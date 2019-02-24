@@ -13,13 +13,13 @@ import maryk.core.properties.definitions.IsUsableInMultiType
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.SetDefinition
+import maryk.core.properties.definitions.wrapper.ContextualPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.EmbeddedValuesPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.ContextualPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.references.AnyPropertyReference
@@ -32,27 +32,32 @@ import maryk.core.values.IsValueItems
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ValueItem
 
-abstract class AbstractPropertyDefinitions<DO: Any>:
+abstract class AbstractPropertyDefinitions<DO : Any> :
     IsPropertyDefinitions,
-    Collection<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>>
-{
+    Collection<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>> {
     override fun iterator() = _allProperties.iterator()
 
-    private val _allProperties: MutableList<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>> = mutableListOf()
+    private val _allProperties: MutableList<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>> =
+        mutableListOf()
 
     protected val indexToDefinition = mutableMapOf<Int, IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>>()
-    protected val nameToDefinition = mutableMapOf<String, IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>>()
+    protected val nameToDefinition =
+        mutableMapOf<String, IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>>()
 
     // Implementation of Collection
     override val size = _allProperties.size
+
     override fun contains(element: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>) =
         this._allProperties.contains(element)
+
     override fun containsAll(elements: Collection<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>>) =
         this._allProperties.containsAll(elements)
+
     override fun isEmpty() = this._allProperties.isEmpty()
 
     /** Get the definition with a property [name] */
     operator fun get(name: String) = nameToDefinition[name]
+
     /** Get the definition with a property [index] */
     operator fun get(index: Int) = indexToDefinition[index]
 
@@ -60,16 +65,16 @@ abstract class AbstractPropertyDefinitions<DO: Any>:
     fun mapNonNulls(vararg pairs: ValueItem?): IsValueItems =
         MutableValueItems().also { items ->
             for (it in pairs) {
-                if(it != null) items += it
+                if (it != null) items += it
             }
         }
 
     /** Helper for definition maps for multi types. Add enum/usableInMultiType [pair] to map */
-    fun <E: IndexedEnum<E>> definitionMap(vararg pair: Pair<E, IsUsableInMultiType<*, IsPropertyContext>>) =
+    fun <E : IndexedEnum<E>> definitionMap(vararg pair: Pair<E, IsUsableInMultiType<*, IsPropertyContext>>) =
         mapOf(*pair)
 
     /** Add flex bytes encodable property [definition] with [name] and [index] */
-    fun <T: Any, CX: IsPropertyContext, D: IsSerializableFlexBytesEncodable<T, CX>> add(
+    fun <T : Any, CX : IsPropertyContext, D : IsSerializableFlexBytesEncodable<T, CX>> add(
         index: Int,
         name: String,
         definition: D
@@ -78,7 +83,7 @@ abstract class AbstractPropertyDefinitions<DO: Any>:
     }
 
     /** Add flex bytes encodable property [definition] with [name] and [index] */
-    fun <T: Any, CX: IsPropertyContext, D: IsContextualEncodable<T, CX>> add(
+    fun <T : Any, CX : IsPropertyContext, D : IsContextualEncodable<T, CX>> add(
         index: Int,
         name: String,
         definition: D
@@ -87,7 +92,7 @@ abstract class AbstractPropertyDefinitions<DO: Any>:
     }
 
     /** Add fixed bytes encodable property [definition] with [name] and [index] */
-    fun <T: Any, CX: IsPropertyContext, D: IsSerializableFixedBytesEncodable<T, CX>> add(
+    fun <T : Any, CX : IsPropertyContext, D : IsSerializableFixedBytesEncodable<T, CX>> add(
         index: Int,
         name: String,
         definition: D
@@ -96,7 +101,7 @@ abstract class AbstractPropertyDefinitions<DO: Any>:
     }
 
     /** Add list property [definition] with [name] and [index] */
-    fun <T: Any, CX: IsPropertyContext> add(
+    fun <T : Any, CX : IsPropertyContext> add(
         index: Int,
         name: String,
         definition: ListDefinition<T, CX>
@@ -105,7 +110,7 @@ abstract class AbstractPropertyDefinitions<DO: Any>:
     }
 
     /** Add set property [definition] with [name] and [index] */
-    fun <T: Any, CX: IsPropertyContext> add(
+    fun <T : Any, CX : IsPropertyContext> add(
         index: Int,
         name: String,
         definition: SetDefinition<T, CX>
@@ -114,16 +119,16 @@ abstract class AbstractPropertyDefinitions<DO: Any>:
     }
 
     /** Add map property [definition] with [name] and [index] */
-    fun <K: Any, V: Any, CX: IsPropertyContext> add(
+    fun <K : Any, V : Any, CX : IsPropertyContext> add(
         index: Int,
         name: String,
         definition: MapDefinition<K, V, CX>
-    ) = MapPropertyDefinitionWrapper<K, V, Map<K,V>, CX, Any>(index, name, definition).apply {
+    ) = MapPropertyDefinitionWrapper<K, V, Map<K, V>, CX, Any>(index, name, definition).apply {
         addSingle(this)
     }
 
     /** Add multi type property [definition] with [name] and [index] */
-    fun <E: IndexedEnum<E>, CX: IsPropertyContext> add(
+    fun <E : IndexedEnum<E>, CX : IsPropertyContext> add(
         index: Int,
         name: String,
         definition: IsMultiTypeDefinition<E, CX>
@@ -132,7 +137,7 @@ abstract class AbstractPropertyDefinitions<DO: Any>:
     }
 
     /** Add embedded object property [definition] with [name] and [index] */
-    fun <DM: IsValuesDataModel<P>, P: PropertyDefinitions, CX: IsPropertyContext> add(
+    fun <DM : IsValuesDataModel<P>, P : PropertyDefinitions, CX : IsPropertyContext> add(
         index: Int,
         name: String,
         definition: IsEmbeddedValuesDefinition<DM, P, CX>
@@ -152,7 +157,10 @@ abstract class AbstractPropertyDefinitions<DO: Any>:
     }
 
     /** Get PropertyReference by [referenceName] */
-    final override fun getPropertyReferenceByName(referenceName: String, context: IsPropertyContext?): IsPropertyReference<*, IsPropertyDefinition<*>, *> {
+    final override fun getPropertyReferenceByName(
+        referenceName: String,
+        context: IsPropertyContext?
+    ): IsPropertyReference<*, IsPropertyDefinition<*>, *> {
         val names = referenceName.split(".")
 
         var propertyReference: AnyPropertyReference? = null
@@ -168,7 +176,11 @@ abstract class AbstractPropertyDefinitions<DO: Any>:
     }
 
     /** Get PropertyReference by bytes from [reader] with [length] */
-    final override fun getPropertyReferenceByBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?): IsPropertyReference<*, IsPropertyDefinition<*>, *> {
+    final override fun getPropertyReferenceByBytes(
+        length: Int,
+        reader: () -> Byte,
+        context: IsPropertyContext?
+    ): IsPropertyReference<*, IsPropertyDefinition<*>, *> {
         var readLength = 0
 
         val lengthReader = {
@@ -192,7 +204,11 @@ abstract class AbstractPropertyDefinitions<DO: Any>:
     }
 
     /** Get PropertyReference by storage bytes from [reader] with [length] */
-    final override fun getPropertyReferenceByStorageBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?): IsPropertyReference<*, IsPropertyDefinition<*>, *> {
+    final override fun getPropertyReferenceByStorageBytes(
+        length: Int,
+        reader: () -> Byte,
+        context: IsPropertyContext?
+    ): IsPropertyReference<*, IsPropertyDefinition<*>, *> {
         var readLength = 0
         val lengthReader = {
             readLength++
@@ -204,7 +220,11 @@ abstract class AbstractPropertyDefinitions<DO: Any>:
             when {
                 propertyReference == null -> throw DefNotFoundException("Property reference does not exist")
                 readLength >= length -> propertyReference
-                propertyReference is HasEmbeddedPropertyReference<*> -> propertyReference.getEmbeddedStorageRef(lengthReader, context, referenceType) { readLength >= length }
+                propertyReference is HasEmbeddedPropertyReference<*> -> propertyReference.getEmbeddedStorageRef(
+                    lengthReader,
+                    context,
+                    referenceType
+                ) { readLength >= length }
                 else -> throw DefNotFoundException("More property references found on property that cannot have any: $propertyReference")
             }
         }

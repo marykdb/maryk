@@ -18,7 +18,7 @@ import maryk.core.values.ObjectValues
 import kotlin.experimental.xor
 
 /** Class to reverse key parts of type [T] by [reference] in key. */
-data class Reversed<T: Any>(
+data class Reversed<T : Any>(
     val reference: IsValuePropertyReference<T, *, *, *>
 ) : IsIndexablePropertyReference<T> {
     override val indexKeyPartType = IndexKeyPartType.Reversed
@@ -61,7 +61,9 @@ data class Reversed<T: Any>(
     object Properties : ObjectPropertyDefinitions<Reversed<out Any>>() {
         val reference = add(1, "reference",
             ContextualPropertyReferenceDefinition<DefinitionsConversionContext>(
-                contextualResolver = { it?.propertyDefinitions as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException() }
+                contextualResolver = {
+                    it?.propertyDefinitions as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()
+                }
             ),
             getter = {
                 @Suppress("UNCHECKED_CAST")
@@ -70,10 +72,11 @@ data class Reversed<T: Any>(
         )
     }
 
-    internal object Model : SingleTypedValueDataModel<AnyPropertyReference, Reversed<out Any>, Properties, DefinitionsConversionContext>(
-        properties = Properties,
-        singlePropertyDefinition = Properties.reference
-    ) {
+    internal object Model :
+        SingleTypedValueDataModel<AnyPropertyReference, Reversed<out Any>, Properties, DefinitionsConversionContext>(
+            properties = Properties,
+            singlePropertyDefinition = Properties.reference
+        ) {
         override fun invoke(values: ObjectValues<Reversed<out Any>, Properties>) = Reversed<Any>(
             reference = values(1)
         )

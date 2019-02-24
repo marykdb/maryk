@@ -2,16 +2,16 @@ package maryk.core.query.responses
 
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.QueryDataModel
-import maryk.core.values.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.wrapper.ObjectListPropertyDefinitionWrapper
 import maryk.core.query.ValuesWithMetaData
+import maryk.core.values.ObjectValues
 
 /** Response with [values] to an objects (Get/Scan) request to [dataModel] */
-data class ValuesResponse<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
+data class ValuesResponse<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions>(
     override val dataModel: DM,
     val values: List<ValuesWithMetaData<DM, P>>
 ) : IsDataModelResponse<DM> {
@@ -31,7 +31,7 @@ data class ValuesResponse<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
         }
     }
 
-    companion object: QueryDataModel<ValuesResponse<*, *>, Properties>(
+    companion object : QueryDataModel<ValuesResponse<*, *>, Properties>(
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<ValuesResponse<*, *>, Properties>) = ValuesResponse(

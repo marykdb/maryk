@@ -27,7 +27,7 @@ import maryk.lib.exceptions.ParseException
  * The graphables are sorted after generation so the PropRefGraph can be processed quicker.
  */
 @Suppress("unused")
-fun <P: PropertyDefinitions, DM: IsValuesDataModel<PS>, PS: PropertyDefinitions> P.graph(
+fun <P : PropertyDefinitions, DM : IsValuesDataModel<PS>, PS : PropertyDefinitions> P.graph(
     embed: EmbeddedValuesPropertyDefinitionWrapper<DM, PS, IsPropertyContext>,
     runner: PS.() -> List<IsPropRefGraphNode<PS>>
 ) = PropRefGraph<P, DM, PS>(embed, runner(embed.definition.dataModel.properties).sortedBy { it.index })
@@ -36,7 +36,7 @@ fun <P: PropertyDefinitions, DM: IsValuesDataModel<PS>, PS: PropertyDefinitions>
  * Represents a Property Reference Graph branch below a [parent] with all [properties] to fetch
  * [properties] should always be sorted by index so processing graphs is a lot easier
  */
-data class PropRefGraph<P: PropertyDefinitions, DM: IsValuesDataModel<PS>, PS: PropertyDefinitions> internal constructor(
+data class PropRefGraph<P : PropertyDefinitions, DM : IsValuesDataModel<PS>, PS : PropertyDefinitions> internal constructor(
     val parent: EmbeddedValuesPropertyDefinitionWrapper<DM, PS, IsPropertyContext>,
     override val properties: List<IsPropRefGraphNode<PS>>
 ) : IsPropRefGraphNode<P>, IsPropRefGraph<PS> {
@@ -60,11 +60,13 @@ data class PropRefGraph<P: PropertyDefinitions, DM: IsValuesDataModel<PS>, PS: P
         val parent = add(1, "parent",
             ContextualPropertyReferenceDefinition(
                 contextualResolver = { context: GraphContext? ->
-                    context?.dataModel?.properties as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()
+                    context?.dataModel?.properties as? AbstractPropertyDefinitions<*>?
+                        ?: throw ContextNotFoundException()
                 }
             ),
             capturer = { context, value ->
-                context.subDataModel = (value.propertyDefinition as EmbeddedValuesPropertyDefinitionWrapper<*, *, *>).dataModel
+                context.subDataModel =
+                    (value.propertyDefinition as EmbeddedValuesPropertyDefinitionWrapper<*, *, *>).dataModel
             },
             toSerializable = { value: IsPropertyDefinitionWrapper<*, *, *, *>?, _ ->
                 value?.ref()
@@ -80,20 +82,22 @@ data class PropRefGraph<P: PropertyDefinitions, DM: IsValuesDataModel<PS>, PS: P
         }
     }
 
-    companion object : ContextualDataModel<PropRefGraph<*, *, *>, Properties, ContainsDataModelContext<*>, GraphContext>(
-        properties = Properties,
-        contextTransformer = {
-            if (it is GraphContext && it.subDataModel != null) {
-                GraphContext(it.subDataModel)
-            } else {
-                GraphContext(it?.dataModel)
+    companion object :
+        ContextualDataModel<PropRefGraph<*, *, *>, Properties, ContainsDataModelContext<*>, GraphContext>(
+            properties = Properties,
+            contextTransformer = {
+                if (it is GraphContext && it.subDataModel != null) {
+                    GraphContext(it.subDataModel)
+                } else {
+                    GraphContext(it?.dataModel)
+                }
             }
-        }
-    ) {
-        override fun invoke(values: ObjectValues<PropRefGraph<*, *, *>, Properties>) = PropRefGraph<PropertyDefinitions, IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
-            parent = values(1),
-            properties = values(2)
-        )
+        ) {
+        override fun invoke(values: ObjectValues<PropRefGraph<*, *, *>, Properties>) =
+            PropRefGraph<PropertyDefinitions, IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
+                parent = values(1),
+                properties = values(2)
+            )
 
         override fun writeJson(obj: PropRefGraph<*, *, *>, writer: IsJsonLikeWriter, context: GraphContext?) {
             writeJsonValues(obj.parent.ref(), obj.properties, writer, context)
@@ -115,8 +119,11 @@ data class PropRefGraph<P: PropertyDefinitions, DM: IsValuesDataModel<PS>, PS: P
             writer.writeEndObject()
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: GraphContext?): ObjectValues<PropRefGraph<*, *, *>, Properties> {
-            if (reader.currentToken == JsonToken.StartDocument){
+        override fun readJson(
+            reader: IsJsonLikeReader,
+            context: GraphContext?
+        ): ObjectValues<PropRefGraph<*, *, *>, Properties> {
+            if (reader.currentToken == JsonToken.StartDocument) {
                 reader.nextToken()
             }
 
@@ -143,7 +150,7 @@ data class PropRefGraph<P: PropertyDefinitions, DM: IsValuesDataModel<PS>, PS: P
 
             var currentToken = reader.nextToken()
 
-            val propertiesValue = mutableListOf<TypedValue<PropRefGraphType,*>>()
+            val propertiesValue = mutableListOf<TypedValue<PropRefGraphType, *>>()
 
             while (currentToken != JsonToken.EndArray && currentToken !is JsonToken.Stopped) {
                 when (currentToken) {
@@ -158,7 +165,8 @@ data class PropRefGraph<P: PropertyDefinitions, DM: IsValuesDataModel<PS>, PS: P
                         )
                     }
                     is JsonToken.Value<*> -> {
-                        val multiTypeDefinition = Properties.properties.valueDefinition as MultiTypeDefinition<PropRefGraphType, GraphContext>
+                        val multiTypeDefinition =
+                            Properties.properties.valueDefinition as MultiTypeDefinition<PropRefGraphType, GraphContext>
 
                         propertiesValue.add(
                             TypedValue(
@@ -189,7 +197,7 @@ data class PropRefGraph<P: PropertyDefinitions, DM: IsValuesDataModel<PS>, PS: P
 /**
  * Add properties to Property Reference PropRefGraph objects so they are encodable
  */
-internal fun <DO: Any> ObjectPropertyDefinitions<DO>.addProperties(
+internal fun <DO : Any> ObjectPropertyDefinitions<DO>.addProperties(
     index: Int,
     getter: (DO) -> List<IsPropRefGraphNode<*>>,
     contextResolver: (GraphContext?) -> PropertyDefinitions

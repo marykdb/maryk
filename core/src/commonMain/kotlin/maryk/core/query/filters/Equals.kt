@@ -12,15 +12,15 @@ data class Equals internal constructor(
     override val filterType = FilterType.Equals
 
     @Suppress("UNCHECKED_CAST")
-    constructor(vararg referenceValuePair: ReferenceValuePair<*>): this(referenceValuePair.toList() as List<ReferenceValuePair<Any>>)
+    constructor(vararg referenceValuePair: ReferenceValuePair<*>) : this(referenceValuePair.toList() as List<ReferenceValuePair<Any>>)
 
-    object Properties: ReferenceValuePairsObjectPropertyDefinitions<Equals, ReferenceValuePair<Any>>(
+    object Properties : ReferenceValuePairsObjectPropertyDefinitions<Equals, ReferenceValuePair<Any>>(
         pairName = "referenceValuePairs",
         pairGetter = Equals::referenceValuePairs,
         pairModel = ReferenceValuePair
     )
 
-    companion object: ReferencePairDataModel<Equals, Properties, ReferenceValuePair<Any>, Any>(
+    companion object : ReferencePairDataModel<Equals, Properties, ReferenceValuePair<Any>, Any>(
         properties = Properties,
         pairProperties = ReferenceValuePair.Properties
     ) {

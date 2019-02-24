@@ -10,11 +10,10 @@ import maryk.json.IsJsonLikeWriter
 import maryk.yaml.YamlWriter
 
 internal fun <
-    DM: IsNamedDataModel<*>,
-    P: IsDataModelPropertyDefinitions<DM, *>,
-    P2: AbstractPropertyDefinitions<DM>
->
-AbstractDataModel<DM, P2, *, ContainsDefinitionsContext, ContainsDefinitionsContext>.writeDataModelJson(
+    DM : IsNamedDataModel<*>,
+    P : IsDataModelPropertyDefinitions<DM, *>,
+    P2 : AbstractPropertyDefinitions<DM>
+> AbstractDataModel<DM, P2, *, ContainsDefinitionsContext, ContainsDefinitionsContext>.writeDataModelJson(
     writer: IsJsonLikeWriter,
     context: ContainsDefinitionsContext?,
     obj: DM,

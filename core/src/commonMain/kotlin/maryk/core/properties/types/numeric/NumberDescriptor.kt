@@ -2,7 +2,7 @@ package maryk.core.properties.types.numeric
 
 import maryk.core.protobuf.WireType
 
-abstract class NumberDescriptor<T: Comparable<T>> internal constructor(
+abstract class NumberDescriptor<T : Comparable<T>> internal constructor(
     internal val size: Int,
     internal val wireType: WireType,
     val type: NumberType

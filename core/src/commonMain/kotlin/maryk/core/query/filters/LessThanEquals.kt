@@ -12,7 +12,7 @@ data class LessThanEquals internal constructor(
     override val filterType = FilterType.LessThanEquals
 
     @Suppress("UNCHECKED_CAST")
-    constructor(vararg referenceValuePair: ReferenceValuePair<out Any>): this(referenceValuePair.toList() as List<ReferenceValuePair<Any>>)
+    constructor(vararg referenceValuePair: ReferenceValuePair<out Any>) : this(referenceValuePair.toList() as List<ReferenceValuePair<Any>>)
 
     object Properties : ReferenceValuePairsObjectPropertyDefinitions<LessThanEquals, ReferenceValuePair<Any>>(
         pairName = "referenceValuePairs",
@@ -20,7 +20,7 @@ data class LessThanEquals internal constructor(
         pairModel = ReferenceValuePair
     )
 
-    companion object: ReferencePairDataModel<LessThanEquals, Properties, ReferenceValuePair<Any>, Any>(
+    companion object : ReferencePairDataModel<LessThanEquals, Properties, ReferenceValuePair<Any>, Any>(
         properties = Properties,
         pairProperties = ReferenceValuePair.Properties
     ) {

@@ -20,7 +20,7 @@ data class ValidationUmbrellaException internal constructor(
 ) {
     override val validationExceptionType = ValidationExceptionType.UMBRELLA
 
-    internal companion object: SimpleQueryDataModel<ValidationUmbrellaException>(
+    internal companion object : SimpleQueryDataModel<ValidationUmbrellaException>(
         properties = object : ObjectPropertyDefinitions<ValidationUmbrellaException>() {
             init {
                 ValidationException.addReference(this, ValidationUmbrellaException::reference)
@@ -57,7 +57,10 @@ private fun createReason(reference: AnyPropertyReference?, exceptions: List<Vali
 }
 
 /** Convenience method to create a new ValidationUmbrellaException */
-fun createValidationUmbrellaException(refGetter: () -> AnyPropertyReference?, exceptionCollector: (exceptionAdder: (e: ValidationException) -> Unit) -> Unit){
+fun createValidationUmbrellaException(
+    refGetter: () -> AnyPropertyReference?,
+    exceptionCollector: (exceptionAdder: (e: ValidationException) -> Unit) -> Unit
+) {
     var hasExceptions = false
     val exceptions by lazy {
         hasExceptions = true

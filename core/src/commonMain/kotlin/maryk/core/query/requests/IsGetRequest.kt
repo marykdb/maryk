@@ -11,11 +11,14 @@ import maryk.core.query.RequestContext
 import maryk.core.query.responses.IsResponse
 
 /** Defines a Get by keys request. */
-interface IsGetRequest<DM: IsRootDataModel<P>, P: PropertyDefinitions, RP: IsResponse> : IsFetchRequest<DM, P, RP> {
+interface IsGetRequest<DM : IsRootDataModel<P>, P : PropertyDefinitions, RP : IsResponse> : IsFetchRequest<DM, P, RP> {
     val keys: List<Key<DM>>
 
     companion object {
-        internal fun <REQ: IsGetRequest<*, *, *>> addKeys(definitions: ObjectPropertyDefinitions<REQ>, getter: (REQ) -> List<Key<*>>?) =
+        internal fun <REQ : IsGetRequest<*, *, *>> addKeys(
+            definitions: ObjectPropertyDefinitions<REQ>,
+            getter: (REQ) -> List<Key<*>>?
+        ) =
             definitions.add(2, "keys", ListDefinition(
                 valueDefinition = ContextualReferenceDefinition<RequestContext>(
                     contextualResolver = {

@@ -13,7 +13,7 @@ data class Prefix internal constructor(
 ) : IsReferenceValuePairsFilter<String> {
     override val filterType = FilterType.Prefix
 
-    constructor(vararg referenceValuePair: ReferenceValuePair<String>): this(referenceValuePair.toList())
+    constructor(vararg referenceValuePair: ReferenceValuePair<String>) : this(referenceValuePair.toList())
 
     @Suppress("UNCHECKED_CAST")
     object Properties : ReferenceValuePairsObjectPropertyDefinitions<Prefix, ReferenceValuePair<String>>(
@@ -23,7 +23,7 @@ data class Prefix internal constructor(
     )
 
     @Suppress("UNCHECKED_CAST")
-    companion object: ReferencePairDataModel<Prefix, Properties, ReferenceValuePair<String>, String>(
+    companion object : ReferencePairDataModel<Prefix, Properties, ReferenceValuePair<String>, String>(
         properties = Properties,
         pairProperties = ReferenceValuePair.Properties as ReferenceValuePairPropertyDefinitions<ReferenceValuePair<String>, String>
     ) {

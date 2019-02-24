@@ -22,6 +22,7 @@ object UInt64 : UnsignedNumberDescriptor<ULong>(
     override fun writeTransportBytes(value: ULong, writer: (byte: Byte) -> Unit) {
         value.writeVarBytes(writer)
     }
+
     override fun ofString(value: String) = value.toULong()
     override fun ofDouble(value: Double) = value.toLong().toULong()
     override fun toDouble(value: ULong) = value.toLong().toDouble()

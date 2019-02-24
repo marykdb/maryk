@@ -13,7 +13,7 @@ data class MultiTypeChange internal constructor(
 ) : IsChange {
     override val changeType = ChangeType.TypeChange
 
-    constructor(vararg referenceTypePair: ReferenceTypePair<*>): this(referenceTypePair.toList())
+    constructor(vararg referenceTypePair: ReferenceTypePair<*>) : this(referenceTypePair.toList())
 
     @Suppress("UNCHECKED_CAST")
     object Properties : ReferenceValuePairsObjectPropertyDefinitions<MultiTypeChange, ReferenceTypePair<*>>(
@@ -22,7 +22,7 @@ data class MultiTypeChange internal constructor(
         pairModel = ReferenceTypePair as QueryDataModel<ReferenceTypePair<*>, *>
     )
 
-    companion object: ReferencePairDataModel<MultiTypeChange, Properties, ReferenceTypePair<*>, AnyIndexedEnum>(
+    companion object : ReferencePairDataModel<MultiTypeChange, Properties, ReferenceTypePair<*>, AnyIndexedEnum>(
         properties = Properties,
         pairProperties = ReferenceTypePair.Properties
     ) {

@@ -3,7 +3,7 @@ package maryk.core.properties.graph
 import maryk.core.properties.IsPropertyDefinitions
 
 /** Defines a graph element */
-interface IsPropRefGraph<in P: IsPropertyDefinitions> {
+interface IsPropRefGraph<in P : IsPropertyDefinitions> {
     val properties: List<IsPropRefGraphNode<P>>
 
     /** Select a node by [index] or return null if not exists */

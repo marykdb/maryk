@@ -20,7 +20,7 @@ import maryk.core.properties.types.numeric.UInt64
 import maryk.core.values.ObjectValues
 import maryk.core.values.Values
 
-data class ValuesWithMetaData<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
+data class ValuesWithMetaData<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions>(
     val key: Key<DM>,
     val values: Values<DM, P>,
     val firstVersion: ULong,
@@ -38,25 +38,28 @@ data class ValuesWithMetaData<DM: IsRootValuesDataModel<P>, P: PropertyDefinitio
         val values = add(2, "values",
             ContextualEmbeddedValuesDefinition<RequestContext>(
                 contextualResolver = {
-                    it?.dataModel as? AbstractValuesDataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, RequestContext>? ?: throw ContextNotFoundException()
+                    it?.dataModel as? AbstractValuesDataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, RequestContext>?
+                        ?: throw ContextNotFoundException()
                 }
             ) as IsEmbeddedValuesDefinition<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions, RequestContext>,
             ValuesWithMetaData<*, *>::values as (ValuesWithMetaData<*, *>) -> Values<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>?
         )
-        val firstVersion = add(3, "firstVersion", NumberDefinition(type = UInt64), ValuesWithMetaData<*, *>::firstVersion)
+        val firstVersion =
+            add(3, "firstVersion", NumberDefinition(type = UInt64), ValuesWithMetaData<*, *>::firstVersion)
         val lastVersion = add(4, "lastVersion", NumberDefinition(type = UInt64), ValuesWithMetaData<*, *>::lastVersion)
         val isDeleted = add(5, "isDeleted", BooleanDefinition(), ValuesWithMetaData<*, *>::isDeleted)
     }
 
-    companion object: QueryDataModel<ValuesWithMetaData<*, *>, Properties>(
+    companion object : QueryDataModel<ValuesWithMetaData<*, *>, Properties>(
         properties = Properties
     ) {
-        override fun invoke(values: ObjectValues<ValuesWithMetaData<*, *>, Properties>) = ValuesWithMetaData<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
-            key = values(1),
-            values = values(2),
-            firstVersion = values(3),
-            lastVersion = values(4),
-            isDeleted = values(5)
-        )
+        override fun invoke(values: ObjectValues<ValuesWithMetaData<*, *>, Properties>) =
+            ValuesWithMetaData<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
+                key = values(1),
+                values = values(2),
+                firstVersion = values(3),
+                lastVersion = values(4),
+                isDeleted = values(5)
+            )
     }
 }

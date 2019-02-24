@@ -4,7 +4,7 @@ import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
 
-enum class RequestType(override val index: UInt): IndexedEnum<RequestType> {
+enum class RequestType(override val index: UInt) : IndexedEnum<RequestType> {
     Add(1u),
     Change(2u),
     Delete(3u),
@@ -12,9 +12,9 @@ enum class RequestType(override val index: UInt): IndexedEnum<RequestType> {
     GetChanges(5u),
     Scan(6u),
     ScanChanges(7u),
-	Collect(8u);
+    Collect(8u);
 
-    companion object: IndexedEnumDefinition<RequestType>(
+    companion object : IndexedEnumDefinition<RequestType>(
         "RequestType", RequestType::values
     )
 }

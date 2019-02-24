@@ -23,7 +23,7 @@ import maryk.yaml.YamlWriter
  * Defines a range of [from] until [to] of type [T].
  * With [inclusiveFrom] and [inclusiveTo] set to true (default) it will include [from] or [to]
  */
-data class ValueRange<T: Comparable<T>> internal constructor(
+data class ValueRange<T : Comparable<T>> internal constructor(
     val from: T,
     val to: T,
     val inclusiveFrom: Boolean = true,
@@ -43,7 +43,7 @@ data class ValueRange<T: Comparable<T>> internal constructor(
             contextualResolver = { context: RequestContext? ->
                 @Suppress("UNCHECKED_CAST")
                 context?.reference?.comparablePropertyDefinition as? IsValueDefinition<Any, IsPropertyContext>?
-                        ?: throw ContextNotFoundException()
+                    ?: throw ContextNotFoundException()
             }
         ), ValueRange<*>::from)
 
@@ -51,7 +51,7 @@ data class ValueRange<T: Comparable<T>> internal constructor(
             contextualResolver = { context: RequestContext? ->
                 @Suppress("UNCHECKED_CAST")
                 context?.reference?.comparablePropertyDefinition as? IsValueDefinition<Any, IsPropertyContext>?
-                        ?: throw ContextNotFoundException()
+                    ?: throw ContextNotFoundException()
             }
         ), ValueRange<*>::to)
 
@@ -59,7 +59,7 @@ data class ValueRange<T: Comparable<T>> internal constructor(
         val inclusiveTo = add(4, "inclusiveTo", BooleanDefinition(default = true), ValueRange<*>::inclusiveTo)
     }
 
-    companion object: QueryDataModel<ValueRange<*>, Properties>(
+    companion object : QueryDataModel<ValueRange<*>, Properties>(
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<ValueRange<*>, Properties>) = ValueRange(
@@ -90,18 +90,41 @@ data class ValueRange<T: Comparable<T>> internal constructor(
             } else {
                 writer.writeStartObject()
 
-                writeJsonValue(Properties.from as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, ValueRange<*>>, writer, obj.from, context)
-                writeJsonValue(Properties.inclusiveFrom as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, ValueRange<*>>, writer, obj.inclusiveFrom, context)
-                writeJsonValue(Properties.to as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, ValueRange<*>>, writer, obj.to, context)
-                writeJsonValue(Properties.inclusiveTo as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, ValueRange<*>>, writer, obj.inclusiveTo, context)
+                writeJsonValue(
+                    Properties.from as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, ValueRange<*>>,
+                    writer,
+                    obj.from,
+                    context
+                )
+                writeJsonValue(
+                    Properties.inclusiveFrom as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, ValueRange<*>>,
+                    writer,
+                    obj.inclusiveFrom,
+                    context
+                )
+                writeJsonValue(
+                    Properties.to as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, ValueRange<*>>,
+                    writer,
+                    obj.to,
+                    context
+                )
+                writeJsonValue(
+                    Properties.inclusiveTo as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, ValueRange<*>>,
+                    writer,
+                    obj.inclusiveTo,
+                    context
+                )
 
                 writer.writeEndObject()
             }
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: RequestContext?): ObjectValues<ValueRange<*>, Properties> {
+        override fun readJson(
+            reader: IsJsonLikeReader,
+            context: RequestContext?
+        ): ObjectValues<ValueRange<*>, Properties> {
             return if (reader is IsYamlReader) {
-                if (reader.currentToken == JsonToken.StartDocument){
+                if (reader.currentToken == JsonToken.StartDocument) {
                     reader.nextToken()
                 }
 

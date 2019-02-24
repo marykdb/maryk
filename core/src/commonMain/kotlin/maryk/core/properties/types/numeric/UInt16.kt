@@ -14,13 +14,18 @@ object UInt16 : UnsignedNumberDescriptor<UShort>(
     MAX_VALUE = UShort.MAX_VALUE,
     type = NumberType.UInt16
 ) {
-    override fun fromStorageByteReader(length: Int, reader: () -> Byte) = (initShort(reader) + Short.MIN_VALUE).toUShort()
-    override fun writeStorageBytes(value: UShort, writer: (byte: Byte) -> Unit) = (value.toShort() - Short.MIN_VALUE).toShort().writeBytes(writer)
+    override fun fromStorageByteReader(length: Int, reader: () -> Byte) =
+        (initShort(reader) + Short.MIN_VALUE).toUShort()
+
+    override fun writeStorageBytes(value: UShort, writer: (byte: Byte) -> Unit) =
+        (value.toShort() - Short.MIN_VALUE).toShort().writeBytes(writer)
+
     override fun readTransportBytes(reader: () -> Byte) = initShortByVar(reader).toUShort()
     override fun calculateTransportByteLength(value: UShort) = value.toInt().calculateVarByteLength()
     override fun writeTransportBytes(value: UShort, writer: (byte: Byte) -> Unit) {
         value.toInt().writeVarBytes(writer)
     }
+
     override fun ofString(value: String) = value.toUShort()
     override fun ofDouble(value: Double) = value.toInt().toUShort()
     override fun toDouble(value: UShort) = value.toLong().toDouble()

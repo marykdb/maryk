@@ -11,7 +11,7 @@ import maryk.lib.exceptions.ParseException
  * Interface to define this is a serializable property definition of [T]
  * with context [CX]
  */
-interface IsSerializablePropertyDefinition<T: Any, in CX: IsPropertyContext> : IsPropertyDefinition<T> {
+interface IsSerializablePropertyDefinition<T : Any, in CX : IsPropertyContext> : IsPropertyDefinition<T> {
     /** Writes a value to Json with [writer] */
     fun writeJsonValue(value: T, writer: IsJsonLikeWriter, context: CX? = null)
 
@@ -25,12 +25,18 @@ interface IsSerializablePropertyDefinition<T: Any, in CX: IsPropertyContext> : I
      * Calculate length of bytes for [value] with key [index] to transport within optional [context]
      * Caches any calculated lengths to [cacher]
      */
-    fun calculateTransportByteLengthWithKey(index: Int, value: T, cacher: WriteCacheWriter, context: CX? = null) : Int
+    fun calculateTransportByteLengthWithKey(index: Int, value: T, cacher: WriteCacheWriter, context: CX? = null): Int
 
     /**
      * Writes [value] and tag [index] and WireType with [writer] to bytes for transportation.
      * Get any cached sizes from [cacheGetter]
      * Optionally pass a [context] to write more complex properties which depend on other properties
      */
-    fun writeTransportBytesWithKey(index: Int, value: T, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null)
+    fun writeTransportBytesWithKey(
+        index: Int,
+        value: T,
+        cacheGetter: WriteCacheReader,
+        writer: (byte: Byte) -> Unit,
+        context: CX? = null
+    )
 }

@@ -14,10 +14,10 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.values.SimpleObjectValues
 
 /** Failure in validation with [exceptions] */
-data class ValidationFail<DM: IsRootDataModel<*>>(
+data class ValidationFail<DM : IsRootDataModel<*>>(
     val exceptions: List<ValidationException>
 ) : IsAddResponseStatus<DM>, IsChangeResponseStatus<DM> {
-    constructor(validationException: ValidationException): this(
+    constructor(validationException: ValidationException) : this(
         if (validationException is ValidationUmbrellaException) {
             validationException.exceptions
         } else {
@@ -27,7 +27,7 @@ data class ValidationFail<DM: IsRootDataModel<*>>(
 
     override val statusType = StatusType.VALIDATION_FAIL
 
-    internal companion object: SimpleQueryDataModel<ValidationFail<*>>(
+    internal companion object : SimpleQueryDataModel<ValidationFail<*>>(
         properties = object : ObjectPropertyDefinitions<ValidationFail<*>>() {
             init {
                 add(1, "exceptions",
@@ -45,8 +45,9 @@ data class ValidationFail<DM: IsRootDataModel<*>>(
             }
         }
     ) {
-        override fun invoke(values: SimpleObjectValues<ValidationFail<*>>) = ValidationFail<IsRootDataModel<IsPropertyDefinitions>>(
-            exceptions = values(1)
-        )
+        override fun invoke(values: SimpleObjectValues<ValidationFail<*>>) =
+            ValidationFail<IsRootDataModel<IsPropertyDefinitions>>(
+                exceptions = values(1)
+            )
     }
 }

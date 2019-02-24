@@ -22,7 +22,7 @@ import maryk.json.IsJsonLikeWriter
  * properties should be validated. It models the DataObjects which can be validated. And it contains a
  * reference to the propertyDefinitions of type [P] which can be used for the references to the properties.
  */
-abstract class DataModel<DM: IsValuesDataModel<P>, P: PropertyDefinitions>(
+abstract class DataModel<DM : IsValuesDataModel<P>, P : PropertyDefinitions>(
     override val name: String,
     properties: P
 ) : SimpleDataModel<DM, P>(
@@ -32,8 +32,7 @@ abstract class DataModel<DM: IsValuesDataModel<P>, P: PropertyDefinitions>(
 
     private object Properties :
         ObjectPropertyDefinitions<DataModel<*, *>>(),
-        IsDataModelPropertyDefinitions<DataModel<*, *>, PropertyDefinitionsCollectionDefinitionWrapper<DataModel<*, *>>>
-    {
+        IsDataModelPropertyDefinitions<DataModel<*, *>, PropertyDefinitionsCollectionDefinitionWrapper<DataModel<*, *>>> {
         override val name = IsNamedDataModel.addName(this, DataModel<*, *>::name)
         override val properties = DataModel.addProperties(this)
     }
@@ -69,7 +68,7 @@ abstract class DataModel<DM: IsValuesDataModel<P>, P: PropertyDefinitions>(
     }
 
     companion object {
-        internal fun <DM: IsDataModel<*>> addProperties(definitions: AbstractPropertyDefinitions<DM>): PropertyDefinitionsCollectionDefinitionWrapper<DM> {
+        internal fun <DM : IsDataModel<*>> addProperties(definitions: AbstractPropertyDefinitions<DM>): PropertyDefinitionsCollectionDefinitionWrapper<DM> {
             val wrapper = PropertyDefinitionsCollectionDefinitionWrapper<DM>(
                 2,
                 "properties",

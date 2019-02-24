@@ -30,8 +30,7 @@ data class DateDefinition(
     IsMomentDefinition<Date>,
     IsSerializableFixedBytesEncodable<Date, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<Date>,
-    HasDefaultValueDefinition<Date>
-{
+    HasDefaultValueDefinition<Date> {
     override val propertyDefinitionType = PropertyDefinitionType.Date
     override val wireType = WireType.VAR_INT
     override val byteSize = 4
@@ -44,11 +43,17 @@ data class DateDefinition(
 
     override fun writeStorageBytes(value: Date, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?) = Date.ofEpochDay(initIntByVar(reader).decodeZigZag())
+    override fun readTransportBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?) =
+        Date.ofEpochDay(initIntByVar(reader).decodeZigZag())
 
     override fun calculateTransportByteLength(value: Date) = value.epochDay.encodeZigZag().calculateVarByteLength()
 
-    override fun writeTransportBytes(value: Date, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: IsPropertyContext?) {
+    override fun writeTransportBytes(
+        value: Date,
+        cacheGetter: WriteCacheReader,
+        writer: (byte: Byte) -> Unit,
+        context: IsPropertyContext?
+    ) {
         val epochDay = value.epochDay
         epochDay.encodeZigZag().writeVarBytes(writer)
     }

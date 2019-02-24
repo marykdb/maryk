@@ -16,12 +16,15 @@ object UInt8 : UnsignedNumberDescriptor<UByte>(
     type = NumberType.UInt8
 ) {
     override fun fromStorageByteReader(length: Int, reader: () -> Byte) = (initByte(reader) + Byte.MIN_VALUE).toUByte()
-    override fun writeStorageBytes(value: UByte, writer: (byte: Byte) -> Unit) = (value.toByte() - Byte.MIN_VALUE).toByte().writeBytes(writer)
+    override fun writeStorageBytes(value: UByte, writer: (byte: Byte) -> Unit) =
+        (value.toByte() - Byte.MIN_VALUE).toByte().writeBytes(writer)
+
     override fun readTransportBytes(reader: () -> Byte) = initByteByVar(reader).toUByte()
     override fun calculateTransportByteLength(value: UByte) = value.toInt().calculateVarByteLength()
     override fun writeTransportBytes(value: UByte, writer: (byte: Byte) -> Unit) {
         value.toInt().writeVarBytes(writer)
     }
+
     override fun ofString(value: String) = value.toUByte()
     override fun ofDouble(value: Double) = value.toInt().toUByte()
     override fun toDouble(value: UByte) = value.toLong().toDouble()

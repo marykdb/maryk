@@ -16,11 +16,11 @@ import maryk.core.values.ObjectValues
 /** Class to encode multiple [references] for key or other indexable usages */
 data class Multiple(
     val references: List<IsIndexablePropertyReference<*>>
-): IsIndexable {
+) : IsIndexable {
     override val indexKeyPartType = IndexKeyPartType.Multiple
 
     /** Convenience method to set with each [reference] as separate argument */
-    constructor(vararg reference: IsIndexablePropertyReference<*>): this(listOf(*reference))
+    constructor(vararg reference: IsIndexablePropertyReference<*>) : this(listOf(*reference))
 
     override fun calculateStorageByteLength(values: IsValuesGetter): Int {
         var totalBytes = references.size - 1 // Start with adding size of separators
@@ -67,7 +67,8 @@ data class Multiple(
 
     object Properties : ObjectPropertyDefinitions<Multiple>() {
         @Suppress("UNCHECKED_CAST")
-        val references = add(1, "references",
+        val references = add(
+            1, "references",
             ListDefinition(
                 valueDefinition = MultiTypeDefinition(
                     typeEnum = IndexKeyPartType,
@@ -84,10 +85,11 @@ data class Multiple(
         )
     }
 
-    internal object Model : SingleValueDataModel<List<TypedValue<IndexKeyPartType, IsIndexablePropertyReference<*>>>, List<IsIndexablePropertyReference<*>>, Multiple, Properties, DefinitionsConversionContext>(
-        properties = Properties,
-        singlePropertyDefinition = Properties.references
-    ) {
+    internal object Model :
+        SingleValueDataModel<List<TypedValue<IndexKeyPartType, IsIndexablePropertyReference<*>>>, List<IsIndexablePropertyReference<*>>, Multiple, Properties, DefinitionsConversionContext>(
+            properties = Properties,
+            singlePropertyDefinition = Properties.references
+        ) {
         override fun invoke(values: ObjectValues<Multiple, Properties>) = Multiple(
             references = values(1)
         )

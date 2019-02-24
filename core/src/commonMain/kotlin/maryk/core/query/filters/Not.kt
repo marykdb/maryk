@@ -34,7 +34,7 @@ data class Not(
         )
     }
 
-    companion object: QueryDataModel<Not, Properties>(
+    companion object : QueryDataModel<Not, Properties>(
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<Not, Properties>) = Not(
@@ -43,14 +43,15 @@ data class Not(
 
         override fun writeJson(obj: Not, writer: IsJsonLikeWriter, context: RequestContext?) {
             Properties.filters.writeJsonValue(
-                Properties.filters.getPropertyAndSerialize(obj, context) ?: throw ParseException("Missing filters in Not filter"),
+                Properties.filters.getPropertyAndSerialize(obj, context)
+                    ?: throw ParseException("Missing filters in Not filter"),
                 writer,
                 context
             )
         }
 
         override fun readJson(reader: IsJsonLikeReader, context: RequestContext?): ObjectValues<Not, Properties> {
-            if (reader.currentToken == JsonToken.StartDocument){
+            if (reader.currentToken == JsonToken.StartDocument) {
                 reader.nextToken()
             }
 

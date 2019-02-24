@@ -15,7 +15,7 @@ import maryk.core.query.DefinitionsContext
 import maryk.core.values.SimpleObjectValues
 
 /** Definition for Set property */
-data class SetDefinition<T: Any, CX: IsPropertyContext> internal constructor(
+data class SetDefinition<T : Any, CX : IsPropertyContext> internal constructor(
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val minSize: UInt? = null,
@@ -36,7 +36,7 @@ data class SetDefinition<T: Any, CX: IsPropertyContext> internal constructor(
         maxSize: UInt? = null,
         valueDefinition: IsUsableInCollection<T, CX>,
         default: Set<T>? = null
-    ): this(required, final, minSize, maxSize, valueDefinition as IsValueDefinition<T, CX>, default)
+    ) : this(required, final, minSize, maxSize, valueDefinition as IsValueDefinition<T, CX>, default)
 
     override fun newMutableCollection(context: CX?) = mutableSetOf<T>()
 
@@ -49,7 +49,7 @@ data class SetDefinition<T: Any, CX: IsPropertyContext> internal constructor(
     }
 
     override fun validateCollectionForExceptions(
-        refGetter: () -> IsPropertyReference<Set<T>,IsPropertyDefinition<Set<T>>, *>?,
+        refGetter: () -> IsPropertyReference<Set<T>, IsPropertyDefinition<Set<T>>, *>?,
         newValue: Set<T>,
         validator: (item: T, parentRefFactory: () -> IsPropertyReference<T, IsPropertyDefinition<T>, *>?) -> Any
     ) {
@@ -61,48 +61,49 @@ data class SetDefinition<T: Any, CX: IsPropertyContext> internal constructor(
         }
     }
 
-    object Model : ContextualDataModel<SetDefinition<*, *>, ObjectPropertyDefinitions<SetDefinition<*, *>>, ContainsDefinitionsContext, SetDefinitionContext>(
-        contextTransformer = { SetDefinitionContext(it) },
-        properties = object : ObjectPropertyDefinitions<SetDefinition<*, *>>() {
-            init {
-                IsPropertyDefinition.addRequired(this, SetDefinition<*, *>::required)
-                IsPropertyDefinition.addFinal(this, SetDefinition<*, *>::final)
-                HasSizeDefinition.addMinSize(3, this, SetDefinition<*, *>::minSize)
-                HasSizeDefinition.addMaxSize(4, this, SetDefinition<*, *>::maxSize)
-                add(5, "valueDefinition",
-                    ContextTransformerDefinition(
-                        contextTransformer = { it?.definitionsContext },
-                        definition = MultiTypeDefinition(
-                            typeEnum = PropertyDefinitionType,
-                            definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
-                        )
-                    ),
-                    getter = SetDefinition<*, *>::valueDefinition,
-                    toSerializable = { value, _ ->
-                        val defType = value!! as IsTransportablePropertyDefinitionType<*>
-                        TypedValue(defType.propertyDefinitionType, value)
-                    },
-                    fromSerializable = {
-                        @Suppress("UNCHECKED_CAST")
-                        it?.value as IsValueDefinition<Any, DefinitionsContext>?
-                    },
-                    capturer = { context: SetDefinitionContext, value ->
-                        @Suppress("UNCHECKED_CAST")
-                        context.valueDefinion = value.value as IsValueDefinition<Any, ContainsDefinitionsContext>
-                    }
-                )
-                @Suppress("UNCHECKED_CAST")
-                add(6, "default", ContextualCollectionDefinition(
-                    required = false,
-                    contextualResolver = { context: SetDefinitionContext? ->
-                        context?.setDefinition?.let {
-                            it as IsByteTransportableCollection<Any, Collection<Any>, SetDefinitionContext>
-                        } ?: throw ContextNotFoundException()
-                    }
-                ), SetDefinition<*, *>::default)
+    object Model :
+        ContextualDataModel<SetDefinition<*, *>, ObjectPropertyDefinitions<SetDefinition<*, *>>, ContainsDefinitionsContext, SetDefinitionContext>(
+            contextTransformer = { SetDefinitionContext(it) },
+            properties = object : ObjectPropertyDefinitions<SetDefinition<*, *>>() {
+                init {
+                    IsPropertyDefinition.addRequired(this, SetDefinition<*, *>::required)
+                    IsPropertyDefinition.addFinal(this, SetDefinition<*, *>::final)
+                    HasSizeDefinition.addMinSize(3, this, SetDefinition<*, *>::minSize)
+                    HasSizeDefinition.addMaxSize(4, this, SetDefinition<*, *>::maxSize)
+                    add(5, "valueDefinition",
+                        ContextTransformerDefinition(
+                            contextTransformer = { it?.definitionsContext },
+                            definition = MultiTypeDefinition(
+                                typeEnum = PropertyDefinitionType,
+                                definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
+                            )
+                        ),
+                        getter = SetDefinition<*, *>::valueDefinition,
+                        toSerializable = { value, _ ->
+                            val defType = value!! as IsTransportablePropertyDefinitionType<*>
+                            TypedValue(defType.propertyDefinitionType, value)
+                        },
+                        fromSerializable = {
+                            @Suppress("UNCHECKED_CAST")
+                            it?.value as IsValueDefinition<Any, DefinitionsContext>?
+                        },
+                        capturer = { context: SetDefinitionContext, value ->
+                            @Suppress("UNCHECKED_CAST")
+                            context.valueDefinion = value.value as IsValueDefinition<Any, ContainsDefinitionsContext>
+                        }
+                    )
+                    @Suppress("UNCHECKED_CAST")
+                    add(6, "default", ContextualCollectionDefinition(
+                        required = false,
+                        contextualResolver = { context: SetDefinitionContext? ->
+                            context?.setDefinition?.let {
+                                it as IsByteTransportableCollection<Any, Collection<Any>, SetDefinitionContext>
+                            } ?: throw ContextNotFoundException()
+                        }
+                    ), SetDefinition<*, *>::default)
+                }
             }
-        }
-    ) {
+        ) {
         override fun invoke(values: SimpleObjectValues<SetDefinition<*, *>>) = SetDefinition(
             required = values(1),
             final = values(2),

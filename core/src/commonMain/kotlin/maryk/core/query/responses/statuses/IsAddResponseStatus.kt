@@ -4,4 +4,4 @@ import maryk.core.models.IsRootDataModel
 
 @Suppress("unused")
 /** Status for an add object request */
-interface IsAddResponseStatus<DM: IsRootDataModel<*>> : IsResponseStatus
+interface IsAddResponseStatus<DM : IsRootDataModel<*>> : IsResponseStatus

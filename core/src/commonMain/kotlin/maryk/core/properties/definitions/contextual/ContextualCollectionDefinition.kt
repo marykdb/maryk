@@ -11,10 +11,10 @@ import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 
 /** Definition which refers to specific property value definition based on context from [contextualResolver] */
-internal class ContextualCollectionDefinition<in CX: IsPropertyContext>(
+internal class ContextualCollectionDefinition<in CX : IsPropertyContext>(
     private val contextualResolver: (context: CX?) -> IsByteTransportableCollection<Any, Collection<Any>, CX>,
     override val required: Boolean = true
-): IsByteTransportableCollection<Any, Collection<Any>, CX>, IsContextualEncodable<Collection<Any>, CX> {
+) : IsByteTransportableCollection<Any, Collection<Any>, CX>, IsContextualEncodable<Collection<Any>, CX> {
     override val final = true
 
     override fun isPacked(context: CX?, encodedWireType: WireType) =
@@ -33,7 +33,12 @@ internal class ContextualCollectionDefinition<in CX: IsPropertyContext>(
     override fun newMutableCollection(context: CX?) =
         contextualResolver(context).newMutableCollection(context)
 
-    override fun calculateTransportByteLengthWithKey(index: Int, value: Collection<Any>, cacher: WriteCacheWriter, context: CX?) =
+    override fun calculateTransportByteLengthWithKey(
+        index: Int,
+        value: Collection<Any>,
+        cacher: WriteCacheWriter,
+        context: CX?
+    ) =
         contextualResolver(context).calculateTransportByteLengthWithKey(index, value, cacher, context)
 
     override fun writeJsonValue(value: Collection<Any>, writer: IsJsonLikeWriter, context: CX?) =
@@ -42,6 +47,12 @@ internal class ContextualCollectionDefinition<in CX: IsPropertyContext>(
     override fun readJson(reader: IsJsonLikeReader, context: CX?) =
         contextualResolver(context).readJson(reader, context)
 
-    override fun writeTransportBytesWithKey(index: Int, value: Collection<Any>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?) =
+    override fun writeTransportBytesWithKey(
+        index: Int,
+        value: Collection<Any>,
+        cacheGetter: WriteCacheReader,
+        writer: (byte: Byte) -> Unit,
+        context: CX?
+    ) =
         contextualResolver(context).writeTransportBytesWithKey(index, value, cacheGetter, writer, context)
 }

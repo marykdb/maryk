@@ -18,12 +18,11 @@ data class FixedBytesDefinition(
     override val default: Bytes? = null,
     override val random: Boolean = false,
     override val byteSize: Int
-):
+) :
     IsNumericDefinition<Bytes>,
     IsSerializableFixedBytesEncodable<Bytes, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<Bytes>,
-    HasDefaultValueDefinition<Bytes>
-{
+    HasDefaultValueDefinition<Bytes> {
     override val propertyDefinitionType = PropertyDefinitionType.FixedBytes
     override val wireType = WireType.LENGTH_DELIMITED
 
@@ -40,7 +39,7 @@ data class FixedBytesDefinition(
     override fun fromString(string: String) = Bytes(string)
 
     override fun fromNativeType(value: Any) =
-        if(value is ByteArray && value.size == this.byteSize){
+        if (value is ByteArray && value.size == this.byteSize) {
             Bytes(value)
         } else {
             value as? Bytes

@@ -10,7 +10,7 @@ import maryk.core.properties.graph.PropRefGraphType
  * It contains an [index] and [name] to which it is referred inside DataModel and a [getter]
  * function to retrieve value on dataObject of [DO] in context [CX]
  */
-data class ListPropertyDefinitionWrapper<T: Any, TO: Any, CX: IsPropertyContext, in DO: Any> internal constructor(
+data class ListPropertyDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext, in DO : Any> internal constructor(
     override val index: Int,
     override val name: String,
     override val definition: ListDefinition<T, CX>,
@@ -22,7 +22,6 @@ data class ListPropertyDefinitionWrapper<T: Any, TO: Any, CX: IsPropertyContext,
 ) :
     AbstractPropertyDefinitionWrapper(index, name),
     IsListDefinition<T, CX> by definition,
-    IsListPropertyDefinitionWrapper<T, TO, ListDefinition<T, CX>, CX, DO>
-{
+    IsListPropertyDefinitionWrapper<T, TO, ListDefinition<T, CX>, CX, DO> {
     override val graphType = PropRefGraphType.PropRef
 }

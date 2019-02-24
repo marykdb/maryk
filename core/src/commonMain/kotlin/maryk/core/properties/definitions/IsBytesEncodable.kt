@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions
 
 /** Interface to define something can be en/decoded to byte array */
-interface IsBytesEncodable<T: Any> {
+interface IsBytesEncodable<T : Any> {
     /** Read stored value from [reader] until [length] */
     fun readStorageBytes(length: Int, reader: () -> Byte): T
 

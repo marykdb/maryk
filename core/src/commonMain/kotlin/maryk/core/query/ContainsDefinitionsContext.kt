@@ -5,7 +5,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.enum.IndexedEnumDefinition
 
 /** Describes a context which contains definitions for models and enums */
-interface ContainsDefinitionsContext: IsPropertyContext {
+interface ContainsDefinitionsContext : IsPropertyContext {
     // All found DataModels
     val dataModels: MutableMap<String, Unit.() -> IsNamedDataModel<*>>
 

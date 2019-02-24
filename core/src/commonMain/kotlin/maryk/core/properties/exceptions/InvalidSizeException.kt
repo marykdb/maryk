@@ -22,8 +22,8 @@ data class InvalidSizeException internal constructor(
 ) {
     override val validationExceptionType = ValidationExceptionType.INVALID_SIZE
 
-    internal companion object: SimpleQueryDataModel<InvalidSizeException>(
-        properties = object: ObjectPropertyDefinitions<InvalidSizeException>() {
+    internal companion object : SimpleQueryDataModel<InvalidSizeException>(
+        properties = object : ObjectPropertyDefinitions<InvalidSizeException>() {
             init {
                 ValidationException.addReference(this, InvalidSizeException::reference)
                 ValidationException.addValue(this, InvalidSizeException::value)

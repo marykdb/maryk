@@ -21,11 +21,11 @@ data class Requests internal constructor(
     val requests: List<IsRequest<*>>,
     internal var injectables: List<InjectWithReference>?
 ) {
-    constructor(vararg request: IsRequest<*>): this(request.toList())
+    constructor(vararg request: IsRequest<*>) : this(request.toList())
 
-    constructor(requests: List<IsRequest<*>>): this(requests, null)
+    constructor(requests: List<IsRequest<*>>) : this(requests, null)
 
-    object Properties: ObjectPropertyDefinitions<Requests>() {
+    object Properties : ObjectPropertyDefinitions<Requests>() {
         val requests = add(1, "requests",
             ListDefinition(
                 valueDefinition = MultiTypeDefinition(
@@ -59,7 +59,7 @@ data class Requests internal constructor(
      * This is however not true for Protobuf. There this object contains a list of injectables.
      */
     @Suppress("UNCHECKED_CAST")
-    companion object: SingleTypedValueDataModel<TypedValue<RequestType, Any>, Requests, Properties, RequestContext>(
+    companion object : SingleTypedValueDataModel<TypedValue<RequestType, Any>, Requests, Properties, RequestContext>(
         properties = Properties,
         singlePropertyDefinition = Properties.requests as IsPropertyDefinitionWrapper<TypedValue<RequestType, Any>, TypedValue<RequestType, Any>, RequestContext, Requests>
     ) {

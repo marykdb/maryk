@@ -34,8 +34,7 @@ data class DateTimeDefinition(
     IsTimeDefinition<DateTime>,
     IsSerializableFixedBytesEncodable<DateTime, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<DateTime>,
-    HasDefaultValueDefinition<DateTime>
-{
+    HasDefaultValueDefinition<DateTime> {
     override val propertyDefinitionType = PropertyDefinitionType.DateTime
     override val wireType = WireType.VAR_INT
     override val byteSize = DateTime.byteSize(precision)
@@ -46,18 +45,24 @@ data class DateTimeDefinition(
 
     override fun writeStorageBytes(value: DateTime, writer: (byte: Byte) -> Unit) = value.writeBytes(precision, writer)
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?) = when(this.precision) {
-        TimePrecision.SECONDS -> DateTime.ofEpochSecond(initLongByVar(reader))
-        TimePrecision.MILLIS -> DateTime.ofEpochMilli(initLongByVar(reader))
-    }
+    override fun readTransportBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?) =
+        when (this.precision) {
+            TimePrecision.SECONDS -> DateTime.ofEpochSecond(initLongByVar(reader))
+            TimePrecision.MILLIS -> DateTime.ofEpochMilli(initLongByVar(reader))
+        }
 
-    override fun calculateTransportByteLength(value: DateTime) = when(this.precision) {
+    override fun calculateTransportByteLength(value: DateTime) = when (this.precision) {
         TimePrecision.SECONDS -> value.toEpochSecond().calculateVarByteLength()
         TimePrecision.MILLIS -> value.toEpochMilli().calculateVarByteLength()
     }
 
-    override fun writeTransportBytes(value: DateTime, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: IsPropertyContext?) {
-        val epochUnit = when(this.precision) {
+    override fun writeTransportBytes(
+        value: DateTime,
+        cacheGetter: WriteCacheReader,
+        writer: (byte: Byte) -> Unit,
+        context: IsPropertyContext?
+    ) {
+        val epochUnit = when (this.precision) {
             TimePrecision.SECONDS -> value.toEpochSecond()
             TimePrecision.MILLIS -> value.toEpochMilli()
         }
@@ -68,47 +73,48 @@ data class DateTimeDefinition(
 
     override fun fromNativeType(value: Any) = value as? DateTime
 
-    object Model : ContextualDataModel<DateTimeDefinition, ObjectPropertyDefinitions<DateTimeDefinition>, ContainsDefinitionsContext, DateTimeDefinitionContext>(
-        contextTransformer = { DateTimeDefinitionContext() },
-        properties = object : ObjectPropertyDefinitions<DateTimeDefinition>() {
-            init {
-                IsPropertyDefinition.addRequired(this, DateTimeDefinition::required)
-                IsPropertyDefinition.addFinal(this, DateTimeDefinition::final)
-                IsComparableDefinition.addUnique(this, DateTimeDefinition::unique)
-                IsTimeDefinition.addPrecision(4, this,
-                    DateTimeDefinition::precision,
-                    capturer = { context: TimePrecisionContext, timePrecision ->
-                        context.precision = timePrecision
-                    }
-                )
-                add(5, "minValue",
-                    ContextualValueDefinition(
-                        contextualResolver = { context: DateTimeDefinitionContext? ->
-                            context?.dateTimeDefinition ?: throw ContextNotFoundException()
+    object Model :
+        ContextualDataModel<DateTimeDefinition, ObjectPropertyDefinitions<DateTimeDefinition>, ContainsDefinitionsContext, DateTimeDefinitionContext>(
+            contextTransformer = { DateTimeDefinitionContext() },
+            properties = object : ObjectPropertyDefinitions<DateTimeDefinition>() {
+                init {
+                    IsPropertyDefinition.addRequired(this, DateTimeDefinition::required)
+                    IsPropertyDefinition.addFinal(this, DateTimeDefinition::final)
+                    IsComparableDefinition.addUnique(this, DateTimeDefinition::unique)
+                    IsTimeDefinition.addPrecision(4, this,
+                        DateTimeDefinition::precision,
+                        capturer = { context: TimePrecisionContext, timePrecision ->
+                            context.precision = timePrecision
                         }
-                    ),
-                    DateTimeDefinition::minValue
-                )
-                add(6, "maxValue",
-                    ContextualValueDefinition(
-                        contextualResolver = { context: DateTimeDefinitionContext? ->
-                            context?.dateTimeDefinition ?: throw ContextNotFoundException()
-                        }
-                    ),
-                    DateTimeDefinition::maxValue
-                )
-                add(7, "default",
-                    ContextualValueDefinition(
-                        contextualResolver = { context: DateTimeDefinitionContext? ->
-                            context?.dateTimeDefinition ?: throw ContextNotFoundException()
-                        }
-                    ),
-                    DateTimeDefinition::default
-                )
-                IsMomentDefinition.addFillWithNow(8, this, DateTimeDefinition::fillWithNow)
+                    )
+                    add(5, "minValue",
+                        ContextualValueDefinition(
+                            contextualResolver = { context: DateTimeDefinitionContext? ->
+                                context?.dateTimeDefinition ?: throw ContextNotFoundException()
+                            }
+                        ),
+                        DateTimeDefinition::minValue
+                    )
+                    add(6, "maxValue",
+                        ContextualValueDefinition(
+                            contextualResolver = { context: DateTimeDefinitionContext? ->
+                                context?.dateTimeDefinition ?: throw ContextNotFoundException()
+                            }
+                        ),
+                        DateTimeDefinition::maxValue
+                    )
+                    add(7, "default",
+                        ContextualValueDefinition(
+                            contextualResolver = { context: DateTimeDefinitionContext? ->
+                                context?.dateTimeDefinition ?: throw ContextNotFoundException()
+                            }
+                        ),
+                        DateTimeDefinition::default
+                    )
+                    IsMomentDefinition.addFillWithNow(8, this, DateTimeDefinition::fillWithNow)
+                }
             }
-        }
-    ) {
+        ) {
         override fun invoke(values: SimpleObjectValues<DateTimeDefinition>) = DateTimeDefinition(
             required = values(1),
             final = values(2),

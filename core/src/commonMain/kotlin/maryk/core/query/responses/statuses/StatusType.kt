@@ -6,7 +6,7 @@ import maryk.core.properties.enum.IndexedEnumDefinition
 /** Indexed type of changes */
 enum class StatusType(
     override val index: UInt
-): IndexedEnum<StatusType> {
+) : IndexedEnum<StatusType> {
     SUCCESS(1u),
     ADD_SUCCESS(2u),
     AUTH_FAIL(3u),
@@ -16,7 +16,7 @@ enum class StatusType(
     ALREADY_EXISTS(7u),
     DOES_NOT_EXIST(8u);
 
-    companion object: IndexedEnumDefinition<StatusType>(
+    companion object : IndexedEnumDefinition<StatusType>(
         "StatusType", StatusType::values
     )
 }

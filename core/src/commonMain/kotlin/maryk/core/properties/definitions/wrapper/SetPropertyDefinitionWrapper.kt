@@ -16,7 +16,7 @@ import maryk.core.properties.references.SetReference
  * It contains an [index] and [name] to which it is referred inside DataModel and a [getter]
  * function to retrieve value on dataObject of [DO] in context [CX]
  */
-data class SetPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, in DO: Any> internal constructor(
+data class SetPropertyDefinitionWrapper<T : Any, CX : IsPropertyContext, in DO : Any> internal constructor(
     override val index: Int,
     override val name: String,
     override val definition: SetDefinition<T, CX>,
@@ -28,8 +28,7 @@ data class SetPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, in DO: An
 ) :
     AbstractPropertyDefinitionWrapper(index, name),
     IsSetDefinition<T, CX> by definition,
-    IsPropertyDefinitionWrapper<Set<T>, Set<T>, CX, DO>
-{
+    IsPropertyDefinitionWrapper<Set<T>, Set<T>, CX, DO> {
     override val graphType = PropRefGraphType.PropRef
 
     override fun ref(parentRef: AnyPropertyReference?) =

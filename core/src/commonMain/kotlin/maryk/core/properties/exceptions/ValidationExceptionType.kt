@@ -6,7 +6,7 @@ import maryk.core.properties.enum.IndexedEnumDefinition
 /** Indexed type of changes */
 enum class ValidationExceptionType(
     override val index: UInt
-): IndexedEnum<ValidationExceptionType> {
+) : IndexedEnum<ValidationExceptionType> {
     ALREADY_SET(1u),
     INVALID_VALUE(2u),
     INVALID_SIZE(3u),
@@ -16,7 +16,7 @@ enum class ValidationExceptionType(
     TOO_MANY_ITEMS(7u),
     UMBRELLA(8u);
 
-    companion object: IndexedEnumDefinition<ValidationExceptionType>(
+    companion object : IndexedEnumDefinition<ValidationExceptionType>(
         "ValidationExceptionType", ValidationExceptionType::values
     )
 }

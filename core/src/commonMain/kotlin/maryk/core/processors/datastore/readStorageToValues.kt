@@ -50,7 +50,7 @@ private typealias AddValue = (Any) -> Unit
  * [getQualifier] gets a qualifier until none is available and returns null
  * [processValue] processes the storage value with given type and definition
  */
-fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.convertStorageToValues(
+fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.convertStorageToValues(
     getQualifier: () -> ByteArray?,
     select: RootPropRefGraph<P>?,
     processValue: ValueReader
@@ -80,7 +80,7 @@ fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.convertStorageToVa
  * [readValueFromStorage] is used to fetch actual value from storage layer
  * [addToCache] is used to add a sub reader to cache so it does not need to reprocess qualifier from start
  */
-private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
+private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
     qualifier: ByteArray,
     offset: Int,
     select: IsPropRefGraph<*>?,
@@ -101,7 +101,8 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
 
             when (referenceStorageTypeOf(type)) {
                 SPECIAL -> when (val specialType = completeReferenceTypeOf(qualifier[offset])) {
-                    DELETE -> {} // Ignore since it should be handled on higher level
+                    DELETE -> {
+                    } // Ignore since it should be handled on higher level
                     MAP_KEY -> throw Exception("Cannot handle Special type $specialType in qualifier")
                     else -> throw Exception("Not recognized special type $specialType")
                 }
@@ -112,13 +113,22 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
 
                     if (isAtEnd) {
                         @Suppress("UNCHECKED_CAST")
-                        val value = readValueFromStorage(Embed as StorageTypeEnum<IsPropertyDefinition<Any>>, definition)
+                        val value =
+                            readValueFromStorage(Embed as StorageTypeEnum<IsPropertyDefinition<Any>>, definition)
                         when (value) {
                             null -> // Ensure that next potential embedded values are not read because is deleted
                                 addToCache(offset) {
                                     // Ignore reading and return
                                 }
-                            is TypedValue<*, *> -> readTypedValue(qualifier, qIndex, readValueFromStorage, definition as IsMultiTypeDefinition<*, *>, select, addToCache, valueAdder)
+                            is TypedValue<*, *> -> readTypedValue(
+                                qualifier = qualifier,
+                                offset = qIndex,
+                                readValueFromStorage = readValueFromStorage,
+                                valueDefinition = definition as IsMultiTypeDefinition<*, *>,
+                                select = select,
+                                addToCache = addToCache,
+                                addValueToOutput = valueAdder
+                            )
                             else -> valueAdder(value)
                         }
                     } else {
@@ -154,7 +164,8 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                         )
                     } else {
                         @Suppress("UNCHECKED_CAST")
-                        val embedValue = readValueFromStorage(Embed as StorageTypeEnum<IsPropertyDefinition<Any>>, definition)
+                        val embedValue =
+                            readValueFromStorage(Embed as StorageTypeEnum<IsPropertyDefinition<Any>>, definition)
                         if (embedValue == null) {
                             // Ensure that next embedded values are not read
                             addToCache(offset) {
@@ -170,7 +181,10 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                     if (isAtEnd) {
                         // If at end it means that this is a list size
                         @Suppress("UNCHECKED_CAST")
-                        val listSize = readValueFromStorage(ListSize as StorageTypeEnum<IsPropertyDefinition<Any>>, definition) as Int?
+                        val listSize = readValueFromStorage(
+                            ListSize as StorageTypeEnum<IsPropertyDefinition<Any>>,
+                            definition
+                        ) as Int?
 
                         if (listSize != null) {
                             // If not null we can create an empty list of listSize
@@ -213,7 +227,10 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                     if (isAtEnd) {
                         // If at end it means that this is a set size
                         @Suppress("UNCHECKED_CAST")
-                        val setSize = readValueFromStorage(SetSize as StorageTypeEnum<IsPropertyDefinition<Any>>, definition) as Int?
+                        val setSize = readValueFromStorage(
+                            SetSize as StorageTypeEnum<IsPropertyDefinition<Any>>,
+                            definition
+                        ) as Int?
 
                         if (setSize != null) {
                             // If not null we can create a set of setSize
@@ -233,7 +250,8 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                         }
                     } else {
                         // Read set contents. Always a simple value for set since it is in qualifier
-                        val valueDefinition = ((definition as IsSetDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
+                        val valueDefinition =
+                            ((definition as IsSetDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
                         val key = valueDefinition.readStorageBytes(qualifier.size - qIndex) { qualifier[qIndex++] }
 
                         @Suppress("UNCHECKED_CAST")
@@ -250,7 +268,10 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                     if (isAtEnd) {
                         // If at end it means that this is a map count
                         @Suppress("UNCHECKED_CAST")
-                        val mapSize = readValueFromStorage(MapSize as StorageTypeEnum<IsPropertyDefinition<Any>>, definition) as Int?
+                        val mapSize = readValueFromStorage(
+                            MapSize as StorageTypeEnum<IsPropertyDefinition<Any>>,
+                            definition
+                        ) as Int?
 
                         if (mapSize != null) {
                             // If not null we can create a map of mapSize
@@ -276,9 +297,10 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                         }
                     } else {
                         @Suppress("UNCHECKED_CAST")
-                        val mapDefinition = definition.definition as? IsMapDefinition<Any, Any, *> ?: throw Exception("Definition ${definition.definition} should be a MapDefinition")
+                        val mapDefinition = definition.definition as? IsMapDefinition<Any, Any, *>
+                            ?: throw Exception("Definition ${definition.definition} should be a MapDefinition")
                         val keyDefinition = mapDefinition.keyDefinition
-                        val qualifierReader = {qualifier[qIndex++]}
+                        val qualifierReader = { qualifier[qIndex++] }
 
                         val keySize = initIntByVar(qualifierReader)
                         val key = keyDefinition.readStorageBytes(keySize, qualifierReader)
@@ -291,7 +313,10 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                         // Begin to read map value
                         if (qualifier.size <= qIndex) {
                             @Suppress("UNCHECKED_CAST")
-                            val value = readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, mapDefinition.valueDefinition)
+                            val value = readValueFromStorage(
+                                Value as StorageTypeEnum<IsPropertyDefinition<Any>>,
+                                mapDefinition.valueDefinition
+                            )
 
                             when {
                                 value == null ->
@@ -404,10 +429,22 @@ private fun readTypedValue(
     var qIndex1 = offset
     if (qualifier.size <= qIndex1) {
         @Suppress("UNCHECKED_CAST")
-        readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, valueDefinition as IsPropertyDefinition<Any>)?.let {
+        readValueFromStorage(
+            Value as StorageTypeEnum<IsPropertyDefinition<Any>>,
+            valueDefinition as IsPropertyDefinition<Any>
+        )?.let {
             // Pass type to check
             addToCache(qIndex1 - 1) { q ->
-                readTypedValue(q, qIndex1, readValueFromStorage, valueDefinition, select, addToCache, addValueToOutput, (it as TypedValue<*, *>).type)
+                readTypedValue(
+                    qualifier = q,
+                    offset = qIndex1,
+                    readValueFromStorage = readValueFromStorage,
+                    valueDefinition = valueDefinition,
+                    select = select,
+                    addToCache = addToCache,
+                    addValueToOutput = addValueToOutput,
+                    typeToCheck = (it as TypedValue<*, *>).type
+                )
             }
 
             addValueToOutput(it)
@@ -454,7 +491,10 @@ private fun IsMultiTypeDefinition<*, *>.readComplexTypedValue(
 
     if (qualifier.size <= qIndex) {
         @Suppress("UNCHECKED_CAST")
-        val value = readValueFromStorage(Embed as StorageTypeEnum<IsPropertyDefinition<Any>>, definition as IsPropertyDefinition<Any>)
+        val value = readValueFromStorage(
+            Embed as StorageTypeEnum<IsPropertyDefinition<Any>>,
+            definition as IsPropertyDefinition<Any>
+        )
 
         if (value == null) {
             // Ensure that next values are not read because Values is deleted

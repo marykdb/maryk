@@ -23,14 +23,14 @@ import maryk.core.values.ObjectValues
 import maryk.core.values.Values
 
 /** Compares given [value] of type [T] against referenced value [reference] */
-data class ReferenceValuePair<T: Any> internal constructor(
+data class ReferenceValuePair<T : Any> internal constructor(
     override val reference: IsPropertyReference<T, IsChangeableValueDefinition<T, IsPropertyContext>, *>,
     val value: T
 ) : DefinedByReference<T> {
 
     override fun toString() = "$reference: $value"
 
-    object Properties: ReferenceValuePairPropertyDefinitions<ReferenceValuePair<Any>, Any>() {
+    object Properties : ReferenceValuePairPropertyDefinitions<ReferenceValuePair<Any>, Any>() {
         override val reference = DefinedByReference.addReference(
             this,
             ReferenceValuePair<*>::reference
@@ -49,7 +49,7 @@ data class ReferenceValuePair<T: Any> internal constructor(
         )
     }
 
-    companion object: QueryDataModel<ReferenceValuePair<Any>, Properties>(
+    companion object : QueryDataModel<ReferenceValuePair<Any>, Properties>(
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<ReferenceValuePair<Any>, Properties>) = ReferenceValuePair(
@@ -60,30 +60,49 @@ data class ReferenceValuePair<T: Any> internal constructor(
 }
 
 /** Convenience infix method to create Reference [value] pairs */
-infix fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>, *>.with(value: T) =
+infix fun <T : Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>, *>.with(value: T) =
     ReferenceValuePair(this, value)
 
 /** Convenience infix method to create Reference [list] pairs */
 @Suppress("UNCHECKED_CAST")
-infix fun <T: Any, D: IsListDefinition<T, *>> IsPropertyReference<List<T>, D, *>.with(list: List<T>): ReferenceValuePair<List<T>> =
-    ReferenceValuePair(this as IsPropertyReference<List<T>, IsChangeableValueDefinition<List<T>, IsPropertyContext>, *>, list)
+infix fun <T : Any, D : IsListDefinition<T, *>> IsPropertyReference<List<T>, D, *>.with(list: List<T>): ReferenceValuePair<List<T>> =
+    ReferenceValuePair(
+        this as IsPropertyReference<List<T>, IsChangeableValueDefinition<List<T>, IsPropertyContext>, *>,
+        list
+    )
 
 /** Convenience infix method to create Reference [set] pairs */
 @Suppress("UNCHECKED_CAST")
-infix fun <T: Any, D: IsSetDefinition<T, *>> IsPropertyReference<Set<T>, D, *>.with(set: Set<T>): ReferenceValuePair<Set<T>> =
-    ReferenceValuePair(this as IsPropertyReference<Set<T>, IsChangeableValueDefinition<Set<T>, IsPropertyContext>, *>, set)
+infix fun <T : Any, D : IsSetDefinition<T, *>> IsPropertyReference<Set<T>, D, *>.with(set: Set<T>): ReferenceValuePair<Set<T>> =
+    ReferenceValuePair(
+        this as IsPropertyReference<Set<T>, IsChangeableValueDefinition<Set<T>, IsPropertyContext>, *>,
+        set
+    )
 
 /** Convenience infix method to create Reference [map] pairs */
 @Suppress("UNCHECKED_CAST")
-infix fun <K: Any, V: Any, D: IsMapDefinition<K, V, *>> IsPropertyReference<Map<K, V>, D, *>.with(map: Map<K, V>): ReferenceValuePair<Map<K, V>> =
-    ReferenceValuePair(this as IsPropertyReference<Map<K, V>, IsChangeableValueDefinition<Map<K, V>, IsPropertyContext>, *>, map)
+infix fun <K : Any, V : Any, D : IsMapDefinition<K, V, *>> IsPropertyReference<Map<K, V>, D, *>.with(map: Map<K, V>): ReferenceValuePair<Map<K, V>> =
+    ReferenceValuePair(
+        this as IsPropertyReference<Map<K, V>, IsChangeableValueDefinition<Map<K, V>, IsPropertyContext>, *>,
+        map
+    )
 
 /** Convenience infix method to create Reference [typedValue] pairs */
 @Suppress("UNCHECKED_CAST")
-infix fun <E: IndexedEnum<E>, D: IsMultiTypeDefinition<E, *>> IsPropertyReference<TypedValue<E, *>, D, *>.with(typedValue: TypedValue<E, *>): ReferenceValuePair<TypedValue<E, *>> =
-    ReferenceValuePair(this as IsPropertyReference<TypedValue<E, *>, IsChangeableValueDefinition<TypedValue<E, *>, IsPropertyContext>, *>, typedValue)
+infix fun <E : IndexedEnum<E>, D : IsMultiTypeDefinition<E, *>> IsPropertyReference<TypedValue<E, *>, D, *>.with(
+    typedValue: TypedValue<E, *>
+): ReferenceValuePair<TypedValue<E, *>> =
+    ReferenceValuePair(
+        this as IsPropertyReference<TypedValue<E, *>, IsChangeableValueDefinition<TypedValue<E, *>, IsPropertyContext>, *>,
+        typedValue
+    )
 
 /** Convenience infix method to create Reference [values] pairs */
 @Suppress("UNCHECKED_CAST")
-infix fun <DM: IsValuesDataModel<P>, P: PropertyDefinitions, D: IsEmbeddedValuesDefinition<DM, P, *>> IsPropertyReference<Values<DM, P>, D, *>.with(values: Values<DM, P>): ReferenceValuePair<Values<DM, P>> =
-    ReferenceValuePair(this as IsPropertyReference<Values<DM, P>, IsChangeableValueDefinition<Values<DM, P>, IsPropertyContext>, *>, values)
+infix fun <DM : IsValuesDataModel<P>, P : PropertyDefinitions, D : IsEmbeddedValuesDefinition<DM, P, *>> IsPropertyReference<Values<DM, P>, D, *>.with(
+    values: Values<DM, P>
+): ReferenceValuePair<Values<DM, P>> =
+    ReferenceValuePair(
+        this as IsPropertyReference<Values<DM, P>, IsChangeableValueDefinition<Values<DM, P>, IsPropertyContext>, *>,
+        values
+    )

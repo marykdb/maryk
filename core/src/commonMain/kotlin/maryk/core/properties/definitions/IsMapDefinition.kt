@@ -7,9 +7,8 @@ import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.MapValueReference
 
 /** Interface for a Map definition with key [K], value [V] and context [CX] */
-interface IsMapDefinition<K: Any, V: Any, CX: IsPropertyContext>
-    : IsSerializablePropertyDefinition<Map<K, V>, CX>, IsChangeableValueDefinition<Map<K, V>, CX>
-{
+interface IsMapDefinition<K : Any, V : Any, CX : IsPropertyContext>
+    : IsSerializablePropertyDefinition<Map<K, V>, CX>, IsChangeableValueDefinition<Map<K, V>, CX> {
     val keyDefinition: IsSimpleValueDefinition<K, CX>
     val valueDefinition: IsSubDefinition<V, CX>
 
@@ -21,7 +20,7 @@ interface IsMapDefinition<K: Any, V: Any, CX: IsPropertyContext>
 
     /** Get a reference to a specific map [key] on [parentMap] */
     fun keyRef(key: K, parentMap: MapReference<K, V, CX>?) =
-            MapKeyReference(key, this, parentMap)
+        MapKeyReference(key, this, parentMap)
 
     /** Get a reference to a specific map value on [parentMap] by [key] */
     fun valueRef(key: K, parentMap: MapReference<K, V, CX>?) =

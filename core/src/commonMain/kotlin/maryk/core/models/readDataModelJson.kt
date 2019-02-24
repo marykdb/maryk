@@ -17,7 +17,7 @@ import maryk.json.JsonToken.Stopped
 import maryk.lib.exceptions.ParseException
 import maryk.yaml.IsYamlReader
 
-internal fun <DM: IsNamedDataModel<*>, P: IsDataModelPropertyDefinitions<DM, *>> readDataModelJson(
+internal fun <DM : IsNamedDataModel<*>, P : IsDataModelPropertyDefinitions<DM, *>> readDataModelJson(
     context: ContainsDefinitionsContext?,
     reader: IsJsonLikeReader,
     values: MutableValueItems,

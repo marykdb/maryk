@@ -8,17 +8,16 @@ import maryk.core.properties.definitions.index.IndexKeyPartType
  * [D] and referred by PropertyReference of type [P].
  */
 open class ValueWithFlexBytesPropertyReference<
-    T: Any,
-    TO: Any,
+    T : Any,
+    TO : Any,
     out D : FlexBytesPropertyDefinitionWrapper<T, TO, *, *, *>,
-    out P: AnyPropertyReference
+    out P : AnyPropertyReference
 > internal constructor(
     propertyDefinition: D,
     parentReference: P?
-):
+) :
     PropertyReferenceForValues<T, TO, D, P>(propertyDefinition, parentReference),
     IsValuePropertyReference<T, TO, D, P>,
-    IsBytesEncodable<T> by propertyDefinition
-{
+    IsBytesEncodable<T> by propertyDefinition {
     override val indexKeyPartType = IndexKeyPartType.Reference
 }

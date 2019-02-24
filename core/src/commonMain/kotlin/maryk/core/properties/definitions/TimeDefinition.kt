@@ -32,8 +32,7 @@ data class TimeDefinition(
     IsTimeDefinition<Time>,
     IsSerializableFixedBytesEncodable<Time, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<Time>,
-    HasDefaultValueDefinition<Time>
-{
+    HasDefaultValueDefinition<Time> {
     override val propertyDefinitionType = PropertyDefinitionType.Time
     override val wireType = WireType.VAR_INT
     override val byteSize = Time.byteSize(precision)
@@ -45,18 +44,24 @@ data class TimeDefinition(
 
     override fun writeStorageBytes(value: Time, writer: (byte: Byte) -> Unit) = value.writeBytes(precision, writer)
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?) = when(this.precision) {
-        TimePrecision.SECONDS -> Time.ofSecondOfDay(initIntByVar(reader))
-        TimePrecision.MILLIS -> Time.ofMilliOfDay(initIntByVar(reader))
-    }
+    override fun readTransportBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?) =
+        when (this.precision) {
+            TimePrecision.SECONDS -> Time.ofSecondOfDay(initIntByVar(reader))
+            TimePrecision.MILLIS -> Time.ofMilliOfDay(initIntByVar(reader))
+        }
 
-    override fun calculateTransportByteLength(value: Time) = when(this.precision) {
+    override fun calculateTransportByteLength(value: Time) = when (this.precision) {
         TimePrecision.SECONDS -> value.toSecondsOfDay().calculateVarByteLength()
         TimePrecision.MILLIS -> value.toMillisOfDay().calculateVarByteLength()
     }
 
-    override fun writeTransportBytes(value: Time, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: IsPropertyContext?) {
-        val toEncode = when(this.precision) {
+    override fun writeTransportBytes(
+        value: Time,
+        cacheGetter: WriteCacheReader,
+        writer: (byte: Byte) -> Unit,
+        context: IsPropertyContext?
+    ) {
+        val toEncode = when (this.precision) {
             TimePrecision.SECONDS -> value.toSecondsOfDay()
             TimePrecision.MILLIS -> value.toMillisOfDay()
         }
@@ -71,47 +76,48 @@ data class TimeDefinition(
         else -> value as? Time
     }
 
-    object Model : ContextualDataModel<TimeDefinition, ObjectPropertyDefinitions<TimeDefinition>, ContainsDefinitionsContext, TimeDefinitionContext>(
-        contextTransformer = { TimeDefinitionContext() },
-        properties = object : ObjectPropertyDefinitions<TimeDefinition>() {
-            init {
-                IsPropertyDefinition.addRequired(this, TimeDefinition::required)
-                IsPropertyDefinition.addFinal(this, TimeDefinition::final)
-                IsComparableDefinition.addUnique(this, TimeDefinition::unique)
-                IsTimeDefinition.addPrecision(4,this,
-                    TimeDefinition::precision,
-                    capturer = { context: TimePrecisionContext, timePrecision ->
-                        context.precision = timePrecision
-                    }
-                )
-                add(5, "minValue",
-                    ContextualValueDefinition(
-                        contextualResolver = { context: TimeDefinitionContext? ->
-                            context?.timeDefinition ?: throw ContextNotFoundException()
+    object Model :
+        ContextualDataModel<TimeDefinition, ObjectPropertyDefinitions<TimeDefinition>, ContainsDefinitionsContext, TimeDefinitionContext>(
+            contextTransformer = { TimeDefinitionContext() },
+            properties = object : ObjectPropertyDefinitions<TimeDefinition>() {
+                init {
+                    IsPropertyDefinition.addRequired(this, TimeDefinition::required)
+                    IsPropertyDefinition.addFinal(this, TimeDefinition::final)
+                    IsComparableDefinition.addUnique(this, TimeDefinition::unique)
+                    IsTimeDefinition.addPrecision(4, this,
+                        TimeDefinition::precision,
+                        capturer = { context: TimePrecisionContext, timePrecision ->
+                            context.precision = timePrecision
                         }
-                    ),
-                    TimeDefinition::minValue
-                )
-                add(6, "maxValue",
-                    ContextualValueDefinition(
-                        contextualResolver = { context: TimeDefinitionContext? ->
-                            context?.timeDefinition ?: throw ContextNotFoundException()
-                        }
-                    ),
-                    TimeDefinition::maxValue
-                )
-                add(7, "default",
-                    ContextualValueDefinition(
-                        contextualResolver = { context: TimeDefinitionContext? ->
-                            context?.timeDefinition ?: throw ContextNotFoundException()
-                        }
-                    ),
-                    TimeDefinition::default
-                )
-                IsMomentDefinition.addFillWithNow(8, this, TimeDefinition::fillWithNow)
+                    )
+                    add(5, "minValue",
+                        ContextualValueDefinition(
+                            contextualResolver = { context: TimeDefinitionContext? ->
+                                context?.timeDefinition ?: throw ContextNotFoundException()
+                            }
+                        ),
+                        TimeDefinition::minValue
+                    )
+                    add(6, "maxValue",
+                        ContextualValueDefinition(
+                            contextualResolver = { context: TimeDefinitionContext? ->
+                                context?.timeDefinition ?: throw ContextNotFoundException()
+                            }
+                        ),
+                        TimeDefinition::maxValue
+                    )
+                    add(7, "default",
+                        ContextualValueDefinition(
+                            contextualResolver = { context: TimeDefinitionContext? ->
+                                context?.timeDefinition ?: throw ContextNotFoundException()
+                            }
+                        ),
+                        TimeDefinition::default
+                    )
+                    IsMomentDefinition.addFillWithNow(8, this, TimeDefinition::fillWithNow)
+                }
             }
-        }
-    ) {
+        ) {
         override fun invoke(values: SimpleObjectValues<TimeDefinition>) = TimeDefinition(
             required = values(1),
             final = values(2),

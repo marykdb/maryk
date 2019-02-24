@@ -31,7 +31,7 @@ data class ReferenceValueRegexPair internal constructor(
         return result
     }
 
-    object Properties: ReferenceValuePairPropertyDefinitions<ReferenceValueRegexPair, Regex>() {
+    object Properties : ReferenceValuePairPropertyDefinitions<ReferenceValueRegexPair, Regex>() {
         override val reference = DefinedByReference.addReference(
             this,
             ReferenceValueRegexPair::reference
@@ -51,7 +51,7 @@ data class ReferenceValueRegexPair internal constructor(
         ) as IsPropertyDefinitionWrapper<Any, Regex, RequestContext, ReferenceValueRegexPair>
     }
 
-    companion object: QueryDataModel<ReferenceValueRegexPair, Properties>(
+    companion object : QueryDataModel<ReferenceValueRegexPair, Properties>(
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<ReferenceValueRegexPair, Properties>) = ReferenceValueRegexPair(

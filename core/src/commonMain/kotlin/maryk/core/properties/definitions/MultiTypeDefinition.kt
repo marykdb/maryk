@@ -45,7 +45,7 @@ import maryk.yaml.YamlWriter
  * The type mapping is defined in the given [definitionMap] mapped by enum [E].
  * Receives context of [CX]
  */
-data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> internal constructor(
+data class MultiTypeDefinition<E : IndexedEnum<E>, in CX : IsPropertyContext> internal constructor(
     override val required: Boolean = true,
     override val final: Boolean = false,
     val typeEnum: IndexedEnumDefinition<E>,
@@ -93,25 +93,36 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
         return this.readJson(JsonReader { stringIterator.nextChar() }, context)
     }
 
-    override fun validateWithRef(previousValue: TypedValue<E, Any>?, newValue: TypedValue<E, Any>?, refGetter: () -> IsPropertyReference<TypedValue<E, Any>, IsPropertyDefinition<TypedValue<E, Any>>, *>?) {
+    override fun validateWithRef(
+        previousValue: TypedValue<E, Any>?,
+        newValue: TypedValue<E, Any>?,
+        refGetter: () -> IsPropertyReference<TypedValue<E, Any>, IsPropertyDefinition<TypedValue<E, Any>>, *>?
+    ) {
         super.validateWithRef(previousValue, newValue, refGetter)
         if (newValue != null) {
             if (this.typeIsFinal && previousValue != null) {
                 if (newValue.type != previousValue.type) {
-                    throw AlreadySetException(this.typeRef(newValue.type, refGetter() as CanHaveComplexChildReference<*, *, *, *>?))
+                    throw AlreadySetException(
+                        this.typeRef(
+                            newValue.type,
+                            refGetter() as CanHaveComplexChildReference<*, *, *, *>?
+                        )
+                    )
                 }
             }
 
             @Suppress("UNCHECKED_CAST")
             val definition = this.definitionMapByIndex[newValue.type.index] as IsSubDefinition<Any, CX>?
-                    ?: throw DefNotFoundException("No def found for index ${newValue.type}")
+                ?: throw DefNotFoundException("No def found for index ${newValue.type}")
 
             val prevValue = previousValue?.let {
                 // Convert prev value to a basic value for Unit types
                 // This is done so type changes can be checked in storage situations where actual value is not yet read
                 if (it.value == Unit) {
                     val value: Any = when (definition) {
-                        is IsEmbeddedValuesDefinition<*, *, *> -> (definition.dataModel as IsTypedValuesDataModel<*, *>).values(null) { EmptyValueItems }
+                        is IsEmbeddedValuesDefinition<*, *, *> -> (definition.dataModel as IsTypedValuesDataModel<*, *>).values(
+                            null
+                        ) { EmptyValueItems }
                         is IsListDefinition<*, *> -> emptyList<Any>()
                         is IsSetDefinition<*, *> -> emptySet<Any>()
                         is IsMapDefinition<*, *, *> -> emptyMap<Any, Any>()
@@ -138,7 +149,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
     override fun writeJsonValue(value: TypedValue<E, Any>, writer: IsJsonLikeWriter, context: CX?) {
         @Suppress("UNCHECKED_CAST")
         val definition = this.definitionMapByIndex[value.type.index] as IsSubDefinition<Any, CX>?
-                ?: throw DefNotFoundException("No def found for index ${value.type.name}")
+            ?: throw DefNotFoundException("No def found for index ${value.type.name}")
 
         if (writer is YamlWriter) {
             writer.writeTag("!${value.type.name}")
@@ -153,9 +164,9 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
     }
 
     override fun readJson(reader: IsJsonLikeReader, context: CX?): TypedValue<E, Any> {
-        if(reader is IsYamlReader) {
+        if (reader is IsYamlReader) {
             val token = reader.currentToken as? TokenWithType
-                    ?: throw ParseException("Expected an Token with YAML type tag which describes property type")
+                ?: throw ParseException("Expected an Token with YAML type tag which describes property type")
 
             val tokenType = token.type
             val type: E = when (tokenType) {
@@ -165,13 +176,13 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
                 }
                 is UnknownYamlTag -> {
                     this.typeByName[tokenType.name]
-                            ?: throw DefNotFoundException("Unknown type ${tokenType.name}")
+                        ?: throw DefNotFoundException("Unknown type ${tokenType.name}")
                 }
                 else -> throw ParseException("Unknown tag type for $tokenType")
             }
 
             val definition = this.definitionMapByIndex[type.index]
-                    ?: throw DefNotFoundException("No definition for type $type")
+                ?: throw DefNotFoundException("No definition for type $type")
 
             return TypedValue(type, definition.readJson(reader, context))
         } else {
@@ -182,7 +193,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
 
                 val type = this.typeByName[it.value] ?: throw ParseException("Invalid multi type name ${it.value}")
                 val definition = this.definitionMapByIndex[type.index]
-                        ?: throw DefNotFoundException("Unknown multi type index ${type.index}")
+                    ?: throw DefNotFoundException("Unknown multi type index ${type.index}")
 
                 reader.nextToken()
                 val value = definition.readJson(reader, context)
@@ -200,7 +211,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
         val type = this.typeByIndex[key.tag.toUInt()] ?: throw ParseException("Unknown multi type index ${key.tag}")
         val def = this.definitionMapByIndex[type.index] ?: throw ParseException("Unknown multi type ${key.tag}")
 
-        val value = if(def is IsEmbeddedObjectDefinition<*, *, *, *, *> && keepAsValues) {
+        val value = if (def is IsEmbeddedObjectDefinition<*, *, *, *, *> && keepAsValues) {
             (def as IsEmbeddedObjectDefinition<*, *, *, CX, *>).readTransportBytesToValues(
                 ProtoBuf.getLength(key.wireType, reader),
                 reader,
@@ -229,8 +240,13 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
         // stored as value below an index of the type id
         @Suppress("UNCHECKED_CAST")
         val def = this.definitionMapByIndex[value.type.index] as IsSubDefinition<Any, CX>?
-                ?: throw DefNotFoundException("Definition ${value.type} not found on Multi type")
-        totalByteLength += def.calculateTransportByteLengthWithKey(value.type.index.toInt(), value.value, cacher, context)
+            ?: throw DefNotFoundException("Definition ${value.type} not found on Multi type")
+        totalByteLength += def.calculateTransportByteLengthWithKey(
+            value.type.index.toInt(),
+            value.value,
+            cacher,
+            context
+        )
 
         if (context is RequestContext) {
             context.closeInjectLevel(this)
@@ -239,10 +255,15 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
         return totalByteLength
     }
 
-    override fun writeTransportBytes(value: TypedValue<E, Any>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?) {
+    override fun writeTransportBytes(
+        value: TypedValue<E, Any>,
+        cacheGetter: WriteCacheReader,
+        writer: (byte: Byte) -> Unit,
+        context: CX?
+    ) {
         @Suppress("UNCHECKED_CAST")
         val def = this.definitionMapByIndex[value.type.index] as IsSubDefinition<Any, CX>?
-                ?: throw DefNotFoundException("Definition ${value.type} not found on Multi type")
+            ?: throw DefNotFoundException("Definition ${value.type} not found on Multi type")
         def.writeTransportBytesWithKey(value.type.index.toInt(), value.value, cacheGetter, writer, context)
     }
 
@@ -254,11 +275,12 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
         if (final != other.final) return false
         if (typeIsFinal != other.typeIsFinal) return false
         if (definitionMap != other.definitionMap) {
-            if(definitionMap.size != other.definitionMap.size) return false
+            if (definitionMap.size != other.definitionMap.size) return false
             definitionMap.entries.zip(other.definitionMap.entries).map {
-                if(it.first.key.index != it.second.key.index
+                if (it.first.key.index != it.second.key.index
                     || it.first.key.name != it.second.key.name
-                    || it.first.value != it.second.value) {
+                    || it.first.value != it.second.value
+                ) {
                     return false
                 }
             }
@@ -303,53 +325,55 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
     override fun resolveReferenceByName(
         name: String,
         parentReference: CanHaveComplexChildReference<*, *, *, *>?
-    ) = when(name[0]) {
-        '*' ->  {
-            val type = this.typeByName[name.substring(1)] ?: throw UnexpectedValueException("Type ${name.substring(1)} is not known")
+    ) = when (name[0]) {
+        '*' -> {
+            val type = this.typeByName[name.substring(1)]
+                ?: throw UnexpectedValueException("Type ${name.substring(1)} is not known")
             typeRef(type, parentReference)
         }
         else -> throw ParseException("Unknown Type type $name[0]")
     }
 
-    object Model : ContextualDataModel<MultiTypeDefinition<*, *>, ObjectPropertyDefinitions<MultiTypeDefinition<*, *>>, ContainsDefinitionsContext, MultiTypeDefinitionContext>(
-        contextTransformer = { MultiTypeDefinitionContext(it) },
-        properties = object : ObjectPropertyDefinitions<MultiTypeDefinition<*, *>>() {
-            init {
-                IsPropertyDefinition.addRequired(this, MultiTypeDefinition<*, *>::required)
-                IsPropertyDefinition.addFinal(this, MultiTypeDefinition<*, *>::final)
+    object Model :
+        ContextualDataModel<MultiTypeDefinition<*, *>, ObjectPropertyDefinitions<MultiTypeDefinition<*, *>>, ContainsDefinitionsContext, MultiTypeDefinitionContext>(
+            contextTransformer = { MultiTypeDefinitionContext(it) },
+            properties = object : ObjectPropertyDefinitions<MultiTypeDefinition<*, *>>() {
+                init {
+                    IsPropertyDefinition.addRequired(this, MultiTypeDefinition<*, *>::required)
+                    IsPropertyDefinition.addFinal(this, MultiTypeDefinition<*, *>::final)
 
-                add(3, "typeEnum",
-                    StringDefinition(),
-                    getter = MultiTypeDefinition<*, *>::typeEnum,
-                    capturer = { context: MultiTypeDefinitionContext, value ->
-                        context.typeEnumName = value
-                    },
-                    toSerializable = { value, _ ->
-                        value?.name
-                    },
-                    fromSerializable = { null }
-                )
-
-                add(4, "typeIsFinal", BooleanDefinition(default = true), MultiTypeDefinition<*, *>::typeIsFinal)
-
-                this.addDescriptorPropertyWrapperWrapper(5, "definitionMap")
-
-                @Suppress("UNCHECKED_CAST")
-                add(6, "default",
-                    ContextualValueDefinition(
-                        required = false,
-                        contextTransformer = { context: MultiTypeDefinitionContext? ->
-                            context?.definitionsContext
+                    add(3, "typeEnum",
+                        StringDefinition(),
+                        getter = MultiTypeDefinition<*, *>::typeEnum,
+                        capturer = { context: MultiTypeDefinitionContext, value ->
+                            context.typeEnumName = value
                         },
-                        contextualResolver = { context: MultiTypeDefinitionContext? ->
-                            context?.multiTypeDefinition ?: throw ContextNotFoundException()
-                        }
-                    ) as IsContextualEncodable<TypedValue<out IndexedEnum<*>, Any>, MultiTypeDefinitionContext>,
-                    MultiTypeDefinition<*, *>::default
-                )
+                        toSerializable = { value, _ ->
+                            value?.name
+                        },
+                        fromSerializable = { null }
+                    )
+
+                    add(4, "typeIsFinal", BooleanDefinition(default = true), MultiTypeDefinition<*, *>::typeIsFinal)
+
+                    this.addDescriptorPropertyWrapperWrapper(5, "definitionMap")
+
+                    @Suppress("UNCHECKED_CAST")
+                    add(6, "default",
+                        ContextualValueDefinition(
+                            required = false,
+                            contextTransformer = { context: MultiTypeDefinitionContext? ->
+                                context?.definitionsContext
+                            },
+                            contextualResolver = { context: MultiTypeDefinitionContext? ->
+                                context?.multiTypeDefinition ?: throw ContextNotFoundException()
+                            }
+                        ) as IsContextualEncodable<TypedValue<out IndexedEnum<*>, Any>, MultiTypeDefinitionContext>,
+                        MultiTypeDefinition<*, *>::default
+                    )
+                }
             }
-        }
-    ) {
+        ) {
         override fun invoke(values: SimpleObjectValues<MultiTypeDefinition<*, *>>): MultiTypeDefinition<IndexedEnum<Any>, ContainsDefinitionsContext> {
             val definitionMap = convertMultiTypeDescriptors(
                 values(5)
@@ -375,10 +399,10 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
 
 class MultiTypeDefinitionContext(
     val definitionsContext: ContainsDefinitionsContext?
-): IsPropertyContext {
+) : IsPropertyContext {
     var typeEnumName: String? = null
 
-    var definitionMap: Map<IndexedEnum<Any>, IsSubDefinition<out Any, ContainsDefinitionsContext>> ?= null
+    var definitionMap: Map<IndexedEnum<Any>, IsSubDefinition<out Any, ContainsDefinitionsContext>>? = null
 
     private var _multiTypeDefinition: Lazy<MultiTypeDefinition<IndexedEnum<Any>, ContainsDefinitionsContext>> = lazy {
         val typeOptions = definitionMap?.keys?.toTypedArray() ?: throw ContextNotFoundException()

@@ -9,12 +9,12 @@ import maryk.core.properties.types.numeric.UInt64
 import maryk.core.values.SimpleObjectValues
 
 /** Action was completed successfully with [version] */
-data class Success<DM: IsRootDataModel<*>>(
+data class Success<DM : IsRootDataModel<*>>(
     val version: ULong
 ) : IsChangeResponseStatus<DM>, IsDeleteResponseStatus<DM> {
     override val statusType = StatusType.SUCCESS
 
-    internal companion object: SimpleQueryDataModel<Success<*>>(
+    internal companion object : SimpleQueryDataModel<Success<*>>(
         properties = object : ObjectPropertyDefinitions<Success<*>>() {
             init {
                 add(1, "version", NumberDefinition(type = UInt64), Success<*>::version)

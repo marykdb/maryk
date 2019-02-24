@@ -25,7 +25,8 @@ fun <T : IsPropertyDefinition<*>> writeListToStorage(
     )
 
     // Process List values
-    val listValueDefinition = (definition as IsListDefinition<Any, *>).valueDefinition as IsSimpleValueDefinition<Any, *>
+    val listValueDefinition =
+        (definition as IsListDefinition<Any, *>).valueDefinition as IsSimpleValueDefinition<Any, *>
     for ((listIndex, listItem) in (list as List<Any>).withIndex()) {
         val listValueQualifierWriter: QualifierWriter = { writer ->
             qualifierWriter.invoke(writer)

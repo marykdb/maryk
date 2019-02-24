@@ -12,7 +12,7 @@ import maryk.json.IsJsonLikeWriter
 /**
  * Definition wrapper to inject a collection on write from context with [valueInjector] for valueDefinition of [T] defined by [definition]
  */
-data class ContextInjectCollectionOnWriteDefinition<T: Any, C: Collection<T>, in CX: IsPropertyContext>(
+data class ContextInjectCollectionOnWriteDefinition<T : Any, C : Collection<T>, in CX : IsPropertyContext>(
     val definition: IsCollectionDefinition<T, C, CX, IsValueDefinition<T, CX>>,
     private val valueInjector: (CX?) -> C
 ) : IsByteTransportableCollection<T, C, CX> by definition, IsContextualEncodable<C, CX> {

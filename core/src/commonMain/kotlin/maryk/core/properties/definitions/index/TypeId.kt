@@ -25,15 +25,15 @@ import maryk.core.values.ObjectValues
  * Defines a key part which refers to a multi type definition with [reference].
  * With this key part it is possible to query all objects which contain a property of a certain type
  */
-data class TypeId<E: IndexedEnum<E>>(
+data class TypeId<E : IndexedEnum<E>>(
     val reference: MultiTypePropertyReference<E, TypedValue<E, *>, MultiTypeDefinitionWrapper<E, TypedValue<E, *>, IsPropertyContext, *>, *>
 ) : IsFixedBytesPropertyReference<UInt> {
     override val indexKeyPartType = IndexKeyPartType.TypeId
     override val byteSize = 2
 
-    override fun  getValue(values: IsValuesGetter): UInt {
+    override fun getValue(values: IsValuesGetter): UInt {
         val typedValue = values[reference]
-                ?: throw RequiredException(reference)
+            ?: throw RequiredException(reference)
         return typedValue.type.index
     }
 
@@ -71,10 +71,11 @@ data class TypeId<E: IndexedEnum<E>>(
         )
     }
 
-    internal object Model : SingleTypedValueDataModel<AnyPropertyReference, TypeId<*>, Properties, DefinitionsConversionContext>(
-        properties = Properties,
-        singlePropertyDefinition = Properties.reference
-    ) {
+    internal object Model :
+        SingleTypedValueDataModel<AnyPropertyReference, TypeId<*>, Properties, DefinitionsConversionContext>(
+            properties = Properties,
+            singlePropertyDefinition = Properties.reference
+        ) {
         override fun invoke(values: ObjectValues<TypeId<*>, Properties>) = TypeId<IndexedEnum<Any>>(
             reference = values(1)
         )

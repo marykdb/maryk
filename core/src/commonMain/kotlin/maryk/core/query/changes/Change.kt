@@ -12,7 +12,7 @@ data class Change internal constructor(
     override val changeType = ChangeType.Change
 
     @Suppress("UNCHECKED_CAST")
-    constructor(vararg referenceValuePair: ReferenceValuePair<*>): this(referenceValuePair.toList() as List<ReferenceValuePair<Any>>)
+    constructor(vararg referenceValuePair: ReferenceValuePair<*>) : this(referenceValuePair.toList() as List<ReferenceValuePair<Any>>)
 
     override fun toString() = "Change[${referenceValuePairs.joinToString()}]"
 
@@ -22,7 +22,7 @@ data class Change internal constructor(
         pairModel = ReferenceValuePair
     )
 
-    companion object: ReferencePairDataModel<Change, Properties, ReferenceValuePair<Any>, Any>(
+    companion object : ReferencePairDataModel<Change, Properties, ReferenceValuePair<Any>, Any>(
         Properties,
         ReferenceValuePair.Properties
     ) {

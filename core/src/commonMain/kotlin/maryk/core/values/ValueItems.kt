@@ -2,7 +2,7 @@
 
 package maryk.core.values
 
-interface IsValueItems: Iterable<ValueItem> {
+interface IsValueItems : Iterable<ValueItem> {
     val size: Int
 
     operator fun get(index: Int): Any?
@@ -12,7 +12,7 @@ interface IsValueItems: Iterable<ValueItem> {
     fun copyAdding(toAdd: Array<ValueItem>): IsValueItems
 }
 
-interface IsValueItemsImpl: IsValueItems {
+interface IsValueItemsImpl : IsValueItems {
     val list: List<ValueItem>
 }
 
@@ -21,7 +21,7 @@ fun ValueItems(vararg item: ValueItem): IsValueItems = MutableValueItems(*item)
 
 inline class MutableValueItems(
     override val list: MutableList<ValueItem>
-): IsValueItemsImpl {
+) : IsValueItemsImpl {
     override val size get() = list.size
 
     constructor() : this(mutableListOf())
@@ -31,7 +31,7 @@ inline class MutableValueItems(
     operator fun plusAssign(valueItem: ValueItem) {
         this.searchItemByIndex(valueItem.index).let {
             when {
-                it < 0 -> list.add((it * -1) -1, valueItem)
+                it < 0 -> list.add((it * -1) - 1, valueItem)
                 else -> list.set(it, valueItem)
             }
         }
@@ -41,7 +41,7 @@ inline class MutableValueItems(
         this.searchItemByIndex(index).let {
             val valueItem = ValueItem(index, value)
             when {
-                it < 0 -> list.add((it * -1) -1, valueItem)
+                it < 0 -> list.add((it * -1) - 1, valueItem)
                 else -> list.set(it, valueItem)
             }
         }

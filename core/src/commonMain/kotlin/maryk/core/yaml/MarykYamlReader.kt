@@ -12,7 +12,7 @@ const val maryk2018 = "tag:maryk.io,2018:"
 @Suppress("FunctionName")
 fun MarykYamlModelReader(
     reader: () -> Char
-) : IsJsonLikeReader =
+): IsJsonLikeReader =
     YamlReader(
         defaultTag = maryk2018,
         tagMap = mapOf(
@@ -26,7 +26,7 @@ fun MarykYamlModelReader(
 @Suppress("FunctionName")
 fun MarykYamlReaders(
     reader: () -> Char
-) : IsJsonLikeReader =
+): IsJsonLikeReader =
     YamlReader(
         defaultTag = maryk2018,
         tagMap = mapOf(maryk2018 to marykTypeMap),

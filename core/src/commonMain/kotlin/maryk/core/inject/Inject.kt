@@ -23,7 +23,7 @@ fun Inject(collectionName: String) = Inject<Any, IsPropertyDefinition<Any>>(coll
 /**
  * To inject a variable into a request
  */
-data class Inject<T: Any, D: IsPropertyDefinition<T>>(
+data class Inject<T : Any, D : IsPropertyDefinition<T>>(
     private val collectionName: String,
     private val propertyReference: IsPropertyReference<T, D, *>?
 ) {
@@ -37,7 +37,7 @@ data class Inject<T: Any, D: IsPropertyDefinition<T>>(
         } ?: result as T?
     }
 
-    internal object Properties: ObjectPropertyDefinitions<AnyInject>() {
+    internal object Properties : ObjectPropertyDefinitions<AnyInject>() {
         val collectionName = add(1, "collectionName",
             definition = StringDefinition(),
             getter = Inject<*, *>::collectionName,
@@ -45,7 +45,8 @@ data class Inject<T: Any, D: IsPropertyDefinition<T>>(
                 context.collectionName = value
             }
         )
-        val propertyReference = add(2, "propertyReference",
+        val propertyReference = add(
+            2, "propertyReference",
             ContextualPropertyReferenceDefinition { context: InjectionContext? ->
                 context?.let {
                     context.resolvePropertyReference()
@@ -55,7 +56,7 @@ data class Inject<T: Any, D: IsPropertyDefinition<T>>(
         )
     }
 
-    internal companion object: ContextualDataModel<AnyInject, Properties, RequestContext, InjectionContext>(
+    internal companion object : ContextualDataModel<AnyInject, Properties, RequestContext, InjectionContext>(
         properties = Properties,
         contextTransformer = { requestContext ->
             InjectionContext(
@@ -69,7 +70,7 @@ data class Inject<T: Any, D: IsPropertyDefinition<T>>(
         )
 
         override fun writeJson(obj: AnyInject, writer: IsJsonLikeWriter, context: InjectionContext?) {
-            if (obj.propertyReference != null){
+            if (obj.propertyReference != null) {
                 writer.writeStartObject()
                 writer.writeFieldName(obj.collectionName)
 
@@ -85,8 +86,11 @@ data class Inject<T: Any, D: IsPropertyDefinition<T>>(
             }
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: InjectionContext?): ObjectValues<AnyInject, Properties> {
-            if (reader.currentToken == JsonToken.StartDocument){
+        override fun readJson(
+            reader: IsJsonLikeReader,
+            context: InjectionContext?
+        ): ObjectValues<AnyInject, Properties> {
+            if (reader.currentToken == JsonToken.StartDocument) {
                 reader.nextToken()
             }
 
@@ -97,7 +101,7 @@ data class Inject<T: Any, D: IsPropertyDefinition<T>>(
                     val currentToken = reader.nextToken()
 
                     val collectionName = (currentToken as? JsonToken.FieldName)?.value
-                            ?: throw ParseException("Expected a collectionName in an Inject")
+                        ?: throw ParseException("Expected a collectionName in an Inject")
 
                     Properties.collectionName.capture(context, collectionName)
 
@@ -117,7 +121,7 @@ data class Inject<T: Any, D: IsPropertyDefinition<T>>(
                 is JsonToken.Value<*> -> {
                     @Suppress("UNCHECKED_CAST")
                     val collectionName = (startToken as? JsonToken.Value<String>)?.value
-                            ?: throw ParseException("Expected a collectionName in an Inject")
+                        ?: throw ParseException("Expected a collectionName in an Inject")
 
                     Properties.collectionName.capture(context, collectionName)
 

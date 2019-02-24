@@ -6,10 +6,12 @@ import kotlin.experimental.xor
 
 /** Write the bytes of this UInt to a [writer] */
 fun UInt.writeBytes(writer: (byte: Byte) -> Unit, length: Int = 4) {
-    if (length !in 2..4) { throw IllegalArgumentException("Length should be within range of 3 to 4") }
+    if (length !in 2..4) {
+        throw IllegalArgumentException("Length should be within range of 3 to 4")
+    }
 
     for (it in 0 until length) {
-        val b = (this shr (length-1-it) * 8 and 0xFFu).toByte()
+        val b = (this shr (length - 1 - it) * 8 and 0xFFu).toByte()
         writer(b)
     }
 }
@@ -87,7 +89,7 @@ internal fun UInt.writeVarIntWithExtraInfo(extraInfo: Byte, writer: (byte: Byte)
         for (it in 1 until byteSize) {
             val isLast = it == byteSize - 1
             writer(
-                (this shr (7*it-3)).toByte() and SEVEN_BYTES xor if(isLast) ZERO_BYTE else SIGN_BYTE
+                (this shr (7 * it - 3)).toByte() and SEVEN_BYTES xor if (isLast) ZERO_BYTE else SIGN_BYTE
             )
         }
     }
@@ -100,7 +102,7 @@ internal fun UInt.writeVarIntWithExtraInfo(extraInfo: Byte, writer: (byte: Byte)
  *
  * This is based on ProtoBuf encoding
  */
-internal fun <T> initUIntByVarWithExtraInfo(reader: () -> Byte, objectCreator: (UInt, Byte) -> T) : T {
+internal fun <T> initUIntByVarWithExtraInfo(reader: () -> Byte, objectCreator: (UInt, Byte) -> T): T {
     var byte = reader()
 
     val wireTypeByte = byte and 0b111

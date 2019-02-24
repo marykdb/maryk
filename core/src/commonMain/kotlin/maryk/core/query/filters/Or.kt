@@ -1,12 +1,12 @@
 package maryk.core.query.filters
 
 import maryk.core.models.QueryDataModel
-import maryk.core.values.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.RequestContext
+import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
@@ -34,7 +34,7 @@ data class Or(
         )
     }
 
-    companion object: QueryDataModel<Or, Properties>(
+    companion object : QueryDataModel<Or, Properties>(
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<Or, Properties>) = Or(
@@ -43,14 +43,15 @@ data class Or(
 
         override fun writeJson(obj: Or, writer: IsJsonLikeWriter, context: RequestContext?) {
             Properties.filters.writeJsonValue(
-                Properties.filters.getPropertyAndSerialize(obj, context) ?: throw ParseException("Missing filters in Or"),
+                Properties.filters.getPropertyAndSerialize(obj, context)
+                    ?: throw ParseException("Missing filters in Or"),
                 writer,
                 context
             )
         }
 
         override fun readJson(reader: IsJsonLikeReader, context: RequestContext?): ObjectValues<Or, Properties> {
-            if (reader.currentToken == JsonToken.StartDocument){
+            if (reader.currentToken == JsonToken.StartDocument) {
                 reader.nextToken()
             }
 

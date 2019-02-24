@@ -21,7 +21,7 @@ data class NotEnoughItemsException internal constructor(
 ) {
     override val validationExceptionType = ValidationExceptionType.NOT_ENOUGH_ITEMS
 
-    internal companion object: SimpleQueryDataModel<NotEnoughItemsException>(
+    internal companion object : SimpleQueryDataModel<NotEnoughItemsException>(
         properties = object : ObjectPropertyDefinitions<NotEnoughItemsException>() {
             init {
                 ValidationException.addReference(this, NotEnoughItemsException::reference)

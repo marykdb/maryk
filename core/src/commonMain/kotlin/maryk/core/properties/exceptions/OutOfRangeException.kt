@@ -1,10 +1,10 @@
 package maryk.core.properties.exceptions
 
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.values.SimpleObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.references.AnyPropertyReference
+import maryk.core.values.SimpleObjectValues
 
 /**
  * Exception for when a [value] of property referred by [reference] was
@@ -24,8 +24,8 @@ data class OutOfRangeException internal constructor(
 ) {
     override val validationExceptionType = ValidationExceptionType.OUT_OF_RANGE
 
-    internal companion object: SimpleQueryDataModel<OutOfRangeException>(
-        properties = object: ObjectPropertyDefinitions<OutOfRangeException>() {
+    internal companion object : SimpleQueryDataModel<OutOfRangeException>(
+        properties = object : ObjectPropertyDefinitions<OutOfRangeException>() {
             init {
                 ValidationException.addReference(this, OutOfRangeException::reference)
                 ValidationException.addValue(this, OutOfRangeException::value)

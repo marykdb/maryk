@@ -19,13 +19,12 @@ data class FlexBytesDefinition(
     override val default: Bytes? = null,
     override val minSize: UInt? = null,
     override val maxSize: UInt? = null
-):
+) :
     IsComparableDefinition<Bytes, IsPropertyContext>,
     HasSizeDefinition,
     IsSerializableFlexBytesEncodable<Bytes, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<Bytes>,
-    HasDefaultValueDefinition<Bytes>
-{
+    HasDefaultValueDefinition<Bytes> {
     override val propertyDefinitionType = PropertyDefinitionType.FlexBytes
     override val wireType = WireType.LENGTH_DELIMITED
 
@@ -40,13 +39,17 @@ data class FlexBytesDefinition(
     override fun fromString(string: String) = Bytes(string)
 
     override fun fromNativeType(value: Any) =
-        if(value is ByteArray){
+        if (value is ByteArray) {
             Bytes(value)
         } else {
             value as? Bytes
         }
 
-    override fun validateWithRef(previousValue: Bytes?, newValue: Bytes?, refGetter: () -> IsPropertyReference<Bytes, IsPropertyDefinition<Bytes>, *>?) {
+    override fun validateWithRef(
+        previousValue: Bytes?,
+        newValue: Bytes?,
+        refGetter: () -> IsPropertyReference<Bytes, IsPropertyDefinition<Bytes>, *>?
+    ) {
         super<IsSerializableFlexBytesEncodable>.validateWithRef(previousValue, newValue, refGetter)
 
         if (newValue != null && (isSizeToSmall(newValue.size.toUInt()) || isSizeToBig(newValue.size.toUInt()))) {

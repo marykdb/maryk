@@ -12,7 +12,7 @@ data class Check internal constructor(
     override val changeType = ChangeType.Check
 
     @Suppress("UNCHECKED_CAST")
-    constructor(vararg referenceValuePair: ReferenceValuePair<*>): this(referenceValuePair.toList() as List<ReferenceValuePair<Any>>)
+    constructor(vararg referenceValuePair: ReferenceValuePair<*>) : this(referenceValuePair.toList() as List<ReferenceValuePair<Any>>)
 
     override fun toString() = "Check[${referenceValuePairs.joinToString()}]"
 
@@ -22,7 +22,7 @@ data class Check internal constructor(
         pairModel = ReferenceValuePair
     )
 
-    companion object: ReferencePairDataModel<Check, Properties, ReferenceValuePair<Any>, Any>(
+    companion object : ReferencePairDataModel<Check, Properties, ReferenceValuePair<Any>, Any>(
         properties = Properties,
         pairProperties = ReferenceValuePair.Properties
     ) {

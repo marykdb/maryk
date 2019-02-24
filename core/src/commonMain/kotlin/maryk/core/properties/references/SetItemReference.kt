@@ -17,19 +17,20 @@ import maryk.core.protobuf.WriteCacheWriter
  * Reference to a Set Item by [value] of [T] and context [CX] on set referred to [parentReference] and
  * defined by [setDefinition]
  */
-class SetItemReference<T: Any, CX: IsPropertyContext> internal constructor(
+class SetItemReference<T : Any, CX : IsPropertyContext> internal constructor(
     val value: T,
     val setDefinition: IsSetDefinition<T, CX>,
     parentReference: SetReference<T, CX>?
 ) : CanHaveSimpleChildReference<T, IsPropertyDefinition<T>, SetReference<T, CX>, Set<T>>(
     setDefinition.valueDefinition, parentReference
 ) {
-    override val completeName: String get() = this.parentReference?.let {
-        "${it.completeName}.$$value"
-    } ?: "$$value"
+    override val completeName: String
+        get() = this.parentReference?.let {
+            "${it.completeName}.$$value"
+        } ?: "$$value"
 
     override fun resolveFromAny(value: Any) =
-        if (value is Set<*> && value.contains(this.value)){
+        if (value is Set<*> && value.contains(this.value)) {
             this.value
         } else {
             throw UnexpectedValueException("Expected List to get value by reference")

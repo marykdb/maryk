@@ -14,12 +14,11 @@ import maryk.lib.exceptions.ParseException
  *
  * This is used for simple single value properties and not for lists and maps.
  */
-interface IsSimpleValueDefinition<T: Any, in CX: IsPropertyContext> :
+interface IsSimpleValueDefinition<T : Any, in CX : IsPropertyContext> :
     IsValueDefinition<T, CX>,
     IsUsableInMultiType<T, CX>,
     IsUsableInMapValue<T, CX>,
-    IsUsableInCollection<T, CX>
-{
+    IsUsableInCollection<T, CX> {
     /**
      * Read stored bytes with [reader] until [length] and return value
      * @throws DefNotFoundException if definition is not found to translate bytes
@@ -34,7 +33,12 @@ interface IsSimpleValueDefinition<T: Any, in CX: IsPropertyContext> :
 
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?) = readStorageBytes(length, reader)
 
-    override fun writeTransportBytes(value: T, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?) {
+    override fun writeTransportBytes(
+        value: T,
+        cacheGetter: WriteCacheReader,
+        writer: (byte: Byte) -> Unit,
+        context: CX?
+    ) {
         writeStorageBytes(value, writer)
     }
 
@@ -72,7 +76,7 @@ interface IsSimpleValueDefinition<T: Any, in CX: IsPropertyContext> :
                     is String -> this.fromString(jsonValue, context)
                     else -> {
                         this.fromNativeType(jsonValue)
-                                ?: throw ParseException("Unknown type for value $jsonValue")
+                            ?: throw ParseException("Unknown type for value $jsonValue")
                     }
                 }
             }

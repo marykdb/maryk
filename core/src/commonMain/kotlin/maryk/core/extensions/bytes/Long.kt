@@ -4,17 +4,19 @@ import maryk.lib.exceptions.ParseException
 import kotlin.experimental.and
 import kotlin.experimental.xor
 
-internal const val MAX_SEVEN_VALUE = 256L*256L*256L*256L*256L*256L*128L-1
-internal const val MIN_SEVEN_VALUE = 256L*256L*256L*256L*256L*256L*128L*-1
+internal const val MAX_SEVEN_VALUE = 256L * 256L * 256L * 256L * 256L * 256L * 128L - 1
+internal const val MIN_SEVEN_VALUE = 256L * 256L * 256L * 256L * 256L * 256L * 128L * -1
 
 /** Write the bytes of this Long to a [writer] */
 internal fun Long.writeBytes(writer: (byte: Byte) -> Unit, length: Int = 8) {
-    if (length !in 5..8) { throw IllegalArgumentException("Length should be within range of 5 to 8") }
+    if (length !in 5..8) {
+        throw IllegalArgumentException("Length should be within range of 5 to 8")
+    }
 
     for (it in 0 until length) {
-        val b = (this shr (length-1-it) * 8 and 0xFF).toByte()
+        val b = (this shr (length - 1 - it) * 8 and 0xFF).toByte()
         writer(
-            if(it == 0) b xor SIGN_BYTE else b
+            if (it == 0) b xor SIGN_BYTE else b
         )
     }
 }

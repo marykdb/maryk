@@ -9,7 +9,7 @@ import kotlin.random.Random
 import kotlin.random.nextUInt
 
 /** Base object for 32 bit/4 byte unsigned integers */
-object UInt32: UnsignedNumberDescriptor<UInt>(
+object UInt32 : UnsignedNumberDescriptor<UInt>(
     size = UInt.SIZE_BYTES,
     MIN_VALUE = UInt.MIN_VALUE,
     MAX_VALUE = UInt.MAX_VALUE,
@@ -22,6 +22,7 @@ object UInt32: UnsignedNumberDescriptor<UInt>(
     override fun writeTransportBytes(value: UInt, writer: (byte: Byte) -> Unit) {
         value.writeVarBytes(writer)
     }
+
     override fun ofString(value: String) = value.toUInt()
     override fun ofDouble(value: Double) = value.toLong().toUInt()
     override fun toDouble(value: UInt) = value.toLong().toDouble()

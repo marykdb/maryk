@@ -4,10 +4,12 @@ import maryk.lib.exceptions.ParseException
 
 /** Write the bytes of this ULong to a [writer] */
 internal fun ULong.writeBytes(writer: (byte: Byte) -> Unit, length: Int = 8) {
-    if (length !in 5..8) { throw IllegalArgumentException("Length should be within range of 5 to 8") }
+    if (length !in 5..8) {
+        throw IllegalArgumentException("Length should be within range of 5 to 8")
+    }
 
     for (it in 0 until length) {
-        val b = (this shr (length-1-it) * 8 and 0xFFu).toByte()
+        val b = (this shr (length - 1 - it) * 8 and 0xFFu).toByte()
         writer(b)
     }
 }

@@ -15,16 +15,16 @@ data class Range internal constructor(
 ) : IsFilter {
     override val filterType = FilterType.Range
 
-    constructor(vararg range: ReferenceValueRangePair<*>): this(range.toList())
+    constructor(vararg range: ReferenceValueRangePair<*>) : this(range.toList())
 
     @Suppress("UNCHECKED_CAST")
     object Properties : ReferenceValuePairsObjectPropertyDefinitions<Range, ReferenceValueRangePair<*>>(
-        pairName =  "referenceValuePairs",
+        pairName = "referenceValuePairs",
         pairGetter = Range::referenceRangePairs,
         pairModel = ReferenceValueRangePair as QueryDataModel<ReferenceValueRangePair<*>, *>
     )
 
-    companion object: ReferencePairDataModel<Range, Properties, ReferenceValueRangePair<*>, ValueRange<*>>(
+    companion object : ReferencePairDataModel<Range, Properties, ReferenceValueRangePair<*>, ValueRange<*>>(
         properties = Properties,
         pairProperties = ReferenceValueRangePair.Properties
     ) {

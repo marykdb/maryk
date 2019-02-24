@@ -11,11 +11,11 @@ typealias ValuesImpl = Values<IsValuesDataModel<PropertyDefinitions>, PropertyDe
 /**
  * Contains a [map] with all values related to a DataObject of [dataModel] of type [DM]
  */
-data class Values<DM: IsValuesDataModel<P>, P: PropertyDefinitions> internal constructor(
+data class Values<DM : IsValuesDataModel<P>, P : PropertyDefinitions> internal constructor(
     override val dataModel: DM,
     override val values: IsValueItems,
     override val context: RequestContext? = null
-): AbstractValues<Any, DM, P>() {
+) : AbstractValues<Any, DM, P>() {
     fun copy(pairCreator: P.() -> Array<ValueItem>) =
         Values(
             dataModel,

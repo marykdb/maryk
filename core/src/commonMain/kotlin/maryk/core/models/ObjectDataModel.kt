@@ -11,14 +11,14 @@ import maryk.core.properties.ObjectPropertyDefinitionsCollectionDefinitionWrappe
  * properties should be validated. It models the DataObjects of type [DO] which can be validated. And it contains a
  * reference to the propertyDefinitions of type [P] which can be used for the references to the properties.
  */
-abstract class ObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>(
+abstract class ObjectDataModel<DO : Any, P : ObjectPropertyDefinitions<DO>>(
     override val name: String,
     properties: P
 ) : SimpleObjectDataModel<DO, P>(
     properties
 ), IsNamedDataModel<P> {
     companion object {
-        internal fun <DM: IsDataModel<*>> addProperties(definitions: AbstractPropertyDefinitions<DM>): ObjectPropertyDefinitionsCollectionDefinitionWrapper<DM> {
+        internal fun <DM : IsDataModel<*>> addProperties(definitions: AbstractPropertyDefinitions<DM>): ObjectPropertyDefinitionsCollectionDefinitionWrapper<DM> {
             val wrapper = ObjectPropertyDefinitionsCollectionDefinitionWrapper<DM>(
                 2,
                 "properties",

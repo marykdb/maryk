@@ -18,7 +18,7 @@ import maryk.lib.exceptions.ParseException
 
 /** Definition for a reference to another DataObject resolved from context by [contextualResolver]. */
 @Suppress("FunctionName")
-fun <DM: IsNamedDataModel<*>, CX: IsPropertyContext> ContextualModelReferenceDefinition(
+fun <DM : IsNamedDataModel<*>, CX : IsPropertyContext> ContextualModelReferenceDefinition(
     contextualResolver: (context: CX?, name: String) -> Unit.() -> DM
 ) = ContextualModelReferenceDefinition<DM, CX, CX>(contextualResolver) {
     it
@@ -28,10 +28,10 @@ fun <DM: IsNamedDataModel<*>, CX: IsPropertyContext> ContextualModelReferenceDef
  * Definition for a reference to another DataObject resolved from context by [contextualResolver].
  * Has a [contextTransformer] to transform context.
  */
-data class ContextualModelReferenceDefinition<DM: IsNamedDataModel<*>, in CX: IsPropertyContext, CXI: IsPropertyContext>(
+data class ContextualModelReferenceDefinition<DM : IsNamedDataModel<*>, in CX : IsPropertyContext, CXI : IsPropertyContext>(
     val contextualResolver: (context: CXI?, name: String) -> Unit.() -> DM,
     val contextTransformer: (CX?) -> CXI?
-): IsValueDefinition<IsDataModelReference<DM>, CX>, IsContextualEncodable<IsDataModelReference<DM>, CX> {
+) : IsValueDefinition<IsDataModelReference<DM>, CX>, IsContextualEncodable<IsDataModelReference<DM>, CX> {
     override val required = true
     override val final = true
     override val wireType = WireType.LENGTH_DELIMITED
@@ -46,12 +46,14 @@ data class ContextualModelReferenceDefinition<DM: IsNamedDataModel<*>, in CX: Is
         writer.writeString(this.asString(value, context))
 
     override fun readJson(reader: IsJsonLikeReader, context: CX?) = reader.currentToken.let {
-        when(it) {
+        when (it) {
             is JsonToken.Value<*> -> {
                 val jsonValue = it.value
                 when (jsonValue) {
                     null -> throw ParseException("Model reference cannot be null in JSON")
-                    is String -> { this.fromString(jsonValue, context) }
+                    is String -> {
+                        this.fromString(jsonValue, context)
+                    }
                     else -> throw ParseException("Model reference has to be a String")
                 }
             }
@@ -62,7 +64,12 @@ data class ContextualModelReferenceDefinition<DM: IsNamedDataModel<*>, in CX: Is
     override fun calculateTransportByteLength(value: IsDataModelReference<DM>, cacher: WriteCacheWriter, context: CX?) =
         value.name.calculateUTF8ByteLength()
 
-    override fun writeTransportBytes(value: IsDataModelReference<DM>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?) =
+    override fun writeTransportBytes(
+        value: IsDataModelReference<DM>,
+        cacheGetter: WriteCacheReader,
+        writer: (byte: Byte) -> Unit,
+        context: CX?
+    ) =
         value.name.writeUTF8Bytes(writer)
 
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?) =

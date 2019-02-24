@@ -7,7 +7,7 @@ import maryk.core.properties.references.ValueWithFlexBytesPropertyReference
 
 /** Checks [keyDefinition] and calculates key size */
 internal fun checkKeyDefinitionAndCountBytes(keyDefinition: IsIndexable): Int {
-    return when(keyDefinition) {
+    return when (keyDefinition) {
         is Multiple -> {
             var keyCount = keyDefinition.references.size - 1 // Start with adding size of separators
             keyDefinition.references.forEach {
@@ -16,7 +16,10 @@ internal fun checkKeyDefinitionAndCountBytes(keyDefinition: IsIndexable): Int {
             keyCount
         }
         is ValueWithFixedBytesPropertyReference<*, *, *, *> -> {
-            checkKeyDefinition(keyDefinition.name, keyDefinition.propertyDefinition.definition as IsValueDefinition<*, *>)
+            checkKeyDefinition(
+                keyDefinition.name,
+                keyDefinition.propertyDefinition.definition as IsValueDefinition<*, *>
+            )
             keyDefinition.byteSize
         }
         is ValueWithFlexBytesPropertyReference<*, *, *, *> -> throw Exception("Definition should have a fixed amount of bytes for a key")

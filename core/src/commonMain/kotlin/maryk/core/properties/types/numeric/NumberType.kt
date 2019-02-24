@@ -5,7 +5,7 @@ import maryk.core.properties.enum.IndexedEnumDefinition
 
 enum class NumberType(
     override val index: UInt,
-    val descriptor: ()-> NumberDescriptor<*>
+    val descriptor: () -> NumberDescriptor<*>
 ) : IndexedEnum<NumberType> {
     SInt8(1u, { maryk.core.properties.types.numeric.SInt8 }),
     SInt16(2u, { maryk.core.properties.types.numeric.SInt16 }),
@@ -18,5 +18,5 @@ enum class NumberType(
     Float32(9u, { maryk.core.properties.types.numeric.Float32 }),
     Float64(10u, { maryk.core.properties.types.numeric.Float64 });
 
-    companion object: IndexedEnumDefinition<NumberType>("NumberType", NumberType::values)
+    companion object : IndexedEnumDefinition<NumberType>("NumberType", NumberType::values)
 }

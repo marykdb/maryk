@@ -11,7 +11,7 @@ data class ObjectSoftDeleteChange(
 ) : IsChange {
     override val changeType = ChangeType.ObjectDelete
 
-    internal companion object: SimpleQueryDataModel<ObjectSoftDeleteChange>(
+    internal companion object : SimpleQueryDataModel<ObjectSoftDeleteChange>(
         properties = object : ObjectPropertyDefinitions<ObjectSoftDeleteChange>() {
             init {
                 add(1, "isDeleted", BooleanDefinition(), ObjectSoftDeleteChange::isDeleted)

@@ -8,13 +8,14 @@ import maryk.core.values.AbstractValues
  * [D] and referred by PropertyReference of type [P].
  */
 open class PropertyReferenceForValues<
-    T: Any,
-    TO: Any,
+    T : Any,
+    TO : Any,
     out D : IsPropertyDefinitionWrapper<T, TO, *, *>,
-    out P: AnyPropertyReference
+    out P : AnyPropertyReference
 > internal constructor(
     propertyDefinition: D,
     parentReference: P?
-): PropertyReference<T, D, P, AbstractValues<*, *, *>>(propertyDefinition, parentReference), IsPropertyReferenceForValues<T, TO, D, P> {
+) : PropertyReference<T, D, P, AbstractValues<*, *, *>>(propertyDefinition, parentReference),
+    IsPropertyReferenceForValues<T, TO, D, P> {
     override val name = this.propertyDefinition.name
 }

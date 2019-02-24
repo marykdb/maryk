@@ -5,7 +5,7 @@ typealias AnyIndexedEnum = IndexedEnum<IndexedEnum<IndexedEnum<Any>>>
 /**
  * Interface for Enums so they have indexes and can be transported and stored
  */
-interface IndexedEnum<in E>: Comparable<E>{
+interface IndexedEnum<in E> : Comparable<E> {
     val index: UInt
     val name: String
 

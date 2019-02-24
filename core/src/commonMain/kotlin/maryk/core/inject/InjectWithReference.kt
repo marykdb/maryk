@@ -26,7 +26,7 @@ internal class InjectWithReference(
         val refList = this.reference.unwrap().dropLast(1)
         var toAddTo: Any = values
 
-        for(reference in refList) {
+        for (reference in refList) {
             toAddTo = reference.resolveFromAny(toAddTo)
         }
 
@@ -59,7 +59,7 @@ internal class InjectWithReference(
         )
     }
 
-    internal companion object: QueryDataModel<InjectWithReference, Properties>(
+    internal companion object : QueryDataModel<InjectWithReference, Properties>(
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<InjectWithReference, Properties>) = InjectWithReference(

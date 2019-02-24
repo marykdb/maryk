@@ -13,14 +13,14 @@ import maryk.lib.exceptions.ParseException
 /**
  * Reference to a map with key [K] and value [V] and context [CX]
  */
-open class MapReference<K: Any, V: Any, CX: IsPropertyContext> internal constructor(
+open class MapReference<K : Any, V : Any, CX : IsPropertyContext> internal constructor(
     propertyDefinition: MapPropertyDefinitionWrapper<K, V, Any, CX, *>,
     parentReference: CanHaveComplexChildReference<*, *, *, *>?
 ) : PropertyReferenceForValues<Map<K, V>, Any, MapPropertyDefinitionWrapper<K, V, Any, CX, *>, CanHaveComplexChildReference<*, *, *, *>>(
     propertyDefinition,
     parentReference
 ), HasEmbeddedPropertyReference<Map<K, V>> {
-    override fun getEmbedded(name: String, context: IsPropertyContext?): AnyPropertyReference  = when(name[0]) {
+    override fun getEmbedded(name: String, context: IsPropertyContext?): AnyPropertyReference = when (name[0]) {
         '@' -> MapValueReference(
             propertyDefinition.keyDefinition.fromString(
                 name.substring(1)
@@ -38,9 +38,12 @@ open class MapReference<K: Any, V: Any, CX: IsPropertyContext> internal construc
         else -> throw ParseException("Unknown List type $name[0]")
     }
 
-    override fun getEmbeddedRef(reader: () -> Byte, context: IsPropertyContext?): IsPropertyReference<*, IsPropertyDefinition<*>, *> {
+    override fun getEmbeddedRef(
+        reader: () -> Byte,
+        context: IsPropertyContext?
+    ): IsPropertyReference<*, IsPropertyDefinition<*>, *> {
         val protoKey = ProtoBuf.readKey(reader)
-        return when(protoKey.tag) {
+        return when (protoKey.tag) {
             0 -> {
                 MapValueReference(
                     this.propertyDefinition.keyDefinition.readTransportBytes(
@@ -65,7 +68,12 @@ open class MapReference<K: Any, V: Any, CX: IsPropertyContext> internal construc
         }
     }
 
-    override fun getEmbeddedStorageRef(reader: () -> Byte, context: IsPropertyContext?, referenceType: CompleteReferenceType, isDoneReading: () -> Boolean): AnyPropertyReference {
+    override fun getEmbeddedStorageRef(
+        reader: () -> Byte,
+        context: IsPropertyContext?,
+        referenceType: CompleteReferenceType,
+        isDoneReading: () -> Boolean
+    ): AnyPropertyReference {
         val mapKeyLength = initIntByVar(reader)
         return when (referenceType) {
             MAP -> {

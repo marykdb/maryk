@@ -41,10 +41,9 @@ typealias AnyPropertyDefinitionWrapper = IsPropertyDefinitionWrapper<Any, Any, I
  * Wraps a Property Definition of type [T] to give it more context [CX] about
  * DataObject [DO] which contains this Definition.
  */
-interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, in DO> :
+interface IsPropertyDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in DO> :
     IsSerializablePropertyDefinition<T, CX>,
-    IsPropRefGraphNode<PropertyDefinitions>
-{
+    IsPropRefGraphNode<PropertyDefinitions> {
     override val index: Int
     val name: String
     val definition: IsSerializablePropertyDefinition<T, CX>
@@ -109,7 +108,12 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
      * Uses the [cacheGetter] to get length.
      * Optionally pass a [context] to write more complex properties which depend on other properties
      */
-    fun writeTransportBytesWithKey(value: T, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) =
+    fun writeTransportBytesWithKey(
+        value: T,
+        cacheGetter: WriteCacheReader,
+        writer: (byte: Byte) -> Unit,
+        context: CX? = null
+    ) =
         this.writeTransportBytesWithKey(this.index, value, cacheGetter, writer, context)
 
     /** Get the property from the [dataObject] and serialize it for transportation */
@@ -122,13 +126,13 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
 
     /** Capture the [value] in the [context] if needed */
     fun capture(context: CX?, value: T) {
-        if(this.capturer != null && context != null) {
+        if (this.capturer != null && context != null) {
             this.capturer!!.invoke(context, value)
         }
     }
 
     companion object {
-        private fun <DO:Any> addIndex(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> Int) =
+        private fun <DO : Any> addIndex(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> Int) =
             definitions.add(1, "index",
                 NumberDefinition(type = UInt32),
                 getter,
@@ -136,10 +140,13 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
                 fromSerializable = { it?.toInt() }
             )
 
-        private fun <DO:Any> addName(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> String) =
+        private fun <DO : Any> addName(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> String) =
             definitions.add(2, "name", StringDefinition(), getter)
 
-        private fun <DO:Any> addDefinition(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> IsSerializablePropertyDefinition<*, *>) =
+        private fun <DO : Any> addDefinition(
+            definitions: ObjectPropertyDefinitions<DO>,
+            getter: (DO) -> IsSerializablePropertyDefinition<*, *>
+        ) =
             definitions.add(3, "definition",
                 MultiTypeDefinition(
                     typeEnum = PropertyDefinitionType,
@@ -152,15 +159,18 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
             )
     }
 
-    private object Properties: ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>>() {
+    private object Properties :
+        ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>>() {
         val index = IsPropertyDefinitionWrapper.addIndex(this, IsPropertyDefinitionWrapper<*, *, *, *>::index)
         val name = IsPropertyDefinitionWrapper.addName(this, IsPropertyDefinitionWrapper<*, *, *, *>::name)
-        val definition = IsPropertyDefinitionWrapper.addDefinition(this, IsPropertyDefinitionWrapper<*, *, *, *>::definition)
+        val definition =
+            IsPropertyDefinitionWrapper.addDefinition(this, IsPropertyDefinitionWrapper<*, *, *, *>::definition)
     }
 
-    object Model : SimpleObjectDataModel<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>, ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>>>(
-        properties = Properties
-    ) {
+    object Model :
+        SimpleObjectDataModel<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>, ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>>>(
+            properties = Properties
+        ) {
         override fun invoke(values: SimpleObjectValues<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>>): IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any> {
             val typedDefinition =
                 values<TypedValue<PropertyDefinitionType, IsPropertyDefinition<Any>>>(3)
@@ -180,7 +190,8 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
         ) {
             // When writing YAML, use YAML optimized format with complex field names
             if (writer is YamlWriter) {
-                val typedDefinition = Properties.definition.getPropertyAndSerialize(obj, context as ContainsDefinitionsContext)
+                val typedDefinition =
+                    Properties.definition.getPropertyAndSerialize(obj, context as ContainsDefinitionsContext)
                         ?: throw Exception("Unknown type ${obj.definition} so cannot serialize contents")
 
                 writer.writeNamedIndexField(obj.name, obj.index.toUInt())
@@ -191,13 +202,17 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
             }
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: IsPropertyContext?): SimpleObjectValues<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>> {
+        override fun readJson(
+            reader: IsJsonLikeReader,
+            context: IsPropertyContext?
+        ): SimpleObjectValues<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>> {
             // When reading YAML, use YAML optimized format with complex field names
             return if (reader is IsYamlReader) {
                 val valueMap = MutableValueItems()
 
                 reader.readNamedIndexField(valueMap, Properties.name, Properties.index)
-                valueMap[Properties.definition.index] = Properties.definition.readJson(reader, context as ContainsDefinitionsContext)
+                valueMap[Properties.definition.index] =
+                    Properties.definition.readJson(reader, context as ContainsDefinitionsContext)
 
                 this.values(context as? RequestContext) {
                     valueMap

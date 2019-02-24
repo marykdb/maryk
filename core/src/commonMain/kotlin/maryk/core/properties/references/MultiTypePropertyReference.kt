@@ -12,14 +12,14 @@ import maryk.core.values.AbstractValues
  * [D] and referred by PropertyReference of type [P].
  */
 open class MultiTypePropertyReference<
-    E: IndexedEnum<E>,
-    TO: Any,
+    E : IndexedEnum<E>,
+    TO : Any,
     out D : MultiTypeDefinitionWrapper<E, TO, *, *>,
-    out P: AnyPropertyReference
+    out P : AnyPropertyReference
 > internal constructor(
     propertyDefinition: D,
     parentReference: P?
-): CanHaveComplexChildReference<TypedValue<E, Any>, D, P, AbstractValues<*, *, *>>(
+) : CanHaveComplexChildReference<TypedValue<E, Any>, D, P, AbstractValues<*, *, *>>(
     propertyDefinition,
     parentReference
 ), IsPropertyReferenceForValues<TypedValue<E, Any>, TO, D, P>, HasEmbeddedPropertyReference<TypedValue<E, Any>> {

@@ -11,7 +11,7 @@ import maryk.json.IsJsonLikeWriter
 /**
  * Definition wrapper to transform the context with [contextTransformer] for collection Definition of [T] defined by [definition]
  */
-internal data class ContextCollectionTransformerDefinition<T: Any, C: Collection<T>, in CX: IsPropertyContext, CXI: IsPropertyContext>(
+internal data class ContextCollectionTransformerDefinition<T : Any, C : Collection<T>, in CX : IsPropertyContext, CXI : IsPropertyContext>(
     val definition: IsByteTransportableCollection<T, C, CXI>,
     private val contextTransformer: (CX?) -> CXI?
 ) : IsByteTransportableCollection<T, C, CX> {

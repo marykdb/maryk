@@ -16,19 +16,19 @@ import maryk.core.query.changes.mapOfChangeDefinitions
 import maryk.core.values.SimpleObjectValues
 
 /** Successful add of given object with [key], [version] and added [changes] */
-data class AddSuccess<DM: IsRootDataModel<*>>(
+data class AddSuccess<DM : IsRootDataModel<*>>(
     val key: Key<DM>,
     val version: ULong,
     val changes: List<IsChange>
 ) : IsAddResponseStatus<DM> {
     override val statusType = StatusType.ADD_SUCCESS
 
-    internal companion object: SimpleQueryDataModel<AddSuccess<*>>(
-        properties = object : ObjectPropertyDefinitions<AddSuccess<*>>(){
+    internal companion object : SimpleQueryDataModel<AddSuccess<*>>(
+        properties = object : ObjectPropertyDefinitions<AddSuccess<*>>() {
             init {
                 IsResponseStatus.addKey(this, AddSuccess<*>::key)
-                add(2,"version", NumberDefinition(type = UInt64), AddSuccess<*>::version)
-                add(3,"changes",
+                add(2, "version", NumberDefinition(type = UInt64), AddSuccess<*>::version)
+                add(3, "changes",
                     ListDefinition(
                         default = emptyList(),
                         valueDefinition = MultiTypeDefinition(
@@ -43,10 +43,11 @@ data class AddSuccess<DM: IsRootDataModel<*>>(
             }
         }
     ) {
-        override fun invoke(values: SimpleObjectValues<AddSuccess<*>>) = AddSuccess<IsRootDataModel<IsPropertyDefinitions>>(
-            key = values(1),
-            version = values(2),
-            changes = values(3)
-        )
+        override fun invoke(values: SimpleObjectValues<AddSuccess<*>>) =
+            AddSuccess<IsRootDataModel<IsPropertyDefinitions>>(
+                key = values(1),
+                version = values(2),
+                changes = values(3)
+            )
     }
 }

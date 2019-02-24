@@ -56,9 +56,9 @@ data class ObjectListPropertyDefinitionWrapper<
 
     /** Get a top level reference on a model at [index] with [propertyDefinitionGetter] */
     @Suppress("UNCHECKED_CAST")
-    fun <T: Any> refAt(
+    fun <T : Any> refAt(
         index: UInt,
-        propertyDefinitionGetter: P.()-> IsPropertyDefinitionWrapper<T, *, *, *>
+        propertyDefinitionGetter: P.() -> IsPropertyDefinitionWrapper<T, *, *, *>
     ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> IsPropertyReference<T, IsPropertyDefinitionWrapper<T, *, *, *>, *> {
         val objectValuesDefinition = this.definition.valueDefinition as EmbeddedObjectDefinition<ODO, P, *, *, *>
 

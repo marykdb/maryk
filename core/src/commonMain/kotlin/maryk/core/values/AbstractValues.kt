@@ -19,7 +19,7 @@ typealias AnyAbstractValues = AbstractValues<Any, IsDataModel<AbstractPropertyDe
 /**
  * Contains a [values] with all values related to a DataObject of [dataModel]
  */
-abstract class AbstractValues<DO: Any, DM: IsDataModel<P>, P: AbstractPropertyDefinitions<DO>>: IsValues<P> {
+abstract class AbstractValues<DO : Any, DM : IsDataModel<P>, P : AbstractPropertyDefinitions<DO>> : IsValues<P> {
     abstract val dataModel: DM
     internal abstract val values: IsValueItems
     abstract val context: RequestContext?
@@ -36,12 +36,15 @@ abstract class AbstractValues<DO: Any, DM: IsDataModel<P>, P: AbstractPropertyDe
         val value = this.original(index)
 
         val valueDef = this.dataModel.properties[index]
-                ?: throw Exception("Value definition of index $index is missing")
+            ?: throw Exception("Value definition of index $index is missing")
 
         return process(valueDef, value)
     }
 
-    inline fun <reified T> process(valueDef: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>, value: Any?): T {
+    inline fun <reified T> process(
+        valueDef: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>,
+        value: Any?
+    ): T {
         // Resolve Injects
         val resolvedValue = if (value is AnyInject) {
             value.resolve(this.context ?: throw ContextNotFoundException())
@@ -57,12 +60,15 @@ abstract class AbstractValues<DO: Any, DM: IsDataModel<P>, P: AbstractPropertyDe
                     throw ParseException("Property '${valueDef.name}' with value '$value' should be non null because is required")
                 } else null as T
             }
-            else -> throw ParseException("Property '${valueDef.name}' with value '$value' should be of type ${(valueDef.definition as? IsTransportablePropertyDefinitionType<*>)?.propertyDefinitionType?.name ?: "unknown"}")
+            else -> throw ParseException(
+                "Property '${valueDef.name}' with value '$value' should be of type ${(valueDef.definition as? IsTransportablePropertyDefinitionType<*>)?.propertyDefinitionType?.name
+                    ?: "unknown"}"
+            )
         }
     }
 
     /** Get property from values with wrapper in [getProperty] and convert it to native usage */
-    inline operator fun <TI: Any, reified TO: Any> invoke(getProperty: P.() -> IsPropertyDefinitionWrapper<TI, TO, *, DO>): TO? {
+    inline operator fun <TI : Any, reified TO : Any> invoke(getProperty: P.() -> IsPropertyDefinitionWrapper<TI, TO, *, DO>): TO? {
         val index = getProperty(
             this.dataModel.properties
         ).index
@@ -71,7 +77,7 @@ abstract class AbstractValues<DO: Any, DM: IsDataModel<P>, P: AbstractPropertyDe
     }
 
     /** Get property from valuesvalues with wrapper in [getProperty] and convert it to native usage */
-    fun <T: Any> original(getProperty: P.() -> IsPropertyDefinitionWrapper<T, *, *, DO>): T? {
+    fun <T : Any> original(getProperty: P.() -> IsPropertyDefinitionWrapper<T, *, *, DO>): T? {
         val index = getProperty(
             this.dataModel.properties
         ).index
@@ -96,7 +102,7 @@ abstract class AbstractValues<DO: Any, DM: IsDataModel<P>, P: AbstractPropertyDe
     }
 
     @Suppress("UNCHECKED_CAST")
-    override operator fun <T: Any, D: IsPropertyDefinition<T>, C: Any> get(propertyReference: IsPropertyReference<T, D, C>): T? {
+    override operator fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(propertyReference: IsPropertyReference<T, D, C>): T? {
         val refList = propertyReference.unwrap()
         var value: Any = this
 
@@ -124,7 +130,7 @@ abstract class AbstractValues<DO: Any, DM: IsDataModel<P>, P: AbstractPropertyDe
  * Returns default value if unset
  */
 @Suppress("UNCHECKED_CAST")
-inline fun <reified T: Any, TO: Any> IsPropertyDefinitionWrapper<T, TO, *, *>.convertToCurrentValue(value: Any?): TO? {
+inline fun <reified T : Any, TO : Any> IsPropertyDefinitionWrapper<T, TO, *, *>.convertToCurrentValue(value: Any?): TO? {
     return when {
         value == null && this.definition is HasDefaultValueDefinition<*> -> (this.definition as? HasDefaultValueDefinition<*>).let {
             it?.default as TO?

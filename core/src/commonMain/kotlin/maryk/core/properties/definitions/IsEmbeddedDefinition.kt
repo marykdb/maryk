@@ -14,7 +14,7 @@ import maryk.core.properties.references.decodeStorageIndex
 typealias IsAnyEmbeddedDefinition = IsEmbeddedDefinition<IsDataModel<AbstractPropertyDefinitions<Any>>, AbstractPropertyDefinitions<Any>>
 
 /** Interface for property definitions containing embedded DataObjects of [DM] and definitions [P]. */
-interface IsEmbeddedDefinition<out DM : IsDataModel<P>, P: AbstractPropertyDefinitions<*>> {
+interface IsEmbeddedDefinition<out DM : IsDataModel<P>, P : AbstractPropertyDefinitions<*>> {
     val dataModel: DM
 
     /** Resolve a reference from [reader] found on a [parentReference] */
@@ -42,7 +42,12 @@ interface IsEmbeddedDefinition<out DM : IsDataModel<P>, P: AbstractPropertyDefin
                 propertyReference
             } else {
                 when (propertyReference) {
-                    is HasEmbeddedPropertyReference<*> -> propertyReference.getEmbeddedStorageRef(reader, context, type, isDoneReading)
+                    is HasEmbeddedPropertyReference<*> -> propertyReference.getEmbeddedStorageRef(
+                        reader,
+                        context,
+                        type,
+                        isDoneReading
+                    )
                     else -> throw DefNotFoundException("More property references found on property that cannot have any: $propertyReference")
                 }
             }

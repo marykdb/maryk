@@ -81,7 +81,7 @@ private val objectDeletePropertyDefinition = BooleanDefinition()
  * [getQualifier] gets a qualifier until none is available and returns null
  * [processValue] processes the storage value with given type and definition
  */
-fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.readStorageToChanges(
+fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readStorageToChanges(
     getQualifier: () -> ByteArray?,
     select: RootPropRefGraph<P>?,
     processValue: ValueWithVersionReader
@@ -115,9 +115,13 @@ fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.readStorageToChang
 /** Adds change to existing list or creates a new change*/
 private fun MutableList<IsChange>.addChange(changeType: ChangeType, changePart: Any) {
     @Suppress("UNCHECKED_CAST")
-    when(changeType) {
+    when (changeType) {
         ChangeType.OBJECT_DELETE -> this.find { it is ObjectSoftDeleteChange }
-        ChangeType.CHANGE -> this.find { it is Change }?.also { ((it as Change).referenceValuePairs as MutableList<ReferenceValuePair<*>>).add(changePart as ReferenceValuePair<*>) }
+        ChangeType.CHANGE -> this.find { it is Change }?.also {
+            ((it as Change).referenceValuePairs as MutableList<ReferenceValuePair<*>>).add(
+                changePart as ReferenceValuePair<*>
+            )
+        }
         ChangeType.DELETE -> this.find { it is Delete }?.also {
             val reference = changePart as AnyValuePropertyReference
             val toDelete = ((it as Delete).references as MutableList<AnyValuePropertyReference>)
@@ -133,7 +137,11 @@ private fun MutableList<IsChange>.addChange(changeType: ChangeType, changePart: 
             }
             toDelete.add(reference)
         }
-        ChangeType.TYPE -> this.find { it is MultiTypeChange }?.also { ((it as MultiTypeChange).referenceTypePairs as MutableList<ReferenceTypePair<*>>).add(changePart as ReferenceTypePair<*>) }
+        ChangeType.TYPE -> this.find { it is MultiTypeChange }?.also {
+            ((it as MultiTypeChange).referenceTypePairs as MutableList<ReferenceTypePair<*>>).add(
+                changePart as ReferenceTypePair<*>
+            )
+        }
         ChangeType.SET_ADD -> {
             this.find { it is SetChange }?.also { change ->
                 val ref = changePart as SetItemReference<*, *>
@@ -152,19 +160,21 @@ private fun MutableList<IsChange>.addChange(changeType: ChangeType, changePart: 
 }
 
 @Suppress("UNCHECKED_CAST")
-private fun createChange(changeType: ChangeType, changePart: Any) = when(changeType) {
+private fun createChange(changeType: ChangeType, changePart: Any) = when (changeType) {
     ChangeType.OBJECT_DELETE -> ObjectSoftDeleteChange(changePart as Boolean)
     ChangeType.CHANGE -> Change(mutableListOf(changePart as ReferenceValuePair<Any>))
     ChangeType.DELETE -> Delete(mutableListOf(changePart as IsPropertyReference<*, IsValuePropertyDefinitionWrapper<*, *, IsPropertyContext, *>, *>))
     ChangeType.TYPE -> MultiTypeChange(mutableListOf(changePart as ReferenceTypePair<*>))
-    ChangeType.SET_ADD-> {
+    ChangeType.SET_ADD -> {
         val ref = changePart as SetItemReference<*, *>
-        SetChange(mutableListOf(
-            SetValueChanges(
-                ref.parentReference as IsPropertyReference<Set<Any>, IsPropertyDefinition<Set<Any>>, *>,
-                addValues = mutableSetOf(ref.value)
+        SetChange(
+            mutableListOf(
+                SetValueChanges(
+                    ref.parentReference as IsPropertyReference<Set<Any>, IsPropertyDefinition<Set<Any>>, *>,
+                    addValues = mutableSetOf(ref.value)
+                )
             )
-        ))
+        )
     }
 }
 
@@ -174,7 +184,7 @@ private fun createChange(changeType: ChangeType, changePart: Any) = when(changeT
  * [readValueFromStorage] is used to fetch actual value from storage layer
  * [addToCache] is used to add a sub reader to cache so it does not need to reprocess qualifier from start
  */
-private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
+private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
     qualifier: ByteArray,
     offset: Int,
     select: IsPropRefGraph<P>?,
@@ -197,7 +207,10 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                 SPECIAL -> when (val specialType = completeReferenceTypeOf(qualifier[offset])) {
                     DELETE -> {
                         @Suppress("UNCHECKED_CAST")
-                        readValueFromStorage(ObjectDelete as StorageTypeEnum<IsPropertyDefinition<Any>>, objectDeletePropertyDefinition as IsPropertyDefinition<Any>) { version, value ->
+                        readValueFromStorage(
+                            ObjectDelete as StorageTypeEnum<IsPropertyDefinition<Any>>,
+                            objectDeletePropertyDefinition as IsPropertyDefinition<Any>
+                        ) { version, value ->
                             if (value != null) {
                                 addChangeToOutput(version, OBJECT_DELETE, value)
                             }
@@ -290,7 +303,10 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
 
                     if (isAtEnd) {
                         @Suppress("UNCHECKED_CAST")
-                        readValueFromStorage(ListSize as StorageTypeEnum<IsPropertyDefinition<Any>>, definition) { version, value ->
+                        readValueFromStorage(
+                            ListSize as StorageTypeEnum<IsPropertyDefinition<Any>>,
+                            definition
+                        ) { version, value ->
                             if (value == null) {
                                 addChangeToOutput(version, ChangeType.DELETE, definition.ref(parentReference))
                             }
@@ -302,28 +318,43 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                         val reference = definition.ref(parentReference) as ListReference<Any, IsPropertyContext>
 
                         // Read set contents. Always a simple value for set since it is in qualifier
-                        val valueDefinition = ((definition as IsListDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
+                        val valueDefinition =
+                            ((definition as IsListDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
                         var listItemIndex = qIndex
 
                         val listIndex = initUInt(reader = { qualifier[listItemIndex++] })
 
                         @Suppress("UNCHECKED_CAST")
-                        readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, valueDefinition as IsPropertyDefinition<Any>) { version, value ->
+                        readValueFromStorage(
+                            Value as StorageTypeEnum<IsPropertyDefinition<Any>>,
+                            valueDefinition as IsPropertyDefinition<Any>
+                        ) { version, value ->
                             if (value == null) {
-                                addChangeToOutput(version, ChangeType.DELETE, listDefinition.itemRef(listIndex, reference))
+                                addChangeToOutput(
+                                    version,
+                                    ChangeType.DELETE,
+                                    listDefinition.itemRef(listIndex, reference)
+                                )
                             } else {
-                                addChangeToOutput(version, CHANGE, listDefinition.itemRef(listIndex, reference) with value)
+                                addChangeToOutput(
+                                    version,
+                                    CHANGE,
+                                    listDefinition.itemRef(listIndex, reference) with value
+                                )
                             }
                         }
                     }
                 }
-                SET ->{
+                SET -> {
                     val definition = this.properties[index]
                         ?: throw Exception("No definition for $index in $this at $index")
 
                     if (isAtEnd) {
                         @Suppress("UNCHECKED_CAST")
-                        readValueFromStorage(SetSize as StorageTypeEnum<IsPropertyDefinition<Any>>, definition) { version, value ->
+                        readValueFromStorage(
+                            SetSize as StorageTypeEnum<IsPropertyDefinition<Any>>,
+                            definition
+                        ) { version, value ->
                             if (value == null) {
                                 addChangeToOutput(version, ChangeType.DELETE, definition.ref(parentReference))
                             }
@@ -335,13 +366,18 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                         val reference = definition.ref(parentReference) as SetReference<Any, IsPropertyContext>
 
                         // Read set contents. Always a simple value for set since it is in qualifier
-                        val valueDefinition = ((definition as IsSetDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
+                        val valueDefinition =
+                            ((definition as IsSetDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
                         var setItemIndex = qIndex
 
-                        val key = valueDefinition.readStorageBytes(qualifier.size - qIndex) { qualifier[setItemIndex++] }
+                        val key =
+                            valueDefinition.readStorageBytes(qualifier.size - qIndex) { qualifier[setItemIndex++] }
 
                         @Suppress("UNCHECKED_CAST")
-                        readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, valueDefinition as IsPropertyDefinition<Any>) { version, value ->
+                        readValueFromStorage(
+                            Value as StorageTypeEnum<IsPropertyDefinition<Any>>,
+                            valueDefinition as IsPropertyDefinition<Any>
+                        ) { version, value ->
                             if (value == null) {
                                 addChangeToOutput(version, ChangeType.DELETE, setDefinition.itemRef(key, reference))
                             } else {
@@ -359,15 +395,20 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
 
                     if (isAtEnd) {
                         @Suppress("UNCHECKED_CAST")
-                        readValueFromStorage(MapSize as StorageTypeEnum<IsPropertyDefinition<Any>>, definition) { version, value ->
+                        readValueFromStorage(
+                            MapSize as StorageTypeEnum<IsPropertyDefinition<Any>>,
+                            definition
+                        ) { version, value ->
                             if (value == null) {
                                 addChangeToOutput(version, ChangeType.DELETE, definition.ref(parentReference))
                             }
                         }
                     } else {
                         // Read set contents. Always a simple value for set since it is in qualifier
-                        val keyDefinition = ((definition as IsMapDefinition<*, *, *>).keyDefinition as IsSimpleValueDefinition<*, *>)
-                        val valueDefinition = ((definition as IsMapDefinition<*, *, *>).valueDefinition as IsSubDefinition<*, *>)
+                        val keyDefinition =
+                            ((definition as IsMapDefinition<*, *, *>).keyDefinition as IsSimpleValueDefinition<*, *>)
+                        val valueDefinition =
+                            ((definition as IsMapDefinition<*, *, *>).valueDefinition as IsSubDefinition<*, *>)
                         val keySize = initIntByVar { qualifier[qIndex++] }
                         val key = keyDefinition.readStorageBytes(keySize) { qualifier[qIndex++] }
 
@@ -415,8 +456,9 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                     val definition = this.properties[index]
                         ?: throw Exception("No definition for $index in $this at $index")
                     @Suppress("UNCHECKED_CAST")
-                    val typedDefinition = definition.definition as? IsMultiTypeDefinition<AnyIndexedEnum, IsPropertyContext>
-                        ?: throw Exception("Definition($index) ${definition.definition} should be a TypedDefinition")
+                    val typedDefinition =
+                        definition.definition as? IsMultiTypeDefinition<AnyIndexedEnum, IsPropertyContext>
+                            ?: throw Exception("Definition($index) ${definition.definition} should be a TypedDefinition")
 
                     typedDefinition.readComplexTypedValue(
                         parentReference,
@@ -488,7 +530,10 @@ private fun readTypedValue(
     var qIndex1 = offset
     if (qualifier.size <= qIndex1) {
         @Suppress("UNCHECKED_CAST")
-        readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, valueDefinition as IsPropertyDefinition<Any>) { version, value ->
+        readValueFromStorage(
+            Value as StorageTypeEnum<IsPropertyDefinition<Any>>,
+            valueDefinition as IsPropertyDefinition<Any>
+        ) { version, value ->
             if (value == null) {
                 addChangeToOutput(version, ChangeType.DELETE, reference as Any)
             } else {
@@ -533,7 +578,7 @@ private fun readTypedValue(
 }
 
 /** Read a complex Typed value from qualifier */
-private fun <E: IndexedEnum<E>> IsMultiTypeDefinition<E, IsPropertyContext>.readComplexTypedValue(
+private fun <E : IndexedEnum<E>> IsMultiTypeDefinition<E, IsPropertyContext>.readComplexTypedValue(
     reference: IsPropertyReference<*, *, *>?,
     index: UInt,
     qualifier: ByteArray,

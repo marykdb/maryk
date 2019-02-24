@@ -52,10 +52,11 @@ data class RootMaryk(
     }
 
     @Suppress("UNCHECKED_CAST")
-    companion object: SingleTypedValueDataModel<List<TypedValue<Operation, *>>, RootMaryk, Properties, DefinitionsContext>(
-        properties = Properties,
-        singlePropertyDefinition = Properties.operations as IsPropertyDefinitionWrapper<List<TypedValue<Operation, *>>, List<TypedValue<Operation, *>>, DefinitionsContext, RootMaryk>
-    ) {
+    companion object :
+        SingleTypedValueDataModel<List<TypedValue<Operation, *>>, RootMaryk, Properties, DefinitionsContext>(
+            properties = Properties,
+            singlePropertyDefinition = Properties.operations as IsPropertyDefinitionWrapper<List<TypedValue<Operation, *>>, List<TypedValue<Operation, *>>, DefinitionsContext, RootMaryk>
+        ) {
         override fun invoke(values: ObjectValues<RootMaryk, Properties>) = RootMaryk(
             operations = values(1)
         )

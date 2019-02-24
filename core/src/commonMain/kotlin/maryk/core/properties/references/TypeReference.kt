@@ -23,7 +23,7 @@ import maryk.core.protobuf.WriteCacheWriter
  * Reference to a Type [E] on [parentReference]
  * Can be a reference to a type below a multi type wrapper or for like multi types within lists
  */
-class TypeReference<E: IndexedEnum<E>, in CX: IsPropertyContext>  internal constructor(
+class TypeReference<E : IndexedEnum<E>, in CX : IsPropertyContext> internal constructor(
     val type: E,
     multiTypeDefinition: IsMultiTypeDefinition<E, CX>,
     parentReference: CanHaveComplexChildReference<*, *, *, *>?
@@ -31,26 +31,33 @@ class TypeReference<E: IndexedEnum<E>, in CX: IsPropertyContext>  internal const
     multiTypeDefinition.definitionMap[type] as IsSubDefinition<Any, CX>,
     parentReference
 ), HasEmbeddedPropertyReference<Any> {
-    override val completeName: String get() = this.parentReference?.let {
-        "${it.completeName}.*${type.name}"
-    } ?: "*${type.name}"
+    override val completeName: String
+        get() = this.parentReference?.let {
+            "${it.completeName}.*${type.name}"
+        } ?: "*${type.name}"
 
-    override fun resolveFromAny(value: Any) = (value as? TypedValue<*, *>)?.value ?: throw UnexpectedValueException("Expected typed value to get value by reference")
+    override fun resolveFromAny(value: Any) = (value as? TypedValue<*, *>)?.value
+        ?: throw UnexpectedValueException("Expected typed value to get value by reference")
 
     override fun getEmbedded(name: String, context: IsPropertyContext?): IsPropertyReference<Any, *, *> {
-        return if(this.propertyDefinition is IsEmbeddedDefinition<*, *>) {
+        return if (this.propertyDefinition is IsEmbeddedDefinition<*, *>) {
             this.propertyDefinition.resolveReferenceByName(name, this)
         } else throw DefNotFoundException("Type reference can not contain embedded name references ($name)")
     }
 
     override fun getEmbeddedRef(reader: () -> Byte, context: IsPropertyContext?): AnyPropertyReference {
-        if(this.propertyDefinition is IsEmbeddedObjectDefinition<*, *, *, *, *>) {
+        if (this.propertyDefinition is IsEmbeddedObjectDefinition<*, *, *, *, *>) {
             return this.propertyDefinition.resolveReference(reader, this)
         } else throw DefNotFoundException("Type reference can not contain embedded index references (${type.name})")
     }
 
-    override fun getEmbeddedStorageRef(reader: () -> Byte, context: IsPropertyContext?, referenceType: CompleteReferenceType, isDoneReading: () -> Boolean): AnyPropertyReference {
-        return if(this.propertyDefinition is IsEmbeddedObjectDefinition<*, *, *, *, *>) {
+    override fun getEmbeddedStorageRef(
+        reader: () -> Byte,
+        context: IsPropertyContext?,
+        referenceType: CompleteReferenceType,
+        isDoneReading: () -> Boolean
+    ): AnyPropertyReference {
+        return if (this.propertyDefinition is IsEmbeddedObjectDefinition<*, *, *, *, *>) {
             this.propertyDefinition.resolveReferenceFromStorage(reader, this, context, isDoneReading)
         } else throw DefNotFoundException("Type reference can not contain embedded index references (${type.name})")
     }

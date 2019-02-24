@@ -17,7 +17,7 @@ import maryk.json.IsJsonLikeWriter
 import maryk.lib.exceptions.ParseException
 
 /** Definition for Number properties */
-data class NumberDefinition<T: Comparable<T>>(
+data class NumberDefinition<T : Comparable<T>>(
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val unique: Boolean = false,
@@ -26,12 +26,11 @@ data class NumberDefinition<T: Comparable<T>>(
     override val default: T? = null,
     override val random: Boolean = false,
     val type: NumberDescriptor<T>
-):
+) :
     IsNumericDefinition<T>,
     IsSerializableFixedBytesEncodable<T, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<T>,
-    HasDefaultValueDefinition<T>
-{
+    HasDefaultValueDefinition<T> {
     override val propertyDefinitionType = PropertyDefinitionType.Number
     override val wireType = type.wireType
     override val byteSize = type.size
@@ -51,12 +50,19 @@ data class NumberDefinition<T: Comparable<T>>(
 
     override fun calculateTransportByteLength(value: T) = this.type.calculateTransportByteLength(value)
 
-    override fun writeTransportBytes(value: T, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: IsPropertyContext?) =
+    override fun writeTransportBytes(
+        value: T,
+        cacheGetter: WriteCacheReader,
+        writer: (byte: Byte) -> Unit,
+        context: IsPropertyContext?
+    ) =
         this.type.writeTransportBytes(value, writer)
 
     override fun fromString(string: String) = try {
         type.ofString(string)
-    } catch (e: Throwable) { throw ParseException(string, e) }
+    } catch (e: Throwable) {
+        throw ParseException(string, e)
+    }
 
     override fun fromNativeType(value: Any) = fromNativeType(this.type, value)
 
@@ -69,61 +75,62 @@ data class NumberDefinition<T: Comparable<T>>(
         else -> super.writeJsonValue(value, writer, context)
     }
 
-    object Model : ContextualDataModel<NumberDefinition<*>, ObjectPropertyDefinitions<NumberDefinition<*>>, IsPropertyContext, NumericContext>(
-        contextTransformer = { NumericContext() },
-        properties = object : ObjectPropertyDefinitions<NumberDefinition<*>>() {
-            init {
-                IsPropertyDefinition.addRequired(this, NumberDefinition<*>::required)
-                IsPropertyDefinition.addFinal(this, NumberDefinition<*>::final)
-                IsComparableDefinition.addUnique(this, NumberDefinition<*>::unique)
-                @Suppress("UNCHECKED_CAST")
-                add(4, "type",
-                    definition = EnumDefinition(enum = NumberType),
-                    getter = NumberDefinition<*>::type as (NumberDefinition<*>) -> NumberDescriptor<Comparable<Any>>?,
-                    capturer = { context: NumericContext, value: NumberType ->
-                        @Suppress("UNCHECKED_CAST")
-                        context.numberType = value.descriptor() as NumberDescriptor<Comparable<Any>>
-                    },
-                    fromSerializable = { value: NumberType? ->
-                        value?.let {
-                            it.descriptor() as NumberDescriptor<Comparable<Any>>
+    object Model :
+        ContextualDataModel<NumberDefinition<*>, ObjectPropertyDefinitions<NumberDefinition<*>>, IsPropertyContext, NumericContext>(
+            contextTransformer = { NumericContext() },
+            properties = object : ObjectPropertyDefinitions<NumberDefinition<*>>() {
+                init {
+                    IsPropertyDefinition.addRequired(this, NumberDefinition<*>::required)
+                    IsPropertyDefinition.addFinal(this, NumberDefinition<*>::final)
+                    IsComparableDefinition.addUnique(this, NumberDefinition<*>::unique)
+                    @Suppress("UNCHECKED_CAST")
+                    add(4, "type",
+                        definition = EnumDefinition(enum = NumberType),
+                        getter = NumberDefinition<*>::type as (NumberDefinition<*>) -> NumberDescriptor<Comparable<Any>>?,
+                        capturer = { context: NumericContext, value: NumberType ->
+                            @Suppress("UNCHECKED_CAST")
+                            context.numberType = value.descriptor() as NumberDescriptor<Comparable<Any>>
+                        },
+                        fromSerializable = { value: NumberType? ->
+                            value?.let {
+                                it.descriptor() as NumberDescriptor<Comparable<Any>>
+                            }
+                        },
+                        toSerializable = { value: NumberDescriptor<Comparable<Any>>?, _: NumericContext? ->
+                            value?.type
                         }
-                    },
-                    toSerializable = { value: NumberDescriptor<Comparable<Any>>?, _: NumericContext? ->
-                        value?.type
-                    }
-                )
-                add(5, "minValue",
-                    ContextualNumberDefinition<NumericContext>(required = false) {
-                        it?.numberType ?: throw ContextNotFoundException()
-                    },
-                    getter = {
-                        @Suppress("UNCHECKED_CAST")
-                        it.minValue as Comparable<Any>?
-                    }
-                )
-                add(6, "maxValue",
-                    ContextualNumberDefinition<NumericContext>(required = false) {
-                        it?.numberType ?: throw ContextNotFoundException()
-                    },
-                    getter = {
-                        @Suppress("UNCHECKED_CAST")
-                        it.maxValue as Comparable<Any>?
-                    }
-                )
-                add(7, "default",
-                    ContextualNumberDefinition<NumericContext>(required = false) {
-                        it?.numberType ?: throw ContextNotFoundException()
-                    },
-                    getter = {
-                        @Suppress("UNCHECKED_CAST")
-                        it.default as Comparable<Any>?
-                    }
-                )
-                IsNumericDefinition.addRandom(8,this, NumberDefinition<*>::random)
+                    )
+                    add(5, "minValue",
+                        ContextualNumberDefinition<NumericContext>(required = false) {
+                            it?.numberType ?: throw ContextNotFoundException()
+                        },
+                        getter = {
+                            @Suppress("UNCHECKED_CAST")
+                            it.minValue as Comparable<Any>?
+                        }
+                    )
+                    add(6, "maxValue",
+                        ContextualNumberDefinition<NumericContext>(required = false) {
+                            it?.numberType ?: throw ContextNotFoundException()
+                        },
+                        getter = {
+                            @Suppress("UNCHECKED_CAST")
+                            it.maxValue as Comparable<Any>?
+                        }
+                    )
+                    add(7, "default",
+                        ContextualNumberDefinition<NumericContext>(required = false) {
+                            it?.numberType ?: throw ContextNotFoundException()
+                        },
+                        getter = {
+                            @Suppress("UNCHECKED_CAST")
+                            it.default as Comparable<Any>?
+                        }
+                    )
+                    IsNumericDefinition.addRandom(8, this, NumberDefinition<*>::random)
+                }
             }
-        }
-    ) {
+        ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(values: SimpleObjectValues<NumberDefinition<*>>) = NumberDefinition<Comparable<Any>>(
             required = values(1),
@@ -142,7 +149,7 @@ class NumericContext : IsPropertyContext {
     var numberType: NumberDescriptor<Comparable<Any>>? = null
 }
 
-fun <T: Comparable<T>> fromNativeType(type: NumberDescriptor<T>, value: Any) =
+fun <T : Comparable<T>> fromNativeType(type: NumberDescriptor<T>, value: Any) =
     when {
         type.isOfType(value) -> {
             @Suppress("UNCHECKED_CAST")

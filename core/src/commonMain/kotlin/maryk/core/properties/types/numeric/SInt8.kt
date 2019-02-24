@@ -23,6 +23,7 @@ object SInt8 : NumberDescriptor<Byte>(
         val zigZaggedValue = value.encodeZigZag()
         zigZaggedValue.writeVarBytes(writer)
     }
+
     override fun ofString(value: String) = value.toByte()
     override fun ofDouble(value: Double) = value.toByte()
     override fun toDouble(value: Byte) = value.toDouble()

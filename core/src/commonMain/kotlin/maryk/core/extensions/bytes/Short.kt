@@ -7,9 +7,9 @@ import kotlin.experimental.xor
 /** Write the bytes of this Short to a [writer] */
 internal fun Short.writeBytes(writer: (byte: Byte) -> Unit) {
     for (it in 0 until 2) {
-        val b = (this.toInt() shr (1-it) * 8 and 0xFF).toByte()
+        val b = (this.toInt() shr (1 - it) * 8 and 0xFF).toByte()
         writer(
-            if(it == 0) b xor SIGN_BYTE else b
+            if (it == 0) b xor SIGN_BYTE else b
         )
     }
 }

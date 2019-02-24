@@ -12,7 +12,7 @@ data class GreaterThan internal constructor(
     override val filterType = FilterType.GreaterThan
 
     @Suppress("UNCHECKED_CAST")
-    constructor(vararg referenceValuePair: ReferenceValuePair<*>): this(referenceValuePair.toList() as List<ReferenceValuePair<Any>>)
+    constructor(vararg referenceValuePair: ReferenceValuePair<*>) : this(referenceValuePair.toList() as List<ReferenceValuePair<Any>>)
 
     object Properties : ReferenceValuePairsObjectPropertyDefinitions<GreaterThan, ReferenceValuePair<Any>>(
         pairName = "referenceValuePairs",
@@ -20,7 +20,7 @@ data class GreaterThan internal constructor(
         pairModel = ReferenceValuePair
     )
 
-    companion object: ReferencePairDataModel<GreaterThan, Properties, ReferenceValuePair<Any>, Any>(
+    companion object : ReferencePairDataModel<GreaterThan, Properties, ReferenceValuePair<Any>, Any>(
         properties = Properties,
         pairProperties = ReferenceValuePair.Properties
     ) {

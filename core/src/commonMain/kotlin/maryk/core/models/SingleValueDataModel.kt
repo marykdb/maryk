@@ -18,17 +18,19 @@ typealias SingleTypedValueDataModel<T, DO, P, CX> = SingleValueDataModel<T, T, D
  *
  * In JSON/YAML this model is represented as just that property.
  */
-abstract class SingleValueDataModel<T: Any, TO: Any, DO: Any, P: ObjectPropertyDefinitions<DO>, CX: IsPropertyContext>(
+abstract class SingleValueDataModel<T : Any, TO : Any, DO : Any, P : ObjectPropertyDefinitions<DO>, CX : IsPropertyContext>(
     properties: P,
     private val singlePropertyDefinition: IsPropertyDefinitionWrapper<T, TO, CX, DO>
 ) : AbstractObjectDataModel<DO, P, CX, CX>(properties) {
     override fun writeJson(values: ObjectValues<DO, P>, writer: IsJsonLikeWriter, context: CX?) {
-        val value = values.original { singlePropertyDefinition } ?: throw ParseException("Missing ${singlePropertyDefinition.name} value")
+        val value = values.original { singlePropertyDefinition }
+            ?: throw ParseException("Missing ${singlePropertyDefinition.name} value")
         writeJsonValue(value, writer, context)
     }
 
     override fun writeJson(obj: DO, writer: IsJsonLikeWriter, context: CX?) {
-        val value = singlePropertyDefinition.getPropertyAndSerialize(obj, context) ?: throw ParseException("Missing ${singlePropertyDefinition.name} value")
+        val value = singlePropertyDefinition.getPropertyAndSerialize(obj, context)
+            ?: throw ParseException("Missing ${singlePropertyDefinition.name} value")
         writeJsonValue(value, writer, context)
     }
 
@@ -38,7 +40,7 @@ abstract class SingleValueDataModel<T: Any, TO: Any, DO: Any, P: ObjectPropertyD
     }
 
     override fun readJson(reader: IsJsonLikeReader, context: CX?): ObjectValues<DO, P> {
-        if (reader.currentToken == JsonToken.StartDocument){
+        if (reader.currentToken == JsonToken.StartDocument) {
             reader.nextToken()
         }
 

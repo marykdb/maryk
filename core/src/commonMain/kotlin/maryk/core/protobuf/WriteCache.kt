@@ -16,7 +16,7 @@ class WriteCache : WriteCacheReader, WriteCacheWriter {
         lengths += item
     }
 
-    override fun <CX: IsPropertyContext> addContextToCache(item: CX) {
+    override fun <CX : IsPropertyContext> addContextToCache(item: CX) {
         contexts += item
     }
 
@@ -26,7 +26,7 @@ class WriteCache : WriteCacheReader, WriteCacheWriter {
 
 interface WriteCacheWriter {
     fun addLengthToCache(item: ByteLengthContainer)
-    fun <CX: IsPropertyContext> addContextToCache(item: CX)
+    fun <CX : IsPropertyContext> addContextToCache(item: CX)
 }
 
 interface WriteCacheReader {

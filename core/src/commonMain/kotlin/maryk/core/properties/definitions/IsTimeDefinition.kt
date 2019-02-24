@@ -6,13 +6,20 @@ import maryk.core.properties.types.TimePrecision
 import maryk.lib.time.IsTime
 
 /** Time Property Definition to define time properties of [T] with precision. */
-interface IsTimeDefinition<T : IsTime<T>> : IsMomentDefinition<T>, IsSerializableFixedBytesEncodable<T, IsPropertyContext> {
+interface IsTimeDefinition<T : IsTime<T>> :
+    IsMomentDefinition<T>,
+    IsSerializableFixedBytesEncodable<T, IsPropertyContext> {
     val precision: TimePrecision
 
     override fun calculateStorageByteLength(value: T) = this.byteSize
 
     companion object {
-        internal fun <DO : Any> addPrecision(index: Int, definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> TimePrecision, capturer: ((TimePrecisionContext, TimePrecision) -> Unit)? = null) {
+        internal fun <DO : Any> addPrecision(
+            index: Int,
+            definitions: ObjectPropertyDefinitions<DO>,
+            getter: (DO) -> TimePrecision,
+            capturer: ((TimePrecisionContext, TimePrecision) -> Unit)? = null
+        ) {
             definitions.add(
                 index,
                 "precision",

@@ -14,31 +14,34 @@ import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 
 /** Compares given [values] set of type [T] against referenced value [reference] */
-data class ReferenceValueSetPair<T: Any> internal constructor(
+data class ReferenceValueSetPair<T : Any> internal constructor(
     override val reference: IsPropertyReference<T, IsChangeableValueDefinition<T, IsPropertyContext>, *>,
     val values: Set<T>
 ) : DefinedByReference<T> {
     override fun toString() = "$reference: $values]"
 
-    object Properties: ReferenceValuePairPropertyDefinitions<ReferenceValueSetPair<*>, Set<*>>() {
+    object Properties : ReferenceValuePairPropertyDefinitions<ReferenceValueSetPair<*>, Set<*>>() {
         override val reference = DefinedByReference.addReference(
             this,
             ReferenceValueSetPair<*>::reference
         )
         @Suppress("UNCHECKED_CAST")
-        override val value = add(2, "values", SetDefinition(
-            valueDefinition = ContextualValueDefinition(
-                contextualResolver = { context: RequestContext? ->
-                    context?.reference?.let {
-                        @Suppress("UNCHECKED_CAST")
-                        it.comparablePropertyDefinition as IsValueDefinition<Any, IsPropertyContext>
-                    } ?: throw ContextNotFoundException()
-                }
-            )
-        ), ReferenceValueSetPair<*>::values) as IsPropertyDefinitionWrapper<Any, Set<*>, RequestContext, ReferenceValueSetPair<*>>
+        override val value = add(
+            2, "values",
+            SetDefinition(
+                valueDefinition = ContextualValueDefinition(
+                    contextualResolver = { context: RequestContext? ->
+                        context?.reference?.let {
+                            @Suppress("UNCHECKED_CAST")
+                            it.comparablePropertyDefinition as IsValueDefinition<Any, IsPropertyContext>
+                        } ?: throw ContextNotFoundException()
+                    }
+                )
+            ),
+            ReferenceValueSetPair<*>::values) as IsPropertyDefinitionWrapper<Any, Set<*>, RequestContext, ReferenceValueSetPair<*>>
     }
 
-    companion object: SimpleObjectDataModel<ReferenceValueSetPair<*>, Properties>(
+    companion object : SimpleObjectDataModel<ReferenceValueSetPair<*>, Properties>(
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<ReferenceValueSetPair<*>, Properties>) = ReferenceValueSetPair(
@@ -49,5 +52,5 @@ data class ReferenceValueSetPair<T: Any> internal constructor(
 }
 
 /** Convenience infix method to create Reference [value] pairs */
-infix fun <T: Any> IsPropertyReference<T, IsChangeableValueDefinition<T, IsPropertyContext>, *>.with(value: Set<T>) =
+infix fun <T : Any> IsPropertyReference<T, IsChangeableValueDefinition<T, IsPropertyContext>, *>.with(value: Set<T>) =
     ReferenceValueSetPair(this, value)

@@ -15,10 +15,10 @@ import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
 /** For data models which contains only reference pairs of type [R] */
-abstract class ReferencePairDataModel<DO: Any, P: ReferenceValuePairsObjectPropertyDefinitions<DO, R>, R: DefinedByReference<*>, T: Any>(
+abstract class ReferencePairDataModel<DO : Any, P : ReferenceValuePairsObjectPropertyDefinitions<DO, R>, R : DefinedByReference<*>, T : Any>(
     properties: P,
     private val pairProperties: ReferenceValuePairPropertyDefinitions<R, T>
-) : QueryDataModel<DO, P>(properties){
+) : QueryDataModel<DO, P>(properties) {
     override fun writeJson(
         values: ObjectValues<DO, P>,
         writer: IsJsonLikeWriter,
@@ -58,7 +58,7 @@ abstract class ReferencePairDataModel<DO: Any, P: ReferenceValuePairsObjectPrope
     }
 
     override fun readJson(reader: IsJsonLikeReader, context: RequestContext?): ObjectValues<DO, P> {
-        if (reader.currentToken == JsonToken.StartDocument){
+        if (reader.currentToken == JsonToken.StartDocument) {
             reader.nextToken()
         }
 
@@ -107,7 +107,7 @@ abstract class ReferencePairDataModel<DO: Any, P: ReferenceValuePairsObjectPrope
 }
 
 /** Defines the PropertyDefinitions of DataModels with only Reference Value pairs */
-abstract class ReferenceValuePairsObjectPropertyDefinitions<DO: Any, R: DefinedByReference<*>>(
+abstract class ReferenceValuePairsObjectPropertyDefinitions<DO : Any, R : DefinedByReference<*>>(
     val pairName: String,
     pairGetter: (DO) -> List<R>?,
     val pairModel: QueryDataModel<R, *>

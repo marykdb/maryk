@@ -16,7 +16,8 @@ import maryk.lib.exceptions.ParseException
  * This type of definition is encodable within Collections because it can
  * read and write ProtoBuf without the key
  */
-interface IsValueDefinition<T: Any, in CX: IsPropertyContext> : IsSubDefinition<T, CX>, IsChangeableValueDefinition<T, CX> {
+interface IsValueDefinition<T : Any, in CX : IsPropertyContext> : IsSubDefinition<T, CX>,
+    IsChangeableValueDefinition<T, CX> {
     val wireType: WireType
 
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = null
@@ -46,7 +47,13 @@ interface IsValueDefinition<T: Any, in CX: IsPropertyContext> : IsSubDefinition<
      */
     fun calculateTransportByteLength(value: T, cacher: WriteCacheWriter, context: CX? = null): Int
 
-    override fun writeTransportBytesWithKey(index: Int, value: T, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?) {
+    override fun writeTransportBytesWithKey(
+        index: Int,
+        value: T,
+        cacheGetter: WriteCacheReader,
+        writer: (byte: Byte) -> Unit,
+        context: CX?
+    ) {
         writeKeyWithLength(this.wireType, index, writer, cacheGetter)
         this.writeTransportBytes(value, cacheGetter, writer, context)
     }

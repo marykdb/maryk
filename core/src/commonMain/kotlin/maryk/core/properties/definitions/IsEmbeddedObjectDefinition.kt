@@ -7,14 +7,13 @@ import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 
 /** Interface for property definitions containing embedded DataObjects of [DO] and context [CX]. */
-interface IsEmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out DM : AbstractObjectDataModel<DO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext> :
+interface IsEmbeddedObjectDefinition<DO : Any, P : ObjectPropertyDefinitions<DO>, out DM : AbstractObjectDataModel<DO, P, CXI, CX>, CXI : IsPropertyContext, CX : IsPropertyContext> :
     IsValueDefinition<DO, CXI>,
     IsTransportablePropertyDefinitionType<DO>,
     HasDefaultValueDefinition<DO>,
     IsEmbeddedDefinition<DM, P>,
     IsUsableInMultiType<DO, CXI>,
-    IsUsableInMapValue<DO, CXI>
-{
+    IsUsableInMapValue<DO, CXI> {
     override val dataModel: DM
 
     /** Read JSON into ObjectValues */

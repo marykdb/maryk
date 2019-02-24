@@ -14,10 +14,10 @@ import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
 /** Definition for a reference to another property from a context resolved from [contextualResolver]  */
-data class ContextualPropertyReferenceDefinition<in CX: IsPropertyContext> internal constructor(
+data class ContextualPropertyReferenceDefinition<in CX : IsPropertyContext> internal constructor(
     override val required: Boolean = true,
     val contextualResolver: (context: CX?) -> IsPropertyDefinitions
-): IsValueDefinition<AnyPropertyReference, CX>, IsContextualEncodable<AnyPropertyReference, CX> {
+) : IsValueDefinition<AnyPropertyReference, CX>, IsContextualEncodable<AnyPropertyReference, CX> {
     override val final = true
     override val wireType = WireType.LENGTH_DELIMITED
 
@@ -32,7 +32,7 @@ data class ContextualPropertyReferenceDefinition<in CX: IsPropertyContext> inter
     }
 
     override fun readJson(reader: IsJsonLikeReader, context: CX?) = reader.currentToken.let {
-        when(it) {
+        when (it) {
             is JsonToken.Value<*> -> {
                 val jsonValue = it.value
                 when (jsonValue) {
@@ -58,7 +58,12 @@ data class ContextualPropertyReferenceDefinition<in CX: IsPropertyContext> inter
     override fun calculateTransportByteLength(value: AnyPropertyReference, cacher: WriteCacheWriter, context: CX?) =
         value.calculateTransportByteLength(cacher)
 
-    override fun writeTransportBytes(value: AnyPropertyReference, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?) {
+    override fun writeTransportBytes(
+        value: AnyPropertyReference,
+        cacheGetter: WriteCacheReader,
+        writer: (byte: Byte) -> Unit,
+        context: CX?
+    ) {
         value.writeTransportBytes(cacheGetter, writer)
     }
 

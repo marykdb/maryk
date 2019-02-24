@@ -13,11 +13,11 @@ import maryk.core.values.ObjectValues
 /**
  * Creates a request to change DataObjects with [objectChanges] in a Store.
  */
-fun <DM: IsRootValuesDataModel<*>> DM.change(vararg objectChanges: DataObjectChange<DM>) =
+fun <DM : IsRootValuesDataModel<*>> DM.change(vararg objectChanges: DataObjectChange<DM>) =
     ChangeRequest(this, objectChanges.toList())
 
 /** A Request to change DataObjects for [dataModel] with [objects] */
-data class ChangeRequest<DM: IsRootValuesDataModel<*>> internal constructor(
+data class ChangeRequest<DM : IsRootValuesDataModel<*>> internal constructor(
     override val dataModel: DM,
     val objects: List<DataObjectChange<DM>>
 ) : IsStoreRequest<DM, ChangeResponse<DM>> {
@@ -38,7 +38,7 @@ data class ChangeRequest<DM: IsRootValuesDataModel<*>> internal constructor(
         )
     }
 
-    companion object: QueryDataModel<ChangeRequest<*>, Properties>(
+    companion object : QueryDataModel<ChangeRequest<*>, Properties>(
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<ChangeRequest<*>, Properties>) = ChangeRequest(

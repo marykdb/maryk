@@ -17,11 +17,11 @@ import maryk.core.values.ObjectValues
 import maryk.core.values.Values
 
 /** Creates a Request to add multiple [objectToAdd] to a store defined by given DataModel */
-fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.add(vararg objectToAdd: Values<DM, P>) =
+fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.add(vararg objectToAdd: Values<DM, P>) =
     AddRequest(this, objectToAdd.toList())
 
 /** A Request to add [objects] to [dataModel] */
-data class AddRequest<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> internal constructor(
+data class AddRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> internal constructor(
     override val dataModel: DM,
     val objects: List<Values<DM, P>>
 ) : IsStoreRequest<DM, AddResponse<DM>> {
@@ -43,12 +43,13 @@ data class AddRequest<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> inte
         ), AddRequest<*, *>::objects)
     }
 
-    companion object: QueryDataModel<AddRequest<*, *>, Properties>(
+    companion object : QueryDataModel<AddRequest<*, *>, Properties>(
         properties = Properties
     ) {
-        override fun invoke(values: ObjectValues<AddRequest<*, *>, Properties>) = AddRequest<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
-            dataModel = values(1),
-            objects = values(2)
-        )
+        override fun invoke(values: ObjectValues<AddRequest<*, *>, Properties>) =
+            AddRequest<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
+                dataModel = values(1),
+                objects = values(2)
+            )
     }
 }

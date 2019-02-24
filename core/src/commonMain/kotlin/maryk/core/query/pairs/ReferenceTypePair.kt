@@ -16,14 +16,14 @@ import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 
 /** Defines a pair of a [reference] and [type] of type [E] */
-data class ReferenceTypePair<E: IndexedEnum<E>> internal constructor(
+data class ReferenceTypePair<E : IndexedEnum<E>> internal constructor(
     override val reference: IsPropertyReference<TypedValue<E, Any>, IsPropertyDefinition<TypedValue<E, Any>>, Any>,
     val type: E
 ) : DefinedByReference<TypedValue<E, Any>> {
 
     override fun toString() = "$reference: $type"
 
-    object Properties: ReferenceValuePairPropertyDefinitions<ReferenceTypePair<*>, AnyIndexedEnum>() {
+    object Properties : ReferenceValuePairPropertyDefinitions<ReferenceTypePair<*>, AnyIndexedEnum>() {
         override val reference = DefinedByReference.addReference(
             this,
             ReferenceTypePair<*>::reference
@@ -41,7 +41,7 @@ data class ReferenceTypePair<E: IndexedEnum<E>> internal constructor(
         ) as IsPropertyDefinitionWrapper<Any, AnyIndexedEnum, RequestContext, ReferenceTypePair<*>>
     }
 
-    companion object: QueryDataModel<ReferenceTypePair<*>, Properties>(
+    companion object : QueryDataModel<ReferenceTypePair<*>, Properties>(
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<ReferenceTypePair<*>, Properties>) = ReferenceTypePair<AnyIndexedEnum>(
@@ -53,5 +53,10 @@ data class ReferenceTypePair<E: IndexedEnum<E>> internal constructor(
 
 /** Convenience infix method to create Reference [type] pairs */
 @Suppress("UNCHECKED_CAST")
-infix fun <E: IndexedEnum<E>> IsPropertyReference<TypedValue<E, *>, IsPropertyDefinition<TypedValue<E, *>>, *>.withType(type: E) =
-    ReferenceTypePair(this as IsPropertyReference<TypedValue<E, Any>, IsPropertyDefinition<TypedValue<E, Any>>, Any>, type)
+infix fun <E : IndexedEnum<E>> IsPropertyReference<TypedValue<E, *>, IsPropertyDefinition<TypedValue<E, *>>, *>.withType(
+    type: E
+) =
+    ReferenceTypePair(
+        this as IsPropertyReference<TypedValue<E, Any>, IsPropertyDefinition<TypedValue<E, Any>>, Any>,
+        type
+    )

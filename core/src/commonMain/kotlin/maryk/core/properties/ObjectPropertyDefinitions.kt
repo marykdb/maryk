@@ -42,14 +42,15 @@ import maryk.yaml.IsYamlReader
 import maryk.yaml.YamlWriter
 
 /** A collection of Property Definitions which can be used to model a ObjectDataModel */
-abstract class ObjectPropertyDefinitions<DO: Any> : AbstractPropertyDefinitions<DO>() {
+abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions<DO>() {
     /** Get a method to retrieve property from DataObject by [name] */
     fun getPropertyGetter(name: String): ((DO) -> Any?)? = { nameToDefinition[name]?.getPropertyAndSerialize(it, null) }
+
     /** Get a method to retrieve property from DataObject by [index] */
     fun getPropertyGetter(index: Int): ((DO) -> Any?)? = { indexToDefinition[index]?.getPropertyAndSerialize(it, null) }
 
     /** Add flex bytes encodable property [definition] with [name] and [index] and value [getter] */
-    fun <T: Any, CX: IsPropertyContext, D: IsSerializableFlexBytesEncodable<T, CX>> add(
+    fun <T : Any, CX : IsPropertyContext, D : IsSerializableFlexBytesEncodable<T, CX>> add(
         index: Int,
         name: String,
         definition: D,
@@ -60,7 +61,7 @@ abstract class ObjectPropertyDefinitions<DO: Any> : AbstractPropertyDefinitions<
     }
 
     /** Add flex bytes encodable property [definition] with [name] and [index] and value [getter] */
-    internal fun <T: Any, TO: Any, CX: IsPropertyContext, D: IsSerializableFlexBytesEncodable<T, CX>> add(
+    internal fun <T : Any, TO : Any, CX : IsPropertyContext, D : IsSerializableFlexBytesEncodable<T, CX>> add(
         index: Int,
         name: String,
         definition: D,
@@ -69,12 +70,21 @@ abstract class ObjectPropertyDefinitions<DO: Any> : AbstractPropertyDefinitions<
         fromSerializable: (T?) -> TO?,
         shouldSerialize: ((Any) -> Boolean)? = null,
         capturer: ((CX, T) -> Unit)? = null
-    ) = FlexBytesPropertyDefinitionWrapper(index, name, definition, getter, capturer, toSerializable, fromSerializable, shouldSerialize).apply {
+    ) = FlexBytesPropertyDefinitionWrapper(
+        index,
+        name,
+        definition,
+        getter,
+        capturer,
+        toSerializable,
+        fromSerializable,
+        shouldSerialize
+    ).apply {
         addSingle(this)
     }
 
     /** Add flex bytes encodable property [definition] with [name] and [index] and value [getter] */
-    internal fun <T: Any, TO: Any, CX: IsPropertyContext, D: IsContextualEncodable<T, CX>> add(
+    internal fun <T : Any, TO : Any, CX : IsPropertyContext, D : IsContextualEncodable<T, CX>> add(
         index: Int,
         name: String,
         definition: D,
@@ -83,12 +93,21 @@ abstract class ObjectPropertyDefinitions<DO: Any> : AbstractPropertyDefinitions<
         fromSerializable: (T?) -> TO?,
         shouldSerialize: ((Any) -> Boolean)? = null,
         capturer: ((CX, T) -> Unit)? = null
-    ) = ContextualPropertyDefinitionWrapper(index, name, definition, getter, capturer, toSerializable, fromSerializable, shouldSerialize).apply {
+    ) = ContextualPropertyDefinitionWrapper(
+        index,
+        name,
+        definition,
+        getter,
+        capturer,
+        toSerializable,
+        fromSerializable,
+        shouldSerialize
+    ).apply {
         addSingle(this)
     }
 
     /** Add flex bytes encodable property [definition] with [name] and [index] and value [getter] */
-    fun <T: Any, CX: IsPropertyContext, D: IsContextualEncodable<T, CX>> add(
+    fun <T : Any, CX : IsPropertyContext, D : IsContextualEncodable<T, CX>> add(
         index: Int,
         name: String,
         definition: D,
@@ -99,7 +118,7 @@ abstract class ObjectPropertyDefinitions<DO: Any> : AbstractPropertyDefinitions<
     }
 
     /** Add fixed bytes encodable property [definition] with [name] and [index] and value [getter] with [toSerializable] and [fromSerializable] to transform values */
-    internal fun <T: Any, TO: Any, CX: IsPropertyContext, D: IsSerializableFixedBytesEncodable<T, CX>> add(
+    internal fun <T : Any, TO : Any, CX : IsPropertyContext, D : IsSerializableFixedBytesEncodable<T, CX>> add(
         index: Int,
         name: String,
         definition: D,
@@ -120,7 +139,7 @@ abstract class ObjectPropertyDefinitions<DO: Any> : AbstractPropertyDefinitions<
     }
 
     /** Add fixed bytes encodable property [definition] with [name] and [index] and value [getter] */
-    fun <T: Any, CX: IsPropertyContext, D: IsSerializableFixedBytesEncodable<T, CX>> add(
+    fun <T : Any, CX : IsPropertyContext, D : IsSerializableFixedBytesEncodable<T, CX>> add(
         index: Int,
         name: String,
         definition: D,
@@ -131,7 +150,7 @@ abstract class ObjectPropertyDefinitions<DO: Any> : AbstractPropertyDefinitions<
     }
 
     /** Add list property [definition] with [name] and [index] and value [getter] */
-    fun <T: Any, CX: IsPropertyContext> add(
+    fun <T : Any, CX : IsPropertyContext> add(
         index: Int,
         name: String,
         definition: ListDefinition<T, CX>,
@@ -142,7 +161,7 @@ abstract class ObjectPropertyDefinitions<DO: Any> : AbstractPropertyDefinitions<
     }
 
     /** Add list property [definition] with [name] and [index] and value [getter] */
-    internal fun <T: Any, TO:Any, CX: IsPropertyContext> add(
+    internal fun <T : Any, TO : Any, CX : IsPropertyContext> add(
         index: Int,
         name: String,
         definition: ListDefinition<T, CX>,
@@ -163,7 +182,7 @@ abstract class ObjectPropertyDefinitions<DO: Any> : AbstractPropertyDefinitions<
     }
 
     /** Add set property [definition] with [name] and [index] and value [getter] */
-    fun <T: Any, CX: IsPropertyContext> add(
+    fun <T : Any, CX : IsPropertyContext> add(
         index: Int,
         name: String,
         definition: SetDefinition<T, CX>,
@@ -174,7 +193,7 @@ abstract class ObjectPropertyDefinitions<DO: Any> : AbstractPropertyDefinitions<
     }
 
     /** Add map property [definition] with [name] and [index] and value [getter] */
-    fun <K: Any, V: Any, CX: IsPropertyContext> add(
+    fun <K : Any, V : Any, CX : IsPropertyContext> add(
         index: Int,
         name: String,
         definition: MapDefinition<K, V, CX>,
@@ -188,7 +207,7 @@ abstract class ObjectPropertyDefinitions<DO: Any> : AbstractPropertyDefinitions<
      * Add map property [definition] with [name] and [index] and value [getter]
      * Also has a [toSerializable], [fromSerializable] and [capturer] to serialize and capture properties
      */
-    fun <K: Any, V: Any, TO: Any, CX: IsPropertyContext> add(
+    fun <K : Any, V : Any, TO : Any, CX : IsPropertyContext> add(
         index: Int,
         name: String,
         definition: MapDefinition<K, V, CX>,
@@ -203,7 +222,7 @@ abstract class ObjectPropertyDefinitions<DO: Any> : AbstractPropertyDefinitions<
     }
 
     /** Add multi types property [definition] with [name] and [index] and value [getter] */
-    fun <E: IndexedEnum<E>, TO: Any, CX: IsPropertyContext, D: IsMultiTypeDefinition<E, CX>> add(
+    fun <E : IndexedEnum<E>, TO : Any, CX : IsPropertyContext, D : IsMultiTypeDefinition<E, CX>> add(
         index: Int,
         name: String,
         definition: D,
@@ -217,7 +236,7 @@ abstract class ObjectPropertyDefinitions<DO: Any> : AbstractPropertyDefinitions<
      * Add multi types property [definition] with [name] and [index] and value [getter]
      * Also has a [toSerializable], [fromSerializable] and [capturer] to serialize and capture properties
      */
-    fun <E: IndexedEnum<E>, TO: Any, CX: IsPropertyContext, D: IsMultiTypeDefinition<E, CX>> add(
+    fun <E : IndexedEnum<E>, TO : Any, CX : IsPropertyContext, D : IsMultiTypeDefinition<E, CX>> add(
         index: Int,
         name: String,
         definition: D,
@@ -230,7 +249,7 @@ abstract class ObjectPropertyDefinitions<DO: Any> : AbstractPropertyDefinitions<
     }
 
     /** Add embedded object property [definition] with [name] and [index] and value [getter] */
-    fun <EODO: Any, P: ObjectPropertyDefinitions<EODO>, D: AbstractObjectDataModel<EODO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext> add(
+    fun <EODO : Any, P : ObjectPropertyDefinitions<EODO>, D : AbstractObjectDataModel<EODO, P, CXI, CX>, CXI : IsPropertyContext, CX : IsPropertyContext> add(
         index: Int,
         name: String,
         definition: IsEmbeddedObjectDefinition<EODO, P, D, CXI, CX>,
@@ -242,7 +261,7 @@ abstract class ObjectPropertyDefinitions<DO: Any> : AbstractPropertyDefinitions<
 
     @Suppress("UNCHECKED_CAST")
     /** Add embedded values property [definition] with [name] and [index] and value [getter] */
-    fun <DM: IsValuesDataModel<P>, P: PropertyDefinitions, CX: IsPropertyContext> add(
+    fun <DM : IsValuesDataModel<P>, P : PropertyDefinitions, CX : IsPropertyContext> add(
         index: Int,
         name: String,
         definition: IsEmbeddedValuesDefinition<DM, P, CX>,
@@ -338,7 +357,10 @@ internal data class ObjectPropertyDefinitionsCollectionDefinition(
         }
     }
 
-    override fun readJson(reader: IsJsonLikeReader, context: DefinitionsConversionContext?): ObjectPropertyDefinitions<Any> {
+    override fun readJson(
+        reader: IsJsonLikeReader,
+        context: DefinitionsConversionContext?
+    ): ObjectPropertyDefinitions<Any> {
         return if (reader is IsYamlReader) {
             if (reader.currentToken !is JsonToken.StartObject) {
                 throw ParseException("Property definitions should be an Object")
@@ -358,7 +380,7 @@ internal data class ObjectPropertyDefinitionsCollectionDefinition(
 }
 
 /** Wrapper specifically to wrap a ObjectPropertyDefinitionsCollectionDefinition */
-internal data class ObjectPropertyDefinitionsCollectionDefinitionWrapper<in DO: Any>(
+internal data class ObjectPropertyDefinitionsCollectionDefinitionWrapper<in DO : Any>(
     override val index: Int,
     override val name: String,
     override val definition: ObjectPropertyDefinitionsCollectionDefinition,

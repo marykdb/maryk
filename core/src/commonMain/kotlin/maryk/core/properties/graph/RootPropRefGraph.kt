@@ -20,11 +20,11 @@ import maryk.lib.exceptions.ParseException
  * Create a Root graph with references to [properties]
  * [properties] should always be sorted by index so processing graphs is a lot easier
  */
-data class RootPropRefGraph<P: IsPropertyDefinitions> internal constructor(
+data class RootPropRefGraph<P : IsPropertyDefinitions> internal constructor(
     override val properties: List<IsPropRefGraphNode<P>>
-): IsPropRefGraph<P> {
+) : IsPropRefGraph<P> {
     object Properties : ObjectPropertyDefinitions<RootPropRefGraph<*>>() {
-        val properties = this.addProperties(1, RootPropRefGraph<*>::properties)  { context: GraphContext? ->
+        val properties = this.addProperties(1, RootPropRefGraph<*>::properties) { context: GraphContext? ->
             context?.dataModel?.properties as? PropertyDefinitions? ?: throw ContextNotFoundException()
         }
     }
@@ -48,9 +48,10 @@ data class RootPropRefGraph<P: IsPropertyDefinitions> internal constructor(
             GraphContext(it?.dataModel)
         }
     ) {
-        override fun invoke(values: ObjectValues<RootPropRefGraph<*>, Properties>) = RootPropRefGraph<PropertyDefinitions>(
-            properties = values(1)
-        )
+        override fun invoke(values: ObjectValues<RootPropRefGraph<*>, Properties>) =
+            RootPropRefGraph<PropertyDefinitions>(
+                properties = values(1)
+            )
 
         override fun writeJson(obj: RootPropRefGraph<*>, writer: IsJsonLikeWriter, context: GraphContext?) {
             writeJsonValues(obj.properties, writer, context)
@@ -65,8 +66,11 @@ data class RootPropRefGraph<P: IsPropertyDefinitions> internal constructor(
             writePropertiesToJson(listOfPropRefGraphNodes, writer, context)
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: GraphContext?): ObjectValues<RootPropRefGraph<*>, Properties> {
-            if (reader.currentToken == JsonToken.StartDocument){
+        override fun readJson(
+            reader: IsJsonLikeReader,
+            context: GraphContext?
+        ): ObjectValues<RootPropRefGraph<*>, Properties> {
+            if (reader.currentToken == JsonToken.StartDocument) {
                 reader.nextToken()
             }
 
@@ -89,7 +93,8 @@ data class RootPropRefGraph<P: IsPropertyDefinitions> internal constructor(
                         )
                     }
                     is JsonToken.Value<*> -> {
-                        val multiTypeDefinition = Properties.properties.valueDefinition as MultiTypeDefinition<PropRefGraphType, GraphContext>
+                        val multiTypeDefinition =
+                            Properties.properties.valueDefinition as MultiTypeDefinition<PropRefGraphType, GraphContext>
 
                         propertiesList.add(
                             TypedValue(

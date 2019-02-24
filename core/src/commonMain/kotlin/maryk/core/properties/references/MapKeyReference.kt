@@ -12,16 +12,17 @@ import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
 /** Reference to a specific Map [key] of [K] containing value [V] contained in map referred by [parentReference] */
-class MapKeyReference<K: Any, V: Any, CX: IsPropertyContext> internal constructor(
+class MapKeyReference<K : Any, V : Any, CX : IsPropertyContext> internal constructor(
     val key: K,
     private val mapDefinition: IsMapDefinition<K, V, CX>,
     parentReference: MapReference<K, V, CX>?
 ) : CanHaveSimpleChildReference<K, IsPropertyDefinition<K>, MapReference<K, V, CX>, Map<K, V>>(
     mapDefinition.keyDefinition, parentReference
 ) {
-    override val completeName get() = this.parentReference?.let {
-        "${it.completeName}.$$key"
-    } ?: "$$key"
+    override val completeName
+        get() = this.parentReference?.let {
+            "${it.completeName}.$$key"
+        } ?: "$$key"
 
     override fun resolveFromAny(value: Any): Any {
         @Suppress("UNCHECKED_CAST")

@@ -23,11 +23,11 @@ import maryk.core.values.ValueItem
  * to be relevant to the Embedded Object
  */
 data class EmbeddedObjectPropertyDefinitionWrapper<
-    EODO: Any,
-    TO: Any,
-    P: ObjectPropertyDefinitions<EODO>,
-    out DM: AbstractObjectDataModel<EODO, P, CXI, CX>,
-    CXI: IsPropertyContext, CX: IsPropertyContext, in DO: Any
+    EODO : Any,
+    TO : Any,
+    P : ObjectPropertyDefinitions<EODO>,
+    out DM : AbstractObjectDataModel<EODO, P, CXI, CX>,
+    CXI : IsPropertyContext, CX : IsPropertyContext, in DO : Any
 > internal constructor(
     override val index: Int,
     override val name: String,
@@ -40,8 +40,7 @@ data class EmbeddedObjectPropertyDefinitionWrapper<
 ) :
     AbstractPropertyDefinitionWrapper(index, name),
     IsEmbeddedObjectDefinition<EODO, P, DM, CXI, CX> by definition,
-    IsPropertyDefinitionWrapper<EODO, TO, CXI, DO>
-{
+    IsPropertyDefinitionWrapper<EODO, TO, CXI, DO> {
     override val graphType = PropRefGraphType.PropRef
 
     override fun ref(parentRef: AnyPropertyReference?) =
@@ -58,13 +57,13 @@ data class EmbeddedObjectPropertyDefinitionWrapper<
     }
 
     /** Get a top level reference on a model with [propertyDefinitionGetter] */
-    infix fun <T: Any, W: IsPropertyDefinitionWrapper<T, *, *, AbstractValues<*, *, *>>> ref(
-        propertyDefinitionGetter: P.()-> W
+    infix fun <T : Any, W : IsPropertyDefinitionWrapper<T, *, *, AbstractValues<*, *, *>>> ref(
+        propertyDefinitionGetter: P.() -> W
     ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> IsPropertyReference<T, W, *> =
         { this.definition.dataModel.ref(this.ref(it), propertyDefinitionGetter) }
 
     /** For quick notation to fetch property references with [referenceGetter] within embedded object */
-    operator fun <T: Any, W: IsPropertyDefinition<T>, R: IsPropertyReference<T, W, *>> invoke(
+    operator fun <T : Any, W : IsPropertyDefinition<T>, R : IsPropertyReference<T, W, *>> invoke(
         referenceGetter: P.() ->
             (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> R
     ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> R =

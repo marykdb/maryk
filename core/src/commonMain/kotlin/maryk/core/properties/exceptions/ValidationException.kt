@@ -27,13 +27,17 @@ abstract class ValidationException internal constructor(
     internal abstract val validationExceptionType: ValidationExceptionType
 
     internal companion object {
-        internal fun <DO: ValidationException> addReference(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> AnyPropertyReference?) {
+        internal fun <DO : ValidationException> addReference(
+            definitions: ObjectPropertyDefinitions<DO>,
+            getter: (DO) -> AnyPropertyReference?
+        ) {
             definitions.add(
                 index = 1, name = "reference",
                 definition = ContextualPropertyReferenceDefinition<RequestContext>(
                     required = false,
                     contextualResolver = {
-                        it?.dataModel?.properties as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()
+                        it?.dataModel?.properties as? AbstractPropertyDefinitions<*>?
+                            ?: throw ContextNotFoundException()
                     }
                 ),
                 getter = getter,
@@ -43,7 +47,11 @@ abstract class ValidationException internal constructor(
                 }
             )
         }
-        internal fun <DO: ValidationException> addValue(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> String?) {
+
+        internal fun <DO : ValidationException> addValue(
+            definitions: ObjectPropertyDefinitions<DO>,
+            getter: (DO) -> String?
+        ) {
             definitions.add(
                 2, "value",
                 StringDefinition(),

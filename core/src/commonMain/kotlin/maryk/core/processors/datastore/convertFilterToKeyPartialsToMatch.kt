@@ -29,7 +29,7 @@ fun convertFilterToKeyPartsToMatch(
     listOfUniqueFilters: MutableList<UniqueToMatch>
 ) {
     when (filter) {
-        null -> {} // Skip
+        null -> Unit // Skip
         is Equals -> walkFilterReferencesAndValues(
             filter,
             dataModel,
@@ -80,7 +80,7 @@ fun convertFilterToKeyPartsToMatch(
                     )
                 }
                 list.sortWith(object : Comparator<ByteArray> {
-                    override fun compare(a : ByteArray, b: ByteArray) = a.compareTo(b)
+                    override fun compare(a: ByteArray, b: ByteArray) = a.compareTo(b)
                 })
                 listOfKeyParts.add(
                     KeyPartialToBeOneOf(index, list)
@@ -103,7 +103,9 @@ fun convertFilterToKeyPartsToMatch(
                 convertFilterToKeyPartsToMatch(dataModel, aFilter, listOfKeyParts, listOfUniqueFilters)
             }
         }
-        else -> { /** Skip since other filters are not supported for key scan ranges*/ }
+        else -> {
+            /** Skip since other filters are not supported for key scan ranges*/
+        }
     }
 }
 
@@ -123,10 +125,10 @@ private fun convertValueToKeyBytes(
 }
 
 /** Walk [referenceValuePairs] using [dataModel] into [handleKeyBytes] */
-private fun <T: Any> walkFilterReferencesAndValues(
+private fun <T : Any> walkFilterReferencesAndValues(
     referenceValuePairs: IsReferenceValuePairsFilter<T>,
     dataModel: IsRootValuesDataModel<*>,
-    handleUniqueMatchers : ((UniqueToMatch) -> Boolean)? = null,
+    handleUniqueMatchers: ((UniqueToMatch) -> Boolean)? = null,
     handleKeyBytes: (Int, ByteArray) -> Unit
 ) {
     for ((reference, value) in referenceValuePairs.referenceValuePairs) {
@@ -159,17 +161,21 @@ private fun <T : Any> createUniqueToMatch(
 )
 
 /** Get key definition by [reference] and [processKeyDefinitionIfFound] using [dataModel] or null if not part of key */
-private fun <T: Any> getKeyDefinitionOrNull(
+private fun <T : Any> getKeyDefinitionOrNull(
     dataModel: IsRootValuesDataModel<*>,
     reference: IsPropertyReference<out T, IsChangeableValueDefinition<out T, IsPropertyContext>, *>,
     processKeyDefinitionIfFound: (Int, Int, IsIndexablePropertyReference<Any>) -> Unit
-){
-    when(val keyDefinition = dataModel.keyDefinition) {
+) {
+    when (val keyDefinition = dataModel.keyDefinition) {
         is Multiple -> {
             for ((index, keyDef) in keyDefinition.references.withIndex()) {
                 if (keyDef.isForPropertyReference(reference)) {
                     @Suppress("UNCHECKED_CAST")
-                    processKeyDefinitionIfFound(index, dataModel.keyIndices[index], keyDef as IsIndexablePropertyReference<Any>)
+                    processKeyDefinitionIfFound(
+                        index,
+                        dataModel.keyIndices[index],
+                        keyDef as IsIndexablePropertyReference<Any>
+                    )
                     break
                 }
             }

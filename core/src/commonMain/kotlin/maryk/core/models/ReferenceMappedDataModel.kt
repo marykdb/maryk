@@ -3,8 +3,8 @@ package maryk.core.models
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ContextualPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.query.DefinedByReference
 import maryk.core.query.RequestContext
@@ -18,7 +18,7 @@ import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
 /** For data models which contains only reference pairs */
-abstract class ReferenceMappedDataModel<DO: Any, CDO: DefinedByReference<*>, P: ObjectPropertyDefinitions<DO>, CP: ObjectPropertyDefinitions<CDO>>(
+abstract class ReferenceMappedDataModel<DO : Any, CDO : DefinedByReference<*>, P : ObjectPropertyDefinitions<DO>, CP : ObjectPropertyDefinitions<CDO>>(
     properties: P,
     private val containedDataModel: QueryDataModel<CDO, CP>,
     private val referenceProperty: ContextualPropertyDefinitionWrapper<AnyPropertyReference, AnyPropertyReference, RequestContext, ContextualPropertyReferenceDefinition<RequestContext>, CDO>
@@ -49,7 +49,11 @@ abstract class ReferenceMappedDataModel<DO: Any, CDO: DefinedByReference<*>, P: 
         writer.writeEndObject()
     }
 
-    private fun <T: Any, CX: IsPropertyContext> IsJsonLikeWriter.writeField(dataObject: CDO, definitionWrapper: IsPropertyDefinitionWrapper<T, T, CX, CDO>, context: CX?) {
+    private fun <T : Any, CX : IsPropertyContext> IsJsonLikeWriter.writeField(
+        dataObject: CDO,
+        definitionWrapper: IsPropertyDefinitionWrapper<T, T, CX, CDO>,
+        context: CX?
+    ) {
         definitionWrapper.getter(dataObject)?.let {
             writeFieldName(definitionWrapper.name)
             definitionWrapper.writeJsonValue(it, this, context)
@@ -57,7 +61,7 @@ abstract class ReferenceMappedDataModel<DO: Any, CDO: DefinedByReference<*>, P: 
     }
 
     override fun readJson(reader: IsJsonLikeReader, context: RequestContext?): ObjectValues<DO, P> {
-        if (reader.currentToken == JsonToken.StartDocument){
+        if (reader.currentToken == JsonToken.StartDocument) {
             reader.nextToken()
         }
 
@@ -78,13 +82,13 @@ abstract class ReferenceMappedDataModel<DO: Any, CDO: DefinedByReference<*>, P: 
                     val valueMap = MutableValueItems()
 
                     valueMap[this.referenceProperty.index] =
-                            this.referenceProperty.definition.fromString(value, context).also {
-                                this.referenceProperty.capture(context, it)
-                            }
+                        this.referenceProperty.definition.fromString(value, context).also {
+                            this.referenceProperty.capture(context, it)
+                        }
 
                     reader.nextToken()
 
-                    if(reader.currentToken != JsonToken.NullValue) {
+                    if (reader.currentToken != JsonToken.NullValue) {
                         if (reader.currentToken !is JsonToken.StartObject) {
                             throw IllegalJsonOperation("Expected object below reference")
                         }

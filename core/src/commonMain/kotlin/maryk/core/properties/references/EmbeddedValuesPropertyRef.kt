@@ -19,23 +19,24 @@ import maryk.core.values.Values
  */
 class EmbeddedValuesPropertyRef<
     DM : IsValuesDataModel<P>,
-    P: PropertyDefinitions,
-    CX: IsPropertyContext
+    P : PropertyDefinitions,
+    CX : IsPropertyContext
 > internal constructor(
     propertyDefinition: EmbeddedValuesPropertyDefinitionWrapper<DM, P, CX>,
     parentReference: CanHaveComplexChildReference<*, *, *, *>?
-): CanHaveComplexChildReference<Values<DM, P>, EmbeddedValuesPropertyDefinitionWrapper<DM, P, CX>, CanHaveComplexChildReference<*, *, *, *>, AbstractValues<*, *, *>>(
+) : CanHaveComplexChildReference<Values<DM, P>, EmbeddedValuesPropertyDefinitionWrapper<DM, P, CX>, CanHaveComplexChildReference<*, *, *, *>, AbstractValues<*, *, *>>(
     propertyDefinition, parentReference
-), HasEmbeddedPropertyReference<Values<DM, P>>, IsPropertyReferenceForValues<Values<DM, P>, Values<DM, P>, EmbeddedValuesPropertyDefinitionWrapper<DM, P, CX>, CanHaveComplexChildReference<*, *, *, *>> {
+), HasEmbeddedPropertyReference<Values<DM, P>>,
+    IsPropertyReferenceForValues<Values<DM, P>, Values<DM, P>, EmbeddedValuesPropertyDefinitionWrapper<DM, P, CX>, CanHaveComplexChildReference<*, *, *, *>> {
     override val name = this.propertyDefinition.name
 
     override fun getEmbedded(name: String, context: IsPropertyContext?) =
         if (this.propertyDefinition.definition is ContextualEmbeddedValuesDefinition<*> && context is ContainsDataModelContext<*>) {
             (context.dataModel as? IsValuesDataModel<*>)?.properties?.get(name)?.ref(this)
-                    ?: throw DefNotFoundException("Embedded Definition with $name not found")
+                ?: throw DefNotFoundException("Embedded Definition with $name not found")
         } else {
             this.propertyDefinition.definition.dataModel.properties[name]?.ref(this)
-                    ?: throw DefNotFoundException("Embedded Definition with $name not found")
+                ?: throw DefNotFoundException("Embedded Definition with $name not found")
         }
 
     override fun getEmbeddedRef(reader: () -> Byte, context: IsPropertyContext?): AnyPropertyReference {
@@ -47,19 +48,30 @@ class EmbeddedValuesPropertyRef<
         } ?: throw DefNotFoundException("Embedded Definition with $index not found")
     }
 
-    override fun getEmbeddedStorageRef(reader: () -> Byte, context: IsPropertyContext?, referenceType: CompleteReferenceType, isDoneReading: () -> Boolean): AnyPropertyReference {
+    override fun getEmbeddedStorageRef(
+        reader: () -> Byte,
+        context: IsPropertyContext?,
+        referenceType: CompleteReferenceType,
+        isDoneReading: () -> Boolean
+    ): AnyPropertyReference {
         return decodeStorageIndex(reader) { index, type ->
-            val propertyReference = if (this.propertyDefinition.definition is ContextualEmbeddedValuesDefinition<*> && context is ContainsDataModelContext<*>) {
-                (context.dataModel as? IsValuesDataModel<*>)?.properties?.get(index)?.ref(this)
-            } else {
-                this.propertyDefinition.definition.dataModel.properties[index]?.ref(this)
-            } ?: throw DefNotFoundException("Embedded Definition with $name not found")
+            val propertyReference =
+                if (this.propertyDefinition.definition is ContextualEmbeddedValuesDefinition<*> && context is ContainsDataModelContext<*>) {
+                    (context.dataModel as? IsValuesDataModel<*>)?.properties?.get(index)?.ref(this)
+                } else {
+                    this.propertyDefinition.definition.dataModel.properties[index]?.ref(this)
+                } ?: throw DefNotFoundException("Embedded Definition with $name not found")
 
             if (isDoneReading()) {
                 propertyReference
             } else {
                 when (propertyReference) {
-                    is HasEmbeddedPropertyReference<*> -> propertyReference.getEmbeddedStorageRef(reader, context, type, isDoneReading)
+                    is HasEmbeddedPropertyReference<*> -> propertyReference.getEmbeddedStorageRef(
+                        reader,
+                        context,
+                        type,
+                        isDoneReading
+                    )
                     else -> throw DefNotFoundException("More property references found on property that cannot have any: $propertyReference")
                 }
             }

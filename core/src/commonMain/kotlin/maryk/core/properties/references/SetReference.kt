@@ -13,14 +13,14 @@ import maryk.lib.exceptions.ParseException
  * Reference to a Set property of type [T] defined by [propertyDefinition] and context [CX]
  * under parent referred by [parentReference]
  */
-open class SetReference<T: Any, CX: IsPropertyContext> internal constructor(
+open class SetReference<T : Any, CX : IsPropertyContext> internal constructor(
     propertyDefinition: SetPropertyDefinitionWrapper<T, CX, *>,
     parentReference: CanHaveComplexChildReference<*, *, *, *>?
 ) : PropertyReferenceForValues<Set<T>, Set<T>, SetPropertyDefinitionWrapper<T, CX, *>, CanHaveComplexChildReference<*, *, *, *>>(
     propertyDefinition,
     parentReference
 ), HasEmbeddedPropertyReference<T> {
-    override fun getEmbedded(name: String, context: IsPropertyContext?) = when(name[0]) {
+    override fun getEmbedded(name: String, context: IsPropertyContext?) = when (name[0]) {
         '$' -> SetItemReference(
             propertyDefinition.definition.valueDefinition.fromString(
                 name.substring(1)
@@ -33,7 +33,7 @@ open class SetReference<T: Any, CX: IsPropertyContext> internal constructor(
 
     override fun getEmbeddedRef(reader: () -> Byte, context: IsPropertyContext?): AnyPropertyReference {
         val protoKey = ProtoBuf.readKey(reader)
-        return when(protoKey.tag) {
+        return when (protoKey.tag) {
             0 -> {
                 SetItemReference(
                     this.propertyDefinition.definition.valueDefinition.readTransportBytes(
@@ -48,10 +48,16 @@ open class SetReference<T: Any, CX: IsPropertyContext> internal constructor(
         }
     }
 
-    override fun getEmbeddedStorageRef(reader: () -> Byte, context: IsPropertyContext?, referenceType: CompleteReferenceType, isDoneReading: () -> Boolean): AnyPropertyReference {
+    override fun getEmbeddedStorageRef(
+        reader: () -> Byte,
+        context: IsPropertyContext?,
+        referenceType: CompleteReferenceType,
+        isDoneReading: () -> Boolean
+    ): AnyPropertyReference {
         return if (referenceType == CompleteReferenceType.SET) {
             @Suppress("UNCHECKED_CAST")
-            val setValueDefinition = (this.propertyDefinition.definition.valueDefinition as IsSimpleValueDefinition<T, *>)
+            val setValueDefinition =
+                (this.propertyDefinition.definition.valueDefinition as IsSimpleValueDefinition<T, *>)
 
             val setItem = setValueDefinition.readStorageBytes(
                 (setValueDefinition as IsFixedBytesEncodable<*>).byteSize,

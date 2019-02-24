@@ -9,9 +9,9 @@ import maryk.core.properties.graph.IsPropRefGraphNode
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
 
-interface IsRootValuesDataModel<P: PropertyDefinitions> : IsRootDataModel<P>, IsValuesDataModel<P>
+interface IsRootValuesDataModel<P : PropertyDefinitions> : IsRootDataModel<P>, IsValuesDataModel<P>
 
-interface IsRootDataModel<P: IsPropertyDefinitions> : IsNamedDataModel<P> {
+interface IsRootDataModel<P : IsPropertyDefinitions> : IsNamedDataModel<P> {
     val keyDefinition: IsIndexable
     val indices: List<IsIndexable>?
 

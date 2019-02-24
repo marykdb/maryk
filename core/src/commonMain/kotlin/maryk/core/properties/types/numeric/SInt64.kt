@@ -23,6 +23,7 @@ object SInt64 : NumberDescriptor<Long>(
         val zigZaggedValue = value.encodeZigZag()
         zigZaggedValue.writeVarBytes(writer)
     }
+
     override fun ofString(value: String) = value.toLong()
     override fun ofDouble(value: Double) = value.toLong()
     override fun toDouble(value: Long) = value.toDouble()

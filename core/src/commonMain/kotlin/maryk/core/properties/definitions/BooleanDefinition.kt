@@ -15,12 +15,11 @@ data class BooleanDefinition(
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val default: Boolean? = null
-):
+) :
     IsSimpleValueDefinition<Boolean, IsPropertyContext>,
     IsSerializableFixedBytesEncodable<Boolean, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<Boolean>,
-    HasDefaultValueDefinition<Boolean>
-{
+    HasDefaultValueDefinition<Boolean> {
     override val propertyDefinitionType = PropertyDefinitionType.Boolean
     override val wireType = WireType.VAR_INT
     override val byteSize = 1
@@ -33,7 +32,7 @@ data class BooleanDefinition(
 
     override fun calculateTransportByteLength(value: Boolean) = this.byteSize
 
-    override fun fromString(string: String) = when(string) {
+    override fun fromString(string: String) = when (string) {
         "true" -> true
         "false" -> false
         else -> throw ParseException(string)

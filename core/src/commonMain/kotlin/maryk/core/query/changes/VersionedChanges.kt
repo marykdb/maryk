@@ -17,9 +17,13 @@ data class VersionedChanges(
     override fun toString() = "VersionedChanges($version)[${changes.joinToString()}]"
 
     object Properties : ObjectPropertyDefinitions<VersionedChanges>() {
-        val version = add(1, "version", NumberDefinition(
-            type = UInt64
-        ), VersionedChanges::version)
+        val version = add(
+            1, "version",
+            NumberDefinition(
+                type = UInt64
+            ),
+            VersionedChanges::version
+        )
 
         val changes = add(2, "changes",
             ListDefinition(
@@ -35,7 +39,7 @@ data class VersionedChanges(
         )
     }
 
-    companion object: QueryDataModel<VersionedChanges, Properties>(
+    companion object : QueryDataModel<VersionedChanges, Properties>(
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<VersionedChanges, Properties>) = VersionedChanges(

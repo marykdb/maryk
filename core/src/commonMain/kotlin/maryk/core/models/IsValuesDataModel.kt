@@ -8,15 +8,20 @@ import maryk.core.query.RequestContext
 import maryk.core.values.IsValueItems
 import maryk.core.values.Values
 
-interface IsValuesDataModel<P: PropertyDefinitions>: IsDataModel<P>, IsNamedDataModel<P>
+interface IsValuesDataModel<P : PropertyDefinitions> : IsDataModel<P>, IsNamedDataModel<P>
 
 /** A DataModel which holds properties and can be validated */
-interface IsTypedValuesDataModel<DM: IsValuesDataModel<P>, P: PropertyDefinitions>: IsDataModelWithValues<Any, P, Values<DM, P>>, IsValuesDataModel<P> {
+interface IsTypedValuesDataModel<DM : IsValuesDataModel<P>, P : PropertyDefinitions> :
+    IsDataModelWithValues<Any, P, Values<DM, P>>,
+    IsValuesDataModel<P> {
     /**
      * Validate a [map] with values and get reference from [refGetter] if exception needs to be thrown
      * @throws ValidationUmbrellaException if input was invalid
      */
-    fun validate(values: Values<DM, P>, refGetter: () -> IsPropertyReference<Values<DM, P>, IsPropertyDefinition<Values<DM, P>>, *>? = { null })
+    fun validate(
+        values: Values<DM, P>,
+        refGetter: () -> IsPropertyReference<Values<DM, P>, IsPropertyDefinition<Values<DM, P>>, *>? = { null }
+    )
 
     /** Create a ObjectValues with given [createValues] function */
     @Suppress("UNCHECKED_CAST")
@@ -25,5 +30,8 @@ interface IsTypedValuesDataModel<DM: IsValuesDataModel<P>, P: PropertyDefinition
 }
 
 /** Create a ObjectValues with given [createMap] function */
-fun <DM: IsValuesDataModel<P>, P: PropertyDefinitions> DM.values(context: RequestContext?, createMap: P.() -> IsValueItems) =
+fun <DM : IsValuesDataModel<P>, P : PropertyDefinitions> DM.values(
+    context: RequestContext?,
+    createMap: P.() -> IsValueItems
+) =
     Values(this, createMap(this.properties), context)

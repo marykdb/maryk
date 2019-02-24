@@ -17,9 +17,9 @@ import maryk.json.JsonReader
 import maryk.json.JsonWriter
 
 /** Definition for an embedded Values from a context resolved from [contextualResolver] */
-internal data class ContextualEmbeddedValuesDefinition<CX: IsPropertyContext>(
+internal data class ContextualEmbeddedValuesDefinition<CX : IsPropertyContext>(
     val contextualResolver: (context: CX?) -> AbstractValuesDataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, CX>
-): IsEmbeddedValuesDefinition<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, CX> {
+) : IsEmbeddedValuesDefinition<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, CX> {
     override val dataModel: IsValuesDataModel<PropertyDefinitions>
         get() = throw Exception("dataModel is contextually determined")
     override val propertyDefinitionType = PropertyDefinitionType.Embed
@@ -50,7 +50,12 @@ internal data class ContextualEmbeddedValuesDefinition<CX: IsPropertyContext>(
     override fun calculateTransportByteLength(value: ValuesImpl, cacher: WriteCacheWriter, context: CX?) =
         contextualResolver(context).calculateProtoBufLength(value, cacher, null)
 
-    override fun writeTransportBytes(value: ValuesImpl, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?) =
+    override fun writeTransportBytes(
+        value: ValuesImpl,
+        cacheGetter: WriteCacheReader,
+        writer: (byte: Byte) -> Unit,
+        context: CX?
+    ) =
         contextualResolver(context).writeProtoBuf(value, cacheGetter, writer, context)
 
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?) =

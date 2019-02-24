@@ -30,7 +30,7 @@ import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
 /** Definition for Map property */
-data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext> internal constructor(
+data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal constructor(
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val minSize: UInt? = null,
@@ -43,8 +43,7 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext> internal constru
     IsByteTransportableMap<K, V, CX>,
     IsMapDefinition<K, V, CX>,
     IsTransportablePropertyDefinitionType<Map<K, V>>,
-    HasDefaultValueDefinition<Map<K, V>>
-{
+    HasDefaultValueDefinition<Map<K, V>> {
     override val propertyDefinitionType = PropertyDefinitionType.Map
 
     init {
@@ -66,7 +65,11 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext> internal constru
 
     override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
-    override fun validateWithRef(previousValue: Map<K,V>?, newValue: Map<K,V>?, refGetter: () -> IsPropertyReference<Map<K, V>, IsPropertyDefinition<Map<K,V>>, *>?) {
+    override fun validateWithRef(
+        previousValue: Map<K, V>?,
+        newValue: Map<K, V>?,
+        refGetter: () -> IsPropertyReference<Map<K, V>, IsPropertyDefinition<Map<K, V>>, *>?
+    ) {
         super<IsByteTransportableMap>.validateWithRef(previousValue, newValue, refGetter)
 
         if (newValue != null) {
@@ -143,7 +146,12 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext> internal constru
         return map
     }
 
-    override fun calculateTransportByteLengthWithKey(index: Int, value: Map<K, V>, cacher: WriteCacheWriter, context: CX?): Int {
+    override fun calculateTransportByteLengthWithKey(
+        index: Int,
+        value: Map<K, V>,
+        cacher: WriteCacheWriter,
+        context: CX?
+    ): Int {
         var totalByteLength = 0
         for ((key, item) in value) {
             totalByteLength += ProtoBuf.calculateKeyLength(index)
@@ -163,7 +171,13 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext> internal constru
         return totalByteLength
     }
 
-    override fun writeTransportBytesWithKey(index: Int, value: Map<K, V>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?) {
+    override fun writeTransportBytesWithKey(
+        index: Int,
+        value: Map<K, V>,
+        cacheGetter: WriteCacheReader,
+        writer: (byte: Byte) -> Unit,
+        context: CX?
+    ) {
         value.forEach { (key, item) ->
             ProtoBuf.writeKey(index, WireType.LENGTH_DELIMITED, writer)
             cacheGetter.nextLengthFromCache().writeVarBytes(writer)
@@ -191,76 +205,78 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext> internal constru
         return Pair(key, value)
     }
 
-    object Model : ContextualDataModel<MapDefinition<*, *, *>, ObjectPropertyDefinitions<MapDefinition<*, *, *>>, ContainsDefinitionsContext, KeyValueDefinitionContext>(
-        contextTransformer = { KeyValueDefinitionContext(it) },
-        properties = object : ObjectPropertyDefinitions<MapDefinition<*, *, *>>() {
-            init {
-                IsPropertyDefinition.addRequired(this, MapDefinition<*, *, *>::required)
-                IsPropertyDefinition.addFinal(this, MapDefinition<*, *, *>::final)
-                HasSizeDefinition.addMinSize(3, this, MapDefinition<*, *, *>::minSize)
-                HasSizeDefinition.addMaxSize(4, this, MapDefinition<*, *, *>::maxSize)
+    object Model :
+        ContextualDataModel<MapDefinition<*, *, *>, ObjectPropertyDefinitions<MapDefinition<*, *, *>>, ContainsDefinitionsContext, KeyValueDefinitionContext>(
+            contextTransformer = { KeyValueDefinitionContext(it) },
+            properties = object : ObjectPropertyDefinitions<MapDefinition<*, *, *>>() {
+                init {
+                    IsPropertyDefinition.addRequired(this, MapDefinition<*, *, *>::required)
+                    IsPropertyDefinition.addFinal(this, MapDefinition<*, *, *>::final)
+                    HasSizeDefinition.addMinSize(3, this, MapDefinition<*, *, *>::minSize)
+                    HasSizeDefinition.addMaxSize(4, this, MapDefinition<*, *, *>::maxSize)
 
-                add(5, "keyDefinition",
-                    ContextTransformerDefinition(
-                        contextTransformer = { it?.definitionsContext },
-                        definition = MultiTypeDefinition(
-                            typeEnum = PropertyDefinitionType,
-                            definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
-                        )
-                    ),
-                    getter = MapDefinition<*, *, *>::keyDefinition,
-                    toSerializable = { value, _ ->
-                        val defType = value!! as IsTransportablePropertyDefinitionType<*>
-                        TypedValue(defType.propertyDefinitionType, value)
-                    },
-                    fromSerializable = {
-                        @Suppress("UNCHECKED_CAST")
-                        it?.value as IsSimpleValueDefinition<Any, DefinitionsContext>?
-                    },
-                    capturer = { context: KeyValueDefinitionContext, value ->
-                        @Suppress("UNCHECKED_CAST")
-                        context.keyDefinion = value.value as IsSimpleValueDefinition<Any, IsPropertyContext>
-                    }
-                )
-
-                add(6, "valueDefinition",
-                    ContextTransformerDefinition(
-                        contextTransformer = { it?.definitionsContext },
-                        definition = MultiTypeDefinition(
-                            typeEnum = PropertyDefinitionType,
-                            definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
-                        )
-                    ),
-                    getter = MapDefinition<*, *, *>::valueDefinition,
-                    toSerializable = { value, _ ->
-                        val defType = value!! as IsTransportablePropertyDefinitionType<*>
-                        TypedValue(defType.propertyDefinitionType, value)
-                    },
-                    fromSerializable = {
-                        @Suppress("UNCHECKED_CAST")
-                        it?.value as IsValueDefinition<Any, DefinitionsContext>?
-                    },
-                    capturer = { context: KeyValueDefinitionContext, value ->
-                        @Suppress("UNCHECKED_CAST")
-                        context.valueDefinion = value.value as IsValueDefinition<Any, IsPropertyContext>
-                    }
-                )
-
-                @Suppress("UNCHECKED_CAST")
-                add(7, "default",
-                    ContextualMapDefinition(
-                        contextualResolver = { context: KeyValueDefinitionContext? ->
-                            context?.let {
-                                it.mapDefinition as IsByteTransportableMap<Any, Any, KeyValueDefinitionContext>
-                            } ?: throw ContextNotFoundException()
+                    add(5, "keyDefinition",
+                        ContextTransformerDefinition(
+                            contextTransformer = { it?.definitionsContext },
+                            definition = MultiTypeDefinition(
+                                typeEnum = PropertyDefinitionType,
+                                definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
+                            )
+                        ),
+                        getter = MapDefinition<*, *, *>::keyDefinition,
+                        toSerializable = { value, _ ->
+                            val defType = value!! as IsTransportablePropertyDefinitionType<*>
+                            TypedValue(defType.propertyDefinitionType, value)
                         },
-                        required = false
-                    ) as IsContextualEncodable<Map<out Any, Any>, KeyValueDefinitionContext>,
-                    MapDefinition<*, *, *>::default
-                )
+                        fromSerializable = {
+                            @Suppress("UNCHECKED_CAST")
+                            it?.value as IsSimpleValueDefinition<Any, DefinitionsContext>?
+                        },
+                        capturer = { context: KeyValueDefinitionContext, value ->
+                            @Suppress("UNCHECKED_CAST")
+                            context.keyDefinion = value.value as IsSimpleValueDefinition<Any, IsPropertyContext>
+                        }
+                    )
+
+                    add(6, "valueDefinition",
+                        ContextTransformerDefinition(
+                            contextTransformer = { it?.definitionsContext },
+                            definition = MultiTypeDefinition(
+                                typeEnum = PropertyDefinitionType,
+                                definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
+                            )
+                        ),
+                        getter = MapDefinition<*, *, *>::valueDefinition,
+                        toSerializable = { value, _ ->
+                            val defType = value!! as IsTransportablePropertyDefinitionType<*>
+                            TypedValue(defType.propertyDefinitionType, value)
+                        },
+                        fromSerializable = {
+                            @Suppress("UNCHECKED_CAST")
+                            it?.value as IsValueDefinition<Any, DefinitionsContext>?
+                        },
+                        capturer = { context: KeyValueDefinitionContext, value ->
+                            @Suppress("UNCHECKED_CAST")
+                            context.valueDefinion = value.value as IsValueDefinition<Any, IsPropertyContext>
+                        }
+                    )
+
+                    @Suppress("UNCHECKED_CAST")
+                    add(
+                        7, "default",
+                        ContextualMapDefinition(
+                            contextualResolver = { context: KeyValueDefinitionContext? ->
+                                context?.let {
+                                    it.mapDefinition as IsByteTransportableMap<Any, Any, KeyValueDefinitionContext>
+                                } ?: throw ContextNotFoundException()
+                            },
+                            required = false
+                        ) as IsContextualEncodable<Map<out Any, Any>, KeyValueDefinitionContext>,
+                        MapDefinition<*, *, *>::default
+                    )
+                }
             }
-        }
-    ) {
+        ) {
         override fun invoke(values: SimpleObjectValues<MapDefinition<*, *, *>>) = MapDefinition(
             required = values(1),
             final = values(2),

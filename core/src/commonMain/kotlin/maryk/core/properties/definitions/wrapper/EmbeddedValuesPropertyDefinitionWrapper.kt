@@ -20,9 +20,9 @@ import maryk.core.values.Values
  * It has an input context of [CX]
  */
 data class EmbeddedValuesPropertyDefinitionWrapper<
-    DM: IsValuesDataModel<P>,
-    P: PropertyDefinitions,
-    CX: IsPropertyContext
+    DM : IsValuesDataModel<P>,
+    P : PropertyDefinitions,
+    CX : IsPropertyContext
 > internal constructor(
     override val index: Int,
     override val name: String,
@@ -35,8 +35,7 @@ data class EmbeddedValuesPropertyDefinitionWrapper<
 ) :
     AbstractPropertyDefinitionWrapper(index, name),
     IsEmbeddedValuesDefinition<DM, P, CX> by definition,
-    IsPropertyDefinitionWrapper<Values<DM, P>, Values<DM, P>, CX, Any>
-{
+    IsPropertyDefinitionWrapper<Values<DM, P>, Values<DM, P>, CX, Any> {
     override val graphType = PropRefGraphType.PropRef
 
     override fun ref(parentRef: AnyPropertyReference?) =
@@ -48,13 +47,13 @@ data class EmbeddedValuesPropertyDefinitionWrapper<
         )
 
     /** Get a top level reference on a model with [propertyDefinitionGetter] */
-    infix fun <T: Any, W: IsPropertyDefinitionWrapper<T, *, *, *>> ref(
-        propertyDefinitionGetter: P.()-> W
+    infix fun <T : Any, W : IsPropertyDefinitionWrapper<T, *, *, *>> ref(
+        propertyDefinitionGetter: P.() -> W
     ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> IsPropertyReference<T, W, IsValues<P>> =
         { this.definition.dataModel.ref(this.ref(it), propertyDefinitionGetter) }
 
     /** For quick notation to fetch property references with [referenceGetter] within embedded object */
-    operator fun <T: Any, W: IsPropertyDefinition<T>, R: IsPropertyReference<T, W, *>> invoke(
+    operator fun <T : Any, W : IsPropertyDefinition<T>, R : IsPropertyReference<T, W, *>> invoke(
         referenceGetter: P.() ->
             (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> R
     ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> R =

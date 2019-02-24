@@ -122,7 +122,7 @@ internal data class PropertyDefinitionsCollectionDefinition(
 }
 
 /** Wrapper specifically to wrap a PropertyDefinitionsCollectionDefinition */
-internal data class PropertyDefinitionsCollectionDefinitionWrapper<in DO: Any>(
+internal data class PropertyDefinitionsCollectionDefinitionWrapper<in DO : Any>(
     override val index: Int,
     override val name: String,
     override val definition: PropertyDefinitionsCollectionDefinition,

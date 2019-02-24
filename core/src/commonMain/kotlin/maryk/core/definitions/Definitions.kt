@@ -30,7 +30,7 @@ import maryk.lib.exceptions.ParseException
 data class Definitions(
     val definitions: List<MarykPrimitive>
 ) {
-    constructor(vararg definition: MarykPrimitive): this(definition.toList())
+    constructor(vararg definition: MarykPrimitive) : this(definition.toList())
 
     internal object Properties : ObjectPropertyDefinitions<Definitions>() {
         @Suppress("UNCHECKED_CAST")
@@ -88,7 +88,7 @@ data class Definitions(
                                 }
                             ),
                             capturer = { context, value ->
-                                context?.let{
+                                context?.let {
                                     it.enums[value.name] = value
                                 } ?: throw ContextNotFoundException()
                             }
@@ -103,15 +103,20 @@ data class Definitions(
     }
 
     @Suppress("UNCHECKED_CAST")
-    internal companion object: SingleValueDataModel<List<TypedValue<PrimitiveType, MarykPrimitive>>, List<MarykPrimitive>, Definitions, Properties, ContainsDefinitionsContext>(
-        properties = Properties,
-        singlePropertyDefinition = Properties.definitions as IsPropertyDefinitionWrapper<List<TypedValue<PrimitiveType, MarykPrimitive>>, List<MarykPrimitive>, ContainsDefinitionsContext, Definitions>
-    ) {
+    internal companion object :
+        SingleValueDataModel<List<TypedValue<PrimitiveType, MarykPrimitive>>, List<MarykPrimitive>, Definitions, Properties, ContainsDefinitionsContext>(
+            properties = Properties,
+            singlePropertyDefinition = Properties.definitions as IsPropertyDefinitionWrapper<List<TypedValue<PrimitiveType, MarykPrimitive>>, List<MarykPrimitive>, ContainsDefinitionsContext, Definitions>
+        ) {
         override fun invoke(values: ObjectValues<Definitions, Properties>) = Definitions(
             definitions = values(1)
         )
 
-        override fun writeJsonValue(value: List<TypedValue<PrimitiveType, MarykPrimitive>>, writer: IsJsonLikeWriter, context: ContainsDefinitionsContext?) {
+        override fun writeJsonValue(
+            value: List<TypedValue<PrimitiveType, MarykPrimitive>>,
+            writer: IsJsonLikeWriter,
+            context: ContainsDefinitionsContext?
+        ) {
             writer.writeStartObject()
             for (item in value) {
                 writer.writeFieldName(item.value.name)

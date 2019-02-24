@@ -17,26 +17,28 @@ import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.pairs.ReferenceValuePair
 
 /** Reference to map value [V] below [key] of [K] contained in map referred by [parentReference] */
-class MapValueReference<K: Any, V: Any, CX: IsPropertyContext> internal constructor(
+class MapValueReference<K : Any, V : Any, CX : IsPropertyContext> internal constructor(
     val key: K,
     val mapDefinition: IsMapDefinition<K, V, CX>,
     parentReference: MapReference<K, V, CX>?
 ) : CanHaveComplexChildReference<V, IsPropertyDefinition<V>, MapReference<K, V, CX>, Map<K, V>>(
     mapDefinition.valueDefinition, parentReference
 ) {
-    override val completeName get() = this.parentReference?.let {
-        "${it.completeName}.@$key"
-    } ?: "@$key"
+    override val completeName
+        get() = this.parentReference?.let {
+            "${it.completeName}.@$key"
+        } ?: "@$key"
 
     /** Convenience infix method to create Reference [value] pairs */
     @Suppress("UNCHECKED_CAST")
-    infix fun <T: Any> with(value: T) =
+    infix fun <T : Any> with(value: T) =
         ReferenceValuePair(this as IsPropertyReference<T, IsChangeableValueDefinition<T, IsPropertyContext>, *>, value)
 
     override fun resolveFromAny(value: Any): Any {
         @Suppress("UNCHECKED_CAST")
         val map = (value as? Map<K, V>) ?: throw UnexpectedValueException("Expected Map to get value by reference")
-        return map[this.key] as Any? ?: throw UnexpectedValueException("Expected Map to contain key to get value by reference")
+        return map[this.key] as Any?
+            ?: throw UnexpectedValueException("Expected Map to contain key to get value by reference")
     }
 
     override fun calculateTransportByteLength(cacher: WriteCacheWriter): Int {

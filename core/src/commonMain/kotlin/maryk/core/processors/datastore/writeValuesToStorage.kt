@@ -30,14 +30,14 @@ import maryk.core.values.AbstractValues
 import maryk.core.values.AnyAbstractValues
 
 @kotlin.Suppress("unused")
-sealed class StorageTypeEnum<T: IsPropertyDefinition<*>>(val referenceType: CompleteReferenceType) {
-    object ObjectDelete: StorageTypeEnum<IsPropertyDefinition<Boolean>>(DELETE)
-    object Value: StorageTypeEnum<IsSimpleValueDefinition<Any, IsPropertyContext>>(CompleteReferenceType.VALUE)
-    object ListSize: StorageTypeEnum<IsListDefinition<Any, IsPropertyContext>>(LIST)
-    object SetSize: StorageTypeEnum<IsSetDefinition<Any, IsPropertyContext>>(SET)
-    object MapSize: StorageTypeEnum<IsMapDefinition<Any, Any, IsPropertyContext>>(MAP)
-    object TypeValue: StorageTypeEnum<IsMultiTypeDefinition<IndexedEnum<Any>, IsPropertyContext>>(TYPE)
-    object Embed: StorageTypeEnum<IsEmbeddedValuesDefinition<*, *, *>>(EMBED)
+sealed class StorageTypeEnum<T : IsPropertyDefinition<*>>(val referenceType: CompleteReferenceType) {
+    object ObjectDelete : StorageTypeEnum<IsPropertyDefinition<Boolean>>(DELETE)
+    object Value : StorageTypeEnum<IsSimpleValueDefinition<Any, IsPropertyContext>>(CompleteReferenceType.VALUE)
+    object ListSize : StorageTypeEnum<IsListDefinition<Any, IsPropertyContext>>(LIST)
+    object SetSize : StorageTypeEnum<IsSetDefinition<Any, IsPropertyContext>>(SET)
+    object MapSize : StorageTypeEnum<IsMapDefinition<Any, Any, IsPropertyContext>>(MAP)
+    object TypeValue : StorageTypeEnum<IsMultiTypeDefinition<IndexedEnum<Any>, IsPropertyContext>>(TYPE)
+    object Embed : StorageTypeEnum<IsEmbeddedValuesDefinition<*, *, *>>(EMBED)
 
     @Suppress("UNCHECKED_CAST")
     fun castDefinition(definition: IsPropertyDefinition<*>) = definition as T
@@ -50,7 +50,7 @@ internal typealias QualifierWriter = ((Byte) -> Unit) -> Unit
  * Walk Values and process storable values.
  * Pass [valueWriter] to process values
  */
-fun <DM: IsDataModel<P>, P: AbstractPropertyDefinitions<*>> AbstractValues<*, DM, P>.writeToStorage(
+fun <DM : IsDataModel<P>, P : AbstractPropertyDefinitions<*>> AbstractValues<*, DM, P>.writeToStorage(
     valueWriter: ValueWriter<IsPropertyDefinition<*>>
 ) = this.writeToStorage(0, null, valueWriter)
 
@@ -59,7 +59,7 @@ fun <DM: IsDataModel<P>, P: AbstractPropertyDefinitions<*>> AbstractValues<*, DM
  * [qualifierCount], [qualifierWriter] define the count and writer for any parent property
  * Pass [valueWriter] to process values
  */
-fun <DM: IsDataModel<P>, P: AbstractPropertyDefinitions<*>> AbstractValues<*, DM, P>.writeToStorage(
+fun <DM : IsDataModel<P>, P : AbstractPropertyDefinitions<*>> AbstractValues<*, DM, P>.writeToStorage(
     qualifierCount: Int = 0,
     qualifierWriter: QualifierWriter? = null,
     valueWriter: ValueWriter<IsPropertyDefinition<*>>
@@ -76,7 +76,7 @@ fun <DM: IsDataModel<P>, P: AbstractPropertyDefinitions<*>> AbstractValues<*, DM
  * If index is -1, this value has no index.
  */
 @Suppress("UNCHECKED_CAST")
-internal fun <T: IsPropertyDefinition<*>> writeValue(
+internal fun <T : IsPropertyDefinition<*>> writeValue(
     index: Int,
     qualifierLength: Int,
     qualifierWriter: QualifierWriter? = null,
@@ -133,15 +133,21 @@ internal fun <T: IsPropertyDefinition<*>> writeValue(
                 throw Exception("Expected Embedded Values Definition for Values object")
             }
 
-            val indexWriter = if (index == -1) qualifierWriter else createQualifierWriter(qualifierWriter, index, ReferenceType.EMBED)
-            val abstractValuesQualifierCount = if (index == -1) qualifierLength else qualifierLength + index.calculateVarIntWithExtraInfoByteSize()
+            val indexWriter =
+                if (index == -1) qualifierWriter else createQualifierWriter(qualifierWriter, index, ReferenceType.EMBED)
+            val abstractValuesQualifierCount =
+                if (index == -1) qualifierLength else qualifierLength + index.calculateVarIntWithExtraInfoByteSize()
 
             // Write complex values existence indicator
             // Write parent value with Unit so it knows this one is not deleted. So possible lingering old types are not read.
             val qualifier = writeQualifier(abstractValuesQualifierCount, indexWriter)
             valueWriter(Embed as StorageTypeEnum<T>, qualifier, definition, Unit)
 
-            (value as AnyAbstractValues).writeToStorage(abstractValuesQualifierCount, indexWriter, valueWriter as ValueWriter<IsPropertyDefinition<*>>)
+            (value as AnyAbstractValues).writeToStorage(
+                abstractValuesQualifierCount,
+                indexWriter,
+                valueWriter as ValueWriter<IsPropertyDefinition<*>>
+            )
         }
         is TypedValue<*, *> -> {
             if (definition !is IsMultiTypeDefinition<*, *>) {

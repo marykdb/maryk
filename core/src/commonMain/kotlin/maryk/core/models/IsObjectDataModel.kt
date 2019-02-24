@@ -15,7 +15,8 @@ import maryk.core.values.ObjectValues
 typealias IsSimpleObjectDataModel<DO> = IsObjectDataModel<DO, ObjectPropertyDefinitions<DO>>
 
 /** A DataModel which holds properties and can be validated */
-interface IsObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>: IsDataModelWithValues<DO, P, ObjectValues<DO, P>> {
+interface IsObjectDataModel<DO : Any, P : ObjectPropertyDefinitions<DO>> :
+    IsDataModelWithValues<DO, P, ObjectValues<DO, P>> {
     /**
      * Validate a [dataObject] and get reference from [refGetter] if exception needs to be thrown
      * @throws ValidationUmbrellaException if input was invalid
@@ -33,14 +34,18 @@ interface IsObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>: IsDataMo
 /**
  * Converts a DataObject back to ObjectValues
  */
-fun <DO: Any, DM: IsObjectDataModel<DO, P>, P: ObjectPropertyDefinitions<DO>> DM.asValues(dataObject: DO, context: RequestContext? = null): ObjectValues<DO, P> {
+fun <DO : Any, DM : IsObjectDataModel<DO, P>, P : ObjectPropertyDefinitions<DO>> DM.asValues(
+    dataObject: DO,
+    context: RequestContext? = null
+): ObjectValues<DO, P> {
     val mutableMap = MutableValueItems()
 
     @Suppress("UNCHECKED_CAST")
     for (property in this.properties) {
         when (property) {
             is ObjectListPropertyDefinitionWrapper<*, *, *, *, *> -> {
-                val dataModel = (property.definition.valueDefinition as EmbeddedObjectDefinition<*, *, *, *, *>).dataModel as IsObjectDataModel<Any, ObjectPropertyDefinitions<Any>>
+                val dataModel =
+                    (property.definition.valueDefinition as EmbeddedObjectDefinition<*, *, *, *, *>).dataModel as IsObjectDataModel<Any, ObjectPropertyDefinitions<Any>>
                 property.getter(dataObject)?.let { list ->
                     mutableMap[property.index] = (list as List<Any>).map {
                         dataModel.asValues(it, context)

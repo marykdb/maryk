@@ -4,14 +4,18 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.types.numeric.UInt32
 
 /** Interface to define something can be en/decoded to fixed byte array */
-interface IsFixedBytesEncodable<T: Any>: IsBytesEncodable<T> {
+interface IsFixedBytesEncodable<T : Any> : IsBytesEncodable<T> {
     /** The byte size */
     val byteSize: Int
 
     override fun calculateStorageByteLength(value: T) = byteSize
 
     companion object {
-        internal fun <DO:Any> addByteSize(index: Int, definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> Int) {
+        internal fun <DO : Any> addByteSize(
+            index: Int,
+            definitions: ObjectPropertyDefinitions<DO>,
+            getter: (DO) -> Int
+        ) {
             definitions.add(index, "byteSize",
                 NumberDefinition(type = UInt32),
                 getter,

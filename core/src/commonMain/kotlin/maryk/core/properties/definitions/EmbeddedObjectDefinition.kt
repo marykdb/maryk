@@ -26,14 +26,13 @@ import maryk.json.JsonWriter
 import maryk.lib.safeLazy
 
 /** Definition for embedded object properties to [dataModel] of type [DM] returning dataObject of [DO] */
-class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out DM : AbstractObjectDataModel<DO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext>(
+class EmbeddedObjectDefinition<DO : Any, P : ObjectPropertyDefinitions<DO>, out DM : AbstractObjectDataModel<DO, P, CXI, CX>, CXI : IsPropertyContext, CX : IsPropertyContext>(
     override val required: Boolean = true,
     override val final: Boolean = false,
     dataModel: Unit.() -> DM,
     override val default: DO? = null
 ) :
-    IsEmbeddedObjectDefinition<DO, P, DM, CXI, CX>
-{
+    IsEmbeddedObjectDefinition<DO, P, DM, CXI, CX> {
     override val propertyDefinitionType = PropertyDefinitionType.EmbedObject
     override val wireType = WireType.LENGTH_DELIMITED
 
@@ -57,7 +56,11 @@ class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out D
 
     override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = dataModel.properties[index]
 
-    override fun validateWithRef(previousValue: DO?, newValue: DO?, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>, *>?) {
+    override fun validateWithRef(
+        previousValue: DO?,
+        newValue: DO?,
+        refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>, *>?
+    ) {
         super.validateWithRef(previousValue, newValue, refGetter)
         if (newValue != null) {
             this.dataModel.validate(
@@ -130,60 +133,64 @@ class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out D
         return result
     }
 
-    object Model : ContextualDataModel<EmbeddedObjectDefinition<*, *, *, *, *>, ObjectPropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>, ContainsDefinitionsContext, ModelContext>(
-        contextTransformer = { ModelContext(it) },
-        properties = object : ObjectPropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>() {
-            init {
-                IsPropertyDefinition.addRequired(this, EmbeddedObjectDefinition<*, *, *, *, *>::required)
-                IsPropertyDefinition.addFinal(this, EmbeddedObjectDefinition<*, *, *, *, *>::final)
-                add(3, "dataModel",
-                    ContextualModelReferenceDefinition(
-                        contextualResolver = { context: ModelContext?, name ->
-                            context?.definitionsContext?.let{
-                                @Suppress("UNCHECKED_CAST")
-                                it.dataModels[name] as? Unit.() -> ObjectDataModel<*, *>
+    object Model :
+        ContextualDataModel<EmbeddedObjectDefinition<*, *, *, *, *>, ObjectPropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>, ContainsDefinitionsContext, ModelContext>(
+            contextTransformer = { ModelContext(it) },
+            properties = object : ObjectPropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>() {
+                init {
+                    IsPropertyDefinition.addRequired(this, EmbeddedObjectDefinition<*, *, *, *, *>::required)
+                    IsPropertyDefinition.addFinal(this, EmbeddedObjectDefinition<*, *, *, *, *>::final)
+                    add(3, "dataModel",
+                        ContextualModelReferenceDefinition(
+                            contextualResolver = { context: ModelContext?, name ->
+                                context?.definitionsContext?.let {
+                                    @Suppress("UNCHECKED_CAST")
+                                    it.dataModels[name] as? Unit.() -> ObjectDataModel<*, *>
                                         ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
-                            } ?: throw ContextNotFoundException()
-                        }
-                    ),
-                    getter = {
-                        { it.dataModel as ObjectDataModel<*, *> }
-                    },
-                    toSerializable = { value: (Unit.() -> ObjectDataModel<*, *>)?, _ ->
-                        value?.invoke(Unit)?.let{ model ->
-                            DataModelReference(model.name, value)
-                        }
-                    },
-                    fromSerializable = { it?.get },
-                    capturer = { context: ModelContext, dataModel: IsDataModelReference<ObjectDataModel<*, *>> ->
-                        context.definitionsContext?.let {
-                            if (!it.dataModels.containsKey(dataModel.name)) {
-                                it.dataModels[dataModel.name] = dataModel.get
+                                } ?: throw ContextNotFoundException()
                             }
-                        } ?: throw ContextNotFoundException()
+                        ),
+                        getter = {
+                            { it.dataModel as ObjectDataModel<*, *> }
+                        },
+                        toSerializable = { value: (Unit.() -> ObjectDataModel<*, *>)?, _ ->
+                            value?.invoke(Unit)?.let { model ->
+                                DataModelReference(model.name, value)
+                            }
+                        },
+                        fromSerializable = { it?.get },
+                        capturer = { context: ModelContext, dataModel: IsDataModelReference<ObjectDataModel<*, *>> ->
+                            context.definitionsContext?.let {
+                                if (!it.dataModels.containsKey(dataModel.name)) {
+                                    it.dataModels[dataModel.name] = dataModel.get
+                                }
+                            } ?: throw ContextNotFoundException()
 
-                        @Suppress("UNCHECKED_CAST")
-                        context.model = dataModel.get as Unit.() -> AbstractObjectDataModel<Any, ObjectPropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>
-                    }
-                )
-
-                add(4, "default",
-                    ContextualEmbeddedObjectDefinition(
-                        contextualResolver = { context: ModelContext? ->
                             @Suppress("UNCHECKED_CAST")
-                            context?.model?.invoke(Unit) as? SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>? ?: throw ContextNotFoundException()
+                            context.model =
+                                dataModel.get as Unit.() -> AbstractObjectDataModel<Any, ObjectPropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>
                         }
-                    ),
-                    EmbeddedObjectDefinition<*, *, *, *, *>::default
-                )
+                    )
+
+                    add(4, "default",
+                        ContextualEmbeddedObjectDefinition(
+                            contextualResolver = { context: ModelContext? ->
+                                @Suppress("UNCHECKED_CAST")
+                                context?.model?.invoke(Unit) as? SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>?
+                                    ?: throw ContextNotFoundException()
+                            }
+                        ),
+                        EmbeddedObjectDefinition<*, *, *, *, *>::default
+                    )
+                }
             }
-        }
-    ) {
-        override fun invoke(values: ObjectValues<EmbeddedObjectDefinition<*, *, *, *, *>, ObjectPropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>>) = EmbeddedObjectDefinition(
-            required = values(1),
-            final = values(2),
-            dataModel = values<Unit.() -> ObjectDataModel<Any, ObjectPropertyDefinitions<Any>>>(3),
-            default = values(4)
-        )
+        ) {
+        override fun invoke(values: ObjectValues<EmbeddedObjectDefinition<*, *, *, *, *>, ObjectPropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>>) =
+            EmbeddedObjectDefinition(
+                required = values(1),
+                final = values(2),
+                dataModel = values<Unit.() -> ObjectDataModel<Any, ObjectPropertyDefinitions<Any>>>(3),
+                default = values(4)
+            )
     }
 }

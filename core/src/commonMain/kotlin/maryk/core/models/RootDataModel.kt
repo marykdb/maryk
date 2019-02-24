@@ -40,7 +40,7 @@ typealias RootDataModelImpl = RootDataModel<IsRootValuesDataModel<PropertyDefini
  *
  * The dataModel can be referenced by the [name] and the properties are defined by a [properties]
  */
-abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
+abstract class RootDataModel<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions>(
     name: String,
     final override val keyDefinition: IsIndexable = UUIDKey,
     final override val indices: List<IsIndexable>? = null,
@@ -51,13 +51,14 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
     override val keyByteSize = checkKeyDefinitionAndCountBytes(keyDefinition)
     override val keyIndices = calculateKeyIndices(keyDefinition)
 
-    private object RootModelProperties:
+    private object RootModelProperties :
         ObjectPropertyDefinitions<RootDataModel<*, *>>(),
-        IsDataModelPropertyDefinitions<RootDataModel<*, *>, PropertyDefinitionsCollectionDefinitionWrapper<RootDataModel<*, *>>>
-    {
-        override val name = IsNamedDataModel.addName(this as ObjectPropertyDefinitions<RootDataModel<*, *>>, RootDataModel<*, *>::name)
+        IsDataModelPropertyDefinitions<RootDataModel<*, *>, PropertyDefinitionsCollectionDefinitionWrapper<RootDataModel<*, *>>> {
+        override val name =
+            IsNamedDataModel.addName(this as ObjectPropertyDefinitions<RootDataModel<*, *>>, RootDataModel<*, *>::name)
         override val properties = DataModel.addProperties(this as ObjectPropertyDefinitions<RootDataModel<*, *>>)
-        val key = add(3, "key",
+        val key = add(
+            3, "key",
             MultiTypeDefinition(
                 typeEnum = IndexKeyPartType,
                 definitionMap = mapOfIndexKeyPartDefinitions
@@ -68,9 +69,10 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
             fromSerializable = { value: TypedValue<IndexKeyPartType, Any>? -> value?.value as IsIndexable },
             getter = RootDataModel<*, *>::keyDefinition
         )
-        val indices = add(4, "indices",
+        val indices = add(
+            4, "indices",
             ListDefinition(
-                valueDefinition =  MultiTypeDefinition(
+                valueDefinition = MultiTypeDefinition(
                     typeEnum = IndexKeyPartType,
                     definitionMap = mapOfIndexKeyPartDefinitions
                 )
@@ -85,15 +87,17 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
         )
     }
 
-    object Model : AbstractObjectDataModel<RootDataModel<*, *>, ObjectPropertyDefinitions<RootDataModel<*, *>>, ContainsDefinitionsContext, ContainsDefinitionsContext>(
-        properties = RootModelProperties
-    ) {
-        override fun invoke(values: ObjectValues<RootDataModel<*, *>, ObjectPropertyDefinitions<RootDataModel<*, *>>>) = object : RootDataModelImpl(
-            name = values(1),
-            properties = values(2),
-            keyDefinition = values(3) ?: UUIDKey,
-            indices = values(4)
-        ){}
+    object Model :
+        AbstractObjectDataModel<RootDataModel<*, *>, ObjectPropertyDefinitions<RootDataModel<*, *>>, ContainsDefinitionsContext, ContainsDefinitionsContext>(
+            properties = RootModelProperties
+        ) {
+        override fun invoke(values: ObjectValues<RootDataModel<*, *>, ObjectPropertyDefinitions<RootDataModel<*, *>>>) =
+            object : RootDataModelImpl(
+                name = values(1),
+                properties = values(2),
+                keyDefinition = values(3) ?: UUIDKey,
+                indices = values(4)
+            ) {}
 
         override fun writeJson(
             values: ObjectValues<RootDataModel<*, *>, ObjectPropertyDefinitions<RootDataModel<*, *>>>,
@@ -106,7 +110,11 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
         /**
          * Overridden to handle earlier definition of keys compared to Properties
          */
-        override fun writeJson(obj: RootDataModel<*, *>, writer: IsJsonLikeWriter, context: ContainsDefinitionsContext?) {
+        override fun writeJson(
+            obj: RootDataModel<*, *>,
+            writer: IsJsonLikeWriter,
+            context: ContainsDefinitionsContext?
+        ) {
             this.writeDataModelJson(writer, context, obj, RootModelProperties)
         }
 
@@ -178,7 +186,7 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
 }
 
 /** Get Key based on [values] */
-fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.key(values: Values<DM, P>): Key<DM> {
+fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.key(values: Values<DM, P>): Key<DM> {
     val bytes = ByteArray(this.keyByteSize)
     var index = 0
     when (val keyDef = this.keyDefinition) {

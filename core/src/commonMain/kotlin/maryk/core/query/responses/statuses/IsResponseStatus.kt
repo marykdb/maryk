@@ -12,7 +12,7 @@ interface IsResponseStatus {
     val statusType: StatusType
 
     companion object {
-        internal fun <DO: Any> addKey(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> Key<*>?) {
+        internal fun <DO : Any> addKey(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> Key<*>?) {
             definitions.add(1, "key", ContextualReferenceDefinition<RequestContext>(
                 contextualResolver = {
                     it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()

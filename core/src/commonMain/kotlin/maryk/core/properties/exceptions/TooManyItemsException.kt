@@ -21,7 +21,7 @@ data class TooManyItemsException internal constructor(
 ) {
     override val validationExceptionType = ValidationExceptionType.TOO_MANY_ITEMS
 
-    internal companion object: SimpleQueryDataModel<TooManyItemsException>(
+    internal companion object : SimpleQueryDataModel<TooManyItemsException>(
         properties = object : ObjectPropertyDefinitions<TooManyItemsException>() {
             init {
                 ValidationException.addReference(this, TooManyItemsException::reference)

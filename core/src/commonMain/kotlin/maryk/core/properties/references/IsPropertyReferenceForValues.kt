@@ -17,18 +17,19 @@ import maryk.core.values.AbstractValues
  * [D] and referred by PropertyReference of type [P].
  */
 interface IsPropertyReferenceForValues<
-    T: Any,
-    TO: Any,
+    T : Any,
+    TO : Any,
     out D : IsPropertyDefinitionWrapper<T, TO, *, *>,
-    out P: AnyPropertyReference
->: IsPropertyReference<T, D, AbstractValues<*, *, *>> {
+    out P : AnyPropertyReference
+> : IsPropertyReference<T, D, AbstractValues<*, *, *>> {
     val name: String
     val parentReference: P?
 
     /** The name of property which is referenced */
-    override val completeName: String get() = this.parentReference?.let {
-        "${it.completeName}.$name"
-    } ?: name
+    override val completeName: String
+        get() = this.parentReference?.let {
+            "${it.completeName}.$name"
+        } ?: name
 
     /** Calculate the transport length of encoding this reference and cache length with [cacher] */
     override fun calculateTransportByteLength(cacher: WriteCacheWriter): Int {
@@ -58,9 +59,10 @@ interface IsPropertyReferenceForValues<
     }
 
     override fun resolveFromAny(value: Any): Any {
-        val valueAsValues = (value as? AbstractValues<*, *, *>)  ?: throw UnexpectedValueException("Expected Values object for getting value by reference")
+        val valueAsValues = (value as? AbstractValues<*, *, *>)
+            ?: throw UnexpectedValueException("Expected Values object for getting value by reference")
 
         return valueAsValues.original(this.propertyDefinition.index)
-                ?: throw UnexpectedValueException("Not Found ${this.propertyDefinition.index}/${this.propertyDefinition.name} on Values")
+            ?: throw UnexpectedValueException("Not Found ${this.propertyDefinition.index}/${this.propertyDefinition.name} on Values")
     }
 }

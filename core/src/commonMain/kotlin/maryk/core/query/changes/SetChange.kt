@@ -1,11 +1,11 @@
 package maryk.core.query.changes
 
 import maryk.core.models.ReferenceMappedDataModel
-import maryk.core.values.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.query.RequestContext
+import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeWriter
 
 /** Defines changes to sets by [setValueChanges] */
@@ -14,7 +14,7 @@ data class SetChange internal constructor(
 ) : IsChange {
     override val changeType = ChangeType.SetChange
 
-    constructor(vararg setValueChange: SetValueChanges<*>): this(setValueChange.toList())
+    constructor(vararg setValueChange: SetValueChanges<*>) : this(setValueChange.toList())
 
     object Properties : ObjectPropertyDefinitions<SetChange>() {
         @Suppress("unused")
@@ -28,7 +28,7 @@ data class SetChange internal constructor(
         )
     }
 
-    companion object: ReferenceMappedDataModel<SetChange, SetValueChanges<*>, Properties, SetValueChanges.Properties>(
+    companion object : ReferenceMappedDataModel<SetChange, SetValueChanges<*>, Properties, SetValueChanges.Properties>(
         properties = SetChange.Properties,
         containedDataModel = SetValueChanges,
         referenceProperty = SetValueChanges.Properties.reference

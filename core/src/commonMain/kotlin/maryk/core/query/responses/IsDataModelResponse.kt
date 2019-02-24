@@ -22,24 +22,28 @@ import maryk.core.query.responses.statuses.Success
 import maryk.core.query.responses.statuses.ValidationFail
 
 /** A response for a data operation on a DataModel */
-interface IsDataModelResponse<out DM: IsRootDataModel<*>> : IsResponse {
+interface IsDataModelResponse<out DM : IsRootDataModel<*>> : IsResponse {
     val dataModel: DM
 
     companion object {
-        internal fun <DM: Any> addDataModel(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> IsRootDataModel<*>?) {
+        internal fun <DM : Any> addDataModel(
+            definitions: ObjectPropertyDefinitions<DM>,
+            getter: (DM) -> IsRootDataModel<*>?
+        ) {
             definitions.add(1, "dataModel",
                 ContextualModelReferenceDefinition<IsRootDataModel<*>, RequestContext>(
                     contextualResolver = { context, name ->
                         context?.let {
                             @Suppress("UNCHECKED_CAST")
-                            it.dataModels[name] as (Unit.() -> IsRootDataModel<*>)? ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
+                            it.dataModels[name] as (Unit.() -> IsRootDataModel<*>)?
+                                ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
                         } ?: throw ContextNotFoundException()
                     }
                 ),
                 getter = getter,
                 toSerializable = { value: IsRootDataModel<*>?, _ ->
-                    value?.let{
-                        DataModelReference(it.name){ it }
+                    value?.let {
+                        DataModelReference(it.name) { it }
                     }
                 },
                 fromSerializable = { it?.get?.invoke(Unit) },
@@ -49,7 +53,11 @@ interface IsDataModelResponse<out DM: IsRootDataModel<*>> : IsResponse {
                 }
             )
         }
-        internal fun <DM: Any> addStatuses(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> List<TypedValue<StatusType, *>>?){
+
+        internal fun <DM : Any> addStatuses(
+            definitions: ObjectPropertyDefinitions<DM>,
+            getter: (DM) -> List<TypedValue<StatusType, *>>?
+        ) {
             definitions.add(2, "statuses", listOfStatuses, getter)
         }
     }
@@ -59,14 +67,14 @@ private val listOfStatuses = ListDefinition(
     valueDefinition = MultiTypeDefinition(
         typeEnum = StatusType,
         definitionMap = mapOf(
-            StatusType.SUCCESS to EmbeddedObjectDefinition(dataModel = {  Success } ),
-            StatusType.ADD_SUCCESS to EmbeddedObjectDefinition(dataModel = {  AddSuccess } ),
-            StatusType.AUTH_FAIL to EmbeddedObjectDefinition(dataModel = {  AuthFail } ),
-            StatusType.REQUEST_FAIL to EmbeddedObjectDefinition(dataModel = {  RequestFail } ),
-            StatusType.SERVER_FAIL to EmbeddedObjectDefinition(dataModel = {  ServerFail } ),
-            StatusType.VALIDATION_FAIL to EmbeddedObjectDefinition(dataModel = {  ValidationFail } ),
-            StatusType.ALREADY_EXISTS to EmbeddedObjectDefinition(dataModel = {  AlreadyExists } ),
-            StatusType.DOES_NOT_EXIST to EmbeddedObjectDefinition(dataModel = {  DoesNotExist } )
+            StatusType.SUCCESS to EmbeddedObjectDefinition(dataModel = { Success }),
+            StatusType.ADD_SUCCESS to EmbeddedObjectDefinition(dataModel = { AddSuccess }),
+            StatusType.AUTH_FAIL to EmbeddedObjectDefinition(dataModel = { AuthFail }),
+            StatusType.REQUEST_FAIL to EmbeddedObjectDefinition(dataModel = { RequestFail }),
+            StatusType.SERVER_FAIL to EmbeddedObjectDefinition(dataModel = { ServerFail }),
+            StatusType.VALIDATION_FAIL to EmbeddedObjectDefinition(dataModel = { ValidationFail }),
+            StatusType.ALREADY_EXISTS to EmbeddedObjectDefinition(dataModel = { AlreadyExists }),
+            StatusType.DOES_NOT_EXIST to EmbeddedObjectDefinition(dataModel = { DoesNotExist })
         )
     )
 )

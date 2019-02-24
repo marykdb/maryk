@@ -29,14 +29,13 @@ import maryk.json.JsonWriter
 import maryk.lib.safeLazy
 
 /** Definition for embedded object properties [P] to [dataModel] of type [DM] */
-class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P: PropertyDefinitions>(
+class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P : PropertyDefinitions>(
     override val required: Boolean = true,
     override val final: Boolean = false,
     dataModel: Unit.() -> DM,
     override val default: Values<DM, P>? = null
 ) :
-    IsEmbeddedValuesDefinition<DM, P, IsPropertyContext>
-{
+    IsEmbeddedValuesDefinition<DM, P, IsPropertyContext> {
     override val propertyDefinitionType = PropertyDefinitionType.Embed
     override val wireType = WireType.LENGTH_DELIMITED
 
@@ -45,7 +44,8 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P: PropertyDefinitions
 
     @Suppress("UNCHECKED_CAST")
     // internal strong typed version so type system is not in a loop when creating EmbeddedValuesDefinition
-    internal val typedDataModel: AbstractValuesDataModel<DM, P, IsPropertyContext> get() = internalDataModel.value as AbstractValuesDataModel<DM, P, IsPropertyContext>
+    internal val typedDataModel: AbstractValuesDataModel<DM, P, IsPropertyContext>
+        get() = internalDataModel.value as AbstractValuesDataModel<DM, P, IsPropertyContext>
 
     override fun asString(value: Values<DM, P>, context: IsPropertyContext?): String {
         var string = ""
@@ -64,7 +64,11 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P: PropertyDefinitions
 
     override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = dataModel.properties[index]
 
-    override fun validateWithRef(previousValue: Values<DM, P>?, newValue: Values<DM, P>?, refGetter: () -> IsPropertyReference<Values<DM, P>, IsPropertyDefinition<Values<DM, P>>, *>?) {
+    override fun validateWithRef(
+        previousValue: Values<DM, P>?,
+        newValue: Values<DM, P>?,
+        refGetter: () -> IsPropertyReference<Values<DM, P>, IsPropertyDefinition<Values<DM, P>>, *>?
+    ) {
         super.validateWithRef(previousValue, newValue, refGetter)
         if (newValue != null) {
             this.typedDataModel.validate(
@@ -74,16 +78,21 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P: PropertyDefinitions
         }
     }
 
-    override fun writeJsonValue(value: Values<DM, P>, writer: IsJsonLikeWriter, context: IsPropertyContext?) = this.typedDataModel.writeJson(
-        value,
-        writer,
-        context
-    )
+    override fun writeJsonValue(value: Values<DM, P>, writer: IsJsonLikeWriter, context: IsPropertyContext?) =
+        this.typedDataModel.writeJson(
+            value,
+            writer,
+            context
+        )
 
     override fun readJson(reader: IsJsonLikeReader, context: IsPropertyContext?) =
         this.typedDataModel.readJson(reader, context)
 
-    override fun calculateTransportByteLength(value: Values<DM, P>, cacher: WriteCacheWriter, context: IsPropertyContext?) =
+    override fun calculateTransportByteLength(
+        value: Values<DM, P>,
+        cacher: WriteCacheWriter,
+        context: IsPropertyContext?
+    ) =
         this.typedDataModel.calculateProtoBufLength(
             value,
             cacher,
@@ -125,62 +134,65 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P: PropertyDefinitions
         return result
     }
 
-    object Model : ContextualDataModel<EmbeddedValuesDefinition<*, *>, ObjectPropertyDefinitions<EmbeddedValuesDefinition<*, *>>, ContainsDefinitionsContext, ModelContext>(
-        contextTransformer = { ModelContext(it) },
-        properties = object : ObjectPropertyDefinitions<EmbeddedValuesDefinition<*, *>>() {
-            init {
-                IsPropertyDefinition.addRequired(this, EmbeddedValuesDefinition<*, *>::required)
-                IsPropertyDefinition.addFinal(this, EmbeddedValuesDefinition<*, *>::final)
-                add(3, "dataModel",
-                    ContextualModelReferenceDefinition(
-                        contextTransformer = {context: ModelContext? ->
-                            context?.definitionsContext
-                        },
-                        contextualResolver = { context: ContainsDefinitionsContext?, name ->
-                            context?.let{
-                                @Suppress("UNCHECKED_CAST")
-                                it.dataModels[name] as? Unit.() -> DataModel<*, *>
+    object Model :
+        ContextualDataModel<EmbeddedValuesDefinition<*, *>, ObjectPropertyDefinitions<EmbeddedValuesDefinition<*, *>>, ContainsDefinitionsContext, ModelContext>(
+            contextTransformer = { ModelContext(it) },
+            properties = object : ObjectPropertyDefinitions<EmbeddedValuesDefinition<*, *>>() {
+                init {
+                    IsPropertyDefinition.addRequired(this, EmbeddedValuesDefinition<*, *>::required)
+                    IsPropertyDefinition.addFinal(this, EmbeddedValuesDefinition<*, *>::final)
+                    add(3, "dataModel",
+                        ContextualModelReferenceDefinition(
+                            contextTransformer = { context: ModelContext? ->
+                                context?.definitionsContext
+                            },
+                            contextualResolver = { context: ContainsDefinitionsContext?, name ->
+                                context?.let {
+                                    @Suppress("UNCHECKED_CAST")
+                                    it.dataModels[name] as? Unit.() -> DataModel<*, *>
                                         ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
-                            } ?: throw ContextNotFoundException()
-                        }
-                    ),
-                    getter = {
-                        { it.dataModel as DataModel<*, *> }
-                    },
-                    toSerializable = { value: (Unit.() -> DataModel<*, *>)?, _ ->
-                        value?.invoke(Unit)?.let{ model ->
-                            DataModelReference(model.name, value)
-                        }
-                    },
-                    fromSerializable = { it?.get },
-                    capturer = { context: ModelContext, dataModel: IsDataModelReference<DataModel<*, *>> ->
-                        context.definitionsContext?.let {
-                            if (!it.dataModels.containsKey(dataModel.name)) {
-                                it.dataModels[dataModel.name] = dataModel.get
+                                } ?: throw ContextNotFoundException()
                             }
-                        } ?: throw ContextNotFoundException()
+                        ),
+                        getter = {
+                            { it.dataModel as DataModel<*, *> }
+                        },
+                        toSerializable = { value: (Unit.() -> DataModel<*, *>)?, _ ->
+                            value?.invoke(Unit)?.let { model ->
+                                DataModelReference(model.name, value)
+                            }
+                        },
+                        fromSerializable = { it?.get },
+                        capturer = { context: ModelContext, dataModel: IsDataModelReference<DataModel<*, *>> ->
+                            context.definitionsContext?.let {
+                                if (!it.dataModels.containsKey(dataModel.name)) {
+                                    it.dataModels[dataModel.name] = dataModel.get
+                                }
+                            } ?: throw ContextNotFoundException()
 
-                        context.model = dataModel.get
-                    }
-                )
-
-                @Suppress("UNCHECKED_CAST")
-                add(4, "default",
-                    ContextualEmbeddedValuesDefinition(
-                        contextualResolver = { context: ModelContext? ->
-                            context?.model?.invoke(Unit) as? AbstractValuesDataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, ModelContext>? ?: throw ContextNotFoundException()
+                            context.model = dataModel.get
                         }
-                    ) as IsEmbeddedValuesDefinition<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, ModelContext>,
-                    EmbeddedValuesDefinition<*, *>::default as (EmbeddedValuesDefinition<*, *>) -> Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>?
-                )
+                    )
+
+                    @Suppress("UNCHECKED_CAST")
+                    add(4, "default",
+                        ContextualEmbeddedValuesDefinition(
+                            contextualResolver = { context: ModelContext? ->
+                                context?.model?.invoke(Unit) as? AbstractValuesDataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, ModelContext>?
+                                    ?: throw ContextNotFoundException()
+                            }
+                        ) as IsEmbeddedValuesDefinition<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, ModelContext>,
+                        EmbeddedValuesDefinition<*, *>::default as (EmbeddedValuesDefinition<*, *>) -> Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>?
+                    )
+                }
             }
-        }
-    ) {
-        override fun invoke(values: ObjectValues<EmbeddedValuesDefinition<*, *>, ObjectPropertyDefinitions<EmbeddedValuesDefinition<*, *>>>) = EmbeddedValuesDefinition<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
-            required = values(1),
-            final = values(2),
-            dataModel = values(3),
-            default = values(4)
-        )
+        ) {
+        override fun invoke(values: ObjectValues<EmbeddedValuesDefinition<*, *>, ObjectPropertyDefinitions<EmbeddedValuesDefinition<*, *>>>) =
+            EmbeddedValuesDefinition<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
+                required = values(1),
+                final = values(2),
+                dataModel = values(3),
+                default = values(4)
+            )
     }
 }

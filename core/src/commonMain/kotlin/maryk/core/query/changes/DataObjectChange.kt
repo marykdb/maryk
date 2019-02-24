@@ -19,7 +19,7 @@ import maryk.core.values.ObjectValues
 /**
  * Creates a DataObjectChange which contains [change] until [lastVersion] for a specific DataObject
  */
-fun <DM: IsRootDataModel<*>> Key<DM>.change(
+fun <DM : IsRootDataModel<*>> Key<DM>.change(
     vararg change: IsChange,
     lastVersion: ULong? = null
 ) = DataObjectChange(this, change.toList(), lastVersion)
@@ -27,7 +27,7 @@ fun <DM: IsRootDataModel<*>> Key<DM>.change(
 /**
  * Contains [changes] until [lastVersion] for a specific DataObject by [key]
  */
-data class DataObjectChange<out DM: IsRootDataModel<*>> internal constructor(
+data class DataObjectChange<out DM : IsRootDataModel<*>> internal constructor(
     val key: Key<DM>,
     val changes: List<IsChange>,
     val lastVersion: ULong? = null
@@ -53,12 +53,16 @@ data class DataObjectChange<out DM: IsRootDataModel<*>> internal constructor(
             fromSerializable = { it.value as IsChange }
         )
 
-        val lastVersion = add(3, "lastVersion", NumberDefinition(
-            type = UInt64
-        ), DataObjectChange<*>::lastVersion)
+        val lastVersion = add(
+            3, "lastVersion",
+            NumberDefinition(
+                type = UInt64
+            ),
+            DataObjectChange<*>::lastVersion
+        )
     }
 
-    companion object: QueryDataModel<DataObjectChange<*>, Properties>(
+    companion object : QueryDataModel<DataObjectChange<*>, Properties>(
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<DataObjectChange<*>, Properties>) = DataObjectChange(

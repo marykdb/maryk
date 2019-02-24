@@ -12,16 +12,20 @@ import maryk.core.properties.references.IsPropertyReference
 /**
  * For objects containing a reference which defines the context of other properties
  */
-interface DefinedByReference<T: Any> {
+interface DefinedByReference<T : Any> {
     val reference: IsPropertyReference<T, IsPropertyDefinition<T>, *>
 
     companion object {
-        internal fun <DO: Any> addReference(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> AnyPropertyReference?) =
+        internal fun <DO : Any> addReference(
+            definitions: ObjectPropertyDefinitions<DO>,
+            getter: (DO) -> AnyPropertyReference?
+        ) =
             definitions.add(
                 index = 1, name = "reference",
                 definition = ContextualPropertyReferenceDefinition<RequestContext>(
                     contextualResolver = {
-                        it?.dataModel?.properties as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()
+                        it?.dataModel?.properties as? AbstractPropertyDefinitions<*>?
+                            ?: throw ContextNotFoundException()
                     }
                 ),
                 getter = getter,

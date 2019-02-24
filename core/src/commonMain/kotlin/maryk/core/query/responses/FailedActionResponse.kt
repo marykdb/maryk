@@ -17,7 +17,7 @@ enum class FailType(
     REQUEST(3u), // Problems with the request content
     AUTH(4u); // Problems with the Authentication
 
-    companion object: IndexedEnumDefinition<FailType>("FailType", FailType::values)
+    companion object : IndexedEnumDefinition<FailType>("FailType", FailType::values)
 }
 
 /** Response with [message] and [failType] for failed actions. */
@@ -25,7 +25,7 @@ data class FailedActionResponse(
     val message: String,
     val failType: FailType
 ) : IsResponse {
-    internal companion object: SimpleQueryDataModel<FailedActionResponse>(
+    internal companion object : SimpleQueryDataModel<FailedActionResponse>(
         properties = object : ObjectPropertyDefinitions<FailedActionResponse>() {
             init {
                 add(1, "message", StringDefinition(), FailedActionResponse::message)

@@ -16,9 +16,9 @@ import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
 /** For data models which contains only reference pairs */
-abstract class ReferencesDataModel<DO: Any, P: ReferencesObjectPropertyDefinitions<DO>>(
+abstract class ReferencesDataModel<DO : Any, P : ReferencesObjectPropertyDefinitions<DO>>(
     properties: P
-) : AbstractObjectDataModel<DO, P, RequestContext, RequestContext>(properties){
+) : AbstractObjectDataModel<DO, P, RequestContext, RequestContext>(properties) {
     protected fun IsJsonLikeWriter.writeJsonReferences(
         references: List<AnyPropertyReference>,
         context: RequestContext?
@@ -37,7 +37,7 @@ abstract class ReferencesDataModel<DO: Any, P: ReferencesObjectPropertyDefinitio
     override fun readJson(reader: IsJsonLikeReader, context: RequestContext?): ObjectValues<DO, P> {
         var currentToken = reader.currentToken
 
-        if (currentToken == JsonToken.StartDocument){
+        if (currentToken == JsonToken.StartDocument) {
             currentToken = reader.nextToken()
 
             if (currentToken is JsonToken.Suspended) {
@@ -49,7 +49,10 @@ abstract class ReferencesDataModel<DO: Any, P: ReferencesObjectPropertyDefinitio
             is JsonToken.Value<*> -> {
                 ValueItems(
                     properties.references withNotNull listOf(
-                        properties.references.definition.valueDefinition.fromString(currentToken.value as String, context)
+                        properties.references.definition.valueDefinition.fromString(
+                            currentToken.value as String,
+                            context
+                        )
                     )
                 )
             }
@@ -67,7 +70,7 @@ abstract class ReferencesDataModel<DO: Any, P: ReferencesObjectPropertyDefinitio
     }
 }
 
-abstract class ReferencesObjectPropertyDefinitions<DO: Any> : ObjectPropertyDefinitions<DO>() {
+abstract class ReferencesObjectPropertyDefinitions<DO : Any> : ObjectPropertyDefinitions<DO>() {
     abstract val references: ListPropertyDefinitionWrapper<AnyPropertyReference, AnyPropertyReference, RequestContext, DO>
 
     internal fun addReferenceListPropertyDefinition(getter: (DO) -> List<AnyPropertyReference>) =
@@ -75,7 +78,8 @@ abstract class ReferencesObjectPropertyDefinitions<DO: Any> : ObjectPropertyDefi
             ListDefinition(
                 valueDefinition = ContextualPropertyReferenceDefinition<RequestContext>(
                     contextualResolver = {
-                        it?.dataModel?.properties as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()
+                        it?.dataModel?.properties as? AbstractPropertyDefinitions<*>?
+                            ?: throw ContextNotFoundException()
                     }
                 )
             ),

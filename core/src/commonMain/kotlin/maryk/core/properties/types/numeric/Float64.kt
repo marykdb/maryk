@@ -16,7 +16,9 @@ object Float64 : NumberDescriptor<Double>(
     override fun writeStorageBytes(value: Double, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
     override fun readTransportBytes(reader: () -> Byte) = initDoubleFromTransport(reader)
     override fun calculateTransportByteLength(value: Double) = this.size
-    override fun writeTransportBytes(value: Double, writer: (byte: Byte) -> Unit) = value.writeTransportableBytes(writer)
+    override fun writeTransportBytes(value: Double, writer: (byte: Byte) -> Unit) =
+        value.writeTransportableBytes(writer)
+
     override fun ofString(value: String) = value.toDouble()
     override fun ofDouble(value: Double) = value
     override fun toDouble(value: Double) = value

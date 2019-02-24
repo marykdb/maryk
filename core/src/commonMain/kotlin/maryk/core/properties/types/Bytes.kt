@@ -11,10 +11,10 @@ import maryk.lib.extensions.toHex
 /**
  * Represents a initByteArrayByHex which is comparable
  */
-open class Bytes(val bytes: ByteArray): Comparable<Bytes> {
+open class Bytes(val bytes: ByteArray) : Comparable<Bytes> {
     val size = bytes.size
 
-    constructor(base64: String): this(
+    constructor(base64: String) : this(
         try {
             Base64.decode(base64)
         } catch (e: Throwable) {
@@ -42,7 +42,7 @@ open class Bytes(val bytes: ByteArray): Comparable<Bytes> {
 
     fun toHex() = this.bytes.toHex()
 
-    companion object: BytesDescriptor<Bytes>() {
+    companion object : BytesDescriptor<Bytes>() {
         override fun invoke(bytes: ByteArray) = Bytes(bytes)
     }
 }
@@ -50,7 +50,7 @@ open class Bytes(val bytes: ByteArray): Comparable<Bytes> {
 /**
  * Generic bytes class to help constructing bytes from different sources
  */
-abstract class BytesDescriptor<T>{
+abstract class BytesDescriptor<T> {
     internal fun fromByteReader(length: Int, reader: () -> Byte) = this(
         initByteArray(length, reader)
     )

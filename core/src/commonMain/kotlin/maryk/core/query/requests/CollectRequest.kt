@@ -1,13 +1,13 @@
 package maryk.core.query.requests
 
 import maryk.core.models.QueryDataModel
-import maryk.core.values.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.RequestContext
 import maryk.core.query.responses.IsResponse
+import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
@@ -15,14 +15,14 @@ import maryk.lib.exceptions.ParseException
 
 typealias AnyCollectRequest = CollectRequest<*, *>
 
-data class CollectRequest<RQ: IsRequest<RP>, RP: IsResponse>(
+data class CollectRequest<RQ : IsRequest<RP>, RP : IsResponse>(
     val name: String,
     val request: RQ
 ) : IsRequest<RP> {
     override val requestType = RequestType.Collect
     override val responseModel = request.responseModel
 
-    object Properties: ObjectPropertyDefinitions<AnyCollectRequest>() {
+    object Properties : ObjectPropertyDefinitions<AnyCollectRequest>() {
         val name = add(1, "name", StringDefinition(), AnyCollectRequest::name)
 
         val request = add(2, "request",
@@ -42,13 +42,14 @@ data class CollectRequest<RQ: IsRequest<RP>, RP: IsResponse>(
         )
     }
 
-    companion object: QueryDataModel<AnyCollectRequest, CollectRequest.Properties>(
+    companion object : QueryDataModel<AnyCollectRequest, CollectRequest.Properties>(
         properties = Properties
     ) {
-        override fun invoke(values: ObjectValues<AnyCollectRequest, CollectRequest.Properties>) = CollectRequest<IsRequest<IsResponse>, IsResponse>(
-            name = values(1),
-            request = values(2)
-        )
+        override fun invoke(values: ObjectValues<AnyCollectRequest, CollectRequest.Properties>) =
+            CollectRequest<IsRequest<IsResponse>, IsResponse>(
+                name = values(1),
+                request = values(2)
+            )
 
         override fun writeJson(obj: AnyCollectRequest, writer: IsJsonLikeWriter, context: RequestContext?) {
             writer.writeStartObject()
@@ -58,8 +59,11 @@ data class CollectRequest<RQ: IsRequest<RP>, RP: IsResponse>(
             writer.writeEndObject()
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: RequestContext?): ObjectValues<AnyCollectRequest, CollectRequest.Properties> {
-            if (reader.currentToken == JsonToken.StartDocument){
+        override fun readJson(
+            reader: IsJsonLikeReader,
+            context: RequestContext?
+        ): ObjectValues<AnyCollectRequest, CollectRequest.Properties> {
+            if (reader.currentToken == JsonToken.StartDocument) {
                 reader.nextToken()
             }
 

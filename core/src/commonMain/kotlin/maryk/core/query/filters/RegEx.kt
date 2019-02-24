@@ -12,7 +12,7 @@ data class RegEx internal constructor(
 ) : IsFilter {
     override val filterType = FilterType.RegEx
 
-    constructor(vararg referenceValuePair: ReferenceValueRegexPair): this(referenceValuePair.toList())
+    constructor(vararg referenceValuePair: ReferenceValueRegexPair) : this(referenceValuePair.toList())
 
     @Suppress("UNCHECKED_CAST")
     object Properties : ReferenceValuePairsObjectPropertyDefinitions<RegEx, ReferenceValueRegexPair>(
@@ -21,7 +21,7 @@ data class RegEx internal constructor(
         pairModel = ReferenceValueRegexPair as QueryDataModel<ReferenceValueRegexPair, *>
     )
 
-    companion object: ReferencePairDataModel<RegEx, Properties, ReferenceValueRegexPair, Regex>(
+    companion object : ReferencePairDataModel<RegEx, Properties, ReferenceValueRegexPair, Regex>(
         properties = Properties,
         pairProperties = ReferenceValueRegexPair.Properties
     ) {

@@ -18,7 +18,7 @@ import maryk.core.values.ObjectValues
  * Creates a Request to delete [objectsToDelete] from [DM]. If [hardDelete] is false the data will still exist but is
  * not possible to request from server.
  */
-fun <DM: IsRootValuesDataModel<*>> DM.delete(
+fun <DM : IsRootValuesDataModel<*>> DM.delete(
     vararg objectsToDelete: Key<DM>,
     hardDelete: Boolean = false
 ) = DeleteRequest(this, objectsToDelete.toList(), hardDelete)
@@ -27,7 +27,7 @@ fun <DM: IsRootValuesDataModel<*>> DM.delete(
  * A Request to delete [keys] from [dataModel]. If [hardDelete] is false the data will still exist but is
  * not possible to request from server.
  */
-data class DeleteRequest<DM: IsRootValuesDataModel<*>> internal constructor(
+data class DeleteRequest<DM : IsRootValuesDataModel<*>> internal constructor(
     override val dataModel: DM,
     val keys: List<Key<DM>>,
     val hardDelete: Boolean
@@ -48,13 +48,14 @@ data class DeleteRequest<DM: IsRootValuesDataModel<*>> internal constructor(
             )
         ), DeleteRequest<*>::keys)
 
-        val hardDelete = add(3, "hardDelete",
+        val hardDelete = add(
+            3, "hardDelete",
             BooleanDefinition(default = false),
             DeleteRequest<*>::hardDelete
         )
     }
 
-    companion object: QueryDataModel<DeleteRequest<*>, Properties>(
+    companion object : QueryDataModel<DeleteRequest<*>, Properties>(
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<DeleteRequest<*>, Properties>) = DeleteRequest(

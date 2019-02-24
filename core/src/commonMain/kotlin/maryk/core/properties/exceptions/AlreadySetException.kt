@@ -17,7 +17,7 @@ data class AlreadySetException(
 ) {
     override val validationExceptionType = ValidationExceptionType.ALREADY_SET
 
-    internal companion object: SimpleQueryDataModel<AlreadySetException>(
+    internal companion object : SimpleQueryDataModel<AlreadySetException>(
         properties = object : ObjectPropertyDefinitions<AlreadySetException>() {
             init {
                 ValidationException.addReference(this, AlreadySetException::reference)

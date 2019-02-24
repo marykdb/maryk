@@ -19,7 +19,7 @@ import maryk.core.properties.types.TypedValue
  * It contains an [index] and [name] to which it is referred inside DataModel and a [getter]
  * function to retrieve value on dataObject of [DO] in context [CX]
  */
-data class MultiTypeDefinitionWrapper<E: IndexedEnum<E>, TO: Any, CX: IsPropertyContext, DO: Any> internal constructor(
+data class MultiTypeDefinitionWrapper<E : IndexedEnum<E>, TO : Any, CX : IsPropertyContext, DO : Any> internal constructor(
     override val index: Int,
     override val name: String,
     override val definition: IsMultiTypeDefinition<E, CX>,
@@ -31,8 +31,7 @@ data class MultiTypeDefinitionWrapper<E: IndexedEnum<E>, TO: Any, CX: IsProperty
 ) :
     AbstractPropertyDefinitionWrapper(index, name),
     IsMultiTypeDefinition<E, CX> by definition,
-    IsPropertyDefinitionWrapper<TypedValue<E, Any>, TO, CX, DO>
-{
+    IsPropertyDefinitionWrapper<TypedValue<E, Any>, TO, CX, DO> {
     override val graphType = PropRefGraphType.PropRef
 
     override fun ref(parentRef: AnyPropertyReference?) =
@@ -45,19 +44,22 @@ data class MultiTypeDefinitionWrapper<E: IndexedEnum<E>, TO: Any, CX: IsProperty
 
     /** Specific extension to support fetching deeper references with [type] */
     @Suppress("UNCHECKED_CAST")
-    fun <P: PropertyDefinitions, T: Any, W: IsPropertyDefinitionWrapper<T, *, *, *>> refWithType(
+    fun <P : PropertyDefinitions, T : Any, W : IsPropertyDefinitionWrapper<T, *, *, *>> refWithType(
         type: E,
         @Suppress("UNUSED_PARAMETER") properties: P, // So it is not needed to pass in types
-        propertyDefinitionGetter: P.()-> W
+        propertyDefinitionGetter: P.() -> W
     ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> IsPropertyReference<T, W, *> =
         {
             val typeRef = this.typeRef(type, this.ref(it))
-            (this.definitionMap[type] as EmbeddedValuesDefinition<IsValuesDataModel<P>, P>).dataModel.ref(typeRef, propertyDefinitionGetter)
+            (this.definitionMap[type] as EmbeddedValuesDefinition<IsValuesDataModel<P>, P>).dataModel.ref(
+                typeRef,
+                propertyDefinitionGetter
+            )
         }
 
     /** Specific extension to support fetching deeper references with [type] */
     @Suppress("UNCHECKED_CAST")
-    fun <P: PropertyDefinitions, T: Any, R: IsPropertyReference<T, IsPropertyDefinitionWrapper<T, *, *, *>, *>> withType(
+    fun <P : PropertyDefinitions, T : Any, R : IsPropertyReference<T, IsPropertyDefinitionWrapper<T, *, *, *>, *>> withType(
         type: E,
         @Suppress("UNUSED_PARAMETER") properties: P, // So it is not needed to pass in types
         referenceGetter: P.() ->
@@ -65,6 +67,9 @@ data class MultiTypeDefinitionWrapper<E: IndexedEnum<E>, TO: Any, CX: IsProperty
     ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> R =
         {
             val typeRef = this.typeRef(type, this.ref(it))
-            (this.definitionMap[type] as EmbeddedValuesDefinition<IsValuesDataModel<P>, P>).dataModel(typeRef, referenceGetter)
+            (this.definitionMap[type] as EmbeddedValuesDefinition<IsValuesDataModel<P>, P>).dataModel(
+                typeRef,
+                referenceGetter
+            )
         }
 }

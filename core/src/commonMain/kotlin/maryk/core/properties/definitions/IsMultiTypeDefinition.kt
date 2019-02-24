@@ -8,13 +8,12 @@ import maryk.core.properties.references.TypeReference
 import maryk.core.properties.types.TypedValue
 
 /** Defines a multi type definition */
-interface IsMultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> :
+interface IsMultiTypeDefinition<E : IndexedEnum<E>, in CX : IsPropertyContext> :
     IsValueDefinition<TypedValue<E, Any>, CX>,
     IsSerializablePropertyDefinition<TypedValue<E, Any>, CX>,
     IsTransportablePropertyDefinitionType<TypedValue<E, Any>>,
     HasDefaultValueDefinition<TypedValue<E, Any>>,
-    IsUsableInMapValue<TypedValue<E, Any>, CX>
-{
+    IsUsableInMapValue<TypedValue<E, Any>, CX> {
     val typeIsFinal: Boolean
     val definitionMap: Map<E, IsSubDefinition<out Any, CX>>
 

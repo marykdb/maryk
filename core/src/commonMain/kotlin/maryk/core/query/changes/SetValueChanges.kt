@@ -18,7 +18,7 @@ import maryk.core.values.ObjectValues
  * Changes for a set property of [T] referred by [reference] with [addValues]
  * First values are deleted before adding new
  */
-data class SetValueChanges<T: Any> internal constructor(
+data class SetValueChanges<T : Any> internal constructor(
     override val reference: IsPropertyReference<Set<T>, IsPropertyDefinition<Set<T>>, *>,
     val addValues: Set<T>? = null
 ) : DefinedByReference<Set<T>> {
@@ -26,13 +26,17 @@ data class SetValueChanges<T: Any> internal constructor(
     object Properties : ObjectPropertyDefinitions<SetValueChanges<*>>() {
         val reference = DefinedByReference.addReference(this, SetValueChanges<*>::reference)
 
-        val addValues = add(2, "addValues", SetDefinition(
-            required = false,
-            valueDefinition = valueDefinition
-        ), SetValueChanges<*>::addValues)
+        val addValues = add(
+            2, "addValues",
+            SetDefinition(
+                required = false,
+                valueDefinition = valueDefinition
+            ),
+            SetValueChanges<*>::addValues
+        )
     }
 
-    companion object: QueryDataModel<SetValueChanges<out Any>, Properties>(
+    companion object : QueryDataModel<SetValueChanges<out Any>, Properties>(
         properties = Properties
     ) {
         @Suppress("RemoveExplicitTypeArguments")
@@ -56,7 +60,7 @@ private val valueDefinition = ContextualValueDefinition(
  * Set property of values [T] with [addValues] for changes
  * First values are deleted before adding new
  */
-fun <T: Any> IsPropertyReference<Set<T>, IsCollectionDefinition<T, Set<T>, *, *>, *>.change(
+fun <T : Any> IsPropertyReference<Set<T>, IsCollectionDefinition<T, Set<T>, *, *>, *>.change(
     addValues: Set<T>? = null
 ) =
     SetValueChanges(

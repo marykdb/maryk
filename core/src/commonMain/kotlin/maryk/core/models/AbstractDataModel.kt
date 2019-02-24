@@ -37,7 +37,7 @@ import maryk.yaml.YamlWriter
  * to read and write. [CXI] is the input Context for properties. This can be different because the ObjectDataModel can create
  * its own context by transforming the given context.
  */
-abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V: AbstractValues<DO, *, P>, in CXI: IsPropertyContext, CX: IsPropertyContext> internal constructor(
+abstract class AbstractDataModel<DO : Any, P : AbstractPropertyDefinitions<DO>, V : AbstractValues<DO, *, P>, in CXI : IsPropertyContext, CX : IsPropertyContext> internal constructor(
     final override val properties: P
 ) : IsDataModelWithValues<DO, P, V> {
 
@@ -97,7 +97,7 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
      * Optionally pass a [context] when needed to read more complex property types
      */
     open fun readJsonToMap(reader: IsJsonLikeReader, context: CX? = null): MutableValueItems {
-        if (reader.currentToken == JsonToken.StartDocument){
+        if (reader.currentToken == JsonToken.StartDocument) {
             reader.nextToken()
         }
 
@@ -189,7 +189,7 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
      * The [cacher] caches any values needed to write later.
      * Optionally pass a [context] to write more complex properties which depend on other properties
      */
-    fun calculateProtoBufLength(values: V, cacher: WriteCacheWriter, context: CX? = null) : Int {
+    fun calculateProtoBufLength(values: V, cacher: WriteCacheWriter, context: CX? = null): Int {
         var totalByteLength = 0
         for (definition in this.properties) {
             val originalValue = values.original(definition.index)
@@ -353,7 +353,9 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
 
                             @Suppress("UNCHECKED_CAST")
                             when {
-                                values.contains(key.tag) -> (values[key.tag] as MutableCollection<Any>).addAll(collection)
+                                values.contains(key.tag) -> (values[key.tag] as MutableCollection<Any>).addAll(
+                                    collection
+                                )
                                 else -> values[key.tag] = collection
                             }
                         }
@@ -400,7 +402,11 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
     /**
      * Utility method to check and map a value to a constructor property
      */
-    protected inline fun <reified T, reified TI> Map<Int, *>.transform(index: Int, transform: (TI) -> T, default: T? = null): T {
+    protected inline fun <reified T, reified TI> Map<Int, *>.transform(
+        index: Int,
+        transform: (TI) -> T,
+        default: T? = null
+    ): T {
         val value: Any? = this[index]
 
         if (value !is TI?) {

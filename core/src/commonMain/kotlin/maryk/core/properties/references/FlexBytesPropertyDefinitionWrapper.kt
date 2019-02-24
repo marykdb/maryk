@@ -11,7 +11,7 @@ import maryk.core.properties.graph.PropRefGraphType
  * It contains an [index] and [name] to which it is referred inside DataModel and a [getter]
  * function to retrieve value on dataObject of [DO] in context [CX]
  */
-data class FlexBytesPropertyDefinitionWrapper<T: Any, TO:Any, CX: IsPropertyContext, D: IsSerializableFlexBytesEncodable<T, CX>, DO: Any> internal constructor(
+data class FlexBytesPropertyDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext, D : IsSerializableFlexBytesEncodable<T, CX>, DO : Any> internal constructor(
     override val index: Int,
     override val name: String,
     override val definition: D,
@@ -23,8 +23,7 @@ data class FlexBytesPropertyDefinitionWrapper<T: Any, TO:Any, CX: IsPropertyCont
 ) :
     AbstractPropertyDefinitionWrapper(index, name),
     IsSerializableFlexBytesEncodable<T, CX> by definition,
-    IsValuePropertyDefinitionWrapper<T, TO, CX, DO>
-{
+    IsValuePropertyDefinitionWrapper<T, TO, CX, DO> {
     override val graphType = PropRefGraphType.PropRef
 
     override fun ref(parentRef: AnyPropertyReference?) =

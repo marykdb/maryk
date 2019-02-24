@@ -11,7 +11,7 @@ import maryk.json.IsJsonLikeWriter
 /**
  * Definition wrapper to capture the context with [capturer] for valueDefinition of [T] defined by [definition]
  */
-internal data class ContextCaptureDefinition<T: Any, in CX: IsPropertyContext>(
+internal data class ContextCaptureDefinition<T : Any, in CX : IsPropertyContext>(
     val definition: IsValueDefinition<T, CX>,
     private val capturer: (CX?, T) -> Unit
 ) : IsValueDefinition<T, CX>, IsContextualEncodable<T, CX> {
@@ -26,12 +26,22 @@ internal data class ContextCaptureDefinition<T: Any, in CX: IsPropertyContext>(
         this.definition.asString(value, context).also { capturer(context, value) }
 
     override fun calculateTransportByteLengthWithKey(index: Int, value: T, cacher: WriteCacheWriter, context: CX?) =
-        this.definition.calculateTransportByteLengthWithKey(index, value, cacher, context).also { capturer(context, value) }
+        this.definition.calculateTransportByteLengthWithKey(index, value, cacher, context).also {
+            capturer(
+                context,
+                value
+            )
+        }
 
     override fun calculateTransportByteLength(value: T, cacher: WriteCacheWriter, context: CX?) =
         this.definition.calculateTransportByteLength(value, cacher, context)
 
-    override fun writeTransportBytes(value: T, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?) =
+    override fun writeTransportBytes(
+        value: T,
+        cacheGetter: WriteCacheReader,
+        writer: (byte: Byte) -> Unit,
+        context: CX?
+    ) =
         this.definition.writeTransportBytes(value, cacheGetter, writer, context)
 
     override fun writeJsonValue(value: T, writer: IsJsonLikeWriter, context: CX?) =

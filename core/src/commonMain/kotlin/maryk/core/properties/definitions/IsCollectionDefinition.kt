@@ -26,18 +26,21 @@ import maryk.lib.exceptions.ParseException
 /**
  * Interface to define a Collection [C] containing [T] with context [CX]
  */
-interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyContext, out ST: IsValueDefinition<T, CX>>:
+interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyContext, out ST : IsValueDefinition<T, CX>> :
     IsByteTransportableCollection<T, C, CX>,
     HasSizeDefinition,
-    IsTransportablePropertyDefinitionType<C>
-{
+    IsTransportablePropertyDefinitionType<C> {
     val valueDefinition: ST
 
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
     override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
-    override fun validateWithRef(previousValue: C?, newValue: C?, refGetter: () -> IsPropertyReference<C, IsPropertyDefinition<C>, *>?) {
+    override fun validateWithRef(
+        previousValue: C?,
+        newValue: C?,
+        refGetter: () -> IsPropertyReference<C, IsPropertyDefinition<C>, *>?
+    ) {
         super<IsByteTransportableCollection>.validateWithRef(previousValue, newValue, refGetter)
 
         if (newValue != null) {
@@ -115,9 +118,14 @@ interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyCont
         return collection as C
     }
 
-    override fun calculateTransportByteLengthWithKey(index: Int, value: C, cacher: WriteCacheWriter, context: CX?): Int {
+    override fun calculateTransportByteLengthWithKey(
+        index: Int,
+        value: C,
+        cacher: WriteCacheWriter,
+        context: CX?
+    ): Int {
         var totalByteSize = 0
-        when(this.valueDefinition.wireType) {
+        when (this.valueDefinition.wireType) {
             WireType.BIT_64, WireType.BIT_32, WireType.VAR_INT -> {
                 // Cache length for length delimiter
                 val container = ByteLengthContainer()
@@ -151,8 +159,14 @@ interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyCont
         return totalByteSize
     }
 
-    override fun writeTransportBytesWithKey(index: Int, value: C, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?) {
-        when(this.valueDefinition.wireType) {
+    override fun writeTransportBytesWithKey(
+        index: Int,
+        value: C,
+        cacheGetter: WriteCacheReader,
+        writer: (byte: Byte) -> Unit,
+        context: CX?
+    ) {
+        when (this.valueDefinition.wireType) {
             WireType.BIT_64, WireType.BIT_32, WireType.VAR_INT -> {
                 ProtoBuf.writeKey(index, WireType.LENGTH_DELIMITED, writer)
                 cacheGetter.nextLengthFromCache().writeVarBytes(writer)
@@ -171,7 +185,7 @@ interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyCont
         throw NotImplementedError()
     }
 
-    override fun isPacked(context: CX?, encodedWireType: WireType) = when(this.valueDefinition.wireType) {
+    override fun isPacked(context: CX?, encodedWireType: WireType) = when (this.valueDefinition.wireType) {
         WireType.BIT_64, WireType.BIT_32, WireType.VAR_INT -> encodedWireType == WireType.LENGTH_DELIMITED
         else -> false
     }

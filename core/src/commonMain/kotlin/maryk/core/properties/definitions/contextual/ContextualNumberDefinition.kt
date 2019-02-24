@@ -22,19 +22,30 @@ import maryk.lib.exceptions.ParseException
  * Definition for Number properties which are based on a context from [contextualResolver] which can be set by a property
  * which defines the number type
  */
-internal class ContextualNumberDefinition<in CX: IsPropertyContext>(
+internal class ContextualNumberDefinition<in CX : IsPropertyContext>(
     override val required: Boolean = true,
     val contextualResolver: (context: CX?) -> NumberDescriptor<Comparable<Any>>
-): IsSubDefinition<Comparable<Any>, CX>, IsContextualEncodable<Comparable<Any>, CX> {
+) : IsSubDefinition<Comparable<Any>, CX>, IsContextualEncodable<Comparable<Any>, CX> {
     override val final = true
 
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = null
     override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
-    override fun calculateTransportByteLengthWithKey(index: Int, value: Comparable<Any>, cacher: WriteCacheWriter, context: CX?) =
+    override fun calculateTransportByteLengthWithKey(
+        index: Int,
+        value: Comparable<Any>,
+        cacher: WriteCacheWriter,
+        context: CX?
+    ) =
         ProtoBuf.calculateKeyLength(index) + contextualResolver(context).calculateTransportByteLength(value)
 
-    override fun writeTransportBytesWithKey(index: Int, value: Comparable<Any>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?) {
+    override fun writeTransportBytesWithKey(
+        index: Int,
+        value: Comparable<Any>,
+        cacheGetter: WriteCacheReader,
+        writer: (byte: Byte) -> Unit,
+        context: CX?
+    ) {
         val numType = contextualResolver(context)
         ProtoBuf.writeKey(index, numType.wireType, writer)
         numType.writeTransportBytes(value, writer)
@@ -52,7 +63,7 @@ internal class ContextualNumberDefinition<in CX: IsPropertyContext>(
                     is String -> contextualResolver(context).ofString(jsonValue)
                     else -> {
                         fromNativeType(contextualResolver(context), jsonValue)
-                                ?: throw ParseException("Contextual number was not defined as a number or string")
+                            ?: throw ParseException("Contextual number was not defined as a number or string")
                     }
                 }
             }

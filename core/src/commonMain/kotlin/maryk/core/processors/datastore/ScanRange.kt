@@ -21,7 +21,7 @@ class ScanRange internal constructor(
     fun keyMatches(key: ByteArray): Boolean {
         partialMatches?.let {
             for (partial in partialMatches) {
-                if(!partial.match(key)) return false
+                if (!partial.match(key)) return false
             }
         }
         return true

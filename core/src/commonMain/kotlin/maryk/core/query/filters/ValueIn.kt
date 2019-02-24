@@ -13,7 +13,7 @@ data class ValueIn internal constructor(
     override val filterType = FilterType.ValueIn
 
     @Suppress("UNCHECKED_CAST")
-    constructor(vararg referenceValuePair: ReferenceValueSetPair<*>): this(referenceValuePair.toList() as List<ReferenceValueSetPair<Any>>)
+    constructor(vararg referenceValuePair: ReferenceValueSetPair<*>) : this(referenceValuePair.toList() as List<ReferenceValueSetPair<Any>>)
 
     @Suppress("UNCHECKED_CAST")
     object Properties : ReferenceValuePairsObjectPropertyDefinitions<ValueIn, ReferenceValueSetPair<*>>(
@@ -22,7 +22,7 @@ data class ValueIn internal constructor(
         pairModel = ReferenceValueSetPair as QueryDataModel<ReferenceValueSetPair<*>, *>
     )
 
-    companion object: ReferencePairDataModel<ValueIn, Properties, ReferenceValueSetPair<*>, Set<*>>(
+    companion object : ReferencePairDataModel<ValueIn, Properties, ReferenceValueSetPair<*>, Set<*>>(
         properties = Properties,
         pairProperties = ReferenceValueSetPair.Properties
     ) {

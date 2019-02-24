@@ -22,7 +22,7 @@ import maryk.core.values.ObjectValues
  * Options are to [deleteValues], [addValuesAtIndex] and/or [addValuesToEnd]
  * This is also the order of operation so mind changed indices while changing
  */
-data class ListValueChanges<T: Any> internal constructor(
+data class ListValueChanges<T : Any> internal constructor(
     override val reference: IsPropertyReference<List<T>, IsPropertyDefinition<List<T>>, *>,
     val deleteValues: List<T>? = null,
     val addValuesAtIndex: Map<UInt, T>? = null,
@@ -34,16 +34,18 @@ data class ListValueChanges<T: Any> internal constructor(
 
         val addValuesToEnd = add(2, "addValuesToEnd", valueListDefinition, ListValueChanges<*>::addValuesToEnd)
 
-        val addValuesAtIndex = add(3, "addValuesAtIndex", MapDefinition(
-            required = false,
-            keyDefinition = NumberDefinition(type = UInt32),
-            valueDefinition = valueDefinition
-        ), ListValueChanges<*>::addValuesAtIndex)
+        val addValuesAtIndex = add(
+            3, "addValuesAtIndex", MapDefinition(
+                required = false,
+                keyDefinition = NumberDefinition(type = UInt32),
+                valueDefinition = valueDefinition
+            ), ListValueChanges<*>::addValuesAtIndex
+        )
 
         val deleteValues = add(4, "deleteValues", valueListDefinition, ListValueChanges<*>::deleteValues)
     }
 
-    companion object: QueryDataModel<ListValueChanges<*>, Properties>(
+    companion object : QueryDataModel<ListValueChanges<*>, Properties>(
         properties = Properties
     ) {
         @Suppress("RemoveExplicitTypeArguments")
@@ -74,7 +76,7 @@ private val valueListDefinition = ListDefinition(
  * Options are to [deleteValues], [addValuesAtIndex] and/or [addValuesToEnd]
  * This is also the order of operation so mind changed indices while changing
  */
-fun <T: Any> IsPropertyReference<List<T>, IsCollectionDefinition<T, List<T>, *, *>, *>.change(
+fun <T : Any> IsPropertyReference<List<T>, IsCollectionDefinition<T, List<T>, *, *>, *>.change(
     deleteValues: List<T>? = null,
     addValuesAtIndex: Map<UInt, T>? = null,
     addValuesToEnd: List<T>? = null

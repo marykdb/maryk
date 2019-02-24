@@ -17,7 +17,7 @@ typealias ValuesDataModelImpl<CX> = AbstractValuesDataModel<IsValuesDataModel<Pr
  * to read and write. This can be different because the DataModel can create
  * its own context by transforming the given context.
  */
-abstract class AbstractValuesDataModel<DM: IsValuesDataModel<P>, P: PropertyDefinitions, CX: IsPropertyContext> internal constructor(
+abstract class AbstractValuesDataModel<DM : IsValuesDataModel<P>, P : PropertyDefinitions, CX : IsPropertyContext> internal constructor(
     properties: P
 ) : IsTypedValuesDataModel<DM, P>, AbstractDataModel<Any, P, Values<DM, P>, CX, CX>(properties) {
 

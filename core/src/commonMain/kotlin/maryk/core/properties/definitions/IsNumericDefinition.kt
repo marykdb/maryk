@@ -8,14 +8,18 @@ import maryk.core.properties.ObjectPropertyDefinitions
  *
  * Implements methods useful for numeric definitions
  */
-interface IsNumericDefinition<T: Comparable<T>> : IsComparableDefinition<T, IsPropertyContext> {
+interface IsNumericDefinition<T : Comparable<T>> : IsComparableDefinition<T, IsPropertyContext> {
     val random: Boolean
 
     /** Create a random value */
     fun createRandom(): T
 
     companion object {
-        internal fun <DO:Any> addRandom(index: Int, definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> Boolean) {
+        internal fun <DO : Any> addRandom(
+            index: Int,
+            definitions: ObjectPropertyDefinitions<DO>,
+            getter: (DO) -> Boolean
+        ) {
             definitions.add(index, "random", BooleanDefinition(default = false), getter)
         }
     }

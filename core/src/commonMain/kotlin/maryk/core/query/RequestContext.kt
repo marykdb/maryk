@@ -12,9 +12,11 @@ import maryk.core.query.requests.IsRequest
 import maryk.core.query.responses.IsResponse
 import maryk.core.values.AbstractValues
 
-sealed class ModelTypeToCollect<DM: IsDataModel<*>>(val model: DM) {
-    class Request<RP: IsResponse>(val request: IsRequest<RP>): ModelTypeToCollect<IsObjectDataModel<RP, *>>(request.responseModel)
-    class Model<DM: IsDataModel<*>>(value: DM): ModelTypeToCollect<DM>(value)
+sealed class ModelTypeToCollect<DM : IsDataModel<*>>(val model: DM) {
+    class Request<RP : IsResponse>(val request: IsRequest<RP>) :
+        ModelTypeToCollect<IsObjectDataModel<RP, *>>(request.responseModel)
+
+    class Model<DM : IsDataModel<*>>(value: DM) : ModelTypeToCollect<DM>(value)
 }
 
 /**
@@ -60,7 +62,8 @@ class RequestContext(
 
     /** Collect result [values] by [collectionName] */
     fun collectResult(collectionName: String, values: AbstractValues<*, *, *>) {
-        val toCollect = this.toCollect[collectionName] ?: throw Exception("$collectionName was not defined as to collect in RequestContext")
+        val toCollect = this.toCollect[collectionName]
+            ?: throw Exception("$collectionName was not defined as to collect in RequestContext")
 
         if (values.dataModel !== toCollect.model) {
             throw Exception("Collect($collectionName): Value $values is not of right dataModel $toCollect ")

@@ -19,14 +19,14 @@ import maryk.json.JsonToken.Value
 import maryk.lib.exceptions.ParseException
 
 /** Definition which refers to indexed enum definition based on context from [contextualResolver] */
-data class ContextualIndexedEnumDefinition<CX: IsPropertyContext, CXI: IsPropertyContext, T: AnyIndexedEnum, D: IsMultiTypeDefinition<AnyIndexedEnum, RequestContext>>(
+data class ContextualIndexedEnumDefinition<CX : IsPropertyContext, CXI : IsPropertyContext, T : AnyIndexedEnum, D : IsMultiTypeDefinition<AnyIndexedEnum, RequestContext>>(
     val contextualResolver: (context: CX?) -> D,
     val contextTransformer: (context: CX?) -> CXI? = {
         @Suppress("UNCHECKED_CAST")
         it as CXI?
     },
     override val required: Boolean = true
-): IsValueDefinition<T, CX>, IsContextualEncodable<T, CX> {
+) : IsValueDefinition<T, CX>, IsContextualEncodable<T, CX> {
     override val wireType = VAR_INT
 
     override val final = true

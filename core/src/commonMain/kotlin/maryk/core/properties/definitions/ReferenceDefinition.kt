@@ -19,7 +19,7 @@ import maryk.lib.exceptions.ParseException
 import maryk.lib.safeLazy
 
 /** Definition for a reference to another DataObject*/
-class ReferenceDefinition<DM: IsRootDataModel<*>>(
+class ReferenceDefinition<DM : IsRootDataModel<*>>(
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val unique: Boolean = false,
@@ -27,12 +27,11 @@ class ReferenceDefinition<DM: IsRootDataModel<*>>(
     override val maxValue: Key<DM>? = null,
     override val default: Key<DM>? = null,
     dataModel: Unit.() -> DM
-):
+) :
     IsComparableDefinition<Key<DM>, IsPropertyContext>,
     IsSerializableFixedBytesEncodable<Key<DM>, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<Key<DM>>,
-    HasDefaultValueDefinition<Key<DM>>
-{
+    HasDefaultValueDefinition<Key<DM>> {
     override val propertyDefinitionType = PropertyDefinitionType.Reference
     override val wireType = WireType.LENGTH_DELIMITED
     override val byteSize get() = dataModel.keyByteSize
@@ -42,7 +41,7 @@ class ReferenceDefinition<DM: IsRootDataModel<*>>(
 
     override fun calculateStorageByteLength(value: Key<DM>) = this.byteSize
 
-    override fun writeStorageBytes(value: Key<DM>, writer: (byte: Byte) -> Unit)  = value.writeBytes(writer)
+    override fun writeStorageBytes(value: Key<DM>, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
 
     @Suppress("UNCHECKED_CAST")
     override fun readStorageBytes(length: Int, reader: () -> Byte) = dataModel.key(reader) as Key<DM>
@@ -52,7 +51,9 @@ class ReferenceDefinition<DM: IsRootDataModel<*>>(
     override fun fromString(string: String) = try {
         @Suppress("UNCHECKED_CAST")
         dataModel.key(string) as Key<DM>
-    } catch (e: Throwable) { throw ParseException(string, e) }
+    } catch (e: Throwable) {
+        throw ParseException(string, e)
+    }
 
     override fun fromNativeType(value: Any) =
         if (value is ByteArray && value.size == this.byteSize) {
@@ -102,14 +103,15 @@ class ReferenceDefinition<DM: IsRootDataModel<*>>(
                         contextualResolver = { context: ContainsDefinitionsContext?, name ->
                             context?.let {
                                 @Suppress("UNCHECKED_CAST")
-                                it.dataModels[name] as (Unit.() -> IsRootDataModel<*>)? ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
+                                it.dataModels[name] as (Unit.() -> IsRootDataModel<*>)?
+                                    ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
                             } ?: throw ContextNotFoundException()
                         }
                     ),
                     getter = {
                         { it.dataModel }
                     },
-                    toSerializable = { value: (Unit.() -> IsRootDataModel<*>)? , _ ->
+                    toSerializable = { value: (Unit.() -> IsRootDataModel<*>)?, _ ->
                         value?.invoke(Unit)?.let { model: IsRootDataModel<*> ->
                             DataModelReference(model.name, value)
                         }
@@ -131,9 +133,21 @@ class ReferenceDefinition<DM: IsRootDataModel<*>>(
             required = values(1),
             final = values(2),
             unique = values(3),
-            minValue = values<Bytes?>(4)?.let { Key<IsTypedRootDataModel<IsRootDataModel<IsPropertyDefinitions>, IsPropertyDefinitions>>(it.bytes) },
-            maxValue = values<Bytes?>(5)?.let { Key<IsTypedRootDataModel<IsRootDataModel<IsPropertyDefinitions>, IsPropertyDefinitions>>(it.bytes) },
-            default = values<Bytes?>(6)?.let { Key<IsTypedRootDataModel<IsRootDataModel<IsPropertyDefinitions>, IsPropertyDefinitions>>(it.bytes) },
+            minValue = values<Bytes?>(4)?.let {
+                Key<IsTypedRootDataModel<IsRootDataModel<IsPropertyDefinitions>, IsPropertyDefinitions>>(
+                    it.bytes
+                )
+            },
+            maxValue = values<Bytes?>(5)?.let {
+                Key<IsTypedRootDataModel<IsRootDataModel<IsPropertyDefinitions>, IsPropertyDefinitions>>(
+                    it.bytes
+                )
+            },
+            default = values<Bytes?>(6)?.let {
+                Key<IsTypedRootDataModel<IsRootDataModel<IsPropertyDefinitions>, IsPropertyDefinitions>>(
+                    it.bytes
+                )
+            },
             dataModel = values(7)
         )
     }

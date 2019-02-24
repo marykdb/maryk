@@ -6,7 +6,8 @@ import maryk.core.protobuf.WireType
 /** Interface with methods to read collection of type[C] containing items of [T]
  * from byte stream with context [CX].
  */
-interface IsByteTransportableCollection<T: Any, C: Collection<T>, in CX: IsPropertyContext> : IsSerializablePropertyDefinition<C, CX> {
+interface IsByteTransportableCollection<T : Any, C : Collection<T>, in CX : IsPropertyContext> :
+    IsSerializablePropertyDefinition<C, CX> {
     /**
      * Reads the transport bytes until length from [reader] into a collection
      * Optionally pass a [context] to read more complex properties which depend on other properties

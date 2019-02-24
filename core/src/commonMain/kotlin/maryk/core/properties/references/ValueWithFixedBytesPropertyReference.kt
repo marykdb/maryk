@@ -14,20 +14,19 @@ import maryk.core.values.IsValuesGetter
  * and referred by PropertyReference of type [P].
  */
 open class ValueWithFixedBytesPropertyReference<
-    T: Any,
-    TO: Any,
+    T : Any,
+    TO : Any,
     out D : FixedBytesPropertyDefinitionWrapper<T, TO, *, *, *>,
-    out P: AnyPropertyReference
+    out P : AnyPropertyReference
 > internal constructor(
     propertyDefinition: D,
     parentReference: P?
-):
+) :
     PropertyReferenceForValues<T, TO, D, P>(propertyDefinition, parentReference),
     IsPropertyReferenceForValues<T, TO, D, P>,
     IsValuePropertyReference<T, TO, D, P>,
     IsFixedBytesPropertyReference<T>,
-    IsFixedBytesEncodable<T> by propertyDefinition
-{
+    IsFixedBytesEncodable<T> by propertyDefinition {
     override val byteSize = propertyDefinition.byteSize
     override val indexKeyPartType = IndexKeyPartType.Reference
 

@@ -12,16 +12,15 @@ import maryk.core.values.IsValuesGetter
  * [D] and referred by PropertyReference of type [P].
  */
 interface IsValuePropertyReference<
-    T: Any,
-    TO: Any,
+    T : Any,
+    TO : Any,
     out D,
-    out P: AnyPropertyReference
->:
+    out P : AnyPropertyReference
+> :
     IsPropertyReferenceForValues<T, TO, D, P>,
     IsIndexablePropertyReference<T>,
     IsBytesEncodable<T>
-    where D: IsBytesEncodable<T>, D: IsPropertyDefinitionWrapper<T, TO, *, *>
-{
+        where D : IsBytesEncodable<T>, D : IsPropertyDefinitionWrapper<T, TO, *, *> {
     override fun calculateReferenceStorageByteLength(): Int {
         val refLength = this.calculateStorageByteLength()
         return refLength.calculateVarIntWithExtraInfoByteSize() + refLength

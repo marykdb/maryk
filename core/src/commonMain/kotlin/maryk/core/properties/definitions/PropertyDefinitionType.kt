@@ -25,7 +25,7 @@ import maryk.json.MapType
 /** Indexed type of property definitions */
 enum class PropertyDefinitionType(
     override val index: UInt
-): IndexedEnum<PropertyDefinitionType>, MapType {
+) : IndexedEnum<PropertyDefinitionType>, MapType {
     Boolean(1u),
     Date(2u),
     DateTime(3u),
@@ -44,31 +44,35 @@ enum class PropertyDefinitionType(
     Time(16u),
     Value(17u);
 
-    companion object: IndexedEnumDefinition<PropertyDefinitionType>("PropertyDefinitionType", PropertyDefinitionType::values)
+    companion object :
+        IndexedEnumDefinition<PropertyDefinitionType>("PropertyDefinitionType", PropertyDefinitionType::values)
 }
 
-internal val mapOfPropertyDefEmbeddedObjectDefinitions = mapOf<PropertyDefinitionType, IsSubDefinition<out Any, ContainsDefinitionsContext>>(
-    PropertyDefinitionType.Boolean to EmbeddedObjectDefinition(dataModel = { BooleanDefinition.Model }),
-    PropertyDefinitionType.Date to EmbeddedObjectDefinition(dataModel = { DateDefinition.Model }),
-    PropertyDefinitionType.DateTime to EmbeddedObjectDefinition(dataModel = { DateTimeDefinition.Model }),
-    PropertyDefinitionType.Enum to EmbeddedObjectDefinition<EnumDefinition<*>, ObjectPropertyDefinitions<EnumDefinition<*>>, AbstractObjectDataModel<EnumDefinition<*>, ObjectPropertyDefinitions<EnumDefinition<*>>, ContainsDefinitionsContext, EnumDefinitionContext>, ContainsDefinitionsContext, EnumDefinitionContext>(dataModel = { EnumDefinition.Model }),
-    PropertyDefinitionType.FixedBytes to EmbeddedObjectDefinition(dataModel = { FixedBytesDefinition.Model }),
-    PropertyDefinitionType.FlexBytes to EmbeddedObjectDefinition(dataModel = { FlexBytesDefinition.Model }),
-    PropertyDefinitionType.List to EmbeddedObjectDefinition(dataModel = { ListDefinition.Model }),
-    PropertyDefinitionType.Map to EmbeddedObjectDefinition(dataModel = { MapDefinition.Model }),
-    PropertyDefinitionType.MultiType to EmbeddedObjectDefinition(dataModel = {
-        @Suppress("UNCHECKED_CAST")
-        MultiTypeDefinition.Model as ContextualDataModel<MultiTypeDefinition<out IndexedEnum<Any>, *>, ObjectPropertyDefinitions<MultiTypeDefinition<out IndexedEnum<Any>, *>>, ContainsDefinitionsContext, MultiTypeDefinitionContext>
-    }),
-    PropertyDefinitionType.Number to EmbeddedObjectDefinition<NumberDefinition<*>, ObjectPropertyDefinitions<NumberDefinition<*>>, AbstractObjectDataModel<NumberDefinition<*>, ObjectPropertyDefinitions<NumberDefinition<*>>, IsPropertyContext, NumericContext>, IsPropertyContext, NumericContext>(dataModel = { NumberDefinition.Model }),
-    PropertyDefinitionType.Reference to EmbeddedObjectDefinition(dataModel = { ReferenceDefinition.Model }),
-    PropertyDefinitionType.Set to EmbeddedObjectDefinition(dataModel = { SetDefinition.Model }),
-    PropertyDefinitionType.String to EmbeddedObjectDefinition(dataModel = { StringDefinition.Model }),
-    PropertyDefinitionType.Embed to EmbeddedObjectDefinition(dataModel = { EmbeddedValuesDefinition.Model }),
-    PropertyDefinitionType.EmbedObject to EmbeddedObjectDefinition(dataModel = { EmbeddedObjectDefinition.Model }),
-    PropertyDefinitionType.Time to EmbeddedObjectDefinition(dataModel = { TimeDefinition.Model }),
-    PropertyDefinitionType.Value to EmbeddedObjectDefinition(dataModel = { ValueModelDefinition.Model })
-)
+internal val mapOfPropertyDefEmbeddedObjectDefinitions =
+    mapOf<PropertyDefinitionType, IsSubDefinition<out Any, ContainsDefinitionsContext>>(
+        PropertyDefinitionType.Boolean to EmbeddedObjectDefinition(dataModel = { BooleanDefinition.Model }),
+        PropertyDefinitionType.Date to EmbeddedObjectDefinition(dataModel = { DateDefinition.Model }),
+        PropertyDefinitionType.DateTime to EmbeddedObjectDefinition(dataModel = { DateTimeDefinition.Model }),
+        PropertyDefinitionType.Enum to EmbeddedObjectDefinition<EnumDefinition<*>, ObjectPropertyDefinitions<EnumDefinition<*>>, AbstractObjectDataModel<EnumDefinition<*>, ObjectPropertyDefinitions<EnumDefinition<*>>, ContainsDefinitionsContext, EnumDefinitionContext>, ContainsDefinitionsContext, EnumDefinitionContext>(
+            dataModel = { EnumDefinition.Model }),
+        PropertyDefinitionType.FixedBytes to EmbeddedObjectDefinition(dataModel = { FixedBytesDefinition.Model }),
+        PropertyDefinitionType.FlexBytes to EmbeddedObjectDefinition(dataModel = { FlexBytesDefinition.Model }),
+        PropertyDefinitionType.List to EmbeddedObjectDefinition(dataModel = { ListDefinition.Model }),
+        PropertyDefinitionType.Map to EmbeddedObjectDefinition(dataModel = { MapDefinition.Model }),
+        PropertyDefinitionType.MultiType to EmbeddedObjectDefinition(dataModel = {
+            @Suppress("UNCHECKED_CAST")
+            MultiTypeDefinition.Model as ContextualDataModel<MultiTypeDefinition<out IndexedEnum<Any>, *>, ObjectPropertyDefinitions<MultiTypeDefinition<out IndexedEnum<Any>, *>>, ContainsDefinitionsContext, MultiTypeDefinitionContext>
+        }),
+        PropertyDefinitionType.Number to EmbeddedObjectDefinition<NumberDefinition<*>, ObjectPropertyDefinitions<NumberDefinition<*>>, AbstractObjectDataModel<NumberDefinition<*>, ObjectPropertyDefinitions<NumberDefinition<*>>, IsPropertyContext, NumericContext>, IsPropertyContext, NumericContext>(
+            dataModel = { NumberDefinition.Model }),
+        PropertyDefinitionType.Reference to EmbeddedObjectDefinition(dataModel = { ReferenceDefinition.Model }),
+        PropertyDefinitionType.Set to EmbeddedObjectDefinition(dataModel = { SetDefinition.Model }),
+        PropertyDefinitionType.String to EmbeddedObjectDefinition(dataModel = { StringDefinition.Model }),
+        PropertyDefinitionType.Embed to EmbeddedObjectDefinition(dataModel = { EmbeddedValuesDefinition.Model }),
+        PropertyDefinitionType.EmbedObject to EmbeddedObjectDefinition(dataModel = { EmbeddedObjectDefinition.Model }),
+        PropertyDefinitionType.Time to EmbeddedObjectDefinition(dataModel = { TimeDefinition.Model }),
+        PropertyDefinitionType.Value to EmbeddedObjectDefinition(dataModel = { ValueModelDefinition.Model })
+    )
 
 typealias WrapperCreator = (index: Int, name: String, definition: IsPropertyDefinition<Any>, getter: (Any) -> Any?) -> IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>
 

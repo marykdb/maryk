@@ -11,25 +11,30 @@ import maryk.core.query.RequestContext
 import maryk.core.query.responses.IsResponse
 
 /** A request for a data operation */
-interface IsObjectRequest<out DM: IsRootDataModel<*>, RP: IsResponse>: IsRequest<RP> {
+interface IsObjectRequest<out DM : IsRootDataModel<*>, RP : IsResponse> : IsRequest<RP> {
     val dataModel: DM
 
     companion object {
-        internal fun <DM: Any> addDataModel(name: String, definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> IsRootDataModel<*>?) =
+        internal fun <DM : Any> addDataModel(
+            name: String,
+            definitions: ObjectPropertyDefinitions<DM>,
+            getter: (DM) -> IsRootDataModel<*>?
+        ) =
             definitions.add(
                 1, name,
                 ContextualModelReferenceDefinition<IsRootDataModel<*>, RequestContext>(
                     contextualResolver = { context, modelName ->
                         context?.let {
                             @Suppress("UNCHECKED_CAST")
-                            it.dataModels[modelName] as (Unit.() -> IsRootDataModel<*>)? ?: throw DefNotFoundException("DataModel of name $modelName not found on dataModels")
+                            it.dataModels[modelName] as (Unit.() -> IsRootDataModel<*>)?
+                                ?: throw DefNotFoundException("DataModel of name $modelName not found on dataModels")
                         } ?: throw ContextNotFoundException()
                     }
                 ),
                 getter = getter,
                 toSerializable = { value, _ ->
                     value?.let {
-                        DataModelReference(it.name){ it }
+                        DataModelReference(it.name) { it }
                     }
                 },
                 fromSerializable = { it?.get?.invoke(Unit) },

@@ -15,7 +15,7 @@ internal object ProtoBuf {
     }
 
     /** Reads the key of a ProtoBuf based field from [reader] into a ProtoBufKey */
-    internal fun readKey(reader: () -> Byte) : ProtoBufKey {
+    internal fun readKey(reader: () -> Byte): ProtoBufKey {
         return initIntByVarWithExtraInfo(reader) { result, wireByte ->
             ProtoBufKey(result, wireTypeOf(wireByte and 0b111))
         }
@@ -56,7 +56,7 @@ internal object ProtoBuf {
      * Get length of next value by [wireType] and reading from [reader]
      * It is -1 for varInt or start/end group
      */
-    internal fun getLength(wireType: WireType, reader: () -> Byte) = when(wireType) {
+    internal fun getLength(wireType: WireType, reader: () -> Byte) = when (wireType) {
         WireType.VAR_INT -> -1
         WireType.BIT_64 -> 8
         WireType.LENGTH_DELIMITED -> initIntByVar(reader)

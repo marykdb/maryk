@@ -17,15 +17,17 @@ import maryk.core.properties.references.ListReference
  * It contains an [index] and [name] to which it is referred inside DataModel and a [getter]
  * function to retrieve value on dataObject of [DO] in context [CX]
  */
-interface IsListPropertyDefinitionWrapper<T: Any, TO: Any, LD: ListDefinition<T, CX>, CX: IsPropertyContext, in DO: Any>:
+interface IsListPropertyDefinitionWrapper<T : Any, TO : Any, LD : ListDefinition<T, CX>, CX : IsPropertyContext, in DO : Any> :
     IsCollectionDefinition<T, List<T>, CX, IsValueDefinition<T, CX>>,
-    IsPropertyDefinitionWrapper<List<T>, List<TO>, CX, DO>
-{
+    IsPropertyDefinitionWrapper<List<T>, List<TO>, CX, DO> {
     override val definition: LD
 
     @Suppress("UNCHECKED_CAST")
     override fun ref(parentRef: AnyPropertyReference?) =
-        ListReference(this as IsListPropertyDefinitionWrapper<T, Any, ListDefinition<T, CX>, CX, *>, parentRef as CanHaveComplexChildReference<*, *, *, *>?)
+        ListReference(
+            this as IsListPropertyDefinitionWrapper<T, Any, ListDefinition<T, CX>, CX, *>,
+            parentRef as CanHaveComplexChildReference<*, *, *, *>?
+        )
 
     /** Get a reference to a specific list item by [index] with optional [parentRef] */
     fun getItemRef(index: UInt, parentRef: AnyPropertyReference? = null) =

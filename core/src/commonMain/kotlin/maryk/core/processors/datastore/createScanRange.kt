@@ -6,7 +6,7 @@ import maryk.core.query.filters.IsFilter
 import maryk.lib.extensions.compare.compareTo
 
 /** Create a scan range by [filter] and [startKey] */
-fun <DM: IsRootValuesDataModel<*>> DM.createScanRange(filter: IsFilter?, startKey: ByteArray?): ScanRange {
+fun <DM : IsRootValuesDataModel<*>> DM.createScanRange(filter: IsFilter?, startKey: ByteArray?): ScanRange {
     val listOfKeyParts = mutableListOf<IsKeyPartialToMatch>()
     val listOfUniqueFilters = mutableListOf<UniqueToMatch>()
     convertFilterToKeyPartsToMatch(this, filter, listOfKeyParts, listOfUniqueFilters)
@@ -17,7 +17,7 @@ fun <DM: IsRootValuesDataModel<*>> DM.createScanRange(filter: IsFilter?, startKe
 }
 
 /** Create scan range from [listOfParts] and check with [startKey]  */
-private fun <DM: IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
+private fun <DM : IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
     startKey: ByteArray?,
     listOfParts: MutableList<IsKeyPartialToMatch>,
     listOfUniqueFilters: MutableList<UniqueToMatch>
@@ -36,7 +36,7 @@ private fun <DM: IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
         // If current key part bytes offset is lower than current key part and that part was already written (partCounter for keyIndex was there)
         if (currentOffset < keyPart.fromIndex && partCounter == keyIndex + 1) {
             currentOffset = (this.keyDefinition as? Multiple)?.let {
-                if(keyIndices.size > 1) keyIndices[++keyIndex] else keySize
+                if (keyIndices.size > 1) keyIndices[++keyIndex] else keySize
             } ?: keySize
         }
         // Break off if current offset is not expected for key part.

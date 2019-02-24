@@ -14,9 +14,9 @@ import maryk.json.JsonReader
 import maryk.json.JsonWriter
 
 /** Definition for an embedded DataObject from a context resolved from [contextualResolver] */
-internal data class ContextualEmbeddedObjectDefinition<CX: IsPropertyContext>(
+internal data class ContextualEmbeddedObjectDefinition<CX : IsPropertyContext>(
     val contextualResolver: (context: CX?) -> SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>
-): IsValueDefinition<Any, CX>, IsContextualEncodable<Any, CX> {
+) : IsValueDefinition<Any, CX>, IsContextualEncodable<Any, CX> {
     override val required = true
     override val final = true
     override val wireType = WireType.LENGTH_DELIMITED
@@ -43,7 +43,12 @@ internal data class ContextualEmbeddedObjectDefinition<CX: IsPropertyContext>(
     override fun calculateTransportByteLength(value: Any, cacher: WriteCacheWriter, context: CX?) =
         contextualResolver(context).calculateProtoBufLength(value, cacher, context)
 
-    override fun writeTransportBytes(value: Any, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?) =
+    override fun writeTransportBytes(
+        value: Any,
+        cacheGetter: WriteCacheReader,
+        writer: (byte: Byte) -> Unit,
+        context: CX?
+    ) =
         contextualResolver(context).writeProtoBuf(value, cacheGetter, writer, context)
 
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?) =

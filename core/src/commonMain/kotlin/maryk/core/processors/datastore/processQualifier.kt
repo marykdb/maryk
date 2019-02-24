@@ -30,8 +30,8 @@ fun processQualifiers(
 
         @Suppress("UNCHECKED_CAST")
         // Try to process qualifier with last qualifier processor in list
-        processorStack.lastOrNull()?.second?.invoke(qualifier) ?:
-            readQualifierAndProcessContent(qualifier) { index, processor ->
+        processorStack.lastOrNull()?.second?.invoke(qualifier)
+            ?: readQualifierAndProcessContent(qualifier) { index, processor ->
                 processorStack += Pair(index, processor)
             }
 

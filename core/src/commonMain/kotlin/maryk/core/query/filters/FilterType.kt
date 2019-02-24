@@ -6,7 +6,7 @@ import maryk.core.properties.enum.IndexedEnumDefinition
 /** Indexed type of changes */
 enum class FilterType(
     override val index: UInt
-): IndexedEnum<FilterType> {
+) : IndexedEnum<FilterType> {
     And(1u),
     Or(2u),
     Not(3u),
@@ -21,7 +21,7 @@ enum class FilterType(
     RegEx(12u),
     ValueIn(13u);
 
-    companion object: IndexedEnumDefinition<FilterType>(
+    companion object : IndexedEnumDefinition<FilterType>(
         "FilterType", FilterType::values
     )
 }

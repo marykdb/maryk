@@ -11,7 +11,7 @@ import maryk.core.properties.references.IsPropertyReference
  *
  * This is used for simple single value properties and not for lists and maps.
  */
-interface IsComparableDefinition<T: Comparable<T>, in CX: IsPropertyContext> : IsSimpleValueDefinition<T, CX> {
+interface IsComparableDefinition<T : Comparable<T>, in CX : IsPropertyContext> : IsSimpleValueDefinition<T, CX> {
     val unique: Boolean
     val minValue: T?
     val maxValue: T?
@@ -20,7 +20,11 @@ interface IsComparableDefinition<T: Comparable<T>, in CX: IsPropertyContext> : I
      * Validate [newValue] against [previousValue] and get reference from [refGetter] if exception needs to be thrown
      * @throws ValidationException thrown if property is invalid
      */
-    override fun validateWithRef(previousValue: T?, newValue: T?, refGetter: () -> IsPropertyReference<T, IsPropertyDefinition<T>, *>?) {
+    override fun validateWithRef(
+        previousValue: T?,
+        newValue: T?,
+        refGetter: () -> IsPropertyReference<T, IsPropertyDefinition<T>, *>?
+    ) {
         super.validateWithRef(previousValue, newValue, refGetter)
         when {
             newValue != null -> {

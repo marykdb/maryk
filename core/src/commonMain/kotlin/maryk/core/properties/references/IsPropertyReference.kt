@@ -12,20 +12,21 @@ typealias AnyValuePropertyReference = IsPropertyReference<*, IsValuePropertyDefi
 /**
  * Abstract for reference to a property of type [T] defined by [D] in Values [V]
  */
-interface IsPropertyReference<T: Any, out D: IsPropertyDefinition<T>, V: Any> {
+interface IsPropertyReference<T : Any, out D : IsPropertyDefinition<T>, V : Any> {
     val completeName: String
     val propertyDefinition: D
 
     /** Wrapper could be passed. This makes sure it is the lowest property definition */
-    val comparablePropertyDefinition: D get() =
-        this.propertyDefinition.let {
-            if (it is IsValuePropertyDefinitionWrapper<*, *, *, *>) {
-                @Suppress("UNCHECKED_CAST")
-                it.definition as D
-            } else {
-                it
+    val comparablePropertyDefinition: D
+        get() =
+            this.propertyDefinition.let {
+                if (it is IsValuePropertyDefinitionWrapper<*, *, *, *>) {
+                    @Suppress("UNCHECKED_CAST")
+                    it.definition as D
+                } else {
+                    it
+                }
             }
-        }
 
     /**
      * Calculate the transport length of encoding this reference

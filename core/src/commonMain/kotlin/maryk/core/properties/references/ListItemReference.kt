@@ -22,20 +22,21 @@ import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.pairs.ReferenceValuePair
 
 /** Reference to a List Item on [parentReference] with [T] by [index] */
-class ListItemReference<T: Any, CX: IsPropertyContext> internal constructor(
+class ListItemReference<T : Any, CX : IsPropertyContext> internal constructor(
     val index: UInt,
     val listDefinition: IsListDefinition<T, CX>,
     parentReference: ListReference<T, CX>?
-) : HasEmbeddedPropertyReference<T>, CanHaveComplexChildReference<T, IsValueDefinition<T, CX>, ListReference<T, CX>, List<T>>(
-    listDefinition.valueDefinition, parentReference
-) {
+) : HasEmbeddedPropertyReference<T>,
+    CanHaveComplexChildReference<T, IsValueDefinition<T, CX>, ListReference<T, CX>, List<T>>(
+        listDefinition.valueDefinition, parentReference
+    ) {
     /** Convenience infix method to create Reference [value] pairs */
     @Suppress("UNCHECKED_CAST")
-    infix fun <T: Any> with(value: T) =
+    infix fun <T : Any> with(value: T) =
         ReferenceValuePair(this as IsPropertyReference<T, IsChangeableValueDefinition<T, IsPropertyContext>, *>, value)
 
     override fun getEmbedded(name: String, context: IsPropertyContext?) =
-        when(this.propertyDefinition) {
+        when (this.propertyDefinition) {
             is IsEmbeddedDefinition<*, *> ->
                 this.propertyDefinition.resolveReferenceByName(name, this)
             is MultiTypeDefinition<*, *> -> {
@@ -45,7 +46,7 @@ class ListItemReference<T: Any, CX: IsPropertyContext> internal constructor(
         }
 
     override fun getEmbeddedRef(reader: () -> Byte, context: IsPropertyContext?): IsPropertyReference<Any, *, *> {
-        return when(this.propertyDefinition) {
+        return when (this.propertyDefinition) {
             is IsEmbeddedDefinition<*, *> -> {
                 this.propertyDefinition.resolveReference(reader, this)
             }
@@ -56,8 +57,13 @@ class ListItemReference<T: Any, CX: IsPropertyContext> internal constructor(
         }
     }
 
-    override fun getEmbeddedStorageRef(reader: () -> Byte, context: IsPropertyContext?, referenceType: CompleteReferenceType, isDoneReading: () -> Boolean): AnyPropertyReference {
-        return when(this.propertyDefinition) {
+    override fun getEmbeddedStorageRef(
+        reader: () -> Byte,
+        context: IsPropertyContext?,
+        referenceType: CompleteReferenceType,
+        isDoneReading: () -> Boolean
+    ): AnyPropertyReference {
+        return when (this.propertyDefinition) {
             is IsEmbeddedObjectDefinition<*, *, *, *, *> -> {
                 this.propertyDefinition.resolveReferenceFromStorage(reader, this, context, isDoneReading)
             }
@@ -68,9 +74,10 @@ class ListItemReference<T: Any, CX: IsPropertyContext> internal constructor(
         }
     }
 
-    override val completeName: String get() = this.parentReference?.let {
-        "${it.completeName}.@$index"
-    } ?: "@$index"
+    override val completeName: String
+        get() = this.parentReference?.let {
+            "${it.completeName}.@$index"
+        } ?: "@$index"
 
     override fun calculateTransportByteLength(cacher: WriteCacheWriter): Int {
         val parentLength = parentReference?.calculateTransportByteLength(cacher) ?: 0
@@ -106,5 +113,6 @@ class ListItemReference<T: Any, CX: IsPropertyContext> internal constructor(
     override fun resolve(values: List<T>): T? = values[index.toInt()]
 
     @Suppress("UNCHECKED_CAST")
-    override fun resolveFromAny(value: Any) = (value as? List<Any>)?.get(this.index.toInt()) ?: throw UnexpectedValueException("Expected List to get value by reference")
+    override fun resolveFromAny(value: Any) = (value as? List<Any>)?.get(this.index.toInt())
+        ?: throw UnexpectedValueException("Expected List to get value by reference")
 }

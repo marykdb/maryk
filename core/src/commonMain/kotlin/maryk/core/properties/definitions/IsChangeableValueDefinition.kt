@@ -7,4 +7,4 @@ import maryk.core.properties.IsPropertyContext
  * This so the references can be generically used in changes.
  * Can be both DefinitionWrappers or Definition
  */
-interface IsChangeableValueDefinition<T: Any, in CX: IsPropertyContext> : IsSerializablePropertyDefinition<T, CX>
+interface IsChangeableValueDefinition<T : Any, in CX : IsPropertyContext> : IsSerializablePropertyDefinition<T, CX>

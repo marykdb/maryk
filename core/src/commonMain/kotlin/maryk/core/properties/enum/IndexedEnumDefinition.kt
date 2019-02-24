@@ -18,10 +18,10 @@ import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
 /** Enum Definitions with a [name] and [cases] */
-open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
+open class IndexedEnumDefinition<E : IndexedEnum<E>> private constructor(
     internal val optionalCases: (() -> Array<E>)?,
     override val name: String
-): MarykPrimitive {
+) : MarykPrimitive {
     constructor(name: String, values: () -> Array<E>) : this(name = name, optionalCases = values)
 
     val cases get() = optionalCases!!
@@ -57,7 +57,7 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
                         false
                     } else {
                         enumNameContext.definitionsContext?.let {
-                            if(it.enums[enumNameContext.name] == null) {
+                            if (it.enums[enumNameContext.name] == null) {
                                 enumNameContext.isOriginalDefinition = true
                                 false
                             } else {
@@ -88,10 +88,11 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
     }
 
     @Suppress("UNCHECKED_CAST")
-    internal object Model: ContextualDataModel<IndexedEnumDefinition<IndexedEnum<Any>>, Properties, ContainsDefinitionsContext, EnumNameContext>(
-        properties = Properties,
-        contextTransformer = { EnumNameContext(it) }
-    ) {
+    internal object Model :
+        ContextualDataModel<IndexedEnumDefinition<IndexedEnum<Any>>, Properties, ContainsDefinitionsContext, EnumNameContext>(
+            properties = Properties,
+            contextTransformer = { EnumNameContext(it) }
+        ) {
         override fun invoke(values: ObjectValues<IndexedEnumDefinition<IndexedEnum<Any>>, Properties>) =
             IndexedEnumDefinition<IndexedEnum<Any>>(
                 name = values(1),
@@ -106,11 +107,15 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
             throw Exception("Cannot write definitions from Values")
         }
 
-        override fun writeJson(obj: IndexedEnumDefinition<IndexedEnum<Any>>, writer: IsJsonLikeWriter, context: EnumNameContext?) {
+        override fun writeJson(
+            obj: IndexedEnumDefinition<IndexedEnum<Any>>,
+            writer: IsJsonLikeWriter,
+            context: EnumNameContext?
+        ) {
             if (context?.definitionsContext?.enums?.containsKey(obj.name) == true) {
                 // Write a single string name if no options was defined
                 val value = Properties.name.getPropertyAndSerialize(obj, context)
-                        ?: throw ParseException("Missing requests in Requests")
+                    ?: throw ParseException("Missing requests in Requests")
                 Properties.name.writeJsonValue(value, writer, context)
                 Properties.name.capture(context, value)
             } else {
@@ -132,8 +137,11 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
             }
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: EnumNameContext?): ObjectValues<IndexedEnumDefinition<IndexedEnum<Any>>, Properties>{
-            if (reader.currentToken == JsonToken.StartDocument){
+        override fun readJson(
+            reader: IsJsonLikeReader,
+            context: EnumNameContext?
+        ): ObjectValues<IndexedEnumDefinition<IndexedEnum<Any>>, Properties> {
+            if (reader.currentToken == JsonToken.StartDocument) {
                 reader.nextToken()
             }
 

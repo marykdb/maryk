@@ -8,7 +8,7 @@ import maryk.core.properties.ObjectPropertyDefinitions
  * Use it to create a context on starting an action which needs a context.
  * This context is cached if it is needed to read multiple times
  */
-abstract class ContextualDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>, in CXI: IsPropertyContext, CX: IsPropertyContext>(
+abstract class ContextualDataModel<DO : Any, P : ObjectPropertyDefinitions<DO>, in CXI : IsPropertyContext, CX : IsPropertyContext>(
     properties: P,
     private val contextTransformer: (CXI?) -> CX?
 ) : AbstractObjectDataModel<DO, P, CXI, CX>(properties) {

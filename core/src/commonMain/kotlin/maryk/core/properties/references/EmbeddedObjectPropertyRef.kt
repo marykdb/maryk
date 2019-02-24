@@ -15,17 +15,18 @@ import maryk.core.values.AbstractValues
  */
 class EmbeddedObjectPropertyRef<
     DO : Any,
-    TO: Any,
-    P: ObjectPropertyDefinitions<DO>,
+    TO : Any,
+    P : ObjectPropertyDefinitions<DO>,
     out DM : AbstractObjectDataModel<DO, P, CXI, CX>,
-    CXI: IsPropertyContext,
-    CX: IsPropertyContext
+    CXI : IsPropertyContext,
+    CX : IsPropertyContext
 > internal constructor(
     propertyDefinition: EmbeddedObjectPropertyDefinitionWrapper<DO, TO, P, DM, CXI, CX, *>,
     parentReference: CanHaveComplexChildReference<*, *, *, *>?
-): CanHaveComplexChildReference<DO, EmbeddedObjectPropertyDefinitionWrapper<DO, TO, P, DM, CXI, CX, *>, CanHaveComplexChildReference<*, *, *, *>, AbstractValues<*, *, *>>(
+) : CanHaveComplexChildReference<DO, EmbeddedObjectPropertyDefinitionWrapper<DO, TO, P, DM, CXI, CX, *>, CanHaveComplexChildReference<*, *, *, *>, AbstractValues<*, *, *>>(
     propertyDefinition, parentReference
-), HasEmbeddedPropertyReference<DO>, IsPropertyReferenceForValues<DO, TO, EmbeddedObjectPropertyDefinitionWrapper<DO, TO, P, DM, CXI, CX, *>, CanHaveComplexChildReference<*, *, *, *>> {
+), HasEmbeddedPropertyReference<DO>,
+    IsPropertyReferenceForValues<DO, TO, EmbeddedObjectPropertyDefinitionWrapper<DO, TO, P, DM, CXI, CX, *>, CanHaveComplexChildReference<*, *, *, *>> {
     override val name = this.propertyDefinition.name
 
     override fun getEmbedded(name: String, context: IsPropertyContext?) =
@@ -35,7 +36,12 @@ class EmbeddedObjectPropertyRef<
     override fun getEmbeddedRef(reader: () -> Byte, context: IsPropertyContext?) =
         this.propertyDefinition.resolveReference(reader, parentReference)
 
-    override fun getEmbeddedStorageRef(reader: () -> Byte, context: IsPropertyContext?, referenceType: CompleteReferenceType, isDoneReading: () -> Boolean): AnyPropertyReference =
+    override fun getEmbeddedStorageRef(
+        reader: () -> Byte,
+        context: IsPropertyContext?,
+        referenceType: CompleteReferenceType,
+        isDoneReading: () -> Boolean
+    ): AnyPropertyReference =
         this.propertyDefinition.resolveReferenceFromStorage(reader, parentReference, context, isDoneReading)
 
     override fun writeStorageBytes(writer: (byte: Byte) -> Unit) {

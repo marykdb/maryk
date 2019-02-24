@@ -4,7 +4,7 @@ import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.initIntByVarWithExtraInfo
 
 /** Decode Storage index from [reader] and then creates object with [objectCreator] */
-fun <T: Any?> decodeStorageIndex(reader: () -> Byte, objectCreator: (Int, CompleteReferenceType) -> T): T {
+fun <T : Any?> decodeStorageIndex(reader: () -> Byte, objectCreator: (Int, CompleteReferenceType) -> T): T {
     var firstByte: Byte? = reader()
 
     return when (referenceStorageTypeOf(firstByte!!)) {

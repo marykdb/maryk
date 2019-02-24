@@ -25,7 +25,7 @@ internal fun YamlWriter.writeNamedIndexField(name: String, index: UInt) {
  * Read a complex named index field from yaml and write values
  * to [valueMap] using [nameDescriptor] and [indexDescriptor]
  */
-internal fun <DO: Any> IsYamlReader.readNamedIndexField(
+internal fun <DO : Any> IsYamlReader.readNamedIndexField(
     valueMap: MutableValueItems,
     nameDescriptor: FlexBytesPropertyDefinitionWrapper<String, String, IsPropertyContext, StringDefinition, DO>,
     indexDescriptor: FixedBytesPropertyDefinitionWrapper<UInt, *, IsPropertyContext, NumberDefinition<UInt>, DO>
@@ -35,13 +35,14 @@ internal fun <DO: Any> IsYamlReader.readNamedIndexField(
     }
 
     val index = (nextToken() as? JsonToken.FieldName)?.value?.toUInt()
-            ?: throw IllegalJsonOperation("Expected index integer as field name like '? 0: name'")
+        ?: throw IllegalJsonOperation("Expected index integer as field name like '? 0: name'")
     valueMap[indexDescriptor.index] = index
 
-    (nextToken() as? JsonToken.Value<*>) ?: throw IllegalJsonOperation("Expected property name as value like '? 0: name'")
+    (nextToken() as? JsonToken.Value<*>)
+        ?: throw IllegalJsonOperation("Expected property name as value like '? 0: name'")
     valueMap[nameDescriptor.index] = nameDescriptor.readJson(this, null)
 
-    if (nextToken() != JsonToken.EndObject || nextToken() != JsonToken.EndComplexFieldName){
+    if (nextToken() != JsonToken.EndObject || nextToken() != JsonToken.EndComplexFieldName) {
         throw IllegalJsonOperation("Expected only one index/value inside key like '? [0: name]' Start descriptor ': '  on a line below in same indent as '?'")
     }
     nextToken() // Move to next value

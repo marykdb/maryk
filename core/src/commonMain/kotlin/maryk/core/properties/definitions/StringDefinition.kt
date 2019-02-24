@@ -28,8 +28,7 @@ data class StringDefinition(
     HasSizeDefinition,
     IsSerializableFlexBytesEncodable<String, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<String>,
-    HasDefaultValueDefinition<String>
-{
+    HasDefaultValueDefinition<String> {
     override val propertyDefinitionType = PropertyDefinitionType.String
     override val wireType = WireType.LENGTH_DELIMITED
 
@@ -54,7 +53,11 @@ data class StringDefinition(
 
     override fun fromNativeType(value: Any) = value as? String
 
-    override fun validateWithRef(previousValue: String?, newValue: String?, refGetter: () -> IsPropertyReference<String, IsPropertyDefinition<String>, *>?) {
+    override fun validateWithRef(
+        previousValue: String?,
+        newValue: String?,
+        refGetter: () -> IsPropertyReference<String, IsPropertyDefinition<String>, *>?
+    ) {
         super<IsComparableDefinition>.validateWithRef(previousValue, newValue, refGetter)
 
         when {

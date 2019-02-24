@@ -26,7 +26,7 @@ internal typealias SimpleQueryDataModel<DO> = AbstractObjectDataModel<DO, Object
  * to read and write. [CXI] is the input Context for properties. This can be different because the ObjectDataModel can create
  * its own context by transforming the given context.
  */
-abstract class AbstractObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>, in CXI: IsPropertyContext, CX: IsPropertyContext> internal constructor(
+abstract class AbstractObjectDataModel<DO : Any, P : ObjectPropertyDefinitions<DO>, in CXI : IsPropertyContext, CX : IsPropertyContext> internal constructor(
     properties: P
 ) : IsObjectDataModel<DO, P>, AbstractDataModel<DO, P, ObjectValues<DO, P>, CXI, CX>(properties) {
     override fun validate(
@@ -84,7 +84,7 @@ abstract class AbstractObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>
      * The [cacher] caches any values needed to write later.
      * Optionally pass a [context] to write more complex properties which depend on other properties
      */
-    fun calculateProtoBufLength(dataObject: DO, cacher: WriteCacheWriter, context: CX? = null) : Int {
+    fun calculateProtoBufLength(dataObject: DO, cacher: WriteCacheWriter, context: CX? = null): Int {
         var totalByteLength = 0
         for (definition in this.properties) {
             val value = getValueWithDefinition(definition, dataObject, context)
@@ -104,7 +104,12 @@ abstract class AbstractObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>
      * possible cached values from [cacheGetter]
      * Optionally pass a [context] to write more complex properties which depend on other properties
      */
-    fun writeProtoBuf(dataObject: DO, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) {
+    fun writeProtoBuf(
+        dataObject: DO,
+        cacheGetter: WriteCacheReader,
+        writer: (byte: Byte) -> Unit,
+        context: CX? = null
+    ) {
         for (definition in this.properties) {
             val value = getValueWithDefinition(definition, dataObject, context)
 
@@ -116,7 +121,7 @@ abstract class AbstractObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>
         definition: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>,
         obj: DO,
         context: CX?
-    ) = if(obj is ObjectValues<*, *>) {
+    ) = if (obj is ObjectValues<*, *>) {
         obj.original(definition.index)
     } else {
         definition.getPropertyAndSerialize(obj, context)
@@ -124,5 +129,5 @@ abstract class AbstractObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>
 
     /** Transform [context] into context specific to ObjectDataModel. Override for specific implementation */
     @Suppress("UNCHECKED_CAST")
-    internal open fun transformContext(context: CXI?): CX?  = context as CX?
+    internal open fun transformContext(context: CXI?): CX? = context as CX?
 }

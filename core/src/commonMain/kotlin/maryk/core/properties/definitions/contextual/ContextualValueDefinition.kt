@@ -10,14 +10,14 @@ import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 
 /** Definition which refers to specific property value definition based on context from [contextualResolver] */
-data class ContextualValueDefinition<CX: IsPropertyContext, CXI: IsPropertyContext, T: Any, D: IsValueDefinition<T, CXI>>(
+data class ContextualValueDefinition<CX : IsPropertyContext, CXI : IsPropertyContext, T : Any, D : IsValueDefinition<T, CXI>>(
     val contextualResolver: (context: CX?) -> D,
     val contextTransformer: (context: CX?) -> CXI? = {
         @Suppress("UNCHECKED_CAST")
         it as CXI?
     },
     override val required: Boolean = true
-): IsValueDefinition<T, CX>, IsContextualEncodable<T, CX> {
+) : IsValueDefinition<T, CX>, IsContextualEncodable<T, CX> {
     override val final = true
     override val wireType = WireType.LENGTH_DELIMITED
 
@@ -36,7 +36,12 @@ data class ContextualValueDefinition<CX: IsPropertyContext, CXI: IsPropertyConte
     override fun readJson(reader: IsJsonLikeReader, context: CX?) =
         contextualResolver(context).readJson(reader, contextTransformer(context))
 
-    override fun writeTransportBytes(value: T, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?) =
+    override fun writeTransportBytes(
+        value: T,
+        cacheGetter: WriteCacheReader,
+        writer: (byte: Byte) -> Unit,
+        context: CX?
+    ) =
         contextualResolver(context).writeTransportBytes(value, cacheGetter, writer, contextTransformer(context))
 
     override fun calculateTransportByteLength(value: T, cacher: WriteCacheWriter, context: CX?) =

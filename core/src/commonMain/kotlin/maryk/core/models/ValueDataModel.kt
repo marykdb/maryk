@@ -24,14 +24,14 @@ import maryk.lib.bytes.Base64
  * ObjectDataModel of type [DO] for objects that can be encoded in fixed length width.
  * Contains [properties] definitions.
  */
-abstract class ValueDataModel<DO: ValueDataObject, P: ObjectPropertyDefinitions<DO>>(
+abstract class ValueDataModel<DO : ValueDataObject, P : ObjectPropertyDefinitions<DO>>(
     name: String,
     properties: P
 ) : ObjectDataModel<DO, P>(name, properties), MarykPrimitive {
     override val primitiveType = PrimitiveType.ValueModel
 
     internal val byteSize: Int by lazy {
-        var size = - 1
+        var size = -1
         for (it in this.properties) {
             val def = it.definition as IsFixedBytesEncodable<*>
             size += def.byteSize + 1
@@ -55,7 +55,7 @@ abstract class ValueDataModel<DO: ValueDataObject, P: ObjectPropertyDefinitions<
 
     /** Creates bytes for given [values] */
     protected fun toBytes(values: ObjectValues<DO, P>): ByteArray {
-        val bytes =  ByteArray(this.byteSize)
+        val bytes = ByteArray(this.byteSize)
         var offset = 0
 
         this.properties.forEachIndexed { index, it ->
@@ -65,7 +65,7 @@ abstract class ValueDataModel<DO: ValueDataObject, P: ObjectPropertyDefinitions<
                 bytes[offset++] = it
             }
 
-            if(offset < bytes.size) {
+            if (offset < bytes.size) {
                 bytes[offset++] = 1 // separator byte
             }
         }
@@ -85,7 +85,7 @@ abstract class ValueDataModel<DO: ValueDataObject, P: ObjectPropertyDefinitions<
 
     /** Creates bytes for given [inputs] */
     protected fun toBytes(vararg inputs: Any): ByteArray {
-        val bytes =  ByteArray(this.byteSize)
+        val bytes = ByteArray(this.byteSize)
         var offset = 0
 
         this.properties.forEachIndexed { index, it ->
@@ -95,7 +95,7 @@ abstract class ValueDataModel<DO: ValueDataObject, P: ObjectPropertyDefinitions<
                 bytes[offset++] = it
             }
 
-            if(offset < bytes.size) {
+            if (offset < bytes.size) {
                 bytes[offset++] = 1 // separator byte
             }
         }
@@ -116,8 +116,7 @@ abstract class ValueDataModel<DO: ValueDataObject, P: ObjectPropertyDefinitions<
 
     private object ValueDataModelProperties :
         ObjectPropertyDefinitions<ValueDataModel<*, *>>(),
-        IsDataModelPropertyDefinitions<ValueDataModel<*, *>, ObjectPropertyDefinitionsCollectionDefinitionWrapper<ValueDataModel<*, *>>>
-    {
+        IsDataModelPropertyDefinitions<ValueDataModel<*, *>, ObjectPropertyDefinitionsCollectionDefinitionWrapper<ValueDataModel<*, *>>> {
         override val name = IsNamedDataModel.addName(this, ValueDataModel<*, *>::name)
         override val properties = ObjectDataModel.addProperties(this)
     }
@@ -125,14 +124,15 @@ abstract class ValueDataModel<DO: ValueDataObject, P: ObjectPropertyDefinitions<
     internal object Model : DefinitionDataModel<ValueDataModel<*, *>>(
         properties = ValueDataModelProperties
     ) {
-        override fun invoke(values: SimpleObjectValues<ValueDataModel<*, *>>) = object : ValueDataModel<ValueDataObjectWithValues, ObjectPropertyDefinitions<ValueDataObjectWithValues>>(
-            name = values(1),
-            properties = values(2)
-        ){
-            override fun invoke(values: ObjectValues<ValueDataObjectWithValues, ObjectPropertyDefinitions<ValueDataObjectWithValues>>): ValueDataObjectWithValues {
-                return ValueDataObjectWithValues(toBytes(values), values)
+        override fun invoke(values: SimpleObjectValues<ValueDataModel<*, *>>) =
+            object : ValueDataModel<ValueDataObjectWithValues, ObjectPropertyDefinitions<ValueDataObjectWithValues>>(
+                name = values(1),
+                properties = values(2)
+            ) {
+                override fun invoke(values: ObjectValues<ValueDataObjectWithValues, ObjectPropertyDefinitions<ValueDataObjectWithValues>>): ValueDataObjectWithValues {
+                    return ValueDataObjectWithValues(toBytes(values), values)
+                }
             }
-        }
 
         override fun writeJson(
             values: ObjectValues<ValueDataModel<*, *>, ObjectPropertyDefinitions<ValueDataModel<*, *>>>,
@@ -142,7 +142,11 @@ abstract class ValueDataModel<DO: ValueDataObject, P: ObjectPropertyDefinitions<
             throw Exception("Cannot write definitions from values")
         }
 
-        override fun writeJson(obj: ValueDataModel<*, *>, writer: IsJsonLikeWriter, context: ContainsDefinitionsContext?) {
+        override fun writeJson(
+            obj: ValueDataModel<*, *>,
+            writer: IsJsonLikeWriter,
+            context: ContainsDefinitionsContext?
+        ) {
             this.writeDataModelJson(writer, context, obj, ValueDataModelProperties)
         }
 
@@ -151,7 +155,11 @@ abstract class ValueDataModel<DO: ValueDataObject, P: ObjectPropertyDefinitions<
             values: MutableValueItems,
             context: ContainsDefinitionsContext?
         ) {
-            readDataModelJson(context, reader, values, ValueDataModelProperties, { MutableObjectPropertyDefinitions<ValueDataModel<*, *>>() })
+            readDataModelJson(
+                context, reader, values,
+                properties = ValueDataModelProperties,
+                propertyDefinitionsCreator = { MutableObjectPropertyDefinitions<ValueDataModel<*, *>>() }
+            )
         }
     }
 }

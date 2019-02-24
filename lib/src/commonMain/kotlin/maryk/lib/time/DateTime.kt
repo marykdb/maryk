@@ -7,12 +7,20 @@ import kotlin.math.floor
 data class DateTime(
     val date: Date,
     val time: Time
-):
+) :
     TimeInterface by time,
     DateInterface by date,
     IsTime<DateTime>()
 {
-    constructor(year: Int, month: Byte, day: Byte, hour: Byte = 0, minute: Byte = 0, second: Byte = 0, milli: Short = 0): this(
+    constructor(
+        year: Int,
+        month: Byte,
+        day: Byte,
+        hour: Byte = 0,
+        minute: Byte = 0,
+        second: Byte = 0,
+        milli: Short = 0
+    ) : this(
         Date(year, month, day), Time(hour, minute, second, milli)
     )
 
@@ -36,7 +44,7 @@ data class DateTime(
     /** Get the date time as the amount of seconds since 01-01-1970 */
     fun toEpochSecond() = date.epochDay.toLong() * SECONDS_PER_DAY + time.toSecondsOfDay()
 
-    companion object: IsTimeObject<DateTime>() {
+    companion object : IsTimeObject<DateTime>() {
         var MIN = DateTime(Date.MIN, Time.MIN)
         var MAX_IN_SECONDS = DateTime(Date.MAX, Time.MAX_IN_SECONDS)
         var MAX_IN_MILLIS = DateTime(Date.MAX, Time.MAX_IN_MILLIS)
@@ -80,7 +88,8 @@ data class DateTime(
                     Date.parse(date),
                     Time.parse(time)
                 )
-            } catch (e: Throwable) { throw ParseException(value, e)
+            } catch (e: Throwable) {
+                throw ParseException(value, e)
             }
         }
     }

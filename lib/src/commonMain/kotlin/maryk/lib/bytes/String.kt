@@ -4,7 +4,7 @@ private const val MIN_SUPPLEMENTARY_CODE_POINT = 0x010000
 
 expect fun fromCodePoint(value: Int): String
 expect fun initString(length: Int, reader: () -> Byte): String
-expect fun codePointAt(string: String, index: Int) : Int
+expect fun codePointAt(string: String, index: Int): Int
 
 fun String.writeUTF8Bytes(writer: (byte: Byte) -> Unit) = this.toUTF8Bytes(writer)
 
@@ -110,7 +110,7 @@ private fun String.toUTF8Bytes(writer: (byte: Byte) -> Unit) {
     }
 }
 
-private fun toCodePoint(high: Char, low: Char)=
+private fun toCodePoint(high: Char, low: Char) =
     (high.toInt() shl 10) + low.toInt() + (
             MIN_SUPPLEMENTARY_CODE_POINT
                     - (Char.MIN_HIGH_SURROGATE.toInt() shl 10)
@@ -120,11 +120,11 @@ private fun toCodePoint(high: Char, low: Char)=
 private fun isSurrogatePair(high: Char, low: Char) =
     isHighSurrogate(high) && isLowSurrogate(low)
 
-private fun isHighSurrogate(ch: Char)=
+private fun isHighSurrogate(ch: Char) =
     ch >= Char.MIN_HIGH_SURROGATE && ch.toInt() < Char.MAX_HIGH_SURROGATE.toInt() + 1
 
-private fun isLowSurrogate(ch: Char)=
+private fun isLowSurrogate(ch: Char) =
     ch >= Char.MIN_LOW_SURROGATE && ch.toInt() < Char.MAX_LOW_SURROGATE.toInt() + 1
 
-private fun isSurrogate(ch: Char)=
+private fun isSurrogate(ch: Char) =
     ch >= Char.MIN_SURROGATE && ch.toInt() < Char.MAX_SURROGATE.toInt() + 1

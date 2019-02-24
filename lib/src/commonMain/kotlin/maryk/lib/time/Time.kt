@@ -10,7 +10,7 @@ data class Time(
     override val minute: Byte,
     override val second: Byte = 0,
     override val milli: Short = 0
-): IsTime<Time>(),
+) : IsTime<Time>(),
     TimeInterface,
     Comparable<Time>
 {
@@ -59,7 +59,7 @@ data class Time(
         }
     }
 
-    companion object: IsTimeObject<Time>() {
+    companion object : IsTimeObject<Time>() {
         val MIN = Time(0, 0, 0)
         val MAX_IN_SECONDS = Time(23, 59, 59)
         val MAX_IN_MILLIS = Time(23, 59, 59, 999)
@@ -70,7 +70,7 @@ data class Time(
 
         /** Get Time with seconds since midnight */
         fun ofSecondOfDay(secondOfDay: Int): Time {
-            if(secondOfDay !in (0 until SECONDS_PER_DAY)){
+            if (secondOfDay !in (0 until SECONDS_PER_DAY)) {
                 throw ParseException("seconds of day out of reach for Time: $secondOfDay in $SECONDS_PER_DAY")
             }
             val hours = (secondOfDay / SECONDS_PER_HOUR)
@@ -86,7 +86,7 @@ data class Time(
 
         /** Get Time with millis since midnight */
         fun ofMilliOfDay(milliOfDay: Int): Time {
-            if(milliOfDay !in (0 until MILLIS_PER_DAY)){
+            if (milliOfDay !in (0 until MILLIS_PER_DAY)) {
                 throw ParseException("Milli of day $milliOfDay out of reach for Time")
             }
             val hours = milliOfDay / MILLIS_PER_HOUR
@@ -105,8 +105,8 @@ data class Time(
 
         override fun parse(value: String): Time {
             val result = timeRegex.matchEntire(value)
-                    ?: throw ParseException("Invalid Time string: $value")
-            val ( hour, minute, _, second, _,  milli) = result.destructured
+                ?: throw ParseException("Invalid Time string: $value")
+            val (hour, minute, _, second, _, milli) = result.destructured
 
             return when {
                 milli.isNotBlank() -> {

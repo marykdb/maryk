@@ -16,7 +16,7 @@ actual object Base64 {
     actual fun decode(base64: String): ByteArray {
         // For this library end padding is mandatory so add possible missing padding
         val value = base64.padEnd(
-            length = ((base64.length+3)/4)*4,
+            length = ((base64.length + 3) / 4) * 4,
             padChar = '='
         )
 

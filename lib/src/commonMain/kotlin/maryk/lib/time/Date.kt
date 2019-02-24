@@ -8,30 +8,31 @@ data class Date(
     override val year: Int,
     override val month: Byte,
     override val day: Byte
-):
+) :
     DateInterface,
     IsTemporal<Date>()
 {
-    val epochDay: Int get() {
-        val y = year.toLong()
-        val m = month.toLong()
-        var total = 0L
-        total += 365 * y
-        if (y >= 0) {
-            total += (y + 3) / 4 - (y + 99) / 100 + (y + 399) / 400
-        } else {
-            total -= y / -4 - y / -100 + y / -400
-        }
-        total += (367 * m - 362) / 12
-        total += (day - 1).toLong()
-        if (m > 2) {
-            total--
-            if (!isLeapYear(year)) {
-                total--
+    val epochDay: Int
+        get() {
+            val y = year.toLong()
+            val m = month.toLong()
+            var total = 0L
+            total += 365 * y
+            if (y >= 0) {
+                total += (y + 3) / 4 - (y + 99) / 100 + (y + 399) / 400
+            } else {
+                total -= y / -4 - y / -100 + y / -400
             }
+            total += (367 * m - 362) / 12
+            total += (day - 1).toLong()
+            if (m > 2) {
+                total--
+                if (!isLeapYear(year)) {
+                    total--
+                }
+            }
+            return (total - DAYS_0000_TO_1970).toInt()
         }
-        return (total - DAYS_0000_TO_1970).toInt()
-    }
 
     override fun compareTo(other: Date): Int {
         var cmp = this.year - other.year
@@ -50,7 +51,7 @@ data class Date(
      */
     override fun toString() = "$year-${month.zeroFill(2)}-${day.zeroFill(2)}"
 
-    companion object: IsTemporalObject<Date>() {
+    companion object : IsTemporalObject<Date>() {
         var MIN = Date(-999_999, 1, 1)
         var MAX = Date(999_999, 12, 31)
 
@@ -113,16 +114,16 @@ data class Date(
 
             when (m) {
                 2.toByte() -> when {
-                    d in (1..28) -> {}
-                    d == 29.toByte() && isLeapYear(y) -> {}
+                    d in (1..28) -> Unit
+                    d == 29.toByte() && isLeapYear(y) -> Unit
                     else -> throw ParseException(value)
                 }
                 in byteArrayOf(1, 3, 5, 7, 8, 10, 12) -> when (d) {
-                    in (1..31) -> {}
+                    in (1..31) -> Unit
                     else -> throw ParseException(value)
                 }
-                in byteArrayOf(4, 6, 9, 11) -> when(d) {
-                    in (1..30) -> {}
+                in byteArrayOf(4, 6, 9, 11) -> when (d) {
+                    in (1..30) -> Unit
                     else -> throw ParseException(value)
                 }
                 else -> throw ParseException(value)

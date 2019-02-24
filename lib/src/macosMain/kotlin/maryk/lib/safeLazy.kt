@@ -25,7 +25,7 @@ internal class SafeLazyImpl<out T>(
             if (!_initializer.isFrozen) {
                 _initializer = null
             }
-            return if(this._value.compareAndSet(UNINITIALIZED, result)) {
+            return if (this._value.compareAndSet(UNINITIALIZED, result)) {
                 result
             } else {
                 _value.value as T

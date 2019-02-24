@@ -9,7 +9,7 @@ internal class HexKtTest {
     private val bytes = byteArrayOf(0, -1, 88)
 
     @Test
-    fun testToHexConversion(){
+    fun testToHexConversion() {
         bytes.toHex() shouldBe "00ff58"
 
         byteArrayOf(0, 0, 0, -1, 88).toHex(true) shouldBe "ff58"
@@ -18,18 +18,18 @@ internal class HexKtTest {
     }
 
     @Test
-    fun testFromHexConversion(){
+    fun testFromHexConversion() {
         bytes contentEquals initByteArrayByHex("00ff58") shouldBe true
         bytes contentEquals initByteArrayByHex("00FF58") shouldBe true
     }
 
     @Test
-    fun testHexConversionBothWays(){
+    fun testHexConversionBothWays() {
         bytes contentEquals initByteArrayByHex(bytes.toHex()) shouldBe true
     }
 
     @Test
-    fun testFromInvalidHexConversion(){
+    fun testFromInvalidHexConversion() {
         shouldThrow<ParseException> {
             bytes contentEquals initByteArrayByHex("wrong")
         }

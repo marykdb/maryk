@@ -10,7 +10,7 @@ actual object Base64 {
      */
     actual fun decode(base64: String): ByteArray {
         // Only needed for node
-        if(!base64.matches("^[a-zA-Z0-9/+]+[=]{0,2}\$")) {
+        if (!base64.matches("^[a-zA-Z0-9/+]+[=]{0,2}\$")) {
             throw ParseException("Not allowed characters found in base64 string: $base64")
         }
         val buffer = Buffer.from(base64, "base64")

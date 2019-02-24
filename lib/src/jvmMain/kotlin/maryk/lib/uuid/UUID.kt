@@ -1,6 +1,6 @@
 package maryk.lib.uuid
 
-import java.util.*
+import java.util.UUID
 
 actual fun generateUUID(): Pair<Long, Long> {
     val uuid = UUID.randomUUID()

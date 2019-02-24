@@ -9,11 +9,11 @@ val HEX_CHARS = charArrayOf('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a
 fun ByteArray.toHex(skipLeadingZeroBytes: Boolean = false): String {
     val numChars = size * 2
 
-    val startPos = if(skipLeadingZeroBytes) {
+    val startPos = if (skipLeadingZeroBytes) {
         var index = 0
         while (this[index] == ZERO_BYTE) {
             index++
-            if(index >= this.size) {
+            if (index >= this.size) {
                 return ""
             }
         }
@@ -32,15 +32,13 @@ fun ByteArray.toHex(skipLeadingZeroBytes: Boolean = false): String {
 }
 
 /** Converts [hex] String into a initByteArrayByHex */
-fun initByteArrayByHex(hex: String) : ByteArray {
+fun initByteArrayByHex(hex: String): ByteArray {
     if (hex.length % 2 != 0) {
         throw ParseException("length is not a multiple of 2")
     }
     val b = ByteArray(hex.length / 2)
     for (i in 0 until hex.length step 2) {
-        b[i / 2] = (
-                hexCharToInt(hex[i]) shl 4 or hexCharToInt(hex[i + 1])
-        ).toByte()
+        b[i / 2] = (hexCharToInt(hex[i]) shl 4 or hexCharToInt(hex[i + 1])).toByte()
     }
     return b
 }

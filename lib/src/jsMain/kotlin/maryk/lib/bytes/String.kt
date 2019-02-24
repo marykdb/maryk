@@ -7,6 +7,7 @@ actual fun fromCodePoint(value: Int) = js("String.fromCodePoint(value)") as Stri
 
 @Suppress("UNUSED_PARAMETER")
 private fun fromCharCode(value: Int) = js("String.fromCharCode(value)") as String
+
 @Suppress("UNUSED_PARAMETER")
 private fun fromCharCode(value: Int, value2: Int) = js("String.fromCharCode(value, value2)") as String
 
@@ -20,7 +21,7 @@ actual fun initString(length: Int, reader: () -> Byte): String {
         index++
 
         val v = reader()
-        if(v < 0) {
+        if (v < 0) {
             // If signed, change value to unsigned value
             (v and SEVEN_BYTES).toInt() + 0b1000_0000
         } else {
@@ -29,7 +30,7 @@ actual fun initString(length: Int, reader: () -> Byte): String {
     }
 
     var str = ""
-    while(index < length) {
+    while (index < length) {
         val value = read()
         when {
             value < 0x80 -> str += fromCharCode(value)

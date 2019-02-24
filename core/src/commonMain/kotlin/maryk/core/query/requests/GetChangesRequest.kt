@@ -10,7 +10,6 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
 import maryk.core.query.filters.IsFilter
-import maryk.core.query.orders.Order
 import maryk.core.query.responses.ChangesResponse
 import maryk.core.values.ObjectValues
 
@@ -23,7 +22,6 @@ import maryk.core.values.ObjectValues
 fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.getChanges(
     vararg keys: Key<DM>,
     filter: IsFilter? = null,
-    order: Order? = null,
     fromVersion: ULong = 0uL,
     toVersion: ULong? = null,
     maxVersions: UInt = 1u,
@@ -34,7 +32,6 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.getChanges(
         this,
         keys.toList(),
         filter,
-        order,
         fromVersion,
         toVersion,
         maxVersions,
@@ -53,7 +50,6 @@ data class GetChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
     override val dataModel: DM,
     override val keys: List<Key<DM>>,
     override val filter: IsFilter? = null,
-    override val order: Order? = null,
     override val fromVersion: ULong = 0uL,
     override val toVersion: ULong? = null,
     override val maxVersions: UInt = 1u,
@@ -70,11 +66,10 @@ data class GetChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
         val keys = IsGetRequest.addKeys(this, GetChangesRequest<*, *>::keys)
         val select = IsFetchRequest.addSelect(this, GetChangesRequest<*, *>::select)
         val filter = IsFetchRequest.addFilter(this, GetChangesRequest<*, *>::filter)
-        val order = IsFetchRequest.addOrder(this, GetChangesRequest<*, *>::order)
         val toVersion = IsFetchRequest.addToVersion(this, GetChangesRequest<*, *>::toVersion)
         val filterSoftDeleted = IsFetchRequest.addFilterSoftDeleted(this, GetChangesRequest<*, *>::filterSoftDeleted)
-        val fromVersion = IsChangesRequest.addFromVersion(8, this, GetChangesRequest<*, *>::fromVersion)
-        val maxVersions = IsChangesRequest.addMaxVersions(9, this, GetChangesRequest<*, *>::maxVersions)
+        val fromVersion = IsChangesRequest.addFromVersion(7, this, GetChangesRequest<*, *>::fromVersion)
+        val maxVersions = IsChangesRequest.addMaxVersions(8, this, GetChangesRequest<*, *>::maxVersions)
     }
 
     companion object : QueryDataModel<GetChangesRequest<*, *>, Properties>(
@@ -86,11 +81,10 @@ data class GetChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
                 keys = values(2),
                 select = values(3),
                 filter = values(4),
-                order = values(5),
-                toVersion = values(6),
-                filterSoftDeleted = values(7),
-                fromVersion = values(8),
-                maxVersions = values(9)
+                toVersion = values(5),
+                filterSoftDeleted = values(6),
+                fromVersion = values(7),
+                maxVersions = values(8)
             )
     }
 }

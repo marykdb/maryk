@@ -71,9 +71,9 @@ data class ScanChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinit
         val startKey = IsScanRequest.addStartKey(this, ScanChangesRequest<*, *>::startKey)
         val select = IsFetchRequest.addSelect(this, ScanChangesRequest<*, *>::select)
         val filter = IsFetchRequest.addFilter(this, ScanChangesRequest<*, *>::filter)
-        val order = IsFetchRequest.addOrder(this, ScanChangesRequest<*, *>::order)
         val toVersion = IsFetchRequest.addToVersion(this, ScanChangesRequest<*, *>::toVersion)
         val filterSoftDeleted = IsFetchRequest.addFilterSoftDeleted(this, ScanChangesRequest<*, *>::filterSoftDeleted)
+        val order = IsScanRequest.addOrder(this, ScanChangesRequest<*, *>::order)
         val limit = IsScanRequest.addLimit(this, ScanChangesRequest<*, *>::limit)
         val fromVersion = IsChangesRequest.addFromVersion(9, this, ScanChangesRequest<*, *>::fromVersion)
         val maxVersions = IsChangesRequest.addMaxVersions(10, this, ScanChangesRequest<*, *>::maxVersions)
@@ -88,9 +88,9 @@ data class ScanChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinit
                 startKey = values(2),
                 select = values(3),
                 filter = values(4),
-                order = values(5),
-                toVersion = values(6),
-                filterSoftDeleted = values(7),
+                toVersion = values(5),
+                filterSoftDeleted = values(6),
+                order = values(7),
                 limit = values(8),
                 fromVersion = values(9),
                 maxVersions = values(10)

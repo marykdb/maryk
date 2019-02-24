@@ -13,14 +13,12 @@ import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.filters.FilterType
 import maryk.core.query.filters.IsFilter
 import maryk.core.query.filters.mapOfFilterDefinitions
-import maryk.core.query.orders.Order
 import maryk.core.query.responses.IsResponse
 
 /** Defines a fetch. */
 interface IsFetchRequest<DM : IsRootDataModel<P>, P : PropertyDefinitions, RP : IsResponse> : IsStoreRequest<DM, RP> {
     val select: RootPropRefGraph<P>?
     val filter: IsFilter?
-    val order: Order?
     val toVersion: ULong?
     val filterSoftDeleted: Boolean
 
@@ -56,18 +54,9 @@ interface IsFetchRequest<DM : IsRootDataModel<P>, P : PropertyDefinitions, RP : 
                 getter = getter
             )
 
-        internal fun <DM : Any> addOrder(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> Order?) =
-            definitions.add(5, "order",
-                EmbeddedObjectDefinition(
-                    required = false,
-                    dataModel = { Order }
-                ),
-                getter
-            )
-
         internal fun <DM : Any> addToVersion(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> ULong?) =
             definitions.add(
-                6, "toVersion",
+                5, "toVersion",
                 NumberDefinition(
                     required = false,
                     type = UInt64
@@ -80,7 +69,7 @@ interface IsFetchRequest<DM : IsRootDataModel<P>, P : PropertyDefinitions, RP : 
             getter: (DM) -> Boolean?
         ) =
             definitions.add(
-                7, "filterSoftDeleted",
+                6, "filterSoftDeleted",
                 BooleanDefinition(
                     default = true
                 ),

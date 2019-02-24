@@ -45,9 +45,9 @@ class ScanChangesRequestTest {
         select:
         - value
         filter: !Exists value
-        order: !Desc value
         toVersion: 2345
         filterSoftDeleted: true
+        order: !Desc value
         limit: 300
         fromVersion: 1234
         maxVersions: 10

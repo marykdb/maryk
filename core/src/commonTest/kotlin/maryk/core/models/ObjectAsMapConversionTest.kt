@@ -6,7 +6,6 @@ import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.core.query.filters.Exists
-import maryk.core.query.orders.descending
 import maryk.core.query.requests.GetRequest
 import maryk.test.models.SimpleMarykModel
 import maryk.test.shouldBe
@@ -28,7 +27,6 @@ class ObjectAsMapConversionTest {
                 listOf(value)
             },
             filter with Exists(SimpleMarykModel.ref { value }),
-            order with SimpleMarykModel.ref { value }.descending(),
             toVersion with 333uL,
             filterSoftDeleted with true
         )
@@ -49,7 +47,6 @@ class ObjectAsMapConversionTest {
         select:
         - value
         filter: !Exists value
-        order: !Desc value
         toVersion: 333
         filterSoftDeleted: true
 

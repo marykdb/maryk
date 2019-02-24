@@ -8,28 +8,26 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
 import maryk.core.query.filters.IsFilter
-import maryk.core.query.orders.Order
 import maryk.core.query.responses.ValuesResponse
 import maryk.core.values.ObjectValues
 
 /**
  * Creates a Request to get [select] values of DataObjects by [keys] and [filter] for the DataModel of type [DM].
- * Optional: [order] can be applied to the results and the data can be shown as it was at [toVersion]
+ * Optional: the data can be requested as it was at [toVersion]
  * If [filterSoftDeleted] (default true) is set to false it will not filter away all soft deleted results.
  */
 fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.get(
     vararg keys: Key<DM>,
     select: RootPropRefGraph<P>? = null,
     filter: IsFilter? = null,
-    order: Order? = null,
     toVersion: ULong? = null,
     filterSoftDeleted: Boolean = true
 ) =
-    GetRequest(this, keys.toList(), select, filter, order, toVersion, filterSoftDeleted)
+    GetRequest(this, keys.toList(), select, filter, toVersion, filterSoftDeleted)
 
 /**
  * A Request to get [select] values of DataObjects by [keys] and [filter] for specific DataModel of type [DM].
- * Optional: [order] can be applied to the results and the data can be shown as it was at [toVersion]
+ * Optional: the data can be requested as it was at [toVersion]
  * If [filterSoftDeleted] (default true) is set to false it will not filter away all soft deleted results.
  */
 data class GetRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> internal constructor(
@@ -37,7 +35,6 @@ data class GetRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> in
     override val keys: List<Key<DM>>,
     override val select: RootPropRefGraph<P>? = null,
     override val filter: IsFilter?,
-    override val order: Order?,
     override val toVersion: ULong?,
     override val filterSoftDeleted: Boolean
 ) : IsGetRequest<DM, P, ValuesResponse<DM, P>> {
@@ -50,7 +47,6 @@ data class GetRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> in
         val keys = IsGetRequest.addKeys(this, GetRequest<*, *>::keys)
         val select = IsFetchRequest.addSelect(this, GetRequest<*, *>::select)
         val filter = IsFetchRequest.addFilter(this, GetRequest<*, *>::filter)
-        val order = IsFetchRequest.addOrder(this, GetRequest<*, *>::order)
         val toVersion = IsFetchRequest.addToVersion(this, GetRequest<*, *>::toVersion)
         val filterSoftDeleted = IsFetchRequest.addFilterSoftDeleted(this, GetRequest<*, *>::filterSoftDeleted)
     }
@@ -63,9 +59,8 @@ data class GetRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> in
             keys = values(2),
             select = values(3),
             filter = values(4),
-            order = values(5),
-            toVersion = values(6),
-            filterSoftDeleted = values(7)
+            toVersion = values(5),
+            filterSoftDeleted = values(6)
         )
     }
 }

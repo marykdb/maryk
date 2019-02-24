@@ -45,7 +45,6 @@ class GetChangesRequestTest {
         select:
         - value
         filter: !Exists value
-        order: !Desc value
         toVersion: 12345
         filterSoftDeleted: true
         fromVersion: 1234

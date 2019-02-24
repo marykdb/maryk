@@ -43,9 +43,9 @@ class ScanSelectRequestTest {
         select:
         - value
         filter: !Exists value
-        order: value
         toVersion: 2345
         filterSoftDeleted: true
+        order: value
         limit: 200
 
         """.trimIndent()

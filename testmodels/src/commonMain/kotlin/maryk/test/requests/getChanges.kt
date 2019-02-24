@@ -1,7 +1,6 @@
 package maryk.test.requests
 
 import maryk.core.query.filters.Exists
-import maryk.core.query.orders.descending
 import maryk.core.query.requests.getChanges
 import maryk.test.models.SimpleMarykModel
 
@@ -18,7 +17,6 @@ val getChangesMaxRequest = SimpleMarykModel.run {
         key1,
         key2,
         filter = Exists(ref { value }),
-        order = ref { value }.descending(),
         fromVersion = 1234uL,
         toVersion = 12345uL,
         maxVersions = 5u,

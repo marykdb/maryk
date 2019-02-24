@@ -7,7 +7,6 @@ import maryk.core.extensions.toUnitLambda
 import maryk.core.inject.Inject
 import maryk.core.query.RequestContext
 import maryk.core.query.filters.Exists
-import maryk.core.query.orders.descending
 import maryk.core.query.requests.GetRequest
 import maryk.core.query.requests.RequestType
 import maryk.core.query.requests.Requests
@@ -28,7 +27,6 @@ class InjectInRequestTest {
             dataModel with SimpleMarykModel,
             keys injectWith Inject("keysToInject", GetRequest.ref { keys }),
             filter with Exists(SimpleMarykModel.ref { value }),
-            order with SimpleMarykModel.ref { value }.descending(),
             toVersion with 333uL,
             filterSoftDeleted with true,
             select with SimpleMarykModel.graph {
@@ -77,7 +75,6 @@ class InjectInRequestTest {
         select:
         - value
         filter: !Exists value
-        order: !Desc value
         toVersion: 333
         filterSoftDeleted: true
 
@@ -94,7 +91,7 @@ class InjectInRequestTest {
             { context },
             checker = ::checker
         ) shouldBe """
-        {"from":"SimpleMarykModel","?keys":{"keysToInject":"keys"},"select":["value"],"filter":["Exists","value"],"order":{"propertyReference":"value","direction":"DESC"},"toVersion":"333","filterSoftDeleted":true}
+        {"from":"SimpleMarykModel","?keys":{"keysToInject":"keys"},"select":["value"],"filter":["Exists","value"],"toVersion":"333","filterSoftDeleted":true}
         """.trimIndent()
     }
 

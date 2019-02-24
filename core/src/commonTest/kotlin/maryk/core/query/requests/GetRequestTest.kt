@@ -6,7 +6,6 @@ import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.core.query.filters.Exists
-import maryk.core.query.orders.descending
 import maryk.core.yaml.MarykYamlReaders
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.getMaxRequest
@@ -36,7 +35,6 @@ class GetRequestTest {
                 dataModel with SimpleMarykModel,
                 keys with listOf(getMaxRequest.keys[0], getMaxRequest.keys[1]),
                 filter with Exists(SimpleMarykModel.ref { value }),
-                order with SimpleMarykModel.ref { value }.descending(),
                 toVersion with 333uL,
                 filterSoftDeleted with true,
                 select with SimpleMarykModel.graph {
@@ -73,7 +71,6 @@ class GetRequestTest {
         select:
         - value
         filter: !Exists value
-        order: !Desc value
         toVersion: 333
         filterSoftDeleted: true
 

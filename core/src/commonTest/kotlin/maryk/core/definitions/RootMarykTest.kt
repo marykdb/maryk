@@ -73,7 +73,6 @@ class RootMarykTest {
             select:
             - value
             filter: !Exists value
-            order: !Desc value
             toVersion: 333
             filterSoftDeleted: true
 
@@ -88,7 +87,7 @@ class RootMarykTest {
 
             item.type shouldBe convertedItem.type
 
-            when(item.type) {
+            when (item.type) {
                 Operation.Define -> {
                     compareDefinitions(item.value as Definitions, convertedItem.value as Definitions)
                 }

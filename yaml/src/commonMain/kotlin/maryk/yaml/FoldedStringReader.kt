@@ -21,7 +21,7 @@ internal class FoldedStringReader<P>(
 
         var previousWasOnBaseIndent = this.indentCount?.let { it == startIndentCount } ?: true
 
-        loop@while(true) {
+        loop@ while (true) {
             when (this.lastChar) {
                 '\n', '\r' -> {
                     this.foundLineBreaks = 1
@@ -30,7 +30,7 @@ internal class FoldedStringReader<P>(
 
 
                     var currentIndentCount = 0
-                    whitespace@while (this.lastChar.isWhitespace()) {
+                    whitespace@ while (this.lastChar.isWhitespace()) {
                         if (this.lastChar.isLineBreak()) {
                             currentIndentCount = 0
                             this.foundLineBreaks++
@@ -38,7 +38,7 @@ internal class FoldedStringReader<P>(
                             currentIndentCount++
                         }
                         read()
-                        if(currentIndentCount == this.indentCount!!) {
+                        if (currentIndentCount == this.indentCount!!) {
                             break@whitespace
                         }
                     }
@@ -56,7 +56,7 @@ internal class FoldedStringReader<P>(
                         this.storedValue += '\n'
                     }
 
-                    if(this.lastChar == ' ') {
+                    if (this.lastChar == ' ') {
                         if (previousWasOnBaseIndent) {
                             this.storedValue += '\n'
                         }

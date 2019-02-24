@@ -8,20 +8,19 @@ import maryk.json.ValueType
 /** Read single or multiple yaml documents until end of stream or "..." */
 internal class DocumentReader(
     yamlReader: YamlReaderImpl
-): YamlCharReader(yamlReader),
-    IsYamlCharWithIndentsReader
-{
+) : YamlCharReader(yamlReader),
+    IsYamlCharWithIndentsReader {
     private var finishedWithDirectives: Boolean? = null
     private var firstDocumentContentWasFound = false
     private var contentWasFound = false
     private var indentCount: Int = 0
 
     override fun readUntilToken(extraIndent: Int, tag: TokenType?): JsonToken {
-        if(this.lastChar == '\u0000') {
+        if (this.lastChar == '\u0000') {
             this.read()
         }
 
-        return when(this.lastChar) {
+        return when (this.lastChar) {
             '%' -> {
                 if (this.finishedWithDirectives == true) {
                     throw InvalidYamlContent("Cannot start another directives block")
@@ -37,18 +36,18 @@ internal class DocumentReader(
             '-' -> {
                 try {
                     this.read()
-                } catch(e: ExceptionWhileReadingJson) {
+                } catch (e: ExceptionWhileReadingJson) {
                     return plainStringReader("")
                 }
 
-                when(this.lastChar) {
+                when (this.lastChar) {
                     '-' -> {
                         try {
                             this.read()
-                        } catch(e: ExceptionWhileReadingJson) {
+                        } catch (e: ExceptionWhileReadingJson) {
                             plainStringReader("-")
                         }
-                        when(this.lastChar) {
+                        when (this.lastChar) {
                             '-' -> {
                                 read()
                                 return if (this.firstDocumentContentWasFound) {
@@ -81,18 +80,18 @@ internal class DocumentReader(
             '.' -> {
                 try {
                     this.read()
-                } catch(e: ExceptionWhileReadingJson) {
+                } catch (e: ExceptionWhileReadingJson) {
                     return plainStringReader("")
                 }
 
-                when(this.lastChar) {
+                when (this.lastChar) {
                     '.' -> {
                         try {
                             this.read()
-                        } catch(e: ExceptionWhileReadingJson) {
+                        } catch (e: ExceptionWhileReadingJson) {
                             return plainStringReader(".")
                         }
-                        when(this.lastChar) {
+                        when (this.lastChar) {
                             '.' -> {
                                 read()
                                 JsonToken.EndDocument
@@ -121,11 +120,12 @@ internal class DocumentReader(
                 if (indentCount != this.indentCount) {
                     throw InvalidYamlContent("Cannot have a new indent level which is lower than current")
                 } else {
-                    this.selectReaderAndRead(true, tag, 0)  { value, isPlainString, tagg, _ ->
+                    this.selectReaderAndRead(true, tag, 0) { value, isPlainString, tagg, _ ->
                         createYamlValueToken(value, tagg, isPlainString)
                     }
                 }
-            } else -> {
+            }
+            else -> {
                 if (this.finishedWithDirectives == false) {
                     throw InvalidYamlContent("Directives has to end with an start document --- separator")
                 }

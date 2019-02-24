@@ -38,7 +38,7 @@ internal fun <P> P.plainStringReader(
     }
 
     try {
-        loop@while(true) {
+        loop@ while (true) {
             when (this.lastChar) {
                 '\n', '\r' -> {
                     storedValue = storedValue.trimEnd()
@@ -102,7 +102,7 @@ internal fun <P> P.plainStringReader(
                                 return createToken()
                             }
                         }
-                        else -> {}
+                        else -> Unit
                     }
 
                     storeCharAndProceed()

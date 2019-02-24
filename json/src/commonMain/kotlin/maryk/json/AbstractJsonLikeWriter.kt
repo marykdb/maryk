@@ -29,13 +29,13 @@ enum class JsonType {
 
 /** Describes JSON complex types */
 sealed class JsonEmbedType(val isSimple: Boolean) {
-    class Object(isSimple: Boolean): JsonEmbedType(isSimple)
-    class Array(isSimple: Boolean): JsonEmbedType(isSimple)
-    object ComplexField: JsonEmbedType(false)
+    class Object(isSimple: Boolean) : JsonEmbedType(isSimple)
+    class Array(isSimple: Boolean) : JsonEmbedType(isSimple)
+    object ComplexField : JsonEmbedType(false)
 }
 
 /** Class to implement code which is generic among JSON like writers */
-abstract class AbstractJsonLikeWriter: IsJsonLikeWriter {
+abstract class AbstractJsonLikeWriter : IsJsonLikeWriter {
     protected var lastType: JsonType = START
     protected var typeStack: MutableList<JsonEmbedType> = mutableListOf()
 
@@ -57,7 +57,7 @@ abstract class AbstractJsonLikeWriter: IsJsonLikeWriter {
     }
 
     override fun writeEndObject() {
-        if(typeStack.isEmpty() || typeStack.last() !is JsonEmbedType.Object) {
+        if (typeStack.isEmpty() || typeStack.last() !is JsonEmbedType.Object) {
             throw IllegalJsonOperation("There is no object to close")
         }
         typeStack.removeAt(typeStack.lastIndex)
@@ -85,7 +85,7 @@ abstract class AbstractJsonLikeWriter: IsJsonLikeWriter {
     }
 
     override fun writeEndArray() {
-        if(typeStack.isEmpty() || typeStack.last() !is JsonEmbedType.Array) {
+        if (typeStack.isEmpty() || typeStack.last() !is JsonEmbedType.Array) {
             throw IllegalJsonOperation("Json: There is no array to close")
         }
         typeStack.removeAt(typeStack.lastIndex)
@@ -102,7 +102,7 @@ abstract class AbstractJsonLikeWriter: IsJsonLikeWriter {
         )
     }
 
-    protected fun checkTypeIsAllowed(type: JsonType, allowed: Array<JsonType>){
+    protected fun checkTypeIsAllowed(type: JsonType, allowed: Array<JsonType>) {
         if (lastType !in allowed) {
             throw IllegalJsonOperation("Type $type not allowed after $lastType")
         }

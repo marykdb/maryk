@@ -38,7 +38,7 @@ internal fun YamlCharReader.tagReader(onDone: (tag: TokenType) -> JsonToken): Js
         this.yamlReader.hasException = true
     }
 
-    if(foundUrlTag && newTag.last() != '>') {
+    if (foundUrlTag && newTag.last() != '>') {
         throw InvalidYamlContent("Yaml URL tag should always end with '>'")
     }
 

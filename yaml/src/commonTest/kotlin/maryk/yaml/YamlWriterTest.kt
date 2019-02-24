@@ -193,7 +193,7 @@ internal class YamlWriterTest {
     @Test
     fun writeYamlIndoubleArrayWithLessComplexChild() {
         var output = ""
-        YamlWriter{
+        YamlWriter {
             output += it
         }.apply {
             writeStartArray()
@@ -467,7 +467,7 @@ internal class YamlWriterTest {
             // Should not be able to write string value before a fieldname
             shouldThrow<IllegalJsonOperation> {
                 writeString("test")
-            }    
+            }
         }
     }
 
@@ -493,7 +493,7 @@ internal class YamlWriterTest {
             // Should not be able to write field name after field name
             shouldThrow<IllegalJsonOperation> {
                 writeFieldName("anotherField")
-            }            
+            }
         }
     }
 }

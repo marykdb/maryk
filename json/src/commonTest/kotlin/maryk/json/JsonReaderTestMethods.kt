@@ -9,7 +9,9 @@ fun IsJsonLikeReader.assertStartObject(type: MapType = MapType.Map) {
             type.let {
                 this.type shouldBe it
             }
-        } else { fail("$this should be object start") }
+        } else {
+            fail("$this should be object start")
+        }
     }
 }
 
@@ -25,7 +27,9 @@ fun IsJsonLikeReader.assertFieldName(value: String?) {
     this.nextToken().apply {
         if (this is JsonToken.FieldName) {
             this.value shouldBe value
-        } else { fail("$this should be field name '$value'") }
+        } else {
+            fail("$this should be field name '$value'")
+        }
     }
 }
 
@@ -35,7 +39,9 @@ fun IsJsonLikeReader.assertStartArray(type: ArrayType = ArrayType.Sequence) {
             type.let {
                 this.type shouldBe it
             }
-        } else { fail("$this should be array start") }
+        } else {
+            fail("$this should be array start")
+        }
     }
 }
 
@@ -47,7 +53,7 @@ fun IsJsonLikeReader.assertEndArray() {
     }
 }
 
-fun <T: Any> IsJsonLikeReader.assertValue(value: T?, type: ValueType<T>? = null) {
+fun <T : Any> IsJsonLikeReader.assertValue(value: T?, type: ValueType<T>? = null) {
     this.nextToken().apply {
         if (this is JsonToken.Value<*>) {
             this.value shouldBe value
@@ -55,7 +61,9 @@ fun <T: Any> IsJsonLikeReader.assertValue(value: T?, type: ValueType<T>? = null)
             type?.let {
                 this.type shouldBe it
             }
-        } else { fail("$this should be value '$value'") }
+        } else {
+            fail("$this should be value '$value'")
+        }
     }
 }
 

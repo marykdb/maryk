@@ -9,12 +9,14 @@ class JsonWriter(
     private val writer: (String) -> Unit
 ) : AbstractJsonLikeWriter() {
     override fun writeStartObject(isCompact: Boolean) {
-        if(lastType != START_ARRAY
+        if (lastType != START_ARRAY
             && !typeStack.isEmpty()
             && typeStack.last() is JsonEmbedType.Array
         ) {
             writer(",")
-            if (pretty) { writer(" ") }
+            if (pretty) {
+                writer(" ")
+            }
         }
         super.writeStartObject(isCompact)
         writer("{")
@@ -28,12 +30,14 @@ class JsonWriter(
     }
 
     override fun writeStartArray(isCompact: Boolean) {
-        if(lastType != START_ARRAY
+        if (lastType != START_ARRAY
             && !typeStack.isEmpty()
             && typeStack.last() is JsonEmbedType.Array
         ) {
             writer(",")
-            if (pretty) { writer(" ") }
+            if (pretty) {
+                writer(" ")
+            }
         }
         super.writeStartArray(isCompact)
         writer("[")
@@ -46,13 +50,15 @@ class JsonWriter(
 
     /** Writes the field name for an object */
     override fun writeFieldName(name: String) {
-        if(lastType != START_OBJ) {
+        if (lastType != START_OBJ) {
             writer(",")
             makePretty()
         }
         super.writeFieldName(name)
         writer("\"$name\":")
-        if (pretty) { writer(" ") }
+        if (pretty) {
+            writer(" ")
+        }
     }
 
     /** Writes a string value including quotes */
@@ -60,15 +66,17 @@ class JsonWriter(
 
     /** Writes a value excluding quotes */
     override fun writeValue(value: String) = if (!typeStack.isEmpty()) {
-        when(typeStack.last()) {
+        when (typeStack.last()) {
             is JsonEmbedType.Object -> {
                 super.checkObjectValueAllowed()
                 writer(value)
             }
             is JsonEmbedType.Array -> {
-                if(lastType != START_ARRAY) {
+                if (lastType != START_ARRAY) {
                     writer(",")
-                    if (pretty) { writer(" ") }
+                    if (pretty) {
+                        writer(" ")
+                    }
                 }
                 super.checkArrayValueAllowed()
                 writer(value)
@@ -85,7 +93,9 @@ class JsonWriter(
         if (pretty) {
             writer("\n")
             for (it in typeStack) {
-                if(it is JsonEmbedType.Object) { writer("\t") }
+                if (it is JsonEmbedType.Object) {
+                    writer("\t")
+                }
             }
         }
     }

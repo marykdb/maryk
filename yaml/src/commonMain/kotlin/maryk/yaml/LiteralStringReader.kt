@@ -32,14 +32,14 @@ internal open class LiteralStringReader<P>(
 
         findAndSetStartingIndentation()
 
-        loop@while(true) {
+        loop@ while (true) {
             when (this.lastChar) {
                 '\n', '\r' -> {
                     this.storedValue += this.lastChar
                     this.foundLineBreaks = 0
                     read()
                     var currentIndentCount = 0
-                    whitespace@while (this.lastChar.isWhitespace()) {
+                    whitespace@ while (this.lastChar.isWhitespace()) {
                         if (this.lastChar.isLineBreak()) {
                             currentIndentCount = 0
                             this.foundLineBreaks++
@@ -47,7 +47,7 @@ internal open class LiteralStringReader<P>(
                             currentIndentCount++
                         }
                         read()
-                        if(currentIndentCount == this.indentCount) {
+                        if (currentIndentCount == this.indentCount) {
                             break@whitespace
                         }
                     }
@@ -71,22 +71,22 @@ internal open class LiteralStringReader<P>(
     }
 
     protected fun readStartForOptionsAndReturnIndent(description: String) {
-        options@while (true) {
+        options@ while (true) {
             when {
                 this.lastChar.isNonZeroDigit() -> {
-                    if(this.indentCount != null) {
+                    if (this.indentCount != null) {
                         throw InvalidYamlContent("Cannot define indentation twice")
                     }
                     this.indentCount = this.lastChar.toString().toInt() + this.parentIndentCount
                 }
                 this.lastChar == '+' -> {
-                    if(this.chompStyle != ChompStyle.CLIP) {
+                    if (this.chompStyle != ChompStyle.CLIP) {
                         throw InvalidYamlContent("Cannot define chomping twice")
                     }
                     this.chompStyle = ChompStyle.KEEP
                 }
                 this.lastChar == '-' -> {
-                    if(this.chompStyle != ChompStyle.CLIP) {
+                    if (this.chompStyle != ChompStyle.CLIP) {
                         throw InvalidYamlContent("Cannot define chomping twice")
                     }
                     this.chompStyle = ChompStyle.STRIP
@@ -125,7 +125,7 @@ internal open class LiteralStringReader<P>(
         }
         if (this.indentCount == null) {
             this.indentCount = currentIndentCount
-        } else if(this.indentCount!! > currentIndentCount) {
+        } else if (this.indentCount!! > currentIndentCount) {
             throw InvalidYamlContent("Expected a continuation of block")
         } else {
             if (currentIndentCount > this.indentCount!!) {
@@ -147,7 +147,7 @@ internal open class LiteralStringReader<P>(
     }
 
     protected fun createTokenAndClose(): JsonToken {
-        when(this.chompStyle) {
+        when (this.chompStyle) {
             ChompStyle.KEEP -> for (it in 0 until this.foundLineBreaks) {
                 this.storedValue += '\n'
             }

@@ -11,7 +11,7 @@ import maryk.lib.extensions.isLineBreak
 import maryk.lib.time.DateTime
 
 /** Unknown tag name to reader, pass allowUnknownTags true in YamlReader to get them */
-class UnknownYamlTag(val name: String): MapType, ValueType<Nothing>, ArrayType
+class UnknownYamlTag(val name: String) : MapType, ValueType<Nothing>, ArrayType
 
 @Suppress("FunctionName")
 fun YamlReader(
@@ -19,11 +19,11 @@ fun YamlReader(
     tagMap: Map<String, Map<String, TokenType>>? = null,
     allowUnknownTags: Boolean = false,
     reader: () -> Char
-) : IsYamlReader =
+): IsYamlReader =
     YamlReaderImpl(defaultTag, tagMap, allowUnknownTags, reader)
 
 /** Interface to determine object is a yaml reader */
-interface IsYamlReader: IsJsonLikeReader {
+interface IsYamlReader : IsJsonLikeReader {
     /** Add token to stack to return first */
     fun pushToken(token: JsonToken)
 }
@@ -39,12 +39,12 @@ internal interface IsInternalYamlReader {
     fun read()
 }
 
-internal interface YamlValueType<out T: Any>: ValueType<T> {
-    object Binary: YamlValueType<ByteArray>
-    object Merge: YamlValueType<Nothing>
-    object TimeStamp: YamlValueType<DateTime>
-    object Value: YamlValueType<Nothing> //Default value
-    object Yaml: YamlValueType<Nothing>
+internal interface YamlValueType<out T : Any> : ValueType<T> {
+    object Binary : YamlValueType<ByteArray>
+    object Merge : YamlValueType<Nothing>
+    object TimeStamp : YamlValueType<DateTime>
+    object Value : YamlValueType<Nothing> //Default value
+    object Yaml : YamlValueType<Nothing>
 }
 
 private val yamlTagMap = mapOf(
@@ -165,10 +165,12 @@ internal class YamlReaderImpl(
                             this.merges.remove(merge)
                             return this.nextToken()
                         }
-                        this.merges.add(Merge(
-                            this.tokenDepth - 1,
-                            this.currentToken
-                        ))
+                        this.merges.add(
+                            Merge(
+                                this.tokenDepth - 1,
+                                this.currentToken
+                            )
+                        )
                         return this.nextToken()
                     }
                     false -> {
@@ -202,7 +204,7 @@ internal class YamlReaderImpl(
 
     internal fun skipEmptyLinesAndCommentsAndCountIndents(): Int {
         var currentIndentCount = 0
-        while(this.lastChar.isWhitespace()) {
+        while (this.lastChar.isWhitespace()) {
             if (this.lastChar.isLineBreak()) {
                 currentIndentCount = 0
             } else {
@@ -222,7 +224,7 @@ internal class YamlReaderImpl(
     override fun skipUntilNextField(handleSkipToken: ((JsonToken) -> Unit)?) {
         val startDepth = this.tokenDepth
         nextToken()
-        while(
+        while (
             !((currentToken is JsonToken.FieldName || currentToken is JsonToken.StartComplexFieldName) && this.tokenDepth <= startDepth)
             && currentToken !is JsonToken.Stopped
         ) {
@@ -266,7 +268,7 @@ internal class YamlReaderImpl(
                 this.tagMap[
                         realTag.substring(0, indexOfColon)
                 ]?.get(realTag.substring(indexOfColon))
-                        ?: throw InvalidYamlContent("Unknown $tag")
+                    ?: throw InvalidYamlContent("Unknown $tag")
             }
             this.tags.containsKey(prefix) -> {
                 val resolvedPrefix = this.tags[prefix]!!
@@ -279,7 +281,7 @@ internal class YamlReaderImpl(
                 }
 
                 this.tagMap[resolvedPrefix]?.get(tag)
-                        ?: throw InvalidYamlContent("Unknown tag $resolvedPrefix$tag")
+                    ?: throw InvalidYamlContent("Unknown tag $resolvedPrefix$tag")
             }
             prefix == "!" && !this.defaultTag.isNullOrEmpty() -> {
                 this.tagMap[this.defaultTag]?.get(tag)
@@ -289,7 +291,7 @@ internal class YamlReaderImpl(
             }
             prefix == "!!" -> {
                 this.tagMap["tag:yaml.org,2002:"]?.get(tag)
-                        ?: throw InvalidYamlContent("Unknown tag $prefix$tag")
+                    ?: throw InvalidYamlContent("Unknown tag $prefix$tag")
             }
             else -> throw InvalidYamlContent("Unknown tag prefix $prefix")
         }

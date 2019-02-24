@@ -14,8 +14,7 @@ internal class ExplicitMapKeyReader(
     yamlReader: YamlReaderImpl,
     parentReader: MapItemsReader<*>
 ) : YamlCharWithParentAndIndentReader<MapItemsReader<*>>(yamlReader, parentReader),
-    IsYamlCharWithIndentsReader
-{
+    IsYamlCharWithIndentsReader {
     private var state: ExplicitMapState? = null
     private var indentCount: Int = 0
 
@@ -74,7 +73,7 @@ internal class ExplicitMapKeyReader(
         this.currentReader = this.parentReader
         this.yamlReader.setUnclaimedIndenting(indentCount)
 
-        return when(this.state) {
+        return when (this.state) {
             ExplicitMapState.INTERNAL_MAP -> {
                 tokenToReturn?.let {
                     this.yamlReader.pushToken(JsonToken.EndObject)
@@ -101,7 +100,7 @@ internal class ExplicitMapKeyReader(
             ExplicitMapState.EMPTY_KEY_VALUE -> {
                 if (this.lastChar == ':') {
                     read()
-                    if(this.lastChar == ' ') {
+                    if (this.lastChar == ' ') {
                         return this.parentReader.checkAndCreateFieldName(null, false)
                     }
                 }
@@ -124,7 +123,12 @@ internal class ExplicitMapKeyReader(
         return null
     }
 
-    private fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean, tag: TokenType?, extraIndent: Int): JsonToken {
+    private fun jsonTokenCreator(
+        value: String?,
+        isPlainStringReader: Boolean,
+        tag: TokenType?,
+        extraIndent: Int
+    ): JsonToken {
         while (this.lastChar.isSpacing()) {
             read()
         }
@@ -153,7 +157,7 @@ internal class ExplicitMapKeyReader(
     }
 
     override fun handleReaderInterrupt() =
-        when(this.state) {
+        when (this.state) {
             null -> {
                 this.state = ExplicitMapState.STARTED
                 JsonToken.SimpleStartObject

@@ -46,9 +46,10 @@ internal class MapItemsReader<out P>(
                     if (currentIndentCount == readerIndentCount && this.state == MapState.VALUE_FOUND) {
                         this.state = MapState.NEW_PAIR
                     }
-                    this.selectReaderAndRead(true, tag, currentIndentCount - readerIndentCount, this::jsonTokenCreator).also {
-                        return checkAndSetState(currentIndentCount == readerIndentCount, tag, it)
-                    }
+                    this.selectReaderAndRead(true, tag, currentIndentCount - readerIndentCount, this::jsonTokenCreator)
+                        .also {
+                            return checkAndSetState(currentIndentCount == readerIndentCount, tag, it)
+                        }
                 }
             } else {
                 this.selectReaderAndRead(false, tag, extraIndent, this::jsonTokenCreator).also {
@@ -59,7 +60,7 @@ internal class MapItemsReader<out P>(
     }
 
     internal fun setState(it: JsonToken) {
-        if(this.stateWasSetOnRead) {
+        if (this.stateWasSetOnRead) {
             return
         }
 
@@ -103,7 +104,12 @@ internal class MapItemsReader<out P>(
         return checkAndSetState(extraIndent == 0, tag, token)
     }
 
-    private fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean, tag: TokenType?, extraIndent: Int): JsonToken {
+    private fun jsonTokenCreator(
+        value: String?,
+        isPlainStringReader: Boolean,
+        tag: TokenType?,
+        extraIndent: Int
+    ): JsonToken {
         while (this.lastChar.isSpacing()) {
             read()
         }
@@ -205,7 +211,7 @@ internal class MapItemsReader<out P>(
 
             this.stateWasSetOnRead = true
 
-            return if(this.state == MapState.KEY_FOUND) {
+            return if (this.state == MapState.KEY_FOUND) {
                 this.yamlReader.pushTokenAsFirst(it)
                 this.createTokensFittingTag(tag)
             } else {

@@ -32,7 +32,7 @@ internal fun YamlCharReader.anchorReader(onDone: () -> JsonToken): JsonToken {
     var anchor = ""
     read()
 
-    while(!this.lastChar.isWhitespace()) {
+    while (!this.lastChar.isWhitespace()) {
         anchor += this.lastChar
         read()
     }

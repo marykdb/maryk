@@ -19,7 +19,7 @@ internal class SequenceItemsReader<out P>(
     private var expectValueAfter: JsonToken? = null
 
     override fun readUntilToken(extraIndent: Int, tag: TokenType?): JsonToken {
-        return when(this.isStarted) {
+        return when (this.isStarted) {
             null -> {
                 this.isStarted = false
                 tag?.let {
@@ -47,7 +47,11 @@ internal class SequenceItemsReader<out P>(
                     currentIndentCount == readerIndentCount -> // Continue reading on same level
                         this.continueIndentLevel(extraIndent, tag)
                     else -> // Deeper value
-                        this.selectReaderAndRead(isLineBreak, tag, currentIndentCount - this.indentCount()) { value, isPlainString, tagg, _ ->
+                        this.selectReaderAndRead(
+                            isLineBreak,
+                            tag,
+                            currentIndentCount - this.indentCount()
+                        ) { value, isPlainString, tagg, _ ->
                             createYamlValueToken(value, tagg, isPlainString)
                         }.also {
                             this.expectValueAfter = this.yamlReader.currentToken

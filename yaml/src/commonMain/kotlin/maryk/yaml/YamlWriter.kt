@@ -33,15 +33,16 @@ class YamlWriter(
             ""
         } else prefix
 
-    private val lastIsCompact: Boolean get() {
-        this.compactStartedAtLevel?.let {
-            if (this.typeStack.size < it) {
-                this.compactStartedAtLevel = null
-            } else return true
-        }
+    private val lastIsCompact: Boolean
+        get() {
+            this.compactStartedAtLevel?.let {
+                if (this.typeStack.size < it) {
+                    this.compactStartedAtLevel = null
+                } else return true
+            }
 
-        return this.typeStack.lastOrNull()?.isSimple ?: false
-    }
+            return this.typeStack.lastOrNull()?.isSimple ?: false
+        }
 
     override fun writeStartObject(isCompact: Boolean) {
         if (isCompact || this.lastIsCompact) {
@@ -51,8 +52,8 @@ class YamlWriter(
             ) {
                 writer(" ")
             } else if (this.lastType == END_OBJ) {
-                val lastEmbedType= this.typeStack.lastOrNull()
-                if(lastEmbedType is JsonEmbedType.Array) {
+                val lastEmbedType = this.typeStack.lastOrNull()
+                if (lastEmbedType is JsonEmbedType.Array) {
                     writer(", ")
                 }
             }
@@ -70,7 +71,7 @@ class YamlWriter(
                 writer(" ")
             }
 
-            val lastEmbedType= this.typeStack.lastOrNull()
+            val lastEmbedType = this.typeStack.lastOrNull()
 
             // If starting object within array then add array field
             if (lastEmbedType != null && lastEmbedType is JsonEmbedType.Array && !prefixWasWrittenBefore) {
@@ -135,7 +136,7 @@ class YamlWriter(
                     this.prefixWasWritten = true
                     prefix += spacing
                 }
-                else -> {}
+                else -> Unit
             }
         } else if (lastType != START_ARRAY && lastType != FIELD_NAME) {
             writer(",")
@@ -160,7 +161,7 @@ class YamlWriter(
             }
         } else {
             super.writeEndArray()
-            val lastType = if(typeStack.isEmpty()) null else typeStack.last()
+            val lastType = if (typeStack.isEmpty()) null else typeStack.last()
 
             if (lastType == null || (lastType !is JsonEmbedType.Object && lastType !is JsonEmbedType.ComplexField)) {
                 prefix = prefix.removeSuffix(spacing)
@@ -195,7 +196,7 @@ class YamlWriter(
             writer(" ")
         }
 
-        when(typeStack.last()) {
+        when (typeStack.last()) {
             is JsonEmbedType.Object -> {
                 super.checkObjectValueAllowed()
                 if (lastTypeBeforeOperation == FIELD_NAME) {
@@ -304,7 +305,7 @@ class YamlWriter(
 
         prefix = prefix.removeSuffix(spacing)
 
-        if(typeStack.isEmpty() || typeStack.last() !== JsonEmbedType.ComplexField) {
+        if (typeStack.isEmpty() || typeStack.last() !== JsonEmbedType.ComplexField) {
             throw IllegalJsonOperation("There is no complex field to close")
         }
         typeStack.removeAt(typeStack.lastIndex)
@@ -315,7 +316,7 @@ class YamlWriter(
 
     /** If value contains yaml incompatible values it will be surrounded by quotes */
     private fun sanitizeValue(value: String) =
-        if(value.matches(toSanitizeRegex)) {
+        if (value.matches(toSanitizeRegex)) {
             "'${value.replace("'", "''")}'"
         } else {
             value

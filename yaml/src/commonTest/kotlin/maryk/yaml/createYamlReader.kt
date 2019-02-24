@@ -5,11 +5,11 @@ import maryk.json.MapType
 import maryk.json.ValueType
 
 /** Indexed type of property definitions */
-sealed class TestType: MapType {
-    object Foo: MapType
-    object Bar: MapType
-    object Test: MapType
-    object Value: ValueType<Any>
+sealed class TestType : MapType {
+    object Foo : MapType
+    object Bar : MapType
+    object Test : MapType
+    object Value : ValueType<Any>
 }
 
 const val defaultTag = "tag:test,2018:"

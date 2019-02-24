@@ -11,7 +11,11 @@ import maryk.lib.extensions.HEX_CHARS
  * Pass [tag] to set type on Value.
  * [jsonTokenCreator] creates the right jsonToken. Could be field name or value.
  */
-internal fun YamlCharReader.doubleQuoteString(tag: TokenType?, indentAtStart: Int, jsonTokenCreator: JsonTokenCreator): JsonToken {
+internal fun YamlCharReader.doubleQuoteString(
+    tag: TokenType?,
+    indentAtStart: Int,
+    jsonTokenCreator: JsonTokenCreator
+): JsonToken {
     var foundValue: String? = ""
 
     fun addCharAndResetSkipChar(value: String): SkipCharType {
@@ -23,13 +27,13 @@ internal fun YamlCharReader.doubleQuoteString(tag: TokenType?, indentAtStart: In
         read()
 
         var skipChar: SkipCharType = SkipCharType.None
-        loop@while(lastChar != '"' || skipChar == SkipCharType.StartNewEscaped) {
+        loop@ while (lastChar != '"' || skipChar == SkipCharType.StartNewEscaped) {
             skipChar = when (skipChar) {
-                SkipCharType.None -> when(lastChar) {
+                SkipCharType.None -> when (lastChar) {
                     '\\' -> SkipCharType.StartNewEscaped
                     else -> addCharAndResetSkipChar("$lastChar")
                 }
-                SkipCharType.StartNewEscaped -> when(lastChar) {
+                SkipCharType.StartNewEscaped -> when (lastChar) {
                     '0' -> addCharAndResetSkipChar("\u0000")
                     'a' -> addCharAndResetSkipChar("\u0007")
                     'b' -> addCharAndResetSkipChar("\b")
@@ -53,7 +57,7 @@ internal fun YamlCharReader.doubleQuoteString(tag: TokenType?, indentAtStart: In
                     '\n', '\r' -> SkipCharType.None
                     else -> addCharAndResetSkipChar("\\$lastChar")
                 }
-                is SkipCharType.UtfChar -> when(lastChar.toLowerCase()) {
+                is SkipCharType.UtfChar -> when (lastChar.toLowerCase()) {
                     in HEX_CHARS -> {
                         if (skipChar.addCharAndHasReachedEnd(lastChar)) {
                             addCharAndResetSkipChar(skipChar.toCharString())
@@ -94,14 +98,16 @@ private sealed class SkipCharType {
         private var index = 0
         fun addCharAndHasReachedEnd(char: Char): Boolean {
             chars[index++] = char
-            if(index == charCount) {
+            if (index == charCount) {
                 return true
             }
             return false
         }
+
         open fun toCharString(): String {
             return chars.joinToString(separator = "").toInt(16).toChar().toString()
         }
+
         fun toOriginalChars(): String {
             return chars.sliceArray(0 until index).joinToString(separator = "")
         }

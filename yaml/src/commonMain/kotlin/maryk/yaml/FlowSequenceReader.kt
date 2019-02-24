@@ -25,8 +25,7 @@ internal class FlowSequenceReader<out P>(
     private val indentToAdd: Int
 ) : YamlCharWithParentAndIndentReader<P>(yamlReader, parentReader)
         where P : YamlCharReader,
-              P : IsYamlCharWithIndentsReader
-{
+              P : IsYamlCharWithIndentsReader {
     private var state = FlowSequenceState.START
     private var cachedCall: (() -> JsonToken)? = null
 
@@ -36,7 +35,7 @@ internal class FlowSequenceReader<out P>(
             this.state = FlowSequenceState.KEY
         }
 
-        return when(this.state) {
+        return when (this.state) {
             FlowSequenceState.START -> {
                 this.state = FlowSequenceState.VALUE_START
                 tag?.let {
@@ -47,11 +46,11 @@ internal class FlowSequenceReader<out P>(
             }
             FlowSequenceState.COMPLEX_KEY -> this.jsonTokenCreator(null, false, null, 0)
             else -> {
-                while(this.lastChar.isWhitespace()) {
+                while (this.lastChar.isWhitespace()) {
                     read()
                 }
 
-                return when(this.lastChar) {
+                return when (this.lastChar) {
                     '\'' -> this.singleQuoteString(tag, extraIndent, this::jsonTokenCreator)
                     '\"' -> this.doubleQuoteString(tag, extraIndent, this::jsonTokenCreator)
                     '{' -> this.flowMapReader(tag, 0).let(this::checkComplexFieldAndReturn)
@@ -68,7 +67,7 @@ internal class FlowSequenceReader<out P>(
                         }
                     }
                     ',' -> {
-                        if(this.state != FlowSequenceState.MAP_END && this.state != FlowSequenceState.VALUE_START) {
+                        if (this.state != FlowSequenceState.MAP_END && this.state != FlowSequenceState.VALUE_START) {
                             return this.jsonTokenCreator(null, false, null, 0)
                         }
 
@@ -107,7 +106,7 @@ internal class FlowSequenceReader<out P>(
                             }
                             this.state = FlowSequenceState.EXPLICIT_KEY
                             this.jsonTokenCreator(null, false, tag, 0)
-                        } else if(this.lastChar == ',' || this.lastChar == ':') {
+                        } else if (this.lastChar == ',' || this.lastChar == ':') {
                             this.state = FlowSequenceState.EXPLICIT_KEY
                             this.jsonTokenCreator(null, false, null, 0)
                         } else {
@@ -115,7 +114,13 @@ internal class FlowSequenceReader<out P>(
                         }
                     }
                     '|', '>', '@', '`' -> throw InvalidYamlContent("Unsupported character $lastChar in flow array")
-                    else -> this.plainStringReader("", tag, PlainStyleMode.FLOW_SEQUENCE, indentToAdd, this::jsonTokenCreator)
+                    else -> this.plainStringReader(
+                        "",
+                        tag,
+                        PlainStyleMode.FLOW_SEQUENCE,
+                        indentToAdd,
+                        this::jsonTokenCreator
+                    )
                 }
             }
         }
@@ -164,7 +169,11 @@ internal class FlowSequenceReader<out P>(
         }
     }
 
-    private fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean, tag: TokenType?, @Suppress("UNUSED_PARAMETER") extraIndentAtStart: Int): JsonToken = when(this.state) {
+    private fun jsonTokenCreator(
+        value: String?,
+        isPlainStringReader: Boolean,
+        tag: TokenType?, @Suppress("UNUSED_PARAMETER") extraIndentAtStart: Int
+    ): JsonToken = when (this.state) {
         FlowSequenceState.START -> throw Exception("Sequence cannot be in start mode")
         FlowSequenceState.EXPLICIT_KEY -> this.startObject(tag)
         FlowSequenceState.VALUE_START -> {

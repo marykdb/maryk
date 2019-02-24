@@ -28,7 +28,7 @@ class PresetJsonTokenReader(
                 is JsonToken.EndObject, is JsonToken.EndArray -> {
                     this.typeStackCount--
                 }
-                else -> {}
+                else -> Unit
             }
         }
     }

@@ -32,7 +32,7 @@ class JsonReader(
             when (currentToken) {
                 JsonToken.StartDocument -> {
                     lastChar = readSkipWhitespace()
-                    when(lastChar) {
+                    when (lastChar) {
                         '{' -> startObject()
                         '[' -> startArray()
                         '"' -> readStringValue(this::constructJsonValueToken)
@@ -41,7 +41,7 @@ class JsonReader(
                 }
                 is JsonToken.StartObject -> {
                     typeStack.add(JsonComplexType.OBJECT)
-                    when(lastChar) {
+                    when (lastChar) {
                         '}' -> endObject()
                         '"' -> readFieldName()
                         else -> throwJsonException()
@@ -72,7 +72,7 @@ class JsonReader(
                     }
                 }
                 JsonToken.ObjectSeparator -> {
-                    when(lastChar) {
+                    when (lastChar) {
                         '"' -> readFieldName()
                         else -> throwJsonException()
                     }
@@ -112,19 +112,19 @@ class JsonReader(
     }
 
     private fun constructJsonValueToken(it: Any?) =
-            when (it) {
-                null -> JsonToken.NullValue
-                is Boolean -> JsonToken.Value(it, ValueType.Bool)
-                is String -> JsonToken.Value(it, ValueType.String)
-                is Double -> JsonToken.Value(it, ValueType.Float)
-                is Long -> JsonToken.Value(it, ValueType.Int)
-                else -> JsonToken.Value(it.toString(), ValueType.String)
-            }
+        when (it) {
+            null -> JsonToken.NullValue
+            is Boolean -> JsonToken.Value(it, ValueType.Bool)
+            is String -> JsonToken.Value(it, ValueType.String)
+            is Double -> JsonToken.Value(it, ValueType.Float)
+            is Long -> JsonToken.Value(it, ValueType.Int)
+            else -> JsonToken.Value(it.toString(), ValueType.String)
+        }
 
     override fun skipUntilNextField(handleSkipToken: ((JsonToken) -> Unit)?) {
         val startDepth = typeStack.count()
         nextToken()
-        while(
+        while (
             !(currentToken is JsonToken.FieldName && this.typeStack.count() <= startDepth)
             && currentToken !is JsonToken.Stopped
         ) {
@@ -168,7 +168,7 @@ class JsonReader(
     }
 
     private fun readArray() {
-        when(lastChar) {
+        when (lastChar) {
             ',' -> {
                 currentToken = JsonToken.ArraySeparator
                 readSkipWhitespace()
@@ -179,7 +179,7 @@ class JsonReader(
     }
 
     private fun readObject() {
-        when(lastChar) {
+        when (lastChar) {
             ',' -> {
                 currentToken = JsonToken.ObjectSeparator
                 readSkipWhitespace()
@@ -229,19 +229,21 @@ class JsonReader(
         }
 
         // Read fraction
-        val isFraction = if(lastChar == '.') {
+        val isFraction = if (lastChar == '.') {
             addAndAdvance()
             if (!lastChar.isDigit()) throwJsonException()
             do {
                 addAndAdvance()
             } while (lastChar.isDigit())
             true
-        } else { false }
+        } else {
+            false
+        }
 
         // read exponent
-        val isExponent = if(lastChar in arrayOf('e', 'E')) {
+        val isExponent = if (lastChar in arrayOf('e', 'E')) {
             addAndAdvance()
-            if(lastChar in arrayOf('+', '-')) {
+            if (lastChar in arrayOf('+', '-')) {
                 addAndAdvance()
             }
             if (!lastChar.isDigit()) throwJsonException()
@@ -249,9 +251,11 @@ class JsonReader(
                 addAndAdvance()
             } while (lastChar.isDigit())
             true
-        } else { false }
+        } else {
+            false
+        }
 
-        currentToken = if(isExponent || isFraction) {
+        currentToken = if (isExponent || isFraction) {
             currentTokenCreator(storedValue!!.toDouble())
         } else {
             currentTokenCreator(storedValue!!.toLong())
@@ -263,7 +267,7 @@ class JsonReader(
     private fun readFalse(currentTokenCreator: (value: Any?) -> JsonToken) {
         for (it in "alse") {
             read()
-            if(lastChar != it) {
+            if (lastChar != it) {
                 throwJsonException()
             }
         }
@@ -275,7 +279,7 @@ class JsonReader(
     private fun readTrue(currentTokenCreator: (value: Any?) -> JsonToken) {
         ("rue").forEach {
             read()
-            if(lastChar != it) {
+            if (lastChar != it) {
                 throwJsonException()
             }
         }
@@ -287,7 +291,7 @@ class JsonReader(
     private fun readNullValue(currentTokenCreator: (value: String?) -> JsonToken) {
         for (it in "ull") {
             read()
-            if(lastChar != it) {
+            if (lastChar != it) {
                 throwJsonException()
             }
         }
@@ -314,14 +318,16 @@ class JsonReader(
             private var index = 0
             fun addCharAndHasReachedEnd(char: Char): Boolean {
                 chars[index++] = char
-                if(index == charCount) {
+                if (index == charCount) {
                     return true
                 }
                 return false
             }
+
             open fun toCharString(): String {
                 return chars.joinToString(separator = "").toInt(16).toChar().toString()
             }
+
             fun toOriginalChars(): String {
                 return chars.sliceArray(0 until index).joinToString(separator = "")
             }
@@ -331,18 +337,18 @@ class JsonReader(
     private fun readStringValue(currentTokenCreator: (value: String?) -> JsonToken) {
         read()
         var skipChar: SkipCharType = SkipCharType.None
-        loop@while(lastChar != '"' || skipChar == SkipCharType.StartNewEscaped) {
+        loop@ while (lastChar != '"' || skipChar == SkipCharType.StartNewEscaped) {
             fun addCharAndResetSkipChar(value: String): SkipCharType {
                 storedValue += value
                 return SkipCharType.None
             }
 
             skipChar = when (skipChar) {
-                SkipCharType.None -> when(lastChar) {
+                SkipCharType.None -> when (lastChar) {
                     '\\' -> SkipCharType.StartNewEscaped
                     else -> addCharAndResetSkipChar("$lastChar")
                 }
-                SkipCharType.StartNewEscaped -> when(lastChar) {
+                SkipCharType.StartNewEscaped -> when (lastChar) {
                     'b' -> addCharAndResetSkipChar("\b")
                     '"' -> addCharAndResetSkipChar("\"")
                     '\\' -> addCharAndResetSkipChar("\\")
@@ -354,7 +360,7 @@ class JsonReader(
                     'u' -> SkipCharType.UtfChar('u', 4)
                     else -> addCharAndResetSkipChar("\\$lastChar")
                 }
-                is SkipCharType.UtfChar -> when(lastChar.toLowerCase()) {
+                is SkipCharType.UtfChar -> when (lastChar.toLowerCase()) {
                     in HEX_CHARS -> {
                         if (skipChar.addCharAndHasReachedEnd(lastChar)) {
                             addCharAndResetSkipChar(skipChar.toCharString())
@@ -369,7 +375,7 @@ class JsonReader(
         }
         currentToken = currentTokenCreator(storedValue)
 
-        if(!typeStack.isEmpty()) {
+        if (!typeStack.isEmpty()) {
             readSkipWhitespace()
         }
     }
@@ -382,7 +388,7 @@ class JsonReader(
     private fun endObject() {
         typeStack.removeAt(typeStack.lastIndex)
         currentToken = JsonToken.EndObject
-        if(!typeStack.isEmpty()) {
+        if (!typeStack.isEmpty()) {
             readSkipWhitespace()
         }
     }
@@ -395,7 +401,7 @@ class JsonReader(
     private fun endArray() {
         typeStack.removeAt(typeStack.lastIndex)
         currentToken = JsonToken.EndArray
-        if(!typeStack.isEmpty()) {
+        if (!typeStack.isEmpty()) {
             readSkipWhitespace()
         }
     }

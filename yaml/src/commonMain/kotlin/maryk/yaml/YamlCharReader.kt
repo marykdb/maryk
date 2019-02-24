@@ -9,12 +9,13 @@ internal abstract class YamlCharReader(
 ) : IsInternalYamlReader by yamlReader {
     /** Reads Yaml until next found Token */
     abstract fun readUntilToken(extraIndent: Int, tag: TokenType? = null): JsonToken
+
     /** Handles reader interruptions */
     abstract fun handleReaderInterrupt(): JsonToken
 }
 
 /** Yaml Character reader which is a child to a parent reader */
-internal abstract class YamlCharWithParentReader<out P: YamlCharReader>(
+internal abstract class YamlCharWithParentReader<out P : YamlCharReader>(
     yamlReader: YamlReaderImpl,
     val parentReader: P
 ) : YamlCharReader(yamlReader)

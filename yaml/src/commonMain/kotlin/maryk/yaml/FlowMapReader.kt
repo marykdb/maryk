@@ -15,8 +15,7 @@ internal class FlowMapReader<out P>(
     private val indentToAdd: Int
 ) : YamlCharWithParentAndIndentReader<P>(yamlReader, parentReader)
         where P : YamlCharReader,
-              P : IsYamlCharWithIndentsReader
-{
+              P : IsYamlCharWithIndentsReader {
     private var state = FlowMapState.START
     private val fieldNames = mutableListOf<String?>()
 
@@ -26,7 +25,7 @@ internal class FlowMapReader<out P>(
             this.state = FlowMapState.KEY
         }
 
-        return when(this.state) {
+        return when (this.state) {
             FlowMapState.START -> {
                 this.state = FlowMapState.KEY
                 tag?.let { tokenType ->
@@ -37,11 +36,11 @@ internal class FlowMapReader<out P>(
             }
             FlowMapState.COMPLEX_KEY -> this.jsonTokenCreator(null, false, tag, extraIndent)
             else -> {
-                while(this.lastChar.isWhitespace()) {
+                while (this.lastChar.isWhitespace()) {
                     read()
                 }
 
-                return when(this.lastChar) {
+                return when (this.lastChar) {
                     '\'' -> this.singleQuoteString(tag, extraIndent, this::jsonTokenCreator)
                     '\"' -> this.doubleQuoteString(tag, extraIndent, this::jsonTokenCreator)
                     '[' -> {
@@ -65,7 +64,7 @@ internal class FlowMapReader<out P>(
                         } else this.plainStringReader("-", tag, PlainStyleMode.FLOW_MAP, 0, this::jsonTokenCreator)
                     }
                     ',' -> {
-                        if(this.state != FlowMapState.SEPARATOR) {
+                        if (this.state != FlowMapState.SEPARATOR) {
                             return this.jsonTokenCreator(null, false, tag, extraIndent)
                         }
 
@@ -81,7 +80,7 @@ internal class FlowMapReader<out P>(
                         throw InvalidYamlContent("Invalid char $lastChar at this position")
                     }
                     '}' -> {
-                        if(this.state != FlowMapState.SEPARATOR) {
+                        if (this.state != FlowMapState.SEPARATOR) {
                             return this.jsonTokenCreator(null, false, tag, extraIndent)
                         }
                         this.state = FlowMapState.STOP
@@ -98,14 +97,20 @@ internal class FlowMapReader<out P>(
                             }
                             this.state = FlowMapState.EXPLICIT_KEY
                             this.jsonTokenCreator(null, false, tag, extraIndent)
-                        } else if(this.lastChar == ',' || this.lastChar == ':') {
+                        } else if (this.lastChar == ',' || this.lastChar == ':') {
                             this.jsonTokenCreator(null, false, tag, extraIndent)
                         } else {
                             this.plainStringReader("?", tag, PlainStyleMode.FLOW_MAP, 0, this::jsonTokenCreator)
                         }
                     }
                     '|', '>', '@', '`' -> throw InvalidYamlContent("Unsupported character $lastChar in flow map")
-                    else -> this.plainStringReader("", tag, PlainStyleMode.FLOW_MAP, indentToAdd, this::jsonTokenCreator)
+                    else -> this.plainStringReader(
+                        "",
+                        tag,
+                        PlainStyleMode.FLOW_MAP,
+                        indentToAdd,
+                        this::jsonTokenCreator
+                    )
                 }
             }
         }
@@ -118,7 +123,11 @@ internal class FlowMapReader<out P>(
     ) =
         throw InvalidYamlContent("Did not close map")
 
-    private fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean, tag: TokenType?, @Suppress("UNUSED_PARAMETER") extraIndent: Int) = when(this.state) {
+    private fun jsonTokenCreator(
+        value: String?,
+        isPlainStringReader: Boolean,
+        tag: TokenType?, @Suppress("UNUSED_PARAMETER") extraIndent: Int
+    ) = when (this.state) {
         FlowMapState.START, FlowMapState.STOP -> throw Exception("Map cannot create tokens in state $state")
         FlowMapState.EXPLICIT_KEY -> this.readUntilToken(0)
         FlowMapState.KEY, FlowMapState.SEPARATOR -> {

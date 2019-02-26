@@ -13,7 +13,7 @@ operator fun ByteArray.compareTo(other: ByteArray): Int {
         val a = this[it].toUByte() and MAX_BYTE
         val b = other[it].toUByte() and MAX_BYTE
         if (a != b) {
-            return (a.toUByte() - b.toUByte()).toInt()
+            return a.toUByte().toInt() - b.toUByte().toInt()
         }
     }
     return this.size - other.size

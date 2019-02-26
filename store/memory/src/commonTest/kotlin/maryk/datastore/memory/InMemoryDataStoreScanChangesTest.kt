@@ -4,6 +4,7 @@ import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.VersionedChanges
+import maryk.core.query.orders.Order.Companion.descending
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
 import maryk.core.query.requests.scanChanges
@@ -88,6 +89,26 @@ class InMemoryDataStoreScanChangesTest {
                 ))
             )
             it.key shouldBe keys[0]
+        }
+    }
+
+    @Test
+    fun executeSimpleScanReversedChangesRequest() = runSuspendingTest {
+        val scanResponse = dataStore.execute(
+            Log.scanChanges(startKey = keys[2], order = descending)
+        )
+
+        scanResponse.changes.size shouldBe 3
+
+        // Mind that Log is sorted in reverse so it goes back in time going forward
+        scanResponse.changes[0].let {
+            it.key shouldBe keys[0]
+        }
+        scanResponse.changes[1].let {
+            it.key shouldBe keys[1]
+        }
+        scanResponse.changes[2].let {
+            it.key shouldBe keys[2]
         }
     }
 

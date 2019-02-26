@@ -2,6 +2,7 @@ package maryk.datastore.memory
 
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.Key
+import maryk.core.query.orders.Order.Companion.descending
 import maryk.core.query.requests.add
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
@@ -61,6 +62,29 @@ class InMemoryDataStoreScanTest {
         scanResponse.values[2].let {
             it.values shouldBe logs[0]
             it.key shouldBe keys[0]
+        }
+    }
+
+    @Test
+    fun executeSimpleScanRequestReverseOrder() = runSuspendingTest {
+        val scanResponse = dataStore.execute(
+            Log.scan(startKey = keys[2], order = descending)
+        )
+
+        scanResponse.values.size shouldBe 3
+
+        // Mind that Log is sorted in reverse so it goes back in time going forward
+        scanResponse.values[0].let {
+            it.values shouldBe logs[0]
+            it.key shouldBe keys[0]
+        }
+        scanResponse.values[1].let {
+            it.values shouldBe logs[1]
+            it.key shouldBe keys[1]
+        }
+        scanResponse.values[2].let {
+            it.values shouldBe logs[2]
+            it.key shouldBe keys[2]
         }
     }
 

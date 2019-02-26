@@ -61,15 +61,15 @@ class ScanRangeTest {
         scanRange.start.toHex() shouldBe "7fffffa3f445ec7fff010000"
         scanRange.end?.toHex() shouldBe "7fffffa3f445ec7fff01ffff"
 
-        scanRange.keyBeforeStart(match.bytes) shouldBe true
+        scanRange.keyBeforeStart(match.bytes) shouldBe false
         scanRange.keyOutOfRange(match.bytes) shouldBe false
         scanRange.keyMatches(match.bytes) shouldBe true
 
-        scanRange.keyBeforeStart(earlier.bytes) shouldBe false
+        scanRange.keyBeforeStart(earlier.bytes) shouldBe true
         scanRange.keyOutOfRange(earlier.bytes) shouldBe false
         scanRange.keyMatches(earlier.bytes) shouldBe true
 
-        scanRange.keyBeforeStart(later.bytes) shouldBe true
+        scanRange.keyBeforeStart(later.bytes) shouldBe false
         scanRange.keyOutOfRange(later.bytes) shouldBe true
         scanRange.keyMatches(later.bytes) shouldBe true
     }
@@ -85,15 +85,15 @@ class ScanRangeTest {
         scanRange.start.toHex() shouldBe "7fffffa3f445ec7fff020000"
         scanRange.end?.toHex() shouldBe "ffffffffffffffffffffffff"
 
-        scanRange.keyBeforeStart(match.bytes) shouldBe false // Because should skip
+        scanRange.keyBeforeStart(match.bytes) shouldBe true // Because should skip
         scanRange.keyOutOfRange(match.bytes) shouldBe false
         scanRange.keyMatches(match.bytes) shouldBe true
 
-        scanRange.keyBeforeStart(earlier.bytes) shouldBe false
+        scanRange.keyBeforeStart(earlier.bytes) shouldBe true
         scanRange.keyOutOfRange(earlier.bytes) shouldBe false
         scanRange.keyMatches(earlier.bytes) shouldBe true
 
-        scanRange.keyBeforeStart(later.bytes) shouldBe true
+        scanRange.keyBeforeStart(later.bytes) shouldBe false
         scanRange.keyOutOfRange(later.bytes) shouldBe false
         scanRange.keyMatches(later.bytes) shouldBe true
     }
@@ -109,15 +109,15 @@ class ScanRangeTest {
         scanRange.start.toHex() shouldBe "7fffffa3f445ec7fff010000"
         scanRange.end?.toHex() shouldBe "ffffffffffffffffffffffff"
 
-        scanRange.keyBeforeStart(match.bytes) shouldBe true
+        scanRange.keyBeforeStart(match.bytes) shouldBe false
         scanRange.keyOutOfRange(match.bytes) shouldBe false
         scanRange.keyMatches(match.bytes) shouldBe true
 
-        scanRange.keyBeforeStart(earlier.bytes) shouldBe false
+        scanRange.keyBeforeStart(earlier.bytes) shouldBe true
         scanRange.keyOutOfRange(earlier.bytes) shouldBe false
         scanRange.keyMatches(earlier.bytes) shouldBe true
 
-        scanRange.keyBeforeStart(later.bytes) shouldBe true
+        scanRange.keyBeforeStart(later.bytes) shouldBe false
         scanRange.keyOutOfRange(later.bytes) shouldBe false
         scanRange.keyMatches(later.bytes) shouldBe true
     }
@@ -133,15 +133,15 @@ class ScanRangeTest {
         scanRange.start.toHex() shouldBe "000000000000000000000000"
         scanRange.end?.toHex() shouldBe "7fffffa3f445ec7fff00ffff"
 
-        scanRange.keyBeforeStart(match.bytes) shouldBe true
+        scanRange.keyBeforeStart(match.bytes) shouldBe false
         scanRange.keyOutOfRange(match.bytes) shouldBe true // because should not be included
         scanRange.keyMatches(match.bytes) shouldBe true
 
-        scanRange.keyBeforeStart(earlier.bytes) shouldBe true
+        scanRange.keyBeforeStart(earlier.bytes) shouldBe false
         scanRange.keyOutOfRange(earlier.bytes) shouldBe false
         scanRange.keyMatches(earlier.bytes) shouldBe true
 
-        scanRange.keyBeforeStart(later.bytes) shouldBe true
+        scanRange.keyBeforeStart(later.bytes) shouldBe false
         scanRange.keyOutOfRange(later.bytes) shouldBe true
         scanRange.keyMatches(later.bytes) shouldBe true
     }
@@ -157,15 +157,15 @@ class ScanRangeTest {
         scanRange.start.toHex() shouldBe "000000000000000000000000"
         scanRange.end?.toHex() shouldBe "7fffffa3f445ec7fff01ffff"
 
-        scanRange.keyBeforeStart(match.bytes) shouldBe true
+        scanRange.keyBeforeStart(match.bytes) shouldBe false
         scanRange.keyOutOfRange(match.bytes) shouldBe false
         scanRange.keyMatches(match.bytes) shouldBe true
 
-        scanRange.keyBeforeStart(earlier.bytes) shouldBe true
+        scanRange.keyBeforeStart(earlier.bytes) shouldBe false
         scanRange.keyOutOfRange(earlier.bytes) shouldBe false
         scanRange.keyMatches(earlier.bytes) shouldBe true
 
-        scanRange.keyBeforeStart(later.bytes) shouldBe true
+        scanRange.keyBeforeStart(later.bytes) shouldBe false
         scanRange.keyOutOfRange(later.bytes) shouldBe true
         scanRange.keyMatches(later.bytes) shouldBe true
     }
@@ -181,15 +181,15 @@ class ScanRangeTest {
         scanRange.start.toHex() shouldBe "7fffffa3f445cc7ffd010000"
         scanRange.end?.toHex() shouldBe "7fffffa3f446027ffe01ffff"
 
-        scanRange.keyBeforeStart(match.bytes) shouldBe true
+        scanRange.keyBeforeStart(match.bytes) shouldBe false
         scanRange.keyOutOfRange(match.bytes) shouldBe false
         scanRange.keyMatches(match.bytes) shouldBe true
 
-        scanRange.keyBeforeStart(earlier.bytes) shouldBe false
+        scanRange.keyBeforeStart(earlier.bytes) shouldBe true
         scanRange.keyOutOfRange(earlier.bytes) shouldBe false
         scanRange.keyMatches(earlier.bytes) shouldBe true
 
-        scanRange.keyBeforeStart(later.bytes) shouldBe true
+        scanRange.keyBeforeStart(later.bytes) shouldBe false
         scanRange.keyOutOfRange(later.bytes) shouldBe true
         scanRange.keyMatches(later.bytes) shouldBe true
     }
@@ -211,15 +211,15 @@ class ScanRangeTest {
 
         val match = Log.key(Log("message", ERROR, DateTime(2018, 12, 8, 12, 2, 2, 2)))
 
-        scanRange.keyBeforeStart(match.bytes) shouldBe true
+        scanRange.keyBeforeStart(match.bytes) shouldBe false
         scanRange.keyOutOfRange(match.bytes) shouldBe false
         scanRange.keyMatches(match.bytes) shouldBe true
 
-        scanRange.keyBeforeStart(earlier.bytes) shouldBe false
+        scanRange.keyBeforeStart(earlier.bytes) shouldBe true
         scanRange.keyOutOfRange(earlier.bytes) shouldBe false
         scanRange.keyMatches(earlier.bytes) shouldBe false
 
-        scanRange.keyBeforeStart(later.bytes) shouldBe true
+        scanRange.keyBeforeStart(later.bytes) shouldBe false
         scanRange.keyOutOfRange(later.bytes) shouldBe true
         scanRange.keyMatches(later.bytes) shouldBe false
     }
@@ -242,15 +242,15 @@ class ScanRangeTest {
         scanRange.end?.toHex() shouldBe "7fffffa3f445ec7fff010003"
         scanRange.endInclusive shouldBe false
 
-        scanRange.keyBeforeStart(match.bytes) shouldBe true
+        scanRange.keyBeforeStart(match.bytes) shouldBe false
         scanRange.keyOutOfRange(match.bytes) shouldBe true
         scanRange.keyMatches(match.bytes) shouldBe true
 
-        scanRange.keyBeforeStart(earlier.bytes) shouldBe false
+        scanRange.keyBeforeStart(earlier.bytes) shouldBe true
         scanRange.keyOutOfRange(earlier.bytes) shouldBe false
         scanRange.keyMatches(earlier.bytes) shouldBe true
 
-        scanRange.keyBeforeStart(later.bytes) shouldBe true
+        scanRange.keyBeforeStart(later.bytes) shouldBe false
         scanRange.keyOutOfRange(later.bytes) shouldBe true
         scanRange.keyMatches(later.bytes) shouldBe true
     }
@@ -268,16 +268,15 @@ class ScanRangeTest {
         scanRange.end?.toHex() shouldBe "ffffffffffffffffffffffff"
         scanRange.endInclusive shouldBe true
 
-        scanRange.keyBeforeStart(match.bytes)
-        scanRange.keyBeforeStart(match.bytes) shouldBe true
+        scanRange.keyBeforeStart(match.bytes) shouldBe false
         scanRange.keyOutOfRange(match.bytes) shouldBe false
         scanRange.keyMatches(match.bytes) shouldBe false
 
-        scanRange.keyBeforeStart(earlier.bytes) shouldBe true
+        scanRange.keyBeforeStart(earlier.bytes) shouldBe false
         scanRange.keyOutOfRange(earlier.bytes) shouldBe false
         scanRange.keyMatches(earlier.bytes) shouldBe true
 
-        scanRange.keyBeforeStart(later.bytes) shouldBe true
+        scanRange.keyBeforeStart(later.bytes) shouldBe false
         scanRange.keyOutOfRange(later.bytes) shouldBe false
         scanRange.keyMatches(later.bytes) shouldBe true
     }

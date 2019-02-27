@@ -2,9 +2,13 @@ package maryk.core.properties.enum
 
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.definitions.PrimitiveType
+import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.SerializationException
+import maryk.core.extensions.bytes.initUInt
+import maryk.core.extensions.bytes.writeBytes
 import maryk.core.models.ContextualDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.NumberDefinition
@@ -23,18 +27,39 @@ import maryk.lib.exceptions.ParseException
 open class IndexedEnumDefinition<E : IndexedEnum<E>> private constructor(
     internal val optionalCases: (() -> Array<E>)?,
     override val name: String
-) : MarykPrimitive, IsPropertyDefinition<E> {
-    override val required = true
-    override val final = true
-
-    constructor(name: String, values: () -> Array<E>) : this(name = name, optionalCases = values)
-
-    val cases get() = optionalCases!!
+) : MarykPrimitive,
+    IsPropertyDefinition<E>,
+    IsFixedBytesEncodable<E> {
 
     override val primitiveType = PrimitiveType.EnumDefinition
 
+    override val byteSize = 2
+    override val required = true
+    override val final = true
+
+    val valueByString: Map<String, E> by lazy {
+        cases().associate { Pair(it.name, it) }
+    }
+    val valueByIndex: Map<UInt, E> by lazy {
+        cases().associate { Pair(it.index, it) }
+    }
+
+    val cases get() = optionalCases!!
+
+    constructor(name: String, values: () -> Array<E>) : this(name = name, optionalCases = values)
+
     override fun getEmbeddedByName(name: String): Nothing? = null
     override fun getEmbeddedByIndex(index: Int): Nothing? = null
+
+    override fun readStorageBytes(length: Int, reader: () -> Byte): E {
+        val index = initUInt(reader, 2)
+        return valueByIndex[index]
+            ?: throw DefNotFoundException("Unknown index $index for $name")
+    }
+
+    override fun writeStorageBytes(value: E, writer: (byte: Byte) -> Unit) {
+        value.index.writeBytes(writer, 2)
+    }
 
     internal object Properties : ObjectPropertyDefinitions<IndexedEnumDefinition<IndexedEnum<Any>>>() {
         val name = add(1, "name",

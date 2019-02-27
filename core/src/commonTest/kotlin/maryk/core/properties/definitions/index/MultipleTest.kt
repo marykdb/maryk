@@ -17,7 +17,7 @@ class MultipleTest {
     private val multiple = Multiple(
         UUIDKey,
         Reversed(bool.ref()),
-        TypeId(multi.ref()),
+        multi.anyTypeRef(),
         string.ref(),
         Reversed(string.ref()),
         int.ref()
@@ -54,7 +54,7 @@ class MultipleTest {
         ) shouldBe """
         - !UUID
         - !Reversed bool
-        - !TypeId multi
+        - !Ref multi.*
         - !Ref string
         - !Reversed string
         - !Ref int
@@ -64,6 +64,6 @@ class MultipleTest {
 
     @Test
     fun toReferenceStorageBytes() {
-        multiple.toReferenceStorageByteArray().toHex() shouldBe "050101020c31020b69020a09020c09020a11"
+        multiple.toReferenceStorageByteArray().toHex() shouldBe "040101020b31020a69020a09020b09020a11"
     }
 }

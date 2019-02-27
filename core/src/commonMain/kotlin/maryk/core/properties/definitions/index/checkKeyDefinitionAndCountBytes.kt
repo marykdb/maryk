@@ -4,6 +4,7 @@ import maryk.core.exceptions.InvalidDefinitionException
 import maryk.core.exceptions.TypeException
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsValueDefinition
+import maryk.core.properties.references.IsFixedBytesPropertyReference
 import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
 import maryk.core.properties.references.ValueWithFlexBytesPropertyReference
 
@@ -24,12 +25,9 @@ internal fun checkKeyDefinitionAndCountBytes(keyDefinition: IsIndexable): Int {
             )
             keyDefinition.byteSize
         }
+        is IsFixedBytesPropertyReference<*> -> keyDefinition.byteSize
         is ValueWithFlexBytesPropertyReference<*, *, *, *> ->
             throw InvalidDefinitionException("Definition should have a fixed amount of bytes for a key")
-        is TypeId<*> -> {
-            checkKeyDefinition(keyDefinition.reference.name, keyDefinition.reference.propertyDefinition.definition)
-            keyDefinition.byteSize
-        }
         is Reversed<*> ->
             checkKeyDefinitionAndCountBytes(keyDefinition.reference)
         is UUIDKey -> UUIDKey.byteSize

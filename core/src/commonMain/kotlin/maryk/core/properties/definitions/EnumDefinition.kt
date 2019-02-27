@@ -38,16 +38,8 @@ class EnumDefinition<E : IndexedEnum<E>>(
     override val wireType = WireType.VAR_INT
     override val byteSize = 2
 
-    private val valueByString: Map<String, E> by lazy {
-        enum.cases().associate { Pair(it.name, it) }
-    }
-
-    private val valueByIndex: Map<UInt, E> by lazy {
-        enum.cases().associate { Pair(it.index, it) }
-    }
-
     private fun getEnumByIndex(index: UInt) =
-        valueByIndex[index] ?: throw ParseException("Enum index does not exist $index")
+        enum.valueByIndex[index] ?: throw ParseException("Enum index does not exist $index")
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) =
         getEnumByIndex(initUInt(reader, 2))
@@ -75,7 +67,7 @@ class EnumDefinition<E : IndexedEnum<E>>(
     override fun asString(value: E) = value.name
 
     override fun fromString(string: String) =
-        valueByString[string] ?: throw ParseException(string)
+        enum.valueByString[string] ?: throw ParseException(string)
 
     override fun fromNativeType(value: Any): E? = null
 

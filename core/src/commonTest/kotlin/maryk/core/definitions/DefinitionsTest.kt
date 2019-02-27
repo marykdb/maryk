@@ -113,7 +113,7 @@ class DefinitionsTest {
           indices:
           - !Ref int
           - !Reversed double
-          - !TypeId multi
+          - !Ref multi.*
           - !Multiple
             - !Reversed dateTime
             - !Ref enum

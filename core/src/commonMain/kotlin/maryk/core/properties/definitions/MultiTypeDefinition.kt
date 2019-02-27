@@ -21,6 +21,7 @@ import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.MultiAnyTypeReference
 import maryk.core.properties.references.ReferenceType.TYPE
 import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.ProtoBuf
@@ -59,8 +60,6 @@ data class MultiTypeDefinition<E : IndexedEnum<E>, in CX : IsPropertyContext> in
     override val propertyDefinitionType = PropertyDefinitionType.MultiType
     override val wireType = WireType.LENGTH_DELIMITED
 
-    private val typeByName = definitionMap.map { Pair(it.key.name, it.key) }.toMap()
-    private val typeByIndex = definitionMap.map { Pair(it.key.index, it.key) }.toMap()
     private val definitionMapByIndex = definitionMap.map { Pair(it.key.index, it.value) }.toMap()
 
     init {
@@ -79,8 +78,6 @@ data class MultiTypeDefinition<E : IndexedEnum<E>, in CX : IsPropertyContext> in
     ) : this(required, final, typeEnum, typeIsFinal, definitionMap as Map<E, IsSubDefinition<out Any, CX>>, default)
 
     override fun definition(index: UInt) = definitionMapByIndex[index]
-    override fun type(index: UInt) = typeByIndex[index]
-    override fun type(name: String) = typeByName[name]
 
     override fun asString(value: TypedValue<E, Any>, context: CX?): String {
         var string = ""
@@ -177,7 +174,7 @@ data class MultiTypeDefinition<E : IndexedEnum<E>, in CX : IsPropertyContext> in
                     tokenType as E
                 }
                 is UnknownYamlTag -> {
-                    this.typeByName[tokenType.name]
+                    this.typeEnum.valueByString[tokenType.name]
                         ?: throw DefNotFoundException("Unknown type ${tokenType.name}")
                 }
                 else -> throw ParseException("Unknown tag type for $tokenType")
@@ -193,7 +190,7 @@ data class MultiTypeDefinition<E : IndexedEnum<E>, in CX : IsPropertyContext> in
                     throw ParseException("Expected a value at start, not ${it.name}")
                 }
 
-                val type = this.typeByName[it.value] ?: throw ParseException("Invalid multi type name ${it.value}")
+                val type = this.typeEnum.valueByString[it.value] ?: throw ParseException("Invalid multi type name ${it.value}")
                 val definition = this.definitionMapByIndex[type.index]
                     ?: throw DefNotFoundException("Unknown multi type index ${type.index}")
 
@@ -210,7 +207,7 @@ data class MultiTypeDefinition<E : IndexedEnum<E>, in CX : IsPropertyContext> in
         // Read the protobuf where the key tag is the type
         val key = ProtoBuf.readKey(reader)
 
-        val type = this.typeByIndex[key.tag.toUInt()] ?: throw ParseException("Unknown multi type index ${key.tag}")
+        val type = this.typeEnum.valueByIndex[key.tag.toUInt()] ?: throw ParseException("Unknown multi type index ${key.tag}")
         val def = this.definitionMapByIndex[type.index] ?: throw ParseException("Unknown multi type ${key.tag}")
 
         val value = if (def is IsEmbeddedObjectDefinition<*, *, *, *, *> && keepAsValues) {
@@ -309,9 +306,11 @@ data class MultiTypeDefinition<E : IndexedEnum<E>, in CX : IsPropertyContext> in
         val typeIndex = initUIntByVar(reader)
         return if (typeIndex == 0u) {
             @Suppress("UNCHECKED_CAST")
-            this.anyTypeRef(parentReference) as IsPropertyReference<Any, *, *>
+            this.anyTypeRef(
+                parentReference as CanHaveComplexChildReference<TypedValue<E, *>, IsMultiTypeDefinition<E, *>, *, *>?
+            ) as IsPropertyReference<Any, *, *>
         } else {
-            val type = this.typeByIndex[typeIndex] ?: throw UnexpectedValueException("Type $typeIndex is not known")
+            val type = this.typeEnum.valueByIndex[typeIndex] ?: throw UnexpectedValueException("Type $typeIndex is not known")
             typeRef(type, parentReference)
         }
     }
@@ -326,9 +325,11 @@ data class MultiTypeDefinition<E : IndexedEnum<E>, in CX : IsPropertyContext> in
         }
         return if (typeIndex == 0u) {
             @Suppress("UNCHECKED_CAST")
-            this.anyTypeRef(parentReference) as IsPropertyReference<Any, *, *>
+            this.anyTypeRef(
+                parentReference as CanHaveComplexChildReference<TypedValue<E, *>, IsMultiTypeDefinition<E, *>, *, *>?
+            ) as IsPropertyReference<Any, *, *>
         } else {
-            val type = this.typeByIndex[typeIndex] ?: throw UnexpectedValueException("Type $typeIndex is not known")
+            val type = this.typeEnum.valueByIndex[typeIndex] ?: throw UnexpectedValueException("Type $typeIndex is not known")
             typeRef(type, parentReference)
         }
     }
@@ -341,9 +342,12 @@ data class MultiTypeDefinition<E : IndexedEnum<E>, in CX : IsPropertyContext> in
         '*' -> {
             if (name.length == 1) {
                 @Suppress("UNCHECKED_CAST")
-                this.anyTypeRef(parentReference) as IsPropertyReference<Any, *, *>
+                MultiAnyTypeReference(
+                    this,
+                    parentReference as CanHaveComplexChildReference<TypedValue<E, *>, IsMultiTypeDefinition<E, *>, *, *>?
+                ) as IsPropertyReference<Any, *, *>
             } else {
-                val type = this.typeByName[name.substring(1)]
+                val type = this.typeEnum.valueByString[name.substring(1)]
                     ?: throw UnexpectedValueException("Type ${name.substring(1)} is not known")
                 typeRef(type, parentReference)
             }

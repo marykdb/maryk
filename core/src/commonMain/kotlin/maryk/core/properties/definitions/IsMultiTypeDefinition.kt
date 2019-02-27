@@ -23,12 +23,6 @@ interface IsMultiTypeDefinition<E : IndexedEnum<E>, in CX : IsPropertyContext> :
     /** Get definition by [index] */
     fun definition(index: UInt): IsSubDefinition<out Any, CX>?
 
-    /** Get type by [index] */
-    fun type(index: UInt): E?
-
-    /** Get type by [name] */
-    fun type(name: String): E?
-
     /**
      * Creates a reference referring to [type] of multi type below [parentReference]
      * so reference can be strongly typed
@@ -36,11 +30,12 @@ interface IsMultiTypeDefinition<E : IndexedEnum<E>, in CX : IsPropertyContext> :
     fun typeRef(type: E, parentReference: CanHaveComplexChildReference<*, *, *, *>?) =
         TypeReference(type, this, parentReference)
 
-    /**
-     * Creates a reference referring to any type of multi type below [parentReference]
-     */
-    fun anyTypeRef(parentReference: CanHaveComplexChildReference<*, *, *, *>?) =
-        MultiAnyTypeReference( this, parentReference)
+    /** Creates a reference referring to any type of multi type below [parentReference] */
+    fun anyTypeRef(parentReference: CanHaveComplexChildReference<TypedValue<E, *>, IsMultiTypeDefinition<E, *>, *, *>? = null) =
+        MultiAnyTypeReference(
+            this,
+            parentReference
+        )
 
     /** Resolve a reference from [reader] found on a [parentReference] */
     fun resolveReference(

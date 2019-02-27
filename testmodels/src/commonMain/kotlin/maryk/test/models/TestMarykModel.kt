@@ -19,7 +19,6 @@ import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.definitions.ValueModelDefinition
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.Reversed
-import maryk.core.properties.definitions.index.TypeId
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.Float64
@@ -47,7 +46,7 @@ object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>
     indices = listOf(
         int.ref(),
         Reversed(double.ref()),
-        TypeId(multi.ref()),
+        multi.anyTypeRef(),
         Multiple(
             Reversed(dateTime.ref()),
             enum.ref(),

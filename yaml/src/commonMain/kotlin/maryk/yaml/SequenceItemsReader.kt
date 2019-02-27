@@ -24,7 +24,8 @@ internal class SequenceItemsReader<out P>(
                 this.isStarted = false
                 tag?.let {
                     val sequenceType =
-                        it as? ArrayType ?: throw InvalidYamlContent("Can only use sequence tags on sequences")
+                        it as? ArrayType
+                            ?: throw InvalidYamlContent("Can only use sequence tags on sequences")
                     JsonToken.StartArray(sequenceType)
                 } ?: JsonToken.SimpleStartArray
             }

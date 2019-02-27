@@ -9,7 +9,9 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.graph.PropRefGraphType
 import maryk.core.properties.references.AnyPropertyReference
+import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.MultiAnyTypeReference
 import maryk.core.properties.references.MultiTypePropertyReference
 import maryk.core.properties.references.TypeReference
 import maryk.core.properties.types.TypedValue
@@ -40,6 +42,18 @@ data class MultiTypeDefinitionWrapper<E : IndexedEnum<E>, TO : Any, CX : IsPrope
     /** For quick notation to get a [type] reference */
     infix fun ofType(type: E): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> TypeReference<E, CX> {
         return { this.typeRef(type, this.ref(it)) }
+    }
+
+    /** For quick notation to get an any type reference */
+    fun ofAnyTypeRef(): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> MultiAnyTypeReference<E, CX> {
+        return {
+            @Suppress("UNCHECKED_CAST")
+            this.anyTypeRef(it as CanHaveComplexChildReference<TypedValue<E, *>, IsMultiTypeDefinition<E, *>, *, *>?)
+        }
+    }
+
+    override fun anyTypeRef(parentReference: CanHaveComplexChildReference<TypedValue<E, *>, IsMultiTypeDefinition<E, *>, *, *>?): MultiAnyTypeReference<E, CX> {
+        return this.definition.anyTypeRef(this.ref(parentReference))
     }
 
     /** Specific extension to support fetching deeper references with [type] */

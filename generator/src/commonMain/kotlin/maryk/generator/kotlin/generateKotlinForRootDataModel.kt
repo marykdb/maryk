@@ -2,13 +2,15 @@ package maryk.generator.kotlin
 
 import maryk.core.exceptions.TypeException
 import maryk.core.models.RootDataModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.Reversed
-import maryk.core.properties.definitions.index.TypeId
 import maryk.core.properties.definitions.index.UUIDKey
 import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.references.IsPropertyReferenceForValues
+import maryk.core.properties.references.MultiAnyTypeReference
 import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
 
 fun <P : PropertyDefinitions> RootDataModel<*, P>.generateKotlin(
@@ -78,12 +80,12 @@ private fun IsIndexable.generateKotlin(
         addImport("maryk.core.properties.definitions.key.UUIDKey")
         "UUIDKey"
     }
-    is TypeId<*> -> {
-        addImport("maryk.core.properties.definitions.key.TypeId")
+    is MultiAnyTypeReference<*, *> -> {
         @Suppress("UNCHECKED_CAST")
-        val typeId = this as TypeId<IndexedEnum<Any>>
-        addImport("$packageName.$name.Properties.${typeId.reference.name}")
-        "TypeId(${typeId.reference.name}.ref())"
+        val typeId = this as MultiAnyTypeReference<IndexedEnum<Any>, IsPropertyContext>
+        val parentReference = (typeId.parentReference as IsPropertyReferenceForValues<*, *, *, *>)
+        addImport("$packageName.$name.Properties.${parentReference.name}")
+        "${parentReference.name}.anyTypeRef()"
     }
     is Reversed<*> -> {
         addImport("maryk.core.properties.definitions.key.Reversed")

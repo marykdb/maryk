@@ -25,6 +25,7 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.wrapper.AnyPropertyDefinitionWrapper
+import maryk.core.properties.enum.AnyIndexedEnum
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.graph.IsPropRefGraph
 import maryk.core.properties.graph.RootPropRefGraph
@@ -364,7 +365,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                     val definition = this.properties[index]
                         ?: throw DefNotFoundException("No definition for $index in $this at $index")
                     @Suppress("UNCHECKED_CAST")
-                    val typedDefinition = definition.definition as? IsMultiTypeDefinition<*, *>
+                    val typedDefinition = definition.definition as? IsMultiTypeDefinition<AnyIndexedEnum, *>
                         ?: throw TypeException("Definition($index) ${definition.definition} should be a TypedDefinition")
 
                     typedDefinition.readComplexTypedValue(
@@ -488,7 +489,7 @@ private fun IsMultiTypeDefinition<*, *>.readComplexTypedValue(
     val definition = this.definition(index)
         ?: throw DefNotFoundException("No definition for $index in $this")
     @Suppress("UNCHECKED_CAST")
-    val type: IndexedEnum<IndexedEnum<*>> = this.type(index) as IndexedEnum<IndexedEnum<*>>?
+    val type = this.typeEnum.valueByIndex[index] as AnyIndexedEnum?
         ?: throw DefNotFoundException("Unknown type $index for $this")
 
     val addMultiTypeToOutput: AddValue = { addValueToOutput(TypedValue(type, it)) }

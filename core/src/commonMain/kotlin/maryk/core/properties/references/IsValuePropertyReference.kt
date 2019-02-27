@@ -20,7 +20,9 @@ interface IsValuePropertyReference<
     IsPropertyReferenceForValues<T, TO, D, P>,
     IsIndexablePropertyReference<T>,
     IsBytesEncodable<T>
-        where D : IsBytesEncodable<T>, D : IsPropertyDefinitionWrapper<T, TO, *, *> {
+        where D : IsBytesEncodable<T>,
+              D : IsPropertyDefinitionWrapper<T, TO, *, *> {
+
     override fun calculateReferenceStorageByteLength(): Int {
         val refLength = this.calculateStorageByteLength()
         return refLength.calculateVarIntWithExtraInfoByteSize() + refLength

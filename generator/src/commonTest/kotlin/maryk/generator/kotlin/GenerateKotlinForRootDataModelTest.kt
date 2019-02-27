@@ -60,7 +60,6 @@ import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.definitions.ValueModelDefinition
 import maryk.core.properties.definitions.key.Multiple
 import maryk.core.properties.definitions.key.Reversed
-import maryk.core.properties.definitions.key.TypeId
 import maryk.core.properties.definitions.key.UUIDKey
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
@@ -96,7 +95,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
     name = "CompleteMarykModel",
     keyDefinitions = Multiple(
         UUIDKey,
-        TypeId(multiForKey.ref()),
+        multiForKey.anyTypeRef(),
         booleanForKey.ref(),
         Reversed(dateForKey.ref())
     ),
@@ -105,7 +104,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
         Reversed(dateTime.ref()),
         Multiple(
             booleanForKey.ref(),
-            TypeId(multiForKey.ref())
+            multiForKey.anyTypeRef()
         )
     ),
     properties = Properties

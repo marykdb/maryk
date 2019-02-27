@@ -36,7 +36,7 @@ data class ContextualIndexedEnumDefinition<CX : IsPropertyContext, CXI : IsPrope
 
     @Suppress("UNCHECKED_CAST")
     override fun fromString(string: String, context: CX?) =
-        contextualResolver(context).type(string) as T?
+        contextualResolver(context).typeEnum.valueByString[string] as T?
             ?: throw ParseException("Unknown Type enum $string")
 
     override fun writeJsonValue(value: T, writer: IsJsonLikeWriter, context: CX?) {
@@ -66,7 +66,7 @@ data class ContextualIndexedEnumDefinition<CX : IsPropertyContext, CXI : IsPrope
     @Suppress("UNCHECKED_CAST")
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?): T {
         val index = initUIntByVar(reader)
-        return contextualResolver(context).type(index) as T?
+        return contextualResolver(context).typeEnum.valueByIndex[index] as T?
             ?: throw ParseException("Unknown Type enum index $index")
     }
 }

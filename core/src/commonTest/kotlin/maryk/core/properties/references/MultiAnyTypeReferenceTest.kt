@@ -1,8 +1,5 @@
-package maryk.core.properties.definitions.index
+package maryk.core.properties.references
 
-import maryk.checkJsonConversion
-import maryk.checkProtoBufConversion
-import maryk.checkYamlConversion
 import maryk.core.models.RootDataModel
 import maryk.core.models.key
 import maryk.core.properties.IsPropertyContext
@@ -11,19 +8,20 @@ import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.StringDefinition
-import maryk.core.properties.definitions.index.TypeIdTest.MarykModel.Properties.multi
+import maryk.core.properties.references.MultiAnyTypeReferenceTest.MarykModel.Properties.multi
 import maryk.core.properties.types.TypedValue
-import maryk.core.query.DefinitionsConversionContext
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.Option
+import maryk.test.models.Option.V1
+import maryk.test.models.Option.V2
 import maryk.test.shouldBe
 import kotlin.test.Test
 
-internal class TypeIdTest {
+internal class MultiAnyTypeReferenceTest {
     object MarykModel : RootDataModel<MarykModel, MarykModel.Properties>(
         name = "MarykModel",
-        keyDefinition = TypeId(multi.ref()),
+        keyDefinition = multi.anyTypeRef(),
         properties = Properties
     ) {
         object Properties : PropertyDefinitions() {
@@ -61,51 +59,21 @@ internal class TypeIdTest {
 
         val keyDef = MarykModel.keyDefinition
 
-        (keyDef is TypeId<*>) shouldBe true
-        val specificDef = keyDef as TypeId<*>
-        specificDef.reference shouldBe multi.ref()
+        (keyDef is MultiAnyTypeReference<*, *>) shouldBe true
+        @Suppress("UNCHECKED_CAST")
+        val specificDef = keyDef as MultiAnyTypeReference<Option, *>
+        specificDef shouldBe multi.anyTypeRef()
 
-        specificDef.getValue(obj) shouldBe 2u
+        specificDef.getValue(obj) shouldBe V2
 
         val bc = ByteCollector()
         bc.reserve(2)
-        specificDef.writeStorageBytes(1u, bc::write)
-        specificDef.readStorageBytes(bc.size, bc::read) shouldBe 1u
-    }
-
-    private val context = DefinitionsConversionContext(
-        propertyDefinitions = MarykModel.Properties
-    )
-
-    @Test
-    fun convertDefinitionToProtoBufAndBack() {
-        checkProtoBufConversion(
-            value = TypeId(multi.ref()),
-            dataModel = TypeId.Model,
-            context = { context }
-        )
-    }
-
-    @Test
-    fun convertDefinitionToJSONAndBack() {
-        checkJsonConversion(
-            value = TypeId(multi.ref()),
-            dataModel = TypeId.Model,
-            context = { context }
-        )
-    }
-
-    @Test
-    fun convertDefinitionToYAMLAndBack() {
-        checkYamlConversion(
-            value = TypeId(multi.ref()),
-            dataModel = TypeId.Model,
-            context = { context }
-        ) shouldBe "multi"
+        specificDef.writeStorageBytes(Option.V1, bc::write)
+        specificDef.readStorageBytes(bc.size, bc::read) shouldBe V1
     }
 
     @Test
     fun toReferenceStorageBytes() {
-        TypeId(multi.ref()).toReferenceStorageByteArray().toHex() shouldBe "0b09"
+        multi.anyTypeRef().toReferenceStorageByteArray().toHex() shouldBe "0a09"
     }
 }

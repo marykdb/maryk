@@ -105,6 +105,6 @@ internal class ReversedTest {
 
     @Test
     fun toReferenceStorageBytes() {
-        Reversed(boolean.ref()).toReferenceStorageByteArray().toHex() shouldBe "0c09"
+        Reversed(boolean.ref()).toReferenceStorageByteArray().toHex() shouldBe "0b09"
     }
 }

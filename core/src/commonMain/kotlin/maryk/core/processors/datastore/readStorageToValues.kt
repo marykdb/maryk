@@ -154,7 +154,17 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                         ?: throw DefNotFoundException("No definition for $index in $this at $index")
                     val valueAdder: AddValue = { addValueToOutput(index, it) }
 
-                    if (!isAtEnd) {
+                    if (isAtEnd) {
+                        @Suppress("UNCHECKED_CAST")
+                        val embedValue =
+                            readValueFromStorage(Embed as StorageTypeEnum<IsPropertyDefinition<Any>>, definition)
+                        if (embedValue == null) {
+                            // Ensure that next embedded values are not read
+                            addToCache(offset) {
+                                // Ignore reading and return
+                            }
+                        } else null // unknown value so ignore
+                    } else {
                         readComplexValueFromStorage(
                             definition,
                             qualifier,
@@ -166,16 +176,6 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                             addValueToOutput,
                             index
                         )
-                    } else {
-                        @Suppress("UNCHECKED_CAST")
-                        val embedValue =
-                            readValueFromStorage(Embed as StorageTypeEnum<IsPropertyDefinition<Any>>, definition)
-                        if (embedValue == null) {
-                            // Ensure that next embedded values are not read
-                            addToCache(offset) {
-                                // Ignore reading and return
-                            }
-                        } else null // unknown value so ignore
                     }
                 }
                 LIST -> {

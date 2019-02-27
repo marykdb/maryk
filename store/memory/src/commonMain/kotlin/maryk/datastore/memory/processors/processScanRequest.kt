@@ -2,7 +2,7 @@ package maryk.datastore.memory.processors
 
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.ScanType.IndexScan
-import maryk.core.processors.datastore.ScanType.StoreScan
+import maryk.core.processors.datastore.ScanType.TableScan
 import maryk.core.processors.datastore.createScanRange
 import maryk.core.processors.datastore.orderToScanType
 import maryk.core.properties.PropertyDefinitions
@@ -24,10 +24,10 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
     val valuesWithMeta = mutableListOf<ValuesWithMetaData<DM, P>>()
 
     val scanRange = scanRequest.dataModel.createScanRange(scanRequest.filter, scanRequest.startKey?.bytes)
-    val scanIndex = orderToScanType(storeAction.request.order)
+    val scanIndex = scanRequest.dataModel.orderToScanType(storeAction.request.order)
 
     when (scanIndex) {
-        is StoreScan -> {
+        is TableScan -> {
             scanStore(
                 dataStore,
                 scanIndex.direction,

@@ -1,5 +1,6 @@
 package maryk.generator.proto3
 
+import maryk.core.exceptions.TypeException
 import maryk.core.models.IsNamedDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
@@ -167,7 +168,7 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(
 
             multiTypeName
         }
-        else -> throw Exception("Unknown type $this")
+        else -> throw TypeException("Unknown type $this")
     }
 }
 

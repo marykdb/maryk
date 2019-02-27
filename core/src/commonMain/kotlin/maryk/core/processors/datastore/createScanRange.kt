@@ -101,7 +101,6 @@ private fun <DM : IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
                     end[nextIndex] = 1
                 }
             }
-            else -> throw Exception("Unknown partial type: $keyPart")
         }
     }
 

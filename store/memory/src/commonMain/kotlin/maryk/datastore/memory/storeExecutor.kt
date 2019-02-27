@@ -1,5 +1,6 @@
 package maryk.datastore.memory
 
+import maryk.core.exceptions.TypeException
 import maryk.core.query.requests.AddRequest
 import maryk.core.query.requests.ChangeRequest
 import maryk.core.query.requests.DeleteRequest
@@ -41,6 +42,6 @@ internal val storeExecutor: StoreExecutor<*, *> = { storeAction, dataStore ->
             processScanRequest(storeAction as AnyScanStoreAction, dataStore as AnyDataStore)
         is ScanChangesRequest<*, *> ->
             processScanChangesRequest(storeAction as AnyScanChangesStoreAction, dataStore as AnyDataStore)
-        else -> throw Exception("Unknown request type ${storeAction.request}")
+        else -> throw TypeException("Unknown request type ${storeAction.request}")
     }
 }

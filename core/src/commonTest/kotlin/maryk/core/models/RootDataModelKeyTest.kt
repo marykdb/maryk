@@ -1,5 +1,6 @@
 package maryk.core.models
 
+import maryk.core.exceptions.InvalidDefinitionException
 import maryk.core.models.WrongProperties.boolean
 import maryk.core.models.WrongProperties.dateTime
 import maryk.core.models.WrongProperties.string
@@ -62,7 +63,7 @@ class RootDataModelKeyTest {
 
     @Test
     fun notAcceptFlexByteDefinitions() {
-        shouldThrow<Exception> {
+        shouldThrow<InvalidDefinitionException> {
             object : RootDataModel<IsRootValuesDataModel<WrongProperties>, WrongProperties>(
                 name = "MarykModel",
                 keyDefinition = Multiple(

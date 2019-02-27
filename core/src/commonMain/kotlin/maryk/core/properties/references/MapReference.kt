@@ -1,5 +1,6 @@
 package maryk.core.properties.references
 
+import maryk.core.exceptions.TypeException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.properties.IsPropertyContext
@@ -90,7 +91,7 @@ open class MapReference<K : Any, V : Any, CX : IsPropertyContext> internal const
                     this
                 )
             }
-            else -> throw Exception("Unknown map ref type $referenceType")
+            else -> throw TypeException("Unknown map ref type $referenceType")
         }
     }
 

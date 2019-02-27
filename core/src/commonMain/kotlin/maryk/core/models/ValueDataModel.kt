@@ -3,6 +3,7 @@ package maryk.core.models
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.definitions.PrimitiveType
 import maryk.core.exceptions.DefNotFoundException
+import maryk.core.exceptions.SerializationException
 import maryk.core.properties.IsDataModelPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.MutableObjectPropertyDefinitions
@@ -139,7 +140,7 @@ abstract class ValueDataModel<DO : ValueDataObject, P : ObjectPropertyDefinition
             writer: IsJsonLikeWriter,
             context: ContainsDefinitionsContext?
         ) {
-            throw Exception("Cannot write definitions from values")
+            throw SerializationException("Cannot write definitions from values")
         }
 
         override fun writeJson(

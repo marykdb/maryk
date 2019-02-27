@@ -1,6 +1,7 @@
 package maryk.generator.kotlin
 
 import maryk.core.definitions.Definitions
+import maryk.core.exceptions.TypeException
 import maryk.core.models.DataModel
 import maryk.core.models.RootDataModel
 import maryk.core.models.ValueDataModel
@@ -44,7 +45,7 @@ fun Definitions.generateKotlin(
                 val writer = writerConstructor(obj.name)
                 (obj as DataModel<*, PropertyDefinitions>).generateKotlin(packageName, kotlinGenerationContext, writer)
             }
-            else -> throw Exception("Unknown Maryk Primitive $obj")
+            else -> throw TypeException("Unknown Maryk Primitive $obj")
         }
     }
 }

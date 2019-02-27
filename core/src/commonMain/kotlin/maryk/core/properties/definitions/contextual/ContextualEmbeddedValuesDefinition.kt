@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions.contextual
 
+import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.AbstractValuesDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.IsPropertyContext
@@ -21,7 +22,7 @@ internal data class ContextualEmbeddedValuesDefinition<CX : IsPropertyContext>(
     val contextualResolver: (context: CX?) -> AbstractValuesDataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, CX>
 ) : IsEmbeddedValuesDefinition<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, CX> {
     override val dataModel: IsValuesDataModel<PropertyDefinitions>
-        get() = throw Exception("dataModel is contextually determined")
+        get() = throw DefNotFoundException("dataModel is contextually determined")
     override val propertyDefinitionType = PropertyDefinitionType.Embed
     override val default: Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>? = null
     override val required = true

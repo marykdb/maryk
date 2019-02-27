@@ -1,6 +1,7 @@
 package maryk.core.models
 
 import maryk.core.definitions.PrimitiveType
+import maryk.core.exceptions.SerializationException
 import maryk.core.properties.IsDataModelPropertyDefinitions
 import maryk.core.properties.MutablePropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -104,7 +105,7 @@ abstract class RootDataModel<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
             writer: IsJsonLikeWriter,
             context: ContainsDefinitionsContext?
         ) {
-            throw Exception("Cannot write definitions from Values")
+            throw SerializationException("Cannot write definitions from Values")
         }
 
         /**

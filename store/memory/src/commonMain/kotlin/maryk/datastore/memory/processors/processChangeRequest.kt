@@ -1,5 +1,7 @@
 package maryk.datastore.memory.processors
 
+import maryk.core.exceptions.RequestException
+import maryk.core.exceptions.TypeException
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.values
@@ -173,7 +175,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                             when (value) {
                                 is Map<*, *> -> {
                                     if (reference !is MapReference<*, *, *>) {
-                                        throw Exception("Expected a MapReference for a map")
+                                        throw TypeException("Expected a MapReference for a map")
                                     }
                                     @Suppress("UNCHECKED_CAST")
                                     val mapReference = reference as MapReference<Any, Any, IsPropertyContext>
@@ -200,7 +202,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                 }
                                 is List<*> -> {
                                     if (reference !is ListReference<*, *>) {
-                                        throw Exception("Expected a ListReference for a List")
+                                        throw TypeException("Expected a ListReference for a List")
                                     }
                                     @Suppress("UNCHECKED_CAST")
                                     val listReference = reference as ListReference<Any, IsPropertyContext>
@@ -227,7 +229,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                 }
                                 is Set<*> -> {
                                     if (reference !is SetReference<*, *>) {
-                                        throw Exception("Expected a SetReference for a Set")
+                                        throw TypeException("Expected a SetReference for a Set")
                                     }
                                     @Suppress("UNCHECKED_CAST")
                                     val setReference = reference as SetReference<Any, IsPropertyContext>
@@ -254,7 +256,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                 }
                                 is TypedValue<*, *> -> {
                                     if (reference !is MultiTypePropertyReference<*, *, *, *>) {
-                                        throw Exception("Expected a MultiTypePropertyReference for a typedValue")
+                                        throw TypeException("Expected a MultiTypePropertyReference for a typedValue")
                                     }
                                     @Suppress("UNCHECKED_CAST")
                                     val multiTypeReference =
@@ -293,7 +295,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                 }
                                 is Values<*, *> -> {
                                     if (reference !is EmbeddedValuesPropertyRef<*, *, *>) {
-                                        throw Exception("Expected a EmbeddedValuesPropertyRef for Values")
+                                        throw TypeException("Expected a EmbeddedValuesPropertyRef for Values")
                                     }
 
                                     @Suppress("UNCHECKED_CAST")
@@ -355,13 +357,12 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                                 getValue<Any>(
                                                     newValueList,
                                                     reference.parentReference!!.toStorageByteArray()
-                                                )
-                                                    ?: throw Exception("Property '${reference.completeName}' can only be changed if parent exists. Set the parent property to set this value.")
+                                                ) ?: throw RequestException("Property '${reference.completeName}' can only be changed if parent value exists. Set the parent value with this value.")
                                             }
 
                                             // Extra validations based on reference type
                                             when (reference) {
-                                                is ListItemReference<*, *> -> throw Exception("ListItem can only be changed if it exists. To add a new one use ListChange.")
+                                                is ListItemReference<*, *> -> throw RequestException("ListItem can only be changed if it exists. To add a new one use ListChange.")
                                                 is MapValueReference<*, *, *> -> {
                                                     try {
                                                         @Suppress("UNCHECKED_CAST")
@@ -392,8 +393,8 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                                         (reference as MapValueReference<Any, Any, IsPropertyContext>).mapDefinition.validateSize(it) { reference as IsPropertyReference<Map<Any, Any>, IsPropertyDefinition<Map<Any, Any>>, *> }
                                                     }
                                                 }
-                                                is SetItemReference<*, *> -> throw Exception("Not allowed to add with a Set Item reference, use SetChange instead")
-                                                is MapKeyReference<*, *, *> -> throw Exception("Not allowed to add with a Map key, use Map value instead")
+                                                is SetItemReference<*, *> -> throw RequestException("Not allowed to add with a Set Item reference, use SetChange instead")
+                                                is MapKeyReference<*, *, *> -> throw RequestException("Not allowed to add with a Map key, use Map value instead")
                                             }
                                         }
 
@@ -462,7 +463,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                                 (ref as ListItemReference<Any, IsPropertyContext>).listDefinition.validateSize(it) { ref as IsPropertyReference<List<Any>, IsPropertyDefinition<List<Any>>, *> }
                                             }
                                         }
-                                        is MapKeyReference<*, *, *> -> throw Exception("Not allowed to delete Map key, delete value instead")
+                                        is MapKeyReference<*, *, *> -> throw RequestException("Not allowed to delete Map key, delete value instead")
                                     }
                                 } catch (e: ValidationException) {
                                     addValidationFail(e)

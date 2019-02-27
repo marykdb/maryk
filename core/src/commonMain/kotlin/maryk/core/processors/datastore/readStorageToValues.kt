@@ -1,5 +1,9 @@
 package maryk.core.processors.datastore
 
+import maryk.core.exceptions.DefNotFoundException
+import maryk.core.exceptions.InvalidDefinitionException
+import maryk.core.exceptions.StorageException
+import maryk.core.exceptions.TypeException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.initIntByVarWithExtraInfo
 import maryk.core.extensions.bytes.initUInt
@@ -103,12 +107,12 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                 SPECIAL -> when (val specialType = completeReferenceTypeOf(qualifier[offset])) {
                     DELETE -> {
                     } // Ignore since it should be handled on higher level
-                    MAP_KEY -> throw Exception("Cannot handle Special type $specialType in qualifier")
-                    else -> throw Exception("Not recognized special type $specialType")
+                    MAP_KEY -> throw TypeException("Cannot handle Special type $specialType in qualifier")
+                    else -> throw TypeException("Not recognized special type $specialType")
                 }
                 VALUE -> {
                     val definition = this.properties[index]
-                        ?: throw Exception("No definition for $index in $this at $index")
+                        ?: throw DefNotFoundException("No definition for $index in $this at $index")
                     val valueAdder: AddValue = { addValueToOutput(index, it) }
 
                     if (isAtEnd) {
@@ -147,7 +151,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                 }
                 EMBED -> {
                     val definition = this.properties[index]
-                        ?: throw Exception("No definition for $index in $this at $index")
+                        ?: throw DefNotFoundException("No definition for $index in $this at $index")
                     val valueAdder: AddValue = { addValueToOutput(index, it) }
 
                     if (!isAtEnd) {
@@ -176,7 +180,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                 }
                 LIST -> {
                     val definition = this.properties[index]
-                        ?: throw Exception("No definition for $index in $this at $index")
+                        ?: throw DefNotFoundException("No definition for $index in $this at $index")
 
                     if (isAtEnd) {
                         // If at end it means that this is a list size
@@ -222,7 +226,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                 }
                 SET -> {
                     val definition = this.properties[index]
-                        ?: throw Exception("No definition for $index in $this at $index")
+                        ?: throw DefNotFoundException("No definition for $index in $this at $index")
 
                     if (isAtEnd) {
                         // If at end it means that this is a set size
@@ -263,7 +267,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                 }
                 MAP -> {
                     val definition = this.properties[index]
-                        ?: throw Exception("No definition for $index in $this at $index")
+                        ?: throw DefNotFoundException("No definition for $index in $this at $index")
 
                     if (isAtEnd) {
                         // If at end it means that this is a map count
@@ -298,7 +302,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                     } else {
                         @Suppress("UNCHECKED_CAST")
                         val mapDefinition = definition.definition as? IsMapDefinition<Any, Any, *>
-                            ?: throw Exception("Definition ${definition.definition} should be a MapDefinition")
+                            ?: throw TypeException("Definition ${definition.definition} should be a MapDefinition")
                         val keyDefinition = mapDefinition.keyDefinition
                         val qualifierReader = { qualifier[qIndex++] }
 
@@ -351,17 +355,17 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                                         mapItemAdder
                                     )
                                 }
-                                else -> throw Exception("Can only use Embedded/MultiType as complex value type in Map $mapDefinition")
+                                else -> throw StorageException("Can only use Embedded/MultiType as complex value type in Map $mapDefinition")
                             }
                         }
                     }
                 }
                 ReferenceType.TYPE -> {
                     val definition = this.properties[index]
-                        ?: throw Exception("No definition for $index in $this at $index")
+                        ?: throw DefNotFoundException("No definition for $index in $this at $index")
                     @Suppress("UNCHECKED_CAST")
                     val typedDefinition = definition.definition as? IsMultiTypeDefinition<*, *>
-                        ?: throw Exception("Definition($index) ${definition.definition} should be a TypedDefinition")
+                        ?: throw TypeException("Definition($index) ${definition.definition} should be a TypedDefinition")
 
                     typedDefinition.readComplexTypedValue(
                         index.toUInt(),
@@ -411,7 +415,7 @@ private fun readComplexValueFromStorage(
                 { addValueToOutput(index, it) }
             )
         }
-        else -> throw Exception("Can only use Embedded as values with deeper values, not $definition")
+        else -> throw StorageException("Can only use Embedded/Multi as values with deeper values, not $definition")
     }
 }
 
@@ -482,10 +486,10 @@ private fun IsMultiTypeDefinition<*, *>.readComplexTypedValue(
     addValueToOutput: AddValue
 ) {
     val definition = this.definition(index)
-        ?: throw Exception("No definition for $index in $this")
+        ?: throw DefNotFoundException("No definition for $index in $this")
     @Suppress("UNCHECKED_CAST")
-    val type: IndexedEnum<IndexedEnum<*>> =
-        this.type(index) as IndexedEnum<IndexedEnum<*>>? ?: throw Exception("Unknown type $index for $this")
+    val type: IndexedEnum<IndexedEnum<*>> = this.type(index) as IndexedEnum<IndexedEnum<*>>?
+        ?: throw DefNotFoundException("Unknown type $index for $this")
 
     val addMultiTypeToOutput: AddValue = { addValueToOutput(TypedValue(type, it)) }
 
@@ -516,7 +520,7 @@ private fun IsMultiTypeDefinition<*, *>.readComplexTypedValue(
                 addMultiTypeToOutput
             )
         }
-        else -> throw Exception("Can only use Embedded/MultiType as complex value type in Multi Type $definition")
+        else -> throw InvalidDefinitionException("Can only use Embedded/MultiType as complex value type in Multi Type $definition")
     }
 }
 

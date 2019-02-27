@@ -1,5 +1,6 @@
 package maryk.datastore.memory.processors
 
+import maryk.core.exceptions.TypeException
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.readStorageToChanges
 import maryk.core.properties.PropertyDefinitions
@@ -55,7 +56,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordT
                             is DeletedValue<*> -> {
                                 valueWithVersionReader(latest.version, null)
                             }
-                            else -> throw Exception("Unknown value type")
+                            else -> throw TypeException("Unknown value type")
                         }
                     }
                 }

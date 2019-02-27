@@ -1,5 +1,6 @@
 package maryk.core.query
 
+import maryk.core.exceptions.RequestException
 import maryk.core.inject.Inject
 import maryk.core.inject.InjectWithReference
 import maryk.core.models.IsDataModel
@@ -63,10 +64,10 @@ class RequestContext(
     /** Collect result [values] by [collectionName] */
     fun collectResult(collectionName: String, values: AbstractValues<*, *, *>) {
         val toCollect = this.toCollect[collectionName]
-            ?: throw Exception("$collectionName was not defined as to collect in RequestContext")
+            ?: throw RequestException("$collectionName was not defined as to collect in RequestContext")
 
         if (values.dataModel !== toCollect.model) {
-            throw Exception("Collect($collectionName): Value $values is not of right dataModel $toCollect ")
+            throw RequestException("Collect($collectionName): Value $values is not of right dataModel $toCollect ")
         }
 
         this.collectedResults[collectionName] = values

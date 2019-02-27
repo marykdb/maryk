@@ -1,5 +1,6 @@
 package maryk.generator.kotlin
 
+import maryk.core.exceptions.TypeException
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.HasDefaultValueDefinition
@@ -16,7 +17,7 @@ internal fun <DO : Any> AbstractPropertyDefinitions<DO>.generateKotlin(
     val propertiesKotlin = mutableListOf<KotlinForProperty>()
     for (propertyDefinitionWrapper in this) {
         val definition = propertyDefinitionWrapper.definition as? IsTransportablePropertyDefinitionType<Any>
-            ?: throw Exception("Property definition is not supported: ${propertyDefinitionWrapper.definition}")
+            ?: throw TypeException("Property definition is not supported: ${propertyDefinitionWrapper.definition}")
 
         val kotlinDescriptor =
             definition.getKotlinDescriptor()

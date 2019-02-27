@@ -1,5 +1,8 @@
 package maryk.core.processors.datastore
 
+import maryk.core.exceptions.DefNotFoundException
+import maryk.core.exceptions.StorageException
+import maryk.core.exceptions.TypeException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.initIntByVarWithExtraInfo
 import maryk.core.extensions.bytes.initUInt
@@ -216,12 +219,12 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                             }
                         }
                     }
-                    MAP_KEY -> throw Exception("Cannot handle Special type $specialType in qualifier")
-                    else -> throw Exception("Not recognized special type $specialType")
+                    MAP_KEY -> throw TypeException("Cannot handle Special type $specialType in qualifier")
+                    else -> throw TypeException("Not recognized special type $specialType")
                 }
                 VALUE -> {
                     val definition = this.properties[index]
-                        ?: throw Exception("No definition for $index in $this at $index")
+                        ?: throw DefNotFoundException("No definition for $index in $this at $index")
 
                     if (isAtEnd) {
                         @Suppress("UNCHECKED_CAST")
@@ -267,7 +270,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                 }
                 EMBED -> {
                     val definition = this.properties[index]
-                        ?: throw Exception("No definition for $index in $this at $index")
+                        ?: throw DefNotFoundException("No definition for $index in $this at $index")
 
                     val reference = definition.ref(parentReference)
 
@@ -299,7 +302,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                 }
                 LIST -> {
                     val definition = this.properties[index]
-                        ?: throw Exception("No definition for $index in $this at $index")
+                        ?: throw DefNotFoundException("No definition for $index in $this at $index")
 
                     if (isAtEnd) {
                         @Suppress("UNCHECKED_CAST")
@@ -347,7 +350,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                 }
                 SET -> {
                     val definition = this.properties[index]
-                        ?: throw Exception("No definition for $index in $this at $index")
+                        ?: throw DefNotFoundException("No definition for $index in $this at $index")
 
                     if (isAtEnd) {
                         @Suppress("UNCHECKED_CAST")
@@ -454,11 +457,11 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                 }
                 ReferenceType.TYPE -> {
                     val definition = this.properties[index]
-                        ?: throw Exception("No definition for $index in $this at $index")
+                        ?: throw DefNotFoundException("No definition for $index in $this at $index")
                     @Suppress("UNCHECKED_CAST")
                     val typedDefinition =
                         definition.definition as? IsMultiTypeDefinition<AnyIndexedEnum, IsPropertyContext>
-                            ?: throw Exception("Definition($index) ${definition.definition} should be a TypedDefinition")
+                            ?: throw TypeException("Definition($index) ${definition.definition} should be a TypedDefinition")
 
                     typedDefinition.readComplexTypedValue(
                         parentReference,
@@ -512,7 +515,7 @@ private fun <P : PropertyDefinitions> readComplexChanges(
                 addChangeToOutput
             )
         }
-        else -> throw Exception("Can only use Embedded as values with deeper values $definition")
+        else -> throw StorageException("Can only use Embedded as values with deeper values $definition")
     }
 }
 
@@ -557,7 +560,7 @@ private fun readTypedValue(
                         )
                     }
                 } else {
-                    throw Exception("Unexpected stored value for TypedValue.")
+                    throw TypeException("Unexpected stored value for TypedValue.")
                 }
             }
         }
@@ -588,10 +591,9 @@ private fun <E : IndexedEnum<E>> IsMultiTypeDefinition<E, IsPropertyContext>.rea
     addToCache: CacheProcessor,
     addChangeToOutput: ChangeAdder
 ) {
-    @Suppress("UNCHECKED_CAST")
     val definition = this.definition(index)
-    @Suppress("UNCHECKED_CAST")
-    val type = this.type(index) ?: throw Exception("Unknown type $index for $this")
+    val type = this.type(index)
+        ?: throw DefNotFoundException("Unknown type $index for $this")
     val typedReference = TypeReference(type, this, reference as CanHaveComplexChildReference<*, *, *, *>?)
 
     if (qualifier.size <= qIndex) {
@@ -612,7 +614,7 @@ private fun <E : IndexedEnum<E>> IsMultiTypeDefinition<E, IsPropertyContext>.rea
                 addChangeToOutput
             )
         }
-        else -> throw Exception("Can only use Embedded/MultiType as complex value type in Multi Type $definition")
+        else -> throw StorageException("Can only use Embedded/MultiType as complex value type in Multi Type $definition")
     }
 }
 

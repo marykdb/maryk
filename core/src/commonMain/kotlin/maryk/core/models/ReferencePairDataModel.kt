@@ -1,5 +1,6 @@
 package maryk.core.models
 
+import maryk.core.exceptions.SerializationException
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
@@ -30,7 +31,8 @@ abstract class ReferencePairDataModel<DO : Any, P : ReferenceValuePairsObjectPro
 
     override fun writeJson(obj: DO, writer: IsJsonLikeWriter, context: RequestContext?) {
         @Suppress("UNCHECKED_CAST")
-        val pairs = properties[1]?.getter?.invoke(obj) as? List<R> ?: throw Exception("No pairs defined on $obj")
+        val pairs = properties[1]?.getter?.invoke(obj) as? List<R>
+            ?: throw SerializationException("No pairs defined on $obj")
 
         writer.writeJsonTypePairs(pairs, context)
     }
@@ -49,7 +51,7 @@ abstract class ReferencePairDataModel<DO : Any, P : ReferenceValuePairsObjectPro
             @Suppress("UNCHECKED_CAST")
             pairProperties.value.writeJsonValue(
                 pairProperties.value.getPropertyAndSerialize(it, context)
-                    ?: throw Exception("No pair value defined on $it"),
+                    ?: throw SerializationException("No pair value defined on $it"),
                 this,
                 context
             )

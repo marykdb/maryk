@@ -192,7 +192,7 @@ interface IsPropertyDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyConte
             if (writer is YamlWriter) {
                 val typedDefinition =
                     Properties.definition.getPropertyAndSerialize(obj, context as ContainsDefinitionsContext)
-                        ?: throw Exception("Unknown type ${obj.definition} so cannot serialize contents")
+                        ?: throw DefNotFoundException("Unknown type ${obj.definition} so cannot serialize contents")
 
                 writer.writeNamedIndexField(obj.name, obj.index.toUInt())
 

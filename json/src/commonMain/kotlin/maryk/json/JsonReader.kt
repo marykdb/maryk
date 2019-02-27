@@ -92,7 +92,7 @@ class JsonReader(
                     return currentToken
                 }
                 JsonToken.StartComplexFieldName, JsonToken.EndComplexFieldName -> {
-                    throw Exception("Start and End ComplexFieldName not possible in JSON")
+                    throw JsonWriteException("Start and End ComplexFieldName not possible in JSON")
                 }
             }
         } catch (e: ExceptionWhileReadingJson) {

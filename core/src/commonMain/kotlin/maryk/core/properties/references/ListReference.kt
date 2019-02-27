@@ -1,5 +1,6 @@
 package maryk.core.properties.references
 
+import maryk.core.exceptions.TypeException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.initUInt
 import maryk.core.extensions.bytes.initUIntByVar
@@ -42,7 +43,7 @@ open class ListReference<T : Any, CX : IsPropertyContext> internal constructor(
     ): AnyPropertyReference {
         return if (referenceType == CompleteReferenceType.LIST) {
             ListItemReference(initUInt(reader), propertyDefinition.definition, this)
-        } else throw Exception("Unknown reference type below List: $referenceType")
+        } else throw TypeException("Unknown reference type below List: $referenceType")
     }
 
     override fun writeStorageBytes(writer: (byte: Byte) -> Unit) {

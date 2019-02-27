@@ -82,7 +82,7 @@ class JsonWriter(
                 writer(value)
             }
             is JsonEmbedType.ComplexField -> {
-                throw Exception("Complex fields are not possible in JSON")
+                throw JsonWriteException("Complex fields are not possible in JSON")
             }
         }
     } else {

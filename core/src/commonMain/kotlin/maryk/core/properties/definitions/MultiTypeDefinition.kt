@@ -2,6 +2,8 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
+import maryk.core.exceptions.SerializationException
+import maryk.core.exceptions.TypeException
 import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.initUIntByVar
@@ -126,7 +128,7 @@ data class MultiTypeDefinition<E : IndexedEnum<E>, in CX : IsPropertyContext> in
                         is IsListDefinition<*, *> -> emptyList<Any>()
                         is IsSetDefinition<*, *> -> emptySet<Any>()
                         is IsMapDefinition<*, *, *> -> emptyMap<Any, Any>()
-                        else -> throw Exception("Not supported complex multitype")
+                        else -> throw TypeException("Not supported complex multitype")
                     }
                     TypedValue(it.type, value)
                 } else previousValue
@@ -314,7 +316,7 @@ data class MultiTypeDefinition<E : IndexedEnum<E>, in CX : IsPropertyContext> in
         parentReference: CanHaveComplexChildReference<*, *, *, *>?
     ): IsPropertyReference<Any, *, *> {
         val typeIndex = initUIntByVarWithExtraInfo(reader) { index, type ->
-            if (type != TYPE.value) throw Exception("Expected TypedValue")
+            if (type != TYPE.value) throw SerializationException("Expected TypedValue")
             index
         }
         val type = this.typeByIndex[typeIndex] ?: throw UnexpectedValueException("Type $typeIndex is not known")

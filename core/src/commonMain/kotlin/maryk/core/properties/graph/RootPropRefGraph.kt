@@ -1,6 +1,7 @@
 package maryk.core.properties.graph
 
 import maryk.core.exceptions.ContextNotFoundException
+import maryk.core.exceptions.TypeException
 import maryk.core.models.ContextualDataModel
 import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -36,7 +37,7 @@ data class RootPropRefGraph<P : IsPropertyDefinitions> internal constructor(
             values += when (it) {
                 is IsPropertyDefinitionWrapper<*, *, *, *> -> it.name
                 is PropRefGraph<*, *, *> -> it.toString()
-                else -> throw Exception("Unknown Graphable type")
+                else -> throw TypeException("Unknown Graphable type")
             }
         }
         return "RootPropRefGraph { $values }"

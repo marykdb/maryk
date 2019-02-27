@@ -4,6 +4,7 @@ import maryk.json.ArrayType
 import maryk.json.JsonToken
 import maryk.json.MapType
 import maryk.json.TokenType
+import maryk.lib.exceptions.ParseException
 
 private enum class FlowSequenceState {
     START,
@@ -174,7 +175,7 @@ internal class FlowSequenceReader<out P>(
         isPlainStringReader: Boolean,
         tag: TokenType?, @Suppress("UNUSED_PARAMETER") extraIndentAtStart: Int
     ): JsonToken = when (this.state) {
-        FlowSequenceState.START -> throw Exception("Sequence cannot be in start mode")
+        FlowSequenceState.START -> throw ParseException("Sequence cannot be in start mode")
         FlowSequenceState.EXPLICIT_KEY -> this.startObject(tag)
         FlowSequenceState.VALUE_START -> {
             this.cachedCall = { this.jsonTokenCreator(value, isPlainStringReader, tag, 0) }
@@ -197,7 +198,7 @@ internal class FlowSequenceReader<out P>(
             createYamlValueToken(value, tag, isPlainStringReader)
         }
         FlowSequenceState.MAP_END, FlowSequenceState.STOP -> {
-            throw Exception("Not a content token creator")
+            throw ParseException("Not a content token creator")
         }
     }
 

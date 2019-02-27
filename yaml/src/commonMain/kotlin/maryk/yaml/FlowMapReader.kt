@@ -3,6 +3,7 @@ package maryk.yaml
 import maryk.json.JsonToken
 import maryk.json.MapType
 import maryk.json.TokenType
+import maryk.lib.exceptions.ParseException
 
 private enum class FlowMapState {
     START, EXPLICIT_KEY, KEY, COMPLEX_KEY, VALUE, SEPARATOR, STOP
@@ -128,7 +129,7 @@ internal class FlowMapReader<out P>(
         isPlainStringReader: Boolean,
         tag: TokenType?, @Suppress("UNUSED_PARAMETER") extraIndent: Int
     ) = when (this.state) {
-        FlowMapState.START, FlowMapState.STOP -> throw Exception("Map cannot create tokens in state $state")
+        FlowMapState.START, FlowMapState.STOP -> throw ParseException("Map cannot create tokens in state $state")
         FlowMapState.EXPLICIT_KEY -> this.readUntilToken(0)
         FlowMapState.KEY, FlowMapState.SEPARATOR -> {
             this.state = FlowMapState.VALUE

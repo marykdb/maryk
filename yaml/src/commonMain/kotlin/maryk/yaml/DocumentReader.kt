@@ -4,6 +4,7 @@ import maryk.json.ExceptionWhileReadingJson
 import maryk.json.JsonToken
 import maryk.json.TokenType
 import maryk.json.ValueType
+import maryk.lib.exceptions.ParseException
 
 /** Read single or multiple yaml documents until end of stream or "..." */
 internal class DocumentReader(
@@ -153,7 +154,7 @@ internal class DocumentReader(
     }
 
     override fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean) =
-        throw Exception("FieldNames are only allowed within maps")
+        throw ParseException("FieldNames are only allowed within maps")
 
     override fun continueIndentLevel(extraIndent: Int, tag: TokenType?): JsonToken {
         return if (this.indentCount == 0) {

@@ -2,6 +2,7 @@ package maryk.core.properties.enum
 
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.definitions.PrimitiveType
+import maryk.core.exceptions.SerializationException
 import maryk.core.models.ContextualDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.MapDefinition
@@ -104,7 +105,7 @@ open class IndexedEnumDefinition<E : IndexedEnum<E>> private constructor(
             writer: IsJsonLikeWriter,
             context: EnumNameContext?
         ) {
-            throw Exception("Cannot write definitions from Values")
+            throw SerializationException("Cannot write definitions from Values")
         }
 
         override fun writeJson(

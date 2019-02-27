@@ -1,5 +1,6 @@
 package maryk.core.inject
 
+import maryk.core.exceptions.RequestException
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
@@ -34,7 +35,7 @@ internal class InjectWithReference(
             this.reference !is PropertyReferenceForValues<*, *, *, *>
             || toAddTo !is AbstractValues<*, *, *>
         ) {
-            throw Exception("Inject can only be contained in Values")
+            throw RequestException("Inject can only be contained in Values")
         }
 
         toAddTo.add(

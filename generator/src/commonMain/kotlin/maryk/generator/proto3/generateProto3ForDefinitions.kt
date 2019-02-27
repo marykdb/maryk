@@ -1,6 +1,7 @@
 package maryk.generator.proto3
 
 import maryk.core.definitions.Definitions
+import maryk.core.exceptions.TypeException
 import maryk.core.models.DataModel
 import maryk.core.models.RootDataModel
 import maryk.core.models.ValueDataModel
@@ -38,7 +39,7 @@ fun Definitions.generateProto3(
                 val writer = writerConstructor(obj.name)
                 (obj as DataModel<*, PropertyDefinitions>).generateProto3Schema(kotlinGenerationContext, writer)
             }
-            else -> throw Exception("Unknown Maryk Primitive $obj")
+            else -> throw TypeException("Unknown Maryk Primitive $obj")
         }
     }
 }

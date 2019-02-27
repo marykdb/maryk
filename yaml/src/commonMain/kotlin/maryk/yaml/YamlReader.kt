@@ -4,6 +4,7 @@ import maryk.json.ArrayType
 import maryk.json.ExceptionWhileReadingJson
 import maryk.json.IsJsonLikeReader
 import maryk.json.JsonToken
+import maryk.json.JsonWriteException
 import maryk.json.MapType
 import maryk.json.TokenType
 import maryk.json.ValueType
@@ -99,7 +100,7 @@ internal class YamlReaderImpl(
 
     private val tagMap: Map<String, Map<String, TokenType>> = tagMap?.let {
         if (defaultTag != null && !tagMap.contains(defaultTag)) {
-            throw Exception("Default tag should be defined in tag map")
+            throw JsonWriteException("Default tag should be defined in tag map")
         }
         yamlTagMap.plus(tagMap)
     } ?: yamlTagMap

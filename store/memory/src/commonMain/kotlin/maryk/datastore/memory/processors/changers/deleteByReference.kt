@@ -1,5 +1,6 @@
 package maryk.datastore.memory.processors.changers
 
+import maryk.core.exceptions.RequestException
 import maryk.core.models.IsDataModelWithValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -31,7 +32,7 @@ internal fun <T : Any> deleteByReference(
     handlePreviousValue: ((ByteArray, T?) -> Unit)? = null
 ): Boolean {
     if (reference is TypeReference<*, *>) {
-        throw Exception("Type Reference not allowed for deletes. Use the multi type parent.")
+        throw RequestException("Type Reference not allowed for deletes. Use the multi type parent.")
     }
 
     val referenceToCompareTo = reference.toStorageByteArray()

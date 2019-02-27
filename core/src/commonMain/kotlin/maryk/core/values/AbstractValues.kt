@@ -1,6 +1,7 @@
 package maryk.core.values
 
 import maryk.core.exceptions.ContextNotFoundException
+import maryk.core.exceptions.DefNotFoundException
 import maryk.core.inject.AnyInject
 import maryk.core.models.IsDataModel
 import maryk.core.models.IsNamedDataModel
@@ -36,7 +37,7 @@ abstract class AbstractValues<DO : Any, DM : IsDataModel<P>, P : AbstractPropert
         val value = this.original(index)
 
         val valueDef = this.dataModel.properties[index]
-            ?: throw Exception("Value definition of index $index is missing")
+            ?: throw DefNotFoundException("Value definition of index $index is missing")
 
         return process(valueDef, value)
     }

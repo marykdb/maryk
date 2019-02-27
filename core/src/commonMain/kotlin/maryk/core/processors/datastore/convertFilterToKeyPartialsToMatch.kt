@@ -1,12 +1,12 @@
 package maryk.core.processors.datastore
 
+import maryk.core.exceptions.TypeException
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.index.Multiple
-import maryk.core.properties.references.IsFixedBytesPropertyReference
 import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.filters.And
@@ -180,13 +180,13 @@ private fun <T : Any> getKeyDefinitionOrNull(
                 }
             }
         }
-        is IsFixedBytesPropertyReference<*> -> {
+        is IsIndexablePropertyReference<*> -> {
             if (keyDefinition.isForPropertyReference(reference)) {
                 @Suppress("UNCHECKED_CAST")
-                processKeyDefinitionIfFound(0, 0, keyDefinition as IsFixedBytesPropertyReference<Any>)
+                processKeyDefinitionIfFound(0, 0, keyDefinition as IsIndexablePropertyReference<Any>)
             }
         }
-        else -> throw Exception("Impossible option $keyDefinition for keyDefinition")
+        else -> throw TypeException("Impossible option $keyDefinition for keyDefinition")
     }
 
 }

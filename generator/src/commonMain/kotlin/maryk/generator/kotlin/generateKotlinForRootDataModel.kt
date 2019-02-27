@@ -1,5 +1,6 @@
 package maryk.generator.kotlin
 
+import maryk.core.exceptions.TypeException
 import maryk.core.models.RootDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.index.IsIndexable
@@ -105,5 +106,5 @@ private fun IsIndexable.generateKotlin(
 
         "Multiple(\n${output.joinToString(",\n").prependIndent()}\n)"
     }
-    else -> throw Exception("Unknown key part type $this")
+    else -> throw TypeException("Unknown IsIndexable type: $this")
 }

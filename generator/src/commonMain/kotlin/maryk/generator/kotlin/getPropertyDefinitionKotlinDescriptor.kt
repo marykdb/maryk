@@ -1,5 +1,6 @@
 package maryk.generator.kotlin
 
+import maryk.core.exceptions.TypeException
 import maryk.core.models.IsNamedDataModel
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsSimpleObjectDataModel
@@ -36,7 +37,7 @@ import maryk.core.properties.types.numeric.NumberType
 internal fun <T : Any, D : IsTransportablePropertyDefinitionType<T>, P : ObjectPropertyDefinitions<D>> D.getKotlinDescriptor(): PropertyDefinitionKotlinDescriptor<T, D, P> {
     @Suppress("UNCHECKED_CAST")
     return definitionNamesMap[this.propertyDefinitionType] as PropertyDefinitionKotlinDescriptor<T, D, P>?
-        ?: throw Exception("Unknown propertyDefinitionType ${this.propertyDefinitionType}")
+        ?: throw TypeException("Unknown propertyDefinitionType ${this.propertyDefinitionType}")
 }
 
 

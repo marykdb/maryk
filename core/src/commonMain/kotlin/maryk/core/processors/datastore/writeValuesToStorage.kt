@@ -1,5 +1,6 @@
 package maryk.core.processors.datastore
 
+import maryk.core.exceptions.TypeException
 import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.models.IsDataModel
@@ -87,7 +88,7 @@ internal fun <T : IsPropertyDefinition<*>> writeValue(
     when (value) {
         is List<*> -> {
             if (definition !is IsListDefinition<*, *>) {
-                throw Exception("Definition should be a ListDefinition for a List")
+                throw TypeException("Definition should be a ListDefinition for a List")
             }
             val listQualifierWriter = createQualifierWriter(qualifierWriter, index, ReferenceType.LIST)
             val listQualifierCount = qualifierLength + index.calculateVarIntWithExtraInfoByteSize()
@@ -112,7 +113,7 @@ internal fun <T : IsPropertyDefinition<*>> writeValue(
         }
         is Map<*, *> -> {
             if (definition !is IsMapDefinition<*, *, *>) {
-                throw Exception("Definition should be a MapDefinition for a Map")
+                throw TypeException("Definition should be a MapDefinition for a Map")
             }
             val mapQualifierWriter = createQualifierWriter(
                 qualifierWriter,
@@ -130,7 +131,7 @@ internal fun <T : IsPropertyDefinition<*>> writeValue(
         }
         is AbstractValues<*, *, *> -> {
             if (definition !is EmbeddedValuesDefinition<*, *>) {
-                throw Exception("Expected Embedded Values Definition for Values object")
+                throw TypeException("Expected Embedded Values Definition for Values object")
             }
 
             val indexWriter =
@@ -151,7 +152,7 @@ internal fun <T : IsPropertyDefinition<*>> writeValue(
         }
         is TypedValue<*, *> -> {
             if (definition !is IsMultiTypeDefinition<*, *>) {
-                throw Exception("Definition should be a MultiTypeDefinition for a TypedValue")
+                throw TypeException("Definition should be a MultiTypeDefinition for a TypedValue")
             }
 
             val valueQualifierWriter = if (index > -1) {

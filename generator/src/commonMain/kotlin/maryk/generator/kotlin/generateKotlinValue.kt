@@ -1,5 +1,6 @@
 package maryk.generator.kotlin
 
+import maryk.core.exceptions.TypeException
 import maryk.core.models.DataModel
 import maryk.core.models.IsNamedDataModel
 import maryk.core.models.ObjectDataModel
@@ -158,12 +159,13 @@ internal fun generateKotlinValue(
                 @Suppress("UNCHECKED_CAST")
                 (value as? Unit.() -> IsNamedDataModel<*>)?.let {
                     """{ ${value(Unit).name} }"""
-                } ?: throw Exception("NamedDataModel $value cannot be null")
+                } ?: throw TypeException("NamedDataModel $value has to be a function which returns a IsNamedDataModel")
             }
-            is EmbeddedValuesDefinition<*, *> -> (definition.dataModel as? DataModel<*, *>)?.let {
-                @Suppress("UNCHECKED_CAST")
-                return it.generateKotlinValue(value as ValuesImpl, addImport)
-            } ?: throw Exception("DataModel ${definition.dataModel} cannot be used to generate Kotlin code")
+            is EmbeddedValuesDefinition<*, *> -> definition.dataModel.let { dataModel ->
+                if (dataModel is DataModel<*, *>) {
+                    dataModel.generateKotlinValue(value as ValuesImpl, addImport)
+                } else throw TypeException("Only type DataModel can be used for Kotlin generation: ${definition.dataModel} cannot be converted")
+            }
             is ValueModelDefinition<*, *, *> -> definition.dataModel.let {
                 return it.generateKotlinValue(value, addImport)
             }

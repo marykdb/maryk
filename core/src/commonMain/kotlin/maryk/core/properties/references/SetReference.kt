@@ -1,5 +1,6 @@
 package maryk.core.properties.references
 
+import maryk.core.exceptions.TypeException
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsFixedBytesEncodable
@@ -64,7 +65,7 @@ open class SetReference<T : Any, CX : IsPropertyContext> internal constructor(
                 reader
             )
             SetItemReference(setItem, propertyDefinition.definition, this)
-        } else throw Exception("Unknown reference type below Set: $referenceType")
+        } else throw TypeException("Unknown reference type below Set: $referenceType")
     }
 
     override fun writeStorageBytes(writer: (byte: Byte) -> Unit) {

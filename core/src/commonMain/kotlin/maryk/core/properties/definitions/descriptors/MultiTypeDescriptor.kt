@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions.descriptors
 
+import maryk.core.exceptions.TypeException
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -105,7 +106,7 @@ private data class MultiTypeDescriptor(
             if (writer is YamlWriter) {
                 val typedDefinition =
                     Properties.definition.getPropertyAndSerialize(obj, context as ContainsDefinitionsContext?)
-                        ?: throw Exception("Unknown type ${obj.definition} so cannot serialize contents")
+                        ?: throw TypeException("Unknown type ${obj.definition} so cannot serialize contents")
 
                 writer.writeNamedIndexField(obj.name, obj.index)
 

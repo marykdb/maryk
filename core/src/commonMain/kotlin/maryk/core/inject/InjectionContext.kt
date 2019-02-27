@@ -1,6 +1,7 @@
 package maryk.core.inject
 
 import maryk.core.exceptions.ContextNotFoundException
+import maryk.core.exceptions.RequestException
 import maryk.core.models.IsDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsPropertyDefinitions
@@ -25,7 +26,7 @@ internal class InjectionContext(
                 val collectType = requestContext.getToCollectModel(collectionName)
 
                 return when (collectType) {
-                    null -> throw Exception("Inject collection name $collectionName not found")
+                    null -> throw RequestException("Inject collection name $collectionName not found")
                     is ModelTypeToCollect.Request<*> -> {
                         if (collectType.request is IsObjectRequest<*, *>) {
                             collectType.request.dataModel
@@ -45,7 +46,7 @@ internal class InjectionContext(
             val collectType = requestContext.getToCollectModel(collectionName)
 
             return when (collectType) {
-                null -> throw Exception("Inject collection name $collectionName not found")
+                null -> throw RequestException("Inject collection name $collectionName not found")
                 is ModelTypeToCollect.Request<*> -> {
                     collectType.model.properties
                 }

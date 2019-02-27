@@ -1,5 +1,7 @@
 package maryk.core.models
 
+import maryk.core.exceptions.RequestException
+import maryk.core.exceptions.SerializationException
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsDataModelPropertyDefinitions
 import maryk.core.properties.IsMutablePropertyDefinitions
@@ -56,7 +58,7 @@ internal fun <DM : IsNamedDataModel<*>, P : IsDataModelPropertyDefinitions<DM, *
                 } else {
                     if (definition == properties.properties) {
                         if (reader is IsYamlReader) {
-                            throw Exception("Property definitions should be written as complex key value.")
+                            throw SerializationException("Property definitions should be written as complex key value.")
                         }
                         propertiesAreProcessed = true
                     } else if (
@@ -85,7 +87,7 @@ internal fun <DM : IsNamedDataModel<*>, P : IsDataModelPropertyDefinitions<DM, *
     context?.currentDefinitionName?.let { name ->
         if (name.isNotBlank()) {
             if (values.contains(properties.name.index)) {
-                throw Exception("Name $name was already defined by map")
+                throw RequestException("Name $name was already defined by map")
             }
             // Reset it so no deeper value can reuse it
             context.currentDefinitionName = ""

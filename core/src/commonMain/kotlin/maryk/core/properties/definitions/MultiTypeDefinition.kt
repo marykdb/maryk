@@ -50,7 +50,7 @@ import maryk.yaml.YamlWriter
 data class MultiTypeDefinition<E : IndexedEnum<E>, in CX : IsPropertyContext> internal constructor(
     override val required: Boolean = true,
     override val final: Boolean = false,
-    val typeEnum: IndexedEnumDefinition<E>,
+    override val typeEnum: IndexedEnumDefinition<E>,
     override val typeIsFinal: Boolean = true,
     override val definitionMap: Map<E, IsSubDefinition<out Any, CX>>,
     override val default: TypedValue<E, *>? = null,
@@ -307,8 +307,13 @@ data class MultiTypeDefinition<E : IndexedEnum<E>, in CX : IsPropertyContext> in
         val index = initIntByVar(reader)
         if (index != 0) throw UnexpectedValueException("Index in multi type reference other than 0 ($index) is not supported")
         val typeIndex = initUIntByVar(reader)
-        val type = this.typeByIndex[typeIndex] ?: throw UnexpectedValueException("Type $typeIndex is not known")
-        return typeRef(type, parentReference)
+        return if (typeIndex == 0u) {
+            @Suppress("UNCHECKED_CAST")
+            this.anyTypeRef(parentReference) as IsPropertyReference<Any, *, *>
+        } else {
+            val type = this.typeByIndex[typeIndex] ?: throw UnexpectedValueException("Type $typeIndex is not known")
+            typeRef(type, parentReference)
+        }
     }
 
     override fun resolveReferenceFromStorage(
@@ -319,8 +324,13 @@ data class MultiTypeDefinition<E : IndexedEnum<E>, in CX : IsPropertyContext> in
             if (type != TYPE.value) throw SerializationException("Expected TypedValue")
             index
         }
-        val type = this.typeByIndex[typeIndex] ?: throw UnexpectedValueException("Type $typeIndex is not known")
-        return typeRef(type, parentReference)
+        return if (typeIndex == 0u) {
+            @Suppress("UNCHECKED_CAST")
+            this.anyTypeRef(parentReference) as IsPropertyReference<Any, *, *>
+        } else {
+            val type = this.typeByIndex[typeIndex] ?: throw UnexpectedValueException("Type $typeIndex is not known")
+            typeRef(type, parentReference)
+        }
     }
 
     /** Resolve a reference from [name] found on a [parentReference] */
@@ -329,9 +339,14 @@ data class MultiTypeDefinition<E : IndexedEnum<E>, in CX : IsPropertyContext> in
         parentReference: CanHaveComplexChildReference<*, *, *, *>?
     ) = when (name[0]) {
         '*' -> {
-            val type = this.typeByName[name.substring(1)]
-                ?: throw UnexpectedValueException("Type ${name.substring(1)} is not known")
-            typeRef(type, parentReference)
+            if (name.length == 1) {
+                @Suppress("UNCHECKED_CAST")
+                this.anyTypeRef(parentReference) as IsPropertyReference<Any, *, *>
+            } else {
+                val type = this.typeByName[name.substring(1)]
+                    ?: throw UnexpectedValueException("Type ${name.substring(1)} is not known")
+                typeRef(type, parentReference)
+            }
         }
         else -> throw ParseException("Unknown Type type $name[0]")
     }

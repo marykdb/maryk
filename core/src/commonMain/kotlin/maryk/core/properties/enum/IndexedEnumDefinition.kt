@@ -5,6 +5,7 @@ import maryk.core.definitions.PrimitiveType
 import maryk.core.exceptions.SerializationException
 import maryk.core.models.ContextualDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.StringDefinition
@@ -22,12 +23,18 @@ import maryk.lib.exceptions.ParseException
 open class IndexedEnumDefinition<E : IndexedEnum<E>> private constructor(
     internal val optionalCases: (() -> Array<E>)?,
     override val name: String
-) : MarykPrimitive {
+) : MarykPrimitive, IsPropertyDefinition<E> {
+    override val required = true
+    override val final = true
+
     constructor(name: String, values: () -> Array<E>) : this(name = name, optionalCases = values)
 
     val cases get() = optionalCases!!
 
     override val primitiveType = PrimitiveType.EnumDefinition
+
+    override fun getEmbeddedByName(name: String): Nothing? = null
+    override fun getEmbeddedByIndex(index: Int): Nothing? = null
 
     internal object Properties : ObjectPropertyDefinitions<IndexedEnumDefinition<IndexedEnum<Any>>>() {
         val name = add(1, "name",

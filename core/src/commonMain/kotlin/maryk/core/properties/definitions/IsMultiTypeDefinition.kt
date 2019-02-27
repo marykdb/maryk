@@ -2,8 +2,10 @@ package maryk.core.properties.definitions
 
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.MultiAnyTypeReference
 import maryk.core.properties.references.TypeReference
 import maryk.core.properties.types.TypedValue
 
@@ -15,6 +17,7 @@ interface IsMultiTypeDefinition<E : IndexedEnum<E>, in CX : IsPropertyContext> :
     HasDefaultValueDefinition<TypedValue<E, Any>>,
     IsUsableInMapValue<TypedValue<E, Any>, CX> {
     val typeIsFinal: Boolean
+    val typeEnum: IndexedEnumDefinition<E>
     val definitionMap: Map<E, IsSubDefinition<out Any, CX>>
 
     /** Get definition by [index] */
@@ -32,6 +35,12 @@ interface IsMultiTypeDefinition<E : IndexedEnum<E>, in CX : IsPropertyContext> :
      */
     fun typeRef(type: E, parentReference: CanHaveComplexChildReference<*, *, *, *>?) =
         TypeReference(type, this, parentReference)
+
+    /**
+     * Creates a reference referring to any type of multi type below [parentReference]
+     */
+    fun anyTypeRef(parentReference: CanHaveComplexChildReference<*, *, *, *>?) =
+        MultiAnyTypeReference( this, parentReference)
 
     /** Resolve a reference from [reader] found on a [parentReference] */
     fun resolveReference(

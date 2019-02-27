@@ -8,8 +8,10 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.OutOfRangeException
+import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.SInt32
+import maryk.core.protobuf.WriteCache
 import maryk.test.ByteCollector
 import maryk.test.models.Option
 import maryk.test.models.Option.V1
@@ -83,6 +85,36 @@ internal class MultiTypeDefinitionTest {
     @Test
     fun resolveReferenceByName() {
         def.resolveReferenceByName("*V1") shouldBe def.typeRef(V1, null)
+        def.resolveReferenceByName("*") shouldBe def.anyTypeRef(null)
+    }
+
+    @Test
+    fun resolveReferenceFromStorageByAnyTypeName() {
+        writeAndReadStorageReference(def.typeRef(V1, null))
+        writeAndReadStorageReference(def.anyTypeRef(null))
+    }
+
+    private fun writeAndReadTransportReference(ref: IsPropertyReference<*, *, *>) {
+        val byteCollector = ByteCollector()
+        byteCollector.reserve(ref.calculateStorageByteLength())
+        ref.writeStorageBytes(byteCollector::write)
+
+        def.resolveReferenceFromStorage(byteCollector::read, null) shouldBe ref
+    }
+
+    @Test
+    fun resolveReferenceFromTransportByAnyTypeName() {
+        writeAndReadTransportReference(def.typeRef(V1, null))
+        writeAndReadTransportReference(def.anyTypeRef(null))
+    }
+
+    private fun writeAndReadStorageReference(ref: IsPropertyReference<*, *, *>) {
+        val byteCollector = ByteCollector()
+        val cache = WriteCache()
+        byteCollector.reserve(ref.calculateTransportByteLength(cache))
+        ref.writeTransportBytes(cache, byteCollector::write)
+
+        def.resolveReference(byteCollector::read, null) shouldBe ref
     }
 
     @Test

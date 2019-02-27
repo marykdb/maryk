@@ -11,9 +11,9 @@ import maryk.core.properties.graph.PropRefGraphType
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.references.MultiAnyTypeReference
 import maryk.core.properties.references.MultiTypePropertyReference
 import maryk.core.properties.references.TypeReference
+import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.types.TypedValue
 
 /**
@@ -40,20 +40,20 @@ data class MultiTypeDefinitionWrapper<E : IndexedEnum<E>, TO : Any, CX : IsPrope
         MultiTypePropertyReference(this, parentRef)
 
     /** For quick notation to get a [type] reference */
-    infix fun ofType(type: E): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> TypeReference<E, CX> {
-        return { this.typeRef(type, this.ref(it)) }
+    infix fun refAtType(type: E): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> TypedValueReference<E, CX> {
+        return { this.typedValueRef(type, this.ref(it)) }
     }
 
     /** For quick notation to get an any type reference */
-    fun ofAnyTypeRef(): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> MultiAnyTypeReference<E, CX> {
+    fun refToType(): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> TypeReference<E, CX> {
         return {
             @Suppress("UNCHECKED_CAST")
-            this.anyTypeRef(it as CanHaveComplexChildReference<TypedValue<E, *>, IsMultiTypeDefinition<E, *>, *, *>?)
+            this.typeRef(it as CanHaveComplexChildReference<TypedValue<E, *>, IsMultiTypeDefinition<E, *>, *, *>?)
         }
     }
 
-    override fun anyTypeRef(parentReference: CanHaveComplexChildReference<TypedValue<E, *>, IsMultiTypeDefinition<E, *>, *, *>?): MultiAnyTypeReference<E, CX> {
-        return this.definition.anyTypeRef(this.ref(parentReference))
+    override fun typeRef(parentReference: CanHaveComplexChildReference<TypedValue<E, *>, IsMultiTypeDefinition<E, *>, *, *>?): TypeReference<E, CX> {
+        return this.definition.typeRef(this.ref(parentReference))
     }
 
     /** Specific extension to support fetching deeper references with [type] */
@@ -64,7 +64,7 @@ data class MultiTypeDefinitionWrapper<E : IndexedEnum<E>, TO : Any, CX : IsPrope
         propertyDefinitionGetter: P.() -> W
     ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> IsPropertyReference<T, W, *> =
         {
-            val typeRef = this.typeRef(type, this.ref(it))
+            val typeRef = this.typedValueRef(type, this.ref(it))
             (this.definitionMap[type] as EmbeddedValuesDefinition<IsValuesDataModel<P>, P>).dataModel.ref(
                 typeRef,
                 propertyDefinitionGetter
@@ -80,7 +80,7 @@ data class MultiTypeDefinitionWrapper<E : IndexedEnum<E>, TO : Any, CX : IsPrope
             (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> R
     ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> R =
         {
-            val typeRef = this.typeRef(type, this.ref(it))
+            val typeRef = this.typedValueRef(type, this.ref(it))
             (this.definitionMap[type] as EmbeddedValuesDefinition<IsValuesDataModel<P>, P>).dataModel(
                 typeRef,
                 referenceGetter

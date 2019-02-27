@@ -55,7 +55,7 @@ import maryk.core.properties.references.ReferenceType.SPECIAL
 import maryk.core.properties.references.ReferenceType.VALUE
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
-import maryk.core.properties.references.TypeReference
+import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.references.completeReferenceTypeOf
 import maryk.core.properties.references.referenceStorageTypeOf
 import maryk.core.properties.types.TypedValue
@@ -594,7 +594,7 @@ private fun <E : IndexedEnum<E>> IsMultiTypeDefinition<E, IsPropertyContext>.rea
     val definition = this.definition(index)
     val type = this.typeEnum.resolve(index)
         ?: throw DefNotFoundException("Unknown type $index for $this")
-    val typedReference = TypeReference(type, this, reference as CanHaveComplexChildReference<*, *, *, *>?)
+    val typedValueReference = TypedValueReference(type, this, reference as CanHaveComplexChildReference<*, *, *, *>?)
 
     if (qualifier.size <= qIndex) {
         return // Skip because is only complex exists indicator
@@ -605,7 +605,7 @@ private fun <E : IndexedEnum<E>> IsMultiTypeDefinition<E, IsPropertyContext>.rea
             @Suppress("UNCHECKED_CAST")
             readEmbeddedValues(
                 definition,
-                typedReference,
+                typedValueReference,
                 select,
                 readValueFromStorage,
                 addToCache,

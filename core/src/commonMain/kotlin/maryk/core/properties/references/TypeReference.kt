@@ -1,92 +1,99 @@
 package maryk.core.properties.references
 
-import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.UnexpectedValueException
-import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.IsEmbeddedDefinition
-import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
+import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.IsMultiTypeDefinition
-import maryk.core.properties.definitions.IsSubDefinition
+import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.index.IndexKeyPartType
+import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.enum.IndexedEnumDefinition
+import maryk.core.properties.exceptions.RequiredException
 import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.core.values.IsValuesGetter
 
-@Suppress("UNCHECKED_CAST")
-/**
- * Reference to a Type [E] on [parentReference]
- * Can be a reference to a type below a multi type wrapper or for like multi types within lists
- */
-class TypeReference<E : IndexedEnum<E>, in CX : IsPropertyContext> internal constructor(
-    val type: E,
-    multiTypeDefinition: IsMultiTypeDefinition<E, CX>,
-    parentReference: CanHaveComplexChildReference<*, *, *, *>?
-) : CanHaveComplexChildReference<Any, IsSubDefinition<Any, CX>, CanHaveComplexChildReference<*, *, *, *>, TypedValue<E, Any>>(
-    multiTypeDefinition.definitionMap[type] as IsSubDefinition<Any, CX>,
-    parentReference
-), HasEmbeddedPropertyReference<Any> {
-    override val completeName: String
+/** Reference to any MultiType reference */
+data class TypeReference<E : IndexedEnum<E>, in CX : IsPropertyContext> internal constructor(
+    val multiTypeDefinition: IsMultiTypeDefinition<E, CX>,
+    val parentReference: CanHaveComplexChildReference<TypedValue<E, *>, IsMultiTypeDefinition<E, *>, *, *>?
+) : IsPropertyReference<E, IndexedEnumDefinition<E>, TypedValue<E, *>>,
+    IsFixedBytesPropertyReference<E>,
+    IsFixedBytesEncodable<E> by multiTypeDefinition.typeEnum,
+    IsIndexable
+{
+    override val indexKeyPartType = IndexKeyPartType.Reference
+    override val propertyDefinition = multiTypeDefinition.typeEnum
+
+    override val completeName
         get() = this.parentReference?.let {
-            "${it.completeName}.*${type.name}"
-        } ?: "*${type.name}"
+            "${it.completeName}.*"
+        } ?: "*"
 
-    override fun resolveFromAny(value: Any) = (value as? TypedValue<*, *>)?.value
-        ?: throw UnexpectedValueException("Expected typed value to get value by reference")
-
-    override fun getEmbedded(name: String, context: IsPropertyContext?): IsPropertyReference<Any, *, *> {
-        return if (this.propertyDefinition is IsEmbeddedDefinition<*, *>) {
-            this.propertyDefinition.resolveReferenceByName(name, this)
-        } else throw DefNotFoundException("Type reference can not contain embedded name references ($name)")
+    override fun resolveFromAny(value: Any): Any {
+        @Suppress("UNCHECKED_CAST")
+        return (value as? TypedValue<E, *>)?.type
+            ?: throw UnexpectedValueException("Expected TypedValue to get id by reference")
     }
 
-    override fun getEmbeddedRef(reader: () -> Byte, context: IsPropertyContext?): AnyPropertyReference {
-        if (this.propertyDefinition is IsEmbeddedObjectDefinition<*, *, *, *, *>) {
-            return this.propertyDefinition.resolveReference(reader, this)
-        } else throw DefNotFoundException("Type reference can not contain embedded index references (${type.name})")
+    override fun getValue(values: IsValuesGetter): E {
+        val typedValue: TypedValue<E, *> = values[parentReference as IsPropertyReference<TypedValue<E, *>, IsPropertyDefinition<TypedValue<E, *>>, *>]
+            ?: throw RequiredException(parentReference)
+        return typedValue.type
     }
 
-    override fun getEmbeddedStorageRef(
-        reader: () -> Byte,
-        context: IsPropertyContext?,
-        referenceType: CompleteReferenceType,
-        isDoneReading: () -> Boolean
-    ): AnyPropertyReference {
-        return if (this.propertyDefinition is IsEmbeddedObjectDefinition<*, *, *, *, *>) {
-            this.propertyDefinition.resolveReferenceFromStorage(reader, this, context, isDoneReading)
-        } else throw DefNotFoundException("Type reference can not contain embedded index references (${type.name})")
+    override fun isForPropertyReference(propertyReference: AnyPropertyReference): Boolean {
+        return propertyReference == parentReference
+    }
+
+    override fun calculateReferenceStorageByteLength(): Int {
+        val refLength = this.parentReference?.calculateStorageByteLength() ?: 0
+        return refLength.calculateVarIntWithExtraInfoByteSize() + refLength
+    }
+
+    override fun writeReferenceStorageBytes(writer: (Byte) -> Unit) {
+        val refLength = this.parentReference?.calculateStorageByteLength() ?: 0
+        refLength.writeVarIntWithExtraInfo(
+            this.indexKeyPartType.index.toByte(),
+            writer
+        )
+        this.parentReference?.writeStorageBytes(writer)
     }
 
     override fun calculateTransportByteLength(cacher: WriteCacheWriter): Int {
         val parentLength = parentReference?.calculateTransportByteLength(cacher) ?: 0
-        return parentLength + 1 + type.index.calculateVarByteLength()
+        return parentLength + 1 + 1 // Last is for length of type bytes
     }
 
     override fun writeTransportBytes(cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit) {
         this.parentReference?.writeTransportBytes(cacheGetter, writer)
         ProtoBuf.writeKey(0, WireType.VAR_INT, writer)
-        type.index.writeVarBytes(writer)
+        0.writeVarBytes(writer)
     }
 
     override fun calculateStorageByteLength(): Int {
         val parentCount = this.parentReference?.calculateStorageByteLength() ?: 0
-        return parentCount + type.index.calculateVarIntWithExtraInfoByteSize()
+        return parentCount + 1 // Last is for length of type bytes
     }
 
     override fun writeStorageBytes(writer: (byte: Byte) -> Unit) {
         this.parentReference?.writeStorageBytes(writer)
 
         // Write type index bytes
-        type.index.writeVarIntWithExtraInfo(
+        0.writeVarIntWithExtraInfo(
             CompleteReferenceType.TYPE.value,
             writer
         )
     }
 
-    override fun resolve(values: TypedValue<E, Any>) = values.value
+    override fun resolve(values: TypedValue<E, *>): E? {
+        return values.type
+    }
 }

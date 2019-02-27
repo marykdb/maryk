@@ -5,8 +5,8 @@ import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.references.MultiAnyTypeReference
 import maryk.core.properties.references.TypeReference
+import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.types.TypedValue
 
 /** Defines a multi type definition */
@@ -24,15 +24,15 @@ interface IsMultiTypeDefinition<E : IndexedEnum<E>, in CX : IsPropertyContext> :
     fun definition(index: UInt): IsSubDefinition<out Any, CX>?
 
     /**
-     * Creates a reference referring to [type] of multi type below [parentReference]
+     * Creates a reference referring to a value of [type] of multi type below [parentReference]
      * so reference can be strongly typed
      */
-    fun typeRef(type: E, parentReference: CanHaveComplexChildReference<*, *, *, *>?) =
-        TypeReference(type, this, parentReference)
+    fun typedValueRef(type: E, parentReference: CanHaveComplexChildReference<*, *, *, *>?) =
+        TypedValueReference(type, this, parentReference)
 
     /** Creates a reference referring to any type of multi type below [parentReference] */
-    fun anyTypeRef(parentReference: CanHaveComplexChildReference<TypedValue<E, *>, IsMultiTypeDefinition<E, *>, *, *>? = null) =
-        MultiAnyTypeReference(
+    fun typeRef(parentReference: CanHaveComplexChildReference<TypedValue<E, *>, IsMultiTypeDefinition<E, *>, *, *>? = null) =
+        TypeReference(
             this,
             parentReference
         )

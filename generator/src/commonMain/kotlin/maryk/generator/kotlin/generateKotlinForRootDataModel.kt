@@ -10,7 +10,7 @@ import maryk.core.properties.definitions.index.Reversed
 import maryk.core.properties.definitions.index.UUIDKey
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.references.IsPropertyReferenceForValues
-import maryk.core.properties.references.MultiAnyTypeReference
+import maryk.core.properties.references.TypeReference
 import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
 
 fun <P : PropertyDefinitions> RootDataModel<*, P>.generateKotlin(
@@ -80,12 +80,12 @@ private fun IsIndexable.generateKotlin(
         addImport("maryk.core.properties.definitions.key.UUIDKey")
         "UUIDKey"
     }
-    is MultiAnyTypeReference<*, *> -> {
+    is TypeReference<*, *> -> {
         @Suppress("UNCHECKED_CAST")
-        val typeId = this as MultiAnyTypeReference<IndexedEnum<Any>, IsPropertyContext>
+        val typeId = this as TypeReference<IndexedEnum<Any>, IsPropertyContext>
         val parentReference = (typeId.parentReference as IsPropertyReferenceForValues<*, *, *, *>)
         addImport("$packageName.$name.Properties.${parentReference.name}")
-        "${parentReference.name}.anyTypeRef()"
+        "${parentReference.name}.typeRef()"
     }
     is Reversed<*> -> {
         addImport("maryk.core.properties.definitions.key.Reversed")

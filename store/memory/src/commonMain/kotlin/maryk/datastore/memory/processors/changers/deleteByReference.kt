@@ -12,7 +12,7 @@ import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
-import maryk.core.properties.references.TypeReference
+import maryk.core.properties.references.TypedValueReference
 import maryk.core.values.EmptyValueItems
 import maryk.datastore.memory.records.DataRecordNode
 import maryk.datastore.memory.records.DataRecordValue
@@ -31,7 +31,7 @@ internal fun <T : Any> deleteByReference(
     keepAllVersions: Boolean,
     handlePreviousValue: ((ByteArray, T?) -> Unit)? = null
 ): Boolean {
-    if (reference is TypeReference<*, *>) {
+    if (reference is TypedValueReference<*, *>) {
         throw RequestException("Type Reference not allowed for deletes. Use the multi type parent.")
     }
 

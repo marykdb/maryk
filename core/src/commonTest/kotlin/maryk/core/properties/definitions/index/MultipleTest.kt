@@ -17,7 +17,7 @@ class MultipleTest {
     private val multiple = Multiple(
         UUIDKey,
         Reversed(bool.ref()),
-        multi.anyTypeRef(),
+        multi.typeRef(),
         string.ref(),
         Reversed(string.ref()),
         int.ref()

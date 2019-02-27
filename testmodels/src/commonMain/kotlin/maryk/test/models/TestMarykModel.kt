@@ -46,7 +46,7 @@ object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>
     indices = listOf(
         int.ref(),
         Reversed(double.ref()),
-        multi.anyTypeRef(),
+        multi.typeRef(),
         Multiple(
             Reversed(dateTime.ref()),
             enum.ref(),

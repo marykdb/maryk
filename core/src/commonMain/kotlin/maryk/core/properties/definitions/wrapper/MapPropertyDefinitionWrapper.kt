@@ -88,9 +88,9 @@ fun <K : Any, E : IndexedEnum<E>, P : PropertyDefinitions, T : Any, W : IsProper
 ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> IsPropertyReference<T, W, *> =
     {
         val multiTypeDef = (this.definition.valueDefinition as IsMultiTypeDefinition<E, IsPropertyContext>)
-        val typeRef = multiTypeDef.typeRef(type, this.valueRef(key, it))
+        val typedValueRef = multiTypeDef.typedValueRef(type, this.valueRef(key, it))
         (multiTypeDef.definitionMap[type] as EmbeddedValuesDefinition<IsValuesDataModel<P>, P>).dataModel.ref(
-            typeRef,
+            typedValueRef,
             propertyDefinitionGetter
         )
     }
@@ -120,9 +120,9 @@ fun <K : Any, E : IndexedEnum<E>, P : PropertyDefinitions, T : Any, R : IsProper
 ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> R =
     {
         val multiTypeDef = (this.definition.valueDefinition as IsMultiTypeDefinition<E, IsPropertyContext>)
-        val typeRef = multiTypeDef.typeRef(type, this.valueRef(key, it))
+        val typedValueRef = multiTypeDef.typedValueRef(type, this.valueRef(key, it))
         (multiTypeDef.definitionMap[type] as EmbeddedValuesDefinition<IsValuesDataModel<P>, P>).dataModel(
-            typeRef,
+            typedValueRef,
             referenceGetter
         )
     }

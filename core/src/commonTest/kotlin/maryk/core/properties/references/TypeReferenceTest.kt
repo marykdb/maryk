@@ -1,71 +1,79 @@
 package maryk.core.properties.references
 
-import maryk.core.exceptions.UnexpectedValueException
+import maryk.core.models.RootDataModel
+import maryk.core.models.key
+import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.definitions.BooleanDefinition
+import maryk.core.properties.definitions.IsSubDefinition
+import maryk.core.properties.definitions.MultiTypeDefinition
+import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.references.TypeReferenceTest.MarykModel.Properties.multi
 import maryk.core.properties.types.TypedValue
-import maryk.core.protobuf.WriteCache
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
+import maryk.test.models.Option
 import maryk.test.models.Option.V1
 import maryk.test.models.Option.V2
-import maryk.test.models.TestMarykModel
 import maryk.test.shouldBe
-import maryk.test.shouldThrow
 import kotlin.test.Test
 
-class TypeReferenceTest {
-    private val typeReference =
-        TestMarykModel { multi ofType V2 }
+internal class TypeReferenceTest {
+    object MarykModel : RootDataModel<MarykModel, MarykModel.Properties>(
+        name = "MarykModel",
+        keyDefinition = multi.typeRef(),
+        properties = Properties
+    ) {
+        object Properties : PropertyDefinitions() {
+            val multi = add(
+                1,
+                "multi",
+                MultiTypeDefinition(
+                    final = true,
+                    typeEnum = Option,
+                    definitionMap = mapOf<Option, IsSubDefinition<*, IsPropertyContext>>(
+                        Option.V1 to StringDefinition(),
+                        Option.V2 to BooleanDefinition()
+                    )
+                )
+            )
+        }
 
-    @Test
-    fun getValueFromMap() {
-        val typedValue = TypedValue(
-            V1,
-            "string"
-        )
-
-        this.typeReference.resolveFromAny(typedValue) shouldBe "string"
-
-        shouldThrow<UnexpectedValueException> {
-            this.typeReference.resolveFromAny("wrongInput")
+        operator fun invoke(
+            multi: TypedValue<Option, *>
+        ) = this.values {
+            mapNonNulls(
+                this.multi with multi
+            )
         }
     }
 
     @Test
-    fun testCompleteName() {
-        typeReference.completeName shouldBe "multi.*V2"
-    }
-
-    @Test
-    fun writeAndReadStringValue() {
-        TestMarykModel.Properties.getPropertyReferenceByName(typeReference.completeName) shouldBe typeReference
-    }
-
-    @Test
-    fun writeAndReadTransportBytes() {
-        val bc = ByteCollector()
-        val cache = WriteCache()
-
-        bc.reserve(
-            typeReference.calculateTransportByteLength(cache)
+    fun testKey() {
+        val obj = MarykModel(
+            multi = TypedValue(Option.V2, true)
         )
-        typeReference.writeTransportBytes(cache, bc::write)
 
-        bc.bytes!!.toHex() shouldBe "0d0002"
+        val key = MarykModel.key(obj)
+        key.bytes.toHex() shouldBe "0002"
 
-        TestMarykModel.Properties.getPropertyReferenceByBytes(bc.size, bc::read) shouldBe typeReference
+        val keyDef = MarykModel.keyDefinition
+
+        (keyDef is TypeReference<*, *>) shouldBe true
+        @Suppress("UNCHECKED_CAST")
+        val specificDef = keyDef as TypeReference<Option, *>
+        specificDef shouldBe multi.typeRef()
+
+        specificDef.getValue(obj) shouldBe V2
+
+        val bc = ByteCollector()
+        bc.reserve(2)
+        specificDef.writeStorageBytes(Option.V1, bc::write)
+        specificDef.readStorageBytes(bc.size, bc::read) shouldBe V1
     }
 
     @Test
-    fun writeAndReadStorageBytes() {
-        val bc = ByteCollector()
-
-        bc.reserve(
-            typeReference.calculateStorageByteLength()
-        )
-        typeReference.writeStorageBytes(bc::write)
-
-        bc.bytes!!.toHex() shouldBe "6915"
-
-        TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) shouldBe typeReference
+    fun toReferenceStorageBytes() {
+        multi.typeRef().toReferenceStorageByteArray().toHex() shouldBe "0a09"
     }
 }

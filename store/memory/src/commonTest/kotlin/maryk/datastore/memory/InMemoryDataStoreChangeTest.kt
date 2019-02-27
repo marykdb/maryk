@@ -341,7 +341,7 @@ class InMemoryDataStoreChangeTest {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[4].change(
-                    Delete(TestMarykModel { multi ofType V1 })
+                    Delete(TestMarykModel { multi refAtType V1 })
                 )
             )
         )

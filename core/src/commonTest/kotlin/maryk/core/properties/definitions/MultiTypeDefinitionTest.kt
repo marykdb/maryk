@@ -84,14 +84,14 @@ internal class MultiTypeDefinitionTest {
 
     @Test
     fun resolveReferenceByName() {
-        def.resolveReferenceByName("*V1") shouldBe def.typeRef(V1, null)
-        def.resolveReferenceByName("*") shouldBe def.anyTypeRef(null)
+        def.resolveReferenceByName("*V1") shouldBe def.typedValueRef(V1, null)
+        def.resolveReferenceByName("*") shouldBe def.typeRef(null)
     }
 
     @Test
     fun resolveReferenceFromStorageByAnyTypeName() {
-        writeAndReadStorageReference(def.typeRef(V1, null))
-        writeAndReadStorageReference(def.anyTypeRef(null))
+        writeAndReadStorageReference(def.typedValueRef(V1, null))
+        writeAndReadStorageReference(def.typeRef(null))
     }
 
     private fun writeAndReadTransportReference(ref: IsPropertyReference<*, *, *>) {
@@ -104,8 +104,8 @@ internal class MultiTypeDefinitionTest {
 
     @Test
     fun resolveReferenceFromTransportByAnyTypeName() {
-        writeAndReadTransportReference(def.typeRef(V1, null))
-        writeAndReadTransportReference(def.anyTypeRef(null))
+        writeAndReadTransportReference(def.typedValueRef(V1, null))
+        writeAndReadTransportReference(def.typeRef(null))
     }
 
     private fun writeAndReadStorageReference(ref: IsPropertyReference<*, *, *>) {

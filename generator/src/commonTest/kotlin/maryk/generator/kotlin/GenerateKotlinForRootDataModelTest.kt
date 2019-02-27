@@ -95,7 +95,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
     name = "CompleteMarykModel",
     keyDefinitions = Multiple(
         UUIDKey,
-        multiForKey.anyTypeRef(),
+        multiForKey.typeRef(),
         booleanForKey.ref(),
         Reversed(dateForKey.ref())
     ),
@@ -104,7 +104,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
         Reversed(dateTime.ref()),
         Multiple(
             booleanForKey.ref(),
-            multiForKey.anyTypeRef()
+            multiForKey.typeRef()
         )
     ),
     properties = Properties

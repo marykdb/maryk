@@ -35,8 +35,8 @@ internal class DataObjectPropertyReferenceTest {
         TestMarykModel { embeddedValues { marykModel { map refToKey Time(12, 23) } } }.completeName shouldBe """embeddedValues.marykModel.map.$12:23"""
         TestMarykModel { embeddedValues { marykModel { map refAt Time(12, 23) } } }.completeName shouldBe "embeddedValues.marykModel.map.@12:23"
 
-        TestMarykModel { multi ofType V1 }.completeName shouldBe "multi.*V1"
-        TestMarykModel { multi.ofAnyTypeRef() }.completeName shouldBe "multi.*"
+        TestMarykModel { multi refAtType V1 }.completeName shouldBe "multi.*V1"
+        TestMarykModel { multi.refToType() }.completeName shouldBe "multi.*"
 
         ComplexModel { mapIntObject.refAtKey(2u) { value } }.completeName shouldBe "mapIntObject.@2.value"
         ComplexModel { mapIntObject.at(2u) { model ref { value } } }.completeName shouldBe "mapIntObject.@2.model.value"
@@ -66,8 +66,8 @@ internal class DataObjectPropertyReferenceTest {
         TestMarykModel { embeddedValues { marykModel { map refToKey Time(12, 23) } } }.toStorageByteArray().toHex() shouldBe "661e080a0300ae24"
         TestMarykModel { embeddedValues { marykModel { map refAt Time(12, 23) } } }.toStorageByteArray().toHex() shouldBe "661e540300ae24"
 
-        TestMarykModel { multi ofType V1 }.toStorageByteArray().toHex() shouldBe "690d"
-        TestMarykModel { multi.ofAnyTypeRef() }.toStorageByteArray().toHex() shouldBe "6905"
+        TestMarykModel { multi refAtType V1 }.toStorageByteArray().toHex() shouldBe "690d"
+        TestMarykModel { multi.refToType() }.toStorageByteArray().toHex() shouldBe "6905"
 
         ComplexModel { mapIntObject.refAtKey(2u) { value } }.toStorageByteArray().toHex() shouldBe "1c040000000209"
         ComplexModel { mapIntObject.at(2u) { model ref { value } } }.toStorageByteArray().toHex() shouldBe "1c04000000021609"

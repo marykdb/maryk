@@ -120,6 +120,7 @@ data class Order internal constructor(
                     when (currentToken) {
                         is JsonToken.Suspended -> currentToken = currentToken.lastToken
                         is EndDocument -> return this.values(context) { EmptyValueItems }
+                        else -> Unit
                     }
                 }
 

@@ -489,7 +489,7 @@ private fun IsMultiTypeDefinition<*, *>.readComplexTypedValue(
     val definition = this.definition(index)
         ?: throw DefNotFoundException("No definition for $index in $this")
     @Suppress("UNCHECKED_CAST")
-    val type = this.typeEnum.valueByIndex[index] as AnyIndexedEnum?
+    val type = this.typeEnum.resolve(index) as AnyIndexedEnum?
         ?: throw DefNotFoundException("Unknown type $index for $this")
 
     val addMultiTypeToOutput: AddValue = { addValueToOutput(TypedValue(type, it)) }

@@ -592,7 +592,7 @@ private fun <E : IndexedEnum<E>> IsMultiTypeDefinition<E, IsPropertyContext>.rea
     addChangeToOutput: ChangeAdder
 ) {
     val definition = this.definition(index)
-    val type = this.typeEnum.valueByIndex[index]
+    val type = this.typeEnum.resolve(index)
         ?: throw DefNotFoundException("Unknown type $index for $this")
     val typedReference = TypeReference(type, this, reference as CanHaveComplexChildReference<*, *, *, *>?)
 

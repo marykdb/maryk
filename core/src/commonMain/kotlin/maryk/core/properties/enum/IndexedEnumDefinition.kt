@@ -37,10 +37,12 @@ open class IndexedEnumDefinition<E : IndexedEnum<E>> private constructor(
     override val required = true
     override val final = true
 
-    val valueByString: Map<String, E> by lazy {
+    // Because of compilation issue in Native this map contains IndexedEnum<E> instead of E as value
+    private val valueByString: Map<String, IndexedEnum<E>> by lazy {
         cases().associate { Pair(it.name, it) }
     }
-    val valueByIndex: Map<UInt, E> by lazy {
+    // Because of compilation issue in Native this map contains IndexedEnum<E> instead of E as value
+    private val valueByIndex: Map<UInt, IndexedEnum<E>> by lazy {
         cases().associate { Pair(it.index, it) }
     }
 
@@ -51,9 +53,17 @@ open class IndexedEnumDefinition<E : IndexedEnum<E>> private constructor(
     override fun getEmbeddedByName(name: String): Nothing? = null
     override fun getEmbeddedByIndex(index: Int): Nothing? = null
 
+    /** Get Enum value by [index] */
+    @Suppress("UNCHECKED_CAST")
+    fun resolve(index: UInt) = valueByIndex[index] as E?
+
+    /** Get Enum value by [name] */
+    @Suppress("UNCHECKED_CAST")
+    fun resolve(name: String) = valueByString[name] as E?
+
     override fun readStorageBytes(length: Int, reader: () -> Byte): E {
         val index = initUInt(reader, 2)
-        return valueByIndex[index]
+        return resolve(index)
             ?: throw DefNotFoundException("Unknown index $index for $name")
     }
 

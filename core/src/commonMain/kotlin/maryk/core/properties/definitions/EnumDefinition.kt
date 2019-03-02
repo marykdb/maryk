@@ -39,7 +39,7 @@ class EnumDefinition<E : IndexedEnum<E>>(
     override val byteSize = 2
 
     private fun getEnumByIndex(index: UInt) =
-        enum.valueByIndex[index] ?: throw ParseException("Enum index does not exist $index")
+        enum.resolve(index) ?: throw ParseException("Enum index does not exist $index")
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) =
         getEnumByIndex(initUInt(reader, 2))
@@ -67,7 +67,7 @@ class EnumDefinition<E : IndexedEnum<E>>(
     override fun asString(value: E) = value.name
 
     override fun fromString(string: String) =
-        enum.valueByString[string] ?: throw ParseException(string)
+        enum.resolve(string) ?: throw ParseException(string)
 
     override fun fromNativeType(value: Any): E? = null
 

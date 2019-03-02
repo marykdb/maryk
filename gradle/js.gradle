@@ -26,10 +26,6 @@ ext.setupJS = { runTests ->
     }
 
     if (runTests == null || runTests == true) {
-        task installMocha(type: NpmTask) {
-            args = ['install', 'mocha']
-        }
-
         afterEvaluate {
             // Directory for all js test dependencies
             def testDir = "${buildDir}/jsTest"
@@ -54,7 +50,7 @@ ext.setupJS = { runTests ->
             }
 
             // Use mocha as the test runner
-            task runMocha(type: NodeTask, dependsOn: [copyJsMainOutputAndDependencies, copyJsTestOutput, installMocha]) {
+            task runMocha(type: NodeTask, dependsOn: [copyJsMainOutputAndDependencies, copyJsTestOutput]) {
                 script = file("${project.rootDir}/.nodeTest/node_modules/mocha/bin/mocha")
                 args = ["${testDir}/${projectName}_test.js"]
             }

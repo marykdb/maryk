@@ -1,0 +1,11 @@
+{
+  "name": "maryk-js-test-runner",
+  "version": "0.0.1",
+  "description": "Test running package",
+  "author": "Jurriaan Mous",
+  "license": "Apache-2.0",
+  "repository": {},
+  "dependencies": {
+    "mocha": "^6.0.2"
+  }
+}

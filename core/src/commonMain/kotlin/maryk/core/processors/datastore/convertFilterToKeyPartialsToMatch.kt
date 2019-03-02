@@ -138,12 +138,14 @@ private fun <T : Any> walkFilterReferencesAndValues(
             handleKeyBytes(byteIndex, byteArray)
         }
 
-        // Add unique to match if
-        reference.comparablePropertyDefinition.let {
-            if (it is IsComparableDefinition<*, *> && it.unique) {
-                handleUniqueMatchers?.invoke(
-                    createUniqueToMatch(reference, it, value)
-                )
+        // Add unique to match if handler was passed
+        handleUniqueMatchers?.let {
+            reference.comparablePropertyDefinition.let {
+                if (it is IsComparableDefinition<*, *> && it.unique) {
+                    handleUniqueMatchers(
+                        createUniqueToMatch(reference, it, value)
+                    )
+                }
             }
         }
     }

@@ -12,6 +12,10 @@ interface IndexedEnum<in E> : Comparable<E> {
     companion object {
         internal operator fun invoke(index: UInt, name: String) = object :
             AnyIndexedEnum {
+            init {
+                require(index > 0u) { "Only indices of 1 and higher are allowed" }
+            }
+
             override val index = index
             override val name = name
 

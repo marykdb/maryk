@@ -88,7 +88,8 @@ open class IndexedEnumDefinition<E : IndexedEnum<E>> private constructor(
         val cases = add(2, "cases",
             MapDefinition(
                 keyDefinition = NumberDefinition(
-                    type = UInt32
+                    type = UInt32,
+                    minValue = 1u
                 ),
                 valueDefinition = StringDefinition()
             ) as MapDefinition<UInt, String, EnumNameContext>,

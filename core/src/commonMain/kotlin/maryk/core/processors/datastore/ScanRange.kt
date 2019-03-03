@@ -2,6 +2,7 @@ package maryk.core.processors.datastore
 
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsComparableDefinition
+import maryk.core.query.pairs.ReferenceValuePair
 import maryk.lib.extensions.compare.compareTo
 
 /**
@@ -12,6 +13,7 @@ class ScanRange internal constructor(
     val startInclusive: Boolean,
     val end: ByteArray? = null,
     val endInclusive: Boolean,
+    val equalPairs: List<ReferenceValuePair<Any>>,
     val uniques: List<UniqueToMatch>? = null,
     val partialMatches: List<IsKeyPartialToMatch>? = null
 ) {

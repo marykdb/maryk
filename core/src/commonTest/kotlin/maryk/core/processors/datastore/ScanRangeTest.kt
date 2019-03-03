@@ -26,6 +26,7 @@ class ScanRangeTest {
         end = byteArrayOf(9, 8, 7, 6, 5),
         endInclusive = true,
         uniques = listOf(),
+        equalPairs = listOf(),
         partialMatches = listOf(
             KeyPartialToMatch(1, byteArrayOf(2, 4)),
             KeyPartialToMatch(3, byteArrayOf(5, 6))

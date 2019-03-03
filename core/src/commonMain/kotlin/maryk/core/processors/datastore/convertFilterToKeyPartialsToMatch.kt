@@ -19,6 +19,7 @@ import maryk.core.query.filters.LessThan
 import maryk.core.query.filters.LessThanEquals
 import maryk.core.query.filters.Range
 import maryk.core.query.filters.ValueIn
+import maryk.core.query.pairs.ReferenceValuePair
 import maryk.lib.extensions.compare.compareTo
 
 /** Convert [filter] for [dataModel] into [listOfKeyParts] */
@@ -26,18 +27,22 @@ fun convertFilterToKeyPartsToMatch(
     dataModel: IsRootValuesDataModel<*>,
     filter: IsFilter?,
     listOfKeyParts: MutableList<IsKeyPartialToMatch>,
+    listOfEqualPairs: MutableList<ReferenceValuePair<Any>>,
     listOfUniqueFilters: MutableList<UniqueToMatch>
 ) {
     when (filter) {
         null -> Unit // Skip
-        is Equals -> walkFilterReferencesAndValues(
-            filter,
-            dataModel,
-            listOfUniqueFilters::add
-        ) { index, byteArray ->
-            listOfKeyParts.add(
-                KeyPartialToMatch(index, byteArray)
-            )
+        is Equals -> {
+            listOfEqualPairs.addAll(filter.referenceValuePairs)
+            walkFilterReferencesAndValues(
+                filter,
+                dataModel,
+                listOfUniqueFilters::add
+            ) { index, byteArray ->
+                listOfKeyParts.add(
+                    KeyPartialToMatch(index, byteArray)
+                )
+            }
         }
         is GreaterThan -> walkFilterReferencesAndValues(filter, dataModel) { index, byteArray ->
             listOfKeyParts.add(
@@ -100,7 +105,7 @@ fun convertFilterToKeyPartsToMatch(
         }
         is And -> {
             for (aFilter in filter.filters) {
-                convertFilterToKeyPartsToMatch(dataModel, aFilter, listOfKeyParts, listOfUniqueFilters)
+                convertFilterToKeyPartsToMatch(dataModel, aFilter, listOfKeyParts, listOfEqualPairs, listOfUniqueFilters)
             }
         }
         else -> {

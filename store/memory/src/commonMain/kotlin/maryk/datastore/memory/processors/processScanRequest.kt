@@ -24,7 +24,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
     val valuesWithMeta = mutableListOf<ValuesWithMetaData<DM, P>>()
 
     val scanRange = scanRequest.dataModel.createScanRange(scanRequest.filter, scanRequest.startKey?.bytes)
-    val scanIndex = scanRequest.dataModel.orderToScanType(storeAction.request.order)
+    val scanIndex = scanRequest.dataModel.orderToScanType(storeAction.request.order, scanRange.equalPairs)
 
     when (scanIndex) {
         is TableScan -> {

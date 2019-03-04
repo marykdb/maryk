@@ -114,4 +114,11 @@ internal class DataStore<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions>
             uniqueIndices[i]
         }
     }
+
+    /** Get DataRecord by [key] */
+    fun getByKey(key: ByteArray): DataRecord<DM, P>? {
+        val index = this.records.binarySearch { it.key.bytes.compareTo(key) }
+
+        return if (index >= 0) this.records[index] else null
+    }
 }

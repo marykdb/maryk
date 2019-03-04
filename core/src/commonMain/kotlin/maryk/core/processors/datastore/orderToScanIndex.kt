@@ -14,9 +14,13 @@ import maryk.core.query.orders.Direction.DESC
 import maryk.core.query.orders.IsOrder
 import maryk.core.query.orders.Order
 import maryk.core.query.orders.Orders
+import maryk.core.query.pairs.ReferenceValuePair
 
 /** Converts an [order] to a ScanIndexType */
-fun IsRootDataModel<*>.orderToScanType(order: IsOrder?): ScanType {
+fun IsRootDataModel<*>.orderToScanType(
+    order: IsOrder?,
+    equalPairs: List<ReferenceValuePair<*>>
+): ScanType {
     return when (order) {
         null -> TableScan(ASC)
         is Order -> singleOrderToScanType(order)
@@ -41,8 +45,8 @@ fun IsRootDataModel<*>.orderToScanType(order: IsOrder?): ScanType {
             }
 
             // Walk all indices and try to match given Orders
-            this.indices?.let {
-                indexLoop@ for (indexable in it) {
+            this.indices?.let { indices ->
+                indexLoop@ for (indexable in indices) {
                     var direction: Direction? = null
 
                     if (indexable !is Multiple) {
@@ -52,70 +56,84 @@ fun IsRootDataModel<*>.orderToScanType(order: IsOrder?): ScanType {
                     } else if (order.orders.size > indexable.references.size && order.orders.last().propertyReference != null) {
                         continue@indexLoop // If one more order than index size is not default order, then skip
                     } else {
+                        var currentOrderIndex = 0
+
                         // Walk all sub indexables inside Multiple
                         subIndexLoop@ for ((index, subIndexable) in indexable.references.withIndex()) {
-                            val currentOrderPart = order.orders.getOrNull(index)
+                            val currentOrderPart = order.orders.getOrNull(currentOrderIndex++)
                                 ?: return IndexScan(indexable, direction!!) // direction is never null since 0 sized orders are skipped out early
-
 
                             // When order is native Table order
                             if (currentOrderPart.propertyReference == null) {
                                 when {
                                     index != indexable.references.lastIndex ->
                                         throw RequestException("An Order on Table is only allowed to be the last or only one")
-                                    order.orders[1].direction == direction ->
+                                    currentOrderPart.direction == direction ->
                                         return IndexScan(indexable, direction)
                                     else -> continue@indexLoop
                                 }
                             }
 
-                            val refToMatch = when (subIndexable) {
+                            when (subIndexable) {
                                 is Reversed<*> -> {
                                     // Only continue if order is correct
-                                    when (direction) {
-                                        null -> direction = when (currentOrderPart.direction) {
-                                            ASC -> DESC
-                                            DESC -> ASC
+                                    if (subIndexable.reference != currentOrderPart.propertyReference) {
+                                        if (equalPairs.any { it.reference == subIndexable.reference }) {
+                                            currentOrderIndex-- // substract because of a non order match
+                                        } else {
+                                            continue@indexLoop
                                         }
-                                        ASC -> if (currentOrderPart.direction == ASC) continue@indexLoop
-                                        DESC -> if (currentOrderPart.direction == DESC) continue@indexLoop
+                                    } else {
+                                        when (direction) {
+                                            null -> direction = when (currentOrderPart.direction) {
+                                                ASC -> DESC
+                                                DESC -> ASC
+                                            }
+                                            ASC -> if (currentOrderPart.direction == ASC) continue@indexLoop else Unit
+                                            DESC -> if (currentOrderPart.direction == DESC) continue@indexLoop else Unit
+                                        }
                                     }
-                                    subIndexable.reference
                                 }
                                 else -> {
                                     // Only continue if order is correct
-                                    when (direction) {
-                                        null -> direction = when (currentOrderPart.direction) {
-                                            ASC -> ASC
-                                            DESC -> DESC
+                                    if (subIndexable != currentOrderPart.propertyReference) {
+                                        if (equalPairs.any { it.reference == subIndexable }) {
+                                            currentOrderIndex-- // substract because of a non order match
+                                        } else {
+                                            continue@indexLoop
                                         }
-                                        ASC -> if (currentOrderPart.direction == DESC) continue@indexLoop
-                                        DESC -> if (currentOrderPart.direction == ASC) continue@indexLoop
+                                    } else {
+                                        when (direction) {
+                                            null -> direction = when (currentOrderPart.direction) {
+                                                ASC -> ASC
+                                                DESC -> DESC
+                                            }
+                                            ASC -> if (currentOrderPart.direction == DESC) continue@indexLoop else Unit
+                                            DESC -> if (currentOrderPart.direction == ASC) continue@indexLoop else Unit
+                                        }
                                     }
-                                    subIndexable
                                 }
                             }
-
-                            // Continue to next indexable if not matches
-                            if (refToMatch != currentOrderPart.propertyReference) continue@indexLoop
                         }
 
-                        // If no direction was set it was an empty Multiple index so skip
-                        if (direction == null) continue@indexLoop
+                        // There should be at least one order that matches, and thus direction should always be set
+                        if (currentOrderIndex == 0 || direction == null) continue@indexLoop
 
                         // Catch check the last table order of indexable found before
-                        if (order.orders.size > indexable.references.size) {
-                            val last = order.orders.last()
-                            if (last.propertyReference == null) {
-                                when (direction) {
-                                    // Index match fount
-                                    last.direction -> return IndexScan(indexable, direction)
-                                    else -> throw RequestException("Cannot have a reversed Table order as last index parameter compared to index scan direction")
-                                }
-                            } else continue@indexLoop
-                        } else {
-                            // Index match found
-                            return IndexScan(indexable, direction)
+                        return when {
+                            currentOrderIndex == order.orders.size - 1 -> {
+                                val last = order.orders.last()
+                                if (last.propertyReference == null) {
+                                    when (direction) {
+                                        // Index match found
+                                        last.direction -> IndexScan(indexable, direction)
+                                        else -> throw RequestException("Cannot have a reversed Table order as last index parameter compared to index scan direction")
+                                    }
+                                } else continue@indexLoop
+                            }
+                            currentOrderIndex < order.orders.size -> continue@indexLoop
+                            else -> // Index match found
+                                IndexScan(indexable, direction)
                         }
                     }
                 }
@@ -128,7 +146,9 @@ fun IsRootDataModel<*>.orderToScanType(order: IsOrder?): ScanType {
 }
 
 /** Convert Single [order] to ScanType */
-private fun IsRootDataModel<*>.singleOrderToScanType(order: Order): ScanType {
+private fun IsRootDataModel<*>.singleOrderToScanType(
+    order: Order
+): ScanType {
     return if (order.propertyReference == null) {
         TableScan(order.direction)
     } else {

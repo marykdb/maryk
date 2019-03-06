@@ -21,6 +21,7 @@ import maryk.test.models.TestMarykModel.Properties.dateTime
 import maryk.test.models.TestMarykModel.Properties.double
 import maryk.test.models.TestMarykModel.Properties.enum
 import maryk.test.models.TestMarykModel.Properties.int
+import maryk.test.models.TestMarykModel.Properties.uint
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
@@ -244,6 +245,41 @@ class OrderToScanIndexKtTest {
             )
         ) shouldBe IndexScan(
             multipleIndex,
+            direction = ASC
+        )
+    }
+
+    @Test
+    fun defaultOrdersToIndexScanWithEqualPairs() {
+        TestMarykModel.orderToScanType(
+            Orders(
+                uint.ref().ascending(),
+                bool.ref().ascending(),
+                enum.ref().ascending()
+            ),
+            emptyList()
+        ) shouldBe TableScan(
+            direction = ASC
+        )
+
+        TestMarykModel.orderToScanType(
+            Orders(
+                uint.ref().descending()
+            ),
+            emptyList()
+        ) shouldBe TableScan(
+            direction = DESC
+        )
+
+        TestMarykModel.orderToScanType(
+            Orders(
+                uint.ref().ascending(),
+                enum.ref().ascending()
+            ),
+            listOf(
+                bool.ref() with true
+            )
+        ) shouldBe TableScan(
             direction = ASC
         )
     }

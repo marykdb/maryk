@@ -1,15 +1,12 @@
 package maryk.datastore.memory.processors
 
 import maryk.core.models.IsRootValuesDataModel
-import maryk.core.processors.datastore.ScanType.IndexScan
-import maryk.core.processors.datastore.ScanType.TableScan
-import maryk.core.processors.datastore.createScanRange
-import maryk.core.processors.datastore.orderToScanType
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.requests.ScanRequest
 import maryk.core.query.responses.ValuesResponse
 import maryk.datastore.memory.StoreAction
+import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataStore
 
 internal typealias ScanStoreAction<DM, P> = StoreAction<DM, P, ScanRequest<DM, P>, ValuesResponse<DM, P>>
@@ -23,30 +20,8 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
     val scanRequest = storeAction.request
     val valuesWithMeta = mutableListOf<ValuesWithMetaData<DM, P>>()
 
-    val scanRange = scanRequest.dataModel.createScanRange(scanRequest.filter, scanRequest.startKey?.bytes)
-    val scanIndex = scanRequest.dataModel.orderToScanType(storeAction.request.order, scanRange.equalPairs)
-
-    when (scanIndex) {
-        is TableScan -> {
-            scanStore(
-                dataStore,
-                scanIndex.direction,
-                scanRange,
-                scanRequest
-            ) { record ->
-                scanRequest.dataModel.recordToValueWithMeta(
-                    scanRequest.select,
-                    scanRequest.toVersion,
-                    record
-                )?.let {
-                    // Only add if not null
-                    valuesWithMeta += it
-                }
-            }
-        }
-        is IndexScan -> {
-
-        }
+    processScan(scanRequest, dataStore) { record ->
+        recordToValuesWithMeta(scanRequest, record, valuesWithMeta)
     }
 
     storeAction.response.complete(
@@ -55,5 +30,20 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
             values = valuesWithMeta
         )
     )
+}
+
+private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> recordToValuesWithMeta(
+    scanRequest: ScanRequest<DM, P>,
+    record: DataRecord<DM, P>,
+    valuesWithMeta: MutableList<ValuesWithMetaData<DM, P>>
+) {
+    scanRequest.dataModel.recordToValueWithMeta(
+        scanRequest.select,
+        scanRequest.toVersion,
+        record
+    )?.let {
+        // Only add if not null
+        valuesWithMeta += it
+    }
 }
 

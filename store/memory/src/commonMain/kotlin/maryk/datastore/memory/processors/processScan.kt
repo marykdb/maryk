@@ -32,9 +32,9 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
                 is TableScan -> {
                     scanStore(
                         dataStore,
+                        scanRequest,
                         scanIndex.direction,
                         scanRange,
-                        scanRequest,
                         processRecord
                     )
                 }

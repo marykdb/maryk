@@ -14,9 +14,9 @@ import kotlin.math.min
 
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
     dataStore: DataStore<DM, P>,
+    scanRequest: IsScanRequest<DM, P, *>,
     direction: Direction,
     scanRange: ScanRange,
-    scanRequest: IsScanRequest<DM, P, *>,
     processStoreValue: (DataRecord<DM, P>) -> Unit
 ) {
     when (direction) {

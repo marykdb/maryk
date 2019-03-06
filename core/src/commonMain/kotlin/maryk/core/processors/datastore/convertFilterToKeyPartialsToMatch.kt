@@ -1,11 +1,11 @@
 package maryk.core.processors.datastore
 
 import maryk.core.exceptions.TypeException
-import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
+import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.properties.references.IsPropertyReference
@@ -22,62 +22,72 @@ import maryk.core.query.filters.ValueIn
 import maryk.core.query.pairs.ReferenceValuePair
 import maryk.lib.extensions.compare.compareTo
 
-/** Convert [filter] for [dataModel] into [listOfKeyParts] */
+/**
+ * Convert [filter] for [indexable] into [listOfIndexParts], [listOfEqualPairs] and [listOfUniqueFilters]
+ */
 fun convertFilterToKeyPartsToMatch(
-    dataModel: IsRootValuesDataModel<*>,
+    indexable: IsIndexable,
+    convertIndex: ((Int) -> Int)?,
     filter: IsFilter?,
-    listOfKeyParts: MutableList<IsKeyPartialToMatch>,
-    listOfEqualPairs: MutableList<ReferenceValuePair<Any>>,
-    listOfUniqueFilters: MutableList<UniqueToMatch>
+    listOfIndexParts: MutableList<IsIndexPartialToMatch>,
+    listOfEqualPairs: MutableList<ReferenceValuePair<Any>>? = null,
+    listOfUniqueFilters: MutableList<UniqueToMatch>? = null
 ) {
     when (filter) {
         null -> Unit // Skip
         is Equals -> {
-            listOfEqualPairs.addAll(filter.referenceValuePairs)
+            listOfEqualPairs?.addAll(filter.referenceValuePairs)
             walkFilterReferencesAndValues(
                 filter,
-                dataModel,
-                listOfUniqueFilters::add
+                indexable,
+                listOfUniqueFilters
             ) { index, byteArray ->
-                listOfKeyParts.add(
-                    KeyPartialToMatch(index, byteArray)
+                val keyIndex = convertIndex?.invoke(index)
+                listOfIndexParts.add(
+                    IndexPartialToMatch(index, keyIndex, byteArray)
                 )
             }
         }
-        is GreaterThan -> walkFilterReferencesAndValues(filter, dataModel) { index, byteArray ->
-            listOfKeyParts.add(
-                KeyPartialToBeBigger(index, byteArray, false)
+        is GreaterThan -> walkFilterReferencesAndValues(filter, indexable) { index, byteArray ->
+            val keyIndex = convertIndex?.invoke(index)
+            listOfIndexParts.add(
+                IndexPartialToBeBigger(index, keyIndex, byteArray, false)
             )
         }
-        is GreaterThanEquals -> walkFilterReferencesAndValues(filter, dataModel) { index, byteArray ->
-            listOfKeyParts.add(
-                KeyPartialToBeBigger(index, byteArray, true)
+        is GreaterThanEquals -> walkFilterReferencesAndValues(filter, indexable) { index, byteArray ->
+            val keyIndex = convertIndex?.invoke(index)
+            listOfIndexParts.add(
+                IndexPartialToBeBigger(index, keyIndex, byteArray, true)
             )
         }
-        is LessThan -> walkFilterReferencesAndValues(filter, dataModel) { index, byteArray ->
-            listOfKeyParts.add(
-                KeyPartialToBeSmaller(index, byteArray, false)
+        is LessThan -> walkFilterReferencesAndValues(filter, indexable) { index, byteArray ->
+            val keyIndex = convertIndex?.invoke(index)
+            listOfIndexParts.add(
+                IndexPartialToBeSmaller(index, keyIndex, byteArray, false)
             )
         }
-        is LessThanEquals -> walkFilterReferencesAndValues(filter, dataModel) { index, byteArray ->
-            listOfKeyParts.add(
-                KeyPartialToBeSmaller(index, byteArray, true)
+        is LessThanEquals -> walkFilterReferencesAndValues(filter, indexable) { index, byteArray ->
+            val keyIndex = convertIndex?.invoke(index)
+            listOfIndexParts.add(
+                IndexPartialToBeSmaller(index, keyIndex, byteArray, true)
             )
         }
         is Range -> for ((reference, value) in filter.referenceRangePairs) {
-            getKeyDefinitionOrNull(dataModel, reference) { index, _, keyDefinition ->
+            getDefinitionOrNull(indexable, reference) { index, keyDefinition ->
+                val keyIndex = convertIndex?.invoke(index)
                 val fromBytes = convertValueToKeyBytes(keyDefinition, value.from)
                 val toBytes = convertValueToKeyBytes(keyDefinition, value.to)
-                listOfKeyParts.add(
-                    KeyPartialToBeSmaller(index, fromBytes, value.inclusiveFrom)
+                listOfIndexParts.add(
+                    IndexPartialToBeSmaller(index, keyIndex, fromBytes, value.inclusiveFrom)
                 )
-                listOfKeyParts.add(
-                    KeyPartialToBeBigger(index, toBytes, value.inclusiveTo)
+                listOfIndexParts.add(
+                    IndexPartialToBeBigger(index, keyIndex, toBytes, value.inclusiveTo)
                 )
             }
         }
         is ValueIn -> for ((reference, value) in filter.referenceValuePairs) {
-            getKeyDefinitionOrNull(dataModel, reference) { index, _, keyDefinition ->
+            getDefinitionOrNull(indexable, reference) { index, keyDefinition ->
+                val keyIndex = convertIndex?.invoke(index)
                 val list = ArrayList<ByteArray>(value.size)
                 for (setValue in value) {
                     list.add(
@@ -87,25 +97,27 @@ fun convertFilterToKeyPartsToMatch(
                 list.sortWith(object : Comparator<ByteArray> {
                     override fun compare(a: ByteArray, b: ByteArray) = a.compareTo(b)
                 })
-                listOfKeyParts.add(
-                    KeyPartialToBeOneOf(index, list)
+                listOfIndexParts.add(
+                    IndexPartialToBeOneOf(index, keyIndex, list)
                 )
             }
 
             // Add all unique matchers for every item in valueIn
-            reference.comparablePropertyDefinition.let {
-                if (it is IsComparableDefinition<*, *> && it.unique) {
-                    for (uniqueToMatch in value) {
-                        listOfUniqueFilters.add(
-                            createUniqueToMatch(reference, it, uniqueToMatch)
-                        )
+            listOfUniqueFilters?.let {
+                reference.comparablePropertyDefinition.let {
+                    if (it is IsComparableDefinition<*, *> && it.unique) {
+                        for (uniqueToMatch in value) {
+                            listOfUniqueFilters.add(
+                                createUniqueToMatch(reference, it, uniqueToMatch)
+                            )
+                        }
                     }
                 }
             }
         }
         is And -> {
             for (aFilter in filter.filters) {
-                convertFilterToKeyPartsToMatch(dataModel, aFilter, listOfKeyParts, listOfEqualPairs, listOfUniqueFilters)
+                convertFilterToKeyPartsToMatch(indexable, convertIndex, aFilter, listOfIndexParts, listOfEqualPairs, listOfUniqueFilters)
             }
         }
         else -> {
@@ -114,40 +126,40 @@ fun convertFilterToKeyPartsToMatch(
     }
 }
 
-/** Convert [value] with [keyDefinition] into a key ByteArray */
+/** Convert [value] with [indexableRef] into a key ByteArray */
 private fun convertValueToKeyBytes(
-    keyDefinition: IsIndexablePropertyReference<Any>,
+    indexableRef: IsIndexablePropertyReference<Any>,
     value: Any
 ): ByteArray {
     var byteReadIndex = 0
     val byteArray = ByteArray(
-        keyDefinition.calculateStorageByteLength(value)
+        indexableRef.calculateStorageByteLength(value)
     )
-    keyDefinition.writeStorageBytes(value) {
+    indexableRef.writeStorageBytes(value) {
         byteArray[byteReadIndex++] = it
     }
     return byteArray
 }
 
-/** Walk [referenceValuePairs] using [dataModel] into [handleKeyBytes] */
+/** Walk [referenceValuePairs] using [indexable] into [handleKeyBytes] */
 private fun <T : Any> walkFilterReferencesAndValues(
     referenceValuePairs: IsReferenceValuePairsFilter<T>,
-    dataModel: IsRootValuesDataModel<*>,
-    handleUniqueMatchers: ((UniqueToMatch) -> Boolean)? = null,
+    indexable: IsIndexable,
+    listOfUniqueFilters: MutableList<UniqueToMatch>? = null,
     handleKeyBytes: (Int, ByteArray) -> Unit
 ) {
     for ((reference, value) in referenceValuePairs.referenceValuePairs) {
-        getKeyDefinitionOrNull(dataModel, reference) { _, byteIndex, keyDefinition ->
+        getDefinitionOrNull(indexable, reference) { index, keyDefinition ->
             val byteArray = convertValueToKeyBytes(keyDefinition, value)
 
-            handleKeyBytes(byteIndex, byteArray)
+            handleKeyBytes(index, byteArray)
         }
 
         // Add unique to match if handler was passed
-        handleUniqueMatchers?.let {
+        listOfUniqueFilters?.let {
             reference.comparablePropertyDefinition.let {
                 if (it is IsComparableDefinition<*, *> && it.unique) {
-                    handleUniqueMatchers(
+                    listOfUniqueFilters.add(
                         createUniqueToMatch(reference, it, value)
                     )
                 }
@@ -167,20 +179,19 @@ private fun <T : Any> createUniqueToMatch(
     value as Comparable<*>
 )
 
-/** Get key definition by [reference] and [processKeyDefinitionIfFound] using [dataModel] or null if not part of key */
-private fun <T : Any> getKeyDefinitionOrNull(
-    dataModel: IsRootValuesDataModel<*>,
+/** Get key definition by [reference] and [processKeyDefinitionWhenFound] using [indexable] or null if not part of key */
+private fun <T : Any> getDefinitionOrNull(
+    indexable: IsIndexable,
     reference: IsPropertyReference<out T, IsChangeableValueDefinition<out T, IsPropertyContext>, *>,
-    processKeyDefinitionIfFound: (Int, Int, IsIndexablePropertyReference<Any>) -> Unit
+    processKeyDefinitionWhenFound: (Int, IsIndexablePropertyReference<Any>) -> Unit
 ) {
-    when (val keyDefinition = dataModel.keyDefinition) {
+    when (indexable) {
         is Multiple -> {
-            for ((index, keyDef) in keyDefinition.references.withIndex()) {
+            for ((index, keyDef) in indexable.references.withIndex()) {
                 if (keyDef.isForPropertyReference(reference)) {
                     @Suppress("UNCHECKED_CAST")
-                    processKeyDefinitionIfFound(
+                    processKeyDefinitionWhenFound(
                         index,
-                        dataModel.keyIndices[index],
                         keyDef as IsIndexablePropertyReference<Any>
                     )
                     break
@@ -188,12 +199,11 @@ private fun <T : Any> getKeyDefinitionOrNull(
             }
         }
         is IsIndexablePropertyReference<*> -> {
-            if (keyDefinition.isForPropertyReference(reference)) {
+            if (indexable.isForPropertyReference(reference)) {
                 @Suppress("UNCHECKED_CAST")
-                processKeyDefinitionIfFound(0, 0, keyDefinition as IsIndexablePropertyReference<Any>)
+                processKeyDefinitionWhenFound(0, indexable as IsIndexablePropertyReference<Any>)
             }
         }
-        else -> throw TypeException("Impossible option $keyDefinition for keyDefinition")
+        else -> throw TypeException("Impossible option $indexable for keyDefinition")
     }
-
 }

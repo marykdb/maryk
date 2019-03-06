@@ -26,4 +26,8 @@ interface IsIndexablePropertyReference<T : Any> : IsIndexable, IsBytesEncodable<
         val value = this.getValue(values)
         this.writeStorageBytes(value, writer)
     }
+
+    override fun writeStorageBytesForKey(values: IsValuesGetter, writer: (byte: Byte) -> Unit) {
+        this.writeStorageBytes(values, writer)
+    }
 }

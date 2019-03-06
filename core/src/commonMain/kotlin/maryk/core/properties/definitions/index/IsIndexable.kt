@@ -41,4 +41,10 @@ interface IsIndexable {
      * Throws RequiredException if values are missing
      */
     fun writeStorageBytes(values: IsValuesGetter, writer: (byte: Byte) -> Unit)
+
+    /**
+     * Write bytes for storage of indexable for [values] to [writer]
+     * Throws RequiredException if values are missing
+     */
+    fun writeStorageBytesForKey(values: IsValuesGetter, writer: (byte: Byte) -> Unit)
 }

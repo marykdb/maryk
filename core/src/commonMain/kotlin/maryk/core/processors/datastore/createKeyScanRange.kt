@@ -1,27 +1,29 @@
 package maryk.core.processors.datastore
 
 import maryk.core.models.IsRootValuesDataModel
-import maryk.core.properties.definitions.index.Multiple
 import maryk.core.query.filters.IsFilter
 import maryk.core.query.pairs.ReferenceValuePair
 import maryk.lib.extensions.compare.compareTo
 
 /** Create a scan range by [filter] and [startKey] */
 fun <DM : IsRootValuesDataModel<*>> DM.createScanRange(filter: IsFilter?, startKey: ByteArray?): ScanRange {
-    val listOfKeyParts = mutableListOf<IsKeyPartialToMatch>()
+    val listOfKeyParts = mutableListOf<IsIndexPartialToMatch>()
     val listOfUniqueFilters = mutableListOf<UniqueToMatch>()
     val listOfEqualPairs = mutableListOf<ReferenceValuePair<Any>>()
-    convertFilterToKeyPartsToMatch(this, filter, listOfKeyParts, listOfEqualPairs, listOfUniqueFilters)
+    convertFilterToKeyPartsToMatch(this.keyDefinition, { this.keyIndices[it] }, filter, listOfKeyParts, listOfEqualPairs, listOfUniqueFilters)
 
-    listOfKeyParts.sortBy { it.fromIndex }
+    listOfKeyParts.sortBy { it.fromByteIndex }
 
-    return this.createScanRangeFromParts(startKey, listOfKeyParts, listOfEqualPairs, listOfUniqueFilters)
+    return createScanRangeFromParts(startKey, listOfKeyParts, listOfEqualPairs, listOfUniqueFilters)
 }
 
-/** Create scan range from [listOfParts] and check with [startKey]  */
+/**
+ * Create scan range from [listOfParts] and check with [startKey]
+ * It writes complete start and end keys with the partials to match
+ */
 private fun <DM : IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
     startKey: ByteArray?,
-    listOfParts: MutableList<IsKeyPartialToMatch>,
+    listOfParts: MutableList<IsIndexPartialToMatch>,
     listOfEqualPairs: List<ReferenceValuePair<Any>>,
     listOfUniqueFilters: List<UniqueToMatch>
 ): ScanRange {
@@ -31,26 +33,20 @@ private fun <DM : IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
     var startInclusive = true
     var endInclusive = true
 
-    var partCounter = 0
-    var currentOffset = 0
-    var keyIndex = 0
-    val toRemove = mutableListOf<IsKeyPartialToMatch>()
+    var currentOffset: Int
+    var keyIndex = -1
+    val toRemove = mutableListOf<IsIndexPartialToMatch>()
     for (keyPart in listOfParts) {
-        // If current key part bytes offset is lower than current key part and that part was already written (partCounter for keyIndex was there)
-        if (currentOffset < keyPart.fromIndex && partCounter == keyIndex + 1) {
-            currentOffset = (this.keyDefinition as? Multiple)?.let {
-                if (keyIndices.size > 1) keyIndices[++keyIndex] else keySize
-            } ?: keySize
-        }
-        // Break off if current offset is not expected for key part.
-        if (currentOffset != keyPart.fromIndex) {
-            break
+        if (keyIndex + 1 == keyPart.indexableIndex) {
+            keyIndex++ // continue to next indexable
+        } else if (keyIndex != keyPart.indexableIndex) {
+            break // Break loop since keyIndex is larger than expected or smaller which should never happen
         }
 
-        partCounter++
+        currentOffset = keyIndices[keyIndex]
 
         when (keyPart) {
-            is KeyPartialToMatch -> {
+            is IndexPartialToMatch -> {
                 keyPart.toMatch.forEachIndexed { i, b ->
                     start[i + currentOffset] = b
                     end[i + currentOffset] = b
@@ -63,7 +59,7 @@ private fun <DM : IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
                 }
                 toRemove.add(keyPart)
             }
-            is KeyPartialToBeBigger -> {
+            is IndexPartialToBeBigger -> {
                 keyPart.toBeSmaller.forEachIndexed { i, b ->
                     start[i + currentOffset] = b
                 }
@@ -76,7 +72,7 @@ private fun <DM : IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
                 }
                 toRemove.add(keyPart)
             }
-            is KeyPartialToBeSmaller -> {
+            is IndexPartialToBeSmaller -> {
                 keyPart.toBeBigger.forEachIndexed { i, b ->
                     end[i + currentOffset] = b
                 }
@@ -89,7 +85,7 @@ private fun <DM : IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
                 }
                 toRemove.add(keyPart)
             }
-            is KeyPartialToBeOneOf -> {
+            is IndexPartialToBeOneOf -> {
                 val first = keyPart.toBeOneOf.first()
                 first.forEachIndexed { i, b ->
                     start[i + currentOffset] = b

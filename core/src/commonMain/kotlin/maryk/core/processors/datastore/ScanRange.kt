@@ -15,7 +15,7 @@ class ScanRange internal constructor(
     val endInclusive: Boolean,
     val equalPairs: List<ReferenceValuePair<Any>>,
     val uniques: List<UniqueToMatch>? = null,
-    val partialMatches: List<IsKeyPartialToMatch>? = null
+    val partialMatches: List<IsIndexPartialToMatch>? = null
 ) {
     fun keyBeforeStart(key: ByteArray) = if (startInclusive) key < start else key <= start
     fun keyOutOfRange(key: ByteArray) = end?.let { if (endInclusive) end < key else end <= key } ?: false

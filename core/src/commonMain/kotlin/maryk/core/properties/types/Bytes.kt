@@ -9,7 +9,7 @@ import maryk.lib.extensions.initByteArrayByHex
 import maryk.lib.extensions.toHex
 
 /**
- * Represents a initByteArrayByHex which is comparable
+ * Represents a ByteArray which is comparable
  */
 open class Bytes(val bytes: ByteArray) : Comparable<Bytes> {
     val size = bytes.size

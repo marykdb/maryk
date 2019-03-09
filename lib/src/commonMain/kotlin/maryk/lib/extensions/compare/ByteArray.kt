@@ -3,7 +3,7 @@ package maryk.lib.extensions.compare
 private val MAX_BYTE: UByte = 0b1111_1111.toUByte()
 
 /**
- * Compares initByteArrayByHex to [other] initByteArrayByHex.
+ * Compares ByteArray to [other] ByteArray.
  * Returns zero if this object is equal to the specified [other] object,
  * a negative number if it's less than [other],
  * or a positive number if it's greater than [other].

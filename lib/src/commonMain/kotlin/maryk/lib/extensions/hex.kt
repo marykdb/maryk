@@ -5,7 +5,7 @@ import maryk.lib.exceptions.ParseException
 const val ZERO_BYTE: Byte = 0b0
 val HEX_CHARS = charArrayOf('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f')
 
-/** Converts initByteArrayByHex into a String Hex value */
+/** Converts ByteArray into a String Hex value */
 fun ByteArray.toHex(skipLeadingZeroBytes: Boolean = false): String {
     val numChars = size * 2
 
@@ -31,7 +31,7 @@ fun ByteArray.toHex(skipLeadingZeroBytes: Boolean = false): String {
     return String(charArray)
 }
 
-/** Converts [hex] String into a initByteArrayByHex */
+/** Converts [hex] String into a ByteArray */
 fun initByteArrayByHex(hex: String): ByteArray {
     if (hex.length % 2 != 0) {
         throw ParseException("length is not a multiple of 2")

@@ -1,7 +1,7 @@
 package maryk.datastore.memory.processors
 
 import maryk.core.models.IsRootValuesDataModel
-import maryk.core.processors.datastore.ScanRange
+import maryk.core.processors.datastore.KeyScanRange
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.orders.Direction
 import maryk.core.query.orders.Direction.ASC
@@ -16,7 +16,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
     dataStore: DataStore<DM, P>,
     scanRequest: IsScanRequest<DM, P, *>,
     direction: Direction,
-    scanRange: ScanRange,
+    scanRange: KeyScanRange,
     processStoreValue: (DataRecord<DM, P>) -> Unit
 ) {
     when (direction) {

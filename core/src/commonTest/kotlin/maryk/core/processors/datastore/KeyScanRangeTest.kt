@@ -19,8 +19,8 @@ import maryk.test.models.Severity.INFO
 import maryk.test.shouldBe
 import kotlin.test.Test
 
-class ScanRangeTest {
-    private val scanRange = ScanRange(
+class KeyScanRangeTest {
+    private val scanRange = KeyScanRange(
         start = byteArrayOf(1, 2, 3, 4, 5),
         startInclusive = true,
         end = byteArrayOf(9, 8, 7, 6, 5),

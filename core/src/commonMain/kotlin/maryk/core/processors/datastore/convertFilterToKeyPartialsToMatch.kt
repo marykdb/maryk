@@ -7,6 +7,7 @@ import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.definitions.index.Multiple
+import maryk.core.properties.definitions.index.Reversed
 import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.filters.And
@@ -52,25 +53,25 @@ fun convertFilterToKeyPartsToMatch(
         is GreaterThan -> walkFilterReferencesAndValues(filter, indexable) { index, byteArray ->
             val keyIndex = convertIndex?.invoke(index)
             listOfIndexParts.add(
-                IndexPartialToBeBigger(index, keyIndex, keySize, byteArray, false)
+                indexPartialWithDirection(indexable !is Reversed<*>, index, keyIndex, keySize, byteArray, false)
             )
         }
         is GreaterThanEquals -> walkFilterReferencesAndValues(filter, indexable) { index, byteArray ->
             val keyIndex = convertIndex?.invoke(index)
             listOfIndexParts.add(
-                IndexPartialToBeBigger(index, keyIndex, keySize, byteArray, true)
+                indexPartialWithDirection(indexable !is Reversed<*>, index, keyIndex, keySize, byteArray, true)
             )
         }
         is LessThan -> walkFilterReferencesAndValues(filter, indexable) { index, byteArray ->
             val keyIndex = convertIndex?.invoke(index)
             listOfIndexParts.add(
-                IndexPartialToBeSmaller(index, keyIndex, keySize, byteArray, false)
+                indexPartialWithDirection(indexable is Reversed<*>, index, keyIndex, keySize, byteArray, false)
             )
         }
         is LessThanEquals -> walkFilterReferencesAndValues(filter, indexable) { index, byteArray ->
             val keyIndex = convertIndex?.invoke(index)
             listOfIndexParts.add(
-                IndexPartialToBeSmaller(index, keyIndex, keySize, byteArray, true)
+                indexPartialWithDirection(indexable is Reversed<*>, index, keyIndex, keySize, byteArray, true)
             )
         }
         is Range -> for ((reference, value) in filter.referenceRangePairs) {
@@ -79,10 +80,10 @@ fun convertFilterToKeyPartsToMatch(
                 val fromBytes = convertValueToKeyBytes(keyDefinition, value.from)
                 val toBytes = convertValueToKeyBytes(keyDefinition, value.to)
                 listOfIndexParts.add(
-                    IndexPartialToBeSmaller(index, keyIndex, keySize, fromBytes, value.inclusiveFrom)
+                    indexPartialWithDirection(indexable is Reversed<*>, index, keyIndex, keySize, fromBytes, value.inclusiveFrom)
                 )
                 listOfIndexParts.add(
-                    IndexPartialToBeBigger(index, keyIndex, keySize, toBytes, value.inclusiveTo)
+                    indexPartialWithDirection(indexable !is Reversed<*>, index, keyIndex, keySize, toBytes, value.inclusiveTo)
                 )
             }
         }
@@ -124,6 +125,21 @@ fun convertFilterToKeyPartsToMatch(
         else -> {
             /** Skip since other filters are not supported for key scan ranges*/
         }
+    }
+}
+
+private fun indexPartialWithDirection(
+    bigger: Boolean,
+    index: Int,
+    keyIndex: Int?,
+    keySize: Int,
+    byteArray: ByteArray,
+    inclusive: Boolean
+): IsIndexPartialToMatch {
+    return if (bigger) {
+        IndexPartialToBeBigger(index, keyIndex, keySize, byteArray, inclusive)
+    } else {
+        IndexPartialToBeSmaller(index, keyIndex, keySize, byteArray, inclusive)
     }
 }
 

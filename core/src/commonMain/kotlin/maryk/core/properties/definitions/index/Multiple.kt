@@ -22,34 +22,45 @@ data class Multiple(
     /** Convenience method to set with each [reference] as separate argument */
     constructor(vararg reference: IsIndexablePropertyReference<*>) : this(listOf(*reference))
 
-    override fun calculateStorageByteLength(values: IsValuesGetter): Int {
+    override fun calculateStorageByteLengthForIndex(values: IsValuesGetter, key: ByteArray): Int {
         var totalBytes = 0
-        for (it in references) {
-            val length = it.calculateStorageByteLength(values)
-            totalBytes += length.calculateVarByteLength() + length
+        for (reference in references) {
+            @Suppress("UNCHECKED_CAST")
+            val value = (reference as IsIndexablePropertyReference<Any>).getValue(values)
+            val length = reference.calculateStorageByteLength(value)
+            totalBytes += length + 1 + length.calculateVarByteLength()
         }
-        return totalBytes
+        return totalBytes + key.size
     }
 
-    override fun writeStorageBytes(values: IsValuesGetter, writer: (byte: Byte) -> Unit) {
-        for (reference in this.references) {
+    override fun writeStorageBytesForIndex(values: IsValuesGetter, key: ByteArray, writer: (byte: Byte) -> Unit) {
+        val sizes = IntArray(this.references.size)
+        for ((keyIndex, reference) in this.references.withIndex()) {
             @Suppress("UNCHECKED_CAST")
             val value = (reference as IsIndexablePropertyReference<Any>).getValue(values)
 
-            val length = reference.calculateStorageByteLength(value)
-            length.writeVarBytes(writer) // length indicator
+            sizes[keyIndex] = reference.calculateStorageByteLength(value)
+
             reference.writeStorageBytes(value, writer)
+            writer(1) // Add separator always after value
         }
+
+        // Write the sizes in backwards order
+        for (sizeIndex in sizes.lastIndex..0) {
+            sizes[sizeIndex].writeVarBytes(writer)
+        }
+
+        key.forEach(writer) // write key at end
     }
 
-    override fun writeStorageBytesForKey(values: IsValuesGetter, writer: (byte: Byte) -> Unit) {
+    override fun writeStorageBytes(values: IsValuesGetter, writer: (byte: Byte) -> Unit) {
         for ((keyIndex, reference) in this.references.withIndex()) {
             @Suppress("UNCHECKED_CAST")
             val value = (reference as IsIndexablePropertyReference<Any>).getValue(values)
 
             reference.writeStorageBytes(value, writer)
 
-            // Add separator
+            // Add separator only in between
             if (keyIndex < this.references.lastIndex) {
                 writer(1)
             }

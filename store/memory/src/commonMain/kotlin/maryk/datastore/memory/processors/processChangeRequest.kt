@@ -600,10 +600,10 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
 
         // Process indices
         dataModel.indices?.forEach {
-            val oldValue = it.toStorageByteArray(objectToChange)
+            val oldValue = it.toStorageByteArrayForIndex(objectToChange, objectToChange.key.bytes)
             // Use switch trick to use less object creation and still be able to get values
             objectToChange.values = newValueList
-            val newValue = it.toStorageByteArray(objectToChange)
+            val newValue = it.toStorageByteArrayForIndex(objectToChange, objectToChange.key.bytes)
             objectToChange.values = oldValueList
 
             if (newValue == null) {

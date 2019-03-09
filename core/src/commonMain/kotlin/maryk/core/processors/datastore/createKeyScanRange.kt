@@ -10,7 +10,7 @@ fun <DM : IsRootValuesDataModel<*>> DM.createScanRange(filter: IsFilter?, startK
     val listOfKeyParts = mutableListOf<IsIndexPartialToMatch>()
     val listOfUniqueFilters = mutableListOf<UniqueToMatch>()
     val listOfEqualPairs = mutableListOf<ReferenceValuePair<Any>>()
-    convertFilterToKeyPartsToMatch(this.keyDefinition, { this.keyIndices[it] }, filter, listOfKeyParts, listOfEqualPairs, listOfUniqueFilters)
+    convertFilterToKeyPartsToMatch(this.keyDefinition, this.keyByteSize, { this.keyIndices[it] }, filter, listOfKeyParts, listOfEqualPairs, listOfUniqueFilters)
 
     listOfKeyParts.sortBy { it.fromByteIndex }
 

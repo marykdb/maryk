@@ -28,8 +28,8 @@ class ScanRangeTest {
         uniques = listOf(),
         equalPairs = listOf(),
         partialMatches = listOf(
-            IndexPartialToMatch(1, 1, byteArrayOf(2, 4)),
-            IndexPartialToMatch(2, 3, byteArrayOf(5, 6))
+            IndexPartialToMatch(1, 1, 5, byteArrayOf(2, 4)),
+            IndexPartialToMatch(2, 3, 5, byteArrayOf(5, 6))
         )
     )
 

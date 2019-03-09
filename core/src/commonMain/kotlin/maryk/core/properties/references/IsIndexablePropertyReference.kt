@@ -1,5 +1,7 @@
 package maryk.core.properties.references
 
+import maryk.core.extensions.bytes.calculateVarByteLength
+import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.definitions.IsBytesEncodable
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.values.IsValuesGetter
@@ -17,17 +19,22 @@ interface IsIndexablePropertyReference<T : Any> : IsIndexable, IsBytesEncodable<
      */
     fun isForPropertyReference(propertyReference: AnyPropertyReference): Boolean
 
-    override fun calculateStorageByteLength(values: IsValuesGetter): Int {
+    override fun calculateStorageByteLengthForIndex(values: IsValuesGetter, key: ByteArray): Int {
         val value = this.getValue(values)
-        return this.calculateStorageByteLength(value)
+        val length = this.calculateStorageByteLength(value)
+        return length + 1 + length.calculateVarByteLength() + key.size
+    }
+
+    override fun writeStorageBytesForIndex(values: IsValuesGetter, key: ByteArray, writer: (byte: Byte) -> Unit) {
+        val value = this.getValue(values)
+        this.writeStorageBytes(value, writer)
+        writer(1) // add end separator
+        this.calculateStorageByteLength(value).writeVarBytes(writer) // write value length
+        key.forEach(writer) // write key to end
     }
 
     override fun writeStorageBytes(values: IsValuesGetter, writer: (byte: Byte) -> Unit) {
         val value = this.getValue(values)
         this.writeStorageBytes(value, writer)
-    }
-
-    override fun writeStorageBytesForKey(values: IsValuesGetter, writer: (byte: Byte) -> Unit) {
-        this.writeStorageBytes(values, writer)
     }
 }

@@ -5,12 +5,13 @@ import maryk.lib.extensions.compare.matchPart
 sealed class IsIndexPartialToMatch {
     abstract val indexableIndex: Int
     abstract val fromByteIndex: Int?
+    abstract val keySize: Int
 
     /**
      * Returns byte index to start reading for [bytes]
      * If this partial is for key bytes it already has the value or otherwise is for flex key then will calculate value
      */
-    protected fun getByteIndex(bytes: ByteArray) = fromByteIndex ?: findByteIndexByPartIndex(indexableIndex, bytes)
+    protected fun getByteIndex(bytes: ByteArray) = fromByteIndex ?: findByteIndexByPartIndex(indexableIndex, bytes, keySize)
 
     abstract fun match(bytes: ByteArray): Boolean
 }
@@ -18,6 +19,7 @@ sealed class IsIndexPartialToMatch {
 internal class IndexPartialToMatch(
     override val indexableIndex: Int,
     override val fromByteIndex: Int?,
+    override val keySize: Int,
     val toMatch: ByteArray
 ) : IsIndexPartialToMatch() {
     /** Matches [bytes] to partial and returns true if matches */
@@ -28,6 +30,7 @@ internal class IndexPartialToMatch(
 internal class IndexPartialToBeBigger(
     override val indexableIndex: Int,
     override val fromByteIndex: Int?,
+    override val keySize: Int,
     val toBeSmaller: ByteArray,
     val inclusive: Boolean
 ) : IsIndexPartialToMatch() {
@@ -51,6 +54,7 @@ internal class IndexPartialToBeBigger(
 internal class IndexPartialToBeSmaller(
     override val indexableIndex: Int,
     override val fromByteIndex: Int?,
+    override val keySize: Int,
     val toBeBigger: ByteArray,
     val inclusive: Boolean
 ) : IsIndexPartialToMatch() {
@@ -74,6 +78,7 @@ internal class IndexPartialToBeSmaller(
 internal class IndexPartialToBeOneOf(
     override val indexableIndex: Int,
     override val fromByteIndex: Int?,
+    override val keySize: Int,
     val toBeOneOf: List<ByteArray>
 ) : IsIndexPartialToMatch() {
     /** Matches [bytes] to be one of partials in list */

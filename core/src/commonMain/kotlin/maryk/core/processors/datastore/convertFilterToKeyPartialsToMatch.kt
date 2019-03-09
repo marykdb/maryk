@@ -27,6 +27,7 @@ import maryk.lib.extensions.compare.compareTo
  */
 fun convertFilterToKeyPartsToMatch(
     indexable: IsIndexable,
+    keySize: Int,
     convertIndex: ((Int) -> Int)?,
     filter: IsFilter?,
     listOfIndexParts: MutableList<IsIndexPartialToMatch>,
@@ -44,32 +45,32 @@ fun convertFilterToKeyPartsToMatch(
             ) { index, byteArray ->
                 val keyIndex = convertIndex?.invoke(index)
                 listOfIndexParts.add(
-                    IndexPartialToMatch(index, keyIndex, byteArray)
+                    IndexPartialToMatch(index, keyIndex, keySize, byteArray)
                 )
             }
         }
         is GreaterThan -> walkFilterReferencesAndValues(filter, indexable) { index, byteArray ->
             val keyIndex = convertIndex?.invoke(index)
             listOfIndexParts.add(
-                IndexPartialToBeBigger(index, keyIndex, byteArray, false)
+                IndexPartialToBeBigger(index, keyIndex, keySize, byteArray, false)
             )
         }
         is GreaterThanEquals -> walkFilterReferencesAndValues(filter, indexable) { index, byteArray ->
             val keyIndex = convertIndex?.invoke(index)
             listOfIndexParts.add(
-                IndexPartialToBeBigger(index, keyIndex, byteArray, true)
+                IndexPartialToBeBigger(index, keyIndex, keySize, byteArray, true)
             )
         }
         is LessThan -> walkFilterReferencesAndValues(filter, indexable) { index, byteArray ->
             val keyIndex = convertIndex?.invoke(index)
             listOfIndexParts.add(
-                IndexPartialToBeSmaller(index, keyIndex, byteArray, false)
+                IndexPartialToBeSmaller(index, keyIndex, keySize, byteArray, false)
             )
         }
         is LessThanEquals -> walkFilterReferencesAndValues(filter, indexable) { index, byteArray ->
             val keyIndex = convertIndex?.invoke(index)
             listOfIndexParts.add(
-                IndexPartialToBeSmaller(index, keyIndex, byteArray, true)
+                IndexPartialToBeSmaller(index, keyIndex, keySize, byteArray, true)
             )
         }
         is Range -> for ((reference, value) in filter.referenceRangePairs) {
@@ -78,10 +79,10 @@ fun convertFilterToKeyPartsToMatch(
                 val fromBytes = convertValueToKeyBytes(keyDefinition, value.from)
                 val toBytes = convertValueToKeyBytes(keyDefinition, value.to)
                 listOfIndexParts.add(
-                    IndexPartialToBeSmaller(index, keyIndex, fromBytes, value.inclusiveFrom)
+                    IndexPartialToBeSmaller(index, keyIndex, keySize, fromBytes, value.inclusiveFrom)
                 )
                 listOfIndexParts.add(
-                    IndexPartialToBeBigger(index, keyIndex, toBytes, value.inclusiveTo)
+                    IndexPartialToBeBigger(index, keyIndex, keySize, toBytes, value.inclusiveTo)
                 )
             }
         }
@@ -98,7 +99,7 @@ fun convertFilterToKeyPartsToMatch(
                     override fun compare(a: ByteArray, b: ByteArray) = a.compareTo(b)
                 })
                 listOfIndexParts.add(
-                    IndexPartialToBeOneOf(index, keyIndex, list)
+                    IndexPartialToBeOneOf(index, keyIndex, keySize, list)
                 )
             }
 
@@ -117,7 +118,7 @@ fun convertFilterToKeyPartsToMatch(
         }
         is And -> {
             for (aFilter in filter.filters) {
-                convertFilterToKeyPartsToMatch(indexable, convertIndex, aFilter, listOfIndexParts, listOfEqualPairs, listOfUniqueFilters)
+                convertFilterToKeyPartsToMatch(indexable, keySize, convertIndex, aFilter, listOfIndexParts, listOfEqualPairs, listOfUniqueFilters)
             }
         }
         else -> {

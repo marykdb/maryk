@@ -5,31 +5,33 @@ import kotlin.test.Test
 
 class FindKeyIndexByPartIndexKtTest {
     val bytes = byteArrayOf(
-        /* index 0: */ 2, 0, 0,
-        /* index 1: */ 5, 0, 0, 0, 0, 0,
-        /* index 2: */ 1, 0,
-        /* index 3: */ 4, 0, 0, 0, 0,
-        /* index 4: */ 8, 0, 0, 0, 0, 0, 0, 0, 0,
-        /* index 5: */ 1, 0
+        /* index 0: */ 0, 0, 0, 1,
+        /* index 1: */ 0, 0, 0, 0, 0, 1,
+        /* index 2: */ 0, 1,
+        /* index 3: */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+        /* index 4: */ 0, 0, 0, 0, 0, 0, 0, 0, 1,
+        /* index 5: */ 0, 1,
+        /* index sizes */ 1, 8, 16, 1, 5, 3,
+        /* key: */ 2, 2, 2, 2, 2, 2, 2, 2
     )
 
     @Test
     fun findKeyIndices() {
-        findByteIndexByPartIndex(0, bytes) shouldBe 1
-        findByteIndexByPartIndex(1, bytes) shouldBe 4
-        findByteIndexByPartIndex(2, bytes) shouldBe 10
-        findByteIndexByPartIndex(3, bytes) shouldBe 12
-        findByteIndexByPartIndex(4, bytes) shouldBe 17
-        findByteIndexByPartIndex(5, bytes) shouldBe 26
+        findByteIndexByPartIndex(0, bytes, 8) shouldBe 0
+        findByteIndexByPartIndex(1, bytes, 8) shouldBe 4
+        findByteIndexByPartIndex(2, bytes, 8) shouldBe 10
+        findByteIndexByPartIndex(3, bytes, 8) shouldBe 12
+        findByteIndexByPartIndex(4, bytes, 8) shouldBe 29
+        findByteIndexByPartIndex(5, bytes, 8) shouldBe 38
     }
 
     @Test
     fun findKeyIndicesAndSizes() {
-        findByteIndexAndSizeByPartIndex(0, bytes) shouldBe Pair(1, 2)
-        findByteIndexAndSizeByPartIndex(1, bytes) shouldBe Pair(4, 5)
-        findByteIndexAndSizeByPartIndex(2, bytes) shouldBe Pair(10, 1)
-        findByteIndexAndSizeByPartIndex(3, bytes) shouldBe Pair(12, 4)
-        findByteIndexAndSizeByPartIndex(4, bytes) shouldBe Pair(17, 8)
-        findByteIndexAndSizeByPartIndex(5, bytes) shouldBe Pair(26, 1)
+        findByteIndexAndSizeByPartIndex(0, bytes, 8) shouldBe Pair(0, 3)
+        findByteIndexAndSizeByPartIndex(1, bytes, 8) shouldBe Pair(4, 5)
+        findByteIndexAndSizeByPartIndex(2, bytes, 8) shouldBe Pair(10, 1)
+        findByteIndexAndSizeByPartIndex(3, bytes, 8) shouldBe Pair(12, 16)
+        findByteIndexAndSizeByPartIndex(4, bytes, 8) shouldBe Pair(29, 8)
+        findByteIndexAndSizeByPartIndex(5, bytes, 8) shouldBe Pair(38, 1)
     }
 }

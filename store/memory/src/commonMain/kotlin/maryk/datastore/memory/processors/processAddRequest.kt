@@ -60,14 +60,11 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
                     // Find new index values to write
                     addRequest.dataModel.indices?.forEach { indexDefinition ->
                         try {
-                            val indexValueSize = indexDefinition.calculateStorageByteLength(objectToAdd)
-                            val valueBytes = ByteArray(indexValueSize + addRequest.dataModel.keyByteSize)
+                            val indexValueSize = indexDefinition.calculateStorageByteLengthForIndex(objectToAdd, key.bytes)
+                            val valueBytes = ByteArray(indexValueSize)
                             var writeIndex = 0
                             val writer = { byte: Byte -> valueBytes[writeIndex++] = byte }
-                            indexDefinition.writeStorageBytes(objectToAdd, writer)
-
-                            // add key to end to make it unique for any DataRecord
-                            key.bytes.forEach(writer)
+                            indexDefinition.writeStorageBytesForIndex(objectToAdd, key.bytes, writer)
 
                             if (toIndex == null) toIndex = mutableMapOf()
                             toIndex?.let {

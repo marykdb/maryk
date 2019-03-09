@@ -18,10 +18,10 @@ interface IsIndexable {
     }
 
     /** Convert indexable to a ByteArray so it can be referenced */
-    fun toStorageByteArray(values: IsValuesGetter) = try {
+    fun toStorageByteArrayForIndex(values: IsValuesGetter, key: ByteArray) = try {
         var index = 0
-        ByteArray(this.calculateStorageByteLength(values)).also { bytes ->
-            this.writeStorageBytes(values) { bytes[index++] = it }
+        ByteArray(this.calculateStorageByteLengthForIndex(values, key)).also { bytes ->
+            this.writeStorageBytesForIndex(values, key) { bytes[index++] = it }
         }
     } catch (e: RequiredException) {
         null
@@ -33,18 +33,19 @@ interface IsIndexable {
     /** Write storage bytes for reference to this indexable with [writer] */
     fun writeReferenceStorageBytes(writer: (Byte) -> Unit)
 
-    /** Calculates the byte size of the storage bytes for [values] */
-    fun calculateStorageByteLength(values: IsValuesGetter): Int
+    /** Calculates the byte size of the storage bytes for index for [values] and [key] */
+    fun calculateStorageByteLengthForIndex(values: IsValuesGetter, key: ByteArray): Int
+
+    /**
+     * Write bytes for storage of indexable for [values] to [writer]
+     * Adds lengths and [key] to the end
+     * Throws RequiredException if values are missing
+     */
+    fun writeStorageBytesForIndex(values: IsValuesGetter, key: ByteArray, writer: (byte: Byte) -> Unit)
 
     /**
      * Write bytes for storage of indexable for [values] to [writer]
      * Throws RequiredException if values are missing
      */
     fun writeStorageBytes(values: IsValuesGetter, writer: (byte: Byte) -> Unit)
-
-    /**
-     * Write bytes for storage of indexable for [values] to [writer]
-     * Throws RequiredException if values are missing
-     */
-    fun writeStorageBytesForKey(values: IsValuesGetter, writer: (byte: Byte) -> Unit)
 }

@@ -192,7 +192,7 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.key(values: Valu
     var index = 0
     when (val keyDef = this.keyDefinition) {
         is Multiple -> {
-            keyDef.writeStorageBytesForKey(values) {
+            keyDef.writeStorageBytes(values) {
                 bytes[index++] = it
             }
         }

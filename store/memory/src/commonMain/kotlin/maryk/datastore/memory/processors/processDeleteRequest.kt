@@ -41,7 +41,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
 
                         // Delete indexed values
                         deleteRequest.dataModel.indices?.forEach {
-                            val oldValue = it.toStorageByteArray(objectToDelete)
+                            val oldValue = it.toStorageByteArrayForIndex(objectToDelete, objectToDelete.key.bytes)
                             if (oldValue != null) {
                                 dataStore.removeFromIndex(
                                     objectToDelete,

@@ -49,7 +49,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
                     continue
                 }
 
-                if (scanRequest.filterData(dataRecord, scanRequest.toVersion)) {
+                if (scanRequest.shouldBeFiltered(dataRecord, scanRequest.toVersion)) {
                     continue
                 }
 
@@ -84,7 +84,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
                     continue
                 }
 
-                if (scanRequest.filterData(dataRecord, scanRequest.toVersion)) {
+                if (scanRequest.shouldBeFiltered(dataRecord, scanRequest.toVersion)) {
                     continue
                 }
 

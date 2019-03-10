@@ -2,11 +2,15 @@ package maryk.datastore.memory
 
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.Key
+import maryk.core.query.filters.Equals
 import maryk.core.query.orders.Order.Companion.descending
+import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.test.models.Log
+import maryk.test.models.Log.Properties.severity
+import maryk.test.models.Severity.DEBUG
 import maryk.test.models.Severity.ERROR
 import maryk.test.models.Severity.INFO
 import maryk.test.runSuspendingTest
@@ -21,7 +25,7 @@ class InMemoryDataStoreScanTest {
 
     private val logs = arrayOf(
         Log("Something happened", timestamp = DateTime(2018, 11, 14, 11, 22, 33, 40)),
-        Log("Something else happened", timestamp = DateTime(2018, 11, 14, 12, 0, 0, 0)),
+        Log("Something else happened", DEBUG, DateTime(2018, 11, 14, 12, 0, 0, 0)),
         Log("Something REALLY happened", timestamp = DateTime(2018, 11, 14, 12, 33, 22, 111)),
         Log("WRONG", ERROR, DateTime(2018, 11, 14, 13, 0, 2, 0))
     )
@@ -137,6 +141,24 @@ class InMemoryDataStoreScanTest {
                 )
             }
             it.key shouldBe keys[2]
+        }
+    }
+
+    @Test
+    fun executeSimpleScanFilterRequest() = runSuspendingTest {
+        val scanResponse = dataStore.execute(
+            Log.scan(
+                filter = Equals(
+                    severity.ref() with DEBUG
+                )
+            )
+        )
+
+        scanResponse.values.size shouldBe 1
+
+        scanResponse.values[0].let {
+            it.values shouldBe logs[1]
+            it.key shouldBe keys[1]
         }
     }
 }

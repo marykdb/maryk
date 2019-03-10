@@ -26,17 +26,17 @@ import maryk.datastore.memory.records.DataRecord
  * Filters on soft deleted state and given filters.
  * Return true if [dataRecord] should be filtered away.
  */
-internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> IsFetchRequest<DM, P, *>.filterData(
+internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> IsFetchRequest<DM, P, *>.shouldBeFiltered(
     dataRecord: DataRecord<DM, P>,
     toVersion: ULong?
 ) = when {
     this.filterSoftDeleted && dataRecord.isDeleted(toVersion) -> true
-    this.filter != null -> doFilter(this.filter as IsFilter, dataRecord, toVersion)
+    this.filter != null -> !filterMatches(filter as IsFilter, dataRecord, toVersion)
     else -> false
 }
 
 /** Test if [dataRecord] is passing given [filter]. True if filter matches */
-internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> doFilter(
+internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> filterMatches(
     filter: IsFilter,
     dataRecord: DataRecord<DM, P>,
     toVersion: ULong?
@@ -45,14 +45,14 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> doFilter(
         FilterType.And -> {
             val and = filter as And
             for (f in and.filters) {
-                if (!doFilter(f, dataRecord, toVersion)) return false
+                if (!filterMatches(f, dataRecord, toVersion)) return false
             }
             return true
         }
         FilterType.Or -> {
             val or = filter as Or
             for (f in or.filters) {
-                if (doFilter(f, dataRecord, toVersion)) return true
+                if (filterMatches(f, dataRecord, toVersion)) return true
             }
             return false
         }
@@ -60,7 +60,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> doFilter(
             val notFilter = (filter as Not)
             for (aFilter in notFilter.filters) {
                 // If internal filter succeeds, then fail
-                if (doFilter(aFilter, dataRecord, toVersion)) return false
+                if (filterMatches(aFilter, dataRecord, toVersion)) return false
             }
             return true
         }

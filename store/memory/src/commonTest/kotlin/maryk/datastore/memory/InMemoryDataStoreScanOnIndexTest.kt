@@ -2,8 +2,12 @@ package maryk.datastore.memory
 
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.Key
+import maryk.core.query.filters.Equals
+import maryk.core.query.filters.GreaterThanEquals
+import maryk.core.query.filters.LessThanEquals
 import maryk.core.query.orders.ascending
 import maryk.core.query.orders.descending
+import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
@@ -146,6 +150,75 @@ class InMemoryDataStoreScanOnIndexTest {
                     this.timestamp with DateTime(2018, 11, 14, 12, 33, 22, 111)
                 )
             }
+            it.key shouldBe keys[2]
+        }
+    }
+
+    @Test
+    fun executeSimpleIndexFilterScanRequest() = runSuspendingTest {
+        val scanResponse = dataStore.execute(
+            Log.scan(
+                filter = Equals(
+                    severity.ref() with DEBUG
+                ),
+                order = severity.ref().ascending()
+            )
+        )
+
+        scanResponse.values.size shouldBe 1
+
+        scanResponse.values[0].let {
+            it.values shouldBe logs[1]
+            it.key shouldBe keys[1]
+        }
+    }
+
+    @Test
+    fun executeSimpleIndexFilterGreaterScanRequest() = runSuspendingTest {
+        val scanResponse = dataStore.execute(
+            Log.scan(
+                filter = GreaterThanEquals(
+                    severity.ref() with DEBUG
+                ),
+                order = severity.ref().ascending()
+            )
+        )
+
+        scanResponse.values.size shouldBe 2
+
+        scanResponse.values[0].let {
+            it.values shouldBe logs[1]
+            it.key shouldBe keys[1]
+        }
+        scanResponse.values[1].let {
+            it.values shouldBe logs[3]
+            it.key shouldBe keys[3]
+        }
+    }
+
+    @Test
+    fun executeSimpleIndexFilterLessScanRequest() = runSuspendingTest {
+        val scanResponse = dataStore.execute(
+            Log.scan(
+                filter = LessThanEquals(
+                    severity.ref() with DEBUG
+                ),
+                order = severity.ref().descending()
+            )
+        )
+
+        scanResponse.values.size shouldBe 3
+
+        scanResponse.values[0].let {
+            it.values shouldBe logs[1]
+            it.key shouldBe keys[1]
+        }
+        scanResponse.values[1].let {
+            it.values shouldBe logs[0]
+            it.key shouldBe keys[0]
+        }
+        scanResponse.values[2].let {
+            it.values shouldBe logs[2]
             it.key shouldBe keys[2]
         }
     }

@@ -26,7 +26,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
         if (index > -1) {
             val record = dataStore.records[index]
 
-            if (getRequest.filterData(record, getRequest.toVersion)) {
+            if (getRequest.shouldBeFiltered(record, getRequest.toVersion)) {
                 continue
             }
 

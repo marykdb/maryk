@@ -42,7 +42,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
                     continue
                 }
 
-                if (scanRequest.filterData(record, scanRequest.toVersion)) {
+                if (scanRequest.shouldBeFiltered(record, scanRequest.toVersion)) {
                     continue
                 }
 
@@ -76,7 +76,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
                     continue
                 }
 
-                if (scanRequest.filterData(record, scanRequest.toVersion)) {
+                if (scanRequest.shouldBeFiltered(record, scanRequest.toVersion)) {
                     continue
                 }
 

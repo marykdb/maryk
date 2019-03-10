@@ -9,6 +9,7 @@ class KeyScanRange internal constructor(
     end: ByteArray? = null,
     endInclusive: Boolean,
     partialMatches: List<IsIndexPartialToMatch>? = null,
+    val keySize: Int,
     val equalPairs: List<ReferenceValuePair<Any>>,
     val uniques: List<UniqueToMatch>? = null
 ): ScanRange(start, startInclusive, end, endInclusive, partialMatches)

@@ -10,7 +10,8 @@ class IndexableScanRange internal constructor(
     startInclusive: Boolean,
     end: ByteArray? = null,
     endInclusive: Boolean,
-    partialMatches: List<IsIndexPartialToMatch>? = null
+    partialMatches: List<IsIndexPartialToMatch>? = null,
+    val keyScanRange: KeyScanRange
 ): ScanRange(start, startInclusive, end, endInclusive, partialMatches) {
     override fun keyOutOfRange(key: ByteArray) = end?.let {
         end.compareDefinedTo(key).let {

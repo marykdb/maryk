@@ -21,7 +21,7 @@ abstract class ScanRange internal constructor(
     } ?: false
 
     /** Checks if [key] matches the partial matches for this scan range */
-    fun keyMatches(key: ByteArray): Boolean {
+    open fun keyMatches(key: ByteArray): Boolean {
         partialMatches?.let {
             for (partial in partialMatches) {
                 if (!partial.match(key)) return false

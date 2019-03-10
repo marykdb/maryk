@@ -114,6 +114,7 @@ private fun <DM : IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
         endInclusive = endInclusive,
         partialMatches = listOfParts,
         equalPairs = listOfEqualPairs,
-        uniques = listOfUniqueFilters
+        uniques = listOfUniqueFilters,
+        keySize = keySize
     )
 }

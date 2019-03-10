@@ -30,7 +30,8 @@ class KeyScanRangeTest {
             IndexPartialToMatch(2, 3, 5, byteArrayOf(5, 6))
         ),
         equalPairs = listOf(),
-        uniques = listOf()
+        uniques = listOf(),
+        keySize = 5
     )
 
     @Test

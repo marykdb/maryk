@@ -8,7 +8,7 @@ import maryk.lib.extensions.compare.compareTo
 abstract class ScanRange internal constructor(
     val start: ByteArray,
     val end: ByteArray? = null,
-    val partialMatches: List<IsIndexPartialToMatch>? = null
+    private val partialMatches: List<IsIndexPartialToMatch>? = null
 ) {
     open fun keyBeforeStart(key: ByteArray) =  key < start
     open fun keyOutOfRange(key: ByteArray) = end?.let {  end < key } ?: false

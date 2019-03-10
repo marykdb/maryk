@@ -43,35 +43,35 @@ fun convertFilterToKeyPartsToMatch(
                 filter,
                 indexable,
                 listOfUniqueFilters
-            ) { index, byteArray ->
+            ) { index, _, byteArray ->
                 val keyIndex = convertIndex?.invoke(index)
                 listOfIndexParts.add(
                     IndexPartialToMatch(index, keyIndex, keySize, byteArray)
                 )
             }
         }
-        is GreaterThan -> walkFilterReferencesAndValues(filter, indexable) { index, byteArray ->
+        is GreaterThan -> walkFilterReferencesAndValues(filter, indexable) { index, keyDefinition, byteArray ->
             val keyIndex = convertIndex?.invoke(index)
             listOfIndexParts.add(
-                indexPartialWithDirection(indexable !is Reversed<*>, index, keyIndex, keySize, byteArray, false)
+                indexPartialWithDirection(keyDefinition !is Reversed<*>, index, keyIndex, keySize, byteArray, false)
             )
         }
-        is GreaterThanEquals -> walkFilterReferencesAndValues(filter, indexable) { index, byteArray ->
+        is GreaterThanEquals -> walkFilterReferencesAndValues(filter, indexable) { index, keyDefinition, byteArray ->
             val keyIndex = convertIndex?.invoke(index)
             listOfIndexParts.add(
-                indexPartialWithDirection(indexable !is Reversed<*>, index, keyIndex, keySize, byteArray, true)
+                indexPartialWithDirection(keyDefinition !is Reversed<*>, index, keyIndex, keySize, byteArray, true)
             )
         }
-        is LessThan -> walkFilterReferencesAndValues(filter, indexable) { index, byteArray ->
+        is LessThan -> walkFilterReferencesAndValues(filter, indexable) { index, keyDefinition, byteArray ->
             val keyIndex = convertIndex?.invoke(index)
             listOfIndexParts.add(
-                indexPartialWithDirection(indexable is Reversed<*>, index, keyIndex, keySize, byteArray, false)
+                indexPartialWithDirection(keyDefinition is Reversed<*>, index, keyIndex, keySize, byteArray, false)
             )
         }
-        is LessThanEquals -> walkFilterReferencesAndValues(filter, indexable) { index, byteArray ->
+        is LessThanEquals -> walkFilterReferencesAndValues(filter, indexable) { index, keyDefinition, byteArray ->
             val keyIndex = convertIndex?.invoke(index)
             listOfIndexParts.add(
-                indexPartialWithDirection(indexable is Reversed<*>, index, keyIndex, keySize, byteArray, true)
+                indexPartialWithDirection(keyDefinition is Reversed<*>, index, keyIndex, keySize, byteArray, true)
             )
         }
         is Range -> for ((reference, value) in filter.referenceRangePairs) {
@@ -80,10 +80,10 @@ fun convertFilterToKeyPartsToMatch(
                 val fromBytes = convertValueToKeyBytes(keyDefinition, value.from)
                 val toBytes = convertValueToKeyBytes(keyDefinition, value.to)
                 listOfIndexParts.add(
-                    indexPartialWithDirection(indexable is Reversed<*>, index, keyIndex, keySize, fromBytes, value.inclusiveFrom)
+                    indexPartialWithDirection(keyDefinition !is Reversed<*>, index, keyIndex, keySize, fromBytes, value.inclusiveFrom)
                 )
                 listOfIndexParts.add(
-                    indexPartialWithDirection(indexable !is Reversed<*>, index, keyIndex, keySize, toBytes, value.inclusiveTo)
+                    indexPartialWithDirection(keyDefinition is Reversed<*>, index, keyIndex, keySize, toBytes, value.inclusiveTo)
                 )
             }
         }
@@ -163,13 +163,13 @@ private fun <T : Any> walkFilterReferencesAndValues(
     referenceValuePairs: IsReferenceValuePairsFilter<T>,
     indexable: IsIndexable,
     listOfUniqueFilters: MutableList<UniqueToMatch>? = null,
-    handleKeyBytes: (Int, ByteArray) -> Unit
+    handleKeyBytes: (Int, IsIndexablePropertyReference<Any>, ByteArray) -> Unit
 ) {
     for ((reference, value) in referenceValuePairs.referenceValuePairs) {
         getDefinitionOrNull(indexable, reference) { index, keyDefinition ->
             val byteArray = convertValueToKeyBytes(keyDefinition, value)
 
-            handleKeyBytes(index, byteArray)
+            handleKeyBytes(index, keyDefinition, byteArray)
         }
 
         // Add unique to match if handler was passed

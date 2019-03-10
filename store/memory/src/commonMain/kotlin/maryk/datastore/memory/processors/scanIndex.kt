@@ -30,7 +30,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
             val startIndex = index.records.binarySearch { it.value.compareTo(indexScanRange.start) }.let { valueIndex ->
                 when {
                     valueIndex < 0 -> valueIndex * -1 - 1 // If negative start at first entry point
-//                    !indexScanRange.startInclusive -> valueIndex + 1 // Skip the match if not inclusive
+                    !indexScanRange.startInclusive -> valueIndex + 1 // Skip the match if not inclusive
                     else -> valueIndex
                 }
             }
@@ -64,7 +64,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
                 index.records.binarySearch { it.value.compareTo(endRange) }.let { valueIndex ->
                     when {
                         valueIndex < 0 -> valueIndex * -1 - 1 // If negative start at first entry point
-//                        !indexScanRange.endInclusive -> valueIndex - 1 // Skip the match if not inclusive
+                        !indexScanRange.endInclusive -> valueIndex - 1 // Skip the match if not inclusive
                         else -> valueIndex
                     }
                 }

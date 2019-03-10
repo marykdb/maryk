@@ -26,7 +26,7 @@ import maryk.lib.extensions.compare.compareTo
 /**
  * Convert [filter] for [indexable] into [listOfIndexParts], [listOfEqualPairs] and [listOfUniqueFilters]
  */
-fun convertFilterToKeyPartsToMatch(
+fun convertFilterToIndexPartsToMatch(
     indexable: IsIndexable,
     keySize: Int,
     convertIndex: ((Int) -> Int)?,
@@ -77,8 +77,8 @@ fun convertFilterToKeyPartsToMatch(
         is Range -> for ((reference, value) in filter.referenceRangePairs) {
             getDefinitionOrNull(indexable, reference) { index, keyDefinition ->
                 val keyIndex = convertIndex?.invoke(index)
-                val fromBytes = convertValueToKeyBytes(keyDefinition, value.from)
-                val toBytes = convertValueToKeyBytes(keyDefinition, value.to)
+                val fromBytes = convertValueToIndexableBytes(keyDefinition, value.from)
+                val toBytes = convertValueToIndexableBytes(keyDefinition, value.to)
                 listOfIndexParts.add(
                     indexPartialWithDirection(keyDefinition !is Reversed<*>, index, keyIndex, keySize, fromBytes, value.inclusiveFrom)
                 )
@@ -93,7 +93,7 @@ fun convertFilterToKeyPartsToMatch(
                 val list = ArrayList<ByteArray>(value.size)
                 for (setValue in value) {
                     list.add(
-                        convertValueToKeyBytes(keyDefinition, setValue)
+                        convertValueToIndexableBytes(keyDefinition, setValue)
                     )
                 }
                 list.sortWith(object : Comparator<ByteArray> {
@@ -119,7 +119,7 @@ fun convertFilterToKeyPartsToMatch(
         }
         is And -> {
             for (aFilter in filter.filters) {
-                convertFilterToKeyPartsToMatch(indexable, keySize, convertIndex, aFilter, listOfIndexParts, listOfEqualPairs, listOfUniqueFilters)
+                convertFilterToIndexPartsToMatch(indexable, keySize, convertIndex, aFilter, listOfIndexParts, listOfEqualPairs, listOfUniqueFilters)
             }
         }
         else -> {
@@ -144,7 +144,7 @@ private fun indexPartialWithDirection(
 }
 
 /** Convert [value] with [indexableRef] into a key ByteArray */
-private fun convertValueToKeyBytes(
+private fun convertValueToIndexableBytes(
     indexableRef: IsIndexablePropertyReference<Any>,
     value: Any
 ): ByteArray {
@@ -167,7 +167,7 @@ private fun <T : Any> walkFilterReferencesAndValues(
 ) {
     for ((reference, value) in referenceValuePairs.referenceValuePairs) {
         getDefinitionOrNull(indexable, reference) { index, keyDefinition ->
-            val byteArray = convertValueToKeyBytes(keyDefinition, value)
+            val byteArray = convertValueToIndexableBytes(keyDefinition, value)
 
             handleKeyBytes(index, keyDefinition, byteArray)
         }

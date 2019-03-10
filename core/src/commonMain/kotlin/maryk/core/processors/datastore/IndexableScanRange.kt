@@ -1,16 +1,20 @@
 package maryk.core.processors.datastore
 
 import maryk.lib.extensions.compare.compareDefinedTo
-import maryk.lib.extensions.compare.compareTo
 
 /**
  * Defines a range to scan on Indexables. Also contains partial matches to check.
  */
 class IndexableScanRange internal constructor(
     start: ByteArray,
+    startInclusive: Boolean,
     end: ByteArray? = null,
+    endInclusive: Boolean,
     partialMatches: List<IsIndexPartialToMatch>? = null
-): ScanRange(start, end, partialMatches) {
-    override fun keyBeforeStart(key: ByteArray) =  key < start
-    override fun keyOutOfRange(key: ByteArray) = end?.let {  end.compareDefinedTo(key) < 0 } ?: false
+): ScanRange(start, startInclusive, end, endInclusive, partialMatches) {
+    override fun keyOutOfRange(key: ByteArray) = end?.let {
+        end.compareDefinedTo(key).let {
+            if (endInclusive) it <= 0 else it < 0
+        }
+    } ?: false
 }

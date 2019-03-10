@@ -6,7 +6,7 @@ import maryk.core.query.filters.IsFilter
 /** Create a scan range with [filter] and [keySize] */
 fun IsIndexable.createScanRange(filter: IsFilter?, keySize: Int): IndexableScanRange {
     val listOfKeyParts = mutableListOf<IsIndexPartialToMatch>()
-    convertFilterToKeyPartsToMatch(this, keySize,null, filter, listOfKeyParts)
+    convertFilterToIndexPartsToMatch(this, keySize,null, filter, listOfKeyParts)
 
     listOfKeyParts.sortBy { it.fromByteIndex }
 
@@ -99,7 +99,9 @@ private fun createScanRangeFromParts(
 
     return IndexableScanRange(
         start = start.toByteArray(),
+        startInclusive = true,
         end = end.toByteArray(),
+        endInclusive = false,
         partialMatches = listOfParts
     )
 }

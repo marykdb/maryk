@@ -74,7 +74,7 @@ class IndexableScanRangeTest {
             CompleteMarykModel.ref { number } with 5u
         )
 
-        val scanRange = indexable.createScanRange(filter, null, CompleteMarykModel.keyByteSize)
+        val scanRange = indexable.createScanRange(filter, CompleteMarykModel.keyByteSize)
 
         scanRange.start.toHex() shouldBe "0000000501"
         scanRange.end?.toHex() shouldBe "0000000501"
@@ -98,7 +98,7 @@ class IndexableScanRangeTest {
             CompleteMarykModel.ref { number } with 5u
         )
 
-        val scanRange = indexable.createScanRange(filter, null, CompleteMarykModel.keyByteSize)
+        val scanRange = indexable.createScanRange(filter, CompleteMarykModel.keyByteSize)
 
         scanRange.start.toHex() shouldBe "0000000502"
         scanRange.end?.toHex() shouldBe ""
@@ -122,7 +122,7 @@ class IndexableScanRangeTest {
             CompleteMarykModel.ref { number } with 5u
         )
 
-        val scanRange = indexable.createScanRange(filter, null, CompleteMarykModel.keyByteSize)
+        val scanRange = indexable.createScanRange(filter, CompleteMarykModel.keyByteSize)
 
         scanRange.start.toHex() shouldBe "0000000501"
         scanRange.end?.toHex() shouldBe ""
@@ -146,7 +146,7 @@ class IndexableScanRangeTest {
             CompleteMarykModel.ref { number } with 5u
         )
 
-        val scanRange = indexable.createScanRange(filter, null, CompleteMarykModel.keyByteSize)
+        val scanRange = indexable.createScanRange(filter, CompleteMarykModel.keyByteSize)
 
         scanRange.start.toHex() shouldBe ""
         scanRange.end?.toHex() shouldBe "0000000500"
@@ -170,7 +170,7 @@ class IndexableScanRangeTest {
             CompleteMarykModel.ref { number } with 5u
         )
 
-        val scanRange = indexable.createScanRange(filter, null, CompleteMarykModel.keyByteSize)
+        val scanRange = indexable.createScanRange(filter, CompleteMarykModel.keyByteSize)
 
         scanRange.start.toHex() shouldBe ""
         scanRange.end?.toHex() shouldBe "0000000501"
@@ -194,7 +194,7 @@ class IndexableScanRangeTest {
             CompleteMarykModel.ref { number } with 4u..6u
         )
 
-        val scanRange = indexable.createScanRange(filter, null, CompleteMarykModel.keyByteSize)
+        val scanRange = indexable.createScanRange(filter, CompleteMarykModel.keyByteSize)
 
         scanRange.start.toHex() shouldBe "0000000401"
         scanRange.end?.toHex() shouldBe "0000000601"
@@ -222,7 +222,7 @@ class IndexableScanRangeTest {
             )
         )
 
-        val scanRange = indexable.createScanRange(filter, null, CompleteMarykModel.keyByteSize)
+        val scanRange = indexable.createScanRange(filter, CompleteMarykModel.keyByteSize)
 
         scanRange.start.toHex() shouldBe "0000000301"
         scanRange.end?.toHex() shouldBe "0000000601"
@@ -251,7 +251,7 @@ class IndexableScanRangeTest {
             )
         )
 
-        val scanRange = indexable.createScanRange(filter, null, CompleteMarykModel.keyByteSize)
+        val scanRange = indexable.createScanRange(filter, CompleteMarykModel.keyByteSize)
 
         scanRange.start.toHex() shouldBe "0000000501"
         scanRange.end?.toHex() shouldBe "0000000501029d673000"
@@ -275,7 +275,7 @@ class IndexableScanRangeTest {
             CompleteMarykModel.ref { boolean } with true
         )
 
-        val scanRange = indexable.createScanRange(filter, null, CompleteMarykModel.keyByteSize)
+        val scanRange = indexable.createScanRange(filter, CompleteMarykModel.keyByteSize)
 
         scanRange.start.toHex() shouldBe ""
         scanRange.end?.toHex() shouldBe ""

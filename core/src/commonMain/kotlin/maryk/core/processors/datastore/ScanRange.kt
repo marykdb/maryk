@@ -1,6 +1,6 @@
 package maryk.core.processors.datastore
 
-import maryk.lib.extensions.compare.compareTo
+import maryk.lib.extensions.compare.compareWithOffsetTo
 
 /**
  * Defines a range to scan. Also contains partial matches to check.
@@ -13,11 +13,16 @@ abstract class ScanRange internal constructor(
     private val partialMatches: List<IsIndexPartialToMatch>? = null
 ) {
     /** Checks if [key] is before start of this scan range */
-    fun keyBeforeStart(key: ByteArray) = if (startInclusive) key < start else key <= start
+    fun keyBeforeStart(key: ByteArray, offset: Int = 0) =
+        start.compareWithOffsetTo(key, offset).let {
+            if (startInclusive) it > 0 else it >= 0
+        }
 
     /** Checks if [key] is after the end of this range start of this scan range */
-    open fun keyOutOfRange(key: ByteArray) = end?.let {
-        if (endInclusive) end < key else end <= key
+    open fun keyOutOfRange(key: ByteArray, offset: Int = 0) = end?.let {
+        end.compareWithOffsetTo(key, offset).let {
+            if (endInclusive) it < 0 else it <= 0
+        }
     } ?: false
 
     /** Checks if [key] matches the partial matches for this scan range */

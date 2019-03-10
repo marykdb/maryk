@@ -102,7 +102,7 @@ private fun createScanRangeFromParts(
         start = start.toByteArray(),
         startInclusive = true,
         end = end.toByteArray(),
-        endInclusive = false,
+        endInclusive = true,
         partialMatches = listOfParts,
         keyScanRange = keyScanRange
     )

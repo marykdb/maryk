@@ -13,17 +13,23 @@ class IndexableScanRange internal constructor(
     partialMatches: List<IsIndexPartialToMatch>? = null,
     val keyScanRange: KeyScanRange
 ): ScanRange(start, startInclusive, end, endInclusive, partialMatches) {
-    override fun keyOutOfRange(key: ByteArray) = end?.let {
-        end.compareDefinedTo(key).let {
-            if (endInclusive) it <= 0 else it < 0
+    override fun keyOutOfRange(key: ByteArray, offset: Int) = end?.let {
+        end.compareDefinedTo(key, offset).let {
+            if (endInclusive) it < 0 else it <= 0
         }
     } ?: false
 
     override fun matchesPartials(key: ByteArray, offset: Int): Boolean {
-        if (!keyScanRange.matchesPartials(key, key.size - keyScanRange.keySize)) {
-            return false
+        val keyIndex = key.size - keyScanRange.keySize
+
+        return when {
+            // If key or parts do not match, skip
+            keyScanRange.keyBeforeStart(key, keyIndex) ||
+                keyScanRange.keyOutOfRange(key, keyIndex) ||
+                !keyScanRange.matchesPartials(key, keyIndex) ->
+                false
+            else -> super.matchesPartials(key, offset)
         }
 
-        return super.matchesPartials(key, offset)
     }
 }

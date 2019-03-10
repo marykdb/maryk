@@ -20,21 +20,40 @@ operator fun ByteArray.compareTo(other: ByteArray): Int {
 }
 
 /**
+ * Compares ByteArray to [other] ByteArray.
+ * Returns zero if this object is equal to the specified [other] object,
+ * a negative number if it's less than [other],
+ * or a positive number if it's greater than [other].
+ */
+fun ByteArray.compareWithOffsetTo(other: ByteArray, offset: Int): Int {
+    val otherSize = other.size - offset
+    for (it in 0 until minOf(this.size, otherSize)) {
+        val a = this[it].toUByte() and MAX_BYTE
+        val b = other[it + offset].toUByte() and MAX_BYTE
+        if (a != b) {
+            return a.toUByte().toInt() - b.toUByte().toInt()
+        }
+    }
+    return this.size - otherSize
+}
+
+/**
  * Compares only defined bytes of ByteArray to [other] ByteArray.
  * Returns zero if this object is equal to the specified [other] object,
  * a negative number if it's less than [other],
  * or a positive number if it's greater than [other].
  */
-fun ByteArray.compareDefinedTo(other: ByteArray): Int {
-    for (it in 0 until minOf(this.size, other.size)) {
+fun ByteArray.compareDefinedTo(other: ByteArray, offset: Int): Int {
+    val otherSize = other.size - offset
+    for (it in 0 until minOf(this.size, otherSize)) {
         val a = this[it].toUByte() and MAX_BYTE
-        val b = other[it].toUByte() and MAX_BYTE
+        val b = other[it + offset].toUByte() and MAX_BYTE
         if (a != b) {
             return a.toUByte().toInt() - b.toUByte().toInt()
         }
     }
-    return if (other.size < this.size){
-        this.size - other.size
+    return if (otherSize < this.size){
+        this.size - otherSize
     } else {
         0
     }

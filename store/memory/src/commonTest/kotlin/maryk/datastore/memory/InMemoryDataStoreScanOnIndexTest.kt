@@ -77,6 +77,29 @@ class InMemoryDataStoreScanOnIndexTest {
     }
 
     @Test
+    fun executeSimpleIndexScanWithStartKeyRequest() = runSuspendingTest {
+        val scanResponse = dataStore.execute(
+            Log.scan(startKey = keys[2], order = severity.ref().ascending())
+        )
+
+        scanResponse.values.size shouldBe 3
+
+        // Sorted on severity
+        scanResponse.values[0].let {
+            it.values shouldBe logs[2]
+            it.key shouldBe keys[2]
+        }
+        scanResponse.values[1].let {
+            it.values shouldBe logs[0]
+            it.key shouldBe keys[0]
+        }
+        scanResponse.values[2].let {
+            it.values shouldBe logs[1]
+            it.key shouldBe keys[1]
+        }
+    }
+
+    @Test
     fun executeSimpleIndexScanRequestReverseOrder() = runSuspendingTest {
         val scanResponse = dataStore.execute(
             Log.scan(order = severity.ref().descending())

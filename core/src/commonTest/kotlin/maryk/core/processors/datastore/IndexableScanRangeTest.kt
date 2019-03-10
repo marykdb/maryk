@@ -90,15 +90,15 @@ class IndexableScanRangeTest {
 
         scanRange.keyBeforeStart(matchIndexValue) shouldBe false
         scanRange.keyOutOfRange(matchIndexValue) shouldBe false
-        scanRange.keyMatches(matchIndexValue) shouldBe true
+        scanRange.matchesPartials(matchIndexValue) shouldBe true
 
         scanRange.keyBeforeStart(earlierIndexValue) shouldBe true
         scanRange.keyOutOfRange(earlierIndexValue) shouldBe false
-        scanRange.keyMatches(earlierIndexValue) shouldBe true
+        scanRange.matchesPartials(earlierIndexValue) shouldBe true
 
         scanRange.keyBeforeStart(laterIndexValue) shouldBe false
         scanRange.keyOutOfRange(laterIndexValue) shouldBe true
-        scanRange.keyMatches(laterIndexValue) shouldBe true
+        scanRange.matchesPartials(laterIndexValue) shouldBe true
     }
 
     @Test
@@ -114,15 +114,15 @@ class IndexableScanRangeTest {
 
         scanRange.keyBeforeStart(matchIndexValue) shouldBe true // Because should skip
         scanRange.keyOutOfRange(matchIndexValue) shouldBe false
-        scanRange.keyMatches(matchIndexValue) shouldBe true
+        scanRange.matchesPartials(matchIndexValue) shouldBe true
 
         scanRange.keyBeforeStart(earlierIndexValue) shouldBe true
         scanRange.keyOutOfRange(earlierIndexValue) shouldBe false
-        scanRange.keyMatches(earlierIndexValue) shouldBe true
+        scanRange.matchesPartials(earlierIndexValue) shouldBe true
 
         scanRange.keyBeforeStart(laterIndexValue) shouldBe false
         scanRange.keyOutOfRange(laterIndexValue) shouldBe false
-        scanRange.keyMatches(laterIndexValue) shouldBe true
+        scanRange.matchesPartials(laterIndexValue) shouldBe true
     }
 
     @Test
@@ -138,15 +138,15 @@ class IndexableScanRangeTest {
 
         scanRange.keyBeforeStart(matchIndexValue) shouldBe false
         scanRange.keyOutOfRange(matchIndexValue) shouldBe false
-        scanRange.keyMatches(matchIndexValue) shouldBe true
+        scanRange.matchesPartials(matchIndexValue) shouldBe true
 
         scanRange.keyBeforeStart(earlierIndexValue) shouldBe true
         scanRange.keyOutOfRange(earlierIndexValue) shouldBe false
-        scanRange.keyMatches(earlierIndexValue) shouldBe true
+        scanRange.matchesPartials(earlierIndexValue) shouldBe true
 
         scanRange.keyBeforeStart(laterIndexValue) shouldBe false
         scanRange.keyOutOfRange(laterIndexValue) shouldBe false
-        scanRange.keyMatches(laterIndexValue) shouldBe true
+        scanRange.matchesPartials(laterIndexValue) shouldBe true
     }
 
     @Test
@@ -162,15 +162,15 @@ class IndexableScanRangeTest {
 
         scanRange.keyBeforeStart(matchIndexValue) shouldBe false
         scanRange.keyOutOfRange(matchIndexValue) shouldBe true // because should not be included
-        scanRange.keyMatches(matchIndexValue) shouldBe true
+        scanRange.matchesPartials(matchIndexValue) shouldBe true
 
         scanRange.keyBeforeStart(earlierIndexValue) shouldBe false
         scanRange.keyOutOfRange(earlierIndexValue) shouldBe false
-        scanRange.keyMatches(earlierIndexValue) shouldBe true
+        scanRange.matchesPartials(earlierIndexValue) shouldBe true
 
         scanRange.keyBeforeStart(laterIndexValue) shouldBe false
         scanRange.keyOutOfRange(laterIndexValue) shouldBe true
-        scanRange.keyMatches(laterIndexValue) shouldBe true
+        scanRange.matchesPartials(laterIndexValue) shouldBe true
     }
 
     @Test
@@ -186,15 +186,15 @@ class IndexableScanRangeTest {
 
         scanRange.keyBeforeStart(matchIndexValue) shouldBe false
         scanRange.keyOutOfRange(matchIndexValue) shouldBe false
-        scanRange.keyMatches(matchIndexValue) shouldBe true
+        scanRange.matchesPartials(matchIndexValue) shouldBe true
 
         scanRange.keyBeforeStart(earlierIndexValue) shouldBe false
         scanRange.keyOutOfRange(earlierIndexValue) shouldBe false
-        scanRange.keyMatches(earlierIndexValue) shouldBe true
+        scanRange.matchesPartials(earlierIndexValue) shouldBe true
 
         scanRange.keyBeforeStart(laterIndexValue) shouldBe false
         scanRange.keyOutOfRange(laterIndexValue) shouldBe true
-        scanRange.keyMatches(laterIndexValue) shouldBe true
+        scanRange.matchesPartials(laterIndexValue) shouldBe true
     }
 
     @Test
@@ -210,15 +210,15 @@ class IndexableScanRangeTest {
 
         scanRange.keyBeforeStart(matchIndexValue) shouldBe false
         scanRange.keyOutOfRange(matchIndexValue) shouldBe false
-        scanRange.keyMatches(matchIndexValue) shouldBe true
+        scanRange.matchesPartials(matchIndexValue) shouldBe true
 
         scanRange.keyBeforeStart(earlierIndexValue) shouldBe true
         scanRange.keyOutOfRange(earlierIndexValue) shouldBe false
-        scanRange.keyMatches(earlierIndexValue) shouldBe true
+        scanRange.matchesPartials(earlierIndexValue) shouldBe true
 
         scanRange.keyBeforeStart(laterIndexValue) shouldBe false
         scanRange.keyOutOfRange(laterIndexValue) shouldBe true
-        scanRange.keyMatches(laterIndexValue) shouldBe true
+        scanRange.matchesPartials(laterIndexValue) shouldBe true
     }
 
     @Test
@@ -238,15 +238,15 @@ class IndexableScanRangeTest {
 
         scanRange.keyBeforeStart(matchIndexValue) shouldBe false
         scanRange.keyOutOfRange(matchIndexValue) shouldBe false
-        scanRange.keyMatches(matchIndexValue) shouldBe true
+        scanRange.matchesPartials(matchIndexValue) shouldBe true
 
         scanRange.keyBeforeStart(earlierIndexValue) shouldBe true
         scanRange.keyOutOfRange(earlierIndexValue) shouldBe false
-        scanRange.keyMatches(earlierIndexValue) shouldBe false
+        scanRange.matchesPartials(earlierIndexValue) shouldBe false
 
         scanRange.keyBeforeStart(laterIndexValue) shouldBe false
         scanRange.keyOutOfRange(laterIndexValue) shouldBe true
-        scanRange.keyMatches(laterIndexValue) shouldBe false
+        scanRange.matchesPartials(laterIndexValue) shouldBe false
     }
 
     @Test
@@ -267,15 +267,15 @@ class IndexableScanRangeTest {
 
         scanRange.keyBeforeStart(matchIndexValue) shouldBe false
         scanRange.keyOutOfRange(matchIndexValue) shouldBe true
-        scanRange.keyMatches(matchIndexValue) shouldBe true
+        scanRange.matchesPartials(matchIndexValue) shouldBe true
 
         scanRange.keyBeforeStart(earlierIndexValue) shouldBe true
         scanRange.keyOutOfRange(earlierIndexValue) shouldBe false
-        scanRange.keyMatches(earlierIndexValue) shouldBe true
+        scanRange.matchesPartials(earlierIndexValue) shouldBe true
 
         scanRange.keyBeforeStart(laterIndexValue) shouldBe false
         scanRange.keyOutOfRange(laterIndexValue) shouldBe true
-        scanRange.keyMatches(laterIndexValue) shouldBe true
+        scanRange.matchesPartials(laterIndexValue) shouldBe true
     }
 
     @Test
@@ -291,14 +291,14 @@ class IndexableScanRangeTest {
 
         scanRange.keyBeforeStart(matchIndexValue) shouldBe false
         scanRange.keyOutOfRange(matchIndexValue) shouldBe false
-        scanRange.keyMatches(matchIndexValue) shouldBe true
+        scanRange.matchesPartials(matchIndexValue) shouldBe true
 
         scanRange.keyBeforeStart(earlierIndexValue) shouldBe false
         scanRange.keyOutOfRange(earlierIndexValue) shouldBe false
-        scanRange.keyMatches(earlierIndexValue) shouldBe true
+        scanRange.matchesPartials(earlierIndexValue) shouldBe true
 
         scanRange.keyBeforeStart(laterIndexValue) shouldBe false
         scanRange.keyOutOfRange(laterIndexValue) shouldBe false
-        scanRange.keyMatches(laterIndexValue) shouldBe true
+        scanRange.matchesPartials(laterIndexValue) shouldBe true
     }
 }

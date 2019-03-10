@@ -45,7 +45,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
                     break
                 }
 
-                if (!indexScanRange.keyMatches(indexRecord.value)) {
+                if (!indexScanRange.matchesPartials(indexRecord.value)) {
                     continue
                 }
 
@@ -80,7 +80,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
                     break
                 }
 
-                if (!indexScanRange.keyMatches(indexRecord.value)) {
+                if (!indexScanRange.matchesPartials(indexRecord.value)) {
                     continue
                 }
 

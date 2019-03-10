@@ -38,7 +38,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
                     break
                 }
 
-                if (!scanRange.keyMatches(record.key.bytes)) {
+                if (!scanRange.matchesPartials(record.key.bytes)) {
                     continue
                 }
 
@@ -72,7 +72,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
                     break
                 }
 
-                if (!scanRange.keyMatches(record.key.bytes)) {
+                if (!scanRange.matchesPartials(record.key.bytes)) {
                     continue
                 }
 

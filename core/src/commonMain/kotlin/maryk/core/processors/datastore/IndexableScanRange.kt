@@ -18,4 +18,12 @@ class IndexableScanRange internal constructor(
             if (endInclusive) it <= 0 else it < 0
         }
     } ?: false
+
+    override fun matchesPartials(key: ByteArray, offset: Int): Boolean {
+        if (!keyScanRange.matchesPartials(key, key.size - keyScanRange.keySize)) {
+            return false
+        }
+
+        return super.matchesPartials(key, offset)
+    }
 }

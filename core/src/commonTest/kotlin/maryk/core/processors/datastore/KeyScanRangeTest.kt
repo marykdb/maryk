@@ -42,9 +42,9 @@ class KeyScanRangeTest {
 
     @Test
     fun keyMatches() {
-        scanRange.keyMatches(byteArrayOf(3, 2, 4, 5, 6)) shouldBe true
-        scanRange.keyMatches(byteArrayOf(3, 4, 4, 5, 6)) shouldBe false
-        scanRange.keyMatches(byteArrayOf(3, 2, 4, 6, 6)) shouldBe false
+        scanRange.matchesPartials(byteArrayOf(3, 2, 4, 5, 6)) shouldBe true
+        scanRange.matchesPartials(byteArrayOf(3, 4, 4, 5, 6)) shouldBe false
+        scanRange.matchesPartials(byteArrayOf(3, 2, 4, 6, 6)) shouldBe false
     }
 
     private val match = Log.key(Log("message", ERROR, DateTime(2018, 12, 8, 12, 33, 23)))
@@ -65,15 +65,15 @@ class KeyScanRangeTest {
 
         scanRange.keyBeforeStart(match.bytes) shouldBe false
         scanRange.keyOutOfRange(match.bytes) shouldBe false
-        scanRange.keyMatches(match.bytes) shouldBe true
+        scanRange.matchesPartials(match.bytes) shouldBe true
 
         scanRange.keyBeforeStart(earlier.bytes) shouldBe true
         scanRange.keyOutOfRange(earlier.bytes) shouldBe false
-        scanRange.keyMatches(earlier.bytes) shouldBe true
+        scanRange.matchesPartials(earlier.bytes) shouldBe true
 
         scanRange.keyBeforeStart(later.bytes) shouldBe false
         scanRange.keyOutOfRange(later.bytes) shouldBe true
-        scanRange.keyMatches(later.bytes) shouldBe true
+        scanRange.matchesPartials(later.bytes) shouldBe true
     }
 
     @Test
@@ -90,15 +90,15 @@ class KeyScanRangeTest {
 
         scanRange.keyBeforeStart(match.bytes) shouldBe false
         scanRange.keyOutOfRange(match.bytes) shouldBe true
-        scanRange.keyMatches(match.bytes) shouldBe true
+        scanRange.matchesPartials(match.bytes) shouldBe true
 
         scanRange.keyBeforeStart(earlier.bytes) shouldBe false
         scanRange.keyOutOfRange(earlier.bytes) shouldBe false
-        scanRange.keyMatches(earlier.bytes) shouldBe true
+        scanRange.matchesPartials(earlier.bytes) shouldBe true
 
         scanRange.keyBeforeStart(later.bytes) shouldBe false
         scanRange.keyOutOfRange(later.bytes) shouldBe true
-        scanRange.keyMatches(later.bytes) shouldBe true
+        scanRange.matchesPartials(later.bytes) shouldBe true
     }
 
     @Test
@@ -115,15 +115,15 @@ class KeyScanRangeTest {
 
         scanRange.keyBeforeStart(match.bytes) shouldBe false
         scanRange.keyOutOfRange(match.bytes) shouldBe false
-        scanRange.keyMatches(match.bytes) shouldBe true
+        scanRange.matchesPartials(match.bytes) shouldBe true
 
         scanRange.keyBeforeStart(earlier.bytes) shouldBe false
         scanRange.keyOutOfRange(earlier.bytes) shouldBe false
-        scanRange.keyMatches(earlier.bytes) shouldBe true
+        scanRange.matchesPartials(earlier.bytes) shouldBe true
 
         scanRange.keyBeforeStart(later.bytes) shouldBe false
         scanRange.keyOutOfRange(later.bytes) shouldBe true
-        scanRange.keyMatches(later.bytes) shouldBe true
+        scanRange.matchesPartials(later.bytes) shouldBe true
     }
 
     @Test
@@ -140,15 +140,15 @@ class KeyScanRangeTest {
 
         scanRange.keyBeforeStart(match.bytes) shouldBe true
         scanRange.keyOutOfRange(match.bytes) shouldBe false
-        scanRange.keyMatches(match.bytes) shouldBe true
+        scanRange.matchesPartials(match.bytes) shouldBe true
 
         scanRange.keyBeforeStart(earlier.bytes) shouldBe true
         scanRange.keyOutOfRange(earlier.bytes) shouldBe false
-        scanRange.keyMatches(earlier.bytes) shouldBe true
+        scanRange.matchesPartials(earlier.bytes) shouldBe true
 
         scanRange.keyBeforeStart(later.bytes) shouldBe false
         scanRange.keyOutOfRange(later.bytes) shouldBe false
-        scanRange.keyMatches(later.bytes) shouldBe true
+        scanRange.matchesPartials(later.bytes) shouldBe true
     }
 
     @Test
@@ -165,15 +165,15 @@ class KeyScanRangeTest {
 
         scanRange.keyBeforeStart(match.bytes) shouldBe false
         scanRange.keyOutOfRange(match.bytes) shouldBe false
-        scanRange.keyMatches(match.bytes) shouldBe true
+        scanRange.matchesPartials(match.bytes) shouldBe true
 
         scanRange.keyBeforeStart(earlier.bytes) shouldBe true
         scanRange.keyOutOfRange(earlier.bytes) shouldBe false
-        scanRange.keyMatches(earlier.bytes) shouldBe true
+        scanRange.matchesPartials(earlier.bytes) shouldBe true
 
         scanRange.keyBeforeStart(later.bytes) shouldBe false
         scanRange.keyOutOfRange(later.bytes) shouldBe false
-        scanRange.keyMatches(later.bytes) shouldBe true
+        scanRange.matchesPartials(later.bytes) shouldBe true
     }
 
     @Test
@@ -189,15 +189,15 @@ class KeyScanRangeTest {
 
         scanRange.keyBeforeStart(match.bytes) shouldBe false
         scanRange.keyOutOfRange(match.bytes) shouldBe false
-        scanRange.keyMatches(match.bytes) shouldBe true
+        scanRange.matchesPartials(match.bytes) shouldBe true
 
         scanRange.keyBeforeStart(earlier.bytes) shouldBe true
         scanRange.keyOutOfRange(earlier.bytes) shouldBe false
-        scanRange.keyMatches(earlier.bytes) shouldBe true
+        scanRange.matchesPartials(earlier.bytes) shouldBe true
 
         scanRange.keyBeforeStart(later.bytes) shouldBe false
         scanRange.keyOutOfRange(later.bytes) shouldBe true
-        scanRange.keyMatches(later.bytes) shouldBe true
+        scanRange.matchesPartials(later.bytes) shouldBe true
     }
 
     @Test
@@ -219,15 +219,15 @@ class KeyScanRangeTest {
 
         scanRange.keyBeforeStart(match.bytes) shouldBe false
         scanRange.keyOutOfRange(match.bytes) shouldBe false
-        scanRange.keyMatches(match.bytes) shouldBe true
+        scanRange.matchesPartials(match.bytes) shouldBe true
 
         scanRange.keyBeforeStart(earlier.bytes) shouldBe true
         scanRange.keyOutOfRange(earlier.bytes) shouldBe false
-        scanRange.keyMatches(earlier.bytes) shouldBe false
+        scanRange.matchesPartials(earlier.bytes) shouldBe false
 
         scanRange.keyBeforeStart(later.bytes) shouldBe false
         scanRange.keyOutOfRange(later.bytes) shouldBe true
-        scanRange.keyMatches(later.bytes) shouldBe false
+        scanRange.matchesPartials(later.bytes) shouldBe false
     }
 
     @Test
@@ -250,15 +250,15 @@ class KeyScanRangeTest {
 
         scanRange.keyBeforeStart(match.bytes) shouldBe false
         scanRange.keyOutOfRange(match.bytes) shouldBe true
-        scanRange.keyMatches(match.bytes) shouldBe true
+        scanRange.matchesPartials(match.bytes) shouldBe true
 
         scanRange.keyBeforeStart(earlier.bytes) shouldBe true
         scanRange.keyOutOfRange(earlier.bytes) shouldBe false
-        scanRange.keyMatches(earlier.bytes) shouldBe true
+        scanRange.matchesPartials(earlier.bytes) shouldBe true
 
         scanRange.keyBeforeStart(later.bytes) shouldBe false
         scanRange.keyOutOfRange(later.bytes) shouldBe true
-        scanRange.keyMatches(later.bytes) shouldBe true
+        scanRange.matchesPartials(later.bytes) shouldBe true
     }
 
     @Test
@@ -276,14 +276,14 @@ class KeyScanRangeTest {
 
         scanRange.keyBeforeStart(match.bytes) shouldBe false
         scanRange.keyOutOfRange(match.bytes) shouldBe false
-        scanRange.keyMatches(match.bytes) shouldBe false
+        scanRange.matchesPartials(match.bytes) shouldBe false
 
         scanRange.keyBeforeStart(earlier.bytes) shouldBe false
         scanRange.keyOutOfRange(earlier.bytes) shouldBe false
-        scanRange.keyMatches(earlier.bytes) shouldBe true
+        scanRange.matchesPartials(earlier.bytes) shouldBe true
 
         scanRange.keyBeforeStart(later.bytes) shouldBe false
         scanRange.keyOutOfRange(later.bytes) shouldBe false
-        scanRange.keyMatches(later.bytes) shouldBe true
+        scanRange.matchesPartials(later.bytes) shouldBe true
     }
 }

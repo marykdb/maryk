@@ -21,10 +21,10 @@ abstract class ScanRange internal constructor(
     } ?: false
 
     /** Checks if [key] matches the partial matches for this scan range */
-    open fun keyMatches(key: ByteArray): Boolean {
+    open fun matchesPartials(key: ByteArray, offset: Int = 0): Boolean {
         partialMatches?.let {
             for (partial in partialMatches) {
-                if (!partial.match(key)) return false
+                if (!partial.match(key, offset)) return false
             }
         }
         return true

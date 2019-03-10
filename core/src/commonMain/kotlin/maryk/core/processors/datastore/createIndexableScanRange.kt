@@ -24,9 +24,13 @@ private fun createScanRangeFromParts(
     val start = mutableListOf<Byte>()
     val end = mutableListOf<Byte>()
 
-    var startKeyIndex = 0
-    var endKeyIndex = 0
+    var startKeyIndex = -1
+    var endKeyIndex = -1
     var keyIndex = -1
+
+    var startInclusive = true
+    var endInclusive = true
+
     val toRemove = mutableListOf<IsIndexPartialToMatch>()
     for (keyPart in listOfParts) {
         if (keyIndex + 1 == keyPart.indexableIndex) {
@@ -37,8 +41,8 @@ private fun createScanRangeFromParts(
 
         when (keyPart) {
             is IndexPartialToMatch -> {
-                if (startKeyIndex == keyIndex - 1) startKeyIndex++
-                if (endKeyIndex == keyIndex - 1) endKeyIndex++
+                if (startKeyIndex == keyIndex - 1 && startInclusive) startKeyIndex++
+                if (endKeyIndex == keyIndex - 1 && endInclusive) endKeyIndex++
 
                 keyPart.toMatch.forEach {
                     if (startKeyIndex == keyIndex) start += it
@@ -50,46 +54,48 @@ private fun createScanRangeFromParts(
                 toRemove.add(keyPart)
             }
             is IndexPartialToBeBigger -> {
-                if (startKeyIndex == keyIndex - 1) startKeyIndex++
-
-                if (startKeyIndex == keyIndex) {
+                if (startKeyIndex == keyIndex -1 && startInclusive) {
+                    startKeyIndex++
                     keyPart.toBeSmaller.forEach {
                         start += it
                     }
                     // Separator to 1 so match is exact
                     start += if (keyPart.inclusive) 1.toByte() else 2.toByte()
+                    startInclusive = keyPart.inclusive
+
+                    toRemove.add(keyPart)
                 }
-                toRemove.add(keyPart)
             }
             is IndexPartialToBeSmaller -> {
-                if (endKeyIndex == keyIndex - 1) endKeyIndex++
-                if (endKeyIndex == keyIndex) {
+                if (endKeyIndex == keyIndex - 1 && endInclusive) {
+                    endKeyIndex++
+
                     keyPart.toBeBigger.forEach {
                         end += it
                     }
                     // Separator to 1 so match is exact
                     end += if (keyPart.inclusive) 1.toByte() else 0.toByte()
+                    endInclusive = keyPart.inclusive
+
                     toRemove.add(keyPart)
                 }
             }
             is IndexPartialToBeOneOf -> {
-                if (startKeyIndex == keyIndex - 1) startKeyIndex++
-                if (endKeyIndex == keyIndex - 1) endKeyIndex++
-
-                if (startKeyIndex == keyIndex) {
+                if (startKeyIndex == keyIndex - 1 && startInclusive) {
+                    startKeyIndex++
                     keyPart.toBeOneOf.first().forEach {
                         start += it
                     }
+                    start += 1 // Separator to 1 so match is exact
                 }
 
-                if (endKeyIndex == keyIndex) {
+                if (endKeyIndex == keyIndex - 1 && endInclusive) {
+                    endKeyIndex++
                     keyPart.toBeOneOf.last().forEach {
                         end += it
                     }
+                    end += 1 // Separator to 1 so match is exact
                 }
-                // Separator to 1 so match is exact
-                if (startKeyIndex == keyIndex) start += 1
-                if (endKeyIndex == keyIndex) end += 1
             }
         }
     }
@@ -100,9 +106,9 @@ private fun createScanRangeFromParts(
 
     return IndexableScanRange(
         start = start.toByteArray(),
-        startInclusive = true,
+        startInclusive = startInclusive,
         end = end.toByteArray(),
-        endInclusive = true,
+        endInclusive = endInclusive,
         partialMatches = listOfParts,
         keyScanRange = keyScanRange
     )

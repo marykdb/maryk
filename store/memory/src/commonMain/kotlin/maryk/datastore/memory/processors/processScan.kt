@@ -39,7 +39,13 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
                     )
                 }
                 is IndexScan -> {
-
+                    scanIndex(
+                        dataStore,
+                        scanRequest,
+                        scanIndex,
+                        scanRange,
+                        processRecord
+                    )
                 }
             }
         }

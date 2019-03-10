@@ -86,7 +86,7 @@ internal class DataStore<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions>
     }
 
     /** Get unique index for [indexReference] or create it if it does not exist. */
-    private fun getOrCreateIndex(indexReference: ByteArray): IndexValues<DM, P> {
+    internal fun getOrCreateIndex(indexReference: ByteArray): IndexValues<DM, P> {
         val i = indices.binarySearch { it.indexReference.compareTo(indexReference) }
         return if (i < 0) {
             IndexValues<DM, P>(indexReference).also {

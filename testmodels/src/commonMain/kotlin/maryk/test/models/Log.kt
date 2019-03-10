@@ -29,6 +29,9 @@ object Log : RootDataModel<Log, Log.Properties>(
         Reversed(timestamp.ref()),
         severity.ref()
     ),
+    indices = listOf(
+        severity.ref()
+    ),
     properties = Log.Properties
 ) {
     object Properties : PropertyDefinitions() {

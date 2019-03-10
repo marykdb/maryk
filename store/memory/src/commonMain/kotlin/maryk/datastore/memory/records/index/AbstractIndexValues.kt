@@ -22,7 +22,7 @@ internal abstract class AbstractIndexValues<DM : IsRootValuesDataModel<P>, P : P
         value: T,
         version: ULong
     ): Boolean {
-        val i = records.binarySearch { value.compareTo(it.value) }
+        val i = records.binarySearch { it.value.compareTo(value) }
         return when {
             i < 0 -> {
                 records.add(
@@ -59,7 +59,7 @@ internal abstract class AbstractIndexValues<DM : IsRootValuesDataModel<P>, P : P
         version: ULong,
         keepAllVersions: Boolean
     ): Boolean {
-        val i = records.binarySearch { value.compareTo(it.value) }
+        val i = records.binarySearch { it.value.compareTo(value) }
         return if (i >= 0 && records[i].record == record) {
             val oldValue = records[i]
             if (keepAllVersions) {
@@ -81,7 +81,7 @@ internal abstract class AbstractIndexValues<DM : IsRootValuesDataModel<P>, P : P
 
     /** Get DataRecord for [value] if exists or null */
     operator fun get(value: T) =
-        this.records.binarySearch { value.compareTo(it.value) }.let { index ->
+        this.records.binarySearch { it.value.compareTo(value) }.let { index ->
             if (index >= 0) {
                 this.records[index].record
             } else {
@@ -91,7 +91,7 @@ internal abstract class AbstractIndexValues<DM : IsRootValuesDataModel<P>, P : P
 
     /** Get DataRecord for [value] if exists or null */
     operator fun get(value: T, version: ULong) =
-        this.records.binarySearch { value.compareTo(it.value) }.let { index ->
+        this.records.binarySearch { it.value.compareTo(value) }.let { index ->
             if (index >= 0) {
                 this.records[index].recordAtVersion(version)
             } else {

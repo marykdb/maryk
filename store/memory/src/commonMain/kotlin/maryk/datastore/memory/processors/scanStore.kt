@@ -23,7 +23,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
         ASC -> {
             val startIndex = dataStore.records.binarySearch { it.key.bytes.compareTo(scanRange.start) }.let { index ->
                 when {
-                    index < 0 -> index * -1 + 1 // If negative start at first entry point
+                    index < 0 -> index * -1 - 1 // If negative start at first entry point
                     !scanRange.startInclusive -> index + 1 // Skip the match if not inclusive
                     else -> index
                 }

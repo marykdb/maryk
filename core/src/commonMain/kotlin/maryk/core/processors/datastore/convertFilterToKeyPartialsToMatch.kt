@@ -20,6 +20,7 @@ import maryk.core.query.filters.LessThan
 import maryk.core.query.filters.LessThanEquals
 import maryk.core.query.filters.Prefix
 import maryk.core.query.filters.Range
+import maryk.core.query.filters.RegEx
 import maryk.core.query.filters.ValueIn
 import maryk.core.query.pairs.ReferenceValuePair
 import maryk.lib.extensions.compare.compareTo
@@ -127,6 +128,13 @@ fun convertFilterToIndexPartsToMatch(
                             )
                         }
                     }
+                }
+            }
+        }
+        is RegEx -> {
+            for ((reference, regex) in filter.referenceValuePairs) {
+                getDefinitionOrNull(indexable, reference) { index, _ ->
+                    listOfIndexParts += IndexPartialToRegexMatch(index, keySize, regex)
                 }
             }
         }

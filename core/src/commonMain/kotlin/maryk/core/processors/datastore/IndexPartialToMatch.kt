@@ -1,5 +1,6 @@
 package maryk.core.processors.datastore
 
+import maryk.lib.bytes.initString
 import maryk.lib.extensions.compare.matchPart
 
 sealed class IsIndexPartialToMatch {
@@ -27,6 +28,26 @@ internal class IndexPartialToMatch(
     /** Matches [bytes] to partial and returns true if matches */
     override fun match(bytes: ByteArray, offset: Int) =
         bytes.matchPart(offset + getByteIndex(bytes), toMatch)
+}
+
+/** Matcher for regex matches */
+internal class IndexPartialToRegexMatch(
+    override val indexableIndex: Int,
+    override val keySize: Int,
+    val regex: Regex
+) : IsIndexPartialToMatch() {
+    // Cannot be set because is string, so needs to be encoded
+    override val fromByteIndex = null
+
+    /** Matches [bytes] to partial and returns true if matches */
+    override fun match(bytes: ByteArray, offset: Int): Boolean {
+        val (internalOffset, size) = findByteIndexAndSizeByPartIndex(indexableIndex, bytes, keySize)
+        var readIndex= offset + internalOffset
+
+        val toMatch = initString(size) { bytes[readIndex++] }
+
+        return regex.matches(toMatch)
+    }
 }
 
 /** Size matcher for exact matches in partials */

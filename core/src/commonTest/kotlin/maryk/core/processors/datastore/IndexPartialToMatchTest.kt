@@ -1,5 +1,6 @@
 package maryk.core.processors.datastore
 
+import maryk.lib.extensions.initByteArrayByHex
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -15,6 +16,13 @@ class IndexPartialToMatchTest {
     fun keyPartialSizeToMatch() {
         IndexPartialSizeToMatch(1, null, 5, 3).match(byteArrayOf(0, 0, 1, 3, 5, 3, 2, -1, -1, -1, -1, -1)) shouldBe true
         IndexPartialSizeToMatch(1, null, 5, 3).match(byteArrayOf(0, 0, 9, 8, 7, 8, 4, 2, -1, -1, -1, -1, -1)) shouldBe false
+    }
+
+    @Test
+    fun keyPartialRegExToMatch() {
+        IndexPartialToRegexMatch(1, 5, Regex("^(TestMarykModel)$")).match(
+            initByteArrayByHex("000000546573744d6172796b4d6f64656c0E02FFFFFFFFFF")
+        ) shouldBe true
     }
 
     @Test

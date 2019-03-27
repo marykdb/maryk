@@ -12,6 +12,7 @@ import maryk.core.query.filters.LessThan
 import maryk.core.query.filters.LessThanEquals
 import maryk.core.query.filters.Prefix
 import maryk.core.query.filters.Range
+import maryk.core.query.filters.RegEx
 import maryk.core.query.filters.ValueIn
 import maryk.core.query.pairs.with
 import maryk.lib.extensions.toHex
@@ -358,5 +359,42 @@ class IndexableScanRangeTest {
         scanRange.keyBeforeStart(laterStringIndexValue) shouldBe false
         scanRange.keyOutOfRange(laterStringIndexValue) shouldBe true
         scanRange.matchesPartials(laterStringIndexValue) shouldBe true
+    }
+
+    @Test
+    fun convertRegexFilterToScanRange() {
+        val filter = RegEx(
+            CompleteMarykModel.ref { string } with Regex("^[A-Z]an.*$")
+        )
+
+        val scanRange = string.ref().createScanRange(filter, keyScanRange)
+
+        scanRange.start.toHex() shouldBe ""
+        scanRange.end?.toHex() shouldBe ""
+
+        val matchStringIndexValue = string.ref().toStorageByteArrayForIndex(
+            matchDO, matchKey.bytes
+        )!!
+
+        scanRange.keyBeforeStart(matchStringIndexValue) shouldBe false
+        scanRange.keyOutOfRange(matchStringIndexValue) shouldBe false
+        // Only one to match with the RegEx
+        scanRange.matchesPartials(matchStringIndexValue) shouldBe true
+
+        val earlierStringIndexValue = string.ref().toStorageByteArrayForIndex(
+            earlierDO, earlierKey.bytes
+        )!!
+
+        scanRange.keyBeforeStart(earlierStringIndexValue) shouldBe false
+        scanRange.keyOutOfRange(earlierStringIndexValue) shouldBe false
+        scanRange.matchesPartials(earlierStringIndexValue) shouldBe false
+
+        val laterStringIndexValue = string.ref().toStorageByteArrayForIndex(
+            laterDO, laterKey.bytes
+        )!!
+
+        scanRange.keyBeforeStart(laterStringIndexValue) shouldBe false
+        scanRange.keyOutOfRange(laterStringIndexValue) shouldBe false
+        scanRange.matchesPartials(laterStringIndexValue) shouldBe false
     }
 }

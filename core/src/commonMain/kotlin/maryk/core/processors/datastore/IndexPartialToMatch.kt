@@ -21,7 +21,8 @@ internal class IndexPartialToMatch(
     override val indexableIndex: Int,
     override val fromByteIndex: Int?,
     override val keySize: Int,
-    val toMatch: ByteArray
+    val toMatch: ByteArray,
+    val partialMatch: Boolean = false
 ) : IsIndexPartialToMatch() {
     /** Matches [bytes] to partial and returns true if matches */
     override fun match(bytes: ByteArray, offset: Int) =

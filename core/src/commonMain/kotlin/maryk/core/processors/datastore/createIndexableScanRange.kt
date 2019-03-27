@@ -51,15 +51,23 @@ private fun createScanRangeFromParts(
                     if (startKeyIndex == keyIndex) start += it
                     if (endKeyIndex == keyIndex) end += it
                 }
-                // Add size checker
-                toAdd.add(
-                    IndexPartialSizeToMatch(
-                        keyIndex,
-                        null,
-                        keyPart.keySize,
-                        keyPart.toMatch.size
+
+                if (!keyPart.partialMatch) {
+                    // Add size checker for exact matches
+                    toAdd.add(
+                        IndexPartialSizeToMatch(
+                            keyIndex,
+                            null,
+                            keyPart.keySize,
+                            keyPart.toMatch.size
+                        )
                     )
-                )
+                } else {
+                    // Ensure no more parts are added with partial match by invalidating the keyIndex
+                    if (startKeyIndex == keyIndex) startKeyIndex = -1
+                    if (endKeyIndex == keyIndex) endKeyIndex = -1
+                }
+
                 toRemove.add(keyPart)
             }
             is IndexPartialToBeBigger -> {

@@ -18,6 +18,7 @@ import maryk.core.query.filters.IsFilter
 import maryk.core.query.filters.IsReferenceValuePairsFilter
 import maryk.core.query.filters.LessThan
 import maryk.core.query.filters.LessThanEquals
+import maryk.core.query.filters.Prefix
 import maryk.core.query.filters.Range
 import maryk.core.query.filters.ValueIn
 import maryk.core.query.pairs.ReferenceValuePair
@@ -47,6 +48,18 @@ fun convertFilterToIndexPartsToMatch(
                 val keyIndex = convertIndex?.invoke(index)
                 listOfIndexParts.add(
                     IndexPartialToMatch(index, keyIndex, keySize, byteArray)
+                )
+            }
+        }
+        is Prefix -> {
+            walkFilterReferencesAndValues(
+                filter,
+                indexable,
+                listOfUniqueFilters
+            ) { index, _, byteArray ->
+                val keyIndex = convertIndex?.invoke(index)
+                listOfIndexParts.add(
+                    IndexPartialToMatch(index, keyIndex, keySize, byteArray, partialMatch = true)
                 )
             }
         }

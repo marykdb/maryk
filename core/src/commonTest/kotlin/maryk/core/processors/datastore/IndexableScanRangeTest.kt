@@ -10,6 +10,7 @@ import maryk.core.query.filters.GreaterThan
 import maryk.core.query.filters.GreaterThanEquals
 import maryk.core.query.filters.LessThan
 import maryk.core.query.filters.LessThanEquals
+import maryk.core.query.filters.Prefix
 import maryk.core.query.filters.Range
 import maryk.core.query.filters.ValueIn
 import maryk.core.query.pairs.with
@@ -18,6 +19,7 @@ import maryk.lib.time.Date
 import maryk.lib.time.Time
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.CompleteMarykModel.Properties.number
+import maryk.test.models.CompleteMarykModel.Properties.string
 import maryk.test.models.CompleteMarykModel.Properties.time
 import maryk.test.models.MarykEnum.O1
 import maryk.test.models.MarykEnumEmbedded.E1
@@ -40,6 +42,7 @@ class IndexableScanRangeTest {
     )
 
     private val earlierDO = CompleteMarykModel(
+        string = "Arend",
         number= 2u,
         time = Time(12, 11, 10),
         booleanForKey = true,
@@ -53,6 +56,7 @@ class IndexableScanRangeTest {
     )!!
 
     private val matchDO = CompleteMarykModel(
+        string = "Jannes",
         number= 5u,
         time = Time(11, 10, 9),
         booleanForKey = true,
@@ -66,6 +70,7 @@ class IndexableScanRangeTest {
     )!!
 
     private val laterDO = CompleteMarykModel(
+        string = "Karel",
         number= 9u,
         time = Time(9, 8, 7),
         booleanForKey = true,
@@ -317,5 +322,41 @@ class IndexableScanRangeTest {
         scanRange.keyBeforeStart(laterIndexValue) shouldBe false
         scanRange.keyOutOfRange(laterIndexValue) shouldBe false
         scanRange.matchesPartials(laterIndexValue) shouldBe true
+    }
+
+    @Test
+    fun convertPrefixFilterToScanRange() {
+        val filter = Prefix(
+            CompleteMarykModel.ref { string } with "Jan"
+        )
+
+        val scanRange = string.ref().createScanRange(filter, keyScanRange)
+
+        scanRange.start.toHex() shouldBe "4a616e"
+        scanRange.end?.toHex() shouldBe "4a616e"
+
+        val matchStringIndexValue = string.ref().toStorageByteArrayForIndex(
+            matchDO, matchKey.bytes
+        )!!
+
+        scanRange.keyBeforeStart(matchStringIndexValue) shouldBe false
+        scanRange.keyOutOfRange(matchStringIndexValue) shouldBe false
+        scanRange.matchesPartials(matchStringIndexValue) shouldBe true
+
+        val earlierStringIndexValue = string.ref().toStorageByteArrayForIndex(
+            earlierDO, earlierKey.bytes
+        )!!
+
+        scanRange.keyBeforeStart(earlierStringIndexValue) shouldBe true
+        scanRange.keyOutOfRange(earlierStringIndexValue) shouldBe false
+        scanRange.matchesPartials(earlierStringIndexValue) shouldBe true
+
+        val laterStringIndexValue = string.ref().toStorageByteArrayForIndex(
+            laterDO, laterKey.bytes
+        )!!
+
+        scanRange.keyBeforeStart(laterStringIndexValue) shouldBe false
+        scanRange.keyOutOfRange(laterStringIndexValue) shouldBe true
+        scanRange.matchesPartials(laterStringIndexValue) shouldBe true
     }
 }

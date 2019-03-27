@@ -31,6 +31,7 @@ private fun createScanRangeFromParts(
     var startInclusive = true
     var endInclusive = true
 
+    val toAdd = mutableListOf<IsIndexPartialToMatch>()
     val toRemove = mutableListOf<IsIndexPartialToMatch>()
     for (keyPart in listOfParts) {
         if (keyIndex + 1 == keyPart.indexableIndex) {
@@ -50,6 +51,15 @@ private fun createScanRangeFromParts(
                     if (startKeyIndex == keyIndex) start += it
                     if (endKeyIndex == keyIndex) end += it
                 }
+                // Add size checker
+                toAdd.add(
+                    IndexPartialSizeToMatch(
+                        keyIndex,
+                        null,
+                        keyPart.keySize,
+                        keyPart.toMatch.size
+                    )
+                )
                 toRemove.add(keyPart)
             }
             is IndexPartialToBeBigger -> {
@@ -93,9 +103,8 @@ private fun createScanRangeFromParts(
         }
     }
 
-    for (partToRemove in toRemove) {
-        listOfParts.remove(partToRemove)
-    }
+    listOfParts.removeAll(toRemove)
+    listOfParts.addAll(toAdd)
 
     return IndexableScanRange(
         start = start.toByteArray(),

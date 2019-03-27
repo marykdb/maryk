@@ -16,6 +16,7 @@ sealed class IsIndexPartialToMatch {
     abstract fun match(bytes: ByteArray, offset: Int = 0): Boolean
 }
 
+/** Matcher for exact matches */
 internal class IndexPartialToMatch(
     override val indexableIndex: Int,
     override val fromByteIndex: Int?,
@@ -25,6 +26,19 @@ internal class IndexPartialToMatch(
     /** Matches [bytes] to partial and returns true if matches */
     override fun match(bytes: ByteArray, offset: Int) =
         bytes.matchPart(offset + getByteIndex(bytes), toMatch)
+}
+
+/** Size matcher for exact matches in partials */
+internal class IndexPartialSizeToMatch(
+    override val indexableIndex: Int,
+    override val fromByteIndex: Int?,
+    override val keySize: Int,
+    val size: Int
+) : IsIndexPartialToMatch() {
+    /** Matches size encoded in [bytes] to partial size and returns true if matches */
+    override fun match(bytes: ByteArray, offset: Int): Boolean {
+        return findByteIndexAndSizeByPartIndex(indexableIndex, bytes, keySize).second == size
+    }
 }
 
 /** Partial [toBeSmaller] for indexable part from [fromByteIndex]. If [inclusive] then include value itself too  */

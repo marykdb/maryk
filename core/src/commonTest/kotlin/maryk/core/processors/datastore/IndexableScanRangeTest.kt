@@ -1,5 +1,6 @@
 package maryk.core.processors.datastore
 
+import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.models.key
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.types.TypedValue
@@ -25,12 +26,12 @@ import kotlin.test.Test
 
 class IndexableScanRangeTest {
     private val keyScanRange = KeyScanRange(
-        start = byteArrayOf(0, 0, 0, 0, 0),
+        start = ByteArray(23) { 0 },
         startInclusive = true,
-        end = byteArrayOf(-1, -1, -1, -1, -1),
-        endInclusive = false,
+        end = ByteArray(23) { MAX_BYTE },
+        endInclusive = true,
         equalPairs = listOf(),
-        keySize = 5
+        keySize = 23
     )
 
     private val indexable = Multiple(

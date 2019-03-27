@@ -12,6 +12,12 @@ class IndexPartialToMatchTest {
     }
 
     @Test
+    fun keyPartialSizeToMatch() {
+        IndexPartialSizeToMatch(1, null, 5, 3).match(byteArrayOf(0, 0, 1, 3, 5, 3, 2, -1, -1, -1, -1, -1)) shouldBe true
+        IndexPartialSizeToMatch(1, null, 5, 3).match(byteArrayOf(0, 0, 9, 8, 7, 8, 4, 2, -1, -1, -1, -1, -1)) shouldBe false
+    }
+
+    @Test
     fun keyPartialToBeBigger() {
         val toBeSmaller = byteArrayOf(1, 3)
         IndexPartialToBeBigger(1, 2, 5, toBeSmaller, true).match(byteArrayOf(0, 0, 2, 3, 5)) shouldBe true

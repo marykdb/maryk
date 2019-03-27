@@ -62,7 +62,7 @@ class KeyScanRangeTest {
 
         scanRange.start.toHex() shouldBe "7fffffa3f445ec7fff"
         scanRange.startInclusive shouldBe true
-        scanRange.end?.toHex() shouldBe "7fffffa3f445ec7fff"
+        scanRange.end?.toHex() shouldBe "7fffffa3f445ec7fffffff"
         scanRange.endInclusive shouldBe true
 
         scanRange.keyBeforeStart(match.bytes) shouldBe false
@@ -89,7 +89,7 @@ class KeyScanRangeTest {
         // Order is reversed for timestamp
         scanRange.start.toHex() shouldBe ""
         scanRange.startInclusive shouldBe true
-        scanRange.end?.toHex() shouldBe "7fffffa3f445ec7fff"
+        scanRange.end?.toHex() shouldBe "7fffffa3f445ec7fff0000"
         scanRange.endInclusive shouldBe false
 
         scanRange.keyBeforeStart(match.bytes) shouldBe false
@@ -116,7 +116,7 @@ class KeyScanRangeTest {
         // Order is reversed for timestamp
         scanRange.start.toHex() shouldBe ""
         scanRange.startInclusive shouldBe true
-        scanRange.end?.toHex() shouldBe "7fffffa3f445ec7fff"
+        scanRange.end?.toHex() shouldBe "7fffffa3f445ec7fffffff"
         scanRange.endInclusive shouldBe true
 
         scanRange.keyBeforeStart(match.bytes) shouldBe false
@@ -143,7 +143,7 @@ class KeyScanRangeTest {
         // Order is reversed for timestamp
         scanRange.start.toHex() shouldBe "7fffffa3f445ec7fff"
         scanRange.startInclusive shouldBe false
-        scanRange.end?.toHex() shouldBe ""
+        scanRange.end?.toHex() shouldBe "ffffffffffffffffffffff"
         scanRange.endInclusive shouldBe true
 
         scanRange.keyBeforeStart(match.bytes) shouldBe true
@@ -169,7 +169,7 @@ class KeyScanRangeTest {
 
         // Order is reversed for timestamp
         scanRange.start.toHex() shouldBe "7fffffa3f445ec7fff"
-        scanRange.end?.toHex() shouldBe ""
+        scanRange.end?.toHex() shouldBe "ffffffffffffffffffffff"
 
         scanRange.keyBeforeStart(match.bytes) shouldBe false
         scanRange.keyOutOfRange(match.bytes) shouldBe false
@@ -194,7 +194,7 @@ class KeyScanRangeTest {
 
         scanRange.start.toHex() shouldBe "7fffffa3f445cc7ffd"
         scanRange.startInclusive shouldBe true
-        scanRange.end?.toHex() shouldBe "7fffffa3f446027ffe"
+        scanRange.end?.toHex() shouldBe "7fffffa3f446027ffeffff"
         scanRange.endInclusive shouldBe true
 
         scanRange.keyBeforeStart(match.bytes) shouldBe false
@@ -224,7 +224,7 @@ class KeyScanRangeTest {
 
         scanRange.start.toHex() shouldBe "7fffffa3f44d087ffc"
         scanRange.startInclusive shouldBe true
-        scanRange.end?.toHex() shouldBe "7fffffa3f44d827ffe"
+        scanRange.end?.toHex() shouldBe "7fffffa3f44d827ffeffff"
         scanRange.endInclusive shouldBe true
 
         val match = Log.key(Log("message", ERROR, DateTime(2018, 12, 8, 12, 2, 2, 2)))
@@ -283,7 +283,7 @@ class KeyScanRangeTest {
 
         scanRange.start.toHex() shouldBe ""
         scanRange.startInclusive shouldBe true
-        scanRange.end?.toHex() shouldBe ""
+        scanRange.end?.toHex() shouldBe "ffffffffffffffffffffff"
         scanRange.endInclusive shouldBe true
 
         scanRange.keyBeforeStart(match.bytes) shouldBe false

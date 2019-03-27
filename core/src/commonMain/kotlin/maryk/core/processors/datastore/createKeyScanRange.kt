@@ -1,5 +1,6 @@
 package maryk.core.processors.datastore
 
+import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.query.filters.IsFilter
 import maryk.core.query.pairs.ReferenceValuePair
@@ -104,6 +105,11 @@ private fun <DM : IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
     }
 
     val startArray = start.toByteArray()
+
+    // Fill key with MAX bytes so it properly goes to the end
+    for (it in 1..(this.keyByteSize - end.size)) {
+        end += if (endInclusive) MAX_BYTE else 0
+    }
 
     return KeyScanRange(
         start = if (startKey != null && startArray < startKey) startKey else startArray,

@@ -28,8 +28,8 @@ private fun <DM : IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
     listOfEqualPairs: List<ReferenceValuePair<Any>>,
     listOfUniqueFilters: List<UniqueToMatch>
 ): KeyScanRange {
-    val start = mutableListOf<Byte>()
-    val end = mutableListOf<Byte>()
+    val start = ArrayList<Byte>(this.keyByteSize)
+    val end = ArrayList<Byte>(this.keyByteSize)
 
     var startKeyIndex = -1 // only highered on exact matches so breaks if too low
     var endKeyIndex = -1 // only highered on exact matches so breaks if too low
@@ -104,12 +104,17 @@ private fun <DM : IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
         listOfParts.remove(partToRemove)
     }
 
-    val startArray = start.toByteArray()
+    // Fill start key with MAX bytes so it properly goes to the end
+    for (it in 1..(this.keyByteSize - start.size)) {
+        start += if (startInclusive) 0 else MAX_BYTE
+    }
 
-    // Fill key with MAX bytes so it properly goes to the end
+    // Fill end key with MAX bytes so it properly goes to the end
     for (it in 1..(this.keyByteSize - end.size)) {
         end += if (endInclusive) MAX_BYTE else 0
     }
+
+    val startArray = start.toByteArray()
 
     return KeyScanRange(
         start = if (startKey != null && startArray < startKey) startKey else startArray,

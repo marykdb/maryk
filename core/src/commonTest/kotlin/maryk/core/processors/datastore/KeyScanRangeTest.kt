@@ -60,7 +60,7 @@ class KeyScanRangeTest {
 
         val scanRange = Log.createScanRange(filter, null)
 
-        scanRange.start.toHex() shouldBe "7fffffa3f445ec7fff"
+        scanRange.start.toHex() shouldBe "7fffffa3f445ec7fff0000"
         scanRange.startInclusive shouldBe true
         scanRange.end?.toHex() shouldBe "7fffffa3f445ec7fffffff"
         scanRange.endInclusive shouldBe true
@@ -87,7 +87,7 @@ class KeyScanRangeTest {
         val scanRange = Log.createScanRange(filter, null)
 
         // Order is reversed for timestamp
-        scanRange.start.toHex() shouldBe ""
+        scanRange.start.toHex() shouldBe "0000000000000000000000"
         scanRange.startInclusive shouldBe true
         scanRange.end?.toHex() shouldBe "7fffffa3f445ec7fff0000"
         scanRange.endInclusive shouldBe false
@@ -114,7 +114,7 @@ class KeyScanRangeTest {
         val scanRange = Log.createScanRange(filter, null)
 
         // Order is reversed for timestamp
-        scanRange.start.toHex() shouldBe ""
+        scanRange.start.toHex() shouldBe "0000000000000000000000"
         scanRange.startInclusive shouldBe true
         scanRange.end?.toHex() shouldBe "7fffffa3f445ec7fffffff"
         scanRange.endInclusive shouldBe true
@@ -141,7 +141,7 @@ class KeyScanRangeTest {
         val scanRange = Log.createScanRange(filter, null)
 
         // Order is reversed for timestamp
-        scanRange.start.toHex() shouldBe "7fffffa3f445ec7fff"
+        scanRange.start.toHex() shouldBe "7fffffa3f445ec7fffffff"
         scanRange.startInclusive shouldBe false
         scanRange.end?.toHex() shouldBe "ffffffffffffffffffffff"
         scanRange.endInclusive shouldBe true
@@ -168,8 +168,10 @@ class KeyScanRangeTest {
         val scanRange = Log.createScanRange(filter, null)
 
         // Order is reversed for timestamp
-        scanRange.start.toHex() shouldBe "7fffffa3f445ec7fff"
+        scanRange.start.toHex() shouldBe "7fffffa3f445ec7fff0000"
+        scanRange.startInclusive shouldBe true
         scanRange.end?.toHex() shouldBe "ffffffffffffffffffffff"
+        scanRange.endInclusive shouldBe true
 
         scanRange.keyBeforeStart(match.bytes) shouldBe false
         scanRange.keyOutOfRange(match.bytes) shouldBe false
@@ -192,7 +194,7 @@ class KeyScanRangeTest {
 
         val scanRange = Log.createScanRange(filter, null)
 
-        scanRange.start.toHex() shouldBe "7fffffa3f445cc7ffd"
+        scanRange.start.toHex() shouldBe "7fffffa3f445cc7ffd0000"
         scanRange.startInclusive shouldBe true
         scanRange.end?.toHex() shouldBe "7fffffa3f446027ffeffff"
         scanRange.endInclusive shouldBe true
@@ -222,7 +224,7 @@ class KeyScanRangeTest {
 
         val scanRange = Log.createScanRange(filter, null)
 
-        scanRange.start.toHex() shouldBe "7fffffa3f44d087ffc"
+        scanRange.start.toHex() shouldBe "7fffffa3f44d087ffc0000"
         scanRange.startInclusive shouldBe true
         scanRange.end?.toHex() shouldBe "7fffffa3f44d827ffeffff"
         scanRange.endInclusive shouldBe true
@@ -255,7 +257,7 @@ class KeyScanRangeTest {
 
         val scanRange = Log.createScanRange(filter, null)
 
-        scanRange.start.toHex() shouldBe "7fffffa3f445ec7fff"
+        scanRange.start.toHex() shouldBe "7fffffa3f445ec7fff0000"
         scanRange.startInclusive shouldBe true
         scanRange.end?.toHex() shouldBe "7fffffa3f445ec7fff0003"
         scanRange.endInclusive shouldBe false
@@ -281,7 +283,7 @@ class KeyScanRangeTest {
 
         val scanRange = Log.createScanRange(filter, null)
 
-        scanRange.start.toHex() shouldBe ""
+        scanRange.start.toHex() shouldBe "0000000000000000000000"
         scanRange.startInclusive shouldBe true
         scanRange.end?.toHex() shouldBe "ffffffffffffffffffffff"
         scanRange.endInclusive shouldBe true

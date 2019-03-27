@@ -1,6 +1,6 @@
 package maryk.lib.extensions.compare
 
-private val MAX_BYTE: UByte = 0b1111_1111.toUByte()
+private val MAX_BYTE = 0b1111_1111.toUByte()
 
 /**
  * Compares ByteArray to [other] ByteArray.
@@ -67,7 +67,7 @@ fun ByteArray.matchPart(fromIndex: Int, bytes: ByteArray): Boolean {
     return true
 }
 
-/** Match given [bytes] with [fromIndex] */
+/** Match given [bytes] */
 fun ByteArray.matches(bytes: ByteArray): Boolean {
     if (this.size != bytes.size) return false
 

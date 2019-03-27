@@ -37,6 +37,8 @@ private fun createScanRangeFromParts(
             keyIndex++ // continue to next indexable
         } else if (keyIndex != keyPart.indexableIndex) {
             break // Break loop since keyIndex is larger than expected or smaller which should never happen
+        } else if (!startInclusive && !endInclusive) {
+            break // Break loop finding parts since no inclusive scan parts are possible
         }
 
         when (keyPart) {

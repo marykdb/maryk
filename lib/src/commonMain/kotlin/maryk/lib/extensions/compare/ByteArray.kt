@@ -77,3 +77,22 @@ fun ByteArray.matches(bytes: ByteArray): Boolean {
     return true
 }
 
+/**
+ * Higher the range with 1 byte while keeping length the same
+ * Will return same byte array if it cannot be highered
+ */
+fun ByteArray.nextByteInSameLength(): ByteArray {
+    val newArray = this.copyOf()
+    for (i in newArray.lastIndex downTo 0) {
+        val v = newArray[i].toUByte()
+
+        if (v < MAX_BYTE) {
+            newArray[i] = (v + 1.toUByte()).toByte()
+            break
+        } else if (i == 0) {
+            return this
+            // All bytes are max bytes
+        }
+    }
+    return newArray
+}

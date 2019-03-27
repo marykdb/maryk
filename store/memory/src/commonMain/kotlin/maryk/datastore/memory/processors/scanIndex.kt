@@ -11,6 +11,7 @@ import maryk.core.query.requests.IsScanRequest
 import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataStore
 import maryk.lib.extensions.compare.compareTo
+import maryk.lib.extensions.compare.nextByteInSameLength
 import kotlin.math.min
 
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
@@ -64,11 +65,22 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
                 if (endRange.isEmpty()) {
                     dataStore.records.lastIndex
                 } else {
-                    index.records.binarySearch { it.value.compareTo(endRange) }.let { valueIndex ->
-                        when {
-                            valueIndex < 0 -> valueIndex * -1 - 1 // If negative start at first entry point
-                            !indexScanRange.endInclusive -> valueIndex - 1 // Skip the match if not inclusive
-                            else -> valueIndex
+                    val endRangeToSearch = if (indexScanRange.endInclusive) {
+                        endRange.nextByteInSameLength()
+                    } else {
+                        endRange
+                    }
+
+                    if (indexScanRange.endInclusive && endRangeToSearch === endRange) {
+                        // If was not highered it was not possible so scan to lastIndex
+                        index.records.lastIndex
+                    } else {
+                        index.records.binarySearch { it.value.compareTo(endRangeToSearch) }.let { valueIndex ->
+                            when {
+                                valueIndex < 0 -> valueIndex * -1 - 1 // If negative start at first entry point
+                                !indexScanRange.endInclusive -> valueIndex - 1 // Skip the match if not inclusive
+                                else -> valueIndex
+                            }
                         }
                     }
                 }

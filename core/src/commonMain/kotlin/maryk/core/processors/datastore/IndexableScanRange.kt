@@ -1,7 +1,5 @@
 package maryk.core.processors.datastore
 
-import maryk.lib.extensions.compare.compareDefinedTo
-
 /**
  * Defines a range to scan on Indexables. Also contains partial matches to check.
  */
@@ -13,12 +11,6 @@ class IndexableScanRange internal constructor(
     partialMatches: List<IsIndexPartialToMatch>? = null,
     val keyScanRange: KeyScanRange
 ): ScanRange(start, startInclusive, end, endInclusive, partialMatches) {
-    override fun keyOutOfRange(key: ByteArray, offset: Int) = end?.let {
-        end.compareDefinedTo(key, offset).let {
-            if (endInclusive) it < 0 else it <= 0
-        }
-    } ?: false
-
     override fun matchesPartials(key: ByteArray, offset: Int): Boolean {
         val keyIndex = key.size - keyScanRange.keySize
 
@@ -30,6 +22,5 @@ class IndexableScanRange internal constructor(
                 false
             else -> super.matchesPartials(key, offset)
         }
-
     }
 }

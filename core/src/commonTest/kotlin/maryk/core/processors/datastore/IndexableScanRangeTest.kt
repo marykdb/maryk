@@ -85,8 +85,10 @@ class IndexableScanRangeTest {
 
         val scanRange = indexable.createScanRange(filter, keyScanRange)
 
-        scanRange.start.toHex() shouldBe "0000000501"
-        scanRange.end?.toHex() shouldBe "0000000501"
+        scanRange.start.toHex() shouldBe "00000005"
+        scanRange.startInclusive shouldBe true
+        scanRange.end?.toHex() shouldBe "00000005"
+        scanRange.endInclusive shouldBe true
 
         scanRange.keyBeforeStart(matchIndexValue) shouldBe false
         scanRange.keyOutOfRange(matchIndexValue) shouldBe false
@@ -109,8 +111,10 @@ class IndexableScanRangeTest {
 
         val scanRange = indexable.createScanRange(filter, keyScanRange)
 
-        scanRange.start.toHex() shouldBe "0000000502"
+        scanRange.start.toHex() shouldBe "00000005"
+        scanRange.startInclusive shouldBe false
         scanRange.end?.toHex() shouldBe ""
+        scanRange.endInclusive shouldBe true
 
         scanRange.keyBeforeStart(matchIndexValue) shouldBe true // Because should skip
         scanRange.keyOutOfRange(matchIndexValue) shouldBe false
@@ -133,8 +137,10 @@ class IndexableScanRangeTest {
 
         val scanRange = indexable.createScanRange(filter, keyScanRange)
 
-        scanRange.start.toHex() shouldBe "0000000501"
+        scanRange.start.toHex() shouldBe "00000005"
+        scanRange.startInclusive shouldBe true
         scanRange.end?.toHex() shouldBe ""
+        scanRange.endInclusive shouldBe true
 
         scanRange.keyBeforeStart(matchIndexValue) shouldBe false
         scanRange.keyOutOfRange(matchIndexValue) shouldBe false
@@ -158,7 +164,9 @@ class IndexableScanRangeTest {
         val scanRange = indexable.createScanRange(filter, keyScanRange)
 
         scanRange.start.toHex() shouldBe ""
-        scanRange.end?.toHex() shouldBe "0000000500"
+        scanRange.startInclusive shouldBe true
+        scanRange.end?.toHex() shouldBe "00000005"
+        scanRange.endInclusive shouldBe false
 
         scanRange.keyBeforeStart(matchIndexValue) shouldBe false
         scanRange.keyOutOfRange(matchIndexValue) shouldBe true // because should not be included
@@ -182,7 +190,9 @@ class IndexableScanRangeTest {
         val scanRange = indexable.createScanRange(filter, keyScanRange)
 
         scanRange.start.toHex() shouldBe ""
-        scanRange.end?.toHex() shouldBe "0000000501"
+        scanRange.startInclusive shouldBe true
+        scanRange.end?.toHex() shouldBe "00000005"
+        scanRange.endInclusive shouldBe true
 
         scanRange.keyBeforeStart(matchIndexValue) shouldBe false
         scanRange.keyOutOfRange(matchIndexValue) shouldBe false
@@ -205,8 +215,10 @@ class IndexableScanRangeTest {
 
         val scanRange = indexable.createScanRange(filter, keyScanRange)
 
-        scanRange.start.toHex() shouldBe "0000000401"
-        scanRange.end?.toHex() shouldBe "0000000601"
+        scanRange.start.toHex() shouldBe "00000004"
+        scanRange.startInclusive shouldBe true
+        scanRange.end?.toHex() shouldBe "00000006"
+        scanRange.endInclusive shouldBe true
 
         scanRange.keyBeforeStart(matchIndexValue) shouldBe false
         scanRange.keyOutOfRange(matchIndexValue) shouldBe false
@@ -233,8 +245,10 @@ class IndexableScanRangeTest {
 
         val scanRange = indexable.createScanRange(filter, keyScanRange)
 
-        scanRange.start.toHex() shouldBe "0000000301"
-        scanRange.end?.toHex() shouldBe "0000000601"
+        scanRange.start.toHex() shouldBe "00000003"
+        scanRange.startInclusive shouldBe true
+        scanRange.end?.toHex() shouldBe "00000006"
+        scanRange.endInclusive shouldBe true
 
         scanRange.keyBeforeStart(matchIndexValue) shouldBe false
         scanRange.keyOutOfRange(matchIndexValue) shouldBe false
@@ -262,8 +276,10 @@ class IndexableScanRangeTest {
 
         val scanRange = indexable.createScanRange(filter, keyScanRange)
 
-        scanRange.start.toHex() shouldBe "0000000501"
-        scanRange.end?.toHex() shouldBe "0000000501029d673000"
+        scanRange.start.toHex() shouldBe "00000005"
+        scanRange.startInclusive shouldBe true
+        scanRange.end?.toHex() shouldBe "00000005029d6730"
+        scanRange.endInclusive shouldBe false
 
         scanRange.keyBeforeStart(matchIndexValue) shouldBe false
         scanRange.keyOutOfRange(matchIndexValue) shouldBe true

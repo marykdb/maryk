@@ -24,8 +24,8 @@ private fun createScanRangeFromParts(
     val start = mutableListOf<Byte>()
     val end = mutableListOf<Byte>()
 
-    var startKeyIndex = -1
-    var endKeyIndex = -1
+    var startKeyIndex = -1 // only highered on exact matches so breaks if too low
+    var endKeyIndex = -1 // only highered on exact matches so breaks if too low
     var keyIndex = -1
 
     var startInclusive = true
@@ -48,9 +48,6 @@ private fun createScanRangeFromParts(
                     if (startKeyIndex == keyIndex) start += it
                     if (endKeyIndex == keyIndex) end += it
                 }
-                // Separator to 1 so match is exact
-                if (startKeyIndex == keyIndex) start += 1
-                if (endKeyIndex == keyIndex) end += 1
                 toRemove.add(keyPart)
             }
             is IndexPartialToBeBigger -> {
@@ -59,8 +56,6 @@ private fun createScanRangeFromParts(
                     keyPart.toBeSmaller.forEach {
                         start += it
                     }
-                    // Separator to 1 so match is exact
-                    start += if (keyPart.inclusive) 1.toByte() else 2.toByte()
                     startInclusive = keyPart.inclusive
 
                     toRemove.add(keyPart)
@@ -73,8 +68,6 @@ private fun createScanRangeFromParts(
                     keyPart.toBeBigger.forEach {
                         end += it
                     }
-                    // Separator to 1 so match is exact
-                    end += if (keyPart.inclusive) 1.toByte() else 0.toByte()
                     endInclusive = keyPart.inclusive
 
                     toRemove.add(keyPart)
@@ -86,7 +79,6 @@ private fun createScanRangeFromParts(
                     keyPart.toBeOneOf.first().forEach {
                         start += it
                     }
-                    start += 1 // Separator to 1 so match is exact
                 }
 
                 if (endKeyIndex == keyIndex - 1 && endInclusive) {
@@ -94,7 +86,6 @@ private fun createScanRangeFromParts(
                     keyPart.toBeOneOf.last().forEach {
                         end += it
                     }
-                    end += 1 // Separator to 1 so match is exact
                 }
             }
         }

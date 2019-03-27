@@ -22,13 +22,12 @@ interface IsIndexablePropertyReference<T : Any> : IsIndexable, IsBytesEncodable<
     override fun calculateStorageByteLengthForIndex(values: IsValuesGetter, key: ByteArray): Int {
         val value = this.getValue(values)
         val length = this.calculateStorageByteLength(value)
-        return length + 1 + length.calculateVarByteLength() + key.size
+        return length + length.calculateVarByteLength() + key.size
     }
 
     override fun writeStorageBytesForIndex(values: IsValuesGetter, key: ByteArray, writer: (byte: Byte) -> Unit) {
         val value = this.getValue(values)
         this.writeStorageBytes(value, writer)
-        writer(1) // add end separator
         this.calculateStorageByteLength(value).writeVarBytes(writer) // write value length
         key.forEach(writer) // write key to end
     }

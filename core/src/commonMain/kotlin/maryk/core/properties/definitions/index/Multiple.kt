@@ -28,7 +28,7 @@ data class Multiple(
             @Suppress("UNCHECKED_CAST")
             val value = (reference as IsIndexablePropertyReference<Any>).getValue(values)
             val length = reference.calculateStorageByteLength(value)
-            totalBytes += length + 1 + length.calculateVarByteLength()
+            totalBytes += length + length.calculateVarByteLength()
         }
         return totalBytes + key.size
     }
@@ -42,7 +42,6 @@ data class Multiple(
             sizes[keyIndex] = reference.calculateStorageByteLength(value)
 
             reference.writeStorageBytes(value, writer)
-            writer(1) // Add separator always after value
         }
 
         // Write the sizes in backwards order

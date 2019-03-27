@@ -13,7 +13,7 @@ import kotlin.test.Test
 
 class DataObjectChangeTest {
     private val key1 = TestMarykModel.key(
-        byteArrayOf(0, 0, 2, 43, 1, 1, 1, 0, 2)
+        byteArrayOf(0, 0, 2, 43, 1, 0, 2)
     )
 
     private val subModel = TestMarykModel.ref { embeddedValues }
@@ -52,7 +52,7 @@ class DataObjectChangeTest {
     @Test
     fun convertToYAMLAndBack() {
         checkYamlConversion(this.dataObjectChange, DataObjectChange, { this.context }) shouldBe """
-        key: AAACKwEBAQAC
+        key: AAACKwEAAg
         changes:
         - !Change
           embeddedValues.value: new

@@ -20,14 +20,14 @@ an index.
 
 ## Properties which can be used in a key
 
-All fixed byte length properties can be used as a key part. This so key
+All fixed byte length properties can be used as a key part. This way key
 structure is always predictable and the location of key elements can
 be used in scans.
 
 This means you can use numbers, dates & times, fixed bytes, references,
 enums, booleans, type of multi type objects and ValueDataModels which can
 contain all the same kind of values. You cannot use Strings, flexible
-bytes, Sets, Lists, Maps and Submodels since their byte length is not 
+bytes, Sets, Lists, Maps and embedded models since their byte length is not 
 fixed.
 
 ## The order of keys
@@ -52,4 +52,5 @@ the key you need to include it after the time so all data is still ordered
 on that time.
 
 - If date with millisecond precision by itself is not enough, it is possible
-to add a random number to the field. Set random as true.
+to add a random number to the field. Set random to true on the property 
+definition.

@@ -24,7 +24,7 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 class ChangesResponseTest {
-    private val key = TestMarykModel.key("AAACKwEBAQAC")
+    private val key = TestMarykModel.key("AAACKwEAAg")
 
     private val subModel = TestMarykModel.ref { embeddedValues }
 
@@ -79,7 +79,7 @@ class ChangesResponseTest {
         checkYamlConversion(this.objectChangesResponse, ChangesResponse, { this.context }) shouldBe """
         dataModel: TestMarykModel
         changes:
-        - key: AAACKwEBAQAC
+        - key: AAACKwEAAg
           changes:
           - version: 219674127
             changes:

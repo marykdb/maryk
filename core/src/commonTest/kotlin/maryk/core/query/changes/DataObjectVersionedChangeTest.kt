@@ -13,7 +13,7 @@ import kotlin.test.Test
 
 class DataObjectVersionedChangeTest {
     private val key1 = TestMarykModel.key(
-        byteArrayOf(0, 0, 2, 43, 1, 1, 1, 0, 2)
+        byteArrayOf(0, 0, 2, 43, 1, 0, 2)
     )
 
     private val subModel = TestMarykModel.ref { embeddedValues }
@@ -61,7 +61,7 @@ class DataObjectVersionedChangeTest {
     @Test
     fun convertToYAMLAndBack() {
         checkYamlConversion(this.dataObjectVersionedChanges, DataObjectVersionedChange, { this.context }) shouldBe """
-        key: AAACKwEBAQAC
+        key: AAACKwEAAg
         changes:
         - version: 219674127
           changes:

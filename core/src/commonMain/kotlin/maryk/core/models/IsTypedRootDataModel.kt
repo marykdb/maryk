@@ -15,7 +15,7 @@ interface IsTypedRootDataModel<DM : IsRootDataModel<P>, P : IsPropertyDefinition
 
     override fun key(bytes: ByteArray): Key<DM> {
         if (bytes.size != this.keyByteSize) {
-            throw ParseException("Invalid byte length for key")
+            throw ParseException("Invalid byte length for key. Expected $keyByteSize instead of ${bytes.size}")
         }
         return Key(bytes)
     }

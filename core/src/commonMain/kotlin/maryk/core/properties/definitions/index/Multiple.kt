@@ -53,16 +53,11 @@ data class Multiple(
     }
 
     override fun writeStorageBytes(values: IsValuesGetter, writer: (byte: Byte) -> Unit) {
-        for ((keyIndex, reference) in this.references.withIndex()) {
+        for (reference in this.references) {
             @Suppress("UNCHECKED_CAST")
             val value = (reference as IsIndexablePropertyReference<Any>).getValue(values)
 
             reference.writeStorageBytes(value, writer)
-
-            // Add separator only in between
-            if (keyIndex < this.references.lastIndex) {
-                writer(1)
-            }
         }
     }
 

@@ -16,9 +16,9 @@ import kotlin.test.Test
 
 internal class ReferenceDefinitionTest {
     private val refToTest = arrayOf<Key<TestMarykModel>>(
-        Key(ByteArray(9) { ZERO_BYTE }),
-        Key(ByteArray(9) { MAX_BYTE }),
-        Key(ByteArray(9) { if (it % 2 == 1) 0b1000_1000.toByte() else MAX_BYTE })
+        Key(ByteArray(7) { ZERO_BYTE }),
+        Key(ByteArray(7) { MAX_BYTE }),
+        Key(ByteArray(7) { if (it % 2 == 1) 0b1000_1000.toByte() else MAX_BYTE })
     )
 
     val def = ReferenceDefinition(
@@ -31,7 +31,7 @@ internal class ReferenceDefinitionTest {
         minValue = refToTest[0],
         maxValue = refToTest[1],
         dataModel = { TestMarykModel },
-        default = Key(ByteArray(9) { 1 })
+        default = Key(ByteArray(7) { 1 })
     )
 
     @Test
@@ -94,9 +94,9 @@ internal class ReferenceDefinitionTest {
         required: false
         final: true
         unique: true
-        minValue: AAAAAAAAAAAA
-        maxValue: ////////////
-        default: AQEBAQEBAQEB
+        minValue: AAAAAAAAAA
+        maxValue: /////////w
+        default: AQEBAQEBAQ
         dataModel: TestMarykModel
 
         """.trimIndent()

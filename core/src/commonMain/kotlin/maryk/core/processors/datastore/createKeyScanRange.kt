@@ -27,77 +27,73 @@ private fun <DM : IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
     listOfEqualPairs: List<ReferenceValuePair<Any>>,
     listOfUniqueFilters: List<UniqueToMatch>
 ): KeyScanRange {
-    val keySize = this.keyByteSize
-    val start = ByteArray(keySize)
-    val end = ByteArray(keySize) { -1 }
+    val start = mutableListOf<Byte>()
+    val end = mutableListOf<Byte>()
+
+    var startKeyIndex = -1 // only highered on exact matches so breaks if too low
+    var endKeyIndex = -1 // only highered on exact matches so breaks if too low
+    var keyIndex = -1
+
     var startInclusive = true
     var endInclusive = true
 
-    var currentOffset: Int
-    var keyIndex = -1
     val toRemove = mutableListOf<IsIndexPartialToMatch>()
     for (keyPart in listOfParts) {
         if (keyIndex + 1 == keyPart.indexableIndex) {
             keyIndex++ // continue to next indexable
         } else if (keyIndex != keyPart.indexableIndex) {
             break // Break loop since keyIndex is larger than expected or smaller which should never happen
+        } else if (!startInclusive && !endInclusive) {
+            break // Break loop finding parts since no inclusive scan parts are possible
         }
-
-        currentOffset = keyIndices[keyIndex]
 
         when (keyPart) {
             is IndexPartialToMatch -> {
-                keyPart.toMatch.forEachIndexed { i, b ->
-                    start[i + currentOffset] = b
-                    end[i + currentOffset] = b
-                }
-                val nextIndex = currentOffset + keyPart.toMatch.size
-                // Separator to 1 so match is exact
-                if (nextIndex < keySize) {
-                    start[nextIndex] = 1
-                    end[nextIndex] = 1
+                if (startKeyIndex == keyIndex - 1 && startInclusive) startKeyIndex++
+                if (endKeyIndex == keyIndex - 1 && endInclusive) endKeyIndex++
+
+                keyPart.toMatch.forEach {
+                    if (startKeyIndex == keyIndex) start += it
+                    if (endKeyIndex == keyIndex) end += it
                 }
                 toRemove.add(keyPart)
             }
             is IndexPartialToBeBigger -> {
-                keyPart.toBeSmaller.forEachIndexed { i, b ->
-                    start[i + currentOffset] = b
-                }
-                val nextIndex = currentOffset + keyPart.toBeSmaller.size
-                // Separator to 1 so match is exact
-                if (nextIndex < keySize) {
-                    start[nextIndex] = if (keyPart.inclusive) 1 else 2
-                } else {
+                if (startKeyIndex == keyIndex -1 && startInclusive) {
+                    startKeyIndex++
+                    keyPart.toBeSmaller.forEach {
+                        start += it
+                    }
                     startInclusive = keyPart.inclusive
+
+                    toRemove.add(keyPart)
                 }
-                toRemove.add(keyPart)
             }
             is IndexPartialToBeSmaller -> {
-                keyPart.toBeBigger.forEachIndexed { i, b ->
-                    end[i + currentOffset] = b
-                }
-                val nextIndex = currentOffset + keyPart.toBeBigger.size
-                // Separator to 1 so match is exact
-                if (nextIndex < keySize) {
-                    end[nextIndex] = if (keyPart.inclusive) 1 else 0
-                } else {
+                if (endKeyIndex == keyIndex - 1 && endInclusive) {
+                    endKeyIndex++
+
+                    keyPart.toBeBigger.forEach {
+                        end += it
+                    }
                     endInclusive = keyPart.inclusive
+
+                    toRemove.add(keyPart)
                 }
-                toRemove.add(keyPart)
             }
             is IndexPartialToBeOneOf -> {
-                val first = keyPart.toBeOneOf.first()
-                first.forEachIndexed { i, b ->
-                    start[i + currentOffset] = b
+                if (startKeyIndex == keyIndex - 1 && startInclusive) {
+                    startKeyIndex++
+                    keyPart.toBeOneOf.first().forEach {
+                        start += it
+                    }
                 }
-                keyPart.toBeOneOf.last().forEachIndexed { i, b ->
-                    end[i + currentOffset] = b
-                }
-                val nextIndex = currentOffset + first.size
-                // Separator to 1 so match is exact
-                if (nextIndex < keySize) {
-                    start[nextIndex] = 1
-                    end[nextIndex] = 1
+
+                if (endKeyIndex == keyIndex - 1 && endInclusive) {
+                    endKeyIndex++
+                    keyPart.toBeOneOf.last().forEach {
+                        end += it
+                    }
                 }
             }
         }
@@ -107,14 +103,16 @@ private fun <DM : IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
         listOfParts.remove(partToRemove)
     }
 
+    val startArray = start.toByteArray()
+
     return KeyScanRange(
-        start = if (startKey != null && start < startKey) startKey else start,
+        start = if (startKey != null && startArray < startKey) startKey else startArray,
         startInclusive = startInclusive,
-        end = end,
+        end = end.toByteArray(),
         endInclusive = endInclusive,
         partialMatches = listOfParts,
         equalPairs = listOfEqualPairs,
         uniques = listOfUniqueFilters,
-        keySize = keySize
+        keySize = this.keyByteSize
     )
 }

@@ -40,7 +40,7 @@ class InMemoryDataStoreAddTest {
             val response = shouldBeOfType<AddSuccess<Log>>(it)
             shouldBeRecent(response.version, 1000uL)
             response.changes.isEmpty() shouldBe true
-            shouldBeOfType<Key<Log>>(response.key).size shouldBe 12
+            shouldBeOfType<Key<Log>>(response.key).size shouldBe 11
             keys.add(response.key)
             keysToOriginal[response.key] = logs[index]
         }

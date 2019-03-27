@@ -12,7 +12,7 @@ import maryk.core.properties.references.ValueWithFlexBytesPropertyReference
 internal fun checkKeyDefinitionAndCountBytes(keyDefinition: IsIndexable): Int {
     return when (keyDefinition) {
         is Multiple -> {
-            var keyCount = keyDefinition.references.size - 1 // Start with adding size of separators
+            var keyCount = 0
             keyDefinition.references.forEach {
                 keyCount += checkKeyDefinitionAndCountBytes(it)
             }

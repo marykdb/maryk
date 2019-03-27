@@ -69,7 +69,7 @@ internal class ReversedTest {
             this.readStorageBytes(bc.size, bc::read) shouldBe dt
         }
 
-        key.toHex() shouldBe "fe017fffffa6540703"
+        key.toHex() shouldBe "fe7fffffa6540703"
     }
 
     private val context = DefinitionsConversionContext(

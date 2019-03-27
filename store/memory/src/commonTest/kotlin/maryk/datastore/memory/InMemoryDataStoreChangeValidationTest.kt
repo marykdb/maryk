@@ -66,7 +66,7 @@ class InMemoryDataStoreChangeValidationTest {
                         DateTime(2018, 12, 9),
                         false,
                         listOfString = listOf("c"),
-                        reference = TestMarykModel.key("AAACKwEBAQAC")
+                        reference = TestMarykModel.key("AAACKwEAAw")
                     )
                 )
             )

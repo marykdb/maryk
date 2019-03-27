@@ -262,7 +262,7 @@ internal class DataModelTest {
                 dateTime with DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13),
                 bool with true,
                 enum with V3,
-                reference with TestMarykModel.key(byteArrayOf(1, 5, 1, 5, 1, 5, 1, 5, 1))
+                reference with TestMarykModel.key(byteArrayOf(1, 5, 1, 5, 1, 5, 1))
             )
         }
 
@@ -272,7 +272,7 @@ internal class DataModelTest {
 
         TestMarykModel.writeProtoBuf(map, cache, bc::write)
 
-        bc.bytes!!.toHex() shouldBe "0a036861791008182021713d0ad7a3700c4028ccf794d105300138037209010501050105010501"
+        bc.bytes!!.toHex() shouldBe "0a036861791008182021713d0ad7a3700c4028ccf794d10530013803720701050105010501"
     }
 
     @Test

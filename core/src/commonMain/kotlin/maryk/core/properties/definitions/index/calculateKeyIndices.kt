@@ -17,7 +17,7 @@ internal fun calculateKeyIndices(keyDefinition: IsIndexable): IntArray {
                     } else throw InvalidDefinitionException("Key cannot contain flex bytes encodables")
                     else -> throw TypeException("Unknown key encodable")
                 }
-                index += propDef.byteSize + 1
+                index += propDef.byteSize
             }
         }.toIntArray()
         else -> intArrayOf(0)

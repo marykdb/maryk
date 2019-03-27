@@ -9,7 +9,7 @@ import maryk.core.query.orders.Direction.DESC
 import maryk.core.query.requests.IsScanRequest
 import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataStore
-import maryk.lib.extensions.compare.compareTo
+import maryk.lib.extensions.compare.compareDefinedTo
 import kotlin.math.min
 
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
@@ -21,7 +21,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
 ) {
     when (direction) {
         ASC -> {
-            val startIndex = dataStore.records.binarySearch { it.key.bytes.compareTo(scanRange.start) }.let { index ->
+            val startIndex = dataStore.records.binarySearch { it.key.bytes.compareDefinedTo(scanRange.start, 0) }.let { index ->
                 when {
                     index < 0 -> index * -1 - 1 // If negative start at first entry point
                     !scanRange.startInclusive -> index + 1 // Skip the match if not inclusive
@@ -54,11 +54,15 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
         }
         DESC -> {
             val startIndex = scanRange.end?.let { endRange ->
-                dataStore.records.binarySearch { it.key.bytes.compareTo(endRange) }.let { index ->
-                    when {
-                        index < 0 -> index * -1 - 1 // If negative start at first entry point
-                        !scanRange.endInclusive -> index - 1 // Skip the match if not inclusive
-                        else -> index
+                if (endRange.isEmpty()) {
+                    dataStore.records.lastIndex
+                } else {
+                    dataStore.records.binarySearch { it.key.bytes.compareDefinedTo(endRange, 0) }.let { index ->
+                        when {
+                            index < 0 -> index * -1 - 1 // If negative start at first entry point
+                            !scanRange.endInclusive -> index - 1 // Skip the match if not inclusive
+                            else -> index
+                        }
                     }
                 }
             } ?: dataStore.records.lastIndex

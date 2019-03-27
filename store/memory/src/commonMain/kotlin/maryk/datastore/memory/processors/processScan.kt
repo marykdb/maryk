@@ -21,7 +21,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
 
     when {
         // If hard key match then quit with direct record
-        scanRange.end?.matches(scanRange.start) == true && (scanRange.startInclusive || scanRange.endInclusive) ->
+        scanRange.start.size == scanRange.keySize && scanRange.end?.matches(scanRange.start) == true && (scanRange.startInclusive || scanRange.endInclusive) ->
             dataStore.getByKey(scanRange.start)?.let {
                 processRecord(it)
             }

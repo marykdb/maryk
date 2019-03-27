@@ -15,9 +15,9 @@ import kotlin.test.Test
 
 class ContextualReferenceDefinitionTest {
     private val refsToTest = arrayOf<Key<TestMarykModel>>(
-        Key(ByteArray(9) { ZERO_BYTE }),
-        Key(ByteArray(9) { MAX_BYTE }),
-        Key(ByteArray(9) { if (it % 2 == 1) 0b1000_1000.toByte() else MAX_BYTE })
+        Key(ByteArray(7) { ZERO_BYTE }),
+        Key(ByteArray(7) { MAX_BYTE }),
+        Key(ByteArray(7) { if (it % 2 == 1) 0b1000_1000.toByte() else MAX_BYTE })
     )
 
     private val def = ContextualReferenceDefinition<RequestContext>(

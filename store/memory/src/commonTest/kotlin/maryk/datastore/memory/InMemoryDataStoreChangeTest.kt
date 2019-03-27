@@ -69,7 +69,7 @@ class InMemoryDataStoreChangeTest {
                         1333.3,
                         DateTime(2018, 12, 9),
                         false,
-                        reference = TestMarykModel.key("AAACKwEBAQAC")
+                        reference = TestMarykModel.key("AAACKwEAAw")
                     ),
                     TestMarykModel(
                         "haha4",

@@ -52,7 +52,7 @@ class ValuesWithMetaDataTest {
     @Test
     fun convertToYAMLAndBack() {
         checkYamlConversion(this.valuesMetaData, ValuesWithMetaData, { this.context }) shouldBe """
-        key: AAACKwEBAQAD
+        key: AAACKwEAAw
         values:
           string: name
           int: 5123123

@@ -61,11 +61,15 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
         }
         DESC -> {
             val startIndex = keyScanRange.end?.let { endRange ->
-                index.records.binarySearch { it.value.compareTo(endRange) }.let { valueIndex ->
-                    when {
-                        valueIndex < 0 -> valueIndex * -1 - 1 // If negative start at first entry point
-                        !indexScanRange.endInclusive -> valueIndex - 1 // Skip the match if not inclusive
-                        else -> valueIndex
+                if (endRange.isEmpty()) {
+                    dataStore.records.lastIndex
+                } else {
+                    index.records.binarySearch { it.value.compareTo(endRange) }.let { valueIndex ->
+                        when {
+                            valueIndex < 0 -> valueIndex * -1 - 1 // If negative start at first entry point
+                            !indexScanRange.endInclusive -> valueIndex - 1 // Skip the match if not inclusive
+                            else -> valueIndex
+                        }
                     }
                 }
             } ?: index.records.lastIndex

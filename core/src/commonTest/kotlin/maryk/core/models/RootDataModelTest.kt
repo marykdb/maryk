@@ -51,7 +51,7 @@ internal class RootDataModelTest {
                 dateTime = DateTime.nowUTC()
             )
         ) shouldBe Key<TestMarykModel>(
-            byteArrayOf(0, 0, 2, 43, 1, 1, 1, 0, 3)
+            byteArrayOf(0, 0, 2, 43, 1, 0, 3)
         )
     }
 

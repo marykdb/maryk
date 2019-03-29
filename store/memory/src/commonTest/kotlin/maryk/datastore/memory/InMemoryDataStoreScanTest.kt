@@ -9,7 +9,9 @@ import maryk.core.query.requests.add
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.test.models.Log
+import maryk.test.models.Log.Properties.message
 import maryk.test.models.Log.Properties.severity
+import maryk.test.models.Log.Properties.timestamp
 import maryk.test.models.Severity.DEBUG
 import maryk.test.models.Severity.ERROR
 import maryk.test.models.Severity.INFO
@@ -160,5 +162,40 @@ class InMemoryDataStoreScanTest {
             it.values shouldBe logs[1]
             it.key shouldBe keys[1]
         }
+    }
+
+    @Test
+    fun executeSimpleScanFilterExactMatchRequest() = runSuspendingTest {
+        val scanResponse = dataStore.execute(
+            Log.scan(
+                filter = Equals(
+                    severity.ref() with INFO,
+                    timestamp.ref() with DateTime(2018, 11, 14, 11, 22, 33, 40),
+                    message.ref() with "Something happened"
+                )
+            )
+        )
+
+        scanResponse.values.size shouldBe 1
+
+        scanResponse.values[0].let {
+            it.values shouldBe logs[0]
+            it.key shouldBe keys[0]
+        }
+    }
+
+    @Test
+    fun executeSimpleScanFilterExactWrongMatchRequest() = runSuspendingTest {
+        val scanResponse = dataStore.execute(
+            Log.scan(
+                filter = Equals(
+                    severity.ref() with INFO,
+                    timestamp.ref() with DateTime(2018, 11, 14, 11, 22, 33, 40),
+                    message.ref() with "WRONG happened"
+                )
+            )
+        )
+
+        scanResponse.values.size shouldBe 0
     }
 }

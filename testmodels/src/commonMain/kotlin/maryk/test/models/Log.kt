@@ -43,7 +43,8 @@ object Log : RootDataModel<Log, Log.Properties>(
             index = 2, name = "severity",
             definition = EnumDefinition(
                 final = true,
-                enum = Severity
+                enum = Severity,
+                default = INFO
             )
         )
         val timestamp = add(

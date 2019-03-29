@@ -44,14 +44,14 @@ object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>
         enum.ref()
     ),
     indices = listOf(
-        int.ref(),
-        Reversed(double.ref()),
-        multi.typeRef(),
         Multiple(
             Reversed(dateTime.ref()),
             enum.ref(),
             int.ref()
-        )
+        ),
+        int.ref(),
+        Reversed(double.ref()),
+        multi.typeRef()
     ),
     properties = Properties
 ) {

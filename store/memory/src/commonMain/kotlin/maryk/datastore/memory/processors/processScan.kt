@@ -4,6 +4,7 @@ import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.ScanType.IndexScan
 import maryk.core.processors.datastore.ScanType.TableScan
 import maryk.core.processors.datastore.createScanRange
+import maryk.core.processors.datastore.optimizeTableScan
 import maryk.core.processors.datastore.orderToScanType
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.requests.IsScanRequest
@@ -28,12 +29,16 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
         else -> {
             val scanIndex = scanRequest.dataModel.orderToScanType(scanRequest.order, scanRange.equalPairs)
 
-            when (scanIndex) {
+            val processedScanIndex = if (scanIndex is TableScan) {
+                scanRequest.dataModel.optimizeTableScan(scanIndex, scanRange.equalPairs)
+            } else scanIndex
+
+            when (processedScanIndex) {
                 is TableScan -> {
                     scanStore(
                         dataStore,
                         scanRequest,
-                        scanIndex.direction,
+                        processedScanIndex.direction,
                         scanRange,
                         processRecord
                     )
@@ -42,7 +47,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
                     scanIndex(
                         dataStore,
                         scanRequest,
-                        scanIndex,
+                        processedScanIndex,
                         scanRange,
                         processRecord
                     )

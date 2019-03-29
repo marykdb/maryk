@@ -111,13 +111,13 @@ class DefinitionsTest {
           - !Ref bool
           - !Ref enum
           indices:
-          - !Ref int
-          - !Reversed double
-          - !Ref multi.*
           - !Multiple
             - !Reversed dateTime
             - !Ref enum
             - !Ref int
+          - !Ref int
+          - !Reversed double
+          - !Ref multi.*
           ? 1: string
           : !String
             required: true

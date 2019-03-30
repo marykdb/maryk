@@ -13,6 +13,7 @@ import maryk.core.properties.graph.PropRefGraphType
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.MapAnyValueReference
 import maryk.core.properties.references.MapKeyReference
 import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.MapValueReference
@@ -54,6 +55,10 @@ data class MapPropertyDefinitionWrapper<K : Any, V : Any, TO : Any, CX : IsPrope
     internal fun valueRef(key: K, parentRef: AnyPropertyReference? = null) =
         this.definition.valueRef(key, this.ref(parentRef))
 
+    /** Get a reference to any map value with optional [parentRef] */
+    internal fun anyValueRef(parentRef: AnyPropertyReference? = null) =
+        this.definition.anyValueRef(this.ref(parentRef))
+
     /** For quick notation to get a map [key] reference */
     infix fun refToKey(key: K): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> MapKeyReference<K, V, *> {
         return { this.keyRef(key, it) }
@@ -62,6 +67,11 @@ data class MapPropertyDefinitionWrapper<K : Any, V : Any, TO : Any, CX : IsPrope
     /** For quick notation to get a map value reference at given [key] */
     infix fun refAt(key: K): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> MapValueReference<K, V, *> {
         return { this.valueRef(key, it) }
+    }
+
+    /** For quick notation to get a map value reference at any key */
+    fun refToAny(): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> MapAnyValueReference<K, V, *> {
+        return { this.anyValueRef(it) }
     }
 }
 
@@ -74,6 +84,18 @@ fun <K : Any, V : Values<*, P>, DM : IsValuesDataModel<P>, P : PropertyDefinitio
     {
         (this.definition.valueDefinition as EmbeddedValuesDefinition<DM, P>).dataModel.ref(
             this.valueRef(key, it),
+            propertyDefinitionGetter
+        )
+    }
+
+/** Specific extension to support fetching sub refs on Map values by any key */
+@Suppress("UNCHECKED_CAST")
+fun <K : Any, V : Values<*, P>, DM : IsValuesDataModel<P>, P : PropertyDefinitions, T : Any, W : IsPropertyDefinitionWrapper<T, *, *, *>> MapPropertyDefinitionWrapper<K, V, *, *, *>.refAtAny(
+    propertyDefinitionGetter: P.() -> W
+): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> IsPropertyReference<T, W, *> =
+    {
+        (this.definition.valueDefinition as EmbeddedValuesDefinition<DM, P>).dataModel.ref(
+            this.anyValueRef(it),
             propertyDefinitionGetter
         )
     }
@@ -105,6 +127,19 @@ fun <K : Any, V : Values<*, P>, DM : IsValuesDataModel<P>, P : PropertyDefinitio
     {
         (this.definition.valueDefinition as EmbeddedValuesDefinition<DM, P>).dataModel(
             this.valueRef(key, it),
+            referenceGetter
+        )
+    }
+
+/** Specific extension to support fetching deeper references on Map values by any key */
+@Suppress("UNCHECKED_CAST")
+fun <K : Any, V : Values<*, P>, DM : IsValuesDataModel<P>, P : PropertyDefinitions, T : Any, W : IsPropertyDefinitionWrapper<T, *, *, *>, R : IsPropertyReference<T, W, *>> MapPropertyDefinitionWrapper<K, V, *, *, *>.any(
+    referenceGetter: P.() ->
+        (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> R
+): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> R =
+    {
+        (this.definition.valueDefinition as EmbeddedValuesDefinition<DM, P>).dataModel(
+            this.anyValueRef(it),
             referenceGetter
         )
     }

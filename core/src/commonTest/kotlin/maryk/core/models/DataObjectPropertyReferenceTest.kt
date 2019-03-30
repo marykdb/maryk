@@ -1,7 +1,9 @@
 package maryk.core.models
 
+import maryk.core.properties.definitions.wrapper.any
 import maryk.core.properties.definitions.wrapper.at
 import maryk.core.properties.definitions.wrapper.atKeyAndType
+import maryk.core.properties.definitions.wrapper.refAtAny
 import maryk.core.properties.definitions.wrapper.refAtKey
 import maryk.core.properties.definitions.wrapper.refAtKeyAndType
 import maryk.lib.extensions.toHex
@@ -39,7 +41,9 @@ internal class DataObjectPropertyReferenceTest {
         TestMarykModel { multi.refToType() }.completeName shouldBe "multi.*"
 
         ComplexModel { mapIntObject.refAtKey(2u) { value } }.completeName shouldBe "mapIntObject.@2.value"
+        ComplexModel { mapIntObject.refAtAny { value } }.completeName shouldBe "mapIntObject.*.value"
         ComplexModel { mapIntObject.at(2u) { model ref { value } } }.completeName shouldBe "mapIntObject.@2.model.value"
+        ComplexModel { mapIntObject.any { model ref { value } } }.completeName shouldBe "mapIntObject.*.model.value"
 
         ComplexModel { mapIntMulti.refAtKeyAndType(2u, V3, EmbeddedMarykModel.Properties) { value } }.completeName shouldBe "mapIntMulti.@2.*V3.value"
         ComplexModel { mapIntMulti.atKeyAndType(2u, V3, EmbeddedMarykModel.Properties) { model ref { value } } }.completeName shouldBe "mapIntMulti.@2.*V3.model.value"
@@ -70,7 +74,9 @@ internal class DataObjectPropertyReferenceTest {
         TestMarykModel { multi.refToType() }.toStorageByteArray().toHex() shouldBe "6905"
 
         ComplexModel { mapIntObject.refAtKey(2u) { value } }.toStorageByteArray().toHex() shouldBe "1c040000000209"
+        ComplexModel { mapIntObject.refAtAny { value } }.toStorageByteArray().toHex() shouldBe "10030009"
         ComplexModel { mapIntObject.at(2u) { model ref { value } } }.toStorageByteArray().toHex() shouldBe "1c04000000021609"
+        ComplexModel { mapIntObject.any { model ref { value } } }.toStorageByteArray().toHex() shouldBe "1003001609"
 
         ComplexModel { mapIntMulti.refAtKeyAndType(2u, V3, EmbeddedMarykModel.Properties) { value } }.toStorageByteArray().toHex() shouldBe "2404000000021d09"
         ComplexModel { mapIntMulti.atKeyAndType(2u, V3, EmbeddedMarykModel.Properties) { model ref { value } } }.toStorageByteArray().toHex() shouldBe "2404000000021d1609"

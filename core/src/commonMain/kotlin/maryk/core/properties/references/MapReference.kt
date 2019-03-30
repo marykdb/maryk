@@ -7,6 +7,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
 import maryk.core.properties.references.CompleteReferenceType.MAP
+import maryk.core.properties.references.CompleteReferenceType.MAP_ANY_VALUE
 import maryk.core.properties.references.CompleteReferenceType.MAP_KEY
 import maryk.core.protobuf.ProtoBuf
 import maryk.lib.exceptions.ParseException
@@ -33,6 +34,10 @@ open class MapReference<K : Any, V : Any, CX : IsPropertyContext> internal const
             propertyDefinition.keyDefinition.fromString(
                 name.substring(1)
             ),
+            propertyDefinition.definition,
+            this
+        )
+        '*' -> MapAnyValueReference(
             propertyDefinition.definition,
             this
         )
@@ -65,6 +70,12 @@ open class MapReference<K : Any, V : Any, CX : IsPropertyContext> internal const
                     this
                 )
             }
+            2 -> {
+                MapAnyValueReference(
+                    this.propertyDefinition.definition,
+                    this
+                )
+            }
             else -> throw ParseException("Unknown Key reference type ${protoKey.tag}")
         }
     }
@@ -75,9 +86,9 @@ open class MapReference<K : Any, V : Any, CX : IsPropertyContext> internal const
         referenceType: CompleteReferenceType,
         isDoneReading: () -> Boolean
     ): AnyPropertyReference {
-        val mapKeyLength = initIntByVar(reader)
         return when (referenceType) {
             MAP -> {
+                val mapKeyLength = initIntByVar(reader)
                 MapValueReference(
                     this.propertyDefinition.keyDefinition.readStorageBytes(mapKeyLength, reader),
                     this.propertyDefinition.definition,
@@ -85,8 +96,15 @@ open class MapReference<K : Any, V : Any, CX : IsPropertyContext> internal const
                 )
             }
             MAP_KEY -> {
+                val mapKeyLength = initIntByVar(reader)
                 MapKeyReference(
                     this.propertyDefinition.keyDefinition.readStorageBytes(mapKeyLength, reader),
+                    this.propertyDefinition.definition,
+                    this
+                )
+            }
+            MAP_ANY_VALUE -> {
+                MapAnyValueReference(
                     this.propertyDefinition.definition,
                     this
                 )

@@ -59,7 +59,7 @@ class InMemoryDataStoreScanUniqueTest {
     fun executeSimpleScanFilterRequest() = runSuspendingTest {
         val scanResponse = dataStore.execute(
             CompleteMarykModel.scan(
-                filter = Equals(
+                where = Equals(
                     string.ref() with "haas"
                 )
             )

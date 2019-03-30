@@ -44,7 +44,7 @@ class ScanSelectRequestTest {
         startKey: Zk6m4QpZQegUg5s13JVYlQ
         select:
         - value
-        filter: !Exists value
+        where: !Exists value
         toVersion: 2345
         filterSoftDeleted: true
         order: value

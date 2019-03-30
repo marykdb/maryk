@@ -72,7 +72,7 @@ class RootMarykTest {
             keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
             select:
             - value
-            filter: !Exists value
+            where: !Exists value
             toVersion: 333
             filterSoftDeleted: true
 

@@ -122,25 +122,25 @@ class InjectTest {
 
     @Test
     fun testInjectInObject() {
-        context.addToCollect("filter", Equals)
+        context.addToCollect("where", Equals)
 
         val getRequest = GetRequest.values(context) {
             mapNonNulls(
-                filter injectWith Inject("filter", EmbeddedMarykModel { model.ref { value } })
+                where injectWith Inject("where", EmbeddedMarykModel { model.ref { value } })
             )
         }
 
         shouldThrow<InjectException> {
-            getRequest { filter }
-        } shouldBe InjectException("filter")
+            getRequest { where }
+        } shouldBe InjectException("where")
 
         val equals = Equals(
             EmbeddedMarykModel.ref { value } with "hoi"
         )
 
-        context.collectResult("filter", Equals.asValues(equals))
+        context.collectResult("where", Equals.asValues(equals))
 
-        getRequest { filter } shouldBe equals
+        getRequest { where } shouldBe equals
     }
 
     @Test

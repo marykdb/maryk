@@ -34,7 +34,7 @@ class GetRequestTest {
             mapNonNulls(
                 dataModel with SimpleMarykModel,
                 keys with listOf(getMaxRequest.keys[0], getMaxRequest.keys[1]),
-                filter with Exists(SimpleMarykModel.ref { value }),
+                where with Exists(SimpleMarykModel.ref { value }),
                 toVersion with 333uL,
                 filterSoftDeleted with true,
                 select with SimpleMarykModel.graph {
@@ -70,7 +70,7 @@ class GetRequestTest {
         keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
         select:
         - value
-        filter: !Exists value
+        where: !Exists value
         toVersion: 333
         filterSoftDeleted: true
 
@@ -82,7 +82,7 @@ class GetRequestTest {
         val simpleYaml = """
         from: SimpleMarykModel
         keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
-        filter:
+        where:
         select:
         - value
 
@@ -102,7 +102,7 @@ class GetRequestTest {
             .toDataObject()
             .apply {
                 dataModel shouldBe SimpleMarykModel
-                filter shouldBe null
+                where shouldBe null
             }
     }
 }

@@ -24,7 +24,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
     val indexReference = indexScan.index.toReferenceStorageByteArray()
     val index = dataStore.getOrCreateIndex(indexReference)
 
-    val indexScanRange = indexScan.index.createScanRange(scanRequest.filter, keyScanRange)
+    val indexScanRange = indexScan.index.createScanRange(scanRequest.where, keyScanRange)
 
     when (indexScan.direction) {
         ASC -> {

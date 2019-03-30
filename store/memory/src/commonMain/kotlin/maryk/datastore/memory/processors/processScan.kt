@@ -19,7 +19,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
     dataStore: DataStore<DM, P>,
     processRecord: (DataRecord<DM, P>) -> Unit
 ) {
-    val scanRange = scanRequest.dataModel.createScanRange(scanRequest.filter, scanRequest.startKey?.bytes)
+    val scanRange = scanRequest.dataModel.createScanRange(scanRequest.where, scanRequest.startKey?.bytes)
 
     when {
         // If hard key match then quit with direct record

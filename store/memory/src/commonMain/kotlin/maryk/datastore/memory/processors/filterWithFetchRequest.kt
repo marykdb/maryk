@@ -31,7 +31,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> IsFetchReq
     toVersion: ULong?
 ) = when {
     this.filterSoftDeleted && dataRecord.isDeleted(toVersion) -> true
-    this.filter != null -> !filterMatches(filter as IsFilter, dataRecord, toVersion)
+    this.where != null -> !filterMatches(where as IsFilter, dataRecord, toVersion)
     else -> false
 }
 

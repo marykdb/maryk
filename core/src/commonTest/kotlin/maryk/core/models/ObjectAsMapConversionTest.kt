@@ -26,7 +26,7 @@ class ObjectAsMapConversionTest {
             select with SimpleMarykModel.graph {
                 listOf(value)
             },
-            filter with Exists(SimpleMarykModel.ref { value }),
+            where with Exists(SimpleMarykModel.ref { value }),
             toVersion with 333uL,
             filterSoftDeleted with true
         )
@@ -46,7 +46,7 @@ class ObjectAsMapConversionTest {
         keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
         select:
         - value
-        filter: !Exists value
+        where: !Exists value
         toVersion: 333
         filterSoftDeleted: true
 

@@ -26,7 +26,7 @@ class InjectInRequestTest {
         mapNonNulls(
             dataModel with SimpleMarykModel,
             keys injectWith Inject("keysToInject", GetRequest.ref { keys }),
-            filter with Exists(SimpleMarykModel.ref { value }),
+            where with Exists(SimpleMarykModel.ref { value }),
             toVersion with 333uL,
             filterSoftDeleted with true,
             select with SimpleMarykModel.graph {
@@ -56,7 +56,7 @@ class InjectInRequestTest {
                 originalKeys shouldBe original.original { keys }
             }
         }
-        converted { filter } shouldBe original { filter }
+        converted { where } shouldBe original { where }
     }
 
     @Test
@@ -74,7 +74,7 @@ class InjectInRequestTest {
           keysToInject: keys
         select:
         - value
-        filter: !Exists value
+        where: !Exists value
         toVersion: 333
         filterSoftDeleted: true
 
@@ -91,7 +91,7 @@ class InjectInRequestTest {
             { context },
             checker = ::checker
         ) shouldBe """
-        {"from":"SimpleMarykModel","?keys":{"keysToInject":"keys"},"select":["value"],"filter":["Exists","value"],"toVersion":"333","filterSoftDeleted":true}
+        {"from":"SimpleMarykModel","?keys":{"keysToInject":"keys"},"select":["value"],"where":["Exists","value"],"toVersion":"333","filterSoftDeleted":true}
         """.trimIndent()
     }
 

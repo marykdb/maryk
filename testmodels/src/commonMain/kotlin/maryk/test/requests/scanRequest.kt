@@ -16,7 +16,7 @@ val scanRequest = SimpleMarykModel.run {
 val scanMaxRequest = SimpleMarykModel.run {
     scan(
         startKey = key1,
-        filter = Exists(ref { value }),
+        where = Exists(ref { value }),
         order = ref { value }.ascending(),
         limit = 200u,
         filterSoftDeleted = true,

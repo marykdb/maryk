@@ -44,7 +44,7 @@ class GetChangesRequestTest {
         keys: [WWurg6ysTsozoMei/SurOw, awfbjYrVQ+cdXblfQKV10A]
         select:
         - value
-        filter: !Exists value
+        where: !Exists value
         toVersion: 12345
         filterSoftDeleted: true
         fromVersion: 1234

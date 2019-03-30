@@ -15,32 +15,32 @@ import maryk.core.values.ObjectValues
 /**
  * Creates a Request to scan DataObjects by key from [startKey] until [limit] and only return [select]
  * values of properties.
- * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
+ * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
 fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.scan(
     startKey: Key<DM>? = null,
     select: RootPropRefGraph<P>? = null,
-    filter: IsFilter? = null,
+    where: IsFilter? = null,
     order: IsOrder? = null,
     limit: UInt = 100u,
     toVersion: ULong? = null,
     filterSoftDeleted: Boolean = true
 ) =
-    ScanRequest(this, startKey, select, filter, order, limit, toVersion, filterSoftDeleted)
+    ScanRequest(this, startKey, select, where, order, limit, toVersion, filterSoftDeleted)
 
 /**
  * A Request to scan DataObjects by key from [startKey] until [limit]
  * for specific [dataModel] and only return [select]
  * values of properties.
- * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
+ * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
 data class ScanRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> internal constructor(
     override val dataModel: DM,
     override val startKey: Key<DM>? = null,
     override val select: RootPropRefGraph<P>? = null,
-    override val filter: IsFilter? = null,
+    override val where: IsFilter? = null,
     override val order: IsOrder? = null,
     override val limit: UInt = 100u,
     override val toVersion: ULong? = null,
@@ -55,7 +55,7 @@ data class ScanRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> i
         val dataModel = IsObjectRequest.addDataModel("from", this, ScanRequest<*, *>::dataModel)
         val startKey = IsScanRequest.addStartKey(this, ScanRequest<*, *>::startKey)
         val select = IsFetchRequest.addSelect(this, ScanRequest<*, *>::select)
-        val filter = IsFetchRequest.addFilter(this, ScanRequest<*, *>::filter)
+        val where = IsFetchRequest.addFilter(this, ScanRequest<*, *>::where)
         val toVersion = IsFetchRequest.addToVersion(this, ScanRequest<*, *>::toVersion)
         val filterSoftDeleted = IsFetchRequest.addFilterSoftDeleted(this, ScanRequest<*, *>::filterSoftDeleted)
         val order = IsScanRequest.addOrder(this, ScanRequest<*, *>::order)
@@ -69,7 +69,7 @@ data class ScanRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> i
             dataModel = values<IsRootValuesDataModel<PropertyDefinitions>>(1),
             startKey = values(2),
             select = values(3),
-            filter = values(4),
+            where = values(4),
             toVersion = values(5),
             filterSoftDeleted = values(6),
             order = values(7),

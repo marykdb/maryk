@@ -16,7 +16,7 @@ val getMaxRequest = SimpleMarykModel.run {
     get(
         key1,
         key2,
-        filter = Exists(ref { value }),
+        where = Exists(ref { value }),
         toVersion = 333uL,
         filterSoftDeleted = true,
         select = graph { listOf(value) }

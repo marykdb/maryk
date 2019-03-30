@@ -16,7 +16,7 @@ val getChangesMaxRequest = SimpleMarykModel.run {
     getChanges(
         key1,
         key2,
-        filter = Exists(ref { value }),
+        where = Exists(ref { value }),
         fromVersion = 1234uL,
         toVersion = 12345uL,
         maxVersions = 5u,

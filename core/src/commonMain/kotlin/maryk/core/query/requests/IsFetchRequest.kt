@@ -18,7 +18,7 @@ import maryk.core.query.responses.IsResponse
 /** Defines a fetch. */
 interface IsFetchRequest<DM : IsRootDataModel<P>, P : PropertyDefinitions, RP : IsResponse> : IsStoreRequest<DM, RP> {
     val select: RootPropRefGraph<P>?
-    val filter: IsFilter?
+    val where: IsFilter?
     val toVersion: ULong?
     val filterSoftDeleted: Boolean
 
@@ -37,7 +37,7 @@ interface IsFetchRequest<DM : IsRootDataModel<P>, P : PropertyDefinitions, RP : 
         @Suppress("UNCHECKED_CAST")
         internal fun <DM : Any> addFilter(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> IsFilter?) =
             definitions.add(
-                4, "filter",
+                4, "where",
                 MultiTypeDefinition(
                     required = false,
                     typeEnum = FilterType,

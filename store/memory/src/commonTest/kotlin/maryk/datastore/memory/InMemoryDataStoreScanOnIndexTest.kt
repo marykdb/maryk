@@ -181,7 +181,7 @@ class InMemoryDataStoreScanOnIndexTest {
     fun executeSimpleIndexFilterScanRequest() = runSuspendingTest {
         val scanResponse = dataStore.execute(
             Log.scan(
-                filter = Equals(
+                where = Equals(
                     severity.ref() with DEBUG
                 ),
                 order = severity.ref().ascending()
@@ -200,7 +200,7 @@ class InMemoryDataStoreScanOnIndexTest {
     fun executeSimpleIndexFilterGreaterScanRequest() = runSuspendingTest {
         val scanResponse = dataStore.execute(
             Log.scan(
-                filter = GreaterThanEquals(
+                where = GreaterThanEquals(
                     severity.ref() with DEBUG
                 ),
                 order = severity.ref().ascending()
@@ -223,7 +223,7 @@ class InMemoryDataStoreScanOnIndexTest {
     fun executeSimpleIndexFilterLessScanRequest() = runSuspendingTest {
         val scanResponse = dataStore.execute(
             Log.scan(
-                filter = LessThanEquals(
+                where = LessThanEquals(
                     severity.ref() with DEBUG
                 ),
                 order = severity.ref().descending()

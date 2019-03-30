@@ -12,7 +12,7 @@ val scanChangesRequest = SimpleMarykModel.scanChanges()
 val scanChangesMaxRequest = SimpleMarykModel.run {
     scanChanges(
         startKey = key1,
-        filter = Exists(ref { value }),
+        where = Exists(ref { value }),
         order = ref { value }.descending(),
         limit = 300u,
         toVersion = 2345uL,

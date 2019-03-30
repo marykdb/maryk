@@ -16,12 +16,12 @@ import maryk.core.values.ObjectValues
 /**
  * Creates a request to get DataObject its versioned changes by value [keys]
  * It will only fetch the changes [fromVersion] (Inclusive) until [maxVersions] (Default=1000) is reached.
- * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
+ * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
 fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.getChanges(
     vararg keys: Key<DM>,
-    filter: IsFilter? = null,
+    where: IsFilter? = null,
     fromVersion: ULong = 0uL,
     toVersion: ULong? = null,
     maxVersions: UInt = 1u,
@@ -31,7 +31,7 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.getChanges(
     GetChangesRequest(
         this,
         keys.toList(),
-        filter,
+        where,
         fromVersion,
         toVersion,
         maxVersions,
@@ -42,14 +42,14 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.getChanges(
 /**
  * A Request to get DataObject its versioned changes by value [keys] for specific [dataModel] of type [DM]
  * It will only fetch the changes [fromVersion] (Inclusive) until [maxVersions] (Default=1000) is reached.
- * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
+ * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order] and only selected properties can be returned with a [select] graph
  */
 @Suppress("EXPERIMENTAL_OVERRIDE")
 data class GetChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> internal constructor(
     override val dataModel: DM,
     override val keys: List<Key<DM>>,
-    override val filter: IsFilter? = null,
+    override val where: IsFilter? = null,
     override val fromVersion: ULong = 0uL,
     override val toVersion: ULong? = null,
     override val maxVersions: UInt = 1u,
@@ -65,7 +65,7 @@ data class GetChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
         val dataModel = IsObjectRequest.addDataModel("from", this, GetChangesRequest<*, *>::dataModel)
         val keys = IsGetRequest.addKeys(this, GetChangesRequest<*, *>::keys)
         val select = IsFetchRequest.addSelect(this, GetChangesRequest<*, *>::select)
-        val filter = IsFetchRequest.addFilter(this, GetChangesRequest<*, *>::filter)
+        val where = IsFetchRequest.addFilter(this, GetChangesRequest<*, *>::where)
         val toVersion = IsFetchRequest.addToVersion(this, GetChangesRequest<*, *>::toVersion)
         val filterSoftDeleted = IsFetchRequest.addFilterSoftDeleted(this, GetChangesRequest<*, *>::filterSoftDeleted)
         val fromVersion = IsChangesRequest.addFromVersion(7, this, GetChangesRequest<*, *>::fromVersion)
@@ -80,7 +80,7 @@ data class GetChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
                 dataModel = values(1),
                 keys = values(2),
                 select = values(3),
-                filter = values(4),
+                where = values(4),
                 toVersion = values(5),
                 filterSoftDeleted = values(6),
                 fromVersion = values(7),

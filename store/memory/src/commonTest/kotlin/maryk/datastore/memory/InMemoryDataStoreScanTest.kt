@@ -150,7 +150,7 @@ class InMemoryDataStoreScanTest {
     fun executeSimpleScanFilterRequest() = runSuspendingTest {
         val scanResponse = dataStore.execute(
             Log.scan(
-                filter = Equals(
+                where = Equals(
                     severity.ref() with DEBUG
                 )
             )
@@ -168,7 +168,7 @@ class InMemoryDataStoreScanTest {
     fun executeSimpleScanFilterExactMatchRequest() = runSuspendingTest {
         val scanResponse = dataStore.execute(
             Log.scan(
-                filter = Equals(
+                where = Equals(
                     severity.ref() with INFO,
                     timestamp.ref() with DateTime(2018, 11, 14, 11, 22, 33, 40),
                     message.ref() with "Something happened"
@@ -188,7 +188,7 @@ class InMemoryDataStoreScanTest {
     fun executeSimpleScanFilterExactWrongMatchRequest() = runSuspendingTest {
         val scanResponse = dataStore.execute(
             Log.scan(
-                filter = Equals(
+                where = Equals(
                     severity.ref() with INFO,
                     timestamp.ref() with DateTime(2018, 11, 14, 11, 22, 33, 40),
                     message.ref() with "WRONG happened"

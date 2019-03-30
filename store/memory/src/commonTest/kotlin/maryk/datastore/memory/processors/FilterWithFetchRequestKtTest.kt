@@ -21,14 +21,32 @@ import maryk.core.query.pairs.with
 import maryk.core.values.Values
 import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataRecordValue
+import maryk.lib.time.Date
 import maryk.lib.time.DateTime
+import maryk.lib.time.Time
 import maryk.test.models.TestMarykModel
 import maryk.test.shouldBe
 import kotlin.test.Test
 
 class FilterWithFetchRequestKtTest {
     private val value1 = TestMarykModel.createDataRecord(
-        TestMarykModel("haha1", 5, 6u, 0.43, DateTime(2018, 3, 2), true)
+        TestMarykModel(
+            string = "haha1",
+            int = 5,
+            uint = 6u,
+            double = 0.43,
+            dateTime = DateTime(2018, 3, 2),
+            bool = true,
+            map = mapOf(
+                Time(12, 13, 14) to "haha10"
+            ),
+            list = listOf(
+                4, 6, 7
+            ),
+            set = setOf(
+                Date(2019, 3, 30), Date(2018, 9, 9)
+            )
+        )
     )
 
     private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.createDataRecord(values: Values<DM, P>): DataRecord<DM, P> {
@@ -84,6 +102,51 @@ class FilterWithFetchRequestKtTest {
 
         filterMatches(
             Equals(TestMarykModel.ref { string } with "wrong"),
+            value1,
+            null
+        ) shouldBe false
+    }
+
+    @Test
+    fun doComplexMapListSetFilter() {
+        filterMatches(
+            Equals(TestMarykModel { map.refAt(Time(12, 13, 14)) } with "haha10"),
+            value1,
+            null
+        ) shouldBe true
+
+        filterMatches(
+            Equals(TestMarykModel { map.refAt(Time(13, 13, 14)) } with "haha10"),
+            value1,
+            null
+        ) shouldBe false
+
+        filterMatches(
+            Equals(TestMarykModel { list refAt 1u } with 6),
+            value1,
+            null
+        ) shouldBe true
+
+        filterMatches(
+            Equals(TestMarykModel { list refAt 2u } with 6),
+            value1,
+            null
+        ) shouldBe false
+
+        filterMatches(
+            Equals(TestMarykModel { list refAt 1u } with 6),
+            value1,
+            null
+        ) shouldBe true
+
+        filterMatches(
+            Exists(TestMarykModel { set refAt Date(2018, 9, 9) }),
+            value1,
+            null
+        ) shouldBe true
+
+        filterMatches(
+            Exists(TestMarykModel { set refAt Date(2017, 9, 9) }),
             value1,
             null
         ) shouldBe false

@@ -2,8 +2,7 @@ package maryk.core.query.filters
 
 import maryk.core.models.ReferencesDataModel
 import maryk.core.models.ReferencesObjectPropertyDefinitions
-import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
+import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
@@ -11,12 +10,11 @@ import maryk.json.IsJsonLikeWriter
 
 /** Checks if [references] exist on DataModel */
 data class Exists internal constructor(
-    val references: List<IsPropertyReference<*, IsValuePropertyDefinitionWrapper<*, *, IsPropertyContext, *>, *>>
+    val references: List<IsPropertyReference<*, IsChangeableValueDefinition<*, *>, *>>
 ) : IsFilter {
     override val filterType = FilterType.Exists
 
-    @Suppress("UNCHECKED_CAST")
-    constructor(vararg reference: IsPropertyReference<*, IsValuePropertyDefinitionWrapper<*, *, IsPropertyContext, *>, *>) : this(
+    constructor(vararg reference: IsPropertyReference<*, IsChangeableValueDefinition<*, *>, *>) : this(
         reference.toList()
     )
 

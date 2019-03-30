@@ -5,8 +5,8 @@ import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsFixedBytesEncodable
-import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
+import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.references.ReferenceType.SET
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
@@ -21,7 +21,7 @@ class SetItemReference<T : Any, CX : IsPropertyContext> internal constructor(
     val value: T,
     val setDefinition: IsSetDefinition<T, CX>,
     parentReference: SetReference<T, CX>?
-) : CanHaveSimpleChildReference<T, IsPropertyDefinition<T>, SetReference<T, CX>, Set<T>>(
+) : CanHaveSimpleChildReference<T, IsValueDefinition<T, CX>, SetReference<T, CX>, Set<T>>(
     setDefinition.valueDefinition, parentReference
 ) {
     override val completeName: String

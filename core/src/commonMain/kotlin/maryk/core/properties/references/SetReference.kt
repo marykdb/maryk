@@ -55,17 +55,20 @@ open class SetReference<T : Any, CX : IsPropertyContext> internal constructor(
         referenceType: CompleteReferenceType,
         isDoneReading: () -> Boolean
     ): AnyPropertyReference {
-        return if (referenceType == CompleteReferenceType.SET) {
-            @Suppress("UNCHECKED_CAST")
-            val setValueDefinition =
-                (this.propertyDefinition.definition.valueDefinition as IsSimpleValueDefinition<T, *>)
+        return when (referenceType) {
+            CompleteReferenceType.SET -> {
+                @Suppress("UNCHECKED_CAST")
+                val setValueDefinition =
+                    (this.propertyDefinition.definition.valueDefinition as IsSimpleValueDefinition<T, *>)
 
-            val setItem = setValueDefinition.readStorageBytes(
-                (setValueDefinition as IsFixedBytesEncodable<*>).byteSize,
-                reader
-            )
-            SetItemReference(setItem, propertyDefinition.definition, this)
-        } else throw TypeException("Unknown reference type below Set: $referenceType")
+                val setItem = setValueDefinition.readStorageBytes(
+                    (setValueDefinition as IsFixedBytesEncodable<*>).byteSize,
+                    reader
+                )
+                SetItemReference(setItem, propertyDefinition.definition, this)
+            }
+            else -> throw TypeException("Unknown reference type below Set: $referenceType")
+        }
     }
 
     override fun writeStorageBytes(writer: (byte: Byte) -> Unit) {

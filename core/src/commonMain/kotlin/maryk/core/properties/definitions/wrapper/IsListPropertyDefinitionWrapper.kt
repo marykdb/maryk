@@ -8,6 +8,7 @@ import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.ListAnyItemReference
 import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.ListReference
 
@@ -32,6 +33,15 @@ interface IsListPropertyDefinitionWrapper<T : Any, TO : Any, LD : ListDefinition
     /** Get a reference to a specific list item by [index] with optional [parentRef] */
     fun getItemRef(index: UInt, parentRef: AnyPropertyReference? = null) =
         this.definition.itemRef(index, this.ref(parentRef))
+
+    /** Get a reference to a specific list item at any index with optional [parentRef] */
+    fun getAnyItemRef(parentRef: AnyPropertyReference? = null) =
+        this.definition.anyItemRef(this.ref(parentRef))
+
+    /** For quick notation to get any list item reference */
+    fun refAtAny(): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> ListAnyItemReference<T, CX> {
+        return { this.getAnyItemRef(it) }
+    }
 
     /** For quick notation to get a list item reference by [index] */
     infix fun refAt(index: UInt): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> ListItemReference<T, CX> {

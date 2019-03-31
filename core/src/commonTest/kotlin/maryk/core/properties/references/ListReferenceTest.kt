@@ -12,6 +12,7 @@ import kotlin.test.Test
 class ListReferenceTest {
     private val listReference = TestMarykModel { embeddedValues { marykModel ref { listOfString } } }
     private val reference = TestMarykModel { listOfString refAt 5u }
+    private val anyReference = TestMarykModel { listOfString.refAtAny() }
     private val subReference = TestMarykModel { embeddedValues { marykModel { listOfString refAt 22u } } }
     val cache = WriteCache()
 
@@ -40,11 +41,32 @@ class ListReferenceTest {
     }
 
     @Test
+    fun convertAnyToProtoBufAndBack() {
+        val bc = ByteCollector()
+
+        bc.reserve(
+            this.anyReference.calculateTransportByteLength(cache)
+        )
+        this.anyReference.writeTransportBytes(cache, bc::write)
+
+        val converted = TestMarykModel.getPropertyReferenceByBytes(bc.size, bc::read)
+        converted shouldBe this.anyReference
+    }
+
+    @Test
     fun convertToStringAndBack() {
         this.reference.completeName shouldBe "listOfString.@5"
 
         val converted = TestMarykModel.getPropertyReferenceByName(this.reference.completeName)
         converted shouldBe this.reference
+    }
+
+    @Test
+    fun convertAnyToStringAndBack() {
+        this.anyReference.completeName shouldBe "listOfString.*"
+
+        val converted = TestMarykModel.getPropertyReferenceByName(this.anyReference.completeName)
+        converted shouldBe this.anyReference
     }
 
     @Test
@@ -71,6 +93,20 @@ class ListReferenceTest {
         bc.bytes!!.toHex() shouldBe "7a00000005"
 
         TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) shouldBe reference
+    }
+
+    @Test
+    fun writeAndReadAnyStorageBytes() {
+        val bc = ByteCollector()
+
+        bc.reserve(
+            anyReference.calculateStorageByteLength()
+        )
+        anyReference.writeStorageBytes(bc::write)
+
+        bc.bytes!!.toHex() shouldBe "180f00"
+
+        TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) shouldBe anyReference
     }
 
     @Test

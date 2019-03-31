@@ -56,7 +56,7 @@ class MapAnyValueReference<K : Any, V : Any, CX : IsPropertyContext> internal co
     }
 
     override fun writeStorageBytes(writer: (byte: Byte) -> Unit) {
-        // Calculate bytes above the setReference parent
+        // Calculate bytes above the mapReference parent
         this.parentReference?.parentReference?.writeStorageBytes(writer)
         writer(CompleteReferenceType.MAP_ANY_VALUE.value)
         this.parentReference?.propertyDefinition?.index?.writeVarBytes(writer)

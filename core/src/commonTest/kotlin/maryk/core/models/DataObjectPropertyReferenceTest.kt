@@ -31,6 +31,7 @@ internal class DataObjectPropertyReferenceTest {
         TestMarykModel { embeddedValues { model { model { model ref { value } } } } }.completeName shouldBe "embeddedValues.model.model.model.value"
 
         TestMarykModel { embeddedValues { marykModel { list refAt 5u } } }.completeName shouldBe "embeddedValues.marykModel.list.@5"
+        TestMarykModel { embeddedValues { marykModel { list.refAtAny() } } }.completeName shouldBe "embeddedValues.marykModel.list.*"
 
         TestMarykModel { embeddedValues { marykModel { set refAt Date(2017, 12, 5) } } }.completeName shouldBe "embeddedValues.marykModel.set.\$2017-12-05"
 
@@ -64,6 +65,7 @@ internal class DataObjectPropertyReferenceTest {
         TestMarykModel { embeddedValues { model { model { model ref { value } } } } }.toStorageByteArray().toHex() shouldBe "6616161609"
 
         TestMarykModel { embeddedValues { marykModel { list refAt 5u } } }.toStorageByteArray().toHex() shouldBe "661e4200000005"
+        TestMarykModel { embeddedValues { marykModel { list.refAtAny() } } }.toStorageByteArray().toHex() shouldBe "661e180800"
 
         TestMarykModel { embeddedValues { marykModel { set refAt Date(2017, 12, 5) } } }.toStorageByteArray().toHex() shouldBe "661e4b80004461"
 

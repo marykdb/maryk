@@ -1,6 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.references.ListAnyItemReference
 import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.ListReference
 
@@ -11,4 +12,8 @@ interface IsListDefinition<T : Any, CX : IsPropertyContext> :
     /** Get a reference to a specific list item on [parentList] by [index]. */
     fun itemRef(index: UInt, parentList: ListReference<T, CX>?) =
         ListItemReference(index, this, parentList)
+
+    /** Get a reference to any list item on [parentList]. */
+    fun anyItemRef(parentList: ListReference<T, CX>?) =
+        ListAnyItemReference(this, parentList)
 }

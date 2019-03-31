@@ -27,8 +27,10 @@ enum class CompleteReferenceType(val value: Byte) {
 
     // These fall outside the space and are encoded with SPECIAL (Last 3 bits 0)
     MAP_KEY(0b1000),
-    MAP_ANY_VALUE(0b10000)
-    // Binary counting so next is 0b11000
+    MAP_ANY_VALUE(0b10000),
+    LIST_ANY_VALUE(0b11000),
+    SET_ANY_VALUE(0b100000)
+    // Binary counting so next is 0b101000
 }
 
 /** Retrieve reference storage type from the [byte] */

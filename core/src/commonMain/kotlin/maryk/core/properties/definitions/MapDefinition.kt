@@ -234,7 +234,7 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
                         },
                         capturer = { context: KeyValueDefinitionContext, value ->
                             @Suppress("UNCHECKED_CAST")
-                            context.keyDefinion = value.value as IsSimpleValueDefinition<Any, IsPropertyContext>
+                            context.keyDefinition = value.value as IsSimpleValueDefinition<Any, IsPropertyContext>
                         }
                     )
 
@@ -257,7 +257,7 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
                         },
                         capturer = { context: KeyValueDefinitionContext, value ->
                             @Suppress("UNCHECKED_CAST")
-                            context.valueDefinion = value.value as IsValueDefinition<Any, IsPropertyContext>
+                            context.valueDefinition = value.value as IsValueDefinition<Any, IsPropertyContext>
                         }
                     )
 
@@ -291,14 +291,14 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
 
 class KeyValueDefinitionContext(
     val definitionsContext: ContainsDefinitionsContext?,
-    var keyDefinion: IsSimpleValueDefinition<Any, IsPropertyContext>? = null,
-    var valueDefinion: IsValueDefinition<Any, IsPropertyContext>? = null
+    var keyDefinition: IsSimpleValueDefinition<Any, IsPropertyContext>? = null,
+    var valueDefinition: IsValueDefinition<Any, IsPropertyContext>? = null
 ) : IsPropertyContext {
 
     private var _mapDefinition: Lazy<MapDefinition<Any, Any, IsPropertyContext>> = lazy {
         MapDefinition(
-            keyDefinition = this.keyDefinion ?: throw ContextNotFoundException(),
-            valueDefinition = this.valueDefinion ?: throw ContextNotFoundException()
+            keyDefinition = this.keyDefinition ?: throw ContextNotFoundException(),
+            valueDefinition = this.valueDefinition ?: throw ContextNotFoundException()
         )
     }
 

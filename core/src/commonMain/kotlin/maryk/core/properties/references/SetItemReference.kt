@@ -22,8 +22,9 @@ class SetItemReference<T : Any, CX : IsPropertyContext> internal constructor(
     val setDefinition: IsSetDefinition<T, CX>,
     parentReference: SetReference<T, CX>?
 ) : CanHaveSimpleChildReference<T, IsValueDefinition<T, CX>, SetReference<T, CX>, Set<T>>(
-    setDefinition.valueDefinition, parentReference
-) {
+        setDefinition.valueDefinition, parentReference
+    ),
+    IsPropertyReferenceWithIndirectStorageParent<T, IsValueDefinition<T, CX>, SetReference<T, CX>, Set<T>> {
     override val completeName: String
         get() = this.parentReference?.let {
             "${it.completeName}.$$value"
@@ -48,21 +49,15 @@ class SetItemReference<T : Any, CX : IsPropertyContext> internal constructor(
         setDefinition.valueDefinition.writeTransportBytes(value, cacheGetter, writer)
     }
 
-    override fun calculateStorageByteLength(): Int {
-        // Calculate bytes above the setReference parent
-        val parentCount = this.parentReference?.parentReference?.calculateStorageByteLength() ?: 0
-
-        return parentCount +
-                // calculate length of index of setDefinition
-                (this.parentReference?.propertyDefinition?.index?.calculateVarIntWithExtraInfoByteSize() ?: 0) +
-                // add bytes for set value
-                @Suppress("UNCHECKED_CAST")
-                (setDefinition.valueDefinition as IsFixedBytesEncodable<T>).calculateStorageByteLength(value)
+    override fun calculateSelfStorageByteLength(): Int {
+        // calculate length of index of setDefinition
+        return (this.parentReference?.propertyDefinition?.index?.calculateVarIntWithExtraInfoByteSize() ?: 0) +
+            // add bytes for set value
+            @Suppress("UNCHECKED_CAST")
+            (setDefinition.valueDefinition as IsFixedBytesEncodable<T>).calculateStorageByteLength(value)
     }
 
-    override fun writeStorageBytes(writer: (byte: Byte) -> Unit) {
-        // Calculate bytes above the setReference parent
-        this.parentReference?.parentReference?.writeStorageBytes(writer)
+    override fun writeSelfStorageBytes(writer: (byte: Byte) -> Unit) {
         // Write set index with a SetValue type
         this.parentReference?.propertyDefinition?.index?.writeVarIntWithExtraInfo(SET.value, writer)
         // Write value bytes

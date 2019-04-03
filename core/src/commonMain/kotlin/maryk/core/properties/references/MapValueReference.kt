@@ -22,8 +22,9 @@ class MapValueReference<K : Any, V : Any, CX : IsPropertyContext> internal const
     val mapDefinition: IsMapDefinition<K, V, CX>,
     parentReference: MapReference<K, V, CX>?
 ) : CanHaveComplexChildReference<V, IsPropertyDefinition<V>, MapReference<K, V, CX>, Map<K, V>>(
-    mapDefinition.valueDefinition, parentReference
-) {
+        mapDefinition.valueDefinition, parentReference
+    ),
+    IsPropertyReferenceWithIndirectStorageParent<V, IsPropertyDefinition<V>, MapReference<K, V, CX>, Map<K, V>> {
     override val completeName
         get() = this.parentReference?.let {
             "${it.completeName}.@$key"
@@ -53,23 +54,18 @@ class MapValueReference<K : Any, V : Any, CX : IsPropertyContext> internal const
         mapDefinition.keyDefinition.writeTransportBytes(key, cacheGetter, writer)
     }
 
-    override fun calculateStorageByteLength(): Int {
-        // Calculate bytes above the setReference parent
-        val parentCount = this.parentReference?.parentReference?.calculateStorageByteLength() ?: 0
+    override fun calculateSelfStorageByteLength(): Int {
         val keyLength = this.mapDefinition.keyDefinition.calculateStorageByteLength(this.key)
 
-        return parentCount +
-                // calculate length of index of setDefinition
-                (this.parentReference?.propertyDefinition?.index?.calculateVarIntWithExtraInfoByteSize() ?: 0) +
-                // Add key length size
-                keyLength.calculateVarByteLength() +
-                // add bytes for map key
-                keyLength
+        // calculate length of index of setDefinition
+        return (this.parentReference?.propertyDefinition?.index?.calculateVarIntWithExtraInfoByteSize() ?: 0) +
+            // Add key length size
+            keyLength.calculateVarByteLength() +
+            // add bytes for map key
+            keyLength
     }
 
-    override fun writeStorageBytes(writer: (byte: Byte) -> Unit) {
-        // Calculate bytes above the setReference parent
-        this.parentReference?.parentReference?.writeStorageBytes(writer)
+    override fun writeSelfStorageBytes(writer: (byte: Byte) -> Unit) {
         // Write set index with a SetValue type
         this.parentReference?.propertyDefinition?.index?.writeVarIntWithExtraInfo(MAP.value, writer)
         // Write key length

@@ -19,9 +19,10 @@ open class MapReference<K : Any, V : Any, CX : IsPropertyContext> internal const
     propertyDefinition: MapPropertyDefinitionWrapper<K, V, Any, CX, *>,
     parentReference: CanHaveComplexChildReference<*, *, *, *>?
 ) : PropertyReferenceForValues<Map<K, V>, Any, MapPropertyDefinitionWrapper<K, V, Any, CX, *>, CanHaveComplexChildReference<*, *, *, *>>(
-    propertyDefinition,
-    parentReference
-), HasEmbeddedPropertyReference<Map<K, V>> {
+        propertyDefinition,
+        parentReference
+    ),
+    HasEmbeddedPropertyReference<Map<K, V>> {
     override fun getEmbedded(name: String, context: IsPropertyContext?): AnyPropertyReference = when (name[0]) {
         '@' -> MapValueReference(
             propertyDefinition.keyDefinition.fromString(
@@ -113,8 +114,7 @@ open class MapReference<K : Any, V : Any, CX : IsPropertyContext> internal const
         }
     }
 
-    override fun writeStorageBytes(writer: (byte: Byte) -> Unit) {
-        this.parentReference?.writeStorageBytes(writer)
+    override fun writeSelfStorageBytes(writer: (byte: Byte) -> Unit) {
         this.propertyDefinition.index.writeVarIntWithExtraInfo(MAP.value, writer)
     }
 }

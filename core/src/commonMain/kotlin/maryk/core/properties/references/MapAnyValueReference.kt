@@ -17,9 +17,11 @@ import maryk.core.query.pairs.ReferenceValuePair
 class MapAnyValueReference<K : Any, V : Any, CX : IsPropertyContext> internal constructor(
     val mapDefinition: IsMapDefinition<K, V, CX>,
     parentReference: MapReference<K, V, CX>?
-) : CanHaveComplexChildReference<V, IsPropertyDefinition<V>, MapReference<K, V, CX>, Map<K, V>>(
-    mapDefinition.valueDefinition, parentReference
-) {
+) : IsFuzzyReference,
+    IsPropertyReferenceWithIndirectStorageParent<V, IsPropertyDefinition<V>, MapReference<K, V, CX>, Map<K, V>>,
+    CanHaveComplexChildReference<V, IsPropertyDefinition<V>, MapReference<K, V, CX>, Map<K, V>>(
+        mapDefinition.valueDefinition, parentReference
+    ) {
     override val completeName
         get() = this.parentReference?.let {
             "${it.completeName}.*"
@@ -44,20 +46,14 @@ class MapAnyValueReference<K : Any, V : Any, CX : IsPropertyContext> internal co
         ProtoBuf.writeKey(2, WireType.VAR_INT, writer)
     }
 
-    override fun calculateStorageByteLength(): Int {
-        // Calculate bytes above the setReference parent
-        val parentCount = this.parentReference?.parentReference?.calculateStorageByteLength() ?: 0
-
-        return parentCount +
-            1 + // The type byte
+    override fun calculateSelfStorageByteLength(): Int {
+        return 1 + // The type byte
             // The map index
             (this.parentReference?.propertyDefinition?.index?.calculateVarByteLength() ?: 0) +
             1
     }
 
-    override fun writeStorageBytes(writer: (byte: Byte) -> Unit) {
-        // Calculate bytes above the mapReference parent
-        this.parentReference?.parentReference?.writeStorageBytes(writer)
+    override fun writeSelfStorageBytes(writer: (byte: Byte) -> Unit) {
         writer(CompleteReferenceType.MAP_ANY_VALUE.value)
         this.parentReference?.propertyDefinition?.index?.writeVarBytes(writer)
         writer(0)

@@ -71,8 +71,7 @@ open class SetReference<T : Any, CX : IsPropertyContext> internal constructor(
         }
     }
 
-    override fun writeStorageBytes(writer: (byte: Byte) -> Unit) {
-        this.parentReference?.writeStorageBytes(writer)
+    override fun writeSelfStorageBytes(writer: (byte: Byte) -> Unit) {
         this.propertyDefinition.index.writeVarIntWithExtraInfo(SET.value, writer)
     }
 }

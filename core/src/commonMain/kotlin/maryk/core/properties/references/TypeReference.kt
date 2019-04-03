@@ -23,8 +23,8 @@ import maryk.core.values.IsValuesGetter
 /** Reference to any MultiType reference */
 data class TypeReference<E : IndexedEnum<E>, in CX : IsPropertyContext> internal constructor(
     val multiTypeDefinition: IsMultiTypeDefinition<E, CX>,
-    val parentReference: CanHaveComplexChildReference<TypedValue<E, *>, IsMultiTypeDefinition<E, *>, *, *>?
-) : IsPropertyReference<E, IndexedEnumDefinition<E>, TypedValue<E, *>>,
+    override val parentReference: CanHaveComplexChildReference<TypedValue<E, *>, IsMultiTypeDefinition<E, *>, *, *>?
+) : IsPropertyReferenceWithDirectStorageParent<E, IndexedEnumDefinition<E>, CanHaveComplexChildReference<TypedValue<E, *>, IsMultiTypeDefinition<E, *>, *, *>, TypedValue<E, *>>,
     IsFixedBytesPropertyReference<E>,
     IsFixedBytesEncodable<E> by multiTypeDefinition.typeEnum,
     IsIndexable
@@ -78,14 +78,9 @@ data class TypeReference<E : IndexedEnum<E>, in CX : IsPropertyContext> internal
         0.writeVarBytes(writer)
     }
 
-    override fun calculateStorageByteLength(): Int {
-        val parentCount = this.parentReference?.calculateStorageByteLength() ?: 0
-        return parentCount + 1 // Last is for length of type bytes
-    }
+    override fun calculateSelfStorageByteLength() = 1 // For length of type bytes
 
-    override fun writeStorageBytes(writer: (byte: Byte) -> Unit) {
-        this.parentReference?.writeStorageBytes(writer)
-
+    override fun writeSelfStorageBytes(writer: (byte: Byte) -> Unit) {
         // Write type index bytes
         0.writeVarIntWithExtraInfo(
             CompleteReferenceType.TYPE.value,

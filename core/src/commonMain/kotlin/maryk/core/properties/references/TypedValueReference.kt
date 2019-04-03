@@ -28,9 +28,11 @@ class TypedValueReference<E : IndexedEnum<E>, in CX : IsPropertyContext> interna
     multiTypeDefinition: IsMultiTypeDefinition<E, CX>,
     parentReference: CanHaveComplexChildReference<*, *, *, *>?
 ) : CanHaveComplexChildReference<Any, IsSubDefinition<Any, CX>, CanHaveComplexChildReference<*, *, *, *>, TypedValue<E, Any>>(
-    multiTypeDefinition.definitionMap[type] as IsSubDefinition<Any, CX>,
-    parentReference
-), HasEmbeddedPropertyReference<Any> {
+        multiTypeDefinition.definitionMap[type] as IsSubDefinition<Any, CX>,
+        parentReference
+    ),
+    IsPropertyReferenceWithDirectStorageParent<Any, IsSubDefinition<Any, CX>, CanHaveComplexChildReference<*, *, *, *>, TypedValue<E, Any>>,
+    HasEmbeddedPropertyReference<Any> {
     override val completeName: String
         get() = this.parentReference?.let {
             "${it.completeName}.*${type.name}"
@@ -73,14 +75,9 @@ class TypedValueReference<E : IndexedEnum<E>, in CX : IsPropertyContext> interna
         type.index.writeVarBytes(writer)
     }
 
-    override fun calculateStorageByteLength(): Int {
-        val parentCount = this.parentReference?.calculateStorageByteLength() ?: 0
-        return parentCount + type.index.calculateVarIntWithExtraInfoByteSize()
-    }
+    override fun calculateSelfStorageByteLength() = type.index.calculateVarIntWithExtraInfoByteSize()
 
-    override fun writeStorageBytes(writer: (byte: Byte) -> Unit) {
-        this.parentReference?.writeStorageBytes(writer)
-
+    override fun writeSelfStorageBytes(writer: (byte: Byte) -> Unit) {
         // Write type index bytes
         type.index.writeVarIntWithExtraInfo(
             CompleteReferenceType.TYPE.value,

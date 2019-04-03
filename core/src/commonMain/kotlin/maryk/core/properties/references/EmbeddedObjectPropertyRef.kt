@@ -44,8 +44,7 @@ class EmbeddedObjectPropertyRef<
     ): AnyPropertyReference =
         this.propertyDefinition.resolveReferenceFromStorage(reader, parentReference, context, isDoneReading)
 
-    override fun writeStorageBytes(writer: (byte: Byte) -> Unit) {
-        this.parentReference?.writeStorageBytes(writer)
+    override fun writeSelfStorageBytes(writer: (byte: Byte) -> Unit) {
         this.propertyDefinition.index.writeVarIntWithExtraInfo(EMBED.value, writer)
     }
 }

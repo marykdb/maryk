@@ -27,6 +27,7 @@ class ListItemReference<T : Any, CX : IsPropertyContext> internal constructor(
     val listDefinition: IsListDefinition<T, CX>,
     parentReference: ListReference<T, CX>?
 ) : HasEmbeddedPropertyReference<T>,
+    IsPropertyReferenceWithIndirectStorageParent<T, IsValueDefinition<T, CX>, ListReference<T, CX>, List<T>>,
     CanHaveComplexChildReference<T, IsValueDefinition<T, CX>, ListReference<T, CX>, List<T>>(
         listDefinition.valueDefinition, parentReference
     ) {
@@ -90,20 +91,14 @@ class ListItemReference<T : Any, CX : IsPropertyContext> internal constructor(
         index.writeVarBytes(writer)
     }
 
-    override fun calculateStorageByteLength(): Int {
-        // Calculate bytes above the setReference parent
-        val parentCount = this.parentReference?.parentReference?.calculateStorageByteLength() ?: 0
-
-        return parentCount +
-                // calculate length of index of setDefinition
-                (this.parentReference?.propertyDefinition?.index?.calculateVarIntWithExtraInfoByteSize() ?: 0) +
-                // add bytes for list index
-                Int.SIZE_BYTES
+    override fun calculateSelfStorageByteLength(): Int {
+        // calculate length of index of setDefinition
+        return (this.parentReference?.propertyDefinition?.index?.calculateVarIntWithExtraInfoByteSize() ?: 0) +
+            // add bytes for list index
+            Int.SIZE_BYTES
     }
 
-    override fun writeStorageBytes(writer: (byte: Byte) -> Unit) {
-        // Calculate bytes above the setReference parent
-        this.parentReference?.parentReference?.writeStorageBytes(writer)
+    override fun writeSelfStorageBytes(writer: (byte: Byte) -> Unit) {
         // Write set index with a SetValue type
         this.parentReference?.propertyDefinition?.index?.writeVarIntWithExtraInfo(LIST.value, writer)
         // Write index bytes

@@ -40,12 +40,16 @@ interface IsPropertyReference<T : Any, out D : IsPropertyDefinition<T>, V : Any>
      */
     fun writeTransportBytes(cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit)
 
-    /**
-     * Calculate the storage length of encoding this reference
-     */
+    /** Calculate the storage length of encoding only this reference */
+    fun calculateSelfStorageByteLength(): Int
+
+    /** Write storage bytes of only property reference to [writer] */
+    fun writeSelfStorageBytes(writer: (byte: Byte) -> Unit)
+
+    /** Calculate the storage length of encoding this reference and parents */
     fun calculateStorageByteLength(): Int
 
-    /** Write storage bytes of property reference to [writer] */
+    /** Write storage bytes of property reference and parents to [writer] */
     fun writeStorageBytes(writer: (byte: Byte) -> Unit)
 
     /** Resolve the value from the given [values] */

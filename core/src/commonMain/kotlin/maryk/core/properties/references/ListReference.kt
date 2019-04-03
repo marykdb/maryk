@@ -54,8 +54,7 @@ open class ListReference<T : Any, CX : IsPropertyContext> internal constructor(
         }
     }
 
-    override fun writeStorageBytes(writer: (byte: Byte) -> Unit) {
-        this.parentReference?.writeStorageBytes(writer)
+    override fun writeSelfStorageBytes(writer: (byte: Byte) -> Unit) {
         this.propertyDefinition.index.writeVarIntWithExtraInfo(LIST.value, writer)
     }
 }

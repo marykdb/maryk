@@ -21,9 +21,8 @@ interface IsPropertyReferenceForValues<
     TO : Any,
     out D : IsPropertyDefinitionWrapper<T, TO, *, *>,
     out P : AnyPropertyReference
-> : IsPropertyReference<T, D, AbstractValues<*, *, *>> {
+> : IsPropertyReference<T, D, AbstractValues<*, *, *>>, IsPropertyReferenceWithDirectStorageParent<T, D, P, AbstractValues<*, *, *>> {
     val name: String
-    val parentReference: P?
 
     /** The name of property which is referenced */
     override val completeName: String
@@ -43,13 +42,10 @@ interface IsPropertyReferenceForValues<
         this.propertyDefinition.index.writeVarBytes(writer)
     }
 
-    override fun calculateStorageByteLength(): Int {
-        val parent = this.parentReference?.calculateStorageByteLength() ?: 0
-        return parent + this.propertyDefinition.index.calculateVarIntWithExtraInfoByteSize()
-    }
+    override fun calculateSelfStorageByteLength() =
+        this.propertyDefinition.index.calculateVarIntWithExtraInfoByteSize()
 
-    override fun writeStorageBytes(writer: (byte: Byte) -> Unit) {
-        this.parentReference?.writeStorageBytes(writer)
+    override fun writeSelfStorageBytes(writer: (byte: Byte) -> Unit) {
         this.propertyDefinition.index.writeVarIntWithExtraInfo(VALUE.value, writer)
     }
 

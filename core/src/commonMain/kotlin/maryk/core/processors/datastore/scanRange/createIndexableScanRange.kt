@@ -11,7 +11,7 @@ import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.query.filters.IsFilter
 
 /** Create a scan range with [filter] and [keyScanRange] */
-fun IsIndexable.createScanRange(filter: IsFilter?, keyScanRange: KeyScanRange): IndexableScanRange {
+fun IsIndexable.createScanRange(filter: IsFilter?, keyScanRange: KeyScanRanges): IndexableScanRanges {
     val listOfKeyParts = mutableListOf<IsIndexPartialToMatch>()
     convertFilterToIndexPartsToMatch(
         this,
@@ -32,13 +32,14 @@ fun IsIndexable.createScanRange(filter: IsFilter?, keyScanRange: KeyScanRange): 
  */
 private fun createScanRangeFromParts(
     listOfParts: MutableList<IsIndexPartialToMatch>,
-    keyScanRange: KeyScanRange
-): IndexableScanRange {
+    keyScanRange: KeyScanRanges
+): IndexableScanRanges {
     val start = mutableListOf<Byte>()
     val end = mutableListOf<Byte>()
 
-    var startKeyIndex = -1 // only highered on exact matches so breaks if too low
-    var endKeyIndex = -1 // only highered on exact matches so breaks if too low
+    var startKeyIndex = -1 // only increased on exact matches so breaks if too low
+    var endKeyIndex = -1 // only increased on exact matches so breaks if too low
+    
     var keyIndex = -1
 
     var startInclusive = true
@@ -127,11 +128,15 @@ private fun createScanRangeFromParts(
     listOfParts.removeAll(toRemove)
     listOfParts.addAll(toAdd)
 
-    return IndexableScanRange(
+    val range = ScanRange(
         start = start.toByteArray(),
         startInclusive = startInclusive,
         end = end.toByteArray(),
-        endInclusive = endInclusive,
+        endInclusive = endInclusive
+    )
+
+    return IndexableScanRanges(
+        ranges = listOf(range),
         partialMatches = listOfParts,
         keyScanRange = keyScanRange
     )

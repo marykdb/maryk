@@ -9,7 +9,7 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 import kotlin.test.fail
 
-class KeyScanRangeUniqueTest {
+class KeyScanRangesUniqueTest {
     @Test
     fun convertSimpleEqualFilterToScanRange() {
         val filter = Equals(

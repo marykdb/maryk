@@ -14,7 +14,7 @@ import maryk.core.query.pairs.ReferenceValuePair
 import maryk.lib.extensions.compare.compareTo
 
 /** Create a scan range by [filter] and [startKey] */
-fun <DM : IsRootValuesDataModel<*>> DM.createScanRange(filter: IsFilter?, startKey: ByteArray?): KeyScanRange {
+fun <DM : IsRootValuesDataModel<*>> DM.createScanRange(filter: IsFilter?, startKey: ByteArray?): KeyScanRanges {
     val listOfKeyParts = mutableListOf<IsIndexPartialToMatch>()
     val listOfUniqueFilters = mutableListOf<UniqueToMatch>()
     val listOfEqualPairs = mutableListOf<ReferenceValuePair<Any>>()
@@ -42,7 +42,7 @@ private fun <DM : IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
     listOfParts: MutableList<IsIndexPartialToMatch>,
     listOfEqualPairs: List<ReferenceValuePair<Any>>,
     listOfUniqueFilters: List<UniqueToMatch>
-): KeyScanRange {
+): KeyScanRanges {
     val start = ArrayList<Byte>(this.keyByteSize)
     val end = ArrayList<Byte>(this.keyByteSize)
 
@@ -131,11 +131,15 @@ private fun <DM : IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
 
     val startArray = start.toByteArray()
 
-    return KeyScanRange(
+    val scanRange = ScanRange(
         start = if (startKey != null && startArray < startKey) startKey else startArray,
         startInclusive = startInclusive,
         end = end.toByteArray(),
-        endInclusive = endInclusive,
+        endInclusive = endInclusive
+    )
+
+    return KeyScanRanges(
+        ranges = listOf(scanRange),
         partialMatches = listOfParts,
         equalPairs = listOfEqualPairs,
         uniques = listOfUniqueFilters,

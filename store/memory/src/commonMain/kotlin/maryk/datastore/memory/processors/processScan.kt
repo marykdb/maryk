@@ -1,17 +1,16 @@
 package maryk.datastore.memory.processors
 
 import maryk.core.models.IsRootValuesDataModel
-import maryk.core.processors.datastore.scanRange.KeyScanRange
 import maryk.core.processors.datastore.ScanType.IndexScan
 import maryk.core.processors.datastore.ScanType.TableScan
-import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.processors.datastore.optimizeTableScan
 import maryk.core.processors.datastore.orderToScanType
+import maryk.core.processors.datastore.scanRange.KeyScanRanges
+import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.requests.IsScanRequest
 import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataStore
-import maryk.lib.extensions.compare.matches
 
 /** Walk with [scanRequest] on [dataStore] and do [processRecord] */
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processScan(
@@ -23,8 +22,8 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
 
     when {
         // If hard key match then quit with direct record
-        scanRange.start.size == scanRange.keySize && scanRange.end?.matches(scanRange.start) == true && (scanRange.startInclusive || scanRange.endInclusive) ->
-            dataStore.getByKey(scanRange.start)?.let {
+        scanRange.isSingleKey() ->
+            dataStore.getByKey(scanRange.ranges.first().start)?.let {
                 if (shouldProcessRecord(it, scanRequest, scanRange)) {
                     processRecord(it)
                 }
@@ -86,9 +85,9 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
 internal fun <DM: IsRootValuesDataModel<P>, P:PropertyDefinitions> shouldProcessRecord(
     record: DataRecord<DM, P>,
     scanRequest: IsScanRequest<DM, P, *>,
-    scanRange: KeyScanRange
+    scanRange: KeyScanRanges
 ): Boolean {
-    if (scanRange.keyOutOfRange(record.key.bytes)) {
+    if (!scanRange.keyWithinRanges(record.key.bytes, 0)) {
         return false
     } else if (!scanRange.matchesPartials(record.key.bytes)) {
         return false

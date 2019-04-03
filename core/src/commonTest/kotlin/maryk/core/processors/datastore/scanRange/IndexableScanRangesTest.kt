@@ -2,8 +2,6 @@ package maryk.core.processors.datastore.scanRange
 
 import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.models.key
-import maryk.core.processors.datastore.scanRange.KeyScanRange
-import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.filters.And
@@ -29,12 +27,16 @@ import maryk.test.models.MarykEnumEmbedded.E1
 import maryk.test.shouldBe
 import kotlin.test.Test
 
-class IndexableScanRangeTest {
-    private val keyScanRange = KeyScanRange(
-        start = ByteArray(23) { 0 },
-        startInclusive = true,
-        end = ByteArray(23) { MAX_BYTE },
-        endInclusive = true,
+class IndexableScanRangesTest {
+    private val keyScanRange = KeyScanRanges(
+        ranges = listOf(
+            ScanRange(
+                start = ByteArray(23) { 0 },
+                startInclusive = true,
+                end = ByteArray(23) { MAX_BYTE },
+                endInclusive = true
+            )
+        ),
         equalPairs = listOf(),
         keySize = 23
     )
@@ -46,7 +48,7 @@ class IndexableScanRangeTest {
 
     private val earlierDO = CompleteMarykModel(
         string = "Arend",
-        number= 2u,
+        number = 2u,
         time = Time(12, 11, 10),
         booleanForKey = true,
         dateForKey = Date(2019, 3, 20),
@@ -60,7 +62,7 @@ class IndexableScanRangeTest {
 
     private val matchDO = CompleteMarykModel(
         string = "Jannes",
-        number= 5u,
+        number = 5u,
         time = Time(11, 10, 9),
         booleanForKey = true,
         dateForKey = Date(2019, 3, 3),
@@ -74,7 +76,7 @@ class IndexableScanRangeTest {
 
     private val laterDO = CompleteMarykModel(
         string = "Karel",
-        number= 9u,
+        number = 9u,
         time = Time(9, 8, 7),
         booleanForKey = true,
         dateForKey = Date(2019, 3, 1),
@@ -94,21 +96,21 @@ class IndexableScanRangeTest {
 
         val scanRange = indexable.createScanRange(filter, keyScanRange)
 
-        scanRange.start.toHex() shouldBe "00000005"
-        scanRange.startInclusive shouldBe true
-        scanRange.end?.toHex() shouldBe "00000005"
-        scanRange.endInclusive shouldBe true
+        scanRange.ranges.first().start.toHex() shouldBe "00000005"
+        scanRange.ranges.first().startInclusive shouldBe true
+        scanRange.ranges.first().end?.toHex() shouldBe "00000005"
+        scanRange.ranges.first().endInclusive shouldBe true
 
-        scanRange.keyBeforeStart(matchIndexValue) shouldBe false
-        scanRange.keyOutOfRange(matchIndexValue) shouldBe false
+        scanRange.ranges.first().keyBeforeStart(matchIndexValue) shouldBe false
+        scanRange.ranges.first().keyOutOfRange(matchIndexValue) shouldBe false
         scanRange.matchesPartials(matchIndexValue) shouldBe true
 
-        scanRange.keyBeforeStart(earlierIndexValue) shouldBe true
-        scanRange.keyOutOfRange(earlierIndexValue) shouldBe false
+        scanRange.ranges.first().keyBeforeStart(earlierIndexValue) shouldBe true
+        scanRange.ranges.first().keyOutOfRange(earlierIndexValue) shouldBe false
         scanRange.matchesPartials(earlierIndexValue) shouldBe true
 
-        scanRange.keyBeforeStart(laterIndexValue) shouldBe false
-        scanRange.keyOutOfRange(laterIndexValue) shouldBe true
+        scanRange.ranges.first().keyBeforeStart(laterIndexValue) shouldBe false
+        scanRange.ranges.first().keyOutOfRange(laterIndexValue) shouldBe true
         scanRange.matchesPartials(laterIndexValue) shouldBe true
     }
 
@@ -120,21 +122,21 @@ class IndexableScanRangeTest {
 
         val scanRange = indexable.createScanRange(filter, keyScanRange)
 
-        scanRange.start.toHex() shouldBe "00000005"
-        scanRange.startInclusive shouldBe false
-        scanRange.end?.toHex() shouldBe ""
-        scanRange.endInclusive shouldBe true
+        scanRange.ranges.first().start.toHex() shouldBe "00000005"
+        scanRange.ranges.first().startInclusive shouldBe false
+        scanRange.ranges.first().end?.toHex() shouldBe ""
+        scanRange.ranges.first().endInclusive shouldBe true
 
-        scanRange.keyBeforeStart(matchIndexValue) shouldBe true // Because should skip
-        scanRange.keyOutOfRange(matchIndexValue) shouldBe false
+        scanRange.ranges.first().keyBeforeStart(matchIndexValue) shouldBe true // Because should skip
+        scanRange.ranges.first().keyOutOfRange(matchIndexValue) shouldBe false
         scanRange.matchesPartials(matchIndexValue) shouldBe true
 
-        scanRange.keyBeforeStart(earlierIndexValue) shouldBe true
-        scanRange.keyOutOfRange(earlierIndexValue) shouldBe false
+        scanRange.ranges.first().keyBeforeStart(earlierIndexValue) shouldBe true
+        scanRange.ranges.first().keyOutOfRange(earlierIndexValue) shouldBe false
         scanRange.matchesPartials(earlierIndexValue) shouldBe true
 
-        scanRange.keyBeforeStart(laterIndexValue) shouldBe false
-        scanRange.keyOutOfRange(laterIndexValue) shouldBe false
+        scanRange.ranges.first().keyBeforeStart(laterIndexValue) shouldBe false
+        scanRange.ranges.first().keyOutOfRange(laterIndexValue) shouldBe false
         scanRange.matchesPartials(laterIndexValue) shouldBe true
     }
 
@@ -146,21 +148,21 @@ class IndexableScanRangeTest {
 
         val scanRange = indexable.createScanRange(filter, keyScanRange)
 
-        scanRange.start.toHex() shouldBe "00000005"
-        scanRange.startInclusive shouldBe true
-        scanRange.end?.toHex() shouldBe ""
-        scanRange.endInclusive shouldBe true
+        scanRange.ranges.first().start.toHex() shouldBe "00000005"
+        scanRange.ranges.first().startInclusive shouldBe true
+        scanRange.ranges.first().end?.toHex() shouldBe ""
+        scanRange.ranges.first().endInclusive shouldBe true
 
-        scanRange.keyBeforeStart(matchIndexValue) shouldBe false
-        scanRange.keyOutOfRange(matchIndexValue) shouldBe false
+        scanRange.ranges.first().keyBeforeStart(matchIndexValue) shouldBe false
+        scanRange.ranges.first().keyOutOfRange(matchIndexValue) shouldBe false
         scanRange.matchesPartials(matchIndexValue) shouldBe true
 
-        scanRange.keyBeforeStart(earlierIndexValue) shouldBe true
-        scanRange.keyOutOfRange(earlierIndexValue) shouldBe false
+        scanRange.ranges.first().keyBeforeStart(earlierIndexValue) shouldBe true
+        scanRange.ranges.first().keyOutOfRange(earlierIndexValue) shouldBe false
         scanRange.matchesPartials(earlierIndexValue) shouldBe true
 
-        scanRange.keyBeforeStart(laterIndexValue) shouldBe false
-        scanRange.keyOutOfRange(laterIndexValue) shouldBe false
+        scanRange.ranges.first().keyBeforeStart(laterIndexValue) shouldBe false
+        scanRange.ranges.first().keyOutOfRange(laterIndexValue) shouldBe false
         scanRange.matchesPartials(laterIndexValue) shouldBe true
     }
 
@@ -172,21 +174,21 @@ class IndexableScanRangeTest {
 
         val scanRange = indexable.createScanRange(filter, keyScanRange)
 
-        scanRange.start.toHex() shouldBe ""
-        scanRange.startInclusive shouldBe true
-        scanRange.end?.toHex() shouldBe "00000005"
-        scanRange.endInclusive shouldBe false
+        scanRange.ranges.first().start.toHex() shouldBe ""
+        scanRange.ranges.first().startInclusive shouldBe true
+        scanRange.ranges.first().end?.toHex() shouldBe "00000005"
+        scanRange.ranges.first().endInclusive shouldBe false
 
-        scanRange.keyBeforeStart(matchIndexValue) shouldBe false
-        scanRange.keyOutOfRange(matchIndexValue) shouldBe true // because should not be included
+        scanRange.ranges.first().keyBeforeStart(matchIndexValue) shouldBe false
+        scanRange.ranges.first().keyOutOfRange(matchIndexValue) shouldBe true // because should not be included
         scanRange.matchesPartials(matchIndexValue) shouldBe true
 
-        scanRange.keyBeforeStart(earlierIndexValue) shouldBe false
-        scanRange.keyOutOfRange(earlierIndexValue) shouldBe false
+        scanRange.ranges.first().keyBeforeStart(earlierIndexValue) shouldBe false
+        scanRange.ranges.first().keyOutOfRange(earlierIndexValue) shouldBe false
         scanRange.matchesPartials(earlierIndexValue) shouldBe true
 
-        scanRange.keyBeforeStart(laterIndexValue) shouldBe false
-        scanRange.keyOutOfRange(laterIndexValue) shouldBe true
+        scanRange.ranges.first().keyBeforeStart(laterIndexValue) shouldBe false
+        scanRange.ranges.first().keyOutOfRange(laterIndexValue) shouldBe true
         scanRange.matchesPartials(laterIndexValue) shouldBe true
     }
 
@@ -198,21 +200,21 @@ class IndexableScanRangeTest {
 
         val scanRange = indexable.createScanRange(filter, keyScanRange)
 
-        scanRange.start.toHex() shouldBe ""
-        scanRange.startInclusive shouldBe true
-        scanRange.end?.toHex() shouldBe "00000005"
-        scanRange.endInclusive shouldBe true
+        scanRange.ranges.first().start.toHex() shouldBe ""
+        scanRange.ranges.first().startInclusive shouldBe true
+        scanRange.ranges.first().end?.toHex() shouldBe "00000005"
+        scanRange.ranges.first().endInclusive shouldBe true
 
-        scanRange.keyBeforeStart(matchIndexValue) shouldBe false
-        scanRange.keyOutOfRange(matchIndexValue) shouldBe false
+        scanRange.ranges.first().keyBeforeStart(matchIndexValue) shouldBe false
+        scanRange.ranges.first().keyOutOfRange(matchIndexValue) shouldBe false
         scanRange.matchesPartials(matchIndexValue) shouldBe true
 
-        scanRange.keyBeforeStart(earlierIndexValue) shouldBe false
-        scanRange.keyOutOfRange(earlierIndexValue) shouldBe false
+        scanRange.ranges.first().keyBeforeStart(earlierIndexValue) shouldBe false
+        scanRange.ranges.first().keyOutOfRange(earlierIndexValue) shouldBe false
         scanRange.matchesPartials(earlierIndexValue) shouldBe true
 
-        scanRange.keyBeforeStart(laterIndexValue) shouldBe false
-        scanRange.keyOutOfRange(laterIndexValue) shouldBe true
+        scanRange.ranges.first().keyBeforeStart(laterIndexValue) shouldBe false
+        scanRange.ranges.first().keyOutOfRange(laterIndexValue) shouldBe true
         scanRange.matchesPartials(laterIndexValue) shouldBe true
     }
 
@@ -224,21 +226,21 @@ class IndexableScanRangeTest {
 
         val scanRange = indexable.createScanRange(filter, keyScanRange)
 
-        scanRange.start.toHex() shouldBe "00000004"
-        scanRange.startInclusive shouldBe true
-        scanRange.end?.toHex() shouldBe "00000006"
-        scanRange.endInclusive shouldBe true
+        scanRange.ranges.first().start.toHex() shouldBe "00000004"
+        scanRange.ranges.first().startInclusive shouldBe true
+        scanRange.ranges.first().end?.toHex() shouldBe "00000006"
+        scanRange.ranges.first().endInclusive shouldBe true
 
-        scanRange.keyBeforeStart(matchIndexValue) shouldBe false
-        scanRange.keyOutOfRange(matchIndexValue) shouldBe false
+        scanRange.ranges.first().keyBeforeStart(matchIndexValue) shouldBe false
+        scanRange.ranges.first().keyOutOfRange(matchIndexValue) shouldBe false
         scanRange.matchesPartials(matchIndexValue) shouldBe true
 
-        scanRange.keyBeforeStart(earlierIndexValue) shouldBe true
-        scanRange.keyOutOfRange(earlierIndexValue) shouldBe false
+        scanRange.ranges.first().keyBeforeStart(earlierIndexValue) shouldBe true
+        scanRange.ranges.first().keyOutOfRange(earlierIndexValue) shouldBe false
         scanRange.matchesPartials(earlierIndexValue) shouldBe true
 
-        scanRange.keyBeforeStart(laterIndexValue) shouldBe false
-        scanRange.keyOutOfRange(laterIndexValue) shouldBe true
+        scanRange.ranges.first().keyBeforeStart(laterIndexValue) shouldBe false
+        scanRange.ranges.first().keyOutOfRange(laterIndexValue) shouldBe true
         scanRange.matchesPartials(laterIndexValue) shouldBe true
     }
 
@@ -254,21 +256,21 @@ class IndexableScanRangeTest {
 
         val scanRange = indexable.createScanRange(filter, keyScanRange)
 
-        scanRange.start.toHex() shouldBe "00000003"
-        scanRange.startInclusive shouldBe true
-        scanRange.end?.toHex() shouldBe "00000006"
-        scanRange.endInclusive shouldBe true
+        scanRange.ranges.first().start.toHex() shouldBe "00000003"
+        scanRange.ranges.first().startInclusive shouldBe true
+        scanRange.ranges.first().end?.toHex() shouldBe "00000006"
+        scanRange.ranges.first().endInclusive shouldBe true
 
-        scanRange.keyBeforeStart(matchIndexValue) shouldBe false
-        scanRange.keyOutOfRange(matchIndexValue) shouldBe false
+        scanRange.ranges.first().keyBeforeStart(matchIndexValue) shouldBe false
+        scanRange.ranges.first().keyOutOfRange(matchIndexValue) shouldBe false
         scanRange.matchesPartials(matchIndexValue) shouldBe true
 
-        scanRange.keyBeforeStart(earlierIndexValue) shouldBe true
-        scanRange.keyOutOfRange(earlierIndexValue) shouldBe false
+        scanRange.ranges.first().keyBeforeStart(earlierIndexValue) shouldBe true
+        scanRange.ranges.first().keyOutOfRange(earlierIndexValue) shouldBe false
         scanRange.matchesPartials(earlierIndexValue) shouldBe false
 
-        scanRange.keyBeforeStart(laterIndexValue) shouldBe false
-        scanRange.keyOutOfRange(laterIndexValue) shouldBe true
+        scanRange.ranges.first().keyBeforeStart(laterIndexValue) shouldBe false
+        scanRange.ranges.first().keyOutOfRange(laterIndexValue) shouldBe true
         scanRange.matchesPartials(laterIndexValue) shouldBe false
     }
 
@@ -285,21 +287,21 @@ class IndexableScanRangeTest {
 
         val scanRange = indexable.createScanRange(filter, keyScanRange)
 
-        scanRange.start.toHex() shouldBe "00000005"
-        scanRange.startInclusive shouldBe true
-        scanRange.end?.toHex() shouldBe "00000005029d6730"
-        scanRange.endInclusive shouldBe false
+        scanRange.ranges.first().start.toHex() shouldBe "00000005"
+        scanRange.ranges.first().startInclusive shouldBe true
+        scanRange.ranges.first().end?.toHex() shouldBe "00000005029d6730"
+        scanRange.ranges.first().endInclusive shouldBe false
 
-        scanRange.keyBeforeStart(matchIndexValue) shouldBe false
-        scanRange.keyOutOfRange(matchIndexValue) shouldBe true
+        scanRange.ranges.first().keyBeforeStart(matchIndexValue) shouldBe false
+        scanRange.ranges.first().keyOutOfRange(matchIndexValue) shouldBe true
         scanRange.matchesPartials(matchIndexValue) shouldBe true
 
-        scanRange.keyBeforeStart(earlierIndexValue) shouldBe true
-        scanRange.keyOutOfRange(earlierIndexValue) shouldBe false
+        scanRange.ranges.first().keyBeforeStart(earlierIndexValue) shouldBe true
+        scanRange.ranges.first().keyOutOfRange(earlierIndexValue) shouldBe false
         scanRange.matchesPartials(earlierIndexValue) shouldBe true
 
-        scanRange.keyBeforeStart(laterIndexValue) shouldBe false
-        scanRange.keyOutOfRange(laterIndexValue) shouldBe true
+        scanRange.ranges.first().keyBeforeStart(laterIndexValue) shouldBe false
+        scanRange.ranges.first().keyOutOfRange(laterIndexValue) shouldBe true
         scanRange.matchesPartials(laterIndexValue) shouldBe true
     }
 
@@ -311,19 +313,19 @@ class IndexableScanRangeTest {
 
         val scanRange = indexable.createScanRange(filter, keyScanRange)
 
-        scanRange.start.toHex() shouldBe ""
-        scanRange.end?.toHex() shouldBe ""
+        scanRange.ranges.first().start.toHex() shouldBe ""
+        scanRange.ranges.first().end?.toHex() shouldBe ""
 
-        scanRange.keyBeforeStart(matchIndexValue) shouldBe false
-        scanRange.keyOutOfRange(matchIndexValue) shouldBe false
+        scanRange.ranges.first().keyBeforeStart(matchIndexValue) shouldBe false
+        scanRange.ranges.first().keyOutOfRange(matchIndexValue) shouldBe false
         scanRange.matchesPartials(matchIndexValue) shouldBe true
 
-        scanRange.keyBeforeStart(earlierIndexValue) shouldBe false
-        scanRange.keyOutOfRange(earlierIndexValue) shouldBe false
+        scanRange.ranges.first().keyBeforeStart(earlierIndexValue) shouldBe false
+        scanRange.ranges.first().keyOutOfRange(earlierIndexValue) shouldBe false
         scanRange.matchesPartials(earlierIndexValue) shouldBe true
 
-        scanRange.keyBeforeStart(laterIndexValue) shouldBe false
-        scanRange.keyOutOfRange(laterIndexValue) shouldBe false
+        scanRange.ranges.first().keyBeforeStart(laterIndexValue) shouldBe false
+        scanRange.ranges.first().keyOutOfRange(laterIndexValue) shouldBe false
         scanRange.matchesPartials(laterIndexValue) shouldBe true
     }
 
@@ -335,31 +337,31 @@ class IndexableScanRangeTest {
 
         val scanRange = string.ref().createScanRange(filter, keyScanRange)
 
-        scanRange.start.toHex() shouldBe "4a616e"
-        scanRange.end?.toHex() shouldBe "4a616e"
+        scanRange.ranges.first().start.toHex() shouldBe "4a616e"
+        scanRange.ranges.first().end?.toHex() shouldBe "4a616e"
 
         val matchStringIndexValue = string.ref().toStorageByteArrayForIndex(
             matchDO, matchKey.bytes
         )!!
 
-        scanRange.keyBeforeStart(matchStringIndexValue) shouldBe false
-        scanRange.keyOutOfRange(matchStringIndexValue) shouldBe false
+        scanRange.ranges.first().keyBeforeStart(matchStringIndexValue) shouldBe false
+        scanRange.ranges.first().keyOutOfRange(matchStringIndexValue) shouldBe false
         scanRange.matchesPartials(matchStringIndexValue) shouldBe true
 
         val earlierStringIndexValue = string.ref().toStorageByteArrayForIndex(
             earlierDO, earlierKey.bytes
         )!!
 
-        scanRange.keyBeforeStart(earlierStringIndexValue) shouldBe true
-        scanRange.keyOutOfRange(earlierStringIndexValue) shouldBe false
+        scanRange.ranges.first().keyBeforeStart(earlierStringIndexValue) shouldBe true
+        scanRange.ranges.first().keyOutOfRange(earlierStringIndexValue) shouldBe false
         scanRange.matchesPartials(earlierStringIndexValue) shouldBe true
 
         val laterStringIndexValue = string.ref().toStorageByteArrayForIndex(
             laterDO, laterKey.bytes
         )!!
 
-        scanRange.keyBeforeStart(laterStringIndexValue) shouldBe false
-        scanRange.keyOutOfRange(laterStringIndexValue) shouldBe true
+        scanRange.ranges.first().keyBeforeStart(laterStringIndexValue) shouldBe false
+        scanRange.ranges.first().keyOutOfRange(laterStringIndexValue) shouldBe true
         scanRange.matchesPartials(laterStringIndexValue) shouldBe true
     }
 
@@ -371,15 +373,15 @@ class IndexableScanRangeTest {
 
         val scanRange = string.ref().createScanRange(filter, keyScanRange)
 
-        scanRange.start.toHex() shouldBe ""
-        scanRange.end?.toHex() shouldBe ""
+        scanRange.ranges.first().start.toHex() shouldBe ""
+        scanRange.ranges.first().end?.toHex() shouldBe ""
 
         val matchStringIndexValue = string.ref().toStorageByteArrayForIndex(
             matchDO, matchKey.bytes
         )!!
 
-        scanRange.keyBeforeStart(matchStringIndexValue) shouldBe false
-        scanRange.keyOutOfRange(matchStringIndexValue) shouldBe false
+        scanRange.ranges.first().keyBeforeStart(matchStringIndexValue) shouldBe false
+        scanRange.ranges.first().keyOutOfRange(matchStringIndexValue) shouldBe false
         // Only one to match with the RegEx
         scanRange.matchesPartials(matchStringIndexValue) shouldBe true
 
@@ -387,16 +389,16 @@ class IndexableScanRangeTest {
             earlierDO, earlierKey.bytes
         )!!
 
-        scanRange.keyBeforeStart(earlierStringIndexValue) shouldBe false
-        scanRange.keyOutOfRange(earlierStringIndexValue) shouldBe false
+        scanRange.ranges.first().keyBeforeStart(earlierStringIndexValue) shouldBe false
+        scanRange.ranges.first().keyOutOfRange(earlierStringIndexValue) shouldBe false
         scanRange.matchesPartials(earlierStringIndexValue) shouldBe false
 
         val laterStringIndexValue = string.ref().toStorageByteArrayForIndex(
             laterDO, laterKey.bytes
         )!!
 
-        scanRange.keyBeforeStart(laterStringIndexValue) shouldBe false
-        scanRange.keyOutOfRange(laterStringIndexValue) shouldBe false
+        scanRange.ranges.first().keyBeforeStart(laterStringIndexValue) shouldBe false
+        scanRange.ranges.first().keyOutOfRange(laterStringIndexValue) shouldBe false
         scanRange.matchesPartials(laterStringIndexValue) shouldBe false
     }
 }

@@ -41,9 +41,9 @@ class MapAnyValueReference<K : Any, V : Any, CX : IsPropertyContext> internal co
     }
 
     override fun fuzzyMatcher(): IsFuzzyMatcher {
-        val valueDefinition = mapDefinition.valueDefinition
-        return if (valueDefinition is IsFixedBytesEncodable<*>) {
-            FuzzyExactLengthMatch(valueDefinition.byteSize)
+        val keyDefinition = mapDefinition.keyDefinition
+        return if (keyDefinition is IsFixedBytesEncodable<*>) {
+            FuzzyExactLengthMatch(keyDefinition.byteSize)
         } else {
             FuzzyDynamicLengthMatch
         }

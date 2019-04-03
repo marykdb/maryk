@@ -23,8 +23,8 @@ enum class FuzzyMatchResult {
 
 /** Defines a fuzzy qualifier matcher with [qualifierParts] and in between [fuzzyMatchers] */
 class QualifierFuzzyMatcher(
-    private val qualifierParts: List<ByteArray>,
-    private val fuzzyMatchers: List<IsFuzzyMatcher>
+    val qualifierParts: List<ByteArray>,
+    val fuzzyMatchers: List<IsFuzzyMatcher>
 ) : IsQualifierMatcher() {
     /** Find first possible match */
     fun firstPossible() = qualifierParts.first()

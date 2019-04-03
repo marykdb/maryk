@@ -1,6 +1,9 @@
 package maryk.core.properties.references
 
 import maryk.core.exceptions.UnexpectedValueException
+import maryk.core.processors.datastore.matchers.FuzzyExactLengthMatch
+import maryk.core.processors.datastore.matchers.QualifierExactMatcher
+import maryk.core.processors.datastore.matchers.QualifierFuzzyMatcher
 import maryk.core.protobuf.WriteCache
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
@@ -110,6 +113,23 @@ class ListReferenceTest {
     }
 
     @Test
+    fun createAnyRefQualifierMatcher() {
+        val matcher = anyReference.toQualifierMatcher()
+
+        (matcher is QualifierFuzzyMatcher) shouldBe true
+        (matcher as QualifierFuzzyMatcher).let {
+            it.firstPossible().toHex() shouldBe "7a"
+            it.qualifierParts.size shouldBe 1
+            it.fuzzyMatchers.size shouldBe 1
+
+            it.fuzzyMatchers.first().let { matcher ->
+                (matcher is FuzzyExactLengthMatch) shouldBe true
+                (matcher as FuzzyExactLengthMatch).length shouldBe 4
+            }
+        }
+    }
+
+    @Test
     fun writeDeepStorageBytes() {
         val bc = ByteCollector()
 
@@ -121,5 +141,13 @@ class ListReferenceTest {
         bc.bytes!!.toHex() shouldBe "661e7a00000016"
 
         TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) shouldBe subReference
+    }
+
+    @Test
+    fun createItemRefQualifierMatcher() {
+        val matcher = reference.toQualifierMatcher()
+
+        (matcher is QualifierExactMatcher) shouldBe true
+        (matcher as QualifierExactMatcher).qualifier.toHex() shouldBe "7a00000005"
     }
 }

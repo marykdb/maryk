@@ -1,6 +1,9 @@
 package maryk.core.properties.references
 
 import maryk.core.exceptions.UnexpectedValueException
+import maryk.core.processors.datastore.matchers.FuzzyExactLengthMatch
+import maryk.core.processors.datastore.matchers.QualifierExactMatcher
+import maryk.core.processors.datastore.matchers.QualifierFuzzyMatcher
 import maryk.core.protobuf.WriteCache
 import maryk.lib.extensions.toHex
 import maryk.lib.time.Time
@@ -124,6 +127,23 @@ class MapReferenceTest {
     }
 
     @Test
+    fun createAnyRefQualifierMatcher() {
+        val matcher = anyReference.toQualifierMatcher()
+
+        (matcher is QualifierFuzzyMatcher) shouldBe true
+        (matcher as QualifierFuzzyMatcher).let {
+            it.firstPossible().toHex() shouldBe "54"
+            it.qualifierParts.size shouldBe 1
+            it.fuzzyMatchers.size shouldBe 1
+
+            it.fuzzyMatchers.first().let { matcher ->
+                (matcher is FuzzyExactLengthMatch) shouldBe true
+                (matcher as FuzzyExactLengthMatch).length shouldBe 3
+            }
+        }
+    }
+
+    @Test
     fun writeAndReadKeyRefStorageBytes() {
         val bc = ByteCollector()
 
@@ -135,6 +155,14 @@ class MapReferenceTest {
         bc.bytes!!.toHex() shouldBe "080a0300a8c1"
 
         TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) shouldBe keyReference
+    }
+
+    @Test
+    fun createKeyRefQualifierMatcher() {
+        val matcher = keyReference.toQualifierMatcher()
+
+        (matcher is QualifierExactMatcher) shouldBe true
+        (matcher as QualifierExactMatcher).qualifier.toHex() shouldBe "080a0300a8c1"
     }
 
     @Test

@@ -2,6 +2,7 @@ package maryk.core.properties.references
 
 import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.models.RootDataModel
+import maryk.core.processors.datastore.matchers.QualifierExactMatcher
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.StringDefinition
@@ -97,5 +98,12 @@ internal class PropertyReferenceTest {
         bc.bytes!!.toHex() shouldBe "1609"
 
         Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) shouldBe subRef
+    }
+
+    @Test
+    fun createMatcher() {
+        val matcher = subRef.toQualifierMatcher()
+        (matcher is QualifierExactMatcher) shouldBe true
+        (matcher as QualifierExactMatcher).qualifier.toHex() shouldBe "0916"
     }
 }

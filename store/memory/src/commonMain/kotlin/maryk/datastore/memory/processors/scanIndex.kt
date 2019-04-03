@@ -1,9 +1,9 @@
 package maryk.datastore.memory.processors
 
 import maryk.core.models.IsRootValuesDataModel
-import maryk.core.processors.datastore.KeyScanRange
+import maryk.core.processors.datastore.scanRange.KeyScanRange
 import maryk.core.processors.datastore.ScanType.IndexScan
-import maryk.core.processors.datastore.createScanRange
+import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.orders.Direction.ASC
 import maryk.core.query.orders.Direction.DESC

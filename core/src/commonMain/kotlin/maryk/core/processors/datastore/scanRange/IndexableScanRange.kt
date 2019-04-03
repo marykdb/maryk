@@ -1,4 +1,6 @@
-package maryk.core.processors.datastore
+package maryk.core.processors.datastore.scanRange
+
+import maryk.core.processors.datastore.matchers.IsIndexPartialToMatch
 
 /**
  * Defines a range to scan on Indexables. Also contains partial matches to check.

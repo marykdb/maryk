@@ -1,4 +1,4 @@
-package maryk.core.processors.datastore
+package maryk.core.processors.datastore.matchers
 
 import maryk.core.exceptions.TypeException
 import maryk.core.properties.IsPropertyContext
@@ -60,44 +60,106 @@ fun convertFilterToIndexPartsToMatch(
             ) { index, _, byteArray ->
                 val keyIndex = convertIndex?.invoke(index)
                 listOfIndexParts.add(
-                    IndexPartialToMatch(index, keyIndex, keySize, byteArray, partialMatch = true)
+                    IndexPartialToMatch(
+                        index,
+                        keyIndex,
+                        keySize,
+                        byteArray,
+                        partialMatch = true
+                    )
                 )
             }
         }
-        is GreaterThan -> walkFilterReferencesAndValues(filter, indexable) { index, keyDefinition, byteArray ->
+        is GreaterThan -> walkFilterReferencesAndValues(
+            filter,
+            indexable
+        ) { index, keyDefinition, byteArray ->
             val keyIndex = convertIndex?.invoke(index)
             listOfIndexParts.add(
-                indexPartialWithDirection(keyDefinition !is Reversed<*>, index, keyIndex, keySize, byteArray, false)
+                indexPartialWithDirection(
+                    keyDefinition !is Reversed<*>,
+                    index,
+                    keyIndex,
+                    keySize,
+                    byteArray,
+                    false
+                )
             )
         }
-        is GreaterThanEquals -> walkFilterReferencesAndValues(filter, indexable) { index, keyDefinition, byteArray ->
+        is GreaterThanEquals -> walkFilterReferencesAndValues(
+            filter,
+            indexable
+        ) { index, keyDefinition, byteArray ->
             val keyIndex = convertIndex?.invoke(index)
             listOfIndexParts.add(
-                indexPartialWithDirection(keyDefinition !is Reversed<*>, index, keyIndex, keySize, byteArray, true)
+                indexPartialWithDirection(
+                    keyDefinition !is Reversed<*>,
+                    index,
+                    keyIndex,
+                    keySize,
+                    byteArray,
+                    true
+                )
             )
         }
-        is LessThan -> walkFilterReferencesAndValues(filter, indexable) { index, keyDefinition, byteArray ->
+        is LessThan -> walkFilterReferencesAndValues(
+            filter,
+            indexable
+        ) { index, keyDefinition, byteArray ->
             val keyIndex = convertIndex?.invoke(index)
             listOfIndexParts.add(
-                indexPartialWithDirection(keyDefinition is Reversed<*>, index, keyIndex, keySize, byteArray, false)
+                indexPartialWithDirection(
+                    keyDefinition is Reversed<*>,
+                    index,
+                    keyIndex,
+                    keySize,
+                    byteArray,
+                    false
+                )
             )
         }
-        is LessThanEquals -> walkFilterReferencesAndValues(filter, indexable) { index, keyDefinition, byteArray ->
+        is LessThanEquals -> walkFilterReferencesAndValues(
+            filter,
+            indexable
+        ) { index, keyDefinition, byteArray ->
             val keyIndex = convertIndex?.invoke(index)
             listOfIndexParts.add(
-                indexPartialWithDirection(keyDefinition is Reversed<*>, index, keyIndex, keySize, byteArray, true)
+                indexPartialWithDirection(
+                    keyDefinition is Reversed<*>,
+                    index,
+                    keyIndex,
+                    keySize,
+                    byteArray,
+                    true
+                )
             )
         }
         is Range -> for ((reference, value) in filter.referenceRangePairs) {
             getDefinitionOrNull(indexable, reference) { index, keyDefinition ->
                 val keyIndex = convertIndex?.invoke(index)
-                val fromBytes = convertValueToIndexableBytes(keyDefinition, value.from)
-                val toBytes = convertValueToIndexableBytes(keyDefinition, value.to)
+                val fromBytes =
+                    convertValueToIndexableBytes(keyDefinition, value.from)
+                val toBytes =
+                    convertValueToIndexableBytes(keyDefinition, value.to)
                 listOfIndexParts.add(
-                    indexPartialWithDirection(keyDefinition !is Reversed<*>, index, keyIndex, keySize, fromBytes, value.inclusiveFrom)
+                    indexPartialWithDirection(
+                        keyDefinition !is Reversed<*>,
+                        index,
+                        keyIndex,
+                        keySize,
+                        fromBytes,
+                        value.inclusiveFrom
+                    )
                 )
                 listOfIndexParts.add(
-                    indexPartialWithDirection(keyDefinition is Reversed<*>, index, keyIndex, keySize, toBytes, value.inclusiveTo)
+                    indexPartialWithDirection(
+                        keyDefinition is Reversed<*>,
+                        index,
+                        keyIndex,
+                        keySize,
+                        toBytes,
+                        value.inclusiveTo
+                    )
                 )
             }
         }
@@ -124,7 +186,11 @@ fun convertFilterToIndexPartsToMatch(
                     if (it is IsComparableDefinition<*, *> && it.unique) {
                         for (uniqueToMatch in value) {
                             listOfUniqueFilters.add(
-                                createUniqueToMatch(reference, it, uniqueToMatch)
+                                createUniqueToMatch(
+                                    reference,
+                                    it,
+                                    uniqueToMatch
+                                )
                             )
                         }
                     }
@@ -134,13 +200,25 @@ fun convertFilterToIndexPartsToMatch(
         is RegEx -> {
             for ((reference, regex) in filter.referenceValuePairs) {
                 getDefinitionOrNull(indexable, reference) { index, _ ->
-                    listOfIndexParts += IndexPartialToRegexMatch(index, keySize, regex)
+                    listOfIndexParts += IndexPartialToRegexMatch(
+                        index,
+                        keySize,
+                        regex
+                    )
                 }
             }
         }
         is And -> {
             for (aFilter in filter.filters) {
-                convertFilterToIndexPartsToMatch(indexable, keySize, convertIndex, aFilter, listOfIndexParts, listOfEqualPairs, listOfUniqueFilters)
+                convertFilterToIndexPartsToMatch(
+                    indexable,
+                    keySize,
+                    convertIndex,
+                    aFilter,
+                    listOfIndexParts,
+                    listOfEqualPairs,
+                    listOfUniqueFilters
+                )
             }
         }
         else -> {

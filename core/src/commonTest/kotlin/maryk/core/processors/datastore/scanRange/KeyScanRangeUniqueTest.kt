@@ -1,4 +1,4 @@
-package maryk.core.processors.datastore
+package maryk.core.processors.datastore.scanRange
 
 import maryk.core.query.filters.Equals
 import maryk.core.query.filters.ValueIn

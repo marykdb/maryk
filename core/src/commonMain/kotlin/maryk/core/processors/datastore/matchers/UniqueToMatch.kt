@@ -1,4 +1,4 @@
-package maryk.core.processors.datastore
+package maryk.core.processors.datastore.matchers
 
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsComparableDefinition

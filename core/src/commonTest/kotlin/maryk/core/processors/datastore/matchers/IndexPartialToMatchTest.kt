@@ -1,4 +1,4 @@
-package maryk.core.processors.datastore
+package maryk.core.processors.datastore.matchers
 
 import maryk.lib.extensions.initByteArrayByHex
 import maryk.test.shouldBe

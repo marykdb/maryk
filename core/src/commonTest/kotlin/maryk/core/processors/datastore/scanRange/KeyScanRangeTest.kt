@@ -1,6 +1,7 @@
-package maryk.core.processors.datastore
+package maryk.core.processors.datastore.scanRange
 
 import maryk.core.models.key
+import maryk.core.processors.datastore.matchers.IndexPartialToMatch
 import maryk.core.query.filters.And
 import maryk.core.query.filters.Equals
 import maryk.core.query.filters.GreaterThan

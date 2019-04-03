@@ -1,5 +1,6 @@
-package maryk.core.processors.datastore
+package maryk.core.processors.datastore.scanRange
 
+import maryk.core.processors.datastore.matchers.IsIndexPartialToMatch
 import maryk.lib.extensions.compare.compareDefinedTo
 
 /**

@@ -1,5 +1,7 @@
-package maryk.core.processors.datastore
+package maryk.core.processors.datastore.matchers
 
+import maryk.core.processors.datastore.findByteIndexAndSizeByPartIndex
+import maryk.core.processors.datastore.findByteIndexByPartIndex
 import maryk.lib.bytes.initString
 import maryk.lib.extensions.compare.matchPart
 
@@ -12,7 +14,11 @@ sealed class IsIndexPartialToMatch {
      * Returns byte index to start reading for [bytes]
      * If this partial is for key bytes it already has the value or otherwise is for flex key then will calculate value
      */
-    protected fun getByteIndex(bytes: ByteArray) = fromByteIndex ?: findByteIndexByPartIndex(indexableIndex, bytes, keySize)
+    protected fun getByteIndex(bytes: ByteArray) = fromByteIndex ?: findByteIndexByPartIndex(
+        indexableIndex,
+        bytes,
+        keySize
+    )
 
     abstract fun match(bytes: ByteArray, offset: Int = 0): Boolean
 }
@@ -41,7 +47,11 @@ internal class IndexPartialToRegexMatch(
 
     /** Matches [bytes] to partial and returns true if matches */
     override fun match(bytes: ByteArray, offset: Int): Boolean {
-        val (internalOffset, size) = findByteIndexAndSizeByPartIndex(indexableIndex, bytes, keySize)
+        val (internalOffset, size) = findByteIndexAndSizeByPartIndex(
+            indexableIndex,
+            bytes,
+            keySize
+        )
         var readIndex= offset + internalOffset
 
         val toMatch = initString(size) { bytes[readIndex++] }

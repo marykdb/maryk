@@ -1,5 +1,7 @@
-package maryk.core.processors.datastore
+package maryk.core.processors.datastore.scanRange
 
+import maryk.core.processors.datastore.matchers.IsIndexPartialToMatch
+import maryk.core.processors.datastore.matchers.UniqueToMatch
 import maryk.core.query.pairs.ReferenceValuePair
 
 /** Defines a range to scan for key. Also contains partial matches to check. */

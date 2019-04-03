@@ -10,7 +10,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.IsMapDefinition
-import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
@@ -22,8 +22,8 @@ class MapAnyValueReference<K : Any, V : Any, CX : IsPropertyContext> internal co
     val mapDefinition: IsMapDefinition<K, V, CX>,
     parentReference: MapReference<K, V, CX>?
 ) : IsFuzzyReference,
-    IsPropertyReferenceWithIndirectStorageParent<V, IsPropertyDefinition<V>, MapReference<K, V, CX>, Map<K, V>>,
-    CanHaveComplexChildReference<V, IsPropertyDefinition<V>, MapReference<K, V, CX>, Map<K, V>>(
+    IsPropertyReferenceWithIndirectStorageParent<V, IsSubDefinition<V, CX>, MapReference<K, V, CX>, Map<K, V>>,
+    CanHaveComplexChildReference<V, IsSubDefinition<V, CX>, MapReference<K, V, CX>, Map<K, V>>(
         mapDefinition.valueDefinition, parentReference
     ) {
     override val completeName

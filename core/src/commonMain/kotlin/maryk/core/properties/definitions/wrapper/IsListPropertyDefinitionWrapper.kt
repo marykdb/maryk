@@ -39,7 +39,7 @@ interface IsListPropertyDefinitionWrapper<T : Any, TO : Any, LD : ListDefinition
         this.definition.anyItemRef(this.ref(parentRef))
 
     /** For quick notation to get any list item reference */
-    fun refAtAny(): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> ListAnyItemReference<T, CX> {
+    fun refToAny(): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> ListAnyItemReference<T, CX> {
         return { this.getAnyItemRef(it) }
     }
 

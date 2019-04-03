@@ -146,6 +146,18 @@ class FilterWithFetchRequestKtTest {
         ) shouldBe false
 
         filterMatches(
+            Equals(TestMarykModel { list.refToAny() } with 6),
+            value1,
+            null
+        ) shouldBe true
+
+        filterMatches(
+            Equals(TestMarykModel { list.refToAny() } with 2),
+            value1,
+            null
+        ) shouldBe false
+
+        filterMatches(
             Equals(TestMarykModel { list refAt 1u } with 6),
             value1,
             null

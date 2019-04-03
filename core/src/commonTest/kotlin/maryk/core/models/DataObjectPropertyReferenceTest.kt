@@ -3,7 +3,7 @@ package maryk.core.models
 import maryk.core.properties.definitions.wrapper.any
 import maryk.core.properties.definitions.wrapper.at
 import maryk.core.properties.definitions.wrapper.atKeyAndType
-import maryk.core.properties.definitions.wrapper.refAtAny
+import maryk.core.properties.definitions.wrapper.refToAny
 import maryk.core.properties.definitions.wrapper.refAtKey
 import maryk.core.properties.definitions.wrapper.refAtKeyAndType
 import maryk.lib.extensions.toHex
@@ -31,7 +31,7 @@ internal class DataObjectPropertyReferenceTest {
         TestMarykModel { embeddedValues { model { model { model ref { value } } } } }.completeName shouldBe "embeddedValues.model.model.model.value"
 
         TestMarykModel { embeddedValues { marykModel { list refAt 5u } } }.completeName shouldBe "embeddedValues.marykModel.list.@5"
-        TestMarykModel { embeddedValues { marykModel { list.refAtAny() } } }.completeName shouldBe "embeddedValues.marykModel.list.*"
+        TestMarykModel { embeddedValues { marykModel { list.refToAny() } } }.completeName shouldBe "embeddedValues.marykModel.list.*"
 
         TestMarykModel { embeddedValues { marykModel { set refAt Date(2017, 12, 5) } } }.completeName shouldBe "embeddedValues.marykModel.set.\$2017-12-05"
 
@@ -42,7 +42,7 @@ internal class DataObjectPropertyReferenceTest {
         TestMarykModel { multi.refToType() }.completeName shouldBe "multi.*"
 
         ComplexModel { mapIntObject.refAtKey(2u) { value } }.completeName shouldBe "mapIntObject.@2.value"
-        ComplexModel { mapIntObject.refAtAny { value } }.completeName shouldBe "mapIntObject.*.value"
+        ComplexModel { mapIntObject.refToAny { value } }.completeName shouldBe "mapIntObject.*.value"
         ComplexModel { mapIntObject.at(2u) { model ref { value } } }.completeName shouldBe "mapIntObject.@2.model.value"
         ComplexModel { mapIntObject.any { model ref { value } } }.completeName shouldBe "mapIntObject.*.model.value"
 
@@ -65,7 +65,7 @@ internal class DataObjectPropertyReferenceTest {
         TestMarykModel { embeddedValues { model { model { model ref { value } } } } }.toStorageByteArray().toHex() shouldBe "6616161609"
 
         TestMarykModel { embeddedValues { marykModel { list refAt 5u } } }.toStorageByteArray().toHex() shouldBe "661e4200000005"
-        TestMarykModel { embeddedValues { marykModel { list.refAtAny() } } }.toStorageByteArray().toHex() shouldBe "661e180800"
+        TestMarykModel { embeddedValues { marykModel { list.refToAny() } } }.toStorageByteArray().toHex() shouldBe "661e180800"
 
         TestMarykModel { embeddedValues { marykModel { set refAt Date(2017, 12, 5) } } }.toStorageByteArray().toHex() shouldBe "661e4b80004461"
 
@@ -76,7 +76,7 @@ internal class DataObjectPropertyReferenceTest {
         TestMarykModel { multi.refToType() }.toStorageByteArray().toHex() shouldBe "6905"
 
         ComplexModel { mapIntObject.refAtKey(2u) { value } }.toStorageByteArray().toHex() shouldBe "1c040000000209"
-        ComplexModel { mapIntObject.refAtAny { value } }.toStorageByteArray().toHex() shouldBe "10030009"
+        ComplexModel { mapIntObject.refToAny { value } }.toStorageByteArray().toHex() shouldBe "10030009"
         ComplexModel { mapIntObject.at(2u) { model ref { value } } }.toStorageByteArray().toHex() shouldBe "1c04000000021609"
         ComplexModel { mapIntObject.any { model ref { value } } }.toStorageByteArray().toHex() shouldBe "1003001609"
 

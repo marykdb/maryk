@@ -8,7 +8,6 @@ import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsMapDefinition
-import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.ReferenceType.MAP
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
@@ -21,10 +20,10 @@ class MapValueReference<K : Any, V : Any, CX : IsPropertyContext> internal const
     val key: K,
     val mapDefinition: IsMapDefinition<K, V, CX>,
     parentReference: MapReference<K, V, CX>?
-) : CanHaveComplexChildReference<V, IsPropertyDefinition<V>, MapReference<K, V, CX>, Map<K, V>>(
+) : CanHaveComplexChildReference<V, IsChangeableValueDefinition<V, CX>, MapReference<K, V, CX>, Map<K, V>>(
         mapDefinition.valueDefinition, parentReference
     ),
-    IsPropertyReferenceWithIndirectStorageParent<V, IsPropertyDefinition<V>, MapReference<K, V, CX>, Map<K, V>> {
+    IsPropertyReferenceWithIndirectStorageParent<V, IsChangeableValueDefinition<V, CX>, MapReference<K, V, CX>, Map<K, V>> {
     override val completeName
         get() = this.parentReference?.let {
             "${it.completeName}.@$key"

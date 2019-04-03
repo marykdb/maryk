@@ -3,8 +3,12 @@ package maryk.core.properties.references
 import maryk.core.exceptions.RequestException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
+import maryk.core.processors.datastore.matchers.FuzzyDynamicLengthMatch
+import maryk.core.processors.datastore.matchers.FuzzyExactLengthMatch
+import maryk.core.processors.datastore.matchers.IsFuzzyMatcher
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsChangeableValueDefinition
+import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.protobuf.ProtoBuf
@@ -34,6 +38,15 @@ class MapAnyValueReference<K : Any, V : Any, CX : IsPropertyContext> internal co
 
     override fun resolveFromAny(value: Any): Any {
         throw RequestException("Cannot get a specific value with any value reference")
+    }
+
+    override fun fuzzyMatcher(): IsFuzzyMatcher {
+        val valueDefinition = mapDefinition.valueDefinition
+        return if (valueDefinition is IsFixedBytesEncodable<*>) {
+            FuzzyExactLengthMatch(valueDefinition.byteSize)
+        } else {
+            FuzzyDynamicLengthMatch
+        }
     }
 
     override fun calculateTransportByteLength(cacher: WriteCacheWriter): Int {

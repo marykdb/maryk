@@ -4,6 +4,7 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
+import maryk.core.processors.datastore.matchers.FuzzyExactLengthMatch
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsEmbeddedDefinition
@@ -75,6 +76,8 @@ class ListAnyItemReference<T : Any, CX : IsPropertyContext> internal constructor
         get() = this.parentReference?.let {
             "${it.completeName}.*"
         } ?: "*"
+
+    override fun fuzzyMatcher() = FuzzyExactLengthMatch(4)
 
     override fun calculateTransportByteLength(cacher: WriteCacheWriter): Int {
         val parentLength = parentReference?.calculateTransportByteLength(cacher) ?: 0

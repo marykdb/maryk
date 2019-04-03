@@ -23,11 +23,11 @@ class QualifierMatcherTest {
     @Test
     fun fuzzyMatch() {
         val qualifierMatcher = QualifierFuzzyMatcher(
-            arrayOf(
+            listOf(
                 initByteArrayByHex("bbbb"),
                 initByteArrayByHex("cccc")
             ),
-            arrayOf(
+            listOf(
                 FuzzyDynamicLengthMatch,
                 FuzzyExactLengthMatch(4)
             )

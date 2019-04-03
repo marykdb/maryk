@@ -3,14 +3,14 @@ package maryk.core.processors.datastore.matchers
 import maryk.core.extensions.bytes.initIntByVar
 
 /** Describes a fuzzy match where any byte will be matched */
-sealed class IsFuzzyMatch {
+sealed class IsFuzzyMatcher {
     abstract fun skip(reader: () -> Byte)
 }
 
 /** Exact fuzzy [length] match */
 class FuzzyExactLengthMatch(
     val length: Int
-) : IsFuzzyMatch() {
+) : IsFuzzyMatcher() {
     override fun skip(reader: () -> Byte) {
         for (i in 1..length) {
             reader()
@@ -19,7 +19,7 @@ class FuzzyExactLengthMatch(
 }
 
 /** Dynamic fuzzy length match, will read the length from the first bytes */
-object FuzzyDynamicLengthMatch : IsFuzzyMatch() {
+object FuzzyDynamicLengthMatch : IsFuzzyMatcher() {
     override fun skip(reader: () -> Byte) {
         val length = initIntByVar(reader)
 

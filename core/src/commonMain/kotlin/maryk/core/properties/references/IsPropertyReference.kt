@@ -1,5 +1,9 @@
 package maryk.core.properties.references
 
+import maryk.core.processors.datastore.matchers.IsFuzzyMatcher
+import maryk.core.processors.datastore.matchers.IsQualifierMatcher
+import maryk.core.processors.datastore.matchers.QualifierExactMatcher
+import maryk.core.processors.datastore.matchers.QualifierFuzzyMatcher
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
@@ -77,5 +81,37 @@ interface IsPropertyReference<T : Any, out D : IsPropertyDefinition<T>, V : Any>
         val referenceToCompareTo = ByteArray(this.calculateStorageByteLength())
         this.writeStorageBytes { referenceToCompareTo[index++] = it }
         return referenceToCompareTo
+    }
+
+    fun toQualifierMatcher(): IsQualifierMatcher {
+        val bytes = mutableListOf<Byte>()
+        val byteArrays = mutableListOf<ByteArray>()
+        val fuzzyMatchers = mutableListOf<IsFuzzyMatcher>()
+
+        var ref: IsPropertyReference<*, *, *> = this
+        while (ref is IsPropertyReferenceWithParent<*, *, *, *> && ref.parentReference != null) {
+            if (ref is IsFuzzyReference) {
+                byteArrays += bytes.toByteArray()
+                bytes.clear()
+                fuzzyMatchers += ref.fuzzyMatcher()
+            } else {
+                ref.writeSelfStorageBytes {
+                    bytes += it
+                }
+            }
+
+            ref = ref.parentReference as IsPropertyReference<*, *, *>
+        }
+
+        return if (fuzzyMatchers.isEmpty()) {
+            QualifierExactMatcher(
+                bytes.toByteArray()
+            )
+        } else {
+            QualifierFuzzyMatcher(
+                qualifierParts = byteArrays,
+                fuzzyMatchers = fuzzyMatchers
+            )
+        }
     }
 }

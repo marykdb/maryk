@@ -21,10 +21,10 @@ enum class FuzzyMatchResult {
     NO_MATCH, MATCH, OUT_OF_RANGE
 }
 
-/** Defines a fuzzy qualifier matcher with [qualifierParts] and in between [fuzzyMatches] */
+/** Defines a fuzzy qualifier matcher with [qualifierParts] and in between [fuzzyMatchers] */
 class QualifierFuzzyMatcher(
-    private val qualifierParts: Array<ByteArray>,
-    private val fuzzyMatches: Array<IsFuzzyMatch>
+    private val qualifierParts: List<ByteArray>,
+    private val fuzzyMatchers: List<IsFuzzyMatcher>
 ) : IsQualifierMatcher() {
     /** Find first possible match */
     fun firstPossible() = qualifierParts.first()
@@ -41,9 +41,9 @@ class QualifierFuzzyMatcher(
                 }
             }
 
-            if (fuzzyMatches.lastIndex >= qIndex) {
+            if (fuzzyMatchers.lastIndex >= qIndex) {
                 try {
-                    fuzzyMatches[qIndex].skip {
+                    fuzzyMatchers[qIndex].skip {
                         qualifier[index++]
                     }
                 } catch (e: Throwable) {

@@ -10,7 +10,7 @@ sealed class IsQualifierMatcher
 
 /** Defines an exact [qualifier] matcher */
 class QualifierExactMatcher(
-    private val qualifier: ByteArray
+    val qualifier: ByteArray
 ) : IsQualifierMatcher() {
     fun compareTo(qualifier: ByteArray, offset: Int): Int {
         return this.qualifier.compareWithOffsetTo(qualifier, offset)

@@ -89,18 +89,33 @@ interface IsPropertyReference<T : Any, out D : IsPropertyDefinition<T>, V : Any>
         val fuzzyMatchers = mutableListOf<IsFuzzyMatcher>()
 
         var ref: IsPropertyReference<*, *, *> = this
-        while (ref is IsPropertyReferenceWithParent<*, *, *, *> && ref.parentReference != null) {
+        var lastRef: IsPropertyReference<*, *, *>? = null
+        while (ref !== lastRef) {
             if (ref is IsFuzzyReference) {
-                byteArrays += bytes.toByteArray()
-                bytes.clear()
-                fuzzyMatchers += ref.fuzzyMatcher()
+                if(bytes.isNotEmpty()) {
+                    byteArrays.add(0, bytes.toByteArray())
+                    bytes.clear()
+                }
+                fuzzyMatchers.add(0, ref.fuzzyMatcher())
             } else {
                 ref.writeSelfStorageBytes {
                     bytes += it
                 }
             }
 
-            ref = ref.parentReference as IsPropertyReference<*, *, *>
+            lastRef = ref
+            when {
+                ref is IsFuzzyReference && ref is IsPropertyReferenceWithParent<*, *, *, *> && ref.parentReference != null ->
+                    ref = ref.parentReference as IsPropertyReference<*, *, *>
+                ref is IsPropertyReferenceWithIndirectStorageParent<*, *, *, *> && ref.parentReference?.parentReference != null ->
+                    ref = ref.parentReference?.parentReference as IsPropertyReference<*, *, *>
+                ref is IsPropertyReferenceWithDirectStorageParent<*, *, *, *> && ref.parentReference != null ->
+                    ref = ref.parentReference as IsPropertyReference<*, *, *>
+            }
+        }
+
+        if(bytes.isNotEmpty()) {
+            byteArrays.add(0, bytes.toByteArray())
         }
 
         return if (fuzzyMatchers.isEmpty()) {

@@ -116,6 +116,18 @@ class FilterWithFetchRequestKtTest {
         ) shouldBe true
 
         filterMatches(
+            Equals(TestMarykModel { map.refToAny() } with "haha10"),
+            value1,
+            null
+        ) shouldBe true
+
+        filterMatches(
+            Equals(TestMarykModel { map.refToAny() } with "haha11"),
+            value1,
+            null
+        ) shouldBe false
+
+        filterMatches(
             Equals(TestMarykModel { map.refAt(Time(13, 13, 14)) } with "haha10"),
             value1,
             null

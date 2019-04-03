@@ -13,8 +13,8 @@ abstract class PropertyReference<
     C : Any
 > internal constructor(
     final override val propertyDefinition: D,
-    val parentReference: P?
-) : IsPropertyReference<T, D, C> {
+    override val parentReference: P?
+) : IsPropertyReferenceWithParent<T, D, P, C> {
     override fun toString() = this.completeName
 
     override fun equals(other: Any?) = when {

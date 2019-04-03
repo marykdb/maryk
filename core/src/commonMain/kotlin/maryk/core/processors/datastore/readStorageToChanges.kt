@@ -43,9 +43,9 @@ import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.CompleteReferenceType.DELETE
 import maryk.core.properties.references.CompleteReferenceType.MAP_KEY
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.IsPropertyReferenceWithParent
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.references.MapReference
-import maryk.core.properties.references.PropertyReference
 import maryk.core.properties.references.ReferenceType
 import maryk.core.properties.references.ReferenceType.EMBED
 import maryk.core.properties.references.ReferenceType.LIST
@@ -128,9 +128,9 @@ private fun MutableList<IsChange>.addChange(changeType: ChangeType, changePart: 
         ChangeType.DELETE -> this.find { it is Delete }?.also {
             val reference = changePart as AnyValuePropertyReference
             val toDelete = ((it as Delete).references as MutableList<AnyValuePropertyReference>)
-            if (reference is PropertyReference<*, *, *, *>) {
+            if (reference is IsPropertyReferenceWithParent<*, *, *, *>) {
                 var toSearch: AnyPropertyReference? = reference
-                while (toSearch is PropertyReference<*, *, *, *>) {
+                while (toSearch is IsPropertyReferenceWithParent<*, *, *, *>) {
                     if (toDelete.contains(toSearch as AnyValuePropertyReference)) {
                         return@also
                     }

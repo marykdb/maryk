@@ -63,7 +63,7 @@ interface IsPropertyReference<T : Any, out D : IsPropertyDefinition<T>, V : Any>
         @Suppress("UNCHECKED_CAST")
         val refList = mutableListOf(this as IsPropertyReference<*, *, in Any>)
         var ref: IsPropertyReference<*, *, in Any> = this
-        while (ref is PropertyReference<*, *, *, *> && ref.parentReference != null) {
+        while (ref is IsPropertyReferenceWithParent<*, *, *, *> && ref.parentReference != null) {
             @Suppress("UNCHECKED_CAST")
             ref = ref.parentReference as IsPropertyReference<*, *, in Any>
             refList.add(0, ref)

@@ -27,13 +27,13 @@ import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
 import maryk.core.properties.references.EmbeddedValuesPropertyRef
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.IsPropertyReferenceWithParent
 import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.references.MapKeyReference
 import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.references.MultiTypePropertyReference
-import maryk.core.properties.references.PropertyReference
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
 import maryk.core.properties.types.TypedValue
@@ -353,7 +353,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
 
                                         if (previousValue == null) {
                                             // Check if parent exists before trying to change
-                                            if (reference is PropertyReference<*, *, *, *> && reference !is ListItemReference<*, *>) {
+                                            if (reference is IsPropertyReferenceWithParent<*, *, *, *> && reference !is ListItemReference<*, *>) {
                                                 getValue<Any>(
                                                     newValueList,
                                                     reference.parentReference!!.toStorageByteArray()
@@ -497,7 +497,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                 (listChange.reference as ListReference<Any, *>).propertyDefinition.validate(
                                     previousValue = originalList,
                                     newValue = list,
-                                    parentRefFactory = { (listChange.reference as? PropertyReference<Any, *, *, *>)?.parentReference }
+                                    parentRefFactory = { (listChange.reference as? IsPropertyReferenceWithParent<Any, *, *, *>)?.parentReference }
                                 )
                             } catch (e: ValidationException) {
                                 addValidationFail(e)

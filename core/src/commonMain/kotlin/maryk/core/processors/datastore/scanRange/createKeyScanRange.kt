@@ -46,8 +46,9 @@ private fun <DM : IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
     val start = ArrayList<Byte>(this.keyByteSize)
     val end = ArrayList<Byte>(this.keyByteSize)
 
-    var startKeyIndex = -1 // only highered on exact matches so breaks if too low
-    var endKeyIndex = -1 // only highered on exact matches so breaks if too low
+    var startShouldContinue = true
+    var endShouldContinue = true
+
     var keyIndex = -1
 
     var startInclusive = true
@@ -63,20 +64,19 @@ private fun <DM : IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
             break // Break loop finding parts since no inclusive scan parts are possible
         }
 
+        startShouldContinue = startShouldContinue && startInclusive
+        endShouldContinue = endShouldContinue && endInclusive
+
         when (keyPart) {
             is IndexPartialToMatch -> {
-                if (startKeyIndex == keyIndex - 1 && startInclusive) startKeyIndex++
-                if (endKeyIndex == keyIndex - 1 && endInclusive) endKeyIndex++
-
                 keyPart.toMatch.forEach {
-                    if (startKeyIndex == keyIndex) start += it
-                    if (endKeyIndex == keyIndex) end += it
+                    if (startShouldContinue) start += it
+                    if (endShouldContinue) end += it
                 }
                 toRemove.add(keyPart)
             }
             is IndexPartialToBeBigger -> {
-                if (startKeyIndex == keyIndex -1 && startInclusive) {
-                    startKeyIndex++
+                if (startShouldContinue) {
                     keyPart.toBeSmaller.forEach {
                         start += it
                     }
@@ -86,9 +86,7 @@ private fun <DM : IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
                 }
             }
             is IndexPartialToBeSmaller -> {
-                if (endKeyIndex == keyIndex - 1 && endInclusive) {
-                    endKeyIndex++
-
+                if (endShouldContinue) {
                     keyPart.toBeBigger.forEach {
                         end += it
                     }
@@ -98,15 +96,12 @@ private fun <DM : IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
                 }
             }
             is IndexPartialToBeOneOf -> {
-                if (startKeyIndex == keyIndex - 1 && startInclusive) {
-                    startKeyIndex++
+                if (startShouldContinue) {
                     keyPart.toBeOneOf.first().forEach {
                         start += it
                     }
                 }
-
-                if (endKeyIndex == keyIndex - 1 && endInclusive) {
-                    endKeyIndex++
+                if (endShouldContinue) {
                     keyPart.toBeOneOf.last().forEach {
                         end += it
                     }

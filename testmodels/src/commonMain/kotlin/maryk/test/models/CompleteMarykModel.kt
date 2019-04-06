@@ -38,6 +38,8 @@ import maryk.test.models.CompleteMarykModel.Properties.dateForKey
 import maryk.test.models.CompleteMarykModel.Properties.dateTime
 import maryk.test.models.CompleteMarykModel.Properties.multiForKey
 import maryk.test.models.CompleteMarykModel.Properties.number
+import maryk.test.models.CompleteMarykModel.Properties.subModel
+import maryk.test.models.SimpleMarykModel.Properties.value
 
 enum class MarykEnumEmbedded(
     override val index: UInt
@@ -65,7 +67,8 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
         Multiple(
             booleanForKey.ref(),
             multiForKey.typeRef()
-        )
+        ),
+        value.ref(subModel.ref())
     ),
     properties = Properties
 ) {

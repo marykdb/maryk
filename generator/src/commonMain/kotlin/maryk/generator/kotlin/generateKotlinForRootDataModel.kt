@@ -1,9 +1,11 @@
 package maryk.generator.kotlin
 
 import maryk.core.exceptions.TypeException
+import maryk.core.models.IsNamedDataModel
 import maryk.core.models.RootDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.definitions.IsEmbeddedDefinition
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.Reversed
@@ -12,6 +14,7 @@ import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.properties.references.TypeReference
 import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
+import maryk.core.properties.references.ValueWithFlexBytesPropertyReference
 
 fun <P : PropertyDefinitions> RootDataModel<*, P>.generateKotlin(
     packageName: String,
@@ -84,19 +87,19 @@ private fun IsIndexable.generateKotlin(
         @Suppress("UNCHECKED_CAST")
         val typeId = this as TypeReference<IndexedEnum<Any>, IsPropertyContext>
         val parentReference = (typeId.parentReference as IsPropertyReferenceForValues<*, *, *, *>)
-        addImport("$packageName.$name.Properties.${parentReference.name}")
-        "${parentReference.name}.typeRef()"
+        parentReference.generateRef(packageName, name, addImport, refFunction = "typeRef")
     }
     is Reversed<*> -> {
         addImport("maryk.core.properties.definitions.key.Reversed")
         @Suppress("UNCHECKED_CAST")
         val reversed: Reversed<Any> = this as Reversed<Any>
-        addImport("$packageName.$name.Properties.${reversed.reference.name}")
-        "Reversed(${reversed.reference.name}.ref())"
+        "Reversed(${reversed.reference.generateRef(packageName, name, addImport)})"
     }
     is ValueWithFixedBytesPropertyReference<*, *, *, *> -> {
-        addImport("$packageName.$name.Properties.${this.name}")
-        "${this.name}.ref()"
+        generateRef(packageName, name, addImport)
+    }
+    is ValueWithFlexBytesPropertyReference<*, *, *, *> -> {
+        generateRef(packageName, name, addImport)
     }
     is Multiple -> {
         addImport("maryk.core.properties.definitions.key.Multiple")
@@ -109,4 +112,31 @@ private fun IsIndexable.generateKotlin(
         "Multiple(\n${output.joinToString(",\n").prependIndent()}\n)"
     }
     else -> throw TypeException("Unknown IsIndexable type: $this")
+}
+
+/**
+ * Generate reference variable for indexable using [packageName] and [modelName] for [addImport]
+ * [refFunction] can be overridden for other types of ref
+ */
+private fun IsPropertyReferenceForValues<*, *, *, *>.generateRef(
+    packageName: String,
+    modelName: String,
+    addImport: (String) -> Unit,
+    refFunction: String = "ref"
+): String {
+    var parent = ""
+    this.parentReference?.let {
+        if (it is IsPropertyReferenceForValues<*, *, *, *>) {
+            if (it.propertyDefinition is IsEmbeddedDefinition<*, *>) {
+                val embedModelName = ((it.propertyDefinition as IsEmbeddedDefinition<*, *>).dataModel as IsNamedDataModel<*>).name
+                addImport("$packageName.$embedModelName.Properties.${this.name}")
+            }
+
+            parent = it.generateRef(packageName, modelName, addImport)
+        }
+    }
+    if (parent.isEmpty()) {
+        addImport("$packageName.$modelName.Properties.${this.name}")
+    }
+    return "${this.name}.$refFunction($parent)"
 }

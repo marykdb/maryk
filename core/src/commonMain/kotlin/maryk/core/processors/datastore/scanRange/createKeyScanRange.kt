@@ -11,7 +11,6 @@ import maryk.core.processors.datastore.matchers.UniqueToMatch
 import maryk.core.processors.datastore.matchers.convertFilterToIndexPartsToMatch
 import maryk.core.query.filters.IsFilter
 import maryk.core.query.pairs.ReferenceValuePair
-import maryk.lib.extensions.compare.compareTo
 
 /** Create a scan range by [filter] and [startKey] */
 fun <DM : IsRootValuesDataModel<*>> DM.createScanRange(filter: IsFilter?, startKey: ByteArray?): KeyScanRanges {
@@ -43,8 +42,8 @@ private fun <DM : IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
     listOfEqualPairs: List<ReferenceValuePair<Any>>,
     listOfUniqueFilters: List<UniqueToMatch>
 ): KeyScanRanges {
-    val start = ArrayList<Byte>(this.keyByteSize)
-    val end = ArrayList<Byte>(this.keyByteSize)
+    val start: MutableList<MutableList<Byte>> = mutableListOf(ArrayList(this.keyByteSize))
+    val end: MutableList<MutableList<Byte>> = mutableListOf(ArrayList(this.keyByteSize))
 
     var startShouldContinue = true
     var endShouldContinue = true
@@ -70,15 +69,15 @@ private fun <DM : IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
         when (keyPart) {
             is IndexPartialToMatch -> {
                 keyPart.toMatch.forEach {
-                    if (startShouldContinue) start += it
-                    if (endShouldContinue) end += it
+                    if (startShouldContinue) addByte(start, it)
+                    if (endShouldContinue) addByte(end, it)
                 }
                 toRemove.add(keyPart)
             }
             is IndexPartialToBeBigger -> {
                 if (startShouldContinue) {
                     keyPart.toBeSmaller.forEach {
-                        start += it
+                        addByte(start, it)
                     }
                     startInclusive = keyPart.inclusive
 
@@ -88,7 +87,7 @@ private fun <DM : IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
             is IndexPartialToBeSmaller -> {
                 if (endShouldContinue) {
                     keyPart.toBeBigger.forEach {
-                        end += it
+                        addByte(end, it)
                     }
                     endInclusive = keyPart.inclusive
 
@@ -96,14 +95,24 @@ private fun <DM : IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
                 }
             }
             is IndexPartialToBeOneOf -> {
-                if (startShouldContinue) {
-                    keyPart.toBeOneOf.first().forEach {
-                        start += it
-                    }
-                }
-                if (endShouldContinue) {
-                    keyPart.toBeOneOf.last().forEach {
-                        end += it
+                val startSizeBefore = start.size
+                val endSizeBefore = end.size
+
+                multiplyList(start, end, keyPart.toBeOneOf.size)
+
+                for ((oneOfIndex, oneOfBytes) in keyPart.toBeOneOf.withIndex()) {
+                    oneOfBytes.forEach { oneOfByte ->
+                        if (startShouldContinue) {
+                            for (copiesIndex in (0 until startSizeBefore)) {
+                                start[copiesIndex + oneOfIndex].add(oneOfByte)
+                            }
+                        }
+
+                        if (endShouldContinue) {
+                            for (copiesIndex in (0 until endSizeBefore)) {
+                                end[copiesIndex + oneOfIndex].add(oneOfByte)
+                            }
+                        }
                     }
                 }
             }
@@ -115,26 +124,17 @@ private fun <DM : IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
     }
 
     // Fill start key with MAX bytes so it properly goes to the end
-    for (it in 1..(this.keyByteSize - start.size)) {
-        start += if (startInclusive) 0 else MAX_BYTE
+    for (it in 1..(this.keyByteSize - start.first().size)) {
+        addByte(start, if (startInclusive) 0 else MAX_BYTE)
     }
 
     // Fill end key with MAX bytes so it properly goes to the end
-    for (it in 1..(this.keyByteSize - end.size)) {
-        end += if (endInclusive) MAX_BYTE else 0
+    for (it in 1..(this.keyByteSize - end.first().size)) {
+        addByte(end, if (endInclusive) MAX_BYTE else 0)
     }
 
-    val startArray = start.toByteArray()
-
-    val scanRange = ScanRange(
-        start = if (startKey != null && startArray < startKey) startKey else startArray,
-        startInclusive = startInclusive,
-        end = end.toByteArray(),
-        endInclusive = endInclusive
-    )
-
     return KeyScanRanges(
-        ranges = listOf(scanRange),
+        ranges = createRanges(start, end, startInclusive, endInclusive, startKey),
         partialMatches = listOfParts,
         equalPairs = listOfEqualPairs,
         uniques = listOfUniqueFilters,

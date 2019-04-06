@@ -34,8 +34,8 @@ private fun createScanRangeFromParts(
     listOfParts: MutableList<IsIndexPartialToMatch>,
     keyScanRange: KeyScanRanges
 ): IndexableScanRanges {
-    val start = mutableListOf<Byte>()
-    val end = mutableListOf<Byte>()
+    val start = mutableListOf(mutableListOf<Byte>())
+    val end = mutableListOf(mutableListOf<Byte>())
 
     var startShouldContinue = true
     var endShouldContinue = true
@@ -62,8 +62,8 @@ private fun createScanRangeFromParts(
         when (keyPart) {
             is IndexPartialToMatch -> {
                 keyPart.toMatch.forEach {
-                    if (startShouldContinue) start += it
-                    if (endShouldContinue) end += it
+                    if (startShouldContinue) addByte(start, it)
+                    if (endShouldContinue) addByte(end, it)
                 }
 
                 // Partial matches can only happen on index since is string only
@@ -88,7 +88,7 @@ private fun createScanRangeFromParts(
             is IndexPartialToBeBigger -> {
                 if (startInclusive) {
                     keyPart.toBeSmaller.forEach {
-                        start += it
+                        addByte(start, it)
                     }
                     startInclusive = keyPart.inclusive
 
@@ -98,7 +98,7 @@ private fun createScanRangeFromParts(
             is IndexPartialToBeSmaller -> {
                 if (endShouldContinue) {
                     keyPart.toBeBigger.forEach {
-                        end += it
+                        addByte(end, it)
                     }
                     endInclusive = keyPart.inclusive
 
@@ -106,14 +106,24 @@ private fun createScanRangeFromParts(
                 }
             }
             is IndexPartialToBeOneOf -> {
-                if (startShouldContinue) {
-                    keyPart.toBeOneOf.first().forEach {
-                        start += it
-                    }
-                }
-                if (endShouldContinue) {
-                    keyPart.toBeOneOf.last().forEach {
-                        end += it
+                val startSizeBefore = start.size
+                val endSizeBefore = end.size
+
+                multiplyList(start, end, keyPart.toBeOneOf.size)
+
+                for ((oneOfIndex, oneOfBytes) in keyPart.toBeOneOf.withIndex()) {
+                    oneOfBytes.forEach { oneOfByte ->
+                        if (startShouldContinue) {
+                            for (copiesIndex in (0 until startSizeBefore)) {
+                                start[copiesIndex + oneOfIndex].add(oneOfByte)
+                            }
+                        }
+
+                        if (endShouldContinue) {
+                            for (copiesIndex in (0 until endSizeBefore)) {
+                                end[copiesIndex + oneOfIndex].add(oneOfByte)
+                            }
+                        }
                     }
                 }
             }
@@ -123,15 +133,8 @@ private fun createScanRangeFromParts(
     listOfParts.removeAll(toRemove)
     listOfParts.addAll(toAdd)
 
-    val range = ScanRange(
-        start = start.toByteArray(),
-        startInclusive = startInclusive,
-        end = end.toByteArray(),
-        endInclusive = endInclusive
-    )
-
     return IndexableScanRanges(
-        ranges = listOf(range),
+        ranges = createRanges(start, end, startInclusive, endInclusive),
         partialMatches = listOfParts,
         keyScanRange = keyScanRange
     )

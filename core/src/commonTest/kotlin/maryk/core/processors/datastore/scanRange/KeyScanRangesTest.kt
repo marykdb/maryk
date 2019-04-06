@@ -231,17 +231,28 @@ class KeyScanRangesTest {
 
         scanRange.ranges.first().start.toHex() shouldBe "7fffffa3f44d087ffc0000"
         scanRange.ranges.first().startInclusive shouldBe true
-        scanRange.ranges.first().end?.toHex() shouldBe "7fffffa3f44d827ffeffff"
+        scanRange.ranges.first().end?.toHex() shouldBe "7fffffa3f44d087ffcffff"
         scanRange.ranges.first().endInclusive shouldBe true
+
+        scanRange.ranges.last().start.toHex() shouldBe "7fffffa3f44d827ffe0000"
+        scanRange.ranges.last().startInclusive shouldBe true
+        scanRange.ranges.last().end?.toHex() shouldBe "7fffffa3f44d827ffeffff"
+        scanRange.ranges.last().endInclusive shouldBe true
 
         val match = Log.key(Log("message", ERROR, DateTime(2018, 12, 8, 12, 2, 2, 2)))
 
         scanRange.ranges.first().keyBeforeStart(match.bytes) shouldBe false
-        scanRange.ranges.first().keyOutOfRange(match.bytes) shouldBe false
+        scanRange.ranges.first().keyOutOfRange(match.bytes) shouldBe true
+        scanRange.ranges[1].keyBeforeStart(match.bytes) shouldBe false
+        scanRange.ranges[1].keyOutOfRange(match.bytes) shouldBe false
+        scanRange.ranges.last().keyBeforeStart(match.bytes) shouldBe true
+        scanRange.ranges.last().keyOutOfRange(match.bytes) shouldBe false
         scanRange.matchesPartials(match.bytes) shouldBe true
 
         scanRange.ranges.first().keyBeforeStart(earlier.bytes) shouldBe true
         scanRange.ranges.first().keyOutOfRange(earlier.bytes) shouldBe false
+        scanRange.ranges.last().keyBeforeStart(earlier.bytes) shouldBe true
+        scanRange.ranges.last().keyOutOfRange(earlier.bytes) shouldBe false
         scanRange.matchesPartials(earlier.bytes) shouldBe false
 
         scanRange.ranges.first().keyBeforeStart(later.bytes) shouldBe false

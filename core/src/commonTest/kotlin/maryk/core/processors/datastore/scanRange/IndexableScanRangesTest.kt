@@ -256,21 +256,37 @@ class IndexableScanRangesTest {
 
         val scanRange = indexable.createScanRange(filter, keyScanRange)
 
+        scanRange.ranges.size shouldBe 3
+
         scanRange.ranges.first().start.toHex() shouldBe "00000003"
         scanRange.ranges.first().startInclusive shouldBe true
-        scanRange.ranges.first().end?.toHex() shouldBe "00000006"
+        scanRange.ranges.first().end?.toHex() shouldBe "00000003"
         scanRange.ranges.first().endInclusive shouldBe true
 
+        scanRange.ranges[1].start.toHex() shouldBe "00000005"
+        scanRange.ranges[1].startInclusive shouldBe true
+        scanRange.ranges[1].end?.toHex() shouldBe "00000005"
+        scanRange.ranges[1].endInclusive shouldBe true
+
+        scanRange.ranges.last().start.toHex() shouldBe "00000006"
+        scanRange.ranges.last().startInclusive shouldBe true
+        scanRange.ranges.last().end?.toHex() shouldBe "00000006"
+        scanRange.ranges.last().endInclusive shouldBe true
+
         scanRange.ranges.first().keyBeforeStart(matchIndexValue) shouldBe false
-        scanRange.ranges.first().keyOutOfRange(matchIndexValue) shouldBe false
+        scanRange.ranges.first().keyOutOfRange(matchIndexValue) shouldBe true
+        scanRange.ranges[1].keyBeforeStart(matchIndexValue) shouldBe false
+        scanRange.ranges[1].keyOutOfRange(matchIndexValue) shouldBe false
+        scanRange.ranges.last().keyBeforeStart(matchIndexValue) shouldBe true
+        scanRange.ranges.last().keyOutOfRange(matchIndexValue) shouldBe false
         scanRange.matchesPartials(matchIndexValue) shouldBe true
 
         scanRange.ranges.first().keyBeforeStart(earlierIndexValue) shouldBe true
-        scanRange.ranges.first().keyOutOfRange(earlierIndexValue) shouldBe false
+        scanRange.ranges.last().keyOutOfRange(earlierIndexValue) shouldBe false
         scanRange.matchesPartials(earlierIndexValue) shouldBe false
 
         scanRange.ranges.first().keyBeforeStart(laterIndexValue) shouldBe false
-        scanRange.ranges.first().keyOutOfRange(laterIndexValue) shouldBe true
+        scanRange.ranges.last().keyOutOfRange(laterIndexValue) shouldBe true
         scanRange.matchesPartials(laterIndexValue) shouldBe false
     }
 

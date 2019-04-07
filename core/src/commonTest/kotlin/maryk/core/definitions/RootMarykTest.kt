@@ -49,9 +49,12 @@ class RootMarykTest {
         checkYamlConversion(this.rootMaryk, RootMaryk, { DefinitionsContext() }, ::compareRootMaryk, true) shouldBe """
         - !Define
           Option: !EnumDefinition
-            1: V1
-            2: V2
-            3: V3
+            cases:
+              1: V1
+              2: V2
+              3: V3
+            reservedIndices: [4]
+            reservedNames: [V4]
           SimpleMarykModel: !RootModel
             key: !UUID
             ? 1: value

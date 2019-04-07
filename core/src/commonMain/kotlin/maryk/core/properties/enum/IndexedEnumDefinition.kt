@@ -17,7 +17,6 @@ import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.query.ContainsDefinitionsContext
-import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
@@ -94,7 +93,7 @@ open class IndexedEnumDefinition<E : IndexedEnum<E>> private constructor(
 
                 valueByIndex[index] as E?
             } catch (e: NumberFormatException) {
-                throw ParseException("Not a correct number between brackets in type ${name}")
+                throw ParseException("Not a correct number between brackets in type $name")
             }
         } else {
             valueByString[name] as E?
@@ -228,12 +227,7 @@ open class IndexedEnumDefinition<E : IndexedEnum<E>> private constructor(
                 // Only skip when DefinitionsContext was set
                 when {
                     context?.definitionsContext != null && context.definitionsContext.currentDefinitionName == obj.name -> {
-                        // Write only cases if it is inside Definitions
-                        Properties.cases.writeJsonValue(
-                            Properties.cases.toSerializable!!.invoke(obj.cases, context)!!,
-                            writer,
-                            context
-                        )
+                        super.writeJson(obj, writer, context, skip = listOf(Properties.name))
                         context.definitionsContext.currentDefinitionName = ""
                     }
                     else -> {
@@ -271,10 +265,8 @@ open class IndexedEnumDefinition<E : IndexedEnum<E>> private constructor(
                     null, "" -> super.readJsonToMap(reader, context)
                     else -> {
                         context?.definitionsContext?.currentDefinitionName = ""
-                        // If a name was defined, read map as values
-                        MutableValueItems().also {
+                        super.readJsonToMap(reader, context).also {
                             it[Properties.name.index] = name
-                            it[Properties.cases.index] = Properties.cases.readJson(reader, context)
                         }
                     }
                 }

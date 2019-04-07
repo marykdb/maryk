@@ -60,7 +60,7 @@ class ValuesWithMetaDataTest {
           double: 6.33
           dateTime: '2017-12-05T01:33:55'
           bool: true
-          enum: V3
+          enum: V3(3)
         firstVersion: 12
         lastVersion: 12345
         isDeleted: false

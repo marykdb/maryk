@@ -179,7 +179,7 @@ internal class RootDataModelTest {
         				"reservedIndices": [4],
         				"reservedNames": ["V4"]
         			},
-        			"default": "V1"
+        			"default": "V1(1)"
         		}]
         	}, {
         		"index": 8,
@@ -410,7 +410,7 @@ internal class RootDataModelTest {
               3: V3
             reservedIndices: [4]
             reservedNames: [V4]
-          default: V1
+          default: V1(1)
         ? 8: list
         : !List
           required: false

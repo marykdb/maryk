@@ -80,7 +80,25 @@ open class IndexedEnumDefinition<E : IndexedEnum<E>> private constructor(
 
     /** Get Enum value by [name] */
     @Suppress("UNCHECKED_CAST")
-    fun resolve(name: String) = valueByString[name] as E?
+    fun resolve(name: String) =
+        if (name.endsWith(')')) {
+            val found = name.split('(', ')')
+            try {
+                val index = found[1].toUInt()
+                val valueName = found[0]
+
+                val typeByName = valueByString[valueName] as E?
+                if (typeByName != null && typeByName.index != index) {
+                    throw ParseException("Non matching name $valueName with index $index, expected ${typeByName.index}")
+                }
+
+                valueByIndex[index] as E?
+            } catch (e: NumberFormatException) {
+                throw ParseException("Not a correct number between brackets in type ${name}")
+            }
+        } else {
+            valueByString[name] as E?
+        }
 
     override fun readStorageBytes(length: Int, reader: () -> Byte): E {
         val index = initUInt(reader, 2)
@@ -150,6 +168,7 @@ open class IndexedEnumDefinition<E : IndexedEnum<E>> private constructor(
                 }
             }
         )
+
         init {
             add(
                 3, "reservedIndices",

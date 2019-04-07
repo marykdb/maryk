@@ -121,9 +121,9 @@ internal class EnumDefinitionTest {
             3: V3
           reservedIndices: [4]
           reservedNames: [V4]
-        minValue: V1
-        maxValue: V3
-        default: V2
+        minValue: V1(1)
+        maxValue: V3(3)
+        default: V2(2)
 
         """.trimIndent()
     }

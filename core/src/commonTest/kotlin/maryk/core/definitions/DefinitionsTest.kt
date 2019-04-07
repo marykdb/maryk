@@ -164,7 +164,7 @@ class DefinitionsTest {
             final: true
             unique: false
             enum: Option
-            default: V1
+            default: V1(1)
           ? 8: list
           : !List
             required: false

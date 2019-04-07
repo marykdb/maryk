@@ -14,6 +14,7 @@ import maryk.core.properties.definitions.contextual.ContextValueTransformDefinit
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
+import maryk.core.properties.enum.IsCoreEnum
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.query.ContainsDefinitionsContext
@@ -64,7 +65,12 @@ class EnumDefinition<E : IndexedEnum<E>>(
     ) =
         value.index.writeVarBytes(writer)
 
-    override fun asString(value: E) = value.name
+    override fun asString(value: E) =
+        if (value is IsCoreEnum) {
+            value.name
+        } else {
+            "${value.name}(${value.index})"
+        }
 
     override fun fromString(string: String) =
         enum.resolve(string) ?: throw ParseException(string)

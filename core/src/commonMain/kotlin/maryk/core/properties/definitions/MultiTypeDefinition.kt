@@ -450,8 +450,9 @@ data class MultiTypeDefinition<E : IndexedEnum<E>, in CX : IsPropertyContext> in
             val typeOptions = definitionMap.keys.toTypedArray()
 
             val typeEnum = IndexedEnumDefinition(
-                values(3)
-            ) { typeOptions }
+                values(3),
+                { typeOptions }
+            )
 
             return MultiTypeDefinition(
                 required = values(1),
@@ -476,8 +477,9 @@ class MultiTypeDefinitionContext(
         val typeOptions = definitionMap?.keys?.toTypedArray() ?: throw ContextNotFoundException()
 
         val typeEnum = IndexedEnumDefinition(
-            typeEnumName ?: throw ContextNotFoundException()
-        ) { typeOptions }
+            typeEnumName ?: throw ContextNotFoundException(),
+            { typeOptions }
+        )
 
         MultiTypeDefinition(
             typeEnum = typeEnum,

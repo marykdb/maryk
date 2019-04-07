@@ -26,7 +26,9 @@ import maryk.lib.exceptions.ParseException
 /** Enum Definitions with a [name] and [cases] */
 open class IndexedEnumDefinition<E : IndexedEnum<E>> private constructor(
     internal val optionalCases: (() -> Array<E>)?,
-    override val name: String
+    override val name: String,
+    private val reservedIndices: Array<UInt>? = null,
+    private val reservedNames: Array<String>? = null
 ) : MarykPrimitive,
     IsPropertyDefinition<E>,
     IsFixedBytesEncodable<E> {
@@ -48,7 +50,25 @@ open class IndexedEnumDefinition<E : IndexedEnum<E>> private constructor(
 
     val cases get() = optionalCases!!
 
-    constructor(name: String, values: () -> Array<E>) : this(name = name, optionalCases = values)
+    constructor(
+        name: String,
+        values: () -> Array<E>,
+        reserved: Array<UInt>? = null,
+        reservedNames: Array<String>? = null
+    ) : this(name = name, optionalCases = values, reservedIndices = reserved, reservedNames = reservedNames)
+
+    init {
+        reservedIndices?.let {
+            optionalCases?.invoke()?.forEach {
+                require(!reservedIndices.contains(it.index)) { "Enum $name has ${it.index} defined in option ${it.name} while it is reserved" }
+            }
+        }
+        reservedNames?.let {
+            optionalCases?.invoke()?.forEach {
+                require(!reservedNames.contains(it.name)) { "Enum $name has a reserved name defined ${it.name}" }
+            }
+        }
+    }
 
     override fun getEmbeddedByName(name: String): Nothing? = null
     override fun getEmbeddedByIndex(index: Int): Nothing? = null

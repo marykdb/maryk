@@ -9,9 +9,24 @@ import maryk.core.query.DefinitionsContext
 import maryk.core.yaml.createMarykYamlModelReader
 import maryk.test.models.Option
 import maryk.test.shouldBe
+import maryk.test.shouldThrow
 import kotlin.test.Test
 
 class IndexedEnumTest {
+    @Test
+    fun hasReservedIndex() {
+        shouldThrow<IllegalArgumentException> {
+            object : IndexedEnumDefinition<Option>("Option", Option::values, reserved = arrayOf(1u)) {}
+        }
+    }
+
+    @Test
+    fun hasReservedName() {
+        shouldThrow<IllegalArgumentException> {
+            object : IndexedEnumDefinition<Option>("Option", Option::values, reservedNames = arrayOf("V2")) {}
+        }
+    }
+
     @Test
     fun convertDefinitionToProtoBufAndBack() {
         @Suppress("UNCHECKED_CAST")

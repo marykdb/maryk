@@ -152,7 +152,11 @@ data class MultiTypeDefinition<E : IndexedEnum<E>, in CX : IsPropertyContext> in
             ?: throw DefNotFoundException("No def found for index ${value.type.name}")
 
         if (writer is YamlWriter) {
-            writer.writeTag("!${value.type.name}")
+            if (value.type !is IsCoreEnum) {
+                writer.writeTag("!${value.type.name}(${value.type.index})")
+            } else {
+                writer.writeTag("!${value.type.name}")
+            }
             definition.writeJsonValue(value.value, writer, context)
         } else {
             writer.writeStartArray()
@@ -178,8 +182,25 @@ data class MultiTypeDefinition<E : IndexedEnum<E>, in CX : IsPropertyContext> in
                     tokenType as E
                 }
                 is UnknownYamlTag -> {
-                    this.typeEnum.resolve(tokenType.name)
-                        ?: throw DefNotFoundException("Unknown type ${tokenType.name}")
+                    if (tokenType.name.endsWith(')')) {
+                        val found = tokenType.name.split('(', ')')
+                        try {
+                            val index = found[1].toUInt()
+
+                            val typeByName = this.typeEnum.resolve(found[0])
+                            if (typeByName != null && typeByName.index != index) {
+                                throw ParseException("Non matching name ${found[0]} with index $index, expected ${typeByName.index}")
+                            }
+
+                            this.typeEnum.resolve(index)
+                                ?: throw DefNotFoundException("Unknown type ${index}")
+                        } catch (e: NumberFormatException) {
+                            throw ParseException("Not a correct number between brackets in type ${tokenType.name}")
+                        }
+                    } else {
+                        this.typeEnum.resolve(tokenType.name)
+                            ?: throw DefNotFoundException("Unknown type ${tokenType.name}")
+                    }
                 }
                 else -> throw ParseException("Unknown tag type for $tokenType")
             }
@@ -203,13 +224,13 @@ data class MultiTypeDefinition<E : IndexedEnum<E>, in CX : IsPropertyContext> in
                     definition = this.definitionMapByIndex[index]
                         ?: throw DefNotFoundException("Unknown multi type index $index")
 
-                    reader.nextToken().let {
-                        if (it !is JsonToken.Value<*>) {
-                            throw ParseException("Expected a value, not ${it.name}")
+                    reader.nextToken().let { token ->
+                        if (token !is JsonToken.Value<*>) {
+                            throw ParseException("Expected a value, not ${token.name}")
                         }
-                        val typeByName = this.typeEnum.resolve(it.value as String)
+                        val typeByName = this.typeEnum.resolve(token.value as String)
                         if (typeByName != null && typeByName.index != index) {
-                            throw ParseException("Non matching name ${it.value} with index $index, expected ${typeByName.index}")
+                            throw ParseException("Non matching name ${token.value} with index $index, expected ${typeByName.index}")
                         }
                     }
                 } else {

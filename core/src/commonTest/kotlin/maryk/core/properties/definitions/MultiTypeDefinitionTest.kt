@@ -165,7 +165,7 @@ internal class MultiTypeDefinitionTest {
             type: SInt32
             maxValue: 1000
             random: false
-        default: !V1 test
+        default: !V1(1) test
 
         """.trimIndent()
     }

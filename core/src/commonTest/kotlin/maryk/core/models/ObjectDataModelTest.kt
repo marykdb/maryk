@@ -229,7 +229,7 @@ internal class ObjectDataModelTest {
           bool: true
         embeddedObject:
           value: test
-        multi: !V3
+        multi: !V3(3)
           value: subInMulti!
         listOfString: [test1, another test, 🤗]
 

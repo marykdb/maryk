@@ -73,7 +73,7 @@ internal class ComplexDataModelMapTest {
         ComplexModel.writeJson(testComplexMap, writer)
 
         output shouldBe """
-        multi: !V3
+        multi: !V3(3)
           value: u3
           model:
             value: ue3
@@ -86,7 +86,7 @@ internal class ComplexDataModelMapTest {
           2:
             value: t2
         mapIntMulti:
-          2: !V3
+          2: !V3(3)
             value: m3
 
         """.trimIndent()

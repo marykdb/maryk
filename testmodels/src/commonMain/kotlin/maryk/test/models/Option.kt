@@ -8,5 +8,5 @@ enum class Option(
 ) : IndexedEnum<Option> {
     V1(1u), V2(2u), V3(3u);
 
-    companion object : IndexedEnumDefinition<Option>("Option", Option::values, reserved = arrayOf(4u), reservedNames = arrayOf("V4"))
+    companion object : IndexedEnumDefinition<Option>("Option", Option::values, reserved = listOf(4u), reservedNames = listOf("V4"))
 }

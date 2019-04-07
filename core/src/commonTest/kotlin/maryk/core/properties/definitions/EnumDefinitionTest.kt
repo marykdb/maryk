@@ -119,6 +119,8 @@ internal class EnumDefinitionTest {
             1: V1
             2: V2
             3: V3
+          reservedIndices: [4]
+          reservedNames: [V4]
         minValue: V1
         maxValue: V3
         default: V2

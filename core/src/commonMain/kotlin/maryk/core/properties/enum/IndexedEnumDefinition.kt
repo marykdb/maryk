@@ -10,6 +10,7 @@ import maryk.core.models.ContextualDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.StringDefinition
@@ -27,8 +28,8 @@ import maryk.lib.exceptions.ParseException
 open class IndexedEnumDefinition<E : IndexedEnum<E>> private constructor(
     internal val optionalCases: (() -> Array<E>)?,
     override val name: String,
-    private val reservedIndices: Array<UInt>? = null,
-    private val reservedNames: Array<String>? = null
+    private val reservedIndices: List<UInt>? = null,
+    private val reservedNames: List<String>? = null
 ) : MarykPrimitive,
     IsPropertyDefinition<E>,
     IsFixedBytesEncodable<E> {
@@ -53,8 +54,8 @@ open class IndexedEnumDefinition<E : IndexedEnum<E>> private constructor(
     constructor(
         name: String,
         values: () -> Array<E>,
-        reserved: Array<UInt>? = null,
-        reservedNames: Array<String>? = null
+        reserved: List<UInt>? = null,
+        reservedNames: List<String>? = null
     ) : this(name = name, optionalCases = values, reservedIndices = reserved, reservedNames = reservedNames)
 
     init {
@@ -149,6 +150,26 @@ open class IndexedEnumDefinition<E : IndexedEnum<E>> private constructor(
                 }
             }
         )
+        init {
+            add(
+                3, "reservedIndices",
+                ListDefinition(
+                    valueDefinition = NumberDefinition(
+                        type = UInt32,
+                        minValue = 1u
+                    )
+                ),
+                IndexedEnumDefinition<*>::reservedIndices
+            )
+
+            add(
+                4, "reservedNames",
+                ListDefinition(
+                    valueDefinition = StringDefinition()
+                ),
+                IndexedEnumDefinition<*>::reservedNames
+            )
+        }
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -160,7 +181,9 @@ open class IndexedEnumDefinition<E : IndexedEnum<E>> private constructor(
         override fun invoke(values: ObjectValues<IndexedEnumDefinition<IndexedEnum<Any>>, Properties>) =
             IndexedEnumDefinition<IndexedEnum<Any>>(
                 name = values(1),
-                optionalCases = values(2)
+                optionalCases = values(2),
+                reservedIndices = values(3),
+                reservedNames = values(4)
             )
 
         override fun writeJson(

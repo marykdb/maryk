@@ -16,14 +16,14 @@ class IndexedEnumTest {
     @Test
     fun hasReservedIndex() {
         shouldThrow<IllegalArgumentException> {
-            object : IndexedEnumDefinition<Option>("Option", Option::values, reserved = arrayOf(1u)) {}
+            object : IndexedEnumDefinition<Option>("Option", Option::values, reserved = listOf(1u)) {}
         }
     }
 
     @Test
     fun hasReservedName() {
         shouldThrow<IllegalArgumentException> {
-            object : IndexedEnumDefinition<Option>("Option", Option::values, reservedNames = arrayOf("V2")) {}
+            object : IndexedEnumDefinition<Option>("Option", Option::values, reservedNames = listOf("V2")) {}
         }
     }
 
@@ -63,6 +63,8 @@ class IndexedEnumTest {
           1: V1
           2: V2
           3: V3
+        reservedIndices: [4]
+        reservedNames: [V4]
 
         """.trimIndent()
     }

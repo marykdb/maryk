@@ -32,7 +32,7 @@ internal class ComplexDataModelMapTest {
 
         output shouldBe """
         {
-        	"multi": ["V3", {
+        	"multi": [3, "V3", {
         		"value": "u3",
         		"model": {
         			"value": "ue3"
@@ -51,7 +51,7 @@ internal class ComplexDataModelMapTest {
         		}
         	},
         	"mapIntMulti": {
-        		"2": ["V3", {
+        		"2": [3, "V3", {
         			"value": "m3"
         		}]
         	}

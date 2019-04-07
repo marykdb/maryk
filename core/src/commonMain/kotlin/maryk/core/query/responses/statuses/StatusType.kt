@@ -2,11 +2,12 @@ package maryk.core.query.responses.statuses
 
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
+import maryk.core.properties.enum.IsCoreEnum
 
 /** Indexed type of changes */
 enum class StatusType(
     override val index: UInt
-) : IndexedEnum<StatusType> {
+) : IndexedEnum<StatusType>, IsCoreEnum {
     SUCCESS(1u),
     ADD_SUCCESS(2u),
     AUTH_FAIL(3u),

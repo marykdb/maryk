@@ -7,6 +7,7 @@ import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
+import maryk.core.properties.enum.IsCoreEnum
 import maryk.core.query.DefinitionsConversionContext
 import maryk.json.ArrayType
 import maryk.json.TokenType
@@ -16,7 +17,7 @@ import maryk.json.ValueType
 sealed class IndexKeyPartType(
     override val name: String,
     override val index: UInt
-) : IndexedEnum<IndexKeyPartType>, TokenType {
+) : IndexedEnum<IndexKeyPartType>, TokenType, IsCoreEnum {
     override fun compareTo(other: IndexKeyPartType) =
         this.index.compareTo(other.index)
 

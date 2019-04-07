@@ -2,11 +2,12 @@ package maryk.core.properties.graph
 
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
+import maryk.core.properties.enum.IsCoreEnum
 
 /** Indexed type of property reference graph elements */
 enum class PropRefGraphType(
     override val index: UInt
-) : IndexedEnum<PropRefGraphType> {
+) : IndexedEnum<PropRefGraphType>, IsCoreEnum {
     PropRef(1u),
     Graph(2u);
 

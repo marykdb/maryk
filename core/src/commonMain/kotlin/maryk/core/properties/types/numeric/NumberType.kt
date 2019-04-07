@@ -2,11 +2,12 @@ package maryk.core.properties.types.numeric
 
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
+import maryk.core.properties.enum.IsCoreEnum
 
 enum class NumberType(
     override val index: UInt,
     val descriptor: () -> NumberDescriptor<*>
-) : IndexedEnum<NumberType> {
+) : IndexedEnum<NumberType>, IsCoreEnum {
     SInt8(1u, { maryk.core.properties.types.numeric.SInt8 }),
     SInt16(2u, { maryk.core.properties.types.numeric.SInt16 }),
     SInt32(3u, { maryk.core.properties.types.numeric.SInt32 }),

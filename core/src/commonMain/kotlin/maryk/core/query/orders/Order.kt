@@ -8,6 +8,7 @@ import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
+import maryk.core.properties.enum.IsCoreEnum
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.query.RequestContext
 import maryk.core.query.orders.Direction.ASC
@@ -26,7 +27,7 @@ import maryk.yaml.UnknownYamlTag
 import maryk.yaml.YamlWriter
 
 /** Direction Enumeration */
-enum class Direction(override val index: UInt) : IndexedEnum<Direction> {
+enum class Direction(override val index: UInt) : IndexedEnum<Direction>, IsCoreEnum {
     ASC(1u), DESC(2u);
 
     companion object : IndexedEnumDefinition<Direction>("Direction", Direction::values)

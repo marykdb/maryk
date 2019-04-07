@@ -55,7 +55,7 @@ val testExtendedMarykModelObject = TestMarykModel(
 )
 
 private const val JSON =
-    "{\"string\":\"hay\",\"int\":4,\"uint\":32,\"double\":\"3.555\",\"dateTime\":\"2017-12-04T12:13\",\"bool\":true,\"enum\":\"V1\",\"list\":[34,2352,3423,766],\"set\":[\"2017-12-05\",\"2016-03-02\",\"1981-12-05\"],\"map\":{\"12:55\":\"yes\",\"10:03\":\"ahum\"},\"valueObject\":{\"int\":6,\"dateTime\":\"2017-04-01T12:55\",\"bool\":true},\"embeddedValues\":{\"value\":\"test\"},\"multi\":[\"V3\",{\"value\":\"subInMulti!\"}],\"listOfString\":[\"test1\",\"another test\",\"\uD83E\uDD17\"]}"
+    "{\"string\":\"hay\",\"int\":4,\"uint\":32,\"double\":\"3.555\",\"dateTime\":\"2017-12-04T12:13\",\"bool\":true,\"enum\":\"V1\",\"list\":[34,2352,3423,766],\"set\":[\"2017-12-05\",\"2016-03-02\",\"1981-12-05\"],\"map\":{\"12:55\":\"yes\",\"10:03\":\"ahum\"},\"valueObject\":{\"int\":6,\"dateTime\":\"2017-04-01T12:55\",\"bool\":true},\"embeddedValues\":{\"value\":\"test\"},\"multi\":[3,\"V3\",{\"value\":\"subInMulti!\"}],\"listOfString\":[\"test1\",\"another test\",\"\uD83E\uDD17\"]}"
 
 // Test if unknown values will be skipped
 private const val PRETTY_JSON_WITH_SKIP = """{
@@ -81,7 +81,7 @@ private const val PRETTY_JSON_WITH_SKIP = """{
 	"embeddedValues": {
 		"value": "test"
 	},
-	"multi": ["V3", {
+	"multi": [3, "V3", {
 		"value": "subInMulti!"
 	}],
 	"listOfString": ["test1", "another test", "🤗"]
@@ -205,7 +205,7 @@ internal class DataModelTest {
         	"embeddedValues": {
         		"value": "test"
         	},
-        	"multi": ["V3", {
+        	"multi": [3, "V3", {
         		"value": "subInMulti!"
         	}],
         	"listOfString": ["test1", "another test", "🤗"]

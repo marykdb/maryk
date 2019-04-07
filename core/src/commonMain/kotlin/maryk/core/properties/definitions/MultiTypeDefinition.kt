@@ -18,11 +18,12 @@ import maryk.core.properties.definitions.descriptors.convertMultiTypeDescriptors
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
+import maryk.core.properties.enum.IsCoreEnum
 import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.references.TypeReference
 import maryk.core.properties.references.ReferenceType.TYPE
+import maryk.core.properties.references.TypeReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
@@ -155,6 +156,9 @@ data class MultiTypeDefinition<E : IndexedEnum<E>, in CX : IsPropertyContext> in
             definition.writeJsonValue(value.value, writer, context)
         } else {
             writer.writeStartArray()
+            if (value.type !is IsCoreEnum) {
+                writer.writeInt(value.type.index.toInt())
+            }
             writer.writeString(value.type.name)
 
             definition.writeJsonValue(value.value, writer, context)
@@ -190,10 +194,30 @@ data class MultiTypeDefinition<E : IndexedEnum<E>, in CX : IsPropertyContext> in
                     throw ParseException("Expected a value at start, not ${it.name}")
                 }
 
-                val type = this.typeEnum.resolve(it.value as String)
-                    ?: throw ParseException("Invalid multi type name ${it.value}")
-                val definition = this.definitionMapByIndex[type.index]
-                    ?: throw DefNotFoundException("Unknown multi type index ${type.index}")
+                val type: E
+                val definition: IsSubDefinition<out Any, CX>
+                if (it.value is Long) {
+                    val index = (it.value as Long).toUInt()
+                    type = this.typeEnum.resolve(index)
+                        ?: throw DefNotFoundException("Unknown multi type index $index")
+                    definition = this.definitionMapByIndex[index]
+                        ?: throw DefNotFoundException("Unknown multi type index $index")
+
+                    reader.nextToken().let {
+                        if (it !is JsonToken.Value<*>) {
+                            throw ParseException("Expected a value, not ${it.name}")
+                        }
+                        val typeByName = this.typeEnum.resolve(it.value as String)
+                        if (typeByName != null && typeByName.index != index) {
+                            throw ParseException("Non matching name ${it.value} with index $index, expected ${typeByName.index}")
+                        }
+                    }
+                } else {
+                    type = this.typeEnum.resolve(it.value as String)
+                        ?: throw ParseException("Invalid multi type name ${it.value}")
+                    definition = this.definitionMapByIndex[type.index]
+                        ?: throw DefNotFoundException("Unknown multi type index ${type.index}")
+                }
 
                 reader.nextToken()
                 val value = definition.readJson(reader, context)

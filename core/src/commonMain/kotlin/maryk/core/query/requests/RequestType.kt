@@ -3,8 +3,9 @@ package maryk.core.query.requests
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
+import maryk.core.properties.enum.IsCoreEnum
 
-enum class RequestType(override val index: UInt) : IndexedEnum<RequestType> {
+enum class RequestType(override val index: UInt) : IndexedEnum<RequestType>, IsCoreEnum {
     Add(1u),
     Change(2u),
     Delete(3u),

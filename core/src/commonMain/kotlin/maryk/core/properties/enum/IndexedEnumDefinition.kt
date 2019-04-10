@@ -66,9 +66,14 @@ open class IndexedEnumDefinition<E : IndexedEnum<E>> private constructor(
     constructor(
         name: String,
         values: () -> Array<E>,
-        reserved: List<UInt>? = null,
+        reservedIndices: List<UInt>? = null,
         reservedNames: List<String>? = null
-    ) : this(name = name, optionalCases = values, reservedIndices = reserved, reservedNames = reservedNames)
+    ) : this(
+        name = name,
+        optionalCases = values,
+        reservedIndices = reservedIndices,
+        reservedNames = reservedNames
+    )
 
     init {
         reservedIndices?.let {

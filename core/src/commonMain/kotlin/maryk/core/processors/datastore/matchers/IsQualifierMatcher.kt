@@ -44,6 +44,11 @@ class QualifierFuzzyMatcher(
             if (fuzzyMatchers.lastIndex >= qIndex) {
                 try {
                     fuzzyMatchers[qIndex].skip {
+                        if (index > qualifier.lastIndex) {
+                            // So JS skips out.
+                            throw Throwable("0 char encountered")
+                        }
+
                         qualifier[index++]
                     }
                 } catch (e: Throwable) {

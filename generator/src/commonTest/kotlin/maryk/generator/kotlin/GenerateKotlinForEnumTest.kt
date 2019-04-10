@@ -11,7 +11,7 @@ import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IndexedEnumImpl
 
 sealed class MarykEnum(
-    override val index: UInt
+    index: UInt
 ) : IndexedEnumImpl<MarykEnum>(index) {
     object O1: MarykEnum(1u)
     object O2: MarykEnum(2u)

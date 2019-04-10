@@ -15,7 +15,7 @@ import maryk.json.ValueType
 
 /** Indexed type of property definitions */
 sealed class IndexKeyPartType(
-    override val index: UInt
+    index: UInt
 ) : IndexedEnumImpl<IndexKeyPartType>(index), TokenType, IsCoreEnum {
     object UUID : IndexKeyPartType(1u), ValueType.IsNullValueType
     object Reference : ValueType<String>, IndexKeyPartType(2u) {

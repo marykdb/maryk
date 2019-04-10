@@ -22,7 +22,7 @@ fun IndexedEnumDefinition<*>.generateKotlinClass(addImport: (String) -> Unit): S
 
     return """
     sealed class ${this.name}(
-        override val index: UInt
+        index: UInt
     ) : IndexedEnumImpl<${this.name}>(index) {
         ${this.cases().joinToString("") {
             "object ${it.name}: ${this.name}(${it.index}u)\n"

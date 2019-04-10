@@ -143,8 +143,12 @@ cases:
 **Kotlin description** 
 
 ```kotlin
-enum class Role(override val index: Int): IndexedEnum<Option> {
-    Admin(1), Moderator(2), User(3)
+sealed class Role(index: Int): IndexedEnumImpl<Role>(index) {
+    object Admin: Role(1)
+    object Moderator: Role(2)
+    object User: Role(3)
+    
+    companion object: IndexedEnumDefinition<Role>(Role::class, { arrayOf(Admin, Moderator, User) })
 }
 
  

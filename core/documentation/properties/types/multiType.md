@@ -54,10 +54,11 @@ val stringDef = StringDefinition(
     name = "string"
 )
 
-enum class MultiType(
-    override val index: Int
-): IndexedEnum<Option> {
-    ByString(0), ByInt(1)
+sealed class MultiType(index: Int): IndexedEnumImpl<MultiType>(index) {
+    object ByString: MultiType(1)
+    object ByInt: MultiType(2)
+    
+    companion object: IndexedEnumDefinition<MultiType>(MultiType::class, { arrayOf(ByString, ByInt) })
 }
 
 val def = MultiTypeDefinition(

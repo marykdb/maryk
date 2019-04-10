@@ -16,7 +16,7 @@ import maryk.test.models.Log.Properties.timestamp
 import maryk.test.models.Severity.INFO
 
 sealed class Severity(
-    override val index: UInt
+    index: UInt
 ) : IndexedEnumImpl<Severity>(index) {
     object INFO: Severity(1u)
     object DEBUG: Severity(2u)

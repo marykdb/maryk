@@ -81,7 +81,7 @@ import maryk.test.models.CompleteMarykModel.Properties.subModel
 import maryk.test.models.SimpleMarykModel.Properties.value
 
 sealed class MarykEnumEmbedded(
-    override val index: UInt
+    index: UInt
 ) : IndexedEnumImpl<MarykEnumEmbedded>(index) {
     object E1: MarykEnumEmbedded(1u)
     object E2: MarykEnumEmbedded(2u)

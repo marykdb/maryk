@@ -8,7 +8,7 @@ import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
-import maryk.core.properties.enum.AnyIndexedEnum
+import maryk.core.properties.enum.IndexedEnum
 import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
@@ -19,7 +19,7 @@ import maryk.json.JsonToken.Value
 import maryk.lib.exceptions.ParseException
 
 /** Definition which refers to indexed enum definition based on context from [contextualResolver] */
-data class ContextualIndexedEnumDefinition<CX : IsPropertyContext, CXI : IsPropertyContext, T : AnyIndexedEnum, D : IsMultiTypeDefinition<AnyIndexedEnum, RequestContext>>(
+data class ContextualIndexedEnumDefinition<CX : IsPropertyContext, CXI : IsPropertyContext, T : IndexedEnum, D : IsMultiTypeDefinition<IndexedEnum, RequestContext>>(
     val contextualResolver: (context: CX?) -> D,
     val contextTransformer: (context: CX?) -> CXI? = {
         @Suppress("UNCHECKED_CAST")

@@ -16,7 +16,7 @@ class IndexedEnumTest {
     @Test
     fun hasReservedIndex() {
         shouldThrow<IllegalArgumentException> {
-            object : IndexedEnumDefinition<Option>("Option", Option::values, reserved = listOf(1u)) {}
+            object : IndexedEnumDefinition<Option>("Option", Option::values, reservedIndices = listOf(1u)) {}
         }
     }
 

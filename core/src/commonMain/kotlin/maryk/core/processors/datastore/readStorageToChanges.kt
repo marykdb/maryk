@@ -33,7 +33,6 @@ import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
-import maryk.core.properties.enum.AnyIndexedEnum
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.graph.IsPropRefGraph
 import maryk.core.properties.graph.RootPropRefGraph
@@ -246,7 +245,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                                         qualifier,
                                         qIndex,
                                         readValueFromStorage,
-                                        definition as IsMultiTypeDefinition<AnyIndexedEnum, IsPropertyContext>,
+                                        definition as IsMultiTypeDefinition<IndexedEnum, IsPropertyContext>,
                                         select,
                                         addToCache,
                                         addChangeToOutput
@@ -433,7 +432,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                                             qualifier,
                                             qIndex,
                                             readValueFromStorage,
-                                            valueDefinition as IsMultiTypeDefinition<AnyIndexedEnum, IsPropertyContext>,
+                                            valueDefinition as IsMultiTypeDefinition<IndexedEnum, IsPropertyContext>,
                                             select,
                                             addToCache,
                                             addChangeToOutput
@@ -460,7 +459,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                         ?: throw DefNotFoundException("No definition for $index in $this at $index")
                     @Suppress("UNCHECKED_CAST")
                     val typedDefinition =
-                        definition.definition as? IsMultiTypeDefinition<AnyIndexedEnum, IsPropertyContext>
+                        definition.definition as? IsMultiTypeDefinition<IndexedEnum, IsPropertyContext>
                             ?: throw TypeException("Definition($index) ${definition.definition} should be a TypedDefinition")
 
                     typedDefinition.readComplexTypedValue(
@@ -497,7 +496,7 @@ private fun <P : PropertyDefinitions> readComplexChanges(
                 qualifier,
                 offset,
                 readValueFromStorage,
-                definition as IsMultiTypeDefinition<AnyIndexedEnum, IsPropertyContext>,
+                definition as IsMultiTypeDefinition<IndexedEnum, IsPropertyContext>,
                 select,
                 addToCache,
                 addChangeToOutput
@@ -525,7 +524,7 @@ private fun readTypedValue(
     qualifier: ByteArray,
     offset: Int,
     readValueFromStorage: ValueWithVersionReader,
-    valueDefinition: IsMultiTypeDefinition<AnyIndexedEnum, IsPropertyContext>,
+    valueDefinition: IsMultiTypeDefinition<IndexedEnum, IsPropertyContext>,
     select: IsPropRefGraph<*>?,
     addToCache: CacheProcessor,
     addChangeToOutput: ChangeAdder
@@ -545,8 +544,8 @@ private fun readTypedValue(
                         addChangeToOutput(
                             version, TYPE,
                             ReferenceTypePair(
-                                reference as IsPropertyReference<TypedValue<AnyIndexedEnum, Any>, IsPropertyDefinition<TypedValue<AnyIndexedEnum, Any>>, Any>,
-                                value.type as AnyIndexedEnum
+                                reference as IsPropertyReference<TypedValue<IndexedEnum, Any>, IsPropertyDefinition<TypedValue<IndexedEnum, Any>>, Any>,
+                                value.type
                             )
                         )
                     } else {
@@ -581,7 +580,7 @@ private fun readTypedValue(
 }
 
 /** Read a complex Typed value from qualifier */
-private fun <E : IndexedEnum<E>> IsMultiTypeDefinition<E, IsPropertyContext>.readComplexTypedValue(
+private fun <E : IndexedEnum> IsMultiTypeDefinition<E, IsPropertyContext>.readComplexTypedValue(
     reference: IsPropertyReference<*, *, *>?,
     index: UInt,
     qualifier: ByteArray,

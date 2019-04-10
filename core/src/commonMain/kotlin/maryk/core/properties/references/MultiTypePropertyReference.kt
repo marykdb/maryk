@@ -12,7 +12,7 @@ import maryk.core.values.AbstractValues
  * [D] and referred by PropertyReference of type [P].
  */
 open class MultiTypePropertyReference<
-    E : IndexedEnum<E>,
+    E : IndexedEnum,
     TO : Any,
     out D : MultiTypeDefinitionWrapper<E, TO, *, *>,
     out P : AnyPropertyReference

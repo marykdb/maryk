@@ -5,7 +5,6 @@ import maryk.core.processors.datastore.StorageTypeEnum.TypeValue
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
-import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.references.ReferenceType.TYPE
 import maryk.core.properties.types.TypedValue
 
@@ -39,7 +38,7 @@ fun <T : IsPropertyDefinition<*>> writeTypedValueToStorage(
             qualifier,
             definition,
             TypedValue(
-                typedValue.type as IndexedEnum<IndexedEnum<*>>,
+                typedValue.type,
                 Unit
             )
         )

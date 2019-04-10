@@ -37,7 +37,7 @@ sealed class StorageTypeEnum<T : IsPropertyDefinition<*>>(val referenceType: Com
     object ListSize : StorageTypeEnum<IsListDefinition<Any, IsPropertyContext>>(LIST)
     object SetSize : StorageTypeEnum<IsSetDefinition<Any, IsPropertyContext>>(SET)
     object MapSize : StorageTypeEnum<IsMapDefinition<Any, Any, IsPropertyContext>>(MAP)
-    object TypeValue : StorageTypeEnum<IsMultiTypeDefinition<IndexedEnum<Any>, IsPropertyContext>>(TYPE)
+    object TypeValue : StorageTypeEnum<IsMultiTypeDefinition<IndexedEnum, IsPropertyContext>>(TYPE)
     object Embed : StorageTypeEnum<IsEmbeddedValuesDefinition<*, *, *>>(EMBED)
 
     @Suppress("UNCHECKED_CAST")

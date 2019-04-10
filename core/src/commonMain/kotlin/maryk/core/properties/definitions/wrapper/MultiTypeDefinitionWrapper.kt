@@ -21,7 +21,7 @@ import maryk.core.properties.types.TypedValue
  * It contains an [index] and [name] to which it is referred inside DataModel and a [getter]
  * function to retrieve value on dataObject of [DO] in context [CX]
  */
-data class MultiTypeDefinitionWrapper<E : IndexedEnum<E>, TO : Any, CX : IsPropertyContext, DO : Any> internal constructor(
+data class MultiTypeDefinitionWrapper<E : IndexedEnum, TO : Any, CX : IsPropertyContext, DO : Any> internal constructor(
     override val index: Int,
     override val name: String,
     override val definition: IsMultiTypeDefinition<E, CX>,

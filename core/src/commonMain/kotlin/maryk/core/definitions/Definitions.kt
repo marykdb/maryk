@@ -79,7 +79,7 @@ data class Definitions(
                                 valueTransformer = { context, value ->
                                     if (value.optionalCases == null) {
                                         context?.let {
-                                            it.enums[value.name] as IndexedEnumDefinition<IndexedEnum<Any>>?
+                                            it.enums[value.name] as IndexedEnumDefinition<IndexedEnum>?
                                                 ?: throw ParseException("Enum ${value.name} has not been defined")
                                         } ?: throw ContextNotFoundException()
                                     } else {

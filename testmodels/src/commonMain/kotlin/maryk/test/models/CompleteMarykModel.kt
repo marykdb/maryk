@@ -21,7 +21,7 @@ import maryk.core.properties.definitions.ValueModelDefinition
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.Reversed
 import maryk.core.properties.definitions.index.UUIDKey
-import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
@@ -43,7 +43,7 @@ import maryk.test.models.SimpleMarykModel.Properties.value
 
 enum class MarykEnumEmbedded(
     override val index: UInt
-) : IndexedEnum<MarykEnumEmbedded> {
+) : IndexedEnumComparable<MarykEnumEmbedded> {
     E1(1u),
     E2(2u),
     E3(3u);

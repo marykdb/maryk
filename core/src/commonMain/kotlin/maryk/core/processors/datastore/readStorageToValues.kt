@@ -25,7 +25,6 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.wrapper.AnyPropertyDefinitionWrapper
-import maryk.core.properties.enum.AnyIndexedEnum
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.graph.IsPropRefGraph
 import maryk.core.properties.graph.RootPropRefGraph
@@ -365,7 +364,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                     val definition = this.properties[index]
                         ?: throw DefNotFoundException("No definition for $index in $this at $index")
                     @Suppress("UNCHECKED_CAST")
-                    val typedDefinition = definition.definition as? IsMultiTypeDefinition<AnyIndexedEnum, *>
+                    val typedDefinition = definition.definition as? IsMultiTypeDefinition<IndexedEnum, *>
                         ?: throw TypeException("Definition($index) ${definition.definition} should be a TypedDefinition")
 
                     typedDefinition.readComplexTypedValue(
@@ -429,7 +428,7 @@ private fun readTypedValue(
     select: IsPropRefGraph<*>?,
     addToCache: CacheProcessor,
     addValueToOutput: AddValue,
-    typeToCheck: IndexedEnum<*>? = null
+    typeToCheck: IndexedEnum? = null
 ) {
     var qIndex1 = offset
     if (qualifier.size <= qIndex1) {
@@ -488,8 +487,7 @@ private fun IsMultiTypeDefinition<*, *>.readComplexTypedValue(
 ) {
     val definition = this.definition(index)
         ?: throw DefNotFoundException("No definition for $index in $this")
-    @Suppress("UNCHECKED_CAST")
-    val type = this.typeEnum.resolve(index) as AnyIndexedEnum?
+    val type = this.typeEnum.resolve(index)
         ?: throw DefNotFoundException("Unknown type $index for $this")
 
     val addMultiTypeToOutput: AddValue = { addValueToOutput(TypedValue(type, it)) }

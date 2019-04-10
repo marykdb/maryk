@@ -3,20 +3,17 @@ package maryk.generator.kotlin
 import maryk.core.exceptions.TypeException
 import maryk.core.models.IsNamedDataModel
 import maryk.core.models.RootDataModel
-import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsEmbeddedDefinition
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.Reversed
 import maryk.core.properties.definitions.index.UUIDKey
-import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.properties.references.TypeReference
 import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
 import maryk.core.properties.references.ValueWithFlexBytesPropertyReference
 
-fun <P : PropertyDefinitions> RootDataModel<*, P>.generateKotlin(
+fun RootDataModel<*, *>.generateKotlin(
     packageName: String,
     generationContext: GenerationContext? = null,
     writer: (String) -> Unit
@@ -52,7 +49,7 @@ fun <P : PropertyDefinitions> RootDataModel<*, P>.generateKotlin(
     val code = """
     object $name : RootDataModel<$name, $name.Properties>(
         name = "$name",
-        ${keyDefAsKotlin}${indicesAsKotlin}properties = Properties
+        $keyDefAsKotlin${indicesAsKotlin}properties = Properties
     ) {
         object Properties : PropertyDefinitions() {
             ${propertiesKotlin.generateDefinitionsForProperties().prependIndent().trimStart()}
@@ -84,16 +81,13 @@ private fun IsIndexable.generateKotlin(
         "UUIDKey"
     }
     is TypeReference<*, *> -> {
-        @Suppress("UNCHECKED_CAST")
-        val typeId = this as TypeReference<IndexedEnum<Any>, IsPropertyContext>
+        val typeId = this
         val parentReference = (typeId.parentReference as IsPropertyReferenceForValues<*, *, *, *>)
         parentReference.generateRef(packageName, name, addImport, refFunction = "typeRef")
     }
     is Reversed<*> -> {
         addImport("maryk.core.properties.definitions.key.Reversed")
-        @Suppress("UNCHECKED_CAST")
-        val reversed: Reversed<Any> = this as Reversed<Any>
-        "Reversed(${reversed.reference.generateRef(packageName, name, addImport)})"
+        "Reversed(${this.reference.generateRef(packageName, name, addImport)})"
     }
     is ValueWithFixedBytesPropertyReference<*, *, *, *> -> {
         generateRef(packageName, name, addImport)

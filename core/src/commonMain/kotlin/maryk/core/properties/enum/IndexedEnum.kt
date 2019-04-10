@@ -1,30 +1,7 @@
 package maryk.core.properties.enum
 
-typealias AnyIndexedEnum = IndexedEnum<IndexedEnum<IndexedEnum<Any>>>
-
-/**
- * Interface for Enums so they have indexes and can be transported and stored
- */
-interface IndexedEnum<in E> : Comparable<E> {
+/** Interface for Enums with indexes and names for transportation and storage */
+interface IndexedEnum {
     val index: UInt
     val name: String
-
-    companion object {
-        internal operator fun invoke(index: UInt, name: String) = object :
-            AnyIndexedEnum {
-            init {
-                require(index > 0u) { "Only indices of 1 and higher are allowed" }
-            }
-
-            override val index = index
-            override val name = name
-
-            override fun equals(other: Any?) = other is IndexedEnum<*> && other.index == this.index
-            override fun hashCode() = index.hashCode()
-
-            override fun compareTo(other: IndexedEnum<IndexedEnum<Any>>) = this.index.compareTo(other.index)
-
-            override fun toString() = name
-        }
-    }
 }

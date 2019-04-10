@@ -20,6 +20,7 @@ import maryk.core.properties.definitions.contextual.ContextCollectionTransformer
 import maryk.core.properties.definitions.mapOfPropertyDefEmbeddedObjectDefinitions
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.graph.PropRefGraphType
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
@@ -76,7 +77,7 @@ private data class MultiTypeDescriptor(
         override fun invoke(values: ObjectValues<MultiTypeDescriptor, Properties>) = MultiTypeDescriptor(
             index = values(1),
             name = values(2),
-            definition = values<TypedValue<IndexedEnum<Any>, IsSubDefinition<out Any, IsPropertyContext>>>(3).value
+            definition = values<TypedValue<*, IsSubDefinition<out Any, IsPropertyContext>>>(3).value
         )
 
         override fun readJson(
@@ -198,10 +199,10 @@ private data class MultiTypeDescriptorPropertyDefinitionWrapper internal constru
     override val fromSerializable: ((List<MultiTypeDescriptor>?) -> List<MultiTypeDescriptor>?)? = null,
     override val shouldSerialize: ((Any) -> Boolean)? = null,
     override val capturer: ((MultiTypeDefinitionContext, List<MultiTypeDescriptor>) -> Unit)? = null,
-    override val getter: (MultiTypeDefinition<IndexedEnum<Any>, ContainsDefinitionsContext>) -> List<MultiTypeDescriptor>?
+    override val getter: (MultiTypeDefinition<*, ContainsDefinitionsContext>) -> List<MultiTypeDescriptor>?
 ) :
     IsByteTransportableCollection<MultiTypeDescriptor, List<MultiTypeDescriptor>, MultiTypeDefinitionContext> by definition,
-    IsPropertyDefinitionWrapper<List<MultiTypeDescriptor>, List<MultiTypeDescriptor>, MultiTypeDefinitionContext, MultiTypeDefinition<IndexedEnum<Any>, ContainsDefinitionsContext>> {
+    IsPropertyDefinitionWrapper<List<MultiTypeDescriptor>, List<MultiTypeDescriptor>, MultiTypeDefinitionContext, MultiTypeDefinition<*, ContainsDefinitionsContext>> {
     override val graphType = PropRefGraphType.PropRef
 
     override fun ref(parentRef: AnyPropertyReference?) =
@@ -251,13 +252,13 @@ internal fun ObjectPropertyDefinitions<MultiTypeDefinition<*, *>>.addDescriptorP
  * Will throw an exception if it fails to convert
  */
 @Suppress("UNCHECKED_CAST")
-internal fun convertMultiTypeDescriptors(value: Any?): Map<IndexedEnum<Any>, IsSubDefinition<out Any, ContainsDefinitionsContext>> {
+internal fun convertMultiTypeDescriptors(value: Any?): Map<IndexedEnum, IsSubDefinition<out Any, ContainsDefinitionsContext>> {
     val descriptorList = value as? List<MultiTypeDescriptor>
         ?: throw ParseException("Multi type definition descriptor cannot be empty")
 
     return descriptorList.map {
         Pair(
-            IndexedEnum(it.index, it.name) as IndexedEnum<Any>,
+            IndexedEnumComparable(it.index, it.name),
             it.definition
         )
     }.toMap()

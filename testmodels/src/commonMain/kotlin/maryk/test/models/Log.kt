@@ -7,7 +7,7 @@ import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.Reversed
-import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.types.TimePrecision.MILLIS
 import maryk.lib.time.DateTime
@@ -17,7 +17,7 @@ import maryk.test.models.Severity.INFO
 
 enum class Severity(
     override val index: UInt
-) : IndexedEnum<Severity> {
+) : IndexedEnumComparable<Severity> {
     INFO(1u), DEBUG(2u), ERROR(3u);
 
     companion object : IndexedEnumDefinition<Severity>("Severity", Severity::values)

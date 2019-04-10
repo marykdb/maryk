@@ -23,11 +23,13 @@ import maryk.core.protobuf.WriteCacheWriter
  * Reference to a value by [type] [E] on [parentReference]
  * Can be a reference to a type below a multi type wrapper or for like multi types within lists
  */
-class TypedValueReference<E : IndexedEnum<E>, in CX : IsPropertyContext> internal constructor(
+class TypedValueReference<E : IndexedEnum, in CX : IsPropertyContext> internal constructor(
     val type: E,
     multiTypeDefinition: IsMultiTypeDefinition<E, CX>,
     parentReference: CanHaveComplexChildReference<*, *, *, *>?
-) : CanHaveComplexChildReference<Any, IsSubDefinition<Any, CX>, CanHaveComplexChildReference<*, *, *, *>, TypedValue<E, Any>>(
+) : CanHaveComplexChildReference<Any, IsSubDefinition<Any, CX>,
+    CanHaveComplexChildReference<*, *, *, *>,
+    TypedValue<E, Any>>(
         multiTypeDefinition.definitionMap[type] as IsSubDefinition<Any, CX>,
         parentReference
     ),

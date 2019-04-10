@@ -21,7 +21,7 @@ import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.values.IsValuesGetter
 
 /** Reference to any MultiType reference */
-data class TypeReference<E : IndexedEnum<E>, in CX : IsPropertyContext> internal constructor(
+data class TypeReference<E : IndexedEnum, in CX : IsPropertyContext> internal constructor(
     val multiTypeDefinition: IsMultiTypeDefinition<E, CX>,
     override val parentReference: CanHaveComplexChildReference<TypedValue<E, *>, IsMultiTypeDefinition<E, *>, *, *>?
 ) : IsPropertyReferenceWithDirectStorageParent<E, IndexedEnumDefinition<E>, CanHaveComplexChildReference<TypedValue<E, *>, IsMultiTypeDefinition<E, *>, *, *>, TypedValue<E, *>>,

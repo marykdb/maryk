@@ -102,7 +102,7 @@ fun <K : Any, V : Values<*, P>, DM : IsValuesDataModel<P>, P : PropertyDefinitio
 
 /** Specific extension to support fetching sub refs on Map values by [key] and [type] */
 @Suppress("UNCHECKED_CAST")
-fun <K : Any, E : IndexedEnum<E>, P : PropertyDefinitions, T : Any, W : IsPropertyDefinitionWrapper<T, *, *, *>> MapPropertyDefinitionWrapper<K, TypedValue<E, Any>, *, *, *>.refAtKeyAndType(
+fun <K : Any, E : IndexedEnum, P : PropertyDefinitions, T : Any, W : IsPropertyDefinitionWrapper<T, *, *, *>> MapPropertyDefinitionWrapper<K, TypedValue<E, Any>, *, *, *>.refAtKeyAndType(
     key: K,
     type: E,
     @Suppress("UNUSED_PARAMETER") properties: P, // So it is not needed to pass in types
@@ -146,7 +146,7 @@ fun <K : Any, V : Values<*, P>, DM : IsValuesDataModel<P>, P : PropertyDefinitio
 
 /** Specific extension to support fetching deeper references on Map values by [key] and [type] */
 @Suppress("UNCHECKED_CAST")
-fun <K : Any, E : IndexedEnum<E>, P : PropertyDefinitions, T : Any, R : IsPropertyReference<T, IsPropertyDefinitionWrapper<T, *, *, *>, *>> MapPropertyDefinitionWrapper<K, TypedValue<E, Any>, *, *, *>.atKeyAndType(
+fun <K : Any, E : IndexedEnum, P : PropertyDefinitions, T : Any, R : IsPropertyReference<T, IsPropertyDefinitionWrapper<T, *, *, *>, *>> MapPropertyDefinitionWrapper<K, TypedValue<E, Any>, *, *, *>.atKeyAndType(
     key: K,
     type: E,
     @Suppress("UNUSED_PARAMETER") properties: P, // So it is not needed to pass in types

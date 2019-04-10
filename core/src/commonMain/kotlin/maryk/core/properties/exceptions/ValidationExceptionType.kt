@@ -1,13 +1,13 @@
 package maryk.core.properties.exceptions
 
-import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IsCoreEnum
 
 /** Indexed type of changes */
 enum class ValidationExceptionType(
     override val index: UInt
-) : IndexedEnum<ValidationExceptionType>, IsCoreEnum {
+) : IndexedEnumComparable<ValidationExceptionType>, IsCoreEnum {
     ALREADY_SET(1u),
     INVALID_VALUE(2u),
     INVALID_SIZE(3u),

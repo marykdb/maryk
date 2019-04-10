@@ -2,12 +2,12 @@ package maryk.core.properties.types
 
 import maryk.core.extensions.bytes.initUInt
 import maryk.core.extensions.bytes.writeBytes
-import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IsCoreEnum
 import maryk.lib.time.Time
 
-enum class TimePrecision(override val index: UInt) : IndexedEnum<TimePrecision>, IsCoreEnum {
+enum class TimePrecision(override val index: UInt) : IndexedEnumComparable<TimePrecision>, IsCoreEnum {
     SECONDS(1u), MILLIS(2u);
 
     companion object : IndexedEnumDefinition<TimePrecision>(

@@ -4,7 +4,7 @@ import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.StringDefinition
-import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IsCoreEnum
 import maryk.core.values.SimpleObjectValues
@@ -12,7 +12,7 @@ import maryk.core.values.SimpleObjectValues
 /** Types of failures */
 enum class FailType(
     override val index: UInt
-) : IndexedEnum<FailType>, IsCoreEnum {
+) : IndexedEnumComparable<FailType>, IsCoreEnum {
     CONNECTION(1u), // Problems with Connection at the server
     STORE_STATE(2u), // Problems with the state of the store
     REQUEST(3u), // Problems with the request content

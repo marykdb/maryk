@@ -19,7 +19,7 @@ import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
-import maryk.core.properties.enum.AnyIndexedEnum
+import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationException
@@ -204,18 +204,16 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                     if (reference !is ListReference<*, *>) {
                                         throw TypeException("Expected a ListReference for a List")
                                     }
-                                    @Suppress("UNCHECKED_CAST")
-                                    val listReference = reference as ListReference<Any, IsPropertyContext>
 
                                     // Delete all existing values in placeholder
                                     val hadPrevValue =
-                                        deleteByReference(newValueList, listReference, version, keepAllVersions)
+                                        deleteByReference(newValueList, reference, version, keepAllVersions)
 
                                     @Suppress("UNCHECKED_CAST")
-                                    reference.propertyDefinition.definition.validateWithRef(
+                                    (reference as ListReference<Any, IsPropertyContext>).propertyDefinition.definition.validateWithRef(
                                         if (hadPrevValue) listOf() else null,
                                         value as List<Any>
-                                    ) { listReference }
+                                    ) { reference }
 
                                     val valueWriter = createValueWriter(newValueList, version, keepAllVersions)
 
@@ -231,18 +229,16 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                     if (reference !is SetReference<*, *>) {
                                         throw TypeException("Expected a SetReference for a Set")
                                     }
-                                    @Suppress("UNCHECKED_CAST")
-                                    val setReference = reference as SetReference<Any, IsPropertyContext>
 
                                     // Delete all existing values in placeholder
                                     val hadPrevValue =
-                                        deleteByReference(newValueList, setReference, version, keepAllVersions)
+                                        deleteByReference(newValueList, reference, version, keepAllVersions)
 
                                     @Suppress("UNCHECKED_CAST")
-                                    reference.propertyDefinition.definition.validateWithRef(
+                                    (reference as SetReference<Any, IsPropertyContext>).propertyDefinition.definition.validateWithRef(
                                         if (hadPrevValue) setOf() else null,
                                         value as Set<Any>
-                                    ) { setReference }
+                                    ) { reference }
 
                                     val valueWriter = createValueWriter(newValueList, version, keepAllVersions)
 
@@ -260,15 +256,15 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                     }
                                     @Suppress("UNCHECKED_CAST")
                                     val multiTypeReference =
-                                        reference as MultiTypePropertyReference<AnyIndexedEnum, Any, *, *>
+                                        reference as MultiTypePropertyReference<IndexedEnum, Any, *, *>
                                     @Suppress("UNCHECKED_CAST")
                                     val multiTypeDefinition =
-                                        multiTypeReference.propertyDefinition.definition as MultiTypeDefinition<AnyIndexedEnum, IsPropertyContext>
+                                        multiTypeReference.propertyDefinition.definition as MultiTypeDefinition<IndexedEnum, IsPropertyContext>
 
                                     // Previous value to find
                                     var prevValue: TypedValue<*, *>? = null
                                     // Delete all existing values in placeholder
-                                    val hadPrevValue = deleteByReference<TypedValue<AnyIndexedEnum, Any>>(
+                                    val hadPrevValue = deleteByReference<TypedValue<IndexedEnum, Any>>(
                                         newValueList,
                                         multiTypeReference,
                                         version,
@@ -279,8 +275,8 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
 
                                     @Suppress("UNCHECKED_CAST")
                                     multiTypeDefinition.validateWithRef(
-                                        if (hadPrevValue) prevValue as TypedValue<AnyIndexedEnum, Any> else null,
-                                        value as TypedValue<AnyIndexedEnum, Any>
+                                        if (hadPrevValue) prevValue as TypedValue<IndexedEnum, Any> else null,
+                                        value as TypedValue<IndexedEnum, Any>
                                     ) { multiTypeReference }
 
                                     val valueWriter = createValueWriter(newValueList, version, keepAllVersions)

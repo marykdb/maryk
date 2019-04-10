@@ -5,9 +5,6 @@ import maryk.core.exceptions.TypeException
 import maryk.core.models.DataModel
 import maryk.core.models.RootDataModel
 import maryk.core.models.ValueDataModel
-import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.generator.kotlin.GenerationContext
 
@@ -17,27 +14,26 @@ fun Definitions.generateProto3(
     val kotlinGenerationContext = GenerationContext()
 
     for (obj in this.definitions) {
-        @Suppress("UNCHECKED_CAST")
         when (obj) {
             is IndexedEnumDefinition<*> -> {
                 val writer = writerConstructor(obj.name)
-                (obj as IndexedEnumDefinition<IndexedEnum<Any>>).generateProto3Schema(writer)
+                obj.generateProto3Schema(writer)
                 kotlinGenerationContext.enums.add(obj)
             }
             is ValueDataModel<*, *> -> {
                 val writer = writerConstructor(obj.name)
-                (obj as ValueDataModel<*, ObjectPropertyDefinitions<*>>).generateProto3Schema(
+                obj.generateProto3Schema(
                     kotlinGenerationContext,
                     writer
                 )
             }
             is RootDataModel<*, *> -> {
                 val writer = writerConstructor(obj.name)
-                (obj as RootDataModel<*, PropertyDefinitions>).generateProto3Schema(kotlinGenerationContext, writer)
+                obj.generateProto3Schema(kotlinGenerationContext, writer)
             }
             is DataModel<*, *> -> {
                 val writer = writerConstructor(obj.name)
-                (obj as DataModel<*, PropertyDefinitions>).generateProto3Schema(kotlinGenerationContext, writer)
+                obj.generateProto3Schema(kotlinGenerationContext, writer)
             }
             else -> throw TypeException("Unknown Maryk Primitive $obj")
         }

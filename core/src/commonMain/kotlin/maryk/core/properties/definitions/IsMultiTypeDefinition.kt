@@ -10,7 +10,7 @@ import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.types.TypedValue
 
 /** Defines a multi type definition */
-interface IsMultiTypeDefinition<E : IndexedEnum<E>, in CX : IsPropertyContext> :
+interface IsMultiTypeDefinition<E : IndexedEnum, in CX : IsPropertyContext> :
     IsValueDefinition<TypedValue<E, Any>, CX>,
     IsSerializablePropertyDefinition<TypedValue<E, Any>, CX>,
     IsTransportablePropertyDefinitionType<TypedValue<E, Any>>,

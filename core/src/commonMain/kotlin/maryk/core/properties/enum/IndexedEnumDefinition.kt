@@ -25,7 +25,7 @@ import maryk.lib.exceptions.ParseException
 import kotlin.reflect.KClass
 
 /** Enum Definitions with a [name] and [cases] */
-open class IndexedEnumDefinition<E : IndexedEnum<E>> private constructor(
+open class IndexedEnumDefinition<E : IndexedEnum> private constructor(
     internal val optionalCases: (() -> Array<E>)?,
     override val name: String,
     private val reservedIndices: List<UInt>? = null,
@@ -41,11 +41,11 @@ open class IndexedEnumDefinition<E : IndexedEnum<E>> private constructor(
     override val final = true
 
     // Because of compilation issue in Native this map contains IndexedEnum<E> instead of E as value
-    private val valueByString: Map<String, IndexedEnum<E>> by lazy {
+    private val valueByString: Map<String, E> by lazy {
         cases().associate { Pair(it.name, it) }
     }
     // Because of compilation issue in Native this map contains IndexedEnum<E> instead of E as value
-    private val valueByIndex: Map<UInt, IndexedEnum<E>> by lazy {
+    private val valueByIndex: Map<UInt, E> by lazy {
         cases().associate { Pair(it.index, it) }
     }
 
@@ -92,29 +92,27 @@ open class IndexedEnumDefinition<E : IndexedEnum<E>> private constructor(
     override fun getEmbeddedByIndex(index: Int): Nothing? = null
 
     /** Get Enum value by [index] */
-    @Suppress("UNCHECKED_CAST")
-    fun resolve(index: UInt) = valueByIndex[index] as E?
+    fun resolve(index: UInt) = valueByIndex[index]
 
     /** Get Enum value by [name] */
-    @Suppress("UNCHECKED_CAST")
-    fun resolve(name: String) =
+    fun resolve(name: String): E? =
         if (name.endsWith(')')) {
             val found = name.split('(', ')')
             try {
                 val index = found[1].toUInt()
                 val valueName = found[0]
 
-                val typeByName = valueByString[valueName] as E?
+                val typeByName = valueByString[valueName]
                 if (typeByName != null && typeByName.index != index) {
                     throw ParseException("Non matching name $valueName with index $index, expected ${typeByName.index}")
                 }
 
-                valueByIndex[index] as E?
+                valueByIndex[index]
             } catch (e: NumberFormatException) {
                 throw ParseException("Not a correct number between brackets in type $name")
             }
         } else {
-            valueByString[name] as E?
+            valueByString[name]
         }
 
     override fun readStorageBytes(length: Int, reader: () -> Byte): E {
@@ -127,7 +125,7 @@ open class IndexedEnumDefinition<E : IndexedEnum<E>> private constructor(
         value.index.writeBytes(writer, 2)
     }
 
-    internal object Properties : ObjectPropertyDefinitions<IndexedEnumDefinition<IndexedEnum<Any>>>() {
+    internal object Properties : ObjectPropertyDefinitions<IndexedEnumDefinition<IndexedEnum>>() {
         val name = add(1, "name",
             ContextCaptureDefinition(
                 definition = StringDefinition(),
@@ -170,18 +168,18 @@ open class IndexedEnumDefinition<E : IndexedEnum<E>> private constructor(
                 if (toReturnNull) {
                     null
                 } else {
-                    value?.invoke()?.map { v: IndexedEnum<*> -> Pair(v.index, v.name) }?.toMap()
+                    value?.invoke()?.map { v: IndexedEnum -> Pair(v.index, v.name) }?.toMap()
                 }
             },
             fromSerializable = {
                 {
                     @Suppress("UNCHECKED_CAST")
                     it?.map { entry ->
-                        IndexedEnum(
+                        IndexedEnumComparable(
                             entry.key,
                             entry.value
                         )
-                    }?.toTypedArray() as Array<IndexedEnum<*>>
+                    }?.toTypedArray() as Array<IndexedEnum>
                 }
             }
         )
@@ -208,14 +206,13 @@ open class IndexedEnumDefinition<E : IndexedEnum<E>> private constructor(
         }
     }
 
-    @Suppress("UNCHECKED_CAST")
     internal object Model :
-        ContextualDataModel<IndexedEnumDefinition<IndexedEnum<Any>>, Properties, ContainsDefinitionsContext, EnumNameContext>(
+        ContextualDataModel<IndexedEnumDefinition<IndexedEnum>, Properties, ContainsDefinitionsContext, EnumNameContext>(
             properties = Properties,
             contextTransformer = { EnumNameContext(it) }
         ) {
-        override fun invoke(values: ObjectValues<IndexedEnumDefinition<IndexedEnum<Any>>, Properties>) =
-            IndexedEnumDefinition<IndexedEnum<Any>>(
+        override fun invoke(values: ObjectValues<IndexedEnumDefinition<IndexedEnum>, Properties>) =
+            IndexedEnumDefinition<IndexedEnum>(
                 name = values(1),
                 optionalCases = values(2),
                 reservedIndices = values(3),
@@ -223,7 +220,7 @@ open class IndexedEnumDefinition<E : IndexedEnum<E>> private constructor(
             )
 
         override fun writeJson(
-            values: ObjectValues<IndexedEnumDefinition<IndexedEnum<Any>>, Properties>,
+            values: ObjectValues<IndexedEnumDefinition<IndexedEnum>, Properties>,
             writer: IsJsonLikeWriter,
             context: EnumNameContext?
         ) {
@@ -231,7 +228,7 @@ open class IndexedEnumDefinition<E : IndexedEnum<E>> private constructor(
         }
 
         override fun writeJson(
-            obj: IndexedEnumDefinition<IndexedEnum<Any>>,
+            obj: IndexedEnumDefinition<IndexedEnum>,
             writer: IsJsonLikeWriter,
             context: EnumNameContext?
         ) {
@@ -258,7 +255,7 @@ open class IndexedEnumDefinition<E : IndexedEnum<E>> private constructor(
         override fun readJson(
             reader: IsJsonLikeReader,
             context: EnumNameContext?
-        ): ObjectValues<IndexedEnumDefinition<IndexedEnum<Any>>, Properties> {
+        ): ObjectValues<IndexedEnumDefinition<IndexedEnum>, Properties> {
             if (reader.currentToken == JsonToken.StartDocument) {
                 reader.nextToken()
             }

@@ -1,9 +1,8 @@
 package maryk.generator.kotlin
 
 import maryk.core.models.DataModel
-import maryk.core.properties.PropertyDefinitions
 
-fun <P : PropertyDefinitions> DataModel<*, P>.generateKotlin(
+fun DataModel<*, *>.generateKotlin(
     packageName: String,
     generationContext: GenerationContext? = null,
     writer: (String) -> Unit

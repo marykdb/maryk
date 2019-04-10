@@ -4,7 +4,7 @@ import maryk.core.models.ValueDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.types.ValueDataObject
 
-fun <DO : ValueDataObject, P : ObjectPropertyDefinitions<DO>> ValueDataModel<DO, P>.generateKotlin(
+fun <DO : ValueDataObject, P : ObjectPropertyDefinitions<DO>> ValueDataModel<DO, *>.generateKotlin(
     packageName: String,
     generationContext: GenerationContext? = null,
     writer: (String) -> Unit

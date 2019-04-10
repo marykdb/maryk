@@ -13,6 +13,7 @@ import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.contextual.ContextValueTransformDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IsCoreEnum
 import maryk.core.protobuf.WireType
@@ -22,7 +23,7 @@ import maryk.core.values.SimpleObjectValues
 import maryk.lib.exceptions.ParseException
 
 /** Definition for Enum properties */
-class EnumDefinition<E : IndexedEnum<E>>(
+class EnumDefinition<E : IndexedEnumComparable<E>>(
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val unique: Boolean = false,
@@ -72,7 +73,8 @@ class EnumDefinition<E : IndexedEnum<E>>(
             "${value.name}(${value.index})"
         }
 
-    override fun fromString(string: String) =
+    @Suppress("UNCHECKED_CAST")
+    override fun fromString(string: String): E =
         enum.resolve(string) ?: throw ParseException(string)
 
     override fun fromNativeType(value: Any): E? = null
@@ -130,11 +132,11 @@ class EnumDefinition<E : IndexedEnum<E>>(
                                     it?.definitionsContext
                                 }
                             ),
-                            valueTransformer = { context, value ->
+                            valueTransformer = { context: EnumDefinitionContext?, value ->
                                 if (value.optionalCases == null) {
                                     context?.let { c ->
                                         c.definitionsContext?.let {
-                                            it.enums[value.name] as IndexedEnumDefinition<IndexedEnum<Any>>?
+                                            it.enums[value.name] as IndexedEnumDefinition<IndexedEnum>?
                                                 ?: throw ParseException("Enum ${value.name} is not Defined")
                                         }
                                     } ?: throw ContextNotFoundException()
@@ -143,9 +145,9 @@ class EnumDefinition<E : IndexedEnum<E>>(
                                 }
                             }
                         ),
-                        getter = EnumDefinition<*>::enum as (EnumDefinition<*>) -> IndexedEnumDefinition<IndexedEnum<Any>>,
-                        capturer = { context: EnumDefinitionContext, value: IndexedEnumDefinition<IndexedEnum<Any>> ->
-                            context.enumDefinition = EnumDefinition(enum = value)
+                        getter = EnumDefinition<*>::enum as (EnumDefinition<*>) -> IndexedEnumDefinition<IndexedEnum>,
+                        capturer = { context, value ->
+                            context.enumDefinition = EnumDefinition(enum = value as IndexedEnumDefinition<IndexedEnumComparable<Any>>)
                         }
                     )
                     add(5, "minValue",
@@ -164,7 +166,7 @@ class EnumDefinition<E : IndexedEnum<E>>(
                                 @Suppress("UNCHECKED_CAST")
                                 context?.enumDefinition as IsValueDefinition<Any, IsPropertyContext>
                             }
-                        ) as IsContextualEncodable<IndexedEnum<*>, IsPropertyContext>,
+                        ) as IsContextualEncodable<IndexedEnum, IsPropertyContext>,
                         getter = EnumDefinition<*>::maxValue
                     )
                     @Suppress("UNCHECKED_CAST")
@@ -174,13 +176,13 @@ class EnumDefinition<E : IndexedEnum<E>>(
                                 @Suppress("UNCHECKED_CAST")
                                 context?.enumDefinition as IsValueDefinition<Any, IsPropertyContext>
                             }
-                        ) as IsContextualEncodable<IndexedEnum<*>, IsPropertyContext>,
+                        ) as IsContextualEncodable<IndexedEnum, IsPropertyContext>,
                         getter = EnumDefinition<*>::default
                     )
                 }
             }
         ) {
-        override fun invoke(values: SimpleObjectValues<EnumDefinition<*>>) = EnumDefinition<IndexedEnum<Any>>(
+        override fun invoke(values: SimpleObjectValues<EnumDefinition<*>>) = EnumDefinition<IndexedEnumComparable<Any>>(
             required = values(1),
             final = values(2),
             unique = values(3),
@@ -192,7 +194,7 @@ class EnumDefinition<E : IndexedEnum<E>>(
     }
 }
 
-private fun areEnumsEqual(enumValues: Array<out IndexedEnum<*>>, otherValues: Array<out IndexedEnum<*>>) = when {
+private fun areEnumsEqual(enumValues: Array<out IndexedEnum>, otherValues: Array<out IndexedEnum>) = when {
     enumValues === otherValues -> true
     otherValues.size != enumValues.size -> false
     else -> {
@@ -206,7 +208,7 @@ private fun areEnumsEqual(enumValues: Array<out IndexedEnum<*>>, otherValues: Ar
     }
 }
 
-private fun enumsHashCode(enumValues: Array<out IndexedEnum<*>>): Int {
+private fun enumsHashCode(enumValues: Array<out IndexedEnum>): Int {
     var result = 1
     for (it in enumValues) {
         result = 31 * result + it.index.hashCode()
@@ -217,5 +219,5 @@ private fun enumsHashCode(enumValues: Array<out IndexedEnum<*>>): Int {
 class EnumDefinitionContext(
     val definitionsContext: ContainsDefinitionsContext?
 ) : IsPropertyContext {
-    var enumDefinition: EnumDefinition<IndexedEnum<Any>>? = null
+    var enumDefinition: EnumDefinition<IndexedEnumComparable<Any>>? = null
 }

@@ -222,7 +222,7 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
     }
 
     /** Add multi types property [definition] with [name] and [index] and value [getter] */
-    fun <E : IndexedEnum<E>, TO : Any, CX : IsPropertyContext, D : IsMultiTypeDefinition<E, CX>> add(
+    fun <E : IndexedEnum, TO : Any, CX : IsPropertyContext, D : IsMultiTypeDefinition<E, CX>> add(
         index: Int,
         name: String,
         definition: D,
@@ -236,7 +236,7 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
      * Add multi types property [definition] with [name] and [index] and value [getter]
      * Also has a [toSerializable], [fromSerializable] and [capturer] to serialize and capture properties
      */
-    fun <E : IndexedEnum<E>, TO : Any, CX : IsPropertyContext, D : IsMultiTypeDefinition<E, CX>> add(
+    fun <E : IndexedEnum, TO : Any, CX : IsPropertyContext, D : IsMultiTypeDefinition<E, CX>> add(
         index: Int,
         name: String,
         definition: D,

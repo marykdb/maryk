@@ -1,11 +1,11 @@
 package maryk.test.models
 
-import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.enum.IndexedEnumDefinition
 
 enum class MarykEnum(
     override val index: UInt
-) : IndexedEnum<MarykEnum> {
+) : IndexedEnumComparable<MarykEnum> {
     O1(1u),
     O2(2u),
     O3(3u);

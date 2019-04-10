@@ -6,16 +6,15 @@ import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.PropertyDefinitionType
-import maryk.core.properties.enum.IndexedEnum
 
-@Suppress("UNCHECKED_CAST")
-internal fun <DO : Any> AbstractPropertyDefinitions<DO>.generateKotlin(
+internal fun AbstractPropertyDefinitions<*>.generateKotlin(
     addImport: (String) -> Unit,
     generationContext: GenerationContext? = null,
     addEnumDefinition: ((String) -> Unit)? = null
 ): List<KotlinForProperty> {
     val propertiesKotlin = mutableListOf<KotlinForProperty>()
     for (propertyDefinitionWrapper in this) {
+        @Suppress("UNCHECKED_CAST")
         val definition = propertyDefinitionWrapper.definition as? IsTransportablePropertyDefinitionType<Any>
             ?: throw TypeException("Property definition is not supported: ${propertyDefinitionWrapper.definition}")
 
@@ -25,8 +24,7 @@ internal fun <DO : Any> AbstractPropertyDefinitions<DO>.generateKotlin(
         if (definition.propertyDefinitionType == PropertyDefinitionType.Enum) {
             (definition as EnumDefinition<*>).enum.let { enum ->
                 if (generationContext?.enums?.contains(enum) != true) {
-                    @Suppress("UNCHECKED_CAST")
-                    val enumDefinition = (definition as EnumDefinition<IndexedEnum<Any>>).enum
+                    val enumDefinition = definition.enum
 
                     addEnumDefinition?.invoke(
                         enumDefinition.generateKotlinClass(addImport)

@@ -89,7 +89,7 @@ infix fun <K : Any, V : Any, D : IsMapDefinition<K, V, *>> IsPropertyReference<M
 
 /** Convenience infix method to create Reference [typedValue] pairs */
 @Suppress("UNCHECKED_CAST")
-infix fun <E : IndexedEnum<E>, D : IsMultiTypeDefinition<E, *>> IsPropertyReference<TypedValue<E, *>, D, *>.with(
+infix fun <E : IndexedEnum, D : IsMultiTypeDefinition<E, *>> IsPropertyReference<TypedValue<E, *>, D, *>.with(
     typedValue: TypedValue<E, *>
 ): ReferenceValuePair<TypedValue<E, *>> =
     ReferenceValuePair(

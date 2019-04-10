@@ -3,11 +3,11 @@ package maryk.core.query.changes
 import maryk.core.models.QueryDataModel
 import maryk.core.models.ReferencePairDataModel
 import maryk.core.models.ReferenceValuePairsObjectPropertyDefinitions
-import maryk.core.properties.enum.AnyIndexedEnum
+import maryk.core.properties.enum.IndexedEnum
 import maryk.core.query.pairs.ReferenceTypePair
 import maryk.core.values.ObjectValues
 
-/** Defines a change in type for complex multitype value */
+/** Defines a change in type for complex multi type value */
 data class MultiTypeChange internal constructor(
     val referenceTypePairs: List<ReferenceTypePair<*>>
 ) : IsChange {
@@ -22,7 +22,7 @@ data class MultiTypeChange internal constructor(
         pairModel = ReferenceTypePair as QueryDataModel<ReferenceTypePair<*>, *>
     )
 
-    companion object : ReferencePairDataModel<MultiTypeChange, Properties, ReferenceTypePair<*>, AnyIndexedEnum>(
+    companion object : ReferencePairDataModel<MultiTypeChange, Properties, ReferenceTypePair<*>, IndexedEnum>(
         properties = Properties,
         pairProperties = ReferenceTypePair.Properties
     ) {

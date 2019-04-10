@@ -30,6 +30,7 @@ import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.definitions.ValueModelDefinition
 import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.properties.types.numeric.NumberType
 
@@ -84,19 +85,19 @@ private val definitionNamesMap = mapOf(
     PropertyDefinitionType.Enum to PropertyDefinitionKotlinDescriptor(
         className = "EnumDefinition",
         kotlinTypeName = { it.enum.name },
-        definitionModel = EnumDefinition.Model as IsSimpleObjectDataModel<EnumDefinition<IndexedEnum<IndexedEnum<*>>>>,
+        definitionModel = EnumDefinition.Model as IsSimpleObjectDataModel<EnumDefinition<IndexedEnumComparable<IndexedEnum>>>,
         propertyValueOverride = mapOf(
             "maxValue" to { definition, value, _ ->
                 val enumDefinition = definition as EnumDefinition<*>
-                "${enumDefinition.enum.name}.${(value as IndexedEnum<*>).name}"
+                "${enumDefinition.enum.name}.${(value as IndexedEnum).name}"
             },
             "minValue" to { definition, value, _ ->
                 val enumDefinition = definition as EnumDefinition<*>
-                "${enumDefinition.enum.name}.${(value as IndexedEnum<*>).name}"
+                "${enumDefinition.enum.name}.${(value as IndexedEnum).name}"
             },
             "default" to { definition, value, _ ->
                 val enumDefinition = definition as EnumDefinition<*>
-                "${enumDefinition.enum.name}.${(value as IndexedEnum<*>).name}"
+                "${enumDefinition.enum.name}.${(value as IndexedEnum).name}"
             },
             "values" to { _, _, _ ->
                 null
@@ -147,11 +148,11 @@ private val definitionNamesMap = mapOf(
     PropertyDefinitionType.MultiType to PropertyDefinitionKotlinDescriptor(
         className = "MultiTypeDefinition",
         kotlinTypeName = { "TypedValue<${it.typeEnum.name}, *>" },
-        definitionModel = MultiTypeDefinition.Model as IsSimpleObjectDataModel<MultiTypeDefinition<IndexedEnum<Any>, *>>,
+        definitionModel = MultiTypeDefinition.Model as IsSimpleObjectDataModel<MultiTypeDefinition<IndexedEnum, *>>,
         propertyValueOverride = mapOf(
             "definitionMap" to { definition, _, _ ->
                 val multiTypeDefinition =
-                    definition as MultiTypeDefinition<IndexedEnum<IndexedEnum<*>>, IsPropertyContext>
+                    definition as MultiTypeDefinition<IndexedEnum, IsPropertyContext>
 
                 val typeName = multiTypeDefinition.typeEnum.name
 

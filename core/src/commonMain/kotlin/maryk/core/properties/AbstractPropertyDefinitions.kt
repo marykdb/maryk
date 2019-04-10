@@ -70,7 +70,7 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
         }
 
     /** Helper for definition maps for multi types. Add enum/usableInMultiType [pair] to map */
-    fun <E : IndexedEnum<E>> definitionMap(vararg pair: Pair<E, IsUsableInMultiType<*, IsPropertyContext>>) =
+    fun <E : IndexedEnum> definitionMap(vararg pair: Pair<E, IsUsableInMultiType<*, IsPropertyContext>>) =
         mapOf(*pair)
 
     /** Add flex bytes encodable property [definition] with [name] and [index] */
@@ -128,7 +128,7 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
     }
 
     /** Add multi type property [definition] with [name] and [index] */
-    fun <E : IndexedEnum<E>, CX : IsPropertyContext> add(
+    fun <E : IndexedEnum, CX : IsPropertyContext> add(
         index: Int,
         name: String,
         definition: IsMultiTypeDefinition<E, CX>

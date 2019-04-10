@@ -22,6 +22,7 @@ import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
+import kotlin.reflect.KClass
 
 /** Enum Definitions with a [name] and [cases] */
 open class IndexedEnumDefinition<E : IndexedEnum<E>> private constructor(
@@ -49,6 +50,18 @@ open class IndexedEnumDefinition<E : IndexedEnum<E>> private constructor(
     }
 
     val cases get() = optionalCases!!
+
+    constructor(
+        enumClass: KClass<E>,
+        values: () -> Array<E>,
+        reservedIndices: List<UInt>? = null,
+        reservedNames: List<String>? = null
+    ) : this(
+        name = enumClass.simpleName ?: throw DefNotFoundException("No name for enum class"),
+        optionalCases = values,
+        reservedIndices = reservedIndices,
+        reservedNames = reservedNames
+    )
 
     constructor(
         name: String,

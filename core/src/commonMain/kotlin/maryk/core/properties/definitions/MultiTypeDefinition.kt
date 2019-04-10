@@ -413,8 +413,8 @@ data class MultiTypeDefinition<E : IndexedEnum<E>, in CX : IsPropertyContext> in
             val typeOptions = definitionMap.keys.toTypedArray()
 
             val typeEnum = IndexedEnumDefinition(
-                values(3),
-                { typeOptions }
+                name = values(3),
+                values = { typeOptions }
             )
 
             return MultiTypeDefinition(

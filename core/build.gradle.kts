@@ -28,6 +28,11 @@ kotlin {
                 implementation(project(":testmodels"))
             }
         }
+        jvm().compilations["main"].defaultSourceSet {
+            dependencies {
+                api(kotlin("reflect"))
+            }
+        }
     }
 }
 

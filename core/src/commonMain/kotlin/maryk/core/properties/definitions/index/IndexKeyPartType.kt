@@ -5,8 +5,8 @@ import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
-import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
+import maryk.core.properties.enum.IndexedEnumImpl
 import maryk.core.properties.enum.IsCoreEnum
 import maryk.core.query.DefinitionsConversionContext
 import maryk.json.ArrayType
@@ -15,19 +15,16 @@ import maryk.json.ValueType
 
 /** Indexed type of property definitions */
 sealed class IndexKeyPartType(
-    override val name: String,
-    override val index: UInt
-) : IndexedEnum<IndexKeyPartType>, TokenType, IsCoreEnum {
-    override fun compareTo(other: IndexKeyPartType) =
-        this.index.compareTo(other.index)
-
-    object UUID : IndexKeyPartType("UUID", 1u), ValueType.IsNullValueType
-    object Reference : IndexKeyPartType("Ref", 2u), ValueType<String>
-    object Reversed : IndexKeyPartType("Reversed", 3u), ValueType<String>
-    object Multiple : IndexKeyPartType("Multiple", 4u), ArrayType
+    override val index: UInt,
+    name: String? = null
+) : IndexedEnumImpl<IndexKeyPartType>(index, name), TokenType, IsCoreEnum {
+    object UUID : IndexKeyPartType(1u), ValueType.IsNullValueType
+    object Reference : IndexKeyPartType(2u, "Ref"), ValueType<String>
+    object Reversed : IndexKeyPartType(3u), ValueType<String>
+    object Multiple : IndexKeyPartType(4u), ArrayType
 
     companion object : IndexedEnumDefinition<IndexKeyPartType>(
-        "IndexKeyPartType", {
+        IndexKeyPartType::class, {
             arrayOf(UUID, Reference, Reversed, Multiple)
         }
     )

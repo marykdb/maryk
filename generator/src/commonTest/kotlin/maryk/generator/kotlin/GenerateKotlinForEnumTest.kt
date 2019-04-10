@@ -7,18 +7,20 @@ import kotlin.test.Test
 val generatedKotlinForEnum = """
 package maryk.test.models
 
-import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
+import maryk.core.properties.enum.IndexedEnumImpl
 
-enum class MarykEnum(
+sealed class MarykEnum(
     override val index: UInt
-) : IndexedEnum<MarykEnum> {
-    O1(1u),
-    O2(2u),
-    O3(3u);
+) : IndexedEnumImpl<MarykEnum>(index) {
+    object O1: MarykEnum(1u)
+    object O2: MarykEnum(2u)
+    object O3: MarykEnum(3u)
+
+    class UnknownMarykEnum(index: UInt, override val name: String): MarykEnum(index)
 
     companion object : IndexedEnumDefinition<MarykEnum>(
-        "MarykEnum", MarykEnum::values
+        MarykEnum::class, { arrayOf(O1, O2, O3) }, unknownCreator = ::UnknownMarykEnum
     )
 }
 """.trimIndent()

@@ -14,6 +14,7 @@ import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.ValueModelDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.wrapper.AnyPropertyDefinitionWrapper
+import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Date
@@ -30,7 +31,8 @@ import maryk.lib.time.Time
 internal fun generateKotlinValue(
     definition: IsPropertyDefinition<Any>,
     value: Any,
-    addImport: (String) -> Unit
+    addImport: (String) -> Unit,
+    addGenerics: Boolean = false
 ): String = when (value) {
     is String -> """"$value""""
     is TimePrecision -> {
@@ -40,7 +42,7 @@ internal fun generateKotlinValue(
     is NumberType -> {
         value.name
     }
-    is Enum<*> -> {
+    is IndexedEnum -> {
         val enumDefinition = definition as EnumDefinition<*>
         "${enumDefinition.enum.name}.${value.name}"
     }
@@ -138,7 +140,18 @@ internal fun generateKotlinValue(
             )
         }
 
-        "mapOf(${kotlinStringValues.joinToString(", ")})"
+        // Add types for enum since they are difficult sealed classes
+        val type = if (addGenerics && (mapDefinition.keyDefinition is EnumDefinition<*> || mapDefinition.valueDefinition is EnumDefinition<*>)) {
+            val keyType = (mapDefinition.keyDefinition as IsTransportablePropertyDefinitionType<Any>).let {
+                it.getKotlinDescriptor().kotlinTypeName(it)
+            }
+            val valueType = (mapDefinition.valueDefinition as IsTransportablePropertyDefinitionType<Any>).let {
+                it.getKotlinDescriptor().kotlinTypeName(it)
+            }
+            "<$keyType, $valueType>"
+        } else ""
+
+        "mapOf$type(${kotlinStringValues.joinToString(", ")})"
     }
     is TypedValue<*, *> -> {
         addImport("maryk.core.properties.types.TypedValue")

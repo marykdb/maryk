@@ -39,7 +39,7 @@ internal fun AbstractPropertyDefinitions<*>.generateKotlin(
             ""
         }
 
-        val nativeTypeName = kotlinDescriptor.kotlinTypeName(definition)
+        val nativeTypeName = ": "+kotlinDescriptor.kotlinTypeName(definition)
 
         for (import in kotlinDescriptor.getImports(definition)) {
             addImport(import)
@@ -49,8 +49,8 @@ internal fun AbstractPropertyDefinitions<*>.generateKotlin(
             KotlinForProperty(
                 name = propertyDefinitionWrapper.name,
                 index = propertyDefinitionWrapper.index,
-                value = """${propertyDefinitionWrapper.name}: $nativeTypeName$default""",
-                assign = """this.${propertyDefinitionWrapper.name} with ${propertyDefinitionWrapper.name}""",
+                value = "${propertyDefinitionWrapper.name}$nativeTypeName$default",
+                assign = "this.${propertyDefinitionWrapper.name} with ${propertyDefinitionWrapper.name}",
                 definition = kotlinDescriptor.definitionToKotlin(definition, addImport),
                 invoke = "values(${propertyDefinitionWrapper.index})"
             )

@@ -5,7 +5,7 @@ import maryk.core.properties.enum.IndexedEnumImpl
 
 sealed class Option(
     override val index: UInt
-) : IndexedEnumImpl<Option>(index, name) {
+) : IndexedEnumImpl<Option>(index) {
     object V1: Option(1u)
     object V2: Option(2u)
     object V3: Option(3u)

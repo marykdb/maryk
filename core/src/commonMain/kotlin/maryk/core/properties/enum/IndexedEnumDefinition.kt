@@ -25,12 +25,12 @@ import maryk.lib.exceptions.ParseException
 import kotlin.reflect.KClass
 
 /** Enum Definitions with a [name] and [cases] */
-open class IndexedEnumDefinition<E : IndexedEnum> private constructor(
+open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
     internal val optionalCases: (() -> Array<E>)?,
     override val name: String,
-    private val reservedIndices: List<UInt>? = null,
-    private val reservedNames: List<String>? = null,
-    private val unknownCreator: ((UInt, String) -> E)?
+    val reservedIndices: List<UInt>? = null,
+    val reservedNames: List<String>? = null,
+    private val unknownCreator: ((UInt, String) -> E)? = null
 ) : MarykPrimitive,
     IsPropertyDefinition<E>,
     IsFixedBytesEncodable<E> {
@@ -80,27 +80,26 @@ open class IndexedEnumDefinition<E : IndexedEnum> private constructor(
         unknownCreator = unknownCreator
     )
 
-    init {
-        reservedIndices?.let {
-            optionalCases?.invoke()?.forEach {
-                @Suppress("SENSELESS_COMPARISON")
-                if (it == null) return@forEach // Sometimes cases are not created in time
-                require(!reservedIndices.contains(it.index)) {
-                    "Enum $name has ${it.index} defined in option ${it.name} while it is reserved"
+    override fun getEmbeddedByName(name: String): Nothing? = null
+    override fun getEmbeddedByIndex(index: Int): Nothing? = null
+
+    /** Check the enum values */
+    fun check() {
+        this.reservedIndices?.let {
+            this.optionalCases?.invoke()?.forEach { case ->
+                require(!reservedIndices.contains(case.index)) {
+                    "Enum $name has ${case.index} defined in option ${case.name} while it is reserved"
                 }
             }
         }
-        reservedNames?.let {
-            optionalCases?.invoke()?.forEach {
-                @Suppress("SENSELESS_COMPARISON")
-                if (it == null) return@forEach // Sometimes cases are not created in time
-                require(!reservedNames.contains(it.name)) { "Enum $name has a reserved name defined ${it.name}" }
+        this.reservedNames?.let {
+            this.optionalCases?.invoke()?.forEach { case ->
+                require(!reservedNames.contains(case.name)) {
+                    "Enum $name has a reserved name defined ${case.name}"
+                }
             }
         }
     }
-
-    override fun getEmbeddedByName(name: String): Nothing? = null
-    override fun getEmbeddedByIndex(index: Int): Nothing? = null
 
     /** Get Enum value by [index] */
     fun resolve(index: UInt) = valueByIndex[index] ?: unknownCreator?.invoke(index, "%Unknown")

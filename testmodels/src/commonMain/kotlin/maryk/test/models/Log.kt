@@ -7,20 +7,25 @@ import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.Reversed
-import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.enum.IndexedEnumDefinition
+import maryk.core.properties.enum.IndexedEnumImpl
 import maryk.core.properties.types.TimePrecision.MILLIS
 import maryk.lib.time.DateTime
 import maryk.test.models.Log.Properties.severity
 import maryk.test.models.Log.Properties.timestamp
 import maryk.test.models.Severity.INFO
 
-enum class Severity(
+sealed class Severity(
     override val index: UInt
-) : IndexedEnumComparable<Severity> {
-    INFO(1u), DEBUG(2u), ERROR(3u);
+) : IndexedEnumImpl<Severity>(index) {
+    object INFO: Severity(1u)
+    object DEBUG: Severity(2u)
+    object ERROR: Severity(3u)
+    class UnknownSeverity(index: UInt, override val name: String): Severity(index)
 
-    companion object : IndexedEnumDefinition<Severity>(Severity::class, Severity::values)
+    companion object : IndexedEnumDefinition<Severity>(
+        Severity::class, { arrayOf(INFO, DEBUG, ERROR) }, unknownCreator = ::UnknownSeverity
+    )
 }
 
 object Log : RootDataModel<Log, Log.Properties>(

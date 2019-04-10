@@ -40,6 +40,11 @@ class EnumDefinition<E : IndexedEnumComparable<E>>(
     override val wireType = WireType.VAR_INT
     override val byteSize = 2
 
+    init {
+        // Check enum
+        enum.check()
+    }
+
     private fun getEnumByIndex(index: UInt) =
         enum.resolve(index) ?: throw ParseException("Enum index does not exist $index")
 

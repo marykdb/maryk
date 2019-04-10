@@ -53,7 +53,7 @@ internal open class PropertyDefinitionKotlinDescriptor<T : Any, D : IsTransporta
                     } else {
                         def
                     }
-                    output.add("""${property.name} = ${generateKotlinValue(defToSend, value, addImport)}""")
+                    output.add("""${property.name} = ${generateKotlinValue(defToSend, value, addImport, addGenerics = true)}""")
                 }
             }
         }

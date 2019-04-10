@@ -17,22 +17,20 @@ fun IndexedEnumDefinition<*>.generateKotlin(packageName: String, writer: (String
 
 /** Generates kotlin class string for IndexedEnumDefinition and adds imports to [addImport] */
 fun IndexedEnumDefinition<*>.generateKotlinClass(addImport: (String) -> Unit): String {
-    addImport("maryk.core.properties.enum.IndexedEnum")
+    addImport("maryk.core.properties.enum.IndexedEnumImpl")
     addImport("maryk.core.properties.enum.IndexedEnumDefinition")
 
-    val values = mutableListOf<String>()
-    for (value in this.cases()) {
-        values.add("${value.name}(${value.index}u)")
-    }
-
     return """
-    enum class ${this.name}(
+    sealed class ${this.name}(
         override val index: UInt
-    ) : IndexedEnum<${this.name}> {
-        ${values.joinToString(",\n").prependIndent().prependIndent().trimStart()};
+    ) : IndexedEnumImpl<${this.name}>(index) {
+        ${this.cases().joinToString("") {
+            "object ${it.name}: ${this.name}(${it.index}u)\n"
+        }.prependIndent().prependIndent().trimStart()}
+        class Unknown${this.name}(index: UInt, override val name: String): ${this.name}(index)
 
         companion object : IndexedEnumDefinition<${this.name}>(
-            "${this.name}", ${this.name}::values
+            ${this.name}::class, { arrayOf(${this.cases().joinToString(", ") { it.name }}) }, unknownCreator = ::Unknown${this.name}
         )
     }
     """.trimIndent()

@@ -22,7 +22,6 @@ object ComplexModel : RootDataModel<ComplexModel, Properties>(
     properties = Properties
 ) {
     object Properties : PropertyDefinitions() {
-        @Suppress("RemoveExplicitTypeArguments")
         val multi = add(
             index = 1, name = "multi",
             definition = MultiTypeDefinition<Option, IsPropertyContext>(
@@ -68,7 +67,6 @@ object ComplexModel : RootDataModel<ComplexModel, Properties>(
             )
         )
 
-        @Suppress("RemoveExplicitTypeArguments")
         val mapIntMulti = add(
             index = 4, name = "mapIntMulti",
             definition = MapDefinition(
@@ -94,7 +92,7 @@ object ComplexModel : RootDataModel<ComplexModel, Properties>(
         multi: TypedValue<Option, Any>? = null,
         mapStringString: Map<String, String>? = null,
         mapIntObject: Map<UInt, Values<EmbeddedMarykModel, EmbeddedMarykModel.Properties>>? = null,
-        mapIntMulti: Map<UInt, TypedValue<Option, *>>? = null
+        mapIntMulti: Map<UInt, TypedValue<Option, Any>>? = null
     ) = this.values {
         mapNonNulls(
             this.multi with multi,

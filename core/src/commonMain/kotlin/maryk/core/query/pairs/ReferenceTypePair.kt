@@ -43,7 +43,7 @@ data class ReferenceTypePair<E : IndexedEnum> internal constructor(
     companion object : QueryDataModel<ReferenceTypePair<*>, Properties>(
         properties = Properties
     ) {
-        override fun invoke(values: ObjectValues<ReferenceTypePair<*>, Properties>) = ReferenceTypePair<IndexedEnum>(
+        override fun invoke(values: ObjectValues<ReferenceTypePair<*>, Properties>) = ReferenceTypePair(
             reference = values(1),
             type = values(2)
         )

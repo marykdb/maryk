@@ -273,10 +273,9 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                         prevValue = prevTypedValue
                                     }
 
-                                    @Suppress("UNCHECKED_CAST")
                                     multiTypeDefinition.validateWithRef(
-                                        if (hadPrevValue) prevValue as TypedValue<IndexedEnum, Any> else null,
-                                        value as TypedValue<IndexedEnum, Any>
+                                        if (hadPrevValue) prevValue else null,
+                                        value
                                     ) { multiTypeReference }
 
                                     val valueWriter = createValueWriter(newValueList, version, keepAllVersions)

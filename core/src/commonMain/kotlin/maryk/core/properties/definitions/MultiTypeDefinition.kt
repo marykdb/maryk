@@ -397,7 +397,6 @@ data class MultiTypeDefinition<E : IndexedEnum, in CX : IsPropertyContext> inter
 
                     this.addDescriptorPropertyWrapperWrapper(5, "definitionMap")
 
-                    @Suppress("UNCHECKED_CAST")
                     add(6, "default",
                         ContextualValueDefinition(
                             required = false,
@@ -407,7 +406,7 @@ data class MultiTypeDefinition<E : IndexedEnum, in CX : IsPropertyContext> inter
                             contextualResolver = { context: MultiTypeDefinitionContext? ->
                                 context?.multiTypeDefinition ?: throw ContextNotFoundException()
                             }
-                        ) as IsContextualEncodable<TypedValue<out IndexedEnum, Any>, MultiTypeDefinitionContext>,
+                        ),
                         MultiTypeDefinition<*, *>::default
                     )
                 }

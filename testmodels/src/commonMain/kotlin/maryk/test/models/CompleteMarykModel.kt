@@ -49,7 +49,7 @@ enum class MarykEnumEmbedded(
     E3(3u);
 
     companion object : IndexedEnumDefinition<MarykEnumEmbedded>(
-        "MarykEnumEmbedded", MarykEnumEmbedded::values
+        MarykEnumEmbedded::class, MarykEnumEmbedded::values
     )
 }
 

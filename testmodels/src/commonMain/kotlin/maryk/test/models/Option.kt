@@ -1,17 +1,21 @@
 package maryk.test.models
 
-import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.enum.IndexedEnumDefinition
+import maryk.core.properties.enum.IndexedEnumImpl
 
-enum class Option(
+sealed class Option(
     override val index: UInt
-) : IndexedEnumComparable<Option> {
-    V1(1u), V2(2u), V3(3u);
+) : IndexedEnumImpl<Option>(index, name) {
+    object V1: Option(1u)
+    object V2: Option(2u)
+    object V3: Option(3u)
+    class UnknownOption(index: UInt, override val name: String): Option(index)
 
     companion object : IndexedEnumDefinition<Option>(
         enumClass = Option::class,
         values = { arrayOf(V1, V2, V3) },
         reservedIndices = listOf(4u),
-        reservedNames = listOf("V4")
+        reservedNames = listOf("V4"),
+        unknownCreator = ::UnknownOption
     )
 }

@@ -6,21 +6,21 @@ import maryk.checkYamlConversion
 import maryk.core.properties.WriteCacheFailer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
-import maryk.lib.exceptions.ParseException
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.Option
+import maryk.test.models.Option.UnknownOption
 import maryk.test.models.Option.V1
 import maryk.test.models.Option.V2
 import maryk.test.models.Option.V3
 import maryk.test.shouldBe
-import maryk.test.shouldThrow
 import kotlin.test.Test
 
 internal class EnumDefinitionTest {
     private val enumsToTest = arrayOf(
         V1,
-        V2
+        V2,
+        UnknownOption(99u, "%Unknown")
     )
 
     val def = EnumDefinition(
@@ -88,10 +88,8 @@ internal class EnumDefinitionTest {
     }
 
     @Test
-    fun invalidStringValueShouldThrowException() {
-        shouldThrow<ParseException> {
-            def.fromString("wrong")
-        }
+    fun invalidStringValueShouldReturnUnknown() {
+        def.fromString("wrong") shouldBe UnknownOption(0u, "wrong")
     }
 
     @Test

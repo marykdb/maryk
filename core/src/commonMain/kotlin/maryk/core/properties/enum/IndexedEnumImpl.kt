@@ -12,4 +12,10 @@ abstract class IndexedEnumImpl<E: IndexedEnum>(
     override val name: String = name ?: this::class.simpleName ?: throw DefNotFoundException("Missing enum option name")
 
     override fun compareTo(other: E) = this.index.compareTo(other.index)
+
+    override fun equals(other: Any?) = other is IndexedEnum && index == other.index && name == other.name
+
+    override fun hashCode() = 31 * index.hashCode() + name.hashCode()
+
+    override fun toString() = name
 }

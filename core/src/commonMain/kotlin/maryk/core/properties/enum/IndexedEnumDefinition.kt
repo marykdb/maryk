@@ -29,7 +29,8 @@ open class IndexedEnumDefinition<E : IndexedEnum> private constructor(
     internal val optionalCases: (() -> Array<E>)?,
     override val name: String,
     private val reservedIndices: List<UInt>? = null,
-    private val reservedNames: List<String>? = null
+    private val reservedNames: List<String>? = null,
+    private val unknownCreator: ((UInt, String) -> E)?
 ) : MarykPrimitive,
     IsPropertyDefinition<E>,
     IsFixedBytesEncodable<E> {
@@ -55,34 +56,44 @@ open class IndexedEnumDefinition<E : IndexedEnum> private constructor(
         enumClass: KClass<E>,
         values: () -> Array<E>,
         reservedIndices: List<UInt>? = null,
-        reservedNames: List<String>? = null
+        reservedNames: List<String>? = null,
+        unknownCreator: ((UInt, String) -> E)? = null
     ) : this(
         name = enumClass.simpleName ?: throw DefNotFoundException("No name for enum class"),
         optionalCases = values,
         reservedIndices = reservedIndices,
-        reservedNames = reservedNames
+        reservedNames = reservedNames,
+        unknownCreator = unknownCreator
     )
 
-    constructor(
+    internal constructor(
         name: String,
         values: () -> Array<E>,
         reservedIndices: List<UInt>? = null,
-        reservedNames: List<String>? = null
+        reservedNames: List<String>? = null,
+        unknownCreator: ((UInt, String) -> E)? = null
     ) : this(
         name = name,
         optionalCases = values,
         reservedIndices = reservedIndices,
-        reservedNames = reservedNames
+        reservedNames = reservedNames,
+        unknownCreator = unknownCreator
     )
 
     init {
         reservedIndices?.let {
             optionalCases?.invoke()?.forEach {
-                require(!reservedIndices.contains(it.index)) { "Enum $name has ${it.index} defined in option ${it.name} while it is reserved" }
+                @Suppress("SENSELESS_COMPARISON")
+                if (it == null) return@forEach // Sometimes cases are not created in time
+                require(!reservedIndices.contains(it.index)) {
+                    "Enum $name has ${it.index} defined in option ${it.name} while it is reserved"
+                }
             }
         }
         reservedNames?.let {
             optionalCases?.invoke()?.forEach {
+                @Suppress("SENSELESS_COMPARISON")
+                if (it == null) return@forEach // Sometimes cases are not created in time
                 require(!reservedNames.contains(it.name)) { "Enum $name has a reserved name defined ${it.name}" }
             }
         }
@@ -92,7 +103,7 @@ open class IndexedEnumDefinition<E : IndexedEnum> private constructor(
     override fun getEmbeddedByIndex(index: Int): Nothing? = null
 
     /** Get Enum value by [index] */
-    fun resolve(index: UInt) = valueByIndex[index]
+    fun resolve(index: UInt) = valueByIndex[index] ?: unknownCreator?.invoke(index, "%Unknown")
 
     /** Get Enum value by [name] */
     fun resolve(name: String): E? =
@@ -107,12 +118,12 @@ open class IndexedEnumDefinition<E : IndexedEnum> private constructor(
                     throw ParseException("Non matching name $valueName with index $index, expected ${typeByName.index}")
                 }
 
-                valueByIndex[index]
+                valueByIndex[index] ?: unknownCreator?.invoke(index, valueName)
             } catch (e: NumberFormatException) {
                 throw ParseException("Not a correct number between brackets in type $name")
             }
         } else {
-            valueByString[name]
+            valueByString[name] ?: unknownCreator?.invoke(0u, name)
         }
 
     override fun readStorageBytes(length: Int, reader: () -> Byte): E {
@@ -216,7 +227,8 @@ open class IndexedEnumDefinition<E : IndexedEnum> private constructor(
                 name = values(1),
                 optionalCases = values(2),
                 reservedIndices = values(3),
-                reservedNames = values(4)
+                reservedNames = values(4),
+                unknownCreator = { index, name -> IndexedEnumComparable(index, name) }
             )
 
         override fun writeJson(

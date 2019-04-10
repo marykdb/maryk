@@ -20,7 +20,7 @@ enum class Severity(
 ) : IndexedEnumComparable<Severity> {
     INFO(1u), DEBUG(2u), ERROR(3u);
 
-    companion object : IndexedEnumDefinition<Severity>("Severity", Severity::values)
+    companion object : IndexedEnumDefinition<Severity>(Severity::class, Severity::values)
 }
 
 object Log : RootDataModel<Log, Log.Properties>(

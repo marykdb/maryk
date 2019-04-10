@@ -15,7 +15,6 @@ import kotlin.test.Test
 
 internal class UUIDKeyTest {
     object MarykModel : RootDataModel<MarykModel, MarykModel.Properties>(
-        name = "MarykModel",
         keyDefinition = UUIDKey,
         properties = Properties
     ) {

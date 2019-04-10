@@ -20,7 +20,6 @@ import kotlin.test.Test
 
 internal class EmbeddedValuesDefinitionTest {
     object MarykModel : DataModel<MarykModel, MarykModel.Properties>(
-        name = "MarykModel",
         properties = Properties
     ) {
         object Properties : PropertyDefinitions() {

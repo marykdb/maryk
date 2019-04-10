@@ -29,7 +29,6 @@ sealed class Severity(
 }
 
 object Log : RootDataModel<Log, Log.Properties>(
-    name = "Log",
     keyDefinition = Multiple(
         Reversed(timestamp.ref()),
         severity.ref()

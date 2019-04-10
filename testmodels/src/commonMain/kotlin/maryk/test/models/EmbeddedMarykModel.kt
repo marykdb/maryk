@@ -7,7 +7,6 @@ import maryk.core.properties.definitions.StringDefinition
 import maryk.core.values.Values
 
 object EmbeddedMarykModel : DataModel<EmbeddedMarykModel, EmbeddedMarykModel.Properties>(
-    name = "EmbeddedMarykModel",
     properties = EmbeddedMarykModel.Properties
 ) {
     object Properties : PropertyDefinitions() {

@@ -15,7 +15,6 @@ import maryk.core.properties.types.numeric.UInt64
 import maryk.core.properties.types.numeric.UInt8
 
 object NumericMarykModel : RootDataModel<NumericMarykModel, NumericMarykModel.Properties>(
-    name = "NumericMarykModel",
     properties = Properties
 ) {
     object Properties : PropertyDefinitions() {

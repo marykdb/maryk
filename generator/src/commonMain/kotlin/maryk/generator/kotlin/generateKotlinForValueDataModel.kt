@@ -31,7 +31,6 @@ fun <DO : ValueDataObject, P : ObjectPropertyDefinitions<DO>> ValueDataModel<DO,
         }
 
         companion object : ValueDataModel<$name, Properties>(
-            name = "$name",
             properties = Properties
         ) {
             override fun invoke(values: ObjectValues<$name, Properties>) = $name(

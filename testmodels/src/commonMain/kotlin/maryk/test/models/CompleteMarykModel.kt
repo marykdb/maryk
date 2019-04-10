@@ -56,7 +56,6 @@ sealed class MarykEnumEmbedded(
 }
 
 object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel.Properties>(
-    name = "CompleteMarykModel",
     keyDefinition = Multiple(
         UUIDKey,
         multiForKey.typeRef(),

@@ -3,6 +3,7 @@ package maryk.core.models
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.definitions.PrimitiveType
 import maryk.core.exceptions.ContextNotFoundException
+import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.SerializationException
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsDataModelPropertyDefinitions
@@ -24,12 +25,13 @@ import maryk.json.IsJsonLikeWriter
  * reference to the propertyDefinitions of type [P] which can be used for the references to the properties.
  */
 abstract class DataModel<DM : IsValuesDataModel<P>, P : PropertyDefinitions>(
-    override val name: String,
     properties: P
 ) : SimpleDataModel<DM, P>(
     properties
 ), MarykPrimitive {
     override val primitiveType = PrimitiveType.Model
+
+    override val name: String get() = this::class.simpleName ?: throw DefNotFoundException("Class $this has no name")
 
     private object Properties :
         ObjectPropertyDefinitions<DataModel<*, *>>(),
@@ -43,9 +45,10 @@ abstract class DataModel<DM : IsValuesDataModel<P>, P : PropertyDefinitions>(
     ) {
         override fun invoke(values: SimpleObjectValues<DataModel<*, *>>) =
             object : DataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
-                name = values(1),
                 properties = values(2)
-            ) {}
+            ) {
+                override val name: String = values(1)
+            }
 
         override fun writeJson(
             values: ObjectValues<DataModel<*, *>, ObjectPropertyDefinitions<DataModel<*, *>>>,

@@ -48,7 +48,6 @@ fun RootDataModel<*, *>.generateKotlin(
 
     val code = """
     object $name : RootDataModel<$name, $name.Properties>(
-        name = "$name",
         $keyDefAsKotlin${indicesAsKotlin}properties = Properties
     ) {
         object Properties : PropertyDefinitions() {

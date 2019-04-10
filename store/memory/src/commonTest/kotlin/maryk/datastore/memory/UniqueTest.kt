@@ -20,7 +20,6 @@ import maryk.test.shouldBeOfType
 import kotlin.test.Test
 
 object UniqueModel : RootDataModel<UniqueModel, Properties>(
-    name = "SimpleMarykModel",
     properties = Properties
 ) {
     object Properties : PropertyDefinitions() {

@@ -18,7 +18,6 @@ import maryk.test.models.Option.V2
 import maryk.test.models.Option.V3
 
 object ComplexModel : RootDataModel<ComplexModel, Properties>(
-    name = "ComplexModel",
     properties = Properties
 ) {
     object Properties : PropertyDefinitions() {

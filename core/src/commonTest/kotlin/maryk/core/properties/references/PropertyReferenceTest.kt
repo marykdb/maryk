@@ -24,7 +24,7 @@ private object Properties : PropertyDefinitions() {
 }
 
 private object Model : RootDataModel<Model, Properties>(
-    "name", properties = Properties
+    properties = Properties
 )
 
 private val ref = definition.ref()

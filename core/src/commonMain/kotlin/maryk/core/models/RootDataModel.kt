@@ -42,11 +42,10 @@ typealias RootDataModelImpl = RootDataModel<IsRootValuesDataModel<PropertyDefini
  * The dataModel can be referenced by the [name] and the properties are defined by a [properties]
  */
 abstract class RootDataModel<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions>(
-    name: String,
     final override val keyDefinition: IsIndexable = UUIDKey,
     final override val indices: List<IsIndexable>? = null,
     properties: P
-) : DataModel<DM, P>(name, properties), IsTypedRootDataModel<DM, P>, IsRootValuesDataModel<P> {
+) : DataModel<DM, P>(properties), IsTypedRootDataModel<DM, P>, IsRootValuesDataModel<P> {
     override val primitiveType = PrimitiveType.RootModel
 
     override val keyByteSize = checkKeyDefinitionAndCountBytes(keyDefinition)
@@ -94,11 +93,12 @@ abstract class RootDataModel<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
         ) {
         override fun invoke(values: ObjectValues<RootDataModel<*, *>, ObjectPropertyDefinitions<RootDataModel<*, *>>>) =
             object : RootDataModelImpl(
-                name = values(1),
                 properties = values(2),
                 keyDefinition = values(3) ?: UUIDKey,
                 indices = values(4)
-            ) {}
+            ) {
+                override val name: String = values(1)
+            }
 
         override fun writeJson(
             values: ObjectValues<RootDataModel<*, *>, ObjectPropertyDefinitions<RootDataModel<*, *>>>,

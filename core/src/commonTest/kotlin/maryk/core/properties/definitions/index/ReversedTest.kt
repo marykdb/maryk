@@ -19,7 +19,6 @@ import kotlin.test.Test
 
 internal class ReversedTest {
     object MarykModel : RootDataModel<MarykModel, MarykModel.Properties>(
-        name = "MarykModel",
         keyDefinition = Multiple(
             Reversed(boolean.ref()),
             Reversed(dateTime.ref())

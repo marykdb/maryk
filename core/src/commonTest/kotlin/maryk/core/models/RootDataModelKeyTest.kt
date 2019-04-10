@@ -33,7 +33,6 @@ class RootDataModelKeyTest {
     fun notAcceptNonRequiredDefinitions() {
         shouldThrow<IllegalArgumentException> {
             object : RootDataModel<IsRootValuesDataModel<WrongProperties>, WrongProperties>(
-                name = "MarykModel",
                 keyDefinition = boolean.ref(),
                 properties = WrongProperties
             ) {
@@ -48,7 +47,6 @@ class RootDataModelKeyTest {
     fun notAcceptNonFinalDefinitions() {
         shouldThrow<IllegalArgumentException> {
             object : RootDataModel<IsRootValuesDataModel<WrongProperties>, WrongProperties>(
-                name = "MarykModel",
                 keyDefinition = Multiple(
                     dateTime.ref()
                 ),
@@ -65,7 +63,6 @@ class RootDataModelKeyTest {
     fun notAcceptFlexByteDefinitions() {
         shouldThrow<InvalidDefinitionException> {
             object : RootDataModel<IsRootValuesDataModel<WrongProperties>, WrongProperties>(
-                name = "MarykModel",
                 keyDefinition = Multiple(
                     string.ref()
                 ),

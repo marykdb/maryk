@@ -20,7 +20,6 @@ fun DataModel<*, *>.generateKotlin(
 
     val code = """
     object $name : DataModel<$name, $name.Properties>(
-        name = "$name",
         properties = Properties
     ) {
         object Properties : PropertyDefinitions() {

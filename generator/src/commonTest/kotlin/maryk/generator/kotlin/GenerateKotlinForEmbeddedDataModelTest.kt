@@ -12,7 +12,6 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 
 object EmbeddedModel : DataModel<EmbeddedModel, EmbeddedModel.Properties>(
-    name = "EmbeddedModel",
     properties = Properties
 ) {
     object Properties : PropertyDefinitions() {

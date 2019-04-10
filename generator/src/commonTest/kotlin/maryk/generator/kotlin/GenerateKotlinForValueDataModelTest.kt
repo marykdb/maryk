@@ -39,7 +39,6 @@ data class ValueMarykObject(
     }
 
     companion object : ValueDataModel<ValueMarykObject, Properties>(
-        name = "ValueMarykObject",
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<ValueMarykObject, Properties>) = ValueMarykObject(

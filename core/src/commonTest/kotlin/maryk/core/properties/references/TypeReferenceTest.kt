@@ -20,7 +20,6 @@ import kotlin.test.Test
 
 internal class TypeReferenceTest {
     object MarykModel : RootDataModel<MarykModel, MarykModel.Properties>(
-        name = "MarykModel",
         keyDefinition = multi.typeRef(),
         properties = Properties
     ) {

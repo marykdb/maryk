@@ -37,7 +37,6 @@ import maryk.test.models.TestMarykModel.Properties.multi
 import maryk.test.models.TestMarykModel.Properties.uint
 
 object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>(
-    name = "TestMarykModel",
     keyDefinition = Multiple(
         uint.ref(),
         bool.ref(),

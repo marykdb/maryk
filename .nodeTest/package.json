@@ -6,6 +6,7 @@
   "license": "Apache-2.0",
   "repository": {},
   "dependencies": {
-    "mocha": "^6.0.2"
+    "mocha": "^6.1.2",
+    "source-map-support": "^0.5.12"
   }
 }

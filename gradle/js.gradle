@@ -26,37 +26,58 @@ ext.setupJS = { runTests ->
     }
 
     if (runTests == null || runTests == true) {
-        afterEvaluate {
-            // Directory for all js test dependencies
+        def projectName = name
+
+        // Find kotlin targets that are tests for JS platform and set them up with Mocha
+        kotlin.targets.matching { it.platformType.name == 'js' }.all { target->
             def testDir = "${buildDir}/jsTest"
-            def projectName = name
+            def testCompilation = target.compilations["test"]
+            def mainCompilation = target.compilations["main"]
+
+            def testCompilationTask = tasks[testCompilation.compileKotlinTaskName]
+            def mainCompilationTask = tasks[mainCompilation.compileKotlinTaskName]
+            def targetName = target.name
+
+            def syncMainDependencies = task("${targetName}SyncTestDependencies",
+                    type: Sync,
+                    group: 'build',
+                    dependsOn: [mainCompilationTask]) {
+                from mainCompilationTask.destinationDir
+                into "${testDir}/node_modules"
+
+                def configuration = testCompilation.runtimeDependencyFiles
+                from(files {
+                    configuration.collect { File file ->
+                        file.name.endsWith(".jar") ?
+                                zipTree(file.absolutePath).matching {
+                                    include '*.js'
+                                    include '*.js.map'
+                                } :
+                                files()
+                    }
+                }.builtBy(configuration))
+            }
 
             // Copy test files
-            task copyJsTestOutput(type: Copy, dependsOn: [compileTestKotlinJs]) {
+            def testFilesSync = task("${targetName}SyncTestOutput",
+                    type: Sync,
+                    group: 'build',
+                    dependsOn: [compileTestKotlinJs]) {
                 from compileTestKotlinJs.outputFile.parentFile.path
                 include "*.js"
                 include "*.js.map"
                 into testDir
             }
 
-            // Copy all to be tested code and dependencies
-            task copyJsMainOutputAndDependencies(type: Copy, dependsOn: compileKotlinJs) {
-                from compileKotlinJs.destinationDir
-                configurations.jsTestCompileClasspath.each {
-                    from(zipTree(it.absolutePath).matching { include '*.js.map'; include '*.js' })
-                }
-
-                into("${testDir}/node_modules")
-            }
-
-            // Use mocha as the test runner
-            task runMocha(type: NodeTask, dependsOn: [copyJsMainOutputAndDependencies, copyJsTestOutput]) {
+            // Run mocha with node
+            def mochaTask = task("mocha${targetName.capitalize()}Test",
+                    group: 'verification',
+                    type: NodeTask,
+                    dependsOn: [testCompilationTask, syncMainDependencies, testFilesSync]) {
                 script = file("${project.rootDir}/.nodeTest/node_modules/mocha/bin/mocha")
-                args = ["${testDir}/${projectName}_test.js"]
+                args = ["${testDir}/${projectName}_test.js", '--require', 'source-map-support/register']
             }
-
-            // Let mocha run when test is run in JS target
-            jsTest.dependsOn runMocha
+            tasks["${targetName}Test"].dependsOn mochaTask
         }
     }
 }

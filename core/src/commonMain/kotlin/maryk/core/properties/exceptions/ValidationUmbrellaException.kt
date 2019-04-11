@@ -23,7 +23,7 @@ data class ValidationUmbrellaException internal constructor(
     internal companion object : SimpleQueryDataModel<ValidationUmbrellaException>(
         properties = object : ObjectPropertyDefinitions<ValidationUmbrellaException>() {
             init {
-                ValidationException.addReference(this, ValidationUmbrellaException::reference)
+                addReference(this, ValidationUmbrellaException::reference)
                 add(2, "exceptions",
                     ListDefinition(
                         default = emptyList(),

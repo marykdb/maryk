@@ -6,7 +6,7 @@ import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
-import maryk.json.JsonToken
+import maryk.json.JsonToken.Value
 import maryk.lib.exceptions.ParseException
 
 /**
@@ -69,15 +69,12 @@ interface IsSimpleValueDefinition<T : Any, in CX : IsPropertyContext> :
 
     override fun readJson(reader: IsJsonLikeReader, context: CX?): T = reader.currentToken.let { value ->
         when (value) {
-            is JsonToken.Value<*> -> {
-                val jsonValue = value.value
-                when (jsonValue) {
+            is Value<*> -> {
+                when (val jsonValue = value.value) {
                     null -> throw ParseException("JSON value cannot be null")
                     is String -> this.fromString(jsonValue, context)
-                    else -> {
-                        this.fromNativeType(jsonValue)
-                            ?: throw ParseException("Unknown type for value $jsonValue")
-                    }
+                    else -> this.fromNativeType(jsonValue)
+                        ?: throw ParseException("Unknown type for value $jsonValue")
                 }
             }
             else -> throw ParseException("JSON value should be a simple value")

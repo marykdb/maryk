@@ -156,7 +156,7 @@ data class PropRefGraph<P : PropertyDefinitions, DM : IsValuesDataModel<PS>, PS 
             while (currentToken != JsonToken.EndArray && currentToken !is JsonToken.Stopped) {
                 when (currentToken) {
                     is JsonToken.StartObject -> {
-                        val newContext = PropRefGraph.transformContext(context)
+                        val newContext = transformContext(context)
 
                         propertiesValue.add(
                             TypedValue(

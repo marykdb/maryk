@@ -27,8 +27,8 @@ data class OutOfRangeException internal constructor(
     internal companion object : SimpleQueryDataModel<OutOfRangeException>(
         properties = object : ObjectPropertyDefinitions<OutOfRangeException>() {
             init {
-                ValidationException.addReference(this, OutOfRangeException::reference)
-                ValidationException.addValue(this, OutOfRangeException::value)
+                addReference(this, OutOfRangeException::reference)
+                addValue(this, OutOfRangeException::value)
                 add(3, "min", StringDefinition(required = false), OutOfRangeException::min)
                 add(4, "max", StringDefinition(), OutOfRangeException::max)
             }

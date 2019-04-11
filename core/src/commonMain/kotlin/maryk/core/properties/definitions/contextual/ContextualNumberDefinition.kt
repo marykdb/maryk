@@ -15,7 +15,7 @@ import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
-import maryk.json.JsonToken
+import maryk.json.JsonToken.Value
 import maryk.lib.exceptions.ParseException
 
 /**
@@ -56,9 +56,8 @@ internal class ContextualNumberDefinition<in CX : IsPropertyContext>(
 
     override fun readJson(reader: IsJsonLikeReader, context: CX?): Comparable<Any> = reader.currentToken.let {
         when (it) {
-            is JsonToken.Value<*> -> {
-                val jsonValue = it.value
-                when (jsonValue) {
+            is Value<*> -> {
+                when (val jsonValue = it.value) {
                     null -> throw ParseException("Contextual number cannot be null in JSON")
                     is String -> contextualResolver(context).ofString(jsonValue)
                     else -> {

@@ -91,13 +91,13 @@ class InMemoryDataStoreGetChangesComplexTest {
                     ComplexModel { mapIntObject.refAtKey(1u) { value } } with "v1",
                     ComplexModel { mapIntObject refAt 2u } with Unit,
                     ComplexModel { mapIntObject.refAtKey(2u) { value } } with "v2",
-                    ComplexModel { mapIntMulti.refAtKeyAndType(1u, T3, EmbeddedMarykModel.Properties) { value } } with "v1",
-                    ComplexModel { mapIntMulti.atKeyAndType(1u, T3, EmbeddedMarykModel.Properties) { model ref { value } } } with "sub1",
-                    ComplexModel { mapIntMulti.atKeyAndType(1u, T3, EmbeddedMarykModel.Properties) { model { model ref { value } } } } with "sub2",
+                    ComplexModel { mapIntMulti.refAtKeyAndType(1u, T3, Properties) { value } } with "v1",
+                    ComplexModel { mapIntMulti.atKeyAndType(1u, T3, Properties) { model ref { value } } } with "sub1",
+                    ComplexModel { mapIntMulti.atKeyAndType(1u, T3, Properties) { model { model ref { value } } } } with "sub2",
                     ComplexModel { mapIntMulti.refAt(2u) } with TypedValue(T1, "string"),
-                    ComplexModel { mapIntMulti.refAtKeyAndType(3u, T3, EmbeddedMarykModel.Properties) { value } } with "v2",
-                    ComplexModel { mapIntMulti.atKeyAndType(3u, T3, EmbeddedMarykModel.Properties) { model ref { value } } } with "2sub1",
-                    ComplexModel { mapIntMulti.atKeyAndType(3u, T3, EmbeddedMarykModel.Properties) { model { model ref { value } } } } with "2sub2"
+                    ComplexModel { mapIntMulti.refAtKeyAndType(3u, T3, Properties) { value } } with "v2",
+                    ComplexModel { mapIntMulti.atKeyAndType(3u, T3, Properties) { model ref { value } } } with "2sub1",
+                    ComplexModel { mapIntMulti.atKeyAndType(3u, T3, Properties) { model { model ref { value } } } } with "2sub2"
                 )
             ))
         )

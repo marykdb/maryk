@@ -97,7 +97,7 @@ class YamlWriter(
             }
         } else {
             super.writeEndObject()
-            if (!this.typeStack.isEmpty() && this.typeStack.last() !== JsonEmbedType.ComplexField) {
+            if (this.typeStack.isNotEmpty() && this.typeStack.last() !== JsonEmbedType.ComplexField) {
                 prefix = prefix.removeSuffix(spacing)
             }
         }
@@ -188,7 +188,7 @@ class YamlWriter(
     override fun writeString(value: String) = writeValue(value)
 
     /** Writes a [value] excluding quotes */
-    override fun writeValue(value: String) = if (!typeStack.isEmpty()) {
+    override fun writeValue(value: String) = if (typeStack.isNotEmpty()) {
         val valueToWrite = this.sanitizeValue(value)
         val lastTypeBeforeOperation = this.lastType
 
@@ -272,7 +272,7 @@ class YamlWriter(
                 writer(tag)
             }
         } else {
-            if (!this.typeStack.isEmpty()
+            if (this.typeStack.isNotEmpty()
                 && lastTypeBeforeCheck != START_ARRAY
                 && this.typeStack.last() is JsonEmbedType.Array
             ) {

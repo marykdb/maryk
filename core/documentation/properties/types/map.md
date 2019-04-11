@@ -70,11 +70,11 @@ Kotlin:
 ```kotlin
 MapChange(
     Model.ref { mapOfIntToString }.change(
-        valuesToAdd: mapOf(
+        valuesToAdd = mapOf(
             3 to "three",
             4 to "four"
         ),
-        keysToDelete: setOf(1, 2)
+        keysToDelete = setOf(1, 2)
     )
 )
 ```

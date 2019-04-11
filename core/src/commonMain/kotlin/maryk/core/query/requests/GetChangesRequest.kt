@@ -17,7 +17,6 @@ import maryk.core.values.ObjectValues
  * Creates a request to get DataObject its versioned changes by value [keys]
  * It will only fetch the changes [fromVersion] (Inclusive) until [maxVersions] (Default=1000) is reached.
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
- * Results can be ordered with an [order]
  */
 fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.getChanges(
     vararg keys: Key<DM>,
@@ -43,7 +42,7 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.getChanges(
  * A Request to get DataObject its versioned changes by value [keys] for specific [dataModel] of type [DM]
  * It will only fetch the changes [fromVersion] (Inclusive) until [maxVersions] (Default=1000) is reached.
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
- * Results can be ordered with an [order] and only selected properties can be returned with a [select] graph
+ * Only selected properties can be returned with a [select] graph
  */
 @Suppress("EXPERIMENTAL_OVERRIDE")
 data class GetChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> internal constructor(

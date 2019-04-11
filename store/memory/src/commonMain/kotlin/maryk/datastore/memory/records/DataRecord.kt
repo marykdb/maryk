@@ -34,9 +34,7 @@ internal data class DataRecord<DM : IsRootValuesDataModel<P>, P : PropertyDefini
         getValue<Boolean>(this.values, objectSoftDeleteQualifier, toVersion)?.value ?: false
 
     fun <T : Any> matchQualifier(reference: IsPropertyReference<T, *, *>, toVersion: ULong?, matcher: (T?) -> Boolean): Boolean {
-        val qualifierMatcher = reference.toQualifierMatcher()
-
-        when (qualifierMatcher) {
+        when (val qualifierMatcher = reference.toQualifierMatcher()) {
             is QualifierExactMatcher -> {
                 val value = get<T>(qualifierMatcher.qualifier, toVersion)
                 return matcher(value)

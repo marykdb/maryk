@@ -20,7 +20,7 @@ data class AlreadySetException(
     internal companion object : SimpleQueryDataModel<AlreadySetException>(
         properties = object : ObjectPropertyDefinitions<AlreadySetException>() {
             init {
-                ValidationException.addReference(this, AlreadySetException::reference)
+                addReference(this, AlreadySetException::reference)
             }
         }
     ) {

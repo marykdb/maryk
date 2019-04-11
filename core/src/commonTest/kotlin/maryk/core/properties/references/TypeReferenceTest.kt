@@ -31,8 +31,8 @@ internal class TypeReferenceTest {
                     final = true,
                     typeEnum = Option,
                     definitionMap = mapOf<Option, IsSubDefinition<*, IsPropertyContext>>(
-                        Option.V1 to StringDefinition(),
-                        Option.V2 to BooleanDefinition()
+                        V1 to StringDefinition(),
+                        V2 to BooleanDefinition()
                     )
                 )
             )
@@ -50,7 +50,7 @@ internal class TypeReferenceTest {
     @Test
     fun testKey() {
         val obj = MarykModel(
-            multi = TypedValue(Option.V2, true)
+            multi = TypedValue(V2, true)
         )
 
         val key = MarykModel.key(obj)
@@ -67,7 +67,7 @@ internal class TypeReferenceTest {
 
         val bc = ByteCollector()
         bc.reserve(2)
-        specificDef.writeStorageBytes(Option.V1, bc::write)
+        specificDef.writeStorageBytes(V1, bc::write)
         specificDef.readStorageBytes(bc.size, bc::read) shouldBe V1
     }
 

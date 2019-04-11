@@ -10,7 +10,7 @@ import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
-import maryk.json.JsonToken
+import maryk.json.JsonToken.Value
 import maryk.lib.exceptions.ParseException
 
 /** Definition for a reference to another property from a context resolved from [contextualResolver]  */
@@ -33,9 +33,8 @@ data class ContextualPropertyReferenceDefinition<in CX : IsPropertyContext> inte
 
     override fun readJson(reader: IsJsonLikeReader, context: CX?) = reader.currentToken.let {
         when (it) {
-            is JsonToken.Value<*> -> {
-                val jsonValue = it.value
-                when (jsonValue) {
+            is Value<*> -> {
+                when (val jsonValue = it.value) {
                     null -> throw ParseException("Property reference cannot be null in JSON")
                     is String -> fromString(jsonValue, context)
                     is ByteArray -> {
@@ -46,9 +45,7 @@ data class ContextualPropertyReferenceDefinition<in CX : IsPropertyContext> inte
                             context
                         )
                     }
-                    else -> {
-                        throw ParseException("Property reference was not defined as byte array or string")
-                    }
+                    else -> throw ParseException("Property reference was not defined as byte array or string")
                 }
             }
             else -> throw ParseException("Property reference should be a value")

@@ -7,7 +7,7 @@ import maryk.core.properties.definitions.StringDefinition
 import maryk.core.values.Values
 
 object EmbeddedMarykModel : DataModel<EmbeddedMarykModel, EmbeddedMarykModel.Properties>(
-    properties = EmbeddedMarykModel.Properties
+    properties = Properties
 ) {
     object Properties : PropertyDefinitions() {
         val value = add(
@@ -32,7 +32,7 @@ object EmbeddedMarykModel : DataModel<EmbeddedMarykModel, EmbeddedMarykModel.Pro
 
     operator fun invoke(
         value: String,
-        model: Values<EmbeddedMarykModel, EmbeddedMarykModel.Properties>? = null,
+        model: Values<EmbeddedMarykModel, Properties>? = null,
         marykModel: Values<TestMarykModel, TestMarykModel.Properties>? = null
     ) = this.values {
         mapNonNulls(

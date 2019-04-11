@@ -209,10 +209,10 @@ class InMemoryDataStoreChangeComplexTest {
                             mapIntMulti.atKeyAndType(
                                 1u,
                                 T3,
-                                EmbeddedMarykModel.Properties
+                                Properties
                             ) { model ref { model } }
                         },
-                        ComplexModel { mapIntMulti.refAtKeyAndType(3u, T3, EmbeddedMarykModel.Properties) { model } }
+                        ComplexModel { mapIntMulti.refAtKeyAndType(3u, T3, Properties) { model } }
                     )
                 )
             )

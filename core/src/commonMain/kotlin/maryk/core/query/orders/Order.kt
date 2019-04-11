@@ -21,6 +21,8 @@ import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
 import maryk.json.JsonToken.EndDocument
+import maryk.json.JsonToken.StartObject
+import maryk.json.JsonToken.Value
 import maryk.lib.exceptions.ParseException
 import maryk.yaml.IsYamlReader
 import maryk.yaml.UnknownYamlTag
@@ -30,7 +32,7 @@ import maryk.yaml.YamlWriter
 enum class Direction(override val index: UInt) : IndexedEnumComparable<Direction>, IsCoreEnum {
     ASC(1u), DESC(2u);
 
-    companion object : IndexedEnumDefinition<Direction>("Direction", Direction::values)
+    companion object : IndexedEnumDefinition<Direction>("Direction", ::values)
 }
 
 /** Descending ordering of property */
@@ -101,7 +103,7 @@ data class Order internal constructor(
             writer: YamlWriter,
             context: RequestContext?
         ) {
-            if (direction == Direction.DESC) {
+            if (direction == DESC) {
                 writer.writeTag("!Desc")
             } else if (reference == null) {
                 writer.writeTag("!Asc")
@@ -128,21 +130,21 @@ data class Order internal constructor(
                 val valueMap = MutableValueItems()
 
                 return when (currentToken) {
-                    is JsonToken.StartObject -> { // when has no values
+                    is StartObject -> { // when has no values
                         currentToken.type.let { valueType ->
                             if (valueType is UnknownYamlTag && valueType.name == "Desc") {
-                                valueMap += Properties.direction withNotNull Direction.DESC
+                                valueMap += Properties.direction withNotNull DESC
                             }
                         }
 
                         reader.nextToken() // Read until EndObject
                         this.values(context) { valueMap }
                     }
-                    is JsonToken.Value<*> -> {
+                    is Value<*> -> {
                         this.values(context) {
                             currentToken.type.let { valueType ->
                                 if (valueType is UnknownYamlTag && valueType.name == "Desc") {
-                                    valueMap += direction withNotNull Direction.DESC
+                                    valueMap += direction withNotNull DESC
                                 }
                             }
 

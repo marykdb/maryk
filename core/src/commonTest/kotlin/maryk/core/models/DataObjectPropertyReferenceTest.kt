@@ -11,7 +11,6 @@ import maryk.lib.time.Date
 import maryk.lib.time.Time
 import maryk.test.models.ComplexModel
 import maryk.test.models.EmbeddedMarykModel
-import maryk.test.models.MultiTypeEnum
 import maryk.test.models.MultiTypeEnum.T1
 import maryk.test.models.MultiTypeEnum.T3
 import maryk.test.models.TestMarykModel
@@ -42,7 +41,7 @@ internal class DataObjectPropertyReferenceTest {
         TestMarykModel { multi.refToType() }.completeName shouldBe "multi.*"
 
         TestMarykModel { multi.refWithType(T3) { value } }.completeName shouldBe "multi.*T3.value"
-        TestMarykModel { multi.withType(MultiTypeEnum.T3) { model ref { value } } }.completeName shouldBe "multi.*T3.model.value"
+        TestMarykModel { multi.withType(T3) { model ref { value } } }.completeName shouldBe "multi.*T3.model.value"
 
         ComplexModel { mapIntObject.refAtKey(2u) { value } }.completeName shouldBe "mapIntObject.@2.value"
         ComplexModel { mapIntObject.refToAny { value } }.completeName shouldBe "mapIntObject.*.value"
@@ -72,11 +71,11 @@ internal class DataObjectPropertyReferenceTest {
         TestMarykModel { embeddedValues { marykModel { map refToKey Time(12, 23) } } }.toStorageByteArray().toHex() shouldBe "661e080a0300ae24"
         TestMarykModel { embeddedValues { marykModel { map refAt Time(12, 23) } } }.toStorageByteArray().toHex() shouldBe "661e540300ae24"
 
-        TestMarykModel { multi refAtType MultiTypeEnum.T1 }.toStorageByteArray().toHex() shouldBe "690d"
+        TestMarykModel { multi refAtType T1 }.toStorageByteArray().toHex() shouldBe "690d"
         TestMarykModel { multi.refToType() }.toStorageByteArray().toHex() shouldBe "6905"
 
-        TestMarykModel { multi.refWithType(MultiTypeEnum.T3) { value } }.toStorageByteArray().toHex() shouldBe "691d09"
-        TestMarykModel { multi.withType(MultiTypeEnum.T3) { model ref { value } } }.toStorageByteArray().toHex() shouldBe "691d1609"
+        TestMarykModel { multi.refWithType(T3) { value } }.toStorageByteArray().toHex() shouldBe "691d09"
+        TestMarykModel { multi.withType(T3) { model ref { value } } }.toStorageByteArray().toHex() shouldBe "691d1609"
 
         ComplexModel { mapIntObject.refAtKey(2u) { value } }.toStorageByteArray().toHex() shouldBe "1c040000000209"
         ComplexModel { mapIntObject.refToAny { value } }.toStorageByteArray().toHex() shouldBe "10030009"

@@ -24,7 +24,7 @@ data class TooManyItemsException internal constructor(
     internal companion object : SimpleQueryDataModel<TooManyItemsException>(
         properties = object : ObjectPropertyDefinitions<TooManyItemsException>() {
             init {
-                ValidationException.addReference(this, TooManyItemsException::reference)
+                addReference(this, TooManyItemsException::reference)
                 add(2, "size", NumberDefinition(type = UInt32), TooManyItemsException::size)
                 add(3, "maxSize", NumberDefinition(type = UInt32), TooManyItemsException::maxSize)
             }

@@ -108,7 +108,7 @@ internal class YamlReaderImpl(
     override fun nextToken(): JsonToken {
         try {
             this.currentToken = try {
-                if (!this.tokenStack.isEmpty()) {
+                if (this.tokenStack.isNotEmpty()) {
                     this.tokenStack.removeAt(0)
                 } else if (this.hasException) {
                     this.currentReader.handleReaderInterrupt()

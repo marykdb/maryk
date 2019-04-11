@@ -42,10 +42,10 @@ data class CollectRequest<RQ : IsRequest<RP>, RP : IsResponse>(
         )
     }
 
-    companion object : QueryDataModel<AnyCollectRequest, CollectRequest.Properties>(
+    companion object : QueryDataModel<AnyCollectRequest, Properties>(
         properties = Properties
     ) {
-        override fun invoke(values: ObjectValues<AnyCollectRequest, CollectRequest.Properties>) =
+        override fun invoke(values: ObjectValues<AnyCollectRequest, Properties>) =
             CollectRequest<IsRequest<IsResponse>, IsResponse>(
                 name = values(1),
                 request = values(2)
@@ -62,7 +62,7 @@ data class CollectRequest<RQ : IsRequest<RP>, RP : IsResponse>(
         override fun readJson(
             reader: IsJsonLikeReader,
             context: RequestContext?
-        ): ObjectValues<AnyCollectRequest, CollectRequest.Properties> {
+        ): ObjectValues<AnyCollectRequest, Properties> {
             if (reader.currentToken == JsonToken.StartDocument) {
                 reader.nextToken()
             }

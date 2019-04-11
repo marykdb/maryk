@@ -1,10 +1,8 @@
 package maryk.generator.kotlin
 
 import maryk.core.models.ValueDataModel
-import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.types.ValueDataObject
 
-fun <DO : ValueDataObject, P : ObjectPropertyDefinitions<DO>> ValueDataModel<DO, *>.generateKotlin(
+fun ValueDataModel<*, *>.generateKotlin(
     packageName: String,
     generationContext: GenerationContext? = null,
     writer: (String) -> Unit
@@ -54,7 +52,7 @@ private fun List<KotlinForProperty>.generatePropertyNamesForConstructor(): Strin
 private fun List<KotlinForProperty>.generateObjectValuesForProperties(): String {
     var properties = ""
     for (it in this) {
-        if (!properties.isEmpty()) properties += ",\n"
+        if (properties.isNotEmpty()) properties += ",\n"
         properties += "val ${it.value}"
     }
     return properties
@@ -63,7 +61,7 @@ private fun List<KotlinForProperty>.generateObjectValuesForProperties(): String 
 private fun List<KotlinForProperty>.generateInvokesForProperties(): String {
     var properties = ""
     for (it in this) {
-        if (!properties.isEmpty()) properties += ",\n"
+        if (properties.isNotEmpty()) properties += ",\n"
         properties += """${it.name} = ${it.invoke}"""
     }
     return properties.prependIndent()

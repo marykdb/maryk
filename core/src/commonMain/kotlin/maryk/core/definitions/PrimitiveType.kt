@@ -10,6 +10,6 @@ enum class PrimitiveType(
     RootModel(1u), Model(2u), ValueModel(3u), EnumDefinition(4u);
 
     companion object : IndexedEnumDefinition<PrimitiveType>(
-        "PrimitiveType", { PrimitiveType.values() }
+        "PrimitiveType", ::values
     )
 }

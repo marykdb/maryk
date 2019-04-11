@@ -26,8 +26,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordT
         getQualifier = { record.values.getOrNull(++valueIndex)?.reference },
         select = select,
         processValue = { _, _ ->
-            val node = record.values[valueIndex]
-            when (node) {
+            when (val node = record.values[valueIndex]) {
                 is DataRecordValue<*> -> {
                     // Only add if below expected version
                     if (toVersion == null || node.version < toVersion) {

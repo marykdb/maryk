@@ -25,8 +25,8 @@ data class InvalidSizeException internal constructor(
     internal companion object : SimpleQueryDataModel<InvalidSizeException>(
         properties = object : ObjectPropertyDefinitions<InvalidSizeException>() {
             init {
-                ValidationException.addReference(this, InvalidSizeException::reference)
-                ValidationException.addValue(this, InvalidSizeException::value)
+                addReference(this, InvalidSizeException::reference)
+                addValue(this, InvalidSizeException::value)
                 add(3, "min", NumberDefinition(type = UInt32, required = false), InvalidSizeException::min)
                 add(4, "max", NumberDefinition(type = UInt32, required = false), InvalidSizeException::max)
             }

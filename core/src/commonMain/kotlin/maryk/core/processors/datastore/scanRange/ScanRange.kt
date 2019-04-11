@@ -5,7 +5,7 @@ import maryk.lib.extensions.compare.compareDefinedTo
 /**
  * Defines a range to scan.
  */
-final class ScanRange internal constructor(
+class ScanRange internal constructor(
     val start: ByteArray,
     val startInclusive: Boolean,
     val end: ByteArray? = null,

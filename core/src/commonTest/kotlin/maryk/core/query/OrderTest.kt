@@ -29,7 +29,7 @@ class OrderTest {
 
     @Test
     fun testOrder() {
-        this.order.direction shouldBe Direction.DESC
+        this.order.direction shouldBe DESC
         this.order.propertyReference shouldBe SimpleMarykModel.ref { value }
     }
 

@@ -11,6 +11,7 @@ import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IndexedEnumImpl
 import maryk.core.properties.types.TimePrecision.MILLIS
 import maryk.lib.time.DateTime
+import maryk.test.models.Log.Properties
 import maryk.test.models.Log.Properties.severity
 import maryk.test.models.Log.Properties.timestamp
 import maryk.test.models.Severity.INFO
@@ -28,7 +29,7 @@ sealed class Severity(
     )
 }
 
-object Log : RootDataModel<Log, Log.Properties>(
+object Log : RootDataModel<Log, Properties>(
     keyDefinition = Multiple(
         Reversed(timestamp.ref()),
         severity.ref()
@@ -36,7 +37,7 @@ object Log : RootDataModel<Log, Log.Properties>(
     indices = listOf(
         severity.ref()
     ),
-    properties = Log.Properties
+    properties = Properties
 ) {
     object Properties : PropertyDefinitions() {
         val message = add(

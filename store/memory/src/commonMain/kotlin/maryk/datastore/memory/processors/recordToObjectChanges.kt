@@ -36,8 +36,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordT
         },
         select = select,
         processValue = { _, _, valueWithVersionReader ->
-            val node = record.values[valueIndex]
-            when (node) {
+            when (val node = record.values[valueIndex]) {
                 is DataRecordValue<*> -> {
                     // Only add if  below expected version
                     if (node.version >= fromVersion && (toVersion == null || node.version < toVersion)) {

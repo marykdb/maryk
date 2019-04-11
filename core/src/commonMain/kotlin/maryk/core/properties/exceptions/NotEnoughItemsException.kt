@@ -24,7 +24,7 @@ data class NotEnoughItemsException internal constructor(
     internal companion object : SimpleQueryDataModel<NotEnoughItemsException>(
         properties = object : ObjectPropertyDefinitions<NotEnoughItemsException>() {
             init {
-                ValidationException.addReference(this, NotEnoughItemsException::reference)
+                addReference(this, NotEnoughItemsException::reference)
                 add(2, "size", NumberDefinition(type = UInt32), NotEnoughItemsException::size)
                 add(3, "minSize", NumberDefinition(type = UInt32), NotEnoughItemsException::minSize)
             }

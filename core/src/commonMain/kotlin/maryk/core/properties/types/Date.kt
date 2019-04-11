@@ -10,6 +10,6 @@ internal fun maryk.lib.time.Date.writeBytes(writer: (byte: Byte) -> Unit) {
 }
 
 /** Reads a date from bytes [reader] */
-internal fun maryk.lib.time.Date.Companion.fromByteReader(reader: () -> Byte) = maryk.lib.time.Date.ofEpochDay(
+internal fun maryk.lib.time.Date.Companion.fromByteReader(reader: () -> Byte) = ofEpochDay(
     initInt(reader)
 )

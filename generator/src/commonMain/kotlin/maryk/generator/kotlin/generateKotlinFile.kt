@@ -13,7 +13,7 @@ internal fun writeKotlinFile(
     code: String,
     writer: (String) -> Unit
 ) {
-    val enumDefinitionKotlin = if (enumKotlinDefinitions != null && !enumKotlinDefinitions.isEmpty()) {
+    val enumDefinitionKotlin = if (enumKotlinDefinitions != null && enumKotlinDefinitions.isNotEmpty()) {
         "\n" + enumKotlinDefinitions.joinToString("\n\n") + '\n'
     } else ""
 

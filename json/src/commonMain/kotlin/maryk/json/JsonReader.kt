@@ -1,12 +1,25 @@
 package maryk.json
 
+import maryk.json.JsonComplexType.ARRAY
 import maryk.json.JsonComplexType.OBJECT
+import maryk.json.JsonToken.ArraySeparator
+import maryk.json.JsonToken.EndArray
 import maryk.json.JsonToken.EndDocument
+import maryk.json.JsonToken.EndObject
+import maryk.json.JsonToken.FieldName
+import maryk.json.JsonToken.JsonException
+import maryk.json.JsonToken.ObjectSeparator
+import maryk.json.JsonToken.SimpleStartArray
+import maryk.json.JsonToken.StartArray
+import maryk.json.JsonToken.StartDocument
+import maryk.json.JsonToken.StartObject
+import maryk.json.JsonToken.Suspended
+import maryk.json.JsonToken.Value
 import maryk.lib.extensions.HEX_CHARS
 import maryk.lib.extensions.isDigit
 import maryk.lib.extensions.isLineBreak
 
-private val skipArray = arrayOf(JsonToken.ObjectSeparator, JsonToken.ArraySeparator, JsonToken.StartDocument)
+private val skipArray = arrayOf(ObjectSeparator, ArraySeparator, StartDocument)
 
 /** Describes JSON complex types */
 internal enum class JsonComplexType {
@@ -17,7 +30,7 @@ internal enum class JsonComplexType {
 class JsonReader(
     private val reader: () -> Char
 ) : IsJsonLikeReader {
-    override var currentToken: JsonToken = JsonToken.StartDocument
+    override var currentToken: JsonToken = StartDocument
 
     override var columnNumber = 0
     override var lineNumber = 1
@@ -30,7 +43,7 @@ class JsonReader(
         storedValue = ""
         try {
             when (currentToken) {
-                JsonToken.StartDocument -> {
+                StartDocument -> {
                     lastChar = readSkipWhitespace()
                     when (lastChar) {
                         '{' -> startObject()
@@ -39,49 +52,49 @@ class JsonReader(
                         else -> throwJsonException()
                     }
                 }
-                is JsonToken.StartObject -> {
-                    typeStack.add(JsonComplexType.OBJECT)
+                is StartObject -> {
+                    typeStack.add(OBJECT)
                     when (lastChar) {
                         '}' -> endObject()
                         '"' -> readFieldName()
                         else -> throwJsonException()
                     }
                 }
-                JsonToken.EndObject -> {
+                EndObject -> {
                     continueComplexRead()
                 }
-                is JsonToken.StartArray -> {
-                    typeStack.add(JsonComplexType.ARRAY)
+                is StartArray -> {
+                    typeStack.add(ARRAY)
                     if (lastChar == ']') {
                         endArray()
                     } else {
                         readValue(this::constructJsonValueToken)
                     }
                 }
-                JsonToken.EndArray -> {
+                EndArray -> {
                     continueComplexRead()
                 }
-                is JsonToken.FieldName -> {
+                is FieldName -> {
                     readValue(this::constructJsonValueToken)
                 }
-                is JsonToken.Value<*> -> {
+                is Value<*> -> {
                     when {
                         typeStack.isEmpty() -> currentToken = EndDocument
                         typeStack.last() == OBJECT -> readObject()
                         else -> readArray()
                     }
                 }
-                JsonToken.ObjectSeparator -> {
+                ObjectSeparator -> {
                     when (lastChar) {
                         '"' -> readFieldName()
                         else -> throwJsonException()
                     }
                 }
-                JsonToken.ArraySeparator -> {
+                ArraySeparator -> {
                     readValue(this::constructJsonValueToken)
                 }
-                is JsonToken.Suspended -> {
-                    (currentToken as JsonToken.Suspended).let {
+                is Suspended -> {
+                    (currentToken as Suspended).let {
                         currentToken = it.lastToken
                         storedValue = it.storedValue
                     }
@@ -96,9 +109,9 @@ class JsonReader(
                 }
             }
         } catch (e: ExceptionWhileReadingJson) {
-            currentToken = JsonToken.Suspended(currentToken, storedValue)
+            currentToken = Suspended(currentToken, storedValue)
         } catch (e: InvalidJsonContent) {
-            currentToken = JsonToken.JsonException(e)
+            currentToken = JsonException(e)
             e.columnNumber = this.columnNumber
             e.lineNumber = this.lineNumber
             throw e
@@ -114,18 +127,18 @@ class JsonReader(
     private fun constructJsonValueToken(it: Any?) =
         when (it) {
             null -> JsonToken.NullValue
-            is Boolean -> JsonToken.Value(it, ValueType.Bool)
-            is String -> JsonToken.Value(it, ValueType.String)
-            is Double -> JsonToken.Value(it, ValueType.Float)
-            is Long -> JsonToken.Value(it, ValueType.Int)
-            else -> JsonToken.Value(it.toString(), ValueType.String)
+            is Boolean -> Value(it, ValueType.Bool)
+            is String -> Value(it, ValueType.String)
+            is Double -> Value(it, ValueType.Float)
+            is Long -> Value(it, ValueType.Int)
+            else -> Value(it.toString(), ValueType.String)
         }
 
     override fun skipUntilNextField(handleSkipToken: ((JsonToken) -> Unit)?) {
         val startDepth = typeStack.count()
         nextToken()
         while (
-            !(currentToken is JsonToken.FieldName && this.typeStack.count() <= startDepth)
+            !(currentToken is FieldName && this.typeStack.count() <= startDepth)
             && currentToken !is JsonToken.Stopped
         ) {
             handleSkipToken?.invoke(this.currentToken)
@@ -159,10 +172,10 @@ class JsonReader(
 
     private fun continueComplexRead() {
         when {
-            typeStack.isEmpty() -> currentToken = JsonToken.EndDocument
+            typeStack.isEmpty() -> currentToken = EndDocument
             else -> when (typeStack.last()) {
-                JsonComplexType.OBJECT -> readObject()
-                JsonComplexType.ARRAY -> readArray()
+                OBJECT -> readObject()
+                ARRAY -> readArray()
             }
         }
     }
@@ -170,7 +183,7 @@ class JsonReader(
     private fun readArray() {
         when (lastChar) {
             ',' -> {
-                currentToken = JsonToken.ArraySeparator
+                currentToken = ArraySeparator
                 readSkipWhitespace()
             }
             ']' -> endArray()
@@ -181,7 +194,7 @@ class JsonReader(
     private fun readObject() {
         when (lastChar) {
             ',' -> {
-                currentToken = JsonToken.ObjectSeparator
+                currentToken = ObjectSeparator
                 readSkipWhitespace()
             }
             '}' -> endObject()
@@ -303,7 +316,7 @@ class JsonReader(
     }
 
     private fun readFieldName() {
-        readStringValue { JsonToken.FieldName(this.storedValue) }
+        readStringValue { FieldName(this.storedValue) }
         if (lastChar != ':') {
             throwJsonException()
         }
@@ -375,7 +388,7 @@ class JsonReader(
         }
         currentToken = currentTokenCreator(storedValue)
 
-        if (!typeStack.isEmpty()) {
+        if (typeStack.isNotEmpty()) {
             readSkipWhitespace()
         }
     }
@@ -387,21 +400,21 @@ class JsonReader(
 
     private fun endObject() {
         typeStack.removeAt(typeStack.lastIndex)
-        currentToken = JsonToken.EndObject
-        if (!typeStack.isEmpty()) {
+        currentToken = EndObject
+        if (typeStack.isNotEmpty()) {
             readSkipWhitespace()
         }
     }
 
     private fun startArray() {
-        currentToken = JsonToken.SimpleStartArray
+        currentToken = SimpleStartArray
         readSkipWhitespace()
     }
 
     private fun endArray() {
         typeStack.removeAt(typeStack.lastIndex)
-        currentToken = JsonToken.EndArray
-        if (!typeStack.isEmpty()) {
+        currentToken = EndArray
+        if (typeStack.isNotEmpty()) {
             readSkipWhitespace()
         }
     }

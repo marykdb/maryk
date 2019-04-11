@@ -32,8 +32,7 @@ class ContextualReferenceDefinition<in CX : IsPropertyContext>(
     override fun readJson(reader: IsJsonLikeReader, context: CX?) = reader.currentToken.let {
         when (it) {
             is JsonToken.Value<*> -> {
-                val jsonValue = it.value
-                when (jsonValue) {
+                when (val jsonValue = it.value) {
                     null -> throw ParseException("Reference cannot be null in JSON")
                     is String -> contextualResolver(context).key(jsonValue)
                     else -> throw ParseException("Reference has to be a String")

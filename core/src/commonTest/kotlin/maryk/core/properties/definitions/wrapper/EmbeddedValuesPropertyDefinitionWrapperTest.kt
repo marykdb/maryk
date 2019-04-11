@@ -14,7 +14,7 @@ class EmbeddedValuesPropertyDefinitionWrapperTest {
         definition = EmbeddedValuesDefinition(
             dataModel = { EmbeddedMarykModel }
         ),
-        getter = { _: Any -> null }
+        getter = { null }
     )
 
     @Test

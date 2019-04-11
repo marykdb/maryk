@@ -27,7 +27,7 @@ import maryk.test.shouldThrow
 import kotlin.test.Test
 
 class OrderToScanIndexKtTest {
-    val multipleIndex = Multiple(
+    private val multipleIndex = Multiple(
         Reversed(dateTime.ref()),
         enum.ref(),
         int.ref()

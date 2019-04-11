@@ -43,7 +43,7 @@ internal class IndexPartialToRegexMatch(
     val regex: Regex
 ) : IsIndexPartialToMatch() {
     // Cannot be set because is string, so needs to be encoded
-    override val fromByteIndex = null
+    override val fromByteIndex: Int? = null
 
     /** Matches [bytes] to partial and returns true if matches */
     override fun match(bytes: ByteArray, offset: Int): Boolean {

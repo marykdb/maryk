@@ -10,6 +10,6 @@ enum class Operation(
     Define(1u), Request(2u);
 
     companion object : IndexedEnumDefinition<Operation>(
-        Operation::class, { Operation.values() }
+        Operation::class, ::values
     )
 }

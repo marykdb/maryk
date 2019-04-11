@@ -18,8 +18,8 @@ data class InvalidValueException(
     internal companion object : SimpleQueryDataModel<InvalidValueException>(
         properties = object : ObjectPropertyDefinitions<InvalidValueException>() {
             init {
-                ValidationException.addReference(this, InvalidValueException::reference)
-                ValidationException.addValue(this, InvalidValueException::value)
+                addReference(this, InvalidValueException::reference)
+                addValue(this, InvalidValueException::value)
             }
         }
     ) {

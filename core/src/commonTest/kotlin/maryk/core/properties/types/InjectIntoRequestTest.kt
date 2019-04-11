@@ -45,16 +45,11 @@ class InjectInRequestTest {
         converted: ObjectValues<GetRequest<*, *>, GetRequest.Properties>,
         original: ObjectValues<GetRequest<*, *>, GetRequest.Properties>
     ) {
-        val originalKeys = converted.original { keys } as Any?
-
-        when (originalKeys) {
+        when (val originalKeys = converted.original { keys } as Any?) {
             null -> error("Keys should not be null")
-            is ObjectValues<*, *> -> {
+            is ObjectValues<*, *> ->
                 originalKeys.toDataObject() shouldBe original.original { keys }
-            }
-            else -> {
-                originalKeys shouldBe original.original { keys }
-            }
+            else -> originalKeys shouldBe original.original { keys }
         }
         converted { where } shouldBe original { where }
     }

@@ -17,7 +17,7 @@ data class RequiredException internal constructor(
     internal companion object : SimpleQueryDataModel<RequiredException>(
         properties = object : ObjectPropertyDefinitions<RequiredException>() {
             init {
-                ValidationException.addReference(this, RequiredException::reference)
+                addReference(this, RequiredException::reference)
             }
         }
     ) {

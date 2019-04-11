@@ -21,31 +21,25 @@ internal class InjectionContext(
     var collectionName: String? = null
 
     override val dataModel: IsDataModel<*>?
-        get() {
-            collectionName?.let { collectionName ->
-                val collectType = requestContext.getToCollectModel(collectionName)
-
-                return when (collectType) {
-                    null -> throw RequestException("Inject collection name $collectionName not found")
-                    is ModelTypeToCollect.Request<*> -> {
-                        if (collectType.request is IsObjectRequest<*, *>) {
-                            collectType.request.dataModel
-                        } else {
-                            collectType.request.responseModel
-                        }
-                    }
-                    is ModelTypeToCollect.Model<*> -> {
-                        collectType.model
+        get() = collectionName?.let { collectionName ->
+            return when (val collectType = requestContext.getToCollectModel(collectionName)) {
+                null -> throw RequestException("Inject collection name $collectionName not found")
+                is ModelTypeToCollect.Request<*> -> {
+                    if (collectType.request is IsObjectRequest<*, *>) {
+                        collectType.request.dataModel
+                    } else {
+                        collectType.request.responseModel
                     }
                 }
-            } ?: throw ContextNotFoundException()
-        }
+                is ModelTypeToCollect.Model<*> -> {
+                    collectType.model
+                }
+            }
+        } ?: throw ContextNotFoundException()
 
-    fun resolvePropertyReference(): IsPropertyDefinitions? {
+    fun resolvePropertyReference(): IsPropertyDefinitions? =
         collectionName?.let { collectionName ->
-            val collectType = requestContext.getToCollectModel(collectionName)
-
-            return when (collectType) {
+            when (val collectType = requestContext.getToCollectModel(collectionName)) {
                 null -> throw RequestException("Inject collection name $collectionName not found")
                 is ModelTypeToCollect.Request<*> -> {
                     collectType.model.properties
@@ -55,5 +49,4 @@ internal class InjectionContext(
                 }
             }
         } ?: throw ContextNotFoundException()
-    }
 }

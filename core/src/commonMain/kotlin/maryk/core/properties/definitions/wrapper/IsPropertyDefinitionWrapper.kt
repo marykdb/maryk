@@ -161,10 +161,10 @@ interface IsPropertyDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyConte
 
     private object Properties :
         ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>>() {
-        val index = IsPropertyDefinitionWrapper.addIndex(this, IsPropertyDefinitionWrapper<*, *, *, *>::index)
-        val name = IsPropertyDefinitionWrapper.addName(this, IsPropertyDefinitionWrapper<*, *, *, *>::name)
+        val index = addIndex(this, IsPropertyDefinitionWrapper<*, *, *, *>::index)
+        val name = addName(this, IsPropertyDefinitionWrapper<*, *, *, *>::name)
         val definition =
-            IsPropertyDefinitionWrapper.addDefinition(this, IsPropertyDefinitionWrapper<*, *, *, *>::definition)
+            addDefinition(this, IsPropertyDefinitionWrapper<*, *, *, *>::definition)
     }
 
     object Model :

@@ -10,7 +10,7 @@ import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
-import maryk.json.JsonToken
+import maryk.json.JsonToken.Value
 import maryk.lib.bytes.calculateUTF8ByteLength
 import maryk.lib.bytes.initString
 import maryk.lib.bytes.writeUTF8Bytes
@@ -47,13 +47,10 @@ data class ContextualModelReferenceDefinition<DM : IsNamedDataModel<*>, in CX : 
 
     override fun readJson(reader: IsJsonLikeReader, context: CX?) = reader.currentToken.let {
         when (it) {
-            is JsonToken.Value<*> -> {
-                val jsonValue = it.value
-                when (jsonValue) {
+            is Value<*> -> {
+                when (val jsonValue = it.value) {
                     null -> throw ParseException("Model reference cannot be null in JSON")
-                    is String -> {
-                        this.fromString(jsonValue, context)
-                    }
+                    is String -> this.fromString(jsonValue, context)
                     else -> throw ParseException("Model reference has to be a String")
                 }
             }

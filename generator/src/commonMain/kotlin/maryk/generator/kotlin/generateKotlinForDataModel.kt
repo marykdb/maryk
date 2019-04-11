@@ -54,7 +54,7 @@ internal fun List<KotlinForProperty>.generateDefinitionsForProperties(): String 
 internal fun List<KotlinForProperty>.generateValuesForProperties(): String {
     var properties = ""
     for (it in this) {
-        if (!properties.isEmpty()) properties += ",\n"
+        if (properties.isNotEmpty()) properties += ",\n"
         properties += it.value
     }
     return properties
@@ -63,7 +63,7 @@ internal fun List<KotlinForProperty>.generateValuesForProperties(): String {
 internal fun List<KotlinForProperty>.generateAssignsForProperties(): String {
     var properties = ""
     for (it in this) {
-        if (!properties.isEmpty()) properties += ",\n"
+        if (properties.isNotEmpty()) properties += ",\n"
         properties += it.assign
     }
     return properties

@@ -28,7 +28,7 @@ internal fun Time.Companion.byteSize(precision: TimePrecision) = when (precision
 }
 
 internal fun Time.Companion.fromByteReader(length: Int, reader: () -> Byte): Time = when (length) {
-    4 -> Time.ofMilliOfDay(initUInt(reader).toInt())
-    3 -> Time.ofSecondOfDay(initUInt(reader, length).toInt())
+    4 -> ofMilliOfDay(initUInt(reader).toInt())
+    3 -> ofSecondOfDay(initUInt(reader, length).toInt())
     else -> throw IllegalArgumentException("Invalid length for bytes for Time conversion: $length")
 }

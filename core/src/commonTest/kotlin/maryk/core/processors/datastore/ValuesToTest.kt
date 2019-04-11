@@ -68,7 +68,7 @@ val valuesAsStorables = arrayOf(
     "8b01676869" to "ghi"
 )
 
-val valuesAsStorablesWithNulls = arrayOf<Pair<String, Any?>>(
+val valuesAsStorablesWithNulls = arrayOf(
     "4b" to 1,
     "4b80004577" to null,
     "4b80001104" to Date(1981, 12, 5),

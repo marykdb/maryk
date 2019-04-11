@@ -119,7 +119,7 @@ abstract class ValueDataModel<DO : ValueDataObject, P : ObjectPropertyDefinition
         ObjectPropertyDefinitions<ValueDataModel<*, *>>(),
         IsDataModelPropertyDefinitions<ValueDataModel<*, *>, ObjectPropertyDefinitionsCollectionDefinitionWrapper<ValueDataModel<*, *>>> {
         override val name = IsNamedDataModel.addName(this, ValueDataModel<*, *>::name)
-        override val properties = ObjectDataModel.addProperties(this)
+        override val properties = addProperties(this)
     }
 
     internal object Model : DefinitionDataModel<ValueDataModel<*, *>>(

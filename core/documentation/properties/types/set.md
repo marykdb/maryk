@@ -52,8 +52,8 @@ Kotlin example on a model with a set containing strings.
 ```kotlin
 SetChange(
     Model.ref { setOfStrings }.change(
-        addValues: setOf("three", "four"),
-        deleteValues: setOf("one", "two"),
+        addValues = setOf("three", "four"),
+        deleteValues = setOf("one", "two")
     )
 )
 ```

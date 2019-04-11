@@ -38,7 +38,7 @@ internal object ProtoBuf {
             }
             WireType.START_GROUP -> {
                 while (true) {
-                    val key = ProtoBuf.readKey(reader)
+                    val key = readKey(reader)
                     if (key.wireType == WireType.END_GROUP) {
                         break
                     }

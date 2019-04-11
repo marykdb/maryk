@@ -118,8 +118,8 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readStorageToCha
 private fun MutableList<IsChange>.addChange(changeType: ChangeType, changePart: Any) {
     @Suppress("UNCHECKED_CAST")
     when (changeType) {
-        ChangeType.OBJECT_DELETE -> this.find { it is ObjectSoftDeleteChange }
-        ChangeType.CHANGE -> this.find { it is Change }?.also {
+        OBJECT_DELETE -> this.find { it is ObjectSoftDeleteChange }
+        CHANGE -> this.find { it is Change }?.also {
             ((it as Change).referenceValuePairs as MutableList<ReferenceValuePair<*>>).add(
                 changePart as ReferenceValuePair<*>
             )
@@ -139,12 +139,12 @@ private fun MutableList<IsChange>.addChange(changeType: ChangeType, changePart: 
             }
             toDelete.add(reference)
         }
-        ChangeType.TYPE -> this.find { it is MultiTypeChange }?.also {
+        TYPE -> this.find { it is MultiTypeChange }?.also {
             ((it as MultiTypeChange).referenceTypePairs as MutableList<ReferenceTypePair<*>>).add(
                 changePart as ReferenceTypePair<*>
             )
         }
-        ChangeType.SET_ADD -> {
+        SET_ADD -> {
             this.find { it is SetChange }?.also { change ->
                 val ref = changePart as SetItemReference<*, *>
                 val setValueChanges = ((change as SetChange).setValueChanges as MutableList<SetValueChanges<*>>)
@@ -163,11 +163,11 @@ private fun MutableList<IsChange>.addChange(changeType: ChangeType, changePart: 
 
 @Suppress("UNCHECKED_CAST")
 private fun createChange(changeType: ChangeType, changePart: Any) = when (changeType) {
-    ChangeType.OBJECT_DELETE -> ObjectSoftDeleteChange(changePart as Boolean)
-    ChangeType.CHANGE -> Change(mutableListOf(changePart as ReferenceValuePair<Any>))
+    OBJECT_DELETE -> ObjectSoftDeleteChange(changePart as Boolean)
+    CHANGE -> Change(mutableListOf(changePart as ReferenceValuePair<Any>))
     ChangeType.DELETE -> Delete(mutableListOf(changePart as IsPropertyReference<*, IsValuePropertyDefinitionWrapper<*, *, IsPropertyContext, *>, *>))
-    ChangeType.TYPE -> MultiTypeChange(mutableListOf(changePart as ReferenceTypePair<*>))
-    ChangeType.SET_ADD -> {
+    TYPE -> MultiTypeChange(mutableListOf(changePart as ReferenceTypePair<*>))
+    SET_ADD -> {
         val ref = changePart as SetItemReference<*, *>
         SetChange(
             mutableListOf(

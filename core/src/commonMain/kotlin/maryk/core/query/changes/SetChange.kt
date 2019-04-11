@@ -29,11 +29,11 @@ data class SetChange internal constructor(
     }
 
     companion object : ReferenceMappedDataModel<SetChange, SetValueChanges<*>, Properties, SetValueChanges.Properties>(
-        properties = SetChange.Properties,
+        properties = Properties,
         containedDataModel = SetValueChanges,
         referenceProperty = SetValueChanges.Properties.reference
     ) {
-        override fun invoke(values: ObjectValues<SetChange, SetChange.Properties>) = SetChange(
+        override fun invoke(values: ObjectValues<SetChange, Properties>) = SetChange(
             setValueChanges = values(1)
         )
 

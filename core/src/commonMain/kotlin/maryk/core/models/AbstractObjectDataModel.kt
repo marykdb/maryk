@@ -16,7 +16,6 @@ import maryk.json.IsJsonLikeWriter
 
 typealias SimpleObjectDataModel<DO, P> = AbstractObjectDataModel<DO, P, IsPropertyContext, IsPropertyContext>
 typealias DefinitionDataModel<DO> = AbstractObjectDataModel<DO, ObjectPropertyDefinitions<DO>, ContainsDefinitionsContext, ContainsDefinitionsContext>
-typealias DefinitionWithContextDataModel<DO, CX> = AbstractObjectDataModel<DO, ObjectPropertyDefinitions<DO>, CX, CX>
 internal typealias QueryDataModel<DO, P> = AbstractObjectDataModel<DO, P, RequestContext, RequestContext>
 internal typealias SimpleQueryDataModel<DO> = AbstractObjectDataModel<DO, ObjectPropertyDefinitions<DO>, RequestContext, RequestContext>
 

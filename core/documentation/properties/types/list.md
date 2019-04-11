@@ -93,7 +93,7 @@ Maryk Yaml:
   listOfStrings:
     addValuesAtIndex:
       0: three 
-      0: four
+      1: four
     deleteAtIndex: [1, 2]
 ```
 

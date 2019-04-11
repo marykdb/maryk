@@ -6,7 +6,7 @@ import maryk.test.models.SimpleMarykModel
 
 val collectRequest = CollectRequest(
     "testName",
-    maryk.test.models.SimpleMarykModel.get(
+    SimpleMarykModel.get(
         SimpleMarykModel.key("dR9gVdRcSPw2molM1AiOng"),
         SimpleMarykModel.key("Vc4WgX/mQHYCSEoLtfLSUQ")
     )

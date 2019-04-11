@@ -10,7 +10,7 @@ class JsonWriter(
 ) : AbstractJsonLikeWriter() {
     override fun writeStartObject(isCompact: Boolean) {
         if (lastType != START_ARRAY
-            && !typeStack.isEmpty()
+            && typeStack.isNotEmpty()
             && typeStack.last() is JsonEmbedType.Array
         ) {
             writer(",")
@@ -31,7 +31,7 @@ class JsonWriter(
 
     override fun writeStartArray(isCompact: Boolean) {
         if (lastType != START_ARRAY
-            && !typeStack.isEmpty()
+            && typeStack.isNotEmpty()
             && typeStack.last() is JsonEmbedType.Array
         ) {
             writer(",")
@@ -65,7 +65,7 @@ class JsonWriter(
     override fun writeString(value: String) = writeValue("\"$value\"")
 
     /** Writes a value excluding quotes */
-    override fun writeValue(value: String) = if (!typeStack.isEmpty()) {
+    override fun writeValue(value: String) = if (typeStack.isNotEmpty()) {
         when (typeStack.last()) {
             is JsonEmbedType.Object -> {
                 super.checkObjectValueAllowed()

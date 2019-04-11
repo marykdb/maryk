@@ -25,7 +25,7 @@ internal class UUIDKeyTest {
         operator fun invoke(
             value: String
         ) = this.values {
-            Properties.mapNonNulls(
+            mapNonNulls(
                 this.value with value
             )
         }

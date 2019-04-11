@@ -13,6 +13,8 @@ import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
+import maryk.json.JsonToken.StartObject
+import maryk.json.JsonToken.Value
 import maryk.lib.exceptions.ParseException
 
 typealias AnyInject = Inject<*, *>
@@ -94,10 +96,8 @@ data class Inject<T : Any, D : IsPropertyDefinition<T>>(
                 reader.nextToken()
             }
 
-            val startToken = reader.currentToken
-
-            return when (startToken) {
-                is JsonToken.StartObject -> {
+            return when (val startToken = reader.currentToken) {
+                is StartObject -> {
                     val currentToken = reader.nextToken()
 
                     val collectionName = (currentToken as? JsonToken.FieldName)?.value
@@ -118,9 +118,9 @@ data class Inject<T : Any, D : IsPropertyDefinition<T>>(
                         )
                     }
                 }
-                is JsonToken.Value<*> -> {
+                is Value<*> -> {
                     @Suppress("UNCHECKED_CAST")
-                    val collectionName = (startToken as? JsonToken.Value<String>)?.value
+                    val collectionName = (startToken as? Value<String>)?.value
                         ?: throw ParseException("Expected a collectionName in an Inject")
 
                     Properties.collectionName.capture(context, collectionName)
@@ -133,9 +133,7 @@ data class Inject<T : Any, D : IsPropertyDefinition<T>>(
                         )
                     }
                 }
-                else -> {
-                    throw ParseException("JSON value for Inject should be an Object or String")
-                }
+                else -> throw ParseException("JSON value for Inject should be an Object or String")
             }
         }
     }

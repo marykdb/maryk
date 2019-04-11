@@ -118,8 +118,7 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(
             messageAdder
         )}"
         is MapDefinition<*, *, *> -> {
-            val keyDefinition = this.keyDefinition
-            when (keyDefinition) {
+            when (val keyDefinition = this.keyDefinition) {
                 is EnumDefinition<*>,
                 is FlexBytesDefinition,
                 is FixedBytesDefinition,

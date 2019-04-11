@@ -184,8 +184,7 @@ data class MultiTypeDefinition<E : IndexedEnum, in CX : IsPropertyContext> inter
             val token = reader.currentToken as? TokenWithType
                 ?: throw ParseException("Expected an Token with YAML type tag which describes property type")
 
-            val tokenType = token.type
-            val type: E = when (tokenType) {
+            val type: E = when (val tokenType = token.type) {
                 is IndexedEnum -> {
                     @Suppress("UNCHECKED_CAST")
                     tokenType as E

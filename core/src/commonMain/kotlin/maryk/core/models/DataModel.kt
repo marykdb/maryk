@@ -37,7 +37,7 @@ abstract class DataModel<DM : IsValuesDataModel<P>, P : PropertyDefinitions>(
         ObjectPropertyDefinitions<DataModel<*, *>>(),
         IsDataModelPropertyDefinitions<DataModel<*, *>, PropertyDefinitionsCollectionDefinitionWrapper<DataModel<*, *>>> {
         override val name = IsNamedDataModel.addName(this, DataModel<*, *>::name)
-        override val properties = DataModel.addProperties(this)
+        override val properties = addProperties(this)
     }
 
     internal object Model : DefinitionDataModel<DataModel<*, *>>(

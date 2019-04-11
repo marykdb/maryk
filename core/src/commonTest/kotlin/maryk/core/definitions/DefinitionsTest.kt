@@ -221,22 +221,22 @@ class DefinitionsTest {
           : !MultiType
             required: false
             final: false
-            typeEnum: Option
+            typeEnum: MultiTypeEnum
             typeIsFinal: true
             definitionMap:
-              ? 1: V1
+              ? 1: T1
               : !String
                 required: true
                 final: false
                 unique: false
-              ? 2: V2
+              ? 2: T2
               : !Number
                 required: true
                 final: false
                 unique: false
                 type: SInt32
                 random: false
-              ? 3: V3
+              ? 3: T3
               : !Embed
                 required: true
                 final: false

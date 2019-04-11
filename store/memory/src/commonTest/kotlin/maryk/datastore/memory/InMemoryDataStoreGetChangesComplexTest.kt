@@ -16,8 +16,8 @@ import maryk.core.query.responses.statuses.AddSuccess
 import maryk.test.models.ComplexModel
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.EmbeddedMarykModel.Properties
-import maryk.test.models.Option.V1
-import maryk.test.models.Option.V3
+import maryk.test.models.MultiTypeEnum.T1
+import maryk.test.models.MultiTypeEnum.T3
 import maryk.test.runSuspendingTest
 import maryk.test.shouldBe
 import maryk.test.shouldBeOfType
@@ -33,19 +33,19 @@ class InMemoryDataStoreGetChangesComplexTest {
             val addResponse = dataStore.execute(
                 ComplexModel.add(
                     ComplexModel(
-                        multi = TypedValue(V3, EmbeddedMarykModel("u3", EmbeddedMarykModel("ue3"))),
+                        multi = TypedValue(T3, EmbeddedMarykModel("u3", EmbeddedMarykModel("ue3"))),
                         mapStringString = mapOf("a" to "b", "c" to "d"),
                         mapIntObject = mapOf(1u to EmbeddedMarykModel("v1"), 2u to EmbeddedMarykModel("v2")),
                         mapIntMulti = mapOf(
-                            1u to TypedValue(V3,
+                            1u to TypedValue(T3,
                                 EmbeddedMarykModel("v1",
                                     EmbeddedMarykModel("sub1",
                                         EmbeddedMarykModel("sub2")
                                     )
                                 )
                             ),
-                            2u to TypedValue(V1, "string"),
-                            3u to TypedValue(V3,
+                            2u to TypedValue(T1, "string"),
+                            3u to TypedValue(T3,
                                 EmbeddedMarykModel("v2",
                                     EmbeddedMarykModel("2sub1",
                                         EmbeddedMarykModel("2sub2")
@@ -78,26 +78,26 @@ class InMemoryDataStoreGetChangesComplexTest {
         getResponse.changes[0].changes shouldBe listOf(
             VersionedChanges(version = lowestVersion, changes = listOf(
                 MultiTypeChange(
-                    ComplexModel.ref { multi } withType V3,
-                    ComplexModel { mapIntMulti.refAt(1u) } withType V3,
-                    ComplexModel { mapIntMulti.refAt(3u) } withType V3
+                    ComplexModel.ref { multi } withType T3,
+                    ComplexModel { mapIntMulti.refAt(1u) } withType T3,
+                    ComplexModel { mapIntMulti.refAt(3u) } withType T3
                 ),
                 Change(
-                    ComplexModel { multi.refWithType(V3, Properties) { value } } with "u3",
-                    ComplexModel { multi.withType(V3, Properties) { model ref { value } } } with "ue3",
+                    ComplexModel { multi.refWithType(T3, Properties) { value } } with "u3",
+                    ComplexModel { multi.withType(T3, Properties) { model ref { value } } } with "ue3",
                     ComplexModel { mapStringString refAt "a" } with "b",
                     ComplexModel { mapStringString refAt "c" } with "d",
                     ComplexModel { mapIntObject refAt 1u } with Unit,
                     ComplexModel { mapIntObject.refAtKey(1u) { value } } with "v1",
                     ComplexModel { mapIntObject refAt 2u } with Unit,
                     ComplexModel { mapIntObject.refAtKey(2u) { value } } with "v2",
-                    ComplexModel { mapIntMulti.refAtKeyAndType(1u, V3, EmbeddedMarykModel.Properties) { value } } with "v1",
-                    ComplexModel { mapIntMulti.atKeyAndType(1u, V3, EmbeddedMarykModel.Properties) { model ref { value } } } with "sub1",
-                    ComplexModel { mapIntMulti.atKeyAndType(1u, V3, EmbeddedMarykModel.Properties) { model { model ref { value } } } } with "sub2",
-                    ComplexModel { mapIntMulti.refAt(2u) } with TypedValue(V1, "string"),
-                    ComplexModel { mapIntMulti.refAtKeyAndType(3u, V3, EmbeddedMarykModel.Properties) { value } } with "v2",
-                    ComplexModel { mapIntMulti.atKeyAndType(3u, V3, EmbeddedMarykModel.Properties) { model ref { value } } } with "2sub1",
-                    ComplexModel { mapIntMulti.atKeyAndType(3u, V3, EmbeddedMarykModel.Properties) { model { model ref { value } } } } with "2sub2"
+                    ComplexModel { mapIntMulti.refAtKeyAndType(1u, T3, EmbeddedMarykModel.Properties) { value } } with "v1",
+                    ComplexModel { mapIntMulti.atKeyAndType(1u, T3, EmbeddedMarykModel.Properties) { model ref { value } } } with "sub1",
+                    ComplexModel { mapIntMulti.atKeyAndType(1u, T3, EmbeddedMarykModel.Properties) { model { model ref { value } } } } with "sub2",
+                    ComplexModel { mapIntMulti.refAt(2u) } with TypedValue(T1, "string"),
+                    ComplexModel { mapIntMulti.refAtKeyAndType(3u, T3, EmbeddedMarykModel.Properties) { value } } with "v2",
+                    ComplexModel { mapIntMulti.atKeyAndType(3u, T3, EmbeddedMarykModel.Properties) { model ref { value } } } with "2sub1",
+                    ComplexModel { mapIntMulti.atKeyAndType(3u, T3, EmbeddedMarykModel.Properties) { model { model ref { value } } } } with "2sub2"
                 )
             ))
         )

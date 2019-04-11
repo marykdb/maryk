@@ -8,16 +8,16 @@ import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.ComplexModel
 import maryk.test.models.EmbeddedMarykModel
-import maryk.test.models.Option.V3
+import maryk.test.models.MultiTypeEnum.T3
 import maryk.test.shouldBe
 import maryk.yaml.YamlWriter
 import kotlin.test.Test
 
 val testComplexMap = ComplexModel(
-    multi = TypedValue(V3, EmbeddedMarykModel("u3", EmbeddedMarykModel("ue3"))),
+    multi = TypedValue(T3, EmbeddedMarykModel("u3", EmbeddedMarykModel("ue3"))),
     mapStringString = mapOf("v1" to "a", "v2" to "b"),
     mapIntObject = mapOf(1u to EmbeddedMarykModel("t1"), 2u to EmbeddedMarykModel("t2")),
-    mapIntMulti = mapOf(2u to TypedValue(V3, EmbeddedMarykModel("m3")))
+    mapIntMulti = mapOf(2u to TypedValue(T3, EmbeddedMarykModel("m3")))
 )
 
 internal class ComplexDataModelMapTest {
@@ -32,7 +32,7 @@ internal class ComplexDataModelMapTest {
 
         output shouldBe """
         {
-        	"multi": ["V3(3)", {
+        	"multi": ["T3(3)", {
         		"value": "u3",
         		"model": {
         			"value": "ue3"
@@ -51,7 +51,7 @@ internal class ComplexDataModelMapTest {
         		}
         	},
         	"mapIntMulti": {
-        		"2": ["V3(3)", {
+        		"2": ["T3(3)", {
         			"value": "m3"
         		}]
         	}
@@ -73,7 +73,7 @@ internal class ComplexDataModelMapTest {
         ComplexModel.writeJson(testComplexMap, writer)
 
         output shouldBe """
-        multi: !V3(3)
+        multi: !T3(3)
           value: u3
           model:
             value: ue3
@@ -86,7 +86,7 @@ internal class ComplexDataModelMapTest {
           2:
             value: t2
         mapIntMulti:
-          2: !V3(3)
+          2: !T3(3)
             value: m3
 
         """.trimIndent()

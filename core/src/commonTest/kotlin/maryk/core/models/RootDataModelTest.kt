@@ -255,11 +255,11 @@ internal class RootDataModelTest {
         		"definition": ["MultiType", {
         			"required": false,
         			"final": false,
-        			"typeEnum": "Option",
+        			"typeEnum": "MultiTypeEnum",
         			"typeIsFinal": true,
         			"definitionMap": [{
         				"index": 1,
-        				"name": "V1",
+        				"name": "T1",
         				"definition": ["String", {
         					"required": true,
         					"final": false,
@@ -267,7 +267,7 @@ internal class RootDataModelTest {
         				}]
         			}, {
         				"index": 2,
-        				"name": "V2",
+        				"name": "T2",
         				"definition": ["Number", {
         					"required": true,
         					"final": false,
@@ -277,7 +277,7 @@ internal class RootDataModelTest {
         				}]
         			}, {
         				"index": 3,
-        				"name": "V3",
+        				"name": "T3",
         				"definition": ["Embed", {
         					"required": true,
         					"final": false,
@@ -464,22 +464,22 @@ internal class RootDataModelTest {
         : !MultiType
           required: false
           final: false
-          typeEnum: Option
+          typeEnum: MultiTypeEnum
           typeIsFinal: true
           definitionMap:
-            ? 1: V1
+            ? 1: T1
             : !String
               required: true
               final: false
               unique: false
-            ? 2: V2
+            ? 2: T2
             : !Number
               required: true
               final: false
               unique: false
               type: SInt32
               random: false
-            ? 3: V3
+            ? 3: T3
             : !Embed
               required: true
               final: false

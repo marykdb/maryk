@@ -6,7 +6,7 @@ import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.core.query.pairs.withType
-import maryk.test.models.Option.V3
+import maryk.test.models.MultiTypeEnum.T3
 import maryk.test.models.TestMarykModel
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -15,7 +15,7 @@ class MultiTypeChangeTest {
     val ref = TestMarykModel.ref { multi }
 
     private val multiTypeChange = MultiTypeChange(
-        TestMarykModel.ref { multi } withType V3
+        TestMarykModel.ref { multi } withType T3
     )
 
     private val context = RequestContext(
@@ -39,7 +39,7 @@ class MultiTypeChangeTest {
     @Test
     fun convertToYAMLAndBack() {
         checkYamlConversion(this.multiTypeChange, MultiTypeChange, { this.context }) shouldBe """
-        multi: V3
+        multi: T3
 
         """.trimIndent()
     }

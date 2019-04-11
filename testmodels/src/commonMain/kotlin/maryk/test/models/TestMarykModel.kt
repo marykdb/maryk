@@ -19,6 +19,9 @@ import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.definitions.ValueModelDefinition
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.Reversed
+import maryk.core.properties.enum.EmbedTypeCase
+import maryk.core.properties.enum.IndexedEnumDefinition
+import maryk.core.properties.enum.IndexedEnumImpl
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.Float64
@@ -28,6 +31,7 @@ import maryk.core.values.Values
 import maryk.lib.time.Date
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
+import maryk.test.models.EmbeddedMarykModel.Properties
 import maryk.test.models.TestMarykModel.Properties.bool
 import maryk.test.models.TestMarykModel.Properties.dateTime
 import maryk.test.models.TestMarykModel.Properties.double
@@ -35,6 +39,16 @@ import maryk.test.models.TestMarykModel.Properties.enum
 import maryk.test.models.TestMarykModel.Properties.int
 import maryk.test.models.TestMarykModel.Properties.multi
 import maryk.test.models.TestMarykModel.Properties.uint
+
+sealed class MultiTypeEnum(
+    override val index: UInt
+) : IndexedEnumImpl<MultiTypeEnum>(index) {
+    object T1: MultiTypeEnum(1u)
+    object T2: MultiTypeEnum(2u)
+    object T3: MultiTypeEnum(3u), EmbedTypeCase<MultiTypeEnum, Properties>
+
+    companion object : IndexedEnumDefinition<MultiTypeEnum>(MultiTypeEnum::class, { arrayOf(T1, T2, T3) })
+}
 
 object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>(
     keyDefinition = Multiple(
@@ -160,11 +174,11 @@ object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>
             index = 13, name = "multi",
             definition = MultiTypeDefinition(
                 required = false,
-                typeEnum = Option,
+                typeEnum = MultiTypeEnum,
                 definitionMap = definitionMap(
-                    Option.V1 to StringDefinition(),
-                    Option.V2 to NumberDefinition(type = SInt32),
-                    Option.V3 to EmbeddedValuesDefinition(
+                    MultiTypeEnum.T1 to StringDefinition(),
+                    MultiTypeEnum.T2 to NumberDefinition(type = SInt32),
+                    MultiTypeEnum.T3 to EmbeddedValuesDefinition(
                         dataModel = { EmbeddedMarykModel }
                     )
                 )
@@ -225,7 +239,7 @@ object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>
         map: Map<Time, String>? = null,
         valueObject: TestValueObject? = null,
         embeddedValues: Values<EmbeddedMarykModel, EmbeddedMarykModel.Properties>? = null,
-        multi: TypedValue<Option, *>? = null,
+        multi: TypedValue<MultiTypeEnum, *>? = null,
         reference: Key<TestMarykModel>? = null,
         listOfString: List<String>? = null,
         selfReference: Key<TestMarykModel>? = null,

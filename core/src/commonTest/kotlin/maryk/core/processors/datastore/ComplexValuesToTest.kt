@@ -3,24 +3,24 @@ package maryk.core.processors.datastore
 import maryk.core.properties.types.TypedValue
 import maryk.test.models.ComplexModel
 import maryk.test.models.EmbeddedMarykModel
-import maryk.test.models.Option.V1
-import maryk.test.models.Option.V3
+import maryk.test.models.MultiTypeEnum.T1
+import maryk.test.models.MultiTypeEnum.T3
 
 val complexValues = ComplexModel(
-    multi = TypedValue(V3, EmbeddedMarykModel("u3", EmbeddedMarykModel("ue3"))),
+    multi = TypedValue(T3, EmbeddedMarykModel("u3", EmbeddedMarykModel("ue3"))),
     mapStringString = mapOf("v1" to "a", "v22" to "b"),
     mapIntObject = mapOf(
         1u to EmbeddedMarykModel("t1"),
         2u to EmbeddedMarykModel("t2", EmbeddedMarykModel("te2"))
     ),
     mapIntMulti = mapOf(
-        2u to TypedValue(V3, EmbeddedMarykModel("m3", EmbeddedMarykModel("me3"))),
-        5u to TypedValue(V1, "TEST")
+        2u to TypedValue(T3, EmbeddedMarykModel("m3", EmbeddedMarykModel("me3"))),
+        5u to TypedValue(T1, "TEST")
     )
 )
 
 val complexValuesAsStorables = arrayOf(
-    "09" to TypedValue(V3, Unit),
+    "09" to TypedValue(T3, Unit),
     "091d" to Unit,
     "091d09" to "u3",
     "091d16" to Unit,
@@ -36,10 +36,10 @@ val complexValuesAsStorables = arrayOf(
     "1c040000000216" to Unit,
     "1c04000000021609" to "te2",
     "24" to 2,
-    "240400000002" to TypedValue(V3, Unit),
+    "240400000002" to TypedValue(T3, Unit),
     "2404000000021d" to Unit,
     "2404000000021d09" to "m3",
     "2404000000021d16" to Unit,
     "2404000000021d1609" to "me3",
-    "240400000005" to TypedValue(V1, "TEST")
+    "240400000005" to TypedValue(T1, "TEST")
 )

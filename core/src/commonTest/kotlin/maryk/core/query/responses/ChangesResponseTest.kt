@@ -18,7 +18,7 @@ import maryk.core.query.changes.change
 import maryk.core.query.pairs.with
 import maryk.core.query.pairs.withType
 import maryk.test.models.EmbeddedMarykModel
-import maryk.test.models.Option.V3
+import maryk.test.models.MultiTypeEnum.T3
 import maryk.test.models.TestMarykModel
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -40,7 +40,7 @@ class ChangesResponseTest {
                             ObjectSoftDeleteChange(true),
                             ListChange(TestMarykModel.ref { list }.change()),
                             SetChange(TestMarykModel.ref { set }.change()),
-                            MultiTypeChange(TestMarykModel.ref { multi } withType V3)
+                            MultiTypeChange(TestMarykModel.ref { multi } withType T3)
                         )
                     ),
                     VersionedChanges(
@@ -90,7 +90,7 @@ class ChangesResponseTest {
             - !SetChange
               set:
             - !TypeChange
-              multi: V3
+              multi: T3
           - version: 319674127
             changes:
             - !Change

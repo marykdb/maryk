@@ -13,9 +13,9 @@ import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.values.Values
 import maryk.test.models.ComplexModel.Properties
-import maryk.test.models.Option.V1
-import maryk.test.models.Option.V2
-import maryk.test.models.Option.V3
+import maryk.test.models.MultiTypeEnum.T1
+import maryk.test.models.MultiTypeEnum.T2
+import maryk.test.models.MultiTypeEnum.T3
 
 object ComplexModel : RootDataModel<ComplexModel, Properties>(
     properties = Properties
@@ -23,14 +23,14 @@ object ComplexModel : RootDataModel<ComplexModel, Properties>(
     object Properties : PropertyDefinitions() {
         val multi = add(
             index = 1, name = "multi",
-            definition = MultiTypeDefinition<Option, IsPropertyContext>(
+            definition = MultiTypeDefinition<MultiTypeEnum, IsPropertyContext>(
                 required = false,
-                typeEnum = Option,
+                typeEnum = MultiTypeEnum,
                 typeIsFinal = false,
                 definitionMap = mapOf(
-                    V1 to StringDefinition(),
-                    V2 to NumberDefinition(type = SInt32),
-                    V3 to EmbeddedValuesDefinition(
+                    T1 to StringDefinition(),
+                    T2 to NumberDefinition(type = SInt32),
+                    T3 to EmbeddedValuesDefinition(
                         dataModel = { EmbeddedMarykModel }
                     )
                 )
@@ -74,11 +74,11 @@ object ComplexModel : RootDataModel<ComplexModel, Properties>(
                     type = UInt32
                 ),
                 valueDefinition = MultiTypeDefinition(
-                    typeEnum = Option,
+                    typeEnum = MultiTypeEnum,
                     definitionMap = definitionMap(
-                        V1 to StringDefinition(),
-                        V2 to NumberDefinition(type = SInt32),
-                        V3 to EmbeddedValuesDefinition(
+                        T1 to StringDefinition(),
+                        T2 to NumberDefinition(type = SInt32),
+                        T3 to EmbeddedValuesDefinition(
                             dataModel = { EmbeddedMarykModel }
                         )
                     )
@@ -88,10 +88,10 @@ object ComplexModel : RootDataModel<ComplexModel, Properties>(
     }
 
     operator fun invoke(
-        multi: TypedValue<Option, Any>? = null,
+        multi: TypedValue<MultiTypeEnum, Any>? = null,
         mapStringString: Map<String, String>? = null,
         mapIntObject: Map<UInt, Values<EmbeddedMarykModel, EmbeddedMarykModel.Properties>>? = null,
-        mapIntMulti: Map<UInt, TypedValue<Option, Any>>? = null
+        mapIntMulti: Map<UInt, TypedValue<MultiTypeEnum, Any>>? = null
     ) = this.values {
         mapNonNulls(
             this.multi with multi,

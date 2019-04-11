@@ -13,9 +13,10 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.protobuf.WriteCache
 import maryk.test.ByteCollector
-import maryk.test.models.Option
-import maryk.test.models.Option.V1
-import maryk.test.models.Option.V3
+import maryk.test.models.MultiTypeEnum
+import maryk.test.models.MultiTypeEnum.T1
+import maryk.test.models.MultiTypeEnum.T2
+import maryk.test.models.MultiTypeEnum.T3
 import maryk.test.models.TestMarykModel.Properties.multi
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
@@ -31,66 +32,66 @@ internal class MultiTypeDefinitionTest {
         regEx = "#.*"
     )
 
-    val def = MultiTypeDefinition<Option, IsPropertyContext>(
-        typeEnum = Option,
+    val def = MultiTypeDefinition<MultiTypeEnum, IsPropertyContext>(
+        typeEnum = MultiTypeEnum,
         definitionMap = mapOf(
-            Option.V1 to stringDef,
-            Option.V2 to intDef
+            T1 to stringDef,
+            T2 to intDef
         )
     )
 
-    val defMaxDefined = MultiTypeDefinition<Option, IsPropertyContext>(
+    val defMaxDefined = MultiTypeDefinition<MultiTypeEnum, IsPropertyContext>(
         final = true,
         required = false,
-        typeEnum = Option,
+        typeEnum = MultiTypeEnum,
         definitionMap = mapOf(
-            Option.V1 to stringDef,
-            Option.V2 to intDef
+            T1 to stringDef,
+            T2 to intDef
         ),
-        default = TypedValue(Option.V1, "test")
+        default = TypedValue(T1, "test")
     )
 
     private val multisToTest = arrayOf(
-        TypedValue(Option.V1, "#test"),
-        TypedValue(Option.V2, 400)
+        TypedValue(T1, "#test"),
+        TypedValue(T2, 400)
     )
 
     @Test
     fun getProperties() {
-        def.definitionMap[Option.V1] shouldBe stringDef
-        def.definitionMap[Option.V2] shouldBe intDef
+        def.definitionMap[T1] shouldBe stringDef
+        def.definitionMap[T2] shouldBe intDef
     }
 
     @Test
     fun validateContent() {
-        def.validateWithRef(newValue = TypedValue(Option.V1, "#test"))
-        def.validateWithRef(newValue = TypedValue(Option.V2, 400))
+        def.validateWithRef(newValue = TypedValue(T1, "#test"))
+        def.validateWithRef(newValue = TypedValue(T2, 400))
 
         shouldThrow<OutOfRangeException> {
-            def.validateWithRef(newValue = TypedValue(Option.V2, 3000))
+            def.validateWithRef(newValue = TypedValue(T2, 3000))
         }
         shouldThrow<InvalidValueException> {
-            def.validateWithRef(newValue = TypedValue(Option.V1, "WRONG"))
+            def.validateWithRef(newValue = TypedValue(T1, "WRONG"))
         }
 
         shouldThrow<AlreadySetException> {
             def.validateWithRef(
-                previousValue = TypedValue(Option.V1, "WRONG"),
-                newValue = TypedValue(Option.V2, 400),
+                previousValue = TypedValue(T1, "WRONG"),
+                newValue = TypedValue(T2, 400),
                 refGetter = { multi.ref() }
             )
-        }.reference.toString() shouldBe "multi.*V2"
+        }.reference.toString() shouldBe "multi.*T2"
     }
 
     @Test
     fun resolveReferenceByName() {
-        def.resolveReferenceByName("*V1") shouldBe def.typedValueRef(V1, null)
+        def.resolveReferenceByName("*T1") shouldBe def.typedValueRef(T1, null)
         def.resolveReferenceByName("*") shouldBe def.typeRef(null)
     }
 
     @Test
     fun resolveReferenceFromStorageByAnyTypeName() {
-        writeAndReadStorageReference(def.typedValueRef(V1, null))
+        writeAndReadStorageReference(def.typedValueRef(T1, null))
         writeAndReadStorageReference(def.typeRef(null))
     }
 
@@ -104,7 +105,7 @@ internal class MultiTypeDefinitionTest {
 
     @Test
     fun resolveReferenceFromTransportByAnyTypeName() {
-        writeAndReadTransportReference(def.typedValueRef(V1, null))
+        writeAndReadTransportReference(def.typedValueRef(T1, null))
         writeAndReadTransportReference(def.typeRef(null))
     }
 
@@ -120,7 +121,7 @@ internal class MultiTypeDefinitionTest {
     @Test
     fun invalidFieldShouldThrowException() {
         shouldThrow<DefNotFoundException> {
-            def.validateWithRef(newValue = TypedValue(V3, "NonExistingField"))
+            def.validateWithRef(newValue = TypedValue(T3, "NonExistingField"))
         }
     }
 
@@ -148,16 +149,16 @@ internal class MultiTypeDefinitionTest {
         checkYamlConversion(this.defMaxDefined, MultiTypeDefinition.Model) shouldBe """
         required: false
         final: true
-        typeEnum: Option
+        typeEnum: MultiTypeEnum
         typeIsFinal: true
         definitionMap:
-          ? 1: V1
+          ? 1: T1
           : !String
             required: true
             final: false
             unique: false
             regEx: '#.*'
-          ? 2: V2
+          ? 2: T2
           : !Number
             required: true
             final: false
@@ -165,7 +166,7 @@ internal class MultiTypeDefinitionTest {
             type: SInt32
             maxValue: 1000
             random: false
-        default: !V1(1) test
+        default: !T1(1) test
 
         """.trimIndent()
     }

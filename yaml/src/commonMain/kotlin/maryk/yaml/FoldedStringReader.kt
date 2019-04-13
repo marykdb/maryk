@@ -5,14 +5,11 @@ import maryk.json.TokenType
 import maryk.lib.extensions.isLineBreak
 
 /** Folded style string reader */
-internal class FoldedStringReader<P>(
+internal class FoldedStringReader<P: IsYamlCharWithIndentsReader>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
     jsonTokenConstructor: (String?) -> JsonToken
-) : LiteralStringReader<P>(yamlReader, parentReader, jsonTokenConstructor)
-        where P : YamlCharReader,
-              P : IsYamlCharWithIndentsReader
-{
+) : LiteralStringReader<P>(yamlReader, parentReader, jsonTokenConstructor) {
     override fun readUntilToken(extraIndent: Int, tag: TokenType?): JsonToken {
         // Read options and end at first line break
         readStartForOptionsAndReturnIndent("Folded >")
@@ -27,7 +24,6 @@ internal class FoldedStringReader<P>(
                     this.foundLineBreaks = 1
                     val subtractLineBreak = previousWasOnBaseIndent || this.storedValue.isEmpty()
                     read()
-
 
                     var currentIndentCount = 0
                     whitespace@ while (this.lastChar.isWhitespace()) {

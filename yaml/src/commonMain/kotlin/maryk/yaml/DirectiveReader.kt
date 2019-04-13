@@ -9,7 +9,7 @@ private val tagRegEx = Regex("^TAG (!|!!|![a-zAZ]+!) ([^ ]+)$")
 /**
  * Reads YAML directives and fires [onDone] when done
  */
-internal fun YamlCharReader.directiveReader(onDone: () -> JsonToken): JsonToken {
+internal fun IsYamlCharReader.directiveReader(onDone: () -> JsonToken): JsonToken {
     var foundDirective = ""
     while (!this.lastChar.isLineBreak()) {
         foundDirective += lastChar

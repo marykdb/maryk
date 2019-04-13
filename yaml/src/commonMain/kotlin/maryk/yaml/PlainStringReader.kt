@@ -17,15 +17,13 @@ internal enum class PlainStyleMode {
  * [flowMode] determines which characters can stop the reader
  * [jsonTokenCreator] creates the right jsonToken. Could be field name or value.
  */
-internal fun <P> P.plainStringReader(
+internal fun <P : IsYamlCharWithIndentsReader> P.plainStringReader(
     startWith: String,
     tag: TokenType?,
     flowMode: PlainStyleMode,
     extraIndent: Int,
     jsonTokenCreator: JsonTokenCreator
-): JsonToken
-        where P : YamlCharReader,
-              P : IsYamlCharWithIndentsReader {
+): JsonToken {
     var storedValue: String = startWith
 
     fun storeCharAndProceed() {
@@ -67,7 +65,7 @@ internal fun <P> P.plainStringReader(
                             this.foundMap(tag, extraIndent)?.let {
                                 @Suppress("UNCHECKED_CAST")
                                 this.yamlReader.pushToken(
-                                    (this.currentReader as P).checkAndCreateFieldName(storedValue.trim(), true)
+                                    (this.currentReader as IsYamlCharWithIndentsReader).checkAndCreateFieldName(storedValue.trim(), true)
                                 )
                                 return it
                             }

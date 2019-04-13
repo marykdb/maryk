@@ -11,7 +11,7 @@ import maryk.lib.extensions.HEX_CHARS
  * Pass [tag] to set type on Value.
  * [jsonTokenCreator] creates the right jsonToken. Could be field name or value.
  */
-internal fun YamlCharReader.doubleQuoteString(
+internal fun IsYamlCharReader.doubleQuoteString(
     tag: TokenType?,
     indentAtStart: Int,
     jsonTokenCreator: JsonTokenCreator

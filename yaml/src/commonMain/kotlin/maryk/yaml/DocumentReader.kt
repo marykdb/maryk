@@ -190,7 +190,6 @@ internal class DocumentReader(
     private fun plainStringReader(startWith: String): JsonToken {
         checkAlreadyOnIndent()
 
-        @Suppress("UNCHECKED_CAST")
         return this.plainStringReader(startWith, null, PlainStyleMode.NORMAL, 0) { value, _, _, _ ->
             JsonToken.Value(value, ValueType.String)
         }

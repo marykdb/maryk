@@ -12,14 +12,12 @@ import maryk.lib.extensions.isSpacing
  * instead of values.
  * Set [startsAtNewLine] to true if it was started on a new line.
  */
-internal fun <P> P.selectReaderAndRead(
+internal fun <P: IsYamlCharWithIndentsReader> P.selectReaderAndRead(
     startsAtNewLine: Boolean,
     tag: TokenType?,
     extraIndent: Int,
     jsonTokenCreator: JsonTokenCreator
-): JsonToken
-        where P : YamlCharReader,
-              P : IsYamlCharWithIndentsReader {
+): JsonToken {
     var indents = extraIndent
     // count white space
     while (this.lastChar.isSpacing()) {

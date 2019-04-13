@@ -8,7 +8,7 @@ import maryk.json.TokenType
 import maryk.json.ValueType
 
 /** Reads tags */
-internal fun YamlCharReader.tagReader(onDone: (tag: TokenType) -> JsonToken): JsonToken {
+internal fun IsYamlCharReader.tagReader(onDone: (tag: TokenType) -> JsonToken): JsonToken {
     read()
 
     var prefix = ""
@@ -61,7 +61,7 @@ internal fun YamlCharReader.tagReader(onDone: (tag: TokenType) -> JsonToken): Js
     }
 }
 
-internal fun YamlCharReader.createTokensFittingTag(tag: TokenType?): JsonToken {
+internal fun IsYamlCharReader.createTokensFittingTag(tag: TokenType?): JsonToken {
     return when (tag) {
         is MapType -> {
             this.yamlReader.pushTokenAsFirst(JsonToken.EndObject)

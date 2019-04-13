@@ -10,13 +10,11 @@ private enum class FlowMapState {
 }
 
 /** Reader for flow Map Items {key1: value1, key2: value2} */
-internal class FlowMapReader<out P>(
+internal class FlowMapReader<out P: IsYamlCharWithIndentsReader>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
     private val indentToAdd: Int
-) : YamlCharWithParentAndIndentReader<P>(yamlReader, parentReader)
-        where P : YamlCharReader,
-              P : IsYamlCharWithIndentsReader {
+) : YamlCharWithParentAndIndentReader<P>(yamlReader, parentReader) {
     private var state = FlowMapState.START
     private val fieldNames = mutableListOf<String?>()
 
@@ -178,9 +176,7 @@ internal class FlowMapReader<out P>(
  * Creates a FlowMapReader within a YamlCharReader with [tag] as typing.
  * Reads until first token and returns it
  */
-internal fun <P> P.flowMapReader(tag: TokenType?, indentToAdd: Int): JsonToken
-        where P : YamlCharReader,
-              P : IsYamlCharWithIndentsReader {
+internal fun <P: IsYamlCharWithIndentsReader> P.flowMapReader(tag: TokenType?, indentToAdd: Int): JsonToken {
     read()
     return FlowMapReader(
         yamlReader = this.yamlReader,

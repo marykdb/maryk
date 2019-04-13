@@ -34,7 +34,7 @@ internal interface IsInternalYamlReader {
     /** Is last character which was read */
     val lastChar: Char
     /** Holds the current char reader */
-    var currentReader: YamlCharReader
+    var currentReader: IsYamlCharReader
 
     /** Reads next Char */
     fun read()
@@ -80,7 +80,7 @@ internal class YamlReaderImpl(
     override var currentToken: JsonToken = JsonToken.StartDocument
 
     override var lastChar: Char = '\u0000'
-    override var currentReader: YamlCharReader = DocumentReader(this)
+    override var currentReader: IsYamlCharReader = DocumentReader(this)
 
     private var unclaimedIndenting: Int? = null
     internal var hasException: Boolean = false

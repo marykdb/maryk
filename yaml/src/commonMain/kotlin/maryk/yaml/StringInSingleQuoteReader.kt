@@ -9,7 +9,7 @@ import maryk.json.TokenType
  * Pass [tag] to set type on Value.
  * [jsonTokenCreator] creates the right jsonToken. Could be field name or value.
  */
-internal fun YamlCharReader.singleQuoteString(
+internal fun IsYamlCharReader.singleQuoteString(
     tag: TokenType?,
     extraIndentAtStart: Int,
     jsonTokenCreator: JsonTokenCreator

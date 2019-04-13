@@ -3,32 +3,37 @@ package maryk.yaml
 import maryk.json.JsonToken
 import maryk.json.TokenType
 
-/** Yaml Character reader which uses the state in YamlReader to read until next token */
-internal abstract class YamlCharReader(
-    internal val yamlReader: YamlReaderImpl
-) : IsInternalYamlReader by yamlReader {
+/** Yaml Character reader to read until token and handle reader interrupts */
+internal interface IsYamlCharReader: IsInternalYamlReader {
+    val yamlReader: YamlReaderImpl
+
     /** Reads Yaml until next found Token */
-    abstract fun readUntilToken(extraIndent: Int, tag: TokenType? = null): JsonToken
+    fun readUntilToken(extraIndent: Int, tag: TokenType? = null): JsonToken
 
     /** Handles reader interruptions */
-    abstract fun handleReaderInterrupt(): JsonToken
+    fun handleReaderInterrupt(): JsonToken
 }
 
+/** Yaml Character reader which uses the state in YamlReader to read until next token */
+internal abstract class YamlCharReader(
+    override val yamlReader: YamlReaderImpl
+) : IsInternalYamlReader by yamlReader, IsYamlCharReader
+
 /** Yaml Character reader which is a child to a parent reader */
-internal abstract class YamlCharWithParentReader<out P : YamlCharReader>(
+internal abstract class YamlCharWithParentReader<out P : IsYamlCharReader>(
     yamlReader: YamlReaderImpl,
     val parentReader: P
 ) : YamlCharReader(yamlReader)
 
 /** Yaml char reader which is aware of indentation */
-internal interface IsYamlCharWithIndentsReader {
+internal interface IsYamlCharWithIndentsReader: IsInternalYamlReader, IsYamlCharReader {
     /** Indent count for this object */
     fun indentCount(): Int
 
     /** Continue on same indent level with this reader */
     fun continueIndentLevel(extraIndent: Int, tag: TokenType?): JsonToken
 
-    /** Go back to a higher indent level of [indentCount] by closing this reader ans passing optionally a [tokenToReturn] */
+    /** Go back to a higher indent level of [indentCount] by closing this reader and passing optionally a [tokenToReturn] */
     fun endIndentLevel(
         indentCount: Int,
         tag: TokenType?,

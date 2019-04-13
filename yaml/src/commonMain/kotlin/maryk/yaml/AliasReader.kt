@@ -4,7 +4,7 @@ import maryk.json.ExceptionWhileReadingJson
 import maryk.json.JsonToken
 
 /** Reads an alias with [mode] and returns first found token */
-internal fun YamlCharReader.aliasReader(mode: PlainStyleMode): JsonToken {
+internal fun IsYamlCharReader.aliasReader(mode: PlainStyleMode): JsonToken {
     var alias = ""
 
     fun pushStoredTokens(): JsonToken {

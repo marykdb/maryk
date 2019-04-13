@@ -20,13 +20,11 @@ private enum class FlowSequenceState {
 }
 
 /** Reader for flow sequences [item1, item2, item3] */
-internal class FlowSequenceReader<out P>(
+internal class FlowSequenceReader<out P: IsYamlCharWithIndentsReader>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
     private val indentToAdd: Int
-) : YamlCharWithParentAndIndentReader<P>(yamlReader, parentReader)
-        where P : YamlCharReader,
-              P : IsYamlCharWithIndentsReader {
+) : YamlCharWithParentAndIndentReader<P>(yamlReader, parentReader) {
     private var state = FlowSequenceState.START
     private var cachedCall: (() -> JsonToken)? = null
 
@@ -236,9 +234,7 @@ internal class FlowSequenceReader<out P>(
  * Creates a FlowSequenceReader within a YamlCharReader with [tag] as typing.
  * Reads until first token and returns it
  */
-internal fun <P> P.flowSequenceReader(tag: TokenType?, indentToAdd: Int): JsonToken
-        where P : YamlCharReader,
-              P : IsYamlCharWithIndentsReader {
+internal fun <P: IsYamlCharWithIndentsReader> P.flowSequenceReader(tag: TokenType?, indentToAdd: Int): JsonToken {
     read()
     return FlowSequenceReader(
         yamlReader = this.yamlReader,

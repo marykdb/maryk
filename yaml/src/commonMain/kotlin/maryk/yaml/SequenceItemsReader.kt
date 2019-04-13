@@ -6,15 +6,12 @@ import maryk.json.TokenType
 import maryk.lib.extensions.isLineBreak
 
 /** Reader for Sequence Items */
-internal class SequenceItemsReader<out P>(
+internal class SequenceItemsReader<out P : IsYamlCharWithIndentsReader>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
     val indentToAdd: Int = 0
 ) : YamlCharWithParentAndIndentReader<P>(yamlReader, parentReader),
-    IsYamlCharWithIndentsReader
-        where P : YamlCharReader,
-              P : IsYamlCharWithIndentsReader
-{
+    IsYamlCharWithIndentsReader {
     private var isStarted: Boolean? = null
     private var expectValueAfter: JsonToken? = null
 

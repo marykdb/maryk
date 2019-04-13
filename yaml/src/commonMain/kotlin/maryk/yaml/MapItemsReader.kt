@@ -12,15 +12,12 @@ private enum class MapState {
 }
 
 /** Reader for Map Items */
-internal class MapItemsReader<out P>(
+internal class MapItemsReader<out P : IsYamlCharWithIndentsReader>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
     private var indentToAdd: Int = 0
 ) : YamlCharWithParentAndIndentReader<P>(yamlReader, parentReader),
-    IsYamlCharWithIndentsReader
-        where P : YamlCharReader,
-              P : IsYamlCharWithIndentsReader
-{
+    IsYamlCharWithIndentsReader {
     private var state: MapState = MapState.KEY_FOUND // Because is always created after finding key
     private var isStarted = false
 

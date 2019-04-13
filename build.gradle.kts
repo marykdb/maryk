@@ -1,6 +1,6 @@
 buildscript {
     extra["kotlinVersion"] = "1.3.30"
-    extra["coroutinesVersion"] = "1.1.1"
+    extra["coroutinesVersion"] = "1.2.0"
 
     repositories {
         jcenter()
@@ -12,7 +12,7 @@ buildscript {
 
 // For JS projects
 plugins {
-    id("com.moowork.node").version("1.2.0")
+    id("com.moowork.node").version("1.3.1")
 }
 
 allprojects {

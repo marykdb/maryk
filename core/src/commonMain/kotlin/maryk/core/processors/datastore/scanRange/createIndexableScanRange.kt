@@ -5,6 +5,7 @@ import maryk.core.processors.datastore.matchers.IndexPartialToBeBigger
 import maryk.core.processors.datastore.matchers.IndexPartialToBeOneOf
 import maryk.core.processors.datastore.matchers.IndexPartialToBeSmaller
 import maryk.core.processors.datastore.matchers.IndexPartialToMatch
+import maryk.core.processors.datastore.matchers.IndexPartialToRegexMatch
 import maryk.core.processors.datastore.matchers.IsIndexPartialToMatch
 import maryk.core.processors.datastore.matchers.convertFilterToIndexPartsToMatch
 import maryk.core.properties.definitions.index.IsIndexable
@@ -126,6 +127,12 @@ private fun createScanRangeFromParts(
                         }
                     }
                 }
+            }
+            is IndexPartialToRegexMatch -> {
+                // Cannot create a scan range with a Regular Expression so ignore
+            }
+            is IndexPartialSizeToMatch -> {
+                // Partial sizes are not used for scan range creation
             }
         }
     }

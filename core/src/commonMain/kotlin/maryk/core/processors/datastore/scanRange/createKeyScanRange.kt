@@ -2,10 +2,12 @@ package maryk.core.processors.datastore.scanRange
 
 import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.models.IsRootValuesDataModel
+import maryk.core.processors.datastore.matchers.IndexPartialSizeToMatch
 import maryk.core.processors.datastore.matchers.IndexPartialToBeBigger
 import maryk.core.processors.datastore.matchers.IndexPartialToBeOneOf
 import maryk.core.processors.datastore.matchers.IndexPartialToBeSmaller
 import maryk.core.processors.datastore.matchers.IndexPartialToMatch
+import maryk.core.processors.datastore.matchers.IndexPartialToRegexMatch
 import maryk.core.processors.datastore.matchers.IsIndexPartialToMatch
 import maryk.core.processors.datastore.matchers.UniqueToMatch
 import maryk.core.processors.datastore.matchers.convertFilterToIndexPartsToMatch
@@ -115,6 +117,12 @@ private fun <DM : IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
                         }
                     }
                 }
+            }
+            is IndexPartialToRegexMatch -> {
+                // Only used in indices since String is not possible in Key
+            }
+            is IndexPartialSizeToMatch -> {
+                // Only used in indices since key cannot hold flexible size key parts
             }
         }
     }

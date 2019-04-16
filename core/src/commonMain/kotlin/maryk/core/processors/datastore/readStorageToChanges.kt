@@ -239,7 +239,6 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                                 if (value !is TypedValue<*, *>) {
                                     addChangeToOutput(version, CHANGE, ReferenceValuePair(ref, value))
                                 } else { // Is a TypedValue with Unit as value
-                                    @Suppress("UNCHECKED_CAST")
                                     readTypedValue(
                                         ref,
                                         qualifier,
@@ -601,7 +600,6 @@ private fun <E : IndexedEnum> IsMultiTypeDefinition<E, IsPropertyContext>.readCo
 
     when (definition) {
         is IsEmbeddedDefinition<*, *> -> {
-            @Suppress("UNCHECKED_CAST")
             readEmbeddedValues(
                 definition,
                 typedValueReference,

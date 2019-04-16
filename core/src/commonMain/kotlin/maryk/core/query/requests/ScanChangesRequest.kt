@@ -48,7 +48,6 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.scanChanges(
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order] and only selected properties can be returned with a [select] graph
  */
-@Suppress("EXPERIMENTAL_OVERRIDE")
 data class ScanChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> internal constructor(
     override val dataModel: DM,
     override val startKey: Key<DM>? = null,

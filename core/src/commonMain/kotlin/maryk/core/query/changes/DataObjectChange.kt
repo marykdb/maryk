@@ -32,7 +32,6 @@ data class DataObjectChange<out DM : IsRootDataModel<*>> internal constructor(
     val changes: List<IsChange>,
     val lastVersion: ULong? = null
 ) {
-    @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<DataObjectChange<*>>() {
         val key = add(1, "key", ContextualReferenceDefinition<RequestContext>(
             contextualResolver = {

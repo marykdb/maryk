@@ -15,7 +15,6 @@ data class MultiTypeChange internal constructor(
 
     constructor(vararg referenceTypePair: ReferenceTypePair<*>) : this(referenceTypePair.toList())
 
-    @Suppress("UNCHECKED_CAST")
     object Properties : ReferenceValuePairsObjectPropertyDefinitions<MultiTypeChange, ReferenceTypePair<*>>(
         pairName = "referenceValuePairs",
         pairGetter = MultiTypeChange::referenceTypePairs,

@@ -34,7 +34,7 @@ data class ChangeRequest<DM : IsRootValuesDataModel<*>> internal constructor(
                     dataModel = { DataObjectChange }
                 )
             ),
-            getter = ChangeRequest<*>::objects
+            ChangeRequest<*>::objects
         )
     }
 

@@ -102,7 +102,6 @@ data class Definitions(
         )
     }
 
-    @Suppress("UNCHECKED_CAST")
     internal companion object :
         SingleValueDataModel<List<TypedValue<PrimitiveType, MarykPrimitive>>, List<MarykPrimitive>, Definitions, Properties, ContainsDefinitionsContext>(
             properties = Properties,

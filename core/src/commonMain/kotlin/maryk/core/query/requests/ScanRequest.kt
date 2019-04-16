@@ -50,7 +50,6 @@ data class ScanRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> i
     @Suppress("UNCHECKED_CAST")
     override val responseModel = ValuesResponse as IsObjectDataModel<ValuesResponse<DM, P>, *>
 
-    @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<ScanRequest<*, *>>() {
         val dataModel = IsObjectRequest.addDataModel("from", this, ScanRequest<*, *>::dataModel)
         val startKey = IsScanRequest.addStartKey(this, ScanRequest<*, *>::startKey)

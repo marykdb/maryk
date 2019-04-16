@@ -85,7 +85,6 @@ internal fun generateKotlinValue(
         """Bytes("$value")"""
     }
     is IsTransportablePropertyDefinitionType<*> -> {
-        @Suppress("UNCHECKED_CAST")
         val kotlinDescriptor =
             (value as IsTransportablePropertyDefinitionType<Any>).getKotlinDescriptor()
 
@@ -96,12 +95,10 @@ internal fun generateKotlinValue(
         kotlinDescriptor.definitionToKotlin(value, addImport).trimStart()
     }
     is Set<*> -> {
-        @Suppress("UNCHECKED_CAST")
         val setValues = value as Set<Any>
         val kotlinStringValues = mutableSetOf<String>()
 
         for (v in setValues) {
-            @Suppress("UNCHECKED_CAST")
             kotlinStringValues.add(
                 generateKotlinValue(definition, v, addImport)
             )
@@ -110,12 +107,10 @@ internal fun generateKotlinValue(
         "setOf(${kotlinStringValues.joinToString(", ")})"
     }
     is List<*> -> {
-        @Suppress("UNCHECKED_CAST")
         val listValues = value as List<Any>
         val kotlinStringValues = mutableListOf<String>()
 
         for (v in listValues) {
-            @Suppress("UNCHECKED_CAST")
             kotlinStringValues.add(
                 generateKotlinValue(definition, v, addImport)
             )
@@ -124,13 +119,11 @@ internal fun generateKotlinValue(
         "listOf(${kotlinStringValues.joinToString(", ")})"
     }
     is Map<*, *> -> {
-        @Suppress("UNCHECKED_CAST")
         val mapValues = value as Map<Any, Any>
         val kotlinStringValues = mutableListOf<String>()
         val mapDefinition = definition as IsMapDefinition<Any, Any, *>
 
         for (v in mapValues) {
-            @Suppress("UNCHECKED_CAST")
             kotlinStringValues.add(
                 "${generateKotlinValue(mapDefinition.keyDefinition, v.key, addImport)} to ${generateKotlinValue(
                     mapDefinition.valueDefinition,
@@ -159,7 +152,6 @@ internal fun generateKotlinValue(
         val multiTypeDefinition = definition as MultiTypeDefinition<*, *>
         val valueDefinition = multiTypeDefinition.definitionMap[value.type]
 
-        @Suppress("UNCHECKED_CAST")
         val valueAsString = generateKotlinValue(valueDefinition as IsPropertyDefinition<Any>, value.value, addImport)
         "TypedValue(${multiTypeDefinition.typeEnum.name}.${value.type.name}, $valueAsString)"
     }

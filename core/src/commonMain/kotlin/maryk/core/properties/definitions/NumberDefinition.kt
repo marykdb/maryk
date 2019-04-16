@@ -131,7 +131,6 @@ data class NumberDefinition<T : Comparable<T>>(
                 }
             }
         ) {
-        @Suppress("UNCHECKED_CAST")
         override fun invoke(values: SimpleObjectValues<NumberDefinition<*>>) = NumberDefinition<Comparable<Any>>(
             required = values(1),
             final = values(2),

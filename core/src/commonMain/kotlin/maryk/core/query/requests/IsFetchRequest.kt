@@ -34,7 +34,6 @@ interface IsFetchRequest<DM : IsRootDataModel<P>, P : PropertyDefinitions, RP : 
                 getter
             )
 
-        @Suppress("UNCHECKED_CAST")
         internal fun <DM : Any> addFilter(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> IsFilter?) =
             definitions.add(
                 4, "where",

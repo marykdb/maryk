@@ -44,7 +44,6 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.getChanges(
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  * Only selected properties can be returned with a [select] graph
  */
-@Suppress("EXPERIMENTAL_OVERRIDE")
 data class GetChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> internal constructor(
     override val dataModel: DM,
     override val keys: List<Key<DM>>,
@@ -59,7 +58,6 @@ data class GetChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
     @Suppress("UNCHECKED_CAST")
     override val responseModel = ChangesResponse as IsObjectDataModel<ChangesResponse<DM>, *>
 
-    @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<GetChangesRequest<*, *>>() {
         val dataModel = IsObjectRequest.addDataModel("from", this, GetChangesRequest<*, *>::dataModel)
         val keys = IsGetRequest.addKeys(this, GetChangesRequest<*, *>::keys)

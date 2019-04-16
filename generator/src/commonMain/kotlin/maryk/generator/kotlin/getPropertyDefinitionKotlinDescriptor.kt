@@ -159,7 +159,6 @@ private val definitionNamesMap = mapOf(
                 val typeValues = mutableListOf<String>()
 
                 for (typeDefinition in multiTypeDefinition.definitionMap) {
-                    @Suppress("UNCHECKED_CAST")
                     val value = typeDefinition.value as IsTransportablePropertyDefinitionType<Any>
                     val valueDefinition = value.getKotlinDescriptor()
                     val valueAsString = valueDefinition.definitionToKotlin(value) {}.trimStart()

@@ -76,12 +76,12 @@ data class MapPropertyDefinitionWrapper<K : Any, V : Any, TO : Any, CX : IsPrope
 }
 
 /** Specific extension to support fetching sub refs on Map values by [key] */
-@Suppress("UNCHECKED_CAST")
 fun <K : Any, V : Values<*, P>, DM : IsValuesDataModel<P>, P : PropertyDefinitions, T : Any, W : IsPropertyDefinitionWrapper<T, *, *, *>> MapPropertyDefinitionWrapper<K, V, *, *, *>.refAtKey(
     key: K,
     propertyDefinitionGetter: P.() -> W
 ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> IsPropertyReference<T, W, *> =
     {
+        @Suppress("UNCHECKED_CAST")
         (this.definition.valueDefinition as EmbeddedValuesDefinition<DM, P>).dataModel.ref(
             this.valueRef(key, it),
             propertyDefinitionGetter
@@ -118,13 +118,13 @@ fun <K : Any, E : IndexedEnum, P : PropertyDefinitions, T : Any, W : IsPropertyD
     }
 
 /** Specific extension to support fetching deeper references on Map values by [key] */
-@Suppress("UNCHECKED_CAST")
 fun <K : Any, V : Values<*, P>, DM : IsValuesDataModel<P>, P : PropertyDefinitions, T : Any, W : IsPropertyDefinitionWrapper<T, *, *, *>, R : IsPropertyReference<T, W, *>> MapPropertyDefinitionWrapper<K, V, *, *, *>.at(
     key: K,
     referenceGetter: P.() ->
         (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> R
 ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> R =
     {
+        @Suppress("UNCHECKED_CAST")
         (this.definition.valueDefinition as EmbeddedValuesDefinition<DM, P>).dataModel(
             this.valueRef(key, it),
             referenceGetter
@@ -132,12 +132,12 @@ fun <K : Any, V : Values<*, P>, DM : IsValuesDataModel<P>, P : PropertyDefinitio
     }
 
 /** Specific extension to support fetching deeper references on Map values by any key */
-@Suppress("UNCHECKED_CAST")
 fun <K : Any, V : Values<*, P>, DM : IsValuesDataModel<P>, P : PropertyDefinitions, T : Any, W : IsPropertyDefinitionWrapper<T, *, *, *>, R : IsPropertyReference<T, W, *>> MapPropertyDefinitionWrapper<K, V, *, *, *>.any(
     referenceGetter: P.() ->
         (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> R
 ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> R =
     {
+        @Suppress("UNCHECKED_CAST")
         (this.definition.valueDefinition as EmbeddedValuesDefinition<DM, P>).dataModel(
             this.anyValueRef(it),
             referenceGetter

@@ -30,7 +30,6 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.values.AbstractValues
 import maryk.core.values.AnyAbstractValues
 
-@kotlin.Suppress("unused")
 sealed class StorageTypeEnum<T : IsPropertyDefinition<*>>(val referenceType: CompleteReferenceType) {
     object ObjectDelete : StorageTypeEnum<IsPropertyDefinition<Boolean>>(DELETE)
     object Value : StorageTypeEnum<IsSimpleValueDefinition<Any, IsPropertyContext>>(CompleteReferenceType.VALUE)

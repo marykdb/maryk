@@ -51,7 +51,6 @@ data class RootMaryk(
         )
     }
 
-    @Suppress("UNCHECKED_CAST")
     companion object :
         SingleTypedValueDataModel<List<TypedValue<Operation, *>>, RootMaryk, Properties, DefinitionsContext>(
             properties = Properties,

@@ -47,8 +47,8 @@ internal open class PropertyDefinitionKotlinDescriptor<T : Any, D : IsTransporta
                         output.add("""$propertyName = $it""")
                     }
                 } else {
-                    @Suppress("UNCHECKED_CAST")
                     val defToSend = if (def is ContextualMapDefinition<*, *, *>) {
+                        @Suppress("UNCHECKED_CAST")
                         definition as IsPropertyDefinition<Any>
                     } else {
                         def

@@ -183,7 +183,6 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
             },
             fromSerializable = {
                 {
-                    @Suppress("UNCHECKED_CAST")
                     it?.map { entry ->
                         IndexedEnumComparable(
                             entry.key,

@@ -169,7 +169,6 @@ data class ValueModelDefinition<DO : ValueDataObject, DM : ValueDataModel<DO, P>
                 }
             }
         ) {
-        @Suppress("UNCHECKED_CAST")
         override fun invoke(values: SimpleObjectValues<ValueModelDefinition<*, *, *>>) = ValueModelDefinition(
             required = values(1),
             final = values(2),

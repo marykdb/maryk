@@ -48,7 +48,6 @@ abstract class ReferencePairDataModel<DO : Any, P : ReferenceValuePairsObjectPro
             )
             pairProperties.reference.capture(context, it.reference)
 
-            @Suppress("UNCHECKED_CAST")
             pairProperties.value.writeJsonValue(
                 pairProperties.value.getPropertyAndSerialize(it, context)
                     ?: throw SerializationException("No pair value defined on $it"),
@@ -85,7 +84,6 @@ abstract class ReferencePairDataModel<DO : Any, P : ReferenceValuePairsObjectPro
                     @Suppress("UNCHECKED_CAST")
                     val value = pairProperties.value.readJson(reader, context) as T?
 
-                    @Suppress("UNCHECKED_CAST")
                     listOfTypePairs.add(
                         properties.pairModel.values {
                             mapNonNulls(

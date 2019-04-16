@@ -25,9 +25,9 @@ data class Multiple(
     override fun calculateStorageByteLengthForIndex(values: IsValuesGetter, key: ByteArray): Int {
         var totalBytes = 0
         for (reference in references) {
+            val value = reference.getValue(values)
             @Suppress("UNCHECKED_CAST")
-            val value = (reference as IsIndexablePropertyReference<Any>).getValue(values)
-            val length = reference.calculateStorageByteLength(value)
+            val length = (reference as IsIndexablePropertyReference<Any>).calculateStorageByteLength(value)
             totalBytes += length + length.calculateVarByteLength()
         }
         return totalBytes + key.size
@@ -36,10 +36,10 @@ data class Multiple(
     override fun writeStorageBytesForIndex(values: IsValuesGetter, key: ByteArray, writer: (byte: Byte) -> Unit) {
         val sizes = IntArray(this.references.size)
         for ((keyIndex, reference) in this.references.withIndex()) {
-            @Suppress("UNCHECKED_CAST")
-            val value = (reference as IsIndexablePropertyReference<Any>).getValue(values)
+            val value = reference.getValue(values)
 
-            sizes[keyIndex] = reference.calculateStorageByteLength(value)
+            @Suppress("UNCHECKED_CAST")
+            sizes[keyIndex] = (reference as IsIndexablePropertyReference<Any>).calculateStorageByteLength(value)
 
             reference.writeStorageBytes(value, writer)
         }
@@ -54,10 +54,10 @@ data class Multiple(
 
     override fun writeStorageBytes(values: IsValuesGetter, writer: (byte: Byte) -> Unit) {
         for (reference in this.references) {
-            @Suppress("UNCHECKED_CAST")
-            val value = (reference as IsIndexablePropertyReference<Any>).getValue(values)
+            val value = reference.getValue(values)
 
-            reference.writeStorageBytes(value, writer)
+            @Suppress("UNCHECKED_CAST")
+            (reference as IsIndexablePropertyReference<Any>).writeStorageBytes(value, writer)
         }
     }
 

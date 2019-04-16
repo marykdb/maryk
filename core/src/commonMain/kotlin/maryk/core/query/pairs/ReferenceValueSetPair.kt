@@ -32,13 +32,13 @@ data class ReferenceValueSetPair<T : Any> internal constructor(
                 valueDefinition = ContextualValueDefinition(
                     contextualResolver = { context: RequestContext? ->
                         context?.reference?.let {
-                            @Suppress("UNCHECKED_CAST")
                             it.comparablePropertyDefinition as IsValueDefinition<Any, IsPropertyContext>
                         } ?: throw ContextNotFoundException()
                     }
                 )
             ),
-            ReferenceValueSetPair<*>::values) as IsPropertyDefinitionWrapper<Any, Set<*>, RequestContext, ReferenceValueSetPair<*>>
+            ReferenceValueSetPair<*>::values
+        ) as IsPropertyDefinitionWrapper<Any, Set<*>, RequestContext, ReferenceValueSetPair<*>>
     }
 
     companion object : SimpleObjectDataModel<ReferenceValueSetPair<*>, Properties>(

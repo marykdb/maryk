@@ -78,7 +78,6 @@ class EnumDefinition<E : IndexedEnumComparable<E>>(
             "${value.name}(${value.index})"
         }
 
-    @Suppress("UNCHECKED_CAST")
     override fun fromString(string: String): E =
         enum.resolve(string) ?: throw ParseException(string)
 
@@ -164,24 +163,22 @@ class EnumDefinition<E : IndexedEnumComparable<E>>(
                         ),
                         getter = EnumDefinition<*>::minValue
                     )
-                    @Suppress("UNCHECKED_CAST")
                     add(6, "maxValue",
                         ContextualValueDefinition(
                             contextualResolver = { context: EnumDefinitionContext? ->
                                 @Suppress("UNCHECKED_CAST")
                                 context?.enumDefinition as IsValueDefinition<Any, IsPropertyContext>
                             }
-                        ) as IsContextualEncodable<IndexedEnum, IsPropertyContext>,
+                        ),
                         getter = EnumDefinition<*>::maxValue
                     )
-                    @Suppress("UNCHECKED_CAST")
                     add(7, "default",
                         ContextualValueDefinition(
                             contextualResolver = { context: EnumDefinitionContext? ->
                                 @Suppress("UNCHECKED_CAST")
                                 context?.enumDefinition as IsValueDefinition<Any, IsPropertyContext>
                             }
-                        ) as IsContextualEncodable<IndexedEnum, IsPropertyContext>,
+                        ),
                         getter = EnumDefinition<*>::default
                     )
                 }

@@ -12,7 +12,6 @@ import maryk.core.properties.references.ListAnyItemReference
 import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.ListReference
 
-@Suppress("UNCHECKED_CAST")
 /**
  * Contains a List property [definition] which contains items of type [T]
  * It contains an [index] and [name] to which it is referred inside DataModel and a [getter]

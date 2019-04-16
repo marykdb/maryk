@@ -17,15 +17,16 @@ data class SetChange internal constructor(
     constructor(vararg setValueChange: SetValueChanges<*>) : this(setValueChange.toList())
 
     object Properties : ObjectPropertyDefinitions<SetChange>() {
-        @Suppress("unused")
-        val setValueChanges = add(1, "setValueChanges",
-            ListDefinition(
-                valueDefinition = EmbeddedObjectDefinition(
-                    dataModel = { SetValueChanges }
-                )
-            ),
-            SetChange::setValueChanges
-        )
+        init {
+            add(1, "setValueChanges",
+                ListDefinition(
+                    valueDefinition = EmbeddedObjectDefinition(
+                        dataModel = { SetValueChanges }
+                    )
+                ),
+                SetChange::setValueChanges
+            )
+        }
     }
 
     companion object : ReferenceMappedDataModel<SetChange, SetValueChanges<*>, Properties, SetValueChanges.Properties>(

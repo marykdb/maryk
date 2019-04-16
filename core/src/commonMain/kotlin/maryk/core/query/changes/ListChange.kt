@@ -17,15 +17,16 @@ data class ListChange internal constructor(
     constructor(vararg listValueChange: ListValueChanges<*>) : this(listValueChange.toList())
 
     object Properties : ObjectPropertyDefinitions<ListChange>() {
-        @Suppress("unused")
-        val referenceListValueChangesPairs = add(1, "referenceListValueChangesPairs",
-            ListDefinition(
-                valueDefinition = EmbeddedObjectDefinition(
-                    dataModel = { ListValueChanges }
-                )
-            ),
-            ListChange::listValueChanges
-        )
+        init {
+            add(1, "referenceListValueChangesPairs",
+                ListDefinition(
+                    valueDefinition = EmbeddedObjectDefinition(
+                        dataModel = { ListValueChanges }
+                    )
+                ),
+                ListChange::listValueChanges
+            )
+        }
     }
 
     companion object :

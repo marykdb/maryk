@@ -104,7 +104,6 @@ data class PropRefGraph<P : PropertyDefinitions, DM : IsValuesDataModel<PS>, PS 
             writeJsonValues(obj.parent.ref(), obj.properties, writer, context)
         }
 
-        @Suppress("UNUSED_PARAMETER")
         private fun writeJsonValues(
             reference: AnyPropertyReference,
             listOfPropRefGraphNodes: List<IsPropRefGraphNode<*>>,

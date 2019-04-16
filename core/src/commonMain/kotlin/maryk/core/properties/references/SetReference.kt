@@ -57,7 +57,6 @@ open class SetReference<T : Any, CX : IsPropertyContext> internal constructor(
     ): AnyPropertyReference {
         return when (referenceType) {
             CompleteReferenceType.SET -> {
-                @Suppress("UNCHECKED_CAST")
                 val setValueDefinition =
                     (this.propertyDefinition.definition.valueDefinition as IsSimpleValueDefinition<T, *>)
 

@@ -44,8 +44,8 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P : PropertyDefinition
 
     @Suppress("UNCHECKED_CAST")
     // internal strong typed version so type system is not in a loop when creating EmbeddedValuesDefinition
-    internal val typedDataModel: AbstractValuesDataModel<DM, P, IsPropertyContext>
-        get() = internalDataModel.value as AbstractValuesDataModel<DM, P, IsPropertyContext>
+    internal val typedDataModel get() =
+        internalDataModel.value as AbstractValuesDataModel<DM, P, IsPropertyContext>
 
     override fun asString(value: Values<DM, P>, context: IsPropertyContext?): String {
         var string = ""

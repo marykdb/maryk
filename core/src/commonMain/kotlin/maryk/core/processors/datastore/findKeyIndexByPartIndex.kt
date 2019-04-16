@@ -5,7 +5,6 @@ import maryk.core.extensions.bytes.initIntByVar
 import maryk.lib.exceptions.ParseException
 
 /** Find byte index by walking [indexable] until [partIndex] match */
-@Suppress("UNUSED_PARAMETER")
 fun findByteIndexByPartIndex(partIndex: Int, indexable: ByteArray, keySize: Int): Int {
     if (partIndex == 0) {
         return 0
@@ -35,7 +34,7 @@ fun findByteIndexByPartIndex(partIndex: Int, indexable: ByteArray, keySize: Int)
 }
 
 /** Find byte index and size by walking [indexable] until [partIndex] match */
-fun findByteIndexAndSizeByPartIndex(partIndex: Int, indexable: ByteArray, @Suppress("UNUSED_PARAMETER") keySize: Int): Pair<Int, Int> {
+fun findByteIndexAndSizeByPartIndex(partIndex: Int, indexable: ByteArray, keySize: Int): Pair<Int, Int> {
     var indexForPart = 0
     var partCount = 0
     var index = indexable.lastIndex - keySize

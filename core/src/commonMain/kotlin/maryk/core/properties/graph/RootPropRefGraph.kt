@@ -58,7 +58,6 @@ data class RootPropRefGraph<P : IsPropertyDefinitions> internal constructor(
             writeJsonValues(obj.properties, writer, context)
         }
 
-        @Suppress("UNUSED_PARAMETER")
         private fun writeJsonValues(
             listOfPropRefGraphNodes: List<IsPropRefGraphNode<*>>,
             writer: IsJsonLikeWriter,

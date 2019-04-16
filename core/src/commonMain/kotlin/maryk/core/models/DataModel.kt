@@ -84,7 +84,6 @@ abstract class DataModel<DM : IsValuesDataModel<P>, P : PropertyDefinitions>(
                     }
                 )
             ) {
-                @Suppress("UNCHECKED_CAST")
                 it.properties as PropertyDefinitions
             }
 

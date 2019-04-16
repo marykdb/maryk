@@ -4,6 +4,7 @@ import maryk.json.ExceptionWhileReadingJson
 import maryk.json.JsonToken
 import maryk.json.TokenType
 import maryk.lib.extensions.isSpacing
+import maryk.yaml.PlainStyleMode.NORMAL
 
 /**
  * Reads until is clear what is next token, selects relevant reader and continues reading.
@@ -12,7 +13,7 @@ import maryk.lib.extensions.isSpacing
  * instead of values.
  * Set [startsAtNewLine] to true if it was started on a new line.
  */
-internal fun <P: IsYamlCharWithIndentsReader> P.selectReaderAndRead(
+internal fun IsYamlCharWithIndentsReader.selectReaderAndRead(
     startsAtNewLine: Boolean,
     tag: TokenType?,
     extraIndent: Int,
@@ -67,7 +68,7 @@ internal fun <P: IsYamlCharWithIndentsReader> P.selectReaderAndRead(
         }
         '!' -> this.tagReader { this.selectReaderAndRead(true, it, indents, jsonTokenCreator) }
         '&' -> this.anchorReader { this.selectReaderAndRead(true, tag, indents, jsonTokenCreator) }
-        '*' -> this.aliasReader(PlainStyleMode.NORMAL)
+        '*' -> this.aliasReader(NORMAL)
         '@', '`' -> throw InvalidYamlContent("Reserved indicators for future use and not supported by this reader")
         '%' -> throw InvalidYamlContent("Directive % indicator not allowed in this position")
         ']' -> throw InvalidYamlContent("Invalid char $lastChar at this position")
@@ -86,7 +87,7 @@ internal fun <P: IsYamlCharWithIndentsReader> P.selectReaderAndRead(
                     it.readUntilToken(0, tag)
                 }
             } else {
-                this.plainStringReader("-", tag, PlainStyleMode.NORMAL, indents, jsonTokenCreator)
+                this.plainStringReader("-", tag, NORMAL, indents, jsonTokenCreator)
             }
         }
         '?' -> {
@@ -104,18 +105,16 @@ internal fun <P: IsYamlCharWithIndentsReader> P.selectReaderAndRead(
             }
             // If it turns out to not be an explicit key make it a Plain String reader
             if (!this.lastChar.isWhitespace()) {
-                @Suppress("UNCHECKED_CAST")
-                return (this.currentReader as P).plainStringReader(
+                return (this.currentReader as IsYamlCharWithIndentsReader).plainStringReader(
                     "?",
                     tag,
-                    PlainStyleMode.NORMAL,
+                    NORMAL,
                     indents,
                     jsonTokenCreator
                 )
             }
 
             this.foundMap(tag, indents)?.let {
-                @Suppress("UNCHECKED_CAST")
                 this.currentReader = ExplicitMapKeyReader(
                     this.yamlReader,
                     this.currentReader as MapItemsReader<*>
@@ -140,7 +139,7 @@ internal fun <P: IsYamlCharWithIndentsReader> P.selectReaderAndRead(
                 }
                 this.readUntilToken(0)
             } else {
-                plainStringReader(":", tag, PlainStyleMode.NORMAL, 1, jsonTokenCreator)
+                plainStringReader(":", tag, NORMAL, 1, jsonTokenCreator)
             }
         }
         '#' -> {
@@ -148,6 +147,6 @@ internal fun <P: IsYamlCharWithIndentsReader> P.selectReaderAndRead(
                 this.readUntilToken(0, tag)
             }
         }
-        else -> this.plainStringReader("", tag, PlainStyleMode.NORMAL, indents, jsonTokenCreator)
+        else -> this.plainStringReader("", tag, NORMAL, indents, jsonTokenCreator)
     }
 }

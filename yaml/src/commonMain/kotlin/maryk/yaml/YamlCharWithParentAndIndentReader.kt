@@ -16,7 +16,6 @@ internal abstract class YamlCharWithParentAndIndentReader<out P: IsYamlCharWithI
 
     override fun indentCount() = this.parentReader.indentCount()
 
-    @Suppress("UNCHECKED_CAST")
     override fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean) =
         this.parentReader.checkAndCreateFieldName(
             fieldName,

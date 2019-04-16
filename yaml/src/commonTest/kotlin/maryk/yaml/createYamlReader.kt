@@ -3,6 +3,10 @@ package maryk.yaml
 import maryk.json.IsJsonLikeReader
 import maryk.json.MapType
 import maryk.json.ValueType
+import maryk.yaml.TestType.Bar
+import maryk.yaml.TestType.Foo
+import maryk.yaml.TestType.Test
+import maryk.yaml.TestType.Value
 
 /** Indexed type of property definitions */
 sealed class TestType : MapType {
@@ -41,10 +45,10 @@ fun createYamlReader(yaml: String): IsJsonLikeReader {
         defaultTag = defaultTag,
         tagMap = mapOf(
             defaultTag to mapOf(
-                "Foo" to TestType.Foo,
-                "Bar" to TestType.Bar,
-                "Test" to TestType.Test,
-                "Value" to TestType.Value
+                "Foo" to Foo,
+                "Bar" to Bar,
+                "Test" to Test,
+                "Value" to Value
             )
         ),
         allowUnknownTags = false

@@ -4,6 +4,14 @@ import maryk.json.ArrayType
 import maryk.json.ExceptionWhileReadingJson
 import maryk.json.IsJsonLikeReader
 import maryk.json.JsonToken
+import maryk.json.JsonToken.EndArray
+import maryk.json.JsonToken.EndObject
+import maryk.json.JsonToken.FieldName
+import maryk.json.JsonToken.MergeFieldName
+import maryk.json.JsonToken.StartArray
+import maryk.json.JsonToken.StartComplexFieldName
+import maryk.json.JsonToken.StartObject
+import maryk.json.JsonToken.Stopped
 import maryk.json.JsonWriteException
 import maryk.json.MapType
 import maryk.json.TokenType
@@ -143,9 +151,9 @@ internal class YamlReaderImpl(
             }
 
             when (currentToken) {
-                is JsonToken.StartObject, is JsonToken.StartArray -> this.tokenDepth++
-                is JsonToken.EndObject, is JsonToken.EndArray -> this.tokenDepth--
-                is JsonToken.MergeFieldName -> {
+                is StartObject, is StartArray -> this.tokenDepth++
+                is EndObject, is EndArray -> this.tokenDepth--
+                is MergeFieldName -> {
                     this.merges.add(Merge(this.tokenDepth))
                     return this.nextToken()
                 }
@@ -164,14 +172,14 @@ internal class YamlReaderImpl(
                     true -> {
                         if (merge.tokenStartDepth == this.tokenDepth) {
                             this.merges.remove(merge)
-                            return this.nextToken()
-                        }
-                        this.merges.add(
-                            Merge(
-                                this.tokenDepth - 1,
-                                this.currentToken
+                        } else {
+                            this.merges.add(
+                                Merge(
+                                    this.tokenDepth - 1,
+                                    this.currentToken
+                                )
                             )
-                        )
+                        }
                         return this.nextToken()
                     }
                     false -> {
@@ -226,8 +234,8 @@ internal class YamlReaderImpl(
         val startDepth = this.tokenDepth
         nextToken()
         while (
-            !((currentToken is JsonToken.FieldName || currentToken is JsonToken.StartComplexFieldName) && this.tokenDepth <= startDepth)
-            && currentToken !is JsonToken.Stopped
+            !((currentToken is FieldName || currentToken is StartComplexFieldName) && this.tokenDepth <= startDepth)
+            && currentToken !is Stopped
         ) {
             handleSkipToken?.invoke(this.currentToken)
             nextToken()
@@ -253,10 +261,6 @@ internal class YamlReaderImpl(
     fun hasUnclaimedIndenting() = this.unclaimedIndenting != null
 
     fun resolveTag(prefix: String, tag: String): TokenType {
-        // This line of code fixes a class cast issue in generated JS code.
-        @Suppress("USELESS_CAST")
-        this.tagMap as Map<String, Map<String, TokenType>>
-
         return when {
             prefix == "!" && tag.startsWith('<') && tag.endsWith('>') -> {
                 val realTag = tag.removeSurrounding("<", ">")
@@ -335,8 +339,8 @@ private class Merge(
 
     fun setStartToken(token: JsonToken) {
         when (token) {
-            is JsonToken.StartArray -> this.isWithArray = true
-            is JsonToken.StartObject -> this.isWithArray = false
+            is StartArray -> this.isWithArray = true
+            is StartObject -> this.isWithArray = false
             else -> throw InvalidYamlContent("Merges should contain Maps or Sequences with maps")
         }
     }

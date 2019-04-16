@@ -1,10 +1,18 @@
 package maryk.yaml
 
 import maryk.json.JsonToken
+import maryk.json.JsonToken.FieldName
+import maryk.json.JsonToken.MergeFieldName
+import maryk.json.JsonToken.NullValue
+import maryk.json.JsonToken.Value
 import maryk.json.TokenType
 import maryk.json.ValueType
+import maryk.json.ValueType.Bool
+import maryk.json.ValueType.IsNullValueType
 import maryk.lib.bytes.Base64
 import maryk.lib.time.DateTime
+import maryk.yaml.YamlValueType.Binary
+import maryk.yaml.YamlValueType.TimeStamp
 import kotlin.math.pow
 
 private val trueValues = arrayOf("True", "TRUE", "true", "y", "Y", "yes", "YES", "Yes", "on", "ON", "On")
@@ -44,9 +52,9 @@ internal fun checkAndCreateFieldName(
     if (!foundFieldNames.contains(fieldName)) {
         foundFieldNames += fieldName
         if (isPlainStringReader && fieldName == "<<") {
-            JsonToken.MergeFieldName
+            MergeFieldName
         } else {
-            JsonToken.FieldName(fieldName)
+            FieldName(fieldName)
         }
     } else {
         throw InvalidYamlContent("Duplicate field name $fieldName in flow map")
@@ -60,7 +68,7 @@ internal fun createYamlValueToken(
     value: String?,
     tag: TokenType?,
     isPlainStringReader: Boolean
-): JsonToken.Value<Any?> {
+): Value<Any?> {
     return tag?.let { tokenType ->
         if (value == null && tokenType != ValueType.Null) {
             throw InvalidYamlContent("Cannot have a null value with explicit tag which is not !!null")
@@ -69,17 +77,17 @@ internal fun createYamlValueToken(
             !is ValueType<*> -> {
                 throw InvalidYamlContent("Cannot use non value tag with value $value")
             }
-            is ValueType.Bool -> when (value) {
-                in trueValues -> JsonToken.Value(true, tokenType)
-                in falseValues -> JsonToken.Value(false, tokenType)
+            is Bool -> when (value) {
+                in trueValues -> Value(true, tokenType)
+                in falseValues -> Value(false, tokenType)
                 else -> throw InvalidYamlContent("Unknown !!bool value $value")
             }
-            is ValueType.IsNullValueType -> when (value) {
-                null, in nullValues -> JsonToken.NullValue
+            is IsNullValueType -> when (value) {
+                null, in nullValues -> NullValue
                 else -> throw InvalidYamlContent("Unknown !!null value $value")
             }
             is ValueType.Float -> when (value) {
-                in nanValues -> JsonToken.Value(Double.NaN, tokenType)
+                in nanValues -> Value(Double.NaN, tokenType)
                 else -> {
                     findInfinity(value!!)?.let { return it }
                     findFloat(value)?.let { return it }
@@ -88,51 +96,51 @@ internal fun createYamlValueToken(
             }
             is ValueType.Int -> findInt(value!!)?.let { return it }
                 ?: throw InvalidYamlContent("Not an integer: $value")
-            is YamlValueType.Binary -> {
-                JsonToken.Value(Base64.decode(value!!), tokenType)
+            is Binary -> {
+                Value(Base64.decode(value!!), tokenType)
             }
-            is YamlValueType.TimeStamp -> {
+            is TimeStamp -> {
                 findTimestamp(value!!)
             }
-            else -> JsonToken.Value(value, tokenType)
+            else -> Value(value, tokenType)
         }
     } ?: if (value == null) {
-        JsonToken.NullValue
+        NullValue
     } else {
         if (isPlainStringReader) {
             return when (value) {
-                in nullValues -> JsonToken.NullValue
-                in trueValues -> JsonToken.Value(true, ValueType.Bool)
-                in falseValues -> JsonToken.Value(false, ValueType.Bool)
-                in nanValues -> JsonToken.Value(Double.NaN, ValueType.Float)
+                in nullValues -> NullValue
+                in trueValues -> Value(true, Bool)
+                in falseValues -> Value(false, Bool)
+                in nanValues -> Value(Double.NaN, ValueType.Float)
                 else -> {
                     findInfinity(value)?.let { return it }
                     findInt(value)?.let { return it }
                     findFloat(value)?.let { return it }
                     findTimestamp(value)?.let { return it }
-                    JsonToken.Value(value, ValueType.String)
+                    Value(value, ValueType.String)
                 }
             }
         }
 
-        JsonToken.Value(value, ValueType.String)
+        Value(value, ValueType.String)
     }
 }
 
 /** Tries to find infinity value in [value] and returns a Value with infinity if found */
-private fun findInfinity(value: String): JsonToken.Value<Double>? {
+private fun findInfinity(value: String): Value<Double>? {
     infinityRegEx.find(value)?.let {
         return if (value.startsWith("-")) {
-            JsonToken.Value(Double.NEGATIVE_INFINITY, ValueType.Float)
+            Value(Double.NEGATIVE_INFINITY, ValueType.Float)
         } else {
-            JsonToken.Value(Double.POSITIVE_INFINITY, ValueType.Float)
+            Value(Double.POSITIVE_INFINITY, ValueType.Float)
         }
     }
     return null
 }
 
 /** Tries to find Integer value in [value] and returns a Value with a Long if found */
-private fun findInt(value: String): JsonToken.Value<Long>? {
+private fun findInt(value: String): Value<Long>? {
     val minus = if (value.startsWith('-')) {
         -1
     } else {
@@ -141,26 +149,26 @@ private fun findInt(value: String): JsonToken.Value<Long>? {
     base2RegEx.find(value)?.let {
         val result = it.groupValues[1].replace("_", "").toLong(2)
 
-        return JsonToken.Value(
+        return Value(
             result * minus,
             ValueType.Int
         )
     }
     base8RegEx.find(value)?.let {
-        return JsonToken.Value(
+        return Value(
             value.replace("_", "").toLong(8),
             ValueType.Int
         )
     }
     base10RegEx.find(value)?.let {
-        return JsonToken.Value(
+        return Value(
             value.replace("_", "").toLong(10),
             ValueType.Int
         )
     }
     base16RegEx.find(value)?.let {
         val result = it.groupValues[1].replace("_", "").toLong(16)
-        return JsonToken.Value(
+        return Value(
             result * minus,
             ValueType.Int
         )
@@ -172,16 +180,16 @@ private fun findInt(value: String): JsonToken.Value<Long>? {
         segments.forEachIndexed { index, segment ->
             result += (segment.toInt() * 60.0.pow(power - index)).toLong()
         }
-        return JsonToken.Value(result, ValueType.Int)
+        return Value(result, ValueType.Int)
     }
     return null
 }
 
 /** Tries to find float value in [value] and returns a Double if found */
-private fun findFloat(value: String): JsonToken.Value<Double>? {
+private fun findFloat(value: String): Value<Double>? {
     floatRegEx.find(value)?.let {
         return value.replace("_", "").toDoubleOrNull()?.let { double ->
-            JsonToken.Value(
+            Value(
                 double,
                 ValueType.Float
             )
@@ -191,10 +199,10 @@ private fun findFloat(value: String): JsonToken.Value<Double>? {
 }
 
 /** Tries to find timestamp in [value] and returns a DateTime if found */
-private fun findTimestamp(value: String): JsonToken.Value<DateTime>? {
+private fun findTimestamp(value: String): Value<DateTime>? {
     timestampRegex.find(value)?.let {
         return if (it.groups[4] == null) {
-            JsonToken.Value(
+            Value(
                 DateTime(
                     it.groups[1]!!.value.toInt(),
                     it.groups[2]!!.value.toByte(),
@@ -230,7 +238,7 @@ private fun findTimestamp(value: String): JsonToken.Value<DateTime>? {
                     DateTime.parse(value)
                 }
 
-            JsonToken.Value(dateTime, YamlValueType.TimeStamp)
+            Value(dateTime, YamlValueType.TimeStamp)
         }
     }
     return null

@@ -1,9 +1,10 @@
 package maryk.yaml
 
 import maryk.json.IsJsonLikeReader
-import maryk.json.JsonToken
+import maryk.json.JsonToken.FieldName
 import maryk.json.ValueType
 import maryk.test.shouldBe
+import maryk.test.shouldBeOfType
 import maryk.test.shouldThrow
 import kotlin.test.Test
 
@@ -62,8 +63,7 @@ class YamlReaderTest {
 
     private fun IsJsonLikeReader.assertCurrentFieldName(value: String) {
         this.currentToken.apply {
-            (this is JsonToken.FieldName) shouldBe true
-            (this as JsonToken.FieldName).value shouldBe value
+            shouldBeOfType<FieldName>(this).value shouldBe value
         }
     }
 

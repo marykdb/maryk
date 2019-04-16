@@ -4,6 +4,8 @@ import maryk.json.IsJsonLikeReader
 import maryk.json.ValueType
 import maryk.lib.extensions.initByteArrayByHex
 import maryk.lib.time.DateTime
+import maryk.yaml.YamlValueType.Binary
+import maryk.yaml.YamlValueType.TimeStamp
 import kotlin.test.Test
 
 class TypesTest {
@@ -45,7 +47,7 @@ class TypesTest {
             testForValues()
             assertByteArrayValue(
                 initByteArrayByHex("4749463839610c000c00840000fffff7f5f5eee9e9e5666666000000e7e7e75e5e5ef3f3ed8e8e8ee0e0e09f9f9f939393a7a7a79e9e9e696969636363a3a3a3848484fffef9fffef9fffef9fffef9fffef9fffef9fffef9fffef9fffef9fffef9fffef9fffef9fffef9fffef921fe0e4d61646520776974682047494d50002c000000000c000c0000052c20208e81309ee34014e86910c4d18a081ccf804d247aefff308570b8b031660d1bce01c3011e102720820a01003b"),
-                YamlValueType.Binary
+                Binary
             )
             assertEndArray()
             assertEndDocument()
@@ -138,11 +140,11 @@ class TypesTest {
         assertValue(-2.2323e-44, ValueType.Float)
         assertEndArray()
         assertStartArray()
-        assertValue(DateTime(2018, 3, 13), YamlValueType.TimeStamp)
-        assertValue(DateTime(2017, 12, 1, 12, 45, 13), YamlValueType.TimeStamp)
-        assertValue(DateTime(2016, 9, 5, 1, 12, 5, 123), YamlValueType.TimeStamp)
-        assertValue(DateTime(2015, 5, 24, 7, 3, 55), YamlValueType.TimeStamp)
-        assertValue(DateTime(2014, 2, 28, 9, 34, 43, 220), YamlValueType.TimeStamp)
+        assertValue(DateTime(2018, 3, 13), TimeStamp)
+        assertValue(DateTime(2017, 12, 1, 12, 45, 13), TimeStamp)
+        assertValue(DateTime(2016, 9, 5, 1, 12, 5, 123), TimeStamp)
+        assertValue(DateTime(2015, 5, 24, 7, 3, 55), TimeStamp)
+        assertValue(DateTime(2014, 2, 28, 9, 34, 43, 220), TimeStamp)
         assertEndArray()
     }
 }

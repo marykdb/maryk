@@ -2,6 +2,10 @@ package maryk.yaml
 
 import maryk.json.ArrayType
 import maryk.json.JsonToken
+import maryk.json.JsonToken.EndArray
+import maryk.json.JsonToken.NullValue
+import maryk.json.JsonToken.SimpleStartArray
+import maryk.json.JsonToken.StartArray
 import maryk.json.TokenType
 import maryk.lib.extensions.isLineBreak
 
@@ -23,8 +27,8 @@ internal class SequenceItemsReader<out P : IsYamlCharWithIndentsReader>(
                     val sequenceType =
                         it as? ArrayType
                             ?: throw InvalidYamlContent("Can only use sequence tags on sequences")
-                    JsonToken.StartArray(sequenceType)
-                } ?: JsonToken.SimpleStartArray
+                    StartArray(sequenceType)
+                } ?: SimpleStartArray
             }
             false -> {
                 this.isStarted = true
@@ -83,10 +87,10 @@ internal class SequenceItemsReader<out P : IsYamlCharWithIndentsReader>(
                 this.yamlReader.setUnclaimedIndenting(indentCount)
                 this.currentReader = this.parentReader
                 if (this.expectValueAfter != null) {
-                    this.yamlReader.pushToken(JsonToken.EndArray)
-                    return JsonToken.NullValue
+                    this.yamlReader.pushToken(EndArray)
+                    return NullValue
                 }
-                return JsonToken.EndArray
+                return EndArray
             }
             throwSequenceException()
         }
@@ -137,26 +141,26 @@ internal class SequenceItemsReader<out P : IsYamlCharWithIndentsReader>(
             this.yamlReader.setUnclaimedIndenting(indentCount)
             this.currentReader = this.parentReader
             tokenToReturn?.let {
-                this.yamlReader.pushToken(JsonToken.EndArray)
+                this.yamlReader.pushToken(EndArray)
                 return it()
             }
 
             if (this.expectValueAfter == this.yamlReader.currentToken) {
-                this.yamlReader.pushToken(JsonToken.EndArray)
+                this.yamlReader.pushToken(EndArray)
                 return returnExpectedNullValue(tag)
             }
 
-            JsonToken.EndArray
+            EndArray
         } else {
             val returnFunction = tokenToReturn?.let {
-                this.yamlReader.pushToken(JsonToken.EndArray)
+                this.yamlReader.pushToken(EndArray)
                 it
             } ?: {
                 if (this.expectValueAfter == this.yamlReader.currentToken) {
-                    this.yamlReader.pushToken(JsonToken.EndArray)
+                    this.yamlReader.pushToken(EndArray)
                     returnExpectedNullValue(tag)
                 } else {
-                    JsonToken.EndArray
+                    EndArray
                 }
             }
 
@@ -175,11 +179,11 @@ internal class SequenceItemsReader<out P : IsYamlCharWithIndentsReader>(
         if (this.expectValueAfter == this.yamlReader.currentToken) {
             this.yamlReader.hasException
             this.expectValueAfter = null
-            return JsonToken.NullValue
+            return NullValue
         }
 
         this.currentReader = this.parentReader
-        return JsonToken.EndArray
+        return EndArray
     }
 
     private fun throwSequenceException() {

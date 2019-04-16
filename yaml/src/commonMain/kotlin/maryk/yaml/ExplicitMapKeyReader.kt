@@ -1,9 +1,19 @@
 package maryk.yaml
 
 import maryk.json.JsonToken
+import maryk.json.JsonToken.EndComplexFieldName
+import maryk.json.JsonToken.EndObject
+import maryk.json.JsonToken.FieldName
+import maryk.json.JsonToken.SimpleStartObject
+import maryk.json.JsonToken.StartComplexFieldName
 import maryk.json.TokenType
 import maryk.lib.extensions.isLineBreak
 import maryk.lib.extensions.isSpacing
+import maryk.yaml.ExplicitMapState.COMPLEX
+import maryk.yaml.ExplicitMapState.EMPTY_KEY_VALUE
+import maryk.yaml.ExplicitMapState.INTERNAL_MAP
+import maryk.yaml.ExplicitMapState.SIMPLE
+import maryk.yaml.ExplicitMapState.STARTED
 
 private enum class ExplicitMapState {
     STARTED, INTERNAL_MAP, COMPLEX, SIMPLE, EMPTY_KEY_VALUE
@@ -20,13 +30,13 @@ internal class ExplicitMapKeyReader(
 
     override fun readUntilToken(extraIndent: Int, tag: TokenType?): JsonToken {
         if (this.state == null) {
-            this.state = ExplicitMapState.STARTED
+            this.state = STARTED
             val isNewLine = this.lastChar.isLineBreak()
             val indentCount = this.yamlReader.skipEmptyLinesAndCommentsAndCountIndents()
 
             if (isNewLine) {
                 if (indentCount <= this.parentReader.indentCount() + extraIndent) {
-                    this.state = ExplicitMapState.EMPTY_KEY_VALUE
+                    this.state = EMPTY_KEY_VALUE
                     return this.endIndentLevel(indentCount, tag, null)
                 }
 
@@ -36,16 +46,16 @@ internal class ExplicitMapKeyReader(
             }
         }
 
-        val indentToAdd = if (this.state == ExplicitMapState.STARTED) 0 else 1
+        val indentToAdd = if (this.state == STARTED) 0 else 1
 
         this.selectReaderAndRead(false, tag, extraIndent + indentToAdd, this::jsonTokenCreator).let {
-            if (this.state == ExplicitMapState.STARTED) {
-                if (it !is JsonToken.FieldName) {
+            if (this.state == STARTED) {
+                if (it !is FieldName) {
                     this.yamlReader.pushToken(it)
-                    this.state = ExplicitMapState.COMPLEX
-                    return JsonToken.StartComplexFieldName
+                    this.state = COMPLEX
+                    return StartComplexFieldName
                 } else {
-                    this.state = ExplicitMapState.SIMPLE
+                    this.state = SIMPLE
                 }
             }
             return it
@@ -74,30 +84,30 @@ internal class ExplicitMapKeyReader(
         this.yamlReader.setUnclaimedIndenting(indentCount)
 
         return when (this.state) {
-            ExplicitMapState.INTERNAL_MAP -> {
+            INTERNAL_MAP -> {
                 tokenToReturn?.let {
-                    this.yamlReader.pushToken(JsonToken.EndObject)
-                    this.yamlReader.pushToken(JsonToken.EndComplexFieldName)
+                    this.yamlReader.pushToken(EndObject)
+                    this.yamlReader.pushToken(EndComplexFieldName)
                     return it()
                 }
-                this.yamlReader.pushToken(JsonToken.EndComplexFieldName)
-                JsonToken.EndObject
+                this.yamlReader.pushToken(EndComplexFieldName)
+                EndObject
             }
-            ExplicitMapState.COMPLEX -> {
+            COMPLEX -> {
                 tokenToReturn?.let {
                     return it().also {
-                        yamlReader.pushToken(JsonToken.EndComplexFieldName)
+                        yamlReader.pushToken(EndComplexFieldName)
                     }
                 }
-                JsonToken.EndComplexFieldName
+                EndComplexFieldName
             }
-            null, ExplicitMapState.STARTED, ExplicitMapState.SIMPLE -> {
+            null, STARTED, SIMPLE -> {
                 tokenToReturn?.let {
                     return it()
                 }
                 this.parentReader.checkAndCreateFieldName(null, false)
             }
-            ExplicitMapState.EMPTY_KEY_VALUE -> {
+            EMPTY_KEY_VALUE -> {
                 if (this.lastChar == ':') {
                     read()
                     if (this.lastChar == ' ') {
@@ -114,10 +124,10 @@ internal class ExplicitMapKeyReader(
     }
 
     override fun foundMap(tag: TokenType?, startedAtIndent: Int): JsonToken? {
-        if (this.state != ExplicitMapState.INTERNAL_MAP && this.state != ExplicitMapState.COMPLEX) {
-            this.state = ExplicitMapState.INTERNAL_MAP
-            this.yamlReader.pushToken(JsonToken.SimpleStartObject)
-            return JsonToken.StartComplexFieldName
+        if (this.state != INTERNAL_MAP && this.state != COMPLEX) {
+            this.state = INTERNAL_MAP
+            this.yamlReader.pushToken(SimpleStartObject)
+            return StartComplexFieldName
         }
 
         return null
@@ -149,7 +159,7 @@ internal class ExplicitMapKeyReader(
             } else {
                 throw InvalidYamlContent("There should be whitespace after :")
             }
-        } else if (this.state == ExplicitMapState.STARTED) {
+        } else if (this.state == STARTED) {
             return this.parentReader.checkAndCreateFieldName(value, isPlainStringReader)
         }
 
@@ -159,20 +169,20 @@ internal class ExplicitMapKeyReader(
     override fun handleReaderInterrupt() =
         when (this.state) {
             null -> {
-                this.state = ExplicitMapState.STARTED
-                JsonToken.SimpleStartObject
+                this.state = STARTED
+                SimpleStartObject
             }
-            ExplicitMapState.COMPLEX -> {
+            COMPLEX -> {
                 this.currentReader = this.parentReader
-                JsonToken.EndComplexFieldName
+                EndComplexFieldName
             }
-            ExplicitMapState.INTERNAL_MAP -> {
-                this.state = ExplicitMapState.COMPLEX
-                JsonToken.EndObject
+            INTERNAL_MAP -> {
+                this.state = COMPLEX
+                EndObject
             }
-            ExplicitMapState.EMPTY_KEY_VALUE, ExplicitMapState.STARTED, ExplicitMapState.SIMPLE -> {
+            EMPTY_KEY_VALUE, STARTED, SIMPLE -> {
                 this.currentReader = this.parentReader
-                JsonToken.FieldName(null)
+                FieldName(null)
             }
         }
 }

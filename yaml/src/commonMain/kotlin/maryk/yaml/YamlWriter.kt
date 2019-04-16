@@ -3,6 +3,8 @@ package maryk.yaml
 import maryk.json.AbstractJsonLikeWriter
 import maryk.json.IllegalJsonOperation
 import maryk.json.JsonEmbedType
+import maryk.json.JsonEmbedType.ComplexField
+import maryk.json.JsonEmbedType.Object
 import maryk.json.JsonType.ARRAY_VALUE
 import maryk.json.JsonType.COMPLEX_FIELD_NAME_END
 import maryk.json.JsonType.COMPLEX_FIELD_NAME_START
@@ -81,7 +83,7 @@ class YamlWriter(
 
             super.writeStartObject(isCompact)
 
-            if (lastEmbedType != null && lastEmbedType != JsonEmbedType.ComplexField) {
+            if (lastEmbedType != null && lastEmbedType != ComplexField) {
                 prefix += spacing
             }
         }
@@ -97,7 +99,7 @@ class YamlWriter(
             }
         } else {
             super.writeEndObject()
-            if (this.typeStack.isNotEmpty() && this.typeStack.last() !== JsonEmbedType.ComplexField) {
+            if (this.typeStack.isNotEmpty() && this.typeStack.last() !== ComplexField) {
                 prefix = prefix.removeSuffix(spacing)
             }
         }
@@ -163,7 +165,7 @@ class YamlWriter(
             super.writeEndArray()
             val lastType = if (typeStack.isEmpty()) null else typeStack.last()
 
-            if (lastType == null || (lastType !is JsonEmbedType.Object && lastType !is JsonEmbedType.ComplexField)) {
+            if (lastType == null || (lastType !is Object && lastType !is ComplexField)) {
                 prefix = prefix.removeSuffix(spacing)
             }
         }
@@ -197,7 +199,7 @@ class YamlWriter(
         }
 
         when (typeStack.last()) {
-            is JsonEmbedType.Object -> {
+            is Object -> {
                 super.checkObjectValueAllowed()
                 if (lastTypeBeforeOperation == FIELD_NAME) {
                     writer(" ")
@@ -226,7 +228,7 @@ class YamlWriter(
                     this.prefixWasWritten = false
                 }
             }
-            is JsonEmbedType.ComplexField -> {
+            is ComplexField -> {
                 throw IllegalJsonOperation("Complex fields cannot contain values directly, start an array or object before adding them")
             }
         }
@@ -292,7 +294,7 @@ class YamlWriter(
         writer("$prefixToWrite? ")
         prefixWasWritten = true
 
-        typeStack.add(JsonEmbedType.ComplexField)
+        typeStack.add(ComplexField)
 
         prefix += spacing
     }
@@ -305,7 +307,7 @@ class YamlWriter(
 
         prefix = prefix.removeSuffix(spacing)
 
-        if (typeStack.isEmpty() || typeStack.last() !== JsonEmbedType.ComplexField) {
+        if (typeStack.isEmpty() || typeStack.last() !== ComplexField) {
             throw IllegalJsonOperation("There is no complex field to close")
         }
         typeStack.removeAt(typeStack.lastIndex)

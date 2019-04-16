@@ -2,105 +2,76 @@ package maryk.yaml
 
 import maryk.json.ArrayType
 import maryk.json.IsJsonLikeReader
-import maryk.json.JsonToken
+import maryk.json.JsonToken.EndArray
+import maryk.json.JsonToken.EndComplexFieldName
+import maryk.json.JsonToken.EndDocument
+import maryk.json.JsonToken.EndObject
+import maryk.json.JsonToken.FieldName
+import maryk.json.JsonToken.StartArray
+import maryk.json.JsonToken.StartComplexFieldName
+import maryk.json.JsonToken.StartDocument
+import maryk.json.JsonToken.StartObject
+import maryk.json.JsonToken.Value
 import maryk.json.MapType
 import maryk.json.ValueType
 import maryk.lib.extensions.toHex
 import maryk.test.shouldBe
+import maryk.test.shouldBeOfType
 import maryk.test.shouldThrow
 import kotlin.test.fail
 
 fun IsJsonLikeReader.assertStartDocument() {
-    this.nextToken().apply {
-        if (this !== JsonToken.StartDocument) {
-            fail("$this should be document start")
-        }
-    }
+    this.nextToken() shouldBe StartDocument
 }
 
 fun IsJsonLikeReader.assertStartObject(type: MapType = MapType.Map) {
-    this.nextToken().apply {
-        if (this is JsonToken.StartObject) {
-            type.let {
-                this.type shouldBe it
-            }
-        } else {
-            fail("$this should be object start")
+    shouldBeOfType<StartObject>(this.nextToken()).apply {
+        type.let {
+            this.type shouldBe it
         }
     }
 }
 
 fun IsJsonLikeReader.assertEndObject() {
-    this.nextToken().apply {
-        if (this !== JsonToken.EndObject) {
-            fail("$this should be object end")
-        }
-    }
+    this.nextToken() shouldBe EndObject
 }
 
 fun IsJsonLikeReader.assertFieldName(value: String?) {
-    this.nextToken().apply {
-        if (this is JsonToken.FieldName) {
-            this.value shouldBe value
-        } else {
-            fail("$this should be field name '$value'")
-        }
-    }
+    shouldBeOfType<FieldName>(this.nextToken()).value shouldBe value
 }
 
 fun IsJsonLikeReader.assertStartComplexFieldName() {
-    this.nextToken().apply {
-        if (this !== JsonToken.StartComplexFieldName) {
-            fail("$this should be complex field name start")
-        }
-    }
+    this.nextToken() shouldBe StartComplexFieldName
 }
 
 fun IsJsonLikeReader.assertEndComplexFieldName() {
-    this.nextToken().apply {
-        if (this !== JsonToken.EndComplexFieldName) {
-            fail("$this should be complex field name end")
-        }
-    }
+    this.nextToken() shouldBe EndComplexFieldName
 }
 
 fun IsJsonLikeReader.assertStartArray(type: ArrayType = ArrayType.Sequence) {
-    this.nextToken().apply {
-        if (this is JsonToken.StartArray) {
-            type.let {
-                this.type shouldBe it
-            }
-        } else {
-            fail("$this should be array start")
+    shouldBeOfType<StartArray>(this.nextToken()).apply {
+        type.let {
+            this.type shouldBe it
         }
     }
 }
 
 fun IsJsonLikeReader.assertEndArray() {
-    this.nextToken().apply {
-        if (this !== JsonToken.EndArray) {
-            fail("$this should be array end")
-        }
-    }
+    this.nextToken() shouldBe EndArray
 }
 
 fun <T : Any> IsJsonLikeReader.assertValue(value: T?, type: ValueType<T>? = null) {
-    this.nextToken().apply {
-        if (this is JsonToken.Value<*>) {
-            this.value shouldBe value
-
-            type?.let {
-                this.type shouldBe it
-            }
-        } else {
-            fail("$this should be value '$value'")
+    shouldBeOfType<Value<*>>(this.nextToken()).apply {
+        this.value shouldBe value
+        type?.let {
+            this.type shouldBe it
         }
     }
 }
 
 fun IsJsonLikeReader.assertByteArrayValue(value: ByteArray, type: ValueType<ByteArray>) {
     this.nextToken().apply {
-        if (this is JsonToken.Value<*> && this.value is ByteArray) {
+        if (this is Value<*> && this.value is ByteArray) {
             val byteArray = this.value as? ByteArray
 
             byteArray?.let {
@@ -117,15 +88,10 @@ fun IsJsonLikeReader.assertByteArrayValue(value: ByteArray, type: ValueType<Byte
 }
 
 fun IsJsonLikeReader.assertEndDocument() {
-    this.nextToken().apply {
-        if (this !== JsonToken.EndDocument) {
-            fail("$this should be End Document")
-        }
-    }
+    this.nextToken() shouldBe EndDocument
 }
 
-fun IsJsonLikeReader.assertInvalidYaml(): InvalidYamlContent {
-    return shouldThrow {
+fun IsJsonLikeReader.assertInvalidYaml(): InvalidYamlContent =
+    shouldThrow {
         println(this.nextToken())
     }
-}

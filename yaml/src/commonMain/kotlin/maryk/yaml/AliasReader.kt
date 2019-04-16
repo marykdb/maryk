@@ -2,6 +2,8 @@ package maryk.yaml
 
 import maryk.json.ExceptionWhileReadingJson
 import maryk.json.JsonToken
+import maryk.yaml.PlainStyleMode.FLOW_MAP
+import maryk.yaml.PlainStyleMode.FLOW_SEQUENCE
 
 /** Reads an alias with [mode] and returns first found token */
 internal fun IsYamlCharReader.aliasReader(mode: PlainStyleMode): JsonToken {
@@ -19,8 +21,8 @@ internal fun IsYamlCharReader.aliasReader(mode: PlainStyleMode): JsonToken {
         read()
 
         val forbiddenChars = when (mode) {
-            PlainStyleMode.FLOW_SEQUENCE -> arrayOf(' ', '\r', '\n', '\t', ',', ']')
-            PlainStyleMode.FLOW_MAP -> arrayOf(' ', '\r', '\n', '\t', ',', '}')
+            FLOW_SEQUENCE -> arrayOf(' ', '\r', '\n', '\t', ',', ']')
+            FLOW_MAP -> arrayOf(' ', '\r', '\n', '\t', ',', '}')
             else -> arrayOf(' ', '\r', '\n', '\t')
         }
 

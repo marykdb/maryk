@@ -5,6 +5,9 @@ import maryk.json.TokenType
 import maryk.lib.extensions.isLineBreak
 import maryk.lib.extensions.isNonZeroDigit
 import maryk.lib.extensions.isSpacing
+import maryk.yaml.ChompStyle.CLIP
+import maryk.yaml.ChompStyle.KEEP
+import maryk.yaml.ChompStyle.STRIP
 
 internal enum class ChompStyle {
     STRIP, CLIP, KEEP
@@ -21,7 +24,7 @@ internal open class LiteralStringReader<P: IsYamlCharWithIndentsReader>(
     protected var storedValue: String = ""
     protected var indentCount: Int? = null
     protected var foundLineBreaks: Int = 0
-    private var chompStyle: ChompStyle = ChompStyle.CLIP
+    private var chompStyle: ChompStyle = CLIP
 
     override fun readUntilToken(extraIndent: Int, tag: TokenType?): JsonToken {
         // Read options and end at first line break
@@ -77,16 +80,16 @@ internal open class LiteralStringReader<P: IsYamlCharWithIndentsReader>(
                     this.indentCount = this.lastChar.toString().toInt() + this.parentIndentCount
                 }
                 this.lastChar == '+' -> {
-                    if (this.chompStyle != ChompStyle.CLIP) {
+                    if (this.chompStyle != CLIP) {
                         throw InvalidYamlContent("Cannot define chomping twice")
                     }
-                    this.chompStyle = ChompStyle.KEEP
+                    this.chompStyle = KEEP
                 }
                 this.lastChar == '-' -> {
-                    if (this.chompStyle != ChompStyle.CLIP) {
+                    if (this.chompStyle != CLIP) {
                         throw InvalidYamlContent("Cannot define chomping twice")
                     }
-                    this.chompStyle = ChompStyle.STRIP
+                    this.chompStyle = STRIP
                 }
                 else -> {
                     break@options
@@ -145,14 +148,14 @@ internal open class LiteralStringReader<P: IsYamlCharWithIndentsReader>(
 
     protected fun createTokenAndClose(): JsonToken {
         when (this.chompStyle) {
-            ChompStyle.KEEP -> for (it in 0 until this.foundLineBreaks) {
+            KEEP -> for (it in 0 until this.foundLineBreaks) {
                 this.storedValue += '\n'
             }
-            ChompStyle.CLIP -> {
+            CLIP -> {
                 this.storedValue = this.storedValue.trimEnd('\n')
                 this.storedValue += '\n'
             }
-            ChompStyle.STRIP -> {
+            STRIP -> {
                 this.storedValue = this.storedValue.trimEnd('\n')
             }
         }

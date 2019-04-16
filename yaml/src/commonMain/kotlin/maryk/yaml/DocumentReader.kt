@@ -2,9 +2,13 @@ package maryk.yaml
 
 import maryk.json.ExceptionWhileReadingJson
 import maryk.json.JsonToken
+import maryk.json.JsonToken.EndDocument
+import maryk.json.JsonToken.StartDocument
+import maryk.json.JsonToken.Value
 import maryk.json.TokenType
 import maryk.json.ValueType
 import maryk.lib.exceptions.ParseException
+import maryk.yaml.PlainStyleMode.NORMAL
 
 /** Read single or multiple yaml documents until end of stream or "..." */
 internal class DocumentReader(
@@ -54,7 +58,7 @@ internal class DocumentReader(
                                 return if (this.firstDocumentContentWasFound) {
                                     this.contentWasFound = false
                                     this.indentCount = 0
-                                    JsonToken.StartDocument
+                                    StartDocument
                                 } else {
                                     // First found document open before content
                                     this.finishedWithDirectives = true
@@ -95,7 +99,7 @@ internal class DocumentReader(
                         when (this.lastChar) {
                             '.' -> {
                                 read()
-                                JsonToken.EndDocument
+                                EndDocument
                             }
                             else -> plainStringReader("..")
                         }
@@ -184,14 +188,14 @@ internal class DocumentReader(
     override fun indentCount() = this.indentCount
 
     override fun handleReaderInterrupt(): JsonToken {
-        return JsonToken.EndDocument
+        return EndDocument
     }
 
     private fun plainStringReader(startWith: String): JsonToken {
         checkAlreadyOnIndent()
 
-        return this.plainStringReader(startWith, null, PlainStyleMode.NORMAL, 0) { value, _, _, _ ->
-            JsonToken.Value(value, ValueType.String)
+        return this.plainStringReader(startWith, null, NORMAL, 0) { value, _, _, _ ->
+            Value(value, ValueType.String)
         }
     }
 

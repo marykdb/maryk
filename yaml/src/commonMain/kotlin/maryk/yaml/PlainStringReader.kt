@@ -4,6 +4,8 @@ import maryk.json.ExceptionWhileReadingJson
 import maryk.json.JsonToken
 import maryk.json.TokenType
 import maryk.lib.extensions.isLineBreak
+import maryk.yaml.PlainStyleMode.FLOW_MAP
+import maryk.yaml.PlainStyleMode.FLOW_SEQUENCE
 
 internal enum class PlainStyleMode {
     NORMAL, FLOW_SEQUENCE, FLOW_MAP
@@ -17,7 +19,7 @@ internal enum class PlainStyleMode {
  * [flowMode] determines which characters can stop the reader
  * [jsonTokenCreator] creates the right jsonToken. Could be field name or value.
  */
-internal fun <P : IsYamlCharWithIndentsReader> P.plainStringReader(
+internal fun IsYamlCharWithIndentsReader.plainStringReader(
     startWith: String,
     tag: TokenType?,
     flowMode: PlainStyleMode,
@@ -56,14 +58,13 @@ internal fun <P : IsYamlCharWithIndentsReader> P.plainStringReader(
                     read()
                     if (this.lastChar.isWhitespace()) {
                         // Only override token creators with non flow maps
-                        if (flowMode != PlainStyleMode.FLOW_MAP) {
+                        if (flowMode != FLOW_MAP) {
                             if (!this.lastChar.isLineBreak()) {
                                 read()
                             }
 
                             // If new map return Object Start and push new token
                             this.foundMap(tag, extraIndent)?.let {
-                                @Suppress("UNCHECKED_CAST")
                                 this.yamlReader.pushToken(
                                     (this.currentReader as IsYamlCharWithIndentsReader).checkAndCreateFieldName(storedValue.trim(), true)
                                 )
@@ -90,12 +91,12 @@ internal fun <P : IsYamlCharWithIndentsReader> P.plainStringReader(
                 }
                 else -> {
                     when (flowMode) {
-                        PlainStyleMode.FLOW_SEQUENCE -> {
+                        FLOW_SEQUENCE -> {
                             if (this.lastChar == ',' || this.lastChar == ']') {
                                 return createToken()
                             }
                         }
-                        PlainStyleMode.FLOW_MAP -> {
+                        FLOW_MAP -> {
                             if (this.lastChar == ',' || this.lastChar == '}') {
                                 return createToken()
                             }

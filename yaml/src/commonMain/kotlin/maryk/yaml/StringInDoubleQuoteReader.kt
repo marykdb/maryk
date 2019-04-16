@@ -5,6 +5,9 @@ import maryk.json.JsonToken
 import maryk.json.TokenType
 import maryk.lib.bytes.fromCodePoint
 import maryk.lib.extensions.HEX_CHARS
+import maryk.yaml.SkipCharType.None
+import maryk.yaml.SkipCharType.StartNewEscaped
+import maryk.yaml.SkipCharType.UtfChar
 
 /**
  * Reads a double quote string
@@ -20,20 +23,20 @@ internal fun IsYamlCharReader.doubleQuoteString(
 
     fun addCharAndResetSkipChar(value: String): SkipCharType {
         foundValue += value
-        return SkipCharType.None
+        return None
     }
 
     try {
         read()
 
-        var skipChar: SkipCharType = SkipCharType.None
-        loop@ while (lastChar != '"' || skipChar == SkipCharType.StartNewEscaped) {
+        var skipChar: SkipCharType = None
+        loop@ while (lastChar != '"' || skipChar == StartNewEscaped) {
             skipChar = when (skipChar) {
-                SkipCharType.None -> when (lastChar) {
-                    '\\' -> SkipCharType.StartNewEscaped
+                None -> when (lastChar) {
+                    '\\' -> StartNewEscaped
                     else -> addCharAndResetSkipChar("$lastChar")
                 }
-                SkipCharType.StartNewEscaped -> when (lastChar) {
+                StartNewEscaped -> when (lastChar) {
                     '0' -> addCharAndResetSkipChar("\u0000")
                     'a' -> addCharAndResetSkipChar("\u0007")
                     'b' -> addCharAndResetSkipChar("\b")
@@ -51,13 +54,13 @@ internal fun IsYamlCharReader.doubleQuoteString(
                     '_' -> addCharAndResetSkipChar("\u00A0")
                     'L' -> addCharAndResetSkipChar("\u2028")
                     'P' -> addCharAndResetSkipChar("\u2029")
-                    'x' -> SkipCharType.UtfChar('x', 2)
-                    'u' -> SkipCharType.UtfChar('u', 4)
+                    'x' -> UtfChar('x', 2)
+                    'u' -> UtfChar('u', 4)
                     'U' -> SkipCharType.Utf32Char()
-                    '\n', '\r' -> SkipCharType.None
+                    '\n', '\r' -> None
                     else -> addCharAndResetSkipChar("\\$lastChar")
                 }
-                is SkipCharType.UtfChar -> when (lastChar.toLowerCase()) {
+                is UtfChar -> when (lastChar.toLowerCase()) {
                     in HEX_CHARS -> {
                         if (skipChar.addCharAndHasReachedEnd(lastChar)) {
                             addCharAndResetSkipChar(skipChar.toCharString())
@@ -98,25 +101,19 @@ private sealed class SkipCharType {
         private var index = 0
         fun addCharAndHasReachedEnd(char: Char): Boolean {
             chars[index++] = char
-            if (index == charCount) {
-                return true
-            }
-            return false
+            return index == charCount
         }
 
-        open fun toCharString(): String {
-            return chars.joinToString(separator = "").toInt(16).toChar().toString()
-        }
+        open fun toCharString() =
+            chars.joinToString(separator = "").toInt(16).toChar().toString()
 
-        fun toOriginalChars(): String {
-            return chars.sliceArray(0 until index).joinToString(separator = "")
-        }
+        fun toOriginalChars() =
+            chars.sliceArray(0 until index).joinToString(separator = "")
     }
 
     /** UTF 32 char skip found */
     class Utf32Char : UtfChar(charType = 'U', charCount = 8) {
-        override fun toCharString(): String {
-            return fromCodePoint(chars.joinToString(separator = "").toInt(16))
-        }
+        override fun toCharString() =
+            fromCodePoint(chars.joinToString(separator = "").toInt(16))
     }
 }

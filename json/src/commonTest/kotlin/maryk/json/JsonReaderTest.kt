@@ -1,6 +1,12 @@
 package maryk.json
 
+import maryk.json.JsonToken.FieldName
+import maryk.json.JsonToken.Stopped
+import maryk.json.JsonToken.Suspended
+import maryk.json.ValueType.Bool
+import maryk.json.ValueType.Null
 import maryk.test.shouldBe
+import maryk.test.shouldBeOfType
 import maryk.test.shouldThrow
 import kotlin.test.Test
 
@@ -34,9 +40,9 @@ internal class JsonReaderTest {
             assertValue(34L, ValueType.Int)
             assertValue(2352L, ValueType.Int)
             assertValue(3423L, ValueType.Int)
-            assertValue(true, ValueType.Bool)
-            assertValue(false, ValueType.Bool)
-            assertValue(null, ValueType.Null)
+            assertValue(true, Bool)
+            assertValue(false, Bool)
+            assertValue(null, Null)
             assertEndArray()
             assertFieldName("emptyArray")
             assertStartArray()
@@ -84,29 +90,19 @@ internal class JsonReaderTest {
             assertFieldName("1")
             skipUntilNextField()
 
-            currentToken.apply {
-                (this is JsonToken.FieldName) shouldBe true
-                (this as JsonToken.FieldName).value shouldBe "2"
-            }
+            shouldBeOfType<FieldName>(currentToken).value shouldBe "2"
             skipUntilNextField()
 
-            currentToken.apply {
-                (this is JsonToken.FieldName) shouldBe true
-                (this as JsonToken.FieldName).value shouldBe "3"
-            }
+            shouldBeOfType<FieldName>(currentToken).value shouldBe "3"
             skipUntilNextField()
 
-            currentToken.apply {
-                (this is JsonToken.FieldName) shouldBe true
-                (this as JsonToken.FieldName).value shouldBe "4"
-            }
+            shouldBeOfType<FieldName>(currentToken).value shouldBe "4"
 
-            assertValue(true, ValueType.Bool)
+            assertValue(true, Bool)
 
             assertEndObject()
             assertEndDocument()
         }
-
     }
 
     @Test
@@ -151,7 +147,7 @@ internal class JsonReaderTest {
         val e = shouldThrow<InvalidJsonContent> {
             do {
                 reader.nextToken()
-            } while (reader.currentToken !is JsonToken.Stopped)
+            } while (reader.currentToken !is Stopped)
         }
 
         e.lineNumber shouldBe 2
@@ -172,7 +168,7 @@ internal class JsonReaderTest {
             shouldThrow<InvalidJsonContent> {
                 do {
                     reader.nextToken()
-                } while (reader.currentToken !is JsonToken.Stopped)
+                } while (reader.currentToken !is Stopped)
             }
         }
 
@@ -218,9 +214,9 @@ internal class JsonReaderTest {
         }.apply {
             do {
                 nextToken()
-            } while (currentToken !is JsonToken.Stopped)
+            } while (currentToken !is Stopped)
 
-            (currentToken is JsonToken.Suspended) shouldBe true
+            (currentToken is Suspended) shouldBe true
 
             input += "]"
 

@@ -1,5 +1,7 @@
 package maryk.json
 
+import maryk.json.JsonEmbedType.ComplexField
+import maryk.json.JsonEmbedType.Object
 import maryk.json.JsonType.START_ARRAY
 import maryk.json.JsonType.START_OBJ
 
@@ -67,7 +69,7 @@ class JsonWriter(
     /** Writes a value excluding quotes */
     override fun writeValue(value: String) = if (typeStack.isNotEmpty()) {
         when (typeStack.last()) {
-            is JsonEmbedType.Object -> {
+            is Object -> {
                 super.checkObjectValueAllowed()
                 writer(value)
             }
@@ -81,7 +83,7 @@ class JsonWriter(
                 super.checkArrayValueAllowed()
                 writer(value)
             }
-            is JsonEmbedType.ComplexField -> {
+            is ComplexField -> {
                 throw JsonWriteException("Complex fields are not possible in JSON")
             }
         }
@@ -93,7 +95,7 @@ class JsonWriter(
         if (pretty) {
             writer("\n")
             for (it in typeStack) {
-                if (it is JsonEmbedType.Object) {
+                if (it is Object) {
                     writer("\t")
                 }
             }

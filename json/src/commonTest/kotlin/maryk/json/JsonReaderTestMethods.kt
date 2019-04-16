@@ -1,76 +1,44 @@
 package maryk.json
 
+import maryk.json.JsonToken.EndArray
+import maryk.json.JsonToken.EndDocument
+import maryk.json.JsonToken.EndObject
+import maryk.json.JsonToken.FieldName
+import maryk.json.JsonToken.StartArray
+import maryk.json.JsonToken.StartObject
+import maryk.json.JsonToken.Value
 import maryk.test.shouldBe
-import kotlin.test.fail
+import maryk.test.shouldBeOfType
 
 fun IsJsonLikeReader.assertStartObject(type: MapType = MapType.Map) {
-    this.nextToken().apply {
-        if (this is JsonToken.StartObject) {
-            type.let {
-                this.type shouldBe it
-            }
-        } else {
-            fail("$this should be object start")
-        }
-    }
+    shouldBeOfType<StartObject>(this.nextToken()).type shouldBe type
 }
 
 fun IsJsonLikeReader.assertEndObject() {
-    this.nextToken().apply {
-        if (this !== JsonToken.EndObject) {
-            fail("$this should be object end")
-        }
-    }
+    this.nextToken() shouldBe EndObject
 }
 
 fun IsJsonLikeReader.assertFieldName(value: String?) {
-    this.nextToken().apply {
-        if (this is JsonToken.FieldName) {
-            this.value shouldBe value
-        } else {
-            fail("$this should be field name '$value'")
-        }
-    }
+    shouldBeOfType<FieldName>(this.nextToken()).value shouldBe value
 }
 
 fun IsJsonLikeReader.assertStartArray(type: ArrayType = ArrayType.Sequence) {
-    this.nextToken().apply {
-        if (this is JsonToken.StartArray) {
-            type.let {
-                this.type shouldBe it
-            }
-        } else {
-            fail("$this should be array start")
-        }
-    }
+    shouldBeOfType<StartArray>(this.nextToken()).type shouldBe type
 }
 
 fun IsJsonLikeReader.assertEndArray() {
-    this.nextToken().apply {
-        if (this !== JsonToken.EndArray) {
-            fail("$this should be array end")
-        }
-    }
+    this.nextToken() shouldBe EndArray
 }
 
 fun <T : Any> IsJsonLikeReader.assertValue(value: T?, type: ValueType<T>? = null) {
-    this.nextToken().apply {
-        if (this is JsonToken.Value<*>) {
-            this.value shouldBe value
-
-            type?.let {
-                this.type shouldBe it
-            }
-        } else {
-            fail("$this should be value '$value'")
+    shouldBeOfType<Value<*>>(this.nextToken()).apply {
+        this.value shouldBe value
+        type?.let {
+            this.type shouldBe it
         }
     }
 }
 
 fun IsJsonLikeReader.assertEndDocument() {
-    this.nextToken().apply {
-        if (this !== JsonToken.EndDocument) {
-            fail("$this should be End Document")
-        }
-    }
+    this.nextToken() shouldBe EndDocument
 }

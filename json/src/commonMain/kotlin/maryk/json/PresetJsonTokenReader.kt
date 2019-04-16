@@ -1,5 +1,11 @@
 package maryk.json
 
+import maryk.json.JsonToken.EndArray
+import maryk.json.JsonToken.EndDocument
+import maryk.json.JsonToken.EndObject
+import maryk.json.JsonToken.StartArray
+import maryk.json.JsonToken.StartObject
+
 /** Returns JsonTokens supplied by [tokens] */
 class PresetJsonTokenReader(
     private val tokens: List<JsonToken>
@@ -15,17 +21,17 @@ class PresetJsonTokenReader(
 
     override fun nextToken(): JsonToken {
         if (index > tokens.lastIndex) {
-            this.currentToken = JsonToken.EndDocument
+            this.currentToken = EndDocument
             return this.currentToken
         }
 
         return this.tokens[index++].also {
             this.currentToken = it
             when (it) {
-                is JsonToken.StartObject, is JsonToken.StartArray -> {
+                is StartObject, is StartArray -> {
                     this.typeStackCount++
                 }
-                is JsonToken.EndObject, is JsonToken.EndArray -> {
+                is EndObject, is EndArray -> {
                     this.typeStackCount--
                 }
                 else -> Unit

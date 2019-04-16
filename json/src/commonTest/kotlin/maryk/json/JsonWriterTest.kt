@@ -36,67 +36,70 @@ internal class JsonWriterTest {
     }
 
     private fun writeJson(writer: IsJsonLikeWriter) {
-        writer.writeStartArray()
-        writer.writeInt(1)
-        writer.writeString("#Test")
-        writer.writeFloat(3.5f)
-        writer.writeValue("true")
-        writer.writeStartObject()
-        writer.writeFieldName("test")
-        writer.writeBoolean(false)
-        writer.writeFieldName("test2")
-        writer.writeString("value")
-        writer.writeEndObject()
-        writer.writeStartObject()
-        writer.writeFieldName("another")
-        writer.writeString("yes")
-        writer.writeFieldName("null")
-        writer.writeNull()
-        writer.writeEndObject()
-        writer.writeEndArray()
+        writer.apply {
+            writeStartArray()
+            writeInt(1)
+            writeString("#Test")
+            writeFloat(3.5f)
+            writeValue("true")
+            writeStartObject()
+            writeFieldName("test")
+            writeBoolean(false)
+            writeFieldName("test2")
+            writeString("value")
+            writeEndObject()
+            writeStartObject()
+            writeFieldName("another")
+            writeString("yes")
+            writeFieldName("null")
+            writeNull()
+            writeEndObject()
+            writeEndArray()
+        }
     }
 
     @Test
     fun notStartWithUnallowedJSONTypes() {
         var output = ""
 
-        val jsonWriter = JsonWriter {
+        JsonWriter {
             output += it
-        }
+        }.apply {
+            // Should not be able to start with end object
+            shouldThrow<IllegalJsonOperation> {
+                writeEndObject()
+            }
 
-        // Should not be able to start with end object
-        shouldThrow<IllegalJsonOperation> {
-            jsonWriter.writeEndObject()
-        }
+            // Should not be able to start with end array
+            shouldThrow<IllegalJsonOperation> {
+                writeEndArray()
+            }
 
-        // Should not be able to start with end array
-        shouldThrow<IllegalJsonOperation> {
-            jsonWriter.writeEndArray()
-        }
-
-        // Should not be able to start with field name
-        shouldThrow<IllegalJsonOperation> {
-            jsonWriter.writeFieldName("test")
+            // Should not be able to start with field name
+            shouldThrow<IllegalJsonOperation> {
+                writeFieldName("test")
+            }
         }
     }
 
     @Test
     fun notAllowIllegalOperationsInsideAnArray() {
         var output = ""
-        val jsonWriter = JsonWriter {
+
+        JsonWriter {
             output += it
-        }
+        }.apply {
+            writeStartArray()
 
-        jsonWriter.writeStartArray()
+            // Should not be able to write end object after start array
+            shouldThrow<IllegalJsonOperation> {
+                writeEndObject()
+            }
 
-        // Should not be able to write end object after start array
-        shouldThrow<IllegalJsonOperation> {
-            jsonWriter.writeEndObject()
-        }
-
-        // Should not be able to write fieldname to array
-        shouldThrow<IllegalJsonOperation> {
-            jsonWriter.writeFieldName("test")
+            // Should not be able to write field name to array
+            shouldThrow<IllegalJsonOperation> {
+                writeFieldName("test")
+            }
         }
     }
 
@@ -104,51 +107,55 @@ internal class JsonWriterTest {
     @Test
     fun notAllowIllegalOperationsInsideAnObject() {
         var output = ""
-        val jsonWriter = JsonWriter {
+
+        JsonWriter {
             output += it
+        }.apply {
+            writeStartObject()
+
+            // Should not be able to write end array after start object
+            shouldThrow<IllegalJsonOperation> {
+                writeEndArray()
+            }
+
+            // Should not be able to write value before a field name
+            shouldThrow<IllegalJsonOperation> {
+                writeValue("false")
+            }
+
+            // Should not be able to write string value before a field name
+            shouldThrow<IllegalJsonOperation> {
+                writeString("test")
+            }
         }
 
-        jsonWriter.writeStartObject()
-
-        // Should not be able to write end array after start object
-        shouldThrow<IllegalJsonOperation> {
-            jsonWriter.writeEndArray()
-        }
-
-        // Should not be able to write value before a fieldname
-        shouldThrow<IllegalJsonOperation> {
-            jsonWriter.writeValue("false")
-        }
-
-        // Should not be able to write string value before a fieldname
-        shouldThrow<IllegalJsonOperation> {
-            jsonWriter.writeString("test")
-        }
     }
 
     @Test
     fun notAllowIllegalOperationsInsideAnObjectFieldName() {
         var output = ""
-        val jsonWriter = JsonWriter {
+
+        JsonWriter {
             output += it
+        }.apply {
+            writeStartObject()
+            writeFieldName("field")
+
+            // Should not be able to write end array after field name
+            shouldThrow<IllegalJsonOperation> {
+                writeEndArray()
+            }
+
+            // Should not be able to write end object after field name
+            shouldThrow<IllegalJsonOperation> {
+                writeEndObject()
+            }
+
+            // Should not be able to write field name after field name
+            shouldThrow<IllegalJsonOperation> {
+                writeFieldName("anotherField")
+            }
         }
 
-        jsonWriter.writeStartObject()
-        jsonWriter.writeFieldName("field")
-
-        // Should not be able to write end array after fieldname
-        shouldThrow<IllegalJsonOperation> {
-            jsonWriter.writeEndArray()
-        }
-
-        // Should not be able to write end object after fieldname
-        shouldThrow<IllegalJsonOperation> {
-            jsonWriter.writeEndObject()
-        }
-
-        // Should not be able to write field name after field name
-        shouldThrow<IllegalJsonOperation> {
-            jsonWriter.writeFieldName("anotherField")
-        }
     }
 }

@@ -21,6 +21,7 @@ import maryk.core.properties.definitions.ValueModelDefinition
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.Reversed
 import maryk.core.properties.definitions.index.UUIDKey
+import maryk.core.properties.enum.EmbedTypeCase
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IndexedEnumImpl
 import maryk.core.properties.types.Bytes
@@ -39,6 +40,7 @@ import maryk.test.models.CompleteMarykModel.Properties.dateTime
 import maryk.test.models.CompleteMarykModel.Properties.multiForKey
 import maryk.test.models.CompleteMarykModel.Properties.number
 import maryk.test.models.CompleteMarykModel.Properties.subModel
+import maryk.test.models.EmbeddedMarykModel.Properties
 import maryk.test.models.SimpleMarykModel.Properties.value
 
 sealed class MarykEnumEmbedded(
@@ -46,12 +48,14 @@ sealed class MarykEnumEmbedded(
 ) : IndexedEnumImpl<MarykEnumEmbedded>(index) {
     object E1: MarykEnumEmbedded(1u)
     object E2: MarykEnumEmbedded(2u)
-    object E3: MarykEnumEmbedded(3u)
+    object E3: MarykEnumEmbedded(3u), EmbedTypeCase<MultiTypeEnum, Properties>
 
     class UnknownMarykEnumEmbedded(index: UInt, override val name: String): MarykEnumEmbedded(index)
 
     companion object : IndexedEnumDefinition<MarykEnumEmbedded>(
-        MarykEnumEmbedded::class, { arrayOf(E1, E2, E3) }, unknownCreator = ::UnknownMarykEnumEmbedded
+        MarykEnumEmbedded::class,
+        values = { arrayOf(E1, E2, E3) },
+        unknownCreator = ::UnknownMarykEnumEmbedded
     )
 }
 

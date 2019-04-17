@@ -12,6 +12,10 @@ sealed class MarykEnum(
     class UnknownMarykEnum(index: UInt, override val name: String): MarykEnum(index)
 
     companion object : IndexedEnumDefinition<MarykEnum>(
-        MarykEnum::class, { arrayOf(O1, O2, O3) }, unknownCreator = ::UnknownMarykEnum
+        MarykEnum::class,
+        values = { arrayOf(O1, O2, O3) },
+        reservedIndices = listOf(99u),
+        reservedNames = listOf("O99"),
+        unknownCreator = ::UnknownMarykEnum
     )
 }

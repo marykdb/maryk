@@ -90,7 +90,9 @@ sealed class MarykEnumEmbedded(
     class UnknownMarykEnumEmbedded(index: UInt, override val name: String): MarykEnumEmbedded(index)
 
     companion object : IndexedEnumDefinition<MarykEnumEmbedded>(
-        MarykEnumEmbedded::class, { arrayOf(E1, E2, E3) }, unknownCreator = ::UnknownMarykEnumEmbedded
+        MarykEnumEmbedded::class,
+        values = { arrayOf(E1, E2, E3) },
+        unknownCreator = ::UnknownMarykEnumEmbedded
     )
 }
 

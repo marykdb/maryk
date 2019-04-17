@@ -20,6 +20,19 @@ fun IndexedEnumDefinition<*>.generateKotlinClass(addImport: (String) -> Unit): S
     addImport("maryk.core.properties.enum.IndexedEnumImpl")
     addImport("maryk.core.properties.enum.IndexedEnumDefinition")
 
+    val reservedIndices = this.reservedIndices.let { indices ->
+        when {
+            indices.isNullOrEmpty() -> ""
+            else -> "\n"+ "reservedIndices = listOf(${indices.joinToString(", ", postfix = "u")}),".prependIndent().prependIndent().prependIndent()
+        }
+    }
+    val reservedNames = this.reservedNames.let { names ->
+        when {
+            names.isNullOrEmpty() -> ""
+            else -> "\n"+ "reservedNames = listOf(${names.joinToString(", ", "\"", "\"")}),".prependIndent().prependIndent().prependIndent()
+        }
+    }
+
     return """
     sealed class ${this.name}(
         index: UInt
@@ -30,7 +43,9 @@ fun IndexedEnumDefinition<*>.generateKotlinClass(addImport: (String) -> Unit): S
         class Unknown${this.name}(index: UInt, override val name: String): ${this.name}(index)
 
         companion object : IndexedEnumDefinition<${this.name}>(
-            ${this.name}::class, { arrayOf(${this.cases().joinToString(", ") { it.name }}) }, unknownCreator = ::Unknown${this.name}
+            ${this.name}::class,
+            values = { arrayOf(${this.cases().joinToString(", ") { it.name }}) },$reservedIndices$reservedNames
+            unknownCreator = ::Unknown${this.name}
         )
     }
     """.trimIndent()

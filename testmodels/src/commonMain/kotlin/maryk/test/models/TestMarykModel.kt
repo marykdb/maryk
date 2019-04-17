@@ -66,6 +66,8 @@ object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>
         Reversed(double.ref()),
         multi.typeRef()
     ),
+    reservedIndices = listOf(99),
+    reservedNames = listOf("reserved"),
     properties = Properties
 ) {
     object Properties : PropertyDefinitions() {

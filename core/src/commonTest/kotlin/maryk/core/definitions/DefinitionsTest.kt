@@ -121,6 +121,8 @@ class DefinitionsTest {
           - !Ref int
           - !Reversed double
           - !Ref multi.*
+          reservedIndices: [99]
+          reservedNames: [reserved]
           ? 1: string
           : !String
             required: true

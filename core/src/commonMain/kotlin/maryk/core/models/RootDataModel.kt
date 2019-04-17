@@ -10,6 +10,8 @@ import maryk.core.properties.PropertyDefinitionsCollectionDefinitionWrapper
 import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
+import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.index.IndexKeyPartType
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.definitions.index.Multiple
@@ -21,6 +23,7 @@ import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsFixedBytesPropertyReference
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.numeric.SInt32
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.values.MutableValueItems
@@ -44,12 +47,32 @@ typealias RootDataModelImpl = RootDataModel<IsRootValuesDataModel<PropertyDefini
 abstract class RootDataModel<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions>(
     final override val keyDefinition: IsIndexable = UUIDKey,
     final override val indices: List<IsIndexable>? = null,
+    final override val reservedIndices: List<Int>? = null,
+    final override val reservedNames: List<String>? = null,
     properties: P
 ) : DataModel<DM, P>(properties), IsTypedRootDataModel<DM, P>, IsRootValuesDataModel<P> {
     override val primitiveType = PrimitiveType.RootModel
 
     override val keyByteSize = checkKeyDefinitionAndCountBytes(keyDefinition)
     override val keyIndices = calculateKeyIndices(keyDefinition)
+
+    /** Check the property values */
+    fun check() {
+        this.reservedIndices?.let {
+            this.properties.forEach { property ->
+                require(!reservedIndices.contains(property.index)) {
+                    "Enum $name has ${property.index} defined in option ${property.name} while it is reserved"
+                }
+            }
+        }
+        this.reservedNames?.let {
+            this.properties.forEach { case ->
+                require(!reservedNames.contains(case.name)) {
+                    "Enum $name has a reserved name defined ${case.name}"
+                }
+            }
+        }
+    }
 
     private object RootModelProperties :
         ObjectPropertyDefinitions<RootDataModel<*, *>>(),
@@ -85,6 +108,26 @@ abstract class RootDataModel<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
             },
             getter = RootDataModel<*, *>::indices
         )
+
+        init {
+            add(
+                5, "reservedIndices",
+                ListDefinition(
+                    valueDefinition = NumberDefinition(
+                        type = SInt32,
+                        minValue = 1
+                    )
+                ),
+                RootDataModel<*, *>::reservedIndices
+            )
+            add(
+                6, "reservedNames",
+                ListDefinition(
+                    valueDefinition = StringDefinition()
+                ),
+                RootDataModel<*, *>::reservedNames
+            )
+        }
     }
 
     object Model :
@@ -95,7 +138,9 @@ abstract class RootDataModel<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
             object : RootDataModelImpl(
                 properties = values(2),
                 keyDefinition = values(3) ?: UUIDKey,
-                indices = values(4)
+                indices = values(4),
+                reservedIndices = values(5),
+                reservedNames = values(6)
             ) {
                 override val name: String = values(1)
             }

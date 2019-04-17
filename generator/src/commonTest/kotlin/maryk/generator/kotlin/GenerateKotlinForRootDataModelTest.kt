@@ -110,6 +110,8 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
         ),
         value.ref(subModel.ref())
     ),
+    reservedIndices = listOf(99),
+    reservedNames = listOf("reserved"),
     properties = Properties
 ) {
     object Properties : PropertyDefinitions() {

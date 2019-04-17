@@ -41,6 +41,19 @@ fun RootDataModel<*, *>.generateKotlin(
         "indices = listOf(\n${output.joinToString(",\n").prependIndent().prependIndent().prependIndent()}\n        ),\n        "
     } ?: ""
 
+    val reservedIndices = this.reservedIndices.let { indices ->
+        when {
+            indices.isNullOrEmpty() -> ""
+            else -> "reservedIndices = listOf(${indices.joinToString(", ")}),\n        "
+        }
+    }
+    val reservedNames = this.reservedNames.let { names ->
+        when {
+            names.isNullOrEmpty() -> ""
+            else -> "reservedNames = listOf(${names.joinToString(", ", "\"", "\"")}),\n        "
+        }
+    }
+
     val enumKotlinDefinitions = mutableListOf<String>()
     val propertiesKotlin = this.properties.generateKotlin(addImport, generationContext) {
         enumKotlinDefinitions.add(it)
@@ -48,7 +61,7 @@ fun RootDataModel<*, *>.generateKotlin(
 
     val code = """
     object $name : RootDataModel<$name, $name.Properties>(
-        $keyDefAsKotlin${indicesAsKotlin}properties = Properties
+        $keyDefAsKotlin$indicesAsKotlin$reservedIndices${reservedNames}properties = Properties
     ) {
         object Properties : PropertyDefinitions() {
             ${propertiesKotlin.generateDefinitionsForProperties().prependIndent().trimStart()}

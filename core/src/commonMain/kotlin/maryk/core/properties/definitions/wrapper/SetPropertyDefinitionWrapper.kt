@@ -1,13 +1,12 @@
 package maryk.core.properties.definitions.wrapper
 
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.graph.PropRefGraphType
+import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
-import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
 
@@ -39,7 +38,7 @@ data class SetPropertyDefinitionWrapper<T : Any, CX : IsPropertyContext, in DO :
         this.definition.itemRef(value, this.ref(parentRef))
 
     /** For quick notation to get a set [item] reference */
-    infix fun refAt(item: T): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> SetItemReference<T, *> {
+    infix fun refAt(item: T): (AnyOutPropertyReference?) -> SetItemReference<T, *> {
         return { this.itemRef(item, it) }
     }
 }

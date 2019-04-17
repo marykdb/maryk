@@ -4,9 +4,10 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsListDefinition
-import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.graph.PropRefGraphType
+import maryk.core.properties.references.AnyOutPropertyReference
+import maryk.core.properties.references.AnySpecificWrappedPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.values.AbstractValues
 
@@ -40,7 +41,9 @@ data class ObjectListPropertyDefinitionWrapper<
     /** Get sub reference below an index */
     @Suppress("UNCHECKED_CAST")
     operator fun get(index: UInt): (
-        (P.() -> (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> IsPropertyReference<Any, IsPropertyDefinitionWrapper<Any, *, *, *>, *>) -> (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> IsPropertyReference<Any, IsPropertyDefinitionWrapper<Any, *, *, *>, *>
+        (
+            P.() -> (AnyOutPropertyReference?) -> AnySpecificWrappedPropertyReference
+        ) -> (AnyOutPropertyReference?) -> AnySpecificWrappedPropertyReference
     ) {
         val objectValuesDefinition = this.definition.valueDefinition as EmbeddedObjectDefinition<ODO, P, *, *, *>
 
@@ -48,7 +51,7 @@ data class ObjectListPropertyDefinitionWrapper<
             { parentRef ->
                 objectValuesDefinition.dataModel(
                     this.itemRef(index, this.ref(parentRef)),
-                    referenceGetter as ObjectPropertyDefinitions<*>.() -> (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> IsPropertyReference<Any, IsPropertyDefinitionWrapper<Any, *, *, *>, *>
+                    referenceGetter as ObjectPropertyDefinitions<*>.() -> (AnyOutPropertyReference?) -> IsPropertyReference<Any, IsPropertyDefinitionWrapper<Any, *, *, *>, *>
                 )
             }
         }
@@ -59,7 +62,7 @@ data class ObjectListPropertyDefinitionWrapper<
     fun <T : Any> refAt(
         index: UInt,
         propertyDefinitionGetter: P.() -> IsPropertyDefinitionWrapper<T, *, *, *>
-    ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> IsPropertyReference<T, IsPropertyDefinitionWrapper<T, *, *, *>, *> {
+    ): (AnyOutPropertyReference?) -> IsPropertyReference<T, IsPropertyDefinitionWrapper<T, *, *, *>, *> {
         val objectValuesDefinition = this.definition.valueDefinition as EmbeddedObjectDefinition<ODO, P, *, *, *>
 
         return {

@@ -30,7 +30,7 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.values.AbstractValues
 import maryk.core.values.AnyAbstractValues
 
-sealed class StorageTypeEnum<T : IsPropertyDefinition<*>>(val referenceType: CompleteReferenceType) {
+sealed class StorageTypeEnum<out T : IsPropertyDefinition<*>>(val referenceType: CompleteReferenceType) {
     object ObjectDelete : StorageTypeEnum<IsPropertyDefinition<Boolean>>(DELETE)
     object Value : StorageTypeEnum<IsSimpleValueDefinition<Any, IsPropertyContext>>(CompleteReferenceType.VALUE)
     object ListSize : StorageTypeEnum<IsListDefinition<Any, IsPropertyContext>>(LIST)

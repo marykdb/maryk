@@ -1,9 +1,8 @@
 package maryk.datastore.memory.processors.changers
 
 import maryk.core.extensions.bytes.writeBytes
-import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListReference
+import maryk.core.properties.references.TypedPropertyReference
 import maryk.datastore.memory.records.DataRecordNode
 import maryk.lib.extensions.compare.compareTo
 
@@ -15,7 +14,7 @@ import maryk.lib.extensions.compare.compareTo
  */
 fun <T : Any> setListValue(
     values: MutableList<DataRecordNode>,
-    reference: IsPropertyReference<out List<T>, IsPropertyDefinition<out List<T>>, out Any>,
+    reference: TypedPropertyReference<out List<T>>,
     newList: List<T>,
     originalCount: Int,
     version: ULong,

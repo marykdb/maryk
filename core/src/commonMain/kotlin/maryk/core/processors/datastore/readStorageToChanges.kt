@@ -54,6 +54,7 @@ import maryk.core.properties.references.ReferenceType.SPECIAL
 import maryk.core.properties.references.ReferenceType.VALUE
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
+import maryk.core.properties.references.TypedPropertyReference
 import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.references.completeReferenceTypeOf
 import maryk.core.properties.references.referenceStorageTypeOf
@@ -69,7 +70,7 @@ import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.pairs.ReferenceTypePair
 import maryk.core.query.pairs.ReferenceValuePair
 
-typealias ValueWithVersionReader = (StorageTypeEnum<IsPropertyDefinition<Any>>, IsPropertyDefinition<Any>?, (ULong, Any?) -> Unit) -> Unit
+typealias ValueWithVersionReader = (StorageTypeEnum<IsPropertyDefinition<Any>>, IsPropertyDefinition<out Any>?, (ULong, Any?) -> Unit) -> Unit
 private typealias ChangeAdder = (ULong, ChangeType, Any) -> Unit
 
 private enum class ChangeType {
@@ -227,10 +228,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
 
                     if (isAtEnd) {
                         @Suppress("UNCHECKED_CAST")
-                        readValueFromStorage(
-                            Value as StorageTypeEnum<IsPropertyDefinition<Any>>,
-                            definition
-                        ) { version, value ->
+                        readValueFromStorage(Value, definition) { version, value ->
                             val ref =
                                 definition.ref(parentReference) as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>
                             if (value == null) {
@@ -274,13 +272,9 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
 
                     if (isAtEnd) {
                         // Handle embed deletes
-                        @Suppress("UNCHECKED_CAST")
-                        readValueFromStorage(
-                            Value as StorageTypeEnum<IsPropertyDefinition<Any>>,
-                            definition
-                        ) { version, value ->
+                        readValueFromStorage(Value, definition) { version, value ->
                             val ref =
-                                definition.ref(parentReference) as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>
+                                definition.ref(parentReference)
                             if (value == null) {
                                 addChangeToOutput(version, ChangeType.DELETE, ref)
                             } // Else this value just exists
@@ -325,11 +319,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
 
                         val listIndex = initUInt(reader = { qualifier[listItemIndex++] })
 
-                        @Suppress("UNCHECKED_CAST")
-                        readValueFromStorage(
-                            Value as StorageTypeEnum<IsPropertyDefinition<Any>>,
-                            valueDefinition as IsPropertyDefinition<Any>
-                        ) { version, value ->
+                        readValueFromStorage(Value, valueDefinition) { version, value ->
                             if (value == null) {
                                 addChangeToOutput(
                                     version,
@@ -374,11 +364,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                         val key =
                             valueDefinition.readStorageBytes(qualifier.size - qIndex) { qualifier[setItemIndex++] }
 
-                        @Suppress("UNCHECKED_CAST")
-                        readValueFromStorage(
-                            Value as StorageTypeEnum<IsPropertyDefinition<Any>>,
-                            valueDefinition as IsPropertyDefinition<Any>
-                        ) { version, value ->
+                        readValueFromStorage(Value, valueDefinition) { version, value ->
                             if (value == null) {
                                 addChangeToOutput(version, ChangeType.DELETE, setDefinition.itemRef(key, reference))
                             } else {
@@ -414,11 +400,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                         val key = keyDefinition.readStorageBytes(keySize) { qualifier[qIndex++] }
 
                         if (qualifier.size <= qIndex) {
-                            @Suppress("UNCHECKED_CAST")
-                            readValueFromStorage(
-                                Value as StorageTypeEnum<IsPropertyDefinition<Any>>,
-                                valueDefinition as IsPropertyDefinition<Any>
-                            ) { version, value ->
+                            readValueFromStorage(Value, valueDefinition) { version, value ->
                                 val valueReference = mapDefinition.valueRef(key, reference)
                                 if (value == null) {
                                     addChangeToOutput(version, ChangeType.DELETE, valueReference)
@@ -426,6 +408,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                                     if (value !is TypedValue<*, *>) {
                                         addChangeToOutput(version, CHANGE, valueReference with value)
                                     } else {
+                                        @Suppress("UNCHECKED_CAST")
                                         readTypedValue(
                                             valueReference,
                                             qualifier,
@@ -530,24 +513,22 @@ private fun readTypedValue(
 ) {
     var qIndex1 = offset
     if (qualifier.size <= qIndex1) {
-        @Suppress("UNCHECKED_CAST")
-        readValueFromStorage(
-            Value as StorageTypeEnum<IsPropertyDefinition<Any>>,
-            valueDefinition as IsPropertyDefinition<Any>
-        ) { version, value ->
+        readValueFromStorage(Value, valueDefinition) { version, value ->
             if (value == null) {
                 addChangeToOutput(version, ChangeType.DELETE, reference as Any)
             } else {
                 if (value is TypedValue<*, *>) {
                     if (value.value == Unit) {
+                        @Suppress("UNCHECKED_CAST")
                         addChangeToOutput(
                             version, TYPE,
                             ReferenceTypePair(
-                                reference as IsPropertyReference<TypedValue<IndexedEnum, Any>, IsPropertyDefinition<TypedValue<IndexedEnum, Any>>, Any>,
+                                reference as TypedPropertyReference<TypedValue<IndexedEnum, Any>>,
                                 value.type
                             )
                         )
                     } else {
+                        @Suppress("UNCHECKED_CAST")
                         addChangeToOutput(
                             version,
                             CHANGE,

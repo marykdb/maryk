@@ -9,6 +9,7 @@ import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.MultiTypePropertyReference
+import maryk.core.properties.references.TypedPropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DefinedByReference
 import maryk.core.query.RequestContext
@@ -16,7 +17,7 @@ import maryk.core.values.ObjectValues
 
 /** Defines a pair of a [reference] and [type] of type [E] */
 data class ReferenceTypePair<E : IndexedEnum> internal constructor(
-    override val reference: IsPropertyReference<TypedValue<E, Any>, IsPropertyDefinition<TypedValue<E, Any>>, Any>,
+    override val reference: TypedPropertyReference<out TypedValue<E, Any>>,
     val type: E
 ) : DefinedByReference<TypedValue<E, Any>> {
 

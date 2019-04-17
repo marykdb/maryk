@@ -1,6 +1,6 @@
 package maryk.datastore.memory.processors.changers
 
-import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.TypedPropertyReference
 import maryk.datastore.memory.records.DataRecordNode
 import maryk.datastore.memory.records.DataRecordValue
 import maryk.lib.extensions.compare.compareTo
@@ -13,7 +13,7 @@ import maryk.lib.extensions.compare.compareTo
  */
 internal fun <T : Any> setValue(
     values: MutableList<DataRecordNode>,
-    reference: IsPropertyReference<T, *, *>,
+    reference: TypedPropertyReference<out T>,
     value: T,
     version: ULong,
     keepAllVersions: Boolean = false,

@@ -20,6 +20,7 @@ import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IsCoreEnum
 import maryk.core.properties.exceptions.AlreadySetException
+import maryk.core.properties.references.AnyOutPrecisePropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ReferenceType.TYPE
@@ -145,7 +146,7 @@ data class MultiTypeDefinition<E : IndexedEnum, in CX : IsPropertyContext> inter
                 newValue.value
             ) {
                 @Suppress("UNCHECKED_CAST")
-                refGetter() as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>?
+                refGetter() as AnyOutPrecisePropertyReference?
             }
         }
     }

@@ -12,8 +12,8 @@ import maryk.core.properties.references.IsPropertyReference
 /**
  * For objects containing a reference which defines the context of other properties
  */
-interface DefinedByReference<T : Any> {
-    val reference: IsPropertyReference<T, IsPropertyDefinition<T>, *>
+interface DefinedByReference<out T : Any> {
+    val reference: IsPropertyReference<out T, IsPropertyDefinition<out T>, *>
 
     companion object {
         internal fun <DO : Any> addReference(

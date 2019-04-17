@@ -2,12 +2,11 @@ package maryk.core.properties.definitions.wrapper
 
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsCollectionDefinition
-import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.ListDefinition
+import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
-import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListAnyItemReference
 import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.ListReference
@@ -38,12 +37,12 @@ interface IsListPropertyDefinitionWrapper<T : Any, TO : Any, LD : ListDefinition
         this.definition.anyItemRef(this.ref(parentRef))
 
     /** For quick notation to get any list item reference */
-    fun refToAny(): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> ListAnyItemReference<T, CX> {
+    fun refToAny(): (AnyOutPropertyReference?) -> ListAnyItemReference<T, CX> {
         return { this.getAnyItemRef(it) }
     }
 
     /** For quick notation to get a list item reference by [index] */
-    infix fun refAt(index: UInt): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> ListItemReference<T, CX> {
+    infix fun refAt(index: UInt): (AnyOutPropertyReference?) -> ListItemReference<T, CX> {
         return { this.getItemRef(index, it) }
     }
 }

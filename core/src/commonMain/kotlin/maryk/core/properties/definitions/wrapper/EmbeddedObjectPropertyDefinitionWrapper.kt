@@ -6,6 +6,7 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.graph.PropRefGraphType
+import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.EmbeddedObjectPropertyRef
@@ -59,13 +60,12 @@ data class EmbeddedObjectPropertyDefinitionWrapper<
     /** Get a top level reference on a model with [propertyDefinitionGetter] */
     infix fun <T : Any, W : IsPropertyDefinitionWrapper<T, *, *, AbstractValues<*, *, *>>> ref(
         propertyDefinitionGetter: P.() -> W
-    ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> IsPropertyReference<T, W, *> =
+    ): (AnyOutPropertyReference?) -> IsPropertyReference<T, W, *> =
         { this.definition.dataModel.ref(this.ref(it), propertyDefinitionGetter) }
 
     /** For quick notation to fetch property references with [referenceGetter] within embedded object */
     operator fun <T : Any, W : IsPropertyDefinition<T>, R : IsPropertyReference<T, W, *>> invoke(
-        referenceGetter: P.() ->
-            (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> R
-    ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> R =
+        referenceGetter: P.() -> (AnyOutPropertyReference?) -> R
+    ): (AnyOutPropertyReference?) -> R =
         { this.definition.dataModel(this.ref(it), referenceGetter) }
 }

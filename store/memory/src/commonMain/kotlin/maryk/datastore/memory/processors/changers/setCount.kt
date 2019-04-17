@@ -1,7 +1,6 @@
 package maryk.datastore.memory.processors.changers
 
-import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.TypedPropertyReference
 import maryk.datastore.memory.records.DataRecordNode
 import maryk.lib.extensions.compare.compareTo
 
@@ -11,7 +10,7 @@ import maryk.lib.extensions.compare.compareTo
  */
 internal fun <T : Any> createCountUpdater(
     values: MutableList<DataRecordNode>,
-    reference: IsPropertyReference<out T, IsPropertyDefinition<out T>, out Any>,
+    reference: TypedPropertyReference<out T>,
     version: ULong,
     countChange: Int,
     keepAllVersions: Boolean,

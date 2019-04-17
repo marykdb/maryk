@@ -10,7 +10,6 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsIndexablePropertyReference
-import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsValuePropertyReference
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.values.IsValuesGetter
@@ -65,10 +64,7 @@ data class Reversed<T : Any>(
                     it?.propertyDefinitions as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()
                 }
             ),
-            getter = {
-                @Suppress("UNCHECKED_CAST")
-                it.reference as IsPropertyReference<Any, *, *>
-            }
+            getter = Reversed<*>::reference
         )
     }
 

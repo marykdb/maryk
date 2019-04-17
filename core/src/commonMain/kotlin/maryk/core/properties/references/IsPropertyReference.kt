@@ -6,11 +6,16 @@ import maryk.core.processors.datastore.matchers.QualifierExactMatcher
 import maryk.core.processors.datastore.matchers.QualifierFuzzyMatcher
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
 typealias AnyPropertyReference = IsPropertyReference<*, *, *>
+typealias TypedPropertyReference<T> = IsPropertyReference<T, IsPropertyDefinition<T>, *>
+typealias AnyOutPropertyReference = TypedPropertyReference<out Any>
+typealias AnyOutPrecisePropertyReference = TypedPropertyReference<Any>
+typealias AnySpecificWrappedPropertyReference = IsPropertyReference<Any, IsPropertyDefinitionWrapper<Any, *, *, *>, *>
 typealias AnyValuePropertyReference = IsPropertyReference<*, IsValuePropertyDefinitionWrapper<*, *, IsPropertyContext, *>, *>
 
 /**

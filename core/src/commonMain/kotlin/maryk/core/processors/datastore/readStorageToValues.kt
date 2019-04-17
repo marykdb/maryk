@@ -45,7 +45,7 @@ import maryk.core.values.ValueItem
 import maryk.core.values.Values
 import maryk.lib.exceptions.ParseException
 
-typealias ValueReader = (StorageTypeEnum<IsPropertyDefinition<Any>>, IsPropertyDefinition<Any>?) -> Any?
+typealias ValueReader = (StorageTypeEnum<IsPropertyDefinition<out Any>>, IsPropertyDefinition<out Any>?) -> Any?
 private typealias AddToValues = (Int, Any) -> Unit
 private typealias AddValue = (Any) -> Unit
 
@@ -116,10 +116,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                     val valueAdder: AddValue = { addValueToOutput(index, it) }
 
                     if (isAtEnd) {
-                        @Suppress("UNCHECKED_CAST")
-                        val value =
-                            readValueFromStorage(Embed as StorageTypeEnum<IsPropertyDefinition<Any>>, definition)
-                        when (value) {
+                        when (val value = readValueFromStorage(Embed, definition)) {
                             null -> // Ensure that next potential embedded values are not read because is deleted
                                 addToCache(offset) {
                                     // Ignore reading and return
@@ -155,9 +152,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                     val valueAdder: AddValue = { addValueToOutput(index, it) }
 
                     if (isAtEnd) {
-                        @Suppress("UNCHECKED_CAST")
-                        val embedValue =
-                            readValueFromStorage(Embed as StorageTypeEnum<IsPropertyDefinition<Any>>, definition)
+                        val embedValue = readValueFromStorage(Embed, definition)
                         if (embedValue == null) {
                             // Ensure that next embedded values are not read
                             addToCache(offset) {
@@ -184,11 +179,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
 
                     if (isAtEnd) {
                         // If at end it means that this is a list size
-                        @Suppress("UNCHECKED_CAST")
-                        val listSize = readValueFromStorage(
-                            ListSize as StorageTypeEnum<IsPropertyDefinition<Any>>,
-                            definition
-                        ) as Int?
+                        val listSize = readValueFromStorage(ListSize, definition) as Int?
 
                         if (listSize != null) {
                             // If not null we can create an empty list of listSize
@@ -217,8 +208,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                         }
 
                         // Read list item
-                        @Suppress("UNCHECKED_CAST")
-                        readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, definition)?.let {
+                        readValueFromStorage(Value, definition)?.let {
                             // Only add to output if value read from storage is not null
                             addValueToOutput(itemIndex, it)
                         }
@@ -230,11 +220,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
 
                     if (isAtEnd) {
                         // If at end it means that this is a set size
-                        @Suppress("UNCHECKED_CAST")
-                        val setSize = readValueFromStorage(
-                            SetSize as StorageTypeEnum<IsPropertyDefinition<Any>>,
-                            definition
-                        ) as Int?
+                        val setSize = readValueFromStorage(SetSize, definition) as Int?
 
                         if (setSize != null) {
                             // If not null we can create a set of setSize
@@ -258,8 +244,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                             ((definition as IsSetDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
                         val key = valueDefinition.readStorageBytes(qualifier.size - qIndex) { qualifier[qIndex++] }
 
-                        @Suppress("UNCHECKED_CAST")
-                        readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, definition)?.let {
+                        readValueFromStorage(Value, definition)?.let {
                             // Only add to output if value read from storage is not null
                             addValueToOutput(index, key)
                         }
@@ -316,11 +301,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
 
                         // Begin to read map value
                         if (qualifier.size <= qIndex) {
-                            @Suppress("UNCHECKED_CAST")
-                            val value = readValueFromStorage(
-                                Value as StorageTypeEnum<IsPropertyDefinition<Any>>,
-                                mapDefinition.valueDefinition
-                            )
+                            val value = readValueFromStorage(Value, mapDefinition.valueDefinition)
 
                             when {
                                 value == null ->
@@ -493,11 +474,7 @@ private fun IsMultiTypeDefinition<*, *>.readComplexTypedValue(
     val addMultiTypeToOutput: AddValue = { addValueToOutput(TypedValue(type, it)) }
 
     if (qualifier.size <= qIndex) {
-        @Suppress("UNCHECKED_CAST")
-        val value = readValueFromStorage(
-            Embed as StorageTypeEnum<IsPropertyDefinition<Any>>,
-            definition as IsPropertyDefinition<Any>
-        )
+        val value = readValueFromStorage(Embed, definition)
 
         if (value == null) {
             // Ensure that next values are not read because Values is deleted

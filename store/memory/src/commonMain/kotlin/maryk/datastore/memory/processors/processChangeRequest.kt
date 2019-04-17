@@ -5,7 +5,6 @@ import maryk.core.exceptions.TypeException
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.values
-import maryk.core.processors.datastore.StorageTypeEnum
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.ValueWriter
 import maryk.core.processors.datastore.writeListToStorage
@@ -206,8 +205,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                     }
 
                                     // Delete all existing values in placeholder
-                                    val hadPrevValue =
-                                        deleteByReference(newValueList, reference, version, keepAllVersions)
+                                    val hadPrevValue = deleteByReference(newValueList, reference, version, keepAllVersions)
 
                                     @Suppress("UNCHECKED_CAST")
                                     (reference as ListReference<Any, IsPropertyContext>).propertyDefinition.definition.validateWithRef(
@@ -231,8 +229,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                     }
 
                                     // Delete all existing values in placeholder
-                                    val hadPrevValue =
-                                        deleteByReference(newValueList, reference, version, keepAllVersions)
+                                    val hadPrevValue = deleteByReference(newValueList, reference, version, keepAllVersions)
 
                                     @Suppress("UNCHECKED_CAST")
                                     (reference as SetReference<Any, IsPropertyContext>).propertyDefinition.definition.validateWithRef(
@@ -264,7 +261,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                     // Previous value to find
                                     var prevValue: TypedValue<*, *>? = null
                                     // Delete all existing values in placeholder
-                                    val hadPrevValue = deleteByReference<TypedValue<IndexedEnum, Any>>(
+                                    val hadPrevValue = deleteByReference(
                                         newValueList,
                                         multiTypeReference,
                                         version,
@@ -317,9 +314,8 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
 
                                     // Write complex values existence indicator
                                     // Write parent value with Unit so it knows this one is not deleted. So possible lingering old types are not read.
-                                    @Suppress("UNCHECKED_CAST")
                                     valueWriter(
-                                        Embed as StorageTypeEnum<IsPropertyDefinition<*>>,
+                                        Embed,
                                         reference.toStorageByteArray(),
                                         valuesDefinition,
                                         Unit

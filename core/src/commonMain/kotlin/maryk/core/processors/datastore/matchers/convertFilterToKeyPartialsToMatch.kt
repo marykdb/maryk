@@ -286,8 +286,8 @@ private fun <T : Any> walkFilterReferencesAndValues(
 
 @Suppress("UNCHECKED_CAST")
 private fun <T : Any> createUniqueToMatch(
-    reference: IsPropertyReference<T, IsChangeableValueDefinition<T, IsPropertyContext>, *>,
-    it: IsSerializablePropertyDefinition<T, IsPropertyContext>,
+    reference: IsPropertyReference<out T, IsChangeableValueDefinition<out T, IsPropertyContext>, *>,
+    it: IsSerializablePropertyDefinition<out T, IsPropertyContext>,
     value: T
 ) = UniqueToMatch(
     reference.toStorageByteArray(),

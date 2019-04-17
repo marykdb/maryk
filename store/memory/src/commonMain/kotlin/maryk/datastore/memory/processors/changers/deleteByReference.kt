@@ -12,6 +12,7 @@ import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
+import maryk.core.properties.references.TypedPropertyReference
 import maryk.core.properties.references.TypedValueReference
 import maryk.core.values.EmptyValueItems
 import maryk.datastore.memory.records.DataRecordNode
@@ -26,7 +27,7 @@ import maryk.lib.extensions.compare.matchPart
  */
 internal fun <T : Any> deleteByReference(
     values: MutableList<DataRecordNode>,
-    reference: IsPropertyReference<T, IsPropertyDefinition<T>, *>,
+    reference: TypedPropertyReference<out T>,
     version: ULong,
     keepAllVersions: Boolean,
     handlePreviousValue: ((ByteArray, T?) -> Unit)? = null

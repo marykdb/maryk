@@ -5,10 +5,10 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
-import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.enum.EmbedTypeCase
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.graph.PropRefGraphType
+import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
@@ -41,12 +41,12 @@ data class MultiTypeDefinitionWrapper<E : IndexedEnum, TO : Any, CX : IsProperty
         MultiTypePropertyReference(this, parentRef)
 
     /** For quick notation to get a [type] reference */
-    infix fun refAtType(type: E): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> TypedValueReference<E, CX> {
+    infix fun refAtType(type: E): (AnyOutPropertyReference?) -> TypedValueReference<E, CX> {
         return { this.typedValueRef(type, this.ref(it)) }
     }
 
     /** For quick notation to get an any type reference */
-    fun refToType(): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> TypeReference<E, CX> {
+    fun refToType(): (AnyOutPropertyReference?) -> TypeReference<E, CX> {
         return {
             @Suppress("UNCHECKED_CAST")
             this.typeRef(it as CanHaveComplexChildReference<TypedValue<E, *>, IsMultiTypeDefinition<E, *>, *, *>?)
@@ -62,7 +62,7 @@ data class MultiTypeDefinitionWrapper<E : IndexedEnum, TO : Any, CX : IsProperty
         type: E,
         @Suppress("UNUSED_PARAMETER") properties: P, // So it is not needed to pass in types
         propertyDefinitionGetter: P.() -> W
-    ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> IsPropertyReference<T, W, *> =
+    ): (AnyOutPropertyReference?) -> IsPropertyReference<T, W, *> =
         {
             val typeRef = this.typedValueRef(type, this.ref(it))
             @Suppress("UNCHECKED_CAST")
@@ -77,7 +77,7 @@ data class MultiTypeDefinitionWrapper<E : IndexedEnum, TO : Any, CX : IsProperty
     fun <P : PropertyDefinitions, T : Any, W : IsPropertyDefinitionWrapper<T, *, *, *>> refWithType(
         type: EmbedTypeCase<E, P>,
         propertyDefinitionGetter: P.() -> W
-    ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> IsPropertyReference<T, W, *> =
+    ): (AnyOutPropertyReference?) -> IsPropertyReference<T, W, *> =
         {
             val typeRef = this.typedValueRef(type as E, this.ref(it))
             (this.definitionMap[type] as EmbeddedValuesDefinition<IsValuesDataModel<P>, P>).dataModel.ref(
@@ -90,9 +90,8 @@ data class MultiTypeDefinitionWrapper<E : IndexedEnum, TO : Any, CX : IsProperty
     fun <P : PropertyDefinitions, T : Any, R : IsPropertyReference<T, IsPropertyDefinitionWrapper<T, *, *, *>, *>> withType(
         type: E,
         @Suppress("UNUSED_PARAMETER") properties: P, // So it is not needed to pass in types
-        referenceGetter: P.() ->
-            (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> R
-    ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> R =
+        referenceGetter: P.() -> (AnyOutPropertyReference?) -> R
+    ): (AnyOutPropertyReference?) -> R =
         {
             val typeRef = this.typedValueRef(type, this.ref(it))
             @Suppress("UNCHECKED_CAST")
@@ -107,8 +106,8 @@ data class MultiTypeDefinitionWrapper<E : IndexedEnum, TO : Any, CX : IsProperty
     fun <P : PropertyDefinitions, T : Any, R : IsPropertyReference<T, IsPropertyDefinitionWrapper<T, *, *, *>, *>> withType(
         type: EmbedTypeCase<E, P>,
         referenceGetter: P.() ->
-            (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> R
-    ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> R =
+            (AnyOutPropertyReference?) -> R
+    ): (AnyOutPropertyReference?) -> R =
         {
             val typeRef = this.typedValueRef(type as E, this.ref(it))
             (this.definitionMap[type] as EmbeddedValuesDefinition<IsValuesDataModel<P>, P>).dataModel(

@@ -88,7 +88,7 @@ interface IsPropertyDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyConte
     }
 
     /** Get a reference to this definition inside [parentRef] */
-    fun ref(parentRef: AnyPropertyReference? = null): IsPropertyReference<T, *, *>
+    fun ref(parentRef: AnyPropertyReference? = null): IsPropertyReference<T, IsPropertyDefinition<T>, *>
 
     /**
      * Validates [newValue] against [previousValue] on propertyDefinition and if fails creates

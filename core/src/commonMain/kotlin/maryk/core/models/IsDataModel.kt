@@ -3,6 +3,7 @@ package maryk.core.models
 import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.values.IsValues
 
@@ -17,9 +18,8 @@ interface IsDataModel<P : IsPropertyDefinitions> {
      * For Strongly typed reference notation
      */
     operator fun <T : Any, W : IsPropertyDefinition<T>, R : IsPropertyReference<T, W, *>> invoke(
-        parent: IsPropertyReference<out Any, IsPropertyDefinition<*>, *>? = null,
-        referenceGetter: P.() ->
-            (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> R
+        parent: AnyOutPropertyReference? = null,
+        referenceGetter: P.() -> (AnyOutPropertyReference?) -> R
     ) = referenceGetter(this.properties)(parent)
 
     /**
@@ -28,7 +28,7 @@ interface IsDataModel<P : IsPropertyDefinitions> {
      */
     @Suppress("UNCHECKED_CAST")
     fun <T : Any, W : IsPropertyDefinitionWrapper<T, *, *, *>> ref(
-        parent: IsPropertyReference<out Any, IsPropertyDefinition<*>, *>? = null,
+        parent: IsPropertyReference<out Any, IsPropertyDefinition<out Any>, *>? = null,
         propertyDefinitionGetter: P.() -> W
     ) =
         propertyDefinitionGetter(this.properties).ref(parent) as IsPropertyReference<T, W, IsValues<P>>

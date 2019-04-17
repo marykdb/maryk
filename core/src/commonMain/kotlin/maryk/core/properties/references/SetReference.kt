@@ -1,9 +1,9 @@
 package maryk.core.properties.references
 
 import maryk.core.exceptions.TypeException
+import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
 import maryk.core.properties.references.ReferenceType.SET
@@ -60,8 +60,9 @@ open class SetReference<T : Any, CX : IsPropertyContext> internal constructor(
                 val setValueDefinition =
                     (this.propertyDefinition.definition.valueDefinition as IsSimpleValueDefinition<T, *>)
 
+                val setItemLength = initIntByVar(reader)
                 val setItem = setValueDefinition.readStorageBytes(
-                    (setValueDefinition as IsFixedBytesEncodable<*>).byteSize,
+                    setItemLength,
                     reader
                 )
                 SetItemReference(setItem, propertyDefinition.definition, this)

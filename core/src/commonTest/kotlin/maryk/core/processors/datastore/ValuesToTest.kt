@@ -47,9 +47,9 @@ val valuesAsStorables = arrayOf(
     "29" to DateTime(2018, 7, 18),
     "39" to V1,
     "4b" to 3,
-    "4b80001104" to Date(1981, 12, 5),
-    "4b80001ba2" to Date(1989, 5, 15),
-    "4b80004577" to Date(2018, 9, 9),
+    "4b0480001104" to Date(1981, 12, 5),
+    "4b0480001ba2" to Date(1989, 5, 15),
+    "4b0480004577" to Date(2018, 9, 9),
     "54" to 2,
     "5403009ff9" to "eleven",
     "540300ae46" to "twelve",
@@ -63,16 +63,16 @@ val valuesAsStorables = arrayOf(
     "7a00000001" to "v2",
     "7a00000002" to "v3",
     "8b01" to 3,
-    "8b01616263" to "abc",
-    "8b01646566" to "def",
-    "8b01676869" to "ghi"
+    "8b0103616263" to "abc",
+    "8b0103646566" to "def",
+    "8b0103676869" to "ghi"
 )
 
 val valuesAsStorablesWithNulls = arrayOf(
     "4b" to 1,
-    "4b80004577" to null,
-    "4b80001104" to Date(1981, 12, 5),
-    "4b80001ba2" to null,
+    "4b0480004577" to null,
+    "4b0480001104" to Date(1981, 12, 5),
+    "4b0480001ba2" to null,
     "54" to 1,
     "5403009ff9" to null,
     "540300ae46" to "twelve",
@@ -83,7 +83,7 @@ val valuesAsStorablesWithNulls = arrayOf(
     "7a00000000" to "v1",
     "7a00000001" to null,
     "8b01" to 1,
-    "8b01616263" to null,
-    "8b01646566" to "def",
-    "8b01676869" to null
+    "8b0103616263" to null,
+    "8b0103646566" to "def",
+    "8b0103676869" to null
 )

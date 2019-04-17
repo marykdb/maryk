@@ -242,7 +242,8 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                         // Read set contents. Always a simple value for set since it is in qualifier
                         val valueDefinition =
                             ((definition as IsSetDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
-                        val key = valueDefinition.readStorageBytes(qualifier.size - qIndex) { qualifier[qIndex++] }
+                        val setItemLength = initIntByVar { qualifier[qIndex++] }
+                        val key = valueDefinition.readStorageBytes(setItemLength) { qualifier[qIndex++] }
 
                         readValueFromStorage(Value, definition)?.let {
                             // Only add to output if value read from storage is not null

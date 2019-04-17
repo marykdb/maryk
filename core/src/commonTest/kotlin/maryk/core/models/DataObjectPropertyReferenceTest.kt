@@ -32,6 +32,8 @@ internal class DataObjectPropertyReferenceTest {
         TestMarykModel { embeddedValues { marykModel { list refAt 5u } } }.completeName shouldBe "embeddedValues.marykModel.list.@5"
         TestMarykModel { embeddedValues { marykModel { list.refToAny() } } }.completeName shouldBe "embeddedValues.marykModel.list.*"
 
+        TestMarykModel.ref { setOfString }.completeName shouldBe "setOfString"
+        TestMarykModel { setOfString refAt "v1" }.completeName shouldBe "setOfString.\$v1"
         TestMarykModel { embeddedValues { marykModel { set refAt Date(2017, 12, 5) } } }.completeName shouldBe "embeddedValues.marykModel.set.\$2017-12-05"
 
         TestMarykModel { embeddedValues { marykModel { map refToKey Time(12, 23) } } }.completeName shouldBe """embeddedValues.marykModel.map.$12:23"""
@@ -66,7 +68,9 @@ internal class DataObjectPropertyReferenceTest {
         TestMarykModel { embeddedValues { marykModel { list refAt 5u } } }.toStorageByteArray().toHex() shouldBe "661e4200000005"
         TestMarykModel { embeddedValues { marykModel { list.refToAny() } } }.toStorageByteArray().toHex() shouldBe "661e180800"
 
-        TestMarykModel { embeddedValues { marykModel { set refAt Date(2017, 12, 5) } } }.toStorageByteArray().toHex() shouldBe "661e4b80004461"
+        TestMarykModel { embeddedValues { marykModel { set refAt Date(2017, 12, 5) } } }.toStorageByteArray().toHex() shouldBe "661e4b0480004461"
+        TestMarykModel.ref { setOfString }.toStorageByteArray().toHex() shouldBe "8b01"
+        TestMarykModel { setOfString refAt "v1" }.toStorageByteArray().toHex() shouldBe "8b01027631"
 
         TestMarykModel { embeddedValues { marykModel { map refToKey Time(12, 23) } } }.toStorageByteArray().toHex() shouldBe "661e080a0300ae24"
         TestMarykModel { embeddedValues { marykModel { map refAt Time(12, 23) } } }.toStorageByteArray().toHex() shouldBe "661e540300ae24"

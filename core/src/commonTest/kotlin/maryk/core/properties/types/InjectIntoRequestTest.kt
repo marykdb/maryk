@@ -5,20 +5,29 @@ import maryk.checkProtoBufObjectValuesConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.inject.Inject
+import maryk.core.models.asValues
+import maryk.core.models.key
+import maryk.core.properties.exceptions.InjectException
 import maryk.core.query.RequestContext
+import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.filters.Exists
 import maryk.core.query.requests.GetRequest
 import maryk.core.query.requests.RequestType
 import maryk.core.query.requests.Requests
+import maryk.core.query.responses.ValuesResponse
 import maryk.core.values.ObjectValues
+import maryk.test.models.ReferencesModel
 import maryk.test.models.SimpleMarykModel
 import maryk.test.shouldBe
+import maryk.test.shouldThrow
 import kotlin.test.Test
 
 private val context = RequestContext(mapOf(
-    SimpleMarykModel.name toUnitLambda { SimpleMarykModel }
+    SimpleMarykModel.name toUnitLambda { SimpleMarykModel },
+    ReferencesModel.name toUnitLambda { ReferencesModel }
 )).apply {
-    addToCollect("keysToInject", GetRequest)
+    addToCollect("keysToInject", ValuesResponse)
+    addToCollect("referencedKeys", ValuesResponse)
 }
 
 class InjectInRequestTest {
@@ -39,6 +48,49 @@ class InjectInRequestTest {
         mapNonNulls(
             requests withSerializable listOf(TypedValue(RequestType.Get, getRequestWithInjectable))
         )
+    }
+
+    @Test
+    fun testInjectInValuesGetRequest() {
+        val requestRef = ValuesResponse { values.at(0u) { values.ref(ReferencesModel) { references } } }
+
+        val getRequest = GetRequest.values(context) {
+            mapNonNulls(
+                keys injectWith Inject("referencedKeys", requestRef)
+            )
+        }
+
+        shouldThrow<InjectException> {
+            getRequest { keys }
+        } shouldBe InjectException("referencedKeys")
+
+        val expectedKeys = listOf(
+            SimpleMarykModel.key(SimpleMarykModel("v1")),
+            SimpleMarykModel.key(SimpleMarykModel("v2"))
+        )
+
+        val row = ReferencesModel(
+            references = expectedKeys
+        )
+
+        val response = ValuesResponse(
+            dataModel = ReferencesModel,
+            values = listOf(
+                ValuesWithMetaData(
+                    key = ReferencesModel.key(row),
+                    values = row,
+                    isDeleted = false,
+                    firstVersion = 0uL,
+                    lastVersion = 3uL
+                )
+            )
+        )
+
+        context.collectResult("referencedKeys", ValuesResponse.asValues(response))
+
+        context.dataModel = ReferencesModel
+
+        getRequest { keys } shouldBe expectedKeys
     }
 
     private fun checker(

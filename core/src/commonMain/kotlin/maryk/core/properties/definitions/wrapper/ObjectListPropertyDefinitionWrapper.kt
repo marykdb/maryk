@@ -41,9 +41,8 @@ data class ObjectListPropertyDefinitionWrapper<
     /** Get sub reference below an index */
     @Suppress("UNCHECKED_CAST")
     operator fun get(index: UInt): (
-        (
-            P.() -> (AnyOutPropertyReference?) -> AnySpecificWrappedPropertyReference
-        ) -> (AnyOutPropertyReference?) -> AnySpecificWrappedPropertyReference
+        (P.() -> (AnyOutPropertyReference?) -> AnySpecificWrappedPropertyReference) ->
+            (AnyOutPropertyReference?) -> AnySpecificWrappedPropertyReference
     ) {
         val objectValuesDefinition = this.definition.valueDefinition as EmbeddedObjectDefinition<ODO, P, *, *, *>
 
@@ -72,4 +71,19 @@ data class ObjectListPropertyDefinitionWrapper<
             )
         }
     }
+
+    /** Reference values to references from [referenceGetter] at given [index] of list */
+    fun <T : Any, W : IsPropertyDefinitionWrapper<T, *, *, *>, R : IsPropertyReference<T, W, *>> at(
+        index: UInt,
+        referenceGetter: P.() -> (AnyOutPropertyReference?) -> R
+    ): (AnyOutPropertyReference?) -> R =
+        @Suppress("UNCHECKED_CAST")
+        {
+            val objectValuesDefinition = this.definition.valueDefinition as EmbeddedObjectDefinition<ODO, P, *, *, *>
+
+            objectValuesDefinition.dataModel(
+                this.getItemRef(index, it),
+                referenceGetter as ObjectPropertyDefinitions<*>.() -> (AnyOutPropertyReference?) -> R
+            )
+        }
 }

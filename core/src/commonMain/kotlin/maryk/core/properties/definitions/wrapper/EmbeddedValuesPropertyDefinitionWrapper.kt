@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions.wrapper
 
+import maryk.core.models.IsDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
@@ -52,6 +53,13 @@ data class EmbeddedValuesPropertyDefinitionWrapper<
         propertyDefinitionGetter: P.() -> W
     ): (AnyOutPropertyReference?) -> IsPropertyReference<T, W, IsValues<P>> =
         { this.definition.dataModel.ref(this.ref(it), propertyDefinitionGetter) }
+
+    /** Get a top level reference on a model with [propertyDefinitionGetter]. Used for contextual embed values property definitions. */
+    fun <T : Any, W : IsPropertyDefinitionWrapper<T, *, *, *>, DM: IsDataModel<P2>, P2: PropertyDefinitions> ref(
+        dataModel: DM,
+        propertyDefinitionGetter: P2.() -> W
+    ): (AnyOutPropertyReference?) -> IsPropertyReference<T, W, IsValues<P2>> =
+        { dataModel.ref(this.ref(it), propertyDefinitionGetter) }
 
     /** For quick notation to fetch property references with [referenceGetter] within embedded object */
     operator fun <T : Any, W : IsPropertyDefinition<T>, R : IsPropertyReference<T, W, *>> invoke(

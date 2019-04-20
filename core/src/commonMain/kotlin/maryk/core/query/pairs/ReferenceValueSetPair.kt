@@ -27,7 +27,7 @@ data class ReferenceValueSetPair<T : Any> internal constructor(
         )
         @Suppress("UNCHECKED_CAST")
         override val value = add(
-            2, "values",
+            2u, "values",
             SetDefinition(
                 valueDefinition = ContextualValueDefinition(
                     contextualResolver = { context: RequestContext? ->
@@ -45,8 +45,8 @@ data class ReferenceValueSetPair<T : Any> internal constructor(
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<ReferenceValueSetPair<*>, Properties>) = ReferenceValueSetPair(
-            reference = values(1),
-            values = values(2)
+            reference = values(1u),
+            values = values(2u)
         )
     }
 }

@@ -16,7 +16,7 @@ interface IsNumericDefinition<T : Comparable<T>> : IsComparableDefinition<T, IsP
 
     companion object {
         internal fun <DO : Any> addRandom(
-            index: Int,
+            index: UInt,
             definitions: ObjectPropertyDefinitions<DO>,
             getter: (DO) -> Boolean
         ) {

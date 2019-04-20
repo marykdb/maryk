@@ -40,11 +40,11 @@ internal class BooleanDefinitionTest {
 
         for (it in booleanArrayOf(true, false)) {
             bc.reserve(
-                def.calculateTransportByteLengthWithKey(23, it, cacheFailer, null)
+                def.calculateTransportByteLengthWithKey(23u, it, cacheFailer, null)
             )
-            def.writeTransportBytesWithKey(23, it, cacheFailer, bc::write, null)
+            def.writeTransportBytesWithKey(23u, it, cacheFailer, bc::write, null)
             val key = ProtoBuf.readKey(bc::read)
-            key.tag shouldBe 23
+            key.tag shouldBe 23u
             key.wireType shouldBe WireType.VAR_INT
             def.readTransportBytes(
                 ProtoBuf.getLength(WireType.VAR_INT, bc::read),

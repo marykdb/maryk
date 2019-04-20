@@ -23,9 +23,9 @@ data class CollectRequest<RQ : IsRequest<RP>, RP : IsResponse>(
     override val responseModel = request.responseModel
 
     object Properties : ObjectPropertyDefinitions<AnyCollectRequest>() {
-        val name = add(1, "name", StringDefinition(), AnyCollectRequest::name)
+        val name = add(1u, "name", StringDefinition(), AnyCollectRequest::name)
 
-        val request = add(2, "request",
+        val request = add(2u, "request",
             MultiTypeDefinition(
                 typeEnum = RequestType,
                 definitionMap = mapOfRequestTypeEmbeddedObjectDefinitions
@@ -47,8 +47,8 @@ data class CollectRequest<RQ : IsRequest<RP>, RP : IsResponse>(
     ) {
         override fun invoke(values: ObjectValues<AnyCollectRequest, Properties>) =
             CollectRequest<IsRequest<IsResponse>, IsResponse>(
-                name = values(1),
-                request = values(2)
+                name = values(1u),
+                request = values(2u)
             )
 
         override fun writeJson(obj: AnyCollectRequest, writer: IsJsonLikeWriter, context: RequestContext?) {

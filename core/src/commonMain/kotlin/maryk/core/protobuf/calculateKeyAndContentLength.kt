@@ -9,7 +9,7 @@ import maryk.core.extensions.bytes.calculateVarByteLength
  */
 internal fun calculateKeyAndContentLength(
     wireType: WireType,
-    index: Int,
+    index: UInt,
     cacher: WriteCacheWriter,
     contentLengthCalculator: () -> Int
 ): Int {

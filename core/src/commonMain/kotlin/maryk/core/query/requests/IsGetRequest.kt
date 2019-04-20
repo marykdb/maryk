@@ -19,7 +19,7 @@ interface IsGetRequest<DM : IsRootDataModel<P>, P : PropertyDefinitions, RP : Is
             definitions: ObjectPropertyDefinitions<REQ>,
             getter: (REQ) -> List<Key<*>>?
         ) =
-            definitions.add(2, "keys", ListDefinition(
+            definitions.add(2u, "keys", ListDefinition(
                 valueDefinition = ContextualReferenceDefinition<RequestContext>(
                     contextualResolver = {
                         it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()

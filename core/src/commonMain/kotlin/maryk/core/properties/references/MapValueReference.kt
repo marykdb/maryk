@@ -49,7 +49,7 @@ class MapValueReference<K : Any, V : Any, CX : IsPropertyContext> internal const
 
     override fun writeTransportBytes(cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit) {
         this.parentReference?.writeTransportBytes(cacheGetter, writer)
-        ProtoBuf.writeKey(0, WireType.VAR_INT, writer)
+        ProtoBuf.writeKey(0u, WireType.VAR_INT, writer)
         mapDefinition.keyDefinition.writeTransportBytes(key, cacheGetter, writer)
     }
 

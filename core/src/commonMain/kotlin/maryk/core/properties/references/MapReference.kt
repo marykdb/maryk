@@ -51,7 +51,7 @@ open class MapReference<K : Any, V : Any, CX : IsPropertyContext> internal const
     ): IsPropertyReference<*, IsPropertyDefinition<*>, *> {
         val protoKey = ProtoBuf.readKey(reader)
         return when (protoKey.tag) {
-            0 -> {
+            0u -> {
                 MapValueReference(
                     this.propertyDefinition.keyDefinition.readTransportBytes(
                         ProtoBuf.getLength(protoKey.wireType, reader),
@@ -61,7 +61,7 @@ open class MapReference<K : Any, V : Any, CX : IsPropertyContext> internal const
                     this
                 )
             }
-            1 -> {
+            1u -> {
                 MapKeyReference(
                     this.propertyDefinition.keyDefinition.readTransportBytes(
                         ProtoBuf.getLength(protoKey.wireType, reader),
@@ -71,7 +71,7 @@ open class MapReference<K : Any, V : Any, CX : IsPropertyContext> internal const
                     this
                 )
             }
-            2 -> {
+            2u -> {
                 MapAnyValueReference(
                     this.propertyDefinition.definition,
                     this

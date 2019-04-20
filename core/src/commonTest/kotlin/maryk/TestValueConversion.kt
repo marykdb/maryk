@@ -17,11 +17,11 @@ fun <T : Any, CX : IsPropertyContext> checkProtoBufConversion(
     val cache = WriteCache()
 
     bc.reserve(
-        def.calculateTransportByteLengthWithKey(22, value, cache, context)
+        def.calculateTransportByteLengthWithKey(22u, value, cache, context)
     )
-    def.writeTransportBytesWithKey(22, value, cache, bc::write, context)
+    def.writeTransportBytesWithKey(22u, value, cache, bc::write, context)
     val key = ProtoBuf.readKey(bc::read)
-    key.tag shouldBe 22
+    key.tag shouldBe 22u
     key.wireType shouldBe def.wireType
 
     val converted = def.readTransportBytes(

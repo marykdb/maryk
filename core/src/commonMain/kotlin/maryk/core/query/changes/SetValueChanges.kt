@@ -27,7 +27,7 @@ data class SetValueChanges<T : Any> internal constructor(
         val reference = DefinedByReference.addReference(this, SetValueChanges<*>::reference)
 
         val addValues = add(
-            2, "addValues",
+            2u, "addValues",
             SetDefinition(
                 required = false,
                 valueDefinition = valueDefinition
@@ -41,8 +41,8 @@ data class SetValueChanges<T : Any> internal constructor(
     ) {
         @Suppress("RemoveExplicitTypeArguments")
         override fun invoke(values: ObjectValues<SetValueChanges<out Any>, Properties>) = SetValueChanges<Any>(
-            reference = values(1),
-            addValues = values(2)
+            reference = values(1u),
+            addValues = values(2u)
         )
     }
 }

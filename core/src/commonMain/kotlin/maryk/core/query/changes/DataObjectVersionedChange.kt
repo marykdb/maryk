@@ -19,13 +19,13 @@ data class DataObjectVersionedChange<out DM : IsRootDataModel<*>>(
     val changes: List<VersionedChanges>
 ) {
     object Properties : ObjectPropertyDefinitions<DataObjectVersionedChange<*>>() {
-        val key = add(1, "key", ContextualReferenceDefinition<RequestContext>(
+        val key = add(1u, "key", ContextualReferenceDefinition<RequestContext>(
             contextualResolver = {
                 it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
             }
         ), DataObjectVersionedChange<*>::key)
 
-        val changes = add(2, "changes", ListDefinition(
+        val changes = add(2u, "changes", ListDefinition(
             default = emptyList(),
             valueDefinition = EmbeddedObjectDefinition(
                 dataModel = { VersionedChanges }
@@ -37,8 +37,8 @@ data class DataObjectVersionedChange<out DM : IsRootDataModel<*>>(
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<DataObjectVersionedChange<*>, Properties>) = DataObjectVersionedChange(
-            key = values(1),
-            changes = values(2)
+            key = values(1u),
+            changes = values(2u)
         )
     }
 }

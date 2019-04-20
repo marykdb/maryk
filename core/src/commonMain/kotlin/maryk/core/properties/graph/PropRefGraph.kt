@@ -58,7 +58,7 @@ data class PropRefGraph<P : PropertyDefinitions, DM : IsValuesDataModel<PS>, PS 
     }
 
     object Properties : ObjectPropertyDefinitions<PropRefGraph<*, *, *>>() {
-        val parent = add(1, "parent",
+        val parent = add(1u, "parent",
             ContextualPropertyReferenceDefinition(
                 contextualResolver = { context: GraphContext? ->
                     context?.dataModel?.properties as? AbstractPropertyDefinitions<*>?
@@ -78,7 +78,7 @@ data class PropRefGraph<P : PropertyDefinitions, DM : IsValuesDataModel<PS>, PS 
             getter = PropRefGraph<*, *, *>::parent
         )
 
-        val properties = addProperties(2, PropRefGraph<*, *, *>::properties) { context: GraphContext? ->
+        val properties = addProperties(2u, PropRefGraph<*, *, *>::properties) { context: GraphContext? ->
             context?.subDataModel?.properties as? PropertyDefinitions? ?: throw ContextNotFoundException()
         }
     }
@@ -96,8 +96,8 @@ data class PropRefGraph<P : PropertyDefinitions, DM : IsValuesDataModel<PS>, PS 
         ) {
         override fun invoke(values: ObjectValues<PropRefGraph<*, *, *>, Properties>) =
             PropRefGraph<PropertyDefinitions, IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
-                parent = values(1),
-                properties = values(2)
+                parent = values(1u),
+                properties = values(2u)
             )
 
         override fun writeJson(obj: PropRefGraph<*, *, *>, writer: IsJsonLikeWriter, context: GraphContext?) {
@@ -198,7 +198,7 @@ data class PropRefGraph<P : PropertyDefinitions, DM : IsValuesDataModel<PS>, PS 
  * Add properties to Property Reference PropRefGraph objects so they are encodable
  */
 internal fun <DO : Any> ObjectPropertyDefinitions<DO>.addProperties(
-    index: Int,
+    index: UInt,
     getter: (DO) -> List<IsPropRefGraphNode<*>>,
     contextResolver: (GraphContext?) -> PropertyDefinitions
 ) =

@@ -17,8 +17,8 @@ import maryk.test.shouldThrow
 import kotlin.test.Test
 
 private object Properties : PropertyDefinitions() {
-    val definition = add(1, "test", StringDefinition())
-    val modelDefinition = add(2, "embeddedObject", EmbeddedValuesDefinition(
+    val definition = add(1u, "test", StringDefinition())
+    val modelDefinition = add(2u, "embeddedObject", EmbeddedValuesDefinition(
         dataModel = { Model }
     ))
 }

@@ -84,13 +84,13 @@ data class TimeDefinition(
                     IsPropertyDefinition.addRequired(this, TimeDefinition::required)
                     IsPropertyDefinition.addFinal(this, TimeDefinition::final)
                     IsComparableDefinition.addUnique(this, TimeDefinition::unique)
-                    IsTimeDefinition.addPrecision(4, this,
+                    IsTimeDefinition.addPrecision(4u, this,
                         TimeDefinition::precision,
                         capturer = { context: TimePrecisionContext, timePrecision ->
                             context.precision = timePrecision
                         }
                     )
-                    add(5, "minValue",
+                    add(5u, "minValue",
                         ContextualValueDefinition(
                             contextualResolver = { context: TimeDefinitionContext? ->
                                 context?.timeDefinition ?: throw ContextNotFoundException()
@@ -98,7 +98,7 @@ data class TimeDefinition(
                         ),
                         TimeDefinition::minValue
                     )
-                    add(6, "maxValue",
+                    add(6u, "maxValue",
                         ContextualValueDefinition(
                             contextualResolver = { context: TimeDefinitionContext? ->
                                 context?.timeDefinition ?: throw ContextNotFoundException()
@@ -106,7 +106,7 @@ data class TimeDefinition(
                         ),
                         TimeDefinition::maxValue
                     )
-                    add(7, "default",
+                    add(7u, "default",
                         ContextualValueDefinition(
                             contextualResolver = { context: TimeDefinitionContext? ->
                                 context?.timeDefinition ?: throw ContextNotFoundException()
@@ -114,19 +114,19 @@ data class TimeDefinition(
                         ),
                         TimeDefinition::default
                     )
-                    IsMomentDefinition.addFillWithNow(8, this, TimeDefinition::fillWithNow)
+                    IsMomentDefinition.addFillWithNow(8u, this, TimeDefinition::fillWithNow)
                 }
             }
         ) {
         override fun invoke(values: SimpleObjectValues<TimeDefinition>) = TimeDefinition(
-            required = values(1),
-            final = values(2),
-            unique = values(3),
-            precision = values(4),
-            minValue = values(5),
-            maxValue = values(6),
-            default = values(7),
-            fillWithNow = values(8)
+            required = values(1u),
+            final = values(2u),
+            unique = values(3u),
+            precision = values(4u),
+            minValue = values(5u),
+            maxValue = values(6u),
+            default = values(7u),
+            fillWithNow = values(8u)
         )
     }
 }

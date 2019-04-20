@@ -34,7 +34,7 @@ data class Definitions(
 
     internal object Properties : ObjectPropertyDefinitions<Definitions>() {
         @Suppress("UNCHECKED_CAST")
-        val definitions = add(1, "definitions",
+        val definitions = add(1u, "definitions",
             ListDefinition(
                 valueDefinition = MultiTypeDefinition(
                     typeEnum = PrimitiveType,
@@ -108,7 +108,7 @@ data class Definitions(
             singlePropertyDefinition = Properties.definitions as IsPropertyDefinitionWrapper<List<TypedValue<PrimitiveType, MarykPrimitive>>, List<MarykPrimitive>, ContainsDefinitionsContext, Definitions>
         ) {
         override fun invoke(values: ObjectValues<Definitions, Properties>) = Definitions(
-            definitions = values(1)
+            definitions = values(1u)
         )
 
         override fun writeJsonValue(

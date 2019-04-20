@@ -25,15 +25,15 @@ data class TooManyItemsException internal constructor(
         properties = object : ObjectPropertyDefinitions<TooManyItemsException>() {
             init {
                 addReference(this, TooManyItemsException::reference)
-                add(2, "size", NumberDefinition(type = UInt32), TooManyItemsException::size)
-                add(3, "maxSize", NumberDefinition(type = UInt32), TooManyItemsException::maxSize)
+                add(2u, "size", NumberDefinition(type = UInt32), TooManyItemsException::size)
+                add(3u, "maxSize", NumberDefinition(type = UInt32), TooManyItemsException::maxSize)
             }
         }
     ) {
         override fun invoke(values: SimpleObjectValues<TooManyItemsException>) = TooManyItemsException(
-            reference = values(1),
-            size = values(2),
-            maxSize = values(3)
+            reference = values(1u),
+            size = values(2u),
+            maxSize = values(3u)
         )
     }
 }

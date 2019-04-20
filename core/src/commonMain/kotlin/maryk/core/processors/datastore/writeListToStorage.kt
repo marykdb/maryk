@@ -33,7 +33,7 @@ fun <T : IsPropertyDefinition<*>> writeListToStorage(
             listIndex.toUInt().writeBytes(writer, 4)
         }
         writeValue(
-            -1, qualifierCount + 4, listValueQualifierWriter,
+            null, qualifierCount + 4, listValueQualifierWriter,
             listValueDefinition,
             listItem,
             valueWriter as ValueWriter<IsValueDefinition<*, *>>

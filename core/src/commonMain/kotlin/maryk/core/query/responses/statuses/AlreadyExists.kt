@@ -22,7 +22,7 @@ data class AlreadyExists<DM : IsRootDataModel<*>>(
     ) {
         override fun invoke(values: SimpleObjectValues<AlreadyExists<*>>) =
             AlreadyExists<IsRootDataModel<IsPropertyDefinitions>>(
-                key = values(1)
+                key = values(1u)
             )
     }
 }

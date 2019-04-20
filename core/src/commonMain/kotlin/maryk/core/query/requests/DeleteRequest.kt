@@ -40,7 +40,7 @@ data class DeleteRequest<DM : IsRootValuesDataModel<*>> internal constructor(
     object Properties : ObjectPropertyDefinitions<DeleteRequest<*>>() {
         val dataModel = IsObjectRequest.addDataModel("from", this, DeleteRequest<*>::dataModel)
 
-        val objectsToDelete = add(2, "keys", ListDefinition(
+        val objectsToDelete = add(2u, "keys", ListDefinition(
             valueDefinition = ContextualReferenceDefinition<RequestContext>(
                 contextualResolver = {
                     it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
@@ -49,7 +49,7 @@ data class DeleteRequest<DM : IsRootValuesDataModel<*>> internal constructor(
         ), DeleteRequest<*>::keys)
 
         val hardDelete = add(
-            3, "hardDelete",
+            3u, "hardDelete",
             BooleanDefinition(default = false),
             DeleteRequest<*>::hardDelete
         )
@@ -59,9 +59,9 @@ data class DeleteRequest<DM : IsRootValuesDataModel<*>> internal constructor(
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<DeleteRequest<*>, Properties>) = DeleteRequest(
-            dataModel = values(1),
-            keys = values(2),
-            hardDelete = values(3)
+            dataModel = values(1u),
+            keys = values(2u),
+            hardDelete = values(3u)
         )
     }
 }

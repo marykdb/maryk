@@ -29,16 +29,16 @@ data class OutOfRangeException internal constructor(
             init {
                 addReference(this, OutOfRangeException::reference)
                 addValue(this, OutOfRangeException::value)
-                add(3, "min", StringDefinition(required = false), OutOfRangeException::min)
-                add(4, "max", StringDefinition(), OutOfRangeException::max)
+                add(3u, "min", StringDefinition(required = false), OutOfRangeException::min)
+                add(4u, "max", StringDefinition(), OutOfRangeException::max)
             }
         }
     ) {
         override fun invoke(values: SimpleObjectValues<OutOfRangeException>) = OutOfRangeException(
-            reference = values(1),
-            value = values(2),
-            min = values(3),
-            max = values(4)
+            reference = values(1u),
+            value = values(2u),
+            min = values(3u),
+            max = values(4u)
         )
     }
 }

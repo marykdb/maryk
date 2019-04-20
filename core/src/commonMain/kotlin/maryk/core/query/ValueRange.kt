@@ -39,7 +39,7 @@ data class ValueRange<T : Comparable<T>> internal constructor(
     }
 
     object Properties : ObjectPropertyDefinitions<ValueRange<*>>() {
-        val from = add(1, "from", ContextualValueDefinition(
+        val from = add(1u, "from", ContextualValueDefinition(
             contextualResolver = { context: RequestContext? ->
                 @Suppress("UNCHECKED_CAST")
                 context?.reference?.comparablePropertyDefinition as? IsValueDefinition<Any, IsPropertyContext>?
@@ -47,7 +47,7 @@ data class ValueRange<T : Comparable<T>> internal constructor(
             }
         ), ValueRange<*>::from)
 
-        val to = add(2, "to", ContextualValueDefinition(
+        val to = add(2u, "to", ContextualValueDefinition(
             contextualResolver = { context: RequestContext? ->
                 @Suppress("UNCHECKED_CAST")
                 context?.reference?.comparablePropertyDefinition as? IsValueDefinition<Any, IsPropertyContext>?
@@ -55,18 +55,18 @@ data class ValueRange<T : Comparable<T>> internal constructor(
             }
         ), ValueRange<*>::to)
 
-        val inclusiveFrom = add(3, "inclusiveFrom", BooleanDefinition(default = true), ValueRange<*>::inclusiveFrom)
-        val inclusiveTo = add(4, "inclusiveTo", BooleanDefinition(default = true), ValueRange<*>::inclusiveTo)
+        val inclusiveFrom = add(3u, "inclusiveFrom", BooleanDefinition(default = true), ValueRange<*>::inclusiveFrom)
+        val inclusiveTo = add(4u, "inclusiveTo", BooleanDefinition(default = true), ValueRange<*>::inclusiveTo)
     }
 
     companion object : QueryDataModel<ValueRange<*>, Properties>(
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<ValueRange<*>, Properties>) = ValueRange(
-            from = values<Comparable<Any>>(1),
-            to = values(2),
-            inclusiveFrom = values(3),
-            inclusiveTo = values(4)
+            from = values<Comparable<Any>>(1u),
+            to = values(2u),
+            inclusiveFrom = values(3u),
+            inclusiveTo = values(4u)
         )
 
         override fun writeJson(obj: ValueRange<*>, writer: IsJsonLikeWriter, context: RequestContext?) {

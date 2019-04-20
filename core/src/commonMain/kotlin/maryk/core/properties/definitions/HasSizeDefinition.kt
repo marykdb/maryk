@@ -25,7 +25,7 @@ interface HasSizeDefinition {
 
     companion object {
         internal fun <DO : Any> addMinSize(
-            index: Int,
+            index: UInt,
             definitions: ObjectPropertyDefinitions<DO>,
             getter: (DO) -> UInt?
         ) {
@@ -38,7 +38,7 @@ interface HasSizeDefinition {
         }
 
         internal fun <DO : Any> addMaxSize(
-            index: Int,
+            index: UInt,
             definitions: ObjectPropertyDefinitions<DO>,
             getter: (DO) -> UInt?
         ) {

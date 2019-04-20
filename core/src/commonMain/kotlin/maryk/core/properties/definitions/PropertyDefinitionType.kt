@@ -69,7 +69,7 @@ internal val mapOfPropertyDefEmbeddedObjectDefinitions =
         PropertyDefinitionType.Value to EmbeddedObjectDefinition(dataModel = { ValueModelDefinition.Model })
     )
 
-typealias WrapperCreator = (index: Int, name: String, definition: IsPropertyDefinition<Any>, getter: (Any) -> Any?) -> IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>
+typealias WrapperCreator = (index: UInt, name: String, definition: IsPropertyDefinition<Any>, getter: (Any) -> Any?) -> IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>
 
 @Suppress("UNCHECKED_CAST")
 val createFixedBytesWrapper: WrapperCreator = { index, name, definition, getter ->

@@ -31,7 +31,7 @@ abstract class ReferencePairDataModel<DO : Any, P : ReferenceValuePairsObjectPro
 
     override fun writeJson(obj: DO, writer: IsJsonLikeWriter, context: RequestContext?) {
         @Suppress("UNCHECKED_CAST")
-        val pairs = properties[1]?.getter?.invoke(obj) as? List<R>
+        val pairs = properties[1u]?.getter?.invoke(obj) as? List<R>
             ?: throw SerializationException("No pairs defined on $obj")
 
         writer.writeJsonTypePairs(pairs, context)
@@ -112,7 +112,7 @@ abstract class ReferenceValuePairsObjectPropertyDefinitions<DO : Any, R : Define
     pairGetter: (DO) -> List<R>?,
     val pairModel: QueryDataModel<R, *>
 ) : ObjectPropertyDefinitions<DO>() {
-    val referenceValuePairs = add(1, this.pairName,
+    val referenceValuePairs = add(1u, this.pairName,
         ListDefinition(
             valueDefinition = EmbeddedObjectDefinition(
                 dataModel = {

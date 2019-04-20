@@ -41,11 +41,11 @@ object Log : RootDataModel<Log, Properties>(
 ) {
     object Properties : PropertyDefinitions() {
         val message = add(
-            index = 1, name = "message",
+            index = 1u, name = "message",
             definition = StringDefinition()
         )
         val severity = add(
-            index = 2, name = "severity",
+            index = 2u, name = "severity",
             definition = EnumDefinition(
                 final = true,
                 enum = Severity,
@@ -53,7 +53,7 @@ object Log : RootDataModel<Log, Properties>(
             )
         )
         val timestamp = add(
-            index = 3, name = "timestamp",
+            index = 3u, name = "timestamp",
             definition = DateTimeDefinition(
                 final = true,
                 precision = MILLIS,

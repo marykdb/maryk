@@ -22,7 +22,7 @@ data class DoesNotExist<DM : IsRootDataModel<*>>(
     ) {
         override fun invoke(values: SimpleObjectValues<DoesNotExist<*>>) =
             DoesNotExist<IsRootDataModel<IsPropertyDefinitions>>(
-                key = values(1)
+                key = values(1u)
             )
     }
 }

@@ -21,7 +21,7 @@ interface DefinedByReference<out T : Any> {
             getter: (DO) -> AnyPropertyReference?
         ) =
             definitions.add(
-                index = 1, name = "reference",
+                index = 1u, name = "reference",
                 definition = ContextualPropertyReferenceDefinition<RequestContext>(
                     contextualResolver = {
                         it?.dataModel?.properties as? AbstractPropertyDefinitions<*>?

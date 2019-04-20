@@ -41,7 +41,7 @@ class MapKeyReference<K : Any, V : Any, CX : IsPropertyContext> internal constru
 
     override fun writeTransportBytes(cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit) {
         this.parentReference?.writeTransportBytes(cacheGetter, writer)
-        ProtoBuf.writeKey(1, WireType.VAR_INT, writer)
+        ProtoBuf.writeKey(1u, WireType.VAR_INT, writer)
         mapDefinition.keyDefinition.writeTransportBytes(key, cacheGetter, writer)
     }
 

@@ -25,7 +25,7 @@ data class GreaterThan internal constructor(
         pairProperties = ReferenceValuePair.Properties
     ) {
         override fun invoke(values: ObjectValues<GreaterThan, Properties>) = GreaterThan(
-            referenceValuePairs = values(1)
+            referenceValuePairs = values(1u)
         )
     }
 }

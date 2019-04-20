@@ -15,16 +15,16 @@ import kotlin.test.Test
 
 internal object WrongProperties : PropertyDefinitions() {
     val boolean = add(
-        1, "bool", BooleanDefinition(
+        1u, "bool", BooleanDefinition(
             required = false,
             final = true
         )
     )
     val dateTime = add(
-        2, "dateTime", DateTimeDefinition()
+        2u, "dateTime", DateTimeDefinition()
     )
     val string = add(
-        3, "string", StringDefinition()
+        3u, "string", StringDefinition()
     )
 }
 

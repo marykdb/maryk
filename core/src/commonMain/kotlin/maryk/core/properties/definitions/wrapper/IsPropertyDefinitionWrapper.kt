@@ -44,7 +44,7 @@ typealias AnyPropertyDefinitionWrapper = IsPropertyDefinitionWrapper<Any, Any, I
 interface IsPropertyDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in DO> :
     IsSerializablePropertyDefinition<T, CX>,
     IsPropRefGraphNode<PropertyDefinitions> {
-    override val index: Int
+    override val index: UInt
     val name: String
     val definition: IsSerializablePropertyDefinition<T, CX>
     val getter: (DO) -> TO?
@@ -132,22 +132,20 @@ interface IsPropertyDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyConte
     }
 
     companion object {
-        private fun <DO : Any> addIndex(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> Int) =
-            definitions.add(1, "index",
+        private fun <DO : Any> addIndex(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> UInt) =
+            definitions.add(1u, "index",
                 NumberDefinition(type = UInt32),
-                getter,
-                toSerializable = { value, _ -> value?.toUInt() },
-                fromSerializable = { it?.toInt() }
+                getter
             )
 
         private fun <DO : Any> addName(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> String) =
-            definitions.add(2, "name", StringDefinition(), getter)
+            definitions.add(2u, "name", StringDefinition(), getter)
 
         private fun <DO : Any> addDefinition(
             definitions: ObjectPropertyDefinitions<DO>,
             getter: (DO) -> IsSerializablePropertyDefinition<*, *>
         ) =
-            definitions.add(3, "definition",
+            definitions.add(3u, "definition",
                 MultiTypeDefinition(
                     typeEnum = PropertyDefinitionType,
                     definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
@@ -173,12 +171,12 @@ interface IsPropertyDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyConte
         ) {
         override fun invoke(values: SimpleObjectValues<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>>): IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any> {
             val typedDefinition =
-                values<TypedValue<PropertyDefinitionType, IsPropertyDefinition<Any>>>(3)
+                values<TypedValue<PropertyDefinitionType, IsPropertyDefinition<Any>>>(3u)
             val type = typedDefinition.type
 
             return mapOfPropertyDefWrappers[type]?.invoke(
-                values(1),
-                values(2),
+                values(1u),
+                values(2u),
                 typedDefinition.value
             ) { null } ?: throw DefNotFoundException("Property type $type not found")
         }

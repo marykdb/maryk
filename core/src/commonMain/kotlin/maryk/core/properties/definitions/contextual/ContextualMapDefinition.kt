@@ -18,7 +18,7 @@ class ContextualMapDefinition<K : Any, V : Any, in CX : IsPropertyContext>(
 
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
-    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = null
+    override fun getEmbeddedByIndex(index: UInt): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
     override fun writeJsonValue(value: Map<K, V>, writer: IsJsonLikeWriter, context: CX?) =
         contextualResolver(context).writeJsonValue(value, writer, context)
@@ -27,7 +27,7 @@ class ContextualMapDefinition<K : Any, V : Any, in CX : IsPropertyContext>(
         contextualResolver(context).readJson(reader, context)
 
     override fun calculateTransportByteLengthWithKey(
-        index: Int,
+        index: UInt,
         value: Map<K, V>,
         cacher: WriteCacheWriter,
         context: CX?
@@ -38,7 +38,7 @@ class ContextualMapDefinition<K : Any, V : Any, in CX : IsPropertyContext>(
         contextualResolver(context).readMapTransportBytes(reader, context)
 
     override fun writeTransportBytesWithKey(
-        index: Int,
+        index: UInt,
         value: Map<K, V>,
         cacheGetter: WriteCacheReader,
         writer: (byte: Byte) -> Unit,

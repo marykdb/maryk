@@ -30,7 +30,7 @@ data class EmbeddedObjectPropertyDefinitionWrapper<
     out DM : AbstractObjectDataModel<EODO, P, CXI, CX>,
     CXI : IsPropertyContext, CX : IsPropertyContext, in DO : Any
 > internal constructor(
-    override val index: Int,
+    override val index: UInt,
     override val name: String,
     override val definition: IsEmbeddedObjectDefinition<EODO, P, DM, CXI, CX>,
     override val getter: (DO) -> TO?,

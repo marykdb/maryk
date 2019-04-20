@@ -24,7 +24,7 @@ data class ValidationUmbrellaException internal constructor(
         properties = object : ObjectPropertyDefinitions<ValidationUmbrellaException>() {
             init {
                 addReference(this, ValidationUmbrellaException::reference)
-                add(2, "exceptions",
+                add(2u, "exceptions",
                     ListDefinition(
                         default = emptyList(),
                         valueDefinition = MultiTypeDefinition(
@@ -40,8 +40,8 @@ data class ValidationUmbrellaException internal constructor(
         }
     ) {
         override fun invoke(values: SimpleObjectValues<ValidationUmbrellaException>) = ValidationUmbrellaException(
-            reference = values(1),
-            exceptions = values(2)
+            reference = values(1u),
+            exceptions = values(2u)
         )
     }
 }

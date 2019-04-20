@@ -13,7 +13,7 @@ interface IsResponseStatus {
 
     companion object {
         internal fun <DO : Any> addKey(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> Key<*>?) {
-            definitions.add(1, "key", ContextualReferenceDefinition<RequestContext>(
+            definitions.add(1u, "key", ContextualReferenceDefinition<RequestContext>(
                 contextualResolver = {
                     it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
                 }

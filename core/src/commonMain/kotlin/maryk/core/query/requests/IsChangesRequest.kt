@@ -18,7 +18,7 @@ interface IsChangesRequest<DM : IsRootDataModel<P>, P : PropertyDefinitions, RP 
 
     companion object {
         internal fun <DM : Any> addMaxVersions(
-            index: Int,
+            index: UInt,
             definitions: ObjectPropertyDefinitions<DM>,
             getter: (DM) -> UInt?
         ): FixedBytesPropertyDefinitionWrapper<UInt, UInt, IsPropertyContext, NumberDefinition<UInt>, DM> =
@@ -32,7 +32,7 @@ interface IsChangesRequest<DM : IsRootDataModel<P>, P : PropertyDefinitions, RP 
             )
 
         internal fun <DM : Any> addFromVersion(
-            index: Int,
+            index: UInt,
             definitions: ObjectPropertyDefinitions<DM>,
             getter: (DM) -> ULong?
         ) =

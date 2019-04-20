@@ -123,12 +123,12 @@ internal class ObjectDataModelTest {
 
     @Test
     fun getPropertyDefinitionByIndex() {
-        TestMarykObject.properties[1] shouldBe TestMarykObject.Properties.string
-        TestMarykObject.properties[2] shouldBe TestMarykObject.Properties.int
-        TestMarykObject.properties[3] shouldBe TestMarykObject.Properties.uint
-        TestMarykObject.properties[4] shouldBe TestMarykObject.Properties.double
-        TestMarykObject.properties[5] shouldBe TestMarykObject.Properties.dateTime
-        TestMarykObject.properties[6] shouldBe TestMarykObject.Properties.bool
+        TestMarykObject.properties[1u] shouldBe TestMarykObject.Properties.string
+        TestMarykObject.properties[2u] shouldBe TestMarykObject.Properties.int
+        TestMarykObject.properties[3u] shouldBe TestMarykObject.Properties.uint
+        TestMarykObject.properties[4u] shouldBe TestMarykObject.Properties.double
+        TestMarykObject.properties[5u] shouldBe TestMarykObject.Properties.dateTime
+        TestMarykObject.properties[6u] shouldBe TestMarykObject.Properties.bool
     }
 
     @Test
@@ -141,12 +141,12 @@ internal class ObjectDataModelTest {
 
     @Test
     fun getPropertiesByIndex() {
-        TestMarykObject.properties.getPropertyGetter(1)!!.invoke(testExtendedObject) shouldBe "hay"
-        TestMarykObject.properties.getPropertyGetter(2)!!.invoke(testExtendedObject) shouldBe 4
-        TestMarykObject.properties.getPropertyGetter(3)!!.invoke(testExtendedObject) shouldBe 32u
-        TestMarykObject.properties.getPropertyGetter(4)!!.invoke(testExtendedObject) shouldBe 3.555
-        TestMarykObject.properties.getPropertyGetter(5)!!.invoke(testExtendedObject) shouldBe DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13)
-        TestMarykObject.properties.getPropertyGetter(6)!!.invoke(testExtendedObject) shouldBe true
+        TestMarykObject.properties.getPropertyGetter(1u)!!.invoke(testExtendedObject) shouldBe "hay"
+        TestMarykObject.properties.getPropertyGetter(2u)!!.invoke(testExtendedObject) shouldBe 4
+        TestMarykObject.properties.getPropertyGetter(3u)!!.invoke(testExtendedObject) shouldBe 32u
+        TestMarykObject.properties.getPropertyGetter(4u)!!.invoke(testExtendedObject) shouldBe 3.555
+        TestMarykObject.properties.getPropertyGetter(5u)!!.invoke(testExtendedObject) shouldBe DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13)
+        TestMarykObject.properties.getPropertyGetter(6u)!!.invoke(testExtendedObject) shouldBe true
     }
 
     @Test

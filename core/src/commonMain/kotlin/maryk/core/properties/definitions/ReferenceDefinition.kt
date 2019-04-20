@@ -95,10 +95,10 @@ class ReferenceDefinition<DM : IsRootDataModel<*>>(
                 IsPropertyDefinition.addRequired(this, ReferenceDefinition<*>::required)
                 IsPropertyDefinition.addFinal(this, ReferenceDefinition<*>::final)
                 IsComparableDefinition.addUnique(this, ReferenceDefinition<*>::unique)
-                add(4, "minValue", FlexBytesDefinition(), ReferenceDefinition<*>::minValue)
-                add(5, "maxValue", FlexBytesDefinition(), ReferenceDefinition<*>::maxValue)
-                add(6, "default", FlexBytesDefinition(), ReferenceDefinition<*>::default)
-                add(7, "dataModel",
+                add(4u, "minValue", FlexBytesDefinition(), ReferenceDefinition<*>::minValue)
+                add(5u, "maxValue", FlexBytesDefinition(), ReferenceDefinition<*>::maxValue)
+                add(6u, "default", FlexBytesDefinition(), ReferenceDefinition<*>::default)
+                add(7u, "dataModel",
                     definition = ContextualModelReferenceDefinition(
                         contextualResolver = { context: ContainsDefinitionsContext?, name ->
                             context?.let {
@@ -130,25 +130,25 @@ class ReferenceDefinition<DM : IsRootDataModel<*>>(
         }
     ) {
         override fun invoke(values: SimpleObjectValues<ReferenceDefinition<*>>) = ReferenceDefinition(
-            required = values(1),
-            final = values(2),
-            unique = values(3),
-            minValue = values<Bytes?>(4)?.let {
+            required = values(1u),
+            final = values(2u),
+            unique = values(3u),
+            minValue = values<Bytes?>(4u)?.let {
                 Key<IsTypedRootDataModel<IsRootDataModel<IsPropertyDefinitions>, IsPropertyDefinitions>>(
                     it.bytes
                 )
             },
-            maxValue = values<Bytes?>(5)?.let {
+            maxValue = values<Bytes?>(5u)?.let {
                 Key<IsTypedRootDataModel<IsRootDataModel<IsPropertyDefinitions>, IsPropertyDefinitions>>(
                     it.bytes
                 )
             },
-            default = values<Bytes?>(6)?.let {
+            default = values<Bytes?>(6u)?.let {
                 Key<IsTypedRootDataModel<IsRootDataModel<IsPropertyDefinitions>, IsPropertyDefinitions>>(
                     it.bytes
                 )
             },
-            dataModel = values(7)
+            dataModel = values(7u)
         )
     }
 }

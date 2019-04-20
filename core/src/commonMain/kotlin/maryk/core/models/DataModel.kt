@@ -45,9 +45,9 @@ abstract class DataModel<DM : IsValuesDataModel<P>, P : PropertyDefinitions>(
     ) {
         override fun invoke(values: SimpleObjectValues<DataModel<*, *>>) =
             object : DataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
-                properties = values(2)
+                properties = values(2u)
             ) {
-                override val name: String = values(1)
+                override val name: String = values(1u)
             }
 
         override fun writeJson(
@@ -74,7 +74,7 @@ abstract class DataModel<DM : IsValuesDataModel<P>, P : PropertyDefinitions>(
     companion object {
         internal fun <DM : IsDataModel<*>> addProperties(definitions: AbstractPropertyDefinitions<DM>): PropertyDefinitionsCollectionDefinitionWrapper<DM> {
             val wrapper = PropertyDefinitionsCollectionDefinitionWrapper<DM>(
-                2,
+                2u,
                 "properties",
                 PropertyDefinitionsCollectionDefinition(
                     capturer = { context, propDefs ->

@@ -32,17 +32,17 @@ data class ListValueChanges<T : Any> internal constructor(
     object Properties : ObjectPropertyDefinitions<ListValueChanges<*>>() {
         val reference = DefinedByReference.addReference(this, ListValueChanges<*>::reference)
 
-        val addValuesToEnd = add(2, "addValuesToEnd", valueListDefinition, ListValueChanges<*>::addValuesToEnd)
+        val addValuesToEnd = add(2u, "addValuesToEnd", valueListDefinition, ListValueChanges<*>::addValuesToEnd)
 
         val addValuesAtIndex = add(
-            3, "addValuesAtIndex", MapDefinition(
+            3u, "addValuesAtIndex", MapDefinition(
                 required = false,
                 keyDefinition = NumberDefinition(type = UInt32),
                 valueDefinition = valueDefinition
             ), ListValueChanges<*>::addValuesAtIndex
         )
 
-        val deleteValues = add(4, "deleteValues", valueListDefinition, ListValueChanges<*>::deleteValues)
+        val deleteValues = add(4u, "deleteValues", valueListDefinition, ListValueChanges<*>::deleteValues)
     }
 
     companion object : QueryDataModel<ListValueChanges<*>, Properties>(
@@ -50,10 +50,10 @@ data class ListValueChanges<T : Any> internal constructor(
     ) {
         @Suppress("RemoveExplicitTypeArguments")
         override fun invoke(values: ObjectValues<ListValueChanges<*>, Properties>) = ListValueChanges<Any>(
-            reference = values(1),
-            addValuesToEnd = values(2),
-            addValuesAtIndex = values(3),
-            deleteValues = values(4)
+            reference = values(1u),
+            addValuesToEnd = values(2u),
+            addValuesAtIndex = values(3u),
+            deleteValues = values(4u)
         )
     }
 }

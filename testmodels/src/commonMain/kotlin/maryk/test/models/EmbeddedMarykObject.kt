@@ -14,12 +14,12 @@ data class EmbeddedMarykObject(
 ) {
     object Properties : ObjectPropertyDefinitions<EmbeddedMarykObject>() {
         val value = add(
-            index = 1, name = "value",
+            index = 1u, name = "value",
             definition = StringDefinition(),
             getter = EmbeddedMarykObject::value
         )
         val model = add(
-            index = 2, name = "model",
+            index = 2u, name = "model",
             definition = EmbeddedObjectDefinition(
                 required = false,
                 dataModel = { EmbeddedMarykObject }
@@ -27,7 +27,7 @@ data class EmbeddedMarykObject(
             getter = EmbeddedMarykObject::model
         )
         val marykModel = add(
-            index = 3, name = "marykModel",
+            index = 3u, name = "marykModel",
             definition = EmbeddedObjectDefinition(
                 required = false,
                 dataModel = { TestMarykObject }
@@ -42,9 +42,9 @@ data class EmbeddedMarykObject(
     ) {
         override fun invoke(values: ObjectValues<EmbeddedMarykObject, Properties>) =
             EmbeddedMarykObject(
-                value = values(1),
-                model = values(2),
-                marykModel = values(3)
+                value = values(1u),
+                model = values(2u),
+                marykModel = values(3u)
             )
 
         override fun equals(other: Any?): Boolean {

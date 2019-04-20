@@ -58,7 +58,7 @@ data class ValueModelDefinition<DO : ValueDataObject, DM : ValueDataModel<DO, P>
 
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = dataModel.properties[name]
 
-    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = dataModel.properties[index]
+    override fun getEmbeddedByIndex(index: UInt): IsPropertyDefinitionWrapper<*, *, *, *>? = dataModel.properties[index]
 
     override fun validateWithRef(
         previousValue: DO?,
@@ -100,7 +100,7 @@ data class ValueModelDefinition<DO : ValueDataObject, DM : ValueDataModel<DO, P>
                     IsPropertyDefinition.addFinal(this, ValueModelDefinition<*, *, *>::final)
                     IsComparableDefinition.addUnique(this, ValueModelDefinition<*, *, *>::unique)
 
-                    add(4, "dataModel",
+                    add(4u, "dataModel",
                         ContextualModelReferenceDefinition<ValueDataModel<*, *>, ModelContext>(
                             contextualResolver = { context, name ->
                                 context?.definitionsContext?.let {
@@ -134,7 +134,7 @@ data class ValueModelDefinition<DO : ValueDataObject, DM : ValueDataModel<DO, P>
                         }
                     )
 
-                    add(5, "minValue",
+                    add(5u, "minValue",
                         ContextualEmbeddedObjectDefinition(
                             contextualResolver = { context: ModelContext? ->
                                 @Suppress("UNCHECKED_CAST")
@@ -145,7 +145,7 @@ data class ValueModelDefinition<DO : ValueDataObject, DM : ValueDataModel<DO, P>
                         ValueModelDefinition<*, *, *>::minValue
                     )
 
-                    add(6, "maxValue",
+                    add(6u, "maxValue",
                         ContextualEmbeddedObjectDefinition(
                             contextualResolver = { context: ModelContext? ->
                                 @Suppress("UNCHECKED_CAST")
@@ -156,7 +156,7 @@ data class ValueModelDefinition<DO : ValueDataObject, DM : ValueDataModel<DO, P>
                         ValueModelDefinition<*, *, *>::maxValue
                     )
 
-                    add(7, "default",
+                    add(7u, "default",
                         ContextualEmbeddedObjectDefinition(
                             contextualResolver = { context: ModelContext? ->
                                 @Suppress("UNCHECKED_CAST")
@@ -170,13 +170,13 @@ data class ValueModelDefinition<DO : ValueDataObject, DM : ValueDataModel<DO, P>
             }
         ) {
         override fun invoke(values: SimpleObjectValues<ValueModelDefinition<*, *, *>>) = ValueModelDefinition(
-            required = values(1),
-            final = values(2),
-            unique = values(3),
-            dataModel = values<ValueDataModel<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>>(4),
-            minValue = values(5),
-            maxValue = values(6),
-            default = values(7)
+            required = values(1u),
+            final = values(2u),
+            unique = values(3u),
+            dataModel = values<ValueDataModel<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>>(4u),
+            minValue = values(5u),
+            maxValue = values(6u),
+            default = values(7u)
         ) as GenericValueModelDefinition
     }
 }

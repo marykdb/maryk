@@ -103,16 +103,16 @@ internal class ListDefinitionTest {
         val cache = WriteCache()
 
         bc.reserve(
-            def.calculateTransportByteLengthWithKey(1, value, cache)
+            def.calculateTransportByteLengthWithKey(1u, value, cache)
         )
-        def.writeTransportBytesWithKey(1, value, cache, bc::write)
+        def.writeTransportBytesWithKey(1u, value, cache, bc::write)
 
         bc.bytes!!.toHex() shouldBe asHex
 
         fun readKey() {
             val key = ProtoBuf.readKey(bc::read)
             key.wireType shouldBe WireType.LENGTH_DELIMITED
-            key.tag shouldBe 1
+            key.tag shouldBe 1u
         }
 
         fun readValue() = def.readCollectionTransportBytes(
@@ -137,7 +137,7 @@ internal class ListDefinitionTest {
         )
         val asHex = "1209ebd504f712cfc6012a"
 
-        this.testPackedTransportConversion(defVarInt, value, asHex, 2)
+        this.testPackedTransportConversion(defVarInt, value, asHex, 2u)
     }
 
     @Test
@@ -150,7 +150,7 @@ internal class ListDefinitionTest {
         ).asList()
         val asHex = "221058396440e08d6347acc86839d4365c52"
 
-        this.testPackedTransportConversion(def32Int, value, asHex, 4)
+        this.testPackedTransportConversion(def32Int, value, asHex, 4u)
     }
 
     @Test
@@ -163,14 +163,14 @@ internal class ListDefinitionTest {
         )
         val asHex = "1a2026626d33e5300c40fc8310642ab23443a2ab845a8a202d3fb3417d814068c043"
 
-        this.testPackedTransportConversion(def64Int, value, asHex, 3)
+        this.testPackedTransportConversion(def64Int, value, asHex, 3u)
     }
 
     private fun <T : Any> testPackedTransportConversion(
         def: ListDefinition<T, *>,
         list: List<T>,
         hex: String,
-        index: Int
+        index: UInt
     ) {
         val bc = ByteCollector()
         val cache = WriteCache()

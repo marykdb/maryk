@@ -29,10 +29,10 @@ internal class ContextualNumberDefinition<in CX : IsPropertyContext>(
     override val final = true
 
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = null
-    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = null
+    override fun getEmbeddedByIndex(index: UInt): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
     override fun calculateTransportByteLengthWithKey(
-        index: Int,
+        index: UInt,
         value: Comparable<Any>,
         cacher: WriteCacheWriter,
         context: CX?
@@ -40,7 +40,7 @@ internal class ContextualNumberDefinition<in CX : IsPropertyContext>(
         ProtoBuf.calculateKeyLength(index) + contextualResolver(context).calculateTransportByteLength(value)
 
     override fun writeTransportBytesWithKey(
-        index: Int,
+        index: UInt,
         value: Comparable<Any>,
         cacheGetter: WriteCacheReader,
         writer: (byte: Byte) -> Unit,

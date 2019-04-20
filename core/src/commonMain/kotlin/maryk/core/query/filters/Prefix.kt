@@ -28,7 +28,7 @@ data class Prefix internal constructor(
         pairProperties = ReferenceValuePair.Properties as ReferenceValuePairPropertyDefinitions<ReferenceValuePair<String>, String>
     ) {
         override fun invoke(values: ObjectValues<Prefix, Properties>) = Prefix(
-            referenceValuePairs = values(1)
+            referenceValuePairs = values(1u)
         )
     }
 }

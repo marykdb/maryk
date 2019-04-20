@@ -1,7 +1,7 @@
 package maryk.core.properties.references
 
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.extensions.bytes.initIntByVar
+import maryk.core.extensions.bytes.initUIntByVar
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.IsPropertyContext
@@ -40,7 +40,7 @@ class EmbeddedValuesPropertyRef<
         }
 
     override fun getEmbeddedRef(reader: () -> Byte, context: IsPropertyContext?): AnyPropertyReference {
-        val index = initIntByVar(reader)
+        val index = initUIntByVar(reader)
         return if (this.propertyDefinition.definition is ContextualEmbeddedValuesDefinition<*> && context is ContainsDataModelContext<*>) {
             (context.dataModel as? IsValuesDataModel<*>)?.properties?.get(index)?.ref(this)
         } else {

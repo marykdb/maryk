@@ -15,7 +15,7 @@ interface IsTimeDefinition<T : IsTime<T>> :
 
     companion object {
         internal fun <DO : Any> addPrecision(
-            index: Int,
+            index: UInt,
             definitions: ObjectPropertyDefinitions<DO>,
             getter: (DO) -> TimePrecision,
             capturer: ((TimePrecisionContext, TimePrecision) -> Unit)? = null

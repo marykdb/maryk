@@ -153,7 +153,7 @@ data class MultiTypeDefinition<E : IndexedEnum, in CX : IsPropertyContext> inter
 
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
-    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = null
+    override fun getEmbeddedByIndex(index: UInt): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
     override fun writeJsonValue(value: TypedValue<E, Any>, writer: IsJsonLikeWriter, context: CX?) {
         @Suppress("UNCHECKED_CAST")
@@ -258,7 +258,7 @@ data class MultiTypeDefinition<E : IndexedEnum, in CX : IsPropertyContext> inter
         val def = this.definitionMapByIndex[value.type.index] as IsSubDefinition<Any, CX>?
             ?: throw DefNotFoundException("Definition ${value.type} not found on Multi type")
         totalByteLength += def.calculateTransportByteLengthWithKey(
-            value.type.index.toInt(),
+            value.type.index,
             value.value,
             cacher,
             context
@@ -280,7 +280,7 @@ data class MultiTypeDefinition<E : IndexedEnum, in CX : IsPropertyContext> inter
         @Suppress("UNCHECKED_CAST")
         val def = this.definitionMapByIndex[value.type.index] as IsSubDefinition<Any, CX>?
             ?: throw DefNotFoundException("Definition ${value.type} not found on Multi type")
-        def.writeTransportBytesWithKey(value.type.index.toInt(), value.value, cacheGetter, writer, context)
+        def.writeTransportBytesWithKey(value.type.index, value.value, cacheGetter, writer, context)
     }
 
     override fun equals(other: Any?): Boolean {
@@ -381,7 +381,7 @@ data class MultiTypeDefinition<E : IndexedEnum, in CX : IsPropertyContext> inter
                     IsPropertyDefinition.addRequired(this, MultiTypeDefinition<*, *>::required)
                     IsPropertyDefinition.addFinal(this, MultiTypeDefinition<*, *>::final)
 
-                    add(3, "typeEnum",
+                    add(3u, "typeEnum",
                         StringDefinition(),
                         getter = MultiTypeDefinition<*, *>::typeEnum,
                         capturer = { context: MultiTypeDefinitionContext, value ->
@@ -393,11 +393,11 @@ data class MultiTypeDefinition<E : IndexedEnum, in CX : IsPropertyContext> inter
                         fromSerializable = { null }
                     )
 
-                    add(4, "typeIsFinal", BooleanDefinition(default = true), MultiTypeDefinition<*, *>::typeIsFinal)
+                    add(4u, "typeIsFinal", BooleanDefinition(default = true), MultiTypeDefinition<*, *>::typeIsFinal)
 
-                    this.addDescriptorPropertyWrapperWrapper(5, "definitionMap")
+                    this.addDescriptorPropertyWrapperWrapper(5u, "definitionMap")
 
-                    add(6, "default",
+                    add(6u, "default",
                         ContextualValueDefinition(
                             required = false,
                             contextTransformer = { context: MultiTypeDefinitionContext? ->
@@ -414,23 +414,23 @@ data class MultiTypeDefinition<E : IndexedEnum, in CX : IsPropertyContext> inter
         ) {
         override fun invoke(values: SimpleObjectValues<MultiTypeDefinition<*, *>>): MultiTypeDefinition<IndexedEnum, ContainsDefinitionsContext> {
             val definitionMap = convertMultiTypeDescriptors(
-                values(5)
+                values(5u)
             )
 
             val typeOptions = definitionMap.keys.toTypedArray()
 
             val typeEnum = IndexedEnumDefinition(
-                name = values(3),
+                name = values(3u),
                 values = { typeOptions }
             )
 
             return MultiTypeDefinition(
-                required = values(1),
-                final = values(2),
+                required = values(1u),
+                final = values(2u),
                 typeEnum = typeEnum,
-                typeIsFinal = values(4),
+                typeIsFinal = values(4u),
                 definitionMap = definitionMap,
-                default = values(6)
+                default = values(6u)
             )
         }
     }

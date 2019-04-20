@@ -33,8 +33,8 @@ open class ListReference<T : Any, CX : IsPropertyContext> internal constructor(
     ): IsPropertyReference<*, IsPropertyDefinition<*>, *> {
         val protoKey = ProtoBuf.readKey(reader)
         return when (val index = protoKey.tag) {
-            0 -> ListItemReference(initUIntByVar(reader), propertyDefinition.definition, this)
-            1 -> ListAnyItemReference(propertyDefinition.definition, this)
+            0u -> ListItemReference(initUIntByVar(reader), propertyDefinition.definition, this)
+            1u -> ListAnyItemReference(propertyDefinition.definition, this)
             else -> throw ParseException("Unknown List reference type $index")
         }
     }

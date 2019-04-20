@@ -74,7 +74,7 @@ data class TypeReference<E : IndexedEnum, in CX : IsPropertyContext> internal co
 
     override fun writeTransportBytes(cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit) {
         this.parentReference?.writeTransportBytes(cacheGetter, writer)
-        ProtoBuf.writeKey(0, WireType.VAR_INT, writer)
+        ProtoBuf.writeKey(0u, WireType.VAR_INT, writer)
         0.writeVarBytes(writer)
     }
 

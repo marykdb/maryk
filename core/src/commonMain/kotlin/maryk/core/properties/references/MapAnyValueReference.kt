@@ -56,7 +56,7 @@ class MapAnyValueReference<K : Any, V : Any, CX : IsPropertyContext> internal co
 
     override fun writeTransportBytes(cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit) {
         this.parentReference?.writeTransportBytes(cacheGetter, writer)
-        ProtoBuf.writeKey(2, WireType.VAR_INT, writer)
+        ProtoBuf.writeKey(2u, WireType.VAR_INT, writer)
     }
 
     override fun calculateSelfStorageByteLength(): Int {

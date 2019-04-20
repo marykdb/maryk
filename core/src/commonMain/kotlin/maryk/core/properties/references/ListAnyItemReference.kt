@@ -86,7 +86,7 @@ class ListAnyItemReference<T : Any, CX : IsPropertyContext> internal constructor
 
     override fun writeTransportBytes(cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit) {
         this.parentReference?.writeTransportBytes(cacheGetter, writer)
-        ProtoBuf.writeKey(1, WireType.VAR_INT, writer)
+        ProtoBuf.writeKey(1u, WireType.VAR_INT, writer)
     }
 
     override fun calculateSelfStorageByteLength(): Int {

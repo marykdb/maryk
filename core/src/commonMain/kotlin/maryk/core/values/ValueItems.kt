@@ -5,9 +5,9 @@ package maryk.core.values
 interface IsValueItems : Iterable<ValueItem> {
     val size: Int
 
-    operator fun get(index: Int): Any?
+    operator fun get(index: UInt): Any?
 
-    fun contains(index: Int): Boolean
+    fun contains(index: UInt): Boolean
 
     fun copyAdding(toAdd: Array<ValueItem>): IsValueItems
 }
@@ -37,7 +37,7 @@ inline class MutableValueItems(
         }
     }
 
-    operator fun set(index: Int, value: Any) {
+    operator fun set(index: UInt, value: Any) {
         this.searchItemByIndex(index).let {
             val valueItem = ValueItem(index, value)
             when {
@@ -47,18 +47,18 @@ inline class MutableValueItems(
         }
     }
 
-    fun remove(index: Int) = this.searchItemByIndex(index).let {
+    fun remove(index: UInt) = this.searchItemByIndex(index).let {
         when {
             it < 0 -> null
             else -> list.removeAt(it)
         }
     }
 
-    override fun contains(index: Int): Boolean {
+    override fun contains(index: UInt): Boolean {
         return 0 <= list.binarySearch { it.index.compareTo(index) }
     }
 
-    override operator fun get(index: Int): Any? {
+    override operator fun get(index: UInt): Any? {
         this.searchItemByIndex(index).let {
             return when {
                 it < 0 -> null
@@ -79,9 +79,9 @@ inline class MutableValueItems(
         }
     }
 
-    private fun searchItemByIndex(index: Int): Int {
+    private fun searchItemByIndex(index: UInt): Int {
         // Index can never be at a higher spot in list than index itself
-        return list.binarySearch(toIndex = minOf(index, list.size)) { it.index.compareTo(index) }
+        return list.binarySearch(toIndex = minOf(index.toInt(), list.size)) { it.index.compareTo(index) }
     }
 
     override fun toString() = this.list.joinToString(separator = ", ", prefix = "{", postfix = "}")

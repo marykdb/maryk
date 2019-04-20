@@ -27,7 +27,7 @@ data class Change internal constructor(
         ReferenceValuePair.Properties
     ) {
         override fun invoke(values: ObjectValues<Change, Properties>) = Change(
-            referenceValuePairs = values(1)
+            referenceValuePairs = values(1u)
         )
     }
 }

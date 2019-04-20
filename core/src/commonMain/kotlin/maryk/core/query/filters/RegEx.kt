@@ -26,7 +26,7 @@ data class RegEx internal constructor(
         pairProperties = ReferenceValueRegexPair.Properties
     ) {
         override fun invoke(values: ObjectValues<RegEx, Properties>) = RegEx(
-            referenceValuePairs = values(1)
+            referenceValuePairs = values(1u)
         )
     }
 }

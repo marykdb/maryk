@@ -27,7 +27,7 @@ fun <T : IsPropertyDefinition<*>> writeTypedValueToStorage(
         val qualifierTypeLength = qualifierSize + typedValue.type.index.calculateVarIntWithExtraInfoByteSize()
         val qualifierTypeWriter = createQualifierWriter(
             qualifierWriter,
-            typedValue.type.index.toInt(),
+            typedValue.type.index,
             TYPE
         )
 
@@ -45,7 +45,7 @@ fun <T : IsPropertyDefinition<*>> writeTypedValueToStorage(
 
         // write sub value(s)
         writeValue(
-            -1,
+            null,
             qualifierTypeLength,
             qualifierTypeWriter,
             valueDefinition,

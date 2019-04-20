@@ -49,14 +49,14 @@ data class BooleanDefinition(
             init {
                 IsPropertyDefinition.addRequired(this, BooleanDefinition::required)
                 IsPropertyDefinition.addFinal(this, BooleanDefinition::final)
-                add(3, "default", BooleanDefinition(), BooleanDefinition::default)
+                add(3u, "default", BooleanDefinition(), BooleanDefinition::default)
             }
         }
     ) {
         override fun invoke(values: SimpleObjectValues<BooleanDefinition>) = BooleanDefinition(
-            required = values(1),
-            final = values(2),
-            default = values(3)
+            required = values(1u),
+            final = values(2u),
+            default = values(3u)
         )
     }
 }

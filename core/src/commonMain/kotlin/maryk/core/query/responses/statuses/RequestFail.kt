@@ -18,13 +18,13 @@ data class RequestFail<DM : IsRootDataModel<*>>(
     internal companion object : SimpleQueryDataModel<RequestFail<*>>(
         properties = object : ObjectPropertyDefinitions<RequestFail<*>>() {
             init {
-                add(1, "reason", StringDefinition(), RequestFail<*>::reason)
+                add(1u, "reason", StringDefinition(), RequestFail<*>::reason)
             }
         }
     ) {
         override fun invoke(values: SimpleObjectValues<RequestFail<*>>) =
             RequestFail<IsRootDataModel<IsPropertyDefinitions>>(
-                values(1)
+                values(1u)
             )
     }
 }

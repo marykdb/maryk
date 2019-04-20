@@ -24,7 +24,7 @@ object UniqueModel : RootDataModel<UniqueModel, Properties>(
 ) {
     object Properties : PropertyDefinitions() {
         val email = add(
-            index = 1, name = "email",
+            index = 1u, name = "email",
             definition = StringDefinition(
                 unique = true
             )

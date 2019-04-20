@@ -80,12 +80,12 @@ internal class NumberDefinitionTest {
 
         for (value in intArray) {
             bc.reserve(
-                def.calculateTransportByteLengthWithKey(1, value, cacheFailer)
+                def.calculateTransportByteLengthWithKey(1u, value, cacheFailer)
             )
-            def.writeTransportBytesWithKey(1, value, cacheFailer, bc::write)
+            def.writeTransportBytesWithKey(1u, value, cacheFailer, bc::write)
             val key = ProtoBuf.readKey(bc::read)
             key.wireType shouldBe WireType.VAR_INT
-            key.tag shouldBe 1
+            key.tag shouldBe 1u
             def.readTransportBytes(
                 ProtoBuf.getLength(key.wireType, bc::read),
                 bc::read
@@ -101,12 +101,12 @@ internal class NumberDefinitionTest {
 
         for (value in floatArray) {
             bc.reserve(
-                defFloat32.calculateTransportByteLengthWithKey(2, value, cacheFailer)
+                defFloat32.calculateTransportByteLengthWithKey(2u, value, cacheFailer)
             )
-            defFloat32.writeTransportBytesWithKey(2, value, cacheFailer, bc::write)
+            defFloat32.writeTransportBytesWithKey(2u, value, cacheFailer, bc::write)
             val key = ProtoBuf.readKey(bc::read)
             key.wireType shouldBe WireType.BIT_32
-            key.tag shouldBe 2
+            key.tag shouldBe 2u
             defFloat32.readTransportBytes(
                 ProtoBuf.getLength(key.wireType, bc::read),
                 bc::read

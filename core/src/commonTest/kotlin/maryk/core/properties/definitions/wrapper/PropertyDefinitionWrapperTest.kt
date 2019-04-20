@@ -22,7 +22,7 @@ fun comparePropertyDefinitionWrapper(
 
 class PropertyDefinitionWrapperTest {
     private val def = FlexBytesPropertyDefinitionWrapper(
-        index = 1,
+        index = 1u,
         name = "wrapper",
         definition = StringDefinition(),
         getter = { _: Any -> null }

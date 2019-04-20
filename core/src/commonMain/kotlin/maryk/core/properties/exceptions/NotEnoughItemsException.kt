@@ -25,15 +25,15 @@ data class NotEnoughItemsException internal constructor(
         properties = object : ObjectPropertyDefinitions<NotEnoughItemsException>() {
             init {
                 addReference(this, NotEnoughItemsException::reference)
-                add(2, "size", NumberDefinition(type = UInt32), NotEnoughItemsException::size)
-                add(3, "minSize", NumberDefinition(type = UInt32), NotEnoughItemsException::minSize)
+                add(2u, "size", NumberDefinition(type = UInt32), NotEnoughItemsException::size)
+                add(3u, "minSize", NumberDefinition(type = UInt32), NotEnoughItemsException::minSize)
             }
         }
     ) {
         override fun invoke(values: SimpleObjectValues<NotEnoughItemsException>) = NotEnoughItemsException(
-            reference = values(1),
-            size = values(2),
-            minSize = values(3)
+            reference = values(1u),
+            size = values(2u),
+            minSize = values(3u)
         )
     }
 }

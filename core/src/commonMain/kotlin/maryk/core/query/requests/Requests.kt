@@ -26,7 +26,7 @@ data class Requests internal constructor(
     constructor(requests: List<IsRequest<*>>) : this(requests, null)
 
     object Properties : ObjectPropertyDefinitions<Requests>() {
-        val requests = add(1, "requests",
+        val requests = add(1u, "requests",
             ListDefinition(
                 valueDefinition = MultiTypeDefinition(
                     typeEnum = RequestType,
@@ -39,7 +39,7 @@ data class Requests internal constructor(
             toSerializable = { TypedValue(it.requestType, it) }
         )
 
-        internal val injectables = add(2, "injectables",
+        internal val injectables = add(2u, "injectables",
             ContextInjectCollectionOnWriteDefinition(
                 definition = ListDefinition(
                     valueDefinition = EmbeddedObjectDefinition(
@@ -64,8 +64,8 @@ data class Requests internal constructor(
         singlePropertyDefinition = Properties.requests as IsPropertyDefinitionWrapper<TypedValue<RequestType, Any>, TypedValue<RequestType, Any>, RequestContext, Requests>
     ) {
         override fun invoke(values: ObjectValues<Requests, Properties>) = Requests(
-            requests = values(1),
-            injectables = values(2)
+            requests = values(1u),
+            injectables = values(2u)
         )
 
         override fun protoBufLengthToAddForField(

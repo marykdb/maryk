@@ -44,7 +44,7 @@ internal fun List<KotlinForProperty>.generateDefinitionsForProperties(): String 
     for (it in this) {
         properties += """
         val ${it.name} = add(
-            index = ${it.index}, name = "${it.name}",
+            index = ${it.index}u, name = "${it.name}",
             definition = ${it.definition.prependIndent().prependIndent().prependIndent().trimStart()}
         )"""
     }

@@ -27,7 +27,7 @@ import maryk.core.values.Values
  * function to retrieve value on dataObject of [DO] in context [CX]
  */
 data class MapPropertyDefinitionWrapper<K : Any, V : Any, TO : Any, CX : IsPropertyContext, in DO : Any> internal constructor(
-    override val index: Int,
+    override val index: UInt,
     override val name: String,
     override val definition: MapDefinition<K, V, CX>,
     override val getter: (DO) -> TO? = { null },

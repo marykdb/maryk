@@ -38,14 +38,14 @@ internal data class ContextCollectionTransformerDefinition<T : Any, C : Collecti
         this.definition.readJson(reader, contextTransformer(context))
 
     override fun calculateTransportByteLengthWithKey(
-        index: Int,
+        index: UInt,
         value: C,
         cacher: WriteCacheWriter,
         context: CX?
     ) = this.definition.calculateTransportByteLengthWithKey(index, value, cacher, contextTransformer(context))
 
     override fun writeTransportBytesWithKey(
-        index: Int,
+        index: UInt,
         value: C,
         cacheGetter: WriteCacheReader,
         writer: (byte: Byte) -> Unit,
@@ -56,5 +56,5 @@ internal data class ContextCollectionTransformerDefinition<T : Any, C : Collecti
 
     override fun getEmbeddedByName(name: String) = this.definition.getEmbeddedByName(name)
 
-    override fun getEmbeddedByIndex(index: Int) = this.definition.getEmbeddedByIndex(index)
+    override fun getEmbeddedByIndex(index: UInt) = this.definition.getEmbeddedByIndex(index)
 }

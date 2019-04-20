@@ -84,7 +84,7 @@ data class NumberDefinition<T : Comparable<T>>(
                     IsPropertyDefinition.addFinal(this, NumberDefinition<*>::final)
                     IsComparableDefinition.addUnique(this, NumberDefinition<*>::unique)
                     @Suppress("UNCHECKED_CAST")
-                    add(4, "type",
+                    add(4u, "type",
                         definition = EnumDefinition(enum = NumberType),
                         getter = NumberDefinition<*>::type as (NumberDefinition<*>) -> NumberDescriptor<Comparable<Any>>?,
                         capturer = { context: NumericContext, value: NumberType ->
@@ -100,7 +100,7 @@ data class NumberDefinition<T : Comparable<T>>(
                             value?.type
                         }
                     )
-                    add(5, "minValue",
+                    add(5u, "minValue",
                         ContextualNumberDefinition<NumericContext>(required = false) {
                             it?.numberType ?: throw ContextNotFoundException()
                         },
@@ -109,7 +109,7 @@ data class NumberDefinition<T : Comparable<T>>(
                             it.minValue as Comparable<Any>?
                         }
                     )
-                    add(6, "maxValue",
+                    add(6u, "maxValue",
                         ContextualNumberDefinition<NumericContext>(required = false) {
                             it?.numberType ?: throw ContextNotFoundException()
                         },
@@ -118,7 +118,7 @@ data class NumberDefinition<T : Comparable<T>>(
                             it.maxValue as Comparable<Any>?
                         }
                     )
-                    add(7, "default",
+                    add(7u, "default",
                         ContextualNumberDefinition<NumericContext>(required = false) {
                             it?.numberType ?: throw ContextNotFoundException()
                         },
@@ -127,19 +127,19 @@ data class NumberDefinition<T : Comparable<T>>(
                             it.default as Comparable<Any>?
                         }
                     )
-                    IsNumericDefinition.addRandom(8, this, NumberDefinition<*>::random)
+                    IsNumericDefinition.addRandom(8u, this, NumberDefinition<*>::random)
                 }
             }
         ) {
         override fun invoke(values: SimpleObjectValues<NumberDefinition<*>>) = NumberDefinition<Comparable<Any>>(
-            required = values(1),
-            final = values(2),
-            unique = values(3),
-            type = values(4),
-            minValue = values(5),
-            maxValue = values(6),
-            default = values(7),
-            random = values(8)
+            required = values(1u),
+            final = values(2u),
+            unique = values(3u),
+            type = values(4u),
+            minValue = values(5u),
+            maxValue = values(6u),
+            default = values(7u),
+            random = values(8u)
         )
     }
 }

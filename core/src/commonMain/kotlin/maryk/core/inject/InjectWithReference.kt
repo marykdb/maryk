@@ -45,14 +45,14 @@ internal class InjectWithReference(
     }
 
     internal object Properties : ObjectPropertyDefinitions<InjectWithReference>() {
-        val inject = add(1, "inject",
+        val inject = add(1u, "inject",
             EmbeddedObjectDefinition(
                 dataModel = { Inject }
             ),
             getter = InjectWithReference::inject
         )
 
-        val reference = add(2, "reference",
+        val reference = add(2u, "reference",
             ContextualPropertyReferenceDefinition<RequestContext>(
                 contextualResolver = { Requests.Properties }
             ),
@@ -64,8 +64,8 @@ internal class InjectWithReference(
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<InjectWithReference, Properties>) = InjectWithReference(
-            inject = values(1),
-            reference = values(2)
+            inject = values(1u),
+            reference = values(2u)
         )
     }
 }

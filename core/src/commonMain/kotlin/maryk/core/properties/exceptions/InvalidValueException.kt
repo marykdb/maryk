@@ -24,8 +24,8 @@ data class InvalidValueException(
         }
     ) {
         override fun invoke(values: SimpleObjectValues<InvalidValueException>) = InvalidValueException(
-            reference = values(1),
-            value = values(2)
+            reference = values(1u),
+            value = values(2u)
         )
     }
 }

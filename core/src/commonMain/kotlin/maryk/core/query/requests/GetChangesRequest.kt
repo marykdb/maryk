@@ -65,8 +65,8 @@ data class GetChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
         val where = IsFetchRequest.addFilter(this, GetChangesRequest<*, *>::where)
         val toVersion = IsFetchRequest.addToVersion(this, GetChangesRequest<*, *>::toVersion)
         val filterSoftDeleted = IsFetchRequest.addFilterSoftDeleted(this, GetChangesRequest<*, *>::filterSoftDeleted)
-        val fromVersion = IsChangesRequest.addFromVersion(7, this, GetChangesRequest<*, *>::fromVersion)
-        val maxVersions = IsChangesRequest.addMaxVersions(8, this, GetChangesRequest<*, *>::maxVersions)
+        val fromVersion = IsChangesRequest.addFromVersion(7u, this, GetChangesRequest<*, *>::fromVersion)
+        val maxVersions = IsChangesRequest.addMaxVersions(8u, this, GetChangesRequest<*, *>::maxVersions)
     }
 
     companion object : QueryDataModel<GetChangesRequest<*, *>, Properties>(
@@ -74,14 +74,14 @@ data class GetChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
     ) {
         override fun invoke(values: ObjectValues<GetChangesRequest<*, *>, Properties>) =
             GetChangesRequest<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
-                dataModel = values(1),
-                keys = values(2),
-                select = values(3),
-                where = values(4),
-                toVersion = values(5),
-                filterSoftDeleted = values(6),
-                fromVersion = values(7),
-                maxVersions = values(8)
+                dataModel = values(1u),
+                keys = values(2u),
+                select = values(3u),
+                where = values(4u),
+                toVersion = values(5u),
+                filterSoftDeleted = values(6u),
+                fromVersion = values(7u),
+                maxVersions = values(8u)
             )
     }
 }

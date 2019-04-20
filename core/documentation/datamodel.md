@@ -36,9 +36,9 @@ object Person : RootDataModel<Person, Person.Properties>(
     properties = Properties
 ){ 
     object Properties: PropertyDefinitions() {
-        val firstName = add(1, "firstname", StringDefinition(), Person::firstName)
-        val lastName = add(2, "lastName", StringDefinition(), Person::lastName)
-        val dateOfBirth = add(3, "dateOfBirth", DateDefinition(), Person::dateOfBirth)
+        val firstName = add(1u, "firstname", StringDefinition(), Person::firstName)
+        val lastName = add(2u, "lastName", StringDefinition(), Person::lastName)
+        val dateOfBirth = add(3u, "dateOfBirth", DateDefinition(), Person::dateOfBirth)
     }
 
     operator fun invoke(
@@ -159,20 +159,20 @@ data class PersonRoleInPeriod(
     val endDate: Date
 ) : ValueDataObject(toBytes(person, role, startDate, stopDate)) {
     object Properties : ObjectProperties<PersonRoleInPeriod>() {
-        val person = add(1, "person", ReferenceDefinition(dataModel = Person), PersonRoleInPeriod::person)
-        val role = add(2, "role", EnumProperty(values = Role.values()), PersonRoleInPeriod::role)
-        val startDate = add(3, "startDate", DateDefinition(), PersonRoleInPeriod::startDate)
-        val endDate = add(4, "endDate". DateDefinition(), PersonRoleInPeriod::endDate)
+        val person = add(1u, "person", ReferenceDefinition(dataModel = Person), PersonRoleInPeriod::person)
+        val role = add(2u, "role", EnumProperty(values = Role.values()), PersonRoleInPeriod::role)
+        val startDate = add(3u, "startDate", DateDefinition(), PersonRoleInPeriod::startDate)
+        val endDate = add(4u, "endDate". DateDefinition(), PersonRoleInPeriod::endDate)
     }
 
     companion object: ValueDataModel<TestValueObject, Properties>(
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<TestValueObject, Properties>) = TestValueObject(
-            person = values(1),
-            role = values(2),
-            startDate = values(3),
-            endDate = values(4)
+            person = values(1u),
+            role = values(2u),
+            startDate = values(3u),
+            endDate = values(4u)
         )
     }
 }
@@ -203,12 +203,12 @@ object TimelineItem: RootDataModel<TimelineItem>(
     properties = Properties
 ) {
     object Properties: PropertyDefinitions() {
-        val dateOfPosting = add(1, "dateOfPosting", DateTimeDefinition(
+        val dateOfPosting = add(1u, "dateOfPosting", DateTimeDefinition(
             final = true,
             precision = TimePrecision.SECONDS
         ))
         
-        val item = add(2, "item", MultiTypeDefinition(
+        val item = add(2u, "item", MultiTypeDefinition(
             final = true,
             typeMap = mapOf(
                 1 to EmbeddedObjectDefinition(dataModel = Post),

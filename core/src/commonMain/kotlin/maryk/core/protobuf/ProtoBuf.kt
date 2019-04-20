@@ -4,19 +4,19 @@ import maryk.core.extensions.bytes.SIGN_BYTE
 import maryk.core.extensions.bytes.ZERO_BYTE
 import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.initIntByVar
-import maryk.core.extensions.bytes.initIntByVarWithExtraInfo
+import maryk.core.extensions.bytes.initUIntByVarWithExtraInfo
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import kotlin.experimental.and
 
 internal object ProtoBuf {
     /** Write the key for ProtoBuf field */
-    internal fun writeKey(tag: Int, wireType: WireType, writer: (byte: Byte) -> Unit) {
+    internal fun writeKey(tag: UInt, wireType: WireType, writer: (byte: Byte) -> Unit) {
         tag.writeVarIntWithExtraInfo(wireType.type, writer)
     }
 
     /** Reads the key of a ProtoBuf based field from [reader] into a ProtoBufKey */
     internal fun readKey(reader: () -> Byte): ProtoBufKey {
-        return initIntByVarWithExtraInfo(reader) { result, wireByte ->
+        return initUIntByVarWithExtraInfo(reader) { result, wireByte ->
             ProtoBufKey(result, wireTypeOf(wireByte and 0b111))
         }
     }
@@ -66,10 +66,10 @@ internal object ProtoBuf {
     }
 
     /** Calculate the length of the key [tag] */
-    internal fun calculateKeyLength(tag: Int): Int {
+    internal fun calculateKeyLength(tag: UInt): Int {
         return tag.calculateVarIntWithExtraInfoByteSize()
     }
 }
 
 /** Contains the tag and wiretype of the Protobuf key */
-internal class ProtoBufKey(val tag: Int, val wireType: WireType)
+internal class ProtoBufKey(val tag: UInt, val wireType: WireType)

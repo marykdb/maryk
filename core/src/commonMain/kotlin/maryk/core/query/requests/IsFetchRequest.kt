@@ -27,7 +27,7 @@ interface IsFetchRequest<DM : IsRootDataModel<P>, P : PropertyDefinitions, RP : 
             definitions: ObjectPropertyDefinitions<DM>,
             getter: (DM) -> RootPropRefGraph<*>?
         ) =
-            definitions.add(3, "select",
+            definitions.add(3u, "select",
                 EmbeddedObjectDefinition(
                     dataModel = { RootPropRefGraph }
                 ),
@@ -36,7 +36,7 @@ interface IsFetchRequest<DM : IsRootDataModel<P>, P : PropertyDefinitions, RP : 
 
         internal fun <DM : Any> addFilter(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> IsFilter?) =
             definitions.add(
-                4, "where",
+                4u, "where",
                 MultiTypeDefinition(
                     required = false,
                     typeEnum = FilterType,
@@ -55,7 +55,7 @@ interface IsFetchRequest<DM : IsRootDataModel<P>, P : PropertyDefinitions, RP : 
 
         internal fun <DM : Any> addToVersion(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> ULong?) =
             definitions.add(
-                5, "toVersion",
+                5u, "toVersion",
                 NumberDefinition(
                     required = false,
                     type = UInt64
@@ -68,7 +68,7 @@ interface IsFetchRequest<DM : IsRootDataModel<P>, P : PropertyDefinitions, RP : 
             getter: (DM) -> Boolean?
         ) =
             definitions.add(
-                6, "filterSoftDeleted",
+                6u, "filterSoftDeleted",
                 BooleanDefinition(
                     default = true
                 ),

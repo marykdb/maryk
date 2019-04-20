@@ -40,16 +40,16 @@ class ContextualCollectionDefinitionTest {
         val asHex = "ea020154ea02025432ea02025433ea02025434"
 
         bc.reserve(
-            def.calculateTransportByteLengthWithKey(45, value, cache, this.context)
+            def.calculateTransportByteLengthWithKey(45u, value, cache, this.context)
         )
-        def.writeTransportBytesWithKey(45, value, cache, bc::write, this.context)
+        def.writeTransportBytesWithKey(45u, value, cache, bc::write, this.context)
 
         bc.bytes!!.toHex() shouldBe asHex
 
         fun readKey() {
             val key = ProtoBuf.readKey(bc::read)
             key.wireType shouldBe WireType.LENGTH_DELIMITED
-            key.tag shouldBe 45
+            key.tag shouldBe 45u
         }
 
         fun readValue() = def.readCollectionTransportBytes(

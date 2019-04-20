@@ -18,7 +18,7 @@ data class SetChange internal constructor(
 
     object Properties : ObjectPropertyDefinitions<SetChange>() {
         init {
-            add(1, "setValueChanges",
+            add(1u, "setValueChanges",
                 ListDefinition(
                     valueDefinition = EmbeddedObjectDefinition(
                         dataModel = { SetValueChanges }
@@ -35,7 +35,7 @@ data class SetChange internal constructor(
         referenceProperty = SetValueChanges.Properties.reference
     ) {
         override fun invoke(values: ObjectValues<SetChange, Properties>) = SetChange(
-            setValueChanges = values(1)
+            setValueChanges = values(1u)
         )
 
         override fun writeJson(obj: SetChange, writer: IsJsonLikeWriter, context: RequestContext?) {

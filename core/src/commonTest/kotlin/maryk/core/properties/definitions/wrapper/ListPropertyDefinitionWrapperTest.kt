@@ -8,7 +8,7 @@ import kotlin.test.Test
 
 class ListPropertyDefinitionWrapperTest {
     private val def = ListPropertyDefinitionWrapper(
-        index = 1,
+        index = 1u,
         name = "wrapper",
         definition = ListDefinition(
             valueDefinition = StringDefinition()

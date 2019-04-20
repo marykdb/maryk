@@ -25,7 +25,7 @@ data class AlreadySetException(
         }
     ) {
         override fun invoke(values: SimpleObjectValues<AlreadySetException>) = AlreadySetException(
-            reference = values(1)
+            reference = values(1u)
         )
     }
 }

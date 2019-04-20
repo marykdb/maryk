@@ -10,7 +10,7 @@ import kotlin.test.Test
 
 class ObjectListPropertyDefinitionWrapperTest {
     private val def = ObjectListPropertyDefinitionWrapper(
-        index = 1,
+        index = 1u,
         name = "wrapper",
         properties = SimpleMarykObject.Properties,
         definition = ListDefinition(

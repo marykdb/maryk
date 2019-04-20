@@ -12,7 +12,7 @@ interface IsFixedBytesEncodable<T : Any> : IsBytesEncodable<T> {
 
     companion object {
         internal fun <DO : Any> addByteSize(
-            index: Int,
+            index: UInt,
             definitions: ObjectPropertyDefinitions<DO>,
             getter: (DO) -> Int
         ) {

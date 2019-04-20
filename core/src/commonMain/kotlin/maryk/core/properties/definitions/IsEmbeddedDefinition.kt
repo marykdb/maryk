@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.extensions.bytes.initIntByVar
+import maryk.core.extensions.bytes.initUIntByVar
 import maryk.core.models.IsDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
@@ -22,7 +22,7 @@ interface IsEmbeddedDefinition<out DM : IsDataModel<P>, P : AbstractPropertyDefi
         reader: () -> Byte,
         parentReference: CanHaveComplexChildReference<*, *, *, *>? = null
     ): IsPropertyReference<Any, *, *> {
-        val index = initIntByVar(reader)
+        val index = initUIntByVar(reader)
         return this.dataModel.properties[index]?.ref(parentReference)
             ?: throw DefNotFoundException("Embedded Definition with $index not found")
     }

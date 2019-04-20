@@ -19,7 +19,7 @@ data class Orders(
 
     object Properties : ObjectPropertyDefinitions<Orders>() {
         val orders = add(
-            1, "orders",
+            1u, "orders",
             ListDefinition(
                 valueDefinition = EmbeddedObjectDefinition(
                     dataModel = { Order }
@@ -35,7 +35,7 @@ data class Orders(
     ) {
         override fun invoke(values: ObjectValues<Orders, Properties>) =
             Orders(
-                orders = values(1)
+                orders = values(1u)
             )
     }
 }

@@ -20,7 +20,7 @@ abstract class ObjectDataModel<DO : Any, P : ObjectPropertyDefinitions<DO>>(
     companion object {
         internal fun <DM : IsDataModel<*>> addProperties(definitions: AbstractPropertyDefinitions<DM>): ObjectPropertyDefinitionsCollectionDefinitionWrapper<DM> {
             val wrapper = ObjectPropertyDefinitionsCollectionDefinitionWrapper<DM>(
-                2,
+                2u,
                 "properties",
                 ObjectPropertyDefinitionsCollectionDefinition(
                     capturer = { context, propDefs ->

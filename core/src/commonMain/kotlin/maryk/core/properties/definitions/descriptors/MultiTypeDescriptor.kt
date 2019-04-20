@@ -52,14 +52,14 @@ private data class MultiTypeDescriptor(
 ) {
     private object Properties : ObjectPropertyDefinitions<MultiTypeDescriptor>() {
         val index = add(
-            1, "index",
+            1u, "index",
             NumberDefinition(type = UInt32),
             MultiTypeDescriptor::index
         )
-        val name = add(2, "name", StringDefinition(), MultiTypeDescriptor::name)
+        val name = add(2u, "name", StringDefinition(), MultiTypeDescriptor::name)
 
         val definition = add(
-            3, "definition",
+            3u, "definition",
             MultiTypeDefinition(
                 typeEnum = PropertyDefinitionType,
                 definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
@@ -75,9 +75,9 @@ private data class MultiTypeDescriptor(
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<MultiTypeDescriptor, Properties>) = MultiTypeDescriptor(
-            index = values(1),
-            name = values(2),
-            definition = values<TypedValue<*, IsSubDefinition<out Any, IsPropertyContext>>>(3).value
+            index = values(1u),
+            name = values(2u),
+            definition = values<TypedValue<*, IsSubDefinition<out Any, IsPropertyContext>>>(3u).value
         )
 
         override fun readJson(
@@ -192,7 +192,7 @@ private data class MultiTypeDescriptorListDefinition(
  * Describes the property wrapper for the List of type descriptors inside a Multi Typed property definition
  */
 private data class MultiTypeDescriptorPropertyDefinitionWrapper internal constructor(
-    override val index: Int,
+    override val index: UInt,
     override val name: String,
     override val definition: ContextCollectionTransformerDefinition<MultiTypeDescriptor, List<MultiTypeDescriptor>, MultiTypeDefinitionContext, ContainsDefinitionsContext>,
     override val toSerializable: ((List<MultiTypeDescriptor>?, MultiTypeDefinitionContext?) -> List<MultiTypeDescriptor>?)? = null,
@@ -214,7 +214,7 @@ private data class MultiTypeDescriptorPropertyDefinitionWrapper internal constru
  * Set [index] and [name] to append it to model
  */
 internal fun ObjectPropertyDefinitions<MultiTypeDefinition<*, *>>.addDescriptorPropertyWrapperWrapper(
-    index: Int,
+    index: UInt,
     name: String
 ) {
     MultiTypeDescriptorPropertyDefinitionWrapper(

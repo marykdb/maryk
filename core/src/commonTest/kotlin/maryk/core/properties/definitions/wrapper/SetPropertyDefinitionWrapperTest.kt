@@ -8,7 +8,7 @@ import kotlin.test.Test
 
 class SetPropertyDefinitionWrapperTest {
     private val def = SetPropertyDefinitionWrapper(
-        index = 1,
+        index = 1u,
         name = "wrapper",
         definition = SetDefinition(
             valueDefinition = StringDefinition()

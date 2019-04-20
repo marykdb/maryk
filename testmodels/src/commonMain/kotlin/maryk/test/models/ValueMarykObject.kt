@@ -15,7 +15,7 @@ data class ValueMarykObject(
 ) : ValueDataObject(toBytes(int, date)) {
     object Properties : ObjectPropertyDefinitions<ValueMarykObject>() {
         val int = add(
-            index = 1, name = "int",
+            index = 1u, name = "int",
             definition = NumberDefinition(
                 type = SInt32,
                 default = 5
@@ -23,7 +23,7 @@ data class ValueMarykObject(
             getter = ValueMarykObject::int
         )
         val date = add(
-            index = 2, name = "date",
+            index = 2u, name = "date",
             definition = DateDefinition(
                 default = Date(2000, 5, 12)
             ),
@@ -36,8 +36,8 @@ data class ValueMarykObject(
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<ValueMarykObject, Properties>) = ValueMarykObject(
-            int = values(1),
-            date = values(2)
+            int = values(1u),
+            date = values(2u)
         )
     }
 }

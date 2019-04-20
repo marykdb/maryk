@@ -12,7 +12,7 @@ import maryk.core.properties.graph.PropRefGraphType
  * function to retrieve value on dataObject of [DO] in context [CX]
  */
 data class FlexBytesPropertyDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext, D : IsSerializableFlexBytesEncodable<T, CX>, DO : Any> internal constructor(
-    override val index: Int,
+    override val index: UInt,
     override val name: String,
     override val definition: D,
     override val getter: (DO) -> TO? = { null },

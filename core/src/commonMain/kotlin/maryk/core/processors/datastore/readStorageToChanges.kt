@@ -198,7 +198,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
 ) {
     var qIndex = offset
 
-    initIntByVarWithExtraInfo({ qualifier[qIndex++] }) { index, type ->
+    initUIntByVarWithExtraInfo({ qualifier[qIndex++] }) { index, type ->
         val subSelect = select?.selectNodeOrNull(index)
 
         if (select != null && subSelect == null) {

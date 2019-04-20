@@ -62,11 +62,11 @@ internal class EnumDefinitionTest {
 
         for ((enum, expected) in enumsToTest.zip(expectedEnums)) {
             bc.reserve(
-                def.calculateTransportByteLengthWithKey(14, enum, cacheFailer, null)
+                def.calculateTransportByteLengthWithKey(14u, enum, cacheFailer, null)
             )
-            def.writeTransportBytesWithKey(14, enum, cacheFailer, bc::write, null)
+            def.writeTransportBytesWithKey(14u, enum, cacheFailer, bc::write, null)
             val key = ProtoBuf.readKey(bc::read)
-            key.tag shouldBe 14
+            key.tag shouldBe 14u
             key.wireType shouldBe WireType.VAR_INT
 
             bc.bytes!!.toHex() shouldBe expected

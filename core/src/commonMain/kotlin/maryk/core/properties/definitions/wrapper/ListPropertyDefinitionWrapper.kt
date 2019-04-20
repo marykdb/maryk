@@ -11,7 +11,7 @@ import maryk.core.properties.graph.PropRefGraphType
  * function to retrieve value on dataObject of [DO] in context [CX]
  */
 data class ListPropertyDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext, in DO : Any> internal constructor(
-    override val index: Int,
+    override val index: UInt,
     override val name: String,
     override val definition: ListDefinition<T, CX>,
     override val getter: (DO) -> List<TO>? = { null },

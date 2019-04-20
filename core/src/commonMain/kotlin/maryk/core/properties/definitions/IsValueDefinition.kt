@@ -22,7 +22,7 @@ interface IsValueDefinition<T : Any, in CX : IsPropertyContext> : IsSubDefinitio
 
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
-    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = null
+    override fun getEmbeddedByIndex(index: UInt): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
     /**
      * Get value from a [string]
@@ -36,7 +36,7 @@ interface IsValueDefinition<T : Any, in CX : IsPropertyContext> : IsSubDefinitio
      */
     fun asString(value: T, context: CX? = null) = value.toString()
 
-    override fun calculateTransportByteLengthWithKey(index: Int, value: T, cacher: WriteCacheWriter, context: CX?) =
+    override fun calculateTransportByteLengthWithKey(index: UInt, value: T, cacher: WriteCacheWriter, context: CX?) =
         calculateKeyAndContentLength(this.wireType, index, cacher) {
             this.calculateTransportByteLength(value, cacher, context)
         }
@@ -48,7 +48,7 @@ interface IsValueDefinition<T : Any, in CX : IsPropertyContext> : IsSubDefinitio
     fun calculateTransportByteLength(value: T, cacher: WriteCacheWriter, context: CX? = null): Int
 
     override fun writeTransportBytesWithKey(
-        index: Int,
+        index: UInt,
         value: T,
         cacheGetter: WriteCacheReader,
         writer: (byte: Byte) -> Unit,

@@ -126,7 +126,7 @@ class EnumDefinition<E : IndexedEnumComparable<E>>(
                     IsPropertyDefinition.addFinal(this, EnumDefinition<*>::final)
                     IsComparableDefinition.addUnique(this, EnumDefinition<*>::unique)
                     @Suppress("UNCHECKED_CAST")
-                    add(4, "enum",
+                    add(4u, "enum",
                         ContextValueTransformDefinition(
                             definition = ContextTransformerDefinition(
                                 definition = EmbeddedObjectDefinition(
@@ -151,10 +151,11 @@ class EnumDefinition<E : IndexedEnumComparable<E>>(
                         ),
                         getter = EnumDefinition<*>::enum as (EnumDefinition<*>) -> IndexedEnumDefinition<IndexedEnum>,
                         capturer = { context, value ->
-                            context.enumDefinition = EnumDefinition(enum = value as IndexedEnumDefinition<IndexedEnumComparable<Any>>)
+                            context.enumDefinition =
+                                EnumDefinition(enum = value as IndexedEnumDefinition<IndexedEnumComparable<Any>>)
                         }
                     )
-                    add(5, "minValue",
+                    add(5u, "minValue",
                         ContextualValueDefinition(
                             contextualResolver = { context: EnumDefinitionContext? ->
                                 @Suppress("UNCHECKED_CAST")
@@ -163,7 +164,7 @@ class EnumDefinition<E : IndexedEnumComparable<E>>(
                         ),
                         getter = EnumDefinition<*>::minValue
                     )
-                    add(6, "maxValue",
+                    add(6u, "maxValue",
                         ContextualValueDefinition(
                             contextualResolver = { context: EnumDefinitionContext? ->
                                 @Suppress("UNCHECKED_CAST")
@@ -172,7 +173,7 @@ class EnumDefinition<E : IndexedEnumComparable<E>>(
                         ),
                         getter = EnumDefinition<*>::maxValue
                     )
-                    add(7, "default",
+                    add(7u, "default",
                         ContextualValueDefinition(
                             contextualResolver = { context: EnumDefinitionContext? ->
                                 @Suppress("UNCHECKED_CAST")
@@ -185,13 +186,13 @@ class EnumDefinition<E : IndexedEnumComparable<E>>(
             }
         ) {
         override fun invoke(values: SimpleObjectValues<EnumDefinition<*>>) = EnumDefinition<IndexedEnumComparable<Any>>(
-            required = values(1),
-            final = values(2),
-            unique = values(3),
-            enum = values(4),
-            minValue = values(5),
-            maxValue = values(6),
-            default = values(7)
+            required = values(1u),
+            final = values(2u),
+            unique = values(3u),
+            enum = values(4u),
+            minValue = values(5u),
+            maxValue = values(6u),
+            default = values(7u)
         )
     }
 }

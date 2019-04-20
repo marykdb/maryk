@@ -52,7 +52,7 @@ internal fun AbstractPropertyDefinitions<*>.generateKotlin(
                 value = "${propertyDefinitionWrapper.name}$nativeTypeName$default",
                 assign = "this.${propertyDefinitionWrapper.name} with ${propertyDefinitionWrapper.name}",
                 definition = kotlinDescriptor.definitionToKotlin(definition, addImport),
-                invoke = "values(${propertyDefinitionWrapper.index})"
+                invoke = "values(${propertyDefinitionWrapper.index}u)"
             )
         )
     }

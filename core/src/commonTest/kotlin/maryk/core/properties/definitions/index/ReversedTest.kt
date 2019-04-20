@@ -27,12 +27,12 @@ internal class ReversedTest {
     ) {
         object Properties : PropertyDefinitions() {
             val boolean = add(
-                1, "bool", BooleanDefinition(
+                1u, "bool", BooleanDefinition(
                     final = true
                 )
             )
             val dateTime = add(
-                2, "dateTime", DateTimeDefinition(
+                2u, "dateTime", DateTimeDefinition(
                     final = true
                 )
             )

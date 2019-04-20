@@ -81,7 +81,7 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
     )
 
     override fun getEmbeddedByName(name: String): Nothing? = null
-    override fun getEmbeddedByIndex(index: Int): Nothing? = null
+    override fun getEmbeddedByIndex(index: UInt): Nothing? = null
 
     /** Check the enum values */
     fun check() {
@@ -136,7 +136,7 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
     }
 
     internal object Properties : ObjectPropertyDefinitions<IndexedEnumDefinition<IndexedEnum>>() {
-        val name = add(1, "name",
+        val name = add(1u, "name",
             ContextCaptureDefinition(
                 definition = StringDefinition(),
                 capturer = { context: EnumNameContext?, value ->
@@ -149,7 +149,7 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
         )
 
         @Suppress("UNCHECKED_CAST")
-        val cases = add(2, "cases",
+        val cases = add(2u, "cases",
             MapDefinition(
                 keyDefinition = NumberDefinition(
                     type = UInt32,
@@ -195,7 +195,7 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
 
         init {
             add(
-                3, "reservedIndices",
+                3u, "reservedIndices",
                 ListDefinition(
                     valueDefinition = NumberDefinition(
                         type = UInt32,
@@ -206,7 +206,7 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
             )
 
             add(
-                4, "reservedNames",
+                4u, "reservedNames",
                 ListDefinition(
                     valueDefinition = StringDefinition()
                 ),
@@ -222,10 +222,10 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
         ) {
         override fun invoke(values: ObjectValues<IndexedEnumDefinition<IndexedEnum>, Properties>) =
             IndexedEnumDefinition<IndexedEnum>(
-                name = values(1),
-                optionalCases = values(2),
-                reservedIndices = values(3),
-                reservedNames = values(4),
+                name = values(1u),
+                optionalCases = values(2u),
+                reservedIndices = values(3u),
+                reservedNames = values(4u),
                 unknownCreator = { index, name -> IndexedEnumComparable(index, name) }
             )
 

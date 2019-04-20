@@ -55,12 +55,12 @@ data class GetRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> in
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<GetRequest<*, *>, Properties>) = GetRequest(
-            dataModel = values<IsRootValuesDataModel<PropertyDefinitions>>(1),
-            keys = values(2),
-            select = values(3),
-            where = values(4),
-            toVersion = values(5),
-            filterSoftDeleted = values(6)
+            dataModel = values<IsRootValuesDataModel<PropertyDefinitions>>(1u),
+            keys = values(2u),
+            select = values(3u),
+            where = values(4u),
+            toVersion = values(5u),
+            filterSoftDeleted = values(6u)
         )
     }
 }

@@ -27,7 +27,7 @@ data class Check internal constructor(
         pairProperties = ReferenceValuePair.Properties
     ) {
         override fun invoke(values: ObjectValues<Check, Properties>) = Check(
-            referenceValuePairs = values(1)
+            referenceValuePairs = values(1u)
         )
     }
 }

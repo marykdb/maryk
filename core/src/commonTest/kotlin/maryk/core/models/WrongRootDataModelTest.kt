@@ -8,11 +8,11 @@ import kotlin.test.Test
 
 object WrongModelIndex : RootDataModel<WrongModelIndex, WrongModelIndex.Properties>(
     properties = Properties,
-    reservedIndices = listOf(1)
+    reservedIndices = listOf(1u)
 ) {
     object Properties : PropertyDefinitions() {
         val value =
-            add(1, "value", StringDefinition())
+            add(1u, "value", StringDefinition())
     }
 
     operator fun invoke(value: String) = this.values {
@@ -26,7 +26,7 @@ object WrongModelName : RootDataModel<WrongModelName, WrongModelName.Properties>
 ) {
     object Properties : PropertyDefinitions() {
         val value =
-            add(1, "value", StringDefinition())
+            add(1u, "value", StringDefinition())
     }
 
     operator fun invoke(value: String) = this.values {

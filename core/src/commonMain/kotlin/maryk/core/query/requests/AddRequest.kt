@@ -33,7 +33,7 @@ data class AddRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> in
         val dataModel = IsObjectRequest.addDataModel("to", this, AddRequest<*, *>::dataModel)
 
         @Suppress("UNCHECKED_CAST")
-        val objects = add(2, "objects", ListDefinition(
+        val objects = add(2u, "objects", ListDefinition(
             valueDefinition = ContextualEmbeddedValuesDefinition<RequestContext>(
                 contextualResolver = {
                     it?.dataModel as? ValuesDataModelImpl<RequestContext>? ?: throw ContextNotFoundException()
@@ -47,8 +47,8 @@ data class AddRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> in
     ) {
         override fun invoke(values: ObjectValues<AddRequest<*, *>, Properties>) =
             AddRequest<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
-                dataModel = values(1),
-                objects = values(2)
+                dataModel = values(1u),
+                objects = values(2u)
             )
     }
 }

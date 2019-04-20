@@ -13,7 +13,7 @@ import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
  * function to retrieve value on dataObject of [DO] in context [CX]
  */
 data class FixedBytesPropertyDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext, out D : IsSerializableFixedBytesEncodable<T, CX>, in DO : Any> internal constructor(
-    override val index: Int,
+    override val index: UInt,
     override val name: String,
     override val definition: D,
     override val getter: (DO) -> TO? = { null },

@@ -34,7 +34,7 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
 
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
-    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = null
+    override fun getEmbeddedByIndex(index: UInt): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
     override fun validateWithRef(
         previousValue: C?,
@@ -119,7 +119,7 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
     }
 
     override fun calculateTransportByteLengthWithKey(
-        index: Int,
+        index: UInt,
         value: C,
         cacher: WriteCacheWriter,
         context: CX?
@@ -160,7 +160,7 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
     }
 
     override fun writeTransportBytesWithKey(
-        index: Int,
+        index: UInt,
         value: C,
         cacheGetter: WriteCacheReader,
         writer: (byte: Byte) -> Unit,

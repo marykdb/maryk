@@ -22,7 +22,7 @@ object ComplexModel : RootDataModel<ComplexModel, Properties>(
 ) {
     object Properties : PropertyDefinitions() {
         val multi = add(
-            index = 1, name = "multi",
+            index = 1u, name = "multi",
             definition = MultiTypeDefinition<MultiTypeEnum, IsPropertyContext>(
                 required = false,
                 typeEnum = MultiTypeEnum,
@@ -38,7 +38,7 @@ object ComplexModel : RootDataModel<ComplexModel, Properties>(
         )
 
         val mapStringString = add(
-            index = 2, name = "mapStringString",
+            index = 2u, name = "mapStringString",
             definition = MapDefinition(
                 required = false,
                 minSize = 1u,
@@ -54,7 +54,7 @@ object ComplexModel : RootDataModel<ComplexModel, Properties>(
         )
 
         val mapIntObject = add(
-            index = 3, name = "mapIntObject",
+            index = 3u, name = "mapIntObject",
             definition = MapDefinition(
                 required = false,
                 keyDefinition = NumberDefinition(
@@ -67,7 +67,7 @@ object ComplexModel : RootDataModel<ComplexModel, Properties>(
         )
 
         val mapIntMulti = add(
-            index = 4, name = "mapIntMulti",
+            index = 4u, name = "mapIntMulti",
             definition = MapDefinition(
                 required = false,
                 keyDefinition = NumberDefinition(

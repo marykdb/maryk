@@ -25,7 +25,7 @@ internal class TypeReferenceTest {
     ) {
         object Properties : PropertyDefinitions() {
             val multi = add(
-                1,
+                1u,
                 "multi",
                 MultiTypeDefinition(
                     final = true,

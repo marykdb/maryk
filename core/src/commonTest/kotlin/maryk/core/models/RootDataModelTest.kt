@@ -603,76 +603,76 @@ internal class RootDataModelTest {
             name shouldBe "SimpleModel"
 
             properties["string"]!!.let {
-                it.index shouldBe 1
+                it.index shouldBe 1u
                 it.definition shouldBe StringDefinition()
             }
             properties["int"]!!.let {
-                it.index shouldBe 2
+                it.index shouldBe 2u
                 it.definition shouldBe NumberDefinition(type = SInt32)
             }
             properties["date"]!!.let {
-                it.index shouldBe 3
+                it.index shouldBe 3u
                 it.definition shouldBe DateDefinition()
             }
             properties["time"]!!.let {
-                it.index shouldBe 4
+                it.index shouldBe 4u
                 it.definition shouldBe TimeDefinition()
             }
             properties["dateTime"]!!.let {
-                it.index shouldBe 5
+                it.index shouldBe 5u
                 it.definition shouldBe DateTimeDefinition()
             }
             properties["options"]!!.let {
-                it.index shouldBe 6
+                it.index shouldBe 6u
                 it.definition shouldBe EnumDefinition(enum = Option)
             }
             properties["fixed"]!!.let {
-                it.index shouldBe 7
+                it.index shouldBe 7u
                 it.definition shouldBe FixedBytesDefinition(byteSize = 4)
             }
             properties["flex"]!!.let {
-                it.index shouldBe 8
+                it.index shouldBe 8u
                 it.definition shouldBe FlexBytesDefinition()
             }
             properties["list"]!!.let {
-                it.index shouldBe 9
+                it.index shouldBe 9u
                 it.definition shouldBe ListDefinition(
                     valueDefinition = StringDefinition()
                 )
             }
             properties["set"]!!.let {
-                it.index shouldBe 10
+                it.index shouldBe 10u
                 it.definition shouldBe SetDefinition(
                     valueDefinition = BooleanDefinition()
                 )
             }
             properties["map"]!!.let {
-                it.index shouldBe 11
+                it.index shouldBe 11u
                 it.definition shouldBe MapDefinition(
                     keyDefinition = DateDefinition(),
                     valueDefinition = StringDefinition()
                 )
             }
             properties["embedded"]!!.let {
-                it.index shouldBe 12
+                it.index shouldBe 12u
                 it.definition shouldBe EmbeddedValuesDefinition(
                     dataModel = { TestMarykModel }
                 )
             }
             properties["value"]!!.let {
-                it.index shouldBe 13
+                it.index shouldBe 13u
                 it.definition shouldBe ValueModelDefinition(
                     dataModel = TestValueObject
                 )
             }
             properties["ref"]!!.let {
-                it.index shouldBe 14
+                it.index shouldBe 14u
                 it.definition shouldBe ReferenceDefinition(
                     dataModel = { TestMarykModel }
                 )
             }
             properties["multi"]!!.let {
-                it.index shouldBe 15
+                it.index shouldBe 15u
                 it.definition shouldBe MultiTypeDefinition<Option, IsPropertyContext>(
                     typeEnum = Option,
                     definitionMap = mapOf(
@@ -682,7 +682,7 @@ internal class RootDataModelTest {
                 )
             }
             properties["isTrue"]!!.let {
-                it.index shouldBe 16
+                it.index shouldBe 16u
                 it.definition shouldBe BooleanDefinition()
             }
         }

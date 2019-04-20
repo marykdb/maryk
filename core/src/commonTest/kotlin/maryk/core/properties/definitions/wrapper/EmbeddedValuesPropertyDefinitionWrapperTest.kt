@@ -9,7 +9,7 @@ import kotlin.test.Test
 
 class EmbeddedValuesPropertyDefinitionWrapperTest {
     private val def = EmbeddedValuesPropertyDefinitionWrapper(
-        index = 1,
+        index = 1u,
         name = "wrapper",
         definition = EmbeddedValuesDefinition(
             dataModel = { EmbeddedMarykModel }

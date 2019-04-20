@@ -23,7 +23,7 @@ import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsFixedBytesPropertyReference
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
-import maryk.core.properties.types.numeric.SInt32
+import maryk.core.properties.types.numeric.UInt32
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.values.MutableValueItems
@@ -47,7 +47,7 @@ typealias RootDataModelImpl = RootDataModel<IsRootValuesDataModel<PropertyDefini
 abstract class RootDataModel<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions>(
     final override val keyDefinition: IsIndexable = UUIDKey,
     final override val indices: List<IsIndexable>? = null,
-    final override val reservedIndices: List<Int>? = null,
+    final override val reservedIndices: List<UInt>? = null,
     final override val reservedNames: List<String>? = null,
     properties: P
 ) : DataModel<DM, P>(properties), IsTypedRootDataModel<DM, P>, IsRootValuesDataModel<P> {
@@ -81,7 +81,7 @@ abstract class RootDataModel<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
             IsNamedDataModel.addName(this as ObjectPropertyDefinitions<RootDataModel<*, *>>, RootDataModel<*, *>::name)
         override val properties = addProperties(this as ObjectPropertyDefinitions<RootDataModel<*, *>>)
         val key = add(
-            3, "key",
+            3u, "key",
             MultiTypeDefinition(
                 typeEnum = IndexKeyPartType,
                 definitionMap = mapOfIndexKeyPartDefinitions
@@ -93,7 +93,7 @@ abstract class RootDataModel<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
             getter = RootDataModel<*, *>::keyDefinition
         )
         val indices = add(
-            4, "indices",
+            4u, "indices",
             ListDefinition(
                 valueDefinition = MultiTypeDefinition(
                     typeEnum = IndexKeyPartType,
@@ -111,17 +111,17 @@ abstract class RootDataModel<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
 
         init {
             add(
-                5, "reservedIndices",
+                5u, "reservedIndices",
                 ListDefinition(
                     valueDefinition = NumberDefinition(
-                        type = SInt32,
-                        minValue = 1
+                        type = UInt32,
+                        minValue = 1u
                     )
                 ),
                 RootDataModel<*, *>::reservedIndices
             )
             add(
-                6, "reservedNames",
+                6u, "reservedNames",
                 ListDefinition(
                     valueDefinition = StringDefinition()
                 ),
@@ -136,13 +136,13 @@ abstract class RootDataModel<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
         ) {
         override fun invoke(values: ObjectValues<RootDataModel<*, *>, ObjectPropertyDefinitions<RootDataModel<*, *>>>) =
             object : RootDataModelImpl(
-                properties = values(2),
-                keyDefinition = values(3) ?: UUIDKey,
-                indices = values(4),
-                reservedIndices = values(5),
-                reservedNames = values(6)
+                properties = values(2u),
+                keyDefinition = values(3u) ?: UUIDKey,
+                indices = values(4u),
+                reservedIndices = values(5u),
+                reservedNames = values(6u)
             ) {
-                override val name: String = values(1)
+                override val name: String = values(1u)
             }
 
         override fun writeJson(

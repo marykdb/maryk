@@ -19,70 +19,70 @@ object NumericMarykModel : RootDataModel<NumericMarykModel, NumericMarykModel.Pr
 ) {
     object Properties : PropertyDefinitions() {
         val sInt8 = add(
-            index = 1, name = "sInt8",
+            index = 1u, name = "sInt8",
             definition = NumberDefinition(
                 type = SInt8,
                 default = 4.toByte()
             )
         )
         val sInt16 = add(
-            index = 2, name = "sInt16",
+            index = 2u, name = "sInt16",
             definition = NumberDefinition(
                 type = SInt16,
                 default = 42.toShort()
             )
         )
         val sInt32 = add(
-            index = 3, name = "sInt32",
+            index = 3u, name = "sInt32",
             definition = NumberDefinition(
                 type = SInt32,
                 default = 42
             )
         )
         val sInt64 = add(
-            index = 4, name = "sInt64",
+            index = 4u, name = "sInt64",
             definition = NumberDefinition(
                 type = SInt64,
                 default = 4123123344572L
             )
         )
         val uInt8 = add(
-            index = 5, name = "uInt8",
+            index = 5u, name = "uInt8",
             definition = NumberDefinition(
                 type = UInt8,
                 default = 4.toUByte()
             )
         )
         val uInt16 = add(
-            index = 6, name = "uInt16",
+            index = 6u, name = "uInt16",
             definition = NumberDefinition(
                 type = UInt16,
                 default = 42.toUShort()
             )
         )
         val uInt32 = add(
-            index = 7, name = "uInt32",
+            index = 7u, name = "uInt32",
             definition = NumberDefinition(
                 type = UInt32,
                 default = 42u
             )
         )
         val uInt64 = add(
-            index = 8, name = "uInt64",
+            index = 8u, name = "uInt64",
             definition = NumberDefinition(
                 type = UInt64,
                 default = 4123123344572uL
             )
         )
         val float32 = add(
-            index = 9, name = "float32",
+            index = 9u, name = "float32",
             definition = NumberDefinition(
                 type = Float32,
                 default = 42.345F
             )
         )
         val float64 = add(
-            index = 10, name = "float64",
+            index = 10u, name = "float64",
             definition = NumberDefinition(
                 type = Float64,
                 default = 2345762.3123

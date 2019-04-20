@@ -14,12 +14,12 @@ data class ObjectSoftDeleteChange(
     internal companion object : SimpleQueryDataModel<ObjectSoftDeleteChange>(
         properties = object : ObjectPropertyDefinitions<ObjectSoftDeleteChange>() {
             init {
-                add(1, "isDeleted", BooleanDefinition(), ObjectSoftDeleteChange::isDeleted)
+                add(1u, "isDeleted", BooleanDefinition(), ObjectSoftDeleteChange::isDeleted)
             }
         }
     ) {
         override fun invoke(values: SimpleObjectValues<ObjectSoftDeleteChange>) = ObjectSoftDeleteChange(
-            isDeleted = values(1)
+            isDeleted = values(1u)
         )
     }
 }

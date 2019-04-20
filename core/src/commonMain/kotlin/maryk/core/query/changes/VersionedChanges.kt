@@ -18,14 +18,14 @@ data class VersionedChanges(
 
     object Properties : ObjectPropertyDefinitions<VersionedChanges>() {
         val version = add(
-            1, "version",
+            1u, "version",
             NumberDefinition(
                 type = UInt64
             ),
             VersionedChanges::version
         )
 
-        val changes = add(2, "changes",
+        val changes = add(2u, "changes",
             ListDefinition(
                 default = emptyList(),
                 valueDefinition = MultiTypeDefinition(
@@ -43,8 +43,8 @@ data class VersionedChanges(
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<VersionedChanges, Properties>) = VersionedChanges(
-            version = values(1),
-            changes = values(2)
+            version = values(1u),
+            changes = values(2u)
         )
     }
 }

@@ -32,15 +32,15 @@ interface IsPropertyDefinition<T : Any> {
     fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>?
 
     /** To get embedded properties by [index] */
-    fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>?
+    fun getEmbeddedByIndex(index: UInt): IsPropertyDefinitionWrapper<*, *, *, *>?
 
     companion object {
         internal fun <DO : Any> addRequired(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> Boolean) {
-            definitions.add(1, "required", BooleanDefinition(default = true), getter)
+            definitions.add(1u, "required", BooleanDefinition(default = true), getter)
         }
 
         internal fun <DO : Any> addFinal(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> Boolean) {
-            definitions.add(2, "final", BooleanDefinition(default = false), getter)
+            definitions.add(2u, "final", BooleanDefinition(default = false), getter)
         }
     }
 }

@@ -38,7 +38,7 @@ fun <T : IsPropertyDefinition<*>, K : Any, V : Any> writeMapToStorage(
         val mapValueQualifierLength = qualifierLength + keyByteSize + keyByteCountSize
 
         writeValue(
-            -1, mapValueQualifierLength, mapValueQualifierWriter,
+            null, mapValueQualifierLength, mapValueQualifierWriter,
             mapDefinition.valueDefinition,
             mapValue,
             valueWriter as ValueWriter<IsSubDefinition<*, *>>

@@ -38,7 +38,7 @@ data class ReferenceValueRegexPair internal constructor(
         )
         @Suppress("UNCHECKED_CAST")
         override val value = add(
-            index = 2, name = "regex",
+            index = 2u, name = "regex",
             definition = StringDefinition(),
             fromSerializable = { value: String? ->
                 value?.let { Regex(value) }
@@ -55,8 +55,8 @@ data class ReferenceValueRegexPair internal constructor(
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<ReferenceValueRegexPair, Properties>) = ReferenceValueRegexPair(
-            reference = values(1),
-            regex = values(2)
+            reference = values(1u),
+            regex = values(2u)
         )
     }
 }

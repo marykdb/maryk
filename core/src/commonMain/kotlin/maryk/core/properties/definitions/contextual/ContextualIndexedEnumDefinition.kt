@@ -32,7 +32,7 @@ data class ContextualIndexedEnumDefinition<CX : IsPropertyContext, CXI : IsPrope
     override val final = true
 
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = null
-    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = null
+    override fun getEmbeddedByIndex(index: UInt): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
     @Suppress("UNCHECKED_CAST")
     override fun fromString(string: String, context: CX?) =

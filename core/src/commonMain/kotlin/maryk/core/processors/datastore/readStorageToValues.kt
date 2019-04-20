@@ -5,7 +5,6 @@ import maryk.core.exceptions.InvalidDefinitionException
 import maryk.core.exceptions.StorageException
 import maryk.core.exceptions.TypeException
 import maryk.core.extensions.bytes.initIntByVar
-import maryk.core.extensions.bytes.initIntByVarWithExtraInfo
 import maryk.core.extensions.bytes.initUInt
 import maryk.core.extensions.bytes.initUIntByVarWithExtraInfo
 import maryk.core.models.IsDataModel
@@ -46,7 +45,7 @@ import maryk.core.values.Values
 import maryk.lib.exceptions.ParseException
 
 typealias ValueReader = (StorageTypeEnum<IsPropertyDefinition<out Any>>, IsPropertyDefinition<out Any>?) -> Any?
-private typealias AddToValues = (Int, Any) -> Unit
+private typealias AddToValues = (UInt, Any) -> Unit
 private typealias AddValue = (Any) -> Unit
 
 /**
@@ -63,7 +62,7 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.convertStorageTo
     val mutableValuesItems = MutableValueItems()
 
     // Adds valueItems to collection
-    val valueAdder: AddToValues = { index: Int, value: Any ->
+    val valueAdder: AddToValues = { index, value ->
         mutableValuesItems += ValueItem(index, value)
     }
 
@@ -94,7 +93,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
 ) {
     var qIndex = offset
 
-    initIntByVarWithExtraInfo({ qualifier[qIndex++] }) { index, type ->
+    initUIntByVarWithExtraInfo({ qualifier[qIndex++] }) { index, type ->
         val subSelect = select?.selectNodeOrNull(index)
 
         if (select != null && subSelect == null) {
@@ -184,7 +183,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                         if (listSize != null) {
                             // If not null we can create an empty list of listSize
                             val list = ArrayList<Any>(listSize)
-                            val listValueAdder: AddToValues = { i, value -> list.add(i, value) }
+                            val listValueAdder: AddToValues = { i, value -> list.add(i.toInt(), value) }
 
                             // Add value processor to cache starting after list item
                             addToCache(offset) { q ->
@@ -201,7 +200,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                     } else {
                         val itemIndex = initUInt(reader = {
                             qualifier[qIndex++]
-                        }).toInt()
+                        })
 
                         if (qualifier.size > qIndex) {
                             throw ParseException("Lists cannot contain complex data")
@@ -372,7 +371,7 @@ private fun readComplexValueFromStorage(
     select: IsPropRefGraph<*>?,
     addToCache: CacheProcessor,
     addValueToOutput: AddToValues,
-    index: Int
+    index: UInt
 ) {
     when (definition) {
         is IsMultiTypeDefinition<*, *> -> {

@@ -29,7 +29,7 @@ data class Range internal constructor(
         pairProperties = ReferenceValueRangePair.Properties
     ) {
         override fun invoke(values: ObjectValues<Range, Properties>) = Range(
-            referenceRangePairs = values(1)
+            referenceRangePairs = values(1u)
         )
     }
 }

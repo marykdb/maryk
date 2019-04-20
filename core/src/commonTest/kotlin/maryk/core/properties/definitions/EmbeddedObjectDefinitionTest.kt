@@ -26,7 +26,7 @@ internal class EmbeddedObjectDefinitionTest {
         object Properties : ObjectPropertyDefinitions<MarykObject>() {
             init {
                 add(
-                    1, "string", StringDefinition(
+                    1u, "string", StringDefinition(
                         regEx = "jur"
                     ), MarykObject::string
                 )
@@ -38,7 +38,7 @@ internal class EmbeddedObjectDefinitionTest {
             properties = Properties
         ) {
             override fun invoke(values: ObjectValues<MarykObject, Properties>) = MarykObject(
-                values(1)
+                values(1u)
             )
         }
     }
@@ -92,16 +92,16 @@ internal class EmbeddedObjectDefinitionTest {
         val value = MarykObject()
 
         bc.reserve(
-            def.calculateTransportByteLengthWithKey(5, value, cache)
+            def.calculateTransportByteLengthWithKey(5u, value, cache)
         )
         bc.bytes!!.size shouldBe 7
-        def.writeTransportBytesWithKey(5, value, cache, bc::write, null)
+        def.writeTransportBytesWithKey(5u, value, cache, bc::write, null)
 
         bc.bytes!!.toHex() shouldBe "2a050a036a7572"
 
         val key = ProtoBuf.readKey(bc::read)
         key.wireType shouldBe WireType.LENGTH_DELIMITED
-        key.tag shouldBe 5
+        key.tag shouldBe 5u
 
         def.readTransportBytes(
             ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read),

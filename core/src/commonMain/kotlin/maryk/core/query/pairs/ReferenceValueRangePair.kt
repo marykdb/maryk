@@ -26,7 +26,7 @@ data class ReferenceValueRangePair<T : Comparable<T>> internal constructor(
         )
         @Suppress("UNCHECKED_CAST")
         override val value = add(
-            index = 2, name = "range",
+            index = 2u, name = "range",
             definition = EmbeddedObjectDefinition(
                 dataModel = { ValueRange }
             ),
@@ -39,8 +39,8 @@ data class ReferenceValueRangePair<T : Comparable<T>> internal constructor(
     ) {
         override fun invoke(values: ObjectValues<ReferenceValueRangePair<*>, Properties>) =
             ReferenceValueRangePair<Comparable<Any>>(
-                reference = values(1),
-                range = values(2)
+                reference = values(1u),
+                range = values(2u)
             )
     }
 }

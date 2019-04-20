@@ -27,7 +27,7 @@ data class ValueIn internal constructor(
         pairProperties = ReferenceValueSetPair.Properties
     ) {
         override fun invoke(values: ObjectValues<ValueIn, Properties>) = ValueIn(
-            referenceValuePairs = values(1)
+            referenceValuePairs = values(1u)
         )
     }
 }

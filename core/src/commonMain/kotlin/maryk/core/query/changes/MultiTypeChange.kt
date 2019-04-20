@@ -26,7 +26,7 @@ data class MultiTypeChange internal constructor(
         pairProperties = ReferenceTypePair.Properties
     ) {
         override fun invoke(values: ObjectValues<MultiTypeChange, Properties>) = MultiTypeChange(
-            referenceTypePairs = values(1)
+            referenceTypePairs = values(1u)
         )
     }
 }

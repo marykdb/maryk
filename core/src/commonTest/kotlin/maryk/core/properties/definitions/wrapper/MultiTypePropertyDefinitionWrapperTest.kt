@@ -15,7 +15,7 @@ import kotlin.test.Test
 
 class MultiTypePropertyDefinitionWrapperTest {
     private val def = MultiTypeDefinitionWrapper(
-        index = 1,
+        index = 1u,
         name = "wrapper",
         definition = MultiTypeDefinition<Option, IsPropertyContext>(
             typeEnum = Option,

@@ -63,7 +63,7 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
 
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
-    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = null
+    override fun getEmbeddedByIndex(index: UInt): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
     override fun validateWithRef(
         previousValue: Map<K, V>?,
@@ -147,7 +147,7 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
     }
 
     override fun calculateTransportByteLengthWithKey(
-        index: Int,
+        index: UInt,
         value: Map<K, V>,
         cacher: WriteCacheWriter,
         context: CX?
@@ -161,8 +161,8 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
             cacher.addLengthToCache(container)
 
             var fieldLength = 0
-            fieldLength += keyDefinition.calculateTransportByteLengthWithKey(1, key, cacher, context)
-            fieldLength += valueDefinition.calculateTransportByteLengthWithKey(2, item, cacher, context)
+            fieldLength += keyDefinition.calculateTransportByteLengthWithKey(1u, key, cacher, context)
+            fieldLength += valueDefinition.calculateTransportByteLengthWithKey(2u, item, cacher, context)
             container.length = fieldLength // set length for value
             fieldLength += fieldLength.calculateVarByteLength() // Add field length for length delimiter
 
@@ -172,7 +172,7 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
     }
 
     override fun writeTransportBytesWithKey(
-        index: Int,
+        index: UInt,
         value: Map<K, V>,
         cacheGetter: WriteCacheReader,
         writer: (byte: Byte) -> Unit,
@@ -181,8 +181,8 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
         value.forEach { (key, item) ->
             ProtoBuf.writeKey(index, WireType.LENGTH_DELIMITED, writer)
             cacheGetter.nextLengthFromCache().writeVarBytes(writer)
-            keyDefinition.writeTransportBytesWithKey(1, key, cacheGetter, writer, context)
-            valueDefinition.writeTransportBytesWithKey(2, item, cacheGetter, writer, context)
+            keyDefinition.writeTransportBytesWithKey(1u, key, cacheGetter, writer, context)
+            valueDefinition.writeTransportBytesWithKey(2u, item, cacheGetter, writer, context)
         }
     }
 
@@ -212,10 +212,10 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
                 init {
                     IsPropertyDefinition.addRequired(this, MapDefinition<*, *, *>::required)
                     IsPropertyDefinition.addFinal(this, MapDefinition<*, *, *>::final)
-                    HasSizeDefinition.addMinSize(3, this, MapDefinition<*, *, *>::minSize)
-                    HasSizeDefinition.addMaxSize(4, this, MapDefinition<*, *, *>::maxSize)
+                    HasSizeDefinition.addMinSize(3u, this, MapDefinition<*, *, *>::minSize)
+                    HasSizeDefinition.addMaxSize(4u, this, MapDefinition<*, *, *>::maxSize)
 
-                    add(5, "keyDefinition",
+                    add(5u, "keyDefinition",
                         ContextTransformerDefinition(
                             contextTransformer = { it?.definitionsContext },
                             definition = MultiTypeDefinition(
@@ -238,7 +238,7 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
                         }
                     )
 
-                    add(6, "valueDefinition",
+                    add(6u, "valueDefinition",
                         ContextTransformerDefinition(
                             contextTransformer = { it?.definitionsContext },
                             definition = MultiTypeDefinition(
@@ -263,7 +263,7 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
 
                     @Suppress("UNCHECKED_CAST")
                     add(
-                        7, "default",
+                        7u, "default",
                         ContextualMapDefinition(
                             contextualResolver = { context: KeyValueDefinitionContext? ->
                                 context?.let {
@@ -278,13 +278,13 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
             }
         ) {
         override fun invoke(values: SimpleObjectValues<MapDefinition<*, *, *>>) = MapDefinition(
-            required = values(1),
-            final = values(2),
-            minSize = values(3),
-            maxSize = values(4),
-            keyDefinition = values<IsSimpleValueDefinition<*, *>>(5),
-            valueDefinition = values<IsValueDefinition<*, *>>(6),
-            default = values(7)
+            required = values(1u),
+            final = values(2u),
+            minSize = values(3u),
+            maxSize = values(4u),
+            keyDefinition = values<IsSimpleValueDefinition<*, *>>(5u),
+            valueDefinition = values<IsValueDefinition<*, *>>(6u),
+            default = values(7u)
         )
     }
 }

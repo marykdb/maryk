@@ -62,7 +62,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P : PropertyDefinition
 
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = dataModel.properties[name]
 
-    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = dataModel.properties[index]
+    override fun getEmbeddedByIndex(index: UInt): IsPropertyDefinitionWrapper<*, *, *, *>? = dataModel.properties[index]
 
     override fun validateWithRef(
         previousValue: Values<DM, P>?,
@@ -141,7 +141,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P : PropertyDefinition
                 init {
                     IsPropertyDefinition.addRequired(this, EmbeddedValuesDefinition<*, *>::required)
                     IsPropertyDefinition.addFinal(this, EmbeddedValuesDefinition<*, *>::final)
-                    add(3, "dataModel",
+                    add(3u, "dataModel",
                         ContextualModelReferenceDefinition(
                             contextTransformer = { context: ModelContext? ->
                                 context?.definitionsContext
@@ -175,7 +175,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P : PropertyDefinition
                     )
 
                     @Suppress("UNCHECKED_CAST")
-                    add(4, "default",
+                    add(4u, "default",
                         ContextualEmbeddedValuesDefinition(
                             contextualResolver = { context: ModelContext? ->
                                 context?.model?.invoke(Unit) as? AbstractValuesDataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, ModelContext>?
@@ -189,10 +189,10 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P : PropertyDefinition
         ) {
         override fun invoke(values: ObjectValues<EmbeddedValuesDefinition<*, *>, ObjectPropertyDefinitions<EmbeddedValuesDefinition<*, *>>>) =
             EmbeddedValuesDefinition<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
-                required = values(1),
-                final = values(2),
-                dataModel = values(3),
-                default = values(4)
+                required = values(1u),
+                final = values(2u),
+                dataModel = values(3u),
+                default = values(4u)
             )
     }
 }

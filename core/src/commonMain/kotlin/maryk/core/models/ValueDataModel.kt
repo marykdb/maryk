@@ -62,7 +62,7 @@ abstract class ValueDataModel<DO : ValueDataObject, P : ObjectPropertyDefinition
         this.properties.forEachIndexed { index, it ->
             @Suppress("UNCHECKED_CAST")
             val def = it as IsFixedBytesEncodable<in Any>
-            def.writeStorageBytes(values(index + 1)) {
+            def.writeStorageBytes(values(index.toUInt() + 1u)) {
                 bytes[offset++] = it
             }
 
@@ -127,8 +127,8 @@ abstract class ValueDataModel<DO : ValueDataObject, P : ObjectPropertyDefinition
     ) {
         override fun invoke(values: SimpleObjectValues<ValueDataModel<*, *>>) =
             object : ValueDataModel<ValueDataObjectWithValues, ObjectPropertyDefinitions<ValueDataObjectWithValues>>(
-                name = values(1),
-                properties = values(2)
+                name = values(1u),
+                properties = values(2u)
             ) {
                 override fun invoke(values: ObjectValues<ValueDataObjectWithValues, ObjectPropertyDefinitions<ValueDataObjectWithValues>>): ValueDataObjectWithValues {
                     return ValueDataObjectWithValues(toBytes(values), values)

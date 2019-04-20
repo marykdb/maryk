@@ -13,7 +13,7 @@ interface IsMomentDefinition<T : IsTemporal<T>> : IsComparableDefinition<T, IsPr
 
     companion object {
         internal fun <DO : Any> addFillWithNow(
-            index: Int,
+            index: UInt,
             definitions: ObjectPropertyDefinitions<DO>,
             getter: (DO) -> Boolean
         ) {

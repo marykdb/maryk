@@ -7,7 +7,7 @@ interface IsPropRefGraph<in P : IsPropertyDefinitions> {
     val properties: List<IsPropRefGraphNode<P>>
 
     /** Select a node by [index] or return null if not exists */
-    fun selectNodeOrNull(index: Int): IsPropRefGraphNode<P>? {
+    fun selectNodeOrNull(index: UInt): IsPropRefGraphNode<P>? {
         val propertyIndex = this.properties.binarySearch { property -> property.index.compareTo(index) }
         if (propertyIndex < 0) {
             // Not in select so skip!

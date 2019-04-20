@@ -32,7 +32,7 @@ abstract class ValidationException internal constructor(
             getter: (DO) -> AnyPropertyReference?
         ) {
             definitions.add(
-                index = 1, name = "reference",
+                index = 1u, name = "reference",
                 definition = ContextualPropertyReferenceDefinition<RequestContext>(
                     required = false,
                     contextualResolver = {
@@ -53,7 +53,7 @@ abstract class ValidationException internal constructor(
             getter: (DO) -> String?
         ) {
             definitions.add(
-                2, "value",
+                2u, "value",
                 StringDefinition(),
                 getter
             )

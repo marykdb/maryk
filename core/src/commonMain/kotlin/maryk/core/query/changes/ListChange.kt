@@ -18,7 +18,7 @@ data class ListChange internal constructor(
 
     object Properties : ObjectPropertyDefinitions<ListChange>() {
         init {
-            add(1, "referenceListValueChangesPairs",
+            add(1u, "referenceListValueChangesPairs",
                 ListDefinition(
                     valueDefinition = EmbeddedObjectDefinition(
                         dataModel = { ListValueChanges }
@@ -36,7 +36,7 @@ data class ListChange internal constructor(
             referenceProperty = ListValueChanges.Properties.reference
         ) {
         override fun invoke(values: ObjectValues<ListChange, Properties>) = ListChange(
-            listValueChanges = values(1)
+            listValueChanges = values(1u)
         )
 
         override fun writeJson(obj: ListChange, writer: IsJsonLikeWriter, context: RequestContext?) {

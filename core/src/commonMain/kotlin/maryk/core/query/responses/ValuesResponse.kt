@@ -18,7 +18,7 @@ data class ValuesResponse<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions
     object Properties : ObjectPropertyDefinitions<ValuesResponse<*, *>>() {
         val dataModel = IsDataModelResponse.addDataModel(this, ValuesResponse<*, *>::dataModel)
         val values = ObjectListPropertyDefinitionWrapper(
-            2, "values",
+            2u, "values",
             properties = ValuesWithMetaData.Properties,
             definition = ListDefinition(
                 valueDefinition = EmbeddedObjectDefinition(
@@ -35,8 +35,8 @@ data class ValuesResponse<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<ValuesResponse<*, *>, Properties>) = ValuesResponse(
-            dataModel = values(1),
-            values = values<List<ValuesWithMetaData<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>>>(2)
+            dataModel = values(1u),
+            values = values<List<ValuesWithMetaData<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>>>(2u)
         )
     }
 }

@@ -30,7 +30,7 @@ interface IsDataModelResponse<out DM : IsRootDataModel<*>> : IsResponse {
             definitions: ObjectPropertyDefinitions<DM>,
             getter: (DM) -> IsRootDataModel<*>?
         ) {
-            definitions.add(1, "dataModel",
+            definitions.add(1u, "dataModel",
                 ContextualModelReferenceDefinition<IsRootDataModel<*>, RequestContext>(
                     contextualResolver = { context, name ->
                         context?.let {
@@ -58,7 +58,7 @@ interface IsDataModelResponse<out DM : IsRootDataModel<*>> : IsResponse {
             definitions: ObjectPropertyDefinitions<DM>,
             getter: (DM) -> List<TypedValue<StatusType, *>>?
         ) {
-            definitions.add(2, "statuses", listOfStatuses, getter)
+            definitions.add(2u, "statuses", listOfStatuses, getter)
         }
     }
 }

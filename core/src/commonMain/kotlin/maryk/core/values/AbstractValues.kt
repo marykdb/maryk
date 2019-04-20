@@ -33,7 +33,7 @@ abstract class AbstractValues<DO : Any, DM : IsDataModel<P>, P : AbstractPropert
     /**
      * Utility method to check and values a value to a constructor property
      */
-    inline operator fun <reified T> invoke(index: Int): T {
+    inline operator fun <reified T> invoke(index: UInt): T {
         val value = this.original(index)
 
         val valueDef = this.dataModel.properties[index]
@@ -92,7 +92,7 @@ abstract class AbstractValues<DO : Any, DM : IsDataModel<P>, P : AbstractPropert
         (this.values as IsValueItemsImpl).list[index]
 
     /** Get the original value by [index] */
-    fun original(index: Int) = this.values[index]
+    fun original(index: UInt) = this.values[index]
 
     override fun toString(): String {
         val name = if (dataModel is IsNamedDataModel<*>) {
@@ -115,12 +115,12 @@ abstract class AbstractValues<DO : Any, DM : IsDataModel<P>, P : AbstractPropert
     }
 
     /** Add to internal values with [index] and [value] */
-    internal fun add(index: Int, value: Any) {
+    internal fun add(index: UInt, value: Any) {
         (this.values as MutableValueItems)[index] = value
     }
 
     /** Remove from internal valuesvalues by [index] */
-    internal fun remove(index: Int): Any? {
+    internal fun remove(index: UInt): Any? {
         return (this.values as MutableValueItems).remove(index)?.value
     }
 }

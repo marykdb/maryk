@@ -65,14 +65,14 @@ data class ScanRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> i
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<ScanRequest<*, *>, Properties>) = ScanRequest(
-            dataModel = values<IsRootValuesDataModel<PropertyDefinitions>>(1),
-            startKey = values(2),
-            select = values(3),
-            where = values(4),
-            toVersion = values(5),
-            filterSoftDeleted = values(6),
-            order = values(7),
-            limit = values(8)
+            dataModel = values<IsRootValuesDataModel<PropertyDefinitions>>(1u),
+            startKey = values(2u),
+            select = values(3u),
+            where = values(4u),
+            toVersion = values(5u),
+            filterSoftDeleted = values(6u),
+            order = values(7u),
+            limit = values(8u)
         )
     }
 }

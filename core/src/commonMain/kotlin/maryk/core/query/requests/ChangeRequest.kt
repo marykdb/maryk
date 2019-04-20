@@ -28,7 +28,7 @@ data class ChangeRequest<DM : IsRootValuesDataModel<*>> internal constructor(
     @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<ChangeRequest<*>>() {
         val dataModel = IsObjectRequest.addDataModel("to", this, ChangeRequest<*>::dataModel)
-        val objectChanges = add(2, "objects",
+        val objectChanges = add(2u, "objects",
             ListDefinition(
                 valueDefinition = EmbeddedObjectDefinition(
                     dataModel = { DataObjectChange }
@@ -42,8 +42,8 @@ data class ChangeRequest<DM : IsRootValuesDataModel<*>> internal constructor(
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<ChangeRequest<*>, Properties>) = ChangeRequest(
-            dataModel = values(1),
-            objects = values(2)
+            dataModel = values(1u),
+            objects = values(2u)
         )
     }
 }

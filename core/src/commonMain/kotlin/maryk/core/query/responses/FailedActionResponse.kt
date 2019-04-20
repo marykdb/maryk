@@ -29,14 +29,14 @@ data class FailedActionResponse(
     internal companion object : SimpleQueryDataModel<FailedActionResponse>(
         properties = object : ObjectPropertyDefinitions<FailedActionResponse>() {
             init {
-                add(1, "message", StringDefinition(), FailedActionResponse::message)
-                add(2, "failType", EnumDefinition(enum = FailType), FailedActionResponse::failType)
+                add(1u, "message", StringDefinition(), FailedActionResponse::message)
+                add(2u, "failType", EnumDefinition(enum = FailType), FailedActionResponse::failType)
             }
         }
     ) {
         override fun invoke(values: SimpleObjectValues<FailedActionResponse>) = FailedActionResponse(
-            message = values(1),
-            failType = values(2)
+            message = values(1u),
+            failType = values(2u)
         )
     }
 }

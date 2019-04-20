@@ -41,14 +41,14 @@ class ContextualMapDefinitionTest {
         val value = mapToTest
 
         bc.reserve(
-            def.calculateTransportByteLengthWithKey(8, value, cache, this.context)
+            def.calculateTransportByteLengthWithKey(8u, value, cache, this.context)
         )
-        def.writeTransportBytesWithKey(8, value, cache, bc::write, this.context)
+        def.writeTransportBytesWithKey(8u, value, cache, bc::write, this.context)
 
         fun readKey() {
             val key = ProtoBuf.readKey(bc::read)
             key.wireType shouldBe WireType.LENGTH_DELIMITED
-            key.tag shouldBe 8
+            key.tag shouldBe 8u
         }
 
         fun readValue(): Pair<Any, Any> {

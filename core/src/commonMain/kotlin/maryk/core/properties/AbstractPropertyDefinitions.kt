@@ -1,7 +1,7 @@
 package maryk.core.properties
 
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.extensions.bytes.initIntByVar
+import maryk.core.extensions.bytes.initUIntByVar
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
@@ -40,7 +40,7 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
     private val _allProperties: MutableList<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>> =
         mutableListOf()
 
-    protected val indexToDefinition = mutableMapOf<Int, IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>>()
+    protected val indexToDefinition = mutableMapOf<UInt, IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>>()
     protected val nameToDefinition =
         mutableMapOf<String, IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>>()
 
@@ -59,7 +59,7 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
     operator fun get(name: String) = nameToDefinition[name]
 
     /** Get the definition with a property [index] */
-    operator fun get(index: Int) = indexToDefinition[index]
+    operator fun get(index: UInt) = indexToDefinition[index]
 
     /** Converts a list of optional [pairs] to values */
     fun mapNonNulls(vararg pairs: ValueItem?): IsValueItems =
@@ -75,7 +75,7 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
 
     /** Add flex bytes encodable property [definition] with [name] and [index] */
     fun <T : Any, CX : IsPropertyContext, D : IsSerializableFlexBytesEncodable<T, CX>> add(
-        index: Int,
+        index: UInt,
         name: String,
         definition: D
     ) = FlexBytesPropertyDefinitionWrapper<T, T, CX, D, Any>(index, name, definition).apply {
@@ -84,7 +84,7 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
 
     /** Add flex bytes encodable property [definition] with [name] and [index] */
     fun <T : Any, CX : IsPropertyContext, D : IsContextualEncodable<T, CX>> add(
-        index: Int,
+        index: UInt,
         name: String,
         definition: D
     ) = ContextualPropertyDefinitionWrapper<T, T, CX, D, Any>(index, name, definition).apply {
@@ -93,7 +93,7 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
 
     /** Add fixed bytes encodable property [definition] with [name] and [index] */
     fun <T : Any, CX : IsPropertyContext, D : IsSerializableFixedBytesEncodable<T, CX>> add(
-        index: Int,
+        index: UInt,
         name: String,
         definition: D
     ) = FixedBytesPropertyDefinitionWrapper<T, T, CX, D, Any>(index, name, definition).apply {
@@ -102,7 +102,7 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
 
     /** Add list property [definition] with [name] and [index] */
     fun <T : Any, CX : IsPropertyContext> add(
-        index: Int,
+        index: UInt,
         name: String,
         definition: ListDefinition<T, CX>
     ) = ListPropertyDefinitionWrapper<T, T, CX, Any>(index, name, definition).apply {
@@ -111,7 +111,7 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
 
     /** Add set property [definition] with [name] and [index] */
     fun <T : Any, CX : IsPropertyContext> add(
-        index: Int,
+        index: UInt,
         name: String,
         definition: SetDefinition<T, CX>
     ) = SetPropertyDefinitionWrapper<T, CX, Any>(index, name, definition).apply {
@@ -120,7 +120,7 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
 
     /** Add map property [definition] with [name] and [index] */
     fun <K : Any, V : Any, CX : IsPropertyContext> add(
-        index: Int,
+        index: UInt,
         name: String,
         definition: MapDefinition<K, V, CX>
     ) = MapPropertyDefinitionWrapper<K, V, Map<K, V>, CX, Any>(index, name, definition).apply {
@@ -129,7 +129,7 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
 
     /** Add multi type property [definition] with [name] and [index] */
     fun <E : IndexedEnum, CX : IsPropertyContext> add(
-        index: Int,
+        index: UInt,
         name: String,
         definition: IsMultiTypeDefinition<E, CX>
     ) = MultiTypeDefinitionWrapper<E, TypedValue<E, Any>, CX, Any>(index, name, definition).apply {
@@ -138,7 +138,7 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
 
     /** Add embedded object property [definition] with [name] and [index] */
     fun <DM : IsValuesDataModel<P>, P : PropertyDefinitions, CX : IsPropertyContext> add(
-        index: Int,
+        index: UInt,
         name: String,
         definition: IsEmbeddedValuesDefinition<DM, P, CX>
     ) = EmbeddedValuesPropertyDefinitionWrapper(index, name, definition).apply {
@@ -150,7 +150,7 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
         @Suppress("UNCHECKED_CAST")
         _allProperties.add(propertyDefinitionWrapper as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>)
 
-        require(propertyDefinitionWrapper.index in (0..Short.MAX_VALUE)) { "${propertyDefinitionWrapper.index} for ${propertyDefinitionWrapper.name} is outside range $(0..Short.MAX_VALUE)" }
+        require(propertyDefinitionWrapper.index.toInt() in (0..Short.MAX_VALUE)) { "${propertyDefinitionWrapper.index} for ${propertyDefinitionWrapper.name} is outside range $(0..Short.MAX_VALUE)" }
         require(indexToDefinition[propertyDefinitionWrapper.index] == null) { "Duplicate index ${propertyDefinitionWrapper.index} for ${propertyDefinitionWrapper.name} and ${indexToDefinition[propertyDefinitionWrapper.index]?.name}" }
         indexToDefinition[propertyDefinitionWrapper.index] = propertyDefinitionWrapper
         nameToDefinition[propertyDefinitionWrapper.name] = propertyDefinitionWrapper
@@ -192,7 +192,7 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
         while (readLength < length) {
             propertyReference = when (propertyReference) {
                 null -> {
-                    val index = initIntByVar(lengthReader)
+                    val index = initUIntByVar(lengthReader)
                     this[index]?.ref()
                 }
                 is HasEmbeddedPropertyReference<*> -> propertyReference.getEmbeddedRef(lengthReader, context)

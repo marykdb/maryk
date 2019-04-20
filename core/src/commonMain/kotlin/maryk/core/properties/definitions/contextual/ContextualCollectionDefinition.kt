@@ -28,13 +28,13 @@ internal class ContextualCollectionDefinition<in CX : IsPropertyContext>(
 
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
-    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = null
+    override fun getEmbeddedByIndex(index: UInt): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
     override fun newMutableCollection(context: CX?) =
         contextualResolver(context).newMutableCollection(context)
 
     override fun calculateTransportByteLengthWithKey(
-        index: Int,
+        index: UInt,
         value: Collection<Any>,
         cacher: WriteCacheWriter,
         context: CX?
@@ -48,7 +48,7 @@ internal class ContextualCollectionDefinition<in CX : IsPropertyContext>(
         contextualResolver(context).readJson(reader, context)
 
     override fun writeTransportBytesWithKey(
-        index: Int,
+        index: UInt,
         value: Collection<Any>,
         cacheGetter: WriteCacheReader,
         writer: (byte: Byte) -> Unit,

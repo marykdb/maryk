@@ -9,7 +9,7 @@ object SimpleMarykModel : RootDataModel<SimpleMarykModel, SimpleMarykModel.Prope
 ) {
     object Properties : PropertyDefinitions() {
         val value = add(
-            index = 1, name = "value",
+            index = 1u, name = "value",
             definition = StringDefinition(
                 default = "haha",
                 regEx = "ha.*"

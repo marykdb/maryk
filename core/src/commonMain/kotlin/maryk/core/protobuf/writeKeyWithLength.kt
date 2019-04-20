@@ -8,7 +8,7 @@ import maryk.core.extensions.bytes.writeVarBytes
  */
 fun writeKeyWithLength(
     wireType: WireType,
-    index: Int,
+    index: UInt,
     writer: (byte: Byte) -> Unit,
     cacheGetter: WriteCacheReader
 ) {

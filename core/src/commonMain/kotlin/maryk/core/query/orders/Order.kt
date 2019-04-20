@@ -53,7 +53,7 @@ data class Order internal constructor(
 
     object Properties : ObjectPropertyDefinitions<Order>() {
         val propertyReference = add(
-            1, "propertyReference",
+            1u, "propertyReference",
             ContextualPropertyReferenceDefinition<RequestContext>(
                 contextualResolver = {
                     it?.dataModel?.properties as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()
@@ -63,7 +63,7 @@ data class Order internal constructor(
         )
 
         val direction = add(
-            2, "direction",
+            2u, "direction",
             EnumDefinition(
                 enum = Direction,
                 default = ASC
@@ -80,8 +80,8 @@ data class Order internal constructor(
 
         override fun invoke(values: ObjectValues<Order, Properties>) =
             Order(
-                propertyReference = values(1),
-                direction = values(2)
+                propertyReference = values(1u),
+                direction = values(2u)
             )
 
         override fun writeJson(obj: Order, writer: IsJsonLikeWriter, context: RequestContext?) {

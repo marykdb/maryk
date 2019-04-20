@@ -74,7 +74,7 @@ abstract class ReferencesObjectPropertyDefinitions<DO : Any> : ObjectPropertyDef
     abstract val references: ListPropertyDefinitionWrapper<AnyPropertyReference, AnyPropertyReference, RequestContext, DO>
 
     internal fun addReferenceListPropertyDefinition(getter: (DO) -> List<AnyPropertyReference>) =
-        this.add(1, "references",
+        this.add(1u, "references",
             ListDefinition(
                 valueDefinition = ContextualPropertyReferenceDefinition<RequestContext>(
                     contextualResolver = {

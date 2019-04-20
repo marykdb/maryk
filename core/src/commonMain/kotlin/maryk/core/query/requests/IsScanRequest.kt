@@ -40,7 +40,7 @@ interface IsScanRequest<DM : IsRootDataModel<P>, P : PropertyDefinitions, RP : I
             getter: (DO) -> Key<DM>?
         ) =
             definitions.add(
-                2, "startKey",
+                2u, "startKey",
                 ContextualReferenceDefinition<RequestContext>(
                     required = false,
                     contextualResolver = {
@@ -51,7 +51,7 @@ interface IsScanRequest<DM : IsRootDataModel<P>, P : PropertyDefinitions, RP : I
             )
 
         internal fun <DM : Any> addOrder(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> IsOrder?) =
-            definitions.add(7, "order",
+            definitions.add(7u, "order",
                 OrderTypesDefinition,
                 toSerializable = { value, _ ->
                     value?.let {
@@ -66,7 +66,7 @@ interface IsScanRequest<DM : IsRootDataModel<P>, P : PropertyDefinitions, RP : I
 
         internal fun <DO : Any> addLimit(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> UInt?) =
             definitions.add(
-                8, "limit",
+                8u, "limit",
                 NumberDefinition(
                     default = 100u,
                     type = UInt32

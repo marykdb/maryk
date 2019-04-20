@@ -27,16 +27,16 @@ data class InvalidSizeException internal constructor(
             init {
                 addReference(this, InvalidSizeException::reference)
                 addValue(this, InvalidSizeException::value)
-                add(3, "min", NumberDefinition(type = UInt32, required = false), InvalidSizeException::min)
-                add(4, "max", NumberDefinition(type = UInt32, required = false), InvalidSizeException::max)
+                add(3u, "min", NumberDefinition(type = UInt32, required = false), InvalidSizeException::min)
+                add(4u, "max", NumberDefinition(type = UInt32, required = false), InvalidSizeException::max)
             }
         }
     ) {
         override fun invoke(values: SimpleObjectValues<InvalidSizeException>) = InvalidSizeException(
-            reference = values(1),
-            value = values(2),
-            min = values(3),
-            max = values(4)
+            reference = values(1u),
+            value = values(2u),
+            min = values(3u),
+            max = values(4u)
         )
     }
 }

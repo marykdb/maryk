@@ -23,7 +23,7 @@ import maryk.core.properties.types.TypedValue
  * function to retrieve value on dataObject of [DO] in context [CX]
  */
 data class MultiTypeDefinitionWrapper<E : IndexedEnum, TO : Any, CX : IsPropertyContext, DO : Any> internal constructor(
-    override val index: Int,
+    override val index: UInt,
     override val name: String,
     override val definition: IsMultiTypeDefinition<E, CX>,
     override val getter: (DO) -> TO? = { null },

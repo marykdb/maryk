@@ -85,7 +85,7 @@ data class Multiple(
     object Properties : ObjectPropertyDefinitions<Multiple>() {
         @Suppress("UNCHECKED_CAST")
         val references = add(
-            1, "references",
+            1u, "references",
             ListDefinition(
                 valueDefinition = MultiTypeDefinition(
                     typeEnum = IndexKeyPartType,
@@ -108,7 +108,7 @@ data class Multiple(
             singlePropertyDefinition = Properties.references
         ) {
         override fun invoke(values: ObjectValues<Multiple, Properties>) = Multiple(
-            references = values(1)
+            references = values(1u)
         )
     }
 }

@@ -23,7 +23,7 @@ data class ObjectListPropertyDefinitionWrapper<
     CX : IsPropertyContext,
     in DO : Any
 > internal constructor(
-    override val index: Int,
+    override val index: UInt,
     override val name: String,
     val properties: P,
     override val definition: ListDefinition<ODO, CX>,

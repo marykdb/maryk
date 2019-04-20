@@ -17,15 +17,15 @@ data class TestValueObject(
 ) : ValueDataObject(toBytes(int, dateTime, bool)) {
     object Properties : ObjectPropertyDefinitions<TestValueObject>() {
         val int = add(
-            1, "int", NumberDefinition(
+            1u, "int", NumberDefinition(
                 type = SInt32,
                 maxValue = 6
             ), TestValueObject::int
         )
 
-        val dateTime = add(2, "dateTime", DateTimeDefinition(), TestValueObject::dateTime)
+        val dateTime = add(2u, "dateTime", DateTimeDefinition(), TestValueObject::dateTime)
 
-        val bool = add(3, "bool", BooleanDefinition(), TestValueObject::bool)
+        val bool = add(3u, "bool", BooleanDefinition(), TestValueObject::bool)
     }
 
     companion object : ValueDataModel<TestValueObject, Properties>(
@@ -33,9 +33,9 @@ data class TestValueObject(
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<TestValueObject, Properties>) = TestValueObject(
-            int = values(1),
-            dateTime = values(2),
-            bool = values(3)
+            int = values(1u),
+            dateTime = values(2u),
+            bool = values(3u)
         )
 
         override fun equals(other: Any?): Boolean {

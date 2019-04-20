@@ -25,7 +25,7 @@ data class LessThan internal constructor(
         pairProperties = ReferenceValuePair.Properties
     ) {
         override fun invoke(values: ObjectValues<LessThan, Properties>) = LessThan(
-            referenceValuePairs = values(1)
+            referenceValuePairs = values(1u)
         )
     }
 }

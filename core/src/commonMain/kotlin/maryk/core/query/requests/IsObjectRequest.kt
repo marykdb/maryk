@@ -21,7 +21,7 @@ interface IsObjectRequest<out DM : IsRootDataModel<*>, RP : IsResponse> : IsRequ
             getter: (DM) -> IsRootDataModel<*>?
         ) =
             definitions.add(
-                1, name,
+                1u, name,
                 ContextualModelReferenceDefinition<IsRootDataModel<*>, RequestContext>(
                     contextualResolver = { context, modelName ->
                         context?.let {

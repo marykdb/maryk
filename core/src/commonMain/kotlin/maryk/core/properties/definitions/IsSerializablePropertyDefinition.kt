@@ -22,21 +22,39 @@ interface IsSerializablePropertyDefinition<T : Any, in CX : IsPropertyContext> :
     fun readJson(reader: IsJsonLikeReader, context: CX? = null): T
 
     /**
-     * Calculate length of bytes for [value] with key [index] to transport within optional [context]
+     * Calculate length of bytes for [value] with key [index] to transport
      * Caches any calculated lengths to [cacher]
      */
-    fun calculateTransportByteLengthWithKey(index: Int, value: T, cacher: WriteCacheWriter, context: CX? = null): Int
+    fun calculateTransportByteLengthWithKey(index: UInt, value: T, cacher: WriteCacheWriter) =
+        this.calculateTransportByteLengthWithKey(index, value, cacher, null)
+
+    /**
+     * Calculate length of bytes for [value] with key [index] to transport within [context]
+     * Caches any calculated lengths to [cacher]
+     */
+    fun calculateTransportByteLengthWithKey(index: UInt, value: T, cacher: WriteCacheWriter, context: CX?): Int
 
     /**
      * Writes [value] and tag [index] and WireType with [writer] to bytes for transportation.
      * Get any cached sizes from [cacheGetter]
-     * Optionally pass a [context] to write more complex properties which depend on other properties
      */
     fun writeTransportBytesWithKey(
-        index: Int,
+        index: UInt,
+        value: T,
+        cacheGetter: WriteCacheReader,
+        writer: (byte: Byte) -> Unit
+    ) = this.writeTransportBytesWithKey(index, value, cacheGetter, writer, null)
+
+    /**
+     * Writes [value] and tag [index] and WireType with [writer] to bytes for transportation.
+     * Get any cached sizes from [cacheGetter]
+     * Pass a [context] to write more complex properties which depend on other properties
+     */
+    fun writeTransportBytesWithKey(
+        index: UInt,
         value: T,
         cacheGetter: WriteCacheReader,
         writer: (byte: Byte) -> Unit,
-        context: CX? = null
+        context: CX?
     )
 }

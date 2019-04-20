@@ -81,13 +81,13 @@ data class DateTimeDefinition(
                     IsPropertyDefinition.addRequired(this, DateTimeDefinition::required)
                     IsPropertyDefinition.addFinal(this, DateTimeDefinition::final)
                     IsComparableDefinition.addUnique(this, DateTimeDefinition::unique)
-                    IsTimeDefinition.addPrecision(4, this,
+                    IsTimeDefinition.addPrecision(4u, this,
                         DateTimeDefinition::precision,
                         capturer = { context: TimePrecisionContext, timePrecision ->
                             context.precision = timePrecision
                         }
                     )
-                    add(5, "minValue",
+                    add(5u, "minValue",
                         ContextualValueDefinition(
                             contextualResolver = { context: DateTimeDefinitionContext? ->
                                 context?.dateTimeDefinition ?: throw ContextNotFoundException()
@@ -95,7 +95,7 @@ data class DateTimeDefinition(
                         ),
                         DateTimeDefinition::minValue
                     )
-                    add(6, "maxValue",
+                    add(6u, "maxValue",
                         ContextualValueDefinition(
                             contextualResolver = { context: DateTimeDefinitionContext? ->
                                 context?.dateTimeDefinition ?: throw ContextNotFoundException()
@@ -103,7 +103,7 @@ data class DateTimeDefinition(
                         ),
                         DateTimeDefinition::maxValue
                     )
-                    add(7, "default",
+                    add(7u, "default",
                         ContextualValueDefinition(
                             contextualResolver = { context: DateTimeDefinitionContext? ->
                                 context?.dateTimeDefinition ?: throw ContextNotFoundException()
@@ -111,19 +111,19 @@ data class DateTimeDefinition(
                         ),
                         DateTimeDefinition::default
                     )
-                    IsMomentDefinition.addFillWithNow(8, this, DateTimeDefinition::fillWithNow)
+                    IsMomentDefinition.addFillWithNow(8u, this, DateTimeDefinition::fillWithNow)
                 }
             }
         ) {
         override fun invoke(values: SimpleObjectValues<DateTimeDefinition>) = DateTimeDefinition(
-            required = values(1),
-            final = values(2),
-            unique = values(3),
-            precision = values(4),
-            minValue = values(5),
-            maxValue = values(6),
-            default = values(7),
-            fillWithNow = values(8)
+            required = values(1u),
+            final = values(2u),
+            unique = values(3u),
+            precision = values(4u),
+            minValue = values(5u),
+            maxValue = values(6u),
+            default = values(7u),
+            fillWithNow = values(8u)
         )
     }
 }

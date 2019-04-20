@@ -36,7 +36,7 @@ data class ReferenceValuePair<T : Any> internal constructor(
             ReferenceValuePair<*>::reference
         )
         override val value = add(
-            2, "value",
+            2u, "value",
             ContextualValueDefinition(
                 contextualResolver = { context: RequestContext? ->
                     context?.reference?.let {
@@ -53,8 +53,8 @@ data class ReferenceValuePair<T : Any> internal constructor(
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<ReferenceValuePair<Any>, Properties>) = ReferenceValuePair(
-            reference = values(1),
-            value = values(2)
+            reference = values(1u),
+            value = values(2u)
         )
     }
 }

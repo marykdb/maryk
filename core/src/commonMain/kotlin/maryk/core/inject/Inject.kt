@@ -40,7 +40,7 @@ data class Inject<T : Any, D : IsPropertyDefinition<T>>(
     }
 
     internal object Properties : ObjectPropertyDefinitions<AnyInject>() {
-        val collectionName = add(1, "collectionName",
+        val collectionName = add(1u, "collectionName",
             definition = StringDefinition(),
             getter = Inject<*, *>::collectionName,
             capturer = { context: InjectionContext, value ->
@@ -48,7 +48,7 @@ data class Inject<T : Any, D : IsPropertyDefinition<T>>(
             }
         )
         val propertyReference = add(
-            2, "propertyReference",
+            2u, "propertyReference",
             ContextualPropertyReferenceDefinition { context: InjectionContext? ->
                 context?.let {
                     context.resolvePropertyReference()
@@ -67,8 +67,8 @@ data class Inject<T : Any, D : IsPropertyDefinition<T>>(
         }
     ) {
         override fun invoke(values: ObjectValues<AnyInject, Properties>) = Inject<Any, IsPropertyDefinition<Any>>(
-            collectionName = values(1),
-            propertyReference = values(2)
+            collectionName = values(1u),
+            propertyReference = values(2u)
         )
 
         override fun writeJson(obj: AnyInject, writer: IsJsonLikeWriter, context: InjectionContext?) {

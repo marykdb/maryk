@@ -84,16 +84,16 @@ internal class SetDefinitionTest {
         val asHex = "220154220254322202543322025434"
 
         bc.reserve(
-            def.calculateTransportByteLengthWithKey(4, value, cache)
+            def.calculateTransportByteLengthWithKey(4u, value, cache)
         )
-        def.writeTransportBytesWithKey(4, value, cache, bc::write)
+        def.writeTransportBytesWithKey(4u, value, cache, bc::write)
 
         bc.bytes!!.toHex() shouldBe asHex
 
         fun readKey() {
             val key = ProtoBuf.readKey(bc::read)
             key.wireType shouldBe WireType.LENGTH_DELIMITED
-            key.tag shouldBe 4
+            key.tag shouldBe 4u
         }
 
         fun readValue() = def.readCollectionTransportBytes(

@@ -85,25 +85,25 @@ data class StringDefinition(
                 IsPropertyDefinition.addRequired(this, StringDefinition::required)
                 IsPropertyDefinition.addFinal(this, StringDefinition::final)
                 IsComparableDefinition.addUnique(this, StringDefinition::unique)
-                add(4, "minValue", StringDefinition(), StringDefinition::minValue)
-                add(5, "maxValue", StringDefinition(), StringDefinition::maxValue)
-                add(6, "default", StringDefinition(), StringDefinition::default)
-                HasSizeDefinition.addMinSize(7, this, StringDefinition::minSize)
-                HasSizeDefinition.addMaxSize(8, this, StringDefinition::maxSize)
-                add(9, "regEx", StringDefinition(), StringDefinition::regEx)
+                add(4u, "minValue", StringDefinition(), StringDefinition::minValue)
+                add(5u, "maxValue", StringDefinition(), StringDefinition::maxValue)
+                add(6u, "default", StringDefinition(), StringDefinition::default)
+                HasSizeDefinition.addMinSize(7u, this, StringDefinition::minSize)
+                HasSizeDefinition.addMaxSize(8u, this, StringDefinition::maxSize)
+                add(9u, "regEx", StringDefinition(), StringDefinition::regEx)
             }
         }
     ) {
         override fun invoke(values: SimpleObjectValues<StringDefinition>) = StringDefinition(
-            required = values(1),
-            final = values(2),
-            unique = values(3),
-            minValue = values(4),
-            maxValue = values(5),
-            default = values(6),
-            minSize = values(7),
-            maxSize = values(8),
-            regEx = values(9)
+            required = values(1u),
+            final = values(2u),
+            unique = values(3u),
+            minValue = values(4u),
+            maxValue = values(5u),
+            default = values(6u),
+            minSize = values(7u),
+            maxSize = values(8u),
+            regEx = values(9u)
         )
     }
 }

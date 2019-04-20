@@ -19,7 +19,7 @@ data class RootMaryk(
     val operations: List<TypedValue<Operation, *>> = listOf()
 ) {
     object Properties : ObjectPropertyDefinitions<RootMaryk>() {
-        val operations = add(1, "operations",
+        val operations = add(1u, "operations",
             ListDefinition(
                 valueDefinition = MultiTypeDefinition(
                     typeEnum = Operation,
@@ -57,7 +57,7 @@ data class RootMaryk(
             singlePropertyDefinition = Properties.operations as IsPropertyDefinitionWrapper<List<TypedValue<Operation, *>>, List<TypedValue<Operation, *>>, DefinitionsContext, RootMaryk>
         ) {
         override fun invoke(values: ObjectValues<RootMaryk, Properties>) = RootMaryk(
-            operations = values(1)
+            operations = values(1u)
         )
     }
 }

@@ -402,8 +402,8 @@ abstract class AbstractDataModel<DO : Any, P : AbstractPropertyDefinitions<DO>, 
     /**
      * Utility method to check and map a value to a constructor property
      */
-    protected inline fun <reified T, reified TI> Map<Int, *>.transform(
-        index: Int,
+    protected inline fun <reified T, reified TI> Map<UInt, *>.transform(
+        index: UInt,
         transform: (TI) -> T,
         default: T? = null
     ): T {

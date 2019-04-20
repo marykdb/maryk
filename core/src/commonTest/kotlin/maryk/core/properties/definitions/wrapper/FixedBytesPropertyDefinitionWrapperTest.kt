@@ -10,7 +10,7 @@ class FixedBytesPropertyDefinitionWrapperTest {
     private val type = UInt32
 
     private val def = FixedBytesPropertyDefinitionWrapper(
-        index = 1,
+        index = 1u,
         name = "wrapper",
         definition = NumberDefinition(type = type),
         getter = { _: Any -> null }

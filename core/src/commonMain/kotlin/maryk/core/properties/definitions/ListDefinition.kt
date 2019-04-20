@@ -66,9 +66,9 @@ data class ListDefinition<T : Any, CX : IsPropertyContext> internal constructor(
                 init {
                     IsPropertyDefinition.addRequired(this, ListDefinition<*, *>::required)
                     IsPropertyDefinition.addFinal(this, ListDefinition<*, *>::final)
-                    HasSizeDefinition.addMinSize(3, this, ListDefinition<*, *>::minSize)
-                    HasSizeDefinition.addMaxSize(4, this, ListDefinition<*, *>::maxSize)
-                    add(5, "valueDefinition",
+                    HasSizeDefinition.addMinSize(3u, this, ListDefinition<*, *>::minSize)
+                    HasSizeDefinition.addMaxSize(4u, this, ListDefinition<*, *>::maxSize)
+                    add(5u, "valueDefinition",
                         ContextTransformerDefinition(
                             contextTransformer = { it?.definitionsContext },
                             definition = MultiTypeDefinition(
@@ -93,7 +93,7 @@ data class ListDefinition<T : Any, CX : IsPropertyContext> internal constructor(
                         }
                     )
                     @Suppress("UNCHECKED_CAST")
-                    add(6, "default", ContextualCollectionDefinition(
+                    add(6u, "default", ContextualCollectionDefinition(
                         required = false,
                         contextualResolver = { context: ListDefinitionContext? ->
                             context?.listDefinition?.let {
@@ -105,12 +105,12 @@ data class ListDefinition<T : Any, CX : IsPropertyContext> internal constructor(
             }
         ) {
         override fun invoke(values: SimpleObjectValues<ListDefinition<*, *>>) = ListDefinition(
-            required = values(1),
-            final = values(2),
-            minSize = values(3),
-            maxSize = values(4),
-            valueDefinition = values<IsValueDefinition<*, *>>(5),
-            default = values(6)
+            required = values(1u),
+            final = values(2u),
+            minSize = values(3u),
+            maxSize = values(4u),
+            valueDefinition = values<IsValueDefinition<*, *>>(5u),
+            default = values(6u)
         )
     }
 }

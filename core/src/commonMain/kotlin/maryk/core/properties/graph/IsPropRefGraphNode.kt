@@ -4,6 +4,6 @@ import maryk.core.properties.IsPropertyDefinitions
 
 /** Defines an element which can be used within a graph */
 interface IsPropRefGraphNode<in P : IsPropertyDefinitions> {
-    val index: Int
+    val index: UInt
     val graphType: PropRefGraphType
 }

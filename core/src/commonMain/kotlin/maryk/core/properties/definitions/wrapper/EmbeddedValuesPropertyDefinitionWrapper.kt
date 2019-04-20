@@ -25,7 +25,7 @@ data class EmbeddedValuesPropertyDefinitionWrapper<
     P : PropertyDefinitions,
     CX : IsPropertyContext
 > internal constructor(
-    override val index: Int,
+    override val index: UInt,
     override val name: String,
     override val definition: IsEmbeddedValuesDefinition<DM, P, CX>,
     override val getter: (Any) -> Values<DM, P>? = { null },

@@ -16,7 +16,7 @@ import maryk.core.properties.references.SetReference
  * function to retrieve value on dataObject of [DO] in context [CX]
  */
 data class SetPropertyDefinitionWrapper<T : Any, CX : IsPropertyContext, in DO : Any> internal constructor(
-    override val index: Int,
+    override val index: UInt,
     override val name: String,
     override val definition: SetDefinition<T, CX>,
     override val getter: (DO) -> Set<T>? = { null },

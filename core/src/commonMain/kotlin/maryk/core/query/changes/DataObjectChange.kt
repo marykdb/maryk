@@ -33,13 +33,13 @@ data class DataObjectChange<out DM : IsRootDataModel<*>> internal constructor(
     val lastVersion: ULong? = null
 ) {
     object Properties : ObjectPropertyDefinitions<DataObjectChange<*>>() {
-        val key = add(1, "key", ContextualReferenceDefinition<RequestContext>(
+        val key = add(1u, "key", ContextualReferenceDefinition<RequestContext>(
             contextualResolver = {
                 it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
             }
         ), DataObjectChange<*>::key)
 
-        val changes = add(2, "changes",
+        val changes = add(2u, "changes",
             ListDefinition(
                 default = emptyList(),
                 valueDefinition = MultiTypeDefinition(
@@ -53,7 +53,7 @@ data class DataObjectChange<out DM : IsRootDataModel<*>> internal constructor(
         )
 
         val lastVersion = add(
-            3, "lastVersion",
+            3u, "lastVersion",
             NumberDefinition(
                 type = UInt64
             ),
@@ -65,9 +65,9 @@ data class DataObjectChange<out DM : IsRootDataModel<*>> internal constructor(
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<DataObjectChange<*>, Properties>) = DataObjectChange(
-            key = values(1),
-            changes = values(2),
-            lastVersion = values(3)
+            key = values(1u),
+            changes = values(2u),
+            lastVersion = values(3u)
         )
     }
 }

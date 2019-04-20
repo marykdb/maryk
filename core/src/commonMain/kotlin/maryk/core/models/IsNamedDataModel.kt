@@ -14,7 +14,7 @@ interface IsNamedDataModel<P : IsPropertyDefinitions> : IsDataModel<P> {
             definitions: ObjectPropertyDefinitions<DM>,
             getter: (DM) -> String
         ): FlexBytesPropertyDefinitionWrapper<String, String, IsPropertyContext, StringDefinition, DM> {
-            return definitions.add(1, "name", StringDefinition(), getter)
+            return definitions.add(1u, "name", StringDefinition(), getter)
         }
     }
 }

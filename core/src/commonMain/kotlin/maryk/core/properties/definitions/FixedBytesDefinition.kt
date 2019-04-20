@@ -51,23 +51,23 @@ data class FixedBytesDefinition(
                 IsPropertyDefinition.addRequired(this, FixedBytesDefinition::required)
                 IsPropertyDefinition.addFinal(this, FixedBytesDefinition::final)
                 IsComparableDefinition.addUnique(this, FixedBytesDefinition::unique)
-                add(4, "minValue", FlexBytesDefinition(), FixedBytesDefinition::minValue)
-                add(5, "maxValue", FlexBytesDefinition(), FixedBytesDefinition::maxValue)
-                add(6, "default", FlexBytesDefinition(), FixedBytesDefinition::default)
-                IsNumericDefinition.addRandom(7, this, FixedBytesDefinition::random)
-                IsFixedBytesEncodable.addByteSize(8, this, FixedBytesDefinition::byteSize)
+                add(4u, "minValue", FlexBytesDefinition(), FixedBytesDefinition::minValue)
+                add(5u, "maxValue", FlexBytesDefinition(), FixedBytesDefinition::maxValue)
+                add(6u, "default", FlexBytesDefinition(), FixedBytesDefinition::default)
+                IsNumericDefinition.addRandom(7u, this, FixedBytesDefinition::random)
+                IsFixedBytesEncodable.addByteSize(8u, this, FixedBytesDefinition::byteSize)
             }
         }
     ) {
         override fun invoke(values: SimpleObjectValues<FixedBytesDefinition>) = FixedBytesDefinition(
-            required = values(1),
-            final = values(2),
-            unique = values(3),
-            minValue = values(4),
-            maxValue = values(5),
-            default = values(6),
-            random = values(7),
-            byteSize = values(8)
+            required = values(1u),
+            final = values(2u),
+            unique = values(3u),
+            minValue = values(4u),
+            maxValue = values(5u),
+            default = values(6u),
+            random = values(7u),
+            byteSize = values(8u)
         )
     }
 }

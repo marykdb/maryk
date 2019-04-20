@@ -30,7 +30,7 @@ data class ReferenceTypePair<E : IndexedEnum> internal constructor(
         )
         @Suppress("UNCHECKED_CAST")
         override val value = add(
-            index = 2, name = "type",
+            index = 2u, name = "type",
             definition = ContextualIndexedEnumDefinition<RequestContext, RequestContext, IndexedEnum, IsMultiTypeDefinition<IndexedEnum, RequestContext>>(
                 contextualResolver = {
                     (it?.reference as? MultiTypePropertyReference<IndexedEnum, *, *, *>?)?.comparablePropertyDefinition?.definition as IsMultiTypeDefinition<IndexedEnum, RequestContext>?
@@ -45,8 +45,8 @@ data class ReferenceTypePair<E : IndexedEnum> internal constructor(
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<ReferenceTypePair<*>, Properties>) = ReferenceTypePair(
-            reference = values(1),
-            type = values(2)
+            reference = values(1u),
+            type = values(2u)
         )
     }
 }

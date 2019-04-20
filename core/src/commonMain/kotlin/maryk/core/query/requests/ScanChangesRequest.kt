@@ -74,8 +74,8 @@ data class ScanChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinit
         val filterSoftDeleted = IsFetchRequest.addFilterSoftDeleted(this, ScanChangesRequest<*, *>::filterSoftDeleted)
         val order = IsScanRequest.addOrder(this, ScanChangesRequest<*, *>::order)
         val limit = IsScanRequest.addLimit(this, ScanChangesRequest<*, *>::limit)
-        val fromVersion = IsChangesRequest.addFromVersion(9, this, ScanChangesRequest<*, *>::fromVersion)
-        val maxVersions = IsChangesRequest.addMaxVersions(10, this, ScanChangesRequest<*, *>::maxVersions)
+        val fromVersion = IsChangesRequest.addFromVersion(9u, this, ScanChangesRequest<*, *>::fromVersion)
+        val maxVersions = IsChangesRequest.addMaxVersions(10u, this, ScanChangesRequest<*, *>::maxVersions)
     }
 
     companion object : QueryDataModel<ScanChangesRequest<*, *>, Properties>(
@@ -83,16 +83,16 @@ data class ScanChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinit
     ) {
         override fun invoke(values: ObjectValues<ScanChangesRequest<*, *>, Properties>) =
             ScanChangesRequest<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
-                dataModel = values(1),
-                startKey = values(2),
-                select = values(3),
-                where = values(4),
-                toVersion = values(5),
-                filterSoftDeleted = values(6),
-                order = values(7),
-                limit = values(8),
-                fromVersion = values(9),
-                maxVersions = values(10)
+                dataModel = values(1u),
+                startKey = values(2u),
+                select = values(3u),
+                where = values(4u),
+                toVersion = values(5u),
+                filterSoftDeleted = values(6u),
+                order = values(7u),
+                limit = values(8u),
+                fromVersion = values(9u),
+                maxVersions = values(10u)
             )
     }
 }

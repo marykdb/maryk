@@ -33,9 +33,9 @@ internal class ValueDataModelTest {
 
                 val value = converted.values {
                     ValueItems(
-                        convertedValueModel.properties[1]!! withNotNull 5,
-                        convertedValueModel.properties[2]!! withNotNull DateTime(2018, 7, 18, 12, 0, 0),
-                        convertedValueModel.properties[3]!! withNotNull true
+                        convertedValueModel.properties[1u]!! withNotNull 5,
+                        convertedValueModel.properties[2u]!! withNotNull DateTime(2018, 7, 18, 12, 0, 0),
+                        convertedValueModel.properties[3u]!! withNotNull true
                     )
                 }.toDataObject()
 

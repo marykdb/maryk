@@ -25,7 +25,7 @@ internal data class ContextCaptureDefinition<T : Any, in CX : IsPropertyContext>
     override fun asString(value: T, context: CX?) =
         this.definition.asString(value, context).also { capturer(context, value) }
 
-    override fun calculateTransportByteLengthWithKey(index: Int, value: T, cacher: WriteCacheWriter, context: CX?) =
+    override fun calculateTransportByteLengthWithKey(index: UInt, value: T, cacher: WriteCacheWriter, context: CX?) =
         this.definition.calculateTransportByteLengthWithKey(index, value, cacher, context).also {
             capturer(
                 context,

@@ -54,7 +54,7 @@ class EmbeddedObjectDefinition<DO : Any, P : ObjectPropertyDefinitions<DO>, out 
 
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = dataModel.properties[name]
 
-    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = dataModel.properties[index]
+    override fun getEmbeddedByIndex(index: UInt): IsPropertyDefinitionWrapper<*, *, *, *>? = dataModel.properties[index]
 
     override fun validateWithRef(
         previousValue: DO?,
@@ -140,7 +140,7 @@ class EmbeddedObjectDefinition<DO : Any, P : ObjectPropertyDefinitions<DO>, out 
                 init {
                     IsPropertyDefinition.addRequired(this, EmbeddedObjectDefinition<*, *, *, *, *>::required)
                     IsPropertyDefinition.addFinal(this, EmbeddedObjectDefinition<*, *, *, *, *>::final)
-                    add(3, "dataModel",
+                    add(3u, "dataModel",
                         ContextualModelReferenceDefinition(
                             contextualResolver = { context: ModelContext?, name ->
                                 context?.definitionsContext?.let {
@@ -172,7 +172,7 @@ class EmbeddedObjectDefinition<DO : Any, P : ObjectPropertyDefinitions<DO>, out 
                         }
                     )
 
-                    add(4, "default",
+                    add(4u, "default",
                         ContextualEmbeddedObjectDefinition(
                             contextualResolver = { context: ModelContext? ->
                                 @Suppress("UNCHECKED_CAST")
@@ -187,10 +187,10 @@ class EmbeddedObjectDefinition<DO : Any, P : ObjectPropertyDefinitions<DO>, out 
         ) {
         override fun invoke(values: ObjectValues<EmbeddedObjectDefinition<*, *, *, *, *>, ObjectPropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>>) =
             EmbeddedObjectDefinition(
-                required = values(1),
-                final = values(2),
-                dataModel = values<Unit.() -> ObjectDataModel<Any, ObjectPropertyDefinitions<Any>>>(3),
-                default = values(4)
+                required = values(1u),
+                final = values(2u),
+                dataModel = values<Unit.() -> ObjectDataModel<Any, ObjectPropertyDefinitions<Any>>>(3u),
+                default = values(4u)
             )
     }
 }

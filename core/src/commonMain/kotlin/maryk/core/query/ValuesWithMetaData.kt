@@ -28,14 +28,14 @@ data class ValuesWithMetaData<DM : IsRootValuesDataModel<P>, P : PropertyDefinit
     val isDeleted: Boolean
 ) {
     object Properties : ObjectPropertyDefinitions<ValuesWithMetaData<*, *>>() {
-        val key = add(1, "key", ContextualReferenceDefinition<RequestContext>(
+        val key = add(1u, "key", ContextualReferenceDefinition<RequestContext>(
             contextualResolver = {
                 it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
             }
         ), ValuesWithMetaData<*, *>::key)
 
         @Suppress("UNCHECKED_CAST")
-        val values = add(2, "values",
+        val values = add(2u, "values",
             ContextualEmbeddedValuesDefinition<RequestContext>(
                 contextualResolver = {
                     it?.dataModel as? AbstractValuesDataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, RequestContext>?
@@ -45,9 +45,9 @@ data class ValuesWithMetaData<DM : IsRootValuesDataModel<P>, P : PropertyDefinit
             ValuesWithMetaData<*, *>::values as (ValuesWithMetaData<*, *>) -> Values<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>?
         )
         val firstVersion =
-            add(3, "firstVersion", NumberDefinition(type = UInt64), ValuesWithMetaData<*, *>::firstVersion)
-        val lastVersion = add(4, "lastVersion", NumberDefinition(type = UInt64), ValuesWithMetaData<*, *>::lastVersion)
-        val isDeleted = add(5, "isDeleted", BooleanDefinition(), ValuesWithMetaData<*, *>::isDeleted)
+            add(3u, "firstVersion", NumberDefinition(type = UInt64), ValuesWithMetaData<*, *>::firstVersion)
+        val lastVersion = add(4u, "lastVersion", NumberDefinition(type = UInt64), ValuesWithMetaData<*, *>::lastVersion)
+        val isDeleted = add(5u, "isDeleted", BooleanDefinition(), ValuesWithMetaData<*, *>::isDeleted)
     }
 
     companion object : QueryDataModel<ValuesWithMetaData<*, *>, Properties>(
@@ -55,11 +55,11 @@ data class ValuesWithMetaData<DM : IsRootValuesDataModel<P>, P : PropertyDefinit
     ) {
         override fun invoke(values: ObjectValues<ValuesWithMetaData<*, *>, Properties>) =
             ValuesWithMetaData<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
-                key = values(1),
-                values = values(2),
-                firstVersion = values(3),
-                lastVersion = values(4),
-                isDeleted = values(5)
+                key = values(1u),
+                values = values(2u),
+                firstVersion = values(3u),
+                lastVersion = values(4u),
+                isDeleted = values(5u)
             )
     }
 }

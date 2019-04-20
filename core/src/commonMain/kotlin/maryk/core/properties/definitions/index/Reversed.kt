@@ -58,7 +58,7 @@ data class Reversed<T : Any>(
     }
 
     object Properties : ObjectPropertyDefinitions<Reversed<out Any>>() {
-        val reference = add(1, "reference",
+        val reference = add(1u, "reference",
             ContextualPropertyReferenceDefinition<DefinitionsConversionContext>(
                 contextualResolver = {
                     it?.propertyDefinitions as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()
@@ -74,7 +74,7 @@ data class Reversed<T : Any>(
             singlePropertyDefinition = Properties.reference
         ) {
         override fun invoke(values: ObjectValues<Reversed<out Any>, Properties>) = Reversed<Any>(
-            reference = values(1)
+            reference = values(1u)
         )
     }
 }

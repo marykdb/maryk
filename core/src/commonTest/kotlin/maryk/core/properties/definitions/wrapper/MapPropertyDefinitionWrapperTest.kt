@@ -10,7 +10,7 @@ import kotlin.test.Test
 
 class MapPropertyDefinitionWrapperTest {
     private val def = MapPropertyDefinitionWrapper(
-        index = 1,
+        index = 1u,
         name = "wrapper",
         definition = MapDefinition(
             keyDefinition = NumberDefinition(type = Float32),

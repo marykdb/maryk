@@ -154,12 +154,12 @@ internal class DataModelTest {
 
     @Test
     fun getPropertyDefinitionByIndex() {
-        TestMarykModel.properties[1] shouldBe TestMarykModel.Properties.string
-        TestMarykModel.properties[2] shouldBe TestMarykModel.Properties.int
-        TestMarykModel.properties[3] shouldBe TestMarykModel.Properties.uint
-        TestMarykModel.properties[4] shouldBe TestMarykModel.Properties.double
-        TestMarykModel.properties[5] shouldBe TestMarykModel.Properties.dateTime
-        TestMarykModel.properties[6] shouldBe TestMarykModel.Properties.bool
+        TestMarykModel.properties[1u] shouldBe TestMarykModel.Properties.string
+        TestMarykModel.properties[2u] shouldBe TestMarykModel.Properties.int
+        TestMarykModel.properties[3u] shouldBe TestMarykModel.Properties.uint
+        TestMarykModel.properties[4u] shouldBe TestMarykModel.Properties.double
+        TestMarykModel.properties[5u] shouldBe TestMarykModel.Properties.dateTime
+        TestMarykModel.properties[6u] shouldBe TestMarykModel.Properties.bool
     }
 
     @Test

@@ -11,18 +11,18 @@ object EmbeddedMarykModel : DataModel<EmbeddedMarykModel, EmbeddedMarykModel.Pro
 ) {
     object Properties : PropertyDefinitions() {
         val value = add(
-            index = 1, name = "value",
+            index = 1u, name = "value",
             definition = StringDefinition()
         )
         val model = add(
-            index = 2, name = "model",
+            index = 2u, name = "model",
             definition = EmbeddedValuesDefinition(
                 required = false,
                 dataModel = { EmbeddedMarykModel }
             )
         )
         val marykModel = add(
-            index = 3, name = "marykModel",
+            index = 3u, name = "marykModel",
             definition = EmbeddedValuesDefinition(
                 required = false,
                 dataModel = { TestMarykModel }

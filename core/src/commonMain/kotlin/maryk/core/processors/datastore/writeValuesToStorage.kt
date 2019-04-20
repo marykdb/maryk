@@ -77,7 +77,7 @@ fun <DM : IsDataModel<P>, P : AbstractPropertyDefinitions<*>> AbstractValues<*, 
  */
 @Suppress("UNCHECKED_CAST")
 internal fun <T : IsPropertyDefinition<*>> writeValue(
-    index: Int,
+    index: UInt?,
     qualifierLength: Int,
     qualifierWriter: QualifierWriter? = null,
     definition: T,
@@ -88,6 +88,9 @@ internal fun <T : IsPropertyDefinition<*>> writeValue(
         is List<*> -> {
             if (definition !is IsListDefinition<*, *>) {
                 throw TypeException("Definition should be a ListDefinition for a List")
+            }
+            if (index == null) {
+                throw Exception("index should not be null for writing a List")
             }
             val listQualifierWriter = createQualifierWriter(qualifierWriter, index, ReferenceType.LIST)
             val listQualifierCount = qualifierLength + index.calculateVarIntWithExtraInfoByteSize()
@@ -100,6 +103,9 @@ internal fun <T : IsPropertyDefinition<*>> writeValue(
             )
         }
         is Set<*> -> {
+            if (index == null) {
+                throw Exception("index should not be null for writing a Set")
+            }
             val setQualifierWriter = createQualifierWriter(qualifierWriter, index, ReferenceType.SET)
             val setQualifierCount = qualifierLength + index.calculateVarIntWithExtraInfoByteSize()
             writeSetToStorage(
@@ -113,6 +119,9 @@ internal fun <T : IsPropertyDefinition<*>> writeValue(
         is Map<*, *> -> {
             if (definition !is IsMapDefinition<*, *, *>) {
                 throw TypeException("Definition should be a MapDefinition for a Map")
+            }
+            if (index == null) {
+                throw Exception("index should not be null for writing a map")
             }
             val mapQualifierWriter = createQualifierWriter(
                 qualifierWriter,
@@ -134,9 +143,9 @@ internal fun <T : IsPropertyDefinition<*>> writeValue(
             }
 
             val indexWriter =
-                if (index == -1) qualifierWriter else createQualifierWriter(qualifierWriter, index, ReferenceType.EMBED)
+                if (index == null) qualifierWriter else createQualifierWriter(qualifierWriter, index, ReferenceType.EMBED)
             val abstractValuesQualifierCount =
-                if (index == -1) qualifierLength else qualifierLength + index.calculateVarIntWithExtraInfoByteSize()
+                if (index == null) qualifierLength else qualifierLength + index.calculateVarIntWithExtraInfoByteSize()
 
             // Write complex values existence indicator
             // Write parent value with Unit so it knows this one is not deleted. So possible lingering old types are not read.
@@ -154,10 +163,10 @@ internal fun <T : IsPropertyDefinition<*>> writeValue(
                 throw TypeException("Definition should be a MultiTypeDefinition for a TypedValue")
             }
 
-            val valueQualifierWriter = if (index > -1) {
+            val valueQualifierWriter = if (index != null) {
                 createQualifierWriter(qualifierWriter, index, ReferenceType.VALUE)
             } else qualifierWriter
-            val valueQualifierSize = if (index > -1) {
+            val valueQualifierSize = if (index != null) {
                 qualifierLength + index.calculateVarIntWithExtraInfoByteSize()
             } else qualifierLength
 
@@ -170,7 +179,7 @@ internal fun <T : IsPropertyDefinition<*>> writeValue(
             )
         }
         else -> {
-            val qualifier = if (index > -1) {
+            val qualifier = if (index != null) {
                 writeQualifier(
                     qualifierLength + index.calculateVarIntWithExtraInfoByteSize(),
                     createQualifierWriter(qualifierWriter, index, ReferenceType.VALUE)
@@ -188,7 +197,7 @@ internal fun <T : IsPropertyDefinition<*>> writeValue(
  */
 internal fun createQualifierWriter(
     parentQualifierWriter: QualifierWriter?,
-    index: Int,
+    index: UInt,
     referenceType: ReferenceType
 ): QualifierWriter = { writer ->
     parentQualifierWriter?.invoke(writer)

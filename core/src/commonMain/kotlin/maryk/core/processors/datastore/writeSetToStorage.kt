@@ -40,7 +40,7 @@ fun <T : IsPropertyDefinition<*>> writeSetToStorage(
         val setItemQualifierLength = qualifierCount + setItemByteSize + setItemByteCountSize
 
         writeValue(
-            -1,
+            null,
             setItemQualifierLength,
             setValueQualifierWriter,
             setValueDefinition,

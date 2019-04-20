@@ -2,6 +2,7 @@ package maryk.generator.proto3
 
 import maryk.core.exceptions.TypeException
 import maryk.core.models.IsNamedDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
@@ -40,6 +41,18 @@ fun <P : AbstractPropertyDefinitions<*>> IsNamedDataModel<P>.generateProto3Schem
         }
     }
 
+    var reservations = ""
+
+    if (this is IsRootDataModel<P>) {
+        this.reservedIndices?.let { indices ->
+            reservations += "reserved ${indices.joinToString(", ")};\n      "
+        }
+        this.reservedNames?.let { names ->
+            reservations += "reserved ${names.joinToString{ "\"$it\"" }};\n      "
+        }
+        if (reservations.isNotBlank()) reservations.prependIndent().prependIndent("  ")
+    }
+
     val properties = this.properties.generateSchemaForProperties(generationContext, messageAdder)
 
     val precedingMessages = if (subMessages.isNotEmpty()) {
@@ -49,7 +62,7 @@ fun <P : AbstractPropertyDefinitions<*>> IsNamedDataModel<P>.generateProto3Schem
 
     val schema = """
     message $name {
-      $precedingMessages${properties.prependIndent().prependIndent("  ").trimStart()}
+      $reservations$precedingMessages${properties.prependIndent().prependIndent("  ").trimStart()}
     }
     """.trimIndent()
 

@@ -31,6 +31,8 @@ message NumericMarykModel {
 
 val generatedProto3ForCompleteMarykModel = """
 message CompleteMarykModel {
+  reserved 99;
+  reserved "reserved";
   message MultiType {
     oneof multi {
       string o1 = 1;

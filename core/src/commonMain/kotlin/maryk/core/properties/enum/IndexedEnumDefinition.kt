@@ -1,7 +1,7 @@
 package maryk.core.properties.enum
 
 import maryk.core.definitions.MarykPrimitive
-import maryk.core.definitions.PrimitiveType
+import maryk.core.definitions.PrimitiveType.EnumDefinition
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.SerializationException
 import maryk.core.extensions.bytes.initUInt
@@ -27,7 +27,7 @@ import kotlin.reflect.KClass
 /** Enum Definitions with a [name] and [cases] */
 open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
     internal val optionalCases: (() -> Array<E>)?,
-    override val name: String,
+    final override val name: String,
     val reservedIndices: List<UInt>? = null,
     val reservedNames: List<String>? = null,
     private val unknownCreator: ((UInt, String) -> E)? = null
@@ -35,7 +35,7 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
     IsPropertyDefinition<E>,
     IsFixedBytesEncodable<E> {
 
-    override val primitiveType = PrimitiveType.EnumDefinition
+    override val primitiveType = EnumDefinition
 
     override val byteSize = 2
     override val required = true

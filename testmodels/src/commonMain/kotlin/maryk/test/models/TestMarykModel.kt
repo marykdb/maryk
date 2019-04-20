@@ -41,7 +41,7 @@ import maryk.test.models.TestMarykModel.Properties.multi
 import maryk.test.models.TestMarykModel.Properties.uint
 
 sealed class MultiTypeEnum(
-    override val index: UInt
+    index: UInt
 ) : IndexedEnumImpl<MultiTypeEnum>(index) {
     object T1: MultiTypeEnum(1u)
     object T2: MultiTypeEnum(2u)

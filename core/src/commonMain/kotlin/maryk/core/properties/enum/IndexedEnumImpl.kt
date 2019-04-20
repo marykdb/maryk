@@ -3,12 +3,12 @@ package maryk.core.properties.enum
 import maryk.core.exceptions.DefNotFoundException
 
 /**
- * Impl for Enums so they have indexes and can be transported and stored
+ * Implementation for IndexedEnumComparable so they are easier to implement
  */
 abstract class IndexedEnumImpl<E: IndexedEnum>(
-    override val index: UInt
+    final override val index: UInt
 ) : IndexedEnumComparable<E> {
-    override val name get() = this::class.simpleName ?: throw DefNotFoundException("Missing enum option name")
+    override val name = this::class.simpleName ?: throw DefNotFoundException("Missing enum option name")
 
     override fun compareTo(other: E) = this.index.compareTo(other.index)
 

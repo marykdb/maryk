@@ -30,7 +30,7 @@ private val context = RequestContext(mapOf(
     addToCollect("referencedKeys", ValuesResponse)
 }
 
-class InjectInRequestTest {
+class InjectIntoRequestTest {
     private val getRequestWithInjectable = GetRequest.values(context) {
         mapNonNulls(
             dataModel with SimpleMarykModel,

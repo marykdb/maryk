@@ -50,35 +50,37 @@ open class MapReference<K : Any, V : Any, CX : IsPropertyContext> internal const
         context: IsPropertyContext?
     ): IsPropertyReference<*, IsPropertyDefinition<*>, *> {
         val protoKey = ProtoBuf.readKey(reader)
-        return when (protoKey.tag) {
-            0u -> {
-                MapValueReference(
-                    this.propertyDefinition.keyDefinition.readTransportBytes(
-                        ProtoBuf.getLength(protoKey.wireType, reader),
-                        reader
-                    ),
-                    this.propertyDefinition.definition,
-                    this
-                )
-            }
-            1u -> {
-                MapKeyReference(
-                    this.propertyDefinition.keyDefinition.readTransportBytes(
-                        ProtoBuf.getLength(protoKey.wireType, reader),
-                        reader
-                    ),
-                    this.propertyDefinition.definition,
-                    this
-                )
-            }
-            2u -> {
-                MapAnyValueReference(
-                    this.propertyDefinition.definition,
-                    this
-                )
-            }
-            else -> throw ParseException("Unknown Key reference type ${protoKey.tag}")
+        val index = protoKey.tag
+        // Because of an issue in JS not working with unsigned it needs to be an if
+        // https://youtrack.jetbrains.com/issue/KT-31145
+        @Suppress("CascadeIf")
+        return if (index == 0u) {
+            MapValueReference(
+                this.propertyDefinition.keyDefinition.readTransportBytes(
+                    ProtoBuf.getLength(protoKey.wireType, reader),
+                    reader
+                ),
+                this.propertyDefinition.definition,
+                this
+            )
         }
+        else if (index == 1u) {
+            MapKeyReference(
+                this.propertyDefinition.keyDefinition.readTransportBytes(
+                    ProtoBuf.getLength(protoKey.wireType, reader),
+                    reader
+                ),
+                this.propertyDefinition.definition,
+                this
+            )
+        }
+        else if (index == 2u) {
+            MapAnyValueReference(
+                this.propertyDefinition.definition,
+                this
+            )
+        }
+        else throw ParseException("Unknown Key reference type ${protoKey.tag}")
     }
 
     override fun getEmbeddedStorageRef(

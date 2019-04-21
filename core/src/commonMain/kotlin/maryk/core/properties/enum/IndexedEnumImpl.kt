@@ -8,7 +8,8 @@ import maryk.core.exceptions.DefNotFoundException
 abstract class IndexedEnumImpl<E: IndexedEnum>(
     final override val index: UInt
 ) : IndexedEnumComparable<E> {
-    override val name = this::class.simpleName ?: throw DefNotFoundException("Missing enum option name")
+    // The get() is for native and JS
+    override val name get() = this::class.simpleName ?: throw DefNotFoundException("Missing enum option name")
 
     override fun compareTo(other: E) = this.index.compareTo(other.index)
 

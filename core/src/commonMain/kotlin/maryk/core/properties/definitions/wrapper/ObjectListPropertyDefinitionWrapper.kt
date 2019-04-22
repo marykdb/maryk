@@ -86,4 +86,18 @@ data class ObjectListPropertyDefinitionWrapper<
                 referenceGetter as ObjectPropertyDefinitions<*>.() -> (AnyOutPropertyReference?) -> R
             )
         }
+
+    /** Reference values to references from [referenceGetter] at any item of list */
+    fun <T : Any, W : IsPropertyDefinitionWrapper<T, *, *, *>, R : IsPropertyReference<T, W, *>> atAny(
+        referenceGetter: P.() -> (AnyOutPropertyReference?) -> R
+    ): (AnyOutPropertyReference?) -> R =
+        @Suppress("UNCHECKED_CAST")
+        {
+            val objectValuesDefinition = this.definition.valueDefinition as EmbeddedObjectDefinition<ODO, P, *, *, *>
+
+            objectValuesDefinition.dataModel(
+                this.getAnyItemRef(it),
+                referenceGetter as ObjectPropertyDefinitions<*>.() -> (AnyOutPropertyReference?) -> R
+            )
+        }
 }

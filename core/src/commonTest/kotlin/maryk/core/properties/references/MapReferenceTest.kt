@@ -1,9 +1,7 @@
 package maryk.core.properties.references
 
 import maryk.core.exceptions.UnexpectedValueException
-import maryk.core.processors.datastore.matchers.FuzzyExactLengthMatch
 import maryk.core.processors.datastore.matchers.QualifierExactMatcher
-import maryk.core.processors.datastore.matchers.QualifierFuzzyMatcher
 import maryk.core.protobuf.WriteCache
 import maryk.lib.extensions.toHex
 import maryk.lib.time.Time
@@ -17,11 +15,9 @@ class MapReferenceTest {
     private val mapReference = TestMarykModel.ref { map }
     private val keyReference = TestMarykModel { map refToKey Time(12, 0, 1) }
     private val valReference = TestMarykModel { map refAt Time(15, 22, 55) }
-    private val anyReference = TestMarykModel { map.refToAny() }
 
     private val subReference = TestMarykModel { embeddedValues { marykModel { map refAt Time(15, 22, 55) } } }
     private val subKeyReference = TestMarykModel { embeddedValues { marykModel { map refToKey Time(15, 22, 55) } } }
-    private val subAnyReference = TestMarykModel { embeddedValues { marykModel { map.refToAny() } } }
 
     @Test
     fun getValueFromMap() {
@@ -45,7 +41,7 @@ class MapReferenceTest {
         val bc = ByteCollector()
         val cache = WriteCache()
 
-        for (it in arrayOf(mapReference, keyReference, valReference, anyReference)) {
+        for (it in arrayOf(mapReference, keyReference, valReference)) {
             bc.reserve(
                 it.calculateTransportByteLength(cache)
             )
@@ -62,9 +58,8 @@ class MapReferenceTest {
         mapReference.completeName shouldBe "map"
         keyReference.completeName shouldBe "map.\$12:00:01"
         valReference.completeName shouldBe "map.@15:22:55"
-        anyReference.completeName shouldBe "map.*"
 
-        for (it in arrayOf(mapReference, keyReference, valReference, anyReference)) {
+        for (it in arrayOf(mapReference, keyReference, valReference)) {
             val converted = TestMarykModel.getPropertyReferenceByName(it.completeName)
             converted shouldBe it
         }
@@ -113,37 +108,6 @@ class MapReferenceTest {
     }
 
     @Test
-    fun writeAndReadAnyRefStorageBytes() {
-        val bc = ByteCollector()
-
-        bc.reserve(
-            anyReference.calculateStorageByteLength()
-        )
-        anyReference.writeStorageBytes(bc::write)
-
-        bc.bytes!!.toHex() shouldBe "100a00"
-
-        TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) shouldBe anyReference
-    }
-
-    @Test
-    fun createAnyRefQualifierMatcher() {
-        val matcher = anyReference.toQualifierMatcher()
-
-        (matcher is QualifierFuzzyMatcher) shouldBe true
-        (matcher as QualifierFuzzyMatcher).let {
-            it.firstPossible().toHex() shouldBe "54"
-            it.qualifierParts.size shouldBe 1
-            it.fuzzyMatchers.size shouldBe 1
-
-            it.fuzzyMatchers.first().let { matcher ->
-                (matcher is FuzzyExactLengthMatch) shouldBe true
-                (matcher as FuzzyExactLengthMatch).length shouldBe 3
-            }
-        }
-    }
-
-    @Test
     fun writeAndReadKeyRefStorageBytes() {
         val bc = ByteCollector()
 
@@ -177,19 +141,5 @@ class MapReferenceTest {
         bc.bytes!!.toHex() shouldBe "661e080a0300d84f"
 
         TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) shouldBe subKeyReference
-    }
-
-    @Test
-    fun writeAndReadDeepAnyRefStorageBytes() {
-        val bc = ByteCollector()
-
-        bc.reserve(
-            subAnyReference.calculateStorageByteLength()
-        )
-        subAnyReference.writeStorageBytes(bc::write)
-
-        bc.bytes!!.toHex() shouldBe "661e100a00"
-
-        TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) shouldBe subAnyReference
     }
 }

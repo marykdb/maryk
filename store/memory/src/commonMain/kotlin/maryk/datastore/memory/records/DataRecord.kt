@@ -27,7 +27,9 @@ internal data class DataRecord<DM : IsRootValuesDataModel<P>, P : PropertyDefini
     val firstVersion: ULong,
     var lastVersion: ULong
 ) : IsValuesGetter {
-    override fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(propertyReference: IsPropertyReference<T, D, C>) =
+    override fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(
+        propertyReference: IsPropertyReference<T, D, C>
+    ): T? =
         getValue<T>(this.values, propertyReference.toStorageByteArray())?.value
 
     fun isDeleted(toVersion: ULong?): Boolean =

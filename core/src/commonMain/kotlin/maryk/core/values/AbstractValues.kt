@@ -11,6 +11,7 @@ import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.references.IsFuzzyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.RequestContext
 import maryk.lib.exceptions.ParseException
@@ -103,12 +104,30 @@ abstract class AbstractValues<DO : Any, DM : IsDataModel<P>, P : AbstractPropert
     }
 
     @Suppress("UNCHECKED_CAST")
-    override operator fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(propertyReference: IsPropertyReference<T, D, C>): T? {
+    override operator fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(
+        propertyReference: IsPropertyReference<T, D, C>
+    ): T? {
         val refList = propertyReference.unwrap()
         var value: Any = this
+        var fuzzy = false
 
         for (toResolve in refList) {
-            value = toResolve.resolve(value) ?: return null
+            if (fuzzy) {
+                // With fuzzy references all resolved results need to be combined into a list
+                val list = value as MutableList<Any>
+                value = mutableListOf<Any>()
+                for (v in list) {
+                    val valueToAdd = toResolve.resolve(v) ?: continue
+                    if (valueToAdd is List<*>) {
+                        value.addAll(valueToAdd as Collection<Any>)
+                    } else {
+                        value.add(valueToAdd)
+                    }
+                }
+            } else {
+                value = toResolve.resolve(value) ?: return null
+                fuzzy = fuzzy || toResolve is IsFuzzyReference
+            }
         }
 
         return value as T?

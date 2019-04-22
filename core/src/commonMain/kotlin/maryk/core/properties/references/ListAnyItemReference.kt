@@ -1,7 +1,6 @@
 package maryk.core.properties.references
 
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.exceptions.RequestException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.processors.datastore.matchers.FuzzyExactLengthMatch
@@ -10,7 +9,6 @@ import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsEmbeddedDefinition
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsListDefinition
-import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
@@ -24,9 +22,9 @@ class ListAnyItemReference<T : Any, CX : IsPropertyContext> internal constructor
     parentReference: ListReference<T, CX>?
 ) : HasEmbeddedPropertyReference<T>,
     IsFuzzyReference,
-    IsPropertyReferenceWithIndirectStorageParent<T, IsValueDefinition<T, CX>, ListReference<T, CX>, List<T>>,
-    CanHaveComplexChildReference<T, IsValueDefinition<T, CX>, ListReference<T, CX>, List<T>>(
-        listDefinition.valueDefinition, parentReference
+    IsPropertyReferenceWithIndirectStorageParent<List<T>, IsListDefinition<T, CX>, ListReference<T, CX>, List<T>>,
+    CanHaveComplexChildReference<List<T>, IsListDefinition<T, CX>, ListReference<T, CX>, List<T>>(
+        listDefinition, parentReference
     ) {
     /** Convenience infix method to create Reference [value] pairs */
     @Suppress("UNCHECKED_CAST")
@@ -102,9 +100,7 @@ class ListAnyItemReference<T : Any, CX : IsPropertyContext> internal constructor
         writer(0)
     }
 
-    override fun resolve(values: List<T>): T? =
-        throw RequestException("Cannot get a specific value with any value reference")
+    override fun resolve(values: List<T>): List<T> = values
 
-    override fun resolveFromAny(value: Any) =
-        throw RequestException("Cannot get a specific value with any value reference")
+    override fun resolveFromAny(value: Any) = value
 }

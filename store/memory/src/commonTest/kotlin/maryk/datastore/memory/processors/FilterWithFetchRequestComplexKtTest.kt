@@ -45,12 +45,6 @@ class FilterWithFetchRequestComplexKtTest {
             value1,
             null
         ) shouldBe true
-
-        filterMatches(
-            Exists(ComplexModel { mapStringString.refToAny() }),
-            value1,
-            null
-        ) shouldBe true
     }
 
     @Test

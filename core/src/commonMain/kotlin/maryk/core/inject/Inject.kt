@@ -29,6 +29,7 @@ data class Inject<T : Any, D : IsPropertyDefinition<T>>(
     private val collectionName: String,
     private val propertyReference: IsPropertyReference<T, D, *>?
 ) {
+    /** Resolve a value to inject from [context] */
     fun resolve(context: RequestContext): T? {
         val result = context.retrieveResult(collectionName)
             ?: throw InjectException(this.collectionName)

@@ -35,19 +35,27 @@ class InjectTest {
         definitionsContext
     )
 
-    val key = TestMarykModel.key(testMarykModelObject)
+    val key1 = TestMarykModel.key(testMarykModelObject)
+    val key2 = TestMarykModel.key(testExtendedMarykModelObject)
 
-    private val getRequest = TestMarykModel.get(key)
+    private val getRequest = TestMarykModel.get(key1, key2)
 
     private val valuesResponse = ValuesResponse.asValues(
         ValuesResponse(
             TestMarykModel,
             listOf(
                 ValuesWithMetaData(
-                    key = key,
+                    key = key2,
                     values = testExtendedMarykModelObject,
                     firstVersion = 1234uL,
                     lastVersion = 3456uL,
+                    isDeleted = false
+                ),
+                ValuesWithMetaData(
+                    key = key1,
+                    values = testMarykModelObject,
+                    firstVersion = 1235uL,
+                    lastVersion = 3457uL,
                     isDeleted = false
                 )
             )
@@ -72,6 +80,9 @@ class InjectTest {
     private val injectDeep =
         Inject("testCollection", TestMarykModel(firstResponseValueRef) { embeddedValues.ref { value } })
 
+    private val injectFromAny =
+        Inject("testCollection", ValuesResponse { values.atAny { values.ref(TestMarykModel) { string } } })
+
     @Test
     fun testGetToCollect() {
         context.getToCollectModel("testCollection")?.model shouldBe ValuesResponse
@@ -81,6 +92,11 @@ class InjectTest {
     fun testResolve() {
         inject.resolve(context) shouldBe "hay"
         injectDeep.resolve(context) shouldBe "test"
+    }
+
+    @Test
+    fun testResolveAny() {
+        injectFromAny.resolve(context) shouldBe listOf("hay", "haas")
     }
 
     private val valuesToCollect = EmbeddedMarykModel(

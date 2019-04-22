@@ -9,8 +9,10 @@ import maryk.core.processors.datastore.matchers.IsFuzzyMatcher
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsFixedBytesEncodable
+import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsMapDefinition
-import maryk.core.properties.definitions.IsSubDefinition
+import maryk.core.properties.definitions.IsValueDefinition
+import maryk.core.properties.definitions.ListDefinition
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
@@ -22,9 +24,10 @@ class MapAnyValueReference<K : Any, V : Any, CX : IsPropertyContext> internal co
     val mapDefinition: IsMapDefinition<K, V, CX>,
     parentReference: MapReference<K, V, CX>?
 ) : IsFuzzyReference,
-    IsPropertyReferenceWithIndirectStorageParent<V, IsSubDefinition<V, CX>, MapReference<K, V, CX>, Map<K, V>>,
-    CanHaveComplexChildReference<V, IsSubDefinition<V, CX>, MapReference<K, V, CX>, Map<K, V>>(
-        mapDefinition.valueDefinition, parentReference
+    IsPropertyReferenceWithIndirectStorageParent<List<V>, IsListDefinition<V, CX>, MapReference<K, V, CX>, Map<K, V>>,
+    CanHaveComplexChildReference<List<V>, IsListDefinition<V, CX>, MapReference<K, V, CX>, Map<K, V>>(
+        ListDefinition(valueDefinition = mapDefinition.valueDefinition as IsValueDefinition<V, CX>),
+        parentReference
     ) {
     override val completeName
         get() = this.parentReference?.let {
@@ -35,10 +38,6 @@ class MapAnyValueReference<K : Any, V : Any, CX : IsPropertyContext> internal co
     @Suppress("UNCHECKED_CAST")
     infix fun <T : Any> with(value: T) =
         ReferenceValuePair(this as IsPropertyReference<T, IsChangeableValueDefinition<T, IsPropertyContext>, *>, value)
-
-    override fun resolveFromAny(value: Any): Any {
-        throw RequestException("Cannot get a specific value with any value reference")
-    }
 
     override fun fuzzyMatcher(): IsFuzzyMatcher {
         val keyDefinition = mapDefinition.keyDefinition
@@ -72,7 +71,12 @@ class MapAnyValueReference<K : Any, V : Any, CX : IsPropertyContext> internal co
         writer(0)
     }
 
-    override fun resolve(values: Map<K, V>): V? {
-        throw RequestException("Cannot get a specific value with any value reference")
-    }
+    override fun resolve(values: Map<K, V>): List<V> = values.values.toMutableList()
+
+    override fun resolveFromAny(value: Any): Any =
+        if (value is Map<*, *>) {
+            value.values.toMutableList()
+        } else {
+            throw RequestException("Expected a map into resolveFromAny instead of $value")
+        }
 }

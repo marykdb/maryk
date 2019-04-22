@@ -52,7 +52,7 @@ class InjectIntoRequestTest {
 
     @Test
     fun testInjectInValuesGetRequest() {
-        val requestRef = ValuesResponse { values.at(0u) { values.ref(ReferencesModel) { references } } }
+        val requestRef = ValuesResponse { values.atAny { values.ref(ReferencesModel) { references } } }
 
         val getRequest = GetRequest.values(context) {
             mapNonNulls(
@@ -66,22 +66,34 @@ class InjectIntoRequestTest {
 
         val expectedKeys = listOf(
             SimpleMarykModel.key(SimpleMarykModel("v1")),
-            SimpleMarykModel.key(SimpleMarykModel("v2"))
+            SimpleMarykModel.key(SimpleMarykModel("v2")),
+            SimpleMarykModel.key(SimpleMarykModel("v3"))
         )
 
-        val row = ReferencesModel(
-            references = expectedKeys
+        val row1 = ReferencesModel(
+            references = expectedKeys.subList(0, 2)
+        )
+
+        val row2 = ReferencesModel(
+            references = expectedKeys.subList(2, 3)
         )
 
         val response = ValuesResponse(
             dataModel = ReferencesModel,
             values = listOf(
                 ValuesWithMetaData(
-                    key = ReferencesModel.key(row),
-                    values = row,
+                    key = ReferencesModel.key(row1),
+                    values = row1,
                     isDeleted = false,
                     firstVersion = 0uL,
                     lastVersion = 3uL
+                ),
+                ValuesWithMetaData(
+                    key = ReferencesModel.key(row2),
+                    values = row2,
+                    isDeleted = false,
+                    firstVersion = 1uL,
+                    lastVersion = 4uL
                 )
             )
         )

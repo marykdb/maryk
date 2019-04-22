@@ -8,6 +8,7 @@ import maryk.lib.time.Time
 import maryk.test.ByteCollector
 import maryk.test.models.TestMarykModel
 import maryk.test.shouldBe
+import maryk.test.shouldBeOfType
 import kotlin.test.Test
 
 class MapAnyValueReferenceTest {
@@ -65,8 +66,7 @@ class MapAnyValueReferenceTest {
     fun createAnyRefQualifierMatcher() {
         val matcher = anyReference.toQualifierMatcher()
 
-        (matcher is QualifierFuzzyMatcher) shouldBe true
-        (matcher as QualifierFuzzyMatcher).let {
+        shouldBeOfType<QualifierFuzzyMatcher>(matcher).let {
             it.firstPossible().toHex() shouldBe "54"
             it.qualifierParts.size shouldBe 1
             it.fuzzyMatchers.size shouldBe 1
@@ -80,15 +80,15 @@ class MapAnyValueReferenceTest {
 
     @Test
     fun writeAndReadDeepAnyRefStorageBytes() {
-        val bc = ByteCollector()
+        ByteCollector().apply {
+            reserve(
+                subAnyReference.calculateStorageByteLength()
+            )
+            subAnyReference.writeStorageBytes(::write)
 
-        bc.reserve(
-            subAnyReference.calculateStorageByteLength()
-        )
-        subAnyReference.writeStorageBytes(bc::write)
+            bytes!!.toHex() shouldBe "661e100a00"
 
-        bc.bytes!!.toHex() shouldBe "661e100a00"
-
-        TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) shouldBe subAnyReference
+            TestMarykModel.Properties.getPropertyReferenceByStorageBytes(size, ::read) shouldBe subAnyReference
+        }
     }
 }

@@ -7,6 +7,7 @@ import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.TestMarykModel
 import maryk.test.shouldBe
+import maryk.test.shouldBeOfType
 import kotlin.test.Test
 
 class ListAnyItemReferenceTest {
@@ -20,45 +21,42 @@ class ListAnyItemReferenceTest {
 
     @Test
     fun convertAnyToProtoBufAndBack() {
-        val bc = ByteCollector()
+        ByteCollector().apply {
+            reserve(
+                anyReference.calculateTransportByteLength(cache)
+            )
+            anyReference.writeTransportBytes(cache, ::write)
 
-        bc.reserve(
-            this.anyReference.calculateTransportByteLength(cache)
-        )
-        this.anyReference.writeTransportBytes(cache, bc::write)
-
-        val converted = TestMarykModel.getPropertyReferenceByBytes(bc.size, bc::read)
-        converted shouldBe this.anyReference
+            TestMarykModel.getPropertyReferenceByBytes(size, ::read) shouldBe anyReference
+        }
     }
 
     @Test
     fun convertAnyToStringAndBack() {
         this.anyReference.completeName shouldBe "listOfString.*"
 
-        val converted = TestMarykModel.getPropertyReferenceByName(this.anyReference.completeName)
-        converted shouldBe this.anyReference
+        TestMarykModel.getPropertyReferenceByName(this.anyReference.completeName) shouldBe this.anyReference
     }
 
     @Test
     fun writeAndReadAnyStorageBytes() {
-        val bc = ByteCollector()
+        ByteCollector().apply {
+            reserve(
+                anyReference.calculateStorageByteLength()
+            )
+            anyReference.writeStorageBytes(::write)
 
-        bc.reserve(
-            anyReference.calculateStorageByteLength()
-        )
-        anyReference.writeStorageBytes(bc::write)
+            bytes!!.toHex() shouldBe "180f00"
 
-        bc.bytes!!.toHex() shouldBe "180f00"
-
-        TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) shouldBe anyReference
+            TestMarykModel.Properties.getPropertyReferenceByStorageBytes(size, ::read) shouldBe anyReference
+        }
     }
 
     @Test
     fun createAnyRefQualifierMatcher() {
         val matcher = anyReference.toQualifierMatcher()
 
-        (matcher is QualifierFuzzyMatcher) shouldBe true
-        (matcher as QualifierFuzzyMatcher).let {
+        shouldBeOfType<QualifierFuzzyMatcher>(matcher).let {
             it.firstPossible().toHex() shouldBe "7a"
             it.qualifierParts.size shouldBe 1
             it.fuzzyMatchers.size shouldBe 1

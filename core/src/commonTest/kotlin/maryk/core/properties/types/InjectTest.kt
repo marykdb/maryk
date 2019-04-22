@@ -35,8 +35,8 @@ class InjectTest {
         definitionsContext
     )
 
-    val key1 = TestMarykModel.key(testMarykModelObject)
-    val key2 = TestMarykModel.key(testExtendedMarykModelObject)
+    private val key1 = TestMarykModel.key(testMarykModelObject)
+    private val key2 = TestMarykModel.key(testExtendedMarykModelObject)
 
     private val getRequest = TestMarykModel.get(key1, key2)
 
@@ -63,7 +63,6 @@ class InjectTest {
     )
 
     private val injectSimple = Inject("testSimpleConvert", EmbeddedMarykModel { model.ref { value } })
-
     private val injectCompleteObject = Inject("testCompleteConvert")
 
     init {
@@ -192,5 +191,27 @@ class InjectTest {
     @Test
     fun convertToProtoBufAndBack() {
         checkProtoBufConversion(this.inject, Inject, { this.context })
+    }
+
+    @Test
+    fun convertAnyToYAMLAndBack() {
+        checkYamlConversion(this.injectFromAny, Inject, { this.context }) shouldBe """
+        testCollection: values.*.values.string
+
+        """.trimIndent()
+    }
+
+    @Test
+    fun convertAnyToJSONAndBack() {
+        checkJsonConversion(this.injectFromAny, Inject, { this.context }) shouldBe """
+        {
+        	"testCollection": "values.*.values.string"
+        }
+        """.trimIndent()
+    }
+
+    @Test
+    fun convertAnyToProtoBufAndBack() {
+        checkProtoBufConversion(this.injectFromAny, Inject, { this.context })
     }
 }

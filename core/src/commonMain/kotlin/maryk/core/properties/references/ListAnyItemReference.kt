@@ -32,22 +32,22 @@ class ListAnyItemReference<T : Any, CX : IsPropertyContext> internal constructor
         ReferenceValuePair(this as IsPropertyReference<T, IsChangeableValueDefinition<T, IsPropertyContext>, *>, value)
 
     override fun getEmbedded(name: String, context: IsPropertyContext?) =
-        when (this.propertyDefinition) {
+        when (val valueDefinition = this.propertyDefinition.valueDefinition) {
             is IsEmbeddedDefinition<*, *> ->
-                this.propertyDefinition.resolveReferenceByName(name, this)
+                valueDefinition.resolveReferenceByName(name, this)
             is MultiTypeDefinition<*, *> -> {
-                this.propertyDefinition.resolveReferenceByName(name, this)
+                valueDefinition.resolveReferenceByName(name, this)
             }
             else -> throw DefNotFoundException("ListItem can not contain embedded name references ($name)")
         }
 
     override fun getEmbeddedRef(reader: () -> Byte, context: IsPropertyContext?): IsPropertyReference<Any, *, *> {
-        return when (this.propertyDefinition) {
+        return when (val valueDefinition = this.propertyDefinition.valueDefinition) {
             is IsEmbeddedDefinition<*, *> -> {
-                this.propertyDefinition.resolveReference(reader, this)
+                valueDefinition.resolveReference(reader, this)
             }
             is MultiTypeDefinition<*, *> -> {
-                this.propertyDefinition.resolveReference(reader, this)
+                valueDefinition.resolveReference(reader, this)
             }
             else -> throw DefNotFoundException("ListItem can not contain embedded index references")
         }

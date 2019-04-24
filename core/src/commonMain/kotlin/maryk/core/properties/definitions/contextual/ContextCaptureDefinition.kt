@@ -50,6 +50,6 @@ internal data class ContextCaptureDefinition<T : Any, in CX : IsPropertyContext>
     override fun readJson(reader: IsJsonLikeReader, context: CX?) =
         this.definition.readJson(reader, context).also { capturer(context, it) }
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?) =
-        this.definition.readTransportBytes(length, reader, context).also { capturer(context, it) }
+    override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?, earlierValue: T?) =
+        this.definition.readTransportBytes(length, reader, context, earlierValue).also { capturer(context, it) }
 }

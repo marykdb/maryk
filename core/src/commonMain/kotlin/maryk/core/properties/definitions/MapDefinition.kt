@@ -41,7 +41,7 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
     override val default: Map<K, V>? = null
 ) :
     HasSizeDefinition,
-    IsByteTransportableMap<K, V, CX>,
+    IsSerializablePropertyDefinition<Map<K, V>, CX>,
     IsMapDefinition<K, V, CX>,
     IsTransportablePropertyDefinitionType<Map<K, V>>,
     HasDefaultValueDefinition<Map<K, V>> {
@@ -71,7 +71,7 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
         newValue: Map<K, V>?,
         refGetter: () -> IsPropertyReference<Map<K, V>, IsPropertyDefinition<Map<K, V>>, *>?
     ) {
-        super<IsByteTransportableMap>.validateWithRef(previousValue, newValue, refGetter)
+        super<IsTransportablePropertyDefinitionType>.validateWithRef(previousValue, newValue, refGetter)
 
         if (newValue != null) {
             val mapSize = newValue.size.toUInt()
@@ -187,8 +187,28 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
         }
     }
 
+    override fun readTransportBytes(
+        length: Int,
+        reader: () -> Byte,
+        context: CX?,
+        earlierValue: Map<K, V>?
+    ): Map<K, V> {
+        val value = this.readMapTransportBytes(
+            reader,
+            context
+        )
+
+        return if (earlierValue != null) {
+            val map = earlierValue as MutableMap<K, V>
+            map[value.first] = value.second
+            map
+        } else {
+            mutableMapOf(value)
+        }
+    }
+
     /** Read the transport bytes on [reader] with [context] into a map key/value pair */
-    override fun readMapTransportBytes(reader: () -> Byte, context: CX?): Pair<K, V> {
+    private fun readMapTransportBytes(reader: () -> Byte, context: CX? = null): Pair<K, V> {
         val keyOfMapKey = ProtoBuf.readKey(reader)
         val key = keyDefinition.readTransportBytes(
             ProtoBuf.getLength(keyOfMapKey.wireType, reader),
@@ -265,9 +285,7 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
                         7u, "default",
                         ContextualMapDefinition(
                             contextualResolver = { context: KeyValueDefinitionContext? ->
-                                context?.let {
-                                    it.mapDefinition as IsByteTransportableMap<Any, Any, KeyValueDefinitionContext>
-                                } ?: throw ContextNotFoundException()
+                                context?.mapDefinition ?: throw ContextNotFoundException()
                             },
                             required = false
                         ) as IsContextualEncodable<Map<out Any, Any>, KeyValueDefinitionContext>,

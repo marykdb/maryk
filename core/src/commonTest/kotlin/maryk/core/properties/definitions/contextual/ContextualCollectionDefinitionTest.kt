@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions.contextual
 
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.IsByteTransportableCollection
+import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.ListDefinitionContext
 import maryk.core.protobuf.ProtoBuf
@@ -22,7 +22,7 @@ class ContextualCollectionDefinitionTest {
 
     @Suppress("UNCHECKED_CAST")
     private val def = ContextualCollectionDefinition<ListDefinitionContext>(
-        contextualResolver = { it!!.listDefinition as IsByteTransportableCollection<Any, Collection<Any>, ListDefinitionContext> }
+        contextualResolver = { it!!.listDefinition as IsSerializablePropertyDefinition<Collection<Any>, ListDefinitionContext> }
     )
 
     @Suppress("UNCHECKED_CAST")
@@ -52,15 +52,20 @@ class ContextualCollectionDefinitionTest {
             key.tag shouldBe 45u
         }
 
-        fun readValue() = def.readCollectionTransportBytes(
+        fun readValue(list: List<String>) = def.readTransportBytes(
             ProtoBuf.getLength(LENGTH_DELIMITED, bc::read),
             bc::read,
-            this.context
+            this.context,
+            list
         )
+
+        val mutableList = mutableListOf<String>()
 
         value.forEach {
             readKey()
-            readValue() shouldBe it
+            readValue(mutableList)
+
+            mutableList.last() shouldBe it
         }
     }
 

@@ -59,6 +59,11 @@ internal data class ContextualEmbeddedValuesDefinition<CX : IsPropertyContext>(
     ) =
         contextualResolver(context).writeProtoBuf(value, cacheGetter, writer, context)
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?) =
+    override fun readTransportBytes(
+        length: Int,
+        reader: () -> Byte,
+        context: CX?,
+        earlierValue: Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>?
+    ) =
         contextualResolver(context).readProtoBuf(length, reader, context)
 }

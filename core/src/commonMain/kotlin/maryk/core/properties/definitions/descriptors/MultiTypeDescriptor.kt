@@ -5,9 +5,9 @@ import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
-import maryk.core.properties.definitions.IsByteTransportableCollection
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.IsValueDefinition
@@ -204,7 +204,7 @@ private data class MultiTypeDescriptorPropertyDefinitionWrapper internal constru
     override val capturer: ((MultiTypeDefinitionContext, List<MultiTypeDescriptor>) -> Unit)? = null,
     override val getter: (MultiTypeDefinition<*, ContainsDefinitionsContext>) -> List<MultiTypeDescriptor>?
 ) :
-    IsByteTransportableCollection<MultiTypeDescriptor, List<MultiTypeDescriptor>, MultiTypeDefinitionContext> by definition,
+    IsSerializablePropertyDefinition<List<MultiTypeDescriptor>, MultiTypeDefinitionContext> by definition,
     IsPropertyDefinitionWrapper<List<MultiTypeDescriptor>, List<MultiTypeDescriptor>, MultiTypeDefinitionContext, MultiTypeDefinition<*, ContainsDefinitionsContext>> {
     override val graphType = PropRef
 

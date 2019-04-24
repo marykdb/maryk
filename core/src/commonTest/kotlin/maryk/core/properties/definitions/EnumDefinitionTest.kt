@@ -5,8 +5,7 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.properties.WriteCacheFailer
 import maryk.core.protobuf.ProtoBuf
-import maryk.core.protobuf.WireType
-import maryk.core.protobuf.WireType.*
+import maryk.core.protobuf.WireType.VAR_INT
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.Option

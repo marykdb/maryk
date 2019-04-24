@@ -48,8 +48,7 @@ internal class BooleanDefinitionTest {
             key.wireType shouldBe VAR_INT
             def.readTransportBytes(
                 ProtoBuf.getLength(VAR_INT, bc::read),
-                bc::read,
-                null
+                bc::read
             ) shouldBe it
             bc.reset()
         }

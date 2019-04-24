@@ -95,7 +95,7 @@ data class ListDefinition<T : Any, CX : IsPropertyContext> internal constructor(
                         required = false,
                         contextualResolver = { context: ListDefinitionContext? ->
                             context?.listDefinition?.let {
-                                it as IsByteTransportableCollection<Any, Collection<Any>, ListDefinitionContext>
+                                it as IsSerializablePropertyDefinition<Collection<Any>, ListDefinitionContext>
                             } ?: throw ContextNotFoundException()
                         }
                     ), ListDefinition<*, *>::default)

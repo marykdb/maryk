@@ -23,7 +23,7 @@ interface IsEmbeddedObjectDefinition<DO : Any, P : ObjectPropertyDefinitions<DO>
     override fun readJson(reader: IsJsonLikeReader, context: CXI?) =
         this.readJsonToValues(reader, context).toDataObject()
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte, context: CXI?) =
+    override fun readTransportBytes(length: Int, reader: () -> Byte, context: CXI?, earlierValue: DO?) =
         this.readTransportBytesToValues(length, reader, context).toDataObject()
 
     /** Read ProtoBuf into ObjectValues */

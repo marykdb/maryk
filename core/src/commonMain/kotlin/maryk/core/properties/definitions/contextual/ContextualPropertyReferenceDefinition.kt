@@ -5,7 +5,6 @@ import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.references.AnyPropertyReference
-import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WireType.*
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
@@ -65,7 +64,12 @@ data class ContextualPropertyReferenceDefinition<in CX : IsPropertyContext> inte
         value.writeTransportBytes(cacheGetter, writer)
     }
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?): AnyPropertyReference =
+    override fun readTransportBytes(
+        length: Int,
+        reader: () -> Byte,
+        context: CX?,
+        earlierValue: AnyPropertyReference?
+    ): AnyPropertyReference =
         contextualResolver(context).getPropertyReferenceByBytes(length, reader, context)
 }
 

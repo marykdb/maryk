@@ -51,16 +51,17 @@ class ContextualMapDefinitionTest {
             key.tag shouldBe 8u
         }
 
-        fun readValue(): Pair<Any, Any> {
-            ProtoBuf.getLength(LENGTH_DELIMITED, bc::read)
-            return def.readMapTransportBytes(bc::read, this.context)
+        fun readValue(map: MutableMap<Any, Any>) {
+            val length = ProtoBuf.getLength(LENGTH_DELIMITED, bc::read)
+            def.readTransportBytes(length, bc::read, this.context, map)
         }
+
+        val mutableMap = mutableMapOf<Any, Any>()
 
         value.forEach {
             readKey()
-            val mapValue = readValue()
-            mapValue.first shouldBe it.key
-            mapValue.second shouldBe it.value
+            readValue(mutableMap)
+            mutableMap[it.key] shouldBe it.value
         }
     }
 

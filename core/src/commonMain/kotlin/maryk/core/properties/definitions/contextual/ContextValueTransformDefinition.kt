@@ -51,6 +51,6 @@ internal data class ContextValueTransformDefinition<T : Any, in CX : IsPropertyC
     override fun readJson(reader: IsJsonLikeReader, context: CX?) =
         this.valueTransformer(context, this.definition.readJson(reader, context))
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?) =
-        this.valueTransformer(context, this.definition.readTransportBytes(length, reader, context))
+    override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?, earlierValue: T?) =
+        this.valueTransformer(context, this.definition.readTransportBytes(length, reader, context, earlierValue))
 }

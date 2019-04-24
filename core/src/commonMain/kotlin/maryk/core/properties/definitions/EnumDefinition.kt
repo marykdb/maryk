@@ -57,7 +57,12 @@ class EnumDefinition<E : IndexedEnumComparable<E>>(
         value.index.writeBytes(writer, 2)
     }
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?) =
+    override fun readTransportBytes(
+        length: Int,
+        reader: () -> Byte,
+        context: IsPropertyContext?,
+        earlierValue: E?
+    ) =
         getEnumByIndex(initUIntByVar(reader))
 
     override fun calculateTransportByteLength(value: E) =

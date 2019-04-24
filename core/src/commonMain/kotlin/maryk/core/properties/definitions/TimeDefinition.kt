@@ -44,7 +44,12 @@ data class TimeDefinition(
 
     override fun writeStorageBytes(value: Time, writer: (byte: Byte) -> Unit) = value.writeBytes(precision, writer)
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?) =
+    override fun readTransportBytes(
+        length: Int,
+        reader: () -> Byte,
+        context: IsPropertyContext?,
+        earlierValue: Time?
+    ) =
         when (this.precision) {
             TimePrecision.SECONDS -> Time.ofSecondOfDay(initIntByVar(reader))
             TimePrecision.MILLIS -> Time.ofMilliOfDay(initIntByVar(reader))

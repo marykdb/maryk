@@ -45,7 +45,12 @@ data class NumberDefinition<T : Comparable<T>>(
     override fun writeStorageBytes(value: T, writer: (byte: Byte) -> Unit) =
         this.type.writeStorageBytes(value, writer)
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?) =
+    override fun readTransportBytes(
+        length: Int,
+        reader: () -> Byte,
+        context: IsPropertyContext?,
+        earlierValue: T?
+    ) =
         this.type.readTransportBytes(reader)
 
     override fun calculateTransportByteLength(value: T) = this.type.calculateTransportByteLength(value)

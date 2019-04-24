@@ -31,7 +31,7 @@ interface IsSimpleValueDefinition<T : Any, in CX : IsPropertyContext> :
     /** Write a [value] to bytes with [writer] */
     fun writeStorageBytes(value: T, writer: (byte: Byte) -> Unit)
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?) = readStorageBytes(length, reader)
+    override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?, earlierValue: T?) = readStorageBytes(length, reader)
 
     override fun writeTransportBytes(
         value: T,

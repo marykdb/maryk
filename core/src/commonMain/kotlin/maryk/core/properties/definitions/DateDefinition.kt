@@ -43,7 +43,12 @@ data class DateDefinition(
 
     override fun writeStorageBytes(value: Date, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?) =
+    override fun readTransportBytes(
+        length: Int,
+        reader: () -> Byte,
+        context: IsPropertyContext?,
+        earlierValue: Date?
+    ) =
         Date.ofEpochDay(initIntByVar(reader).decodeZigZag())
 
     override fun calculateTransportByteLength(value: Date) = value.epochDay.encodeZigZag().calculateVarByteLength()

@@ -114,7 +114,12 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P : PropertyDefinition
         )
     }
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?) =
+    override fun readTransportBytes(
+        length: Int,
+        reader: () -> Byte,
+        context: IsPropertyContext?,
+        earlierValue: Values<DM, P>?
+    ) =
         this.typedDataModel.readProtoBuf(length, reader, context)
 
     override fun equals(other: Any?): Boolean {

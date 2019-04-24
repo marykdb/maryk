@@ -14,7 +14,6 @@ import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
-import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WireType.BIT_32
 import maryk.core.protobuf.WireType.BIT_64
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
@@ -34,13 +33,12 @@ import maryk.lib.exceptions.ParseException
  * Interface to define a Collection [C] containing [T] with context [CX]
  */
 interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyContext, out ST : IsValueDefinition<T, CX>> :
-    IsByteTransportableCollection<T, C, CX>,
+    IsSerializablePropertyDefinition<C, CX>,
     HasSizeDefinition,
     IsTransportablePropertyDefinitionType<C> {
     val valueDefinition: ST
 
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = null
-
     override fun getEmbeddedByIndex(index: UInt): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
     override fun validateWithRef(
@@ -48,7 +46,7 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
         newValue: C?,
         refGetter: () -> IsPropertyReference<C, IsPropertyDefinition<C>, *>?
     ) {
-        super<IsByteTransportableCollection>.validateWithRef(previousValue, newValue, refGetter)
+        super<IsSerializablePropertyDefinition>.validateWithRef(previousValue, newValue, refGetter)
 
         if (newValue != null) {
             validateSize(newValue.size.toUInt(), refGetter)
@@ -85,8 +83,11 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
         validator: (item: T, itemRefFactory: () -> IsPropertyReference<T, IsPropertyDefinition<T>, *>?) -> Any
     )
 
-    /** Creates a new mutable instance of the collection within optional [context] */
-    override fun newMutableCollection(context: CX?): MutableCollection<T>
+    /**
+     * Creates a new mutable collection of type T
+     * Pass a [context] to read more complex properties which depend on other properties
+     */
+    fun newMutableCollection(context: CX?): MutableCollection<T>
 
     /** Write [value] to JSON [writer] with [context] */
     override fun writeJsonValue(value: C, writer: IsJsonLikeWriter, context: CX?) {
@@ -192,15 +193,47 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
         throw NotImplementedError()
     }
 
-    override fun isPacked(context: CX?, encodedWireType: WireType) = when (this.valueDefinition.wireType) {
-        BIT_64, BIT_32, VAR_INT -> encodedWireType == LENGTH_DELIMITED
+    override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?, earlierValue: C?): C {
+        when {
+            isPacked(length) -> {
+                val collection = this.readPackedCollectionTransportBytes(
+                    length,
+                    reader,
+                    context
+                )
+
+                @Suppress("UNCHECKED_CAST")
+                return when(earlierValue) {
+                    null -> collection
+                    else -> (earlierValue as MutableCollection<T>).addAll(collection) as C
+                }
+            }
+            else -> {
+                val value = valueDefinition.readTransportBytes(length, reader, context)
+                @Suppress("UNCHECKED_CAST")
+                val collection = when(earlierValue) {
+                    null -> newMutableCollection(context)
+                    else -> (earlierValue as MutableCollection<T>)
+                }
+                collection.add(value)
+
+                @Suppress("UNCHECKED_CAST")
+                return collection as C
+            }
+        }
+    }
+
+    /** Packed is true when encoded with longer length than expected byte size for single */
+    private fun isPacked(length: Int) = when (this.valueDefinition.wireType) {
+        BIT_64, BIT_32, VAR_INT -> length > (this.valueDefinition as IsFixedBytesEncodable<*>).byteSize
         else -> false
     }
 
-    override fun readCollectionTransportBytes(length: Int, reader: () -> Byte, context: CX?) =
-        valueDefinition.readTransportBytes(length, reader, context)
-
-    override fun readPackedCollectionTransportBytes(length: Int, reader: () -> Byte, context: CX?): C {
+    /**
+     * Reads the packed transport bytes from [reader] until [length] into a collection
+     * Optionally pass a [context] to read more complex properties which depend on other properties
+     */
+    private fun readPackedCollectionTransportBytes(length: Int, reader: () -> Byte, context: CX?): C {
         var byteCounter = 0
 
         val byteReader = {

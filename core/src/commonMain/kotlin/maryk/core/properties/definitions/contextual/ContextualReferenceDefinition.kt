@@ -53,6 +53,11 @@ class ContextualReferenceDefinition<in CX : IsPropertyContext>(
     ) =
         value.writeBytes(writer)
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?) =
+    override fun readTransportBytes(
+        length: Int,
+        reader: () -> Byte,
+        context: CX?,
+        earlierValue: Key<*>?
+    ) =
         contextualResolver(context).key(reader)
 }

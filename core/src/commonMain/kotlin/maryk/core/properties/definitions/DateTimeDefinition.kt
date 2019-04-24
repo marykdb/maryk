@@ -45,7 +45,12 @@ data class DateTimeDefinition(
 
     override fun writeStorageBytes(value: DateTime, writer: (byte: Byte) -> Unit) = value.writeBytes(precision, writer)
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?) =
+    override fun readTransportBytes(
+        length: Int,
+        reader: () -> Byte,
+        context: IsPropertyContext?,
+        earlierValue: DateTime?
+    ) =
         when (this.precision) {
             TimePrecision.SECONDS -> DateTime.ofEpochSecond(initLongByVar(reader))
             TimePrecision.MILLIS -> DateTime.ofEpochMilli(initLongByVar(reader))

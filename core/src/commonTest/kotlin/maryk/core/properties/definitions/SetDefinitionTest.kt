@@ -96,15 +96,19 @@ internal class SetDefinitionTest {
             key.tag shouldBe 4u
         }
 
-        fun readValue() = def.readCollectionTransportBytes(
+        fun readValue(set: Set<String>) = def.readTransportBytes(
             ProtoBuf.getLength(LENGTH_DELIMITED, bc::read),
             bc::read,
-            null
+            null,
+            set
         )
+
+        val mutableSet = mutableSetOf<String>()
 
         value.forEach {
             readKey()
-            readValue() shouldBe it
+            readValue(mutableSet)
+            mutableSet.contains(it) shouldBe true
         }
     }
 

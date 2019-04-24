@@ -1,10 +1,8 @@
 package maryk.core.properties.definitions.contextual
 
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.IsByteTransportableCollection
-import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsContextualEncodable
-import maryk.core.properties.definitions.IsValueDefinition
+import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.json.IsJsonLikeWriter
@@ -13,9 +11,9 @@ import maryk.json.IsJsonLikeWriter
  * Definition wrapper to inject a collection on write from context with [valueInjector] for valueDefinition of [T] defined by [definition]
  */
 data class ContextInjectCollectionOnWriteDefinition<T : Any, C : Collection<T>, in CX : IsPropertyContext>(
-    val definition: IsCollectionDefinition<T, C, CX, IsValueDefinition<T, CX>>,
+    val definition: IsSerializablePropertyDefinition<C, CX>,
     private val valueInjector: (CX?) -> C
-) : IsByteTransportableCollection<T, C, CX> by definition, IsContextualEncodable<C, CX> {
+) : IsSerializablePropertyDefinition<C, CX> by definition, IsContextualEncodable<C, CX> {
     override val required = definition.required
     override val final = definition.final
 

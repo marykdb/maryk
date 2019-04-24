@@ -1,8 +1,7 @@
 package maryk.core.properties.definitions.contextual
 
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.IsByteTransportableCollection
-import maryk.core.protobuf.WireType
+import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.json.IsJsonLikeReader
@@ -12,23 +11,14 @@ import maryk.json.IsJsonLikeWriter
  * Definition wrapper to transform the context with [contextTransformer] for collection Definition of [T] defined by [definition]
  */
 internal data class ContextCollectionTransformerDefinition<T : Any, C : Collection<T>, in CX : IsPropertyContext, CXI : IsPropertyContext>(
-    val definition: IsByteTransportableCollection<T, C, CXI>,
+    val definition: IsSerializablePropertyDefinition<C, CXI>,
     private val contextTransformer: (CX?) -> CXI?
-) : IsByteTransportableCollection<T, C, CX> {
+) : IsSerializablePropertyDefinition<C, CX> {
     override val required = definition.required
     override val final = definition.final
 
-    override fun readCollectionTransportBytes(length: Int, reader: () -> Byte, context: CX?) =
-        this.definition.readCollectionTransportBytes(length, reader, contextTransformer(context))
-
-    override fun readPackedCollectionTransportBytes(length: Int, reader: () -> Byte, context: CX?) =
-        this.definition.readPackedCollectionTransportBytes(length, reader, contextTransformer(context))
-
-    override fun newMutableCollection(context: CX?) =
-        this.definition.newMutableCollection(contextTransformer(context))
-
-    override fun isPacked(context: CX?, encodedWireType: WireType) =
-        this.definition.isPacked(contextTransformer(context), encodedWireType)
+    override fun getEmbeddedByName(name: String) = this.definition.getEmbeddedByName(name)
+    override fun getEmbeddedByIndex(index: UInt) = this.definition.getEmbeddedByIndex(index)
 
     override fun writeJsonValue(value: C, writer: IsJsonLikeWriter, context: CX?) {
         this.definition.writeJsonValue(value, writer, contextTransformer(context))
@@ -44,6 +34,13 @@ internal data class ContextCollectionTransformerDefinition<T : Any, C : Collecti
         context: CX?
     ) = this.definition.calculateTransportByteLengthWithKey(index, value, cacher, contextTransformer(context))
 
+    override fun readTransportBytes(
+        length: Int,
+        reader: () -> Byte,
+        context: CX?,
+        earlierValue: C?
+    ) = this.definition.readTransportBytes(length, reader, contextTransformer(context), earlierValue)
+
     override fun writeTransportBytesWithKey(
         index: UInt,
         value: C,
@@ -53,8 +50,4 @@ internal data class ContextCollectionTransformerDefinition<T : Any, C : Collecti
     ) {
         this.definition.writeTransportBytesWithKey(index, value, cacheGetter, writer, contextTransformer(context))
     }
-
-    override fun getEmbeddedByName(name: String) = this.definition.getEmbeddedByName(name)
-
-    override fun getEmbeddedByIndex(index: UInt) = this.definition.getEmbeddedByIndex(index)
 }

@@ -140,16 +140,17 @@ internal class MapDefinitionTest {
             key.tag shouldBe 4u
         }
 
-        fun readValue(): Pair<Int, String> {
-            ProtoBuf.getLength(LENGTH_DELIMITED, bc::read)
-            return def.readMapTransportBytes(bc::read)
+        fun readValue(map: Map<Int, String>) {
+            val length = ProtoBuf.getLength(LENGTH_DELIMITED, bc::read)
+            def.readTransportBytes(length, bc::read, null, map)
         }
+
+        val mutableMap = mutableMapOf<Int, String>()
 
         for (it in this.value) {
             readKey()
-            val mapValue = readValue()
-            mapValue.first shouldBe it.key
-            mapValue.second shouldBe it.value
+            readValue(mutableMap)
+            mutableMap[it.key] shouldBe it.value
         }
     }
 

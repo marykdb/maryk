@@ -4,9 +4,6 @@ import maryk.core.inject.Inject
 import maryk.core.inject.InjectWithReference
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.IsByteTransportableCollection
-import maryk.core.properties.definitions.IsByteTransportableMap
-import maryk.core.properties.definitions.IsByteTransportableValue
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsMapDefinition
@@ -324,80 +321,24 @@ abstract class AbstractDataModel<DO : Any, P : AbstractPropertyDefinitions<DO>, 
         if (propertyDefinition == null) {
             ProtoBuf.skipField(key.wireType, byteReader)
         } else {
-            when (propertyDefinition) {
-                is IsByteTransportableValue<*, CX> -> {
-                    values[key.tag] = if (propertyDefinition is IsEmbeddedObjectDefinition<*, *, *, in CX, *>) {
+            values[key.tag] =
+                when (propertyDefinition) {
+                    is IsEmbeddedObjectDefinition<Any, *, *, in CX, *> ->
                         propertyDefinition.readTransportBytesToValues(
                             ProtoBuf.getLength(key.wireType, byteReader),
                             byteReader,
                             context
                         )
-                    } else {
+                    else ->
                         propertyDefinition.readTransportBytes(
                             ProtoBuf.getLength(key.wireType, byteReader),
                             byteReader,
-                            context
+                            context,
+                            values[key.tag]
                         )
-                    }.also {
-                        dataObjectPropertyDefinition.capture(context, it)
-                    }
+                }.also {
+                    dataObjectPropertyDefinition.capture(context, it)
                 }
-                is IsByteTransportableCollection<out Any, *, CX> -> {
-                    when {
-                        propertyDefinition.isPacked(context, key.wireType) -> {
-                            val collection = propertyDefinition.readPackedCollectionTransportBytes(
-                                ProtoBuf.getLength(key.wireType, byteReader),
-                                byteReader,
-                                context
-                            ) as MutableCollection<out Any>
-
-                            dataObjectPropertyDefinition.capture(context, collection)
-
-                            @Suppress("UNCHECKED_CAST")
-                            when {
-                                values.contains(key.tag) -> (values[key.tag] as MutableCollection<Any>).addAll(
-                                    collection
-                                )
-                                else -> values[key.tag] = collection
-                            }
-                        }
-                        else -> {
-                            val value = propertyDefinition.readCollectionTransportBytes(
-                                ProtoBuf.getLength(key.wireType, byteReader),
-                                byteReader,
-                                context
-                            )
-                            @Suppress("UNCHECKED_CAST")
-                            val collection = when {
-                                values.contains(key.tag) -> values[key.tag]
-                                else -> propertyDefinition.newMutableCollection(context).also {
-                                    values[key.tag] = it
-                                }
-                            } as MutableCollection<in Any>
-
-                            collection += value
-                            dataObjectPropertyDefinition.capture(context, collection)
-                        }
-                    }
-                }
-                is IsByteTransportableMap<out Any, out Any, CX> -> {
-                    ProtoBuf.getLength(key.wireType, byteReader)
-                    val value = propertyDefinition.readMapTransportBytes(
-                        byteReader,
-                        context
-                    )
-                    if (values.contains(key.tag)) {
-                        @Suppress("UNCHECKED_CAST")
-                        val map = values[key.tag] as MutableMap<Any, Any>
-                        map[value.first] = value.second
-                    } else {
-                        values[key.tag] = mutableMapOf(value).also {
-                            dataObjectPropertyDefinition.capture(context, it)
-                        }
-                    }
-                }
-                else -> throw ParseException("Unknown property type for ${dataObjectPropertyDefinition.name}")
-            }
         }
     }
 

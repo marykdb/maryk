@@ -51,7 +51,12 @@ internal class ContextualNumberDefinition<in CX : IsPropertyContext>(
         numType.writeTransportBytes(value, writer)
     }
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?) =
+    override fun readTransportBytes(
+        length: Int,
+        reader: () -> Byte,
+        context: CX?,
+        earlierValue: Comparable<Any>?
+    ) =
         contextualResolver(context).readTransportBytes(reader)
 
     override fun readJson(reader: IsJsonLikeReader, context: CX?): Comparable<Any> = reader.currentToken.let {

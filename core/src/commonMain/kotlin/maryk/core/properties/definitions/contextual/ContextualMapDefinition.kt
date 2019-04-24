@@ -1,8 +1,8 @@
 package maryk.core.properties.definitions.contextual
 
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.IsByteTransportableMap
 import maryk.core.properties.definitions.IsContextualEncodable
+import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
@@ -11,13 +11,12 @@ import maryk.json.IsJsonLikeWriter
 
 /** Definition which refers to specific map property value definition based on context from [contextualResolver] */
 class ContextualMapDefinition<K : Any, V : Any, in CX : IsPropertyContext>(
-    private val contextualResolver: (context: CX?) -> IsByteTransportableMap<K, V, CX>,
+    private val contextualResolver: (context: CX?) -> IsSerializablePropertyDefinition<Map<K, V>, CX>,
     override val required: Boolean = true
-) : IsByteTransportableMap<K, V, CX>, IsContextualEncodable<Map<K, V>, CX> {
+) : IsSerializablePropertyDefinition<Map<K, V>, CX>, IsContextualEncodable<Map<K, V>, CX> {
     override val final = true
 
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = null
-
     override fun getEmbeddedByIndex(index: UInt): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
     override fun writeJsonValue(value: Map<K, V>, writer: IsJsonLikeWriter, context: CX?) =
@@ -34,8 +33,12 @@ class ContextualMapDefinition<K : Any, V : Any, in CX : IsPropertyContext>(
     ) =
         contextualResolver(context).calculateTransportByteLengthWithKey(index, value, cacher, context)
 
-    override fun readMapTransportBytes(reader: () -> Byte, context: CX?) =
-        contextualResolver(context).readMapTransportBytes(reader, context)
+    override fun readTransportBytes(
+        length: Int,
+        reader: () -> Byte,
+        context: CX?,
+        earlierValue: Map<K, V>?
+    ) = contextualResolver(context).readTransportBytes(length, reader, context, earlierValue)
 
     override fun writeTransportBytesWithKey(
         index: UInt,

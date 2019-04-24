@@ -115,15 +115,19 @@ internal class ListDefinitionTest {
             key.tag shouldBe 1u
         }
 
-        fun readValue() = def.readCollectionTransportBytes(
+        fun readValue(list: List<String>) = def.readTransportBytes(
             ProtoBuf.getLength(LENGTH_DELIMITED, bc::read),
             bc::read,
-            null
+            null,
+            list
         )
+
+        val mutableList = mutableListOf<String>()
 
         for (it in value) {
             readKey()
-            readValue() shouldBe it
+            readValue(mutableList)
+            mutableList.last() shouldBe it
         }
     }
 
@@ -186,10 +190,9 @@ internal class ListDefinitionTest {
         key.wireType shouldBe LENGTH_DELIMITED
         key.tag shouldBe index
 
-        val readList = def.readPackedCollectionTransportBytes(
+        val readList = def.readTransportBytes(
             ProtoBuf.getLength(LENGTH_DELIMITED, bc::read),
-            bc::read,
-            null
+            bc::read
         )
 
         readList shouldBe list

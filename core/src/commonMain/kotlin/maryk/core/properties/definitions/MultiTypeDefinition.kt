@@ -220,7 +220,12 @@ data class MultiTypeDefinition<E : IndexedEnum, in CX : IsPropertyContext> inter
         }
     }
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?): TypedValue<E, Any> {
+    override fun readTransportBytes(
+        length: Int,
+        reader: () -> Byte,
+        context: CX?,
+        earlierValue: TypedValue<E, Any>?
+    ): TypedValue<E, Any> {
         // Read the protobuf where the key tag is the type
         val key = ProtoBuf.readKey(reader)
 

@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions
 
+import maryk.core.exceptions.DefNotFoundException
 import maryk.core.properties.IsPropertyContext
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
@@ -57,4 +58,12 @@ interface IsSerializablePropertyDefinition<T : Any, in CX : IsPropertyContext> :
         writer: (byte: Byte) -> Unit,
         context: CX?
     )
+
+    /**
+     * Read value from [reader] with [context] until [length] is reached
+     * [earlierValue] is the previous value read in same transport so additional values can be added. Primarily used
+     * for lists/sets/maps
+     * @throws DefNotFoundException if definition is not found to translate bytes
+     */
+    fun readTransportBytes(length: Int, reader: () -> Byte, context: CX? = null, earlierValue: T? = null): T
 }

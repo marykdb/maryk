@@ -69,7 +69,12 @@ data class ContextualModelReferenceDefinition<DM : IsNamedDataModel<*>, in CX : 
     ) =
         value.name.writeUTF8Bytes(writer)
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?) =
+    override fun readTransportBytes(
+        length: Int,
+        reader: () -> Byte,
+        context: CX?,
+        earlierValue: IsDataModelReference<DM>?
+    ) =
         resolveContext(contextTransformer(context), initString(length, reader))
 
     private fun resolveContext(context: CXI?, name: String): IsDataModelReference<DM> {

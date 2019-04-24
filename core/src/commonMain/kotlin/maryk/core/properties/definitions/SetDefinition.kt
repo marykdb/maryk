@@ -97,7 +97,7 @@ data class SetDefinition<T : Any, CX : IsPropertyContext> internal constructor(
                         required = false,
                         contextualResolver = { context: SetDefinitionContext? ->
                             context?.setDefinition?.let {
-                                it as IsByteTransportableCollection<Any, Collection<Any>, SetDefinitionContext>
+                                it as IsSerializablePropertyDefinition<Collection<Any>, SetDefinitionContext>
                             } ?: throw ContextNotFoundException()
                         }
                     ), SetDefinition<*, *>::default)

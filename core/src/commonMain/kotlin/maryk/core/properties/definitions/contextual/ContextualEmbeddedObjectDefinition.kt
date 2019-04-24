@@ -51,6 +51,11 @@ internal data class ContextualEmbeddedObjectDefinition<CX : IsPropertyContext>(
     ) =
         contextualResolver(context).writeProtoBuf(value, cacheGetter, writer, context)
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?) =
+    override fun readTransportBytes(
+        length: Int,
+        reader: () -> Byte,
+        context: CX?,
+        earlierValue: Any?
+    ) =
         contextualResolver(context).readProtoBuf(length, reader, context).toDataObject()
 }

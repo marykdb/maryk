@@ -12,9 +12,10 @@ internal fun calculateKeyIndices(keyDefinition: IsIndexable): IntArray {
             index.also {
                 val propDef: IsFixedBytesEncodable<*> = when (def) {
                     is IsFixedBytesEncodable<*> -> def
-                    is Reversed<*> -> if (def.reference is IsFixedBytesEncodable<*>) {
-                        def.reference
-                    } else throw InvalidDefinitionException("Key cannot contain flex bytes encodables")
+                    is Reversed<*> ->
+                        if (def.reference is IsFixedBytesEncodable<*>) {
+                            def.reference
+                        } else throw InvalidDefinitionException("Key cannot contain flex bytes encodables")
                     else -> throw TypeException("Unknown key encodable")
                 }
                 index += propDef.byteSize

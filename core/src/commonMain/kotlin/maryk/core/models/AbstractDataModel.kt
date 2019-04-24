@@ -73,7 +73,7 @@ abstract class AbstractDataModel<DO : Any, P : AbstractPropertyDefinitions<DO>, 
     }
 
     internal fun writeJsonValue(
-        def: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>,
+        def: IsPropertyDefinitionWrapper<in Any, in Any, IsPropertyContext, DO>,
         writer: IsJsonLikeWriter,
         value: Any,
         context: CX?
@@ -165,7 +165,7 @@ abstract class AbstractDataModel<DO : Any, P : AbstractPropertyDefinitions<DO>, 
                         } else {
                             val readValue = if (definition is IsEmbeddedObjectDefinition<*, *, *, *, *>) {
                                 @Suppress("UNCHECKED_CAST")
-                                (definition as IsEmbeddedObjectDefinition<*, *, *, CX, *>).readJsonToValues(
+                                (definition as IsEmbeddedObjectDefinition<*, *, *, in CX, *>).readJsonToValues(
                                     reader,
                                     context
                                 )
@@ -322,9 +322,8 @@ abstract class AbstractDataModel<DO : Any, P : AbstractPropertyDefinitions<DO>, 
         } else {
             when (propertyDefinition) {
                 is IsByteTransportableValue<*, CX> -> {
-                    values[key.tag] = if (propertyDefinition is IsEmbeddedObjectDefinition<*, *, *, *, *>) {
-                        @Suppress("UNCHECKED_CAST")
-                        (propertyDefinition as IsEmbeddedObjectDefinition<*, *, *, CX, *>).readTransportBytesToValues(
+                    values[key.tag] = if (propertyDefinition is IsEmbeddedObjectDefinition<*, *, *, in CX, *>) {
+                        propertyDefinition.readTransportBytesToValues(
                             ProtoBuf.getLength(key.wireType, byteReader),
                             byteReader,
                             context
@@ -342,12 +341,11 @@ abstract class AbstractDataModel<DO : Any, P : AbstractPropertyDefinitions<DO>, 
                 is IsByteTransportableCollection<out Any, *, CX> -> {
                     when {
                         propertyDefinition.isPacked(context, key.wireType) -> {
-                            @Suppress("UNCHECKED_CAST")
                             val collection = propertyDefinition.readPackedCollectionTransportBytes(
                                 ProtoBuf.getLength(key.wireType, byteReader),
                                 byteReader,
                                 context
-                            ) as MutableCollection<Any>
+                            ) as MutableCollection<out Any>
 
                             dataObjectPropertyDefinition.capture(context, collection)
 
@@ -371,7 +369,7 @@ abstract class AbstractDataModel<DO : Any, P : AbstractPropertyDefinitions<DO>, 
                                 else -> propertyDefinition.newMutableCollection(context).also {
                                     values[key.tag] = it
                                 }
-                            } as MutableCollection<Any>
+                            } as MutableCollection<in Any>
 
                             collection += value
                             dataObjectPropertyDefinition.capture(context, collection)

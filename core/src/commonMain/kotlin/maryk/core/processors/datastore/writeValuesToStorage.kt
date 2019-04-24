@@ -132,8 +132,8 @@ internal fun <T : IsPropertyDefinition<*>> writeValue(
             writeMapToStorage(
                 mapQualifierCount,
                 mapQualifierWriter,
-                valueWriter as ValueWriter<MapDefinition<Any, Any, *>>,
-                definition as MapDefinition<Any, Any, *>,
+                valueWriter as ValueWriter<MapDefinition<*, *, *>>,
+                definition as MapDefinition<*, *, *>,
                 value as Map<Any, Any>
             )
         }

@@ -120,7 +120,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                                 addToCache(offset) {
                                     // Ignore reading and return
                                 }
-                            is TypedValue<*, *> -> readTypedValue(
+                            is TypedValue<IndexedEnum, Any> -> readTypedValue(
                                 qualifier = qualifier,
                                 offset = qIndex,
                                 readValueFromStorage = readValueFromStorage,
@@ -256,11 +256,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
 
                     if (isAtEnd) {
                         // If at end it means that this is a map count
-                        @Suppress("UNCHECKED_CAST")
-                        val mapSize = readValueFromStorage(
-                            MapSize as StorageTypeEnum<IsPropertyDefinition<Any>>,
-                            definition
-                        ) as Int?
+                        val mapSize = readValueFromStorage(MapSize, definition) as Int?
 
                         if (mapSize != null) {
                             // If not null we can create a map of mapSize
@@ -285,8 +281,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                             }
                         }
                     } else {
-                        @Suppress("UNCHECKED_CAST")
-                        val mapDefinition = definition.definition as? IsMapDefinition<Any, Any, *>
+                        val mapDefinition = definition.definition as? IsMapDefinition<*, *, *>
                             ?: throw TypeException("Definition ${definition.definition} should be a MapDefinition")
                         val keyDefinition = mapDefinition.keyDefinition
                         val qualifierReader = { qualifier[qIndex++] }
@@ -327,7 +322,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                                 }
                                 is IsEmbeddedDefinition<*, *> -> {
                                     readEmbeddedValues(
-                                        valueDefinition as IsEmbeddedDefinition<*, *>,
+                                        valueDefinition,
                                         select,
                                         readValueFromStorage,
                                         addToCache,
@@ -344,8 +339,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                 ReferenceType.TYPE -> {
                     val definition = this.properties[index]
                         ?: throw DefNotFoundException("No definition for $index in $this at $index")
-                    @Suppress("UNCHECKED_CAST")
-                    val typedDefinition = definition.definition as? IsMultiTypeDefinition<IndexedEnum, *>
+                    val typedDefinition = definition.definition as? IsMultiTypeDefinition<*, *>
                         ?: throw TypeException("Definition($index) ${definition.definition} should be a TypedDefinition")
 
                     typedDefinition.readComplexTypedValue(
@@ -413,11 +407,7 @@ private fun readTypedValue(
 ) {
     var qIndex1 = offset
     if (qualifier.size <= qIndex1) {
-        @Suppress("UNCHECKED_CAST")
-        readValueFromStorage(
-            Value as StorageTypeEnum<IsPropertyDefinition<Any>>,
-            valueDefinition as IsPropertyDefinition<Any>
-        )?.let {
+        readValueFromStorage(Value, valueDefinition)?.let {
             // Pass type to check
             addToCache(qIndex1 - 1) { q ->
                 readTypedValue(
@@ -487,7 +477,7 @@ private fun IsMultiTypeDefinition<*, *>.readComplexTypedValue(
     when (definition) {
         is IsEmbeddedDefinition<*, *> -> {
             readEmbeddedValues(
-                definition as IsEmbeddedDefinition<*, *>,
+                definition,
                 select,
                 readValueFromStorage,
                 addToCache,
@@ -511,7 +501,7 @@ private fun <P : PropertyDefinitions> readEmbeddedValues(
     addValueToOutput: AddValue
 ) {
     @Suppress("UNCHECKED_CAST")
-    val dataModel = definition.dataModel as IsDataModelWithValues<*, PropertyDefinitions, *>
+    val dataModel = definition.dataModel as IsDataModelWithValues<*, out PropertyDefinitions, *>
     val values = dataModel.values { MutableValueItems() }
 
     addValueToOutput(values)

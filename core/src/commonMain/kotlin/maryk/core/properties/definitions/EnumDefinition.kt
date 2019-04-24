@@ -222,5 +222,5 @@ private fun enumsHashCode(enumValues: Array<out IndexedEnum>): Int {
 class EnumDefinitionContext(
     val definitionsContext: ContainsDefinitionsContext?
 ) : IsPropertyContext {
-    var enumDefinition: EnumDefinition<IndexedEnumComparable<Any>>? = null
+    var enumDefinition: EnumDefinition<out IndexedEnumComparable<Any>>? = null
 }

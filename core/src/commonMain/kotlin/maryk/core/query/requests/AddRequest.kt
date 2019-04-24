@@ -1,7 +1,6 @@
 package maryk.core.query.requests
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.QueryDataModel
@@ -26,8 +25,7 @@ data class AddRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> in
     val objects: List<Values<DM, P>>
 ) : IsStoreRequest<DM, AddResponse<DM>> {
     override val requestType = RequestType.Add
-    @Suppress("UNCHECKED_CAST")
-    override val responseModel = AddResponse as IsObjectDataModel<AddResponse<DM>, *>
+    override val responseModel = AddResponse
 
     object Properties : ObjectPropertyDefinitions<AddRequest<*, *>>() {
         val dataModel = IsObjectRequest.addDataModel("to", this, AddRequest<*, *>::dataModel)

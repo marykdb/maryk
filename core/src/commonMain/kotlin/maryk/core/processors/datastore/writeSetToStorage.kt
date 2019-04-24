@@ -26,7 +26,7 @@ fun <T : IsPropertyDefinition<*>> writeSetToStorage(
     )
 
     // Process Set Values
-    val setValueDefinition = (definition as IsSetDefinition<Any, *>).valueDefinition as IsSimpleValueDefinition<Any, *>
+    val setValueDefinition = (definition as IsSetDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<Any, *>
     val comparableSet = set as Set<Comparable<Any>>
     for (setItem in comparableSet.sorted()) {
         val setItemByteSize = setValueDefinition.calculateStorageByteLength(setItem)

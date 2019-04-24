@@ -29,7 +29,7 @@ import maryk.lib.time.Time
 
 @Suppress("UNCHECKED_CAST")
 internal fun generateKotlinValue(
-    definition: IsPropertyDefinition<Any>,
+    definition: IsPropertyDefinition<out Any>,
     value: Any,
     addImport: (String) -> Unit,
     addGenerics: Boolean = false
@@ -76,17 +76,14 @@ internal fun generateKotlinValue(
     }
     is Date -> "Date(${value.year}, ${value.month}, ${value.day})"
     is IndexedEnumDefinition<*> -> value.name
-    is ValueDataModel<*, *> -> {
-        value.name
-    }
+    is ValueDataModel<*, *> -> value.name
     is Key<*> -> """Key("$value")"""
     is Bytes -> {
         addImport("maryk.core.properties.types.Bytes")
         """Bytes("$value")"""
     }
     is IsTransportablePropertyDefinitionType<*> -> {
-        val kotlinDescriptor =
-            (value as IsTransportablePropertyDefinitionType<Any>).getKotlinDescriptor()
+        val kotlinDescriptor = value.getKotlinDescriptor()
 
         for (import in kotlinDescriptor.getImports(value)) {
             addImport(import)
@@ -135,10 +132,10 @@ internal fun generateKotlinValue(
 
         // Add types for enum since they are difficult sealed classes
         val type = if (addGenerics && (mapDefinition.keyDefinition is EnumDefinition<*> || mapDefinition.valueDefinition is EnumDefinition<*>)) {
-            val keyType = (mapDefinition.keyDefinition as IsTransportablePropertyDefinitionType<Any>).let {
+            val keyType = (mapDefinition.keyDefinition as IsTransportablePropertyDefinitionType<*>).let {
                 it.getKotlinDescriptor().kotlinTypeName(it)
             }
-            val valueType = (mapDefinition.valueDefinition as IsTransportablePropertyDefinitionType<Any>).let {
+            val valueType = (mapDefinition.valueDefinition as IsTransportablePropertyDefinitionType<*>).let {
                 it.getKotlinDescriptor().kotlinTypeName(it)
             }
             "<$keyType, $valueType>"

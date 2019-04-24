@@ -25,7 +25,7 @@ fun <T : IsPropertyDefinition<*>, K : Any, V : Any> writeMapToStorage(
     )
 
     // Process Map Values
-    val mapDefinition = (definition as IsMapDefinition<Any, *, *>)
+    val mapDefinition = (definition as IsMapDefinition<in Any, *, *>)
     for ((key, mapValue) in map) {
         val keyByteSize = mapDefinition.keyDefinition.calculateStorageByteLength(key)
         val keyByteCountSize = keyByteSize.calculateVarByteLength()

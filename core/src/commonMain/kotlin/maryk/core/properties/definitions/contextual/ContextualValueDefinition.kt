@@ -10,7 +10,7 @@ import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 
 /** Definition which refers to specific property value definition based on context from [contextualResolver] */
-data class ContextualValueDefinition<CX : IsPropertyContext, CXI : IsPropertyContext, T : Any, D : IsValueDefinition<T, CXI>>(
+data class ContextualValueDefinition<CX : IsPropertyContext, CXI : IsPropertyContext, T : Any, out D : IsValueDefinition<T, CXI>>(
     val contextualResolver: (context: CX?) -> D,
     val contextTransformer: (context: CX?) -> CXI? = {
         @Suppress("UNCHECKED_CAST")

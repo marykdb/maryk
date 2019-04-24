@@ -8,11 +8,11 @@ import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.contextual.ContextualMapDefinition
 
 /** Describes the property definitions for translation to kotlin */
-internal open class PropertyDefinitionKotlinDescriptor<T : Any, D : IsTransportablePropertyDefinitionType<T>, P : ObjectPropertyDefinitions<D>>(
+internal open class PropertyDefinitionKotlinDescriptor<in T : Any, D : IsTransportablePropertyDefinitionType<in T>, P : ObjectPropertyDefinitions<D>>(
     val className: String,
     val kotlinTypeName: (D) -> String,
     val definitionModel: IsObjectDataModel<D, P>,
-    val propertyValueOverride: Map<String, (IsTransportablePropertyDefinitionType<Any>, Any, (String) -> Unit) -> String?> = mapOf(),
+    val propertyValueOverride: Map<String, (IsTransportablePropertyDefinitionType<out Any>, Any, (String) -> Unit) -> String?> = mapOf(),
     val propertyNameOverride: Map<String, String> = mapOf(),
     private val imports: ((D) -> Array<String>?)? = null
 ) {
@@ -42,14 +42,13 @@ internal open class PropertyDefinitionKotlinDescriptor<T : Any, D : IsTransporta
                 val propertyName = this.propertyNameOverride[property.name] ?: property.name
 
                 if (override != null) {
-                    @Suppress("UNCHECKED_CAST")
-                    override(definition as IsTransportablePropertyDefinitionType<Any>, value, addImport)?.let {
+                    override(definition as IsTransportablePropertyDefinitionType<*>, value, addImport)?.let {
                         output.add("""$propertyName = $it""")
                     }
                 } else {
                     val defToSend = if (def is ContextualMapDefinition<*, *, *>) {
                         @Suppress("UNCHECKED_CAST")
-                        definition as IsPropertyDefinition<Any>
+                        definition as IsPropertyDefinition<in Any>
                     } else {
                         def
                     }

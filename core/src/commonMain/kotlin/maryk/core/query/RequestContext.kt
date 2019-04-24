@@ -15,7 +15,7 @@ import maryk.core.values.AbstractValues
 
 sealed class ModelTypeToCollect<DM : IsDataModel<*>>(val model: DM) {
     class Request<RP : IsResponse>(val request: IsRequest<RP>) :
-        ModelTypeToCollect<IsObjectDataModel<RP, *>>(request.responseModel)
+        ModelTypeToCollect<IsObjectDataModel<in RP, *>>(request.responseModel)
 
     class Model<DM : IsDataModel<*>>(value: DM) : ModelTypeToCollect<DM>(value)
 }

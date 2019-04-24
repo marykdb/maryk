@@ -133,9 +133,11 @@ private fun IsPropertyReferenceForValues<*, *, *, *>.generateRef(
     var parent = ""
     this.parentReference?.let {
         if (it is IsPropertyReferenceForValues<*, *, *, *>) {
-            if (it.propertyDefinition is IsEmbeddedDefinition<*, *>) {
-                val embedModelName = ((it.propertyDefinition as IsEmbeddedDefinition<*, *>).dataModel as IsNamedDataModel<*>).name
-                addImport("$packageName.$embedModelName.Properties.${this.name}")
+            it.propertyDefinition.let { propDef ->
+                if (propDef is IsEmbeddedDefinition<*, *>) {
+                    val embedModelName = (propDef.dataModel as IsNamedDataModel<*>).name
+                    addImport("$packageName.$embedModelName.Properties.${this.name}")
+                }
             }
 
             parent = it.generateRef(packageName, modelName, addImport)

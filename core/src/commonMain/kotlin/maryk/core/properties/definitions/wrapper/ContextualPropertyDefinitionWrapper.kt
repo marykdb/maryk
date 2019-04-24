@@ -22,6 +22,7 @@ data class ContextualPropertyDefinitionWrapper<T : Any, TO : Any, CX : IsPropert
     override val shouldSerialize: ((Any) -> Boolean)? = null
 ) :
     AbstractPropertyDefinitionWrapper(index, name),
+    IsPropertyDefinitionWrapper<T, TO, CX, DO>,
     IsContextualEncodable<T, CX> by definition,
     IsValuePropertyDefinitionWrapper<T, TO, CX, DO> {
     override val graphType = PropRefGraphType.PropRef

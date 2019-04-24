@@ -88,7 +88,6 @@ data class NumberDefinition<T : Comparable<T>>(
                         definition = EnumDefinition(enum = NumberType),
                         getter = NumberDefinition<*>::type as (NumberDefinition<*>) -> NumberDescriptor<Comparable<Any>>?,
                         capturer = { context: NumericContext, value: NumberType ->
-                            @Suppress("UNCHECKED_CAST")
                             context.numberType = value.descriptor() as NumberDescriptor<Comparable<Any>>
                         },
                         fromSerializable = { value: NumberType? ->

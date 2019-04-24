@@ -47,16 +47,9 @@ data class EmbeddedMarykObject(
                 marykModel = values(3u)
             )
 
-        override fun equals(other: Any?): Boolean {
-            if (other !is ObjectDataModel<*, *>) return false
-
-            @Suppress("UNCHECKED_CAST")
-            val otherModel = other as ObjectDataModel<Any, ObjectPropertyDefinitions<Any>>
-
-            if (this.name != otherModel.name) return false
-            if (this.properties.size != otherModel.properties.size) return false
-
-            return true
-        }
+        override fun equals(other: Any?) =
+            other is ObjectDataModel<*, *> &&
+                this.name == other.name &&
+                this.properties.size == other.properties.size
     }
 }

@@ -11,7 +11,6 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.ContainsDefinitionsContext
-import maryk.core.query.DefinitionsContext
 import maryk.core.values.SimpleObjectValues
 
 /** Definition for List property */
@@ -82,8 +81,7 @@ data class ListDefinition<T : Any, CX : IsPropertyContext> internal constructor(
                             TypedValue(defType.propertyDefinitionType, value)
                         },
                         fromSerializable = {
-                            @Suppress("UNCHECKED_CAST")
-                            it?.value as IsValueDefinition<Any, DefinitionsContext>?
+                            it?.value as IsValueDefinition<*, *>?
                         },
                         capturer = { context: ListDefinitionContext?, value ->
                             context?.apply {
@@ -119,9 +117,9 @@ class ListDefinitionContext(
     val definitionsContext: ContainsDefinitionsContext?,
     var valueDefinion: IsValueDefinition<Any, IsPropertyContext>? = null
 ) : IsPropertyContext {
-    private var _listDefinition: Lazy<ListDefinition<Any, IsPropertyContext>> = lazy {
+    private var _listDefinition: Lazy<ListDefinition<in Any, IsPropertyContext>> = lazy {
         ListDefinition(valueDefinition = this.valueDefinion ?: throw ContextNotFoundException())
     }
 
-    val listDefinition: ListDefinition<Any, IsPropertyContext> get() = this._listDefinition.value
+    val listDefinition: ListDefinition<in Any, IsPropertyContext> get() = this._listDefinition.value
 }

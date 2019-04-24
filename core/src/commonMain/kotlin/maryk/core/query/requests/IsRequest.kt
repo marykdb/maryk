@@ -5,5 +5,5 @@ import maryk.core.query.responses.IsResponse
 
 interface IsRequest<RP : IsResponse> {
     val requestType: RequestType
-    val responseModel: IsObjectDataModel<RP, *>
+    val responseModel: IsObjectDataModel<in RP, *>
 }

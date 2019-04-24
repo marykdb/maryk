@@ -4,7 +4,6 @@ import maryk.core.extensions.bytes.writeBytes
 import maryk.core.processors.datastore.StorageTypeEnum.ListSize
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 
 /** Write a complete [list] defined by [definition] with [qualifierWriter] of [qualifierCount] to storage with [valueWriter]. */
@@ -26,7 +25,7 @@ fun <T : IsPropertyDefinition<*>> writeListToStorage(
 
     // Process List values
     val listValueDefinition =
-        (definition as IsListDefinition<Any, *>).valueDefinition as IsSimpleValueDefinition<Any, *>
+        (definition as IsListDefinition<*, *>).valueDefinition
     for ((listIndex, listItem) in (list as List<Any>).withIndex()) {
         val listValueQualifierWriter: QualifierWriter = { writer ->
             qualifierWriter.invoke(writer)

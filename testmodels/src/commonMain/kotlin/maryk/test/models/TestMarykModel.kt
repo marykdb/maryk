@@ -268,15 +268,8 @@ object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>
         )
     }
 
-    override fun equals(other: Any?): Boolean {
-        if (other !is DataModel<*, *>) return false
-
-        @Suppress("UNCHECKED_CAST")
-        val otherModel = other as DataModel<*, PropertyDefinitions>
-
-        if (this.name != otherModel.name) return false
-        if (this.properties.size != otherModel.properties.size) return false
-
-        return true
-    }
+    override fun equals(other: Any?) =
+        other is DataModel<*, *> &&
+            this.name == other.name &&
+            this.properties.size == other.properties.size
 }

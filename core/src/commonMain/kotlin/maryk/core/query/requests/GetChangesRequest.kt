@@ -2,7 +2,6 @@
 
 package maryk.core.query.requests
 
-import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -55,8 +54,7 @@ data class GetChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
     override val filterSoftDeleted: Boolean = true
 ) : IsGetRequest<DM, P, ChangesResponse<DM>>, IsChangesRequest<DM, P, ChangesResponse<DM>> {
     override val requestType = RequestType.GetChanges
-    @Suppress("UNCHECKED_CAST")
-    override val responseModel = ChangesResponse as IsObjectDataModel<ChangesResponse<DM>, *>
+    override val responseModel = ChangesResponse
 
     object Properties : ObjectPropertyDefinitions<GetChangesRequest<*, *>>() {
         val dataModel = IsObjectRequest.addDataModel("from", this, GetChangesRequest<*, *>::dataModel)

@@ -4,7 +4,6 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.StorageException
 import maryk.core.exceptions.TypeException
 import maryk.core.extensions.bytes.initIntByVar
-import maryk.core.extensions.bytes.initIntByVarWithExtraInfo
 import maryk.core.extensions.bytes.initUInt
 import maryk.core.extensions.bytes.initUIntByVarWithExtraInfo
 import maryk.core.models.IsDataModel
@@ -70,7 +69,7 @@ import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.pairs.ReferenceTypePair
 import maryk.core.query.pairs.ReferenceValuePair
 
-typealias ValueWithVersionReader = (StorageTypeEnum<IsPropertyDefinition<Any>>, IsPropertyDefinition<out Any>?, (ULong, Any?) -> Unit) -> Unit
+typealias ValueWithVersionReader = (StorageTypeEnum<IsPropertyDefinition<out Any>>, IsPropertyDefinition<out Any>?, (ULong, Any?) -> Unit) -> Unit
 private typealias ChangeAdder = (ULong, ChangeType, Any) -> Unit
 
 private enum class ChangeType {
@@ -209,11 +208,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
             when (referenceStorageTypeOf(type)) {
                 SPECIAL -> when (val specialType = completeReferenceTypeOf(qualifier[offset])) {
                     DELETE -> {
-                        @Suppress("UNCHECKED_CAST")
-                        readValueFromStorage(
-                            ObjectDelete as StorageTypeEnum<IsPropertyDefinition<Any>>,
-                            objectDeletePropertyDefinition as IsPropertyDefinition<Any>
-                        ) { version, value ->
+                        readValueFromStorage(ObjectDelete, objectDeletePropertyDefinition) { version, value ->
                             if (value != null) {
                                 addChangeToOutput(version, OBJECT_DELETE, value)
                             }
@@ -227,8 +222,8 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                         ?: throw DefNotFoundException("No definition for $index in $this at $index")
 
                     if (isAtEnd) {
-                        @Suppress("UNCHECKED_CAST")
                         readValueFromStorage(Value, definition) { version, value ->
+                            @Suppress("UNCHECKED_CAST")
                             val ref =
                                 definition.ref(parentReference) as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>
                             if (value == null) {
@@ -237,6 +232,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                                 if (value !is TypedValue<*, *>) {
                                     addChangeToOutput(version, CHANGE, ReferenceValuePair(ref, value))
                                 } else { // Is a TypedValue with Unit as value
+                                    @Suppress("UNCHECKED_CAST")
                                     readTypedValue(
                                         ref,
                                         qualifier,
@@ -297,11 +293,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                         ?: throw DefNotFoundException("No definition for $index in $this at $index")
 
                     if (isAtEnd) {
-                        @Suppress("UNCHECKED_CAST")
-                        readValueFromStorage(
-                            ListSize as StorageTypeEnum<IsPropertyDefinition<Any>>,
-                            definition
-                        ) { version, value ->
+                        readValueFromStorage(ListSize, definition) { version, value ->
                             if (value == null) {
                                 addChangeToOutput(version, ChangeType.DELETE, definition.ref(parentReference))
                             }
@@ -341,11 +333,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                         ?: throw DefNotFoundException("No definition for $index in $this at $index")
 
                     if (isAtEnd) {
-                        @Suppress("UNCHECKED_CAST")
-                        readValueFromStorage(
-                            SetSize as StorageTypeEnum<IsPropertyDefinition<Any>>,
-                            definition
-                        ) { version, value ->
+                        readValueFromStorage(SetSize, definition) { version, value ->
                             if (value == null) {
                                 addChangeToOutput(version, ChangeType.DELETE, definition.ref(parentReference))
                             }
@@ -381,11 +369,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                     val reference = definition.ref(parentReference) as MapReference<Any, Any, IsPropertyContext>
 
                     if (isAtEnd) {
-                        @Suppress("UNCHECKED_CAST")
-                        readValueFromStorage(
-                            MapSize as StorageTypeEnum<IsPropertyDefinition<Any>>,
-                            definition
-                        ) { version, value ->
+                        readValueFromStorage(MapSize, definition) { version, value ->
                             if (value == null) {
                                 addChangeToOutput(version, ChangeType.DELETE, definition.ref(parentReference))
                             }
@@ -517,7 +501,7 @@ private fun readTypedValue(
             if (value == null) {
                 addChangeToOutput(version, ChangeType.DELETE, reference as Any)
             } else {
-                if (value is TypedValue<*, *>) {
+                if (value is TypedValue<IndexedEnum, Any>) {
                     if (value.value == Unit) {
                         @Suppress("UNCHECKED_CAST")
                         addChangeToOutput(

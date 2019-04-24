@@ -40,7 +40,7 @@ internal fun <
     } else {
         @Suppress("UNCHECKED_CAST")
         this.writeJsonValue(
-            properties.properties as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DM>,
+            properties.properties as IsPropertyDefinitionWrapper<in Any, in Any, IsPropertyContext, DM>,
             writer,
             obj.properties,
             context

@@ -48,7 +48,6 @@ interface IsDataModelResponse<out DM : IsRootDataModel<*>> : IsResponse {
                 },
                 fromSerializable = { it?.get?.invoke(Unit) },
                 capturer = { context, value ->
-                    @Suppress("UNCHECKED_CAST")
                     context.dataModel = value.get(Unit)
                 }
             )

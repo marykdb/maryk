@@ -227,8 +227,8 @@ data class MultiTypeDefinition<E : IndexedEnum, in CX : IsPropertyContext> inter
         val type = this.typeEnum.resolve(key.tag.toUInt()) ?: throw ParseException("Unknown multi type index ${key.tag}")
         val def = this.definitionMapByIndex[type.index] ?: throw ParseException("Unknown multi type ${key.tag}")
 
-        val value = if (def is IsEmbeddedObjectDefinition<*, *, *, *, *> && keepAsValues) {
-            (def as IsEmbeddedObjectDefinition<*, *, *, CX, *>).readTransportBytesToValues(
+        val value = if (def is IsEmbeddedObjectDefinition<*, *, *, CX, *> && keepAsValues) {
+            def.readTransportBytesToValues(
                 ProtoBuf.getLength(key.wireType, reader),
                 reader,
                 context
@@ -255,7 +255,7 @@ data class MultiTypeDefinition<E : IndexedEnum, in CX : IsPropertyContext> inter
 
         // stored as value below an index of the type id
         @Suppress("UNCHECKED_CAST")
-        val def = this.definitionMapByIndex[value.type.index] as IsSubDefinition<Any, CX>?
+        val def = this.definitionMapByIndex[value.type.index] as IsSubDefinition<in Any, CX>?
             ?: throw DefNotFoundException("Definition ${value.type} not found on Multi type")
         totalByteLength += def.calculateTransportByteLengthWithKey(
             value.type.index,

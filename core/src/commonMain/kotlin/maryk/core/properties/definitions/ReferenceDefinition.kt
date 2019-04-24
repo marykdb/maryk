@@ -117,7 +117,6 @@ class ReferenceDefinition<DM : IsRootDataModel<*>>(
                         }
                     },
                     fromSerializable = {
-                        @Suppress("UNCHECKED_CAST")
                         it?.get
                     },
                     capturer = { context, dataModel ->

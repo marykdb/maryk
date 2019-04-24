@@ -107,7 +107,6 @@ class ListItemReference<T : Any, CX : IsPropertyContext> internal constructor(
 
     override fun resolve(values: List<T>): T? = values[index.toInt()]
 
-    @Suppress("UNCHECKED_CAST")
-    override fun resolveFromAny(value: Any) = (value as? List<Any>)?.get(this.index.toInt())
+    override fun resolveFromAny(value: Any) = (value as? List<*>)?.get(this.index.toInt())
         ?: throw UnexpectedValueException("Expected List to get value by reference")
 }

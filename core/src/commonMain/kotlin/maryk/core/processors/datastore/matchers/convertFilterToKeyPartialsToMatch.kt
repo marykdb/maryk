@@ -291,7 +291,7 @@ private fun <T : Any> createUniqueToMatch(
     value: T
 ) = UniqueToMatch(
     reference.toStorageByteArray(),
-    it as IsComparableDefinition<Comparable<Any>, IsPropertyContext>,
+    it as IsComparableDefinition<out Comparable<Any>, IsPropertyContext>,
     value as Comparable<*>
 )
 

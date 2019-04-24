@@ -23,8 +23,8 @@ internal fun <T : Any> deleteByIndex(
                 }
             }
             is DataRecordHistoricValues<*> -> {
-                @Suppress("UNCHECKED_CAST")
                 DeletedValue<T>(reference, version).also {
+                    @Suppress("UNCHECKED_CAST")
                     (matchedValue.history as MutableList<IsDataRecordValue<*>>).add(it)
                 }
             }

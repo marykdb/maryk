@@ -1,7 +1,6 @@
 package maryk.core.query.requests
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.QueryDataModel
@@ -33,8 +32,7 @@ data class DeleteRequest<DM : IsRootValuesDataModel<*>> internal constructor(
     val hardDelete: Boolean
 ) : IsStoreRequest<DM, DeleteResponse<DM>> {
     override val requestType = RequestType.Delete
-    @Suppress("UNCHECKED_CAST")
-    override val responseModel = DeleteResponse as IsObjectDataModel<DeleteResponse<DM>, *>
+    override val responseModel = DeleteResponse
 
     @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<DeleteRequest<*>>() {

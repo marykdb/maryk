@@ -1,6 +1,5 @@
 package maryk.core.query.requests
 
-import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -22,8 +21,7 @@ data class ChangeRequest<DM : IsRootValuesDataModel<*>> internal constructor(
     val objects: List<DataObjectChange<DM>>
 ) : IsStoreRequest<DM, ChangeResponse<DM>> {
     override val requestType = RequestType.Change
-    @Suppress("UNCHECKED_CAST")
-    override val responseModel = ChangeResponse as IsObjectDataModel<ChangeResponse<DM>, *>
+    override val responseModel = ChangeResponse
 
     @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<ChangeRequest<*>>() {

@@ -22,7 +22,6 @@ import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.ContainsDefinitionsContext
-import maryk.core.query.DefinitionsContext
 import maryk.core.values.SimpleObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
@@ -229,8 +228,7 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
                             TypedValue(defType.propertyDefinitionType, value)
                         },
                         fromSerializable = {
-                            @Suppress("UNCHECKED_CAST")
-                            it?.value as IsSimpleValueDefinition<Any, DefinitionsContext>?
+                            it?.value as IsSimpleValueDefinition<*, *>?
                         },
                         capturer = { context: KeyValueDefinitionContext, value ->
                             @Suppress("UNCHECKED_CAST")
@@ -252,8 +250,7 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
                             TypedValue(defType.propertyDefinitionType, value)
                         },
                         fromSerializable = {
-                            @Suppress("UNCHECKED_CAST")
-                            it?.value as IsValueDefinition<Any, DefinitionsContext>?
+                            it?.value as IsValueDefinition<*, *>?
                         },
                         capturer = { context: KeyValueDefinitionContext, value ->
                             @Suppress("UNCHECKED_CAST")

@@ -1,6 +1,7 @@
 package maryk.test.models
 
 import maryk.core.models.ValueDataModel
+import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
@@ -38,17 +39,10 @@ data class TestValueObject(
             bool = values(3u)
         )
 
-        override fun equals(other: Any?): Boolean {
-            if (other !is ValueDataModel<*, *>) return false
-
-            @Suppress("UNCHECKED_CAST")
-            val otherModel = other as ValueDataModel<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>
-
-            if (this.name != otherModel.name) return false
-            if (this.properties.size != otherModel.properties.size) return false
-
-            return true
-        }
+        override fun equals(other: Any?) =
+            other is ValueDataModel<*, *> &&
+                this.name == other.name &&
+                this.properties.size == (other.properties as AbstractPropertyDefinitions<*>).size
     }
 }
 

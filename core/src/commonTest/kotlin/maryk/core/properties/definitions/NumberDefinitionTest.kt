@@ -8,7 +8,8 @@ import maryk.core.properties.types.numeric.Float32
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.protobuf.ProtoBuf
-import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WireType.BIT_32
+import maryk.core.protobuf.WireType.VAR_INT
 import maryk.lib.exceptions.ParseException
 import maryk.test.ByteCollector
 import maryk.test.shouldBe
@@ -84,7 +85,7 @@ internal class NumberDefinitionTest {
             )
             def.writeTransportBytesWithKey(1u, value, cacheFailer, bc::write)
             val key = ProtoBuf.readKey(bc::read)
-            key.wireType shouldBe WireType.VAR_INT
+            key.wireType shouldBe VAR_INT
             key.tag shouldBe 1u
             def.readTransportBytes(
                 ProtoBuf.getLength(key.wireType, bc::read),
@@ -105,7 +106,7 @@ internal class NumberDefinitionTest {
             )
             defFloat32.writeTransportBytesWithKey(2u, value, cacheFailer, bc::write)
             val key = ProtoBuf.readKey(bc::read)
-            key.wireType shouldBe WireType.BIT_32
+            key.wireType shouldBe BIT_32
             key.tag shouldBe 2u
             defFloat32.readTransportBytes(
                 ProtoBuf.getLength(key.wireType, bc::read),

@@ -10,7 +10,7 @@ import maryk.core.properties.exceptions.TooManyItemsException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.protobuf.ProtoBuf
-import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCache
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
@@ -136,12 +136,12 @@ internal class MapDefinitionTest {
 
         fun readKey() {
             val key = ProtoBuf.readKey(bc::read)
-            key.wireType shouldBe WireType.LENGTH_DELIMITED
+            key.wireType shouldBe LENGTH_DELIMITED
             key.tag shouldBe 4u
         }
 
         fun readValue(): Pair<Int, String> {
-            ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read)
+            ProtoBuf.getLength(LENGTH_DELIMITED, bc::read)
             return def.readMapTransportBytes(bc::read)
         }
 

@@ -13,6 +13,7 @@ import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.changes.ChangeType
 import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.mapOfChangeDefinitions
+import maryk.core.query.responses.statuses.StatusType.ADD_SUCCESS
 import maryk.core.values.SimpleObjectValues
 
 /** Successful add of given object with [key], [version] and added [changes] */
@@ -21,7 +22,7 @@ data class AddSuccess<DM : IsRootDataModel<*>>(
     val version: ULong,
     val changes: List<IsChange>
 ) : IsAddResponseStatus<DM> {
-    override val statusType = StatusType.ADD_SUCCESS
+    override val statusType = ADD_SUCCESS
 
     internal companion object : SimpleQueryDataModel<AddSuccess<*>>(
         properties = object : ObjectPropertyDefinitions<AddSuccess<*>>() {

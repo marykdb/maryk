@@ -7,7 +7,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.PropertyDefinitionType
-import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.values.Values
@@ -27,7 +27,7 @@ internal data class ContextualEmbeddedValuesDefinition<CX : IsPropertyContext>(
     override val default: Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>? = null
     override val required = true
     override val final = true
-    override val wireType = WireType.LENGTH_DELIMITED
+    override val wireType = LENGTH_DELIMITED
 
     override fun fromString(string: String, context: CX?): ValuesImpl {
         val stringIterator = string.iterator()

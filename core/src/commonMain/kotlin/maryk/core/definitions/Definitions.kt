@@ -1,5 +1,9 @@
 package maryk.core.definitions
 
+import maryk.core.definitions.PrimitiveType.EnumDefinition
+import maryk.core.definitions.PrimitiveType.Model
+import maryk.core.definitions.PrimitiveType.RootModel
+import maryk.core.definitions.PrimitiveType.ValueModel
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.DataModel
 import maryk.core.models.RootDataModel
@@ -20,7 +24,9 @@ import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
-import maryk.json.JsonToken
+import maryk.json.JsonToken.EndObject
+import maryk.json.JsonToken.FieldName
+import maryk.json.JsonToken.StartObject
 import maryk.lib.exceptions.ParseException
 
 /**
@@ -39,7 +45,7 @@ data class Definitions(
                 valueDefinition = MultiTypeDefinition(
                     typeEnum = PrimitiveType,
                     definitionMap = mapOf(
-                        PrimitiveType.Model to ContextCaptureDefinition(
+                        Model to ContextCaptureDefinition(
                             definition = EmbeddedObjectDefinition(
                                 dataModel = { DataModel.Model }
                             ),
@@ -49,7 +55,7 @@ data class Definitions(
                                 } ?: throw ContextNotFoundException()
                             }
                         ),
-                        PrimitiveType.ValueModel to ContextCaptureDefinition(
+                        ValueModel to ContextCaptureDefinition(
                             definition = EmbeddedObjectDefinition(
                                 dataModel = { ValueDataModel.Model }
                             ),
@@ -59,7 +65,7 @@ data class Definitions(
                                 } ?: throw ContextNotFoundException()
                             }
                         ),
-                        PrimitiveType.RootModel to ContextCaptureDefinition(
+                        RootModel to ContextCaptureDefinition(
                             definition = EmbeddedObjectDefinition(
                                 dataModel = { RootDataModel.Model }
                             ),
@@ -69,7 +75,7 @@ data class Definitions(
                                 } ?: throw ContextNotFoundException()
                             }
                         ),
-                        PrimitiveType.EnumDefinition to ContextCaptureDefinition(
+                        EnumDefinition to ContextCaptureDefinition(
                             // This transformer takes care to catch Enums without cases to replace them
                             // with previously defined Enums which are stored in the context
                             definition = ContextValueTransformDefinition(
@@ -129,14 +135,14 @@ data class Definitions(
             reader: IsJsonLikeReader,
             context: ContainsDefinitionsContext?
         ): List<TypedValue<PrimitiveType, MarykPrimitive>> {
-            if (reader.currentToken !is JsonToken.StartObject) {
+            if (reader.currentToken !is StartObject) {
                 throw ParseException("JSON value should be an Object")
             }
             val definitions = mutableListOf<TypedValue<PrimitiveType, MarykPrimitive>>()
 
-            while (reader.nextToken() !== JsonToken.EndObject) {
+            while (reader.nextToken() !== EndObject) {
                 reader.currentToken.apply {
-                    if (this is JsonToken.FieldName) {
+                    if (this is FieldName) {
                         if (context == null) throw ContextNotFoundException()
                         context.currentDefinitionName = this.value ?: throw ParseException("Map key cannot be null")
 

@@ -11,6 +11,7 @@ import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedValuesDefinition
 import maryk.core.query.RequestContext
+import maryk.core.query.requests.RequestType.*
 import maryk.core.query.responses.AddResponse
 import maryk.core.values.ObjectValues
 import maryk.core.values.Values
@@ -24,7 +25,7 @@ data class AddRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> in
     override val dataModel: DM,
     val objects: List<Values<DM, P>>
 ) : IsStoreRequest<DM, AddResponse<DM>> {
-    override val requestType = RequestType.Add
+    override val requestType = Add
     override val responseModel = AddResponse
 
     object Properties : ObjectPropertyDefinitions<AddRequest<*, *>>() {

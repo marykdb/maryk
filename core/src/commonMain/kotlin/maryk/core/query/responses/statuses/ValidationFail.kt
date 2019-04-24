@@ -11,6 +11,7 @@ import maryk.core.properties.exceptions.ValidationExceptionType
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.exceptions.mapOfValidationExceptionDefinitions
 import maryk.core.properties.types.TypedValue
+import maryk.core.query.responses.statuses.StatusType.VALIDATION_FAIL
 import maryk.core.values.SimpleObjectValues
 
 /** Failure in validation with [exceptions] */
@@ -25,7 +26,7 @@ data class ValidationFail<DM : IsRootDataModel<*>>(
         }
     )
 
-    override val statusType = StatusType.VALIDATION_FAIL
+    override val statusType = VALIDATION_FAIL
 
     internal companion object : SimpleQueryDataModel<ValidationFail<*>>(
         properties = object : ObjectPropertyDefinitions<ValidationFail<*>>() {

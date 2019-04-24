@@ -6,6 +6,7 @@ import maryk.json.JsonToken.FieldName
 import maryk.json.JsonToken.NullValue
 import maryk.json.JsonToken.SimpleStartObject
 import maryk.json.JsonToken.StartArray
+import maryk.json.JsonToken.StartComplexFieldName
 import maryk.json.JsonToken.StartObject
 import maryk.json.JsonToken.Value
 import maryk.json.MapType
@@ -71,7 +72,7 @@ internal class MapItemsReader<out P : IsYamlCharWithIndentsReader>(
             return
         }
 
-        if (it is JsonToken.FieldName || it == JsonToken.StartComplexFieldName) {
+        if (it is FieldName || it == StartComplexFieldName) {
             if (this.state == KEY_FOUND) {
                 throw InvalidYamlContent("Already found mapping key. No other : allowed")
             }

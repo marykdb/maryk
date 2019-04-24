@@ -8,6 +8,7 @@ import maryk.core.models.ObjectDataModel
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.PropertyDefinitionType.EmbedObject
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
@@ -15,7 +16,7 @@ import maryk.core.properties.definitions.contextual.IsDataModelReference
 import maryk.core.properties.definitions.contextual.ModelContext
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.ContainsDefinitionsContext
@@ -33,8 +34,8 @@ class EmbeddedObjectDefinition<DO : Any, P : ObjectPropertyDefinitions<DO>, out 
     override val default: DO? = null
 ) :
     IsEmbeddedObjectDefinition<DO, P, DM, CXI, CX> {
-    override val propertyDefinitionType = PropertyDefinitionType.EmbedObject
-    override val wireType = WireType.LENGTH_DELIMITED
+    override val propertyDefinitionType = EmbedObject
+    override val wireType = LENGTH_DELIMITED
 
     private val internalDataModel = safeLazy(dataModel)
     override val dataModel: DM get() = internalDataModel.value

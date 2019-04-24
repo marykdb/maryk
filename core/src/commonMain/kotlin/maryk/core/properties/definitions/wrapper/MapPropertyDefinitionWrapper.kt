@@ -9,7 +9,7 @@ import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.enum.EmbedTypeCase
 import maryk.core.properties.enum.IndexedEnum
-import maryk.core.properties.graph.PropRefGraphType
+import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
@@ -39,7 +39,7 @@ data class MapPropertyDefinitionWrapper<K : Any, V : Any, TO : Any, CX : IsPrope
     AbstractPropertyDefinitionWrapper(index, name),
     IsMapDefinition<K, V, CX> by definition,
     IsPropertyDefinitionWrapper<Map<K, V>, TO, CX, DO> {
-    override val graphType = PropRefGraphType.PropRef
+    override val graphType = PropRef
 
     @Suppress("UNCHECKED_CAST")
     override fun ref(parentRef: AnyPropertyReference?): MapReference<K, V, CX> =

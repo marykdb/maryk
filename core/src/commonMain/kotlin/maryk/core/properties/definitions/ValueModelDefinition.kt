@@ -9,6 +9,7 @@ import maryk.core.models.SimpleObjectDataModel
 import maryk.core.models.ValueDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.PropertyDefinitionType.Value
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
@@ -16,7 +17,7 @@ import maryk.core.properties.definitions.contextual.ModelContext
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.ValueDataObject
-import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.SimpleObjectValues
 import maryk.json.IsJsonLikeReader
@@ -39,8 +40,8 @@ data class ValueModelDefinition<DO : ValueDataObject, DM : ValueDataModel<DO, P>
     IsSerializableFixedBytesEncodable<DO, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<DO>,
     HasDefaultValueDefinition<DO> {
-    override val propertyDefinitionType = PropertyDefinitionType.Value
-    override val wireType = WireType.LENGTH_DELIMITED
+    override val propertyDefinitionType = Value
+    override val wireType = LENGTH_DELIMITED
     override val byteSize = dataModel.byteSize
 
     override fun calculateStorageByteLength(value: DO) = this.byteSize

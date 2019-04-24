@@ -3,6 +3,8 @@ package maryk.yaml
 import maryk.json.ArrayType
 import maryk.json.ExceptionWhileReadingJson
 import maryk.json.JsonToken
+import maryk.json.JsonToken.EndArray
+import maryk.json.JsonToken.EndObject
 import maryk.json.JsonToken.NullValue
 import maryk.json.JsonToken.StartArray
 import maryk.json.JsonToken.StartObject
@@ -68,11 +70,11 @@ internal fun IsYamlCharReader.tagReader(onDone: (tag: TokenType) -> JsonToken): 
 internal fun IsYamlCharReader.createTokensFittingTag(tag: TokenType?): JsonToken =
     when (tag) {
         is MapType -> {
-            this.yamlReader.pushTokenAsFirst(JsonToken.EndObject)
+            this.yamlReader.pushTokenAsFirst(EndObject)
             StartObject(tag)
         }
         is ArrayType -> {
-            this.yamlReader.pushTokenAsFirst(JsonToken.EndArray)
+            this.yamlReader.pushTokenAsFirst(EndArray)
             StartArray(tag)
         }
         is IsNullValueType -> Value(null, tag)

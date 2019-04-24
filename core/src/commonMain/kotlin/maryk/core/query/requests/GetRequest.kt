@@ -7,6 +7,7 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
 import maryk.core.query.filters.IsFilter
+import maryk.core.query.requests.RequestType.Get
 import maryk.core.query.responses.ValuesResponse
 import maryk.core.values.ObjectValues
 
@@ -37,7 +38,7 @@ data class GetRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> in
     override val toVersion: ULong?,
     override val filterSoftDeleted: Boolean
 ) : IsGetRequest<DM, P, ValuesResponse<DM, P>> {
-    override val requestType = RequestType.Get
+    override val requestType = Get
     override val responseModel = ValuesResponse
 
     object Properties : ObjectPropertyDefinitions<GetRequest<*, *>>() {

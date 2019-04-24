@@ -2,6 +2,7 @@ package maryk.core.properties.exceptions
 
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.exceptions.ValidationExceptionType.ALREADY_SET
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.values.SimpleObjectValues
 
@@ -15,7 +16,7 @@ data class AlreadySetException(
     reference = reference,
     reason = "is already set before and cannot be set again"
 ) {
-    override val validationExceptionType = ValidationExceptionType.ALREADY_SET
+    override val validationExceptionType = ALREADY_SET
 
     internal companion object : SimpleQueryDataModel<AlreadySetException>(
         properties = object : ObjectPropertyDefinitions<AlreadySetException>() {

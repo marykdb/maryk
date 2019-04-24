@@ -2,6 +2,7 @@ package maryk.core.properties.exceptions
 
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.exceptions.ValidationExceptionType.REQUIRED
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.values.SimpleObjectValues
 
@@ -12,7 +13,7 @@ data class RequiredException internal constructor(
     reference = reference,
     reason = "is required and not set"
 ) {
-    override val validationExceptionType = ValidationExceptionType.REQUIRED
+    override val validationExceptionType = REQUIRED
 
     internal companion object : SimpleQueryDataModel<RequiredException>(
         properties = object : ObjectPropertyDefinitions<RequiredException>() {

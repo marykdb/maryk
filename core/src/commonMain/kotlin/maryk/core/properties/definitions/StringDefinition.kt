@@ -6,7 +6,7 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.exceptions.InvalidSizeException
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.values.SimpleObjectValues
 import maryk.lib.bytes.calculateUTF8ByteLength
 import maryk.lib.bytes.initString
@@ -30,7 +30,7 @@ data class StringDefinition(
     IsTransportablePropertyDefinitionType<String>,
     HasDefaultValueDefinition<String> {
     override val propertyDefinitionType = PropertyDefinitionType.String
-    override val wireType = WireType.LENGTH_DELIMITED
+    override val wireType = LENGTH_DELIMITED
 
     private val _regEx by lazy {
         when {

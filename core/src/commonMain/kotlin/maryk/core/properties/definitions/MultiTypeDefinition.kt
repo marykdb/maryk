@@ -27,7 +27,7 @@ import maryk.core.properties.references.ReferenceType.TYPE
 import maryk.core.properties.references.TypeReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.ProtoBuf
-import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.ContainsDefinitionsContext
@@ -37,7 +37,7 @@ import maryk.core.values.SimpleObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonReader
-import maryk.json.JsonToken
+import maryk.json.JsonToken.Value
 import maryk.json.JsonWriter
 import maryk.json.TokenWithType
 import maryk.lib.exceptions.ParseException
@@ -60,7 +60,7 @@ data class MultiTypeDefinition<E : IndexedEnum, in CX : IsPropertyContext> inter
     internal val keepAsValues: Boolean = false
 ) : IsMultiTypeDefinition<E, CX> {
     override val propertyDefinitionType = PropertyDefinitionType.MultiType
-    override val wireType = WireType.LENGTH_DELIMITED
+    override val wireType = LENGTH_DELIMITED
 
     private val definitionMapByIndex = definitionMap.map { Pair(it.key.index, it.value) }.toMap()
 
@@ -203,7 +203,7 @@ data class MultiTypeDefinition<E : IndexedEnum, in CX : IsPropertyContext> inter
             return TypedValue(type, definition.readJson(reader, context))
         } else {
             reader.nextToken().let {
-                if (it !is JsonToken.Value<*>) {
+                if (it !is Value<*>) {
                     throw ParseException("Expected a value at start, not ${it.name}")
                 }
                 val type: E = this.typeEnum.resolve(it.value as String)

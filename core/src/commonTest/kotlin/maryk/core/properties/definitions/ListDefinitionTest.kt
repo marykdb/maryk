@@ -12,7 +12,7 @@ import maryk.core.properties.types.numeric.Float32
 import maryk.core.properties.types.numeric.Float64
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.protobuf.ProtoBuf
-import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCache
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
@@ -111,12 +111,12 @@ internal class ListDefinitionTest {
 
         fun readKey() {
             val key = ProtoBuf.readKey(bc::read)
-            key.wireType shouldBe WireType.LENGTH_DELIMITED
+            key.wireType shouldBe LENGTH_DELIMITED
             key.tag shouldBe 1u
         }
 
         fun readValue() = def.readCollectionTransportBytes(
-            ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read),
+            ProtoBuf.getLength(LENGTH_DELIMITED, bc::read),
             bc::read,
             null
         )
@@ -183,11 +183,11 @@ internal class ListDefinitionTest {
         bc.bytes!!.toHex() shouldBe hex
 
         val key = ProtoBuf.readKey(bc::read)
-        key.wireType shouldBe WireType.LENGTH_DELIMITED
+        key.wireType shouldBe LENGTH_DELIMITED
         key.tag shouldBe index
 
         val readList = def.readPackedCollectionTransportBytes(
-            ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read),
+            ProtoBuf.getLength(LENGTH_DELIMITED, bc::read),
             bc::read,
             null
         )

@@ -1,6 +1,11 @@
 package maryk.yaml
 
 import maryk.json.JsonToken
+import maryk.json.JsonToken.EndComplexFieldName
+import maryk.json.JsonToken.EndObject
+import maryk.json.JsonToken.SimpleStartObject
+import maryk.json.JsonToken.StartComplexFieldName
+import maryk.json.JsonToken.StartObject
 import maryk.json.MapType
 import maryk.json.TokenType
 import maryk.lib.exceptions.ParseException
@@ -37,9 +42,9 @@ internal class FlowMapReader<out P: IsYamlCharWithIndentsReader>(
                 this.state = KEY
                 tag?.let { tokenType ->
                     (tokenType as? MapType)?.let {
-                        JsonToken.StartObject(it)
+                        StartObject(it)
                     } ?: throw InvalidYamlContent("Cannot use non map tags on maps")
-                } ?: JsonToken.SimpleStartObject
+                } ?: SimpleStartObject
             }
             COMPLEX_KEY -> this.jsonTokenCreator(null, false, tag, extraIndent)
             else -> {
@@ -94,7 +99,7 @@ internal class FlowMapReader<out P: IsYamlCharWithIndentsReader>(
 
                         read()
                         this.currentReader = this.parentReader
-                        JsonToken.EndObject
+                        EndObject
                     }
                     '?' -> {
                         read()
@@ -143,7 +148,7 @@ internal class FlowMapReader<out P: IsYamlCharWithIndentsReader>(
         }
         COMPLEX_KEY -> {
             this.state = VALUE
-            JsonToken.EndComplexFieldName
+            EndComplexFieldName
         }
         VALUE -> {
             this.state = SEPARATOR
@@ -165,7 +170,7 @@ internal class FlowMapReader<out P: IsYamlCharWithIndentsReader>(
         if (this.state == KEY) {
             this.yamlReader.pushToken(jsonToken)
             this.state = COMPLEX_KEY
-            return JsonToken.StartComplexFieldName
+            return StartComplexFieldName
         }
         this.state = SEPARATOR
         return jsonToken
@@ -176,7 +181,7 @@ internal class FlowMapReader<out P: IsYamlCharWithIndentsReader>(
             throw InvalidYamlContent("Maps started with { should always end with a }")
         }
         this.currentReader = this.parentReader
-        return JsonToken.EndObject
+        return EndObject
     }
 }
 

@@ -1,6 +1,7 @@
 package maryk.core.models
 
 import maryk.core.definitions.PrimitiveType
+import maryk.core.definitions.PrimitiveType.*
 import maryk.core.exceptions.SerializationException
 import maryk.core.properties.IsDataModelPropertyDefinitions
 import maryk.core.properties.MutablePropertyDefinitions
@@ -51,7 +52,7 @@ abstract class RootDataModel<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
     final override val reservedNames: List<String>? = null,
     properties: P
 ) : DataModel<DM, P>(properties), IsTypedRootDataModel<DM, P>, IsRootValuesDataModel<P> {
-    override val primitiveType = PrimitiveType.RootModel
+    override val primitiveType = RootModel
 
     override val keyByteSize = checkKeyDefinitionAndCountBytes(keyDefinition)
     override val keyIndices = calculateKeyIndices(keyDefinition)

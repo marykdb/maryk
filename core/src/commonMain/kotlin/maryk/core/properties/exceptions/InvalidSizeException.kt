@@ -3,6 +3,7 @@ package maryk.core.properties.exceptions
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.exceptions.ValidationExceptionType.INVALID_SIZE
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.values.SimpleObjectValues
@@ -20,7 +21,7 @@ data class InvalidSizeException internal constructor(
     reference = reference,
     reason = "has incorrect size: «$value» with size limits [$min,$max]"
 ) {
-    override val validationExceptionType = ValidationExceptionType.INVALID_SIZE
+    override val validationExceptionType = INVALID_SIZE
 
     internal companion object : SimpleQueryDataModel<InvalidSizeException>(
         properties = object : ObjectPropertyDefinitions<InvalidSizeException>() {

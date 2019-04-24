@@ -3,7 +3,7 @@ package maryk.core.properties.definitions.wrapper
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.SetDefinition
-import maryk.core.properties.graph.PropRefGraphType
+import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
@@ -28,7 +28,7 @@ data class SetPropertyDefinitionWrapper<T : Any, CX : IsPropertyContext, in DO :
     AbstractPropertyDefinitionWrapper(index, name),
     IsSetDefinition<T, CX> by definition,
     IsPropertyDefinitionWrapper<Set<T>, Set<T>, CX, DO> {
-    override val graphType = PropRefGraphType.PropRef
+    override val graphType = PropRef
 
     override fun ref(parentRef: AnyPropertyReference?) =
         SetReference(this, parentRef as CanHaveComplexChildReference<*, *, *, *>?)

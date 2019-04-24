@@ -2,7 +2,12 @@ package maryk.yaml
 
 import maryk.json.ArrayType
 import maryk.json.JsonToken
+import maryk.json.JsonToken.EndArray
+import maryk.json.JsonToken.EndComplexFieldName
+import maryk.json.JsonToken.EndObject
+import maryk.json.JsonToken.FieldName
 import maryk.json.JsonToken.SimpleStartArray
+import maryk.json.JsonToken.SimpleStartObject
 import maryk.json.JsonToken.StartArray
 import maryk.json.JsonToken.StartComplexFieldName
 import maryk.json.JsonToken.StartObject
@@ -104,7 +109,7 @@ internal class FlowSequenceReader<out P: IsYamlCharWithIndentsReader>(
                             this.state = STOP
                             read()
                             this.currentReader = this.parentReader
-                            JsonToken.EndArray
+                            EndArray
                         }
                     }
                     '}' -> {
@@ -167,7 +172,7 @@ internal class FlowSequenceReader<out P: IsYamlCharWithIndentsReader>(
         return when (this.state) {
             MAP_END -> {
                 this.state = VALUE_START
-                JsonToken.EndObject
+                EndObject
             }
             KEY, MAP_VALUE ->
                 this.jsonTokenCreator(null, false, null, 0)
@@ -199,7 +204,7 @@ internal class FlowSequenceReader<out P: IsYamlCharWithIndentsReader>(
         }
         COMPLEX_KEY -> {
             this.state = MAP_VALUE_AFTER_COMPLEX_KEY
-            JsonToken.EndComplexFieldName
+            EndComplexFieldName
         }
         FlowSequenceState.VALUE -> {
             this.state = VALUE_START
@@ -227,19 +232,19 @@ internal class FlowSequenceReader<out P: IsYamlCharWithIndentsReader>(
             StartObject(
                 tag as? MapType ?: throw InvalidYamlContent("$tag should be a map type")
             )
-        } ?: JsonToken.SimpleStartObject
+        } ?: SimpleStartObject
     }
 
     // Sequences can only return single item maps
     override fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean) =
-        JsonToken.FieldName(fieldName)
+        FieldName(fieldName)
 
     override fun handleReaderInterrupt(): JsonToken {
         if (this.state != STOP) {
             throw InvalidYamlContent("Sequences started with [ should always end with a ]")
         }
         this.currentReader = this.parentReader
-        return JsonToken.EndArray
+        return EndArray
     }
 }
 

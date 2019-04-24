@@ -3,6 +3,7 @@ package maryk.core.properties.exceptions
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.exceptions.ValidationExceptionType.NOT_ENOUGH_ITEMS
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.values.SimpleObjectValues
@@ -19,7 +20,7 @@ data class NotEnoughItemsException internal constructor(
     reference = reference,
     reason = "has not enough items: $size under minSize of $minSize items"
 ) {
-    override val validationExceptionType = ValidationExceptionType.NOT_ENOUGH_ITEMS
+    override val validationExceptionType = NOT_ENOUGH_ITEMS
 
     internal companion object : SimpleQueryDataModel<NotEnoughItemsException>(
         properties = object : ObjectPropertyDefinitions<NotEnoughItemsException>() {

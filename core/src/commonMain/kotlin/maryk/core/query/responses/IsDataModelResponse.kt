@@ -18,6 +18,7 @@ import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.RequestFail
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.StatusType
+import maryk.core.query.responses.statuses.StatusType.*
 import maryk.core.query.responses.statuses.Success
 import maryk.core.query.responses.statuses.ValidationFail
 
@@ -66,14 +67,14 @@ private val listOfStatuses = ListDefinition(
     valueDefinition = MultiTypeDefinition(
         typeEnum = StatusType,
         definitionMap = mapOf(
-            StatusType.SUCCESS to EmbeddedObjectDefinition(dataModel = { Success }),
-            StatusType.ADD_SUCCESS to EmbeddedObjectDefinition(dataModel = { AddSuccess }),
-            StatusType.AUTH_FAIL to EmbeddedObjectDefinition(dataModel = { AuthFail }),
-            StatusType.REQUEST_FAIL to EmbeddedObjectDefinition(dataModel = { RequestFail }),
-            StatusType.SERVER_FAIL to EmbeddedObjectDefinition(dataModel = { ServerFail }),
-            StatusType.VALIDATION_FAIL to EmbeddedObjectDefinition(dataModel = { ValidationFail }),
-            StatusType.ALREADY_EXISTS to EmbeddedObjectDefinition(dataModel = { AlreadyExists }),
-            StatusType.DOES_NOT_EXIST to EmbeddedObjectDefinition(dataModel = { DoesNotExist })
+            SUCCESS to EmbeddedObjectDefinition(dataModel = { Success }),
+            ADD_SUCCESS to EmbeddedObjectDefinition(dataModel = { AddSuccess }),
+            AUTH_FAIL to EmbeddedObjectDefinition(dataModel = { AuthFail }),
+            REQUEST_FAIL to EmbeddedObjectDefinition(dataModel = { RequestFail }),
+            SERVER_FAIL to EmbeddedObjectDefinition(dataModel = { ServerFail }),
+            VALIDATION_FAIL to EmbeddedObjectDefinition(dataModel = { ValidationFail }),
+            ALREADY_EXISTS to EmbeddedObjectDefinition(dataModel = { AlreadyExists }),
+            DOES_NOT_EXIST to EmbeddedObjectDefinition(dataModel = { DoesNotExist })
         )
     )
 )

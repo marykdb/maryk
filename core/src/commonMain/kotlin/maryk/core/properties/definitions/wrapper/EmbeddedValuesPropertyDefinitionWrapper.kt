@@ -6,7 +6,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.graph.PropRefGraphType
+import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
@@ -38,7 +38,7 @@ data class EmbeddedValuesPropertyDefinitionWrapper<
     AbstractPropertyDefinitionWrapper(index, name),
     IsEmbeddedValuesDefinition<DM, P, CX> by definition,
     IsPropertyDefinitionWrapper<Values<DM, P>, Values<DM, P>, CX, Any> {
-    override val graphType = PropRefGraphType.PropRef
+    override val graphType = PropRef
 
     override fun ref(parentRef: AnyPropertyReference?) =
         EmbeddedValuesPropertyRef(

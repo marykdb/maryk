@@ -6,7 +6,7 @@ import maryk.checkYamlConversion
 import maryk.core.properties.exceptions.InvalidSizeException
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.protobuf.ProtoBuf
-import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCache
 import maryk.lib.bytes.calculateUTF8ByteLength
 import maryk.lib.extensions.toHex
@@ -99,7 +99,7 @@ internal class StringDefinitionTest {
             bc.bytes!!.size shouldBe value.calculateUTF8ByteLength() + 2
             def.writeTransportBytesWithKey(14u, value, cache, bc::write)
             val key = ProtoBuf.readKey(bc::read)
-            key.wireType shouldBe WireType.LENGTH_DELIMITED
+            key.wireType shouldBe LENGTH_DELIMITED
             key.tag shouldBe 14u
             def.readTransportBytes(
                 ProtoBuf.getLength(key.wireType, bc::read),

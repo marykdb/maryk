@@ -11,7 +11,7 @@ import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.protobuf.ProtoBuf
-import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.pairs.ReferenceValuePair
@@ -84,7 +84,7 @@ class ListAnyItemReference<T : Any, CX : IsPropertyContext> internal constructor
 
     override fun writeTransportBytes(cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit) {
         this.parentReference?.writeTransportBytes(cacheGetter, writer)
-        ProtoBuf.writeKey(1u, WireType.VAR_INT, writer)
+        ProtoBuf.writeKey(1u, VAR_INT, writer)
     }
 
     override fun calculateSelfStorageByteLength(): Int {

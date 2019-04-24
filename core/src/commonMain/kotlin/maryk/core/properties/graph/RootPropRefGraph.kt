@@ -8,13 +8,20 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.graph.PropRefGraphType.Graph
+import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.ContainsDataModelContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
-import maryk.json.JsonToken
+import maryk.json.JsonToken.EndArray
+import maryk.json.JsonToken.StartArray
+import maryk.json.JsonToken.StartDocument
+import maryk.json.JsonToken.StartObject
+import maryk.json.JsonToken.Stopped
+import maryk.json.JsonToken.Value
 import maryk.lib.exceptions.ParseException
 
 /**
@@ -70,11 +77,11 @@ data class RootPropRefGraph<P : IsPropertyDefinitions> internal constructor(
             reader: IsJsonLikeReader,
             context: GraphContext?
         ): ObjectValues<RootPropRefGraph<*>, Properties> {
-            if (reader.currentToken == JsonToken.StartDocument) {
+            if (reader.currentToken == StartDocument) {
                 reader.nextToken()
             }
 
-            if (reader.currentToken !is JsonToken.StartArray) {
+            if (reader.currentToken !is StartArray) {
                 throw ParseException("JSON value should be an Array")
             }
 
@@ -82,24 +89,24 @@ data class RootPropRefGraph<P : IsPropertyDefinitions> internal constructor(
 
             val propertiesList = mutableListOf<TypedValue<PropRefGraphType, *>>()
 
-            while (currentToken != JsonToken.EndArray && currentToken !is JsonToken.Stopped) {
+            while (currentToken != EndArray && currentToken !is Stopped) {
                 when (currentToken) {
-                    is JsonToken.StartObject -> {
+                    is StartObject -> {
                         propertiesList.add(
                             TypedValue(
-                                PropRefGraphType.Graph,
+                                Graph,
                                 PropRefGraph.readJson(reader, context).toDataObject()
                             )
                         )
                     }
-                    is JsonToken.Value<*> -> {
+                    is Value<*> -> {
                         val multiTypeDefinition =
                             Properties.properties.valueDefinition as MultiTypeDefinition<PropRefGraphType, GraphContext>
 
                         propertiesList.add(
                             TypedValue(
-                                PropRefGraphType.PropRef,
-                                multiTypeDefinition.definitionMap.getValue(PropRefGraphType.PropRef)
+                                PropRef,
+                                multiTypeDefinition.definitionMap.getValue(PropRef)
                                     .readJson(reader, context) as AnyPropertyReference
                             )
                         )

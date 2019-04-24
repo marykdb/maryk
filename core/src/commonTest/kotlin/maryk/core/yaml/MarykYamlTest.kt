@@ -3,7 +3,13 @@ package maryk.core.yaml
 import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.properties.definitions.index.IndexKeyPartType
 import maryk.json.IsJsonLikeReader
-import maryk.json.JsonToken
+import maryk.json.JsonToken.EndArray
+import maryk.json.JsonToken.EndDocument
+import maryk.json.JsonToken.EndObject
+import maryk.json.JsonToken.FieldName
+import maryk.json.JsonToken.StartArray
+import maryk.json.JsonToken.StartObject
+import maryk.json.JsonToken.Value
 import maryk.test.shouldBe
 import maryk.test.shouldBeOfType
 import kotlin.test.Test
@@ -37,54 +43,54 @@ class MarykYamlTest {
         |    - !Ref test
         """.trimMargin()
         ).apply {
-            shouldBeOfType<JsonToken.StartArray>(nextToken())
+            shouldBeOfType<StartArray>(nextToken())
 
-            shouldBeOfType<JsonToken.StartObject>(
+            shouldBeOfType<StartObject>(
                 nextToken()
             ).type shouldBe PropertyDefinitionType.Boolean
 
-            shouldBeOfType<JsonToken.FieldName>(
+            shouldBeOfType<FieldName>(
                 nextToken()
             ).value shouldBe "k1"
 
-            shouldBeOfType<JsonToken.Value<*>>(
+            shouldBeOfType<Value<*>>(
                 nextToken()
             ).value shouldBe "v1"
 
-            shouldBeOfType<JsonToken.EndObject>(nextToken())
+            shouldBeOfType<EndObject>(nextToken())
 
-            shouldBeOfType<JsonToken.StartObject>(
+            shouldBeOfType<StartObject>(
                 nextToken()
             ).type shouldBe PropertyDefinitionType.String
 
-            shouldBeOfType<JsonToken.FieldName>(
+            shouldBeOfType<FieldName>(
                 nextToken()
             ).value shouldBe "k2"
 
-            shouldBeOfType<JsonToken.Value<*>>(
+            shouldBeOfType<Value<*>>(
                 nextToken()
             ).value shouldBe "v2"
 
-            shouldBeOfType<JsonToken.EndObject>(
+            shouldBeOfType<EndObject>(
                 nextToken()
             )
 
-            shouldBeOfType<JsonToken.Value<*>>(
+            shouldBeOfType<Value<*>>(
                 nextToken()
             ).also {
                 it.type shouldBe IndexKeyPartType.UUID
                 it.value shouldBe null
             }
 
-            shouldBeOfType<JsonToken.Value<*>>(
+            shouldBeOfType<Value<*>>(
                 nextToken()
             ).also {
                 it.type shouldBe IndexKeyPartType.Reference
                 it.value shouldBe "test"
             }
 
-            shouldBeOfType<JsonToken.EndArray>(nextToken())
-            shouldBeOfType<JsonToken.EndDocument>(nextToken())
+            shouldBeOfType<EndArray>(nextToken())
+            shouldBeOfType<EndDocument>(nextToken())
         }
     }
 }

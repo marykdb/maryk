@@ -12,7 +12,7 @@ import maryk.core.properties.types.Date
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.fromByteReader
 import maryk.core.properties.types.writeBytes
-import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.values.SimpleObjectValues
 import maryk.lib.time.Time
@@ -32,7 +32,7 @@ data class DateDefinition(
     IsTransportablePropertyDefinitionType<Date>,
     HasDefaultValueDefinition<Date> {
     override val propertyDefinitionType = PropertyDefinitionType.Date
-    override val wireType = WireType.VAR_INT
+    override val wireType = VAR_INT
     override val byteSize = 4
 
     override fun createNow() = Date.nowUTC()

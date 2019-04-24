@@ -1,6 +1,7 @@
 package maryk.yaml
 
 import maryk.json.JsonToken
+import maryk.json.JsonToken.FieldName
 import maryk.json.TokenType
 
 /** Yaml Character reader to read until token and handle reader interrupts */
@@ -44,5 +45,5 @@ internal interface IsYamlCharWithIndentsReader: IsInternalYamlReader, IsYamlChar
     fun foundMap(tag: TokenType?, startedAtIndent: Int): JsonToken?
 
     /** Checks if field name was set and creates it or otherwise throws error */
-    fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean): JsonToken.FieldName
+    fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean): FieldName
 }

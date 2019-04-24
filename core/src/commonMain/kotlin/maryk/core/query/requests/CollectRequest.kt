@@ -6,11 +6,14 @@ import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.RequestContext
+import maryk.core.query.requests.RequestType.Collect
 import maryk.core.query.responses.IsResponse
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
-import maryk.json.JsonToken
+import maryk.json.JsonToken.FieldName
+import maryk.json.JsonToken.StartDocument
+import maryk.json.JsonToken.StartObject
 import maryk.lib.exceptions.ParseException
 
 typealias AnyCollectRequest = CollectRequest<*, *>
@@ -19,7 +22,7 @@ data class CollectRequest<RQ : IsRequest<RP>, RP : IsResponse>(
     val name: String,
     val request: RQ
 ) : IsRequest<RP> {
-    override val requestType = RequestType.Collect
+    override val requestType = Collect
     override val responseModel = request.responseModel
 
     object Properties : ObjectPropertyDefinitions<AnyCollectRequest>() {
@@ -63,17 +66,17 @@ data class CollectRequest<RQ : IsRequest<RP>, RP : IsResponse>(
             reader: IsJsonLikeReader,
             context: RequestContext?
         ): ObjectValues<AnyCollectRequest, Properties> {
-            if (reader.currentToken == JsonToken.StartDocument) {
+            if (reader.currentToken == StartDocument) {
                 reader.nextToken()
             }
 
-            if (reader.currentToken !is JsonToken.StartObject) {
+            if (reader.currentToken !is StartObject) {
                 throw ParseException("JSON value should be an Object")
             }
 
             val currentToken = reader.nextToken()
 
-            val name = if (currentToken is JsonToken.FieldName) {
+            val name = if (currentToken is FieldName) {
                 currentToken.value
             } else throw ParseException("Expected a name in a CollectRequest")
 

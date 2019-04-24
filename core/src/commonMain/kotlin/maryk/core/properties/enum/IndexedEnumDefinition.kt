@@ -20,7 +20,8 @@ import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
-import maryk.json.JsonToken
+import maryk.json.JsonToken.StartDocument
+import maryk.json.JsonToken.Value
 import maryk.lib.exceptions.ParseException
 import kotlin.reflect.KClass
 
@@ -266,11 +267,11 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
             reader: IsJsonLikeReader,
             context: EnumNameContext?
         ): ObjectValues<IndexedEnumDefinition<IndexedEnum>, Properties> {
-            if (reader.currentToken == JsonToken.StartDocument) {
+            if (reader.currentToken == StartDocument) {
                 reader.nextToken()
             }
 
-            return if (reader.currentToken is JsonToken.Value<*>) {
+            return if (reader.currentToken is Value<*>) {
                 val value = Properties.name.readJson(reader, context)
                 Properties.name.capture(context, value)
 

@@ -5,6 +5,7 @@ import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
+import maryk.core.query.responses.statuses.StatusType.REQUEST_FAIL
 import maryk.core.values.SimpleObjectValues
 
 /**
@@ -13,7 +14,7 @@ import maryk.core.values.SimpleObjectValues
 data class RequestFail<DM : IsRootDataModel<*>>(
     val reason: String
 ) : IsChangeResponseStatus<DM> {
-    override val statusType = StatusType.REQUEST_FAIL
+    override val statusType = REQUEST_FAIL
 
     internal companion object : SimpleQueryDataModel<RequestFail<*>>(
         properties = object : ObjectPropertyDefinitions<RequestFail<*>>() {

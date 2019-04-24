@@ -6,6 +6,7 @@ import maryk.checkYamlConversion
 import maryk.core.properties.WriteCacheFailer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WireType.*
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.Option
@@ -67,12 +68,12 @@ internal class EnumDefinitionTest {
             def.writeTransportBytesWithKey(14u, enum, cacheFailer, bc::write, null)
             val key = ProtoBuf.readKey(bc::read)
             key.tag shouldBe 14u
-            key.wireType shouldBe WireType.VAR_INT
+            key.wireType shouldBe VAR_INT
 
             bc.bytes!!.toHex() shouldBe expected
 
             def.readTransportBytes(
-                ProtoBuf.getLength(WireType.VAR_INT, bc::read),
+                ProtoBuf.getLength(VAR_INT, bc::read),
                 bc::read
             ) shouldBe enum
             bc.reset()

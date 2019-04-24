@@ -5,6 +5,7 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
+import maryk.core.query.responses.FailType.CONNECTION
 import maryk.test.models.SimpleMarykModel
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -12,7 +13,7 @@ import kotlin.test.Test
 class FailedActionResponseTest {
     private val failedActionResponse = FailedActionResponse(
         "Something went wrong",
-        FailType.CONNECTION
+        CONNECTION
     )
 
     private val context = RequestContext(mapOf(

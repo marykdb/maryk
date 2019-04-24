@@ -18,14 +18,16 @@ import maryk.core.properties.references.MapReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
-import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.SimpleObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
-import maryk.json.JsonToken
+import maryk.json.JsonToken.EndObject
+import maryk.json.JsonToken.FieldName
+import maryk.json.JsonToken.StartObject
 import maryk.lib.exceptions.ParseException
 
 /** Definition for Map property */
@@ -123,14 +125,14 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
     }
 
     override fun readJson(reader: IsJsonLikeReader, context: CX?): Map<K, V> {
-        if (reader.currentToken !is JsonToken.StartObject) {
+        if (reader.currentToken !is StartObject) {
             throw ParseException("JSON value should be an Object")
         }
         val map: MutableMap<K, V> = mutableMapOf()
 
-        while (reader.nextToken() !== JsonToken.EndObject) {
+        while (reader.nextToken() !== EndObject) {
             reader.currentToken.apply {
-                if (this is JsonToken.FieldName) {
+                if (this is FieldName) {
                     val key = this.value?.let {
                         keyDefinition.fromString(it)
                     } ?: throw ParseException("Map key cannot be null")
@@ -178,7 +180,7 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
         context: CX?
     ) {
         value.forEach { (key, item) ->
-            ProtoBuf.writeKey(index, WireType.LENGTH_DELIMITED, writer)
+            ProtoBuf.writeKey(index, LENGTH_DELIMITED, writer)
             cacheGetter.nextLengthFromCache().writeVarBytes(writer)
             keyDefinition.writeTransportBytesWithKey(1u, key, cacheGetter, writer, context)
             valueDefinition.writeTransportBytesWithKey(2u, item, cacheGetter, writer, context)

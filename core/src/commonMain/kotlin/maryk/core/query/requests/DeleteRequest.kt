@@ -10,6 +10,7 @@ import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.types.Key
 import maryk.core.query.RequestContext
+import maryk.core.query.requests.RequestType.*
 import maryk.core.query.responses.DeleteResponse
 import maryk.core.values.ObjectValues
 
@@ -31,7 +32,7 @@ data class DeleteRequest<DM : IsRootValuesDataModel<*>> internal constructor(
     val keys: List<Key<DM>>,
     val hardDelete: Boolean
 ) : IsStoreRequest<DM, DeleteResponse<DM>> {
-    override val requestType = RequestType.Delete
+    override val requestType = Delete
     override val responseModel = DeleteResponse
 
     @Suppress("unused")

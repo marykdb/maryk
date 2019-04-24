@@ -208,7 +208,7 @@ private fun findTimestamp(value: String): Value<DateTime>? {
                     it.groups[2]!!.value.toByte(),
                     it.groups[3]!!.value.toByte()
                 ),
-                YamlValueType.TimeStamp
+                TimeStamp
             )
         } else {
             val dateTime =
@@ -238,7 +238,7 @@ private fun findTimestamp(value: String): Value<DateTime>? {
                     DateTime.parse(value)
                 }
 
-            Value(dateTime, YamlValueType.TimeStamp)
+            Value(dateTime, TimeStamp)
         }
     }
     return null

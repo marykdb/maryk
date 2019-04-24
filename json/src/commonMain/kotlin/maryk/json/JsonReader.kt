@@ -4,15 +4,20 @@ import maryk.json.JsonComplexType.ARRAY
 import maryk.json.JsonComplexType.OBJECT
 import maryk.json.JsonToken.ArraySeparator
 import maryk.json.JsonToken.EndArray
+import maryk.json.JsonToken.EndComplexFieldName
 import maryk.json.JsonToken.EndDocument
 import maryk.json.JsonToken.EndObject
 import maryk.json.JsonToken.FieldName
 import maryk.json.JsonToken.JsonException
+import maryk.json.JsonToken.NullValue
 import maryk.json.JsonToken.ObjectSeparator
 import maryk.json.JsonToken.SimpleStartArray
+import maryk.json.JsonToken.SimpleStartObject
 import maryk.json.JsonToken.StartArray
+import maryk.json.JsonToken.StartComplexFieldName
 import maryk.json.JsonToken.StartDocument
 import maryk.json.JsonToken.StartObject
+import maryk.json.JsonToken.Stopped
 import maryk.json.JsonToken.Suspended
 import maryk.json.JsonToken.Value
 import maryk.lib.extensions.HEX_CHARS
@@ -101,10 +106,10 @@ class JsonReader(
                     readSkipWhitespace()
                     return nextToken()
                 }
-                is JsonToken.Stopped -> {
+                is Stopped -> {
                     return currentToken
                 }
-                JsonToken.StartComplexFieldName, JsonToken.EndComplexFieldName -> {
+                StartComplexFieldName, EndComplexFieldName -> {
                     throw JsonWriteException("Start and End ComplexFieldName not possible in JSON")
                 }
             }
@@ -126,7 +131,7 @@ class JsonReader(
 
     private fun constructJsonValueToken(it: Any?) =
         when (it) {
-            null -> JsonToken.NullValue
+            null -> NullValue
             is Boolean -> Value(it, ValueType.Bool)
             is String -> Value(it, ValueType.String)
             is Double -> Value(it, ValueType.Float)
@@ -139,7 +144,7 @@ class JsonReader(
         nextToken()
         while (
             !(currentToken is FieldName && this.typeStack.count() <= startDepth)
-            && currentToken !is JsonToken.Stopped
+            && currentToken !is Stopped
         ) {
             handleSkipToken?.invoke(this.currentToken)
             nextToken()
@@ -394,7 +399,7 @@ class JsonReader(
     }
 
     private fun startObject() {
-        currentToken = JsonToken.SimpleStartObject
+        currentToken = SimpleStartObject
         readSkipWhitespace()
     }
 

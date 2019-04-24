@@ -5,7 +5,7 @@ import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.KeyValueDefinitionContext
 import maryk.core.protobuf.ProtoBuf
-import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCache
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
@@ -47,12 +47,12 @@ class ContextualMapDefinitionTest {
 
         fun readKey() {
             val key = ProtoBuf.readKey(bc::read)
-            key.wireType shouldBe WireType.LENGTH_DELIMITED
+            key.wireType shouldBe LENGTH_DELIMITED
             key.tag shouldBe 8u
         }
 
         fun readValue(): Pair<Any, Any> {
-            ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read)
+            ProtoBuf.getLength(LENGTH_DELIMITED, bc::read)
             return def.readMapTransportBytes(bc::read, this.context)
         }
 

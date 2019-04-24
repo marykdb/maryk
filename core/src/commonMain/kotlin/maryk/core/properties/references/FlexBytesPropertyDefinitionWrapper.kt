@@ -4,7 +4,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.definitions.wrapper.AbstractPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
-import maryk.core.properties.graph.PropRefGraphType
+import maryk.core.properties.graph.PropRefGraphType.PropRef
 
 /**
  * Contains a Flex bytes property [definition] of type [T] which cannot be used in keys or ValueObjects
@@ -24,7 +24,7 @@ data class FlexBytesPropertyDefinitionWrapper<T : Any, TO : Any, CX : IsProperty
     AbstractPropertyDefinitionWrapper(index, name),
     IsSerializableFlexBytesEncodable<T, CX> by definition,
     IsValuePropertyDefinitionWrapper<T, TO, CX, DO> {
-    override val graphType = PropRefGraphType.PropRef
+    override val graphType = PropRef
 
     override fun ref(parentRef: AnyPropertyReference?) =
         ValueWithFlexBytesPropertyReference(this, parentRef)

@@ -16,7 +16,7 @@ import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IsCoreEnum
-import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.SimpleObjectValues
@@ -37,7 +37,7 @@ class EnumDefinition<E : IndexedEnumComparable<E>>(
     IsTransportablePropertyDefinitionType<E>,
     HasDefaultValueDefinition<E> {
     override val propertyDefinitionType = PropertyDefinitionType.Enum
-    override val wireType = WireType.VAR_INT
+    override val wireType = VAR_INT
     override val byteSize = 2
 
     init {

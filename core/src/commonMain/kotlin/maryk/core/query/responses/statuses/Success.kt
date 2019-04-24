@@ -6,13 +6,14 @@ import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.types.numeric.UInt64
+import maryk.core.query.responses.statuses.StatusType.SUCCESS
 import maryk.core.values.SimpleObjectValues
 
 /** Action was completed successfully with [version] */
 data class Success<DM : IsRootDataModel<*>>(
     val version: ULong
 ) : IsChangeResponseStatus<DM>, IsDeleteResponseStatus<DM> {
-    override val statusType = StatusType.SUCCESS
+    override val statusType = SUCCESS
 
     internal companion object : SimpleQueryDataModel<Success<*>>(
         properties = object : ObjectPropertyDefinitions<Success<*>>() {

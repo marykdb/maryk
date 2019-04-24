@@ -6,6 +6,12 @@ import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.initUIntByVarWithExtraInfo
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
+import maryk.core.protobuf.WireType.BIT_32
+import maryk.core.protobuf.WireType.BIT_64
+import maryk.core.protobuf.WireType.END_GROUP
+import maryk.core.protobuf.WireType.LENGTH_DELIMITED
+import maryk.core.protobuf.WireType.START_GROUP
+import maryk.core.protobuf.WireType.VAR_INT
 import kotlin.experimental.and
 
 internal object ProtoBuf {
@@ -24,29 +30,29 @@ internal object ProtoBuf {
     /** Skips a field in [reader] by [wireType] */
     internal fun skipField(wireType: Any, reader: () -> Byte) {
         when (wireType) {
-            WireType.VAR_INT -> {
+            VAR_INT -> {
                 var currentByte: Byte
                 do {
                     currentByte = reader()
                 } while (currentByte and SIGN_BYTE != ZERO_BYTE)
             }
-            WireType.BIT_64 -> for (it in 0 until 8) {
+            BIT_64 -> for (it in 0 until 8) {
                 reader()
             }
-            WireType.LENGTH_DELIMITED -> for (it in 0 until initIntByVar(reader)) {
+            LENGTH_DELIMITED -> for (it in 0 until initIntByVar(reader)) {
                 reader()
             }
-            WireType.START_GROUP -> {
+            START_GROUP -> {
                 while (true) {
                     val key = readKey(reader)
-                    if (key.wireType == WireType.END_GROUP) {
+                    if (key.wireType == END_GROUP) {
                         break
                     }
                     skipField(key.wireType, reader)
                 }
             }
-            WireType.END_GROUP -> return
-            WireType.BIT_32 -> for (it in 0 until 4) {
+            END_GROUP -> return
+            BIT_32 -> for (it in 0 until 4) {
                 reader()
             }
         }
@@ -57,12 +63,12 @@ internal object ProtoBuf {
      * It is -1 for varInt or start/end group
      */
     internal fun getLength(wireType: WireType, reader: () -> Byte) = when (wireType) {
-        WireType.VAR_INT -> -1
-        WireType.BIT_64 -> 8
-        WireType.LENGTH_DELIMITED -> initIntByVar(reader)
-        WireType.START_GROUP -> -1
-        WireType.END_GROUP -> -1
-        WireType.BIT_32 -> 4
+        VAR_INT -> -1
+        BIT_64 -> 8
+        LENGTH_DELIMITED -> initIntByVar(reader)
+        START_GROUP -> -1
+        END_GROUP -> -1
+        BIT_32 -> 4
     }
 
     /** Calculate the length of the key [tag] */

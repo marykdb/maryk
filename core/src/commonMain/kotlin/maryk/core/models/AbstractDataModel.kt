@@ -24,7 +24,11 @@ import maryk.json.IllegalJsonOperation
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonReader
-import maryk.json.JsonToken
+import maryk.json.JsonToken.FieldName
+import maryk.json.JsonToken.StartDocument
+import maryk.json.JsonToken.StartObject
+import maryk.json.JsonToken.Stopped
+import maryk.json.JsonToken.Value
 import maryk.json.TokenWithType
 import maryk.lib.exceptions.ParseException
 import maryk.yaml.IsYamlReader
@@ -97,11 +101,11 @@ abstract class AbstractDataModel<DO : Any, P : AbstractPropertyDefinitions<DO>, 
      * Optionally pass a [context] when needed to read more complex property types
      */
     open fun readJsonToMap(reader: IsJsonLikeReader, context: CX? = null): MutableValueItems {
-        if (reader.currentToken == JsonToken.StartDocument) {
+        if (reader.currentToken == StartDocument) {
             reader.nextToken()
         }
 
-        if (reader.currentToken !is JsonToken.StartObject) {
+        if (reader.currentToken !is StartObject) {
             throw IllegalJsonOperation("Expected object at start of JSON")
         }
 
@@ -120,7 +124,7 @@ abstract class AbstractDataModel<DO : Any, P : AbstractPropertyDefinitions<DO>, 
         walker@ do {
             val token = reader.currentToken
             when (token) {
-                is JsonToken.FieldName -> {
+                is FieldName -> {
                     var isInject = false
 
                     val fieldName = token.value?.let {
@@ -140,7 +144,7 @@ abstract class AbstractDataModel<DO : Any, P : AbstractPropertyDefinitions<DO>, 
                         reader.nextToken()
 
                         // Skip null values
-                        val valueToken = reader.currentToken as? JsonToken.Value<*>
+                        val valueToken = reader.currentToken as? Value<*>
                         if (valueToken != null && valueToken.value == null) {
                             reader.nextToken()
                             continue@walker
@@ -181,7 +185,7 @@ abstract class AbstractDataModel<DO : Any, P : AbstractPropertyDefinitions<DO>, 
                 else -> break@walker
             }
             reader.nextToken()
-        } while (token !is JsonToken.Stopped)
+        } while (token !is Stopped)
     }
 
     /**

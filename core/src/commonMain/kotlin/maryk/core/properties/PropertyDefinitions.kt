@@ -7,13 +7,14 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.properties.definitions.wrapper.AnyPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
-import maryk.core.properties.graph.PropRefGraphType
+import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DefinitionsConversionContext
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
-import maryk.json.JsonToken
+import maryk.json.JsonToken.EndObject
+import maryk.json.JsonToken.StartObject
 import maryk.lib.exceptions.ParseException
 import maryk.yaml.IsYamlReader
 import maryk.yaml.YamlWriter
@@ -104,12 +105,12 @@ internal data class PropertyDefinitionsCollectionDefinition(
 
     override fun readJson(reader: IsJsonLikeReader, context: DefinitionsConversionContext?): PropertyDefinitions {
         return if (reader is IsYamlReader) {
-            if (reader.currentToken !is JsonToken.StartObject) {
+            if (reader.currentToken !is StartObject) {
                 throw ParseException("Property definitions should be an Object")
             }
             val collection = newMutableCollection(context)
 
-            while (reader.nextToken() !== JsonToken.EndObject) {
+            while (reader.nextToken() !== EndObject) {
                 collection.add(
                     valueDefinition.readJson(reader, context)
                 )
@@ -131,7 +132,7 @@ internal data class PropertyDefinitionsCollectionDefinitionWrapper<in DO : Any>(
     IsCollectionDefinition<AnyPropertyDefinitionWrapper, PropertyDefinitions, DefinitionsConversionContext, EmbeddedObjectDefinition<AnyPropertyDefinitionWrapper, ObjectPropertyDefinitions<AnyPropertyDefinitionWrapper>, SimpleObjectDataModel<AnyPropertyDefinitionWrapper, ObjectPropertyDefinitions<AnyPropertyDefinitionWrapper>>, IsPropertyContext, IsPropertyContext>> by definition,
     IsPropertyDefinitionWrapper<PropertyDefinitions, PropertyDefinitions, DefinitionsConversionContext, DO>
 {
-    override val graphType = PropRefGraphType.PropRef
+    override val graphType = PropRef
 
     override val toSerializable: ((PropertyDefinitions?, DefinitionsConversionContext?) -> PropertyDefinitions?)? = null
     override val fromSerializable: ((PropertyDefinitions?) -> PropertyDefinitions?)? = null

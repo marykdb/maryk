@@ -14,7 +14,11 @@ import maryk.core.values.ValueItems
 import maryk.json.IllegalJsonOperation
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
-import maryk.json.JsonToken
+import maryk.json.JsonToken.FieldName
+import maryk.json.JsonToken.NullValue
+import maryk.json.JsonToken.StartDocument
+import maryk.json.JsonToken.StartObject
+import maryk.json.JsonToken.Stopped
 import maryk.lib.exceptions.ParseException
 
 /** For data models which contains only reference pairs */
@@ -61,11 +65,11 @@ abstract class ReferenceMappedDataModel<DO : Any, CDO : DefinedByReference<*>, P
     }
 
     override fun readJson(reader: IsJsonLikeReader, context: RequestContext?): ObjectValues<DO, P> {
-        if (reader.currentToken == JsonToken.StartDocument) {
+        if (reader.currentToken == StartDocument) {
             reader.nextToken()
         }
 
-        if (reader.currentToken !is JsonToken.StartObject) {
+        if (reader.currentToken !is StartObject) {
             throw IllegalJsonOperation("Expected object at start of JSON")
         }
 
@@ -76,7 +80,7 @@ abstract class ReferenceMappedDataModel<DO : Any, CDO : DefinedByReference<*>, P
         walker@ do {
             val token = reader.currentToken
             when (token) {
-                is JsonToken.FieldName -> {
+                is FieldName -> {
                     val value = token.value ?: throw ParseException("Empty field name not allowed in JSON")
 
                     val valueMap = MutableValueItems()
@@ -88,8 +92,8 @@ abstract class ReferenceMappedDataModel<DO : Any, CDO : DefinedByReference<*>, P
 
                     reader.nextToken()
 
-                    if (reader.currentToken != JsonToken.NullValue) {
-                        if (reader.currentToken !is JsonToken.StartObject) {
+                    if (reader.currentToken != NullValue) {
+                        if (reader.currentToken !is StartObject) {
                             throw IllegalJsonOperation("Expected object below reference")
                         }
                         reader.nextToken()
@@ -107,7 +111,7 @@ abstract class ReferenceMappedDataModel<DO : Any, CDO : DefinedByReference<*>, P
                 else -> break@walker
             }
             reader.nextToken()
-        } while (token !is JsonToken.Stopped)
+        } while (token !is Stopped)
 
         return this.values(context) {
             ValueItems(

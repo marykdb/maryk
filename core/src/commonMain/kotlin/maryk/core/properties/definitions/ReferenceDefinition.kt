@@ -12,7 +12,7 @@ import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefi
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
-import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.SimpleObjectValues
 import maryk.lib.exceptions.ParseException
@@ -33,7 +33,7 @@ class ReferenceDefinition<DM : IsRootDataModel<*>>(
     IsTransportablePropertyDefinitionType<Key<DM>>,
     HasDefaultValueDefinition<Key<DM>> {
     override val propertyDefinitionType = PropertyDefinitionType.Reference
-    override val wireType = WireType.LENGTH_DELIMITED
+    override val wireType = LENGTH_DELIMITED
     override val byteSize get() = dataModel.keyByteSize
 
     private val internalDataModel = safeLazy(dataModel)

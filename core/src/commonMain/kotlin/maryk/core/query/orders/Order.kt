@@ -19,9 +19,10 @@ import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
-import maryk.json.JsonToken
 import maryk.json.JsonToken.EndDocument
+import maryk.json.JsonToken.StartDocument
 import maryk.json.JsonToken.StartObject
+import maryk.json.JsonToken.Suspended
 import maryk.json.JsonToken.Value
 import maryk.lib.exceptions.ParseException
 import maryk.yaml.IsYamlReader
@@ -117,11 +118,11 @@ data class Order internal constructor(
             if (reader is IsYamlReader) {
                 var currentToken = reader.currentToken
 
-                if (currentToken == JsonToken.StartDocument) {
+                if (currentToken == StartDocument) {
                     currentToken = reader.nextToken()
 
                     when (currentToken) {
-                        is JsonToken.Suspended -> currentToken = currentToken.lastToken
+                        is Suspended -> currentToken = currentToken.lastToken
                         is EndDocument -> return this.values(context) { EmptyValueItems }
                         else -> Unit
                     }

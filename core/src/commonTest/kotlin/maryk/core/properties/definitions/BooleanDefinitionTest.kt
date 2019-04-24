@@ -5,7 +5,7 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.properties.WriteCacheFailer
 import maryk.core.protobuf.ProtoBuf
-import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WireType.VAR_INT
 import maryk.lib.exceptions.ParseException
 import maryk.test.ByteCollector
 import maryk.test.shouldBe
@@ -45,9 +45,9 @@ internal class BooleanDefinitionTest {
             def.writeTransportBytesWithKey(23u, it, cacheFailer, bc::write, null)
             val key = ProtoBuf.readKey(bc::read)
             key.tag shouldBe 23u
-            key.wireType shouldBe WireType.VAR_INT
+            key.wireType shouldBe VAR_INT
             def.readTransportBytes(
-                ProtoBuf.getLength(WireType.VAR_INT, bc::read),
+                ProtoBuf.getLength(VAR_INT, bc::read),
                 bc::read,
                 null
             ) shouldBe it

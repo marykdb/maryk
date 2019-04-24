@@ -6,6 +6,7 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.query.changes.DataObjectChange
+import maryk.core.query.requests.RequestType.Change
 import maryk.core.query.responses.ChangeResponse
 import maryk.core.values.ObjectValues
 
@@ -20,7 +21,7 @@ data class ChangeRequest<DM : IsRootValuesDataModel<*>> internal constructor(
     override val dataModel: DM,
     val objects: List<DataObjectChange<DM>>
 ) : IsStoreRequest<DM, ChangeResponse<DM>> {
-    override val requestType = RequestType.Change
+    override val requestType = Change
     override val responseModel = ChangeResponse
 
     @Suppress("unused")

@@ -5,7 +5,7 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.graph.PropRefGraphType
+import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.AnySpecificWrappedPropertyReference
 import maryk.core.properties.references.IsPropertyReference
@@ -36,7 +36,7 @@ data class ObjectListPropertyDefinitionWrapper<
     AbstractPropertyDefinitionWrapper(index, name),
     IsListDefinition<ODO, CX> by definition,
     IsListPropertyDefinitionWrapper<ODO, TO, ListDefinition<ODO, CX>, CX, DO> {
-    override val graphType = PropRefGraphType.PropRef
+    override val graphType = PropRef
 
     /** Get sub reference below an index */
     @Suppress("UNCHECKED_CAST")

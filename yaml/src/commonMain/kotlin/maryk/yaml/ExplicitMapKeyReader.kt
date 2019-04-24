@@ -4,6 +4,7 @@ import maryk.json.JsonToken
 import maryk.json.JsonToken.EndComplexFieldName
 import maryk.json.JsonToken.EndObject
 import maryk.json.JsonToken.FieldName
+import maryk.json.JsonToken.NullValue
 import maryk.json.JsonToken.SimpleStartObject
 import maryk.json.JsonToken.StartComplexFieldName
 import maryk.json.TokenType
@@ -115,7 +116,7 @@ internal class ExplicitMapKeyReader(
                     }
                 }
 
-                val value = JsonToken.NullValue
+                val value = NullValue
                 this.yamlReader.pushToken(value)
                 this.parentReader.setState(value)
                 this.parentReader.checkAndCreateFieldName(null, false)

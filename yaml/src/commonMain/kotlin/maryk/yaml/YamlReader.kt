@@ -10,6 +10,7 @@ import maryk.json.JsonToken.FieldName
 import maryk.json.JsonToken.MergeFieldName
 import maryk.json.JsonToken.StartArray
 import maryk.json.JsonToken.StartComplexFieldName
+import maryk.json.JsonToken.StartDocument
 import maryk.json.JsonToken.StartObject
 import maryk.json.JsonToken.Stopped
 import maryk.json.JsonWriteException
@@ -85,7 +86,7 @@ internal class YamlReaderImpl(
 ) : IsJsonLikeReader, IsInternalYamlReader, IsYamlReader {
     var version: String? = null
 
-    override var currentToken: JsonToken = JsonToken.StartDocument
+    override var currentToken: JsonToken = StartDocument
 
     override var lastChar: Char = '\u0000'
     override var currentReader: IsYamlCharReader = DocumentReader(this)

@@ -6,6 +6,7 @@ import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WireType.*
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.json.IsJsonLikeReader
@@ -19,7 +20,7 @@ data class ContextualPropertyReferenceDefinition<in CX : IsPropertyContext> inte
     val contextualResolver: (context: CX?) -> IsPropertyDefinitions
 ) : IsValueDefinition<AnyPropertyReference, CX>, IsContextualEncodable<AnyPropertyReference, CX> {
     override val final = true
-    override val wireType = WireType.LENGTH_DELIMITED
+    override val wireType = LENGTH_DELIMITED
 
     override fun asString(value: AnyPropertyReference, context: CX?) =
         value.completeName

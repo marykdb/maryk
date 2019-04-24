@@ -12,7 +12,8 @@ import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
-import maryk.json.JsonToken
+import maryk.json.JsonToken.FieldName
+import maryk.json.JsonToken.StartDocument
 import maryk.json.JsonToken.StartObject
 import maryk.json.JsonToken.Value
 import maryk.lib.exceptions.ParseException
@@ -93,7 +94,7 @@ data class Inject<T : Any, D : IsPropertyDefinition<T>>(
             reader: IsJsonLikeReader,
             context: InjectionContext?
         ): ObjectValues<AnyInject, Properties> {
-            if (reader.currentToken == JsonToken.StartDocument) {
+            if (reader.currentToken == StartDocument) {
                 reader.nextToken()
             }
 
@@ -101,7 +102,7 @@ data class Inject<T : Any, D : IsPropertyDefinition<T>>(
                 is StartObject -> {
                     val currentToken = reader.nextToken()
 
-                    val collectionName = (currentToken as? JsonToken.FieldName)?.value
+                    val collectionName = (currentToken as? FieldName)?.value
                         ?: throw ParseException("Expected a collectionName in an Inject")
 
                     Properties.collectionName.capture(context, collectionName)

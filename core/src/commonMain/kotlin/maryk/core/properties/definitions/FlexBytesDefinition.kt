@@ -3,10 +3,11 @@ package maryk.core.properties.definitions
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.PropertyDefinitionType.FlexBytes
 import maryk.core.properties.exceptions.InvalidSizeException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Bytes
-import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.values.SimpleObjectValues
 
 /** Definition for a bytes array with fixed length */
@@ -25,8 +26,8 @@ data class FlexBytesDefinition(
     IsSerializableFlexBytesEncodable<Bytes, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<Bytes>,
     HasDefaultValueDefinition<Bytes> {
-    override val propertyDefinitionType = PropertyDefinitionType.FlexBytes
-    override val wireType = WireType.LENGTH_DELIMITED
+    override val propertyDefinitionType = FlexBytes
+    override val wireType = LENGTH_DELIMITED
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) = Bytes.fromByteReader(length, reader)
 

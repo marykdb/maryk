@@ -12,7 +12,7 @@ import maryk.core.properties.types.TimePrecision
 import maryk.core.properties.types.byteSize
 import maryk.core.properties.types.fromByteReader
 import maryk.core.properties.types.writeBytes
-import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.SimpleObjectValues
@@ -34,7 +34,7 @@ data class TimeDefinition(
     IsTransportablePropertyDefinitionType<Time>,
     HasDefaultValueDefinition<Time> {
     override val propertyDefinitionType = PropertyDefinitionType.Time
-    override val wireType = WireType.VAR_INT
+    override val wireType = VAR_INT
     override val byteSize = Time.byteSize(precision)
 
     override fun createNow() = Time.nowUTC()

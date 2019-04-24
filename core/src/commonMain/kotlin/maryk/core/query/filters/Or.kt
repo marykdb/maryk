@@ -9,7 +9,7 @@ import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
-import maryk.json.JsonToken
+import maryk.json.JsonToken.StartDocument
 import maryk.lib.exceptions.ParseException
 
 /** Does an Or comparison against given [filters]. If one returns true the entire result will be true. */
@@ -51,7 +51,7 @@ data class Or(
         }
 
         override fun readJson(reader: IsJsonLikeReader, context: RequestContext?): ObjectValues<Or, Properties> {
-            if (reader.currentToken == JsonToken.StartDocument) {
+            if (reader.currentToken == StartDocument) {
                 reader.nextToken()
             }
 

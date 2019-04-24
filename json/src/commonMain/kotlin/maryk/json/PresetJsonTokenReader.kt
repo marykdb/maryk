@@ -3,8 +3,10 @@ package maryk.json
 import maryk.json.JsonToken.EndArray
 import maryk.json.JsonToken.EndDocument
 import maryk.json.JsonToken.EndObject
+import maryk.json.JsonToken.FieldName
 import maryk.json.JsonToken.StartArray
 import maryk.json.JsonToken.StartObject
+import maryk.json.JsonToken.Stopped
 
 /** Returns JsonTokens supplied by [tokens] */
 class PresetJsonTokenReader(
@@ -45,8 +47,8 @@ class PresetJsonTokenReader(
             nextToken()
             handleSkipToken?.invoke(this.currentToken)
         } while (
-            !(currentToken is JsonToken.FieldName && this.typeStackCount <= startDepth)
-            && currentToken !is JsonToken.Stopped
+            !(currentToken is FieldName && this.typeStackCount <= startDepth)
+            && currentToken !is Stopped
         )
     }
 }

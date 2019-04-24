@@ -21,7 +21,7 @@ import maryk.core.properties.definitions.mapOfPropertyDefEmbeddedObjectDefinitio
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumComparable
-import maryk.core.properties.graph.PropRefGraphType
+import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.PropertyReferenceForValues
@@ -35,7 +35,10 @@ import maryk.core.yaml.readNamedIndexField
 import maryk.core.yaml.writeNamedIndexField
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
-import maryk.json.JsonToken
+import maryk.json.JsonToken.EndArray
+import maryk.json.JsonToken.EndObject
+import maryk.json.JsonToken.StartArray
+import maryk.json.JsonToken.StartObject
 import maryk.lib.exceptions.ParseException
 import maryk.yaml.IsYamlReader
 import maryk.yaml.YamlWriter
@@ -164,20 +167,20 @@ private data class MultiTypeDescriptorListDefinition(
         val collection: MutableCollection<MultiTypeDescriptor> = newMutableCollection(context)
 
         if (reader is IsYamlReader) {
-            if (reader.currentToken !is JsonToken.StartObject) {
+            if (reader.currentToken !is StartObject) {
                 throw ParseException("YAML definition map should be an Object")
             }
 
-            while (reader.nextToken() !== JsonToken.EndObject) {
+            while (reader.nextToken() !== EndObject) {
                 collection.add(
                     valueDefinition.readJson(reader, context)
                 )
             }
         } else {
-            if (reader.currentToken !is JsonToken.StartArray) {
+            if (reader.currentToken !is StartArray) {
                 throw ParseException("JSON value should be an Array")
             }
-            while (reader.nextToken() !== JsonToken.EndArray) {
+            while (reader.nextToken() !== EndArray) {
                 collection.add(
                     valueDefinition.readJson(reader, context)
                 )
@@ -203,7 +206,7 @@ private data class MultiTypeDescriptorPropertyDefinitionWrapper internal constru
 ) :
     IsByteTransportableCollection<MultiTypeDescriptor, List<MultiTypeDescriptor>, MultiTypeDefinitionContext> by definition,
     IsPropertyDefinitionWrapper<List<MultiTypeDescriptor>, List<MultiTypeDescriptor>, MultiTypeDefinitionContext, MultiTypeDefinition<*, ContainsDefinitionsContext>> {
-    override val graphType = PropRefGraphType.PropRef
+    override val graphType = PropRef
 
     override fun ref(parentRef: AnyPropertyReference?) =
         PropertyReferenceForValues(this, parentRef)

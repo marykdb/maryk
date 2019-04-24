@@ -5,7 +5,7 @@ import maryk.core.models.IsNamedDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsValueDefinition
-import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.json.IsJsonLikeReader
@@ -34,7 +34,7 @@ data class ContextualModelReferenceDefinition<DM : IsNamedDataModel<*>, in CX : 
 ) : IsValueDefinition<IsDataModelReference<DM>, CX>, IsContextualEncodable<IsDataModelReference<DM>, CX> {
     override val required = true
     override val final = true
-    override val wireType = WireType.LENGTH_DELIMITED
+    override val wireType = LENGTH_DELIMITED
 
     override fun asString(value: IsDataModelReference<DM>, context: CX?) =
         value.name

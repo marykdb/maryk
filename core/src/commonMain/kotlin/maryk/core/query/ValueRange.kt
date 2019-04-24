@@ -12,7 +12,9 @@ import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
-import maryk.json.JsonToken
+import maryk.json.JsonToken.EndArray
+import maryk.json.JsonToken.StartArray
+import maryk.json.JsonToken.StartDocument
 import maryk.json.TokenWithType
 import maryk.lib.exceptions.ParseException
 import maryk.yaml.IsYamlReader
@@ -124,14 +126,14 @@ data class ValueRange<T : Comparable<T>> internal constructor(
             context: RequestContext?
         ): ObjectValues<ValueRange<*>, Properties> {
             return if (reader is IsYamlReader) {
-                if (reader.currentToken == JsonToken.StartDocument) {
+                if (reader.currentToken == StartDocument) {
                     reader.nextToken()
                 }
 
                 this.values(context) {
                     val valueMap = MutableValueItems()
 
-                    if (reader.currentToken !is JsonToken.StartArray) {
+                    if (reader.currentToken !is StartArray) {
                         throw ParseException("Range should be contained in an Array")
                     }
 
@@ -155,7 +157,7 @@ data class ValueRange<T : Comparable<T>> internal constructor(
 
                     valueMap += to withNotNull to.readJson(reader, context)
 
-                    if (reader.nextToken() !== JsonToken.EndArray) {
+                    if (reader.nextToken() !== EndArray) {
                         throw ParseException("Range should have two values")
                     }
                     valueMap

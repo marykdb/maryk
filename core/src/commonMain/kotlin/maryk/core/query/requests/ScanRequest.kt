@@ -8,6 +8,7 @@ import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
 import maryk.core.query.filters.IsFilter
 import maryk.core.query.orders.IsOrder
+import maryk.core.query.requests.RequestType.Scan
 import maryk.core.query.responses.ValuesResponse
 import maryk.core.values.ObjectValues
 
@@ -45,7 +46,7 @@ data class ScanRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> i
     override val toVersion: ULong? = null,
     override val filterSoftDeleted: Boolean = true
 ) : IsScanRequest<DM, P, ValuesResponse<DM, P>> {
-    override val requestType = RequestType.Scan
+    override val requestType = Scan
     override val responseModel = ValuesResponse
 
     object Properties : ObjectPropertyDefinitions<ScanRequest<*, *>>() {

@@ -8,6 +8,7 @@ import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.enum.EmbedTypeCase
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.graph.PropRefGraphType
+import maryk.core.properties.graph.PropRefGraphType.*
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
@@ -35,7 +36,7 @@ data class MultiTypeDefinitionWrapper<E : IndexedEnum, TO : Any, CX : IsProperty
     AbstractPropertyDefinitionWrapper(index, name),
     IsMultiTypeDefinition<E, CX> by definition,
     IsPropertyDefinitionWrapper<TypedValue<E, Any>, TO, CX, DO> {
-    override val graphType = PropRefGraphType.PropRef
+    override val graphType = PropRef
 
     override fun ref(parentRef: AnyPropertyReference?) =
         MultiTypePropertyReference(this, parentRef)

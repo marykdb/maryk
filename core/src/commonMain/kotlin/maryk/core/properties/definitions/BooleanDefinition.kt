@@ -5,7 +5,7 @@ import maryk.core.extensions.bytes.writeBytes
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.values.SimpleObjectValues
 import maryk.json.IsJsonLikeWriter
 import maryk.lib.exceptions.ParseException
@@ -21,7 +21,7 @@ data class BooleanDefinition(
     IsTransportablePropertyDefinitionType<Boolean>,
     HasDefaultValueDefinition<Boolean> {
     override val propertyDefinitionType = PropertyDefinitionType.Boolean
-    override val wireType = WireType.VAR_INT
+    override val wireType = VAR_INT
     override val byteSize = 1
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) = initBoolean(reader)

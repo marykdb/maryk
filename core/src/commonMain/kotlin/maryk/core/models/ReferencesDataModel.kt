@@ -12,7 +12,10 @@ import maryk.core.values.ObjectValues
 import maryk.core.values.ValueItems
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
-import maryk.json.JsonToken
+import maryk.json.JsonToken.StartArray
+import maryk.json.JsonToken.StartDocument
+import maryk.json.JsonToken.Suspended
+import maryk.json.JsonToken.Value
 import maryk.lib.exceptions.ParseException
 
 /** For data models which contains only reference pairs */
@@ -37,16 +40,16 @@ abstract class ReferencesDataModel<DO : Any, P : ReferencesObjectPropertyDefinit
     override fun readJson(reader: IsJsonLikeReader, context: RequestContext?): ObjectValues<DO, P> {
         var currentToken = reader.currentToken
 
-        if (currentToken == JsonToken.StartDocument) {
+        if (currentToken == StartDocument) {
             currentToken = reader.nextToken()
 
-            if (currentToken is JsonToken.Suspended) {
+            if (currentToken is Suspended) {
                 currentToken = currentToken.lastToken
             }
         }
 
         val valueMap = when (currentToken) {
-            is JsonToken.Value<*> -> {
+            is Value<*> -> {
                 ValueItems(
                     properties.references withNotNull listOf(
                         properties.references.definition.valueDefinition.fromString(
@@ -56,7 +59,7 @@ abstract class ReferencesDataModel<DO : Any, P : ReferencesObjectPropertyDefinit
                     )
                 )
             }
-            is JsonToken.StartArray -> {
+            is StartArray -> {
                 ValueItems(
                     properties.references withNotNull properties.references.readJson(reader, context)
                 )

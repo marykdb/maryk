@@ -3,8 +3,9 @@ package maryk.core.properties.definitions
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.PropertyDefinitionType.FixedBytes
 import maryk.core.properties.types.Bytes
-import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.values.SimpleObjectValues
 import kotlin.random.Random
 
@@ -23,8 +24,8 @@ data class FixedBytesDefinition(
     IsSerializableFixedBytesEncodable<Bytes, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<Bytes>,
     HasDefaultValueDefinition<Bytes> {
-    override val propertyDefinitionType = PropertyDefinitionType.FixedBytes
-    override val wireType = WireType.LENGTH_DELIMITED
+    override val propertyDefinitionType = FixedBytes
+    override val wireType = LENGTH_DELIMITED
 
     override fun createRandom() = Bytes(Random.nextBytes(this.byteSize))
 

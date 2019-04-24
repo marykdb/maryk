@@ -15,12 +15,19 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WireType.BIT_32
+import maryk.core.protobuf.WireType.BIT_64
+import maryk.core.protobuf.WireType.LENGTH_DELIMITED
+import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.RequestContext
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
-import maryk.json.JsonToken
+import maryk.json.JsonToken.EndArray
+import maryk.json.JsonToken.NullValue
+import maryk.json.JsonToken.StartArray
+import maryk.json.JsonToken.Stopped
 import maryk.lib.exceptions.ParseException
 
 /**
@@ -99,17 +106,17 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
 
     /** Read Collection from JSON [reader] within optional [context] */
     override fun readJson(reader: IsJsonLikeReader, context: CX?): C {
-        if (reader.currentToken == JsonToken.NullValue) {
+        if (reader.currentToken == NullValue) {
             @Suppress("UNCHECKED_CAST")
             return newMutableCollection(context) as C
         }
 
-        if (reader.currentToken !is JsonToken.StartArray) {
+        if (reader.currentToken !is StartArray) {
             throw ParseException("JSON value should be an Array")
         }
         val collection: MutableCollection<T> = newMutableCollection(context)
 
-        while (reader.nextToken() !== JsonToken.EndArray && reader.currentToken !is JsonToken.Stopped) {
+        while (reader.nextToken() !== EndArray && reader.currentToken !is Stopped) {
             collection.add(
                 valueDefinition.readJson(reader, context)
             )
@@ -126,7 +133,7 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
     ): Int {
         var totalByteSize = 0
         when (this.valueDefinition.wireType) {
-            WireType.BIT_64, WireType.BIT_32, WireType.VAR_INT -> {
+            BIT_64, BIT_32, VAR_INT -> {
                 // Cache length for length delimiter
                 val container = ByteLengthContainer()
                 cacher.addLengthToCache(container)
@@ -167,8 +174,8 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
         context: CX?
     ) {
         when (this.valueDefinition.wireType) {
-            WireType.BIT_64, WireType.BIT_32, WireType.VAR_INT -> {
-                ProtoBuf.writeKey(index, WireType.LENGTH_DELIMITED, writer)
+            BIT_64, BIT_32, VAR_INT -> {
+                ProtoBuf.writeKey(index, LENGTH_DELIMITED, writer)
                 cacheGetter.nextLengthFromCache().writeVarBytes(writer)
                 value.forEach { item ->
                     valueDefinition.writeTransportBytes(item, cacheGetter, writer, context)
@@ -186,7 +193,7 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
     }
 
     override fun isPacked(context: CX?, encodedWireType: WireType) = when (this.valueDefinition.wireType) {
-        WireType.BIT_64, WireType.BIT_32, WireType.VAR_INT -> encodedWireType == WireType.LENGTH_DELIMITED
+        BIT_64, BIT_32, VAR_INT -> encodedWireType == LENGTH_DELIMITED
         else -> false
     }
 

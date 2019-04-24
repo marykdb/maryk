@@ -7,7 +7,12 @@ import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWra
 import maryk.core.properties.references.FlexBytesPropertyDefinitionWrapper
 import maryk.core.values.MutableValueItems
 import maryk.json.IllegalJsonOperation
-import maryk.json.JsonToken
+import maryk.json.JsonToken.EndComplexFieldName
+import maryk.json.JsonToken.EndObject
+import maryk.json.JsonToken.FieldName
+import maryk.json.JsonToken.StartComplexFieldName
+import maryk.json.JsonToken.StartObject
+import maryk.json.JsonToken.Value
 import maryk.yaml.IsYamlReader
 import maryk.yaml.YamlWriter
 
@@ -30,19 +35,19 @@ internal fun <DO : Any> IsYamlReader.readNamedIndexField(
     nameDescriptor: FlexBytesPropertyDefinitionWrapper<String, String, IsPropertyContext, StringDefinition, DO>,
     indexDescriptor: FixedBytesPropertyDefinitionWrapper<UInt, *, IsPropertyContext, NumberDefinition<UInt>, DO>
 ) {
-    if (currentToken != JsonToken.StartComplexFieldName || nextToken() !is JsonToken.StartObject) {
+    if (currentToken != StartComplexFieldName || nextToken() !is StartObject) {
         throw IllegalJsonOperation("Expected named index like '? [0: name]'")
     }
 
-    val index = (nextToken() as? JsonToken.FieldName)?.value?.toUInt()
+    val index = (nextToken() as? FieldName)?.value?.toUInt()
         ?: throw IllegalJsonOperation("Expected index integer as field name like '? 0: name'")
     valueMap[indexDescriptor.index] = index
 
-    (nextToken() as? JsonToken.Value<*>)
+    (nextToken() as? Value<*>)
         ?: throw IllegalJsonOperation("Expected property name as value like '? 0: name'")
     valueMap[nameDescriptor.index] = nameDescriptor.readJson(this, null)
 
-    if (nextToken() != JsonToken.EndObject || nextToken() != JsonToken.EndComplexFieldName) {
+    if (nextToken() != EndObject || nextToken() != EndComplexFieldName) {
         throw IllegalJsonOperation("Expected only one index/value inside key like '? [0: name]' Start descriptor ': '  on a line below in same indent as '?'")
     }
     nextToken() // Move to next value

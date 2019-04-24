@@ -11,7 +11,7 @@ import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.references.ReferenceType.SET
 import maryk.core.protobuf.ProtoBuf
-import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
@@ -47,7 +47,7 @@ class SetItemReference<T : Any, CX : IsPropertyContext> internal constructor(
 
     override fun writeTransportBytes(cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit) {
         this.parentReference?.writeTransportBytes(cacheGetter, writer)
-        ProtoBuf.writeKey(0u, WireType.VAR_INT, writer)
+        ProtoBuf.writeKey(0u, VAR_INT, writer)
         setDefinition.valueDefinition.writeTransportBytes(value, cacheGetter, writer)
     }
 

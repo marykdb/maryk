@@ -3,7 +3,7 @@ package maryk.core.properties.definitions.wrapper
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.graph.PropRefGraphType
+import maryk.core.properties.graph.PropRefGraphType.PropRef
 
 /**
  * Contains a List property [definition] which contains items of type [T]
@@ -23,5 +23,5 @@ data class ListPropertyDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyConte
     AbstractPropertyDefinitionWrapper(index, name),
     IsListDefinition<T, CX> by definition,
     IsListPropertyDefinitionWrapper<T, TO, ListDefinition<T, CX>, CX, DO> {
-    override val graphType = PropRefGraphType.PropRef
+    override val graphType = PropRef
 }

@@ -7,7 +7,7 @@ import maryk.core.models.DataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.protobuf.ProtoBuf
-import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DefinitionsContext
 import maryk.json.JsonReader
@@ -97,11 +97,11 @@ internal class EmbeddedValuesDefinitionTest {
         bc.bytes!!.toHex() shouldBe "2a050a036a7572"
 
         val key = ProtoBuf.readKey(bc::read)
-        key.wireType shouldBe WireType.LENGTH_DELIMITED
+        key.wireType shouldBe LENGTH_DELIMITED
         key.tag shouldBe 5u
 
         def.readTransportBytes(
-            ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read),
+            ProtoBuf.getLength(LENGTH_DELIMITED, bc::read),
             bc::read
         ) shouldBe value
     }

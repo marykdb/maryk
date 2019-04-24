@@ -7,6 +7,14 @@ import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
+import maryk.core.properties.exceptions.ValidationExceptionType.ALREADY_SET
+import maryk.core.properties.exceptions.ValidationExceptionType.INVALID_SIZE
+import maryk.core.properties.exceptions.ValidationExceptionType.INVALID_VALUE
+import maryk.core.properties.exceptions.ValidationExceptionType.NOT_ENOUGH_ITEMS
+import maryk.core.properties.exceptions.ValidationExceptionType.OUT_OF_RANGE
+import maryk.core.properties.exceptions.ValidationExceptionType.REQUIRED
+import maryk.core.properties.exceptions.ValidationExceptionType.TOO_MANY_ITEMS
+import maryk.core.properties.exceptions.ValidationExceptionType.UMBRELLA
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.RequestContext
@@ -62,12 +70,12 @@ abstract class ValidationException internal constructor(
 }
 
 internal val mapOfValidationExceptionDefinitions = mapOf(
-    ValidationExceptionType.ALREADY_SET to EmbeddedObjectDefinition(dataModel = { AlreadySetException }),
-    ValidationExceptionType.INVALID_SIZE to EmbeddedObjectDefinition(dataModel = { InvalidSizeException }),
-    ValidationExceptionType.INVALID_VALUE to EmbeddedObjectDefinition(dataModel = { InvalidValueException }),
-    ValidationExceptionType.OUT_OF_RANGE to EmbeddedObjectDefinition(dataModel = { OutOfRangeException }),
-    ValidationExceptionType.REQUIRED to EmbeddedObjectDefinition(dataModel = { RequiredException }),
-    ValidationExceptionType.NOT_ENOUGH_ITEMS to EmbeddedObjectDefinition(dataModel = { NotEnoughItemsException }),
-    ValidationExceptionType.TOO_MANY_ITEMS to EmbeddedObjectDefinition(dataModel = { TooManyItemsException }),
-    ValidationExceptionType.UMBRELLA to EmbeddedObjectDefinition(dataModel = { ValidationUmbrellaException })
+    ALREADY_SET to EmbeddedObjectDefinition(dataModel = { AlreadySetException }),
+    INVALID_SIZE to EmbeddedObjectDefinition(dataModel = { InvalidSizeException }),
+    INVALID_VALUE to EmbeddedObjectDefinition(dataModel = { InvalidValueException }),
+    OUT_OF_RANGE to EmbeddedObjectDefinition(dataModel = { OutOfRangeException }),
+    REQUIRED to EmbeddedObjectDefinition(dataModel = { RequiredException }),
+    NOT_ENOUGH_ITEMS to EmbeddedObjectDefinition(dataModel = { NotEnoughItemsException }),
+    TOO_MANY_ITEMS to EmbeddedObjectDefinition(dataModel = { TooManyItemsException }),
+    UMBRELLA to EmbeddedObjectDefinition(dataModel = { ValidationUmbrellaException })
 )

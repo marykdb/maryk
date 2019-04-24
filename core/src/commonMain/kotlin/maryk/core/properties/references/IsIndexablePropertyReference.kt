@@ -2,11 +2,11 @@ package maryk.core.properties.references
 
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.properties.definitions.IsBytesEncodable
+import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.values.IsValuesGetter
 
-interface IsIndexablePropertyReference<T : Any> : IsIndexable, IsBytesEncodable<T> {
+interface IsIndexablePropertyReference<T : Any> : IsIndexable, IsStorageBytesEncodable<T> {
     /**
      * Get the value from [values]
      * to be used in a fixed bytes encodable

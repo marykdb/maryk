@@ -8,7 +8,7 @@ import maryk.core.extensions.bytes.initUInt
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.models.ContextualDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.definitions.IsFixedBytesEncodable
+import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
@@ -34,7 +34,7 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
     private val unknownCreator: ((UInt, String) -> E)? = null
 ) : MarykPrimitive,
     IsPropertyDefinition<E>,
-    IsFixedBytesEncodable<E> {
+    IsFixedStorageBytesEncodable<E> {
 
     override val primitiveType = EnumDefinition
 

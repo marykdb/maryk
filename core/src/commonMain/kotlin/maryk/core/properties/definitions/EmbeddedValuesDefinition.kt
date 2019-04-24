@@ -36,7 +36,8 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P : PropertyDefinition
     dataModel: Unit.() -> DM,
     override val default: Values<DM, P>? = null
 ) :
-    IsEmbeddedValuesDefinition<DM, P, IsPropertyContext> {
+    IsEmbeddedValuesDefinition<DM, P, IsPropertyContext>,
+    IsTransportablePropertyDefinitionType<Values<DM, P>> {
     override val propertyDefinitionType = Embed
     override val wireType = LENGTH_DELIMITED
 
@@ -70,7 +71,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P : PropertyDefinition
         newValue: Values<DM, P>?,
         refGetter: () -> IsPropertyReference<Values<DM, P>, IsPropertyDefinition<Values<DM, P>>, *>?
     ) {
-        super.validateWithRef(previousValue, newValue, refGetter)
+        super<IsEmbeddedValuesDefinition>.validateWithRef(previousValue, newValue, refGetter)
         if (newValue != null) {
             this.typedDataModel.validate(
                 values = newValue,

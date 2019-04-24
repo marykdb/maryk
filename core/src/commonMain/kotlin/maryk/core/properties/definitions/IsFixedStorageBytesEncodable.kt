@@ -4,7 +4,7 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.types.numeric.UInt32
 
 /** Interface to define something can be en/decoded to fixed byte array */
-interface IsFixedBytesEncodable<T : Any> : IsBytesEncodable<T> {
+interface IsFixedStorageBytesEncodable<T : Any> : IsStorageBytesEncodable<T> {
     /** The byte size */
     val byteSize: Int
 

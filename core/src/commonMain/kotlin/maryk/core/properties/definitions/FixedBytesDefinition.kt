@@ -56,7 +56,7 @@ data class FixedBytesDefinition(
                 add(5u, "maxValue", FlexBytesDefinition(), FixedBytesDefinition::maxValue)
                 add(6u, "default", FlexBytesDefinition(), FixedBytesDefinition::default)
                 IsNumericDefinition.addRandom(7u, this, FixedBytesDefinition::random)
-                IsFixedBytesEncodable.addByteSize(8u, this, FixedBytesDefinition::byteSize)
+                IsFixedStorageBytesEncodable.addByteSize(8u, this, FixedBytesDefinition::byteSize)
             }
         }
     ) {

@@ -6,7 +6,7 @@ import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.IsBytesEncodable
+import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.references.ReferenceType.SET
@@ -53,7 +53,7 @@ class SetItemReference<T : Any, CX : IsPropertyContext> internal constructor(
 
     override fun calculateSelfStorageByteLength(): Int {
         @Suppress("UNCHECKED_CAST")
-        val setItemLength = (this.setDefinition.valueDefinition as IsBytesEncodable<T>).calculateStorageByteLength(this.value)
+        val setItemLength = (this.setDefinition.valueDefinition as IsStorageBytesEncodable<T>).calculateStorageByteLength(this.value)
 
         // calculate length of index of setDefinition
         return (this.parentReference?.propertyDefinition?.index?.calculateVarIntWithExtraInfoByteSize() ?: 0) +
@@ -65,7 +65,7 @@ class SetItemReference<T : Any, CX : IsPropertyContext> internal constructor(
 
     override fun writeSelfStorageBytes(writer: (byte: Byte) -> Unit) {
         @Suppress("UNCHECKED_CAST")
-        val valueDefinition = (setDefinition.valueDefinition as IsBytesEncodable<T>)
+        val valueDefinition = (setDefinition.valueDefinition as IsStorageBytesEncodable<T>)
 
         // Write set index with a SetValue type
         this.parentReference?.propertyDefinition?.index?.writeVarIntWithExtraInfo(SET.value, writer)

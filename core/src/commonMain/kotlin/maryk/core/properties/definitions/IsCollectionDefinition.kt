@@ -34,8 +34,7 @@ import maryk.lib.exceptions.ParseException
  */
 interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyContext, out ST : IsValueDefinition<T, CX>> :
     IsSerializablePropertyDefinition<C, CX>,
-    HasSizeDefinition,
-    IsTransportablePropertyDefinitionType<C> {
+    HasSizeDefinition {
     val valueDefinition: ST
 
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = null
@@ -46,7 +45,7 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
         newValue: C?,
         refGetter: () -> IsPropertyReference<C, IsPropertyDefinition<C>, *>?
     ) {
-        super<IsSerializablePropertyDefinition>.validateWithRef(previousValue, newValue, refGetter)
+        super.validateWithRef(previousValue, newValue, refGetter)
 
         if (newValue != null) {
             validateSize(newValue.size.toUInt(), refGetter)
@@ -225,7 +224,7 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
 
     /** Packed is true when encoded with longer length than expected byte size for single */
     private fun isPacked(length: Int) = when (this.valueDefinition.wireType) {
-        BIT_64, BIT_32, VAR_INT -> length > (this.valueDefinition as IsFixedBytesEncodable<*>).byteSize
+        BIT_64, BIT_32, VAR_INT -> length > (this.valueDefinition as IsFixedStorageBytesEncodable<*>).byteSize
         else -> false
     }
 

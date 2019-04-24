@@ -1,11 +1,8 @@
 package maryk.core.properties.definitions
 
-import maryk.core.models.AbstractObjectDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.definitions.wrapper.EmbeddedObjectPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.EmbeddedValuesPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
@@ -40,9 +37,8 @@ enum class PropertyDefinitionType(
     Set(12u),
     String(13u),
     Embed(14u),
-    EmbedObject(15u),
-    Time(16u),
-    Value(17u);
+    Time(15u),
+    Value(16u);
 
     companion object :
         IndexedEnumDefinition<PropertyDefinitionType>("PropertyDefinitionType", PropertyDefinitionType::values)
@@ -64,7 +60,6 @@ internal val mapOfPropertyDefEmbeddedObjectDefinitions =
         PropertyDefinitionType.Set to EmbeddedObjectDefinition(dataModel = { SetDefinition.Model }),
         PropertyDefinitionType.String to EmbeddedObjectDefinition(dataModel = { StringDefinition.Model }),
         PropertyDefinitionType.Embed to EmbeddedObjectDefinition(dataModel = { EmbeddedValuesDefinition.Model }),
-        PropertyDefinitionType.EmbedObject to EmbeddedObjectDefinition(dataModel = { EmbeddedObjectDefinition.Model }),
         PropertyDefinitionType.Time to EmbeddedObjectDefinition(dataModel = { TimeDefinition.Model }),
         PropertyDefinitionType.Value to EmbeddedObjectDefinition(dataModel = { ValueModelDefinition.Model })
     )
@@ -144,15 +139,6 @@ internal val mapOfPropertyDefWrappers = mapOf(
             name,
             definition as EmbeddedValuesDefinition<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>,
             getter as (Any) -> ValuesImpl?
-        )
-    },
-    PropertyDefinitionType.EmbedObject to { index, name, definition, getter ->
-        @Suppress("UNCHECKED_CAST")
-        EmbeddedObjectPropertyDefinitionWrapper(
-            index,
-            name,
-            definition as EmbeddedObjectDefinition<Any, ObjectPropertyDefinitions<Any>, AbstractObjectDataModel<Any, ObjectPropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>, IsPropertyContext, IsPropertyContext>,
-            getter
         )
     },
     PropertyDefinitionType.Time to createFixedBytesWrapper,

@@ -131,8 +131,6 @@ private data class MultiTypeDescriptorListDefinition(
     override val minSize: UInt? = null
     override val maxSize: UInt? = null
 
-    override val propertyDefinitionType = PropertyDefinitionType.List
-
     override fun newMutableCollection(context: IsPropertyContext?) = mutableListOf<MultiTypeDescriptor>()
 
     override fun validateCollectionForExceptions(

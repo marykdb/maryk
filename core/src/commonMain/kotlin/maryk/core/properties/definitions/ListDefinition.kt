@@ -21,7 +21,8 @@ data class ListDefinition<T : Any, CX : IsPropertyContext> internal constructor(
     override val maxSize: UInt? = null,
     override val valueDefinition: IsValueDefinition<T, CX>,
     override val default: List<T>? = null
-) : IsListDefinition<T, CX> {
+) : IsListDefinition<T, CX>,
+    IsTransportablePropertyDefinitionType<List<T>> {
     override val propertyDefinitionType = PropertyDefinitionType.List
 
     init {

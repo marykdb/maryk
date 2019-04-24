@@ -41,7 +41,6 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
     override val default: Map<K, V>? = null
 ) :
     HasSizeDefinition,
-    IsSerializablePropertyDefinition<Map<K, V>, CX>,
     IsMapDefinition<K, V, CX>,
     IsTransportablePropertyDefinitionType<Map<K, V>>,
     HasDefaultValueDefinition<Map<K, V>> {
@@ -71,7 +70,7 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
         newValue: Map<K, V>?,
         refGetter: () -> IsPropertyReference<Map<K, V>, IsPropertyDefinition<Map<K, V>>, *>?
     ) {
-        super<IsTransportablePropertyDefinitionType>.validateWithRef(previousValue, newValue, refGetter)
+        super<IsMapDefinition>.validateWithRef(previousValue, newValue, refGetter)
 
         if (newValue != null) {
             val mapSize = newValue.size.toUInt()

@@ -8,7 +8,7 @@ import maryk.core.processors.datastore.matchers.FuzzyExactLengthMatch
 import maryk.core.processors.datastore.matchers.IsFuzzyMatcher
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsChangeableValueDefinition
-import maryk.core.properties.definitions.IsFixedBytesEncodable
+import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsValueDefinition
@@ -41,7 +41,7 @@ class MapAnyValueReference<K : Any, V : Any, CX : IsPropertyContext> internal co
 
     override fun fuzzyMatcher(): IsFuzzyMatcher {
         val keyDefinition = mapDefinition.keyDefinition
-        return if (keyDefinition is IsFixedBytesEncodable<*>) {
+        return if (keyDefinition is IsFixedStorageBytesEncodable<*>) {
             FuzzyExactLengthMatch(keyDefinition.byteSize)
         } else {
             FuzzyDynamicLengthMatch

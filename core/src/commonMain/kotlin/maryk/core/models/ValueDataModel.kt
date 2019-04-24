@@ -9,7 +9,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.MutableObjectPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitionsCollectionDefinitionWrapper
-import maryk.core.properties.definitions.IsFixedBytesEncodable
+import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.properties.types.ValueDataObjectWithValues
@@ -34,7 +34,7 @@ abstract class ValueDataModel<DO : ValueDataObject, P : ObjectPropertyDefinition
     internal val byteSize: Int by lazy {
         var size = -1
         for (it in this.properties) {
-            val def = it.definition as IsFixedBytesEncodable<*>
+            val def = it.definition as IsFixedStorageBytesEncodable<*>
             size += def.byteSize + 1
         }
         size
@@ -48,7 +48,7 @@ abstract class ValueDataModel<DO : ValueDataObject, P : ObjectPropertyDefinition
         this.properties.forEachIndexed { index, it ->
             if (index != 0) reader() // skip separation byte
 
-            val def = it as IsFixedBytesEncodable<*>
+            val def = it as IsFixedStorageBytesEncodable<*>
             values[it.index] = def.readStorageBytes(def.byteSize, reader)
         }
         return this(this.values { values })
@@ -61,7 +61,7 @@ abstract class ValueDataModel<DO : ValueDataObject, P : ObjectPropertyDefinition
 
         this.properties.forEachIndexed { index, it ->
             @Suppress("UNCHECKED_CAST")
-            val def = it as IsFixedBytesEncodable<in Any>
+            val def = it as IsFixedStorageBytesEncodable<in Any>
             def.writeStorageBytes(values(index.toUInt() + 1u)) {
                 bytes[offset++] = it
             }
@@ -91,7 +91,7 @@ abstract class ValueDataModel<DO : ValueDataObject, P : ObjectPropertyDefinition
 
         this.properties.forEachIndexed { index, it ->
             @Suppress("UNCHECKED_CAST")
-            val def = it as IsFixedBytesEncodable<in Any>
+            val def = it as IsFixedStorageBytesEncodable<in Any>
             def.writeStorageBytes(inputs[index]) {
                 bytes[offset++] = it
             }

@@ -1,5 +1,5 @@
 package maryk.core.properties.references
 
-import maryk.core.properties.definitions.IsFixedBytesEncodable
+import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 
-interface IsFixedBytesPropertyReference<T : Any> : IsFixedBytesEncodable<T>, IsIndexablePropertyReference<T>
+interface IsFixedBytesPropertyReference<T : Any> : IsFixedStorageBytesEncodable<T>, IsIndexablePropertyReference<T>

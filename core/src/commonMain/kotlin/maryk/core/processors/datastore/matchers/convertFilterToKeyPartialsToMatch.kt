@@ -2,7 +2,6 @@ package maryk.core.processors.datastore.matchers
 
 import maryk.core.exceptions.TypeException
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.index.IsIndexable
@@ -286,7 +285,7 @@ private fun <T : Any> walkFilterReferencesAndValues(
 
 @Suppress("UNCHECKED_CAST")
 private fun <T : Any> createUniqueToMatch(
-    reference: IsPropertyReference<out T, IsChangeableValueDefinition<out T, IsPropertyContext>, *>,
+    reference: IsPropertyReference<out T, IsSerializablePropertyDefinition<out T, IsPropertyContext>, *>,
     it: IsSerializablePropertyDefinition<out T, IsPropertyContext>,
     value: T
 ) = UniqueToMatch(
@@ -298,7 +297,7 @@ private fun <T : Any> createUniqueToMatch(
 /** Get key definition by [reference] and [processKeyDefinitionWhenFound] using [indexable] or null if not part of key */
 private fun <T : Any> getDefinitionOrNull(
     indexable: IsIndexable,
-    reference: IsPropertyReference<out T, IsChangeableValueDefinition<out T, IsPropertyContext>, *>,
+    reference: IsPropertyReference<out T, IsSerializablePropertyDefinition<out T, IsPropertyContext>, *>,
     processKeyDefinitionWhenFound: (Int, IsIndexablePropertyReference<Any>) -> Unit
 ) {
     when (indexable) {

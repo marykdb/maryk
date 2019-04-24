@@ -9,7 +9,7 @@ import maryk.json.IsJsonLikeWriter
 import maryk.lib.exceptions.ParseException
 
 /**
- * Interface to define this is a serializable property definition of [T]
+ * Interface to define this is a property definition for which the value of [T] are serializable
  * with context [CX]
  */
 interface IsSerializablePropertyDefinition<T : Any, in CX : IsPropertyContext> : IsPropertyDefinition<T> {

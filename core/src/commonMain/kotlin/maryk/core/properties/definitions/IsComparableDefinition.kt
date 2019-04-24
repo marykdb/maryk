@@ -8,7 +8,6 @@ import maryk.core.properties.references.IsPropertyReference
 
 /**
  * Property Definition to define comparable properties of type [T] with context [CX].
- *
  * This is used for simple single value properties and not for lists and maps.
  */
 interface IsComparableDefinition<T : Comparable<T>, in CX : IsPropertyContext> : IsSimpleValueDefinition<T, CX> {

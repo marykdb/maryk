@@ -2,7 +2,7 @@ package maryk.core.properties.references
 
 import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
-import maryk.core.properties.definitions.IsBytesEncodable
+import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.RequiredException
 import maryk.core.values.IsValuesGetter
@@ -19,8 +19,8 @@ interface IsValuePropertyReference<
 > :
     IsPropertyReferenceForValues<T, TO, D, P>,
     IsIndexablePropertyReference<T>,
-    IsBytesEncodable<T>
-        where D : IsBytesEncodable<T>,
+    IsStorageBytesEncodable<T>
+        where D : IsStorageBytesEncodable<T>,
               D : IsPropertyDefinitionWrapper<T, TO, *, *> {
 
     override fun calculateReferenceStorageByteLength(): Int {

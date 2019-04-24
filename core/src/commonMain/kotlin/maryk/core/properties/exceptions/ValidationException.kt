@@ -4,7 +4,7 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
-import maryk.core.properties.definitions.IsChangeableValueDefinition
+import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.exceptions.ValidationExceptionType.ALREADY_SET
@@ -51,7 +51,7 @@ abstract class ValidationException internal constructor(
                 getter = getter,
                 capturer = { context, value ->
                     @Suppress("UNCHECKED_CAST")
-                    context.reference = value as IsPropertyReference<*, IsChangeableValueDefinition<*, *>, *>
+                    context.reference = value as IsPropertyReference<*, IsSerializablePropertyDefinition<*, *>, *>
                 }
             )
         }

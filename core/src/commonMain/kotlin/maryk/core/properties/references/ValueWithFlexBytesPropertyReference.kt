@@ -1,6 +1,6 @@
 package maryk.core.properties.references
 
-import maryk.core.properties.definitions.IsBytesEncodable
+import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.definitions.index.IndexKeyPartType
 
 /**
@@ -18,6 +18,6 @@ open class ValueWithFlexBytesPropertyReference<
 ) :
     PropertyReferenceForValues<T, TO, D, P>(propertyDefinition, parentReference),
     IsValuePropertyReference<T, TO, D, P>,
-    IsBytesEncodable<T> by propertyDefinition {
+    IsStorageBytesEncodable<T> by propertyDefinition {
     override val indexKeyPartType = IndexKeyPartType.Reference
 }

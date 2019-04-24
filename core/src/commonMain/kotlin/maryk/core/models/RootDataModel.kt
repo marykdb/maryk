@@ -1,6 +1,5 @@
 package maryk.core.models
 
-import maryk.core.definitions.PrimitiveType
 import maryk.core.definitions.PrimitiveType.*
 import maryk.core.exceptions.SerializationException
 import maryk.core.properties.IsDataModelPropertyDefinitions
@@ -8,7 +7,7 @@ import maryk.core.properties.MutablePropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.PropertyDefinitionsCollectionDefinitionWrapper
-import maryk.core.properties.definitions.IsFixedBytesEncodable
+import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
@@ -246,7 +245,7 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.key(values: Valu
             val value = keyDef.getValue(values)
 
             @Suppress("UNCHECKED_CAST")
-            (keyDef as IsFixedBytesEncodable<Any>).writeStorageBytes(value) {
+            (keyDef as IsFixedStorageBytesEncodable<Any>).writeStorageBytes(value) {
                 bytes[index++] = it
             }
         }

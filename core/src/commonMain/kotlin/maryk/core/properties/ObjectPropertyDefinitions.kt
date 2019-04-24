@@ -14,7 +14,6 @@ import maryk.core.properties.definitions.IsSerializableFixedBytesEncodable
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
-import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.wrapper.AnyPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ContextualPropertyDefinitionWrapper
@@ -27,8 +26,7 @@ import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
-import maryk.core.properties.graph.PropRefGraphType
-import maryk.core.properties.graph.PropRefGraphType.*
+import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.FlexBytesPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
@@ -320,7 +318,6 @@ internal data class ObjectPropertyDefinitionsCollectionDefinition(
     override val final = true
     override val minSize: UInt? = null
     override val maxSize: UInt? = null
-    override val propertyDefinitionType = PropertyDefinitionType.List
 
     override val valueDefinition = EmbeddedObjectDefinition(
         dataModel = {

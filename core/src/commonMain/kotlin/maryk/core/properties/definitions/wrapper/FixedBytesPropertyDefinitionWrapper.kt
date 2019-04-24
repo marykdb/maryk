@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions.wrapper
 
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.IsFixedBytesEncodable
+import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 import maryk.core.properties.definitions.IsSerializableFixedBytesEncodable
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyPropertyReference
@@ -26,7 +26,7 @@ data class FixedBytesPropertyDefinitionWrapper<T : Any, TO : Any, CX : IsPropert
     IsSerializableFixedBytesEncodable<T, CX> by definition,
     IsPropertyDefinitionWrapper<T, TO, CX, DO>,
     IsValuePropertyDefinitionWrapper<T, TO, CX, DO>,
-    IsFixedBytesEncodable<T> {
+    IsFixedStorageBytesEncodable<T> {
     override val graphType = PropRef
 
     override fun ref(parentRef: AnyPropertyReference?) =

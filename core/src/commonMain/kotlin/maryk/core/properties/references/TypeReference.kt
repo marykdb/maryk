@@ -5,7 +5,7 @@ import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.IsFixedBytesEncodable
+import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.index.IndexKeyPartType
@@ -26,7 +26,7 @@ data class TypeReference<E : IndexedEnum, in CX : IsPropertyContext> internal co
     override val parentReference: CanHaveComplexChildReference<TypedValue<E, *>, IsMultiTypeDefinition<E, *>, *, *>?
 ) : IsPropertyReferenceWithDirectStorageParent<E, IndexedEnumDefinition<E>, CanHaveComplexChildReference<TypedValue<E, *>, IsMultiTypeDefinition<E, *>, *, *>, TypedValue<E, *>>,
     IsFixedBytesPropertyReference<E>,
-    IsFixedBytesEncodable<E> by multiTypeDefinition.typeEnum,
+    IsFixedStorageBytesEncodable<E> by multiTypeDefinition.typeEnum,
     IsIndexable
 {
     override val indexKeyPartType = IndexKeyPartType.Reference

@@ -2,7 +2,7 @@ package maryk.core.properties.references
 
 import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
-import maryk.core.properties.definitions.IsFixedBytesEncodable
+import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 import maryk.core.properties.definitions.index.IndexKeyPartType
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.RequiredException
@@ -26,7 +26,7 @@ open class ValueWithFixedBytesPropertyReference<
     IsPropertyReferenceForValues<T, TO, D, P>,
     IsValuePropertyReference<T, TO, D, P>,
     IsFixedBytesPropertyReference<T>,
-    IsFixedBytesEncodable<T> by propertyDefinition {
+    IsFixedStorageBytesEncodable<T> by propertyDefinition {
     override val byteSize = propertyDefinition.byteSize
     override val indexKeyPartType = IndexKeyPartType.Reference
 

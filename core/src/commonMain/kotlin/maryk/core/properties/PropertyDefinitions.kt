@@ -4,7 +4,6 @@ import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.properties.definitions.wrapper.AnyPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.graph.PropRefGraphType.PropRef
@@ -64,7 +63,6 @@ internal data class PropertyDefinitionsCollectionDefinition(
     override val final = true
     override val minSize: UInt? = null
     override val maxSize: UInt? = null
-    override val propertyDefinitionType = PropertyDefinitionType.List
 
     override val valueDefinition = EmbeddedObjectDefinition(
         dataModel = {

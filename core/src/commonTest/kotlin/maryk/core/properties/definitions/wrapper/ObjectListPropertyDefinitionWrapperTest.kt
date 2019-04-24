@@ -1,11 +1,11 @@
 package maryk.core.properties.definitions.wrapper
 
-import maryk.checkJsonConversion
-import maryk.checkProtoBufConversion
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.query.DefinitionsContext
+import maryk.core.properties.references.ListReference
 import maryk.test.models.SimpleMarykObject
+import maryk.test.shouldBe
 import kotlin.test.Test
 
 class ObjectListPropertyDefinitionWrapperTest {
@@ -22,22 +22,11 @@ class ObjectListPropertyDefinitionWrapperTest {
     )
 
     @Test
-    fun convertDefinitionToProtoBufAndBack() {
-        checkProtoBufConversion(
-            this.def,
-            IsPropertyDefinitionWrapper.Model,
-            { DefinitionsContext() },
-            ::comparePropertyDefinitionWrapper
-        )
-    }
-
-    @Test
-    fun convertDefinitionToJSONAndBack() {
-        checkJsonConversion(
-            this.def,
-            IsPropertyDefinitionWrapper.Model,
-            { DefinitionsContext() },
-            ::comparePropertyDefinitionWrapper
+    fun getReference() {
+        @Suppress("UNCHECKED_CAST")
+        def.ref() shouldBe ListReference(
+            def as IsListPropertyDefinitionWrapper<SimpleMarykObject, Any, ListDefinition<SimpleMarykObject, IsPropertyContext>, IsPropertyContext, *>,
+            null
         )
     }
 }

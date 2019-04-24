@@ -9,7 +9,7 @@ import maryk.core.protobuf.WriteCacheWriter
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 
-/** Definition which refers to specific property value definition based on context from [contextualResolver] */
+/** Definition which refers to specific collection definition based on context from [contextualResolver] */
 internal class ContextualCollectionDefinition<in CX : IsPropertyContext>(
     private val contextualResolver: (context: CX?) -> IsSerializablePropertyDefinition<Collection<Any>, CX>,
     override val required: Boolean = true

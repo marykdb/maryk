@@ -1,6 +1,6 @@
 package maryk.core.models
 
-import maryk.core.definitions.PrimitiveType.*
+import maryk.core.definitions.PrimitiveType.RootModel
 import maryk.core.exceptions.SerializationException
 import maryk.core.properties.IsDataModelPropertyDefinitions
 import maryk.core.properties.MutablePropertyDefinitions
@@ -241,7 +241,7 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.key(values: Valu
                 bytes[index++] = it
             }
         }
-        is IsFixedBytesPropertyReference<*> -> {
+        is IsFixedBytesPropertyReference<out Any> -> {
             val value = keyDef.getValue(values)
 
             @Suppress("UNCHECKED_CAST")

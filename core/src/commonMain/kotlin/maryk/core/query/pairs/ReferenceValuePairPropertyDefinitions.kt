@@ -9,8 +9,8 @@ import maryk.core.query.DefinedByReference
 import maryk.core.query.RequestContext
 
 /** Defines PropertyDefinitions for a reference value pair so they can be easily converted inside ReferencePairDataModels */
-abstract class ReferenceValuePairPropertyDefinitions<R : DefinedByReference<*>, T : Any> :
+abstract class ReferenceValuePairPropertyDefinitions<R : DefinedByReference<*>, T : Any, TO: Any> :
     ObjectPropertyDefinitions<R>() {
     abstract val reference: ContextualPropertyDefinitionWrapper<AnyPropertyReference, AnyPropertyReference, RequestContext, ContextualPropertyReferenceDefinition<RequestContext>, R>
-    abstract val value: IsPropertyDefinitionWrapper<Any, T, RequestContext, R>
+    abstract val value: IsPropertyDefinitionWrapper<T, TO, RequestContext, R>
 }

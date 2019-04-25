@@ -20,7 +20,7 @@ data class LessThanEquals internal constructor(
         pairModel = ReferenceValuePair
     )
 
-    companion object : ReferencePairDataModel<LessThanEquals, Properties, ReferenceValuePair<Any>, Any>(
+    companion object : ReferencePairDataModel<LessThanEquals, Properties, ReferenceValuePair<Any>, Any, Any>(
         properties = Properties,
         pairProperties = ReferenceValuePair.Properties
     ) {

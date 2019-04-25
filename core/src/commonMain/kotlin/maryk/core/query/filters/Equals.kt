@@ -20,7 +20,7 @@ data class Equals internal constructor(
         pairModel = ReferenceValuePair
     )
 
-    companion object : ReferencePairDataModel<Equals, Properties, ReferenceValuePair<Any>, Any>(
+    companion object : ReferencePairDataModel<Equals, Properties, ReferenceValuePair<Any>, Any, Any>(
         properties = Properties,
         pairProperties = ReferenceValuePair.Properties
     ) {

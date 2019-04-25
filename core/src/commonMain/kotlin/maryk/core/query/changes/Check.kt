@@ -22,7 +22,7 @@ data class Check internal constructor(
         pairModel = ReferenceValuePair
     )
 
-    companion object : ReferencePairDataModel<Check, Properties, ReferenceValuePair<Any>, Any>(
+    companion object : ReferencePairDataModel<Check, Properties, ReferenceValuePair<Any>, Any, Any>(
         properties = Properties,
         pairProperties = ReferenceValuePair.Properties
     ) {

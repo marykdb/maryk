@@ -6,7 +6,6 @@ sealed class DataRecordNode {
 }
 
 /** Defines a [reference] */
-@Suppress("unused")
 interface IsDataRecordValue<T> {
     val reference: ByteArray
     val version: ULong

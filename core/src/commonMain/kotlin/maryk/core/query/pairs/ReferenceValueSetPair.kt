@@ -20,7 +20,7 @@ data class ReferenceValueSetPair<T : Any> internal constructor(
 ) : DefinedByReference<T> {
     override fun toString() = "$reference: $values]"
 
-    object Properties : ReferenceValuePairPropertyDefinitions<ReferenceValueSetPair<*>, Set<*>>() {
+    object Properties : ReferenceValuePairPropertyDefinitions<ReferenceValueSetPair<*>, Set<*>, Set<*>>() {
         override val reference = DefinedByReference.addReference(
             this,
             ReferenceValueSetPair<*>::reference
@@ -37,8 +37,8 @@ data class ReferenceValueSetPair<T : Any> internal constructor(
                     }
                 )
             ),
-            ReferenceValueSetPair<*>::values
-        ) as IsPropertyDefinitionWrapper<Any, Set<*>, RequestContext, ReferenceValueSetPair<*>>
+            ReferenceValueSetPair<*>::values as (ReferenceValueSetPair<*>) -> Set<Any>?
+        ) as IsPropertyDefinitionWrapper<Set<*>, Set<*>, RequestContext, ReferenceValueSetPair<*>>
     }
 
     companion object : SimpleObjectDataModel<ReferenceValueSetPair<*>, Properties>(

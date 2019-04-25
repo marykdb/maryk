@@ -21,7 +21,7 @@ data class RegEx internal constructor(
         pairModel = ReferenceValueRegexPair as QueryDataModel<ReferenceValueRegexPair, *>
     )
 
-    companion object : ReferencePairDataModel<RegEx, Properties, ReferenceValueRegexPair, Regex>(
+    companion object : ReferencePairDataModel<RegEx, Properties, ReferenceValueRegexPair, String, Regex>(
         properties = Properties,
         pairProperties = ReferenceValueRegexPair.Properties
     ) {

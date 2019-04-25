@@ -18,8 +18,8 @@ abstract class ObjectDataModel<DO : Any, P : ObjectPropertyDefinitions<DO>>(
     properties
 ), IsNamedDataModel<P> {
     companion object {
-        internal fun <DM : IsDataModel<*>> addProperties(definitions: AbstractPropertyDefinitions<DM>): ObjectPropertyDefinitionsCollectionDefinitionWrapper<DM> {
-            val wrapper = ObjectPropertyDefinitionsCollectionDefinitionWrapper<DM>(
+        internal fun <DM : ObjectDataModel<*, *>> addProperties(definitions: AbstractPropertyDefinitions<DM>): ObjectPropertyDefinitionsCollectionDefinitionWrapper<DM> =
+            ObjectPropertyDefinitionsCollectionDefinitionWrapper<DM>(
                 2u,
                 "properties",
                 ObjectPropertyDefinitionsCollectionDefinition(
@@ -32,10 +32,8 @@ abstract class ObjectDataModel<DO : Any, P : ObjectPropertyDefinitions<DO>>(
             ) {
                 @Suppress("UNCHECKED_CAST")
                 it.properties as ObjectPropertyDefinitions<in Any>
+            }.also {
+                definitions.addSingle(it)
             }
-
-            definitions.addSingle(wrapper)
-            return wrapper
-        }
     }
 }

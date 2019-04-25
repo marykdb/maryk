@@ -21,7 +21,7 @@ data class MultiTypeChange internal constructor(
         pairModel = ReferenceTypePair as QueryDataModel<ReferenceTypePair<*>, *>
     )
 
-    companion object : ReferencePairDataModel<MultiTypeChange, Properties, ReferenceTypePair<*>, IndexedEnum>(
+    companion object : ReferencePairDataModel<MultiTypeChange, Properties, ReferenceTypePair<*>, IndexedEnum, IndexedEnum>(
         properties = Properties,
         pairProperties = ReferenceTypePair.Properties
     ) {

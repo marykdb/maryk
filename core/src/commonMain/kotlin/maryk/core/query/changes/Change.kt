@@ -22,7 +22,7 @@ data class Change internal constructor(
         pairModel = ReferenceValuePair
     )
 
-    companion object : ReferencePairDataModel<Change, Properties, ReferenceValuePair<Any>, Any>(
+    companion object : ReferencePairDataModel<Change, Properties, ReferenceValuePair<Any>, Any, Any>(
         Properties,
         ReferenceValuePair.Properties
     ) {

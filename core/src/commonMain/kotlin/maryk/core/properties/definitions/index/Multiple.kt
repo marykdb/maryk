@@ -15,7 +15,7 @@ import maryk.core.values.ObjectValues
 
 /** Class to encode multiple [references] for key or other indexable usages */
 data class Multiple(
-    val references: List<IsIndexablePropertyReference<*>>
+    val references: List<IsIndexablePropertyReference<out Any>>
 ) : IsIndexable {
     override val indexKeyPartType = IndexKeyPartType.Multiple
 

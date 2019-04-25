@@ -21,6 +21,8 @@ import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.lib.bytes.Base64
 
+typealias AnyValueDataModel = ValueDataModel<*, *>
+
 /**
  * ObjectDataModel of type [DO] for objects that can be encoded in fixed length width.
  * Contains [properties] definitions.
@@ -116,27 +118,27 @@ abstract class ValueDataModel<DO : ValueDataObject, P : ObjectPropertyDefinition
     }
 
     private object ValueDataModelProperties :
-        ObjectPropertyDefinitions<ValueDataModel<*, *>>(),
-        IsDataModelPropertyDefinitions<ValueDataModel<*, *>, ObjectPropertyDefinitionsCollectionDefinitionWrapper<ValueDataModel<*, *>>> {
+        ObjectPropertyDefinitions<AnyValueDataModel>(),
+        IsDataModelPropertyDefinitions<AnyValueDataModel, ObjectPropertyDefinitionsCollectionDefinitionWrapper<AnyValueDataModel>> {
         override val name = IsNamedDataModel.addName(this, ValueDataModel<*, *>::name)
         override val properties = addProperties(this)
     }
 
-    internal object Model : DefinitionDataModel<ValueDataModel<*, *>>(
+    internal object Model : DefinitionDataModel<AnyValueDataModel>(
         properties = ValueDataModelProperties
     ) {
-        override fun invoke(values: SimpleObjectValues<ValueDataModel<*, *>>) =
-            object : ValueDataModel<ValueDataObjectWithValues, ObjectPropertyDefinitions<ValueDataObjectWithValues>>(
+        override fun invoke(values: SimpleObjectValues<AnyValueDataModel>) =
+            object : ValueDataModel<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>(
                 name = values(1u),
                 properties = values(2u)
             ) {
-                override fun invoke(values: ObjectValues<ValueDataObjectWithValues, ObjectPropertyDefinitions<ValueDataObjectWithValues>>): ValueDataObjectWithValues {
+                override fun invoke(values: ObjectValues<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>): ValueDataObjectWithValues {
                     return ValueDataObjectWithValues(toBytes(values), values)
                 }
             }
 
         override fun writeJson(
-            values: ObjectValues<ValueDataModel<*, *>, ObjectPropertyDefinitions<ValueDataModel<*, *>>>,
+            values: ObjectValues<AnyValueDataModel, ObjectPropertyDefinitions<AnyValueDataModel>>,
             writer: IsJsonLikeWriter,
             context: ContainsDefinitionsContext?
         ) {
@@ -144,7 +146,7 @@ abstract class ValueDataModel<DO : ValueDataObject, P : ObjectPropertyDefinition
         }
 
         override fun writeJson(
-            obj: ValueDataModel<*, *>,
+            obj: AnyValueDataModel,
             writer: IsJsonLikeWriter,
             context: ContainsDefinitionsContext?
         ) {

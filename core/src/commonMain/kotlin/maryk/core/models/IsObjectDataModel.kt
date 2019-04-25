@@ -12,8 +12,6 @@ import maryk.core.values.IsValueItems
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
 
-typealias IsSimpleObjectDataModel<DO> = IsObjectDataModel<DO, ObjectPropertyDefinitions<DO>>
-
 /** A DataModel which holds properties and can be validated */
 interface IsObjectDataModel<DO : Any, P : ObjectPropertyDefinitions<DO>> :
     IsDataModelWithValues<DO, P, ObjectValues<DO, P>> {
@@ -43,11 +41,11 @@ fun <DO : Any, DM : IsObjectDataModel<DO, P>, P : ObjectPropertyDefinitions<DO>>
     @Suppress("UNCHECKED_CAST")
     for (property in this.properties) {
         when (property) {
-            is ObjectListPropertyDefinitionWrapper<*, *, *, *, *> -> {
+            is ObjectListPropertyDefinitionWrapper<out Any, *, *, *, DO> -> {
                 val dataModel =
-                    (property.definition.valueDefinition as EmbeddedObjectDefinition<*, *, *, *, *>).dataModel as IsObjectDataModel<Any, ObjectPropertyDefinitions<Any>>
+                    (property.definition.valueDefinition as EmbeddedObjectDefinition<Any, ObjectPropertyDefinitions<Any>, *, *, *>).dataModel as IsObjectDataModel<Any, ObjectPropertyDefinitions<Any>>
                 property.getter(dataObject)?.let { list ->
-                    mutableMap[property.index] = (list as List<Any>).map {
+                    mutableMap[property.index] = list.map {
                         dataModel.asValues(it, context)
                     }.toList()
                 }

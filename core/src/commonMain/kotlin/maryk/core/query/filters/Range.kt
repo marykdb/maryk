@@ -24,7 +24,7 @@ data class Range internal constructor(
         pairModel = ReferenceValueRangePair as QueryDataModel<ReferenceValueRangePair<*>, *>
     )
 
-    companion object : ReferencePairDataModel<Range, Properties, ReferenceValueRangePair<*>, ValueRange<*>>(
+    companion object : ReferencePairDataModel<Range, Properties, ReferenceValueRangePair<*>, ValueRange<*>, ValueRange<*>>(
         properties = Properties,
         pairProperties = ReferenceValueRangePair.Properties
     ) {

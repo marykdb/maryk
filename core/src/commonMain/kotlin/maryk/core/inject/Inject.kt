@@ -121,8 +121,7 @@ data class Inject<T : Any, D : IsPropertyDefinition<T>>(
                     }
                 }
                 is Value<*> -> {
-                    @Suppress("UNCHECKED_CAST")
-                    val collectionName = (startToken as? Value<String>)?.value
+                    val collectionName = startToken.value as? String
                         ?: throw ParseException("Expected a collectionName in an Inject")
 
                     Properties.collectionName.capture(context, collectionName)

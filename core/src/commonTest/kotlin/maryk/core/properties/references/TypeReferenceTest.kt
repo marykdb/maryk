@@ -16,6 +16,7 @@ import maryk.test.models.Option
 import maryk.test.models.Option.V1
 import maryk.test.models.Option.V2
 import maryk.test.shouldBe
+import maryk.test.shouldBeOfType
 import kotlin.test.Test
 
 internal class TypeReferenceTest {
@@ -58,9 +59,7 @@ internal class TypeReferenceTest {
 
         val keyDef = MarykModel.keyDefinition
 
-        (keyDef is TypeReference<*, *>) shouldBe true
-        @Suppress("UNCHECKED_CAST")
-        val specificDef = keyDef as TypeReference<Option, *>
+        val specificDef = shouldBeOfType<TypeReference<Option, *>>(keyDef)
         specificDef shouldBe multi.typeRef()
 
         specificDef.getValue(obj) shouldBe V2

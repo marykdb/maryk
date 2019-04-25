@@ -145,8 +145,7 @@ class EnumDefinition<E : IndexedEnumComparable<E>>(
                                 if (value.optionalCases == null) {
                                     context?.let { c ->
                                         c.definitionsContext?.let {
-                                            it.enums[value.name] as IndexedEnumDefinition<IndexedEnum>?
-                                                ?: throw ParseException("Enum ${value.name} is not Defined")
+                                            it.enums[value.name] ?: throw ParseException("Enum ${value.name} is not Defined")
                                         }
                                     } ?: throw ContextNotFoundException()
                                 } else {
@@ -227,5 +226,5 @@ private fun enumsHashCode(enumValues: Array<out IndexedEnum>): Int {
 class EnumDefinitionContext(
     val definitionsContext: ContainsDefinitionsContext?
 ) : IsPropertyContext {
-    var enumDefinition: EnumDefinition<out IndexedEnumComparable<Any>>? = null
+    var enumDefinition: EnumDefinition<IndexedEnumComparable<Any>>? = null
 }

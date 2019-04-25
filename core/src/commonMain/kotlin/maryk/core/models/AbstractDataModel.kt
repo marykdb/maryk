@@ -166,7 +166,7 @@ abstract class AbstractDataModel<DO : Any, P : AbstractPropertyDefinitions<DO>, 
                         } else {
                             val readValue = if (definition is IsEmbeddedObjectDefinition<*, *, *, *, *>) {
                                 @Suppress("UNCHECKED_CAST")
-                                (definition as IsEmbeddedObjectDefinition<*, *, *, in CX, *>).readJsonToValues(
+                                (definition as IsEmbeddedObjectDefinition<*, *, *, CX, *>).readJsonToValues(
                                     reader,
                                     context
                                 )
@@ -323,7 +323,7 @@ abstract class AbstractDataModel<DO : Any, P : AbstractPropertyDefinitions<DO>, 
         } else {
             values[key.tag] =
                 when (propertyDefinition) {
-                    is IsEmbeddedObjectDefinition<Any, *, *, in CX, *> ->
+                    is IsEmbeddedObjectDefinition<Any, *, *, CX, *> ->
                         propertyDefinition.readTransportBytesToValues(
                             ProtoBuf.getLength(key.wireType, byteReader),
                             byteReader,

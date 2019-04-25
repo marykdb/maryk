@@ -91,10 +91,10 @@ data class ListDefinition<T : Any, CX : IsPropertyContext> internal constructor(
                             } ?: throw ContextNotFoundException()
                         }
                     )
-                    @Suppress("UNCHECKED_CAST")
                     add(6u, "default", ContextualCollectionDefinition(
                         required = false,
                         contextualResolver = { context: ListDefinitionContext? ->
+                            @Suppress("UNCHECKED_CAST")
                             context?.listDefinition?.let {
                                 it as IsSerializablePropertyDefinition<Collection<Any>, ListDefinitionContext>
                             } ?: throw ContextNotFoundException()

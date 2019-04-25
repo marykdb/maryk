@@ -48,12 +48,12 @@ import maryk.yaml.YamlWriter
  * It contains an [index] and [name] so it can be serialized either efficiently or readable.
  * It also contains a [definition] to describe this type of the multi type
  */
-private data class MultiTypeDescriptor(
+internal data class MultiTypeDescriptor(
     val index: UInt,
     val name: String,
     val definition: IsSubDefinition<out Any, ContainsDefinitionsContext>
 ) {
-    private object Properties : ObjectPropertyDefinitions<MultiTypeDescriptor>() {
+    internal object Properties : ObjectPropertyDefinitions<MultiTypeDescriptor>() {
         val index = add(
             1u, "index",
             NumberDefinition(type = UInt32),
@@ -162,7 +162,7 @@ private data class MultiTypeDescriptorListDefinition(
 
     /** Read Collection from JSON [reader] within optional [context] */
     override fun readJson(reader: IsJsonLikeReader, context: IsPropertyContext?): List<MultiTypeDescriptor> {
-        val collection: MutableCollection<MultiTypeDescriptor> = newMutableCollection(context)
+        val collection: MutableList<MultiTypeDescriptor> = newMutableCollection(context)
 
         if (reader is IsYamlReader) {
             if (reader.currentToken !is StartObject) {
@@ -184,8 +184,7 @@ private data class MultiTypeDescriptorListDefinition(
                 )
             }
         }
-        @Suppress("UNCHECKED_CAST")
-        return collection as List<MultiTypeDescriptor>
+        return collection
     }
 }
 
@@ -252,9 +251,8 @@ internal fun ObjectPropertyDefinitions<MultiTypeDefinition<*, *>>.addDescriptorP
  * Convert multi type descriptors in a list in [value] to an indexed map of definitions.
  * Will throw an exception if it fails to convert
  */
-@Suppress("UNCHECKED_CAST")
-internal fun convertMultiTypeDescriptors(value: Any?): Map<IndexedEnum, IsSubDefinition<out Any, ContainsDefinitionsContext>> {
-    val descriptorList = value as? List<MultiTypeDescriptor>
+internal fun convertMultiTypeDescriptors(value: List<MultiTypeDescriptor>?): Map<IndexedEnum, IsSubDefinition<out Any, ContainsDefinitionsContext>> {
+    val descriptorList = value
         ?: throw ParseException("Multi type definition descriptor cannot be empty")
 
     return descriptorList.map {

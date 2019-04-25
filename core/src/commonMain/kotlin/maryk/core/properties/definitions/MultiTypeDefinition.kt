@@ -260,7 +260,7 @@ data class MultiTypeDefinition<E : IndexedEnum, in CX : IsPropertyContext> inter
 
         // stored as value below an index of the type id
         @Suppress("UNCHECKED_CAST")
-        val def = this.definitionMapByIndex[value.type.index] as IsSubDefinition<in Any, CX>?
+        val def = this.definitionMapByIndex[value.type.index] as IsSubDefinition<Any, CX>?
             ?: throw DefNotFoundException("Definition ${value.type} not found on Multi type")
         totalByteLength += def.calculateTransportByteLengthWithKey(
             value.type.index,

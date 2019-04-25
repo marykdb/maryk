@@ -178,7 +178,7 @@ class InMemoryDataStoreChangeTest {
             shouldBeRecent(success.version, 1000uL)
         }
 
-        @Suppress("UNUSED_VARIABLE") val getResponse = dataStore.execute(
+        val getResponse = dataStore.execute(
             TestMarykModel.get(keys[1])
         )
 

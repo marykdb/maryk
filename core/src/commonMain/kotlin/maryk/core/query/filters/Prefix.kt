@@ -23,9 +23,9 @@ data class Prefix internal constructor(
     )
 
     @Suppress("UNCHECKED_CAST")
-    companion object : ReferencePairDataModel<Prefix, Properties, ReferenceValuePair<String>, String>(
+    companion object : ReferencePairDataModel<Prefix, Properties, ReferenceValuePair<String>, String, String>(
         properties = Properties,
-        pairProperties = ReferenceValuePair.Properties as ReferenceValuePairPropertyDefinitions<ReferenceValuePair<String>, String>
+        pairProperties = ReferenceValuePair.Properties as ReferenceValuePairPropertyDefinitions<ReferenceValuePair<String>, String, String>
     ) {
         override fun invoke(values: ObjectValues<Prefix, Properties>) = Prefix(
             referenceValuePairs = values(1u)

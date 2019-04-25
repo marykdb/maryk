@@ -209,10 +209,12 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
             }
             else -> {
                 val value = valueDefinition.readTransportBytes(length, reader, context)
-                @Suppress("UNCHECKED_CAST")
                 val collection = when(earlierValue) {
                     null -> newMutableCollection(context)
-                    else -> (earlierValue as MutableCollection<T>)
+                    else -> {
+                        @Suppress("UNCHECKED_CAST")
+                        (earlierValue as MutableCollection<T>)
+                    }
                 }
                 collection.add(value)
 

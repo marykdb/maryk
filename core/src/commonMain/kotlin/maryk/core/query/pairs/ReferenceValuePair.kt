@@ -30,7 +30,7 @@ data class ReferenceValuePair<T : Any> internal constructor(
 
     override fun toString() = "$reference: $value"
 
-    object Properties : ReferenceValuePairPropertyDefinitions<ReferenceValuePair<Any>, Any>() {
+    object Properties : ReferenceValuePairPropertyDefinitions<ReferenceValuePair<Any>, Any, Any>() {
         override val reference = DefinedByReference.addReference(
             this,
             ReferenceValuePair<*>::reference

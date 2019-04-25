@@ -20,7 +20,7 @@ data class GreaterThanEquals(
         pairModel = ReferenceValuePair
     )
 
-    companion object : ReferencePairDataModel<GreaterThanEquals, Properties, ReferenceValuePair<Any>, Any>(
+    companion object : ReferencePairDataModel<GreaterThanEquals, Properties, ReferenceValuePair<Any>, Any, Any>(
         properties = Properties,
         pairProperties = ReferenceValuePair.Properties
     ) {

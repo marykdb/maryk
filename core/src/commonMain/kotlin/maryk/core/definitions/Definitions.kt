@@ -17,7 +17,6 @@ import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.contextual.ContextValueTransformDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
-import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.ContainsDefinitionsContext
@@ -85,8 +84,7 @@ data class Definitions(
                                 valueTransformer = { context, value ->
                                     if (value.optionalCases == null) {
                                         context?.let {
-                                            it.enums[value.name] as IndexedEnumDefinition<IndexedEnum>?
-                                                ?: throw ParseException("Enum ${value.name} has not been defined")
+                                            it.enums[value.name] ?: throw ParseException("Enum ${value.name} has not been defined")
                                         } ?: throw ContextNotFoundException()
                                     } else {
                                         value

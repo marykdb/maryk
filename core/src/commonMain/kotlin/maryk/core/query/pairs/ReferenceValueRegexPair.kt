@@ -4,10 +4,8 @@ import maryk.core.models.QueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.StringDefinition
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DefinedByReference
-import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 
 /** Defines a pair of a [reference] and [regex] */
@@ -31,12 +29,11 @@ data class ReferenceValueRegexPair internal constructor(
         return result
     }
 
-    object Properties : ReferenceValuePairPropertyDefinitions<ReferenceValueRegexPair, Regex>() {
+    object Properties : ReferenceValuePairPropertyDefinitions<ReferenceValueRegexPair, String, Regex>() {
         override val reference = DefinedByReference.addReference(
             this,
             ReferenceValueRegexPair::reference
         )
-        @Suppress("UNCHECKED_CAST")
         override val value = add(
             index = 2u, name = "regex",
             definition = StringDefinition(),
@@ -48,7 +45,7 @@ data class ReferenceValueRegexPair internal constructor(
             },
             shouldSerialize = { it is Regex },
             getter = ReferenceValueRegexPair::regex
-        ) as IsPropertyDefinitionWrapper<Any, Regex, RequestContext, ReferenceValueRegexPair>
+        )
     }
 
     companion object : QueryDataModel<ReferenceValueRegexPair, Properties>(

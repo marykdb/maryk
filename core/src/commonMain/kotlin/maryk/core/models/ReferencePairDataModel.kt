@@ -19,9 +19,9 @@ import maryk.json.JsonToken.Stopped
 import maryk.lib.exceptions.ParseException
 
 /** For data models which contains only reference pairs of type [R] */
-abstract class ReferencePairDataModel<DO : Any, P : ReferenceValuePairsObjectPropertyDefinitions<DO, R>, R : DefinedByReference<*>, T : Any>(
+abstract class ReferencePairDataModel<DO : Any, P : ReferenceValuePairsObjectPropertyDefinitions<DO, R>, R : DefinedByReference<*>, T : Any, TO: Any>(
     properties: P,
-    private val pairProperties: ReferenceValuePairPropertyDefinitions<R, T>
+    private val pairProperties: ReferenceValuePairPropertyDefinitions<R, T, TO>
 ) : QueryDataModel<DO, P>(properties) {
     override fun writeJson(
         values: ObjectValues<DO, P>,
@@ -85,7 +85,7 @@ abstract class ReferencePairDataModel<DO : Any, P : ReferenceValuePairsObjectPro
                     reader.nextToken()
 
                     @Suppress("UNCHECKED_CAST")
-                    val value = pairProperties.value.readJson(reader, context) as T?
+                    val value = pairProperties.value.readJson(reader, context) as TO?
 
                     listOfTypePairs.add(
                         properties.pairModel.values {

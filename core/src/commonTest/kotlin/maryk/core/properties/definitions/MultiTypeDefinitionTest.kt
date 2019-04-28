@@ -5,11 +5,12 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.MultiTypeEnum.T1
-import maryk.core.properties.definitions.MultiTypeEnum.T2
-import maryk.core.properties.definitions.MultiTypeEnum.T3
-import maryk.core.properties.definitions.MultiTypeEnum.T4
-import maryk.core.properties.definitions.MultiTypeEnum.T99
+import maryk.core.properties.definitions.MultiTypeEnum.INT
+import maryk.core.properties.definitions.MultiTypeEnum.LIST
+import maryk.core.properties.definitions.MultiTypeEnum.MAP
+import maryk.core.properties.definitions.MultiTypeEnum.SET
+import maryk.core.properties.definitions.MultiTypeEnum.STRING
+import maryk.core.properties.definitions.MultiTypeEnum.UNUSED
 import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IndexedEnumImpl
@@ -29,13 +30,14 @@ import kotlin.test.Test
 private sealed class MultiTypeEnum(
     index: UInt
 ) : IndexedEnumImpl<MultiTypeEnum>(index) {
-    object T1: MultiTypeEnum(1u)
-    object T2: MultiTypeEnum(2u)
-    object T3: MultiTypeEnum(3u)
-    object T4: MultiTypeEnum(4u)
-    object T99: MultiTypeEnum(99u)
+    object STRING: MultiTypeEnum(1u)
+    object INT: MultiTypeEnum(2u)
+    object LIST: MultiTypeEnum(3u)
+    object SET: MultiTypeEnum(4u)
+    object MAP: MultiTypeEnum(5u)
+    object UNUSED: MultiTypeEnum(99u)
 
-    companion object : IndexedEnumDefinition<MultiTypeEnum>(MultiTypeEnum::class, { arrayOf(T1, T2, T3, T4, T99) })
+    companion object : IndexedEnumDefinition<MultiTypeEnum>(MultiTypeEnum::class, { arrayOf(STRING, INT, LIST, SET, MAP, UNUSED) })
 }
 
 internal class MultiTypeDefinitionTest {
@@ -49,24 +51,25 @@ internal class MultiTypeDefinitionTest {
     )
 
     private val listDef = ListDefinition(
-        valueDefinition = StringDefinition(
-            regEx = "#.*"
-        )
+        valueDefinition = stringDef
     )
 
     private val setDef = SetDefinition(
-        valueDefinition = StringDefinition(
-            regEx = "#.*"
-        )
+        valueDefinition = stringDef
+    )
+    private val mapDef = MapDefinition(
+        keyDefinition = intDef,
+        valueDefinition = stringDef
     )
 
     private val def = MultiTypeDefinition<MultiTypeEnum, IsPropertyContext>(
         typeEnum = MultiTypeEnum,
         definitionMap = mapOf(
-            T1 to stringDef,
-            T2 to intDef,
-            T3 to listDef,
-            T4 to setDef
+            STRING to stringDef,
+            INT to intDef,
+            LIST to listDef,
+            SET to setDef,
+            MAP to mapDef
         )
     )
 
@@ -75,12 +78,13 @@ internal class MultiTypeDefinitionTest {
         required = false,
         typeEnum = MultiTypeEnum,
         definitionMap = mapOf(
-            T1 to stringDef,
-            T2 to intDef,
-            T3 to listDef,
-            T4 to setDef
+            STRING to stringDef,
+            INT to intDef,
+            LIST to listDef,
+            SET to setDef,
+            MAP to mapDef
         ),
-        default = TypedValue(T1, "test")
+        default = TypedValue(STRING, "test")
     )
 
     private val defWrapper = MultiTypeDefinitionWrapper<MultiTypeEnum, Any, IsPropertyContext, Any>(
@@ -88,58 +92,64 @@ internal class MultiTypeDefinitionTest {
     )
 
     private val multisToTest = arrayOf(
-        TypedValue(T1, "#test"),
-        TypedValue(T2, 400),
-        TypedValue(T3, listOf("#a", "#b", "#c")),
-        TypedValue(T4, setOf("#a", "#b", "#c"))
+        TypedValue(STRING, "#test"),
+        TypedValue(INT, 400),
+        TypedValue(LIST, listOf("#a", "#b", "#c")),
+        TypedValue(SET, setOf("#a", "#b", "#c")),
+        TypedValue(MAP, mapOf(1 to "#a", 2 to "#b", 3 to "#c"))
     )
 
     @Test
     fun getProperties() {
-        def.definitionMap[T1] shouldBe stringDef
-        def.definitionMap[T2] shouldBe intDef
-        def.definitionMap[T3] shouldBe listDef
-        def.definitionMap[T4] shouldBe setDef
+        def.definitionMap[STRING] shouldBe stringDef
+        def.definitionMap[INT] shouldBe intDef
+        def.definitionMap[LIST] shouldBe listDef
+        def.definitionMap[SET] shouldBe setDef
+        def.definitionMap[MAP] shouldBe mapDef
     }
 
     @Test
     fun validateContent() {
-        def.validateWithRef(newValue = TypedValue(T1, "#test"))
-        def.validateWithRef(newValue = TypedValue(T2, 400))
-        def.validateWithRef(newValue = TypedValue(T3, listOf("#a", "#b", "#c")))
-        def.validateWithRef(newValue = TypedValue(T4, setOf("#a", "#b", "#c")))
+        def.validateWithRef(newValue = TypedValue(STRING, "#test"))
+        def.validateWithRef(newValue = TypedValue(INT, 400))
+        def.validateWithRef(newValue = TypedValue(LIST, listOf("#a", "#b", "#c")))
+        def.validateWithRef(newValue = TypedValue(SET, setOf("#a", "#b", "#c")))
+        def.validateWithRef(newValue = TypedValue(MAP, mapOf(1 to "#a")))
 
         shouldThrow<OutOfRangeException> {
-            def.validateWithRef(newValue = TypedValue(T2, 3000))
+            def.validateWithRef(newValue = TypedValue(INT, 3000))
         }
         shouldThrow<InvalidValueException> {
-            def.validateWithRef(newValue = TypedValue(T1, "WRONG"))
+            def.validateWithRef(newValue = TypedValue(STRING, "WRONG"))
         }
         shouldThrow<ValidationUmbrellaException> {
-            def.validateWithRef(newValue = TypedValue(T3, listOf("WRONG")))
+            def.validateWithRef(newValue = TypedValue(LIST, listOf("WRONG")))
         }
         shouldThrow<ValidationUmbrellaException> {
-            def.validateWithRef(newValue = TypedValue(T4, setOf("WRONG")))
+            def.validateWithRef(newValue = TypedValue(SET, setOf("WRONG")))
+        }
+        shouldThrow<ValidationUmbrellaException> {
+            def.validateWithRef(newValue = TypedValue(MAP, mapOf(1 to "WRONG")))
         }
 
         shouldThrow<AlreadySetException> {
             def.validateWithRef(
-                previousValue = TypedValue(T1, "WRONG"),
-                newValue = TypedValue(T2, 400),
+                previousValue = TypedValue(STRING, "WRONG"),
+                newValue = TypedValue(INT, 400),
                 refGetter = { defWrapper.ref() }
             )
-        }.reference.toString() shouldBe "multi.*T2"
+        }.reference.toString() shouldBe "multi.*INT"
     }
 
     @Test
     fun resolveReferenceByName() {
-        def.resolveReferenceByName("*T1") shouldBe def.typedValueRef(T1, null)
+        def.resolveReferenceByName("*STRING") shouldBe def.typedValueRef(STRING, null)
         def.resolveReferenceByName("*") shouldBe def.typeRef(null)
     }
 
     @Test
     fun resolveReferenceFromStorageByAnyTypeName() {
-        writeAndReadStorageReference(def.typedValueRef(T1, null))
+        writeAndReadStorageReference(def.typedValueRef(STRING, null))
         writeAndReadStorageReference(def.typeRef(null))
     }
 
@@ -153,7 +163,7 @@ internal class MultiTypeDefinitionTest {
 
     @Test
     fun resolveReferenceFromTransportByAnyTypeName() {
-        writeAndReadTransportReference(def.typedValueRef(T1, null))
+        writeAndReadTransportReference(def.typedValueRef(STRING, null))
         writeAndReadTransportReference(def.typeRef(null))
     }
 
@@ -175,7 +185,7 @@ internal class MultiTypeDefinitionTest {
     @Test
     fun invalidFieldShouldThrowException() {
         shouldThrow<DefNotFoundException> {
-            def.validateWithRef(newValue = TypedValue(T99, "NonExistingField"))
+            def.validateWithRef(newValue = TypedValue(UNUSED, "NonExistingField"))
         }
     }
 
@@ -200,13 +210,13 @@ internal class MultiTypeDefinitionTest {
         typeEnum: MultiTypeEnum
         typeIsFinal: true
         definitionMap:
-          ? 1: T1
+          ? 1: STRING
           : !String
             required: true
             final: false
             unique: false
             regEx: '#.*'
-          ? 2: T2
+          ? 2: INT
           : !Number
             required: true
             final: false
@@ -214,7 +224,7 @@ internal class MultiTypeDefinitionTest {
             type: SInt32
             maxValue: 1000
             random: false
-          ? 3: T3
+          ? 3: LIST
           : !List
             required: true
             final: false
@@ -223,7 +233,7 @@ internal class MultiTypeDefinitionTest {
               final: false
               unique: false
               regEx: '#.*'
-          ? 4: T4
+          ? 4: SET
           : !Set
             required: true
             final: false
@@ -232,7 +242,23 @@ internal class MultiTypeDefinitionTest {
               final: false
               unique: false
               regEx: '#.*'
-        default: !T1(1) test
+          ? 5: MAP
+          : !Map
+            required: true
+            final: false
+            keyDefinition: !Number
+              required: true
+              final: false
+              unique: false
+              type: SInt32
+              maxValue: 1000
+              random: false
+            valueDefinition: !String
+              required: true
+              final: false
+              unique: false
+              regEx: '#.*'
+        default: !STRING(1) test
 
         """.trimIndent()
     }

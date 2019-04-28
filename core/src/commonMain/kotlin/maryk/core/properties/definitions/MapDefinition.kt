@@ -41,6 +41,7 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
     override val default: Map<K, V>? = null
 ) :
     HasSizeDefinition,
+    IsUsableInMultiType<Map<K, V>, CX>,
     IsMapDefinition<K, V, CX>,
     IsTransportablePropertyDefinitionType<Map<K, V>>,
     HasDefaultValueDefinition<Map<K, V>> {

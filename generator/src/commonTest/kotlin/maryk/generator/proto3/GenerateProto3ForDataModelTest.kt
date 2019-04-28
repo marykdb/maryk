@@ -37,6 +37,7 @@ message CompleteMarykModel {
     oneof multi {
       string o1 = 1;
       bool o2 = 2;
+      repeated string o3 = 3;
     }
   }
   message MultiForKeyType {

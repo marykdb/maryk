@@ -23,6 +23,7 @@ data class SetDefinition<T : Any, CX : IsPropertyContext> internal constructor(
     override val valueDefinition: IsValueDefinition<T, CX>,
     override val default: Set<T>? = null
 ) : IsSetDefinition<T, CX>,
+    IsUsableInMultiType<Set<T>, CX>,
     IsTransportablePropertyDefinitionType<Set<T>> {
     override val propertyDefinitionType = PropertyDefinitionType.Set
 

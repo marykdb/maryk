@@ -4,8 +4,7 @@ import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
-import maryk.core.properties.definitions.IsCollectionDefinition
-import maryk.core.properties.definitions.IsValueDefinition
+import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.AnyPropertyReference
@@ -22,7 +21,7 @@ import maryk.core.values.Values
  * function to retrieve value on dataObject of [DO] in context [CX]
  */
 interface IsListPropertyDefinitionWrapper<T : Any, TO : Any, LD : ListDefinition<T, CX>, CX : IsPropertyContext, in DO : Any> :
-    IsCollectionDefinition<T, List<T>, CX, IsValueDefinition<T, CX>>,
+    IsListDefinition<T, CX>,
     IsPropertyDefinitionWrapper<List<T>, List<TO>, CX, DO> {
     override val definition: LD
 

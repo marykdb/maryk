@@ -20,8 +20,8 @@ and stored.
 |[FixedBytes](types/fixedBytes.md)        |true    |true  |true    |true     |true    |true        |
 |[FlexBytes](types/flexBytes.md)          |false   |true  |true    |true     |true    |true        |
 |[MultiType](types/multiType.md)          |typeId**|false |true    |false    |false   |true        |
-|[List](types/list.md)                    |false   |false |false   |false    |false   |true        |
-|[Set](types/set.md)                      |false   |false |false   |false    |false   |true        |
+|[List](types/list.md)                    |false   |false |false   |true     |false   |true        |
+|[Set](types/set.md)                      |false   |false |false   |true     |false   |true        |
 |[Map](types/map.md)                      |false   |false |false   |false    |false   |key only    |
 |[Embed](types/embeddedValues.md)         |false   |false |true    |true     |false   |subProp only|
 |[ValueModel](types/valueModel.md)        |false   |true  |true    |true     |true    |true        |

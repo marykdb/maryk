@@ -32,6 +32,10 @@ import maryk.lib.time.Date
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.models.EmbeddedMarykModel.Properties
+import maryk.test.models.MultiTypeEnum.T1
+import maryk.test.models.MultiTypeEnum.T2
+import maryk.test.models.MultiTypeEnum.T3
+import maryk.test.models.MultiTypeEnum.T4
 import maryk.test.models.TestMarykModel.Properties.bool
 import maryk.test.models.TestMarykModel.Properties.dateTime
 import maryk.test.models.TestMarykModel.Properties.double
@@ -46,6 +50,7 @@ sealed class MultiTypeEnum(
     object T1: MultiTypeEnum(1u)
     object T2: MultiTypeEnum(2u)
     object T3: MultiTypeEnum(3u), EmbedTypeCase<MultiTypeEnum, Properties>
+    object T4: MultiTypeEnum(4u)
 
     companion object : IndexedEnumDefinition<MultiTypeEnum>(MultiTypeEnum::class, { arrayOf(T1, T2, T3) })
 }
@@ -178,10 +183,13 @@ object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>
                 required = false,
                 typeEnum = MultiTypeEnum,
                 definitionMap = definitionMap(
-                    MultiTypeEnum.T1 to StringDefinition(),
-                    MultiTypeEnum.T2 to NumberDefinition(type = SInt32),
-                    MultiTypeEnum.T3 to EmbeddedValuesDefinition(
+                    T1 to StringDefinition(),
+                    T2 to NumberDefinition(type = SInt32),
+                    T3 to EmbeddedValuesDefinition(
                         dataModel = { EmbeddedMarykModel }
+                    ),
+                    T4 to ListDefinition(
+                        valueDefinition = StringDefinition()
                     )
                 )
             )

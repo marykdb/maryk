@@ -283,7 +283,10 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                     MarykEnum.O1 to StringDefinition(
                         regEx = "hi.*"
                     ),
-                    MarykEnum.O2 to BooleanDefinition()
+                    MarykEnum.O2 to BooleanDefinition(),
+                    MarykEnum.O3 to ListDefinition(
+                        valueDefinition = StringDefinition()
+                    )
                 ),
                 default = TypedValue(MarykEnum.O1, "a value")
             )

@@ -226,27 +226,51 @@ data class MultiTypeDefinition<E : IndexedEnum, in CX : IsPropertyContext> inter
         context: CX?,
         earlierValue: TypedValue<E, Any>?
     ): TypedValue<E, Any> {
-        // Read the protobuf where the key tag is the type
-        val key = ProtoBuf.readKey(reader)
+        var lengthToGo = length
+        var value: Any? = earlierValue?.value
 
-        val type = this.typeEnum.resolve(key.tag.toUInt()) ?: throw ParseException("Unknown multi type index ${key.tag}")
-        val def = this.definitionMapByIndex[type.index] ?: throw ParseException("Unknown multi type ${key.tag}")
-
-        val value = if (def is IsEmbeddedObjectDefinition<*, *, *, CX, *> && keepAsValues) {
-            def.readTransportBytesToValues(
-                ProtoBuf.getLength(key.wireType, reader),
-                reader,
-                context
-            )
-        } else {
-            def.readTransportBytes(
-                ProtoBuf.getLength(key.wireType, reader),
-                reader,
-                context
-            )
+        val wrappedReader = {
+            lengthToGo--
+            reader()
         }
 
-        return TypedValue(type, value)
+        var type: E? = null
+
+        while (lengthToGo > 0) {
+            // Read the proto buf where the key tag is the type
+            val key = ProtoBuf.readKey(wrappedReader)
+
+            val newType = this.typeEnum.resolve(key.tag.toUInt()) ?: throw ParseException("Unknown multi type index ${key.tag}")
+
+            type = when(type) {
+                null -> newType
+                newType -> type
+                else -> throw ParseException("If multiple type values encoded they should be all of the same type")
+            }
+
+            @Suppress("UNCHECKED_CAST")
+            val def = this.definitionMapByIndex[type.index] as IsSubDefinition<Any, CX>? ?: throw ParseException("Unknown multi type ${key.tag}")
+
+            value = if (def is IsEmbeddedObjectDefinition<*, *, *, CX, *> && keepAsValues) {
+                def.readTransportBytesToValues(
+                    ProtoBuf.getLength(key.wireType, wrappedReader),
+                    wrappedReader,
+                    context
+                )
+            } else {
+                def.readTransportBytes(
+                    ProtoBuf.getLength(key.wireType, wrappedReader),
+                    wrappedReader,
+                    context,
+                    value
+                )
+            }
+        }
+
+        return TypedValue(
+            type ?: throw ParseException("Multi type type cannot be null"),
+            value ?: throw ParseException("Multi type value cannot be null")
+        )
     }
 
     override fun calculateTransportByteLength(value: TypedValue<E, Any>, cacher: WriteCacheWriter, context: CX?): Int {

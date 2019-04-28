@@ -243,6 +243,14 @@ class DefinitionsTest {
                 required: true
                 final: false
                 dataModel: EmbeddedMarykModel
+              ? 4: T4
+              : !List
+                required: true
+                final: false
+                valueDefinition: !String
+                  required: true
+                  final: false
+                  unique: false
           ? 14: reference
           : !Reference
             required: false

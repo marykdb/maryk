@@ -285,6 +285,18 @@ internal class RootDataModelTest {
         					"final": false,
         					"dataModel": "EmbeddedMarykModel"
         				}]
+        			}, {
+        				"index": 4,
+        				"name": "T4",
+        				"definition": ["List", {
+        					"required": true,
+        					"final": false,
+        					"valueDefinition": ["String", {
+        						"required": true,
+        						"final": false,
+        						"unique": false
+        					}]
+        				}]
         			}]
         		}]
         	}, {
@@ -488,6 +500,14 @@ internal class RootDataModelTest {
               required: true
               final: false
               dataModel: EmbeddedMarykModel
+            ? 4: T4
+            : !List
+              required: true
+              final: false
+              valueDefinition: !String
+                required: true
+                final: false
+                unique: false
         ? 14: reference
         : !Reference
           required: false

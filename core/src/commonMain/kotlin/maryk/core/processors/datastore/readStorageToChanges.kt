@@ -31,6 +31,7 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.IsSubDefinition
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.graph.IsPropRefGraph
@@ -195,17 +196,16 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
     readValueFromStorage: ValueWithVersionReader,
     addToCache: CacheProcessor
 ) {
-    var qIndex = offset
+    var currentOffset = offset
 
-    initUIntByVarWithExtraInfo({ qualifier[qIndex++] }) { index, type ->
+    initUIntByVarWithExtraInfo({ qualifier[currentOffset++] }) { index, type ->
         val subSelect = select?.selectNodeOrNull(index)
 
         if (select != null && subSelect == null) {
             // Return null if not selected within select
             null
         } else {
-            val isAtEnd = qualifier.size <= qIndex
-            when (referenceStorageTypeOf(type)) {
+            when (val refStoreType = referenceStorageTypeOf(type)) {
                 SPECIAL -> when (val specialType = completeReferenceTypeOf(qualifier[offset])) {
                     DELETE -> {
                         readValueFromStorage(ObjectDelete, objectDeletePropertyDefinition) { version, value ->
@@ -217,229 +217,255 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                     MAP_KEY -> throw TypeException("Cannot handle Special type $specialType in qualifier")
                     else -> throw TypeException("Not recognized special type $specialType")
                 }
-                VALUE -> {
+                else -> {
                     val definition = this.properties[index]
                         ?: throw DefNotFoundException("No definition for $index in $this at $index")
+                    readQualifierOfType(
+                        qualifier,
+                        currentOffset,
+                        definition,
+                        refStoreType,
+                        index,
+                        select,
+                        parentReference,
+                        addChangeToOutput,
+                        readValueFromStorage,
+                        addToCache
+                    )
+                }
+            }
+        }
+    }
+}
 
-                    if (isAtEnd) {
-                        readValueFromStorage(Value, definition) { version, value ->
+/** Read qualifier from [qualifier] at [currentOffset] with [definition] into changes */
+private fun <P : PropertyDefinitions> readQualifierOfType(
+    qualifier: ByteArray,
+    currentOffset: Int,
+    definition: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>,
+    refStoreType: ReferenceType,
+    index: UInt,
+    select: IsPropRefGraph<P>?,
+    parentReference: IsPropertyReference<*, *, *>?,
+    addChangeToOutput: ChangeAdder,
+    readValueFromStorage: ValueWithVersionReader,
+    addToCache: CacheProcessor
+) {
+    var offset = currentOffset
+    val isAtEnd = qualifier.size <= offset
+
+    when (refStoreType) {
+        SPECIAL -> {
+            // skip
+        }
+        VALUE -> {
+            if (isAtEnd) {
+                readValueFromStorage(Value, definition) { version, value ->
+                    @Suppress("UNCHECKED_CAST")
+                    val ref =
+                        definition.ref(parentReference) as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>
+                    if (value == null) {
+                        addChangeToOutput(version, ChangeType.DELETE, ref)
+                    } else {
+                        if (value !is TypedValue<*, *>) {
+                            addChangeToOutput(version, CHANGE, ReferenceValuePair(ref, value))
+                        } else { // Is a TypedValue with Unit as value
                             @Suppress("UNCHECKED_CAST")
-                            val ref =
-                                definition.ref(parentReference) as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>
-                            if (value == null) {
-                                addChangeToOutput(version, ChangeType.DELETE, ref)
-                            } else {
-                                if (value !is TypedValue<*, *>) {
-                                    addChangeToOutput(version, CHANGE, ReferenceValuePair(ref, value))
-                                } else { // Is a TypedValue with Unit as value
-                                    @Suppress("UNCHECKED_CAST")
-                                    readTypedValue(
-                                        ref,
-                                        qualifier,
-                                        qIndex,
-                                        readValueFromStorage,
-                                        definition as IsMultiTypeDefinition<IndexedEnum, IsPropertyContext>,
-                                        select,
-                                        addToCache,
-                                        addChangeToOutput
-                                    )
-                                }
-                            }
-                        }
-                    } else { // Is Complex value
-                        val reference = definition.ref(parentReference)
-                        readComplexChanges(
-                            qualifier,
-                            qIndex,
-                            definition,
-                            reference,
-                            select,
-                            addToCache,
-                            addChangeToOutput,
-                            readValueFromStorage
-                        )
-                    }
-                }
-                EMBED -> {
-                    val definition = this.properties[index]
-                        ?: throw DefNotFoundException("No definition for $index in $this at $index")
-
-                    val reference = definition.ref(parentReference)
-
-                    if (isAtEnd) {
-                        // Handle embed deletes
-                        readValueFromStorage(Value, definition) { version, value ->
-                            val ref =
-                                definition.ref(parentReference)
-                            if (value == null) {
-                                addChangeToOutput(version, ChangeType.DELETE, ref)
-                            } // Else this value just exists
-                        }
-                    } else {
-                        readComplexChanges(
-                            qualifier,
-                            qIndex,
-                            definition,
-                            reference,
-                            select,
-                            addToCache,
-                            addChangeToOutput,
-                            readValueFromStorage
-                        )
-                    }
-                }
-                LIST -> {
-                    val definition = this.properties[index]
-                        ?: throw DefNotFoundException("No definition for $index in $this at $index")
-
-                    if (isAtEnd) {
-                        readValueFromStorage(ListSize, definition) { version, value ->
-                            if (value == null) {
-                                addChangeToOutput(version, ChangeType.DELETE, definition.ref(parentReference))
-                            }
-                        }
-                    } else {
-                        @Suppress("UNCHECKED_CAST")
-                        val listDefinition = definition as IsListDefinition<Any, IsPropertyContext>
-                        @Suppress("UNCHECKED_CAST")
-                        val reference = definition.ref(parentReference) as ListReference<Any, IsPropertyContext>
-
-                        // Read set contents. Always a simple value for set since it is in qualifier
-                        val valueDefinition =
-                            ((definition as IsListDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
-                        var listItemIndex = qIndex
-
-                        val listIndex = initUInt(reader = { qualifier[listItemIndex++] })
-
-                        readValueFromStorage(Value, valueDefinition) { version, value ->
-                            if (value == null) {
-                                addChangeToOutput(
-                                    version,
-                                    ChangeType.DELETE,
-                                    listDefinition.itemRef(listIndex, reference)
-                                )
-                            } else {
-                                addChangeToOutput(
-                                    version,
-                                    CHANGE,
-                                    listDefinition.itemRef(listIndex, reference) with value
-                                )
-                            }
-                        }
-                    }
-                }
-                SET -> {
-                    val definition = this.properties[index]
-                        ?: throw DefNotFoundException("No definition for $index in $this at $index")
-
-                    if (isAtEnd) {
-                        readValueFromStorage(SetSize, definition) { version, value ->
-                            if (value == null) {
-                                addChangeToOutput(version, ChangeType.DELETE, definition.ref(parentReference))
-                            }
-                        }
-                    } else {
-                        @Suppress("UNCHECKED_CAST")
-                        val setDefinition = definition as IsSetDefinition<Any, IsPropertyContext>
-                        @Suppress("UNCHECKED_CAST")
-                        val reference = definition.ref(parentReference) as SetReference<Any, IsPropertyContext>
-
-                        // Read set contents. Always a simple value for set since it is in qualifier
-                        val valueDefinition =
-                            ((definition as IsSetDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
-                        var setItemIndex = qIndex
-
-                        val key =
-                            valueDefinition.readStorageBytes(qualifier.size - qIndex) { qualifier[setItemIndex++] }
-
-                        readValueFromStorage(Value, valueDefinition) { version, value ->
-                            if (value == null) {
-                                addChangeToOutput(version, ChangeType.DELETE, setDefinition.itemRef(key, reference))
-                            } else {
-                                addChangeToOutput(version, SET_ADD, setDefinition.itemRef(key, reference))
-                            }
-                        }
-                    }
-                }
-                MAP -> {
-                    val definition = this.properties[index]!!
-                    @Suppress("UNCHECKED_CAST")
-                    val mapDefinition = definition as IsMapDefinition<Any, Any, IsPropertyContext>
-                    @Suppress("UNCHECKED_CAST")
-                    val reference = definition.ref(parentReference) as MapReference<Any, Any, IsPropertyContext>
-
-                    if (isAtEnd) {
-                        readValueFromStorage(MapSize, definition) { version, value ->
-                            if (value == null) {
-                                addChangeToOutput(version, ChangeType.DELETE, definition.ref(parentReference))
-                            }
-                        }
-                    } else {
-                        // Read set contents. Always a simple value for set since it is in qualifier
-                        val keyDefinition =
-                            ((definition as IsMapDefinition<*, *, *>).keyDefinition as IsSimpleValueDefinition<*, *>)
-                        val valueDefinition =
-                            ((definition as IsMapDefinition<*, *, *>).valueDefinition as IsSubDefinition<*, *>)
-                        val keySize = initIntByVar { qualifier[qIndex++] }
-                        val key = keyDefinition.readStorageBytes(keySize) { qualifier[qIndex++] }
-
-                        if (qualifier.size <= qIndex) {
-                            readValueFromStorage(Value, valueDefinition) { version, value ->
-                                val valueReference = mapDefinition.valueRef(key, reference)
-                                if (value == null) {
-                                    addChangeToOutput(version, ChangeType.DELETE, valueReference)
-                                } else {
-                                    if (value !is TypedValue<*, *>) {
-                                        addChangeToOutput(version, CHANGE, valueReference with value)
-                                    } else {
-                                        @Suppress("UNCHECKED_CAST")
-                                        readTypedValue(
-                                            valueReference,
-                                            qualifier,
-                                            qIndex,
-                                            readValueFromStorage,
-                                            valueDefinition as IsMultiTypeDefinition<IndexedEnum, IsPropertyContext>,
-                                            select,
-                                            addToCache,
-                                            addChangeToOutput
-                                        )
-                                    }
-                                }
-                            }
-                        } else {
-                            readComplexChanges(
+                            readTypedValue(
+                                ref,
                                 qualifier,
-                                qIndex,
-                                valueDefinition,
-                                mapDefinition.valueRef(key, reference),
+                                offset,
+                                readValueFromStorage,
+                                definition as IsMultiTypeDefinition<IndexedEnum, IsPropertyContext>,
                                 select,
                                 addToCache,
-                                addChangeToOutput,
-                                readValueFromStorage
+                                addChangeToOutput
                             )
                         }
                     }
                 }
-                ReferenceType.TYPE -> {
-                    val definition = this.properties[index]
-                        ?: throw DefNotFoundException("No definition for $index in $this at $index")
-                    @Suppress("UNCHECKED_CAST")
-                    val typedDefinition =
-                        definition.definition as? IsMultiTypeDefinition<IndexedEnum, IsPropertyContext>
-                            ?: throw TypeException("Definition($index) ${definition.definition} should be a TypedDefinition")
+            } else { // Is Complex value
+                val reference = definition.ref(parentReference)
+                readComplexChanges(
+                    qualifier,
+                    offset,
+                    definition,
+                    reference,
+                    select,
+                    addToCache,
+                    addChangeToOutput,
+                    readValueFromStorage
+                )
+            }
+        }
+        EMBED -> {
+            val reference = definition.ref(parentReference)
 
-                    typedDefinition.readComplexTypedValue(
-                        parentReference,
-                        index.toUInt(),
+            if (isAtEnd) {
+                // Handle embed deletes
+                readValueFromStorage(Value, definition) { version, value ->
+                    val ref =
+                        definition.ref(parentReference)
+                    if (value == null) {
+                        addChangeToOutput(version, ChangeType.DELETE, ref)
+                    } // Else this value just exists
+                }
+            } else {
+                readComplexChanges(
+                    qualifier,
+                    offset,
+                    definition,
+                    reference,
+                    select,
+                    addToCache,
+                    addChangeToOutput,
+                    readValueFromStorage
+                )
+            }
+        }
+        LIST -> {
+            if (isAtEnd) {
+                readValueFromStorage(ListSize, definition) { version, value ->
+                    if (value == null) {
+                        addChangeToOutput(version, ChangeType.DELETE, definition.ref(parentReference))
+                    }
+                }
+            } else {
+                @Suppress("UNCHECKED_CAST")
+                val listDefinition = definition as IsListDefinition<Any, IsPropertyContext>
+                @Suppress("UNCHECKED_CAST")
+                val reference = definition.ref(parentReference) as ListReference<Any, IsPropertyContext>
+
+                // Read set contents. Always a simple value for set since it is in qualifier
+                val valueDefinition =
+                    ((definition as IsListDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
+
+                val listIndex = initUInt({ qualifier[offset++] })
+
+                readValueFromStorage(Value, valueDefinition) { version, value ->
+                    if (value == null) {
+                        addChangeToOutput(
+                            version,
+                            ChangeType.DELETE,
+                            listDefinition.itemRef(listIndex, reference)
+                        )
+                    } else {
+                        addChangeToOutput(
+                            version,
+                            CHANGE,
+                            listDefinition.itemRef(listIndex, reference) with value
+                        )
+                    }
+                }
+            }
+        }
+        SET -> {
+            if (isAtEnd) {
+                readValueFromStorage(SetSize, definition) { version, value ->
+                    if (value == null) {
+                        addChangeToOutput(version, ChangeType.DELETE, definition.ref(parentReference))
+                    }
+                }
+            } else {
+                @Suppress("UNCHECKED_CAST")
+                val setDefinition = definition as IsSetDefinition<Any, IsPropertyContext>
+                @Suppress("UNCHECKED_CAST")
+                val reference = definition.ref(parentReference) as SetReference<Any, IsPropertyContext>
+
+                // Read set contents. Always a simple value for set since it is in qualifier
+                val valueDefinition =
+                    ((definition as IsSetDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
+
+                val key =
+                    valueDefinition.readStorageBytes(qualifier.size - offset) { qualifier[offset++] }
+
+                readValueFromStorage(Value, valueDefinition) { version, value ->
+                    if (value == null) {
+                        addChangeToOutput(
+                            version,
+                            ChangeType.DELETE,
+                            setDefinition.itemRef(key, reference)
+                        )
+                    } else {
+                        addChangeToOutput(version, SET_ADD, setDefinition.itemRef(key, reference))
+                    }
+                }
+            }
+        }
+        MAP -> {
+            @Suppress("UNCHECKED_CAST")
+            val mapDefinition = definition as IsMapDefinition<Any, Any, IsPropertyContext>
+            @Suppress("UNCHECKED_CAST")
+            val reference = definition.ref(parentReference) as MapReference<Any, Any, IsPropertyContext>
+
+            if (isAtEnd) {
+                readValueFromStorage(MapSize, definition) { version, value ->
+                    if (value == null) {
+                        addChangeToOutput(version, ChangeType.DELETE, definition.ref(parentReference))
+                    }
+                }
+            } else {
+                // Read set contents. Always a simple value for set since it is in qualifier
+                val keyDefinition =
+                    ((definition as IsMapDefinition<*, *, *>).keyDefinition as IsSimpleValueDefinition<*, *>)
+                val valueDefinition =
+                    ((definition as IsMapDefinition<*, *, *>).valueDefinition as IsSubDefinition<*, *>)
+                val keySize = initIntByVar { qualifier[offset++] }
+                val key = keyDefinition.readStorageBytes(keySize) { qualifier[offset++] }
+
+                if (qualifier.size <= offset) {
+                    readValueFromStorage(Value, valueDefinition) { version, value ->
+                        val valueReference = mapDefinition.valueRef(key, reference)
+                        if (value == null) {
+                            addChangeToOutput(version, ChangeType.DELETE, valueReference)
+                        } else {
+                            if (value !is TypedValue<*, *>) {
+                                addChangeToOutput(version, CHANGE, valueReference with value)
+                            } else {
+                                @Suppress("UNCHECKED_CAST")
+                                readTypedValue(
+                                    valueReference,
+                                    qualifier,
+                                    offset,
+                                    readValueFromStorage,
+                                    valueDefinition as IsMultiTypeDefinition<IndexedEnum, IsPropertyContext>,
+                                    select,
+                                    addToCache,
+                                    addChangeToOutput
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    readComplexChanges(
                         qualifier,
-                        qIndex,
-                        readValueFromStorage,
+                        offset,
+                        valueDefinition,
+                        mapDefinition.valueRef(key, reference),
                         select,
                         addToCache,
-                        addChangeToOutput
+                        addChangeToOutput,
+                        readValueFromStorage
                     )
                 }
             }
+        }
+        ReferenceType.TYPE -> {
+            @Suppress("UNCHECKED_CAST")
+            val typedDefinition =
+                definition.definition as? IsMultiTypeDefinition<IndexedEnum, IsPropertyContext>
+                    ?: throw TypeException("Definition($index) ${definition.definition} should be a TypedDefinition")
+
+            typedDefinition.readComplexTypedValue(
+                parentReference,
+                index.toUInt(),
+                qualifier,
+                offset,
+                readValueFromStorage,
+                select,
+                addToCache,
+                addChangeToOutput
+            )
         }
     }
 }

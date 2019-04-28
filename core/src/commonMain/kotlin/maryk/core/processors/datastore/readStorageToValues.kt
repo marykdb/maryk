@@ -18,6 +18,7 @@ import maryk.core.processors.datastore.StorageTypeEnum.SetSize
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsEmbeddedDefinition
+import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -348,6 +349,48 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifierOfType(
                                 qualifier,
                                 offset,
                                 mapItemAdder
+                            )
+                        }
+                        is IsListDefinition<*, *> -> {
+                            readQualifierOfType(
+                                qualifier = qualifier,
+                                currentOffset = offset + 1,
+                                partOffset = offset,
+                                definition = valueDefinition,
+                                index = index,
+                                refStoreType = LIST,
+                                select = select,
+                                addValueToOutput = { _, value -> addValueToOutput(index, Pair(key, value)) },
+                                readValueFromStorage = readValueFromStorage,
+                                addToCache = addToCache
+                            )
+                        }
+                        is IsSetDefinition<*, *> -> {
+                            readQualifierOfType(
+                                qualifier = qualifier,
+                                currentOffset = offset + 1,
+                                partOffset = offset,
+                                definition = valueDefinition,
+                                index = index,
+                                refStoreType = SET,
+                                select = select,
+                                addValueToOutput = { _, value -> addValueToOutput(index, Pair(key, value)) },
+                                readValueFromStorage = readValueFromStorage,
+                                addToCache = addToCache
+                            )
+                        }
+                        is IsMapDefinition<*, *, *> -> {
+                            readQualifierOfType(
+                                qualifier = qualifier,
+                                currentOffset = offset + 1,
+                                partOffset = offset,
+                                definition = valueDefinition,
+                                index = index,
+                                refStoreType = MAP,
+                                select = select,
+                                addValueToOutput = { _, value -> addValueToOutput(index, Pair(key, value)) },
+                                readValueFromStorage = readValueFromStorage,
+                                addToCache = addToCache
                             )
                         }
                         else -> throw StorageException("Can only use Embedded/MultiType as complex value type in Map $mapDefinition")

@@ -77,6 +77,9 @@ message CompleteMarykModel {
   MultiForKeyType multiForKey = 19;
   MarykEnumEmbedded enumEmbedded = 20;
   repeated MapWithEnumEntry mapWithEnum = 21;
+  map<string, repeated string> mapWithList = 22;
+  map<string, repeated string> mapWithSet = 23;
+  map<string, map<string, string>> mapWithMap = 24;
 }
 """.trimIndent()
 

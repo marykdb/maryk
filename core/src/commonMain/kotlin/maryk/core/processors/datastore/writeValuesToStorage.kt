@@ -89,11 +89,11 @@ internal fun <T : IsPropertyDefinition<*>> writeValue(
             if (definition !is IsListDefinition<*, *>) {
                 throw TypeException("Definition should be a ListDefinition for a List")
             }
-            if (index == null) {
-                throw Exception("index should not be null for writing a List")
-            }
-            val listQualifierWriter = createQualifierWriter(qualifierWriter, index, ReferenceType.LIST)
-            val listQualifierCount = qualifierLength + index.calculateVarIntWithExtraInfoByteSize()
+
+            val newIndex = index ?: 0u
+
+            val listQualifierWriter = createQualifierWriter(qualifierWriter, newIndex, ReferenceType.LIST)
+            val listQualifierCount = qualifierLength + newIndex.calculateVarIntWithExtraInfoByteSize()
             writeListToStorage(
                 listQualifierCount,
                 listQualifierWriter,
@@ -103,11 +103,10 @@ internal fun <T : IsPropertyDefinition<*>> writeValue(
             )
         }
         is Set<*> -> {
-            if (index == null) {
-                throw Exception("index should not be null for writing a Set")
-            }
-            val setQualifierWriter = createQualifierWriter(qualifierWriter, index, ReferenceType.SET)
-            val setQualifierCount = qualifierLength + index.calculateVarIntWithExtraInfoByteSize()
+            val newIndex = index ?: 0u
+
+            val setQualifierWriter = createQualifierWriter(qualifierWriter, newIndex, ReferenceType.SET)
+            val setQualifierCount = qualifierLength + newIndex.calculateVarIntWithExtraInfoByteSize()
             writeSetToStorage(
                 setQualifierCount,
                 setQualifierWriter,
@@ -120,15 +119,15 @@ internal fun <T : IsPropertyDefinition<*>> writeValue(
             if (definition !is IsMapDefinition<*, *, *>) {
                 throw TypeException("Definition should be a MapDefinition for a Map")
             }
-            if (index == null) {
-                throw Exception("index should not be null for writing a map")
-            }
+
+            val newIndex = index ?: 0u
+
             val mapQualifierWriter = createQualifierWriter(
                 qualifierWriter,
-                index,
+                newIndex,
                 ReferenceType.MAP
             )
-            val mapQualifierCount = qualifierLength + index.calculateVarIntWithExtraInfoByteSize()
+            val mapQualifierCount = qualifierLength + newIndex.calculateVarIntWithExtraInfoByteSize()
             writeMapToStorage(
                 mapQualifierCount,
                 mapQualifierWriter,

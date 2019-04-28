@@ -374,6 +374,40 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 default = mapOf<MarykEnumEmbedded, String>(MarykEnumEmbedded.E1 to "value")
             )
         )
+        val mapWithList = add(
+            index = 22u, name = "mapWithList",
+            definition = MapDefinition(
+                required = false,
+                keyDefinition = StringDefinition(),
+                valueDefinition = ListDefinition(
+                    valueDefinition = StringDefinition()
+                ),
+                default = mapOf("a" to listOf("b", "c"))
+            )
+        )
+        val mapWithSet = add(
+            index = 23u, name = "mapWithSet",
+            definition = MapDefinition(
+                required = false,
+                keyDefinition = StringDefinition(),
+                valueDefinition = SetDefinition(
+                    valueDefinition = StringDefinition()
+                ),
+                default = mapOf("a" to setOf("b", "c"))
+            )
+        )
+        val mapWithMap = add(
+            index = 24u, name = "mapWithMap",
+            definition = MapDefinition(
+                required = false,
+                keyDefinition = StringDefinition(),
+                valueDefinition = MapDefinition(
+                    keyDefinition = StringDefinition(),
+                    valueDefinition = StringDefinition()
+                ),
+                default = mapOf("a" to mapOf("b" to "c"))
+            )
+        )
     }
 
     operator fun invoke(
@@ -402,7 +436,10 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
         dateForKey: Date,
         multiForKey: TypedValue<MarykEnum, *>,
         enumEmbedded: MarykEnumEmbedded,
-        mapWithEnum: Map<MarykEnumEmbedded, String> = mapOf(MarykEnumEmbedded.E1 to "value")
+        mapWithEnum: Map<MarykEnumEmbedded, String> = mapOf(MarykEnumEmbedded.E1 to "value"),
+        mapWithList: Map<String, List<String>> = mapOf("a" to listOf("b", "c")),
+        mapWithSet: Map<String, Set<String>> = mapOf("a" to setOf("b", "c")),
+        mapWithMap: Map<String, Map<String, String>> = mapOf("a" to mapOf("b" to "c"))
     ) = values {
         mapNonNulls(
             this.string with string,
@@ -425,7 +462,10 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
             this.dateForKey with dateForKey,
             this.multiForKey with multiForKey,
             this.enumEmbedded with enumEmbedded,
-            this.mapWithEnum with mapWithEnum
+            this.mapWithEnum with mapWithEnum,
+            this.mapWithList with mapWithList,
+            this.mapWithSet with mapWithSet,
+            this.mapWithMap with mapWithMap
         )
     }
 }

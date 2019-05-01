@@ -42,7 +42,7 @@ private sealed class MultiTypeEnum(
     object MULTI: MultiTypeEnum(6u)
     object UNUSED: MultiTypeEnum(99u)
 
-    companion object : IndexedEnumDefinition<MultiTypeEnum>(MultiTypeEnum::class, { arrayOf(STRING, INT, LIST, SET, MAP, UNUSED) })
+    companion object : IndexedEnumDefinition<MultiTypeEnum>(MultiTypeEnum::class, { arrayOf(STRING, INT, LIST, SET, MAP, MULTI, UNUSED) })
 }
 
 internal class MultiTypeDefinitionTest {
@@ -110,7 +110,8 @@ internal class MultiTypeDefinitionTest {
         TypedValue(INT, 400),
         TypedValue(LIST, listOf("#a", "#b", "#c")),
         TypedValue(SET, setOf("#a", "#b", "#c")),
-        TypedValue(MAP, mapOf(1 to "#a", 2 to "#b", 3 to "#c"))
+        TypedValue(MAP, mapOf(1 to "#a", 2 to "#b", 3 to "#c")),
+        TypedValue(MULTI, TypedValue(V1, "#test"))
     )
 
     @Test
@@ -144,6 +145,9 @@ internal class MultiTypeDefinitionTest {
         }
         shouldThrow<ValidationUmbrellaException> {
             def.validateWithRef(newValue = TypedValue(MAP, mapOf(1 to "WRONG")))
+        }
+        shouldThrow<InvalidValueException> {
+            def.validateWithRef(newValue = TypedValue(MULTI, TypedValue(V1, "WRONG")))
         }
 
         shouldThrow<AlreadySetException> {

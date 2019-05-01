@@ -273,11 +273,11 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
                             TypedValue(defType.propertyDefinitionType, value)
                         },
                         fromSerializable = {
-                            it?.value as IsValueDefinition<*, *>?
+                            it?.value as IsSubDefinition<*, *>?
                         },
                         capturer = { context: KeyValueDefinitionContext, value ->
                             @Suppress("UNCHECKED_CAST")
-                            context.valueDefinition = value.value as IsValueDefinition<Any, IsPropertyContext>
+                            context.valueDefinition = value.value as IsSubDefinition<Any, IsPropertyContext>
                         }
                     )
 
@@ -301,7 +301,7 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
             minSize = values(3u),
             maxSize = values(4u),
             keyDefinition = values<IsSimpleValueDefinition<*, *>>(5u),
-            valueDefinition = values<IsValueDefinition<*, *>>(6u),
+            valueDefinition = values<IsSubDefinition<*, *>>(6u),
             default = values(7u)
         )
     }
@@ -310,7 +310,7 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
 class KeyValueDefinitionContext(
     val definitionsContext: ContainsDefinitionsContext?,
     var keyDefinition: IsSimpleValueDefinition<Any, IsPropertyContext>? = null,
-    var valueDefinition: IsValueDefinition<Any, IsPropertyContext>? = null
+    var valueDefinition: IsSubDefinition<Any, IsPropertyContext>? = null
 ) : IsPropertyContext {
 
     private var _mapDefinition: Lazy<MapDefinition<Any, Any, IsPropertyContext>> = lazy {

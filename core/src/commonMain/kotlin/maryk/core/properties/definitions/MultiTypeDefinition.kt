@@ -58,7 +58,7 @@ data class MultiTypeDefinition<E : IndexedEnum, in CX : IsPropertyContext> inter
     override val definitionMap: Map<E, IsSubDefinition<out Any, CX>>,
     override val default: TypedValue<E, *>? = null,
     internal val keepAsValues: Boolean = false
-) : IsMultiTypeDefinition<E, CX> {
+) : IsMultiTypeDefinition<E, CX>, IsUsableInMultiType<TypedValue<E, Any>, CX> {
     override val propertyDefinitionType = PropertyDefinitionType.MultiType
     override val wireType = LENGTH_DELIMITED
 
@@ -107,7 +107,7 @@ data class MultiTypeDefinition<E : IndexedEnum, in CX : IsPropertyContext> inter
         newValue: TypedValue<E, Any>?,
         refGetter: () -> IsPropertyReference<TypedValue<E, Any>, IsPropertyDefinition<TypedValue<E, Any>>, *>?
     ) {
-        super.validateWithRef(previousValue, newValue, refGetter)
+        super<IsMultiTypeDefinition>.validateWithRef(previousValue, newValue, refGetter)
         if (newValue != null) {
             if (this.typeIsFinal && previousValue != null) {
                 if (newValue.type != previousValue.type) {

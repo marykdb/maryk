@@ -8,6 +8,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.MultiTypeEnum.INT
 import maryk.core.properties.definitions.MultiTypeEnum.LIST
 import maryk.core.properties.definitions.MultiTypeEnum.MAP
+import maryk.core.properties.definitions.MultiTypeEnum.MULTI
 import maryk.core.properties.definitions.MultiTypeEnum.SET
 import maryk.core.properties.definitions.MultiTypeEnum.STRING
 import maryk.core.properties.definitions.MultiTypeEnum.UNUSED
@@ -23,6 +24,9 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.protobuf.WriteCache
 import maryk.test.ByteCollector
+import maryk.test.models.Option
+import maryk.test.models.Option.V1
+import maryk.test.models.Option.V2
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
@@ -35,6 +39,7 @@ private sealed class MultiTypeEnum(
     object LIST: MultiTypeEnum(3u)
     object SET: MultiTypeEnum(4u)
     object MAP: MultiTypeEnum(5u)
+    object MULTI: MultiTypeEnum(6u)
     object UNUSED: MultiTypeEnum(99u)
 
     companion object : IndexedEnumDefinition<MultiTypeEnum>(MultiTypeEnum::class, { arrayOf(STRING, INT, LIST, SET, MAP, UNUSED) })
@@ -61,6 +66,13 @@ internal class MultiTypeDefinitionTest {
         keyDefinition = intDef,
         valueDefinition = stringDef
     )
+    private val subMultiDef = MultiTypeDefinition<Option, IsPropertyContext>(
+        typeEnum = Option,
+        definitionMap = mapOf(
+            V1 to stringDef,
+            V2 to intDef
+        )
+    )
 
     private val def = MultiTypeDefinition<MultiTypeEnum, IsPropertyContext>(
         typeEnum = MultiTypeEnum,
@@ -69,7 +81,8 @@ internal class MultiTypeDefinitionTest {
             INT to intDef,
             LIST to listDef,
             SET to setDef,
-            MAP to mapDef
+            MAP to mapDef,
+            MULTI to subMultiDef
         )
     )
 
@@ -82,7 +95,8 @@ internal class MultiTypeDefinitionTest {
             INT to intDef,
             LIST to listDef,
             SET to setDef,
-            MAP to mapDef
+            MAP to mapDef,
+            MULTI to subMultiDef
         ),
         default = TypedValue(STRING, "test")
     )
@@ -258,6 +272,27 @@ internal class MultiTypeDefinitionTest {
               final: false
               unique: false
               regEx: '#.*'
+          ? 6: MULTI
+          : !MultiType
+            required: true
+            final: false
+            typeEnum: Option
+            typeIsFinal: true
+            definitionMap:
+              ? 1: V1
+              : !String
+                required: true
+                final: false
+                unique: false
+                regEx: '#.*'
+              ? 2: V2
+              : !Number
+                required: true
+                final: false
+                unique: false
+                type: SInt32
+                maxValue: 1000
+                random: false
         default: !STRING(1) test
 
         """.trimIndent()

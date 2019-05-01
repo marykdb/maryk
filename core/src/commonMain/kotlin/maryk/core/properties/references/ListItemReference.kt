@@ -3,10 +3,8 @@ package maryk.core.properties.references
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.extensions.bytes.calculateVarByteLength
-import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsEmbeddedDefinition
@@ -14,7 +12,6 @@ import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
-import maryk.core.properties.references.ReferenceType.LIST
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCacheReader
@@ -27,7 +24,7 @@ class ListItemReference<T : Any, CX : IsPropertyContext> internal constructor(
     val listDefinition: IsListDefinition<T, CX>,
     parentReference: ListReference<T, CX>?
 ) : HasEmbeddedPropertyReference<T>,
-    IsPropertyReferenceWithIndirectStorageParent<T, IsValueDefinition<T, CX>, ListReference<T, CX>, List<T>>,
+    IsPropertyReferenceWithDirectStorageParent<T, IsValueDefinition<T, CX>, ListReference<T, CX>, List<T>>,
     CanHaveComplexChildReference<T, IsValueDefinition<T, CX>, ListReference<T, CX>, List<T>>(
         listDefinition.valueDefinition, parentReference
     ) {
@@ -91,16 +88,9 @@ class ListItemReference<T : Any, CX : IsPropertyContext> internal constructor(
         index.writeVarBytes(writer)
     }
 
-    override fun calculateSelfStorageByteLength(): Int {
-        // calculate length of index of setDefinition
-        return (this.parentReference?.propertyDefinition?.index?.calculateVarIntWithExtraInfoByteSize() ?: 0) +
-            // add bytes for list index
-            Int.SIZE_BYTES
-    }
+    override fun calculateSelfStorageByteLength() = Int.SIZE_BYTES
 
     override fun writeSelfStorageBytes(writer: (byte: Byte) -> Unit) {
-        // Write set index with a SetValue type
-        this.parentReference?.propertyDefinition?.index?.writeVarIntWithExtraInfo(LIST.value, writer)
         // Write index bytes
         index.toUInt().writeBytes(writer)
     }

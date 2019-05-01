@@ -2,14 +2,11 @@ package maryk.core.properties.references
 
 import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.extensions.bytes.calculateVarByteLength
-import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.definitions.IsSetDefinition
+import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.definitions.IsValueDefinition
-import maryk.core.properties.references.ReferenceType.SET
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCacheReader
@@ -26,7 +23,7 @@ class SetItemReference<T : Any, CX : IsPropertyContext> internal constructor(
 ) : CanHaveSimpleChildReference<T, IsValueDefinition<T, CX>, SetReference<T, CX>, Set<T>>(
         setDefinition.valueDefinition, parentReference
     ),
-    IsPropertyReferenceWithIndirectStorageParent<T, IsValueDefinition<T, CX>, SetReference<T, CX>, Set<T>> {
+    IsPropertyReferenceWithDirectStorageParent<T, IsValueDefinition<T, CX>, SetReference<T, CX>, Set<T>> {
     override val completeName: String
         get() = this.parentReference?.let {
             "${it.completeName}.$$value"
@@ -55,10 +52,8 @@ class SetItemReference<T : Any, CX : IsPropertyContext> internal constructor(
         @Suppress("UNCHECKED_CAST")
         val setItemLength = (this.setDefinition.valueDefinition as IsStorageBytesEncodable<T>).calculateStorageByteLength(this.value)
 
-        // calculate length of index of setDefinition
-        return (this.parentReference?.propertyDefinition?.index?.calculateVarIntWithExtraInfoByteSize() ?: 0) +
-            // Add length size for set value
-            setItemLength.calculateVarByteLength() +
+        // Add length size for set value
+        return setItemLength.calculateVarByteLength() +
             // Add bytes for set value
             setItemLength
     }
@@ -67,8 +62,6 @@ class SetItemReference<T : Any, CX : IsPropertyContext> internal constructor(
         @Suppress("UNCHECKED_CAST")
         val valueDefinition = (setDefinition.valueDefinition as IsStorageBytesEncodable<T>)
 
-        // Write set index with a SetValue type
-        this.parentReference?.propertyDefinition?.index?.writeVarIntWithExtraInfo(SET.value, writer)
         // Write set item bytes
         valueDefinition.calculateStorageByteLength(value).writeVarBytes(writer)
         // Write value bytes

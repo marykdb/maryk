@@ -2,14 +2,11 @@ package maryk.core.properties.references
 
 import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.extensions.bytes.calculateVarByteLength
-import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsSubDefinition
-import maryk.core.properties.references.ReferenceType.MAP
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCacheReader
@@ -24,7 +21,7 @@ class MapValueReference<K : Any, V : Any, CX : IsPropertyContext> internal const
 ) : CanHaveComplexChildReference<V, IsSubDefinition<V, CX>, MapReference<K, V, CX>, Map<K, V>>(
         mapDefinition.valueDefinition, parentReference
     ),
-    IsPropertyReferenceWithIndirectStorageParent<V, IsSubDefinition<V, CX>, MapReference<K, V, CX>, Map<K, V>> {
+    IsPropertyReferenceWithDirectStorageParent<V, IsSubDefinition<V, CX>, MapReference<K, V, CX>, Map<K, V>> {
     override val completeName
         get() = this.parentReference?.let {
             "${it.completeName}.@$key"
@@ -57,17 +54,13 @@ class MapValueReference<K : Any, V : Any, CX : IsPropertyContext> internal const
     override fun calculateSelfStorageByteLength(): Int {
         val keyLength = this.mapDefinition.keyDefinition.calculateStorageByteLength(this.key)
 
-        // calculate length of index of setDefinition
-        return (this.parentReference?.propertyDefinition?.index?.calculateVarIntWithExtraInfoByteSize() ?: 0) +
-            // Add key length size
-            keyLength.calculateVarByteLength() +
+        // Add key byte length
+        return keyLength.calculateVarByteLength() +
             // add bytes for map key
             keyLength
     }
 
     override fun writeSelfStorageBytes(writer: (byte: Byte) -> Unit) {
-        // Write set index with a SetValue type
-        this.parentReference?.propertyDefinition?.index?.writeVarIntWithExtraInfo(MAP.value, writer)
         // Write key length
         this.mapDefinition.keyDefinition.calculateStorageByteLength(this.key).writeVarBytes(writer)
         // Write value bytes

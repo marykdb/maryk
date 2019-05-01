@@ -116,19 +116,59 @@ object ComplexModel : RootDataModel<ComplexModel, Properties>(
                 )
             )
         )
+
+        val mapWithList = add(
+            index = 5u, name = "mapWithList",
+            definition = MapDefinition(
+                required = false,
+                keyDefinition = StringDefinition(),
+                valueDefinition = ListDefinition(
+                    valueDefinition = StringDefinition()
+                )
+            )
+        )
+
+        val mapWithSet = add(
+            index = 6u, name = "mapWithSet",
+            definition = MapDefinition(
+                required = false,
+                keyDefinition = StringDefinition(),
+                valueDefinition = SetDefinition(
+                    valueDefinition = StringDefinition()
+                )
+            )
+        )
+
+        val mapWithMap = add(
+            index = 7u, name = "mapWithMap",
+            definition = MapDefinition(
+                required = false,
+                keyDefinition = StringDefinition(),
+                valueDefinition = MapDefinition(
+                    keyDefinition = StringDefinition(),
+                    valueDefinition = StringDefinition()
+                )
+            )
+        )
     }
 
     operator fun invoke(
         multi: TypedValue<MultiTypeEnum, Any>? = null,
         mapStringString: Map<String, String>? = null,
         mapIntObject: Map<UInt, Values<EmbeddedMarykModel, EmbeddedMarykModel.Properties>>? = null,
-        mapIntMulti: Map<UInt, TypedValue<MultiTypeEnum, Any>>? = null
+        mapIntMulti: Map<UInt, TypedValue<MultiTypeEnum, Any>>? = null,
+        mapWithList: Map<String, List<String>>? = null,
+        mapWithSet: Map<String, Set<String>>? = null,
+        mapWithMap: Map<String, Map<String, String>>? = null
     ) = this.values {
         mapNonNulls(
             this.multi with multi,
             this.mapStringString with mapStringString,
             this.mapIntObject with mapIntObject,
-            this.mapIntMulti with mapIntMulti
+            this.mapIntMulti with mapIntMulti,
+            this.mapWithList with mapWithList,
+            this.mapWithSet with mapWithSet,
+            this.mapWithMap with mapWithMap
         )
     }
 }

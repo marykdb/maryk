@@ -28,6 +28,15 @@ val complexValues = ComplexModel(
             6u to "f"
         )),
         10u to TypedValue(T7, TypedValue(V3, EmbeddedMarykModel("g")))
+    ),
+    mapWithList = mapOf(
+        "a" to listOf("a1", "a2")
+    ),
+    mapWithSet = mapOf(
+        "b" to setOf("b1", "b2")
+    ),
+    mapWithMap = mapOf(
+        "c" to mapOf("c1" to "c2")
     )
 )
 
@@ -69,5 +78,16 @@ val complexValuesAsStorables = arrayOf(
     "24040000000a" to TypedValue(T7, Unit),
     "24040000000a3d" to TypedValue(V3, Unit),
     "24040000000a3d1d" to Unit,
-    "24040000000a3d1d09" to "g"
+    "24040000000a3d1d09" to "g",
+    "2c" to 1,
+    "2c016102" to 2,
+    "2c01610200000000" to "a1",
+    "2c01610200000001" to "a2",
+    "34" to 1,
+    "34016203" to 2,
+    "34016203026231" to "b1",
+    "34016203026232" to "b2",
+    "3c" to 1,
+    "3c016304" to 1,
+    "3c016304026331" to "c2"
 )

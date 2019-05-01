@@ -12,6 +12,7 @@ import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.references.ReferenceType.TYPE
 import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.VAR_INT
@@ -33,7 +34,7 @@ class TypedValueReference<E : IndexedEnum, in CX : IsPropertyContext> internal c
         multiTypeDefinition.definitionMap[type] as IsSubDefinition<Any, CX>,
         parentReference
     ),
-    IsPropertyReferenceWithDirectStorageParent<Any, IsSubDefinition<Any, CX>, CanHaveComplexChildReference<*, *, *, *>, TypedValue<E, Any>>,
+    IsPropertyReferenceWithParent<Any, IsSubDefinition<Any, CX>, CanHaveComplexChildReference<*, *, *, *>, TypedValue<E, Any>>,
     HasEmbeddedPropertyReference<Any> {
     override val completeName: String
         get() = this.parentReference?.let {
@@ -58,7 +59,7 @@ class TypedValueReference<E : IndexedEnum, in CX : IsPropertyContext> internal c
     override fun getEmbeddedStorageRef(
         reader: () -> Byte,
         context: IsPropertyContext?,
-        referenceType: CompleteReferenceType,
+        referenceType: ReferenceType,
         isDoneReading: () -> Boolean
     ): AnyPropertyReference {
         return if (this.propertyDefinition is IsEmbeddedObjectDefinition<*, *, *, *, *>) {
@@ -82,7 +83,7 @@ class TypedValueReference<E : IndexedEnum, in CX : IsPropertyContext> internal c
     override fun writeSelfStorageBytes(writer: (byte: Byte) -> Unit) {
         // Write type index bytes
         type.index.writeVarIntWithExtraInfo(
-            CompleteReferenceType.TYPE.value,
+            TYPE.value,
             writer
         )
     }

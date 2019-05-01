@@ -11,7 +11,7 @@ interface HasEmbeddedPropertyReference<T> {
     fun getEmbeddedStorageRef(
         reader: () -> Byte,
         context: IsPropertyContext?,
-        referenceType: CompleteReferenceType,
+        referenceType: ReferenceType,
         isDoneReading: () -> Boolean
     ): AnyPropertyReference
 

@@ -13,6 +13,7 @@ import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.exceptions.RequiredException
+import maryk.core.properties.references.ReferenceType.TYPE
 import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.VAR_INT
@@ -24,7 +25,7 @@ import maryk.core.values.IsValuesGetter
 data class TypeReference<E : IndexedEnum, in CX : IsPropertyContext> internal constructor(
     val multiTypeDefinition: IsMultiTypeDefinition<E, CX>,
     override val parentReference: CanHaveComplexChildReference<TypedValue<E, *>, IsMultiTypeDefinition<E, *>, *, *>?
-) : IsPropertyReferenceWithDirectStorageParent<E, IndexedEnumDefinition<E>, CanHaveComplexChildReference<TypedValue<E, *>, IsMultiTypeDefinition<E, *>, *, *>, TypedValue<E, *>>,
+) : IsPropertyReferenceWithParent<E, IndexedEnumDefinition<E>, CanHaveComplexChildReference<TypedValue<E, *>, IsMultiTypeDefinition<E, *>, *, *>, TypedValue<E, *>>,
     IsFixedBytesPropertyReference<E>,
     IsFixedStorageBytesEncodable<E> by multiTypeDefinition.typeEnum,
     IsIndexable
@@ -83,7 +84,7 @@ data class TypeReference<E : IndexedEnum, in CX : IsPropertyContext> internal co
     override fun writeSelfStorageBytes(writer: (byte: Byte) -> Unit) {
         // Write type index bytes
         0.writeVarIntWithExtraInfo(
-            CompleteReferenceType.TYPE.value,
+            TYPE.value,
             writer
         )
     }

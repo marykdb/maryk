@@ -1,14 +1,11 @@
 package maryk.core.properties.references
 
 import maryk.core.exceptions.UnexpectedValueException
-import maryk.core.processors.datastore.matchers.QualifierExactMatcher
 import maryk.core.protobuf.WriteCache
-import maryk.lib.extensions.toHex
 import maryk.lib.time.Time
 import maryk.test.ByteCollector
 import maryk.test.models.TestMarykModel
 import maryk.test.shouldBe
-import maryk.test.shouldBeOfType
 import maryk.test.shouldThrow
 import kotlin.test.Test
 
@@ -52,40 +49,5 @@ class MapKeyReferenceTest {
         keyReference.completeName shouldBe "map.\$12:00:01"
 
         TestMarykModel.getPropertyReferenceByName(keyReference.completeName) shouldBe keyReference
-    }
-
-    @Test
-    fun writeAndReadKeyRefStorageBytes() {
-        val bc = ByteCollector()
-
-        bc.reserve(
-            keyReference.calculateStorageByteLength()
-        )
-        keyReference.writeStorageBytes(bc::write)
-
-        bc.bytes!!.toHex() shouldBe "080a0300a8c1"
-
-        TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) shouldBe keyReference
-    }
-
-    @Test
-    fun createKeyRefQualifierMatcher() {
-        val matcher = keyReference.toQualifierMatcher()
-
-        shouldBeOfType<QualifierExactMatcher>(matcher).qualifier.toHex() shouldBe "080a0300a8c1"
-    }
-
-    @Test
-    fun writeAndReadDeepKeyRefStorageBytes() {
-        val bc = ByteCollector()
-
-        bc.reserve(
-            subKeyReference.calculateStorageByteLength()
-        )
-        subKeyReference.writeStorageBytes(bc::write)
-
-        bc.bytes!!.toHex() shouldBe "661e080a0300d84f"
-
-        TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) shouldBe subKeyReference
     }
 }

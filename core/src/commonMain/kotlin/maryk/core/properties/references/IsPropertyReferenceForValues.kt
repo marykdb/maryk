@@ -21,7 +21,7 @@ interface IsPropertyReferenceForValues<
     TO : Any,
     out D : IsPropertyDefinitionWrapper<T, TO, *, *>,
     out P : AnyPropertyReference
-> : IsPropertyReference<T, D, AbstractValues<*, *, *>>, IsPropertyReferenceWithDirectStorageParent<T, D, P, AbstractValues<*, *, *>> {
+> : IsPropertyReference<T, D, AbstractValues<*, *, *>>, IsPropertyReferenceWithParent<T, D, P, AbstractValues<*, *, *>> {
     val name: String
 
     /** The name of property which is referenced */

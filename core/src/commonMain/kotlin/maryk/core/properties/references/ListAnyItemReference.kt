@@ -1,8 +1,6 @@
 package maryk.core.properties.references
 
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.extensions.bytes.calculateVarByteLength
-import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.processors.datastore.matchers.FuzzyExactLengthMatch
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsChangeableValueDefinition
@@ -22,7 +20,7 @@ class ListAnyItemReference<T : Any, CX : IsPropertyContext> internal constructor
     parentReference: ListReference<T, CX>?
 ) : HasEmbeddedPropertyReference<T>,
     IsFuzzyReference,
-    IsPropertyReferenceWithIndirectStorageParent<List<T>, IsListDefinition<T, CX>, ListReference<T, CX>, List<T>>,
+    IsPropertyReferenceWithParent<List<T>, IsListDefinition<T, CX>, ListReference<T, CX>, List<T>>,
     CanHaveComplexChildReference<List<T>, IsListDefinition<T, CX>, ListReference<T, CX>, List<T>>(
         listDefinition, parentReference
     ) {
@@ -56,7 +54,7 @@ class ListAnyItemReference<T : Any, CX : IsPropertyContext> internal constructor
     override fun getEmbeddedStorageRef(
         reader: () -> Byte,
         context: IsPropertyContext?,
-        referenceType: CompleteReferenceType,
+        referenceType: ReferenceType,
         isDoneReading: () -> Boolean
     ): AnyPropertyReference {
         return when (this.propertyDefinition) {
@@ -88,16 +86,11 @@ class ListAnyItemReference<T : Any, CX : IsPropertyContext> internal constructor
     }
 
     override fun calculateSelfStorageByteLength(): Int {
-        return 1 + // The type byte
-            // The map index
-            (this.parentReference?.propertyDefinition?.index?.calculateVarByteLength() ?: 0) +
-            1
+        throw NotImplementedError("List any item reference is not supported to convert to storage bytes. It uses fuzzy matchers instead")
     }
 
     override fun writeSelfStorageBytes(writer: (byte: Byte) -> Unit) {
-        writer(CompleteReferenceType.LIST_ANY_VALUE.value)
-        this.parentReference?.propertyDefinition?.index?.writeVarBytes(writer)
-        writer(0)
+        throw NotImplementedError("List any item reference is not supported to convert to storage bytes. It uses fuzzy matchers instead")
     }
 
     override fun resolve(values: List<T>): List<T> = values

@@ -39,20 +39,6 @@ class ListAnyItemReferenceTest {
     }
 
     @Test
-    fun writeAndReadAnyStorageBytes() {
-        ByteCollector().apply {
-            reserve(
-                anyReference.calculateStorageByteLength()
-            )
-            anyReference.writeStorageBytes(::write)
-
-            bytes!!.toHex() shouldBe "180f00"
-
-            TestMarykModel.Properties.getPropertyReferenceByStorageBytes(size, ::read) shouldBe anyReference
-        }
-    }
-
-    @Test
     fun createAnyRefQualifierMatcher() {
         val matcher = anyReference.toQualifierMatcher()
 

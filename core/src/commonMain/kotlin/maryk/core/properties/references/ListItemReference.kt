@@ -24,7 +24,7 @@ class ListItemReference<T : Any, CX : IsPropertyContext> internal constructor(
     val listDefinition: IsListDefinition<T, CX>,
     parentReference: ListReference<T, CX>?
 ) : HasEmbeddedPropertyReference<T>,
-    IsPropertyReferenceWithDirectStorageParent<T, IsValueDefinition<T, CX>, ListReference<T, CX>, List<T>>,
+    IsPropertyReferenceWithParent<T, IsValueDefinition<T, CX>, ListReference<T, CX>, List<T>>,
     CanHaveComplexChildReference<T, IsValueDefinition<T, CX>, ListReference<T, CX>, List<T>>(
         listDefinition.valueDefinition, parentReference
     ) {
@@ -58,7 +58,7 @@ class ListItemReference<T : Any, CX : IsPropertyContext> internal constructor(
     override fun getEmbeddedStorageRef(
         reader: () -> Byte,
         context: IsPropertyContext?,
-        referenceType: CompleteReferenceType,
+        referenceType: ReferenceType,
         isDoneReading: () -> Boolean
     ): AnyPropertyReference {
         return when (this.propertyDefinition) {

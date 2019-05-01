@@ -115,9 +115,7 @@ interface IsPropertyReference<T : Any, out D : IsPropertyDefinition<T>, V : Any>
             when {
                 ref is IsFuzzyReference && ref is IsPropertyReferenceWithParent<*, *, *, *> && ref.parentReference != null ->
                     ref = ref.parentReference as IsPropertyReference<*, *, *>
-                ref is IsPropertyReferenceWithIndirectStorageParent<*, *, *, *> && ref.parentReference?.parentReference != null ->
-                    ref = ref.parentReference?.parentReference as IsPropertyReference<*, *, *>
-                ref is IsPropertyReferenceWithDirectStorageParent<*, *, *, *> && ref.parentReference != null ->
+                ref is IsPropertyReferenceWithParent<*, *, *, *> && ref.parentReference != null ->
                     ref = ref.parentReference as IsPropertyReference<*, *, *>
             }
         }

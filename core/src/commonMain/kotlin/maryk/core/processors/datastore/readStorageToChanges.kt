@@ -39,24 +39,21 @@ import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.AnyValuePropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
-import maryk.core.properties.references.CompleteReferenceType.DELETE
-import maryk.core.properties.references.CompleteReferenceType.MAP_KEY
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceWithParent
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.ReferenceType
+import maryk.core.properties.references.ReferenceType.DELETE
 import maryk.core.properties.references.ReferenceType.EMBED
 import maryk.core.properties.references.ReferenceType.LIST
 import maryk.core.properties.references.ReferenceType.MAP
 import maryk.core.properties.references.ReferenceType.SET
-import maryk.core.properties.references.ReferenceType.SPECIAL
 import maryk.core.properties.references.ReferenceType.VALUE
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
 import maryk.core.properties.references.TypedPropertyReference
 import maryk.core.properties.references.TypedValueReference
-import maryk.core.properties.references.completeReferenceTypeOf
 import maryk.core.properties.references.referenceStorageTypeOf
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
@@ -206,16 +203,12 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
             null
         } else {
             when (val refStoreType = referenceStorageTypeOf(type)) {
-                SPECIAL -> when (val specialType = completeReferenceTypeOf(qualifier[offset])) {
-                    DELETE -> {
-                        readValueFromStorage(ObjectDelete, objectDeletePropertyDefinition) { version, value ->
-                            if (value != null) {
-                                addChangeToOutput(version, OBJECT_DELETE, value)
-                            }
+                DELETE -> {
+                    readValueFromStorage(ObjectDelete, objectDeletePropertyDefinition) { version, value ->
+                        if (value != null) {
+                            addChangeToOutput(version, OBJECT_DELETE, value)
                         }
                     }
-                    MAP_KEY -> throw TypeException("Cannot handle Special type $specialType in qualifier")
-                    else -> throw TypeException("Not recognized special type $specialType")
                 }
                 else -> {
                     val definition = this.properties[index]
@@ -255,7 +248,7 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
     val isAtEnd = qualifier.size <= offset
 
     when (refStoreType) {
-        SPECIAL -> {
+        DELETE -> {
             // skip
         }
         VALUE -> {

@@ -18,21 +18,20 @@ import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.enum.IndexedEnum
-import maryk.core.properties.references.CompleteReferenceType
-import maryk.core.properties.references.CompleteReferenceType.DELETE
-import maryk.core.properties.references.CompleteReferenceType.EMBED
-import maryk.core.properties.references.CompleteReferenceType.LIST
-import maryk.core.properties.references.CompleteReferenceType.MAP
-import maryk.core.properties.references.CompleteReferenceType.SET
-import maryk.core.properties.references.CompleteReferenceType.TYPE
 import maryk.core.properties.references.ReferenceType
+import maryk.core.properties.references.ReferenceType.DELETE
+import maryk.core.properties.references.ReferenceType.EMBED
+import maryk.core.properties.references.ReferenceType.LIST
+import maryk.core.properties.references.ReferenceType.MAP
+import maryk.core.properties.references.ReferenceType.SET
+import maryk.core.properties.references.ReferenceType.TYPE
 import maryk.core.properties.types.TypedValue
 import maryk.core.values.AbstractValues
 import maryk.core.values.AnyAbstractValues
 
-sealed class StorageTypeEnum<out T : IsPropertyDefinition<*>>(val referenceType: CompleteReferenceType) {
+sealed class StorageTypeEnum<out T : IsPropertyDefinition<*>>(val referenceType: ReferenceType) {
     object ObjectDelete : StorageTypeEnum<IsPropertyDefinition<Boolean>>(DELETE)
-    object Value : StorageTypeEnum<IsSimpleValueDefinition<Any, IsPropertyContext>>(CompleteReferenceType.VALUE)
+    object Value : StorageTypeEnum<IsSimpleValueDefinition<Any, IsPropertyContext>>(ReferenceType.VALUE)
     object ListSize : StorageTypeEnum<IsListDefinition<Any, IsPropertyContext>>(LIST)
     object SetSize : StorageTypeEnum<IsSetDefinition<Any, IsPropertyContext>>(SET)
     object MapSize : StorageTypeEnum<IsMapDefinition<Any, Any, IsPropertyContext>>(MAP)
@@ -92,7 +91,7 @@ internal fun <T : IsPropertyDefinition<*>> writeValue(
 
             val newIndex = index ?: 0u
 
-            val listQualifierWriter = createQualifierWriter(qualifierWriter, newIndex, ReferenceType.LIST)
+            val listQualifierWriter = createQualifierWriter(qualifierWriter, newIndex, LIST)
             val listQualifierCount = qualifierLength + newIndex.calculateVarIntWithExtraInfoByteSize()
             writeListToStorage(
                 listQualifierCount,
@@ -105,7 +104,7 @@ internal fun <T : IsPropertyDefinition<*>> writeValue(
         is Set<*> -> {
             val newIndex = index ?: 0u
 
-            val setQualifierWriter = createQualifierWriter(qualifierWriter, newIndex, ReferenceType.SET)
+            val setQualifierWriter = createQualifierWriter(qualifierWriter, newIndex, SET)
             val setQualifierCount = qualifierLength + newIndex.calculateVarIntWithExtraInfoByteSize()
             writeSetToStorage(
                 setQualifierCount,
@@ -125,7 +124,7 @@ internal fun <T : IsPropertyDefinition<*>> writeValue(
             val mapQualifierWriter = createQualifierWriter(
                 qualifierWriter,
                 newIndex,
-                ReferenceType.MAP
+                MAP
             )
             val mapQualifierCount = qualifierLength + newIndex.calculateVarIntWithExtraInfoByteSize()
             writeMapToStorage(
@@ -142,7 +141,7 @@ internal fun <T : IsPropertyDefinition<*>> writeValue(
             }
 
             val indexWriter =
-                if (index == null) qualifierWriter else createQualifierWriter(qualifierWriter, index, ReferenceType.EMBED)
+                if (index == null) qualifierWriter else createQualifierWriter(qualifierWriter, index, EMBED)
             val abstractValuesQualifierCount =
                 if (index == null) qualifierLength else qualifierLength + index.calculateVarIntWithExtraInfoByteSize()
 

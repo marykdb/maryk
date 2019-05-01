@@ -52,11 +52,11 @@ open class SetReference<T : Any, CX : IsPropertyContext> internal constructor(
     override fun getEmbeddedStorageRef(
         reader: () -> Byte,
         context: IsPropertyContext?,
-        referenceType: CompleteReferenceType,
+        referenceType: ReferenceType,
         isDoneReading: () -> Boolean
     ): AnyPropertyReference {
         return when (referenceType) {
-            CompleteReferenceType.SET -> {
+            SET -> {
                 val setValueDefinition =
                     (this.propertyDefinition.definition.valueDefinition as IsSimpleValueDefinition<T, *>)
 

@@ -27,17 +27,14 @@ import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.graph.IsPropRefGraph
 import maryk.core.properties.graph.RootPropRefGraph
-import maryk.core.properties.references.CompleteReferenceType.DELETE
-import maryk.core.properties.references.CompleteReferenceType.MAP_KEY
 import maryk.core.properties.references.ReferenceType
+import maryk.core.properties.references.ReferenceType.DELETE
 import maryk.core.properties.references.ReferenceType.EMBED
 import maryk.core.properties.references.ReferenceType.LIST
 import maryk.core.properties.references.ReferenceType.MAP
 import maryk.core.properties.references.ReferenceType.SET
-import maryk.core.properties.references.ReferenceType.SPECIAL
 import maryk.core.properties.references.ReferenceType.TYPE
 import maryk.core.properties.references.ReferenceType.VALUE
-import maryk.core.properties.references.completeReferenceTypeOf
 import maryk.core.properties.references.referenceStorageTypeOf
 import maryk.core.properties.types.TypedValue
 import maryk.core.values.MutableValueItems
@@ -102,12 +99,8 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
             null
         } else {
             when (val refStoreType = referenceStorageTypeOf(type)) {
-                SPECIAL -> when (val specialType = completeReferenceTypeOf(type)) {
-                    DELETE -> {
-                    } // Ignore since it should be handled on higher level
-                    MAP_KEY -> throw TypeException("Cannot handle Special type $specialType in qualifier")
-                    else -> throw TypeException("Not recognized special type $specialType")
-                }
+                DELETE -> {
+                } // Ignore since it should be handled on higher level
                 else -> {
                     val definition = this.properties[index]
                         ?: throw DefNotFoundException("No definition for $index in $this at $index")
@@ -146,7 +139,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifierOfType(
     val isAtEnd = qualifier.size <= offset
 
     return when (refStoreType) {
-        SPECIAL -> {
+        DELETE -> {
             // skip
         }
         VALUE -> {

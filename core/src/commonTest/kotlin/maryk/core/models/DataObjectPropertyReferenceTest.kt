@@ -68,13 +68,11 @@ internal class DataObjectPropertyReferenceTest {
         TestMarykModel { embeddedValues { model { model { model ref { value } } } } }.toStorageByteArray().toHex() shouldBe "6616161609"
 
         TestMarykModel { embeddedValues { marykModel { list refAt 5u } } }.toStorageByteArray().toHex() shouldBe "661e4200000005"
-        TestMarykModel { embeddedValues { marykModel { list.refToAny() } } }.toStorageByteArray().toHex() shouldBe "661e180800"
 
         TestMarykModel { embeddedValues { marykModel { set refAt Date(2017, 12, 5) } } }.toStorageByteArray().toHex() shouldBe "661e4b0480004461"
         TestMarykModel.ref { setOfString }.toStorageByteArray().toHex() shouldBe "8b01"
         TestMarykModel { setOfString refAt "v1" }.toStorageByteArray().toHex() shouldBe "8b01027631"
 
-        TestMarykModel { embeddedValues { marykModel { map refToKey Time(12, 23) } } }.toStorageByteArray().toHex() shouldBe "661e080a0300ae24"
         TestMarykModel { embeddedValues { marykModel { map refAt Time(12, 23) } } }.toStorageByteArray().toHex() shouldBe "661e540300ae24"
 
         TestMarykModel { multi refAtType T1 }.toStorageByteArray().toHex() shouldBe "690d"
@@ -84,9 +82,7 @@ internal class DataObjectPropertyReferenceTest {
         TestMarykModel { multi.withType(T3) { model ref { value } } }.toStorageByteArray().toHex() shouldBe "691d1609"
 
         ComplexModel { mapIntObject.refAtKey(2u) { value } }.toStorageByteArray().toHex() shouldBe "1c040000000209"
-        ComplexModel { mapIntObject.refToAny { value } }.toStorageByteArray().toHex() shouldBe "10030009"
         ComplexModel { mapIntObject.at(2u) { model ref { value } } }.toStorageByteArray().toHex() shouldBe "1c04000000021609"
-        ComplexModel { mapIntObject.any { model ref { value } } }.toStorageByteArray().toHex() shouldBe "1003001609"
 
         ComplexModel { mapIntMulti.refAtKeyAndType(2u, T3, EmbeddedMarykModel.Properties) { value } }.toStorageByteArray().toHex() shouldBe "2404000000021d09"
         ComplexModel { mapIntMulti.refAtKeyAndType(2u, T3) { value } }.toStorageByteArray().toHex() shouldBe "2404000000021d09"

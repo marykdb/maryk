@@ -23,7 +23,7 @@ class SetItemReference<T : Any, CX : IsPropertyContext> internal constructor(
 ) : CanHaveSimpleChildReference<T, IsValueDefinition<T, CX>, SetReference<T, CX>, Set<T>>(
         setDefinition.valueDefinition, parentReference
     ),
-    IsPropertyReferenceWithDirectStorageParent<T, IsValueDefinition<T, CX>, SetReference<T, CX>, Set<T>> {
+    IsPropertyReferenceWithParent<T, IsValueDefinition<T, CX>, SetReference<T, CX>, Set<T>> {
     override val completeName: String
         get() = this.parentReference?.let {
             "${it.completeName}.$$value"

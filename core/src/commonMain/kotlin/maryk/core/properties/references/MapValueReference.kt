@@ -21,7 +21,7 @@ class MapValueReference<K : Any, V : Any, CX : IsPropertyContext> internal const
 ) : CanHaveComplexChildReference<V, IsSubDefinition<V, CX>, MapReference<K, V, CX>, Map<K, V>>(
         mapDefinition.valueDefinition, parentReference
     ),
-    IsPropertyReferenceWithDirectStorageParent<V, IsSubDefinition<V, CX>, MapReference<K, V, CX>, Map<K, V>> {
+    IsPropertyReferenceWithParent<V, IsSubDefinition<V, CX>, MapReference<K, V, CX>, Map<K, V>> {
     override val completeName
         get() = this.parentReference?.let {
             "${it.completeName}.@$key"

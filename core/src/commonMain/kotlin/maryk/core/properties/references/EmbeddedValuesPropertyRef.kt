@@ -51,7 +51,7 @@ class EmbeddedValuesPropertyRef<
     override fun getEmbeddedStorageRef(
         reader: () -> Byte,
         context: IsPropertyContext?,
-        referenceType: CompleteReferenceType,
+        referenceType: ReferenceType,
         isDoneReading: () -> Boolean
     ): AnyPropertyReference {
         return decodeStorageIndex(reader) { index, type ->

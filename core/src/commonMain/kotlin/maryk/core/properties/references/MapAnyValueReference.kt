@@ -1,8 +1,6 @@
 package maryk.core.properties.references
 
 import maryk.core.exceptions.RequestException
-import maryk.core.extensions.bytes.calculateVarByteLength
-import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.processors.datastore.matchers.FuzzyDynamicLengthMatch
 import maryk.core.processors.datastore.matchers.FuzzyExactLengthMatch
 import maryk.core.processors.datastore.matchers.IsFuzzyMatcher
@@ -24,7 +22,7 @@ class MapAnyValueReference<K : Any, V : Any, CX : IsPropertyContext> internal co
     val mapDefinition: IsMapDefinition<K, V, CX>,
     parentReference: MapReference<K, V, CX>?
 ) : IsFuzzyReference,
-    IsPropertyReferenceWithIndirectStorageParent<List<V>, IsListDefinition<V, CX>, MapReference<K, V, CX>, Map<K, V>>,
+    IsPropertyReferenceWithParent<List<V>, IsListDefinition<V, CX>, MapReference<K, V, CX>, Map<K, V>>,
     CanHaveComplexChildReference<List<V>, IsListDefinition<V, CX>, MapReference<K, V, CX>, Map<K, V>>(
         ListDefinition(valueDefinition = mapDefinition.valueDefinition as IsValueDefinition<V, CX>),
         parentReference
@@ -59,16 +57,11 @@ class MapAnyValueReference<K : Any, V : Any, CX : IsPropertyContext> internal co
     }
 
     override fun calculateSelfStorageByteLength(): Int {
-        return 1 + // The type byte
-            // The map index
-            (this.parentReference?.propertyDefinition?.index?.calculateVarByteLength() ?: 0) +
-            1
+        throw NotImplementedError("Map Any Value is not supported to convert to storage bytes. It uses fuzzy matchers instead")
     }
 
     override fun writeSelfStorageBytes(writer: (byte: Byte) -> Unit) {
-        writer(CompleteReferenceType.MAP_ANY_VALUE.value)
-        this.parentReference?.propertyDefinition?.index?.writeVarBytes(writer)
-        writer(0)
+        throw NotImplementedError("Map Any Value is not supported to convert to storage bytes. It uses fuzzy matchers instead")
     }
 
     override fun resolve(values: Map<K, V>): List<V> = values.values.toMutableList()

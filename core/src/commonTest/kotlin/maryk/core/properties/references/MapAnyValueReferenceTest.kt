@@ -49,20 +49,6 @@ class MapAnyValueReferenceTest {
     }
 
     @Test
-    fun writeAndReadAnyRefStorageBytes() {
-        val bc = ByteCollector()
-
-        bc.reserve(
-            anyReference.calculateStorageByteLength()
-        )
-        anyReference.writeStorageBytes(bc::write)
-
-        bc.bytes!!.toHex() shouldBe "100a00"
-
-        TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) shouldBe anyReference
-    }
-
-    @Test
     fun createAnyRefQualifierMatcher() {
         val matcher = anyReference.toQualifierMatcher()
 
@@ -75,20 +61,6 @@ class MapAnyValueReferenceTest {
                 (matcher is FuzzyExactLengthMatch) shouldBe true
                 (matcher as FuzzyExactLengthMatch).length shouldBe 3
             }
-        }
-    }
-
-    @Test
-    fun writeAndReadDeepAnyRefStorageBytes() {
-        ByteCollector().apply {
-            reserve(
-                subAnyReference.calculateStorageByteLength()
-            )
-            subAnyReference.writeStorageBytes(::write)
-
-            bytes!!.toHex() shouldBe "661e100a00"
-
-            TestMarykModel.Properties.getPropertyReferenceByStorageBytes(size, ::read) shouldBe subAnyReference
         }
     }
 }

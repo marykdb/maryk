@@ -6,9 +6,7 @@ import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
-import maryk.core.properties.references.CompleteReferenceType.MAP
-import maryk.core.properties.references.CompleteReferenceType.MAP_ANY_VALUE
-import maryk.core.properties.references.CompleteReferenceType.MAP_KEY
+import maryk.core.properties.references.ReferenceType.MAP
 import maryk.core.protobuf.ProtoBuf
 import maryk.lib.exceptions.ParseException
 
@@ -86,7 +84,7 @@ open class MapReference<K : Any, V : Any, CX : IsPropertyContext> internal const
     override fun getEmbeddedStorageRef(
         reader: () -> Byte,
         context: IsPropertyContext?,
-        referenceType: CompleteReferenceType,
+        referenceType: ReferenceType,
         isDoneReading: () -> Boolean
     ): AnyPropertyReference {
         return when (referenceType) {
@@ -94,20 +92,6 @@ open class MapReference<K : Any, V : Any, CX : IsPropertyContext> internal const
                 val mapKeyLength = initIntByVar(reader)
                 MapValueReference(
                     this.propertyDefinition.keyDefinition.readStorageBytes(mapKeyLength, reader),
-                    this.propertyDefinition.definition,
-                    this
-                )
-            }
-            MAP_KEY -> {
-                val mapKeyLength = initIntByVar(reader)
-                MapKeyReference(
-                    this.propertyDefinition.keyDefinition.readStorageBytes(mapKeyLength, reader),
-                    this.propertyDefinition.definition,
-                    this
-                )
-            }
-            MAP_ANY_VALUE -> {
-                MapAnyValueReference(
                     this.propertyDefinition.definition,
                     this
                 )

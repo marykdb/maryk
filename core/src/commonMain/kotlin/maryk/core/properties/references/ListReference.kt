@@ -8,7 +8,6 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.wrapper.IsListPropertyDefinitionWrapper
-import maryk.core.properties.references.CompleteReferenceType.LIST_ANY_VALUE
 import maryk.core.properties.references.ReferenceType.LIST
 import maryk.core.protobuf.ProtoBuf
 import maryk.lib.exceptions.ParseException
@@ -48,14 +47,12 @@ open class ListReference<T : Any, CX : IsPropertyContext> internal constructor(
     override fun getEmbeddedStorageRef(
         reader: () -> Byte,
         context: IsPropertyContext?,
-        referenceType: CompleteReferenceType,
+        referenceType: ReferenceType,
         isDoneReading: () -> Boolean
     ): AnyPropertyReference {
         return when (referenceType) {
-            CompleteReferenceType.LIST ->
+            LIST ->
                 ListItemReference(initUInt(reader), propertyDefinition.definition, this)
-            LIST_ANY_VALUE ->
-                ListAnyItemReference(propertyDefinition.definition, this)
             else -> throw TypeException("Unknown reference type below List: $referenceType")
         }
     }

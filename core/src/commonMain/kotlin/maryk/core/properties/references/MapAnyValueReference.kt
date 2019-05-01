@@ -20,10 +20,10 @@ import maryk.core.query.pairs.ReferenceValuePair
 /** Reference to map value [V] below any key of [K] contained in map referred by [parentReference] */
 class MapAnyValueReference<K : Any, V : Any, CX : IsPropertyContext> internal constructor(
     val mapDefinition: IsMapDefinition<K, V, CX>,
-    parentReference: MapReference<K, V, CX>?
+    parentReference: CanContainMapItemReference<*, *, *>?
 ) : IsFuzzyReference,
-    IsPropertyReferenceWithParent<List<V>, IsListDefinition<V, CX>, MapReference<K, V, CX>, Map<K, V>>,
-    CanHaveComplexChildReference<List<V>, IsListDefinition<V, CX>, MapReference<K, V, CX>, Map<K, V>>(
+    IsPropertyReferenceWithParent<List<V>, IsListDefinition<V, CX>, CanContainMapItemReference<*, *, *>, Map<K, V>>,
+    CanHaveComplexChildReference<List<V>, IsListDefinition<V, CX>, CanContainMapItemReference<*, *, *>, Map<K, V>>(
         ListDefinition(valueDefinition = mapDefinition.valueDefinition as IsValueDefinition<V, CX>),
         parentReference
     ) {

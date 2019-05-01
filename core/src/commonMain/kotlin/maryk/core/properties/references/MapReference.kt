@@ -8,6 +8,7 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
 import maryk.core.properties.references.ReferenceType.MAP
 import maryk.core.protobuf.ProtoBuf
+import maryk.core.values.AbstractValues
 import maryk.lib.exceptions.ParseException
 
 /**
@@ -20,6 +21,7 @@ open class MapReference<K : Any, V : Any, CX : IsPropertyContext> internal const
         propertyDefinition,
         parentReference
     ),
+    CanContainMapItemReference<Map<K, V>, MapPropertyDefinitionWrapper<K, V, Any, CX, *>, AbstractValues<*, *, *>>,
     HasEmbeddedPropertyReference<Map<K, V>> {
     override fun getEmbedded(name: String, context: IsPropertyContext?): AnyPropertyReference = when (name[0]) {
         '@' -> MapValueReference(

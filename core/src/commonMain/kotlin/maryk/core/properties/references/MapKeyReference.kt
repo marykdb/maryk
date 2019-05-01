@@ -13,11 +13,12 @@ import maryk.core.protobuf.WriteCacheWriter
 class MapKeyReference<K : Any, V : Any, CX : IsPropertyContext> internal constructor(
     val key: K,
     private val mapDefinition: IsMapDefinition<K, V, CX>,
-    parentReference: MapReference<K, V, CX>?
-) : CanHaveSimpleChildReference<K, IsPropertyDefinition<K>, MapReference<K, V, CX>, Map<K, V>>(
+    parentReference: CanContainMapItemReference<*, *, *>?
+) : CanHaveSimpleChildReference<K, IsPropertyDefinition<K>, CanContainMapItemReference<*, *, *>, Map<K, V>>(
         mapDefinition.keyDefinition, parentReference
     ),
-    IsPropertyReferenceWithParent<K, IsPropertyDefinition<K>, MapReference<K, V, CX>, Map<K, V>> {
+    CanContainMapItemReference<K, IsPropertyDefinition<K>, Map<K, V>>,
+    IsPropertyReferenceWithParent<K, IsPropertyDefinition<K>, CanContainMapItemReference<*, *, *>, Map<K, V>> {
     override val completeName
         get() = this.parentReference?.let {
             "${it.completeName}.$$key"

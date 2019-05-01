@@ -1,10 +1,10 @@
 package maryk.core.properties.definitions
 
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.references.CanContainMapItemReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.MapAnyValueReference
 import maryk.core.properties.references.MapKeyReference
-import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.MapValueReference
 
 /** Interface for a Map definition with key [K], value [V] and context [CX] */
@@ -20,14 +20,14 @@ interface IsMapDefinition<K : Any, V : Any, CX : IsPropertyContext>
     )
 
     /** Get a reference to a specific map [key] on [parentMap] */
-    fun keyRef(key: K, parentMap: MapReference<K, V, CX>?) =
+    fun keyRef(key: K, parentMap: CanContainMapItemReference<*, *, *>?) =
         MapKeyReference(key, this, parentMap)
 
     /** Get a reference to a specific map value on [parentMap] by [key] */
-    fun valueRef(key: K, parentMap: MapReference<K, V, CX>?) =
+    fun valueRef(key: K, parentMap: CanContainMapItemReference<*, *, *>?) =
         MapValueReference(key, this, parentMap)
 
     /** Get a reference to any map value on [parentMap] */
-    fun anyValueRef(parentMap: MapReference<K, V, CX>?) =
+    fun anyValueRef(parentMap: CanContainMapItemReference<*, *, *>?) =
         MapAnyValueReference(this, parentMap)
 }

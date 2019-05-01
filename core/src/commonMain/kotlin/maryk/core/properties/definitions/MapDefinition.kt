@@ -13,8 +13,8 @@ import maryk.core.properties.exceptions.NotEnoughItemsException
 import maryk.core.properties.exceptions.TooManyItemsException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
+import maryk.core.properties.references.CanContainMapItemReference
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.references.MapReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
@@ -82,16 +82,14 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
                 for ((key, value) in newValue) {
                     try {
                         this.keyDefinition.validateWithRef(null, key) {
-                            @Suppress("UNCHECKED_CAST")
-                            this.keyRef(key, refGetter() as MapReference<K, V, CX>?)
+                            this.keyRef(key, refGetter() as CanContainMapItemReference<*, *, *>?)
                         }
                     } catch (e: ValidationException) {
                         addException(e)
                     }
                     try {
                         this.valueDefinition.validateWithRef(null, value) {
-                            @Suppress("UNCHECKED_CAST")
-                            this.valueRef(key, refGetter() as MapReference<K, V, CX>?)
+                            this.valueRef(key, refGetter() as CanContainMapItemReference<*, *, *>?)
                         }
                     } catch (e: ValidationException) {
                         addException(e)

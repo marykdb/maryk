@@ -10,7 +10,7 @@ inline fun <reified T> shouldThrow(thunk: () -> Any?): T {
 
     when (throwable) {
         null -> throw AssertionError("Expected ${T::class.simpleName} but nothing was thrown")
-        !is T -> throw AssertionError("Expected ${T::class.simpleName} but ${throwable::class.simpleName} was thrown")
+        !is T -> throw throwable
         else -> return throwable
     }
 }

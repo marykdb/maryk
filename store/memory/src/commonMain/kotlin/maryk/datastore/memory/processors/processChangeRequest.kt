@@ -377,7 +377,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
 
                                                     createCountUpdater(
                                                         newValueList,
-                                                        reference.parentReference as IsPropertyReference<out Map<*, *>, IsPropertyDefinition<out Map<*, *>>, out Any>,
+                                                        reference.parentReference as IsPropertyReference<*, *, *>,
                                                         version,
                                                         1,
                                                         keepAllVersions
@@ -425,7 +425,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                         is MapValueReference<*, *, *> -> {
                                             createCountUpdater(
                                                 newValueList,
-                                                ref.parentReference as IsPropertyReference<out Map<*, *>, IsPropertyDefinition<out Map<*, *>>, out Any>,
+                                                ref.parentReference as IsPropertyReference<*, *, *>,
                                                 version,
                                                 -1,
                                                 keepAllVersions

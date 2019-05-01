@@ -17,11 +17,12 @@ import maryk.core.query.pairs.ReferenceValuePair
 class MapValueReference<K : Any, V : Any, CX : IsPropertyContext> internal constructor(
     val key: K,
     val mapDefinition: IsMapDefinition<K, V, CX>,
-    parentReference: MapReference<K, V, CX>?
-) : CanHaveComplexChildReference<V, IsSubDefinition<V, CX>, MapReference<K, V, CX>, Map<K, V>>(
+    parentReference: CanContainMapItemReference<*, *, *>?
+) : CanHaveComplexChildReference<V, IsSubDefinition<V, CX>, CanContainMapItemReference<*, *, *>, Map<K, V>>(
         mapDefinition.valueDefinition, parentReference
     ),
-    IsPropertyReferenceWithParent<V, IsSubDefinition<V, CX>, MapReference<K, V, CX>, Map<K, V>> {
+    CanContainMapItemReference<V, IsSubDefinition<V, CX>, Map<K, V>>,
+    IsPropertyReferenceWithParent<V, IsSubDefinition<V, CX>, CanContainMapItemReference<*, *, *>, Map<K, V>> {
     override val completeName
         get() = this.parentReference?.let {
             "${it.completeName}.@$key"

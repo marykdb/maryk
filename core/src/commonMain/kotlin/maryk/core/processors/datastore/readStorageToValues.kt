@@ -123,7 +123,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
 }
 
 /** Read qualifier from [qualifier] at [currentOffset] with [definition] into a value */
-private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifierOfType(
+private fun readQualifierOfType(
     qualifier: ByteArray,
     currentOffset: Int,
     partOffset: Int,
@@ -209,7 +209,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifierOfType(
 
                     // Add value processor to cache starting after list item
                     addToCache(partOffset) { q ->
-                        this.readQualifierOfType(q, currentOffset, partOffset, definition, index, refStoreType, select, listValueAdder, readValueFromStorage, addToCache)
+                        readQualifierOfType(q, currentOffset, partOffset, definition, index, refStoreType, select, listValueAdder, readValueFromStorage, addToCache)
                     }
 
                     addValueToOutput(index, list)
@@ -244,7 +244,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifierOfType(
                     val setValueAdder: AddToValues = { _, value -> set += value }
 
                     addToCache(partOffset) { q ->
-                        this.readQualifierOfType(q, currentOffset, partOffset, definition, index, refStoreType, select, setValueAdder, readValueFromStorage, addToCache)
+                        readQualifierOfType(q, currentOffset, partOffset, definition, index, refStoreType, select, setValueAdder, readValueFromStorage, addToCache)
                     }
 
                     addValueToOutput(index, set)
@@ -284,7 +284,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifierOfType(
 
                     // For later map items the above map value adder is used
                     addToCache(partOffset) { q ->
-                        this.readQualifierOfType(q, currentOffset, partOffset, definition, index, refStoreType, select, mapValueAdder, readValueFromStorage, addToCache)
+                        readQualifierOfType(q, currentOffset, partOffset, definition, index, refStoreType, select, mapValueAdder, readValueFromStorage, addToCache)
                     }
 
                     addValueToOutput(index, map)
@@ -386,7 +386,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifierOfType(
                                 addToCache = addToCache
                             )
                         }
-                        else -> throw StorageException("Can only use Embedded/MultiType as complex value type in Map $mapDefinition")
+                        else -> throw StorageException("Can only use Embedded/MultiType/List/Set/Map as complex value type in Map $mapDefinition")
                     }
                 }
             }
@@ -535,7 +535,60 @@ private fun IsMultiTypeDefinition<*, *>.readComplexTypedValue(
                 addMultiTypeToOutput
             )
         }
-        else -> throw InvalidDefinitionException("Can only use Embedded/MultiType as complex value type in Multi Type $definition")
+        is IsMultiTypeDefinition<*, *> -> {
+            readTypedValue(
+                qualifier,
+                offset,
+                readValueFromStorage,
+                definition,
+                select,
+                addToCache,
+                addMultiTypeToOutput
+            )
+        }
+        is IsListDefinition<*, *> -> {
+            readQualifierOfType(
+                qualifier = qualifier,
+                currentOffset = offset + 1,
+                partOffset = offset,
+                definition = definition,
+                index = index,
+                refStoreType = LIST,
+                select = select,
+                addValueToOutput = { _, value -> addMultiTypeToOutput(value) },
+                readValueFromStorage = readValueFromStorage,
+                addToCache = addToCache
+            )
+        }
+        is IsSetDefinition<*, *> -> {
+            readQualifierOfType(
+                qualifier = qualifier,
+                currentOffset = offset + 1,
+                partOffset = offset,
+                definition = definition,
+                index = index,
+                refStoreType = SET,
+                select = select,
+                addValueToOutput = { _, value -> addMultiTypeToOutput(value) },
+                readValueFromStorage = readValueFromStorage,
+                addToCache = addToCache
+            )
+        }
+        is IsMapDefinition<*, *, *> -> {
+            readQualifierOfType(
+                qualifier = qualifier,
+                currentOffset = offset + 1,
+                partOffset = offset,
+                definition = definition,
+                index = index,
+                refStoreType = MAP,
+                select = select,
+                addValueToOutput = { _, value -> addMultiTypeToOutput(value) },
+                readValueFromStorage = readValueFromStorage,
+                addToCache = addToCache
+            )
+        }
+        else -> throw InvalidDefinitionException("Can only use Embedded/MultiType/List/Set/Map as complex value type in Multi Type $definition")
     }
 }
 

@@ -51,8 +51,11 @@ sealed class MultiTypeEnum(
     object T2: MultiTypeEnum(2u)
     object T3: MultiTypeEnum(3u), EmbedTypeCase<MultiTypeEnum, Properties>
     object T4: MultiTypeEnum(4u)
+    object T5: MultiTypeEnum(5u)
+    object T6: MultiTypeEnum(6u)
+    object T7: MultiTypeEnum(7u)
 
-    companion object : IndexedEnumDefinition<MultiTypeEnum>(MultiTypeEnum::class, { arrayOf(T1, T2, T3) })
+    companion object : IndexedEnumDefinition<MultiTypeEnum>(MultiTypeEnum::class, { arrayOf(T1, T2, T3, T4, T5, T6, T7) })
 }
 
 object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>(

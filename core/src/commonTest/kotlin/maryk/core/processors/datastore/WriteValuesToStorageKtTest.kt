@@ -66,6 +66,6 @@ class WriteValuesToStorageKtTest {
             }
             counter++
         }
-        counter shouldBe 22
+        counter shouldBe 38
     }
 }

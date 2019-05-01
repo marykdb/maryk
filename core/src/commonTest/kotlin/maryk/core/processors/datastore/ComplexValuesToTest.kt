@@ -5,6 +5,11 @@ import maryk.test.models.ComplexModel
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.MultiTypeEnum.T1
 import maryk.test.models.MultiTypeEnum.T3
+import maryk.test.models.MultiTypeEnum.T4
+import maryk.test.models.MultiTypeEnum.T5
+import maryk.test.models.MultiTypeEnum.T6
+import maryk.test.models.MultiTypeEnum.T7
+import maryk.test.models.Option.V3
 
 val complexValues = ComplexModel(
     multi = TypedValue(T3, EmbeddedMarykModel("u3", EmbeddedMarykModel("ue3"))),
@@ -15,7 +20,14 @@ val complexValues = ComplexModel(
     ),
     mapIntMulti = mapOf(
         2u to TypedValue(T3, EmbeddedMarykModel("m3", EmbeddedMarykModel("me3"))),
-        5u to TypedValue(T1, "TEST")
+        5u to TypedValue(T1, "TEST"),
+        7u to TypedValue(T4, listOf("a", "b")),
+        8u to TypedValue(T5, setOf("c", "d")),
+        9u to TypedValue(T6, mapOf(
+            5u to "e",
+            6u to "f"
+        )),
+        10u to TypedValue(T7, TypedValue(V3, EmbeddedMarykModel("g")))
     )
 )
 
@@ -35,11 +47,27 @@ val complexValuesAsStorables = arrayOf(
     "1c040000000209" to "t2",
     "1c040000000216" to Unit,
     "1c04000000021609" to "te2",
-    "24" to 2,
+    "24" to 6,
     "240400000002" to TypedValue(T3, Unit),
     "2404000000021d" to Unit,
     "2404000000021d09" to "m3",
     "2404000000021d16" to Unit,
     "2404000000021d1609" to "me3",
-    "240400000005" to TypedValue(T1, "TEST")
+    "240400000005" to TypedValue(T1, "TEST"),
+    "240400000007" to TypedValue(T4, Unit),
+    "2404000000072502" to 2,
+    "240400000007250200000000" to "a",
+    "240400000007250200000001" to "b",
+    "240400000008" to TypedValue(T5, Unit),
+    "2404000000082d03" to 2,
+    "2404000000082d030163" to "c",
+    "2404000000082d030164" to "d",
+    "240400000009" to TypedValue(T6, Unit),
+    "2404000000093504" to 2,
+    "24040000000935040400000005" to "e",
+    "24040000000935040400000006" to "f",
+    "24040000000a" to TypedValue(T7, Unit),
+    "24040000000a3d" to TypedValue(V3, Unit),
+    "24040000000a3d1d" to Unit,
+    "24040000000a3d1d09" to "g"
 )

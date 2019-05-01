@@ -4,11 +4,14 @@ import maryk.core.models.RootDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
+import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.numeric.SInt16
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.values.Values
@@ -16,6 +19,13 @@ import maryk.test.models.ComplexModel.Properties
 import maryk.test.models.MultiTypeEnum.T1
 import maryk.test.models.MultiTypeEnum.T2
 import maryk.test.models.MultiTypeEnum.T3
+import maryk.test.models.MultiTypeEnum.T4
+import maryk.test.models.MultiTypeEnum.T5
+import maryk.test.models.MultiTypeEnum.T6
+import maryk.test.models.MultiTypeEnum.T7
+import maryk.test.models.Option.V1
+import maryk.test.models.Option.V2
+import maryk.test.models.Option.V3
 
 object ComplexModel : RootDataModel<ComplexModel, Properties>(
     properties = Properties
@@ -66,6 +76,7 @@ object ComplexModel : RootDataModel<ComplexModel, Properties>(
             )
         )
 
+        @Suppress("RemoveExplicitTypeArguments")
         val mapIntMulti = add(
             index = 4u, name = "mapIntMulti",
             definition = MapDefinition(
@@ -80,6 +91,26 @@ object ComplexModel : RootDataModel<ComplexModel, Properties>(
                         T2 to NumberDefinition(type = SInt32),
                         T3 to EmbeddedValuesDefinition(
                             dataModel = { EmbeddedMarykModel }
+                        ),
+                        T4 to ListDefinition(
+                            valueDefinition = StringDefinition()
+                        ),
+                        T5 to SetDefinition(
+                            valueDefinition = StringDefinition()
+                        ),
+                        T6 to MapDefinition(
+                            keyDefinition = NumberDefinition(type = UInt32),
+                            valueDefinition = StringDefinition()
+                        ),
+                        T7 to MultiTypeDefinition<Option, IsPropertyContext>(
+                            typeEnum = Option,
+                            definitionMap = mapOf(
+                                V1 to StringDefinition(),
+                                V2 to NumberDefinition(type = SInt16),
+                                V3 to EmbeddedValuesDefinition(
+                                    dataModel = { EmbeddedMarykModel }
+                                )
+                            )
                         )
                     )
                 )

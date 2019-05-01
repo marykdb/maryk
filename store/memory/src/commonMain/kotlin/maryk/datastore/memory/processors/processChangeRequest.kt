@@ -27,8 +27,10 @@ import maryk.core.properties.exceptions.createValidationUmbrellaException
 import maryk.core.properties.references.EmbeddedValuesPropertyRef
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceWithParent
+import maryk.core.properties.references.ListAnyItemReference
 import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.ListReference
+import maryk.core.properties.references.MapAnyValueReference
 import maryk.core.properties.references.MapKeyReference
 import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.MapValueReference
@@ -386,6 +388,8 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                                 }
                                                 is SetItemReference<*, *> -> throw RequestException("Not allowed to add with a Set Item reference, use SetChange instead")
                                                 is MapKeyReference<*, *, *> -> throw RequestException("Not allowed to add with a Map key, use Map value instead")
+                                                is MapAnyValueReference<*, *, *> -> throw RequestException("Not allowed to add Map with any key reference")
+                                                is ListAnyItemReference<*, *> -> throw RequestException("Not allowed to add List with any item reference")
                                             }
                                         }
 
@@ -455,6 +459,8 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                             }
                                         }
                                         is MapKeyReference<*, *, *> -> throw RequestException("Not allowed to delete Map key, delete value instead")
+                                        is MapAnyValueReference<*, *, *> -> throw RequestException("Not allowed to delete Map with any key reference, delete by map reference instead")
+                                        is ListAnyItemReference<*, *> -> throw RequestException("Not allowed to delete List with any item reference, delete by list reference instead")
                                     }
                                 } catch (e: ValidationException) {
                                     addValidationFail(e)

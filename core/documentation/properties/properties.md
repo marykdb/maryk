@@ -7,28 +7,29 @@ and stored.
 
 ## Types of properties
 
-|Type                                     |Keyable |MapKey|MapValue|MultiType|List/Set|Indexable   |
-|:----------------------------------------|:------:|:----:|:------:|:------:|:------:|:----------:|
-|[String](types/string.md)                |❌      |✅    |✅      |✅       |✅      |✅          |
-|[Boolean](types/boolean.md)              |✅      |✅    |✅      |✅       |✅      |✅          |
-|[Number](types/number.md)*               |✅      |✅    |✅      |✅       |✅      |✅          |
-|[Enum](types/enum.md)                    |✅      |✅    |✅      |✅       |✅      |✅          |
-|[Date](types/date.md)                    |✅      |✅    |✅      |✅       |✅      |✅          |
-|[Time](types/time.md)                    |✅      |✅    |✅      |✅       |✅      |✅          |
-|[DateTime](types/datetime.md)            |✅      |✅    |✅      |✅       |✅      |✅          |
-|[Reference](types/reference.md)          |✅      |✅    |✅      |✅       |✅      |✅          |
-|[FixedBytes](types/fixedBytes.md)        |✅      |✅    |✅      |✅       |✅      |✅          |
-|[FlexBytes](types/flexBytes.md)          |❌      |✅    |✅      |✅       |✅      |✅          |
-|[MultiType](types/multiType.md)          |typeId**|❌    |✅      |❌       |❌      |✅          |
-|[List](types/list.md)                    |❌      |❌    |✅      |✅       |❌      |✅          |
-|[Set](types/set.md)                      |❌      |❌    |✅      |✅       |❌      |✅          |
-|[Map](types/map.md)                      |❌      |❌    |✅      |✅       |❌      |key only    |
-|[Embed](types/embeddedValues.md)         |❌      |❌    |✅      |✅       |❌      |subProp only|
-|[ValueModel](types/valueModel.md)        |❌      |✅    |✅      |✅       |✅      |✅          |
+|Type                                     |Keyable |Indexable |List/Set|MapKey|MapValue|MultiType|
+|:----------------------------------------|:------:|:--------:|:------:|:----:|:------:|:-------:|
+|[String](types/string.md)                |❌      |✅        |✅      |✅    |✅       |✅       |
+|[Boolean](types/boolean.md)              |✅      |✅        |✅      |✅    |✅       |✅       |
+|[Number](types/number.md)🔢              |✅      |✅        |✅      |✅    |✅       |✅       |
+|[Enum](types/enum.md)                    |✅      |✅        |✅      |✅    |✅       |✅       |
+|[Date](types/date.md)                    |✅      |✅        |✅      |✅    |✅       |✅       |
+|[Time](types/time.md)                    |✅      |✅        |✅      |✅    |✅       |✅       |
+|[DateTime](types/datetime.md)            |✅      |✅        |✅      |✅    |✅       |✅       |
+|[Reference](types/reference.md)          |✅      |✅        |✅      |✅    |✅       |✅       |
+|[FixedBytes](types/fixedBytes.md)        |✅      |✅        |✅      |✅    |✅       |✅       |
+|[FlexBytes](types/flexBytes.md)          |❌      |✅        |✅      |✅    |✅       |✅       |
+|[MultiType](types/multiType.md)          |🆔      |✅        |❌      |❌    |✅       |✅       |
+|[List](types/list.md)                    |❌      |✅        |❌      |❌    |✅       |✅       |
+|[Set](types/set.md)                      |❌      |✅        |❌      |❌    |✅       |✅       |
+|[Map](types/map.md)                      |❌      |🔑        |❌      |❌    |✅       |✅       |
+|[Embed](types/embeddedValues.md)         |❌      |⤵️        |❌      |❌    |✅       |✅       |
+|[ValueModel](types/valueModel.md)        |❌      |✅        |✅      |✅    |✅       |✅       |
 
-\* All numeric properties like Int8/16/32/64, UInt8/16/32/64, Float, Double 
-
-\*\* Only the typeID of multitypes can be used in the key 
+🔢 All numeric properties like Int8/16/32/64, UInt8/16/32/64, Float, Double 
+🆔 Only the typeID of multitypes can be used in the key
+🔑 Only the key of the map can be indexed 
+⤵️ Only specific values below the embedded object can be indexed, not the whole object itself
 
 
 - Keyable - true for properties which can be used within a key. 

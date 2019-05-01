@@ -104,6 +104,6 @@ internal class PropertyReferenceTest {
     fun createMatcher() {
         val matcher = subRef.toQualifierMatcher()
         (matcher is QualifierExactMatcher) shouldBe true
-        (matcher as QualifierExactMatcher).qualifier.toHex() shouldBe "0916"
+        (matcher as QualifierExactMatcher).qualifier.toHex() shouldBe "1609"
     }
 }

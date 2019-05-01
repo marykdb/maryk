@@ -95,6 +95,8 @@ interface IsPropertyReference<T : Any, out D : IsPropertyDefinition<T>, V : Any>
 
         var ref: IsPropertyReference<*, *, *> = this
         var lastRef: IsPropertyReference<*, *, *>? = null
+
+        var writeIndex = 0
         while (ref !== lastRef) {
             if (ref is IsFuzzyReference) {
                 if(bytes.isNotEmpty()) {
@@ -104,9 +106,10 @@ interface IsPropertyReference<T : Any, out D : IsPropertyDefinition<T>, V : Any>
                 fuzzyMatchers.add(0, ref.fuzzyMatcher())
             } else {
                 ref.writeSelfStorageBytes {
-                    bytes += it
+                    bytes.add(writeIndex++, it)
                 }
             }
+            writeIndex = 0
 
             lastRef = ref
             when {

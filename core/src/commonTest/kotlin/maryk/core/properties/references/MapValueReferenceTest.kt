@@ -85,6 +85,6 @@ class MapValueReferenceTest {
     fun createValueRefQualifierMatcher() {
         val matcher = subReference.toQualifierMatcher()
 
-        shouldBeOfType<QualifierExactMatcher>(matcher).qualifier.toHex() shouldBe "540300d84f1e66"
+        shouldBeOfType<QualifierExactMatcher>(matcher).qualifier.toHex() shouldBe "661e540300d84f"
     }
 }

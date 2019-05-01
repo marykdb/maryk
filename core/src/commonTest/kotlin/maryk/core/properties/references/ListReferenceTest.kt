@@ -61,6 +61,6 @@ class ListReferenceTest {
     fun createItemRefQualifierMatcher() {
         val matcher = listReference.toQualifierMatcher()
 
-        shouldBeOfType<QualifierExactMatcher>(matcher).qualifier.toHex() shouldBe "7a1e66"
+        shouldBeOfType<QualifierExactMatcher>(matcher).qualifier.toHex() shouldBe "661e7a"
     }
 }

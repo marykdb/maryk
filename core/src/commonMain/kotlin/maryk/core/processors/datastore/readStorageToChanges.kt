@@ -38,10 +38,10 @@ import maryk.core.properties.graph.IsPropRefGraph
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.AnyValuePropertyReference
+import maryk.core.properties.references.CanContainListItemReference
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceWithParent
-import maryk.core.properties.references.ListReference
 import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.ReferenceType
 import maryk.core.properties.references.ReferenceType.DELETE
@@ -332,7 +332,7 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
                 @Suppress("UNCHECKED_CAST")
                 val listDefinition = definition as IsListDefinition<Any, IsPropertyContext>
                 @Suppress("UNCHECKED_CAST")
-                val listReference = reference as ListReference<Any, IsPropertyContext>
+                val listReference = reference as CanContainListItemReference<*, *, *>
 
                 // Read set contents. Always a simple value for set since it is in qualifier
                 val valueDefinition =
@@ -501,6 +501,20 @@ private fun <P : PropertyDefinitions> readComplexChanges(
                 parentReference,
                 addToCache,
                 addChangeToOutput
+            )
+        }
+        is IsListDefinition<*, *> -> {
+            readQualifierOfType(
+                qualifier = qualifier,
+                currentOffset = offset + 1,
+                definition = definition,
+                refStoreType = LIST,
+                index = 0u, // Is ignored by addValueToOutput
+                select = select,
+                reference = parentReference,
+                addChangeToOutput = addChangeToOutput,
+                readValueFromStorage = readValueFromStorage,
+                addToCache = addToCache
             )
         }
         else -> throw StorageException("Can only use Embedded as values with deeper values. Not $definition")

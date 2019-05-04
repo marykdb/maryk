@@ -10,6 +10,7 @@ import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.wrapper.IsListPropertyDefinitionWrapper
 import maryk.core.properties.references.ReferenceType.LIST
 import maryk.core.protobuf.ProtoBuf
+import maryk.core.values.AbstractValues
 import maryk.lib.exceptions.ParseException
 
 /** Reference to a List property of type [T] and context [CX] */
@@ -19,7 +20,7 @@ open class ListReference<T : Any, CX : IsPropertyContext> internal constructor(
 ) : PropertyReferenceForValues<List<T>, List<Any>, IsListPropertyDefinitionWrapper<T, Any, ListDefinition<T, CX>, CX, *>, CanHaveComplexChildReference<*, *, *, *>>(
     propertyDefinition,
     parentReference
-), HasEmbeddedPropertyReference<T> {
+), HasEmbeddedPropertyReference<T>, CanContainListItemReference<List<T>, IsListPropertyDefinitionWrapper<T, Any, ListDefinition<T, CX>, CX, *>, AbstractValues<*, *, *>> {
     override fun getEmbedded(name: String, context: IsPropertyContext?): AnyPropertyReference = when (name[0]) {
         '@' -> ListItemReference(name.substring(1).toUInt(), propertyDefinition.definition, this)
         '*' -> ListAnyItemReference(propertyDefinition.definition, this)

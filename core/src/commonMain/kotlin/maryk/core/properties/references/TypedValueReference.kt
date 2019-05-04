@@ -34,6 +34,7 @@ class TypedValueReference<E : IndexedEnum, in CX : IsPropertyContext> internal c
         multiTypeDefinition.definitionMap[type] as IsSubDefinition<Any, CX>,
         parentReference
     ),
+    CanContainListItemReference<Any, IsSubDefinition<Any, CX>, TypedValue<E, Any>>,
     IsPropertyReferenceWithParent<Any, IsSubDefinition<Any, CX>, CanHaveComplexChildReference<*, *, *, *>, TypedValue<E, Any>>,
     HasEmbeddedPropertyReference<Any> {
     override val completeName: String

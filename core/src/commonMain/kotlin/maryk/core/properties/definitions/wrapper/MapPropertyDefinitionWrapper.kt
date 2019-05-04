@@ -6,18 +6,22 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
+import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.enum.EmbedTypeCase
 import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.enum.ListTypeCase
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.MapAnyValueReference
 import maryk.core.properties.references.MapKeyReference
 import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.MapValueReference
+import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.values.Values
 
@@ -101,6 +105,17 @@ fun <K : Any, V : Values<*, P>, DM : IsValuesDataModel<P>, P : PropertyDefinitio
         )
     }
 
+/** Specific extension to support fetching ref on Map values by [key] and [type] */
+@Suppress("UNCHECKED_CAST")
+fun <K : Any, E : IndexedEnum> MapPropertyDefinitionWrapper<K, TypedValue<E, Any>, *, *, *>.refToKeyAndType(
+    key: K,
+    type: E
+): (AnyOutPropertyReference?) -> TypedValueReference<E, IsPropertyContext> =
+    {
+        val multiTypeDef = (this.definition.valueDefinition as IsMultiTypeDefinition<E, IsPropertyContext>)
+        multiTypeDef.typedValueRef(type, this.valueRef(key, it))
+    }
+
 /** Specific extension to support fetching sub refs on Map values by [key] and [type] */
 @Suppress("UNCHECKED_CAST")
 fun <K : Any, E : IndexedEnum, P : PropertyDefinitions, T : Any, W : IsPropertyDefinitionWrapper<T, *, *, *>> MapPropertyDefinitionWrapper<K, TypedValue<E, Any>, *, *, *>.refAtKeyAndType(
@@ -131,6 +146,52 @@ fun <K : Any, E : IndexedEnum, P : PropertyDefinitions, T : Any, W : IsPropertyD
         (multiTypeDef.definitionMap[type] as EmbeddedValuesDefinition<IsValuesDataModel<P>, P>).dataModel.ref(
             typedValueRef,
             propertyDefinitionGetter
+        )
+    }
+
+/** Specific extension to support fetching sub refs on Map values by [key] and [type] */
+@Suppress("UNCHECKED_CAST")
+fun <K : Any, E : IndexedEnum, T : Any> MapPropertyDefinitionWrapper<K, TypedValue<E, Any>, *, *, *>.refToKeyTypeAndIndexWeak(
+    key: K,
+    type: E,
+    listIndex: UInt
+): (AnyOutPropertyReference?) -> ListItemReference<T, *> =
+    {
+        val multiTypeDef = (this.definition.valueDefinition as IsMultiTypeDefinition<E, IsPropertyContext>)
+        val typedValueRef = multiTypeDef.typedValueRef(type, this.valueRef(key, it))
+        (multiTypeDef.definitionMap[type] as ListDefinition<T, *>).itemRef(
+            listIndex,
+            typedValueRef
+        )
+    }
+
+/** Specific extension to support fetching sub refs on Map values by [key] and [type] */
+@Suppress("UNCHECKED_CAST")
+fun <K : Any, E : IndexedEnum, T : Any> MapPropertyDefinitionWrapper<K, TypedValue<E, Any>, *, *, *>.refToKeyTypeAndIndex(
+    key: K,
+    type: ListTypeCase<E, T>,
+    listIndex: UInt
+): (AnyOutPropertyReference?) -> ListItemReference<T, *> =
+    {
+        val multiTypeDef = (this.definition.valueDefinition as IsMultiTypeDefinition<E, IsPropertyContext>)
+        val typedValueRef = multiTypeDef.typedValueRef(type as E, this.valueRef(key, it))
+        (multiTypeDef.definitionMap[type] as ListDefinition<T, *>).itemRef(
+            listIndex,
+            typedValueRef
+        )
+    }
+
+
+/** Specific extension to support fetching sub refs on Map values by [key] and [type] */
+@Suppress("UNCHECKED_CAST")
+fun <K : Any, T : Any> MapPropertyDefinitionWrapper<K, List<T>, *, *, *>.refToKeyAndIndex(
+    key: K,
+    listIndex: UInt
+): (AnyOutPropertyReference?) -> ListItemReference<T, *> =
+    {
+        (this.valueDefinition as ListDefinition<T, *>).itemRef(
+            listIndex,
+            this.valueRef(key, it)
         )
     }
 

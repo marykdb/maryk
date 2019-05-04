@@ -22,10 +22,10 @@ import maryk.core.query.pairs.ReferenceValuePair
 class ListItemReference<T : Any, CX : IsPropertyContext> internal constructor(
     val index: UInt,
     val listDefinition: IsListDefinition<T, CX>,
-    parentReference: ListReference<T, CX>?
+    parentReference: CanContainListItemReference<*, *, *>?
 ) : HasEmbeddedPropertyReference<T>,
-    IsPropertyReferenceWithParent<T, IsValueDefinition<T, CX>, ListReference<T, CX>, List<T>>,
-    CanHaveComplexChildReference<T, IsValueDefinition<T, CX>, ListReference<T, CX>, List<T>>(
+    IsPropertyReferenceWithParent<T, IsValueDefinition<T, CX>, CanContainListItemReference<*, *, *>, List<T>>,
+    CanHaveComplexChildReference<T, IsValueDefinition<T, CX>, CanContainListItemReference<*, *, *>, List<T>>(
         listDefinition.valueDefinition, parentReference
     ) {
     /** Convenience infix method to create Reference [value] pairs */

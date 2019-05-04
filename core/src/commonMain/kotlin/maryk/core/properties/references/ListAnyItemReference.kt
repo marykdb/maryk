@@ -17,11 +17,11 @@ import maryk.core.query.pairs.ReferenceValuePair
 /** Reference to any List Item on [parentReference] with [T] */
 class ListAnyItemReference<T : Any, CX : IsPropertyContext> internal constructor(
     listDefinition: IsListDefinition<T, CX>,
-    parentReference: ListReference<T, CX>?
+    parentReference: IsPropertyReference<*, *, *>?
 ) : HasEmbeddedPropertyReference<T>,
     IsFuzzyReference,
-    IsPropertyReferenceWithParent<List<T>, IsListDefinition<T, CX>, ListReference<T, CX>, List<T>>,
-    CanHaveComplexChildReference<List<T>, IsListDefinition<T, CX>, ListReference<T, CX>, List<T>>(
+    IsPropertyReferenceWithParent<List<T>, IsListDefinition<T, CX>, IsPropertyReference<*, *, *>, List<T>>,
+    CanHaveComplexChildReference<List<T>, IsListDefinition<T, CX>, IsPropertyReference<*, *, *>, List<T>>(
         listDefinition, parentReference
     ) {
     /** Convenience infix method to create Reference [value] pairs */

@@ -4,6 +4,8 @@ import maryk.core.properties.definitions.wrapper.at
 import maryk.core.properties.definitions.wrapper.atKeyAndType
 import maryk.core.properties.definitions.wrapper.refAtKey
 import maryk.core.properties.definitions.wrapper.refAtKeyAndType
+import maryk.core.properties.definitions.wrapper.refToKeyAndIndex
+import maryk.core.properties.definitions.wrapper.refToKeyTypeAndIndex
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.MultiTypeChange
@@ -41,7 +43,14 @@ private val complexValuesAsStorablesWithVersion = arrayOf(
     "2404000000021d16" to arrayOf(1234uL to Unit),
     "2404000000021d1609" to arrayOf(1234uL to "me3"),
     "240400000005" to arrayOf(1234uL to TypedValue(T1, "TEST")),
-    "240400000007" to arrayOf(1234uL to TypedValue(T4, Unit))
+    "240400000007" to arrayOf(1234uL to TypedValue(T4, Unit)),
+    "2404000000072502" to arrayOf(1234uL to 2),
+    "240400000007250200000000" to arrayOf(1234uL to "a"),
+    "240400000007250200000001" to arrayOf(1234uL to "b"),
+    "2c" to arrayOf(1234uL to 1),
+    "2c016102" to arrayOf(1234uL to 2),
+    "2c01610200000000" to arrayOf(1234uL to "a1"),
+    "2c01610200000001" to arrayOf(1234uL to "a2")
 )
 
 class ReadStorageToChangesComplexKtTest {
@@ -83,7 +92,11 @@ class ReadStorageToChangesComplexKtTest {
                         ComplexModel { mapIntObject.at(2u) { model.ref { value } } } with "te2",
                         ComplexModel { mapIntMulti.refAtKeyAndType(2u, T3) { value } } with "m3",
                         ComplexModel { mapIntMulti.atKeyAndType(2u, T3) { model.ref { value } } } with "me3",
-                        ComplexModel { mapIntMulti.refAt(5u) } with TypedValue(T1, "TEST")
+                        ComplexModel { mapIntMulti.refAt(5u) } with TypedValue(T1, "TEST"),
+                        ComplexModel { mapIntMulti.refToKeyTypeAndIndex(7u, T4, 0u) } with "a",
+                        ComplexModel { mapIntMulti.refToKeyTypeAndIndex(7u, T4, 1u) } with "b",
+                        ComplexModel { mapWithList.refToKeyAndIndex("a", 0u) } with "a1",
+                        ComplexModel { mapWithList.refToKeyAndIndex("a", 1u) } with "a2"
                     )
                 )
             )

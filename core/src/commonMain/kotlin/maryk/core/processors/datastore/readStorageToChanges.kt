@@ -376,9 +376,8 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
                 // Read set contents. Always a simple value for set since it is in qualifier
                 val valueDefinition =
                     ((definition as IsSetDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
-
-                val key =
-                    valueDefinition.readStorageBytes(qualifier.size - offset) { qualifier[offset++] }
+                val setItemLength = initIntByVar { qualifier[offset++] }
+                val key = valueDefinition.readStorageBytes(setItemLength) { qualifier[offset++] }
 
                 readValueFromStorage(Value, valueDefinition) { version, value ->
                     if (value == null) {

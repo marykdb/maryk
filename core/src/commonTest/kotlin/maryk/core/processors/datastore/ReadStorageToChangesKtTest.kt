@@ -24,11 +24,11 @@ val valuesAsStorablesWithVersion = arrayOf(
     "29" to arrayOf(1233uL to DateTime(2018, 7, 18), 1235uL to null),
     "39" to arrayOf(1234uL to V2, 1235uL to V1),
     "4b" to arrayOf(1233uL to 1, 1235uL to 2, 1236uL to 2),
-    "4b80004577" to arrayOf(1233uL to Date(2018, 9, 9)),
-    "4b80001104" to arrayOf(1235uL to Date(1981, 12, 5)),
-    "4b80001105" to arrayOf(1235uL to Date(1981, 12, 6), 1236uL to null),
-    "4b80001ba2" to arrayOf(1235uL to null),
-    "4b80001ba3" to arrayOf(1235uL to null),
+    "4b0480004577" to arrayOf(1233uL to Date(2018, 9, 9)),
+    "4b0480001104" to arrayOf(1235uL to Date(1981, 12, 5)),
+    "4b0480001105" to arrayOf(1235uL to Date(1981, 12, 6), 1236uL to null),
+    "4b0480001ba2" to arrayOf(1235uL to null),
+    "4b0480001ba3" to arrayOf(1235uL to null),
     "54" to arrayOf(1234uL to 3, 1236uL to null),
     "5403008fe9" to arrayOf(1233uL to "ten", 1235uL to null),
     "5403009ff9" to arrayOf(1234uL to "eleven", 1236uL to null),
@@ -44,7 +44,11 @@ val valuesAsStorablesWithVersion = arrayOf(
     "7a00000001" to arrayOf(1234uL to "v2"),
     "7a00000002" to arrayOf(1234uL to "v3", 1235uL to null),
     "7a00000003" to arrayOf(1234uL to null),
-    "7a00000004" to arrayOf(1234uL to null)
+    "7a00000004" to arrayOf(1234uL to null),
+    "8b01" to arrayOf(1233uL to 2, 1235uL to 1),
+    "8b0103616263" to arrayOf(1233uL to "abc", 1235uL to null),
+    "8b0103646566" to arrayOf(1233uL to "def", 1235uL to null),
+    "8b0103676869" to arrayOf(1235uL to "ghi")
 )
 
 class ReadStorageToChangesKtTest {
@@ -78,6 +82,9 @@ class ReadStorageToChangesKtTest {
                     SetChange(
                         TestMarykModel.ref { set }.change(
                             addValues = setOf(Date(2018, 9, 9))
+                        ),
+                        TestMarykModel.ref { setOfString }.change(
+                            addValues = setOf("abc", "def")
                         )
                     )
                 )
@@ -119,11 +126,16 @@ class ReadStorageToChangesKtTest {
                         TestMarykModel { set refAt Date(1989, 5, 16) },
                         TestMarykModel { map refAt Time(10, 14, 1) },
                         TestMarykModel { embeddedValues { model.ref { value } } },
-                        TestMarykModel { listOfString.refAt(2u) }
+                        TestMarykModel { listOfString.refAt(2u) },
+                        TestMarykModel { setOfString refAt "abc" },
+                        TestMarykModel { setOfString refAt "def" }
                     ),
                     SetChange(
                         TestMarykModel.ref { set }.change(
                             addValues = setOf(Date(1981, 12, 5), Date(1981, 12, 6))
+                        ),
+                        TestMarykModel.ref { setOfString }.change(
+                            addValues = setOf("ghi")
                         )
                     )
                 )

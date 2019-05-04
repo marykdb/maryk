@@ -32,7 +32,6 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.IsSubDefinition
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.graph.IsPropRefGraph
@@ -218,11 +217,11 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                     readQualifierOfType(
                         qualifier,
                         currentOffset,
-                        definition,
+                        definition.definition,
                         refStoreType,
                         index,
                         select,
-                        parentReference,
+                        definition.ref(parentReference),
                         addChangeToOutput,
                         readValueFromStorage,
                         addToCache
@@ -237,11 +236,11 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
 private fun <P : PropertyDefinitions> readQualifierOfType(
     qualifier: ByteArray,
     currentOffset: Int,
-    definition: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>,
+    definition: IsPropertyDefinition<out Any>,
     refStoreType: ReferenceType,
     index: UInt,
     select: IsPropRefGraph<P>?,
-    parentReference: IsPropertyReference<*, *, *>?,
+    reference: IsPropertyReference<*, *, *>?,
     addChangeToOutput: ChangeAdder,
     readValueFromStorage: ValueWithVersionReader,
     addToCache: CacheProcessor
@@ -258,7 +257,7 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
                 readValueFromStorage(Value, definition) { version, value ->
                     @Suppress("UNCHECKED_CAST")
                     val ref =
-                        definition.ref(parentReference) as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>
+                        reference as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>
                     if (value == null) {
                         addChangeToOutput(version, ChangeType.DELETE, ref)
                     } else {
@@ -290,7 +289,7 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
                     offset,
                     readValueFromStorage,
                     definition as IsMultiTypeDefinition<*, IsPropertyContext>,
-                    definition.ref(parentReference),
+                    reference,
                     select,
                     addToCache,
                     addChangeToOutput
@@ -298,13 +297,11 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
             }
         }
         EMBED -> {
-            val reference = definition.ref(parentReference)
-
             if (isAtEnd) {
                 // Handle embed deletes
                 readValueFromStorage(Value, definition) { version, value ->
                     if (value == null) {
-                        addChangeToOutput(version, ChangeType.DELETE, reference)
+                        addChangeToOutput(version, ChangeType.DELETE, reference as Any)
                     } // Else this value just exists
                 }
             } else {
@@ -328,14 +325,14 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
             if (isAtEnd) {
                 readValueFromStorage(ListSize, definition) { version, value ->
                     if (value == null) {
-                        addChangeToOutput(version, ChangeType.DELETE, definition.ref(parentReference))
+                        addChangeToOutput(version, ChangeType.DELETE, reference as Any)
                     }
                 }
             } else {
                 @Suppress("UNCHECKED_CAST")
                 val listDefinition = definition as IsListDefinition<Any, IsPropertyContext>
                 @Suppress("UNCHECKED_CAST")
-                val reference = definition.ref(parentReference) as ListReference<Any, IsPropertyContext>
+                val listReference = reference as ListReference<Any, IsPropertyContext>
 
                 // Read set contents. Always a simple value for set since it is in qualifier
                 val valueDefinition =
@@ -348,13 +345,13 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
                         addChangeToOutput(
                             version,
                             ChangeType.DELETE,
-                            listDefinition.itemRef(listIndex, reference)
+                            listDefinition.itemRef(listIndex, listReference)
                         )
                     } else {
                         addChangeToOutput(
                             version,
                             CHANGE,
-                            listDefinition.itemRef(listIndex, reference) with value
+                            listDefinition.itemRef(listIndex, listReference) with value
                         )
                     }
                 }
@@ -364,14 +361,14 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
             if (isAtEnd) {
                 readValueFromStorage(SetSize, definition) { version, value ->
                     if (value == null) {
-                        addChangeToOutput(version, ChangeType.DELETE, definition.ref(parentReference))
+                        addChangeToOutput(version, ChangeType.DELETE, reference as Any)
                     }
                 }
             } else {
                 @Suppress("UNCHECKED_CAST")
                 val setDefinition = definition as IsSetDefinition<Any, IsPropertyContext>
                 @Suppress("UNCHECKED_CAST")
-                val reference = definition.ref(parentReference) as SetReference<Any, IsPropertyContext>
+                val setReference = reference as SetReference<Any, IsPropertyContext>
 
                 // Read set contents. Always a simple value for set since it is in qualifier
                 val valueDefinition =
@@ -384,10 +381,10 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
                         addChangeToOutput(
                             version,
                             ChangeType.DELETE,
-                            setDefinition.itemRef(key, reference)
+                            setDefinition.itemRef(key, setReference)
                         )
                     } else {
-                        addChangeToOutput(version, SET_ADD, setDefinition.itemRef(key, reference))
+                        addChangeToOutput(version, SET_ADD, setDefinition.itemRef(key, setReference))
                     }
                 }
             }
@@ -396,12 +393,12 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
             @Suppress("UNCHECKED_CAST")
             val mapDefinition = definition as IsMapDefinition<Any, Any, IsPropertyContext>
             @Suppress("UNCHECKED_CAST")
-            val reference = definition.ref(parentReference) as MapReference<Any, Any, IsPropertyContext>
+            val mapReference = reference as MapReference<Any, Any, IsPropertyContext>
 
             if (isAtEnd) {
                 readValueFromStorage(MapSize, definition) { version, value ->
                     if (value == null) {
-                        addChangeToOutput(version, ChangeType.DELETE, definition.ref(parentReference))
+                        addChangeToOutput(version, ChangeType.DELETE, reference as Any)
                     }
                 }
             } else {
@@ -415,7 +412,7 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
 
                 if (qualifier.size <= offset) {
                     readValueFromStorage(Value, valueDefinition) { version, value ->
-                        val valueReference = mapDefinition.valueRef(key, reference)
+                        val valueReference = mapDefinition.valueRef(key, mapReference)
                         if (value == null) {
                             addChangeToOutput(version, ChangeType.DELETE, valueReference)
                         } else {
@@ -441,7 +438,7 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
                         qualifier,
                         offset,
                         valueDefinition,
-                        mapDefinition.valueRef(key, reference),
+                        mapDefinition.valueRef(key, mapReference),
                         select,
                         addToCache,
                         addChangeToOutput,
@@ -453,15 +450,15 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
         ReferenceType.TYPE -> {
             @Suppress("UNCHECKED_CAST")
             val typedDefinition =
-                definition.definition as? IsMultiTypeDefinition<IndexedEnum, IsPropertyContext>
-                    ?: throw TypeException("Definition($index) ${definition.definition} should be a TypedDefinition")
+                definition as? IsMultiTypeDefinition<IndexedEnum, IsPropertyContext>
+                    ?: throw TypeException("Definition($index) $definition should be a TypedDefinition")
 
             typedDefinition.readComplexTypedValue(
                 qualifier,
                 offset,
                 readValueFromStorage,
                 index.toUInt(),
-                parentReference,
+                reference,
                 select,
                 addToCache,
                 addChangeToOutput
@@ -506,7 +503,7 @@ private fun <P : PropertyDefinitions> readComplexChanges(
                 addChangeToOutput
             )
         }
-        else -> throw StorageException("Can only use Embedded as values with deeper values $definition")
+        else -> throw StorageException("Can only use Embedded as values with deeper values. Not $definition")
     }
 }
 

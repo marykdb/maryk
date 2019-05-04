@@ -16,7 +16,7 @@ import maryk.test.models.TestMarykModel
 import maryk.test.shouldBe
 import kotlin.test.Test
 
-val valuesAsStorablesWithVersion = arrayOf(
+private val valuesAsStorablesWithVersion = arrayOf(
     "09" to arrayOf(1234uL to "hello world", 1235uL to "hello universe"),
     "11" to arrayOf(1234uL to 5, 1235uL to 7),
     "19" to arrayOf(1235uL to 3u),

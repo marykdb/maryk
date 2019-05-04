@@ -1,7 +1,6 @@
 package maryk.core.processors.datastore
 
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.exceptions.InvalidDefinitionException
 import maryk.core.exceptions.StorageException
 import maryk.core.exceptions.TypeException
 import maryk.core.extensions.bytes.initIntByVar
@@ -18,12 +17,14 @@ import maryk.core.processors.datastore.StorageTypeEnum.SetSize
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsEmbeddedDefinition
+import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
+import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.graph.IsPropRefGraph
 import maryk.core.properties.graph.RootPropRefGraph
@@ -163,15 +164,7 @@ private fun readQualifierOfType(
                     else -> valueAdder(value)
                 }
             } else {
-                readComplexValueFromStorage(
-                    definition,
-                    qualifier,
-                    offset,
-                    readValueFromStorage,
-                    valueAdder,
-                    select,
-                    addToCache
-                )
+                throw ParseException("Only allowed complex value qualifier is for multi type and that is handled through a cached reader")
             }
         }
         EMBED -> {
@@ -186,14 +179,18 @@ private fun readQualifierOfType(
                     }
                 } else null // unknown value so ignore
             } else {
-                readComplexValueFromStorage(
-                    definition,
+                // Only embedded types can be encoded as complex EMBED qualifier
+                if (definition !is IsEmbeddedValuesDefinition<*, *, *>) {
+                    throw TypeException("Only Embeds types are allowed to be encoded as EMBED type with complex qualifiers. Not $definition")
+                }
+                readEmbeddedValues(
                     qualifier,
                     offset,
                     readValueFromStorage,
-                    valueAdder,
+                    definition,
                     select,
-                    addToCache
+                    addToCache,
+                    valueAdder
                 )
             }
         }
@@ -321,73 +318,16 @@ private fun readQualifierOfType(
                         else -> null
                     }
                 } else {
-                    when (val valueDefinition = mapDefinition.valueDefinition) {
-                        is IsMultiTypeDefinition<*, *> -> {
-                            readTypedValue(
-                                qualifier,
-                                offset,
-                                readValueFromStorage,
-                                valueDefinition,
-                                select,
-                                addToCache,
-                                mapItemAdder
-                            )
-                        }
-                        is IsEmbeddedDefinition<*, *> -> {
-                            readEmbeddedValues(
-                                valueDefinition,
-                                select,
-                                readValueFromStorage,
-                                addToCache,
-                                qualifier,
-                                offset,
-                                mapItemAdder
-                            )
-                        }
-                        is IsListDefinition<*, *> -> {
-                            readQualifierOfType(
-                                qualifier = qualifier,
-                                currentOffset = offset + 1,
-                                partOffset = offset,
-                                definition = valueDefinition,
-                                index = index,
-                                refStoreType = LIST,
-                                select = select,
-                                addValueToOutput = { _, value -> addValueToOutput(index, Pair(key, value)) },
-                                readValueFromStorage = readValueFromStorage,
-                                addToCache = addToCache
-                            )
-                        }
-                        is IsSetDefinition<*, *> -> {
-                            readQualifierOfType(
-                                qualifier = qualifier,
-                                currentOffset = offset + 1,
-                                partOffset = offset,
-                                definition = valueDefinition,
-                                index = index,
-                                refStoreType = SET,
-                                select = select,
-                                addValueToOutput = { _, value -> addValueToOutput(index, Pair(key, value)) },
-                                readValueFromStorage = readValueFromStorage,
-                                addToCache = addToCache
-                            )
-                        }
-                        is IsMapDefinition<*, *, *> -> {
-                            readQualifierOfType(
-                                qualifier = qualifier,
-                                currentOffset = offset + 1,
-                                partOffset = offset,
-                                definition = valueDefinition,
-                                index = index,
-                                refStoreType = MAP,
-                                select = select,
-                                addValueToOutput = { _, value -> addValueToOutput(index, Pair(key, value)) },
-                                readValueFromStorage = readValueFromStorage,
-                                addToCache = addToCache
-                            )
-                        }
-                        else -> throw StorageException("Can only use Embedded/MultiType/List/Set/Map as complex value type in Map $mapDefinition")
-                    }
+                    readComplexWithSubDefinition(
+                        qualifier,
+                        offset,
+                        readValueFromStorage,
+                        mapDefinition,
+                        mapDefinition.valueDefinition,
+                        select,
+                        addToCache,
+                        mapItemAdder
+                    )
                 }
             }
         }
@@ -407,40 +347,52 @@ private fun readQualifierOfType(
     }
 }
 
-private fun readComplexValueFromStorage(
-    definition: IsPropertyDefinition<out Any>,
+/** Read embedded values into Values object */
+private fun <P : PropertyDefinitions> readEmbeddedValues(
     qualifier: ByteArray,
-    qIndex: Int,
+    offset: Int,
     readValueFromStorage: ValueReader,
-    valueAdder: AddValue,
-    select: IsPropRefGraph<*>?,
-    addToCache: CacheProcessor
+    definition: IsEmbeddedDefinition<*, *>,
+    select: IsPropRefGraph<P>?,
+    addToCache: CacheProcessor,
+    addValueToOutput: AddValue
 ) {
-    when (definition) {
-        is IsMultiTypeDefinition<*, *> -> {
-            readTypedValue(
-                qualifier,
-                qIndex,
-                readValueFromStorage,
-                definition,
-                select,
-                addToCache,
-                valueAdder
-            )
-        }
-        is IsEmbeddedDefinition<*, *> -> {
-            readEmbeddedValues(
-                definition,
-                select,
-                readValueFromStorage,
-                addToCache,
-                qualifier,
-                qIndex,
-                valueAdder
-            )
-        }
-        else -> throw StorageException("Can only use Embedded/Multi as values with deeper values, not $definition")
+    @Suppress("UNCHECKED_CAST")
+    val dataModel = definition.dataModel as IsDataModelWithValues<*, out PropertyDefinitions, *>
+    val values = dataModel.values { MutableValueItems() }
+
+    addValueToOutput(values)
+
+    val valuesItemAdder: AddToValues = { i, value ->
+        values.add(i, value)
     }
+
+    // If select is Graph then resolve sub graph.
+    // Otherwise is null or is property itself so needs to be completely selected thus set as null.
+    val specificSelect = if (select is IsPropRefGraph<*>) {
+        @Suppress("UNCHECKED_CAST")
+        select as IsPropRefGraph<PropertyDefinitions>
+    } else null
+
+    addToCache(offset - 1) { q ->
+        dataModel.readQualifier(
+            q,
+            offset,
+            specificSelect,
+            valuesItemAdder,
+            readValueFromStorage,
+            addToCache
+        )
+    }
+
+    dataModel.readQualifier(
+        qualifier,
+        offset,
+        specificSelect,
+        valuesItemAdder,
+        readValueFromStorage,
+        addToCache
+    )
 }
 
 /** Read a typed value */
@@ -523,119 +475,92 @@ private fun IsMultiTypeDefinition<*, *>.readComplexTypedValue(
         return
     }
 
-    when (definition) {
-        is IsEmbeddedDefinition<*, *> -> {
-            readEmbeddedValues(
-                definition,
-                select,
-                readValueFromStorage,
-                addToCache,
-                qualifier,
-                offset,
-                addMultiTypeToOutput
-            )
-        }
-        is IsMultiTypeDefinition<*, *> -> {
-            readTypedValue(
-                qualifier,
-                offset,
-                readValueFromStorage,
-                definition,
-                select,
-                addToCache,
-                addMultiTypeToOutput
-            )
-        }
-        is IsListDefinition<*, *> -> {
-            readQualifierOfType(
-                qualifier = qualifier,
-                currentOffset = offset + 1,
-                partOffset = offset,
-                definition = definition,
-                index = index,
-                refStoreType = LIST,
-                select = select,
-                addValueToOutput = { _, value -> addMultiTypeToOutput(value) },
-                readValueFromStorage = readValueFromStorage,
-                addToCache = addToCache
-            )
-        }
-        is IsSetDefinition<*, *> -> {
-            readQualifierOfType(
-                qualifier = qualifier,
-                currentOffset = offset + 1,
-                partOffset = offset,
-                definition = definition,
-                index = index,
-                refStoreType = SET,
-                select = select,
-                addValueToOutput = { _, value -> addMultiTypeToOutput(value) },
-                readValueFromStorage = readValueFromStorage,
-                addToCache = addToCache
-            )
-        }
-        is IsMapDefinition<*, *, *> -> {
-            readQualifierOfType(
-                qualifier = qualifier,
-                currentOffset = offset + 1,
-                partOffset = offset,
-                definition = definition,
-                index = index,
-                refStoreType = MAP,
-                select = select,
-                addValueToOutput = { _, value -> addMultiTypeToOutput(value) },
-                readValueFromStorage = readValueFromStorage,
-                addToCache = addToCache
-            )
-        }
-        else -> throw InvalidDefinitionException("Can only use Embedded/MultiType/List/Set/Map as complex value type in Multi Type $definition")
-    }
-}
-
-/** Read embedded values into Values object */
-private fun <P : PropertyDefinitions> readEmbeddedValues(
-    definition: IsEmbeddedDefinition<*, *>,
-    select: IsPropRefGraph<P>?,
-    readValueFromStorage: ValueReader,
-    addToCache: CacheProcessor,
-    qualifier: ByteArray,
-    offset: Int,
-    addValueToOutput: AddValue
-) {
-    @Suppress("UNCHECKED_CAST")
-    val dataModel = definition.dataModel as IsDataModelWithValues<*, out PropertyDefinitions, *>
-    val values = dataModel.values { MutableValueItems() }
-
-    addValueToOutput(values)
-
-    val valuesItemAdder: AddToValues = { i, value ->
-        values.add(i, value)
-    }
-
-    // If select is Graph then resolve sub graph.
-    // Otherwise is null or is property itself so needs to be completely selected thus set as null.
-    val specificSelect = if (select is IsPropRefGraph<*>) {
-        @Suppress("UNCHECKED_CAST")
-        select as IsPropRefGraph<PropertyDefinitions>
-    } else null
-
-    addToCache(offset - 1) { q ->
-        dataModel.readQualifier(
-            q,
-            offset,
-            specificSelect,
-            valuesItemAdder,
-            readValueFromStorage,
-            addToCache
-        )
-    }
-
-    dataModel.readQualifier(
+    readComplexWithSubDefinition(
         qualifier,
         offset,
-        specificSelect,
-        valuesItemAdder,
         readValueFromStorage,
-        addToCache
+        this,
+        definition,
+        select,
+        addToCache,
+        addMultiTypeToOutput
     )
+}
+
+/** Read values for a sub definition (used in map values and multi types) */
+private fun readComplexWithSubDefinition(
+    qualifier: ByteArray,
+    offset: Int,
+    readValueFromStorage: ValueReader,
+    parentDefinition: IsPropertyDefinition<*>,
+    valueDefinition: IsSubDefinition<out Any, Nothing>,
+    select: IsPropRefGraph<*>?,
+    addToCache: CacheProcessor,
+    valueAdder: AddValue
+) = when (valueDefinition) {
+    is IsMultiTypeDefinition<*, *> -> {
+        readTypedValue(
+            qualifier,
+            offset,
+            readValueFromStorage,
+            valueDefinition,
+            select,
+            addToCache,
+            valueAdder
+        )
+    }
+    is IsEmbeddedDefinition<*, *> -> {
+        readEmbeddedValues(
+            qualifier,
+            offset,
+            readValueFromStorage,
+            valueDefinition,
+            select,
+            addToCache,
+            valueAdder
+        )
+    }
+    is IsListDefinition<*, *> -> {
+        readQualifierOfType(
+            qualifier = qualifier,
+            currentOffset = offset + 1,
+            partOffset = offset,
+            definition = valueDefinition,
+            index = 0u, // Is ignored by addValueToOutput
+            refStoreType = LIST,
+            select = select,
+            addValueToOutput = { _, value -> valueAdder(value) },
+            readValueFromStorage = readValueFromStorage,
+            addToCache = addToCache
+        )
+    }
+    is IsSetDefinition<*, *> -> {
+        readQualifierOfType(
+            qualifier = qualifier,
+            currentOffset = offset + 1,
+            partOffset = offset,
+            definition = valueDefinition,
+            index = 0u, // Is ignored by addValueToOutput
+            refStoreType = SET,
+            select = select,
+            addValueToOutput = { _, value -> valueAdder(value) },
+            readValueFromStorage = readValueFromStorage,
+            addToCache = addToCache
+        )
+    }
+    is IsMapDefinition<*, *, *> -> {
+        readQualifierOfType(
+            qualifier = qualifier,
+            currentOffset = offset + 1,
+            partOffset = offset,
+            definition = valueDefinition,
+            index = 0u, // Is ignored by addValueToOutput
+            refStoreType = MAP,
+            select = select,
+            addValueToOutput = { _, value -> valueAdder(value) },
+            readValueFromStorage = readValueFromStorage,
+            addToCache = addToCache
+        )
+    }
+    else -> throw StorageException("Can only use Embedded/MultiType/List/Set/Map as complex value type in $parentDefinition")
 }

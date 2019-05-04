@@ -19,11 +19,11 @@ import maryk.core.protobuf.WriteCacheWriter
 class SetItemReference<T : Any, CX : IsPropertyContext> internal constructor(
     val value: T,
     val setDefinition: IsSetDefinition<T, CX>,
-    parentReference: SetReference<T, CX>?
-) : CanHaveSimpleChildReference<T, IsValueDefinition<T, CX>, SetReference<T, CX>, Set<T>>(
+    parentReference: CanContainSetItemReference<*, *, *>?
+) : CanHaveSimpleChildReference<T, IsValueDefinition<T, CX>, CanContainSetItemReference<*, *, *>, Set<T>>(
         setDefinition.valueDefinition, parentReference
     ),
-    IsPropertyReferenceWithParent<T, IsValueDefinition<T, CX>, SetReference<T, CX>, Set<T>> {
+    IsPropertyReferenceWithParent<T, IsValueDefinition<T, CX>, CanContainSetItemReference<*, *, *>, Set<T>> {
     override val completeName: String
         get() = this.parentReference?.let {
             "${it.completeName}.$$value"

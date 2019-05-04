@@ -8,6 +8,7 @@ import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
 import maryk.core.properties.references.ReferenceType.SET
 import maryk.core.protobuf.ProtoBuf
+import maryk.core.values.AbstractValues
 import maryk.lib.exceptions.ParseException
 
 /**
@@ -18,9 +19,11 @@ open class SetReference<T : Any, CX : IsPropertyContext> internal constructor(
     propertyDefinition: SetPropertyDefinitionWrapper<T, CX, *>,
     parentReference: CanHaveComplexChildReference<*, *, *, *>?
 ) : PropertyReferenceForValues<Set<T>, Set<T>, SetPropertyDefinitionWrapper<T, CX, *>, CanHaveComplexChildReference<*, *, *, *>>(
-    propertyDefinition,
-    parentReference
-), HasEmbeddedPropertyReference<T> {
+        propertyDefinition,
+        parentReference
+    ),
+    HasEmbeddedPropertyReference<T>,
+    CanContainSetItemReference<Set<T>, SetPropertyDefinitionWrapper<T, CX, *>, AbstractValues<*, *, *>> {
     override fun getEmbedded(name: String, context: IsPropertyContext?) = when (name[0]) {
         '$' -> SetItemReference(
             propertyDefinition.definition.valueDefinition.fromString(

@@ -4,7 +4,6 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
@@ -56,11 +55,11 @@ private val valueDefinition = ContextualValueDefinition(
 )
 
 /**
- * Convenience infix method to define avalues set value change
+ * Convenience infix method to define a set value change
  * Set property of values [T] with [addValues] for changes
  * First values are deleted before adding new
  */
-fun <T : Any> IsPropertyReference<Set<T>, IsCollectionDefinition<T, Set<T>, *, *>, *>.change(
+fun <T : Any> IsPropertyReference<Set<T>, IsPropertyDefinition<Set<T>>, *>.change(
     addValues: Set<T>? = null
 ) =
     SetValueChanges(

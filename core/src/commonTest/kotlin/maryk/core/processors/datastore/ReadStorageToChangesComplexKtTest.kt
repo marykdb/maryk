@@ -8,8 +8,11 @@ import maryk.core.properties.definitions.wrapper.refToKeyAndIndex
 import maryk.core.properties.definitions.wrapper.refToKeyTypeAndIndex
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
+import maryk.core.query.changes.Delete
 import maryk.core.query.changes.MultiTypeChange
+import maryk.core.query.changes.SetChange
 import maryk.core.query.changes.VersionedChanges
+import maryk.core.query.changes.change
 import maryk.core.query.pairs.with
 import maryk.core.query.pairs.withType
 import maryk.lib.extensions.initByteArrayByHex
@@ -17,6 +20,7 @@ import maryk.test.models.ComplexModel
 import maryk.test.models.MultiTypeEnum.T1
 import maryk.test.models.MultiTypeEnum.T3
 import maryk.test.models.MultiTypeEnum.T4
+import maryk.test.models.MultiTypeEnum.T5
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -47,10 +51,22 @@ private val complexValuesAsStorablesWithVersion = arrayOf(
     "2404000000072502" to arrayOf(1234uL to 2),
     "240400000007250200000000" to arrayOf(1234uL to "a"),
     "240400000007250200000001" to arrayOf(1234uL to "b"),
+    "240400000007250200000002" to arrayOf(1234uL to null),
+    "240400000008" to arrayOf(1234uL to TypedValue(T5, Unit)),
+// Problems with reference so commented out
+//    "2404000000082d03" to arrayOf(1234uL to 2),
+//    "2404000000082d030163" to arrayOf(1234uL to "c"),
+//    "2404000000082d030164" to arrayOf(1234uL to "d"),
     "2c" to arrayOf(1234uL to 1),
     "2c016102" to arrayOf(1234uL to 2),
     "2c01610200000000" to arrayOf(1234uL to "a1"),
-    "2c01610200000001" to arrayOf(1234uL to "a2")
+    "2c01610200000001" to arrayOf(1234uL to "a2"),
+    "2c01610200000002" to arrayOf(1234uL to null),
+    "34" to arrayOf(1234uL to 1),
+    "34016203" to arrayOf(1234uL to 2),
+    "34016203026231" to arrayOf(1234uL to "b1"),
+    "34016203026232" to arrayOf(1234uL to "b2"),
+    "34016203026233" to arrayOf(1234uL to null)
 )
 
 class ReadStorageToChangesComplexKtTest {
@@ -78,7 +94,8 @@ class ReadStorageToChangesComplexKtTest {
                     MultiTypeChange(
                         ComplexModel.ref { multi } withType T3,
                         ComplexModel { mapIntMulti.refAt(2u) } withType T3,
-                        ComplexModel { mapIntMulti.refAt(7u) } withType T4
+                        ComplexModel { mapIntMulti.refAt(7u) } withType T4,
+                        ComplexModel { mapIntMulti.refAt(8u) } withType T5
                     ),
                     Change(
                         ComplexModel { multi.refWithType(T3) { value } } with "u3",
@@ -97,6 +114,20 @@ class ReadStorageToChangesComplexKtTest {
                         ComplexModel { mapIntMulti.refToKeyTypeAndIndex(7u, T4, 1u) } with "b",
                         ComplexModel { mapWithList.refToKeyAndIndex("a", 0u) } with "a1",
                         ComplexModel { mapWithList.refToKeyAndIndex("a", 1u) } with "a2"
+                    ),
+                    Delete(
+                        ComplexModel { mapIntMulti.refToKeyTypeAndIndex(7u, T4, 2u) },
+                        ComplexModel { mapWithList.refToKeyAndIndex("a", 2u) },
+                        ComplexModel { mapWithSet.refToKeyAndIndex("b", "b3") }
+                    ),
+                    SetChange(
+// Problems with reference and SetChange so commented out
+//                        ComplexModel {  mapIntMulti.refToKeyAndType(7u, T5) }.change(
+//                            addValues = setOf("b1", "b2")
+//                        ),
+                        ComplexModel { mapWithSet.refAt("b") }.change(
+                            addValues = setOf("b1", "b2")
+                        )
                     )
                 )
             )

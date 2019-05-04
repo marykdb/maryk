@@ -23,6 +23,7 @@ import maryk.core.properties.enum.EmbedTypeCase
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IndexedEnumImpl
 import maryk.core.properties.enum.ListTypeCase
+import maryk.core.properties.enum.SetTypeCase
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.Float64
@@ -52,7 +53,7 @@ sealed class MultiTypeEnum(
     object T2: MultiTypeEnum(2u)
     object T3: MultiTypeEnum(3u), EmbedTypeCase<MultiTypeEnum, Properties>
     object T4: MultiTypeEnum(4u), ListTypeCase<MultiTypeEnum, String>
-    object T5: MultiTypeEnum(5u)
+    object T5: MultiTypeEnum(5u), SetTypeCase<MultiTypeEnum, String>
     object T6: MultiTypeEnum(6u)
     object T7: MultiTypeEnum(7u)
 

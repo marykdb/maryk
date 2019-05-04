@@ -8,6 +8,7 @@ import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
+import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.enum.EmbedTypeCase
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.ListTypeCase
@@ -21,6 +22,7 @@ import maryk.core.properties.references.MapAnyValueReference
 import maryk.core.properties.references.MapKeyReference
 import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.MapValueReference
+import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.values.Values
@@ -181,8 +183,7 @@ fun <K : Any, E : IndexedEnum, T : Any> MapPropertyDefinitionWrapper<K, TypedVal
         )
     }
 
-
-/** Specific extension to support fetching sub refs on Map values by [key] and [type] */
+/** Specific extension to support fetching list item refs on Map values by [key] and [listIndex] */
 @Suppress("UNCHECKED_CAST")
 fun <K : Any, T : Any> MapPropertyDefinitionWrapper<K, List<T>, *, *, *>.refToKeyAndIndex(
     key: K,
@@ -191,6 +192,19 @@ fun <K : Any, T : Any> MapPropertyDefinitionWrapper<K, List<T>, *, *, *>.refToKe
     {
         (this.valueDefinition as ListDefinition<T, *>).itemRef(
             listIndex,
+            this.valueRef(key, it)
+        )
+    }
+
+/** Specific extension to support fetching set item refs on Map values by [key] and [setItem] */
+@Suppress("UNCHECKED_CAST")
+fun <K : Any, T : Any> MapPropertyDefinitionWrapper<K, Set<T>, *, *, *>.refToKeyAndIndex(
+    key: K,
+    setItem: T
+): (AnyOutPropertyReference?) -> SetItemReference<T, *> =
+    {
+        (this.valueDefinition as SetDefinition<T, *>).itemRef(
+            setItem,
             this.valueRef(key, it)
         )
     }

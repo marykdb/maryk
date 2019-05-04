@@ -25,6 +25,7 @@ import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
 import maryk.core.properties.references.CanContainListItemReference
+import maryk.core.properties.references.CanContainSetItemReference
 import maryk.core.properties.references.EmbeddedValuesPropertyRef
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceWithParent
@@ -438,7 +439,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                         is SetItemReference<*, *> -> {
                                             createCountUpdater(
                                                 newValueList,
-                                                ref.parentReference as IsPropertyReference<out Set<Any>, IsPropertyDefinition<out Set<Any>>, out Any>,
+                                                ref.parentReference as CanContainSetItemReference<*, *, *>,
                                                 version,
                                                 -1,
                                                 keepAllVersions

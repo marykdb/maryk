@@ -39,6 +39,7 @@ import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.AnyValuePropertyReference
 import maryk.core.properties.references.CanContainListItemReference
+import maryk.core.properties.references.CanContainSetItemReference
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceWithParent
@@ -51,7 +52,6 @@ import maryk.core.properties.references.ReferenceType.MAP
 import maryk.core.properties.references.ReferenceType.SET
 import maryk.core.properties.references.ReferenceType.VALUE
 import maryk.core.properties.references.SetItemReference
-import maryk.core.properties.references.SetReference
 import maryk.core.properties.references.TypedPropertyReference
 import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.references.referenceStorageTypeOf
@@ -368,7 +368,7 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
                 @Suppress("UNCHECKED_CAST")
                 val setDefinition = definition as IsSetDefinition<Any, IsPropertyContext>
                 @Suppress("UNCHECKED_CAST")
-                val setReference = reference as SetReference<Any, IsPropertyContext>
+                val setReference = reference as CanContainSetItemReference<*, *, *>
 
                 // Read set contents. Always a simple value for set since it is in qualifier
                 val valueDefinition =
@@ -509,6 +509,20 @@ private fun <P : PropertyDefinitions> readComplexChanges(
                 currentOffset = offset + 1,
                 definition = definition,
                 refStoreType = LIST,
+                index = 0u, // Is ignored by addValueToOutput
+                select = select,
+                reference = parentReference,
+                addChangeToOutput = addChangeToOutput,
+                readValueFromStorage = readValueFromStorage,
+                addToCache = addToCache
+            )
+        }
+        is IsSetDefinition<*, *> -> {
+            readQualifierOfType(
+                qualifier = qualifier,
+                currentOffset = offset + 1,
+                definition = definition,
+                refStoreType = SET,
                 index = 0u, // Is ignored by addValueToOutput
                 select = select,
                 reference = parentReference,

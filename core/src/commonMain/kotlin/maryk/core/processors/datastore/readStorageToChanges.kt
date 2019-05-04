@@ -39,11 +39,11 @@ import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.AnyValuePropertyReference
 import maryk.core.properties.references.CanContainListItemReference
+import maryk.core.properties.references.CanContainMapItemReference
 import maryk.core.properties.references.CanContainSetItemReference
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceWithParent
-import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.ReferenceType
 import maryk.core.properties.references.ReferenceType.DELETE
 import maryk.core.properties.references.ReferenceType.EMBED
@@ -393,7 +393,7 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
             @Suppress("UNCHECKED_CAST")
             val mapDefinition = definition as IsMapDefinition<Any, Any, IsPropertyContext>
             @Suppress("UNCHECKED_CAST")
-            val mapReference = reference as MapReference<Any, Any, IsPropertyContext>
+            val mapReference = reference as CanContainMapItemReference<*, *, *>
 
             if (isAtEnd) {
                 readValueFromStorage(MapSize, definition) { version, value ->
@@ -523,6 +523,20 @@ private fun <P : PropertyDefinitions> readComplexChanges(
                 currentOffset = offset + 1,
                 definition = definition,
                 refStoreType = SET,
+                index = 0u, // Is ignored by addValueToOutput
+                select = select,
+                reference = parentReference,
+                addChangeToOutput = addChangeToOutput,
+                readValueFromStorage = readValueFromStorage,
+                addToCache = addToCache
+            )
+        }
+        is IsMapDefinition<*, *, *> -> {
+            readQualifierOfType(
+                qualifier = qualifier,
+                currentOffset = offset + 1,
+                definition = definition,
+                refStoreType = MAP,
                 index = 0u, // Is ignored by addValueToOutput
                 select = select,
                 reference = parentReference,

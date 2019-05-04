@@ -6,6 +6,7 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
+import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.SetDefinition
@@ -15,6 +16,7 @@ import maryk.core.properties.enum.ListTypeCase
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.AnyPropertyReference
+import maryk.core.properties.references.CanContainMapItemReference
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListItemReference
@@ -220,6 +222,34 @@ fun <K : Any, V : Values<*, P>, DM : IsValuesDataModel<P>, P : PropertyDefinitio
             this.valueRef(key, it),
             referenceGetter
         )
+    }
+
+/** Specific extension to support fetching deeper references on Map values at [key] */
+fun <K : Any, V : Map<*, *>, T : Any, R : IsPropertyReference<T, *, *>> IsSubDefinition<Map<K, V>, *>.at(
+    key: K,
+    referenceGetter: IsSubDefinition<V, *>.() -> (AnyOutPropertyReference?) -> R
+): (AnyOutPropertyReference?) -> R =
+    {
+        val mapDefinition = this as IsMapDefinition<K, V, *>
+
+        val parent = if (this is IsPropertyDefinitionWrapper<*, *, *, *>) {
+            this.ref(it)
+        } else it
+
+        referenceGetter(
+            mapDefinition.valueDefinition
+        )(
+            mapDefinition.valueRef(key, parent as CanContainMapItemReference<*, *, *>?)
+        )
+    }
+
+/** Specific extension to support fetching references on map definition at [key] */
+fun <K : Any, V : Any> IsSubDefinition<Map<K, V>, *>.refAtKey(
+    key: K
+): (AnyOutPropertyReference?) -> MapValueReference<K, V, out IsPropertyContext> =
+    {
+        val mapDefinition = this as IsMapDefinition<K, V, *>
+        mapDefinition.valueRef(key, it as CanContainMapItemReference<*, *, *>)
     }
 
 /** Specific extension to support fetching deeper references on Map values by any key */

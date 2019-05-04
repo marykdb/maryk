@@ -60,6 +60,8 @@ internal class DataObjectPropertyReferenceTest {
 
         ComplexModel { mapWithSet.refToKeyAndIndex("b", "b3") }.completeName shouldBe "mapWithSet.@b.\$b3"
 
+        ComplexModel { mapWithMap.at("b") { refAtKey("c")  }}.completeName shouldBe "mapWithMap.@b.@c"
+
         ComplexModel { mapIntMulti.refToKeyAndType(2u, T3) }.completeName shouldBe "mapIntMulti.@2.*T3"
         ComplexModel { mapIntMulti.refAtKeyAndType(2u, T3, EmbeddedMarykModel.Properties) { value } }.completeName shouldBe "mapIntMulti.@2.*T3.value"
         ComplexModel { mapIntMulti.refAtKeyAndType(2u, T3) { value } }.completeName shouldBe "mapIntMulti.@2.*T3.value"
@@ -101,6 +103,8 @@ internal class DataObjectPropertyReferenceTest {
         ComplexModel { mapWithList.refToKeyAndIndex("a", 23u) }.toStorageByteArray().toHex() shouldBe "2c016100000017"
 
         ComplexModel { mapWithSet.refToKeyAndIndex("b", "b3") }.toStorageByteArray().toHex() shouldBe "340162026233"
+
+        ComplexModel { mapWithMap.at("b") { refAtKey("c")  }}.toStorageByteArray().toHex() shouldBe "3c01620163"
 
         ComplexModel { mapIntMulti.refToKeyAndType(2u, T3) }.toStorageByteArray().toHex() shouldBe "2404000000021d"
         ComplexModel { mapIntMulti.refAtKeyAndType(2u, T3, EmbeddedMarykModel.Properties) { value } }.toStorageByteArray().toHex() shouldBe "2404000000021d09"

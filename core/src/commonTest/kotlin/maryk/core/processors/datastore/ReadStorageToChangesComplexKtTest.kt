@@ -66,7 +66,10 @@ private val complexValuesAsStorablesWithVersion = arrayOf(
     "34016203" to arrayOf(1234uL to 2),
     "34016203026231" to arrayOf(1234uL to "b1"),
     "34016203026232" to arrayOf(1234uL to "b2"),
-    "34016203026233" to arrayOf(1234uL to null)
+    "34016203026233" to arrayOf(1234uL to null),
+    "3c" to arrayOf(1234uL to 1),
+    "3c016304" to arrayOf(1234uL to 1),
+    "3c016304026331" to arrayOf(1234uL to "c2")
 )
 
 class ReadStorageToChangesComplexKtTest {
@@ -113,7 +116,8 @@ class ReadStorageToChangesComplexKtTest {
                         ComplexModel { mapIntMulti.refToKeyTypeAndIndex(7u, T4, 0u) } with "a",
                         ComplexModel { mapIntMulti.refToKeyTypeAndIndex(7u, T4, 1u) } with "b",
                         ComplexModel { mapWithList.refToKeyAndIndex("a", 0u) } with "a1",
-                        ComplexModel { mapWithList.refToKeyAndIndex("a", 1u) } with "a2"
+                        ComplexModel { mapWithList.refToKeyAndIndex("a", 1u) } with "a2",
+                        ComplexModel { mapWithMap.at("c") { refAtKey("c1")  }} with "c2"
                     ),
                     Delete(
                         ComplexModel { mapIntMulti.refToKeyTypeAndIndex(7u, T4, 2u) },

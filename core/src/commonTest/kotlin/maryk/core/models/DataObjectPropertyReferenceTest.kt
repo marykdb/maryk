@@ -2,14 +2,12 @@ package maryk.core.models
 
 import maryk.core.properties.definitions.wrapper.any
 import maryk.core.properties.definitions.wrapper.atKeyAndType
-import maryk.core.properties.definitions.wrapper.refAtKey
 import maryk.core.properties.definitions.wrapper.refAtKeyAndIndex
-import maryk.core.properties.definitions.wrapper.refAtKeyAndType
 import maryk.core.properties.definitions.wrapper.refAtKeyTypeAndIndex
 import maryk.core.properties.definitions.wrapper.refAtKeyTypeAndIndexWeak
 import maryk.core.properties.definitions.wrapper.refToAny
 import maryk.core.properties.references.dsl.at
-import maryk.core.properties.references.dsl.refAtKey
+import maryk.core.properties.references.dsl.refAt
 import maryk.core.properties.references.dsl.refAtType
 import maryk.lib.extensions.toHex
 import maryk.lib.time.Date
@@ -49,12 +47,12 @@ internal class DataObjectPropertyReferenceTest {
         TestMarykModel { multi refAtType T1 }.completeName shouldBe "multi.*T1"
         TestMarykModel { multi.refToType() }.completeName shouldBe "multi.*"
 
-        TestMarykModel { multi.refWithType(T3) { value } }.completeName shouldBe "multi.*T3.value"
+        TestMarykModel { multi.withType(T3) { value::ref } }.completeName shouldBe "multi.*T3.value"
         TestMarykModel { multi.withType(T3) { model { value::ref } } }.completeName shouldBe "multi.*T3.model.value"
 
         ComplexModel { mapIntObject.refToKey(2u) }.completeName shouldBe "mapIntObject.$2"
-        ComplexModel { mapIntObject.refAtKey(2u) }.completeName shouldBe "mapIntObject.@2"
-        ComplexModel { mapIntObject.refAtKey(2u) { value } }.completeName shouldBe "mapIntObject.@2.value"
+        ComplexModel { mapIntObject.refAt(2u) }.completeName shouldBe "mapIntObject.@2"
+        ComplexModel { mapIntObject.at(2u) { value::ref } }.completeName shouldBe "mapIntObject.@2.value"
         ComplexModel { mapIntObject.refToAny { value } }.completeName shouldBe "mapIntObject.*.value"
         ComplexModel { mapIntObject.at(2u) { model { value::ref } } }.completeName shouldBe "mapIntObject.@2.model.value"
         ComplexModel { mapIntObject.any { model { value::ref } } }.completeName shouldBe "mapIntObject.*.model.value"
@@ -63,11 +61,11 @@ internal class DataObjectPropertyReferenceTest {
 
         ComplexModel { mapWithSet.refAtKeyAndIndex("b", "b3") }.completeName shouldBe "mapWithSet.@b.\$b3"
 
-        ComplexModel { mapWithMap.at("b") { refAtKey("c")  }}.completeName shouldBe "mapWithMap.@b.@c"
+        ComplexModel { mapWithMap.at("b") { refAt("c")  }}.completeName shouldBe "mapWithMap.@b.@c"
 
         ComplexModel { mapIntMulti.at(2u) { refAtType(T3) } }.completeName shouldBe "mapIntMulti.@2.*T3"
-        ComplexModel { mapIntMulti.refAtKeyAndType(2u, T3, EmbeddedMarykModel.Properties) { value } }.completeName shouldBe "mapIntMulti.@2.*T3.value"
-        ComplexModel { mapIntMulti.refAtKeyAndType(2u, T3) { value } }.completeName shouldBe "mapIntMulti.@2.*T3.value"
+        ComplexModel { mapIntMulti.atKeyAndType(2u, T3, EmbeddedMarykModel.Properties) { value::ref } }.completeName shouldBe "mapIntMulti.@2.*T3.value"
+        ComplexModel { mapIntMulti.atKeyAndType(2u, T3) { value::ref } }.completeName shouldBe "mapIntMulti.@2.*T3.value"
         ComplexModel { mapIntMulti.atKeyAndType(2u, T3, EmbeddedMarykModel.Properties) { model { value::ref } } }.completeName shouldBe "mapIntMulti.@2.*T3.model.value"
         ComplexModel { mapIntMulti.atKeyAndType(2u, T3) { model { value::ref } } }.completeName shouldBe "mapIntMulti.@2.*T3.model.value"
 
@@ -97,21 +95,21 @@ internal class DataObjectPropertyReferenceTest {
         TestMarykModel { multi refAtType T1 }.toStorageByteArray().toHex() shouldBe "690d"
         TestMarykModel { multi.refToType() }.toStorageByteArray().toHex() shouldBe "6905"
 
-        TestMarykModel { multi.refWithType(T3) { value } }.toStorageByteArray().toHex() shouldBe "691d09"
+        TestMarykModel { multi.withType(T3) { value::ref } }.toStorageByteArray().toHex() shouldBe "691d09"
         TestMarykModel { multi.withType(T3) { model { value::ref } } }.toStorageByteArray().toHex() shouldBe "691d1609"
 
-        ComplexModel { mapIntObject.refAtKey(2u) { value } }.toStorageByteArray().toHex() shouldBe "1c040000000209"
+        ComplexModel { mapIntObject.at(2u) { value::ref } }.toStorageByteArray().toHex() shouldBe "1c040000000209"
         ComplexModel { mapIntObject.at(2u) { model { value::ref } } }.toStorageByteArray().toHex() shouldBe "1c04000000021609"
 
         ComplexModel { mapWithList.refAtKeyAndIndex("a", 23u) }.toStorageByteArray().toHex() shouldBe "2c016100000017"
 
         ComplexModel { mapWithSet.refAtKeyAndIndex("b", "b3") }.toStorageByteArray().toHex() shouldBe "340162026233"
 
-        ComplexModel { mapWithMap.at("b") { refAtKey("c")  }}.toStorageByteArray().toHex() shouldBe "3c01620163"
+        ComplexModel { mapWithMap.at("b") { refAt("c")  }}.toStorageByteArray().toHex() shouldBe "3c01620163"
 
         ComplexModel { mapIntMulti.at(2u) { refAtType(T3) } }.toStorageByteArray().toHex() shouldBe "2404000000021d"
-        ComplexModel { mapIntMulti.refAtKeyAndType(2u, T3, EmbeddedMarykModel.Properties) { value } }.toStorageByteArray().toHex() shouldBe "2404000000021d09"
-        ComplexModel { mapIntMulti.refAtKeyAndType(2u, T3) { value } }.toStorageByteArray().toHex() shouldBe "2404000000021d09"
+        ComplexModel { mapIntMulti.atKeyAndType(2u, T3, EmbeddedMarykModel.Properties) { value::ref } }.toStorageByteArray().toHex() shouldBe "2404000000021d09"
+        ComplexModel { mapIntMulti.atKeyAndType(2u, T3) { value::ref } }.toStorageByteArray().toHex() shouldBe "2404000000021d09"
         ComplexModel { mapIntMulti.atKeyAndType(2u, T3, EmbeddedMarykModel.Properties) { model { value::ref } } }.toStorageByteArray().toHex() shouldBe "2404000000021d1609"
         ComplexModel { mapIntMulti.atKeyAndType(2u, T3) { model { value::ref } } }.toStorageByteArray().toHex() shouldBe "2404000000021d1609"
 

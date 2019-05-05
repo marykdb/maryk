@@ -9,7 +9,7 @@ import maryk.core.properties.references.CanContainMapItemReference
 import maryk.core.properties.references.MapValueReference
 
 /** Specific extension to support fetching references on map definition at [key] */
-fun <K : Any, V : Any> IsSubDefinition<Map<K, V>, *>.refAtKey(
+fun <K : Any, V : Any> IsSubDefinition<Map<K, V>, *>.refAt(
     key: K
 ): (AnyOutPropertyReference?) -> MapValueReference<K, V, out IsPropertyContext> =
     {

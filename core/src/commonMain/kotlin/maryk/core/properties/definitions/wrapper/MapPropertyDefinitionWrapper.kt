@@ -81,20 +81,6 @@ data class MapPropertyDefinitionWrapper<K : Any, V : Any, TO : Any, CX : IsPrope
     }
 }
 
-/** Specific extension to support fetching sub refs on Map values by [key] */
-fun <K : Any, V : Values<*, P>, DM : IsValuesDataModel<P>, P : PropertyDefinitions, T : Any, W : IsPropertyDefinitionWrapper<T, *, *, *>> MapPropertyDefinitionWrapper<K, V, *, *, *>.refAtKey(
-    key: K,
-    propertyDefinitionGetter: P.() -> W
-): (AnyOutPropertyReference?) -> IsPropertyReference<T, W, *> =
-    {
-        @Suppress("UNCHECKED_CAST")
-        propertyDefinitionGetter(
-            (this.definition.valueDefinition as EmbeddedValuesDefinition<DM, P>).dataModel.properties
-        ).ref(
-            this.valueRef(key, it)
-        ) as IsPropertyReference<T, W, *>
-    }
-
 /** Specific extension to support fetching sub refs on Map values by any key */
 @Suppress("UNCHECKED_CAST")
 fun <K : Any, V : Values<*, P>, DM : IsValuesDataModel<P>, P : PropertyDefinitions, T : Any, W : IsPropertyDefinitionWrapper<T, *, *, *>> MapPropertyDefinitionWrapper<K, V, *, *, *>.refToAny(
@@ -106,41 +92,6 @@ fun <K : Any, V : Values<*, P>, DM : IsValuesDataModel<P>, P : PropertyDefinitio
             (this.definition.valueDefinition as EmbeddedValuesDefinition<DM, P>).dataModel.properties
         ).ref(
             this.anyValueRef(it)
-        ) as IsPropertyReference<T, W, *>
-    }
-
-/** Specific extension to support fetching sub refs on Map values by [key] and [type] */
-@Suppress("UNCHECKED_CAST")
-fun <K : Any, E : IndexedEnum, P : PropertyDefinitions, T : Any, W : IsPropertyDefinitionWrapper<T, *, *, *>> MapPropertyDefinitionWrapper<K, TypedValue<E, Any>, *, *, *>.refAtKeyAndType(
-    key: K,
-    type: E,
-    @Suppress("UNUSED_PARAMETER") properties: P, // So it is not needed to pass in types
-    propertyDefinitionGetter: P.() -> W
-): (AnyOutPropertyReference?) -> IsPropertyReference<T, W, *> =
-    {
-        val multiTypeDef = (this.definition.valueDefinition as IsMultiTypeDefinition<E, IsPropertyContext>)
-        val typedValueRef = multiTypeDef.typedValueRef(type, this.valueRef(key, it))
-        propertyDefinitionGetter(
-            (multiTypeDef.definitionMap[type] as EmbeddedValuesDefinition<IsValuesDataModel<P>, P>).dataModel.properties
-        ).ref(
-            typedValueRef
-        ) as IsPropertyReference<T, W, *>
-    }
-
-/** Specific extension to support fetching sub refs on Map values by [key] and [type] */
-@Suppress("UNCHECKED_CAST")
-fun <K : Any, E : IndexedEnum, P : PropertyDefinitions, T : Any, W : IsPropertyDefinitionWrapper<T, *, *, *>> MapPropertyDefinitionWrapper<K, TypedValue<E, Any>, *, *, *>.refAtKeyAndType(
-    key: K,
-    type: EmbedTypeCase<E, P>,
-    propertyDefinitionGetter: P.() -> W
-): (AnyOutPropertyReference?) -> IsPropertyReference<T, W, *> =
-    {
-        val multiTypeDef = (this.definition.valueDefinition as IsMultiTypeDefinition<E, IsPropertyContext>)
-        val typedValueRef = multiTypeDef.typedValueRef(type as E, this.valueRef(key, it))
-        propertyDefinitionGetter(
-            (multiTypeDef.definitionMap[type] as EmbeddedValuesDefinition<IsValuesDataModel<P>, P>).dataModel.properties
-        ).ref(
-            typedValueRef
         ) as IsPropertyReference<T, W, *>
     }
 

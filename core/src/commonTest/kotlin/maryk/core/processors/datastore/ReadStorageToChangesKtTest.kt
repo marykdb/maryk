@@ -73,17 +73,17 @@ class ReadStorageToChangesKtTest {
             VersionedChanges(
                 1233UL,
                 listOf(
-                    Delete(TestMarykModel.ref { double }),
+                    Delete(TestMarykModel { double::ref }),
                     Change(
-                        TestMarykModel.ref { dateTime } with DateTime(2018, 7, 18),
+                        TestMarykModel { dateTime::ref } with DateTime(2018, 7, 18),
                         TestMarykModel { map refAt Time(10, 14, 1) } with "ten",
                         TestMarykModel { listOfString refAt 0u } with "v1"
                     ),
                     SetChange(
-                        TestMarykModel.ref { set }.change(
+                        TestMarykModel { set::ref }.change(
                             addValues = setOf(Date(2018, 9, 9))
                         ),
-                        TestMarykModel.ref { setOfString }.change(
+                        TestMarykModel { setOfString::ref }.change(
                             addValues = setOf("abc", "def")
                         )
                     )
@@ -93,13 +93,13 @@ class ReadStorageToChangesKtTest {
                 1234UL,
                 listOf(
                     Change(
-                        TestMarykModel.ref { string } with "hello world",
-                        TestMarykModel.ref { int } with 5,
-                        TestMarykModel.ref { enum } with V2,
+                        TestMarykModel { string::ref } with "hello world",
+                        TestMarykModel { int::ref } with 5,
+                        TestMarykModel { enum::ref } with V2,
                         TestMarykModel { map refAt Time(11, 22, 33) } with "eleven",
                         TestMarykModel { map refAt Time(12, 23, 34) } with "twelve",
-                        TestMarykModel { embeddedValues.ref { value } } with "test",
-                        TestMarykModel { embeddedValues { model.ref { value } } } with "another test",
+                        TestMarykModel { embeddedValues { value::ref } } with "test",
+                        TestMarykModel { embeddedValues { model { value::ref } } } with "another test",
                         TestMarykModel { listOfString refAt 1u } with "v2",
                         TestMarykModel { listOfString refAt 2u } with "v3"
                     ),
@@ -115,26 +115,26 @@ class ReadStorageToChangesKtTest {
                 1235UL,
                 listOf(
                     Change(
-                        TestMarykModel.ref { string } with "hello universe",
-                        TestMarykModel.ref { int } with 7,
-                        TestMarykModel.ref { uint } with 3u,
-                        TestMarykModel.ref { enum } with V1
+                        TestMarykModel { string::ref } with "hello universe",
+                        TestMarykModel { int::ref } with 7,
+                        TestMarykModel { uint::ref } with 3u,
+                        TestMarykModel { enum::ref } with V1
                     ),
                     Delete(
-                        TestMarykModel.ref { dateTime },
+                        TestMarykModel { dateTime::ref },
                         TestMarykModel { set refAt Date(1989, 5, 15) },
                         TestMarykModel { set refAt Date(1989, 5, 16) },
                         TestMarykModel { map refAt Time(10, 14, 1) },
-                        TestMarykModel { embeddedValues { model.ref { value } } },
+                        TestMarykModel { embeddedValues { model { value::ref } } },
                         TestMarykModel { listOfString.refAt(2u) },
                         TestMarykModel { setOfString refAt "abc" },
                         TestMarykModel { setOfString refAt "def" }
                     ),
                     SetChange(
-                        TestMarykModel.ref { set }.change(
+                        TestMarykModel { set::ref }.change(
                             addValues = setOf(Date(1981, 12, 5), Date(1981, 12, 6))
                         ),
-                        TestMarykModel.ref { setOfString }.change(
+                        TestMarykModel { setOfString::ref }.change(
                             addValues = setOf("ghi")
                         )
                     )
@@ -145,8 +145,8 @@ class ReadStorageToChangesKtTest {
                 listOf(
                     Delete(
                         TestMarykModel { set refAt Date(1981, 12, 6) },
-                        TestMarykModel.ref { map },
-                        TestMarykModel.ref { embeddedValues }
+                        TestMarykModel { map::ref },
+                        TestMarykModel { embeddedValues::ref }
                     )
                 )
             )

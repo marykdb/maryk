@@ -34,7 +34,7 @@ class GetRequestTest {
             mapNonNulls(
                 dataModel with SimpleMarykModel,
                 keys with listOf(getMaxRequest.keys[0], getMaxRequest.keys[1]),
-                where with Exists(SimpleMarykModel.ref { value }),
+                where with Exists(SimpleMarykModel { value::ref }),
                 toVersion with 333uL,
                 filterSoftDeleted with true,
                 select with SimpleMarykModel.graph {

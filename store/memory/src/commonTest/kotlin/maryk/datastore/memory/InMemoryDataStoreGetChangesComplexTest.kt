@@ -78,13 +78,13 @@ class InMemoryDataStoreGetChangesComplexTest {
         getResponse.changes[0].changes shouldBe listOf(
             VersionedChanges(version = lowestVersion, changes = listOf(
                 MultiTypeChange(
-                    ComplexModel.ref { multi } withType T3,
+                    ComplexModel { multi::ref } withType T3,
                     ComplexModel { mapIntMulti.refAt(1u) } withType T3,
                     ComplexModel { mapIntMulti.refAt(3u) } withType T3
                 ),
                 Change(
                     ComplexModel { multi.refWithType(T3, Properties) { value } } with "u3",
-                    ComplexModel { multi.withType(T3, Properties) { model ref { value } } } with "ue3",
+                    ComplexModel { multi.withType(T3, Properties) { model { value::ref } } } with "ue3",
                     ComplexModel { mapStringString refAt "a" } with "b",
                     ComplexModel { mapStringString refAt "c" } with "d",
                     ComplexModel { mapIntObject refAt 1u } with Unit,
@@ -92,12 +92,12 @@ class InMemoryDataStoreGetChangesComplexTest {
                     ComplexModel { mapIntObject refAt 2u } with Unit,
                     ComplexModel { mapIntObject.refAtKey(2u) { value } } with "v2",
                     ComplexModel { mapIntMulti.refAtKeyAndType(1u, T3, Properties) { value } } with "v1",
-                    ComplexModel { mapIntMulti.atKeyAndType(1u, T3, Properties) { model ref { value } } } with "sub1",
-                    ComplexModel { mapIntMulti.atKeyAndType(1u, T3, Properties) { model { model ref { value } } } } with "sub2",
+                    ComplexModel { mapIntMulti.atKeyAndType(1u, T3, Properties) { model { value::ref } } } with "sub1",
+                    ComplexModel { mapIntMulti.atKeyAndType(1u, T3, Properties) { model { model { value::ref } } } } with "sub2",
                     ComplexModel { mapIntMulti.refAt(2u) } with TypedValue(T1, "string"),
                     ComplexModel { mapIntMulti.refAtKeyAndType(3u, T3, Properties) { value } } with "v2",
-                    ComplexModel { mapIntMulti.atKeyAndType(3u, T3, Properties) { model ref { value } } } with "2sub1",
-                    ComplexModel { mapIntMulti.atKeyAndType(3u, T3, Properties) { model { model ref { value } } } } with "2sub2"
+                    ComplexModel { mapIntMulti.atKeyAndType(3u, T3, Properties) { model { value::ref } } } with "2sub1",
+                    ComplexModel { mapIntMulti.atKeyAndType(3u, T3, Properties) { model { model { value::ref } } } } with "2sub2"
                 )
             ))
         )

@@ -51,7 +51,7 @@ or change the contents. It can be defined with a set with `addValues` or a set w
 Kotlin example on a model with a set containing strings.
 ```kotlin
 SetChange(
-    Model.ref { setOfStrings }.change(
+    Model { setOfStrings::ref }.change(
         addValues = setOf("three", "four"),
         deleteValues = setOf("one", "two")
     )

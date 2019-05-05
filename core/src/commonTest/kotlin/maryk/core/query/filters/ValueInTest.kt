@@ -12,8 +12,8 @@ import kotlin.test.Test
 
 class ValueInTest {
     private val valueIn = ValueIn(
-        TestMarykModel.ref { string } with setOf("t1", "t2", "t3"),
-        TestMarykModel.ref { int } with setOf(1, 2, 3)
+        TestMarykModel { string::ref } with setOf("t1", "t2", "t3"),
+        TestMarykModel { int::ref } with setOf(1, 2, 3)
     )
 
     private val context = RequestContext(

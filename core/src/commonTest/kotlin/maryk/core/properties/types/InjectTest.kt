@@ -62,7 +62,7 @@ class InjectTest {
         )
     )
 
-    private val injectSimple = Inject("testSimpleConvert", EmbeddedMarykModel { model.ref { value } })
+    private val injectSimple = Inject("testSimpleConvert", EmbeddedMarykModel { model { value::ref } })
     private val injectCompleteObject = Inject("testCompleteConvert")
 
     init {
@@ -74,13 +74,13 @@ class InjectTest {
     private val firstResponseValueRef = ValuesResponse { values.refAt(0u) { values } }
 
     private val inject =
-        Inject("testCollection", TestMarykModel.ref(firstResponseValueRef) { string })
+        Inject("testCollection", TestMarykModel(firstResponseValueRef) { string::ref })
 
     private val injectDeep =
-        Inject("testCollection", TestMarykModel(firstResponseValueRef) { embeddedValues.ref { value } })
+        Inject("testCollection", TestMarykModel(firstResponseValueRef) { embeddedValues { value::ref } })
 
     private val injectFromAny =
-        Inject("testCollection", ValuesResponse { values.atAny { values.ref(TestMarykModel) { string } } })
+        Inject("testCollection", ValuesResponse { values.atAny { values.refWithDM(TestMarykModel) { string } } })
 
     @Test
     fun testGetToCollect() {
@@ -111,7 +111,7 @@ class InjectTest {
 
         val values = TestMarykModel.values(context) {
             mapNonNulls(
-                string injectWith Inject("testCollection2", EmbeddedMarykModel { model.ref { value } })
+                string injectWith Inject("testCollection2", EmbeddedMarykModel { model { value::ref } })
             )
         }
 
@@ -141,7 +141,7 @@ class InjectTest {
 
         val getRequest = GetRequest.values(context) {
             mapNonNulls(
-                where injectWith Inject("where", EmbeddedMarykModel { model.ref { value } })
+                where injectWith Inject("where", EmbeddedMarykModel { model { value::ref } })
             )
         }
 
@@ -150,7 +150,7 @@ class InjectTest {
         } shouldBe InjectException("where")
 
         val equals = Equals(
-            EmbeddedMarykModel.ref { value } with "hoi"
+            EmbeddedMarykModel { value::ref } with "hoi"
         )
 
         context.collectResult("where", Equals.asValues(equals))

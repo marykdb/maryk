@@ -58,9 +58,9 @@ class InMemoryDataStoreScanChangesTest {
             it.changes shouldBe listOf(
                 VersionedChanges(version = lowestVersion, changes = listOf(
                     Change(
-                        Log.ref { message } with "Something REALLY happened",
-                        Log.ref { severity } with INFO,
-                        Log.ref { timestamp } with DateTime(2018, 11, 14, 12, 33, 22, 111)
+                        Log { message::ref } with "Something REALLY happened",
+                        Log { severity::ref } with INFO,
+                        Log { timestamp::ref } with DateTime(2018, 11, 14, 12, 33, 22, 111)
                     )
                 ))
             )
@@ -70,9 +70,9 @@ class InMemoryDataStoreScanChangesTest {
             it.changes shouldBe listOf(
                 VersionedChanges(version = lowestVersion, changes = listOf(
                     Change(
-                        Log.ref { message } with "Something else happened",
-                        Log.ref { severity } with INFO,
-                        Log.ref { timestamp } with DateTime(2018, 11, 14, 12, 0)
+                        Log { message::ref } with "Something else happened",
+                        Log { severity::ref } with INFO,
+                        Log { timestamp::ref } with DateTime(2018, 11, 14, 12, 0)
                     )
                 ))
             )
@@ -82,9 +82,9 @@ class InMemoryDataStoreScanChangesTest {
             it.changes shouldBe listOf(
                 VersionedChanges(version = lowestVersion, changes = listOf(
                     Change(
-                        Log.ref { message } with "Something happened",
-                        Log.ref { severity } with INFO,
-                        Log.ref { timestamp } with DateTime(2018, 11, 14, 11, 22, 33, 40)
+                        Log { message::ref } with "Something happened",
+                        Log { severity::ref } with INFO,
+                        Log { timestamp::ref } with DateTime(2018, 11, 14, 11, 22, 33, 40)
                     )
                 ))
             )
@@ -125,9 +125,9 @@ class InMemoryDataStoreScanChangesTest {
             it.changes shouldBe listOf(
                 VersionedChanges(version = lowestVersion, changes = listOf(
                     Change(
-                        Log.ref { message } with "Something REALLY happened",
-                        Log.ref { severity } with INFO,
-                        Log.ref { timestamp } with DateTime(2018, 11, 14, 12, 33, 22, 111)
+                        Log { message::ref } with "Something REALLY happened",
+                        Log { severity::ref } with INFO,
+                        Log { timestamp::ref } with DateTime(2018, 11, 14, 12, 33, 22, 111)
                     )
                 ))
             )
@@ -173,7 +173,7 @@ class InMemoryDataStoreScanChangesTest {
             it.changes shouldBe listOf(
                 VersionedChanges(version = lowestVersion, changes = listOf(
                     Change(
-                        Log.ref { timestamp } with DateTime(2018, 11, 14, 12, 33, 22, 111)
+                        Log { timestamp::ref } with DateTime(2018, 11, 14, 12, 33, 22, 111)
                     )
                 ))
             )

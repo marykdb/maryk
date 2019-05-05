@@ -85,7 +85,7 @@ class InMemoryDataStoreChangeValidationTest {
             TestMarykModel.change(
                 keys[1].change(
                     Change(
-                        TestMarykModel.ref { string } with "wrong"
+                        TestMarykModel { string::ref } with "wrong"
                     )
                 )
             )
@@ -114,7 +114,7 @@ class InMemoryDataStoreChangeValidationTest {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[2].change(
-                    Delete(TestMarykModel.ref { uint })
+                    Delete(TestMarykModel { uint::ref })
                 )
             )
         )
@@ -143,7 +143,7 @@ class InMemoryDataStoreChangeValidationTest {
             TestMarykModel.change(
                 keys[0].change(
                     ListChange(
-                        TestMarykModel.ref { listOfString }.change(
+                        TestMarykModel { listOfString::ref }.change(
                             addValuesToEnd = listOf("u", "v", "w", "x", "y", "z")
                         )
                     )
@@ -176,7 +176,7 @@ class InMemoryDataStoreChangeValidationTest {
             TestMarykModel.change(
                 keys[0].change(
                     ListChange(
-                        TestMarykModel.ref { listOfString }.change(
+                        TestMarykModel { listOfString::ref }.change(
                             addValuesAtIndex = mapOf(
                                 0u to "verylongwrongvalue"
                             )
@@ -212,7 +212,7 @@ class InMemoryDataStoreChangeValidationTest {
             TestMarykModel.change(
                 keys[1].change(
                     SetChange(
-                        TestMarykModel.ref { set }.change(
+                        TestMarykModel { set::ref }.change(
                             addValues = setOf(
                                 Date(2018, 11, 26),
                                 Date(2019, 11, 26),
@@ -250,7 +250,7 @@ class InMemoryDataStoreChangeValidationTest {
             TestMarykModel.change(
                 keys[1].change(
                     SetChange(
-                        TestMarykModel.ref { set }.change(
+                        TestMarykModel { set::ref }.change(
                             addValues = setOf(
                                 Date(2101, 12, 33)
                             )

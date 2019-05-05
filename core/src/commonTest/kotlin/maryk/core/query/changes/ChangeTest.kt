@@ -12,8 +12,8 @@ import kotlin.test.Test
 
 class ChangeTest {
     private val valueChange = Change(
-        TestMarykModel.ref { string } with "test",
-        TestMarykModel.ref { int } with 5
+        TestMarykModel { string::ref } with "test",
+        TestMarykModel { int::ref } with 5
     )
 
     private val context = RequestContext(
@@ -25,7 +25,7 @@ class ChangeTest {
 
     @Test
     fun testValueChange() {
-        valueChange.referenceValuePairs[0].reference shouldBe TestMarykModel.ref { string }
+        valueChange.referenceValuePairs[0].reference shouldBe TestMarykModel { string::ref }
         valueChange.referenceValuePairs[0].value shouldBe "test"
     }
 

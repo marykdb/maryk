@@ -61,7 +61,12 @@ data class EmbeddedObjectPropertyDefinitionWrapper<
     infix fun <T : Any, W : IsPropertyDefinitionWrapper<T, *, *, AbstractValues<*, *, *>>> ref(
         propertyDefinitionGetter: P.() -> W
     ): (AnyOutPropertyReference?) -> IsPropertyReference<T, W, *> =
-        { this.definition.dataModel.ref(this.ref(it), propertyDefinitionGetter) }
+        {
+            @Suppress("UNCHECKED_CAST")
+            propertyDefinitionGetter(
+                this.definition.dataModel.properties
+            ).ref(this.ref(it)) as IsPropertyReference<T, W, *>
+        }
 
     /** For quick notation to fetch property references with [referenceGetter] within embedded object */
     operator fun <T : Any, W : IsPropertyDefinition<T>, R : IsPropertyReference<T, W, *>> invoke(

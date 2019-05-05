@@ -8,7 +8,7 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 class MapReferenceTest {
-    private val mapReference = TestMarykModel.ref { map }
+    private val mapReference = TestMarykModel { map::ref }
 
     @Test
     fun convertToProtoBufAndBack() {

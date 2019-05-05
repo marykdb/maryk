@@ -12,8 +12,8 @@ import kotlin.test.Test
 
 class GreaterThanTest {
     private val greaterThan = GreaterThan(
-        TestMarykModel.ref { string } with "test",
-        TestMarykModel.ref { int } with 5
+        TestMarykModel { string::ref } with "test",
+        TestMarykModel { int::ref } with 5
     )
 
     private val context = RequestContext(

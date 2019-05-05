@@ -48,18 +48,16 @@ data class EmbeddedValuesPropertyDefinitionWrapper<
             }
         )
 
-    /** Get a top level reference on a model with [propertyDefinitionGetter] */
-    infix fun <T : Any, W : IsPropertyDefinitionWrapper<T, *, *, *>> ref(
-        propertyDefinitionGetter: P.() -> W
-    ): (AnyOutPropertyReference?) -> IsPropertyReference<T, W, IsValues<P>> =
-        { this.definition.dataModel.ref(this.ref(it), propertyDefinitionGetter) }
-
     /** Get a top level reference on a model with [propertyDefinitionGetter]. Used for contextual embed values property definitions. */
-    fun <T : Any, W : IsPropertyDefinitionWrapper<T, *, *, *>, DM: IsDataModel<P2>, P2: PropertyDefinitions> ref(
+    fun <T : Any, W : IsPropertyDefinitionWrapper<T, *, *, *>, DM: IsDataModel<P2>, P2: PropertyDefinitions> refWithDM(
         dataModel: DM,
         propertyDefinitionGetter: P2.() -> W
     ): (AnyOutPropertyReference?) -> IsPropertyReference<T, W, IsValues<P2>> =
-        { dataModel.ref(this.ref(it), propertyDefinitionGetter) }
+        {
+            @Suppress("UNCHECKED_CAST")
+            propertyDefinitionGetter(dataModel.properties)
+                .ref(this.ref(it)) as IsPropertyReference<T, W, IsValues<P2>>
+        }
 
     /** For quick notation to fetch property references with [referenceGetter] within embedded object */
     operator fun <T : Any, W : IsPropertyDefinition<T>, R : IsPropertyReference<T, W, *>> invoke(

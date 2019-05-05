@@ -67,20 +67,20 @@ class FilterWithFetchRequestKtTest {
     @Test
     fun doExistsFilter() {
         filterMatches(
-            Exists(TestMarykModel.ref { string }),
+            Exists(TestMarykModel { string::ref }),
             value1,
             null
         ) shouldBe true
 
         // Below version it did not exist
         filterMatches(
-            Exists(TestMarykModel.ref { string }),
+            Exists(TestMarykModel { string::ref }),
             value1,
             1233uL
         ) shouldBe false
 
         filterMatches(
-            Exists(TestMarykModel.ref { reference }),
+            Exists(TestMarykModel { reference::ref }),
             value1,
             null
         ) shouldBe false
@@ -89,19 +89,19 @@ class FilterWithFetchRequestKtTest {
     @Test
     fun doEqualsFilter() {
         filterMatches(
-            Equals(TestMarykModel.ref { string } with "haha1"),
+            Equals(TestMarykModel { string::ref } with "haha1"),
             value1,
             null
         ) shouldBe true
 
         filterMatches(
-            Equals(TestMarykModel.ref { string } with "haha1"),
+            Equals(TestMarykModel { string::ref } with "haha1"),
             value1,
             1233uL
         ) shouldBe false
 
         filterMatches(
-            Equals(TestMarykModel.ref { string } with "wrong"),
+            Equals(TestMarykModel { string::ref } with "wrong"),
             value1,
             null
         ) shouldBe false
@@ -179,13 +179,13 @@ class FilterWithFetchRequestKtTest {
     @Test
     fun doPrefixFilter() {
         filterMatches(
-            Prefix(TestMarykModel.ref { string } with "ha"),
+            Prefix(TestMarykModel { string::ref } with "ha"),
             value1,
             null
         ) shouldBe true
 
         filterMatches(
-            Prefix(TestMarykModel.ref { string } with "wrong"),
+            Prefix(TestMarykModel { string::ref } with "wrong"),
             value1,
             null
         ) shouldBe false
@@ -194,19 +194,19 @@ class FilterWithFetchRequestKtTest {
     @Test
     fun doLessThanFilter() {
         filterMatches(
-            LessThan(TestMarykModel.ref { int } with 6),
+            LessThan(TestMarykModel { int::ref } with 6),
             value1,
             null
         ) shouldBe true
 
         filterMatches(
-            LessThan(TestMarykModel.ref { int } with 5),
+            LessThan(TestMarykModel { int::ref } with 5),
             value1,
             null
         ) shouldBe false
 
         filterMatches(
-            LessThan(TestMarykModel.ref { int } with 2),
+            LessThan(TestMarykModel { int::ref } with 2),
             value1,
             null
         ) shouldBe false
@@ -215,19 +215,19 @@ class FilterWithFetchRequestKtTest {
     @Test
     fun doLessThanEqualsFilter() {
         filterMatches(
-            LessThanEquals(TestMarykModel.ref { int } with 6),
+            LessThanEquals(TestMarykModel { int::ref } with 6),
             value1,
             null
         ) shouldBe true
 
         filterMatches(
-            LessThanEquals(TestMarykModel.ref { int } with 5),
+            LessThanEquals(TestMarykModel { int::ref } with 5),
             value1,
             null
         ) shouldBe true
 
         filterMatches(
-            LessThanEquals(TestMarykModel.ref { int } with 2),
+            LessThanEquals(TestMarykModel { int::ref } with 2),
             value1,
             null
         ) shouldBe false
@@ -236,19 +236,19 @@ class FilterWithFetchRequestKtTest {
     @Test
     fun doGreaterThanFilter() {
         filterMatches(
-            GreaterThan(TestMarykModel.ref { int } with 4),
+            GreaterThan(TestMarykModel { int::ref } with 4),
             value1,
             null
         ) shouldBe true
 
         filterMatches(
-            GreaterThan(TestMarykModel.ref { int } with 5),
+            GreaterThan(TestMarykModel { int::ref } with 5),
             value1,
             null
         ) shouldBe false
 
         filterMatches(
-            GreaterThan(TestMarykModel.ref { int } with 6),
+            GreaterThan(TestMarykModel { int::ref } with 6),
             value1,
             null
         ) shouldBe false
@@ -257,19 +257,19 @@ class FilterWithFetchRequestKtTest {
     @Test
     fun doGreaterThanEqualsFilter() {
         filterMatches(
-            GreaterThanEquals(TestMarykModel.ref { int } with 4),
+            GreaterThanEquals(TestMarykModel { int::ref } with 4),
             value1,
             null
         ) shouldBe true
 
         filterMatches(
-            GreaterThanEquals(TestMarykModel.ref { int } with 5),
+            GreaterThanEquals(TestMarykModel { int::ref } with 5),
             value1,
             null
         ) shouldBe true
 
         filterMatches(
-            GreaterThanEquals(TestMarykModel.ref { int } with 6),
+            GreaterThanEquals(TestMarykModel { int::ref } with 6),
             value1,
             null
         ) shouldBe false
@@ -278,19 +278,19 @@ class FilterWithFetchRequestKtTest {
     @Test
     fun doRangeFilter() {
         filterMatches(
-            Range(TestMarykModel.ref { int } with (2..8)),
+            Range(TestMarykModel { int::ref } with (2..8)),
             value1,
             null
         ) shouldBe true
 
         filterMatches(
-            Range(TestMarykModel.ref { int } with (2..5)),
+            Range(TestMarykModel { int::ref } with (2..5)),
             value1,
             null
         ) shouldBe true
 
         filterMatches(
-            Range(TestMarykModel.ref { int } with (2..3)),
+            Range(TestMarykModel { int::ref } with (2..3)),
             value1,
             null
         ) shouldBe false
@@ -299,13 +299,13 @@ class FilterWithFetchRequestKtTest {
     @Test
     fun doRegExFilter() {
         filterMatches(
-            RegEx(TestMarykModel.ref { string } with Regex("^h.*$")),
+            RegEx(TestMarykModel { string::ref } with Regex("^h.*$")),
             value1,
             null
         ) shouldBe true
 
         filterMatches(
-            RegEx(TestMarykModel.ref { string } with Regex("^b.*$")),
+            RegEx(TestMarykModel { string::ref } with Regex("^b.*$")),
             value1,
             null
         ) shouldBe false
@@ -314,13 +314,13 @@ class FilterWithFetchRequestKtTest {
     @Test
     fun doValueInFilter() {
         filterMatches(
-            ValueIn(TestMarykModel.ref { string } with setOf("haha1", "haha2")),
+            ValueIn(TestMarykModel { string::ref } with setOf("haha1", "haha2")),
             value1,
             null
         ) shouldBe true
 
         filterMatches(
-            ValueIn(TestMarykModel.ref { string } with setOf("no1", "no2")),
+            ValueIn(TestMarykModel { string::ref } with setOf("no1", "no2")),
             value1,
             null
         ) shouldBe false
@@ -329,13 +329,13 @@ class FilterWithFetchRequestKtTest {
     @Test
     fun doNotFilter() {
         filterMatches(
-            Not(Exists(TestMarykModel.ref { string })),
+            Not(Exists(TestMarykModel { string::ref })),
             value1,
             null
         ) shouldBe false
 
         filterMatches(
-            Not(Exists(TestMarykModel.ref { reference })),
+            Not(Exists(TestMarykModel { reference::ref })),
             value1,
             null
         ) shouldBe true
@@ -345,8 +345,8 @@ class FilterWithFetchRequestKtTest {
     fun doAndFilter() {
         filterMatches(
             And(
-                Exists(TestMarykModel.ref { int }),
-                Exists(TestMarykModel.ref { string })
+                Exists(TestMarykModel { int::ref }),
+                Exists(TestMarykModel { string::ref })
             ),
             value1,
             null
@@ -354,8 +354,8 @@ class FilterWithFetchRequestKtTest {
 
         filterMatches(
             And(
-                Exists(TestMarykModel.ref { reference }),
-                Exists(TestMarykModel.ref { string })
+                Exists(TestMarykModel { reference::ref }),
+                Exists(TestMarykModel { string::ref })
             ),
             value1,
             null
@@ -366,8 +366,8 @@ class FilterWithFetchRequestKtTest {
     fun doOrFilter() {
         filterMatches(
             Or(
-                Exists(TestMarykModel.ref { int }),
-                Exists(TestMarykModel.ref { string })
+                Exists(TestMarykModel { int::ref }),
+                Exists(TestMarykModel { string::ref })
             ),
             value1,
             null
@@ -375,8 +375,8 @@ class FilterWithFetchRequestKtTest {
 
         filterMatches(
             Or(
-                Exists(TestMarykModel.ref { reference }),
-                Exists(TestMarykModel.ref { string })
+                Exists(TestMarykModel { reference::ref }),
+                Exists(TestMarykModel { string::ref })
             ),
             value1,
             null
@@ -384,8 +384,8 @@ class FilterWithFetchRequestKtTest {
 
         filterMatches(
             Or(
-                Exists(TestMarykModel.ref { reference }),
-                Not(Exists(TestMarykModel.ref { string }))
+                Exists(TestMarykModel { reference::ref }),
+                Not(Exists(TestMarykModel { string::ref }))
             ),
             value1,
             null

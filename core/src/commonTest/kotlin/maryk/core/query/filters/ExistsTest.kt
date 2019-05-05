@@ -11,12 +11,12 @@ import kotlin.test.Test
 
 class ExistsTest {
     private val exists = Exists(
-        TestMarykModel.ref { string }
+        TestMarykModel { string::ref }
     )
     private val existsMultiple = Exists(
-        TestMarykModel.ref { string },
-        TestMarykModel.ref { int },
-        TestMarykModel.ref { dateTime }
+        TestMarykModel { string::ref },
+        TestMarykModel { int::ref },
+        TestMarykModel { dateTime::ref }
     )
 
     private val context = RequestContext(

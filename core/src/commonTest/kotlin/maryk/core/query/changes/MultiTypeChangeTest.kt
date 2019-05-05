@@ -12,10 +12,10 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 class MultiTypeChangeTest {
-    val ref = TestMarykModel.ref { multi }
+    val ref = TestMarykModel { multi::ref }
 
     private val multiTypeChange = MultiTypeChange(
-        TestMarykModel.ref { multi } withType T3
+        TestMarykModel { multi::ref } withType T3
     )
 
     private val context = RequestContext(
@@ -23,7 +23,7 @@ class MultiTypeChangeTest {
             TestMarykModel.name toUnitLambda { TestMarykModel }
         ),
         dataModel = TestMarykModel,
-        reference = TestMarykModel.ref { multi }
+        reference = TestMarykModel { multi::ref }
     )
 
     @Test

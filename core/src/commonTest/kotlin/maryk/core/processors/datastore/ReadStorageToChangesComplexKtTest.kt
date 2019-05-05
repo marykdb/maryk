@@ -6,6 +6,7 @@ import maryk.core.properties.definitions.wrapper.refAtKeyAndIndex
 import maryk.core.properties.definitions.wrapper.refAtKeyAndType
 import maryk.core.properties.definitions.wrapper.refAtKeyTypeAndIndex
 import maryk.core.properties.references.dsl.at
+import maryk.core.properties.references.dsl.refAtKey
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Delete
@@ -95,23 +96,23 @@ class ReadStorageToChangesComplexKtTest {
                 1234UL,
                 listOf(
                     MultiTypeChange(
-                        ComplexModel.ref { multi } withType T3,
+                        ComplexModel { multi::ref } withType T3,
                         ComplexModel { mapIntMulti.refAt(2u) } withType T3,
                         ComplexModel { mapIntMulti.refAt(7u) } withType T4,
                         ComplexModel { mapIntMulti.refAt(8u) } withType T5
                     ),
                     Change(
                         ComplexModel { multi.refWithType(T3) { value } } with "u3",
-                        ComplexModel { multi.withType(T3) { model.ref { value } } } with "ue3",
+                        ComplexModel { multi.withType(T3) { model { value::ref } } } with "ue3",
                         ComplexModel { mapStringString.refAt("v1") } with "a",
                         ComplexModel { mapStringString.refAt("v22") } with "b",
                         ComplexModel { mapIntObject.refAt(1u) } with Unit,
                         ComplexModel { mapIntObject.refAtKey(1u) { value } } with "t1",
                         ComplexModel { mapIntObject.refAt(2u) } with Unit,
                         ComplexModel { mapIntObject.refAtKey(2u) { value } } with "t2",
-                        ComplexModel { mapIntObject.at(2u) { model.ref { value } } } with "te2",
+                        ComplexModel { mapIntObject.at(2u) { model { value::ref } } } with "te2",
                         ComplexModel { mapIntMulti.refAtKeyAndType(2u, T3) { value } } with "m3",
-                        ComplexModel { mapIntMulti.atKeyAndType(2u, T3) { model.ref { value } } } with "me3",
+                        ComplexModel { mapIntMulti.atKeyAndType(2u, T3) { model { value::ref } } } with "me3",
                         ComplexModel { mapIntMulti.refAt(5u) } with TypedValue(T1, "TEST"),
                         ComplexModel { mapIntMulti.refAtKeyTypeAndIndex(7u, T4, 0u) } with "a",
                         ComplexModel { mapIntMulti.refAtKeyTypeAndIndex(7u, T4, 1u) } with "b",

@@ -13,8 +13,8 @@ import kotlin.test.Test
 
 class LessThanTest {
     private val lessThan = LessThan(
-        TestMarykModel.ref { int } with 2,
-        TestMarykModel.ref { dateTime } with DateTime(2018, 1, 1, 13, 22, 34)
+        TestMarykModel { int::ref } with 2,
+        TestMarykModel { dateTime::ref } with DateTime(2018, 1, 1, 13, 22, 34)
     )
 
     private val context = RequestContext(

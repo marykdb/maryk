@@ -2,10 +2,8 @@ package maryk.core.models
 
 import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.values.IsValues
 
 /** A DataModel which holds properties and can be validated */
 interface IsDataModel<P : IsPropertyDefinitions> {
@@ -21,15 +19,4 @@ interface IsDataModel<P : IsPropertyDefinitions> {
         parent: AnyOutPropertyReference? = null,
         referenceGetter: P.() -> (AnyOutPropertyReference?) -> R
     ) = referenceGetter(this.properties)(parent)
-
-    /**
-     * To get a top level reference on a model by passing a [propertyDefinitionGetter] from its defined Properties
-     * Optionally pass an already resolved [parent]
-     */
-    @Suppress("UNCHECKED_CAST")
-    fun <T : Any, W : IsPropertyDefinitionWrapper<T, *, *, *>> ref(
-        parent: IsPropertyReference<out Any, IsPropertyDefinition<out Any>, *>? = null,
-        propertyDefinitionGetter: P.() -> W
-    ) =
-        propertyDefinitionGetter(this.properties).ref(parent) as IsPropertyReference<T, W, IsValues<P>>
 }

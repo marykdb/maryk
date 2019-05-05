@@ -75,7 +75,7 @@ class UniqueTest {
         addResponse.statuses.forEach { status ->
             val fail = shouldBeOfType<ValidationFail<UniqueModel>>(status)
             val alreadySet = shouldBeOfType<AlreadySetException>(fail.exceptions.first())
-            alreadySet.reference shouldBe UniqueModel.ref { email }
+            alreadySet.reference shouldBe UniqueModel { email::ref }
         }
 
         dataStore.execute(UniqueModel.delete(keys[0]))
@@ -92,7 +92,7 @@ class UniqueTest {
         addResponse.statuses.forEach { status ->
             val fail = shouldBeOfType<ValidationFail<UniqueModel>>(status)
             val alreadySet = shouldBeOfType<AlreadySetException>(fail.exceptions.first())
-            alreadySet.reference shouldBe UniqueModel.ref { email }
+            alreadySet.reference shouldBe UniqueModel { email::ref }
         }
 
         dataStoreWithHistory.execute(UniqueModel.delete(keysForHistory[0]))
@@ -108,7 +108,7 @@ class UniqueTest {
             UniqueModel.change(
                 keys[1].change(
                     Change(
-                        UniqueModel.ref { email } with "test@test.com"
+                        UniqueModel { email::ref } with "test@test.com"
                     )
                 )
             )
@@ -116,7 +116,7 @@ class UniqueTest {
         changeResponse.statuses.forEach { status ->
             val fail = shouldBeOfType<ValidationFail<UniqueModel>>(status)
             val alreadySet = shouldBeOfType<AlreadySetException>(fail.exceptions.first())
-            alreadySet.reference shouldBe UniqueModel.ref { email }
+            alreadySet.reference shouldBe UniqueModel { email::ref }
         }
 
         dataStore.execute(UniqueModel.delete(keys[0]))

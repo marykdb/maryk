@@ -54,13 +54,13 @@ class ValuesTest {
             )
         )
 
-        values[TestMarykModel.ref { string }] shouldBe "hello world"
-        values[TestMarykModel.ref { double }] shouldBe 2.3
-        values[TestMarykModel.ref { dateTime }] shouldBe DateTime(2018, 7, 18)
+        values[TestMarykModel { string::ref }] shouldBe "hello world"
+        values[TestMarykModel { double::ref }] shouldBe 2.3
+        values[TestMarykModel { dateTime::ref }] shouldBe DateTime(2018, 7, 18)
         values[TestMarykModel { listOfString refAt 2u }] shouldBe "v3"
         values[TestMarykModel { listOfString.refToAny() }] shouldBe listOf("v1", "v2", "v3")
         values[TestMarykModel { map refAt Time(12, 23, 34) }] shouldBe "twelve"
-        values[TestMarykModel { embeddedValues.ref { value } }] shouldBe "test"
-        values[TestMarykModel { embeddedValues { model.ref { value } } }] shouldBe "another test"
+        values[TestMarykModel { embeddedValues { value::ref } }] shouldBe "test"
+        values[TestMarykModel { embeddedValues { model { value::ref } } }] shouldBe "another test"
     }
 }

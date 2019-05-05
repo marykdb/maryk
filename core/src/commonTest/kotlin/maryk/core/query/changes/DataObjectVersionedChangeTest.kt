@@ -16,7 +16,7 @@ class DataObjectVersionedChangeTest {
         byteArrayOf(0, 0, 2, 43, 1, 0, 2)
     )
 
-    private val subModel = TestMarykModel.ref { embeddedValues }
+    private val subModel = TestMarykModel { embeddedValues::ref }
 
     private val dataObjectVersionedChanges = DataObjectVersionedChange(
         key = key1,
@@ -25,16 +25,16 @@ class DataObjectVersionedChangeTest {
                 219674127uL,
                 listOf(
                     ObjectSoftDeleteChange(true),
-                    ListChange(TestMarykModel.ref { list }.change()),
-                    SetChange(TestMarykModel.ref { set }.change())
+                    ListChange(TestMarykModel { list::ref }.change()),
+                    SetChange(TestMarykModel { set::ref }.change())
                 )
             ),
             VersionedChanges(
                 319674127uL,
                 listOf(
-                    Change(EmbeddedMarykModel.ref(subModel) { value } with "new"),
-                    Delete(EmbeddedMarykModel.ref(subModel) { value }),
-                    Check(EmbeddedMarykModel.ref(subModel) { value } with "current")
+                    Change(EmbeddedMarykModel(subModel) { value::ref } with "new"),
+                    Delete(EmbeddedMarykModel(subModel) { value::ref }),
+                    Check(EmbeddedMarykModel(subModel) { value::ref } with "current")
                 )
             )
         )

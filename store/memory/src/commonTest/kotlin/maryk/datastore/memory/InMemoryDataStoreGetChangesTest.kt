@@ -44,13 +44,13 @@ class InMemoryDataStoreGetChangesTest {
 
         getResponse.changes[0].changes shouldBe listOf(
             VersionedChanges(version = lowestVersion, changes = listOf(
-                Change(SimpleMarykModel.ref { value } with "haha1")
+                Change(SimpleMarykModel { value::ref} with "haha1")
             ))
         )
 
         getResponse.changes[1].changes shouldBe listOf(
             VersionedChanges(version = lowestVersion, changes = listOf(
-                Change(SimpleMarykModel.ref { value } with "haha2")
+                Change(SimpleMarykModel { value::ref } with "haha2")
             ))
         )
     }
@@ -89,7 +89,7 @@ class InMemoryDataStoreGetChangesTest {
         scanResponse.changes[0].let {
             it.changes shouldBe listOf(
                 VersionedChanges(version = lowestVersion, changes = listOf(
-                    Change(SimpleMarykModel.ref { value } with "haha1")
+                    Change(SimpleMarykModel { value::ref } with "haha1")
                 ))
             )
             it.key shouldBe keys[0]

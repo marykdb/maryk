@@ -12,7 +12,7 @@ import kotlin.test.Test
 
 class PrefixTest {
     private val prefix = Prefix(
-        TestMarykModel.ref { string } with "te"
+        TestMarykModel { string::ref } with "te"
     )
 
     private val context = RequestContext(

@@ -12,7 +12,7 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 class VersionedChangesTest {
-    private val subModelValue = TestMarykModel { embeddedValues ref { value } }
+    private val subModelValue = TestMarykModel { embeddedValues { value::ref } }
 
     private val versionedChanges = VersionedChanges(
         219674127uL,
@@ -21,8 +21,8 @@ class VersionedChangesTest {
             Delete(subModelValue),
             Check(subModelValue with "current"),
             ObjectSoftDeleteChange(true),
-            ListChange(TestMarykModel.ref { list }.change()),
-            SetChange(TestMarykModel.ref { set }.change())
+            ListChange(TestMarykModel { list::ref }.change()),
+            SetChange(TestMarykModel { set::ref }.change())
         )
     )
 

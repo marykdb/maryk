@@ -99,7 +99,7 @@ class InMemoryDataStoreChangeComplexTest {
         val changeResponse = dataStore.execute(
             ComplexModel.change(
                 keys[0].change(
-                    Delete(ComplexModel.ref { multi })
+                    Delete(ComplexModel { multi::ref })
                 )
             )
         )
@@ -124,7 +124,7 @@ class InMemoryDataStoreChangeComplexTest {
         val changeResponse = dataStore.execute(
             ComplexModel.change(
                 keys[2].change(
-                    Delete(ComplexModel.ref { mapIntObject })
+                    Delete(ComplexModel { mapIntObject::ref })
                 )
             )
         )
@@ -210,7 +210,7 @@ class InMemoryDataStoreChangeComplexTest {
                                 1u,
                                 T3,
                                 Properties
-                            ) { model ref { model } }
+                            ) { model { model::ref } }
                         },
                         ComplexModel { mapIntMulti.refAtKeyAndType(3u, T3, Properties) { model } }
                     )
@@ -248,10 +248,10 @@ class InMemoryDataStoreChangeComplexTest {
                                 1u,
                                 T3,
                                 Properties
-                            ) { model { model ref { value } } }
+                            ) { model { model { value::ref } } }
                         } with "changed",
                         ComplexModel { mapIntObject.refAtKey(1u) { value } } with "mapIntObjectChanged",
-                        ComplexModel { multi.withType(T3, Properties) { model ref { value } } } with "multi sub changed"
+                        ComplexModel { multi.withType(T3, Properties) { model { value::ref } } } with "multi sub changed"
                     )
                 )
             )
@@ -308,10 +308,10 @@ class InMemoryDataStoreChangeComplexTest {
             ComplexModel.change(
                 keys[5].change(
                     Change(
-                        ComplexModel.ref { multi } with newMultiValue,
-                        ComplexModel.ref { mapStringString } with newMapStringString,
-                        ComplexModel.ref { mapIntObject } with newMapIntObject,
-                        ComplexModel.ref { mapIntMulti } with newMapIntMulti
+                        ComplexModel { multi::ref } with newMultiValue,
+                        ComplexModel { mapStringString::ref } with newMapStringString,
+                        ComplexModel { mapIntObject::ref } with newMapIntObject,
+                        ComplexModel { mapIntMulti::ref } with newMapIntMulti
                     )
                 )
             )

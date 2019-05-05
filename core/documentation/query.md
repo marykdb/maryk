@@ -73,11 +73,11 @@ val person2Key // Containing the key of person 2 to change
 
 val changeRequest = Person.change(
     person1Key.change(
-        Check(Person.ref { firstName } with "Jane"),
-        Change(Person.ref { lastName } with "Doe")
+        Check(Person { firstName::ref } with "Jane"),
+        Change(Person { lastName::ref } with "Doe")
     ),
     person2Key.change(
-        Change(Person.ref { lastName } with "Smith")
+        Change(Person { lastName::ref } with "Smith")
     )
 )
 ```
@@ -353,7 +353,7 @@ val scanRequest = Logs.scanChanges(
         )
     },
     filter = GreaterThanEquals(
-        Logs.ref { severity } with Severity.ERROR
+        Logs { severity::ref } with Severity.ERROR
     ),
     order = ref { timeStamp }.descending(),
     filterSoftDeleted = false,    

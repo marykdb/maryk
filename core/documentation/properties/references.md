@@ -36,15 +36,15 @@ help to validate and autocomplete them.
 Examples:
 ```kotlin
 // Reference to firstName property
-Person.ref { firstName }
+Person { firstName::ref }
 
 // Reference to street through a Person
-Person { livingAddress ref { street } }
+Person { livingAddress { street::ref } }
 ```
 
-With deeper nesting of property reference you need to nest the `{}` blocks and call to the last one with ref
+With deeper nesting of property reference you need to nest the `{}` blocks and pass the last one as ::ref
 ```kotlin
-Model { property { property { property { property ref property } } } }
+Model { property { property { property { property { property::ref } } } } }
 ```
 
 ## Creating property references with String notation

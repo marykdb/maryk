@@ -1,6 +1,7 @@
 package maryk.core.properties
 
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 
 @PropertyReferenceMarker
@@ -25,3 +26,13 @@ interface IsPropertyDefinitions {
         context: IsPropertyContext? = null
     ): IsPropertyReference<*, IsPropertyDefinition<*>, *>
 }
+
+/**
+ * Get property reference fetcher of this DataModel with [referenceGetter]
+ * Optionally pass an already resolved [parent]
+ * For Strongly typed reference notation
+ */
+operator fun <T : Any, P: PropertyDefinitions, W : IsPropertyDefinition<T>, R : IsPropertyReference<T, W, *>> P.invoke(
+    parent: AnyOutPropertyReference? = null,
+    referenceGetter: P.() -> (AnyOutPropertyReference?) -> R
+) = referenceGetter(this)(parent)

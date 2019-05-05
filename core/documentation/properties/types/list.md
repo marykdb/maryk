@@ -65,7 +65,7 @@ Maryk Yaml:
 Kotlin:
 ```kotlin
 ListChange(
-    Model.ref { listOfStrings }.change(
+    Model { listOfStrings::ref }.change(
         addValuesToEnd = listOf("three", "four"),
         deleteValues = listOf("one", "two")
     )
@@ -77,7 +77,7 @@ ListChange(
 Kotlin:
 ```kotlin
 ListChange(
-    Model.ref { listOfStrings }.change(
+    Model { listOfStrings::ref }.change(
         addValuesAtIndex = mapOf(
             0 to "three", 
             0 to "four"

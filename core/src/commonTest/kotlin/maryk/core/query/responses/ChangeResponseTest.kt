@@ -28,7 +28,7 @@ class ChangeResponseTest {
             ValidationFail(
                 ValidationUmbrellaException(
                     null, listOf(
-                        InvalidValueException(SimpleMarykModel.ref { value }, "wrong")
+                        InvalidValueException(SimpleMarykModel { value::ref }, "wrong")
                     )
                 )
             ),

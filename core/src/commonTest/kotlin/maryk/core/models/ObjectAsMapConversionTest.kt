@@ -26,7 +26,7 @@ class ObjectAsMapConversionTest {
             select with SimpleMarykModel.graph {
                 listOf(value)
             },
-            where with Exists(SimpleMarykModel.ref { value }),
+            where with Exists(SimpleMarykModel { value::ref }),
             toVersion with 333uL,
             filterSoftDeleted with true
         )

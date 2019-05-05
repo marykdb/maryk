@@ -9,7 +9,6 @@ import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.AnySpecificWrappedPropertyReference
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.values.AbstractValues
 
 /**
  * Contains a List property [definition] which contains values of type [ODO] and [P]
@@ -65,10 +64,9 @@ data class ObjectListPropertyDefinitionWrapper<
         val objectValuesDefinition = this.definition.valueDefinition as EmbeddedObjectDefinition<ODO, P, *, *, *>
 
         return {
-            objectValuesDefinition.dataModel.ref(
-                this.getItemRef(index, it),
-                propertyDefinitionGetter as ObjectPropertyDefinitions<*>.() -> IsPropertyDefinitionWrapper<T, *, *, AbstractValues<*, *, *>>
-            )
+            propertyDefinitionGetter(
+                objectValuesDefinition.dataModel.properties as P
+            ).ref(this.getItemRef(index,it)) as IsPropertyReference<T, IsPropertyDefinitionWrapper<T, *, *, *>, *>
         }
     }
 

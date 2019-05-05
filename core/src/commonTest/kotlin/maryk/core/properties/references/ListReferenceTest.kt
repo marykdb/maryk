@@ -10,7 +10,7 @@ import maryk.test.shouldBeOfType
 import kotlin.test.Test
 
 class ListReferenceTest {
-    private val listReference = TestMarykModel { embeddedValues { marykModel ref { listOfString } } }
+    private val listReference = TestMarykModel { embeddedValues { marykModel { listOfString::ref } } }
     val cache = WriteCache()
 
     @Test

@@ -26,14 +26,14 @@ class AddResponseTest {
         listOf(
             AddSuccess(
                 key, 32352uL, listOf(
-                    Change(SimpleMarykModel.ref { value } with "new")
+                    Change(SimpleMarykModel { value::ref } with "new")
                 )
             ),
             AlreadyExists(key),
             ValidationFail(
                 ValidationUmbrellaException(
                     null, listOf(
-                        InvalidValueException(SimpleMarykModel.ref { value }, "wrong")
+                        InvalidValueException(SimpleMarykModel { value::ref }, "wrong")
                     )
                 )
             ),

@@ -10,8 +10,8 @@ unless it is true.
 Check if firstName is `John`
 ```kotlin
 Check(
-    Person.ref { firstName } with "John",
-    Person.ref { lastName } with "Smith"
+    Person { firstName::ref } with "John",
+    Person { lastName::ref } with "Smith"
 )
 ```
 
@@ -27,8 +27,8 @@ A property value can be changed with a `PropertyChange`.
 
 ```kotlin
 Change(
-    Person.ref { firstName } with "Jane",
-    Person.ref { lastName } with "Doe"
+    Person { firstName::ref } with "Jane",
+    Person { lastName::ref } with "Doe"
 )
 ```
 
@@ -45,8 +45,8 @@ A `PropertyDelete` can be used to delete a property.
 Delete firstName
 ```kotlin
 Delete(
-    Person.ref { firstName },
-    Person.ref { lastName }
+    Person { firstName::ref },
+    Person { lastName::ref }
 )
 ```
 

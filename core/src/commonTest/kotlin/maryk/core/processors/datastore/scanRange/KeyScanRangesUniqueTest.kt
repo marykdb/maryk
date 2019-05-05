@@ -13,7 +13,7 @@ class KeyScanRangesUniqueTest {
     @Test
     fun convertSimpleEqualFilterToScanRange() {
         val filter = Equals(
-            CompleteMarykModel.ref { string } with "🦄"
+            CompleteMarykModel { string::ref } with "🦄"
         )
 
         val scanRange = CompleteMarykModel.createScanRange(filter, null)
@@ -31,7 +31,7 @@ class KeyScanRangesUniqueTest {
     @Test
     fun convertValueInFilterToScanRange() {
         val filter = ValueIn(
-            CompleteMarykModel.ref { string } with setOf("🦄", "💩", "🤡", "🤖")
+            CompleteMarykModel { string::ref } with setOf("🦄", "💩", "🤡", "🤖")
         )
 
         val scanRange = CompleteMarykModel.createScanRange(filter, null)

@@ -12,7 +12,7 @@ import kotlin.test.Test
 
 class SetChangeTest {
     private val setPropertyChange = SetChange(
-        TestMarykModel.ref { set }.change(
+        TestMarykModel { set::ref }.change(
             addValues = setOf(
                 Date(2014, 4, 14),
                 Date(2013, 3, 13)

@@ -14,8 +14,8 @@ import kotlin.test.Test
 
 class OrdersTest {
     private val orders = Orders(
-        SimpleMarykModel.ref { value }.descending(),
-        SimpleMarykModel.ref { value }.ascending(),
+        SimpleMarykModel { value::ref }.descending(),
+        SimpleMarykModel { value::ref }.ascending(),
         Order.ascending,
         Order.descending
     )

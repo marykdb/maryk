@@ -34,8 +34,8 @@ class InjectIntoRequestTest {
     private val getRequestWithInjectable = GetRequest.values(context) {
         mapNonNulls(
             dataModel with SimpleMarykModel,
-            keys injectWith Inject("keysToInject", GetRequest.ref { keys }),
-            where with Exists(SimpleMarykModel.ref { value }),
+            keys injectWith Inject("keysToInject", GetRequest { keys::ref }),
+            where with Exists(SimpleMarykModel { value::ref }),
             toVersion with 333uL,
             filterSoftDeleted with true,
             select with SimpleMarykModel.graph {
@@ -52,7 +52,7 @@ class InjectIntoRequestTest {
 
     @Test
     fun testInjectInValuesGetRequest() {
-        val requestRef = ValuesResponse { values.atAny { values.ref(ReferencesModel) { references } } }
+        val requestRef = ValuesResponse { values.atAny { values.refWithDM(ReferencesModel) { references } } }
 
         val getRequest = GetRequest.values(context) {
             mapNonNulls(

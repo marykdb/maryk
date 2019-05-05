@@ -69,7 +69,7 @@ Maryk Yaml:
 Kotlin:
 ```kotlin
 MapChange(
-    Model.ref { mapOfIntToString }.change(
+    Model { mapOfIntToString::ref }.change(
         valuesToAdd = mapOf(
             3 to "three",
             4 to "four"

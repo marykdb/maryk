@@ -113,19 +113,19 @@ class InMemoryDataStoreChangeTest {
             TestMarykModel.change(
                 keys[0].change(
                     Check(
-                        TestMarykModel.ref { string } with "haha1"
+                        TestMarykModel { string::ref } with "haha1"
                     ),
                     lastVersion = lastVersions[0]
                 ),
                 keys[0].change(
                     Check(
-                        TestMarykModel.ref { string } with "wrong"
+                        TestMarykModel { string::ref } with "wrong"
                     ),
                     lastVersion = lastVersions[0]
                 ),
                 keys[0].change(
                     Check(
-                        TestMarykModel.ref { string } with "haha1"
+                        TestMarykModel { string::ref } with "haha1"
                     ),
                     lastVersion = 123uL
                 )
@@ -161,12 +161,12 @@ class InMemoryDataStoreChangeTest {
             TestMarykModel.change(
                 keys[1].change(
                     Change(
-                        TestMarykModel.ref { string } with "haha3",
+                        TestMarykModel { string::ref } with "haha3",
                         TestMarykModel { listOfString refAt 0u } with "z",
                         TestMarykModel { map refAt Time(12, 33, 45) } with "changed",
-                        TestMarykModel.ref { list } with newIntList,
-                        TestMarykModel.ref { set } with newDateSet,
-                        TestMarykModel.ref { embeddedValues } with newValues
+                        TestMarykModel { list::ref } with newIntList,
+                        TestMarykModel { set::ref } with newDateSet,
+                        TestMarykModel { embeddedValues::ref } with newValues
                     )
                 )
             )
@@ -231,7 +231,7 @@ class InMemoryDataStoreChangeTest {
             TestMarykModel.change(
                 keys[5].change(
                     Change(
-                        TestMarykModel { embeddedValues.ref { value } } with "test"
+                        TestMarykModel { embeddedValues { value::ref } } with "test"
                     )
                 )
             )
@@ -246,7 +246,7 @@ class InMemoryDataStoreChangeTest {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[2].change(
-                    Delete(TestMarykModel.ref { reference })
+                    Delete(TestMarykModel { reference::ref })
                 )
             )
         )
@@ -270,10 +270,10 @@ class InMemoryDataStoreChangeTest {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[3].change(
-                    Delete(TestMarykModel.ref { map }),
-                    Delete(TestMarykModel.ref { listOfString }),
-                    Delete(TestMarykModel.ref { set }),
-                    Delete(TestMarykModel.ref { multi })
+                    Delete(TestMarykModel { map::ref }),
+                    Delete(TestMarykModel { listOfString::ref }),
+                    Delete(TestMarykModel { set::ref }),
+                    Delete(TestMarykModel { multi::ref })
                 )
             )
         )
@@ -359,7 +359,7 @@ class InMemoryDataStoreChangeTest {
                         TestMarykModel { listOfString.refAt(1u) }
                     ),
                     ListChange(
-                        TestMarykModel.ref { listOfString }.change(
+                        TestMarykModel { listOfString::ref }.change(
                             deleteValues = listOf("c"),
                             addValuesAtIndex = mapOf(
                                 0u to "zero"
@@ -394,7 +394,7 @@ class InMemoryDataStoreChangeTest {
                         TestMarykModel { set.refAt(Date(2018, 11, 25)) }
                     ),
                     SetChange(
-                        TestMarykModel.ref { set }.change(
+                        TestMarykModel { set::ref }.change(
                             addValues = setOf(Date(2018, 11, 26))
                         )
                     )

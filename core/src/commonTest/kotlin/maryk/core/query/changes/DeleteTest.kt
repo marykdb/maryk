@@ -11,13 +11,13 @@ import kotlin.test.Test
 
 class DeleteTest {
     private val propertyDelete = Delete(
-        TestMarykModel.ref { string }
+        TestMarykModel { string::ref }
     )
 
     private val propertyDeleteMultiple = Delete(
-        TestMarykModel.ref { string },
-        TestMarykModel.ref { int },
-        TestMarykModel.ref { dateTime }
+        TestMarykModel { string::ref },
+        TestMarykModel { int::ref },
+        TestMarykModel { dateTime::ref }
     )
 
     private val context = RequestContext(

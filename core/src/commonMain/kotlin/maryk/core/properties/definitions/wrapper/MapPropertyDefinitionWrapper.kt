@@ -25,9 +25,9 @@ import maryk.core.properties.references.MapKeyReference
 import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.references.SetItemReference
-import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.values.Values
+import kotlin.jvm.JvmName
 
 /**
  * Contains a Map property [definition] which contains keys [K] and values [V]
@@ -109,17 +109,6 @@ fun <K : Any, V : Values<*, P>, DM : IsValuesDataModel<P>, P : PropertyDefinitio
         )
     }
 
-/** Specific extension to support fetching ref on Map values by [key] and [type] */
-@Suppress("UNCHECKED_CAST")
-fun <K : Any, E : IndexedEnum> MapPropertyDefinitionWrapper<K, TypedValue<E, Any>, *, *, *>.refToKeyAndType(
-    key: K,
-    type: E
-): (AnyOutPropertyReference?) -> TypedValueReference<E, IsPropertyContext> =
-    {
-        val multiTypeDef = (this.definition.valueDefinition as IsMultiTypeDefinition<E, IsPropertyContext>)
-        multiTypeDef.typedValueRef(type, this.valueRef(key, it))
-    }
-
 /** Specific extension to support fetching sub refs on Map values by [key] and [type] */
 @Suppress("UNCHECKED_CAST")
 fun <K : Any, E : IndexedEnum, P : PropertyDefinitions, T : Any, W : IsPropertyDefinitionWrapper<T, *, *, *>> MapPropertyDefinitionWrapper<K, TypedValue<E, Any>, *, *, *>.refAtKeyAndType(
@@ -155,7 +144,7 @@ fun <K : Any, E : IndexedEnum, P : PropertyDefinitions, T : Any, W : IsPropertyD
 
 /** Specific extension to support fetching sub refs on Map values by [key] and [type] */
 @Suppress("UNCHECKED_CAST")
-fun <K : Any, E : IndexedEnum, T : Any> MapPropertyDefinitionWrapper<K, TypedValue<E, Any>, *, *, *>.refToKeyTypeAndIndexWeak(
+fun <K : Any, E : IndexedEnum, T : Any> MapPropertyDefinitionWrapper<K, TypedValue<E, Any>, *, *, *>.refAtKeyTypeAndIndexWeak(
     key: K,
     type: E,
     listIndex: UInt
@@ -171,7 +160,7 @@ fun <K : Any, E : IndexedEnum, T : Any> MapPropertyDefinitionWrapper<K, TypedVal
 
 /** Specific extension to support fetching sub refs on Map values by [key] and [type] */
 @Suppress("UNCHECKED_CAST")
-fun <K : Any, E : IndexedEnum, T : Any> MapPropertyDefinitionWrapper<K, TypedValue<E, Any>, *, *, *>.refToKeyTypeAndIndex(
+fun <K : Any, E : IndexedEnum, T : Any> MapPropertyDefinitionWrapper<K, TypedValue<E, Any>, *, *, *>.refAtKeyTypeAndIndex(
     key: K,
     type: ListTypeCase<E, T>,
     listIndex: UInt
@@ -187,7 +176,7 @@ fun <K : Any, E : IndexedEnum, T : Any> MapPropertyDefinitionWrapper<K, TypedVal
 
 /** Specific extension to support fetching list item refs on Map values by [key] and [listIndex] */
 @Suppress("UNCHECKED_CAST")
-fun <K : Any, T : Any> MapPropertyDefinitionWrapper<K, List<T>, *, *, *>.refToKeyAndIndex(
+fun <K : Any, T : Any> MapPropertyDefinitionWrapper<K, List<T>, *, *, *>.refAtKeyAndIndex(
     key: K,
     listIndex: UInt
 ): (AnyOutPropertyReference?) -> ListItemReference<T, *> =
@@ -200,7 +189,7 @@ fun <K : Any, T : Any> MapPropertyDefinitionWrapper<K, List<T>, *, *, *>.refToKe
 
 /** Specific extension to support fetching set item refs on Map values by [key] and [setItem] */
 @Suppress("UNCHECKED_CAST")
-fun <K : Any, T : Any> MapPropertyDefinitionWrapper<K, Set<T>, *, *, *>.refToKeyAndIndex(
+fun <K : Any, T : Any> MapPropertyDefinitionWrapper<K, Set<T>, *, *, *>.refAtKeyAndIndex(
     key: K,
     setItem: T
 ): (AnyOutPropertyReference?) -> SetItemReference<T, *> =
@@ -211,37 +200,7 @@ fun <K : Any, T : Any> MapPropertyDefinitionWrapper<K, Set<T>, *, *, *>.refToKey
         )
     }
 
-/** Specific extension to support fetching deeper references on Map values by [key] */
-fun <K : Any, V : Values<*, P>, DM : IsValuesDataModel<P>, P : PropertyDefinitions, T : Any, W : IsPropertyDefinitionWrapper<T, *, *, *>, R : IsPropertyReference<T, W, *>> MapPropertyDefinitionWrapper<K, V, *, *, *>.at(
-    key: K,
-    referenceGetter: P.() -> (AnyOutPropertyReference?) -> R
-): (AnyOutPropertyReference?) -> R =
-    {
-        @Suppress("UNCHECKED_CAST")
-        (this.definition.valueDefinition as EmbeddedValuesDefinition<DM, P>).dataModel(
-            this.valueRef(key, it),
-            referenceGetter
-        )
-    }
 
-/** Specific extension to support fetching deeper references on Map values at [key] */
-fun <K : Any, V : Map<*, *>, T : Any, R : IsPropertyReference<T, *, *>> IsSubDefinition<Map<K, V>, *>.at(
-    key: K,
-    referenceGetter: IsSubDefinition<V, *>.() -> (AnyOutPropertyReference?) -> R
-): (AnyOutPropertyReference?) -> R =
-    {
-        val mapDefinition = this as IsMapDefinition<K, V, *>
-
-        val parent = if (this is IsPropertyDefinitionWrapper<*, *, *, *>) {
-            this.ref(it)
-        } else it
-
-        referenceGetter(
-            mapDefinition.valueDefinition
-        )(
-            mapDefinition.valueRef(key, parent as CanContainMapItemReference<*, *, *>?)
-        )
-    }
 
 /** Specific extension to support fetching references on map definition at [key] */
 fun <K : Any, V : Any> IsSubDefinition<Map<K, V>, *>.refAtKey(
@@ -249,7 +208,12 @@ fun <K : Any, V : Any> IsSubDefinition<Map<K, V>, *>.refAtKey(
 ): (AnyOutPropertyReference?) -> MapValueReference<K, V, out IsPropertyContext> =
     {
         val mapDefinition = this as IsMapDefinition<K, V, *>
-        mapDefinition.valueRef(key, it as CanContainMapItemReference<*, *, *>)
+
+        val parent = if (this is IsPropertyDefinitionWrapper<*, *, *, *>) {
+            this.ref(it)
+        } else it
+
+        mapDefinition.valueRef(key, parent as CanContainMapItemReference<*, *, *>?)
     }
 
 /** Specific extension to support fetching deeper references on Map values by any key */

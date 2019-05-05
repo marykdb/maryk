@@ -33,7 +33,7 @@ import maryk.lib.exceptions.ParseException
  * Interface to define a Collection [C] containing [T] with context [CX]
  */
 interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyContext, out ST : IsValueDefinition<T, CX>> :
-    IsSerializablePropertyDefinition<C, CX>,
+    IsSubDefinition<C, CX>,
     HasSizeDefinition {
     val valueDefinition: ST
 

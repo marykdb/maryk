@@ -1,9 +1,8 @@
 package maryk.core.processors.datastore
 
-import maryk.core.properties.definitions.wrapper.atKeyAndType
-import maryk.core.properties.definitions.wrapper.refAtKeyAndIndex
 import maryk.core.properties.definitions.wrapper.refAtKeyTypeAndIndex
 import maryk.core.properties.references.dsl.at
+import maryk.core.properties.references.dsl.atType
 import maryk.core.properties.references.dsl.refAt
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
@@ -109,19 +108,19 @@ class ReadStorageToChangesComplexKtTest {
                         ComplexModel { mapIntObject.refAt(2u) } with Unit,
                         ComplexModel { mapIntObject.at(2u) { value::ref } } with "t2",
                         ComplexModel { mapIntObject.at(2u) { model { value::ref } } } with "te2",
-                        ComplexModel { mapIntMulti.atKeyAndType(2u, T3) { value::ref } } with "m3",
-                        ComplexModel { mapIntMulti.atKeyAndType(2u, T3) { model { value::ref } } } with "me3",
+                        ComplexModel { mapIntMulti.at(2u) { atType(T3) { value::ref } } } with "m3",
+                        ComplexModel { mapIntMulti.at(2u) { atType(T3) { model { value::ref } } } } with "me3",
                         ComplexModel { mapIntMulti.refAt(5u) } with TypedValue(T1, "TEST"),
                         ComplexModel { mapIntMulti.refAtKeyTypeAndIndex(7u, T4, 0u) } with "a",
                         ComplexModel { mapIntMulti.refAtKeyTypeAndIndex(7u, T4, 1u) } with "b",
-                        ComplexModel { mapWithList.refAtKeyAndIndex("a", 0u) } with "a1",
-                        ComplexModel { mapWithList.refAtKeyAndIndex("a", 1u) } with "a2",
+                        ComplexModel { mapWithList.at("a") { refAt(0u) } } with "a1",
+                        ComplexModel { mapWithList.at("a") { refAt(1u) } } with "a2",
                         ComplexModel { mapWithMap.at("c") { refAt("c1")  }} with "c2"
                     ),
                     Delete(
                         ComplexModel { mapIntMulti.refAtKeyTypeAndIndex(7u, T4, 2u) },
-                        ComplexModel { mapWithList.refAtKeyAndIndex("a", 2u) },
-                        ComplexModel { mapWithSet.refAtKeyAndIndex("b", "b3") }
+                        ComplexModel { mapWithList.at("a") { refAt(2u) } },
+                        ComplexModel { mapWithSet.at("b") { refAt("b3") } }
                     ),
                     SetChange(
 // Problems with reference and SetChange so commented out

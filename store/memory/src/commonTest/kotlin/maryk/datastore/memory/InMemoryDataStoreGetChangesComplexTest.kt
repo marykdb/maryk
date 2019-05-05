@@ -1,7 +1,7 @@
 package maryk.datastore.memory
 
-import maryk.core.properties.definitions.wrapper.atKeyAndType
 import maryk.core.properties.references.dsl.at
+import maryk.core.properties.references.dsl.atType
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
@@ -90,13 +90,13 @@ class InMemoryDataStoreGetChangesComplexTest {
                     ComplexModel { mapIntObject.at(1u) { value::ref } } with "v1",
                     ComplexModel { mapIntObject refAt 2u } with Unit,
                     ComplexModel { mapIntObject.at(2u) { value::ref } } with "v2",
-                    ComplexModel { mapIntMulti.atKeyAndType(1u, T3, Properties) { value::ref } } with "v1",
-                    ComplexModel { mapIntMulti.atKeyAndType(1u, T3, Properties) { model { value::ref } } } with "sub1",
-                    ComplexModel { mapIntMulti.atKeyAndType(1u, T3, Properties) { model { model { value::ref } } } } with "sub2",
-                    ComplexModel { mapIntMulti.refAt(2u) } with TypedValue(T1, "string"),
-                    ComplexModel { mapIntMulti.atKeyAndType(3u, T3, Properties) { value::ref } } with "v2",
-                    ComplexModel { mapIntMulti.atKeyAndType(3u, T3, Properties) { model { value::ref } } } with "2sub1",
-                    ComplexModel { mapIntMulti.atKeyAndType(3u, T3, Properties) { model { model { value::ref } } } } with "2sub2"
+                    ComplexModel { mapIntMulti.at(1u) { atType(T3) { value::ref } } } with "v1",
+                    ComplexModel { mapIntMulti.at(1u) { atType(T3) { model { value::ref } } } } with "sub1",
+                    ComplexModel { mapIntMulti.at(1u) { atType(T3) { model { model { value::ref } } } } } with "sub2",
+                    ComplexModel { mapIntMulti refAt 2u } with TypedValue(T1, "string"),
+                    ComplexModel { mapIntMulti.at(3u) { atType(T3) { value::ref } } } with "v2",
+                    ComplexModel { mapIntMulti.at(3u) { atType(T3) { model { value::ref } } } } with "2sub1",
+                    ComplexModel { mapIntMulti.at(3u) { atType(T3) { model { model { value::ref } } } } } with "2sub2"
                 )
             ))
         )

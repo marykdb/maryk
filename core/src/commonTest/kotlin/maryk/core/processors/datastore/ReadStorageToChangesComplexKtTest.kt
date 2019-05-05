@@ -1,9 +1,9 @@
 package maryk.core.processors.datastore
 
-import maryk.core.properties.definitions.wrapper.refAtKeyTypeAndIndex
 import maryk.core.properties.references.dsl.at
 import maryk.core.properties.references.dsl.atType
 import maryk.core.properties.references.dsl.refAt
+import maryk.core.properties.references.dsl.refAtTypeAndIndex
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Delete
@@ -111,14 +111,14 @@ class ReadStorageToChangesComplexKtTest {
                         ComplexModel { mapIntMulti.at(2u) { atType(T3) { value::ref } } } with "m3",
                         ComplexModel { mapIntMulti.at(2u) { atType(T3) { model { value::ref } } } } with "me3",
                         ComplexModel { mapIntMulti.refAt(5u) } with TypedValue(T1, "TEST"),
-                        ComplexModel { mapIntMulti.refAtKeyTypeAndIndex(7u, T4, 0u) } with "a",
-                        ComplexModel { mapIntMulti.refAtKeyTypeAndIndex(7u, T4, 1u) } with "b",
+                        ComplexModel { mapIntMulti.at(7u) { refAtTypeAndIndex(T4, 0u) } } with "a",
+                        ComplexModel { mapIntMulti.at(7u) { refAtTypeAndIndex(T4, 1u) } } with "b",
                         ComplexModel { mapWithList.at("a") { refAt(0u) } } with "a1",
                         ComplexModel { mapWithList.at("a") { refAt(1u) } } with "a2",
                         ComplexModel { mapWithMap.at("c") { refAt("c1")  }} with "c2"
                     ),
                     Delete(
-                        ComplexModel { mapIntMulti.refAtKeyTypeAndIndex(7u, T4, 2u) },
+                        ComplexModel { mapIntMulti.at(7u) { refAtTypeAndIndex(T4, 2u) } },
                         ComplexModel { mapWithList.at("a") { refAt(2u) } },
                         ComplexModel { mapWithSet.at("b") { refAt("b3") } }
                     ),

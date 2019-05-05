@@ -1,19 +1,14 @@
 package maryk.core.properties.definitions.wrapper
 
-import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
-import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListAnyItemReference
 import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.ListReference
-import maryk.core.values.Values
 
 /**
  * Contains a List property [definition] which contains items of type [T]
@@ -50,18 +45,3 @@ interface IsListPropertyDefinitionWrapper<T : Any, TO : Any, LD : ListDefinition
         return { this.getItemRef(index, it) }
     }
 }
-
-/** Specific extension to support fetching deeper references on List with values by [index] */
-fun <V: Values<*, P>, DM : IsValuesDataModel<P>, P : PropertyDefinitions, T : Any, W : IsPropertyDefinitionWrapper<T, *, *, *>, R : IsPropertyReference<T, W, *>> IsListPropertyDefinitionWrapper<V, *, *, *, *>.at(
-    index: UInt,
-    referenceGetter: P.() -> (AnyOutPropertyReference?) -> R
-): (AnyOutPropertyReference?) -> R =
-    {
-        @Suppress("UNCHECKED_CAST")
-        val valueDefinition = (this.definition.valueDefinition as EmbeddedValuesDefinition<DM, P>)
-
-        valueDefinition.dataModel(
-            this.getItemRef(index, it),
-            referenceGetter
-        )
-    }

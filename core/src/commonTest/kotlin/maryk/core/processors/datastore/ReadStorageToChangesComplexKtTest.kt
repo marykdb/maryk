@@ -19,6 +19,9 @@ import maryk.test.models.MultiTypeEnum.T1
 import maryk.test.models.MultiTypeEnum.T3
 import maryk.test.models.MultiTypeEnum.T4
 import maryk.test.models.MultiTypeEnum.T5
+import maryk.test.models.MultiTypeEnum.T6
+import maryk.test.models.MultiTypeEnum.T7
+import maryk.test.models.Option.V3
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -55,6 +58,16 @@ private val complexValuesAsStorablesWithVersion = arrayOf(
 //    "2404000000082d03" to arrayOf(1234uL to 2),
 //    "2404000000082d030163" to arrayOf(1234uL to "c"),
 //    "2404000000082d030164" to arrayOf(1234uL to "d"),
+    "240400000009" to arrayOf(1234uL to TypedValue(T6, Unit)),
+// Problems with reference so commented out
+//    "2404000000093504" to arrayOf(1234uL to 2),
+//    "24040000000935040400000005" to arrayOf(1234uL to "e"),
+//    "24040000000935040400000006" to arrayOf(1234uL to "f"),
+    "24040000000a" to arrayOf(1234uL to TypedValue(T7, Unit)),
+    "24040000000a3d" to arrayOf(1234uL to TypedValue(V3, Unit)),
+// Problems with reference so commented out
+//    "24040000000a3d1d" to arrayOf(1234uL to Unit),
+//    "24040000000a3d1d09" to arrayOf(1234uL to "g"),
     "2c" to arrayOf(1234uL to 1),
     "2c016102" to arrayOf(1234uL to 2),
     "2c01610200000000" to arrayOf(1234uL to "a1"),
@@ -96,7 +109,9 @@ class ReadStorageToChangesComplexKtTest {
                         ComplexModel { multi::ref } withType T3,
                         ComplexModel { mapIntMulti.refAt(2u) } withType T3,
                         ComplexModel { mapIntMulti.refAt(7u) } withType T4,
-                        ComplexModel { mapIntMulti.refAt(8u) } withType T5
+                        ComplexModel { mapIntMulti.refAt(8u) } withType T5,
+                        ComplexModel { mapIntMulti.refAt(9u) } withType T6,
+                        ComplexModel { mapIntMulti.refAt(10u) } withType T7
                     ),
                     Change(
                         ComplexModel { multi.withType(T3) { value::ref } } with "u3",

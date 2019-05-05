@@ -36,6 +36,7 @@ class TypedValueReference<E : IndexedEnum, in CX : IsPropertyContext> internal c
     ),
     CanContainListItemReference<Any, IsSubDefinition<Any, CX>, TypedValue<E, Any>>,
     CanContainSetItemReference<Any, IsSubDefinition<Any, CX>, TypedValue<E, Any>>,
+    CanContainMapItemReference<Any, IsSubDefinition<Any, CX>, TypedValue<E, Any>>,
     IsPropertyReferenceWithParent<Any, IsSubDefinition<Any, CX>, CanHaveComplexChildReference<*, *, *, *>, TypedValue<E, Any>>,
     HasEmbeddedPropertyReference<Any> {
     override val completeName: String

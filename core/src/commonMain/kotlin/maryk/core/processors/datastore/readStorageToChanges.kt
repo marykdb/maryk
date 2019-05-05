@@ -147,14 +147,16 @@ private fun MutableList<IsChange>.addChange(changeType: ChangeType, changePart: 
             this.find { it is SetChange }?.also { change ->
                 val ref = changePart as SetItemReference<*, *>
                 val setValueChanges = ((change as SetChange).setValueChanges as MutableList<SetValueChanges<*>>)
-                setValueChanges.find { it.reference == ref.parentReference }?.also {
-                    (it.addValues as MutableSet<Any>).add(ref.value)
-                } ?: setValueChanges.add(
-                    SetValueChanges(
-                        ref.parentReference as IsPropertyReference<Set<Any>, IsPropertyDefinition<Set<Any>>, *>,
-                        addValues = mutableSetOf(ref.value)
+
+                when(val setValueChange = setValueChanges.find { it.reference == ref.parentReference }) {
+                    null -> setValueChanges.add(
+                        SetValueChanges(
+                            ref.parentReference as IsPropertyReference<Set<Any>, IsPropertyDefinition<Set<Any>>, *>,
+                            addValues = mutableSetOf(ref.value)
+                        )
                     )
-                )
+                    else -> (setValueChange.addValues as MutableSet<Any>).add(ref.value)
+                }
             }
         }
     } ?: this.add(createChange(changeType, changePart))

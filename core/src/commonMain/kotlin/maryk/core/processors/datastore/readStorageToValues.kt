@@ -26,6 +26,7 @@ import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.graph.IsPropRefGraph
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.ReferenceType
@@ -152,7 +153,7 @@ private fun readQualifierOfType(
                         addToCache(partOffset) {
                             // Ignore reading and return
                         }
-                    is TypedValue<IndexedEnum, Any> -> readTypedValue(
+                    is TypedValue<TypeEnum<Any>, Any> -> readTypedValue(
                         qualifier = qualifier,
                         offset = offset,
                         readValueFromStorage = readValueFromStorage,

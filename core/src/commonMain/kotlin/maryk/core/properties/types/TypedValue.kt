@@ -1,8 +1,8 @@
 package maryk.core.properties.types
 
-import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.enum.TypeEnum
 
-data class TypedValue<out E : IndexedEnum, out T : Any>(
+data class TypedValue<out E : TypeEnum<T>, out T : Any>(
     val type: E,
     val value: T
 )

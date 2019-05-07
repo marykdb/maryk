@@ -25,7 +25,7 @@ import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
-import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.FlexBytesPropertyDefinitionWrapper
@@ -222,7 +222,7 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
     }
 
     /** Add multi types property [definition] with [name] and [index] and value [getter] */
-    fun <E : IndexedEnum, TO : Any, CX : IsPropertyContext, D : IsMultiTypeDefinition<E, CX>> add(
+    fun <E : TypeEnum<*>, TO : Any, CX : IsPropertyContext, D : IsMultiTypeDefinition<E, CX>> add(
         index: UInt,
         name: String,
         definition: D,
@@ -236,7 +236,7 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
      * Add multi types property [definition] with [name] and [index] and value [getter]
      * Also has a [toSerializable], [fromSerializable] and [capturer] to serialize and capture properties
      */
-    fun <E : IndexedEnum, TO : Any, CX : IsPropertyContext, D : IsMultiTypeDefinition<E, CX>> add(
+    fun <E : TypeEnum<*>, TO : Any, CX : IsPropertyContext, D : IsMultiTypeDefinition<E, CX>> add(
         index: UInt,
         name: String,
         definition: D,

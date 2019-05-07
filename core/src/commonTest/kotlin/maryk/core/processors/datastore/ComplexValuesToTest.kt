@@ -3,13 +3,13 @@ package maryk.core.processors.datastore
 import maryk.core.properties.types.TypedValue
 import maryk.test.models.ComplexModel
 import maryk.test.models.EmbeddedMarykModel
+import maryk.test.models.MarykTypeEnum.O3
 import maryk.test.models.MultiTypeEnum.T1
 import maryk.test.models.MultiTypeEnum.T3
 import maryk.test.models.MultiTypeEnum.T4
 import maryk.test.models.MultiTypeEnum.T5
 import maryk.test.models.MultiTypeEnum.T6
 import maryk.test.models.MultiTypeEnum.T7
-import maryk.test.models.Option.V3
 
 val complexValues = ComplexModel(
     multi = TypedValue(T3, EmbeddedMarykModel("u3", EmbeddedMarykModel("ue3"))),
@@ -27,7 +27,7 @@ val complexValues = ComplexModel(
             5u to "e",
             6u to "f"
         )),
-        10u to TypedValue(T7, TypedValue(V3, EmbeddedMarykModel("g")))
+        10u to TypedValue(T7, TypedValue(O3, EmbeddedMarykModel("g")))
     ),
     mapWithList = mapOf(
         "a" to listOf("a1", "a2")
@@ -76,7 +76,7 @@ val complexValuesAsStorables = arrayOf(
     "24040000000935040400000005" to "e",
     "24040000000935040400000006" to "f",
     "24040000000a" to TypedValue(T7, Unit),
-    "24040000000a3d" to TypedValue(V3, Unit),
+    "24040000000a3d" to TypedValue(O3, Unit),
     "24040000000a3d1d" to Unit,
     "24040000000a3d1d09" to "g",
     "2c" to 1,

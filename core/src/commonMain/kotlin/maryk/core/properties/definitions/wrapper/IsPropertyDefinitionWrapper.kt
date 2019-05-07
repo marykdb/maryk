@@ -171,13 +171,14 @@ interface IsPropertyDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyConte
         ) {
         override fun invoke(values: SimpleObjectValues<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>>): IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any> {
             val typedDefinition =
-                values<TypedValue<PropertyDefinitionType, IsPropertyDefinition<Any>>>(3u)
+                values<TypedValue<PropertyDefinitionType, IsTransportablePropertyDefinitionType<*>>>(3u)
             val type = typedDefinition.type
 
+            @Suppress("UNCHECKED_CAST")
             return mapOfPropertyDefWrappers[type]?.invoke(
                 values(1u),
                 values(2u),
-                typedDefinition.value
+                typedDefinition.value as IsPropertyDefinition<Any>
             ) { null } ?: throw DefNotFoundException("Property type $type not found")
         }
 

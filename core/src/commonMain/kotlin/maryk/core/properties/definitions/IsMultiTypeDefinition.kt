@@ -1,8 +1,8 @@
 package maryk.core.properties.definitions
 
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
+import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.TypeReference
@@ -10,7 +10,7 @@ import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.types.TypedValue
 
 /** Defines a multi type definition */
-interface IsMultiTypeDefinition<E : IndexedEnum, in CX : IsPropertyContext> :
+interface IsMultiTypeDefinition<E : TypeEnum<Any>, in CX : IsPropertyContext> :
     IsValueDefinition<TypedValue<E, Any>, CX>,
     IsSerializablePropertyDefinition<TypedValue<E, Any>, CX>,
     IsTransportablePropertyDefinitionType<TypedValue<E, Any>>,

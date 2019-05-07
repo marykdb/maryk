@@ -18,7 +18,7 @@ import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
-import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationException
@@ -252,15 +252,15 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                     )
                                 }
                                 is TypedValue<*, *> -> {
-                                    if (reference !is MultiTypePropertyReference<*, *, *, *>) {
+                                    if (reference !is MultiTypePropertyReference<*, *, *, *, *>) {
                                         throw TypeException("Expected a MultiTypePropertyReference for a typedValue")
                                     }
                                     @Suppress("UNCHECKED_CAST")
                                     val multiTypeReference =
-                                        reference as MultiTypePropertyReference<IndexedEnum, Any, *, *>
+                                        reference as MultiTypePropertyReference<TypeEnum<Any>, Any, Any, *, *>
                                     @Suppress("UNCHECKED_CAST")
                                     val multiTypeDefinition =
-                                        multiTypeReference.propertyDefinition.definition as MultiTypeDefinition<IndexedEnum, IsPropertyContext>
+                                        multiTypeReference.propertyDefinition.definition as MultiTypeDefinition<TypeEnum<Any>, IsPropertyContext>
 
                                     // Previous value to find
                                     var prevValue: TypedValue<*, *>? = null

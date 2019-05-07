@@ -33,7 +33,7 @@ import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
-import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.graph.IsPropRefGraph
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.AnyPropertyReference
@@ -271,7 +271,7 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
                                 qualifier,
                                 offset,
                                 readValueFromStorage,
-                                definition as IsMultiTypeDefinition<IndexedEnum, IsPropertyContext>,
+                                definition as IsMultiTypeDefinition<TypeEnum<Any>, IsPropertyContext>,
                                 ref,
                                 select,
                                 addToCache,
@@ -426,7 +426,7 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
                                     qualifier,
                                     offset,
                                     readValueFromStorage,
-                                    valueDefinition as IsMultiTypeDefinition<IndexedEnum, IsPropertyContext>,
+                                    valueDefinition as IsMultiTypeDefinition<TypeEnum<Any>, IsPropertyContext>,
                                     valueReference,
                                     select,
                                     addToCache,
@@ -452,7 +452,7 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
         ReferenceType.TYPE -> {
             @Suppress("UNCHECKED_CAST")
             val typedDefinition =
-                definition as? IsMultiTypeDefinition<IndexedEnum, IsPropertyContext>
+                definition as? IsMultiTypeDefinition<TypeEnum<Any>, IsPropertyContext>
                     ?: throw TypeException("Definition($index) $definition should be a TypedDefinition")
 
             typedDefinition.readComplexTypedValue(
@@ -486,7 +486,7 @@ private fun <P : PropertyDefinitions> readComplexChanges(
                 qualifier,
                 offset,
                 readValueFromStorage,
-                definition as IsMultiTypeDefinition<IndexedEnum, IsPropertyContext>,
+                definition as IsMultiTypeDefinition<TypeEnum<Any>, IsPropertyContext>,
                 parentReference,
                 select,
                 addToCache,
@@ -568,13 +568,13 @@ private fun readTypedValue(
             if (value == null) {
                 addChangeToOutput(version, ChangeType.DELETE, reference as Any)
             } else {
-                if (value is TypedValue<IndexedEnum, Any>) {
+                if (value is TypedValue<TypeEnum<Any>, Any>) {
                     if (value.value == Unit) {
                         @Suppress("UNCHECKED_CAST")
                         addChangeToOutput(
                             version, TYPE,
                             ReferenceTypePair(
-                                reference as TypedPropertyReference<TypedValue<IndexedEnum, Any>>,
+                                reference as TypedPropertyReference<TypedValue<TypeEnum<Any>, Any>>,
                                 value.type
                             )
                         )
@@ -611,7 +611,7 @@ private fun readTypedValue(
 }
 
 /** Read a complex Typed value from [qualifier] */
-private fun <E : IndexedEnum> IsMultiTypeDefinition<E, IsPropertyContext>.readComplexTypedValue(
+private fun <E : TypeEnum<Any>> IsMultiTypeDefinition<E, IsPropertyContext>.readComplexTypedValue(
     qualifier: ByteArray,
     offset: Int,
     readValueFromStorage: ValueWithVersionReader,

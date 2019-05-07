@@ -1,5 +1,6 @@
 package maryk.core.definitions
 
+import maryk.core.definitions.Operation.Define
 import maryk.core.definitions.PrimitiveType.EnumDefinition
 import maryk.core.definitions.PrimitiveType.Model
 import maryk.core.definitions.PrimitiveType.RootModel
@@ -20,6 +21,7 @@ import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.ContainsDefinitionsContext
+import maryk.core.query.requests.IsOperation
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
@@ -34,7 +36,9 @@ import maryk.lib.exceptions.ParseException
  */
 data class Definitions(
     val definitions: List<MarykPrimitive>
-) {
+) : IsOperation {
+    override val operationType = Define
+
     constructor(vararg definition: MarykPrimitive) : this(definition.toList())
 
     internal object Properties : ObjectPropertyDefinitions<Definitions>() {

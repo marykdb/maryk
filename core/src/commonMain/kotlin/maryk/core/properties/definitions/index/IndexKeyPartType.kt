@@ -8,30 +8,34 @@ import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceD
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IndexedEnumImpl
 import maryk.core.properties.enum.IsCoreEnum
+import maryk.core.properties.enum.TypeEnum
+import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.query.DefinitionsConversionContext
 import maryk.json.ArrayType
 import maryk.json.TokenType
 import maryk.json.ValueType
+import maryk.core.properties.definitions.index.Multiple as MultipleInstance
+import maryk.core.properties.definitions.index.Reversed as ReversedInstance
 
 /** Indexed type of property definitions */
-sealed class IndexKeyPartType(
+sealed class IndexKeyPartType<out T: IsIndexable>(
     index: UInt
-) : IndexedEnumImpl<IndexKeyPartType>(index), TokenType, IsCoreEnum {
-    object UUID : IndexKeyPartType(1u), ValueType.IsNullValueType
-    object Reference : ValueType<String>, IndexKeyPartType(2u) {
+) : IndexedEnumImpl<IndexKeyPartType<*>>(index), TokenType, IsCoreEnum, TypeEnum<T> {
+    object UUID : IndexKeyPartType<UUIDKey>(1u), ValueType.IsNullValueType, TypeEnum<UUIDKey>
+    object Reference : ValueType<String>, IndexKeyPartType<IsIndexablePropertyReference<*>>(2u) {
         override val name = "Ref"
     }
-    object Reversed : IndexKeyPartType(3u), ValueType<String>
-    object Multiple : IndexKeyPartType(4u), ArrayType
+    object Reversed : IndexKeyPartType<ReversedInstance<*>>(3u), ValueType<String>
+    object Multiple : IndexKeyPartType<MultipleInstance>(4u), ArrayType
 
-    companion object : IndexedEnumDefinition<IndexKeyPartType>(
+    companion object : IndexedEnumDefinition<IndexKeyPartType<*>>(
         IndexKeyPartType::class, {
             arrayOf(UUID, Reference, Reversed, Multiple)
         }
     )
 }
 
-internal val mapOfSimpleIndexKeyPartDefinitions: Map<IndexKeyPartType, IsValueDefinition<*, DefinitionsConversionContext>> =
+internal val mapOfSimpleIndexKeyPartDefinitions: Map<IndexKeyPartType<IsIndexable>, IsValueDefinition<*, DefinitionsConversionContext>> =
     mapOf(
         IndexKeyPartType.UUID to EmbeddedObjectDefinition(dataModel = { UUIDKey.Model }),
         IndexKeyPartType.Reference to ContextualPropertyReferenceDefinition(
@@ -39,10 +43,10 @@ internal val mapOfSimpleIndexKeyPartDefinitions: Map<IndexKeyPartType, IsValueDe
                 it?.propertyDefinitions as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()
             }
         ),
-        IndexKeyPartType.Reversed to EmbeddedObjectDefinition(dataModel = { Reversed.Model })
+        IndexKeyPartType.Reversed to EmbeddedObjectDefinition(dataModel = { ReversedInstance.Model })
     )
 
-internal val mapOfIndexKeyPartDefinitions: Map<IndexKeyPartType, IsValueDefinition<*, DefinitionsConversionContext>> =
+internal val mapOfIndexKeyPartDefinitions: Map<IndexKeyPartType<*>, IsValueDefinition<*, DefinitionsConversionContext>> =
     mapOfSimpleIndexKeyPartDefinitions.plus(
-        IndexKeyPartType.Multiple to EmbeddedObjectDefinition(dataModel = { Multiple.Model })
+        IndexKeyPartType.Multiple to EmbeddedObjectDefinition(dataModel = { MultipleInstance.Model })
     )

@@ -2,7 +2,7 @@ package maryk.generator.proto3
 
 import maryk.generator.kotlin.GenerationContext
 import maryk.test.models.CompleteMarykModel
-import maryk.test.models.MarykEnum
+import maryk.test.models.MarykTypeEnum
 import maryk.test.models.NumericMarykModel
 import maryk.test.models.SimpleMarykModel
 import maryk.test.shouldBe
@@ -44,6 +44,7 @@ message CompleteMarykModel {
     oneof multiForKey {
       string o1 = 1;
       bool o2 = 2;
+      repeated string o3 = 3;
     }
   }
   enum MarykEnumEmbedded {
@@ -59,7 +60,7 @@ message CompleteMarykModel {
   string string = 1;
   uint64 number = 2;
   bool boolean = 3;
-  MarykEnum enum = 4;
+  MarykTypeEnum enum = 4;
   sint32 date = 5;
   int64 dateTime = 6;
   uint32 time = 7;
@@ -90,7 +91,7 @@ class GenerateProto3ForDataModelTest {
 
         CompleteMarykModel.generateProto3Schema(
             GenerationContext(
-                enums = mutableListOf(MarykEnum)
+                enums = mutableListOf(MarykTypeEnum)
             )
         ) {
             output += it
@@ -118,7 +119,7 @@ class GenerateProto3ForDataModelTest {
 
         SimpleMarykModel.generateProto3Schema(
             GenerationContext(
-                enums = mutableListOf(MarykEnum)
+                enums = mutableListOf(MarykTypeEnum)
             )
         ) {
             output += it

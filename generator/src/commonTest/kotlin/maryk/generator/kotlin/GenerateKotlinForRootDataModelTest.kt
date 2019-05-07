@@ -1,7 +1,7 @@
 package maryk.generator.kotlin
 
 import maryk.test.models.CompleteMarykModel
-import maryk.test.models.MarykEnum
+import maryk.test.models.MarykTypeEnum
 import maryk.test.models.SimpleMarykModel
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -157,10 +157,10 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 required = false,
                 final = true,
                 unique = true,
-                enum = MarykEnum,
-                minValue = MarykEnum.O1,
-                maxValue = MarykEnum.O3,
-                default = MarykEnum.O1
+                enum = MarykTypeEnum,
+                minValue = MarykTypeEnum.O1,
+                maxValue = MarykTypeEnum.O3,
+                default = MarykTypeEnum.O1
             )
         )
         val date = add(
@@ -315,17 +315,17 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
             definition = MultiTypeDefinition(
                 required = false,
                 final = true,
-                typeEnum = MarykEnum,
+                typeEnum = MarykTypeEnum,
                 definitionMap = definitionMap(
-                    MarykEnum.O1 to StringDefinition(
+                    MarykTypeEnum.O1 to StringDefinition(
                         regEx = "hi.*"
                     ),
-                    MarykEnum.O2 to BooleanDefinition(),
-                    MarykEnum.O3 to ListDefinition(
+                    MarykTypeEnum.O2 to BooleanDefinition(),
+                    MarykTypeEnum.O3 to ListDefinition(
                         valueDefinition = StringDefinition()
                     )
                 ),
-                default = TypedValue(MarykEnum.O1, "a value")
+                default = TypedValue(MarykTypeEnum.O1, "a value")
             )
         )
         val booleanForKey = add(
@@ -344,12 +344,15 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
             index = 19u, name = "multiForKey",
             definition = MultiTypeDefinition(
                 final = true,
-                typeEnum = MarykEnum,
+                typeEnum = MarykTypeEnum,
                 definitionMap = definitionMap(
-                    MarykEnum.O1 to StringDefinition(
+                    MarykTypeEnum.O1 to StringDefinition(
                         regEx = "hi.*"
                     ),
-                    MarykEnum.O2 to BooleanDefinition()
+                    MarykTypeEnum.O2 to BooleanDefinition(),
+                    MarykTypeEnum.O3 to ListDefinition(
+                        valueDefinition = StringDefinition()
+                    )
                 )
             )
         )
@@ -414,7 +417,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
         string: String = "string",
         number: UInt = 42u,
         boolean: Boolean = true,
-        enum: MarykEnum = MarykEnum.O1,
+        enum: MarykTypeEnum = MarykTypeEnum.O1,
         date: Date = Date(2018, 5, 2),
         dateTime: DateTime = DateTime(2018, 5, 2, 10, 11, 12),
         time: Time = Time(10, 11, 12),
@@ -431,10 +434,10 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
         list: List<String> = listOf("ha1", "ha2", "ha3"),
         set: Set<Int> = setOf(1, 2, 3),
         map: Map<Date, Int> = mapOf(Date(2010, 11, 12) to 1, Date(2011, 12, 13) to 1),
-        multi: TypedValue<MarykEnum, *> = TypedValue(MarykEnum.O1, "a value"),
+        multi: TypedValue<MarykTypeEnum, *> = TypedValue(MarykTypeEnum.O1, "a value"),
         booleanForKey: Boolean,
         dateForKey: Date,
-        multiForKey: TypedValue<MarykEnum, *>,
+        multiForKey: TypedValue<MarykTypeEnum, *>,
         enumEmbedded: MarykEnumEmbedded,
         mapWithEnum: Map<MarykEnumEmbedded, String> = mapOf(MarykEnumEmbedded.E1 to "value"),
         mapWithList: Map<String, List<String>> = mapOf("a" to listOf("b", "c")),
@@ -488,7 +491,7 @@ class GenerateKotlinForRootDataModelTest {
         var output = ""
 
         val generationContext = GenerationContext(
-            enums = mutableListOf(MarykEnum)
+            enums = mutableListOf(MarykTypeEnum)
         )
 
         CompleteMarykModel.generateKotlin("maryk.test.models", generationContext) {

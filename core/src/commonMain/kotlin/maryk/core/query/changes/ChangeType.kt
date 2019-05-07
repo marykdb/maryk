@@ -3,11 +3,12 @@ package maryk.core.query.changes
 import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IsCoreEnum
+import maryk.core.properties.enum.TypeEnum
 
 /** Indexed type of changes */
 enum class ChangeType(
     override val index: UInt
-) : IndexedEnumComparable<ChangeType>, IsCoreEnum {
+) : IndexedEnumComparable<ChangeType>, IsCoreEnum, TypeEnum<IsChange> {
     Check(1u),
     Change(2u),
     Delete(3u),

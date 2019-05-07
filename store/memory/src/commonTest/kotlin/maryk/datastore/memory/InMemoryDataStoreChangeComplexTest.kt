@@ -16,6 +16,7 @@ import maryk.core.query.responses.statuses.Success
 import maryk.test.models.ComplexModel
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.EmbeddedMarykModel.Properties
+import maryk.test.models.MultiTypeEnum
 import maryk.test.models.MultiTypeEnum.T1
 import maryk.test.models.MultiTypeEnum.T3
 import maryk.test.runSuspendingTest
@@ -205,9 +206,9 @@ class InMemoryDataStoreChangeComplexTest {
                 keys[4].change(
                     Delete(
                         ComplexModel {
-                            mapIntMulti.at(1u) { atType(T3) { model { model::ref } } }
+                            mapIntMulti.at(1u) { atType(T3, Properties) { model { model::ref } } }
                         },
-                        ComplexModel { mapIntMulti.at(3u) { atType(T3) { model::ref } } }
+                        ComplexModel { mapIntMulti.at(3u) { atType(T3, Properties) { model::ref } } }
                     )
                 )
             )
@@ -242,7 +243,7 @@ class InMemoryDataStoreChangeComplexTest {
                             mapIntMulti.at(1u) { atType(T3) { model { model { value::ref } } } }
                         } with "changed",
                         ComplexModel { mapIntObject.at(1u) { value::ref } } with "mapIntObjectChanged",
-                        ComplexModel { multi.withType(T3, Properties) { model { value::ref } } } with "multi sub changed"
+                        ComplexModel { multi.withType(T3) { model { value::ref } } } with "multi sub changed"
                     )
                 )
             )
@@ -286,7 +287,7 @@ class InMemoryDataStoreChangeComplexTest {
         val newMultiValue = TypedValue(T3, EmbeddedMarykModel("a5", EmbeddedMarykModel("ae5")))
         val newMapStringString = mapOf("e" to "f", "g" to "h")
         val newMapIntObject = mapOf(4u to EmbeddedMarykModel("v100"), 8u to EmbeddedMarykModel("v200"))
-        val newMapIntMulti = mapOf(
+        val newMapIntMulti = mapOf<UInt, TypedValue<MultiTypeEnum<*>, *>>(
             5u to TypedValue(
                 T3,
                 EmbeddedMarykModel("v101", EmbeddedMarykModel("suba1", EmbeddedMarykModel("suba2")))

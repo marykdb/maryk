@@ -1,5 +1,6 @@
 package maryk.core.query.requests
 
+import maryk.core.definitions.Operation.Request
 import maryk.core.inject.InjectWithReference
 import maryk.core.models.SingleTypedValueDataModel
 import maryk.core.properties.IsPropertyContext
@@ -20,7 +21,9 @@ import maryk.core.values.ObjectValues
 data class Requests internal constructor(
     val requests: List<IsRequest<*>>,
     internal var injectables: List<InjectWithReference>?
-) {
+): IsOperation {
+    override val operationType = Request
+
     constructor(vararg request: IsRequest<*>) : this(request.toList())
 
     constructor(requests: List<IsRequest<*>>) : this(requests, null)

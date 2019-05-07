@@ -2,7 +2,7 @@ package maryk.generator.proto3
 
 import maryk.core.definitions.Definitions
 import maryk.test.models.CompleteMarykModel
-import maryk.test.models.MarykEnum
+import maryk.test.models.MarykTypeEnum
 import maryk.test.models.ValueMarykObject
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -12,7 +12,7 @@ class MixedKotlinGenerationTest {
     @Test
     fun generateMixedMarykPrimitives() {
         val mapOfWriters = mutableMapOf(
-            "MarykEnum" to Writer(),
+            "MarykTypeEnum" to Writer(),
             "ValueMarykObject" to Writer(),
             "CompleteMarykModel" to Writer()
         )
@@ -20,7 +20,7 @@ class MixedKotlinGenerationTest {
         val setOfNames = mutableSetOf<String>()
 
         Definitions(
-            MarykEnum,
+            MarykTypeEnum,
             ValueMarykObject,
             CompleteMarykModel
         ).generateProto3 { name ->
@@ -32,7 +32,7 @@ class MixedKotlinGenerationTest {
 
         setOfNames.size shouldBe 3
 
-        mapOfWriters["MarykEnum"]!!.output shouldBe generatedProto3ForMarykEnum
+        mapOfWriters["MarykTypeEnum"]!!.output shouldBe generatedProto3ForMarykEnum
         mapOfWriters["ValueMarykObject"]!!.output shouldBe generatedProto3ForValueDataModel
         mapOfWriters["CompleteMarykModel"]!!.output shouldBe generatedProto3ForCompleteMarykModel
     }

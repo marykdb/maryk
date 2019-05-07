@@ -42,7 +42,7 @@ class RequestsTest {
 
             converted.requests.zip(original.requests).forEach {
                 @Suppress("UNCHECKED_CAST")
-                (it.first as TypedValue<RequestType, ObjectValues<*, *>>).value.toDataObject() shouldBe it.second
+                ((it.first as TypedValue<RequestType, *>).value as ObjectValues<*, *>).toDataObject() shouldBe it.second
             }
         })
     }

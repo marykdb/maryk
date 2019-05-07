@@ -7,7 +7,7 @@ import maryk.core.values.IsValuesGetter
  * Defines this item is usable to describe an Index Key
  */
 interface IsIndexable {
-    val indexKeyPartType: IndexKeyPartType
+    val indexKeyPartType: IndexKeyPartType<IsIndexable>
 
     /** Convert indexable to a ByteArray so it can be referenced */
     fun toReferenceStorageByteArray(): ByteArray {

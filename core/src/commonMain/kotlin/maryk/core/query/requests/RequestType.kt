@@ -4,6 +4,7 @@ import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IsCoreEnum
+import maryk.core.properties.enum.TypeEnum
 import maryk.core.query.requests.RequestType.Add
 import maryk.core.query.requests.RequestType.Change
 import maryk.core.query.requests.RequestType.Collect
@@ -13,7 +14,7 @@ import maryk.core.query.requests.RequestType.GetChanges
 import maryk.core.query.requests.RequestType.Scan
 import maryk.core.query.requests.RequestType.ScanChanges
 
-enum class RequestType(override val index: UInt) : IndexedEnumComparable<RequestType>, IsCoreEnum {
+enum class RequestType(override val index: UInt) : IndexedEnumComparable<RequestType>, TypeEnum<IsRequest<*>>, IsCoreEnum {
     Add(1u),
     Change(2u),
     Delete(3u),

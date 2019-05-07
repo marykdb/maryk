@@ -4,17 +4,18 @@ import maryk.core.models.RootDataModel
 import maryk.core.models.key
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
+import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.references.TypeReferenceTest.MarykModel.Properties.multi
 import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.numeric.UInt32
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
-import maryk.test.models.Option
-import maryk.test.models.Option.V1
-import maryk.test.models.Option.V2
+import maryk.test.models.MarykTypeEnum
+import maryk.test.models.MarykTypeEnum.O1
+import maryk.test.models.MarykTypeEnum.O2
 import maryk.test.shouldBe
 import maryk.test.shouldBeOfType
 import kotlin.test.Test
@@ -30,17 +31,17 @@ internal class TypeReferenceTest {
                 "multi",
                 MultiTypeDefinition(
                     final = true,
-                    typeEnum = Option,
-                    definitionMap = mapOf<Option, IsSubDefinition<*, IsPropertyContext>>(
-                        V1 to StringDefinition(),
-                        V2 to BooleanDefinition()
+                    typeEnum = MarykTypeEnum,
+                    definitionMap = mapOf<MarykTypeEnum<*>, IsSubDefinition<*, IsPropertyContext>>(
+                        O1 to StringDefinition(),
+                        O2 to NumberDefinition(type = UInt32)
                     )
                 )
             )
         }
 
         operator fun invoke(
-            multi: TypedValue<Option, *>
+            multi: TypedValue<MarykTypeEnum<*>, *>
         ) = this.values {
             mapNonNulls(
                 this.multi with multi
@@ -51,7 +52,7 @@ internal class TypeReferenceTest {
     @Test
     fun testKey() {
         val obj = MarykModel(
-            multi = TypedValue(V2, true)
+            multi = TypedValue(O2, 23)
         )
 
         val key = MarykModel.key(obj)
@@ -59,15 +60,15 @@ internal class TypeReferenceTest {
 
         val keyDef = MarykModel.keyDefinition
 
-        val specificDef = shouldBeOfType<TypeReference<Option, *>>(keyDef)
+        val specificDef = shouldBeOfType<TypeReference<MarykTypeEnum<*>, *>>(keyDef)
         specificDef shouldBe multi.typeRef()
 
-        specificDef.getValue(obj) shouldBe V2
+        specificDef.getValue(obj) shouldBe O2
 
         val bc = ByteCollector()
         bc.reserve(2)
-        specificDef.writeStorageBytes(V1, bc::write)
-        specificDef.readStorageBytes(bc.size, bc::read) shouldBe V1
+        specificDef.writeStorageBytes(O1, bc::write)
+        specificDef.readStorageBytes(bc.size, bc::read) shouldBe O1
     }
 
     @Test

@@ -14,7 +14,7 @@ import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
-import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DefinedByReference
@@ -89,7 +89,7 @@ infix fun <K : Any, V : Any, D : IsMapDefinition<K, V, *>> IsPropertyReference<M
 
 /** Convenience infix method to create Reference [typedValue] pairs */
 @Suppress("UNCHECKED_CAST")
-infix fun <E : IndexedEnum, D : IsMultiTypeDefinition<E, *>> IsPropertyReference<TypedValue<E, *>, D, *>.with(
+infix fun <E : TypeEnum<*>, D : IsMultiTypeDefinition<E, *>> IsPropertyReference<TypedValue<E, *>, D, *>.with(
     typedValue: TypedValue<E, *>
 ): ReferenceValuePair<TypedValue<E, *>> =
     ReferenceValuePair(

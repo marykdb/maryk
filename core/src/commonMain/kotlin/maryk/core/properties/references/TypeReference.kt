@@ -10,8 +10,8 @@ import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.index.IndexKeyPartType
 import maryk.core.properties.definitions.index.IsIndexable
-import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
+import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.exceptions.RequiredException
 import maryk.core.properties.references.ReferenceType.TYPE
 import maryk.core.properties.types.TypedValue
@@ -22,7 +22,7 @@ import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.values.IsValuesGetter
 
 /** Reference to any MultiType reference */
-data class TypeReference<E : IndexedEnum, in CX : IsPropertyContext> internal constructor(
+data class TypeReference<E : TypeEnum<Any>, in CX : IsPropertyContext> internal constructor(
     val multiTypeDefinition: IsMultiTypeDefinition<E, CX>,
     override val parentReference: CanHaveComplexChildReference<TypedValue<E, *>, IsMultiTypeDefinition<E, *>, *, *>?
 ) : IsPropertyReferenceWithParent<E, IndexedEnumDefinition<E>, CanHaveComplexChildReference<TypedValue<E, *>, IsMultiTypeDefinition<E, *>, *, *>, TypedValue<E, *>>,

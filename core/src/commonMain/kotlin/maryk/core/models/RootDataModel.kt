@@ -89,7 +89,7 @@ abstract class RootDataModel<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
             toSerializable = { value: IsIndexable?, _: ContainsDefinitionsContext? ->
                 value?.let { TypedValue(value.indexKeyPartType, value) }
             },
-            fromSerializable = { value: TypedValue<IndexKeyPartType, Any>? -> value?.value as IsIndexable },
+            fromSerializable = { value: TypedValue<IndexKeyPartType<IsIndexable>, Any>? -> value?.value as IsIndexable },
             getter = RootDataModel<*, *>::keyDefinition
         )
         val indices = add(
@@ -103,7 +103,7 @@ abstract class RootDataModel<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
             toSerializable = { value: IsIndexable ->
                 value.let { TypedValue(it.indexKeyPartType, it) }
             },
-            fromSerializable = { value: TypedValue<IndexKeyPartType, Any> ->
+            fromSerializable = { value: TypedValue<IndexKeyPartType<IsIndexable>, Any> ->
                 value.let { it.value as IsIndexable }
             },
             getter = RootDataModel<*, *>::indices

@@ -7,15 +7,15 @@ import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
-import maryk.core.properties.enum.EmbedTypeCase
-import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
+import maryk.core.values.Values
 
 /** Specific extension to support fetching deeper references on multi types by [type] and explicit [properties] */
-fun <E : IndexedEnum, P : PropertyDefinitions, T : Any, R : IsPropertyReference<T, IsPropertyDefinitionWrapper<T, *, *, *>, *>> IsSubDefinition<TypedValue<E, *>, *>.atType(
+fun <E : TypeEnum<Any>, P : PropertyDefinitions, T : Any, R : IsPropertyReference<T, IsPropertyDefinitionWrapper<T, *, *, *>, *>> IsSubDefinition<TypedValue<E, *>, *>.atType(
     type: E,
     @Suppress("UNUSED_PARAMETER") properties: P, // So it is not needed to pass in types
     referenceGetter: P.() -> (AnyOutPropertyReference?) -> R
@@ -36,8 +36,8 @@ fun <E : IndexedEnum, P : PropertyDefinitions, T : Any, R : IsPropertyReference<
     }
 
 /** Specific extension to support fetching deeper references on multi types by [type] */
-fun <E: IndexedEnum, P : PropertyDefinitions, T : Any, R : IsPropertyReference<T, IsPropertyDefinitionWrapper<T, *, *, *>, *>> IsSubDefinition<TypedValue<E, Any>, *>.atType(
-    type: EmbedTypeCase<E, P>,
+fun <E: TypeEnum<Any>, P : PropertyDefinitions, T : Any, R : IsPropertyReference<T, IsPropertyDefinitionWrapper<T, *, *, *>, *>> IsSubDefinition<TypedValue<E, Any>, *>.atType(
+    type: TypeEnum<Values<*, P>>,
     referenceGetter: P.() -> (AnyOutPropertyReference?) -> R
 ): (AnyOutPropertyReference?) -> R =
     @Suppress("UNCHECKED_CAST")

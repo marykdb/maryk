@@ -3,8 +3,8 @@ package maryk.core.properties.definitions.index
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.SingleValueDataModel
-import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.references.IsIndexablePropertyReference
@@ -15,7 +15,7 @@ import maryk.core.values.ObjectValues
 
 /** Class to encode multiple [references] for key or other indexable usages */
 data class Multiple(
-    val references: List<IsIndexablePropertyReference<out Any>>
+    val references: List<IsIndexablePropertyReference<*>>
 ) : IsIndexable {
     override val indexKeyPartType = IndexKeyPartType.Multiple
 
@@ -90,20 +90,20 @@ data class Multiple(
                 valueDefinition = MultiTypeDefinition(
                     typeEnum = IndexKeyPartType,
                     definitionMap = mapOfSimpleIndexKeyPartDefinitions
-                )
-            ) as ListDefinition<TypedValue<IndexKeyPartType, IsIndexablePropertyReference<*>>, IsPropertyContext>,
+                ) as IsValueDefinition<TypedValue<IndexKeyPartType<IsIndexable>, IsIndexable>, DefinitionsConversionContext>
+            ),
             toSerializable = { value ->
                 TypedValue(value.indexKeyPartType, value)
             },
             fromSerializable = { typedValue ->
-                typedValue.value
+                typedValue.value as IsIndexablePropertyReference<IsIndexable>
             },
-            getter = Multiple::references
+            getter = Multiple::references as (Multiple) -> List<IsIndexablePropertyReference<IsIndexable>>?
         )
     }
 
     internal object Model :
-        SingleValueDataModel<List<TypedValue<IndexKeyPartType, IsIndexablePropertyReference<*>>>, List<IsIndexablePropertyReference<*>>, Multiple, Properties, DefinitionsConversionContext>(
+        SingleValueDataModel<List<TypedValue<IndexKeyPartType<IsIndexable>, IsIndexable>>, List<IsIndexablePropertyReference<IsIndexable>>, Multiple, Properties, DefinitionsConversionContext>(
             properties = Properties,
             singlePropertyDefinition = Properties.references
         ) {

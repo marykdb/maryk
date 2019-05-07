@@ -19,8 +19,7 @@ import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.contextual.ContextCollectionTransformerDefinition
 import maryk.core.properties.definitions.mapOfPropertyDefEmbeddedObjectDefinitions
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
-import maryk.core.properties.enum.IndexedEnum
-import maryk.core.properties.enum.IndexedEnumComparable
+import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
@@ -251,13 +250,13 @@ internal fun ObjectPropertyDefinitions<MultiTypeDefinition<*, *>>.addDescriptorP
  * Convert multi type descriptors in a list in [value] to an indexed map of definitions.
  * Will throw an exception if it fails to convert
  */
-internal fun convertMultiTypeDescriptors(value: List<MultiTypeDescriptor>?): Map<IndexedEnum, IsSubDefinition<out Any, ContainsDefinitionsContext>> {
+internal fun convertMultiTypeDescriptors(value: List<MultiTypeDescriptor>?): Map<TypeEnum<Any>, IsSubDefinition<out Any, ContainsDefinitionsContext>> {
     val descriptorList = value
         ?: throw ParseException("Multi type definition descriptor cannot be empty")
 
     return descriptorList.map {
         Pair(
-            IndexedEnumComparable(it.index, it.name),
+            TypeEnum(it.index, it.name),
             it.definition
         )
     }.toMap()

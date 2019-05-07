@@ -22,7 +22,7 @@ import maryk.test.models.CompleteMarykModel
 import maryk.test.models.CompleteMarykModel.Properties.number
 import maryk.test.models.CompleteMarykModel.Properties.string
 import maryk.test.models.CompleteMarykModel.Properties.time
-import maryk.test.models.MarykEnum.O1
+import maryk.test.models.MarykTypeEnum.O1
 import maryk.test.models.MarykEnumEmbedded.E1
 import maryk.test.shouldBe
 import kotlin.test.Test

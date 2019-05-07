@@ -19,6 +19,7 @@ import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IsCoreEnum
+import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.references.AnyOutPrecisePropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
@@ -50,7 +51,7 @@ import maryk.yaml.YamlWriter
  * The type mapping is defined in the given [definitionMap] mapped by enum [E].
  * Receives context of [CX]
  */
-data class MultiTypeDefinition<E : IndexedEnum, in CX : IsPropertyContext> internal constructor(
+data class MultiTypeDefinition<E : TypeEnum<Any>, in CX : IsPropertyContext> internal constructor(
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val typeEnum: IndexedEnumDefinition<E>,
@@ -441,7 +442,7 @@ data class MultiTypeDefinition<E : IndexedEnum, in CX : IsPropertyContext> inter
                 }
             }
         ) {
-        override fun invoke(values: SimpleObjectValues<MultiTypeDefinition<*, *>>): MultiTypeDefinition<IndexedEnum, ContainsDefinitionsContext> {
+        override fun invoke(values: SimpleObjectValues<MultiTypeDefinition<*, *>>): MultiTypeDefinition<TypeEnum<Any>, ContainsDefinitionsContext> {
             val definitionMap = convertMultiTypeDescriptors(
                 values(5u)
             )
@@ -470,9 +471,9 @@ class MultiTypeDefinitionContext(
 ) : IsPropertyContext {
     var typeEnumName: String? = null
 
-    var definitionMap: Map<IndexedEnum, IsSubDefinition<out Any, ContainsDefinitionsContext>>? = null
+    var definitionMap: Map<TypeEnum<Any>, IsSubDefinition<out Any, ContainsDefinitionsContext>>? = null
 
-    private var _multiTypeDefinition: Lazy<MultiTypeDefinition<IndexedEnum, ContainsDefinitionsContext>> = lazy {
+    private var _multiTypeDefinition: Lazy<MultiTypeDefinition<TypeEnum<Any>, ContainsDefinitionsContext>> = lazy {
         val typeOptions = definitionMap?.keys?.toTypedArray() ?: throw ContextNotFoundException()
 
         val typeEnum = IndexedEnumDefinition(
@@ -486,5 +487,5 @@ class MultiTypeDefinitionContext(
         )
     }
 
-    val multiTypeDefinition: MultiTypeDefinition<IndexedEnum, ContainsDefinitionsContext> get() = this._multiTypeDefinition.value
+    val multiTypeDefinition: MultiTypeDefinition<TypeEnum<Any>, ContainsDefinitionsContext> get() = this._multiTypeDefinition.value
 }

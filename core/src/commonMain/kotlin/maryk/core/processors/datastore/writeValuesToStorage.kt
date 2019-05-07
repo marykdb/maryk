@@ -17,7 +17,7 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.MapDefinition
-import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.references.ReferenceType
 import maryk.core.properties.references.ReferenceType.DELETE
 import maryk.core.properties.references.ReferenceType.EMBED
@@ -35,7 +35,7 @@ sealed class StorageTypeEnum<out T : IsPropertyDefinition<*>>(val referenceType:
     object ListSize : StorageTypeEnum<IsListDefinition<Any, IsPropertyContext>>(LIST)
     object SetSize : StorageTypeEnum<IsSetDefinition<Any, IsPropertyContext>>(SET)
     object MapSize : StorageTypeEnum<IsMapDefinition<Any, Any, IsPropertyContext>>(MAP)
-    object TypeValue : StorageTypeEnum<IsMultiTypeDefinition<IndexedEnum, IsPropertyContext>>(TYPE)
+    object TypeValue : StorageTypeEnum<IsMultiTypeDefinition<TypeEnum<Any>, IsPropertyContext>>(TYPE)
     object Embed : StorageTypeEnum<IsEmbeddedValuesDefinition<*, *, *>>(EMBED)
 
     @Suppress("UNCHECKED_CAST")

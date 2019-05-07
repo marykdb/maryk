@@ -6,6 +6,7 @@ import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.contextual.ContextualIndexedEnumDefinition
 import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.MultiTypePropertyReference
 import maryk.core.properties.references.TypedPropertyReference
@@ -15,7 +16,7 @@ import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 
 /** Defines a pair of a [reference] and [type] of type [E] */
-data class ReferenceTypePair<E : IndexedEnum> internal constructor(
+data class ReferenceTypePair<E : TypeEnum<Any>> internal constructor(
     override val reference: TypedPropertyReference<out TypedValue<E, Any>>,
     val type: E
 ) : DefinedByReference<TypedValue<E, Any>> {
@@ -30,10 +31,10 @@ data class ReferenceTypePair<E : IndexedEnum> internal constructor(
 
         override val value = add(
             index = 2u, name = "type",
-            definition = ContextualIndexedEnumDefinition<RequestContext, RequestContext, IndexedEnum, IsMultiTypeDefinition<IndexedEnum, RequestContext>>(
+            definition = ContextualIndexedEnumDefinition<RequestContext, RequestContext, IndexedEnum, IsMultiTypeDefinition<TypeEnum<Any>, RequestContext>>(
                 contextualResolver = {
                     @Suppress("UNCHECKED_CAST")
-                    (it?.reference as? MultiTypePropertyReference<IndexedEnum, *, *, *>?)?.comparablePropertyDefinition?.definition as IsMultiTypeDefinition<IndexedEnum, RequestContext>?
+                    (it?.reference as? MultiTypePropertyReference<TypeEnum<Any>, *, *, *, *>?)?.comparablePropertyDefinition?.definition as IsMultiTypeDefinition<TypeEnum<Any>, RequestContext>?
                         ?: throw ContextNotFoundException()
                 }
             ),
@@ -53,7 +54,7 @@ data class ReferenceTypePair<E : IndexedEnum> internal constructor(
 
 /** Convenience infix method to create Reference [type] pairs */
 @Suppress("UNCHECKED_CAST")
-infix fun <E : IndexedEnum> IsPropertyReference<TypedValue<E, *>, IsPropertyDefinition<TypedValue<E, *>>, *>.withType(
+infix fun <E : TypeEnum<Any>> IsPropertyReference<TypedValue<E, *>, IsPropertyDefinition<TypedValue<E, *>>, *>.withType(
     type: E
 ) =
     ReferenceTypePair(

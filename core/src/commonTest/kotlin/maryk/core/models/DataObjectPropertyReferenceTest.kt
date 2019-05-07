@@ -11,7 +11,7 @@ import maryk.lib.extensions.toHex
 import maryk.lib.time.Date
 import maryk.lib.time.Time
 import maryk.test.models.ComplexModel
-import maryk.test.models.EmbeddedMarykModel
+import maryk.test.models.EmbeddedMarykModel.Properties
 import maryk.test.models.MultiTypeEnum
 import maryk.test.models.MultiTypeEnum.T1
 import maryk.test.models.MultiTypeEnum.T3
@@ -62,12 +62,12 @@ internal class DataObjectPropertyReferenceTest {
         ComplexModel { mapWithMap.at("b") { refAt("c") } }.completeName shouldBe "mapWithMap.@b.@c"
 
         ComplexModel { mapIntMulti.at(2u) { refAtType(T3) } }.completeName shouldBe "mapIntMulti.@2.*T3"
-        ComplexModel { mapIntMulti.at(2u) { atType(T3, EmbeddedMarykModel.Properties) { value::ref } } }.completeName shouldBe "mapIntMulti.@2.*T3.value"
+        ComplexModel { mapIntMulti.at(2u) { atType(T3, Properties) { value::ref } } }.completeName shouldBe "mapIntMulti.@2.*T3.value"
         ComplexModel { mapIntMulti.at(2u) { atType(T3) { value::ref } } }.completeName shouldBe "mapIntMulti.@2.*T3.value"
-        ComplexModel { mapIntMulti.at(2u) { atType(T3) { model { value::ref } } } }.completeName shouldBe "mapIntMulti.@2.*T3.model.value"
+        ComplexModel { mapIntMulti.at(2u) { atType(T3, Properties) { model { value::ref } } } }.completeName shouldBe "mapIntMulti.@2.*T3.model.value"
         ComplexModel { mapIntMulti.at(2u) { atType(T3) { model { value::ref } } } }.completeName shouldBe "mapIntMulti.@2.*T3.model.value"
 
-        ComplexModel { mapIntMulti.at(2u) { refAtTypeAndIndexWeak<MultiTypeEnum, String>(T4, 5u) } }.completeName shouldBe "mapIntMulti.@2.*T4.@5"
+        ComplexModel { mapIntMulti.at(2u) { refAtTypeAndIndexWeak<MultiTypeEnum<*>, String>(T4, 5u) } }.completeName shouldBe "mapIntMulti.@2.*T4.@5"
         ComplexModel { mapIntMulti.at(2u) { refAtTypeAndIndex(T4, 5u) } }.completeName shouldBe "mapIntMulti.@2.*T4.@5"
     }
 
@@ -106,12 +106,12 @@ internal class DataObjectPropertyReferenceTest {
         ComplexModel { mapWithMap.at("b") { refAt("c") } }.toStorageByteArray().toHex() shouldBe "3c01620163"
 
         ComplexModel { mapIntMulti.at(2u) { refAtType(T3) } }.toStorageByteArray().toHex() shouldBe "2404000000021d"
-        ComplexModel { mapIntMulti.at(2u) { atType(T3, EmbeddedMarykModel.Properties) { value::ref } } }.toStorageByteArray().toHex() shouldBe "2404000000021d09"
+        ComplexModel { mapIntMulti.at(2u) { atType(T3, Properties) { value::ref } } }.toStorageByteArray().toHex() shouldBe "2404000000021d09"
         ComplexModel { mapIntMulti.at(2u) { atType(T3) { value::ref } } }.toStorageByteArray().toHex() shouldBe "2404000000021d09"
-        ComplexModel { mapIntMulti.at(2u) { atType(T3) { model { value::ref } } } }.toStorageByteArray().toHex() shouldBe "2404000000021d1609"
+        ComplexModel { mapIntMulti.at(2u) { atType(T3, Properties) { model { value::ref } } } }.toStorageByteArray().toHex() shouldBe "2404000000021d1609"
         ComplexModel { mapIntMulti.at(2u) { atType(T3) { model { value::ref } } } }.toStorageByteArray().toHex() shouldBe "2404000000021d1609"
 
-        ComplexModel { mapIntMulti.at(2u) { refAtTypeAndIndexWeak<MultiTypeEnum, String>(T4, 5u) } }.toStorageByteArray().toHex() shouldBe "2404000000022500000005"
+        ComplexModel { mapIntMulti.at(2u) { refAtTypeAndIndexWeak<MultiTypeEnum<*>, String>(T4, 5u) } }.toStorageByteArray().toHex() shouldBe "2404000000022500000005"
         ComplexModel { mapIntMulti.at(2u) { refAtTypeAndIndex(T4, 5u) } }.toStorageByteArray().toHex() shouldBe "2404000000022500000005"
     }
 }

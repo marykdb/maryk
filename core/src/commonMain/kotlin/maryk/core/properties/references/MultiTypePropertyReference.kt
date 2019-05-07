@@ -2,7 +2,7 @@ package maryk.core.properties.references
 
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
-import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.types.TypedValue
 import maryk.core.values.AbstractValues
 
@@ -12,9 +12,10 @@ import maryk.core.values.AbstractValues
  * [D] and referred by PropertyReference of type [P].
  */
 open class MultiTypePropertyReference<
-    E : IndexedEnum,
+    E : TypeEnum<T>,
+    T: Any,
     TO : Any,
-    out D : MultiTypeDefinitionWrapper<E, TO, *, *>,
+    out D : MultiTypeDefinitionWrapper<E, T, TO, *, *>,
     out P : AnyPropertyReference
 > internal constructor(
     propertyDefinition: D,

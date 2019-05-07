@@ -11,7 +11,7 @@ import maryk.lib.extensions.toHex
 import maryk.lib.time.Date
 import maryk.test.ByteCollector
 import maryk.test.models.CompleteMarykModel
-import maryk.test.models.MarykEnum.O1
+import maryk.test.models.MarykTypeEnum.O1
 import maryk.test.models.MarykEnumEmbedded.E1
 import maryk.test.models.MarykEnumEmbedded.E2
 import maryk.test.models.NumericMarykModel

@@ -12,7 +12,7 @@ import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.ByteCollector
 import maryk.test.models.EmbeddedMarykObject
-import maryk.test.models.Option.V3
+import maryk.test.models.MarykTypeEnum.O3
 import maryk.test.models.TestMarykObject
 import maryk.test.models.TestValueObject
 import maryk.test.shouldBe
@@ -48,12 +48,12 @@ private val testExtendedObject = TestMarykObject(
     ),
     valueObject = TestValueObject(6, DateTime(2017, 4, 1, 12, 55), true),
     embeddedObject = EmbeddedMarykObject("test"),
-    multi = TypedValue(V3, EmbeddedMarykObject("subInMulti!")),
+    multi = TypedValue(O3, EmbeddedMarykObject("subInMulti!")),
     listOfString = listOf("test1", "another test", "🤗")
 )
 
 private const val JSON =
-    """{"string":"hay","int":4,"uint":32,"double":"3.555","dateTime":"2017-12-04T12:13","bool":true,"enum":"V1(1)","list":[34,2352,3423,766],"set":["2017-12-05","2016-03-02","1981-12-05"],"map":{"12:55":"yes","10:03":"ahum"},"valueObject":{"int":6,"dateTime":"2017-04-01T12:55","bool":true},"embeddedObject":{"value":"test"},"multi":["V3(3)",{"value":"subInMulti!"}],"listOfString":["test1","another test","🤗"]}"""
+    """{"string":"hay","int":4,"uint":32,"double":"3.555","dateTime":"2017-12-04T12:13","bool":true,"enum":"V1(1)","list":[34,2352,3423,766],"set":["2017-12-05","2016-03-02","1981-12-05"],"map":{"12:55":"yes","10:03":"ahum"},"valueObject":{"int":6,"dateTime":"2017-04-01T12:55","bool":true},"embeddedObject":{"value":"test"},"multi":["O3(3)",{"value":"subInMulti!"}],"listOfString":["test1","another test","🤗"]}"""
 
 // Test if unknown values will be skipped
 private const val PRETTY_JSON_WITH_SKIP = """{
@@ -193,7 +193,7 @@ internal class ObjectDataModelTest {
         	"embeddedObject": {
         		"value": "test"
         	},
-        	"multi": ["V3(3)", {
+        	"multi": ["O3(3)", {
         		"value": "subInMulti!"
         	}],
         	"listOfString": ["test1", "another test", "🤗"]
@@ -229,7 +229,7 @@ internal class ObjectDataModelTest {
           bool: true
         embeddedObject:
           value: test
-        multi: !V3(3)
+        multi: !O3(3)
           value: subInMulti!
         listOfString: [test1, another test, 🤗]
 

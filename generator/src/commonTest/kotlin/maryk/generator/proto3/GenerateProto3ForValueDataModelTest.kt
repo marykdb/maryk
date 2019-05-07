@@ -1,7 +1,7 @@
 package maryk.generator.proto3
 
 import maryk.generator.kotlin.GenerationContext
-import maryk.test.models.MarykEnum
+import maryk.test.models.MarykTypeEnum
 import maryk.test.models.ValueMarykObject
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -20,7 +20,7 @@ class GenerateProto3ForValueDataModelTest {
 
         ValueMarykObject.generateProto3Schema(
             GenerationContext(
-                enums = mutableListOf(MarykEnum)
+                enums = mutableListOf(MarykTypeEnum)
             )
         ) {
             output += it

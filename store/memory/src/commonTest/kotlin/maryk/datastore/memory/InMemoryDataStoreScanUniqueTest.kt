@@ -10,8 +10,8 @@ import maryk.core.query.responses.statuses.AddSuccess
 import maryk.lib.time.Date
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.CompleteMarykModel.Properties.string
-import maryk.test.models.MarykEnum.O1
-import maryk.test.models.MarykEnum.O2
+import maryk.test.models.MarykTypeEnum.O1
+import maryk.test.models.MarykTypeEnum.O2
 import maryk.test.models.MarykEnumEmbedded.E1
 import maryk.test.models.SimpleMarykModel
 import maryk.test.runSuspendingTest

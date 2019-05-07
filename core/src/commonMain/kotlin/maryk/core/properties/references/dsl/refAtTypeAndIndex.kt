@@ -4,8 +4,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.enum.IndexedEnum
-import maryk.core.properties.enum.ListTypeCase
+import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.ListItemReference
@@ -13,7 +12,7 @@ import maryk.core.properties.types.TypedValue
 
 /** Specific extension to support fetching sub refs on Map values by [key] and [type] */
 @Suppress("UNCHECKED_CAST")
-fun <E : IndexedEnum, T : Any> IsSubDefinition<TypedValue<E, Any>, *>.refAtTypeAndIndexWeak(
+fun <E : TypeEnum<Any>, T : Any> IsSubDefinition<TypedValue<E, Any>, *>.refAtTypeAndIndexWeak(
     type: E,
     listIndex: UInt
 ): (AnyOutPropertyReference?) -> ListItemReference<T, *> =
@@ -28,8 +27,8 @@ fun <E : IndexedEnum, T : Any> IsSubDefinition<TypedValue<E, Any>, *>.refAtTypeA
 
 /** Specific extension to support fetching sub refs on multi type with [type] for lists */
 @Suppress("UNCHECKED_CAST")
-fun <E : IndexedEnum, T : Any> IsSubDefinition<TypedValue<E, Any>, *>.refAtTypeAndIndex(
-    type: ListTypeCase<E, T>,
+fun <E : TypeEnum<T>, T : Any> IsSubDefinition<TypedValue<E, Any>, *>.refAtTypeAndIndex(
+    type: TypeEnum<List<T>>,
     listIndex: UInt
 ): (AnyOutPropertyReference?) -> ListItemReference<T, *> =
     {

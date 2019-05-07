@@ -14,7 +14,6 @@ import maryk.core.query.requests.getChanges
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.test.models.ComplexModel
 import maryk.test.models.EmbeddedMarykModel
-import maryk.test.models.EmbeddedMarykModel.Properties
 import maryk.test.models.MultiTypeEnum.T1
 import maryk.test.models.MultiTypeEnum.T3
 import maryk.test.runSuspendingTest
@@ -82,8 +81,8 @@ class InMemoryDataStoreGetChangesComplexTest {
                     ComplexModel { mapIntMulti.refAt(3u) } withType T3
                 ),
                 Change(
-                    ComplexModel { multi.withType(T3, Properties) { value::ref } } with "u3",
-                    ComplexModel { multi.withType(T3, Properties) { model { value::ref } } } with "ue3",
+                    ComplexModel { multi.withType(T3) { value::ref } } with "u3",
+                    ComplexModel { multi.withType(T3) { model { value::ref } } } with "ue3",
                     ComplexModel { mapStringString refAt "a" } with "b",
                     ComplexModel { mapStringString refAt "c" } with "d",
                     ComplexModel { mapIntObject refAt 1u } with Unit,

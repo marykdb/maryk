@@ -28,9 +28,10 @@ import maryk.core.yaml.MarykYamlReaders
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.ByteCollector
+import maryk.test.models.MarykTypeEnum
+import maryk.test.models.MarykTypeEnum.O1
+import maryk.test.models.MarykTypeEnum.O2
 import maryk.test.models.Option
-import maryk.test.models.Option.V1
-import maryk.test.models.Option.V2
 import maryk.test.models.Option.V3
 import maryk.test.models.TestMarykModel
 import maryk.test.models.TestValueObject
@@ -594,11 +595,11 @@ internal class RootDataModelTest {
           dataModel: TestMarykModel
         ? 15: multi
         : !MultiType
-          typeEnum: Option
+          typeEnum: MarykTypeEnum
           definitionMap:
-            ? 1: V1
+            ? 1: O1
             : !String
-            ? 2: V2
+            ? 2: O2
             : !Boolean
         ? 16: isTrue
         : !Boolean
@@ -693,11 +694,11 @@ internal class RootDataModelTest {
             }
             properties["multi"]!!.let {
                 it.index shouldBe 15u
-                it.definition shouldBe MultiTypeDefinition<Option, IsPropertyContext>(
-                    typeEnum = Option,
+                it.definition shouldBe MultiTypeDefinition<MarykTypeEnum<*>, IsPropertyContext>(
+                    typeEnum = MarykTypeEnum,
                     definitionMap = mapOf(
-                        V1 to StringDefinition(),
-                        V2 to BooleanDefinition()
+                        O1 to StringDefinition(),
+                        O2 to BooleanDefinition()
                     )
                 )
             }

@@ -13,6 +13,7 @@ import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IsCoreEnum
+import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.references.FlexBytesPropertyDefinitionWrapper
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.ContainsDefinitionsContext
@@ -22,7 +23,7 @@ import maryk.json.MapType
 /** Indexed type of property definitions */
 enum class PropertyDefinitionType(
     override val index: UInt
-) : IndexedEnumComparable<PropertyDefinitionType>, MapType, IsCoreEnum {
+) : IndexedEnumComparable<PropertyDefinitionType>, MapType, IsCoreEnum, TypeEnum<IsTransportablePropertyDefinitionType<*>> {
     Boolean(1u),
     Date(2u),
     DateTime(3u),

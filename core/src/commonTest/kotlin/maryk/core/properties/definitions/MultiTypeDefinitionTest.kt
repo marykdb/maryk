@@ -15,6 +15,7 @@ import maryk.core.properties.definitions.MultiTypeEnum.UNUSED
 import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IndexedEnumImpl
+import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.OutOfRangeException
@@ -24,16 +25,16 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.protobuf.WriteCache
 import maryk.test.ByteCollector
-import maryk.test.models.Option
-import maryk.test.models.Option.V1
-import maryk.test.models.Option.V2
+import maryk.test.models.MarykTypeEnum
+import maryk.test.models.MarykTypeEnum.O1
+import maryk.test.models.MarykTypeEnum.O2
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
 
 private sealed class MultiTypeEnum(
     index: UInt
-) : IndexedEnumImpl<MultiTypeEnum>(index) {
+) : IndexedEnumImpl<MultiTypeEnum>(index), TypeEnum<Any> {
     object STRING: MultiTypeEnum(1u)
     object INT: MultiTypeEnum(2u)
     object LIST: MultiTypeEnum(3u)
@@ -66,11 +67,11 @@ internal class MultiTypeDefinitionTest {
         keyDefinition = intDef,
         valueDefinition = stringDef
     )
-    private val subMultiDef = MultiTypeDefinition<Option, IsPropertyContext>(
-        typeEnum = Option,
+    private val subMultiDef = MultiTypeDefinition<MarykTypeEnum<*>, IsPropertyContext>(
+        typeEnum = MarykTypeEnum,
         definitionMap = mapOf(
-            V1 to stringDef,
-            V2 to intDef
+            O1 to stringDef,
+            O2 to intDef
         )
     )
 
@@ -101,17 +102,17 @@ internal class MultiTypeDefinitionTest {
         default = TypedValue(STRING, "test")
     )
 
-    private val defWrapper = MultiTypeDefinitionWrapper<MultiTypeEnum, Any, IsPropertyContext, Any>(
+    private val defWrapper = MultiTypeDefinitionWrapper<MultiTypeEnum, Any, Any, IsPropertyContext, Any>(
         1u, "multi", def
     )
 
-    private val multisToTest = arrayOf(
+    private val multisToTest = arrayOf<TypedValue<MultiTypeEnum, Any>>(
         TypedValue(STRING, "#test"),
         TypedValue(INT, 400),
         TypedValue(LIST, listOf("#a", "#b", "#c")),
         TypedValue(SET, setOf("#a", "#b", "#c")),
         TypedValue(MAP, mapOf(1 to "#a", 2 to "#b", 3 to "#c")),
-        TypedValue(MULTI, TypedValue(V1, "#test"))
+        TypedValue(MULTI, TypedValue(O1, "#test"))
     )
 
     @Test
@@ -147,7 +148,7 @@ internal class MultiTypeDefinitionTest {
             def.validateWithRef(newValue = TypedValue(MAP, mapOf(1 to "WRONG")))
         }
         shouldThrow<InvalidValueException> {
-            def.validateWithRef(newValue = TypedValue(MULTI, TypedValue(V1, "WRONG")))
+            def.validateWithRef(newValue = TypedValue(MULTI, TypedValue(O1, "WRONG")))
         }
 
         shouldThrow<AlreadySetException> {
@@ -280,16 +281,16 @@ internal class MultiTypeDefinitionTest {
           : !MultiType
             required: true
             final: false
-            typeEnum: Option
+            typeEnum: MarykTypeEnum
             typeIsFinal: true
             definitionMap:
-              ? 1: V1
+              ? 1: O1
               : !String
                 required: true
                 final: false
                 unique: false
                 regEx: '#.*'
-              ? 2: V2
+              ? 2: O2
               : !Number
                 required: true
                 final: false

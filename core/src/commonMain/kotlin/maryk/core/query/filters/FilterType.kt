@@ -3,11 +3,12 @@ package maryk.core.query.filters
 import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IsCoreEnum
+import maryk.core.properties.enum.TypeEnum
 
 /** Indexed type of changes */
 enum class FilterType(
     override val index: UInt
-) : IndexedEnumComparable<FilterType>, IsCoreEnum {
+) : IndexedEnumComparable<FilterType>, IsCoreEnum, TypeEnum<IsFilter> {
     And(1u),
     Or(2u),
     Not(3u),

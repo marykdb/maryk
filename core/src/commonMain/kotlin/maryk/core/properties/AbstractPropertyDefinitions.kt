@@ -21,7 +21,7 @@ import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
-import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.FlexBytesPropertyDefinitionWrapper
 import maryk.core.properties.references.HasEmbeddedPropertyReference
@@ -70,7 +70,7 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
         }
 
     /** Helper for definition maps for multi types. Add enum/usableInMultiType [pair] to map */
-    fun <E : IndexedEnum> definitionMap(vararg pair: Pair<E, IsUsableInMultiType<*, IsPropertyContext>>) =
+    fun <E : TypeEnum<*>> definitionMap(vararg pair: Pair<E, IsUsableInMultiType<*, IsPropertyContext>>) =
         mapOf(*pair)
 
     /** Add flex bytes encodable property [definition] with [name] and [index] */
@@ -128,11 +128,11 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
     }
 
     /** Add multi type property [definition] with [name] and [index] */
-    fun <E : IndexedEnum, CX : IsPropertyContext> add(
+    fun <E : TypeEnum<T>, T: Any, CX : IsPropertyContext> add(
         index: UInt,
         name: String,
         definition: IsMultiTypeDefinition<E, CX>
-    ) = MultiTypeDefinitionWrapper<E, TypedValue<E, Any>, CX, Any>(index, name, definition).apply {
+    ) = MultiTypeDefinitionWrapper<E, T, TypedValue<E, T>, CX, Any>(index, name, definition).apply {
         addSingle(this)
     }
 

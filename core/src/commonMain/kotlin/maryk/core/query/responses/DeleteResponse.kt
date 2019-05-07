@@ -4,9 +4,9 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.responses.statuses.IsDeleteResponseStatus
-import maryk.core.query.responses.statuses.StatusType
 import maryk.core.values.SimpleObjectValues
 
 /** Response with [statuses] to a Delete request to [dataModel] */
@@ -26,7 +26,7 @@ data class DeleteResponse<DM : IsRootDataModel<*>>(
     ) {
         override fun invoke(values: SimpleObjectValues<DeleteResponse<*>>) = DeleteResponse(
             dataModel = values(1u),
-            statuses = values<List<TypedValue<StatusType, IsDeleteResponseStatus<IsRootDataModel<IsPropertyDefinitions>>>>?>(2u)?.map { it.value } ?: emptyList()
+            statuses = values<List<TypedValue<TypeEnum<IsDeleteResponseStatus<IsRootDataModel<IsPropertyDefinitions>>>, IsDeleteResponseStatus<IsRootDataModel<IsPropertyDefinitions>>>>?>(2u)?.map { it.value } ?: emptyList()
         )
     }
 }

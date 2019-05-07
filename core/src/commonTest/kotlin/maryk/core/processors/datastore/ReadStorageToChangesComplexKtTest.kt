@@ -15,13 +15,13 @@ import maryk.core.query.pairs.with
 import maryk.core.query.pairs.withType
 import maryk.lib.extensions.initByteArrayByHex
 import maryk.test.models.ComplexModel
+import maryk.test.models.MarykTypeEnum.O3
 import maryk.test.models.MultiTypeEnum.T1
 import maryk.test.models.MultiTypeEnum.T3
 import maryk.test.models.MultiTypeEnum.T4
 import maryk.test.models.MultiTypeEnum.T5
 import maryk.test.models.MultiTypeEnum.T6
 import maryk.test.models.MultiTypeEnum.T7
-import maryk.test.models.Option.V3
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -64,7 +64,7 @@ private val complexValuesAsStorablesWithVersion = arrayOf(
 //    "24040000000935040400000005" to arrayOf(1234uL to "e"),
 //    "24040000000935040400000006" to arrayOf(1234uL to "f"),
     "24040000000a" to arrayOf(1234uL to TypedValue(T7, Unit)),
-    "24040000000a3d" to arrayOf(1234uL to TypedValue(V3, Unit)),
+    "24040000000a3d" to arrayOf(1234uL to TypedValue(O3, Unit)),
 // Problems with reference so commented out
 //    "24040000000a3d1d" to arrayOf(1234uL to Unit),
 //    "24040000000a3d1d09" to arrayOf(1234uL to "g"),

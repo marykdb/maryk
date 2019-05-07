@@ -10,19 +10,22 @@ import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.query.DefinitionsContext
 import maryk.test.models.EmbeddedMarykModel
-import maryk.test.models.Option
+import maryk.test.models.MarykTypeEnum
+import maryk.test.models.MarykTypeEnum.O1
+import maryk.test.models.MarykTypeEnum.O2
+import maryk.test.models.MarykTypeEnum.O3
 import kotlin.test.Test
 
 class MultiTypePropertyDefinitionWrapperTest {
     private val def = MultiTypeDefinitionWrapper(
         index = 1u,
         name = "wrapper",
-        definition = MultiTypeDefinition<Option, IsPropertyContext>(
-            typeEnum = Option,
+        definition = MultiTypeDefinition<MarykTypeEnum<*>, IsPropertyContext>(
+            typeEnum = MarykTypeEnum,
             definitionMap = mapOf(
-                Option.V1 to StringDefinition(),
-                Option.V2 to NumberDefinition(type = SInt32),
-                Option.V3 to EmbeddedValuesDefinition(
+                O1 to StringDefinition(),
+                O2 to NumberDefinition(type = SInt32),
+                O3 to EmbeddedValuesDefinition(
                     dataModel = { EmbeddedMarykModel }
                 )
             )

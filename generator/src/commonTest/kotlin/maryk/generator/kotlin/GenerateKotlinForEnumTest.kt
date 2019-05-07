@@ -1,6 +1,6 @@
 package maryk.generator.kotlin
 
-import maryk.test.models.MarykEnum
+import maryk.test.models.MarykTypeEnum
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -10,21 +10,22 @@ package maryk.test.models
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IndexedEnumImpl
 
-sealed class MarykEnum(
+sealed class MarykTypeEnum(
     index: UInt
-) : IndexedEnumImpl<MarykEnum>(index) {
-    object O1: MarykEnum(1u)
-    object O2: MarykEnum(2u)
-    object O3: MarykEnum(3u)
+) : IndexedEnumImpl<MarykTypeEnum>(index) {
+    object O1: MarykTypeEnum(1u)
+    object O2: MarykTypeEnum(2u)
+    object O3: MarykTypeEnum(3u)
+    object O4: MarykTypeEnum(4u)
 
-    class UnknownMarykEnum(index: UInt, override val name: String): MarykEnum(index)
+    class UnknownMarykTypeEnum(index: UInt, override val name: String): MarykTypeEnum(index)
 
-    companion object : IndexedEnumDefinition<MarykEnum>(
-        MarykEnum::class,
-        values = { arrayOf(O1, O2, O3) },
+    companion object : IndexedEnumDefinition<MarykTypeEnum>(
+        MarykTypeEnum::class,
+        values = { arrayOf(O1, O2, O3, O4) },
         reservedIndices = listOf(99u),
         reservedNames = listOf("O99"),
-        unknownCreator = ::UnknownMarykEnum
+        unknownCreator = ::UnknownMarykTypeEnum
     )
 }
 """.trimIndent()
@@ -34,7 +35,7 @@ class GenerateKotlinForEnumTest {
     fun generateKotlinForSimpleModel() {
         var output = ""
 
-        MarykEnum.generateKotlin("maryk.test.models") {
+        MarykTypeEnum.generateKotlin("maryk.test.models") {
             output += it
         }
 

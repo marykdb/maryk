@@ -19,7 +19,6 @@ import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
-@Suppress("UNCHECKED_CAST")
 /**
  * Reference to a value by [type] [E] on [parentReference]
  * Can be a reference to a type below a multi type wrapper or for like multi types within lists
@@ -28,16 +27,16 @@ class TypedValueReference<E : TypeEnum<T>, T: Any, in CX : IsPropertyContext> in
     val type: E,
     multiTypeDefinition: IsMultiTypeDefinition<E, T, CX>,
     parentReference: CanHaveComplexChildReference<*, *, *, *>?
-) : CanHaveComplexChildReference<Any, IsSubDefinition<Any, CX>,
+) : CanHaveComplexChildReference<T, IsSubDefinition<T, CX>,
     CanHaveComplexChildReference<*, *, *, *>,
-    TypedValue<E, Any>>(
-        multiTypeDefinition.definitionMap[type] as IsSubDefinition<Any, CX>,
+    TypedValue<E, T>>(
+        multiTypeDefinition.definition(type) as IsSubDefinition<T, CX>,
         parentReference
     ),
-    CanContainListItemReference<Any, IsSubDefinition<Any, CX>, TypedValue<E, Any>>,
-    CanContainSetItemReference<Any, IsSubDefinition<Any, CX>, TypedValue<E, Any>>,
-    CanContainMapItemReference<Any, IsSubDefinition<Any, CX>, TypedValue<E, Any>>,
-    IsPropertyReferenceWithParent<Any, IsSubDefinition<Any, CX>, CanHaveComplexChildReference<*, *, *, *>, TypedValue<E, Any>>,
+    CanContainListItemReference<T, IsSubDefinition<T, CX>, TypedValue<E, T>>,
+    CanContainSetItemReference<T, IsSubDefinition<T, CX>, TypedValue<E, T>>,
+    CanContainMapItemReference<T, IsSubDefinition<T, CX>, TypedValue<E, T>>,
+    IsPropertyReferenceWithParent<T, IsSubDefinition<T, CX>, CanHaveComplexChildReference<*, *, *, *>, TypedValue<E, T>>,
     HasEmbeddedPropertyReference<Any> {
     override val completeName: String
         get() = this.parentReference?.let {
@@ -91,5 +90,5 @@ class TypedValueReference<E : TypeEnum<T>, T: Any, in CX : IsPropertyContext> in
         )
     }
 
-    override fun resolve(values: TypedValue<E, Any>): Any? = values.value
+    override fun resolve(values: TypedValue<E, T>): T? = values.value
 }

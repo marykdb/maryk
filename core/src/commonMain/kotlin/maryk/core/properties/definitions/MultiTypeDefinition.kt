@@ -277,7 +277,8 @@ data class MultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyContex
 
         if (context is RequestContext) {
             context.collectInjectLevel(this) {
-                this.typedValueRef(value.type, it as CanHaveComplexChildReference<*, *, *, *>)
+                @Suppress("UNCHECKED_CAST")
+                this.typedValueRef(value.type, it as CanHaveComplexChildReference<*, *, *, *>) as IsPropertyReference<in Any, *, *>
             }
         }
 
@@ -347,14 +348,14 @@ data class MultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyContex
         val index = initIntByVar(reader)
         if (index != 0) throw UnexpectedValueException("Index in multi type reference other than 0 ($index) is not supported")
         val typeIndex = initUIntByVar(reader)
+        @Suppress("UNCHECKED_CAST")
         return if (typeIndex == 0u) {
-            @Suppress("UNCHECKED_CAST")
             this.typeRef(
                 parentReference as CanHaveComplexChildReference<TypedValue<E, T>, IsMultiTypeDefinition<E, T, *>, *, *>?
             ) as IsPropertyReference<Any, *, *>
         } else {
             val type = this.typeEnum.resolve(typeIndex) ?: throw UnexpectedValueException("Type $typeIndex is not known")
-            typedValueRef(type, parentReference)
+            typedValueRef(type, parentReference) as IsPropertyReference<Any, *, *>
         }
     }
 
@@ -366,15 +367,15 @@ data class MultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyContex
             if (type != TYPE.value) throw SerializationException("Expected TypedValue")
             index
         }
+        @Suppress("UNCHECKED_CAST")
         return if (typeIndex == 0u) {
-            @Suppress("UNCHECKED_CAST")
             this.typeRef(
                 parentReference as CanHaveComplexChildReference<TypedValue<E, T>, IsMultiTypeDefinition<E, T, *>, *, *>?
             ) as IsPropertyReference<Any, *, *>
         } else {
             val type = this.typeEnum.resolve(typeIndex)
                 ?: throw UnexpectedValueException("Type $typeIndex is not known")
-            typedValueRef(type, parentReference)
+            typedValueRef(type, parentReference) as IsPropertyReference<Any, *, *>
         }
     }
 
@@ -393,7 +394,8 @@ data class MultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyContex
             } else {
                 val type = this.typeEnum.resolve(name.substring(1))
                     ?: throw UnexpectedValueException("Type ${name.substring(1)} is not known")
-                typedValueRef(type, parentReference)
+                @Suppress("UNCHECKED_CAST")
+                typedValueRef(type, parentReference) as IsPropertyReference<Any, *, *>
             }
         }
         else -> throw ParseException("Unknown Type type $name[0]")

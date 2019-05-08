@@ -3,7 +3,9 @@ package maryk.core.processors.datastore
 import maryk.core.properties.references.dsl.at
 import maryk.core.properties.references.dsl.atType
 import maryk.core.properties.references.dsl.refAt
+import maryk.core.properties.references.dsl.refAtType
 import maryk.core.properties.references.dsl.refAtTypeAndIndex
+import maryk.core.properties.references.dsl.refAtTypeAndKey
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Delete
@@ -54,15 +56,13 @@ private val complexValuesAsStorablesWithVersion = arrayOf(
     "240400000007250200000001" to arrayOf(1234uL to "b"),
     "240400000007250200000002" to arrayOf(1234uL to null),
     "240400000008" to arrayOf(1234uL to TypedValue(T5, Unit)),
-// Problems with reference so commented out
-//    "2404000000082d03" to arrayOf(1234uL to 2),
-//    "2404000000082d030163" to arrayOf(1234uL to "c"),
-//    "2404000000082d030164" to arrayOf(1234uL to "d"),
+    "2404000000082d03" to arrayOf(1234uL to 2),
+    "2404000000082d030163" to arrayOf(1234uL to "c"),
+    "2404000000082d030164" to arrayOf(1234uL to "d"),
     "240400000009" to arrayOf(1234uL to TypedValue(T6, Unit)),
-// Problems with reference so commented out
-//    "2404000000093504" to arrayOf(1234uL to 2),
-//    "24040000000935040400000005" to arrayOf(1234uL to "e"),
-//    "24040000000935040400000006" to arrayOf(1234uL to "f"),
+    "2404000000093504" to arrayOf(1234uL to 2),
+    "24040000000935040400000005" to arrayOf(1234uL to "e"),
+    "24040000000935040400000006" to arrayOf(1234uL to "f"),
     "24040000000a" to arrayOf(1234uL to TypedValue(T7, Unit)),
     "24040000000a3d" to arrayOf(1234uL to TypedValue(O3, Unit)),
 // Problems with reference so commented out
@@ -128,6 +128,8 @@ class ReadStorageToChangesComplexKtTest {
                         ComplexModel { mapIntMulti.refAt(5u) } with TypedValue(T1, "TEST"),
                         ComplexModel { mapIntMulti.at(7u) { refAtTypeAndIndex(T4, 0u) } } with "a",
                         ComplexModel { mapIntMulti.at(7u) { refAtTypeAndIndex(T4, 1u) } } with "b",
+                        ComplexModel { mapIntMulti.at(9u) { refAtTypeAndKey(T6, 5u) } } with "e",
+                        ComplexModel { mapIntMulti.at(9u) { refAtTypeAndKey(T6, 6u) } } with "f",
                         ComplexModel { mapWithList.at("a") { refAt(0u) } } with "a1",
                         ComplexModel { mapWithList.at("a") { refAt(1u) } } with "a2",
                         ComplexModel { mapWithMap.at("c") { refAt("c1")  }} with "c2"
@@ -138,10 +140,9 @@ class ReadStorageToChangesComplexKtTest {
                         ComplexModel { mapWithSet.at("b") { refAt("b3") } }
                     ),
                     SetChange(
-// Problems with reference and SetChange so commented out
-//                        ComplexModel {  mapIntMulti.refAtKeyAndType(7u, T5) }.change(
-//                            addValues = setOf("b1", "b2")
-//                        ),
+                        ComplexModel { mapIntMulti.at(8u) { refAtType(T5) } }.change(
+                            addValues = setOf("c", "d")
+                        ),
                         ComplexModel { mapWithSet.refAt("b") }.change(
                             addValues = setOf("b1", "b2")
                         )

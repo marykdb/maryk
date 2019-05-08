@@ -52,8 +52,8 @@ sealed class MultiTypeEnum<T: Any>(
     object T3: MultiTypeEnum<Values<EmbeddedMarykModel, Properties>>(3u)
     object T4: MultiTypeEnum<List<String>>(4u)
     object T5: MultiTypeEnum<Set<String>>(5u)
-    object T6: MultiTypeEnum<String>(6u)
-    object T7: MultiTypeEnum<String>(7u)
+    object T6: MultiTypeEnum<Map<UInt, String>>(6u)
+    object T7: MultiTypeEnum<TypedValue<MarykTypeEnum<*>, Any>>(7u)
 
     companion object : IndexedEnumDefinition<MultiTypeEnum<*>>(MultiTypeEnum::class, { arrayOf(T1, T2, T3, T4, T5, T6, T7) })
 }

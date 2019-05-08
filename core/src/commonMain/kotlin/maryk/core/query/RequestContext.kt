@@ -98,7 +98,7 @@ class RequestContext(
     /** Collect the [propertyRefCreator] for the level defined by [levelItem] */
     fun collectInjectLevel(
         levelItem: Any,
-        propertyRefCreator: (AnyPropertyReference?) -> IsPropertyReference<Any, *, *>
+        propertyRefCreator: (AnyPropertyReference?) -> IsPropertyReference<in Any, *, *>
     ) {
         if (this.collectedLevels.isNotEmpty() && levelItem == this.collectedLevels.last()) {
             this.collectedReferenceCreators.removeAt(this.collectedReferenceCreators.size - 1)

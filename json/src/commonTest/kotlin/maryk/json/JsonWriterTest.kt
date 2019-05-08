@@ -27,11 +27,11 @@ internal class JsonWriterTest {
         writeJson(generator)
 
         output shouldBe """[1, "#Test", 3.5, true, {
-                        |	"test": false,
-                        |	"test2": "value"
+                        |  "test": false,
+                        |  "test2": "value"
                         |}, {
-                        |	"another": "yes",
-                        |	"null": null
+                        |  "another": "yes",
+                        |  "null": null
                         |}]""".trimMargin()
     }
 

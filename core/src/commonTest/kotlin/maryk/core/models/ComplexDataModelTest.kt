@@ -32,29 +32,29 @@ internal class ComplexDataModelMapTest {
 
         output shouldBe """
         {
-        	"multi": ["T3(3)", {
-        		"value": "u3",
-        		"model": {
-        			"value": "ue3"
-        		}
-        	}],
-        	"mapStringString": {
-        		"v1": "a",
-        		"v2": "b"
-        	},
-        	"mapIntObject": {
-        		"1": {
-        			"value": "t1"
-        		},
-        		"2": {
-        			"value": "t2"
-        		}
-        	},
-        	"mapIntMulti": {
-        		"2": ["T3(3)", {
-        			"value": "m3"
-        		}]
-        	}
+          "multi": ["T3(3)", {
+            "value": "u3",
+            "model": {
+              "value": "ue3"
+            }
+          }],
+          "mapStringString": {
+            "v1": "a",
+            "v2": "b"
+          },
+          "mapIntObject": {
+            "1": {
+              "value": "t1"
+            },
+            "2": {
+              "value": "t2"
+            }
+          },
+          "mapIntMulti": {
+            "2": ["T3(3)", {
+              "value": "m3"
+            }]
+          }
         }
         """.trimIndent()
 

@@ -205,7 +205,7 @@ class InjectTest {
     fun convertAnyToJSONAndBack() {
         checkJsonConversion(this.injectFromAny, Inject, { this.context }) shouldBe """
         {
-        	"testCollection": "values.*.values.string"
+          "testCollection": "values.*.values.string"
         }
         """.trimIndent()
     }

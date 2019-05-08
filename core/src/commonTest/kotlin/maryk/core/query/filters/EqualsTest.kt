@@ -32,8 +32,8 @@ class EqualsTest {
     fun convertToJSONAndBack() {
         checkJsonConversion(this.equals, Equals, { this.context }) shouldBe """
         {
-        	"string": "test",
-        	"int": 5
+          "string": "test",
+          "int": 5
         }
         """.trimIndent()
     }

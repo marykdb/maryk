@@ -60,32 +60,32 @@ private const val JSON =
 
 // Test if unknown values will be skipped
 private const val PRETTY_JSON_WITH_SKIP = """{
-	"string": "hay",
-	"int": 4,
-	"uint": 32,
-	"double": "3.555",
-	"bool": true,
-	"dateTime": "2017-12-04T12:13",
-	"enum": "V1(1)",
-	"list": [34, 2352, 3423, 766],
-	"set": ["2017-12-05", "2016-03-02", "1981-12-05"],
-	"map": {
-		"12:55": "yes",
-		"10:03": "ahum"
-	},
+  "string": "hay",
+  "int": 4,
+  "uint": 32,
+  "double": "3.555",
+  "bool": true,
+  "dateTime": "2017-12-04T12:13",
+  "enum": "V1(1)",
+  "list": [34, 2352, 3423, 766],
+  "set": ["2017-12-05", "2016-03-02", "1981-12-05"],
+  "map": {
+    "12:55": "yes",
+    "10:03": "ahum"
+  },
     "skipUnknown": "should be skipped as possible future property",
-	"valueObject": {
-		"int": 6,
-		"dateTime": "2017-04-01T12:55",
-		"bool": true
-	},
-	"embeddedValues": {
-		"value": "test"
-	},
-	"multi": ["T3(3)", {
-		"value": "subInMulti!"
-	}],
-	"listOfString": ["test1", "another test", "🤗"]
+  "valueObject": {
+    "int": 6,
+    "dateTime": "2017-04-01T12:55",
+    "bool": true
+  },
+  "embeddedValues": {
+    "value": "test"
+  },
+  "multi": ["T3(3)", {
+    "value": "subInMulti!"
+  }],
+  "listOfString": ["test1", "another test", "🤗"]
 }"""
 
 internal class DataModelTest {
@@ -185,31 +185,31 @@ internal class DataModelTest {
 
         output shouldBe """
         {
-        	"string": "hay",
-        	"int": 4,
-        	"uint": 32,
-        	"double": "3.555",
-        	"dateTime": "2017-12-04T12:13",
-        	"bool": true,
-        	"enum": "V1(1)",
-        	"list": [34, 2352, 3423, 766],
-        	"set": ["2017-12-05", "2016-03-02", "1981-12-05"],
-        	"map": {
-        		"12:55": "yes",
-        		"10:03": "ahum"
-        	},
-        	"valueObject": {
-        		"int": 6,
-        		"dateTime": "2017-04-01T12:55",
-        		"bool": true
-        	},
-        	"embeddedValues": {
-        		"value": "test"
-        	},
-        	"multi": ["T3(3)", {
-        		"value": "subInMulti!"
-        	}],
-        	"listOfString": ["test1", "another test", "🤗"]
+          "string": "hay",
+          "int": 4,
+          "uint": 32,
+          "double": "3.555",
+          "dateTime": "2017-12-04T12:13",
+          "bool": true,
+          "enum": "V1(1)",
+          "list": [34, 2352, 3423, 766],
+          "set": ["2017-12-05", "2016-03-02", "1981-12-05"],
+          "map": {
+            "12:55": "yes",
+            "10:03": "ahum"
+          },
+          "valueObject": {
+            "int": 6,
+            "dateTime": "2017-04-01T12:55",
+            "bool": true
+          },
+          "embeddedValues": {
+            "value": "test"
+          },
+          "multi": ["T3(3)", {
+            "value": "subInMulti!"
+          }],
+          "listOfString": ["test1", "another test", "🤗"]
         }
         """.trimIndent()
     }

@@ -53,7 +53,7 @@ internal class SimpleDataModelTest {
 
         output shouldBe """
         {
-        	"value": "haas"
+          "value": "haas"
         }
         """.trimIndent()
     }

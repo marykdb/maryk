@@ -96,7 +96,7 @@ class JsonWriter(
             writer("\n")
             for (it in typeStack) {
                 if (it is Object) {
-                    writer("\t")
+                    writer("  ")
                 }
             }
         }

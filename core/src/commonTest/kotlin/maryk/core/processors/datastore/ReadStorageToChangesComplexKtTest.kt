@@ -4,8 +4,6 @@ import maryk.core.properties.references.dsl.at
 import maryk.core.properties.references.dsl.atType
 import maryk.core.properties.references.dsl.refAt
 import maryk.core.properties.references.dsl.refAtType
-import maryk.core.properties.references.dsl.refAtTypeAndIndex
-import maryk.core.properties.references.dsl.refAtTypeAndKey
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Delete
@@ -65,9 +63,8 @@ private val complexValuesAsStorablesWithVersion = arrayOf(
     "24040000000935040400000006" to arrayOf(1234uL to "f"),
     "24040000000a" to arrayOf(1234uL to TypedValue(T7, Unit)),
     "24040000000a3d" to arrayOf(1234uL to TypedValue(O3, Unit)),
-// Problems with reference so commented out
-//    "24040000000a3d1d" to arrayOf(1234uL to Unit),
-//    "24040000000a3d1d09" to arrayOf(1234uL to "g"),
+    "24040000000a3d1d" to arrayOf(1234uL to Unit),
+    "24040000000a3d1d09" to arrayOf(1234uL to "g"),
     "2c" to arrayOf(1234uL to 1),
     "2c016102" to arrayOf(1234uL to 2),
     "2c01610200000000" to arrayOf(1234uL to "a1"),
@@ -126,16 +123,17 @@ class ReadStorageToChangesComplexKtTest {
                         ComplexModel { mapIntMulti.at(2u) { atType(T3) { value::ref } } } with "m3",
                         ComplexModel { mapIntMulti.at(2u) { atType(T3) { model { value::ref } } } } with "me3",
                         ComplexModel { mapIntMulti.refAt(5u) } with TypedValue(T1, "TEST"),
-                        ComplexModel { mapIntMulti.at(7u) { refAtTypeAndIndex(T4, 0u) } } with "a",
-                        ComplexModel { mapIntMulti.at(7u) { refAtTypeAndIndex(T4, 1u) } } with "b",
-                        ComplexModel { mapIntMulti.at(9u) { refAtTypeAndKey(T6, 5u) } } with "e",
-                        ComplexModel { mapIntMulti.at(9u) { refAtTypeAndKey(T6, 6u) } } with "f",
+                        ComplexModel { mapIntMulti.at(7u) { atType(T4) { refAt(0u) } } } with "a",
+                        ComplexModel { mapIntMulti.at(7u) { atType(T4) { refAt(1u) } } } with "b",
+                        ComplexModel { mapIntMulti.at(9u) { atType(T6) { refAt(5u) } } } with "e",
+                        ComplexModel { mapIntMulti.at(9u) { atType(T6) { refAt(6u) }  } } with "f",
+                        ComplexModel { mapIntMulti.at(10u) { atType(T7) { atType(O3) { value::ref } } } } with "g",
                         ComplexModel { mapWithList.at("a") { refAt(0u) } } with "a1",
                         ComplexModel { mapWithList.at("a") { refAt(1u) } } with "a2",
                         ComplexModel { mapWithMap.at("c") { refAt("c1")  }} with "c2"
                     ),
                     Delete(
-                        ComplexModel { mapIntMulti.at(7u) { refAtTypeAndIndex(T4, 2u) } },
+                        ComplexModel { mapIntMulti.at(7u) { atType(T4) { refAt(2u) } } },
                         ComplexModel { mapWithList.at("a") { refAt(2u) } },
                         ComplexModel { mapWithSet.at("b") { refAt("b3") } }
                     ),

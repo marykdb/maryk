@@ -5,7 +5,6 @@ import maryk.core.properties.references.dsl.at
 import maryk.core.properties.references.dsl.atType
 import maryk.core.properties.references.dsl.refAt
 import maryk.core.properties.references.dsl.refAtType
-import maryk.core.properties.references.dsl.refAtTypeAndIndex
 import maryk.lib.extensions.toHex
 import maryk.lib.time.Date
 import maryk.lib.time.Time
@@ -14,6 +13,7 @@ import maryk.test.models.EmbeddedMarykModel.Properties
 import maryk.test.models.MultiTypeEnum.T1
 import maryk.test.models.MultiTypeEnum.T3
 import maryk.test.models.MultiTypeEnum.T4
+import maryk.test.models.MultiTypeEnum.T5
 import maryk.test.models.TestMarykModel
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -64,7 +64,8 @@ internal class DataObjectPropertyReferenceTest {
         ComplexModel { mapIntMulti.at(2u) { atType(T3) { value::ref } } }.completeName shouldBe "mapIntMulti.@2.*T3.value"
         ComplexModel { mapIntMulti.at(2u) { atType(T3) { model { value::ref } } } }.completeName shouldBe "mapIntMulti.@2.*T3.model.value"
 
-        ComplexModel { mapIntMulti.at(2u) { refAtTypeAndIndex(T4, 5u) } }.completeName shouldBe "mapIntMulti.@2.*T4.@5"
+        ComplexModel { mapIntMulti.at(2u) { atType(T4) { refAt(5u) } } }.completeName shouldBe "mapIntMulti.@2.*T4.@5"
+        ComplexModel { mapIntMulti.at(2u) { atType(T5) { refAt("value") } } }.completeName shouldBe "mapIntMulti.@2.*T5.\$value"
     }
 
     @Test
@@ -106,6 +107,7 @@ internal class DataObjectPropertyReferenceTest {
         ComplexModel { mapIntMulti.at(2u) { atType(T3) { value::ref } } }.toStorageByteArray().toHex() shouldBe "2404000000021d09"
         ComplexModel { mapIntMulti.at(2u) { atType(T3) { model { value::ref } } } }.toStorageByteArray().toHex() shouldBe "2404000000021d1609"
 
-        ComplexModel { mapIntMulti.at(2u) { refAtTypeAndIndex(T4, 5u) } }.toStorageByteArray().toHex() shouldBe "2404000000022500000005"
+        ComplexModel { mapIntMulti.at(2u) { atType(T4) { refAt(5u) } } }.toStorageByteArray().toHex() shouldBe "2404000000022500000005"
+        ComplexModel { mapIntMulti.at(2u) { atType(T5) { refAt("value") } } }.toStorageByteArray().toHex() shouldBe "2404000000022d0576616c7565"
     }
 }

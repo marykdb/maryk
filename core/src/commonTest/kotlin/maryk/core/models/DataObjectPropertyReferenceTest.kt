@@ -62,7 +62,6 @@ internal class DataObjectPropertyReferenceTest {
         ComplexModel { mapIntMulti.at(2u) { refAtType(T3) } }.completeName shouldBe "mapIntMulti.@2.*T3"
         ComplexModel { mapIntMulti.at(2u) { atType(T3, Properties) { value::ref } } }.completeName shouldBe "mapIntMulti.@2.*T3.value"
         ComplexModel { mapIntMulti.at(2u) { atType(T3) { value::ref } } }.completeName shouldBe "mapIntMulti.@2.*T3.value"
-        ComplexModel { mapIntMulti.at(2u) { atType(T3, Properties) { model { value::ref } } } }.completeName shouldBe "mapIntMulti.@2.*T3.model.value"
         ComplexModel { mapIntMulti.at(2u) { atType(T3) { model { value::ref } } } }.completeName shouldBe "mapIntMulti.@2.*T3.model.value"
 
         ComplexModel { mapIntMulti.at(2u) { refAtTypeAndIndex(T4, 5u) } }.completeName shouldBe "mapIntMulti.@2.*T4.@5"
@@ -105,7 +104,6 @@ internal class DataObjectPropertyReferenceTest {
         ComplexModel { mapIntMulti.at(2u) { refAtType(T3) } }.toStorageByteArray().toHex() shouldBe "2404000000021d"
         ComplexModel { mapIntMulti.at(2u) { atType(T3, Properties) { value::ref } } }.toStorageByteArray().toHex() shouldBe "2404000000021d09"
         ComplexModel { mapIntMulti.at(2u) { atType(T3) { value::ref } } }.toStorageByteArray().toHex() shouldBe "2404000000021d09"
-        ComplexModel { mapIntMulti.at(2u) { atType(T3, Properties) { model { value::ref } } } }.toStorageByteArray().toHex() shouldBe "2404000000021d1609"
         ComplexModel { mapIntMulti.at(2u) { atType(T3) { model { value::ref } } } }.toStorageByteArray().toHex() shouldBe "2404000000021d1609"
 
         ComplexModel { mapIntMulti.at(2u) { refAtTypeAndIndex(T4, 5u) } }.toStorageByteArray().toHex() shouldBe "2404000000022500000005"

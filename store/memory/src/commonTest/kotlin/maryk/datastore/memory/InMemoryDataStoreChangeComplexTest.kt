@@ -15,7 +15,6 @@ import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.Success
 import maryk.test.models.ComplexModel
 import maryk.test.models.EmbeddedMarykModel
-import maryk.test.models.EmbeddedMarykModel.Properties
 import maryk.test.models.MultiTypeEnum
 import maryk.test.models.MultiTypeEnum.T1
 import maryk.test.models.MultiTypeEnum.T3
@@ -206,9 +205,9 @@ class InMemoryDataStoreChangeComplexTest {
                 keys[4].change(
                     Delete(
                         ComplexModel {
-                            mapIntMulti.at(1u) { atType(T3, Properties) { model { model::ref } } }
+                            mapIntMulti.at(1u) { atType(T3) { model { model::ref } } }
                         },
-                        ComplexModel { mapIntMulti.at(3u) { atType(T3, Properties) { model::ref } } }
+                        ComplexModel { mapIntMulti.at(3u) { atType(T3) { model::ref } } }
                     )
                 )
             )

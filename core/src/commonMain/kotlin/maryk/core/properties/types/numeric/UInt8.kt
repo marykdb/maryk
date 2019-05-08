@@ -5,6 +5,7 @@ import maryk.core.extensions.bytes.initByte
 import maryk.core.extensions.bytes.initByteByVar
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
+import maryk.core.properties.types.numeric.NumberType.UInt8Type
 import kotlin.random.Random
 import kotlin.random.nextUInt
 
@@ -13,7 +14,7 @@ object UInt8 : UnsignedNumberDescriptor<UByte>(
     size = UByte.SIZE_BYTES,
     MIN_VALUE = UByte.MIN_VALUE,
     MAX_VALUE = UByte.MAX_VALUE,
-    type = NumberType.UInt8
+    type = UInt8Type
 ) {
     override fun fromStorageByteReader(length: Int, reader: () -> Byte) = (initByte(reader) + Byte.MIN_VALUE).toUByte()
     override fun writeStorageBytes(value: UByte, writer: (byte: Byte) -> Unit) =

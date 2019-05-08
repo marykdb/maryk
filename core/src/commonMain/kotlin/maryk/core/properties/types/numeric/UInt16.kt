@@ -5,6 +5,7 @@ import maryk.core.extensions.bytes.initShort
 import maryk.core.extensions.bytes.initShortByVar
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
+import maryk.core.properties.types.numeric.NumberType.UInt16Type
 import kotlin.random.Random
 
 /** Object for 16 bit/2 byte unsigned integers */
@@ -12,7 +13,7 @@ object UInt16 : UnsignedNumberDescriptor<UShort>(
     size = 2,
     MIN_VALUE = UShort.MIN_VALUE,
     MAX_VALUE = UShort.MAX_VALUE,
-    type = NumberType.UInt16
+    type = UInt16Type
 ) {
     override fun fromStorageByteReader(length: Int, reader: () -> Byte) =
         (initShort(reader) + Short.MIN_VALUE).toUShort()

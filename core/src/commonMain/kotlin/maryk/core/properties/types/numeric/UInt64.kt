@@ -5,6 +5,7 @@ import maryk.core.extensions.bytes.initULong
 import maryk.core.extensions.bytes.initULongByVar
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
+import maryk.core.properties.types.numeric.NumberType.UInt64Type
 import kotlin.random.Random
 import kotlin.random.nextULong
 
@@ -13,7 +14,7 @@ object UInt64 : UnsignedNumberDescriptor<ULong>(
     size = ULong.SIZE_BYTES,
     MIN_VALUE = ULong.MIN_VALUE,
     MAX_VALUE = ULong.MAX_VALUE,
-    type = NumberType.UInt64
+    type = UInt64Type
 ) {
     override fun fromStorageByteReader(length: Int, reader: () -> Byte) = initULong(reader).toULong()
     override fun writeStorageBytes(value: ULong, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)

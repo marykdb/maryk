@@ -7,13 +7,14 @@ import maryk.core.extensions.bytes.initByte
 import maryk.core.extensions.bytes.initByteByVar
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
+import maryk.core.properties.types.numeric.NumberType.SInt8Type
 import maryk.core.protobuf.WireType.VAR_INT
 import kotlin.random.Random
 
 object SInt8 : NumberDescriptor<Byte>(
     size = 1,
     wireType = VAR_INT,
-    type = NumberType.SInt8
+    type = SInt8Type
 ) {
     override fun fromStorageByteReader(length: Int, reader: () -> Byte): Byte = initByte(reader)
     override fun writeStorageBytes(value: Byte, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)

@@ -26,7 +26,16 @@ import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.definitions.ValueModelDefinition
 import maryk.core.properties.types.numeric.Float32
 import maryk.core.properties.types.numeric.Float64
-import maryk.core.properties.types.numeric.NumberType
+import maryk.core.properties.types.numeric.NumberType.Float32Type
+import maryk.core.properties.types.numeric.NumberType.Float64Type
+import maryk.core.properties.types.numeric.NumberType.SInt16Type
+import maryk.core.properties.types.numeric.NumberType.SInt32Type
+import maryk.core.properties.types.numeric.NumberType.SInt64Type
+import maryk.core.properties.types.numeric.NumberType.SInt8Type
+import maryk.core.properties.types.numeric.NumberType.UInt16Type
+import maryk.core.properties.types.numeric.NumberType.UInt32Type
+import maryk.core.properties.types.numeric.NumberType.UInt64Type
+import maryk.core.properties.types.numeric.NumberType.UInt8Type
 import maryk.generator.kotlin.GenerationContext
 
 fun <P : AbstractPropertyDefinitions<*>> IsNamedDataModel<P>.generateProto3Schema(
@@ -98,16 +107,16 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(
         is DateDefinition -> "sint32"
         is DateTimeDefinition -> "int64"
         is NumberDefinition<*> -> when (this.type.type) {
-            NumberType.SInt8,
-            NumberType.SInt16,
-            NumberType.SInt32 -> "sint32"
-            NumberType.SInt64 -> "sint64"
-            NumberType.UInt8,
-            NumberType.UInt16,
-            NumberType.UInt32 -> "uint64"
-            NumberType.UInt64 -> "uint64"
-            NumberType.Float32 -> "float"
-            NumberType.Float64 -> "double"
+            SInt8Type,
+            SInt16Type,
+            SInt32Type -> "sint32"
+            SInt64Type -> "sint64"
+            UInt8Type,
+            UInt16Type,
+            UInt32Type -> "uint64"
+            UInt64Type -> "uint64"
+            Float32Type -> "float"
+            Float64Type -> "double"
         }
         is EnumDefinition<*> -> {
             if (!generationContext.enums.contains(this.enum)) {

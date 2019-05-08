@@ -22,7 +22,16 @@ import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.definitions.ValueModelDefinition
 import maryk.core.properties.enum.IndexedEnum
-import maryk.core.properties.types.numeric.NumberType
+import maryk.core.properties.types.numeric.NumberType.Float32Type
+import maryk.core.properties.types.numeric.NumberType.Float64Type
+import maryk.core.properties.types.numeric.NumberType.SInt16Type
+import maryk.core.properties.types.numeric.NumberType.SInt32Type
+import maryk.core.properties.types.numeric.NumberType.SInt64Type
+import maryk.core.properties.types.numeric.NumberType.SInt8Type
+import maryk.core.properties.types.numeric.NumberType.UInt16Type
+import maryk.core.properties.types.numeric.NumberType.UInt32Type
+import maryk.core.properties.types.numeric.NumberType.UInt64Type
+import maryk.core.properties.types.numeric.NumberType.UInt8Type
 
 /** Get the PropertyDefinitionKotlinDescriptor of the given property */
 internal fun <T : Any, D : IsTransportablePropertyDefinitionType<in T>, P : ObjectPropertyDefinitions<D>> D.getKotlinDescriptor(): PropertyDefinitionKotlinDescriptor<T, D, P> {
@@ -164,30 +173,30 @@ private val definitionNamesMap = mapOf(
         className = "NumberDefinition",
         kotlinTypeName = {
             when (it.type.type) {
-                NumberType.SInt8 -> "Byte"
-                NumberType.SInt16 -> "Short"
-                NumberType.SInt32 -> "Int"
-                NumberType.SInt64 -> "Long"
-                NumberType.UInt8 -> "UByte"
-                NumberType.UInt16 -> "UShort"
-                NumberType.UInt32 -> "UInt"
-                NumberType.UInt64 -> "ULong"
-                NumberType.Float32 -> "Float"
-                NumberType.Float64 -> "Double"
+                SInt8Type -> "Byte"
+                SInt16Type -> "Short"
+                SInt32Type -> "Int"
+                SInt64Type -> "Long"
+                UInt8Type -> "UByte"
+                UInt16Type -> "UShort"
+                UInt32Type -> "UInt"
+                UInt64Type -> "ULong"
+                Float32Type -> "Float"
+                Float64Type -> "Double"
             }
         },
         imports = {
             when (it.type.type) {
-                NumberType.UInt8 -> uInt8Imports
-                NumberType.UInt16 -> uInt16Imports
-                NumberType.UInt32 -> uInt32Imports
-                NumberType.UInt64 -> uInt64Imports
-                NumberType.SInt8 -> sInt8Imports
-                NumberType.SInt16 -> sInt16Imports
-                NumberType.SInt32 -> sInt32Imports
-                NumberType.SInt64 -> sInt64Imports
-                NumberType.Float32 -> float32Imports
-                NumberType.Float64 -> float64Imports
+                UInt8Type -> uInt8Imports
+                UInt16Type -> uInt16Imports
+                UInt32Type -> uInt32Imports
+                UInt64Type -> uInt64Imports
+                SInt8Type -> sInt8Imports
+                SInt16Type -> sInt16Imports
+                SInt32Type -> sInt32Imports
+                SInt64Type -> sInt64Imports
+                Float32Type -> float32Imports
+                Float64Type -> float64Imports
             }
         },
         definitionModel = NumberDefinition.Model

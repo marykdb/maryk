@@ -4,13 +4,14 @@ import maryk.core.extensions.bytes.initDouble
 import maryk.core.extensions.bytes.initDoubleFromTransport
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeTransportableBytes
+import maryk.core.properties.types.numeric.NumberType.Float64Type
 import maryk.core.protobuf.WireType.BIT_64
 import kotlin.random.Random
 
 object Float64 : NumberDescriptor<Double>(
     size = 8,
     wireType = BIT_64,
-    type = NumberType.Float64
+    type = Float64Type
 ) {
     override fun fromStorageByteReader(length: Int, reader: () -> Byte): Double = initDouble(reader)
     override fun writeStorageBytes(value: Double, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)

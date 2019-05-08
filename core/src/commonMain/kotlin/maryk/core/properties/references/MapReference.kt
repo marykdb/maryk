@@ -31,7 +31,7 @@ open class MapReference<K : Any, V : Any, CX : IsPropertyContext> internal const
             propertyDefinition.definition,
             this
         )
-        '$' -> MapKeyReference(
+        '#' -> MapKeyReference(
             propertyDefinition.keyDefinition.fromString(
                 name.substring(1)
             ),

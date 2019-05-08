@@ -114,11 +114,11 @@ internal class MapDefinitionTest {
         }
 
         with(e.exceptions[1] as OutOfRangeException) {
-            this.reference!!.completeName shouldBe "$1001"
+            this.reference!!.completeName shouldBe "#1001"
         }
 
         with(e.exceptions[2] as OutOfRangeException) {
-            this.reference!!.completeName shouldBe "$3000"
+            this.reference!!.completeName shouldBe "#3000"
         }
     }
 

@@ -25,7 +25,7 @@ open class SetReference<T : Any, CX : IsPropertyContext> internal constructor(
     HasEmbeddedPropertyReference<T>,
     CanContainSetItemReference<Set<T>, SetDefinitionWrapper<T, CX, *>, AbstractValues<*, *, *>> {
     override fun getEmbedded(name: String, context: IsPropertyContext?) = when (name[0]) {
-        '$' -> SetItemReference(
+        '#' -> SetItemReference(
             propertyDefinition.definition.valueDefinition.fromString(
                 name.substring(1)
             ),

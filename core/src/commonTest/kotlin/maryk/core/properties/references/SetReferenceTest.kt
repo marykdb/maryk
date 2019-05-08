@@ -46,7 +46,7 @@ class SetReferenceTest {
 
     @Test
     fun convertToStringAndBack() {
-        this.reference.completeName shouldBe "set.$2001-04-02"
+        this.reference.completeName shouldBe "set.#2001-04-02"
 
         val converted = TestMarykModel.getPropertyReferenceByName(this.reference.completeName)
         converted shouldBe this.reference

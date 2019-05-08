@@ -46,8 +46,13 @@ class MapKeyReferenceTest {
 
     @Test
     fun testStringConversion() {
-        keyReference.completeName shouldBe "map.\$12:00:01"
-
+        keyReference.completeName shouldBe "map.#12:00:01"
         TestMarykModel.getPropertyReferenceByName(keyReference.completeName) shouldBe keyReference
+    }
+
+    @Test
+    fun testStringConversionForSub() {
+        subKeyReference.completeName shouldBe "embeddedValues.marykModel.map.#15:22:55"
+        TestMarykModel.getPropertyReferenceByName(subKeyReference.completeName) shouldBe subKeyReference
     }
 }

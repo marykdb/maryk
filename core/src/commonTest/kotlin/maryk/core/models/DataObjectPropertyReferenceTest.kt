@@ -34,10 +34,10 @@ internal class DataObjectPropertyReferenceTest {
         TestMarykModel { embeddedValues { marykModel { list.refToAny() } } }.completeName shouldBe "embeddedValues.marykModel.list.*"
 
         TestMarykModel { setOfString::ref }.completeName shouldBe "setOfString"
-        TestMarykModel { setOfString refAt "v1" }.completeName shouldBe "setOfString.\$v1"
-        TestMarykModel { embeddedValues { marykModel { set refAt Date(2017, 12, 5) } } }.completeName shouldBe "embeddedValues.marykModel.set.\$2017-12-05"
+        TestMarykModel { setOfString refAt "v1" }.completeName shouldBe "setOfString.#v1"
+        TestMarykModel { embeddedValues { marykModel { set refAt Date(2017, 12, 5) } } }.completeName shouldBe "embeddedValues.marykModel.set.#2017-12-05"
 
-        TestMarykModel { embeddedValues { marykModel { map refToKey Time(12, 23) } } }.completeName shouldBe """embeddedValues.marykModel.map.$12:23"""
+        TestMarykModel { embeddedValues { marykModel { map refToKey Time(12, 23) } } }.completeName shouldBe """embeddedValues.marykModel.map.#12:23"""
         TestMarykModel { embeddedValues { marykModel { map refAt Time(12, 23) } } }.completeName shouldBe "embeddedValues.marykModel.map.@12:23"
 
         TestMarykModel { multi refAtType T1 }.completeName shouldBe "multi.*T1"
@@ -46,7 +46,7 @@ internal class DataObjectPropertyReferenceTest {
         TestMarykModel { multi.withType(T3) { value::ref } }.completeName shouldBe "multi.*T3.value"
         TestMarykModel { multi.withType(T3) { model { value::ref } } }.completeName shouldBe "multi.*T3.model.value"
 
-        ComplexModel { mapIntObject refToKey 2u }.completeName shouldBe "mapIntObject.$2"
+        ComplexModel { mapIntObject refToKey 2u }.completeName shouldBe "mapIntObject.#2"
         ComplexModel { mapIntObject refAt 2u }.completeName shouldBe "mapIntObject.@2"
         ComplexModel { mapIntObject.at(2u) { value::ref } }.completeName shouldBe "mapIntObject.@2.value"
         ComplexModel { mapIntObject.any { value::ref } }.completeName shouldBe "mapIntObject.*.value"
@@ -55,7 +55,7 @@ internal class DataObjectPropertyReferenceTest {
 
         ComplexModel { mapWithList.at("a") { refAt(23u) } }.completeName shouldBe "mapWithList.@a.@23"
 
-        ComplexModel { mapWithSet.at("b") { refAt("b3") } }.completeName shouldBe "mapWithSet.@b.\$b3"
+        ComplexModel { mapWithSet.at("b") { refAt("b3") } }.completeName shouldBe "mapWithSet.@b.#b3"
 
         ComplexModel { mapWithMap.at("b") { refAt("c") } }.completeName shouldBe "mapWithMap.@b.@c"
 
@@ -65,7 +65,7 @@ internal class DataObjectPropertyReferenceTest {
         ComplexModel { mapIntMulti.at(2u) { atType(T3) { model { value::ref } } } }.completeName shouldBe "mapIntMulti.@2.*T3.model.value"
 
         ComplexModel { mapIntMulti.at(2u) { atType(T4) { refAt(5u) } } }.completeName shouldBe "mapIntMulti.@2.*T4.@5"
-        ComplexModel { mapIntMulti.at(2u) { atType(T5) { refAt("value") } } }.completeName shouldBe "mapIntMulti.@2.*T5.\$value"
+        ComplexModel { mapIntMulti.at(2u) { atType(T5) { refAt("value") } } }.completeName shouldBe "mapIntMulti.@2.*T5.#value"
     }
 
     @Test

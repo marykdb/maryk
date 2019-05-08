@@ -68,8 +68,8 @@ internal class MapDefinitionWithMapTest {
 
         shouldBeOfType<ValidationUmbrellaException>(e.exceptions[0]).let { se ->
             shouldBeOfType<InvalidValueException>(se.exceptions[0]).reference!!.completeName shouldBe "@12.@40"
-            shouldBeOfType<OutOfRangeException>(se.exceptions[1]).reference!!.completeName shouldBe "@12.$1323"
-            shouldBeOfType<OutOfRangeException>(se.exceptions[2]).reference!!.completeName shouldBe "@12.$2938"
+            shouldBeOfType<OutOfRangeException>(se.exceptions[1]).reference!!.completeName shouldBe "@12.#1323"
+            shouldBeOfType<OutOfRangeException>(se.exceptions[2]).reference!!.completeName shouldBe "@12.#2938"
         }
 
         shouldBeOfType<ValidationUmbrellaException>(e.exceptions[1]).let { se2 ->

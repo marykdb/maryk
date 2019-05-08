@@ -35,7 +35,7 @@ data class VersionedChanges(
             ),
             getter = VersionedChanges::changes,
             toSerializable = { TypedValue(it.changeType, it) },
-            fromSerializable = { it.value as IsChange }
+            fromSerializable = { it.value }
         )
     }
 

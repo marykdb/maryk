@@ -198,10 +198,10 @@ private data class MultiTypeDescriptorPropertyDefinitionWrapper internal constru
     override val fromSerializable: ((List<MultiTypeDescriptor>?) -> List<MultiTypeDescriptor>?)? = null,
     override val shouldSerialize: ((Any) -> Boolean)? = null,
     override val capturer: ((MultiTypeDefinitionContext, List<MultiTypeDescriptor>) -> Unit)? = null,
-    override val getter: (MultiTypeDefinition<*, ContainsDefinitionsContext>) -> List<MultiTypeDescriptor>?
+    override val getter: (MultiTypeDefinition<*, *, ContainsDefinitionsContext>) -> List<MultiTypeDescriptor>?
 ) :
     IsSerializablePropertyDefinition<List<MultiTypeDescriptor>, MultiTypeDefinitionContext> by definition,
-    IsPropertyDefinitionWrapper<List<MultiTypeDescriptor>, List<MultiTypeDescriptor>, MultiTypeDefinitionContext, MultiTypeDefinition<*, ContainsDefinitionsContext>> {
+    IsPropertyDefinitionWrapper<List<MultiTypeDescriptor>, List<MultiTypeDescriptor>, MultiTypeDefinitionContext, MultiTypeDefinition<*, *, ContainsDefinitionsContext>> {
     override val graphType = PropRef
 
     override fun ref(parentRef: AnyPropertyReference?) =
@@ -212,7 +212,7 @@ private data class MultiTypeDescriptorPropertyDefinitionWrapper internal constru
  * Add a descriptor of multi types to a MultiTypeDefinition ObjectPropertyDefinitions
  * Set [index] and [name] to append it to model
  */
-internal fun ObjectPropertyDefinitions<MultiTypeDefinition<*, *>>.addDescriptorPropertyWrapperWrapper(
+internal fun ObjectPropertyDefinitions<MultiTypeDefinition<*, *, *>>.addDescriptorPropertyWrapperWrapper(
     index: UInt,
     name: String
 ) {
@@ -242,7 +242,7 @@ internal fun ObjectPropertyDefinitions<MultiTypeDefinition<*, *>>.addDescriptorP
         }
     ).apply {
         @Suppress("UNCHECKED_CAST")
-        addSingle(this as IsPropertyDefinitionWrapper<out Any, *, *, MultiTypeDefinition<*, *>>)
+        addSingle(this as IsPropertyDefinitionWrapper<out Any, *, *, MultiTypeDefinition<*, *, *>>)
     }
 }
 

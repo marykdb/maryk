@@ -35,7 +35,7 @@ sealed class StorageTypeEnum<out T : IsPropertyDefinition<*>>(val referenceType:
     object ListSize : StorageTypeEnum<IsListDefinition<Any, IsPropertyContext>>(LIST)
     object SetSize : StorageTypeEnum<IsSetDefinition<Any, IsPropertyContext>>(SET)
     object MapSize : StorageTypeEnum<IsMapDefinition<Any, Any, IsPropertyContext>>(MAP)
-    object TypeValue : StorageTypeEnum<IsMultiTypeDefinition<TypeEnum<Any>, IsPropertyContext>>(TYPE)
+    object TypeValue : StorageTypeEnum<IsMultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>>(TYPE)
     object Embed : StorageTypeEnum<IsEmbeddedValuesDefinition<*, *, *>>(EMBED)
 
     @Suppress("UNCHECKED_CAST")
@@ -157,7 +157,7 @@ internal fun <T : IsPropertyDefinition<*>> writeValue(
             )
         }
         is TypedValue<*, *> -> {
-            if (definition !is IsMultiTypeDefinition<*, *>) {
+            if (definition !is IsMultiTypeDefinition<*, *, *>) {
                 throw TypeException("Definition should be a MultiTypeDefinition for a TypedValue")
             }
 

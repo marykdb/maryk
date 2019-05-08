@@ -15,14 +15,14 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.values.Values
 
 /** Specific extension to support fetching deeper references on multi types by [type] and explicit [properties] */
-fun <E : TypeEnum<Any>, P : PropertyDefinitions, T : Any, R : IsPropertyReference<T, IsPropertyDefinitionWrapper<T, *, *, *>, *>> IsSubDefinition<TypedValue<E, *>, *>.atType(
+fun <E : TypeEnum<I>, I: Any, P : PropertyDefinitions, T : Any, R : IsPropertyReference<T, IsPropertyDefinitionWrapper<T, *, *, *>, *>> IsSubDefinition<TypedValue<E, *>, *>.atType(
     type: E,
     @Suppress("UNUSED_PARAMETER") properties: P, // So it is not needed to pass in types
     referenceGetter: P.() -> (AnyOutPropertyReference?) -> R
 ): (AnyOutPropertyReference?) -> R =
     @Suppress("UNCHECKED_CAST")
     {
-        val multiTypeDef = this as IsMultiTypeDefinition<E, IsPropertyContext>
+        val multiTypeDef = this as IsMultiTypeDefinition<E, I, IsPropertyContext>
 
         val parent = if (this is IsPropertyDefinitionWrapper<*, *, *, *>) {
             this.ref(it)
@@ -36,13 +36,13 @@ fun <E : TypeEnum<Any>, P : PropertyDefinitions, T : Any, R : IsPropertyReferenc
     }
 
 /** Specific extension to support fetching deeper references on multi types by [type] */
-fun <E: TypeEnum<Any>, P : PropertyDefinitions, T : Any, R : IsPropertyReference<T, IsPropertyDefinitionWrapper<T, *, *, *>, *>> IsSubDefinition<TypedValue<E, Any>, *>.atType(
+fun <E: TypeEnum<I>, I: Any, P : PropertyDefinitions, T : Any, R : IsPropertyReference<T, IsPropertyDefinitionWrapper<T, *, *, *>, *>> IsSubDefinition<TypedValue<E, Any>, *>.atType(
     type: TypeEnum<Values<*, P>>,
     referenceGetter: P.() -> (AnyOutPropertyReference?) -> R
 ): (AnyOutPropertyReference?) -> R =
     @Suppress("UNCHECKED_CAST")
     {
-        val multiTypeDef = this as IsMultiTypeDefinition<E, IsPropertyContext>
+        val multiTypeDef = this as IsMultiTypeDefinition<E, I, IsPropertyContext>
 
         val parent = if (this is IsPropertyDefinitionWrapper<*, *, *, *>) {
             this.ref(it)

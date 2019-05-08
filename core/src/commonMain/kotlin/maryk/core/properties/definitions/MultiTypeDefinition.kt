@@ -21,7 +21,6 @@ import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IsCoreEnum
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.exceptions.AlreadySetException
-import maryk.core.properties.references.AnyOutPrecisePropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ReferenceType.TYPE
@@ -51,15 +50,15 @@ import maryk.yaml.YamlWriter
  * The type mapping is defined in the given [definitionMap] mapped by enum [E].
  * Receives context of [CX]
  */
-data class MultiTypeDefinition<E : TypeEnum<Any>, in CX : IsPropertyContext> internal constructor(
+data class MultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyContext> internal constructor(
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val typeEnum: IndexedEnumDefinition<E>,
     override val typeIsFinal: Boolean = true,
     override val definitionMap: Map<E, IsSubDefinition<out Any, CX>>,
-    override val default: TypedValue<E, *>? = null,
+    override val default: TypedValue<E, T>? = null,
     internal val keepAsValues: Boolean = false
-) : IsMultiTypeDefinition<E, CX>, IsUsableInMultiType<TypedValue<E, Any>, CX> {
+) : IsMultiTypeDefinition<E, T, CX>, IsUsableInMultiType<TypedValue<E, T>, CX> {
     override val propertyDefinitionType = PropertyDefinitionType.MultiType
     override val wireType = LENGTH_DELIMITED
 
@@ -71,26 +70,25 @@ data class MultiTypeDefinition<E : TypeEnum<Any>, in CX : IsPropertyContext> int
         }
     }
 
-    @Suppress("UNCHECKED_CAST")
     constructor(
         required: Boolean = true,
         final: Boolean = false,
         typeEnum: IndexedEnumDefinition<E>,
         typeIsFinal: Boolean = true,
         definitionMap: Map<E, IsUsableInMultiType<out Any, CX>>,
-        default: TypedValue<E, *>? = null
+        default: TypedValue<E, T>? = null
     ) : this(
         required = required,
         final = final,
         typeEnum = typeEnum,
         typeIsFinal = typeIsFinal,
-        definitionMap = definitionMap as Map<E, IsSubDefinition<Any, CX>>,
+        definitionMap = definitionMap as Map<E, IsSubDefinition<out Any, CX>>,
         default = default
     )
 
     override fun definition(index: UInt) = definitionMapByIndex[index]
 
-    override fun asString(value: TypedValue<E, Any>, context: CX?): String {
+    override fun asString(value: TypedValue<E, T>, context: CX?): String {
         var string = ""
         this.writeJsonValue(value, JsonWriter {
             string += it
@@ -98,15 +96,15 @@ data class MultiTypeDefinition<E : TypeEnum<Any>, in CX : IsPropertyContext> int
         return string
     }
 
-    override fun fromString(string: String, context: CX?): TypedValue<E, Any> {
+    override fun fromString(string: String, context: CX?): TypedValue<E, T> {
         val stringIterator = string.iterator()
         return this.readJson(JsonReader { stringIterator.nextChar() }, context)
     }
 
     override fun validateWithRef(
-        previousValue: TypedValue<E, Any>?,
-        newValue: TypedValue<E, Any>?,
-        refGetter: () -> IsPropertyReference<TypedValue<E, Any>, IsPropertyDefinition<TypedValue<E, Any>>, *>?
+        previousValue: TypedValue<E, T>?,
+        newValue: TypedValue<E, T>?,
+        refGetter: () -> IsPropertyReference<TypedValue<E, T>, IsPropertyDefinition<TypedValue<E, T>>, *>?
     ) {
         super<IsMultiTypeDefinition>.validateWithRef(previousValue, newValue, refGetter)
         if (newValue != null) {
@@ -121,22 +119,22 @@ data class MultiTypeDefinition<E : TypeEnum<Any>, in CX : IsPropertyContext> int
                 }
             }
 
-            @Suppress("UNCHECKED_CAST")
-            val definition = this.definitionMapByIndex[newValue.type.index] as IsSubDefinition<Any, CX>?
+            val definition = this.definition(newValue.type)
                 ?: throw DefNotFoundException("No def found for index ${newValue.type}")
 
             val prevValue = previousValue?.let {
                 // Convert prev value to a basic value for Unit types
                 // This is done so type changes can be checked in storage situations where actual value is not yet read
                 if (it.value == Unit) {
-                    val value: Any = when (definition) {
+                    @Suppress("UNCHECKED_CAST")
+                    val value: T = when (definition) {
                         is IsEmbeddedValuesDefinition<*, *, *> -> (definition.dataModel as IsTypedValuesDataModel<*, *>).values(
                             null
-                        ) { EmptyValueItems }
-                        is IsListDefinition<*, *> -> emptyList<Any>()
-                        is IsSetDefinition<*, *> -> emptySet<Any>()
-                        is IsMapDefinition<*, *, *> -> emptyMap<Any, Any>()
-                        else -> throw TypeException("Not supported complex multitype")
+                        ) { EmptyValueItems } as T
+                        is IsListDefinition<*, *> -> emptyList<Any>() as T
+                        is IsSetDefinition<*, *> -> emptySet<Any>() as T
+                        is IsMapDefinition<*, *, *> -> emptyMap<Any, Any>() as T
+                        else -> throw TypeException("Not supported complex multi type")
                     }
                     TypedValue(it.type, value)
                 } else previousValue
@@ -147,7 +145,7 @@ data class MultiTypeDefinition<E : TypeEnum<Any>, in CX : IsPropertyContext> int
                 newValue.value
             ) {
                 @Suppress("UNCHECKED_CAST")
-                refGetter() as AnyOutPrecisePropertyReference?
+                refGetter() as IsPropertyReference<T, IsPropertyDefinition<T>, *>?
             }
         }
     }
@@ -156,9 +154,8 @@ data class MultiTypeDefinition<E : TypeEnum<Any>, in CX : IsPropertyContext> int
 
     override fun getEmbeddedByIndex(index: UInt): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
-    override fun writeJsonValue(value: TypedValue<E, Any>, writer: IsJsonLikeWriter, context: CX?) {
-        @Suppress("UNCHECKED_CAST")
-        val definition = this.definitionMapByIndex[value.type.index] as IsSubDefinition<Any, CX>?
+    override fun writeJsonValue(value: TypedValue<E, T>, writer: IsJsonLikeWriter, context: CX?) {
+        val definition = this.definition(value.type)
             ?: throw DefNotFoundException("No def found for index ${value.type.name}")
 
         if (writer is YamlWriter) {
@@ -181,7 +178,7 @@ data class MultiTypeDefinition<E : TypeEnum<Any>, in CX : IsPropertyContext> int
         }
     }
 
-    override fun readJson(reader: IsJsonLikeReader, context: CX?): TypedValue<E, Any> {
+    override fun readJson(reader: IsJsonLikeReader, context: CX?): TypedValue<E, T> {
         if (reader is IsYamlReader) {
             val token = reader.currentToken as? TokenWithType
                 ?: throw ParseException("Expected an Token with YAML type tag which describes property type")
@@ -198,7 +195,7 @@ data class MultiTypeDefinition<E : TypeEnum<Any>, in CX : IsPropertyContext> int
                 else -> throw ParseException("Unknown tag type for $tokenType")
             }
 
-            val definition = this.definitionMapByIndex[type.index]
+            val definition = this.definition(type)
                 ?: throw DefNotFoundException("No definition for type $type")
 
             return TypedValue(type, definition.readJson(reader, context))
@@ -209,7 +206,7 @@ data class MultiTypeDefinition<E : TypeEnum<Any>, in CX : IsPropertyContext> int
                 }
                 val type: E = this.typeEnum.resolve(it.value as String)
                     ?: throw ParseException("Invalid multi type name ${it.value}")
-                val definition = this.definitionMapByIndex[type.index]
+                val definition = this.definition(type)
                     ?: throw DefNotFoundException("Unknown multi type index ${type.index}")
 
                 reader.nextToken()
@@ -225,10 +222,10 @@ data class MultiTypeDefinition<E : TypeEnum<Any>, in CX : IsPropertyContext> int
         length: Int,
         reader: () -> Byte,
         context: CX?,
-        earlierValue: TypedValue<E, Any>?
-    ): TypedValue<E, Any> {
+        earlierValue: TypedValue<E, T>?
+    ): TypedValue<E, T> {
         var lengthToGo = length
-        var value: Any? = earlierValue?.value
+        var value: T? = earlierValue?.value
 
         val wrappedReader = {
             lengthToGo--
@@ -249,15 +246,16 @@ data class MultiTypeDefinition<E : TypeEnum<Any>, in CX : IsPropertyContext> int
                 else -> throw ParseException("If multiple type values encoded they should be all of the same type")
             }
 
-            @Suppress("UNCHECKED_CAST")
-            val def = this.definitionMapByIndex[type.index] as IsSubDefinition<Any, CX>? ?: throw ParseException("Unknown multi type ${key.tag}")
+            val def = this.definition(type)
+                ?: throw ParseException("Unknown multi type ${key.tag}")
 
             value = if (def is IsEmbeddedObjectDefinition<*, *, *, CX, *> && keepAsValues) {
+                @Suppress("UNCHECKED_CAST")
                 def.readTransportBytesToValues(
                     ProtoBuf.getLength(key.wireType, wrappedReader),
                     wrappedReader,
                     context
-                )
+                ) as T
             } else {
                 def.readTransportBytes(
                     ProtoBuf.getLength(key.wireType, wrappedReader),
@@ -274,7 +272,7 @@ data class MultiTypeDefinition<E : TypeEnum<Any>, in CX : IsPropertyContext> int
         )
     }
 
-    override fun calculateTransportByteLength(value: TypedValue<E, Any>, cacher: WriteCacheWriter, context: CX?): Int {
+    override fun calculateTransportByteLength(value: TypedValue<E, T>, cacher: WriteCacheWriter, context: CX?): Int {
         var totalByteLength = 0
 
         if (context is RequestContext) {
@@ -284,8 +282,7 @@ data class MultiTypeDefinition<E : TypeEnum<Any>, in CX : IsPropertyContext> int
         }
 
         // stored as value below an index of the type id
-        @Suppress("UNCHECKED_CAST")
-        val def = this.definitionMapByIndex[value.type.index] as IsSubDefinition<Any, CX>?
+        val def = this.definition(value.type)
             ?: throw DefNotFoundException("Definition ${value.type} not found on Multi type")
         totalByteLength += def.calculateTransportByteLengthWithKey(
             value.type.index,
@@ -302,20 +299,19 @@ data class MultiTypeDefinition<E : TypeEnum<Any>, in CX : IsPropertyContext> int
     }
 
     override fun writeTransportBytes(
-        value: TypedValue<E, Any>,
+        value: TypedValue<E, T>,
         cacheGetter: WriteCacheReader,
         writer: (byte: Byte) -> Unit,
         context: CX?
     ) {
-        @Suppress("UNCHECKED_CAST")
-        val def = this.definitionMapByIndex[value.type.index] as IsSubDefinition<Any, CX>?
+        val def = this.definition(value.type)
             ?: throw DefNotFoundException("Definition ${value.type} not found on Multi type")
         def.writeTransportBytesWithKey(value.type.index, value.value, cacheGetter, writer, context)
     }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is MultiTypeDefinition<*, *>) return false
+        if (other !is MultiTypeDefinition<*, *, *>) return false
 
         if (required != other.required) return false
         if (final != other.final) return false
@@ -354,7 +350,7 @@ data class MultiTypeDefinition<E : TypeEnum<Any>, in CX : IsPropertyContext> int
         return if (typeIndex == 0u) {
             @Suppress("UNCHECKED_CAST")
             this.typeRef(
-                parentReference as CanHaveComplexChildReference<TypedValue<E, *>, IsMultiTypeDefinition<E, *>, *, *>?
+                parentReference as CanHaveComplexChildReference<TypedValue<E, T>, IsMultiTypeDefinition<E, T, *>, *, *>?
             ) as IsPropertyReference<Any, *, *>
         } else {
             val type = this.typeEnum.resolve(typeIndex) ?: throw UnexpectedValueException("Type $typeIndex is not known")
@@ -373,7 +369,7 @@ data class MultiTypeDefinition<E : TypeEnum<Any>, in CX : IsPropertyContext> int
         return if (typeIndex == 0u) {
             @Suppress("UNCHECKED_CAST")
             this.typeRef(
-                parentReference as CanHaveComplexChildReference<TypedValue<E, *>, IsMultiTypeDefinition<E, *>, *, *>?
+                parentReference as CanHaveComplexChildReference<TypedValue<E, T>, IsMultiTypeDefinition<E, T, *>, *, *>?
             ) as IsPropertyReference<Any, *, *>
         } else {
             val type = this.typeEnum.resolve(typeIndex)
@@ -392,7 +388,7 @@ data class MultiTypeDefinition<E : TypeEnum<Any>, in CX : IsPropertyContext> int
                 @Suppress("UNCHECKED_CAST")
                 TypeReference(
                     this,
-                    parentReference as CanHaveComplexChildReference<TypedValue<E, *>, IsMultiTypeDefinition<E, *>, *, *>?
+                    parentReference as CanHaveComplexChildReference<TypedValue<E, T>, IsMultiTypeDefinition<E, T, *>, *, *>?
                 ) as IsPropertyReference<Any, *, *>
             } else {
                 val type = this.typeEnum.resolve(name.substring(1))
@@ -404,26 +400,26 @@ data class MultiTypeDefinition<E : TypeEnum<Any>, in CX : IsPropertyContext> int
     }
 
     object Model :
-        ContextualDataModel<MultiTypeDefinition<*, *>, ObjectPropertyDefinitions<MultiTypeDefinition<*, *>>, ContainsDefinitionsContext, MultiTypeDefinitionContext>(
+        ContextualDataModel<MultiTypeDefinition<*, *, *>, ObjectPropertyDefinitions<MultiTypeDefinition<*, *, *>>, ContainsDefinitionsContext, MultiTypeDefinitionContext>(
             contextTransformer = { MultiTypeDefinitionContext(it) },
-            properties = object : ObjectPropertyDefinitions<MultiTypeDefinition<*, *>>() {
+            properties = object : ObjectPropertyDefinitions<MultiTypeDefinition<*, *, *>>() {
                 init {
-                    IsPropertyDefinition.addRequired(this, MultiTypeDefinition<*, *>::required)
-                    IsPropertyDefinition.addFinal(this, MultiTypeDefinition<*, *>::final)
+                    IsPropertyDefinition.addRequired(this, MultiTypeDefinition<*, *, *>::required)
+                    IsPropertyDefinition.addFinal(this, MultiTypeDefinition<*, *, *>::final)
 
                     add(3u, "typeEnum",
                         StringDefinition(),
-                        getter = MultiTypeDefinition<*, *>::typeEnum,
-                        capturer = { context: MultiTypeDefinitionContext, value ->
+                        getter = MultiTypeDefinition<*, *, *>::typeEnum,
+                        capturer = { context: MultiTypeDefinitionContext, value: String ->
                             context.typeEnumName = value
                         },
-                        toSerializable = { value, _ ->
+                        toSerializable = { value: IndexedEnumDefinition<out TypeEnum<Any>>?, _ ->
                             value?.name
                         },
                         fromSerializable = { null }
                     )
 
-                    add(4u, "typeIsFinal", BooleanDefinition(default = true), MultiTypeDefinition<*, *>::typeIsFinal)
+                    add(4u, "typeIsFinal", BooleanDefinition(default = true), MultiTypeDefinition<*, *, *>::typeIsFinal)
 
                     this.addDescriptorPropertyWrapperWrapper(5u, "definitionMap")
 
@@ -437,12 +433,12 @@ data class MultiTypeDefinition<E : TypeEnum<Any>, in CX : IsPropertyContext> int
                                 context?.multiTypeDefinition ?: throw ContextNotFoundException()
                             }
                         ),
-                        MultiTypeDefinition<*, *>::default
+                        MultiTypeDefinition<*, *, *>::default
                     )
                 }
             }
         ) {
-        override fun invoke(values: SimpleObjectValues<MultiTypeDefinition<*, *>>): MultiTypeDefinition<TypeEnum<Any>, ContainsDefinitionsContext> {
+        override fun invoke(values: SimpleObjectValues<MultiTypeDefinition<*, *, *>>): MultiTypeDefinition<TypeEnum<Any>, Any, ContainsDefinitionsContext> {
             val definitionMap = convertMultiTypeDescriptors(
                 values(5u)
             )
@@ -473,7 +469,7 @@ class MultiTypeDefinitionContext(
 
     var definitionMap: Map<TypeEnum<Any>, IsSubDefinition<out Any, ContainsDefinitionsContext>>? = null
 
-    private var _multiTypeDefinition: Lazy<MultiTypeDefinition<TypeEnum<Any>, ContainsDefinitionsContext>> = lazy {
+    private var _multiTypeDefinition: Lazy<MultiTypeDefinition<TypeEnum<Any>, Any, ContainsDefinitionsContext>> = lazy {
         val typeOptions = definitionMap?.keys?.toTypedArray() ?: throw ContextNotFoundException()
 
         val typeEnum = IndexedEnumDefinition(
@@ -487,5 +483,5 @@ class MultiTypeDefinitionContext(
         )
     }
 
-    val multiTypeDefinition: MultiTypeDefinition<TypeEnum<Any>, ContainsDefinitionsContext> get() = this._multiTypeDefinition.value
+    val multiTypeDefinition: MultiTypeDefinition<TypeEnum<Any>, Any, ContainsDefinitionsContext> get() = this._multiTypeDefinition.value
 }

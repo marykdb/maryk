@@ -49,7 +49,7 @@ data class DataObjectChange<out DM : IsRootDataModel<*>> internal constructor(
             ),
             getter = DataObjectChange<*>::changes,
             toSerializable = { TypedValue(it.changeType, it) },
-            fromSerializable = { it.value as IsChange }
+            fromSerializable = { it.value }
         )
 
         val lastVersion = add(

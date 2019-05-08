@@ -15,10 +15,18 @@ import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.AlreadyExists
 import maryk.core.query.responses.statuses.AuthFail
 import maryk.core.query.responses.statuses.DoesNotExist
+import maryk.core.query.responses.statuses.IsResponseStatus
 import maryk.core.query.responses.statuses.RequestFail
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.StatusType
-import maryk.core.query.responses.statuses.StatusType.*
+import maryk.core.query.responses.statuses.StatusType.ADD_SUCCESS
+import maryk.core.query.responses.statuses.StatusType.ALREADY_EXISTS
+import maryk.core.query.responses.statuses.StatusType.AUTH_FAIL
+import maryk.core.query.responses.statuses.StatusType.DOES_NOT_EXIST
+import maryk.core.query.responses.statuses.StatusType.REQUEST_FAIL
+import maryk.core.query.responses.statuses.StatusType.SERVER_FAIL
+import maryk.core.query.responses.statuses.StatusType.SUCCESS
+import maryk.core.query.responses.statuses.StatusType.VALIDATION_FAIL
 import maryk.core.query.responses.statuses.Success
 import maryk.core.query.responses.statuses.ValidationFail
 
@@ -56,7 +64,7 @@ interface IsDataModelResponse<out DM : IsRootDataModel<*>> : IsResponse {
 
         internal fun <DM : Any> addStatuses(
             definitions: ObjectPropertyDefinitions<DM>,
-            getter: (DM) -> List<TypedValue<StatusType, *>>?
+            getter: (DM) -> List<TypedValue<StatusType, IsResponseStatus>>?
         ) {
             definitions.add(2u, "statuses", listOfStatuses, getter)
         }

@@ -1,6 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
+import maryk.core.exceptions.RequestException
 import maryk.core.models.ContextualDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -83,8 +84,9 @@ data class SetDefinition<T : Any, CX : IsPropertyContext> internal constructor(
                         ),
                         getter = SetDefinition<*, *>::valueDefinition,
                         toSerializable = { value, _ ->
-                            val defType = value!! as IsTransportablePropertyDefinitionType<*>
-                            TypedValue(defType.propertyDefinitionType, value)
+                            val defType = value as? IsTransportablePropertyDefinitionType<*>
+                                ?: throw RequestException("$value is not transportable")
+                            TypedValue(defType.propertyDefinitionType, defType)
                         },
                         fromSerializable = {
                             @Suppress("UNCHECKED_CAST")

@@ -30,7 +30,7 @@ data class Not(
             ),
             getter = Not::filters,
             toSerializable = { TypedValue(it.filterType, it) },
-            fromSerializable = { it.value as IsFilter }
+            fromSerializable = { it.value }
         )
     }
 

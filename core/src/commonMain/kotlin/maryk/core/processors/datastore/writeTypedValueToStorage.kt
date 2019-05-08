@@ -17,7 +17,7 @@ fun <T : IsPropertyDefinition<*>> writeTypedValueToStorage(
     definition: T,
     typedValue: TypedValue<*, *>
 ) {
-    val multiDefinition = definition as IsMultiTypeDefinition<*, *>
+    val multiDefinition = definition as IsMultiTypeDefinition<*, *, *>
     val valueDefinition = multiDefinition.definitionMap[typedValue.type] as IsPropertyDefinition<Any>
 
     if (valueDefinition is IsSimpleValueDefinition<*, *>) {

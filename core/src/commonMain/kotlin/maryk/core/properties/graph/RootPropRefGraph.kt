@@ -10,7 +10,6 @@ import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.graph.PropRefGraphType.Graph
 import maryk.core.properties.graph.PropRefGraphType.PropRef
-import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.ContainsDataModelContext
 import maryk.core.values.ObjectValues
@@ -87,7 +86,7 @@ data class RootPropRefGraph<P : IsPropertyDefinitions> internal constructor(
 
             var currentToken = reader.nextToken()
 
-            val propertiesList = mutableListOf<TypedValue<PropRefGraphType, *>>()
+            val propertiesList = mutableListOf<TypedValue<PropRefGraphType, IsTransportablePropRefGraphNode>>()
 
             while (currentToken != EndArray && currentToken !is Stopped) {
                 when (currentToken) {
@@ -101,13 +100,13 @@ data class RootPropRefGraph<P : IsPropertyDefinitions> internal constructor(
                     }
                     is Value<*> -> {
                         val multiTypeDefinition =
-                            Properties.properties.valueDefinition as MultiTypeDefinition<PropRefGraphType, GraphContext>
+                            Properties.properties.valueDefinition as MultiTypeDefinition<PropRefGraphType, IsTransportablePropRefGraphNode, GraphContext>
 
                         propertiesList.add(
                             TypedValue(
                                 PropRef,
                                 multiTypeDefinition.definitionMap.getValue(PropRef)
-                                    .readJson(reader, context) as AnyPropertyReference
+                                    .readJson(reader, context) as IsTransportablePropRefGraphNode
                             )
                         )
                     }

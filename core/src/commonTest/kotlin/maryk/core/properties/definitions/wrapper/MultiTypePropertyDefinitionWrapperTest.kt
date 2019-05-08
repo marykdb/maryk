@@ -20,7 +20,7 @@ class MultiTypePropertyDefinitionWrapperTest {
     private val def = MultiTypeDefinitionWrapper(
         index = 1u,
         name = "wrapper",
-        definition = MultiTypeDefinition<MarykTypeEnum<*>, IsPropertyContext>(
+        definition = MultiTypeDefinition<MarykTypeEnum<*>, Any, IsPropertyContext>(
             typeEnum = MarykTypeEnum,
             definitionMap = mapOf(
                 O1 to StringDefinition(),

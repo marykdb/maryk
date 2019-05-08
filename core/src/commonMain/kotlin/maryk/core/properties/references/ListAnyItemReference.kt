@@ -33,7 +33,7 @@ class ListAnyItemReference<T : Any, CX : IsPropertyContext> internal constructor
         when (val valueDefinition = this.propertyDefinition.valueDefinition) {
             is IsEmbeddedDefinition<*, *> ->
                 valueDefinition.resolveReferenceByName(name, this)
-            is MultiTypeDefinition<*, *> -> {
+            is MultiTypeDefinition<*, *, *> -> {
                 valueDefinition.resolveReferenceByName(name, this)
             }
             else -> throw DefNotFoundException("ListItem can not contain embedded name references ($name)")
@@ -44,7 +44,7 @@ class ListAnyItemReference<T : Any, CX : IsPropertyContext> internal constructor
             is IsEmbeddedDefinition<*, *> -> {
                 valueDefinition.resolveReference(reader, this)
             }
-            is MultiTypeDefinition<*, *> -> {
+            is MultiTypeDefinition<*, *, *> -> {
                 valueDefinition.resolveReference(reader, this)
             }
             else -> throw DefNotFoundException("ListItem can not contain embedded index references")
@@ -61,7 +61,7 @@ class ListAnyItemReference<T : Any, CX : IsPropertyContext> internal constructor
             is IsEmbeddedObjectDefinition<*, *, *, *, *> -> {
                 this.propertyDefinition.resolveReferenceFromStorage(reader, this, context, isDoneReading)
             }
-            is MultiTypeDefinition<*, *> -> {
+            is MultiTypeDefinition<*, *, *> -> {
                 this.propertyDefinition.resolveReferenceFromStorage(reader, this)
             }
             else -> throw DefNotFoundException("ListItem can not contain embedded index references")

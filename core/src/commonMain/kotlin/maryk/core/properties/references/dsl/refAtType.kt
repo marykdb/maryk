@@ -11,12 +11,12 @@ import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.types.TypedValue
 
 /** Specific extension to support fetching ref on Typed values by [type] */
-fun <E : TypeEnum<Any>> IsSubDefinition<TypedValue<E, *>, *>.refAtType(
+fun <E : TypeEnum<I>, I: Any> IsSubDefinition<TypedValue<E, I>, *>.refAtType(
     type: E
-): (AnyOutPropertyReference?) -> TypedValueReference<E, IsPropertyContext> =
+): (AnyOutPropertyReference?) -> TypedValueReference<E, I, IsPropertyContext> =
     {
         @Suppress("UNCHECKED_CAST")
-        val multiTypeDef = this as IsMultiTypeDefinition<E, IsPropertyContext>
+        val multiTypeDef = this as IsMultiTypeDefinition<E, I, IsPropertyContext>
 
         val parent = if (this is IsPropertyDefinitionWrapper<*, *, *, *>) {
             this.ref(it)

@@ -60,7 +60,7 @@ internal class TypeReferenceTest {
 
         val keyDef = MarykModel.keyDefinition
 
-        val specificDef = shouldBeOfType<TypeReference<MarykTypeEnum<*>, *>>(keyDef)
+        val specificDef = shouldBeOfType<TypeReference<MarykTypeEnum<*>, *, *>>(keyDef)
         specificDef shouldBe multi.typeRef()
 
         specificDef.getValue(obj) shouldBe O2

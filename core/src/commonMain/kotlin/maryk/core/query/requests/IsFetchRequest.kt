@@ -48,7 +48,7 @@ interface IsFetchRequest<DM : IsRootDataModel<P>, P : PropertyDefinitions, RP : 
                     }
                 },
                 fromSerializable = { typedValue ->
-                    typedValue?.value as IsFilter?
+                    typedValue?.value
                 },
                 getter = getter
             )

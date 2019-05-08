@@ -117,8 +117,8 @@ internal val mapOfPropertyDefWrappers = mapOf(
         MultiTypeDefinitionWrapper(
             index,
             name,
-            definition as IsMultiTypeDefinition<*, IsPropertyContext>,
-            getter as (Any) -> TypedValue<*, Any>?
+            definition as IsMultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>,
+            getter as (Any) -> TypedValue<TypeEnum<Any>, Any>?
         )
     },
     PropertyDefinitionType.Number to createFixedBytesWrapper,

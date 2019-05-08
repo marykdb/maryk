@@ -10,18 +10,22 @@ import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.types.TypedValue
 
 /** Defines a multi type definition */
-interface IsMultiTypeDefinition<E : TypeEnum<Any>, in CX : IsPropertyContext> :
-    IsValueDefinition<TypedValue<E, Any>, CX>,
-    IsSerializablePropertyDefinition<TypedValue<E, Any>, CX>,
-    IsTransportablePropertyDefinitionType<TypedValue<E, Any>>,
-    HasDefaultValueDefinition<TypedValue<E, Any>>,
-    IsUsableInMapValue<TypedValue<E, Any>, CX> {
+interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyContext> :
+    IsValueDefinition<TypedValue<E, T>, CX>,
+    IsSerializablePropertyDefinition<TypedValue<E, T>, CX>,
+    IsTransportablePropertyDefinitionType<TypedValue<E, T>>,
+    HasDefaultValueDefinition<TypedValue<E, T>>,
+    IsUsableInMapValue<TypedValue<E, T>, CX> {
     val typeIsFinal: Boolean
     val typeEnum: IndexedEnumDefinition<E>
     val definitionMap: Map<E, IsSubDefinition<out Any, CX>>
 
     /** Get definition by [index] */
     fun definition(index: UInt): IsSubDefinition<out Any, CX>?
+
+    /** Get definition by [type] */
+    @Suppress("UNCHECKED_CAST")
+    fun definition(type: E) = definition(type.index) as IsSubDefinition<T, CX>?
 
     /**
      * Creates a reference referring to a value of [type] of multi type below [parentReference]
@@ -31,7 +35,7 @@ interface IsMultiTypeDefinition<E : TypeEnum<Any>, in CX : IsPropertyContext> :
         TypedValueReference(type, this, parentReference)
 
     /** Creates a reference referring to any type of multi type below [parentReference] */
-    fun typeRef(parentReference: CanHaveComplexChildReference<TypedValue<E, *>, IsMultiTypeDefinition<E, *>, *, *>? = null) =
+    fun typeRef(parentReference: CanHaveComplexChildReference<TypedValue<E, T>, IsMultiTypeDefinition<E, T, *>, *, *>? = null) =
         TypeReference(
             this,
             parentReference

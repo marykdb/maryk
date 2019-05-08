@@ -694,7 +694,7 @@ internal class RootDataModelTest {
             }
             properties["multi"]!!.let {
                 it.index shouldBe 15u
-                it.definition shouldBe MultiTypeDefinition<MarykTypeEnum<*>, IsPropertyContext>(
+                it.definition shouldBe MultiTypeDefinition<MarykTypeEnum<*>, Any, IsPropertyContext>(
                     typeEnum = MarykTypeEnum,
                     definitionMap = mapOf(
                         O1 to StringDefinition(),

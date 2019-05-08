@@ -20,10 +20,10 @@ open class MultiTypePropertyReference<
 > internal constructor(
     propertyDefinition: D,
     parentReference: P?
-) : CanHaveComplexChildReference<TypedValue<E, Any>, D, P, AbstractValues<*, *, *>>(
+) : CanHaveComplexChildReference<TypedValue<E, T>, D, P, AbstractValues<*, *, *>>(
     propertyDefinition,
     parentReference
-), IsPropertyReferenceForValues<TypedValue<E, Any>, TO, D, P>, HasEmbeddedPropertyReference<TypedValue<E, Any>> {
+), IsPropertyReferenceForValues<TypedValue<E, T>, TO, D, P>, HasEmbeddedPropertyReference<TypedValue<E, T>> {
     override val name = this.propertyDefinition.name
 
     override fun getEmbedded(name: String, context: IsPropertyContext?) =

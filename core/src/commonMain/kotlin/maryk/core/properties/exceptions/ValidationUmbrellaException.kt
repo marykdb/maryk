@@ -35,7 +35,7 @@ data class ValidationUmbrellaException internal constructor(
                     ),
                     getter = ValidationUmbrellaException::exceptions,
                     toSerializable = { TypedValue(it.validationExceptionType, it) },
-                    fromSerializable = { it.value as ValidationException }
+                    fromSerializable = { it.value }
                 )
             }
         }

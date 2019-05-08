@@ -6,6 +6,8 @@ import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.graph.IsTransportablePropRefGraphNode
+import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.ReferenceType.VALUE
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
@@ -21,8 +23,10 @@ interface IsPropertyReferenceForValues<
     TO : Any,
     out D : IsPropertyDefinitionWrapper<T, TO, *, *>,
     out P : AnyPropertyReference
-> : IsPropertyReference<T, D, AbstractValues<*, *, *>>, IsPropertyReferenceWithParent<T, D, P, AbstractValues<*, *, *>> {
+> : IsPropertyReference<T, D, AbstractValues<*, *, *>>, IsPropertyReferenceWithParent<T, D, P, AbstractValues<*, *, *>>, IsTransportablePropRefGraphNode {
     val name: String
+    override val index get() = this.propertyDefinition.index
+    override val graphType get() = PropRef
 
     /** The name of property which is referenced */
     override val completeName: String

@@ -37,9 +37,9 @@ data class AddSuccess<DM : IsRootDataModel<*>>(
                             definitionMap = mapOfChangeDefinitions
                         )
                     ),
-                    getter = maryk.core.query.responses.statuses.AddSuccess<*>::changes,
+                    getter = AddSuccess<*>::changes,
                     toSerializable = { TypedValue(it.changeType, it) },
-                    fromSerializable = { it.value as IsChange }
+                    fromSerializable = { it.value }
                 )
             }
         }

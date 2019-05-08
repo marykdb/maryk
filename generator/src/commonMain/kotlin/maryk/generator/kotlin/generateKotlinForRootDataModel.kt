@@ -92,7 +92,7 @@ private fun IsIndexable.generateKotlin(
         addImport("maryk.core.properties.definitions.key.UUIDKey")
         "UUIDKey"
     }
-    is TypeReference<*, *> -> {
+    is TypeReference<*, *, *> -> {
         val typeId = this
         val parentReference = (typeId.parentReference as IsPropertyReferenceForValues<*, *, *, *>)
         parentReference.generateRef(packageName, name, addImport, refFunction = "typeRef")

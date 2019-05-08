@@ -33,7 +33,7 @@ object ComplexModel : RootDataModel<ComplexModel, Properties>(
     object Properties : PropertyDefinitions() {
         val multi = add(
             index = 1u, name = "multi",
-            definition = MultiTypeDefinition<MultiTypeEnum<*>, IsPropertyContext>(
+            definition = MultiTypeDefinition<MultiTypeEnum<*>, Any, IsPropertyContext>(
                 required = false,
                 typeEnum = MultiTypeEnum,
                 typeIsFinal = false,
@@ -102,7 +102,7 @@ object ComplexModel : RootDataModel<ComplexModel, Properties>(
                             keyDefinition = NumberDefinition(type = UInt32),
                             valueDefinition = StringDefinition()
                         ),
-                        T7 to MultiTypeDefinition<MarykTypeEnum<*>, IsPropertyContext>(
+                        T7 to MultiTypeDefinition<MarykTypeEnum<*>, Any, IsPropertyContext>(
                             typeEnum = MarykTypeEnum,
                             definitionMap = mapOf(
                                 O1 to StringDefinition(),

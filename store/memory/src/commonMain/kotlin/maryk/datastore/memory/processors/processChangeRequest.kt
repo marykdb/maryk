@@ -260,7 +260,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                         reference as MultiTypePropertyReference<TypeEnum<Any>, Any, Any, *, *>
                                     @Suppress("UNCHECKED_CAST")
                                     val multiTypeDefinition =
-                                        multiTypeReference.propertyDefinition.definition as MultiTypeDefinition<TypeEnum<Any>, IsPropertyContext>
+                                        multiTypeReference.propertyDefinition.definition as MultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>
 
                                     // Previous value to find
                                     var prevValue: TypedValue<*, *>? = null

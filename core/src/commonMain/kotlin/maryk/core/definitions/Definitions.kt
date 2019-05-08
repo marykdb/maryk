@@ -103,7 +103,7 @@ data class Definitions(
                         )
                     ) as Map<PrimitiveType, IsSubDefinition<out Any, ContainsDefinitionsContext>>
                 )
-            ) as ListDefinition<TypedValue<PrimitiveType, MarykPrimitive>, ContainsDefinitionsContext>,
+            ),
             Definitions::definitions,
             fromSerializable = { it.value },
             toSerializable = { TypedValue(it.primitiveType, it) }

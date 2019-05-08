@@ -42,7 +42,7 @@ class WriteValuesToStorageKtTest {
                     shouldBeOfType<IsMapDefinition<*, *, *>>(type.castDefinition(definition))
                 }
                 TypeValue -> {
-                    shouldBeOfType<IsMultiTypeDefinition<*, *>>(type.castDefinition(definition))
+                    shouldBeOfType<IsMultiTypeDefinition<*, *, *>>(type.castDefinition(definition))
                 }
                 Embed -> {
                     shouldBeOfType<EmbeddedValuesDefinition<*, *>>(type.castDefinition(definition))

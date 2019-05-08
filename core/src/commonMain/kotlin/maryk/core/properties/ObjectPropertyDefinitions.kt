@@ -222,12 +222,12 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
     }
 
     /** Add multi types property [definition] with [name] and [index] and value [getter] */
-    fun <E : TypeEnum<*>, TO : Any, CX : IsPropertyContext, D : IsMultiTypeDefinition<E, CX>> add(
+    fun <E : TypeEnum<T>, T: Any, TO : Any, CX : IsPropertyContext, D : IsMultiTypeDefinition<E, T, CX>> add(
         index: UInt,
         name: String,
         definition: D,
         getter: (DO) -> TO?,
-        capturer: ((CX, TypedValue<E, Any>) -> Unit)? = null
+        capturer: ((CX, TypedValue<E, T>) -> Unit)? = null
     ) = MultiTypeDefinitionWrapper(index, name, definition, getter, capturer).apply {
         addSingle(this)
     }
@@ -236,14 +236,14 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
      * Add multi types property [definition] with [name] and [index] and value [getter]
      * Also has a [toSerializable], [fromSerializable] and [capturer] to serialize and capture properties
      */
-    fun <E : TypeEnum<*>, TO : Any, CX : IsPropertyContext, D : IsMultiTypeDefinition<E, CX>> add(
+    fun <E : TypeEnum<T>, T: Any, TO : Any, CX : IsPropertyContext, D : IsMultiTypeDefinition<E, T, CX>> add(
         index: UInt,
         name: String,
         definition: D,
         getter: (DO) -> TO?,
-        toSerializable: (TO?, CX?) -> TypedValue<E, Any>?,
-        fromSerializable: (TypedValue<E, Any>?) -> TO?,
-        capturer: ((CX, TypedValue<E, Any>) -> Unit)? = null
+        toSerializable: (TO?, CX?) -> TypedValue<E, T>?,
+        fromSerializable: (TypedValue<E, T>?) -> TO?,
+        capturer: ((CX, TypedValue<E, T>) -> Unit)? = null
     ) = MultiTypeDefinitionWrapper(index, name, definition, getter, capturer, toSerializable, fromSerializable).apply {
         addSingle(this)
     }

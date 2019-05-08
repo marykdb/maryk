@@ -146,7 +146,7 @@ internal fun generateKotlinValue(
     is TypedValue<*, *> -> {
         addImport("maryk.core.properties.types.TypedValue")
 
-        val multiTypeDefinition = definition as MultiTypeDefinition<*, *>
+        val multiTypeDefinition = definition as MultiTypeDefinition<*, *, *>
         val valueDefinition = multiTypeDefinition.definitionMap[value.type]
 
         val valueAsString = generateKotlinValue(valueDefinition as IsPropertyDefinition<Any>, value.value, addImport)

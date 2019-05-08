@@ -131,7 +131,7 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
     fun <E : TypeEnum<T>, T: Any, CX : IsPropertyContext> add(
         index: UInt,
         name: String,
-        definition: IsMultiTypeDefinition<E, CX>
+        definition: IsMultiTypeDefinition<E, T, CX>
     ) = MultiTypeDefinitionWrapper<E, T, TypedValue<E, T>, CX, Any>(index, name, definition).apply {
         addSingle(this)
     }

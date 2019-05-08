@@ -95,7 +95,7 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
                 && this.valueDefinition !is ValueModelDefinition<*, *, *>
                 && this.valueDefinition !is ContextualEmbeddedObjectDefinition<*>
                 && this.valueDefinition !is ContextualEmbeddedValuesDefinition<*>
-                && this.valueDefinition !is MultiTypeDefinition<*, *>
+                && this.valueDefinition !is MultiTypeDefinition<*, *, *>
                 && value.size < 5
         writer.writeStartArray(renderCompact)
         for (it in value) {

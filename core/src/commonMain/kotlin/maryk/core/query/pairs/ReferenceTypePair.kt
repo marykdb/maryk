@@ -31,10 +31,10 @@ data class ReferenceTypePair<E : TypeEnum<Any>> internal constructor(
 
         override val value = add(
             index = 2u, name = "type",
-            definition = ContextualIndexedEnumDefinition<RequestContext, RequestContext, IndexedEnum, IsMultiTypeDefinition<TypeEnum<Any>, RequestContext>>(
+            definition = ContextualIndexedEnumDefinition<RequestContext, RequestContext, IndexedEnum, IsMultiTypeDefinition<TypeEnum<Any>, Any, RequestContext>>(
                 contextualResolver = {
                     @Suppress("UNCHECKED_CAST")
-                    (it?.reference as? MultiTypePropertyReference<TypeEnum<Any>, *, *, *, *>?)?.comparablePropertyDefinition?.definition as IsMultiTypeDefinition<TypeEnum<Any>, RequestContext>?
+                    (it?.reference as? MultiTypePropertyReference<TypeEnum<Any>, *, *, *, *>?)?.comparablePropertyDefinition?.definition as IsMultiTypeDefinition<TypeEnum<Any>, Any, RequestContext>?
                         ?: throw ContextNotFoundException()
                 }
             ),

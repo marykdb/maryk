@@ -1,6 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
+import maryk.core.exceptions.RequestException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.ContextualDataModel
@@ -245,13 +246,14 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
                         ),
                         getter = MapDefinition<*, *, *>::keyDefinition,
                         toSerializable = { value, _ ->
-                            val defType = value!! as IsTransportablePropertyDefinitionType<*>
-                            TypedValue(defType.propertyDefinitionType, value)
+                            val defType = value as? IsTransportablePropertyDefinitionType<*>
+                                ?: throw RequestException("$value is not transportable")
+                            TypedValue(defType.propertyDefinitionType, defType)
                         },
                         fromSerializable = {
                             it?.value as IsSimpleValueDefinition<*, *>?
                         },
-                        capturer = { context: KeyValueDefinitionContext, value ->
+                        capturer = { context: KeyValueDefinitionContext, value: TypedValue<PropertyDefinitionType, *> ->
                             @Suppress("UNCHECKED_CAST")
                             context.keyDefinition = value.value as IsSimpleValueDefinition<Any, IsPropertyContext>
                         }
@@ -267,7 +269,8 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
                         ),
                         getter = MapDefinition<*, *, *>::valueDefinition,
                         toSerializable = { value, _ ->
-                            val defType = value!! as IsTransportablePropertyDefinitionType<*>
+                            val defType = value as? IsTransportablePropertyDefinitionType<*>
+                                ?: throw RequestException("$value is not transportable")
                             TypedValue(defType.propertyDefinitionType, value)
                         },
                         fromSerializable = {

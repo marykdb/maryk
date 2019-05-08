@@ -67,7 +67,7 @@ internal class MultiTypeDefinitionTest {
         keyDefinition = intDef,
         valueDefinition = stringDef
     )
-    private val subMultiDef = MultiTypeDefinition<MarykTypeEnum<*>, IsPropertyContext>(
+    private val subMultiDef = MultiTypeDefinition<MarykTypeEnum<*>, Any, IsPropertyContext>(
         typeEnum = MarykTypeEnum,
         definitionMap = mapOf(
             O1 to stringDef,
@@ -75,7 +75,7 @@ internal class MultiTypeDefinitionTest {
         )
     )
 
-    private val def = MultiTypeDefinition<MultiTypeEnum, IsPropertyContext>(
+    private val def = MultiTypeDefinition<MultiTypeEnum, Any, IsPropertyContext>(
         typeEnum = MultiTypeEnum,
         definitionMap = mapOf(
             STRING to stringDef,
@@ -87,7 +87,7 @@ internal class MultiTypeDefinitionTest {
         )
     )
 
-    private val defMaxDefined = MultiTypeDefinition<MultiTypeEnum, IsPropertyContext>(
+    private val defMaxDefined = MultiTypeDefinition<MultiTypeEnum, Any, IsPropertyContext>(
         final = true,
         required = false,
         typeEnum = MultiTypeEnum,

@@ -28,19 +28,20 @@ data class CollectRequest<RQ : IsRequest<RP>, RP : IsResponse>(
     object Properties : ObjectPropertyDefinitions<AnyCollectRequest>() {
         val name = add(1u, "name", StringDefinition(), AnyCollectRequest::name)
 
+        // It transmits any instead of IsRequest so the ObjectValues can also be transmitted
         val request = add(2u, "request",
             MultiTypeDefinition(
                 typeEnum = RequestType,
                 definitionMap = mapOfRequestTypeEmbeddedObjectDefinitions
             ),
             getter = AnyCollectRequest::request,
-            toSerializable = { request, _ ->
+            toSerializable = { request: Any?, _ ->
                 request?.let {
-                    TypedValue(request.requestType, request)
+                    TypedValue((request as IsRequest<*>).requestType, request)
                 }
             },
-            fromSerializable = { request ->
-                request?.value as IsRequest<*>?
+            fromSerializable = { request: TypedValue<RequestType, Any>? ->
+                request?.value
             }
         )
     }

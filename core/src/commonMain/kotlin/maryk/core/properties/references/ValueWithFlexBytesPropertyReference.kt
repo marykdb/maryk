@@ -2,6 +2,7 @@ package maryk.core.properties.references
 
 import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.definitions.index.IndexKeyPartType
+import maryk.core.properties.graph.PropRefGraphType
 
 /**
  * Reference to a value property containing values of type [T]. The property is defined by Property Definition Wrapper

@@ -32,7 +32,7 @@ internal fun <T : Any> deleteByReference(
     keepAllVersions: Boolean,
     handlePreviousValue: ((ByteArray, T?) -> Unit)? = null
 ): Boolean {
-    if (reference is TypedValueReference<*, *>) {
+    if (reference is TypedValueReference<*, *, *>) {
         throw RequestException("Type Reference not allowed for deletes. Use the multi type parent.")
     }
 

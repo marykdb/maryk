@@ -15,7 +15,7 @@ import kotlin.jvm.JvmName
 @JvmName("atMulti")
 fun <K : Any, V : TypedValue<E, I>, E: TypeEnum<I>, I: Any, T: Any, R : IsPropertyReference<T, *, *>> IsSubDefinition<Map<K, V>, *>.at(
     key: K,
-    referenceGetter: IsMultiTypeDefinition<E, *>.() -> (AnyOutPropertyReference?) -> R
+    referenceGetter: IsMultiTypeDefinition<E, I, *>.() -> (AnyOutPropertyReference?) -> R
 ): (AnyOutPropertyReference?) -> R =
     {
         val mapDefinition = this as IsMapDefinition<K, V, *>
@@ -26,7 +26,7 @@ fun <K : Any, V : TypedValue<E, I>, E: TypeEnum<I>, I: Any, T: Any, R : IsProper
 
         @Suppress("UNCHECKED_CAST")
         referenceGetter(
-            mapDefinition.valueDefinition as IsMultiTypeDefinition<E, *>
+            mapDefinition.valueDefinition as IsMultiTypeDefinition<E, I, *>
         )(
             mapDefinition.valueRef(key, parent as CanContainMapItemReference<*, *, *>?)
         )

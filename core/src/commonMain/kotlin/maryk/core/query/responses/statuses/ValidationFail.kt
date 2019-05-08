@@ -41,7 +41,7 @@ data class ValidationFail<DM : IsRootDataModel<*>>(
                     ),
                     getter = ValidationFail<*>::exceptions,
                     toSerializable = { TypedValue(it.validationExceptionType, it) },
-                    fromSerializable = { it.value as ValidationException }
+                    fromSerializable = { it.value }
                 )
             }
         }

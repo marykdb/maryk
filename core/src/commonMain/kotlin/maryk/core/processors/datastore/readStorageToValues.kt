@@ -157,7 +157,7 @@ private fun readQualifierOfType(
                         qualifier = qualifier,
                         offset = offset,
                         readValueFromStorage = readValueFromStorage,
-                        valueDefinition = definition as IsMultiTypeDefinition<*, *>,
+                        valueDefinition = definition as IsMultiTypeDefinition<*, *, *>,
                         select = select,
                         addToCache = addToCache,
                         addValueToOutput = valueAdder
@@ -333,7 +333,7 @@ private fun readQualifierOfType(
             }
         }
         TYPE -> {
-            val typedDefinition = definition as? IsMultiTypeDefinition<*, *>
+            val typedDefinition = definition as? IsMultiTypeDefinition<*, *, *>
                 ?: throw TypeException("Definition($index) $definition should be a TypedDefinition")
 
             typedDefinition.readComplexTypedValue(
@@ -401,7 +401,7 @@ private fun readTypedValue(
     qualifier: ByteArray,
     offset: Int,
     readValueFromStorage: ValueReader,
-    valueDefinition: IsMultiTypeDefinition<*, *>,
+    valueDefinition: IsMultiTypeDefinition<*, *, *>,
     select: IsPropRefGraph<*>?,
     addToCache: CacheProcessor,
     addValueToOutput: AddValue,
@@ -449,7 +449,7 @@ private fun readTypedValue(
 }
 
 /** Read a complex Typed value from qualifier */
-private fun IsMultiTypeDefinition<*, *>.readComplexTypedValue(
+private fun IsMultiTypeDefinition<*, *, *>.readComplexTypedValue(
     index: UInt,
     qualifier: ByteArray,
     offset: Int,
@@ -499,7 +499,7 @@ private fun readComplexWithSubDefinition(
     addToCache: CacheProcessor,
     valueAdder: AddValue
 ) = when (valueDefinition) {
-    is IsMultiTypeDefinition<*, *> -> {
+    is IsMultiTypeDefinition<*, *, *> -> {
         readTypedValue(
             qualifier,
             offset,

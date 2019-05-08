@@ -22,10 +22,10 @@ import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.values.IsValuesGetter
 
 /** Reference to any MultiType reference */
-data class TypeReference<E : TypeEnum<Any>, in CX : IsPropertyContext> internal constructor(
-    val multiTypeDefinition: IsMultiTypeDefinition<E, CX>,
-    override val parentReference: CanHaveComplexChildReference<TypedValue<E, *>, IsMultiTypeDefinition<E, *>, *, *>?
-) : IsPropertyReferenceWithParent<E, IndexedEnumDefinition<E>, CanHaveComplexChildReference<TypedValue<E, *>, IsMultiTypeDefinition<E, *>, *, *>, TypedValue<E, *>>,
+data class TypeReference<E : TypeEnum<T>, T: Any, in CX : IsPropertyContext> internal constructor(
+    val multiTypeDefinition: IsMultiTypeDefinition<E, T, CX>,
+    override val parentReference: CanHaveComplexChildReference<TypedValue<E, T>, IsMultiTypeDefinition<E, T, *>, *, *>?
+) : IsPropertyReferenceWithParent<E, IndexedEnumDefinition<E>, CanHaveComplexChildReference<TypedValue<E, T>, IsMultiTypeDefinition<E, T, *>, *, *>, TypedValue<E, T>>,
     IsFixedBytesPropertyReference<E>,
     IsFixedStorageBytesEncodable<E> by multiTypeDefinition.typeEnum,
     IsIndexable
@@ -45,7 +45,7 @@ data class TypeReference<E : TypeEnum<Any>, in CX : IsPropertyContext> internal 
     }
 
     override fun getValue(values: IsValuesGetter): E {
-        val typedValue: TypedValue<E, *> = values[parentReference as IsPropertyReference<TypedValue<E, *>, IsPropertyDefinition<TypedValue<E, *>>, *>]
+        val typedValue: TypedValue<E, *> = values[parentReference as IsPropertyReference<TypedValue<E, T>, IsPropertyDefinition<TypedValue<E, T>>, *>]
             ?: throw RequiredException(parentReference)
         return typedValue.type
     }
@@ -89,7 +89,7 @@ data class TypeReference<E : TypeEnum<Any>, in CX : IsPropertyContext> internal 
         )
     }
 
-    override fun resolve(values: TypedValue<E, *>): E? {
+    override fun resolve(values: TypedValue<E, T>): E? {
         return values.type
     }
 }

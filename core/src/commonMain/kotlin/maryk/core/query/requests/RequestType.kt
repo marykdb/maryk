@@ -14,7 +14,7 @@ import maryk.core.query.requests.RequestType.GetChanges
 import maryk.core.query.requests.RequestType.Scan
 import maryk.core.query.requests.RequestType.ScanChanges
 
-enum class RequestType(override val index: UInt) : IndexedEnumComparable<RequestType>, TypeEnum<IsRequest<*>>, IsCoreEnum {
+enum class RequestType(override val index: UInt) : IndexedEnumComparable<RequestType>, TypeEnum<Any>, IsCoreEnum {
     Add(1u),
     Change(2u),
     Delete(3u),

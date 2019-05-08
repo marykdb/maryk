@@ -140,7 +140,7 @@ private val definitionNamesMap = mapOf(
         propertyValueOverride = mapOf(
             "definitionMap" to { definition, _, _ ->
                 val multiTypeDefinition =
-                    definition as MultiTypeDefinition<*, *>
+                    definition as MultiTypeDefinition<*, *, *>
 
                 val typeName = multiTypeDefinition.typeEnum.name
 

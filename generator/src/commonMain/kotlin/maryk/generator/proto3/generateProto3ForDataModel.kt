@@ -162,7 +162,7 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(
         }
         is EmbeddedValuesDefinition<*, *> -> this.dataModel.name
         is EmbeddedObjectDefinition<*, *, *, *, *> -> (this.dataModel as IsNamedDataModel<*>).name
-        is MultiTypeDefinition<*, *> -> {
+        is MultiTypeDefinition<*, *, *> -> {
             val multiTypeName = "${name.capitalize()}Type"
 
             val multiTypes = mutableListOf<String>()

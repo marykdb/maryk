@@ -271,7 +271,7 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
                                 qualifier,
                                 offset,
                                 readValueFromStorage,
-                                definition as IsMultiTypeDefinition<TypeEnum<Any>, IsPropertyContext>,
+                                definition as IsMultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>,
                                 ref,
                                 select,
                                 addToCache,
@@ -282,7 +282,7 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
                 }
             } else { // Is Complex value
                 // Only multi types can be encoded as complex VALUE qualifier
-                if (definition !is IsMultiTypeDefinition<*, *>) {
+                if (definition !is IsMultiTypeDefinition<*, *, *>) {
                     throw ParseException("Only Multi types are allowed to be encoded as VALUE type with complex qualifiers. Not $definition")
                 }
                 @Suppress("UNCHECKED_CAST")
@@ -290,7 +290,7 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
                     qualifier,
                     offset,
                     readValueFromStorage,
-                    definition as IsMultiTypeDefinition<*, IsPropertyContext>,
+                    definition as IsMultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>,
                     reference,
                     select,
                     addToCache,
@@ -426,7 +426,7 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
                                     qualifier,
                                     offset,
                                     readValueFromStorage,
-                                    valueDefinition as IsMultiTypeDefinition<TypeEnum<Any>, IsPropertyContext>,
+                                    valueDefinition as IsMultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>,
                                     valueReference,
                                     select,
                                     addToCache,
@@ -452,7 +452,7 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
         ReferenceType.TYPE -> {
             @Suppress("UNCHECKED_CAST")
             val typedDefinition =
-                definition as? IsMultiTypeDefinition<TypeEnum<Any>, IsPropertyContext>
+                definition as? IsMultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>
                     ?: throw TypeException("Definition($index) $definition should be a TypedDefinition")
 
             typedDefinition.readComplexTypedValue(
@@ -480,13 +480,13 @@ private fun <P : PropertyDefinitions> readComplexChanges(
     readValueFromStorage: ValueWithVersionReader
 ) {
     when (definition) {
-        is IsMultiTypeDefinition<*, *> -> {
+        is IsMultiTypeDefinition<*, *, *> -> {
             @Suppress("UNCHECKED_CAST")
             readTypedValue(
                 qualifier,
                 offset,
                 readValueFromStorage,
-                definition as IsMultiTypeDefinition<TypeEnum<Any>, IsPropertyContext>,
+                definition as IsMultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>,
                 parentReference,
                 select,
                 addToCache,
@@ -556,7 +556,7 @@ private fun readTypedValue(
     qualifier: ByteArray,
     offset: Int,
     readValueFromStorage: ValueWithVersionReader,
-    valueDefinition: IsMultiTypeDefinition<*, IsPropertyContext>,
+    valueDefinition: IsMultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>,
     reference: IsPropertyReference<*, *, *>?,
     select: IsPropRefGraph<*>?,
     addToCache: CacheProcessor,
@@ -611,7 +611,7 @@ private fun readTypedValue(
 }
 
 /** Read a complex Typed value from [qualifier] */
-private fun <E : TypeEnum<Any>> IsMultiTypeDefinition<E, IsPropertyContext>.readComplexTypedValue(
+private fun IsMultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>.readComplexTypedValue(
     qualifier: ByteArray,
     offset: Int,
     readValueFromStorage: ValueWithVersionReader,

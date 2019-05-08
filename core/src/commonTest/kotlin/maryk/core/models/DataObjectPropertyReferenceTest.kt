@@ -6,13 +6,11 @@ import maryk.core.properties.references.dsl.atType
 import maryk.core.properties.references.dsl.refAt
 import maryk.core.properties.references.dsl.refAtType
 import maryk.core.properties.references.dsl.refAtTypeAndIndex
-import maryk.core.properties.references.dsl.refAtTypeAndIndexWeak
 import maryk.lib.extensions.toHex
 import maryk.lib.time.Date
 import maryk.lib.time.Time
 import maryk.test.models.ComplexModel
 import maryk.test.models.EmbeddedMarykModel.Properties
-import maryk.test.models.MultiTypeEnum
 import maryk.test.models.MultiTypeEnum.T1
 import maryk.test.models.MultiTypeEnum.T3
 import maryk.test.models.MultiTypeEnum.T4
@@ -67,7 +65,6 @@ internal class DataObjectPropertyReferenceTest {
         ComplexModel { mapIntMulti.at(2u) { atType(T3, Properties) { model { value::ref } } } }.completeName shouldBe "mapIntMulti.@2.*T3.model.value"
         ComplexModel { mapIntMulti.at(2u) { atType(T3) { model { value::ref } } } }.completeName shouldBe "mapIntMulti.@2.*T3.model.value"
 
-        ComplexModel { mapIntMulti.at(2u) { refAtTypeAndIndexWeak<MultiTypeEnum<*>, String>(T4, 5u) } }.completeName shouldBe "mapIntMulti.@2.*T4.@5"
         ComplexModel { mapIntMulti.at(2u) { refAtTypeAndIndex(T4, 5u) } }.completeName shouldBe "mapIntMulti.@2.*T4.@5"
     }
 
@@ -111,7 +108,6 @@ internal class DataObjectPropertyReferenceTest {
         ComplexModel { mapIntMulti.at(2u) { atType(T3, Properties) { model { value::ref } } } }.toStorageByteArray().toHex() shouldBe "2404000000021d1609"
         ComplexModel { mapIntMulti.at(2u) { atType(T3) { model { value::ref } } } }.toStorageByteArray().toHex() shouldBe "2404000000021d1609"
 
-        ComplexModel { mapIntMulti.at(2u) { refAtTypeAndIndexWeak<MultiTypeEnum<*>, String>(T4, 5u) } }.toStorageByteArray().toHex() shouldBe "2404000000022500000005"
         ComplexModel { mapIntMulti.at(2u) { refAtTypeAndIndex(T4, 5u) } }.toStorageByteArray().toHex() shouldBe "2404000000022500000005"
     }
 }

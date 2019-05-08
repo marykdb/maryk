@@ -12,7 +12,7 @@ import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
  * It contains an [index] and [name] to which it is referred inside DataModel and a [getter]
  * function to retrieve value on dataObject of [DO] in context [CX]
  */
-data class FixedBytesPropertyDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext, out D : IsSerializableFixedBytesEncodable<T, CX>, in DO : Any> internal constructor(
+data class FixedBytesDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext, out D : IsSerializableFixedBytesEncodable<T, CX>, in DO : Any> internal constructor(
     override val index: UInt,
     override val name: String,
     override val definition: D,
@@ -22,10 +22,10 @@ data class FixedBytesPropertyDefinitionWrapper<T : Any, TO : Any, CX : IsPropert
     override val fromSerializable: ((T?) -> TO?)? = null,
     override val shouldSerialize: ((Any) -> Boolean)? = null
 ) :
-    AbstractPropertyDefinitionWrapper(index, name),
+    AbstractDefinitionWrapper(index, name),
     IsSerializableFixedBytesEncodable<T, CX> by definition,
-    IsPropertyDefinitionWrapper<T, TO, CX, DO>,
-    IsValuePropertyDefinitionWrapper<T, TO, CX, DO>,
+    IsDefinitionWrapper<T, TO, CX, DO>,
+    IsValueDefinitionWrapper<T, TO, CX, DO>,
     IsFixedStorageBytesEncodable<T> {
     override val graphType = PropRef
 

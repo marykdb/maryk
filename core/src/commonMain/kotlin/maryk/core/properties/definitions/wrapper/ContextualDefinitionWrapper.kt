@@ -11,7 +11,7 @@ import maryk.core.properties.references.PropertyReferenceForValues
  * It contains an [index] and [name] to which it is referred inside DataModel and a [getter]
  * function to retrieve value on dataObject of [DO] in context [CX]
  */
-data class ContextualPropertyDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext, D : IsContextualEncodable<T, CX>, DO : Any> internal constructor(
+data class ContextualDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext, D : IsContextualEncodable<T, CX>, DO : Any> internal constructor(
     override val index: UInt,
     override val name: String,
     override val definition: D,
@@ -21,10 +21,10 @@ data class ContextualPropertyDefinitionWrapper<T : Any, TO : Any, CX : IsPropert
     override val fromSerializable: ((T?) -> TO?)? = null,
     override val shouldSerialize: ((Any) -> Boolean)? = null
 ) :
-    AbstractPropertyDefinitionWrapper(index, name),
-    IsPropertyDefinitionWrapper<T, TO, CX, DO>,
+    AbstractDefinitionWrapper(index, name),
+    IsDefinitionWrapper<T, TO, CX, DO>,
     IsContextualEncodable<T, CX> by definition,
-    IsValuePropertyDefinitionWrapper<T, TO, CX, DO> {
+    IsValueDefinitionWrapper<T, TO, CX, DO> {
     override val graphType = PropRef
 
     override fun ref(parentRef: AnyPropertyReference?) =

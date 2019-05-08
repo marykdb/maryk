@@ -32,7 +32,7 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.IsSubDefinition
-import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsValueDefinitionWrapper
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.graph.IsPropRefGraph
 import maryk.core.properties.graph.RootPropRefGraph
@@ -166,7 +166,7 @@ private fun MutableList<IsChange>.addChange(changeType: ChangeType, changePart: 
 private fun createChange(changeType: ChangeType, changePart: Any) = when (changeType) {
     OBJECT_DELETE -> ObjectSoftDeleteChange(changePart as Boolean)
     CHANGE -> Change(mutableListOf(changePart as ReferenceValuePair<Any>))
-    ChangeType.DELETE -> Delete(mutableListOf(changePart as IsPropertyReference<*, IsValuePropertyDefinitionWrapper<*, *, IsPropertyContext, *>, *>))
+    ChangeType.DELETE -> Delete(mutableListOf(changePart as IsPropertyReference<*, IsValueDefinitionWrapper<*, *, IsPropertyContext, *>, *>))
     TYPE -> MultiTypeChange(mutableListOf(changePart as ReferenceTypePair<*>))
     SET_ADD -> {
         val ref = changePart as SetItemReference<*, *>

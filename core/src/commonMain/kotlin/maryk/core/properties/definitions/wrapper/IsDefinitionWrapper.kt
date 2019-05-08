@@ -35,13 +35,13 @@ import maryk.json.IsJsonLikeWriter
 import maryk.yaml.IsYamlReader
 import maryk.yaml.YamlWriter
 
-typealias AnyPropertyDefinitionWrapper = IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>
+typealias AnyPropertyDefinitionWrapper = IsDefinitionWrapper<Any, Any, IsPropertyContext, Any>
 
 /**
  * Wraps a Property Definition of type [T] to give it more context [CX] about
  * DataObject [DO] which contains this Definition.
  */
-interface IsPropertyDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in DO> :
+interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in DO> :
     IsSerializablePropertyDefinition<T, CX>,
     IsPropRefGraphNode<PropertyDefinitions> {
     override val index: UInt
@@ -158,18 +158,18 @@ interface IsPropertyDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyConte
     }
 
     private object Properties :
-        ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>>() {
-        val index = addIndex(this, IsPropertyDefinitionWrapper<*, *, *, *>::index)
-        val name = addName(this, IsPropertyDefinitionWrapper<*, *, *, *>::name)
+        ObjectPropertyDefinitions<IsDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>>() {
+        val index = addIndex(this, IsDefinitionWrapper<*, *, *, *>::index)
+        val name = addName(this, IsDefinitionWrapper<*, *, *, *>::name)
         val definition =
-            addDefinition(this, IsPropertyDefinitionWrapper<*, *, *, *>::definition)
+            addDefinition(this, IsDefinitionWrapper<*, *, *, *>::definition)
     }
 
     object Model :
-        SimpleObjectDataModel<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>, ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>>>(
+        SimpleObjectDataModel<IsDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>, ObjectPropertyDefinitions<IsDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>>>(
             properties = Properties
         ) {
-        override fun invoke(values: SimpleObjectValues<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>>): IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any> {
+        override fun invoke(values: SimpleObjectValues<IsDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>>): IsDefinitionWrapper<out Any, out Any, IsPropertyContext, Any> {
             val typedDefinition =
                 values<TypedValue<PropertyDefinitionType, IsTransportablePropertyDefinitionType<*>>>(3u)
             val type = typedDefinition.type
@@ -183,7 +183,7 @@ interface IsPropertyDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyConte
         }
 
         override fun writeJson(
-            obj: IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>,
+            obj: IsDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>,
             writer: IsJsonLikeWriter,
             context: IsPropertyContext?
         ) {
@@ -204,7 +204,7 @@ interface IsPropertyDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyConte
         override fun readJson(
             reader: IsJsonLikeReader,
             context: IsPropertyContext?
-        ): SimpleObjectValues<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>> {
+        ): SimpleObjectValues<IsDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>> {
             // When reading YAML, use YAML optimized format with complex field names
             return if (reader is IsYamlReader) {
                 val valueMap = MutableValueItems()

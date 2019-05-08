@@ -5,7 +5,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.NumberDefinition
-import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.responses.IsResponse
@@ -21,7 +21,7 @@ interface IsChangesRequest<DM : IsRootDataModel<P>, P : PropertyDefinitions, RP 
             index: UInt,
             definitions: ObjectPropertyDefinitions<DM>,
             getter: (DM) -> UInt?
-        ): FixedBytesPropertyDefinitionWrapper<UInt, UInt, IsPropertyContext, NumberDefinition<UInt>, DM> =
+        ): FixedBytesDefinitionWrapper<UInt, UInt, IsPropertyContext, NumberDefinition<UInt>, DM> =
             definitions.add(
                 index, "maxVersions",
                 NumberDefinition(

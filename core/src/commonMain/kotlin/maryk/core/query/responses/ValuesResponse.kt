@@ -6,7 +6,7 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.wrapper.ObjectListPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.ObjectListDefinitionWrapper
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.values.ObjectValues
 
@@ -17,7 +17,7 @@ data class ValuesResponse<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions
 ) : IsDataModelResponse<DM> {
     object Properties : ObjectPropertyDefinitions<ValuesResponse<*, *>>() {
         val dataModel = IsDataModelResponse.addDataModel(this, ValuesResponse<*, *>::dataModel)
-        val values = ObjectListPropertyDefinitionWrapper(
+        val values = ObjectListDefinitionWrapper(
             2u, "values",
             properties = ValuesWithMetaData.Properties,
             definition = ListDefinition(

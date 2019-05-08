@@ -15,7 +15,7 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.descriptors.addDescriptorPropertyWrapperWrapper
 import maryk.core.properties.definitions.descriptors.convertMultiTypeDescriptors
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IsCoreEnum
@@ -150,9 +150,9 @@ data class MultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyContex
         }
     }
 
-    override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = null
+    override fun getEmbeddedByName(name: String): IsDefinitionWrapper<*, *, *, *>? = null
 
-    override fun getEmbeddedByIndex(index: UInt): IsPropertyDefinitionWrapper<*, *, *, *>? = null
+    override fun getEmbeddedByIndex(index: UInt): IsDefinitionWrapper<*, *, *, *>? = null
 
     override fun writeJsonValue(value: TypedValue<E, T>, writer: IsJsonLikeWriter, context: CX?) {
         val definition = this.definition(value.type)

@@ -2,7 +2,7 @@ package maryk.core.models
 
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
@@ -20,7 +20,7 @@ typealias SingleTypedValueDataModel<T, DO, P, CX> = SingleValueDataModel<T, T, D
  */
 abstract class SingleValueDataModel<T : Any, TO : Any, DO : Any, P : ObjectPropertyDefinitions<DO>, CX : IsPropertyContext>(
     properties: P,
-    private val singlePropertyDefinition: IsPropertyDefinitionWrapper<T, TO, CX, DO>
+    private val singlePropertyDefinition: IsDefinitionWrapper<T, TO, CX, DO>
 ) : AbstractObjectDataModel<DO, P, CX, CX>(properties) {
     override fun writeJson(values: ObjectValues<DO, P>, writer: IsJsonLikeWriter, context: CX?) {
         val value = values.original { singlePropertyDefinition }

@@ -5,7 +5,7 @@ import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.graph.IsTransportablePropRefGraphNode
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.ReferenceType.VALUE
@@ -21,7 +21,7 @@ import maryk.core.values.AbstractValues
 interface IsPropertyReferenceForValues<
     T : Any,
     TO : Any,
-    out D : IsPropertyDefinitionWrapper<T, TO, *, *>,
+    out D : IsDefinitionWrapper<T, TO, *, *>,
     out P : AnyPropertyReference
 > : IsPropertyReference<T, D, AbstractValues<*, *, *>>, IsPropertyReferenceWithParent<T, D, P, AbstractValues<*, *, *>>, IsTransportablePropRefGraphNode {
     val name: String

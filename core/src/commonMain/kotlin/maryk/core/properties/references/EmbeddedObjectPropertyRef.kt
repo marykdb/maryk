@@ -5,7 +5,7 @@ import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.models.AbstractObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.definitions.wrapper.EmbeddedObjectPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.EmbeddedObjectDefinitionWrapper
 import maryk.core.properties.references.ReferenceType.EMBED
 import maryk.core.values.AbstractValues
 
@@ -21,12 +21,12 @@ class EmbeddedObjectPropertyRef<
     CXI : IsPropertyContext,
     CX : IsPropertyContext
 > internal constructor(
-    propertyDefinition: EmbeddedObjectPropertyDefinitionWrapper<DO, TO, P, DM, CXI, CX, *>,
+    propertyDefinition: EmbeddedObjectDefinitionWrapper<DO, TO, P, DM, CXI, CX, *>,
     parentReference: CanHaveComplexChildReference<*, *, *, *>?
-) : CanHaveComplexChildReference<DO, EmbeddedObjectPropertyDefinitionWrapper<DO, TO, P, DM, CXI, CX, *>, CanHaveComplexChildReference<*, *, *, *>, AbstractValues<*, *, *>>(
+) : CanHaveComplexChildReference<DO, EmbeddedObjectDefinitionWrapper<DO, TO, P, DM, CXI, CX, *>, CanHaveComplexChildReference<*, *, *, *>, AbstractValues<*, *, *>>(
     propertyDefinition, parentReference
 ), HasEmbeddedPropertyReference<DO>,
-    IsPropertyReferenceForValues<DO, TO, EmbeddedObjectPropertyDefinitionWrapper<DO, TO, P, DM, CXI, CX, *>, CanHaveComplexChildReference<*, *, *, *>> {
+    IsPropertyReferenceForValues<DO, TO, EmbeddedObjectDefinitionWrapper<DO, TO, P, DM, CXI, CX, *>, CanHaveComplexChildReference<*, *, *, *>> {
     override val name = this.propertyDefinition.name
 
     override fun getEmbedded(name: String, context: IsPropertyContext?) =

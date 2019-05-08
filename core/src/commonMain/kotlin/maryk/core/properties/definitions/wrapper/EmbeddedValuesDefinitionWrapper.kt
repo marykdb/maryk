@@ -21,7 +21,7 @@ import maryk.core.values.Values
  * It contains an [index] and [name] to which it is referred inside DataModel
  * It has an input context of [CX]
  */
-data class EmbeddedValuesPropertyDefinitionWrapper<
+data class EmbeddedValuesDefinitionWrapper<
     DM : IsValuesDataModel<P>,
     P : PropertyDefinitions,
     CX : IsPropertyContext
@@ -35,9 +35,9 @@ data class EmbeddedValuesPropertyDefinitionWrapper<
     override val fromSerializable: ((Values<DM, P>?) -> Values<DM, P>?)? = null,
     override val shouldSerialize: ((Any) -> Boolean)? = null
 ) :
-    AbstractPropertyDefinitionWrapper(index, name),
+    AbstractDefinitionWrapper(index, name),
     IsEmbeddedValuesDefinition<DM, P, CX> by definition,
-    IsPropertyDefinitionWrapper<Values<DM, P>, Values<DM, P>, CX, Any> {
+    IsDefinitionWrapper<Values<DM, P>, Values<DM, P>, CX, Any> {
     override val graphType = PropRef
 
     override fun ref(parentRef: AnyPropertyReference?) =
@@ -49,7 +49,7 @@ data class EmbeddedValuesPropertyDefinitionWrapper<
         )
 
     /** Get a top level reference on a model with [propertyDefinitionGetter]. Used for contextual embed values property definitions. */
-    fun <T : Any, W : IsPropertyDefinitionWrapper<T, *, *, *>, DM: IsDataModel<P2>, P2: PropertyDefinitions> refWithDM(
+    fun <T : Any, W : IsDefinitionWrapper<T, *, *, *>, DM: IsDataModel<P2>, P2: PropertyDefinitions> refWithDM(
         dataModel: DM,
         propertyDefinitionGetter: P2.() -> W
     ): (AnyOutPropertyReference?) -> IsPropertyReference<T, W, IsValues<P2>> =

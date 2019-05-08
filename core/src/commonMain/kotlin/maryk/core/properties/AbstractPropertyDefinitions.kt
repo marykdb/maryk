@@ -13,17 +13,17 @@ import maryk.core.properties.definitions.IsUsableInMultiType
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.SetDefinition
-import maryk.core.properties.definitions.wrapper.ContextualPropertyDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.EmbeddedValuesPropertyDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.ContextualDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.EmbeddedValuesDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.ListDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.MapDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.SetDefinitionWrapper
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.references.AnyPropertyReference
-import maryk.core.properties.references.FlexBytesPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
 import maryk.core.properties.references.HasEmbeddedPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.decodeStorageIndex
@@ -34,23 +34,23 @@ import maryk.core.values.ValueItem
 
 abstract class AbstractPropertyDefinitions<DO : Any> :
     IsPropertyDefinitions,
-    Collection<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>> {
+    Collection<IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>> {
     override fun iterator() = _allProperties.iterator()
 
-    private val _allProperties: MutableList<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>> =
+    private val _allProperties: MutableList<IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>> =
         mutableListOf()
 
-    protected val indexToDefinition = mutableMapOf<UInt, IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>>()
+    protected val indexToDefinition = mutableMapOf<UInt, IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>>()
     protected val nameToDefinition =
-        mutableMapOf<String, IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>>()
+        mutableMapOf<String, IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>>()
 
     // Implementation of Collection
     override val size = _allProperties.size
 
-    override fun contains(element: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>) =
+    override fun contains(element: IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>) =
         this._allProperties.contains(element)
 
-    override fun containsAll(elements: Collection<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>>) =
+    override fun containsAll(elements: Collection<IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>>) =
         this._allProperties.containsAll(elements)
 
     override fun isEmpty() = this._allProperties.isEmpty()
@@ -78,7 +78,7 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
         index: UInt,
         name: String,
         definition: D
-    ) = FlexBytesPropertyDefinitionWrapper<T, T, CX, D, Any>(index, name, definition).apply {
+    ) = FlexBytesDefinitionWrapper<T, T, CX, D, Any>(index, name, definition).apply {
         addSingle(this)
     }
 
@@ -87,7 +87,7 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
         index: UInt,
         name: String,
         definition: D
-    ) = ContextualPropertyDefinitionWrapper<T, T, CX, D, Any>(index, name, definition).apply {
+    ) = ContextualDefinitionWrapper<T, T, CX, D, Any>(index, name, definition).apply {
         addSingle(this)
     }
 
@@ -96,7 +96,7 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
         index: UInt,
         name: String,
         definition: D
-    ) = FixedBytesPropertyDefinitionWrapper<T, T, CX, D, Any>(index, name, definition).apply {
+    ) = FixedBytesDefinitionWrapper<T, T, CX, D, Any>(index, name, definition).apply {
         addSingle(this)
     }
 
@@ -105,7 +105,7 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
         index: UInt,
         name: String,
         definition: ListDefinition<T, CX>
-    ) = ListPropertyDefinitionWrapper<T, T, CX, Any>(index, name, definition).apply {
+    ) = ListDefinitionWrapper<T, T, CX, Any>(index, name, definition).apply {
         addSingle(this)
     }
 
@@ -114,7 +114,7 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
         index: UInt,
         name: String,
         definition: SetDefinition<T, CX>
-    ) = SetPropertyDefinitionWrapper<T, CX, Any>(index, name, definition).apply {
+    ) = SetDefinitionWrapper<T, CX, Any>(index, name, definition).apply {
         addSingle(this)
     }
 
@@ -123,7 +123,7 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
         index: UInt,
         name: String,
         definition: MapDefinition<K, V, CX>
-    ) = MapPropertyDefinitionWrapper<K, V, Map<K, V>, CX, Any>(index, name, definition).apply {
+    ) = MapDefinitionWrapper<K, V, Map<K, V>, CX, Any>(index, name, definition).apply {
         addSingle(this)
     }
 
@@ -141,14 +141,14 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
         index: UInt,
         name: String,
         definition: IsEmbeddedValuesDefinition<DM, P, CX>
-    ) = EmbeddedValuesPropertyDefinitionWrapper(index, name, definition).apply {
+    ) = EmbeddedValuesDefinitionWrapper(index, name, definition).apply {
         addSingle(this)
     }
 
     /** Add a single property definition wrapper */
-    fun addSingle(propertyDefinitionWrapper: IsPropertyDefinitionWrapper<out Any, *, *, DO>) {
+    fun addSingle(propertyDefinitionWrapper: IsDefinitionWrapper<out Any, *, *, DO>) {
         @Suppress("UNCHECKED_CAST")
-        _allProperties.add(propertyDefinitionWrapper as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>)
+        _allProperties.add(propertyDefinitionWrapper as IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>)
 
         require(propertyDefinitionWrapper.index.toInt() in (0..Short.MAX_VALUE)) { "${propertyDefinitionWrapper.index} for ${propertyDefinitionWrapper.name} is outside range $(0..Short.MAX_VALUE)" }
         require(indexToDefinition[propertyDefinitionWrapper.index] == null) { "Duplicate index ${propertyDefinitionWrapper.index} for ${propertyDefinitionWrapper.name} and ${indexToDefinition[propertyDefinitionWrapper.index]?.name}" }

@@ -3,8 +3,8 @@ package maryk.core.yaml
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.StringDefinition
-import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
-import maryk.core.properties.references.FlexBytesPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
 import maryk.core.values.MutableValueItems
 import maryk.json.IllegalJsonOperation
 import maryk.json.JsonToken.EndComplexFieldName
@@ -32,8 +32,8 @@ internal fun YamlWriter.writeNamedIndexField(name: String, index: UInt) {
  */
 internal fun <DO : Any> IsYamlReader.readNamedIndexField(
     valueMap: MutableValueItems,
-    nameDescriptor: FlexBytesPropertyDefinitionWrapper<String, String, IsPropertyContext, StringDefinition, DO>,
-    indexDescriptor: FixedBytesPropertyDefinitionWrapper<UInt, *, IsPropertyContext, NumberDefinition<UInt>, DO>
+    nameDescriptor: FlexBytesDefinitionWrapper<String, String, IsPropertyContext, StringDefinition, DO>,
+    indexDescriptor: FixedBytesDefinitionWrapper<UInt, *, IsPropertyContext, NumberDefinition<UInt>, DO>
 ) {
     if (currentToken != StartComplexFieldName || nextToken() !is StartObject) {
         throw IllegalJsonOperation("Expected named index like '? [0: name]'")

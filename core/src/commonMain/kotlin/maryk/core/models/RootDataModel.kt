@@ -19,7 +19,7 @@ import maryk.core.properties.definitions.index.UUIDKey
 import maryk.core.properties.definitions.index.calculateKeyIndices
 import maryk.core.properties.definitions.index.checkKeyDefinitionAndCountBytes
 import maryk.core.properties.definitions.index.mapOfIndexKeyPartDefinitions
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.references.IsFixedBytesPropertyReference
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
@@ -205,7 +205,7 @@ abstract class RootDataModel<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
 
         private fun readDelayed(
             tokensToReadLater: List<JsonToken>?,
-            propertyDefinitionWrapper: IsPropertyDefinitionWrapper<*, *, DefinitionsConversionContext, *>,
+            propertyDefinitionWrapper: IsDefinitionWrapper<*, *, DefinitionsConversionContext, *>,
             reader: IsJsonLikeReader,
             values: MutableValueItems,
             context: ContainsDefinitionsContext?

@@ -5,7 +5,7 @@ import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.wrapper.AnyPropertyDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
@@ -67,7 +67,7 @@ internal data class PropertyDefinitionsCollectionDefinition(
     override val valueDefinition = EmbeddedObjectDefinition(
         dataModel = {
             @Suppress("UNCHECKED_CAST")
-            IsPropertyDefinitionWrapper.Model as SimpleObjectDataModel<AnyPropertyDefinitionWrapper, ObjectPropertyDefinitions<AnyPropertyDefinitionWrapper>>
+            IsDefinitionWrapper.Model as SimpleObjectDataModel<AnyPropertyDefinitionWrapper, ObjectPropertyDefinitions<AnyPropertyDefinitionWrapper>>
         }
     )
 
@@ -128,7 +128,7 @@ internal data class PropertyDefinitionsCollectionDefinitionWrapper<in DO : Any>(
     override val getter: (DO) -> PropertyDefinitions?
 ) :
     IsCollectionDefinition<AnyPropertyDefinitionWrapper, PropertyDefinitions, DefinitionsConversionContext, EmbeddedObjectDefinition<AnyPropertyDefinitionWrapper, ObjectPropertyDefinitions<AnyPropertyDefinitionWrapper>, SimpleObjectDataModel<AnyPropertyDefinitionWrapper, ObjectPropertyDefinitions<AnyPropertyDefinitionWrapper>>, IsPropertyContext, IsPropertyContext>> by definition,
-    IsPropertyDefinitionWrapper<PropertyDefinitions, PropertyDefinitions, DefinitionsConversionContext, DO>
+    IsDefinitionWrapper<PropertyDefinitions, PropertyDefinitions, DefinitionsConversionContext, DO>
 {
     override val graphType = PropRef
 

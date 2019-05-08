@@ -3,7 +3,7 @@ package maryk.core.properties.definitions.contextual
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.json.IsJsonLikeReader
@@ -16,8 +16,8 @@ class ContextualMapDefinition<K : Any, V : Any, in CX : IsPropertyContext>(
 ) : IsSerializablePropertyDefinition<Map<K, V>, CX>, IsContextualEncodable<Map<K, V>, CX> {
     override val final = true
 
-    override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = null
-    override fun getEmbeddedByIndex(index: UInt): IsPropertyDefinitionWrapper<*, *, *, *>? = null
+    override fun getEmbeddedByName(name: String): IsDefinitionWrapper<*, *, *, *>? = null
+    override fun getEmbeddedByIndex(index: UInt): IsDefinitionWrapper<*, *, *, *>? = null
 
     override fun writeJsonValue(value: Map<K, V>, writer: IsJsonLikeWriter, context: CX?) =
         contextualResolver(context).writeJsonValue(value, writer, context)

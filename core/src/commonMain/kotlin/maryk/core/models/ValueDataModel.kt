@@ -10,7 +10,7 @@ import maryk.core.properties.MutableObjectPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitionsCollectionDefinitionWrapper
 import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.properties.types.ValueDataObjectWithValues
 import maryk.core.query.ContainsDefinitionsContext
@@ -77,7 +77,7 @@ abstract class ValueDataModel<DO : ValueDataObject, P : ObjectPropertyDefinition
     }
 
     override fun getValueWithDefinition(
-        definition: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>,
+        definition: IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>,
         obj: DO,
         context: IsPropertyContext?
     ) = if (obj is ValueDataObjectWithValues) {

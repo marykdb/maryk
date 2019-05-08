@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
@@ -19,9 +19,9 @@ import maryk.lib.exceptions.ParseException
 interface IsValueDefinition<T : Any, in CX : IsPropertyContext> : IsSubDefinition<T, CX> {
     val wireType: WireType
 
-    override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = null
+    override fun getEmbeddedByName(name: String): IsDefinitionWrapper<*, *, *, *>? = null
 
-    override fun getEmbeddedByIndex(index: UInt): IsPropertyDefinitionWrapper<*, *, *, *>? = null
+    override fun getEmbeddedByIndex(index: UInt): IsDefinitionWrapper<*, *, *, *>? = null
 
     /**
      * Get value from a [string]

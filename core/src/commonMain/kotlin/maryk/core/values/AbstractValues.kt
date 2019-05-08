@@ -10,7 +10,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.references.IsFuzzyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.RequestContext
@@ -44,7 +44,7 @@ abstract class AbstractValues<DO : Any, DM : IsDataModel<P>, P : AbstractPropert
     }
 
     inline fun <reified T> process(
-        valueDef: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>,
+        valueDef: IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>,
         value: Any?
     ): T {
         // Resolve Injects
@@ -70,7 +70,7 @@ abstract class AbstractValues<DO : Any, DM : IsDataModel<P>, P : AbstractPropert
     }
 
     /** Get property from values with wrapper in [getProperty] and convert it to native usage */
-    inline operator fun <TI : Any, reified TO : Any> invoke(getProperty: P.() -> IsPropertyDefinitionWrapper<TI, TO, *, DO>): TO? {
+    inline operator fun <TI : Any, reified TO : Any> invoke(getProperty: P.() -> IsDefinitionWrapper<TI, TO, *, DO>): TO? {
         val index = getProperty(
             this.dataModel.properties
         ).index
@@ -79,7 +79,7 @@ abstract class AbstractValues<DO : Any, DM : IsDataModel<P>, P : AbstractPropert
     }
 
     /** Get property from valuesvalues with wrapper in [getProperty] and convert it to native usage */
-    fun <T : Any> original(getProperty: P.() -> IsPropertyDefinitionWrapper<T, *, *, DO>): T? {
+    fun <T : Any> original(getProperty: P.() -> IsDefinitionWrapper<T, *, *, DO>): T? {
         val index = getProperty(
             this.dataModel.properties
         ).index
@@ -150,7 +150,7 @@ abstract class AbstractValues<DO : Any, DM : IsDataModel<P>, P : AbstractPropert
  * Returns default value if unset
  */
 @Suppress("UNCHECKED_CAST")
-inline fun <reified T : Any, TO : Any> IsPropertyDefinitionWrapper<T, TO, *, *>.convertToCurrentValue(value: Any?): TO? {
+inline fun <reified T : Any, TO : Any> IsDefinitionWrapper<T, TO, *, *>.convertToCurrentValue(value: Any?): TO? {
     return when {
         value == null && this.definition is HasDefaultValueDefinition<*> -> (this.definition as? HasDefaultValueDefinition<*>).let {
             it?.default as TO?

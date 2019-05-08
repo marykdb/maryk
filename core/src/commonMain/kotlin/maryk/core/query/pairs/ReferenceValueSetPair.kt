@@ -7,7 +7,7 @@ import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DefinedByReference
 import maryk.core.query.RequestContext
@@ -38,7 +38,7 @@ data class ReferenceValueSetPair<T : Any> internal constructor(
                 )
             ),
             ReferenceValueSetPair<*>::values as (ReferenceValueSetPair<*>) -> Set<Any>?
-        ) as IsPropertyDefinitionWrapper<Set<*>, Set<*>, RequestContext, ReferenceValueSetPair<*>>
+        ) as IsDefinitionWrapper<Set<*>, Set<*>, RequestContext, ReferenceValueSetPair<*>>
     }
 
     companion object : SimpleObjectDataModel<ReferenceValueSetPair<*>, Properties>(

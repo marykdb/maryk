@@ -5,7 +5,7 @@ import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
-import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.ListDefinitionWrapper
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
@@ -74,7 +74,7 @@ abstract class ReferencesDataModel<DO : Any, P : ReferencesObjectPropertyDefinit
 }
 
 abstract class ReferencesObjectPropertyDefinitions<DO : Any> : ObjectPropertyDefinitions<DO>() {
-    abstract val references: ListPropertyDefinitionWrapper<AnyPropertyReference, AnyPropertyReference, RequestContext, DO>
+    abstract val references: ListDefinitionWrapper<AnyPropertyReference, AnyPropertyReference, RequestContext, DO>
 
     internal fun addReferenceListPropertyDefinition(getter: (DO) -> List<AnyPropertyReference>) =
         this.add(1u, "references",

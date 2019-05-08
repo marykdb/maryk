@@ -8,8 +8,8 @@ import maryk.test.models.SimpleMarykObject
 import maryk.test.shouldBe
 import kotlin.test.Test
 
-class ObjectListPropertyDefinitionWrapperTest {
-    private val def = ObjectListPropertyDefinitionWrapper(
+class ObjectListDefinitionWrapperTest {
+    private val def = ObjectListDefinitionWrapper(
         index = 1u,
         name = "wrapper",
         properties = SimpleMarykObject.Properties,
@@ -25,7 +25,7 @@ class ObjectListPropertyDefinitionWrapperTest {
     fun getReference() {
         @Suppress("UNCHECKED_CAST")
         def.ref() shouldBe ListReference(
-            def as IsListPropertyDefinitionWrapper<SimpleMarykObject, Any, ListDefinition<SimpleMarykObject, IsPropertyContext>, IsPropertyContext, *>,
+            def as IsListDefinitionWrapper<SimpleMarykObject, Any, ListDefinition<SimpleMarykObject, IsPropertyContext>, IsPropertyContext, *>,
             null
         )
     }

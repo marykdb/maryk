@@ -6,10 +6,10 @@ import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.types.numeric.UInt32
 import kotlin.test.Test
 
-class FixedBytesPropertyDefinitionWrapperTest {
+class FixedBytesDefinitionWrapperTest {
     private val type = UInt32
 
-    private val def = FixedBytesPropertyDefinitionWrapper(
+    private val def = FixedBytesDefinitionWrapper(
         index = 1u,
         name = "wrapper",
         definition = NumberDefinition(type = type),
@@ -18,11 +18,11 @@ class FixedBytesPropertyDefinitionWrapperTest {
 
     @Test
     fun convertDefinitionToProtoBufAndBack() {
-        checkProtoBufConversion(this.def, IsPropertyDefinitionWrapper.Model, null, ::comparePropertyDefinitionWrapper)
+        checkProtoBufConversion(this.def, IsDefinitionWrapper.Model, null, ::comparePropertyDefinitionWrapper)
     }
 
     @Test
     fun convertDefinitionToJSONAndBack() {
-        checkJsonConversion(this.def, IsPropertyDefinitionWrapper.Model, null, ::comparePropertyDefinitionWrapper)
+        checkJsonConversion(this.def, IsDefinitionWrapper.Model, null, ::comparePropertyDefinitionWrapper)
     }
 }

@@ -6,8 +6,8 @@ import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.StringDefinition
 import kotlin.test.Test
 
-class ListPropertyDefinitionWrapperTest {
-    private val def = ListPropertyDefinitionWrapper(
+class ListDefinitionWrapperTest {
+    private val def = ListDefinitionWrapper(
         index = 1u,
         name = "wrapper",
         definition = ListDefinition(
@@ -18,11 +18,11 @@ class ListPropertyDefinitionWrapperTest {
 
     @Test
     fun convertDefinitionToProtoBufAndBack() {
-        checkProtoBufConversion(this.def, IsPropertyDefinitionWrapper.Model, null, ::comparePropertyDefinitionWrapper)
+        checkProtoBufConversion(this.def, IsDefinitionWrapper.Model, null, ::comparePropertyDefinitionWrapper)
     }
 
     @Test
     fun convertDefinitionToJSONAndBack() {
-        checkJsonConversion(this.def, IsPropertyDefinitionWrapper.Model, null, ::comparePropertyDefinitionWrapper)
+        checkJsonConversion(this.def, IsDefinitionWrapper.Model, null, ::comparePropertyDefinitionWrapper)
     }
 }

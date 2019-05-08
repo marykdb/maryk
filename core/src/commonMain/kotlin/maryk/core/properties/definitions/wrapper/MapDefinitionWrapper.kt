@@ -17,7 +17,7 @@ import maryk.core.properties.references.MapValueReference
  * It contains an [index] and [name] to which it is referred inside DataModel and a [getter]
  * function to retrieve value on dataObject of [DO] in context [CX]
  */
-data class MapPropertyDefinitionWrapper<K : Any, V : Any, TO : Any, CX : IsPropertyContext, in DO : Any> internal constructor(
+data class MapDefinitionWrapper<K : Any, V : Any, TO : Any, CX : IsPropertyContext, in DO : Any> internal constructor(
     override val index: UInt,
     override val name: String,
     override val definition: MapDefinition<K, V, CX>,
@@ -27,15 +27,15 @@ data class MapPropertyDefinitionWrapper<K : Any, V : Any, TO : Any, CX : IsPrope
     override val fromSerializable: ((Map<K, V>?) -> TO?)? = null,
     override val shouldSerialize: ((Any) -> Boolean)? = null
 ) :
-    AbstractPropertyDefinitionWrapper(index, name),
+    AbstractDefinitionWrapper(index, name),
     IsMapDefinition<K, V, CX> by definition,
-    IsPropertyDefinitionWrapper<Map<K, V>, TO, CX, DO> {
+    IsDefinitionWrapper<Map<K, V>, TO, CX, DO> {
     override val graphType = PropRef
 
     @Suppress("UNCHECKED_CAST")
     override fun ref(parentRef: AnyPropertyReference?): MapReference<K, V, CX> =
         MapReference(
-            this as MapPropertyDefinitionWrapper<K, V, Any, CX, *>,
+            this as MapDefinitionWrapper<K, V, Any, CX, *>,
             parentRef as CanHaveComplexChildReference<*, *, *, *>?
         )
 

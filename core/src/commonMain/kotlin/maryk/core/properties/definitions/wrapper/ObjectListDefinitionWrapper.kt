@@ -15,7 +15,7 @@ import maryk.core.properties.references.IsPropertyReference
  * It contains an [index] and [name] to which it is referred inside DataModel and a [getter]
  * function to retrieve value on dataObject of [DO] in context [CX]
  */
-data class ObjectListPropertyDefinitionWrapper<
+data class ObjectListDefinitionWrapper<
     ODO : Any,
     P : ObjectPropertyDefinitions<ODO>,
     TO : Any,
@@ -32,9 +32,9 @@ data class ObjectListPropertyDefinitionWrapper<
     override val fromSerializable: ((List<ODO>?) -> List<TO>?)? = null,
     override val shouldSerialize: ((Any) -> Boolean)? = null
 ) :
-    AbstractPropertyDefinitionWrapper(index, name),
+    AbstractDefinitionWrapper(index, name),
     IsListDefinition<ODO, CX> by definition,
-    IsListPropertyDefinitionWrapper<ODO, TO, ListDefinition<ODO, CX>, CX, DO> {
+    IsListDefinitionWrapper<ODO, TO, ListDefinition<ODO, CX>, CX, DO> {
     override val graphType = PropRef
 
     /** Get sub reference below an index */
@@ -49,7 +49,7 @@ data class ObjectListPropertyDefinitionWrapper<
             { parentRef ->
                 objectValuesDefinition.dataModel(
                     this.definition.itemRef(index, this.ref(parentRef)),
-                    referenceGetter as ObjectPropertyDefinitions<*>.() -> (AnyOutPropertyReference?) -> IsPropertyReference<Any, IsPropertyDefinitionWrapper<Any, *, *, *>, *>
+                    referenceGetter as ObjectPropertyDefinitions<*>.() -> (AnyOutPropertyReference?) -> IsPropertyReference<Any, IsDefinitionWrapper<Any, *, *, *>, *>
                 )
             }
         }
@@ -59,19 +59,19 @@ data class ObjectListPropertyDefinitionWrapper<
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> refAt(
         index: UInt,
-        propertyDefinitionGetter: P.() -> IsPropertyDefinitionWrapper<T, *, *, *>
-    ): (AnyOutPropertyReference?) -> IsPropertyReference<T, IsPropertyDefinitionWrapper<T, *, *, *>, *> {
+        propertyDefinitionGetter: P.() -> IsDefinitionWrapper<T, *, *, *>
+    ): (AnyOutPropertyReference?) -> IsPropertyReference<T, IsDefinitionWrapper<T, *, *, *>, *> {
         val objectValuesDefinition = this.definition.valueDefinition as EmbeddedObjectDefinition<ODO, P, *, *, *>
 
         return {
             propertyDefinitionGetter(
                 objectValuesDefinition.dataModel.properties as P
-            ).ref(this.getItemRef(index,it)) as IsPropertyReference<T, IsPropertyDefinitionWrapper<T, *, *, *>, *>
+            ).ref(this.getItemRef(index,it)) as IsPropertyReference<T, IsDefinitionWrapper<T, *, *, *>, *>
         }
     }
 
     /** Reference values to references from [referenceGetter] at given [index] of list */
-    fun <T : Any, W : IsPropertyDefinitionWrapper<T, *, *, *>, R : IsPropertyReference<T, W, *>> at(
+    fun <T : Any, W : IsDefinitionWrapper<T, *, *, *>, R : IsPropertyReference<T, W, *>> at(
         index: UInt,
         referenceGetter: P.() -> (AnyOutPropertyReference?) -> R
     ): (AnyOutPropertyReference?) -> R =
@@ -86,7 +86,7 @@ data class ObjectListPropertyDefinitionWrapper<
         }
 
     /** Reference values to references from [referenceGetter] at any item of list */
-    fun <T : Any, W : IsPropertyDefinitionWrapper<T, *, *, *>, R : IsPropertyReference<T, W, *>> atAny(
+    fun <T : Any, W : IsDefinitionWrapper<T, *, *, *>, R : IsPropertyReference<T, W, *>> atAny(
         referenceGetter: P.() -> (AnyOutPropertyReference?) -> R
     ): (AnyOutPropertyReference?) -> R =
         @Suppress("UNCHECKED_CAST")

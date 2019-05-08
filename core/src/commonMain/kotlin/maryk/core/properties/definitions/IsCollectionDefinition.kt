@@ -5,7 +5,7 @@ import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedValuesDefinition
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.exceptions.NotEnoughItemsException
 import maryk.core.properties.exceptions.TooManyItemsException
 import maryk.core.properties.exceptions.ValidationException
@@ -37,8 +37,8 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
     HasSizeDefinition {
     val valueDefinition: ST
 
-    override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = null
-    override fun getEmbeddedByIndex(index: UInt): IsPropertyDefinitionWrapper<*, *, *, *>? = null
+    override fun getEmbeddedByName(name: String): IsDefinitionWrapper<*, *, *, *>? = null
+    override fun getEmbeddedByIndex(index: UInt): IsDefinitionWrapper<*, *, *, *>? = null
 
     override fun validateWithRef(
         previousValue: C?,

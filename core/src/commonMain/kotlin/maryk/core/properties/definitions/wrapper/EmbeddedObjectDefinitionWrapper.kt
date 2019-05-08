@@ -23,7 +23,7 @@ import maryk.core.values.ValueItem
  * It has an input context of [CXI] and the functions take context of [CX] so contexts can be transformed
  * to be relevant to the Embedded Object
  */
-data class EmbeddedObjectPropertyDefinitionWrapper<
+data class EmbeddedObjectDefinitionWrapper<
     EODO : Any,
     TO : Any,
     P : ObjectPropertyDefinitions<EODO>,
@@ -39,9 +39,9 @@ data class EmbeddedObjectPropertyDefinitionWrapper<
     override val fromSerializable: ((EODO?) -> TO?)? = null,
     override val shouldSerialize: ((Any) -> Boolean)? = null
 ) :
-    AbstractPropertyDefinitionWrapper(index, name),
+    AbstractDefinitionWrapper(index, name),
     IsEmbeddedObjectDefinition<EODO, P, DM, CXI, CX> by definition,
-    IsPropertyDefinitionWrapper<EODO, TO, CXI, DO> {
+    IsDefinitionWrapper<EODO, TO, CXI, DO> {
     override val graphType = PropRef
 
     override fun ref(parentRef: AnyPropertyReference?) =
@@ -58,7 +58,7 @@ data class EmbeddedObjectPropertyDefinitionWrapper<
     }
 
     /** Get a top level reference on a model with [propertyDefinitionGetter] */
-    infix fun <T : Any, W : IsPropertyDefinitionWrapper<T, *, *, AbstractValues<*, *, *>>> ref(
+    infix fun <T : Any, W : IsDefinitionWrapper<T, *, *, AbstractValues<*, *, *>>> ref(
         propertyDefinitionGetter: P.() -> W
     ): (AnyOutPropertyReference?) -> IsPropertyReference<T, W, *> =
         {

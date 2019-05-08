@@ -14,7 +14,7 @@ import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefi
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.definitions.contextual.ModelContext
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
@@ -57,9 +57,9 @@ data class ValueModelDefinition<DO : ValueDataObject, DM : ValueDataModel<DO, P>
 
     override fun fromString(string: String) = this.dataModel.fromBase64(string)
 
-    override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = dataModel.properties[name]
+    override fun getEmbeddedByName(name: String): IsDefinitionWrapper<*, *, *, *>? = dataModel.properties[name]
 
-    override fun getEmbeddedByIndex(index: UInt): IsPropertyDefinitionWrapper<*, *, *, *>? = dataModel.properties[index]
+    override fun getEmbeddedByIndex(index: UInt): IsDefinitionWrapper<*, *, *, *>? = dataModel.properties[index]
 
     override fun validateWithRef(
         previousValue: DO?,

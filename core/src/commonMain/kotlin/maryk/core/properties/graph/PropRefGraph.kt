@@ -12,8 +12,8 @@ import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
-import maryk.core.properties.definitions.wrapper.EmbeddedValuesPropertyDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.EmbeddedValuesDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.graph.PropRefGraphType.Graph
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyPropertyReference
@@ -38,7 +38,7 @@ import maryk.lib.exceptions.ParseException
  */
 @Suppress("unused")
 fun <P : PropertyDefinitions, DM : IsValuesDataModel<PS>, PS : PropertyDefinitions> P.graph(
-    embed: EmbeddedValuesPropertyDefinitionWrapper<DM, PS, IsPropertyContext>,
+    embed: EmbeddedValuesDefinitionWrapper<DM, PS, IsPropertyContext>,
     runner: PS.() -> List<IsPropRefGraphNode<PS>>
 ) = PropRefGraph<P, DM, PS>(embed, runner(embed.definition.dataModel.properties).sortedBy { it.index })
 
@@ -47,7 +47,7 @@ fun <P : PropertyDefinitions, DM : IsValuesDataModel<PS>, PS : PropertyDefinitio
  * [properties] should always be sorted by index so processing graphs is a lot easier
  */
 data class PropRefGraph<P : PropertyDefinitions, DM : IsValuesDataModel<PS>, PS : PropertyDefinitions> internal constructor(
-    val parent: EmbeddedValuesPropertyDefinitionWrapper<DM, PS, IsPropertyContext>,
+    val parent: EmbeddedValuesDefinitionWrapper<DM, PS, IsPropertyContext>,
     override val properties: List<IsPropRefGraphNode<PS>>
 ) : IsPropRefGraphNode<P>, IsTransportablePropRefGraphNode, IsPropRefGraph<PS> {
     override val index = parent.index
@@ -58,7 +58,7 @@ data class PropRefGraph<P : PropertyDefinitions, DM : IsValuesDataModel<PS>, PS 
         properties.forEach {
             if (values.isNotBlank()) values += ", "
             values += when (it) {
-                is IsPropertyDefinitionWrapper<*, *, *, *> -> it.name
+                is IsDefinitionWrapper<*, *, *, *> -> it.name
                 is PropRefGraph<*, *, *> -> it.toString()
                 else -> throw TypeException("Unknown Graphable type")
             }
@@ -76,13 +76,13 @@ data class PropRefGraph<P : PropertyDefinitions, DM : IsValuesDataModel<PS>, PS 
             ),
             capturer = { context, value ->
                 context.subDataModel =
-                    (value.propertyDefinition as EmbeddedValuesPropertyDefinitionWrapper<*, *, *>).dataModel
+                    (value.propertyDefinition as EmbeddedValuesDefinitionWrapper<*, *, *>).dataModel
             },
-            toSerializable = { value: IsPropertyDefinitionWrapper<*, *, *, *>?, _ ->
+            toSerializable = { value: IsDefinitionWrapper<*, *, *, *>?, _ ->
                 value?.ref()
             },
             fromSerializable = { value ->
-                value?.propertyDefinition as IsPropertyDefinitionWrapper<*, *, *, *>?
+                value?.propertyDefinition as IsDefinitionWrapper<*, *, *, *>?
             },
             getter = PropRefGraph<*, *, *>::parent
         )
@@ -228,7 +228,7 @@ internal fun <DO : Any> ObjectPropertyDefinitions<DO>.addProperties(
         toSerializable = { value: IsPropRefGraphNode<*> ->
             value.let {
                 when (it) {
-                    is IsPropertyDefinitionWrapper<*, *, *, *> -> TypedValue(it.graphType, it.ref() as IsTransportablePropRefGraphNode)
+                    is IsDefinitionWrapper<*, *, *, *> -> TypedValue(it.graphType, it.ref() as IsTransportablePropRefGraphNode)
                     is PropRefGraph<*, *, *> -> TypedValue(it.graphType, it)
                     else -> throw ParseException("Unknown PropRefGraphType ${it.graphType}")
                 }
@@ -257,7 +257,7 @@ internal fun writePropertiesToJson(
             is PropRefGraph<*, *, *> -> PropRefGraph.writeJson(
                 graphable.value, writer, context
             )
-            is IsPropertyDefinitionWrapper<*, *, *, *> -> {
+            is IsDefinitionWrapper<*, *, *, *> -> {
                 writer.writeString(graphable.value.ref().completeName)
             }
             is AnyPropertyReference -> {

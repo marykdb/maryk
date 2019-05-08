@@ -3,7 +3,7 @@ package maryk.core.properties.references.dsl
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsSubDefinition
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.CanContainMapItemReference
@@ -20,7 +20,7 @@ fun <K : Any, V : TypedValue<E, I>, E: TypeEnum<I>, I: Any, T: Any, R : IsProper
     {
         val mapDefinition = this as IsMapDefinition<K, V, *>
 
-        val parent = if (this is IsPropertyDefinitionWrapper<*, *, *, *>) {
+        val parent = if (this is IsDefinitionWrapper<*, *, *, *>) {
             this.ref(it)
         } else it
 

@@ -8,8 +8,8 @@ import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.types.numeric.Float32
 import kotlin.test.Test
 
-class MapPropertyDefinitionWrapperTest {
-    private val def = MapPropertyDefinitionWrapper(
+class MapDefinitionWrapperTest {
+    private val def = MapDefinitionWrapper(
         index = 1u,
         name = "wrapper",
         definition = MapDefinition(
@@ -21,11 +21,11 @@ class MapPropertyDefinitionWrapperTest {
 
     @Test
     fun convertDefinitionToProtoBufAndBack() {
-        checkProtoBufConversion(this.def, IsPropertyDefinitionWrapper.Model, null, ::comparePropertyDefinitionWrapper)
+        checkProtoBufConversion(this.def, IsDefinitionWrapper.Model, null, ::comparePropertyDefinitionWrapper)
     }
 
     @Test
     fun convertDefinitionToJSONAndBack() {
-        checkJsonConversion(this.def, IsPropertyDefinitionWrapper.Model, null, ::comparePropertyDefinitionWrapper)
+        checkJsonConversion(this.def, IsDefinitionWrapper.Model, null, ::comparePropertyDefinitionWrapper)
     }
 }

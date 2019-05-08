@@ -7,7 +7,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsValueDefinition
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.protobuf.WireType.VAR_INT
@@ -32,8 +32,8 @@ data class ContextualIndexedEnumDefinition<CX : IsPropertyContext, CXI : IsPrope
 
     override val final = true
 
-    override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = null
-    override fun getEmbeddedByIndex(index: UInt): IsPropertyDefinitionWrapper<*, *, *, *>? = null
+    override fun getEmbeddedByName(name: String): IsDefinitionWrapper<*, *, *, *>? = null
+    override fun getEmbeddedByIndex(index: UInt): IsDefinitionWrapper<*, *, *, *>? = null
 
     @Suppress("UNCHECKED_CAST")
     override fun fromString(string: String, context: CX?) =

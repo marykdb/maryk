@@ -5,7 +5,7 @@ import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.MapDefinitionWrapper
 import maryk.core.properties.references.ReferenceType.MAP
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.values.AbstractValues
@@ -15,13 +15,13 @@ import maryk.lib.exceptions.ParseException
  * Reference to a map with key [K] and value [V] and context [CX]
  */
 open class MapReference<K : Any, V : Any, CX : IsPropertyContext> internal constructor(
-    propertyDefinition: MapPropertyDefinitionWrapper<K, V, Any, CX, *>,
+    propertyDefinition: MapDefinitionWrapper<K, V, Any, CX, *>,
     parentReference: CanHaveComplexChildReference<*, *, *, *>?
-) : PropertyReferenceForValues<Map<K, V>, Any, MapPropertyDefinitionWrapper<K, V, Any, CX, *>, CanHaveComplexChildReference<*, *, *, *>>(
+) : PropertyReferenceForValues<Map<K, V>, Any, MapDefinitionWrapper<K, V, Any, CX, *>, CanHaveComplexChildReference<*, *, *, *>>(
         propertyDefinition,
         parentReference
     ),
-    CanContainMapItemReference<Map<K, V>, MapPropertyDefinitionWrapper<K, V, Any, CX, *>, AbstractValues<*, *, *>>,
+    CanContainMapItemReference<Map<K, V>, MapDefinitionWrapper<K, V, Any, CX, *>, AbstractValues<*, *, *>>,
     HasEmbeddedPropertyReference<Map<K, V>> {
     override fun getEmbedded(name: String, context: IsPropertyContext?): AnyPropertyReference = when (name[0]) {
         '@' -> MapValueReference(

@@ -1,6 +1,6 @@
 package maryk.core.properties.references
 
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.values.AbstractValues
 
 /**
@@ -10,7 +10,7 @@ import maryk.core.values.AbstractValues
 open class PropertyReferenceForValues<
     T : Any,
     TO : Any,
-    out D : IsPropertyDefinitionWrapper<T, TO, *, *>,
+    out D : IsDefinitionWrapper<T, TO, *, *>,
     out P : AnyPropertyReference
 > internal constructor(
     propertyDefinition: D,

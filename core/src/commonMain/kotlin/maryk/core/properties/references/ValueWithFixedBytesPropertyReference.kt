@@ -4,7 +4,7 @@ import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 import maryk.core.properties.definitions.index.IndexKeyPartType
-import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.exceptions.RequiredException
 import maryk.core.values.IsValuesGetter
 
@@ -16,7 +16,7 @@ import maryk.core.values.IsValuesGetter
 open class ValueWithFixedBytesPropertyReference<
     T : Any,
     TO : Any,
-    out D : FixedBytesPropertyDefinitionWrapper<T, TO, *, *, *>,
+    out D : FixedBytesDefinitionWrapper<T, TO, *, *, *>,
     out P : AnyPropertyReference
 > internal constructor(
     propertyDefinition: D,

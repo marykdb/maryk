@@ -7,7 +7,7 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
@@ -93,25 +93,25 @@ data class ValueRange<T : Comparable<T>> internal constructor(
                 writer.writeStartObject()
 
                 writeJsonValue(
-                    Properties.from as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, ValueRange<*>>,
+                    Properties.from as IsDefinitionWrapper<Any, Any, IsPropertyContext, ValueRange<*>>,
                     writer,
                     obj.from,
                     context
                 )
                 writeJsonValue(
-                    Properties.inclusiveFrom as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, ValueRange<*>>,
+                    Properties.inclusiveFrom as IsDefinitionWrapper<Any, Any, IsPropertyContext, ValueRange<*>>,
                     writer,
                     obj.inclusiveFrom,
                     context
                 )
                 writeJsonValue(
-                    Properties.to as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, ValueRange<*>>,
+                    Properties.to as IsDefinitionWrapper<Any, Any, IsPropertyContext, ValueRange<*>>,
                     writer,
                     obj.to,
                     context
                 )
                 writeJsonValue(
-                    Properties.inclusiveTo as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, ValueRange<*>>,
+                    Properties.inclusiveTo as IsDefinitionWrapper<Any, Any, IsPropertyContext, ValueRange<*>>,
                     writer,
                     obj.inclusiveTo,
                     context

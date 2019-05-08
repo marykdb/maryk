@@ -4,7 +4,7 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.definitions.wrapper.ObjectListPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.ObjectListDefinitionWrapper
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.RequestContext
@@ -41,7 +41,7 @@ fun <DO : Any, DM : IsObjectDataModel<DO, P>, P : ObjectPropertyDefinitions<DO>>
     @Suppress("UNCHECKED_CAST")
     for (property in this.properties) {
         when (property) {
-            is ObjectListPropertyDefinitionWrapper<out Any, *, *, *, DO> -> {
+            is ObjectListDefinitionWrapper<out Any, *, *, *, DO> -> {
                 val dataModel =
                     (property.definition.valueDefinition as EmbeddedObjectDefinition<Any, ObjectPropertyDefinitions<Any>, *, *, *>).dataModel as IsObjectDataModel<Any, ObjectPropertyDefinitions<Any>>
                 property.getter(dataObject)?.let { list ->

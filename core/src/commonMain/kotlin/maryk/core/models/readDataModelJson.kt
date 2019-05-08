@@ -8,7 +8,7 @@ import maryk.core.properties.IsMutablePropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.IsPropertyDefinitionsCollectionDefinition
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.values.MutableValueItems
@@ -25,10 +25,10 @@ internal fun <DM : IsNamedDataModel<*>, P : IsDataModelPropertyDefinitions<DM, *
     values: MutableValueItems,
     properties: P,
     propertyDefinitionsCreator: () -> IsMutablePropertyDefinitions<*>,
-    processAfterPropertiesAndContinue: ((IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, *>) -> Boolean)? = null
+    processAfterPropertiesAndContinue: ((IsDefinitionWrapper<Any, Any, IsPropertyContext, *>) -> Boolean)? = null
 ) {
     var propertiesAreProcessed = false
-    val propertiesAsWrapper = properties.properties as IsPropertyDefinitionWrapper<*, *, *, *>
+    val propertiesAsWrapper = properties.properties as IsDefinitionWrapper<*, *, *, *>
     @Suppress("UNCHECKED_CAST")
     val propertyDefinitions = lazy {
         propertyDefinitionsCreator().apply {
@@ -36,7 +36,7 @@ internal fun <DM : IsNamedDataModel<*>, P : IsDataModelPropertyDefinitions<DM, *
                 context as DefinitionsConversionContext,
                 this
             )
-        } as IsMutablePropertyDefinitions<IsPropertyDefinitionWrapper<*, *, *, *>>
+        } as IsMutablePropertyDefinitions<IsDefinitionWrapper<*, *, *, *>>
     }
 
     walker@ do {

@@ -3,14 +3,13 @@ package maryk.core.properties.definitions.wrapper
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.properties.definitions.StringDefinition
-import maryk.core.properties.references.FlexBytesPropertyDefinitionWrapper
 import maryk.test.shouldBe
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
 fun comparePropertyDefinitionWrapper(
-    converted: IsPropertyDefinitionWrapper<*, *, *, *>,
-    original: IsPropertyDefinitionWrapper<*, *, *, *>
+    converted: IsDefinitionWrapper<*, *, *, *>,
+    original: IsDefinitionWrapper<*, *, *, *>
 ) {
     converted.index shouldBe original.index
     converted.name shouldBe original.name
@@ -21,7 +20,7 @@ fun comparePropertyDefinitionWrapper(
 }
 
 class PropertyDefinitionWrapperTest {
-    private val def = FlexBytesPropertyDefinitionWrapper(
+    private val def = FlexBytesDefinitionWrapper(
         index = 1u,
         name = "wrapper",
         definition = StringDefinition(),
@@ -30,11 +29,11 @@ class PropertyDefinitionWrapperTest {
 
     @Test
     fun convertDefinitionToProtoBufAndBack() {
-        checkProtoBufConversion(this.def, IsPropertyDefinitionWrapper.Model, null, ::comparePropertyDefinitionWrapper)
+        checkProtoBufConversion(this.def, IsDefinitionWrapper.Model, null, ::comparePropertyDefinitionWrapper)
     }
 
     @Test
     fun convertDefinitionToJSONAndBack() {
-        checkJsonConversion(this.def, IsPropertyDefinitionWrapper.Model, null, ::comparePropertyDefinitionWrapper)
+        checkJsonConversion(this.def, IsDefinitionWrapper.Model, null, ::comparePropertyDefinitionWrapper)
     }
 }

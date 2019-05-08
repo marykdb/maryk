@@ -4,7 +4,7 @@ import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsDataModelPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.AnyPropertyDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.json.IsJsonLikeWriter
 import maryk.yaml.YamlWriter
@@ -40,7 +40,7 @@ internal fun <
     } else {
         @Suppress("UNCHECKED_CAST")
         this.writeJsonValue(
-            properties.properties as IsPropertyDefinitionWrapper<in Any, in Any, IsPropertyContext, DM>,
+            properties.properties as IsDefinitionWrapper<in Any, in Any, IsPropertyContext, DM>,
             writer,
             obj.properties,
             context

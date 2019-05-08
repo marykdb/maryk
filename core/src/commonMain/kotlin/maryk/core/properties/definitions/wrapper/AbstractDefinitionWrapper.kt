@@ -2,7 +2,7 @@ package maryk.core.properties.definitions.wrapper
 
 private val regEx = Regex("[a-z]+[a-zA-Z0-9]*")
 
-abstract class AbstractPropertyDefinitionWrapper(
+abstract class AbstractDefinitionWrapper(
     index: UInt,
     name: String
 ) {

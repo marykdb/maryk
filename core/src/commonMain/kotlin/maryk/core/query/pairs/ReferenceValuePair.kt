@@ -13,7 +13,7 @@ import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
-import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsValueDefinitionWrapper
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
@@ -60,7 +60,7 @@ data class ReferenceValuePair<T : Any> internal constructor(
 }
 
 /** Convenience infix method to create Reference [value] pairs */
-infix fun <T : Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>, *>.with(value: T) =
+infix fun <T : Any> IsPropertyReference<T, IsValueDefinitionWrapper<T, *, IsPropertyContext, *>, *>.with(value: T) =
     ReferenceValuePair(this, value)
 
 /** Convenience infix method to create Reference [list] pairs */

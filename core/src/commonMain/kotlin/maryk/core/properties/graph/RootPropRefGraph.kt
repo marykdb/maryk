@@ -7,7 +7,7 @@ import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.MultiTypeDefinition
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.graph.PropRefGraphType.Graph
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.types.TypedValue
@@ -41,7 +41,7 @@ data class RootPropRefGraph<P : IsPropertyDefinitions> internal constructor(
         properties.forEach {
             if (values.isNotBlank()) values += ", "
             values += when (it) {
-                is IsPropertyDefinitionWrapper<*, *, *, *> -> it.name
+                is IsDefinitionWrapper<*, *, *, *> -> it.name
                 is PropRefGraph<*, *, *> -> it.toString()
                 else -> throw TypeException("Unknown Graphable type")
             }

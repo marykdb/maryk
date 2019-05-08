@@ -7,8 +7,8 @@ import maryk.core.query.DefinitionsContext
 import maryk.test.models.EmbeddedMarykModel
 import kotlin.test.Test
 
-class EmbeddedValuesPropertyDefinitionWrapperTest {
-    private val def = EmbeddedValuesPropertyDefinitionWrapper(
+class EmbeddedValuesDefinitionWrapperTest {
+    private val def = EmbeddedValuesDefinitionWrapper(
         index = 1u,
         name = "wrapper",
         definition = EmbeddedValuesDefinition(
@@ -21,7 +21,7 @@ class EmbeddedValuesPropertyDefinitionWrapperTest {
     fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(
             this.def,
-            IsPropertyDefinitionWrapper.Model,
+            IsDefinitionWrapper.Model,
             { DefinitionsContext() },
             ::comparePropertyDefinitionWrapper
         )
@@ -31,7 +31,7 @@ class EmbeddedValuesPropertyDefinitionWrapperTest {
     fun convertDefinitionToJSONAndBack() {
         checkJsonConversion(
             this.def,
-            IsPropertyDefinitionWrapper.Model,
+            IsDefinitionWrapper.Model,
             { DefinitionsContext() },
             ::comparePropertyDefinitionWrapper
         )

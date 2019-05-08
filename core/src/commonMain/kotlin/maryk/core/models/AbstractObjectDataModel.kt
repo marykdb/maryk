@@ -3,7 +3,7 @@ package maryk.core.models
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
@@ -62,7 +62,7 @@ abstract class AbstractObjectDataModel<DO : Any, P : ObjectPropertyDefinitions<D
         obj: DO,
         writer: IsJsonLikeWriter,
         context: CX? = null,
-        skip: List<IsPropertyDefinitionWrapper<*, *, *, DO>>? = null
+        skip: List<IsDefinitionWrapper<*, *, *, DO>>? = null
     ) {
         writer.writeStartObject()
         for (definition in this.properties) {
@@ -117,7 +117,7 @@ abstract class AbstractObjectDataModel<DO : Any, P : ObjectPropertyDefinitions<D
     }
 
     protected open fun getValueWithDefinition(
-        definition: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>,
+        definition: IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>,
         obj: DO,
         context: CX?
     ) = if (obj is ObjectValues<*, *>) {

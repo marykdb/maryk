@@ -4,7 +4,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.fromNativeType
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.types.numeric.Float32
 import maryk.core.properties.types.numeric.Float64
 import maryk.core.properties.types.numeric.NumberDescriptor
@@ -28,8 +28,8 @@ internal class ContextualNumberDefinition<in CX : IsPropertyContext>(
 ) : IsSubDefinition<Comparable<Any>, CX>, IsContextualEncodable<Comparable<Any>, CX> {
     override val final = true
 
-    override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = null
-    override fun getEmbeddedByIndex(index: UInt): IsPropertyDefinitionWrapper<*, *, *, *>? = null
+    override fun getEmbeddedByName(name: String): IsDefinitionWrapper<*, *, *, *>? = null
+    override fun getEmbeddedByIndex(index: UInt): IsDefinitionWrapper<*, *, *, *>? = null
 
     override fun calculateTransportByteLengthWithKey(
         index: UInt,

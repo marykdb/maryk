@@ -3,8 +3,8 @@ package maryk.core.models
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
-import maryk.core.properties.definitions.wrapper.ContextualPropertyDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.ContextualDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.query.DefinedByReference
 import maryk.core.query.RequestContext
@@ -25,7 +25,7 @@ import maryk.lib.exceptions.ParseException
 abstract class ReferenceMappedDataModel<DO : Any, CDO : DefinedByReference<*>, P : ObjectPropertyDefinitions<DO>, CP : ObjectPropertyDefinitions<CDO>>(
     properties: P,
     private val containedDataModel: QueryDataModel<CDO, CP>,
-    private val referenceProperty: ContextualPropertyDefinitionWrapper<AnyPropertyReference, AnyPropertyReference, RequestContext, ContextualPropertyReferenceDefinition<RequestContext>, CDO>
+    private val referenceProperty: ContextualDefinitionWrapper<AnyPropertyReference, AnyPropertyReference, RequestContext, ContextualPropertyReferenceDefinition<RequestContext>, CDO>
 ) : QueryDataModel<DO, P>(properties) {
 
     /** Write a values to [writer] with references mapped to the internal model for [items] within [context] */
@@ -55,7 +55,7 @@ abstract class ReferenceMappedDataModel<DO : Any, CDO : DefinedByReference<*>, P
 
     private fun <T : Any, CX : IsPropertyContext> IsJsonLikeWriter.writeField(
         dataObject: CDO,
-        definitionWrapper: IsPropertyDefinitionWrapper<T, T, CX, CDO>,
+        definitionWrapper: IsDefinitionWrapper<T, T, CX, CDO>,
         context: CX?
     ) {
         definitionWrapper.getter(dataObject)?.let {

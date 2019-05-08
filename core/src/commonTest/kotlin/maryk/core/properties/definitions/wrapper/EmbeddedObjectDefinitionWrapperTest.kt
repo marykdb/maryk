@@ -6,8 +6,8 @@ import maryk.test.models.EmbeddedMarykObject
 import maryk.test.shouldBe
 import kotlin.test.Test
 
-class EmbeddedObjectPropertyDefinitionWrapperTest {
-    private val def = EmbeddedObjectPropertyDefinitionWrapper(
+class EmbeddedObjectDefinitionWrapperTest {
+    private val def = EmbeddedObjectDefinitionWrapper(
         index = 1u,
         name = "wrapper",
         definition = EmbeddedObjectDefinition(

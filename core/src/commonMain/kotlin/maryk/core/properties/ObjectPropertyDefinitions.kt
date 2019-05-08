@@ -16,19 +16,19 @@ import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.wrapper.AnyPropertyDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.ContextualPropertyDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.EmbeddedObjectPropertyDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.EmbeddedValuesPropertyDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.ContextualDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.EmbeddedObjectDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.EmbeddedValuesDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.ListDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.MapDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.SetDefinitionWrapper
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyPropertyReference
-import maryk.core.properties.references.FlexBytesPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DefinitionsConversionContext
@@ -56,7 +56,7 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
         definition: D,
         getter: (DO) -> T?,
         capturer: ((CX, T) -> Unit)? = null
-    ) = FlexBytesPropertyDefinitionWrapper(index, name, definition, getter, capturer).apply {
+    ) = FlexBytesDefinitionWrapper(index, name, definition, getter, capturer).apply {
         addSingle(this)
     }
 
@@ -70,7 +70,7 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
         fromSerializable: (T?) -> TO?,
         shouldSerialize: ((Any) -> Boolean)? = null,
         capturer: ((CX, T) -> Unit)? = null
-    ) = FlexBytesPropertyDefinitionWrapper(
+    ) = FlexBytesDefinitionWrapper(
         index,
         name,
         definition,
@@ -93,7 +93,7 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
         fromSerializable: (T?) -> TO?,
         shouldSerialize: ((Any) -> Boolean)? = null,
         capturer: ((CX, T) -> Unit)? = null
-    ) = ContextualPropertyDefinitionWrapper(
+    ) = ContextualDefinitionWrapper(
         index,
         name,
         definition,
@@ -113,7 +113,7 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
         definition: D,
         getter: (DO) -> T?,
         capturer: ((CX, T) -> Unit)? = null
-    ) = ContextualPropertyDefinitionWrapper(index, name, definition, getter, capturer).apply {
+    ) = ContextualDefinitionWrapper(index, name, definition, getter, capturer).apply {
         addSingle(this)
     }
 
@@ -126,7 +126,7 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
         capturer: ((CX, T) -> Unit)? = null,
         toSerializable: (TO?, CX?) -> T?,
         fromSerializable: (T?) -> TO?
-    ) = FixedBytesPropertyDefinitionWrapper(
+    ) = FixedBytesDefinitionWrapper(
         index,
         name,
         definition,
@@ -145,7 +145,7 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
         definition: D,
         getter: (DO) -> T?,
         capturer: ((CX, T) -> Unit)? = null
-    ) = FixedBytesPropertyDefinitionWrapper(index, name, definition, getter, capturer = capturer).apply {
+    ) = FixedBytesDefinitionWrapper(index, name, definition, getter, capturer = capturer).apply {
         addSingle(this)
     }
 
@@ -156,7 +156,7 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
         definition: ListDefinition<T, CX>,
         getter: (DO) -> List<T>?,
         capturer: ((CX, List<T>) -> Unit)? = null
-    ) = ListPropertyDefinitionWrapper(index, name, definition, getter, capturer).apply {
+    ) = ListDefinitionWrapper(index, name, definition, getter, capturer).apply {
         addSingle(this)
     }
 
@@ -169,7 +169,7 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
         capturer: ((CX, List<T>) -> Unit)? = null,
         toSerializable: (TO) -> T,
         fromSerializable: (T) -> TO
-    ) = ListPropertyDefinitionWrapper(
+    ) = ListDefinitionWrapper(
         index, name, definition, getter, capturer,
         toSerializable = { value, _ ->
             value?.map { toSerializable(it) }
@@ -188,7 +188,7 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
         definition: SetDefinition<T, CX>,
         getter: (DO) -> Set<T>?,
         capturer: ((CX, Set<T>) -> Unit)? = null
-    ) = SetPropertyDefinitionWrapper(index, name, definition, getter, capturer).apply {
+    ) = SetDefinitionWrapper(index, name, definition, getter, capturer).apply {
         addSingle(this)
     }
 
@@ -199,7 +199,7 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
         definition: MapDefinition<K, V, CX>,
         getter: (DO) -> Map<K, V>?,
         capturer: ((CX, Map<K, V>) -> Unit)? = null
-    ) = MapPropertyDefinitionWrapper(index, name, definition, getter, capturer).apply {
+    ) = MapDefinitionWrapper(index, name, definition, getter, capturer).apply {
         addSingle(this)
     }
 
@@ -215,7 +215,7 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
         capturer: ((CX, Map<K, V>) -> Unit)? = null,
         toSerializable: (TO?, CX?) -> Map<K, V>?,
         fromSerializable: (Map<K, V>?) -> TO?
-    ) = MapPropertyDefinitionWrapper(
+    ) = MapDefinitionWrapper(
         index, name, definition, getter, capturer, toSerializable, fromSerializable
     ).apply {
         addSingle(this)
@@ -255,7 +255,7 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
         definition: IsEmbeddedObjectDefinition<EODO, P, D, CXI, CX>,
         getter: (DO) -> EODO? = { null },
         capturer: ((CXI, EODO) -> Unit)? = null
-    ) = EmbeddedObjectPropertyDefinitionWrapper(index, name, definition, getter, capturer).apply {
+    ) = EmbeddedObjectDefinitionWrapper(index, name, definition, getter, capturer).apply {
         addSingle(this)
     }
 
@@ -267,7 +267,7 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
         definition: IsEmbeddedValuesDefinition<DM, P, CX>,
         getter: (DO) -> Values<DM, P>? = { null },
         capturer: ((CX, Values<DM, P>) -> Unit)? = null
-    ) = EmbeddedValuesPropertyDefinitionWrapper(
+    ) = EmbeddedValuesDefinitionWrapper(
         index, name, definition,
         getter as (Any) -> Values<DM, P>?,
         capturer
@@ -277,13 +277,13 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
 }
 
 /** Mutable variant of ObjectPropertyDefinitions for a IsCollectionDefinition implementation */
-internal class MutableObjectPropertyDefinitions<DO: Any> : ObjectPropertyDefinitions<DO>(), IsMutablePropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>> {
-    override fun add(element: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>): Boolean {
+internal class MutableObjectPropertyDefinitions<DO: Any> : ObjectPropertyDefinitions<DO>(), IsMutablePropertyDefinitions<IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>> {
+    override fun add(element: IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>): Boolean {
         this.addSingle(propertyDefinitionWrapper = element)
         return true
     }
 
-    override fun addAll(elements: Collection<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>>): Boolean {
+    override fun addAll(elements: Collection<IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>>): Boolean {
         elements.forEach {
             this.addSingle(it)
         }
@@ -291,9 +291,9 @@ internal class MutableObjectPropertyDefinitions<DO: Any> : ObjectPropertyDefinit
     }
 
     override fun clear() {}
-    override fun remove(element: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>) = false
-    override fun removeAll(elements: Collection<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>>) = false
-    override fun retainAll(elements: Collection<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>>) = false
+    override fun remove(element: IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>) = false
+    override fun removeAll(elements: Collection<IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>>) = false
+    override fun retainAll(elements: Collection<IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>>) = false
 }
 
 /** Definition for a collection of Property Definitions for in a ObjectPropertyDefinitions */
@@ -322,7 +322,7 @@ internal data class ObjectPropertyDefinitionsCollectionDefinition(
     override val valueDefinition = EmbeddedObjectDefinition(
         dataModel = {
             @Suppress("UNCHECKED_CAST")
-            IsPropertyDefinitionWrapper.Model as SimpleObjectDataModel<AnyPropertyDefinitionWrapper, ObjectPropertyDefinitions<AnyPropertyDefinitionWrapper>>
+            IsDefinitionWrapper.Model as SimpleObjectDataModel<AnyPropertyDefinitionWrapper, ObjectPropertyDefinitions<AnyPropertyDefinitionWrapper>>
         }
     )
 
@@ -386,7 +386,7 @@ internal data class ObjectPropertyDefinitionsCollectionDefinitionWrapper<in DO :
     override val getter: (DO) -> ObjectPropertyDefinitions<Any>?
 ) :
     IsCollectionDefinition<AnyPropertyDefinitionWrapper, ObjectPropertyDefinitions<Any>, DefinitionsConversionContext, EmbeddedObjectDefinition<AnyPropertyDefinitionWrapper, ObjectPropertyDefinitions<AnyPropertyDefinitionWrapper>, SimpleObjectDataModel<AnyPropertyDefinitionWrapper, ObjectPropertyDefinitions<AnyPropertyDefinitionWrapper>>, IsPropertyContext, IsPropertyContext>> by definition,
-    IsPropertyDefinitionWrapper<ObjectPropertyDefinitions<Any>, ObjectPropertyDefinitions<Any>, DefinitionsConversionContext, DO>
+    IsDefinitionWrapper<ObjectPropertyDefinitions<Any>, ObjectPropertyDefinitions<Any>, DefinitionsConversionContext, DO>
 {
     override val graphType = PropRef
 

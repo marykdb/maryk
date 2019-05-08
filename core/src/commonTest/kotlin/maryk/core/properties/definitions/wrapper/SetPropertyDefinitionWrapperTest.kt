@@ -7,7 +7,7 @@ import maryk.core.properties.definitions.StringDefinition
 import kotlin.test.Test
 
 class SetPropertyDefinitionWrapperTest {
-    private val def = SetPropertyDefinitionWrapper(
+    private val def = SetDefinitionWrapper(
         index = 1u,
         name = "wrapper",
         definition = SetDefinition(
@@ -18,11 +18,11 @@ class SetPropertyDefinitionWrapperTest {
 
     @Test
     fun convertDefinitionToProtoBufAndBack() {
-        checkProtoBufConversion(this.def, IsPropertyDefinitionWrapper.Model, null, ::comparePropertyDefinitionWrapper)
+        checkProtoBufConversion(this.def, IsDefinitionWrapper.Model, null, ::comparePropertyDefinitionWrapper)
     }
 
     @Test
     fun convertDefinitionToJSONAndBack() {
-        checkJsonConversion(this.def, IsPropertyDefinitionWrapper.Model, null, ::comparePropertyDefinitionWrapper)
+        checkJsonConversion(this.def, IsDefinitionWrapper.Model, null, ::comparePropertyDefinitionWrapper)
     }
 }

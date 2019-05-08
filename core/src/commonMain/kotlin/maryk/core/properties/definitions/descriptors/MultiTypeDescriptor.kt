@@ -18,7 +18,7 @@ import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.contextual.ContextCollectionTransformerDefinition
 import maryk.core.properties.definitions.mapOfPropertyDefEmbeddedObjectDefinitions
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyPropertyReference
@@ -190,7 +190,7 @@ private data class MultiTypeDescriptorListDefinition(
 /**
  * Describes the property wrapper for the List of type descriptors inside a Multi Typed property definition
  */
-private data class MultiTypeDescriptorPropertyDefinitionWrapper internal constructor(
+private data class MultiTypeDescriptorDefinitionWrapper internal constructor(
     override val index: UInt,
     override val name: String,
     override val definition: ContextCollectionTransformerDefinition<MultiTypeDescriptor, List<MultiTypeDescriptor>, MultiTypeDefinitionContext, ContainsDefinitionsContext>,
@@ -201,7 +201,7 @@ private data class MultiTypeDescriptorPropertyDefinitionWrapper internal constru
     override val getter: (MultiTypeDefinition<*, *, ContainsDefinitionsContext>) -> List<MultiTypeDescriptor>?
 ) :
     IsSerializablePropertyDefinition<List<MultiTypeDescriptor>, MultiTypeDefinitionContext> by definition,
-    IsPropertyDefinitionWrapper<List<MultiTypeDescriptor>, List<MultiTypeDescriptor>, MultiTypeDefinitionContext, MultiTypeDefinition<*, *, ContainsDefinitionsContext>> {
+    IsDefinitionWrapper<List<MultiTypeDescriptor>, List<MultiTypeDescriptor>, MultiTypeDefinitionContext, MultiTypeDefinition<*, *, ContainsDefinitionsContext>> {
     override val graphType = PropRef
 
     override fun ref(parentRef: AnyPropertyReference?) =
@@ -216,7 +216,7 @@ internal fun ObjectPropertyDefinitions<MultiTypeDefinition<*, *, *>>.addDescript
     index: UInt,
     name: String
 ) {
-    MultiTypeDescriptorPropertyDefinitionWrapper(
+    MultiTypeDescriptorDefinitionWrapper(
         index, name,
         definition = ContextCollectionTransformerDefinition(
             definition = MultiTypeDescriptorListDefinition(
@@ -242,7 +242,7 @@ internal fun ObjectPropertyDefinitions<MultiTypeDefinition<*, *, *>>.addDescript
         }
     ).apply {
         @Suppress("UNCHECKED_CAST")
-        addSingle(this as IsPropertyDefinitionWrapper<out Any, *, *, MultiTypeDefinition<*, *, *>>)
+        addSingle(this as IsDefinitionWrapper<out Any, *, *, MultiTypeDefinition<*, *, *>>)
     }
 }
 

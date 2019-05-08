@@ -9,7 +9,7 @@ import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.contextual.ContextInjectCollectionOnWriteDefinition
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
@@ -64,7 +64,7 @@ data class Requests internal constructor(
     @Suppress("UNCHECKED_CAST")
     companion object : SingleTypedValueDataModel<TypedValue<RequestType, Any>, Requests, Properties, RequestContext>(
         properties = Properties,
-        singlePropertyDefinition = Properties.requests as IsPropertyDefinitionWrapper<TypedValue<RequestType, Any>, TypedValue<RequestType, Any>, RequestContext, Requests>
+        singlePropertyDefinition = Properties.requests as IsDefinitionWrapper<TypedValue<RequestType, Any>, TypedValue<RequestType, Any>, RequestContext, Requests>
     ) {
         override fun invoke(values: ObjectValues<Requests, Properties>) = Requests(
             requests = values(1u),
@@ -73,7 +73,7 @@ data class Requests internal constructor(
 
         override fun protoBufLengthToAddForField(
             value: Any?,
-            definition: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Requests>,
+            definition: IsDefinitionWrapper<Any, Any, IsPropertyContext, Requests>,
             cacher: WriteCacheWriter,
             context: RequestContext?
         ): Int {
@@ -83,7 +83,7 @@ data class Requests internal constructor(
 
         override fun writeProtoBufField(
             value: Any?,
-            definition: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Requests>,
+            definition: IsDefinitionWrapper<Any, Any, IsPropertyContext, Requests>,
             cacheGetter: WriteCacheReader,
             writer: (byte: Byte) -> Unit,
             context: RequestContext?
@@ -94,7 +94,7 @@ data class Requests internal constructor(
 
         /** Inject injectables if it is found on context */
         private fun injectValues(
-            definition: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Requests>,
+            definition: IsDefinitionWrapper<Any, Any, IsPropertyContext, Requests>,
             context: RequestContext?,
             value: Any?
         ) = if (definition == Properties.injectables && context != null) {

@@ -2,7 +2,7 @@ package maryk.core.properties.references.dsl
 
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsSubDefinition
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.CanContainMapItemReference
 import maryk.core.properties.references.IsPropertyReference
@@ -17,7 +17,7 @@ fun <K : Any, V : Map<K2, V2>, K2: Any, V2: Any, T : Any, R : IsPropertyReferenc
     {
         val mapDefinition = this as IsMapDefinition<K, V, *>
 
-        val parent = if (this is IsPropertyDefinitionWrapper<*, *, *, *>) {
+        val parent = if (this is IsDefinitionWrapper<*, *, *, *>) {
             this.ref(it)
         } else it
 

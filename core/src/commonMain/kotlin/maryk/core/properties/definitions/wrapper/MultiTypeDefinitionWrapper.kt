@@ -32,9 +32,9 @@ data class MultiTypeDefinitionWrapper<E : TypeEnum<T>, T: Any, TO : Any, CX : Is
     override val fromSerializable: ((TypedValue<E, T>?) -> TO?)? = null,
     override val shouldSerialize: ((Any) -> Boolean)? = null
 ) :
-    AbstractPropertyDefinitionWrapper(index, name),
+    AbstractDefinitionWrapper(index, name),
     IsMultiTypeDefinition<E, T, CX> by definition,
-    IsPropertyDefinitionWrapper<TypedValue<E, T>, TO, CX, DO> {
+    IsDefinitionWrapper<TypedValue<E, T>, TO, CX, DO> {
     override val graphType = PropRef
 
     override fun ref(parentRef: AnyPropertyReference?) =
@@ -58,7 +58,7 @@ data class MultiTypeDefinitionWrapper<E : TypeEnum<T>, T: Any, TO : Any, CX : Is
     }
 
     /** Specific extension to support fetching deeper references with [type] */
-    fun <P : PropertyDefinitions, T : Any, R : IsPropertyReference<T, IsPropertyDefinitionWrapper<T, *, *, *>, *>> withType(
+    fun <P : PropertyDefinitions, T : Any, R : IsPropertyReference<T, IsDefinitionWrapper<T, *, *, *>, *>> withType(
         type: E,
         @Suppress("UNUSED_PARAMETER") properties: P, // So it is not needed to pass in types
         referenceGetter: P.() -> (AnyOutPropertyReference?) -> R
@@ -74,7 +74,7 @@ data class MultiTypeDefinitionWrapper<E : TypeEnum<T>, T: Any, TO : Any, CX : Is
 
     /** Specific extension to support fetching deeper references with [type] */
     @Suppress("UNCHECKED_CAST")
-    fun <P : PropertyDefinitions, T : Any, R : IsPropertyReference<T, IsPropertyDefinitionWrapper<T, *, *, *>, *>> withType(
+    fun <P : PropertyDefinitions, T : Any, R : IsPropertyReference<T, IsDefinitionWrapper<T, *, *, *>, *>> withType(
         type: TypeEnum<Values<*, P>>,
         referenceGetter: P.() ->
             (AnyOutPropertyReference?) -> R

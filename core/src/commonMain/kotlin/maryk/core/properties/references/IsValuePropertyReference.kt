@@ -3,7 +3,7 @@ package maryk.core.properties.references
 import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.properties.definitions.IsStorageBytesEncodable
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.exceptions.RequiredException
 import maryk.core.values.IsValuesGetter
 
@@ -21,7 +21,7 @@ interface IsValuePropertyReference<
     IsIndexablePropertyReference<T>,
     IsStorageBytesEncodable<T>
         where D : IsStorageBytesEncodable<T>,
-              D : IsPropertyDefinitionWrapper<T, TO, *, *> {
+              D : IsDefinitionWrapper<T, TO, *, *> {
 
     override fun calculateReferenceStorageByteLength(): Int {
         val refLength = this.calculateStorageByteLength()

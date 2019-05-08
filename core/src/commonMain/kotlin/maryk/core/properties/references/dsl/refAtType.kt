@@ -3,7 +3,7 @@ package maryk.core.properties.references.dsl
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsSubDefinition
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
@@ -18,7 +18,7 @@ fun <E : TypeEnum<I>, I: Any> IsSubDefinition<TypedValue<E, I>, *>.refAtType(
         @Suppress("UNCHECKED_CAST")
         val multiTypeDef = this as IsMultiTypeDefinition<E, I, IsPropertyContext>
 
-        val parent = if (this is IsPropertyDefinitionWrapper<*, *, *, *>) {
+        val parent = if (this is IsDefinitionWrapper<*, *, *, *>) {
             this.ref(it)
         } else it
 

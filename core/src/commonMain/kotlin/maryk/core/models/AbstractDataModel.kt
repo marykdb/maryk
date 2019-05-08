@@ -8,7 +8,7 @@ import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.ProtoBufKey
 import maryk.core.protobuf.WriteCacheReader
@@ -74,7 +74,7 @@ abstract class AbstractDataModel<DO : Any, P : AbstractPropertyDefinitions<DO>, 
     }
 
     internal fun writeJsonValue(
-        def: IsPropertyDefinitionWrapper<in Any, in Any, IsPropertyContext, DO>,
+        def: IsDefinitionWrapper<in Any, in Any, IsPropertyContext, DO>,
         writer: IsJsonLikeWriter,
         value: Any,
         context: CX?
@@ -208,7 +208,7 @@ abstract class AbstractDataModel<DO : Any, P : AbstractPropertyDefinitions<DO>, 
     /** Calculates length for the ProtoBuf field for [value] */
     protected open fun protoBufLengthToAddForField(
         value: Any?,
-        definition: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>,
+        definition: IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>,
         cacher: WriteCacheWriter,
         context: CX?
     ): Int {
@@ -259,7 +259,7 @@ abstract class AbstractDataModel<DO : Any, P : AbstractPropertyDefinitions<DO>, 
      */
     internal open fun writeProtoBufField(
         value: Any?,
-        definition: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>,
+        definition: IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>,
         cacheGetter: WriteCacheReader,
         writer: (byte: Byte) -> Unit,
         context: CX?

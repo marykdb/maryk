@@ -2,7 +2,7 @@ package maryk.core.properties.references
 
 import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.definitions.index.IndexKeyPartType
-import maryk.core.properties.graph.PropRefGraphType
+import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
 
 /**
  * Reference to a value property containing values of type [T]. The property is defined by Property Definition Wrapper
@@ -11,7 +11,7 @@ import maryk.core.properties.graph.PropRefGraphType
 open class ValueWithFlexBytesPropertyReference<
     T : Any,
     TO : Any,
-    out D : FlexBytesPropertyDefinitionWrapper<T, TO, *, *, *>,
+    out D : FlexBytesDefinitionWrapper<T, TO, *, *, *>,
     out P : AnyPropertyReference
 > internal constructor(
     propertyDefinition: D,

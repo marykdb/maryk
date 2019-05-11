@@ -15,9 +15,7 @@ import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IsCoreEnum
 import maryk.core.properties.enum.TypeEnum
-import maryk.core.properties.types.TypedValue
 import maryk.core.query.ContainsDefinitionsContext
-import maryk.core.values.ValuesImpl
 import maryk.json.MapType
 
 /** Indexed type of property definitions */
@@ -66,25 +64,23 @@ internal val mapOfPropertyDefEmbeddedObjectDefinitions =
         PropertyDefinitionType.Value to EmbeddedObjectDefinition(dataModel = { ValueModelDefinition.Model })
     )
 
-typealias WrapperCreator = (index: UInt, name: String, definition: IsPropertyDefinition<Any>, getter: (Any) -> Any?) -> IsDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>
+typealias WrapperCreator = (index: UInt, name: String, definition: IsPropertyDefinition<out Any>) -> IsDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>
 
 @Suppress("UNCHECKED_CAST")
-val createFixedBytesWrapper: WrapperCreator = { index, name, definition, getter ->
+val createFixedBytesWrapper: WrapperCreator = { index, name, definition ->
     FixedBytesDefinitionWrapper(
         index,
         name,
-        definition as IsSerializableFixedBytesEncodable<Any, IsPropertyContext>,
-        getter
+        definition as IsSerializableFixedBytesEncodable<Any, IsPropertyContext>
     )
 }
 
 @Suppress("UNCHECKED_CAST")
-val createFlexBytesWrapper: WrapperCreator = { index, name, definition, getter ->
+val createFlexBytesWrapper: WrapperCreator = { index, name, definition ->
     FlexBytesDefinitionWrapper(
         index,
         name,
-        definition as IsSerializableFlexBytesEncodable<Any, IsPropertyContext>,
-        getter
+        definition as IsSerializableFlexBytesEncodable<Any, IsPropertyContext>
     )
 }
 
@@ -95,52 +91,47 @@ internal val mapOfPropertyDefWrappers = mapOf(
     PropertyDefinitionType.Enum to createFixedBytesWrapper,
     PropertyDefinitionType.FixedBytes to createFixedBytesWrapper,
     PropertyDefinitionType.FlexBytes to createFlexBytesWrapper,
-    PropertyDefinitionType.List to { index, name, definition, getter ->
+    PropertyDefinitionType.List to { index, name, definition ->
         @Suppress("UNCHECKED_CAST")
-        ListDefinitionWrapper(
+        ListDefinitionWrapper<Any, List<Any>, IsPropertyContext, Any>(
             index,
             name,
-            definition as ListDefinition<Any, IsPropertyContext>,
-            getter as (Any) -> List<Any>?
+            definition as ListDefinition<Any, IsPropertyContext>
         )
     },
-    PropertyDefinitionType.Map to { index, name, definition, getter ->
+    PropertyDefinitionType.Map to { index, name, definition ->
         @Suppress("UNCHECKED_CAST")
         MapDefinitionWrapper(
             index,
             name,
-            definition as MapDefinition<Any, Any, IsPropertyContext>,
-            getter as (Any) -> Map<Any, Any>?
+            definition as MapDefinition<Any, Any, IsPropertyContext>
         )
     },
-    PropertyDefinitionType.MultiType to { index, name, definition, getter ->
+    PropertyDefinitionType.MultiType to { index, name, definition ->
         @Suppress("UNCHECKED_CAST")
         MultiTypeDefinitionWrapper(
             index,
             name,
-            definition as IsMultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>,
-            getter as (Any) -> TypedValue<TypeEnum<Any>, Any>?
+            definition as IsMultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>
         )
     },
     PropertyDefinitionType.Number to createFixedBytesWrapper,
     PropertyDefinitionType.Reference to createFixedBytesWrapper,
-    PropertyDefinitionType.Set to { index, name, definition, getter ->
+    PropertyDefinitionType.Set to { index, name, definition ->
         @Suppress("UNCHECKED_CAST")
         SetDefinitionWrapper(
             index,
             name,
-            definition as SetDefinition<Any, IsPropertyContext>,
-            getter as (Any) -> Set<Any>?
+            definition as SetDefinition<Any, IsPropertyContext>
         )
     },
     PropertyDefinitionType.String to createFlexBytesWrapper,
-    PropertyDefinitionType.Embed to { index, name, definition, getter ->
+    PropertyDefinitionType.Embed to { index, name, definition ->
         @Suppress("UNCHECKED_CAST")
         EmbeddedValuesDefinitionWrapper(
             index,
             name,
-            definition as EmbeddedValuesDefinition<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>,
-            getter as (Any) -> ValuesImpl?
+            definition as EmbeddedValuesDefinition<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
         )
     },
     PropertyDefinitionType.Time to createFixedBytesWrapper,

@@ -174,12 +174,11 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
                 values<TypedValue<PropertyDefinitionType, IsTransportablePropertyDefinitionType<*>>>(3u)
             val type = typedDefinition.type
 
-            @Suppress("UNCHECKED_CAST")
             return mapOfPropertyDefWrappers[type]?.invoke(
                 values(1u),
                 values(2u),
-                typedDefinition.value as IsPropertyDefinition<Any>
-            ) { null } ?: throw DefNotFoundException("Property type $type not found")
+                typedDefinition.value
+            ) ?: throw DefNotFoundException("Property type $type not found")
         }
 
         override fun writeJson(

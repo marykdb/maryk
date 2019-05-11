@@ -29,6 +29,7 @@ data class EmbeddedValuesDefinitionWrapper<
     override val index: UInt,
     override val name: String,
     override val definition: IsEmbeddedValuesDefinition<DM, P, CX>,
+    override val alternativeNames: Set<String>? = null,
     override val getter: (Any) -> Values<DM, P>? = { null },
     override val capturer: ((CX, Values<DM, P>) -> Unit)? = null,
     override val toSerializable: ((Values<DM, P>?, CX?) -> Values<DM, P>?)? = null,

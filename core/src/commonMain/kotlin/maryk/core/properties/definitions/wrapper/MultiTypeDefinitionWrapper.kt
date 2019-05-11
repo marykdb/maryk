@@ -26,6 +26,7 @@ data class MultiTypeDefinitionWrapper<E : TypeEnum<T>, T: Any, TO : Any, CX : Is
     override val index: UInt,
     override val name: String,
     override val definition: IsMultiTypeDefinition<E, T, CX>,
+    override val alternativeNames: Set<String>? = null,
     override val getter: (DO) -> TO? = { null },
     override val capturer: ((CX, TypedValue<E, T>) -> Unit)? = null,
     override val toSerializable: ((TO?, CX?) -> TypedValue<E, T>?)? = null,

@@ -21,6 +21,7 @@ data class MapDefinitionWrapper<K : Any, V : Any, TO : Any, CX : IsPropertyConte
     override val index: UInt,
     override val name: String,
     override val definition: MapDefinition<K, V, CX>,
+    override val alternativeNames: Set<String>? = null,
     override val getter: (DO) -> TO? = { null },
     override val capturer: ((CX, Map<K, V>) -> Unit)? = null,
     override val toSerializable: ((TO?, CX?) -> Map<K, V>?)? = null,
@@ -48,7 +49,7 @@ data class MapDefinitionWrapper<K : Any, V : Any, TO : Any, CX : IsPropertyConte
         this.definition.valueRef(key, this.ref(parentRef))
 
     /** Get a reference to any map value with optional [parentRef] */
-    internal fun anyValueRef(parentRef: AnyPropertyReference? = null) =
+    private fun anyValueRef(parentRef: AnyPropertyReference? = null) =
         this.definition.anyValueRef(this.ref(parentRef))
 
     /** For quick notation to get a map [key] reference */

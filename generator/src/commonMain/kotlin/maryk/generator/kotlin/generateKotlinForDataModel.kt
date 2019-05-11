@@ -42,9 +42,13 @@ fun DataModel<*, *>.generateKotlin(
 internal fun List<KotlinForProperty>.generateDefinitionsForProperties(): String {
     var properties = ""
     for (it in this) {
+        val altNames = it.altNames?.let { altName ->
+            " alternativeNames = setOf(${altName.joinToString(", ") { """"$it"""" }}),"
+        } ?: ""
+
         properties += """
         val ${it.name} = add(
-            index = ${it.index}u, name = "${it.name}",
+            index = ${it.index}u, name = "${it.name}",$altNames
             definition = ${it.definition.prependIndent().prependIndent().prependIndent().trimStart()}
         )"""
     }

@@ -83,7 +83,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
 ) {
     object Properties : PropertyDefinitions() {
         val string = add(
-            index = 1u, name = "string",
+            index = 1u, name = "string", alternativeNames = setOf("str", "stringValue"),
             definition = StringDefinition(
                 required = false,
                 final = true,

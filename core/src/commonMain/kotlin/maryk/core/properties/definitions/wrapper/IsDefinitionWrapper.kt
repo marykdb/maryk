@@ -12,6 +12,7 @@ import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitionType
+import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.mapOfPropertyDefEmbeddedObjectDefinitions
 import maryk.core.properties.definitions.mapOfPropertyDefWrappers
@@ -46,6 +47,7 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
     IsPropRefGraphNode<PropertyDefinitions> {
     override val index: UInt
     val name: String
+    val alternativeNames: Set<String>?
     val definition: IsSerializablePropertyDefinition<T, CX>
     val getter: (DO) -> TO?
     val capturer: ((CX, T) -> Unit)?
@@ -133,19 +135,33 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
 
     companion object {
         private fun <DO : Any> addIndex(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> UInt) =
-            definitions.add(1u, "index",
+            definitions.add(
+                1u, "index",
                 NumberDefinition(type = UInt32),
-                getter
+                getter = getter
             )
 
         private fun <DO : Any> addName(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> String) =
             definitions.add(2u, "name", StringDefinition(), getter)
 
+        private fun <DO : Any> addAlternativeNames(
+            definitions: ObjectPropertyDefinitions<DO>,
+            getter: (DO) -> Set<String>?
+        ) =
+            definitions.add(
+                3u, "alternativeNames",
+                SetDefinition(
+                    valueDefinition = StringDefinition()
+                ),
+                getter = getter
+            )
+
         private fun <DO : Any> addDefinition(
             definitions: ObjectPropertyDefinitions<DO>,
             getter: (DO) -> IsSerializablePropertyDefinition<*, *>
         ) =
-            definitions.add(3u, "definition",
+            definitions.add(
+                4u, "definition",
                 MultiTypeDefinition(
                     typeEnum = PropertyDefinitionType,
                     definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
@@ -161,6 +177,7 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
         ObjectPropertyDefinitions<IsDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>>() {
         val index = addIndex(this, IsDefinitionWrapper<*, *, *, *>::index)
         val name = addName(this, IsDefinitionWrapper<*, *, *, *>::name)
+        val alternativeNames = addAlternativeNames(this, IsDefinitionWrapper<*, *, *, *>::alternativeNames)
         val definition =
             addDefinition(this, IsDefinitionWrapper<*, *, *, *>::definition)
     }
@@ -171,12 +188,15 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
         ) {
         override fun invoke(values: SimpleObjectValues<IsDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>>): IsDefinitionWrapper<out Any, out Any, IsPropertyContext, Any> {
             val typedDefinition =
-                values<TypedValue<PropertyDefinitionType, IsTransportablePropertyDefinitionType<*>>>(3u)
+                values<TypedValue<PropertyDefinitionType, IsTransportablePropertyDefinitionType<*>>>(
+                    Properties.definition.index
+                )
             val type = typedDefinition.type
 
             return mapOfPropertyDefWrappers[type]?.invoke(
-                values(1u),
-                values(2u),
+                values(Properties.index.index),
+                values(Properties.name.index),
+                values(Properties.alternativeNames.index),
                 typedDefinition.value
             ) ?: throw DefNotFoundException("Property type $type not found")
         }
@@ -192,7 +212,7 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
                     Properties.definition.getPropertyAndSerialize(obj, context as ContainsDefinitionsContext)
                         ?: throw DefNotFoundException("Unknown type ${obj.definition} so cannot serialize contents")
 
-                writer.writeNamedIndexField(obj.name, obj.index.toUInt())
+                writer.writeNamedIndexField(obj.name, obj.index, obj.alternativeNames)
 
                 Properties.definition.writeJsonValue(typedDefinition, writer, context)
             } else {
@@ -208,7 +228,7 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
             return if (reader is IsYamlReader) {
                 val valueMap = MutableValueItems()
 
-                reader.readNamedIndexField(valueMap, Properties.name, Properties.index)
+                reader.readNamedIndexField(valueMap, Properties.name, Properties.index, Properties.alternativeNames)
                 valueMap[Properties.definition.index] =
                     Properties.definition.readJson(reader, context as ContainsDefinitionsContext)
 

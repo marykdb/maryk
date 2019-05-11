@@ -49,6 +49,7 @@ internal fun AbstractPropertyDefinitions<*>.generateKotlin(
             KotlinForProperty(
                 name = propertyDefinitionWrapper.name,
                 index = propertyDefinitionWrapper.index,
+                altNames = propertyDefinitionWrapper.alternativeNames,
                 value = "${propertyDefinitionWrapper.name}$nativeTypeName$default",
                 assign = "this.${propertyDefinitionWrapper.name} with ${propertyDefinitionWrapper.name}",
                 definition = kotlinDescriptor.definitionToKotlin(definition, addImport),

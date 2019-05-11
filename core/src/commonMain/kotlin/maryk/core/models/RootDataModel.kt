@@ -86,11 +86,11 @@ abstract class RootDataModel<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
                 typeEnum = IndexKeyPartType,
                 definitionMap = mapOfIndexKeyPartDefinitions
             ),
+            getter = RootDataModel<*, *>::keyDefinition,
             toSerializable = { value: IsIndexable?, _: ContainsDefinitionsContext? ->
                 value?.let { TypedValue(value.indexKeyPartType, value) }
             },
-            fromSerializable = { value: TypedValue<IndexKeyPartType<IsIndexable>, Any>? -> value?.value as IsIndexable },
-            getter = RootDataModel<*, *>::keyDefinition
+            fromSerializable = { value: TypedValue<IndexKeyPartType<IsIndexable>, Any>? -> value?.value as IsIndexable }
         )
         val indices = add(
             4u, "indices",
@@ -100,13 +100,13 @@ abstract class RootDataModel<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
                     definitionMap = mapOfIndexKeyPartDefinitions
                 )
             ),
+            getter = RootDataModel<*, *>::indices,
             toSerializable = { value: IsIndexable ->
                 value.let { TypedValue(it.indexKeyPartType, it) }
             },
             fromSerializable = { value: TypedValue<IndexKeyPartType<IsIndexable>, Any> ->
                 value.let { it.value as IsIndexable }
-            },
-            getter = RootDataModel<*, *>::indices
+            }
         )
 
         init {

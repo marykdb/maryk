@@ -20,6 +20,7 @@ import maryk.core.properties.definitions.wrapper.ContextualDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.EmbeddedObjectDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.EmbeddedValuesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ListDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.MapDefinitionWrapper
@@ -28,7 +29,6 @@ import maryk.core.properties.definitions.wrapper.SetDefinitionWrapper
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyPropertyReference
-import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DefinitionsConversionContext
@@ -56,7 +56,7 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
         definition: D,
         getter: (DO) -> T?,
         capturer: ((CX, T) -> Unit)? = null
-    ) = FlexBytesDefinitionWrapper(index, name, definition, getter, capturer).apply {
+    ) = FlexBytesDefinitionWrapper(index, name, definition, getter = getter, capturer = capturer).apply {
         addSingle(this)
     }
 
@@ -66,6 +66,7 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
         name: String,
         definition: D,
         getter: (DO) -> TO?,
+        alternativeNames: Set<String>? = null,
         toSerializable: (TO?, CX?) -> T?,
         fromSerializable: (T?) -> TO?,
         shouldSerialize: ((Any) -> Boolean)? = null,
@@ -74,6 +75,7 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
         index,
         name,
         definition,
+        alternativeNames,
         getter,
         capturer,
         toSerializable,
@@ -89,6 +91,7 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
         name: String,
         definition: D,
         getter: (DO) -> TO?,
+        alternativeNames: Set<String>? = null,
         toSerializable: (TO?, CX?) -> T?,
         fromSerializable: (T?) -> TO?,
         shouldSerialize: ((Any) -> Boolean)? = null,
@@ -97,6 +100,7 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
         index,
         name,
         definition,
+        alternativeNames,
         getter,
         capturer,
         toSerializable,
@@ -112,8 +116,9 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
         name: String,
         definition: D,
         getter: (DO) -> T?,
+        alternativeNames: Set<String>? = null,
         capturer: ((CX, T) -> Unit)? = null
-    ) = ContextualDefinitionWrapper(index, name, definition, getter, capturer).apply {
+    ) = ContextualDefinitionWrapper(index, name, definition, alternativeNames, getter, capturer).apply {
         addSingle(this)
     }
 
@@ -123,6 +128,7 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
         name: String,
         definition: D,
         getter: (DO) -> TO?,
+        alternativeNames: Set<String>? = null,
         capturer: ((CX, T) -> Unit)? = null,
         toSerializable: (TO?, CX?) -> T?,
         fromSerializable: (T?) -> TO?
@@ -130,6 +136,7 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
         index,
         name,
         definition,
+        alternativeNames,
         getter,
         capturer,
         toSerializable,
@@ -144,8 +151,9 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
         name: String,
         definition: D,
         getter: (DO) -> T?,
+        alternativeNames: Set<String>? = null,
         capturer: ((CX, T) -> Unit)? = null
-    ) = FixedBytesDefinitionWrapper(index, name, definition, getter, capturer = capturer).apply {
+    ) = FixedBytesDefinitionWrapper(index, name, definition, alternativeNames, getter, capturer).apply {
         addSingle(this)
     }
 
@@ -155,8 +163,9 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
         name: String,
         definition: ListDefinition<T, CX>,
         getter: (DO) -> List<T>?,
+        alternativeNames: Set<String>? = null,
         capturer: ((CX, List<T>) -> Unit)? = null
-    ) = ListDefinitionWrapper(index, name, definition, getter, capturer).apply {
+    ) = ListDefinitionWrapper(index, name, definition, alternativeNames, getter, capturer).apply {
         addSingle(this)
     }
 
@@ -166,11 +175,12 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
         name: String,
         definition: ListDefinition<T, CX>,
         getter: (DO) -> List<TO>?,
+        alternativeNames: Set<String>? = null,
         capturer: ((CX, List<T>) -> Unit)? = null,
         toSerializable: (TO) -> T,
         fromSerializable: (T) -> TO
     ) = ListDefinitionWrapper(
-        index, name, definition, getter, capturer,
+        index, name, definition, alternativeNames, getter, capturer,
         toSerializable = { value, _ ->
             value?.map { toSerializable(it) }
         },
@@ -187,8 +197,9 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
         name: String,
         definition: SetDefinition<T, CX>,
         getter: (DO) -> Set<T>?,
+        alternativeNames: Set<String>? = null,
         capturer: ((CX, Set<T>) -> Unit)? = null
-    ) = SetDefinitionWrapper(index, name, definition, getter, capturer).apply {
+    ) = SetDefinitionWrapper(index, name, definition, alternativeNames, getter, capturer).apply {
         addSingle(this)
     }
 
@@ -198,8 +209,9 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
         name: String,
         definition: MapDefinition<K, V, CX>,
         getter: (DO) -> Map<K, V>?,
+        alternativeNames: Set<String>? = null,
         capturer: ((CX, Map<K, V>) -> Unit)? = null
-    ) = MapDefinitionWrapper(index, name, definition, getter, capturer).apply {
+    ) = MapDefinitionWrapper(index, name, definition, alternativeNames, getter, capturer).apply {
         addSingle(this)
     }
 
@@ -212,11 +224,12 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
         name: String,
         definition: MapDefinition<K, V, CX>,
         getter: (DO) -> TO?,
+        alternativeNames: Set<String>? = null,
         capturer: ((CX, Map<K, V>) -> Unit)? = null,
         toSerializable: (TO?, CX?) -> Map<K, V>?,
         fromSerializable: (Map<K, V>?) -> TO?
     ) = MapDefinitionWrapper(
-        index, name, definition, getter, capturer, toSerializable, fromSerializable
+        index, name, definition, alternativeNames, getter, capturer, toSerializable, fromSerializable
     ).apply {
         addSingle(this)
     }
@@ -227,8 +240,9 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
         name: String,
         definition: D,
         getter: (DO) -> TO?,
+        alternativeNames: Set<String>? = null,
         capturer: ((CX, TypedValue<E, T>) -> Unit)? = null
-    ) = MultiTypeDefinitionWrapper(index, name, definition, getter, capturer).apply {
+    ) = MultiTypeDefinitionWrapper(index, name, definition, alternativeNames, getter, capturer).apply {
         addSingle(this)
     }
 
@@ -241,10 +255,11 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
         name: String,
         definition: D,
         getter: (DO) -> TO?,
+        alternativeNames: Set<String>? = null,
         toSerializable: (TO?, CX?) -> TypedValue<E, T>?,
         fromSerializable: (TypedValue<E, T>?) -> TO?,
         capturer: ((CX, TypedValue<E, T>) -> Unit)? = null
-    ) = MultiTypeDefinitionWrapper(index, name, definition, getter, capturer, toSerializable, fromSerializable).apply {
+    ) = MultiTypeDefinitionWrapper(index, name, definition, alternativeNames, getter, capturer, toSerializable, fromSerializable).apply {
         addSingle(this)
     }
 
@@ -254,8 +269,9 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
         name: String,
         definition: IsEmbeddedObjectDefinition<EODO, P, D, CXI, CX>,
         getter: (DO) -> EODO? = { null },
+        alternativeNames: Set<String>? = null,
         capturer: ((CXI, EODO) -> Unit)? = null
-    ) = EmbeddedObjectDefinitionWrapper(index, name, definition, getter, capturer).apply {
+    ) = EmbeddedObjectDefinitionWrapper(index, name, definition, alternativeNames, getter, capturer).apply {
         addSingle(this)
     }
 
@@ -266,9 +282,10 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
         name: String,
         definition: IsEmbeddedValuesDefinition<DM, P, CX>,
         getter: (DO) -> Values<DM, P>? = { null },
+        alternativeNames: Set<String>? = null,
         capturer: ((CX, Values<DM, P>) -> Unit)? = null
     ) = EmbeddedValuesDefinitionWrapper(
-        index, name, definition,
+        index, name, definition, alternativeNames,
         getter as (Any) -> Values<DM, P>?,
         capturer
     ).apply {
@@ -383,7 +400,8 @@ internal data class ObjectPropertyDefinitionsCollectionDefinitionWrapper<in DO :
     override val index: UInt,
     override val name: String,
     override val definition: ObjectPropertyDefinitionsCollectionDefinition,
-    override val getter: (DO) -> ObjectPropertyDefinitions<Any>?
+    override val getter: (DO) -> ObjectPropertyDefinitions<Any>?,
+    override val alternativeNames: Set<String>? = null
 ) :
     IsCollectionDefinition<AnyPropertyDefinitionWrapper, ObjectPropertyDefinitions<Any>, DefinitionsConversionContext, EmbeddedObjectDefinition<AnyPropertyDefinitionWrapper, ObjectPropertyDefinitions<AnyPropertyDefinitionWrapper>, SimpleObjectDataModel<AnyPropertyDefinitionWrapper, ObjectPropertyDefinitions<AnyPropertyDefinitionWrapper>>, IsPropertyContext, IsPropertyContext>> by definition,
     IsDefinitionWrapper<ObjectPropertyDefinitions<Any>, ObjectPropertyDefinitions<Any>, DefinitionsConversionContext, DO>

@@ -42,6 +42,7 @@ interface IsFetchRequest<DM : IsRootDataModel<P>, P : PropertyDefinitions, RP : 
                     typeEnum = FilterType,
                     definitionMap = mapOfFilterDefinitions
                 ),
+                getter = getter,
                 toSerializable = { filter, _ ->
                     filter?.let {
                         TypedValue(filter.filterType, filter)
@@ -49,8 +50,7 @@ interface IsFetchRequest<DM : IsRootDataModel<P>, P : PropertyDefinitions, RP : 
                 },
                 fromSerializable = { typedValue ->
                     typedValue?.value
-                },
-                getter = getter
+                }
             )
 
         internal fun <DM : Any> addToVersion(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> ULong?) =

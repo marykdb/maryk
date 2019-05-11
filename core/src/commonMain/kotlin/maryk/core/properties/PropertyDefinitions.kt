@@ -125,7 +125,8 @@ internal data class PropertyDefinitionsCollectionDefinitionWrapper<in DO : Any>(
     override val index: UInt,
     override val name: String,
     override val definition: PropertyDefinitionsCollectionDefinition,
-    override val getter: (DO) -> PropertyDefinitions?
+    override val getter: (DO) -> PropertyDefinitions?,
+    override val alternativeNames: Set<String>? = null
 ) :
     IsCollectionDefinition<AnyPropertyDefinitionWrapper, PropertyDefinitions, DefinitionsConversionContext, EmbeddedObjectDefinition<AnyPropertyDefinitionWrapper, ObjectPropertyDefinitions<AnyPropertyDefinitionWrapper>, SimpleObjectDataModel<AnyPropertyDefinitionWrapper, ObjectPropertyDefinitions<AnyPropertyDefinitionWrapper>>, IsPropertyContext, IsPropertyContext>> by definition,
     IsDefinitionWrapper<PropertyDefinitions, PropertyDefinitions, DefinitionsConversionContext, DO>

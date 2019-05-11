@@ -51,8 +51,10 @@ interface IsScanRequest<DM : IsRootDataModel<P>, P : PropertyDefinitions, RP : I
             )
 
         internal fun <DM : Any> addOrder(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> IsOrder?) =
-            definitions.add(7u, "order",
+            definitions.add(
+                7u, "order",
                 OrderTypesDefinition,
+                getter = getter,
                 toSerializable = { value, _ ->
                     value?.let {
                         TypedValue(value.orderType, value)
@@ -60,8 +62,7 @@ interface IsScanRequest<DM : IsRootDataModel<P>, P : PropertyDefinitions, RP : I
                 },
                 fromSerializable = { value ->
                     value?.value as IsOrder
-                },
-                getter = getter
+                }
             )
 
         internal fun <DO : Any> addLimit(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> UInt?) =

@@ -123,7 +123,7 @@ class DefinitionsTest {
           - !Ref multi.*
           reservedIndices: [99]
           reservedNames: [reserved]
-          ? 1: string
+          ? 1: [string, str, stringValue]
           : !String
             required: true
             final: false

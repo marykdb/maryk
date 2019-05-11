@@ -31,7 +31,8 @@ data class ValidationFail<DM : IsRootDataModel<*>>(
     internal companion object : SimpleQueryDataModel<ValidationFail<*>>(
         properties = object : ObjectPropertyDefinitions<ValidationFail<*>>() {
             init {
-                add(1u, "exceptions",
+                add(
+                    1u, "exceptions",
                     ListDefinition(
                         default = emptyList(),
                         valueDefinition = MultiTypeDefinition(

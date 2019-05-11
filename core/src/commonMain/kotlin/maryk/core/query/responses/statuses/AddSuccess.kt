@@ -29,7 +29,8 @@ data class AddSuccess<DM : IsRootDataModel<*>>(
             init {
                 IsResponseStatus.addKey(this, AddSuccess<*>::key)
                 add(2u, "version", NumberDefinition(type = UInt64), AddSuccess<*>::version)
-                add(3u, "changes",
+                add(
+                    3u, "changes",
                     ListDefinition(
                         default = emptyList(),
                         valueDefinition = MultiTypeDefinition(

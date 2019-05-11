@@ -92,13 +92,13 @@ data class Multiple(
                     definitionMap = mapOfSimpleIndexKeyPartDefinitions
                 ) as IsValueDefinition<TypedValue<IndexKeyPartType<IsIndexable>, IsIndexable>, DefinitionsConversionContext>
             ),
+            getter = Multiple::references as (Multiple) -> List<IsIndexablePropertyReference<IsIndexable>>?,
             toSerializable = { value ->
                 TypedValue(value.indexKeyPartType, value)
             },
             fromSerializable = { typedValue ->
                 typedValue.value as IsIndexablePropertyReference<IsIndexable>
-            },
-            getter = Multiple::references as (Multiple) -> List<IsIndexablePropertyReference<IsIndexable>>?
+            }
         )
     }
 

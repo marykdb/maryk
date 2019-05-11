@@ -82,10 +82,9 @@ abstract class DataModel<DM : IsValuesDataModel<P>, P : PropertyDefinitions>(
                             this.propertyDefinitions = propDefs
                         } ?: ContextNotFoundException()
                     }
-                )
-            ) {
-                it.properties as PropertyDefinitions
-            }
+                ),
+                getter = { it.properties as PropertyDefinitions }
+            )
 
             definitions.addSingle(wrapper)
             return wrapper

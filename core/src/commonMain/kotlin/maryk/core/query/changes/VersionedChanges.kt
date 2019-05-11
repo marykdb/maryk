@@ -25,7 +25,8 @@ data class VersionedChanges(
             VersionedChanges::version
         )
 
-        val changes = add(2u, "changes",
+        val changes = add(
+            2u, "changes",
             ListDefinition(
                 default = emptyList(),
                 valueDefinition = MultiTypeDefinition(

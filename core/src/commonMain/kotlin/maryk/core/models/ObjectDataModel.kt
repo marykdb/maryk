@@ -28,11 +28,12 @@ abstract class ObjectDataModel<DO : Any, P : ObjectPropertyDefinitions<DO>>(
                             this.propertyDefinitions = propDefs
                         } ?: ContextNotFoundException()
                     }
-                )
-            ) {
-                @Suppress("UNCHECKED_CAST")
-                it.properties as ObjectPropertyDefinitions<in Any>
-            }.also {
+                ),
+                getter = {
+                    @Suppress("UNCHECKED_CAST")
+                    it.properties as ObjectPropertyDefinitions<in Any>
+                }
+            ).also {
                 definitions.addSingle(it)
             }
     }

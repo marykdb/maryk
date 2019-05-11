@@ -29,7 +29,8 @@ data class CollectRequest<RQ : IsRequest<RP>, RP : IsResponse>(
         val name = add(1u, "name", StringDefinition(), AnyCollectRequest::name)
 
         // It transmits any instead of IsRequest so the ObjectValues can also be transmitted
-        val request = add(2u, "request",
+        val request = add(
+            2u, "request",
             MultiTypeDefinition(
                 typeEnum = RequestType,
                 definitionMap = mapOfRequestTypeEmbeddedObjectDefinitions

@@ -16,6 +16,7 @@ import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.wrapper.ContextualDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.EmbeddedValuesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ListDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.MapDefinitionWrapper
@@ -23,7 +24,6 @@ import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.SetDefinitionWrapper
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.references.AnyPropertyReference
-import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
 import maryk.core.properties.references.HasEmbeddedPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.decodeStorageIndex
@@ -31,6 +31,7 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.values.IsValueItems
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ValueItem
+import maryk.lib.exceptions.ParseException
 
 abstract class AbstractPropertyDefinitions<DO : Any> :
     IsPropertyDefinitions,
@@ -77,8 +78,9 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
     fun <T : Any, CX : IsPropertyContext, D : IsSerializableFlexBytesEncodable<T, CX>> add(
         index: UInt,
         name: String,
-        definition: D
-    ) = FlexBytesDefinitionWrapper<T, T, CX, D, Any>(index, name, definition).apply {
+        definition: D,
+        alternativeNames: Set<String>? = null
+    ) = FlexBytesDefinitionWrapper<T, T, CX, D, Any>(index, name, definition, alternativeNames).apply {
         addSingle(this)
     }
 
@@ -86,8 +88,9 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
     fun <T : Any, CX : IsPropertyContext, D : IsContextualEncodable<T, CX>> add(
         index: UInt,
         name: String,
-        definition: D
-    ) = ContextualDefinitionWrapper<T, T, CX, D, Any>(index, name, definition).apply {
+        definition: D,
+        alternativeNames: Set<String>? = null
+    ) = ContextualDefinitionWrapper<T, T, CX, D, Any>(index, name, definition, alternativeNames).apply {
         addSingle(this)
     }
 
@@ -95,8 +98,9 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
     fun <T : Any, CX : IsPropertyContext, D : IsSerializableFixedBytesEncodable<T, CX>> add(
         index: UInt,
         name: String,
-        definition: D
-    ) = FixedBytesDefinitionWrapper<T, T, CX, D, Any>(index, name, definition).apply {
+        definition: D,
+        alternativeNames: Set<String>? = null
+    ) = FixedBytesDefinitionWrapper<T, T, CX, D, Any>(index, name, definition, alternativeNames).apply {
         addSingle(this)
     }
 
@@ -104,8 +108,9 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
     fun <T : Any, CX : IsPropertyContext> add(
         index: UInt,
         name: String,
-        definition: ListDefinition<T, CX>
-    ) = ListDefinitionWrapper<T, T, CX, Any>(index, name, definition).apply {
+        definition: ListDefinition<T, CX>,
+        alternativeNames: Set<String>? = null
+    ) = ListDefinitionWrapper<T, T, CX, Any>(index, name, definition, alternativeNames).apply {
         addSingle(this)
     }
 
@@ -113,8 +118,9 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
     fun <T : Any, CX : IsPropertyContext> add(
         index: UInt,
         name: String,
-        definition: SetDefinition<T, CX>
-    ) = SetDefinitionWrapper<T, CX, Any>(index, name, definition).apply {
+        definition: SetDefinition<T, CX>,
+        alternativeNames: Set<String>? = null
+    ) = SetDefinitionWrapper<T, CX, Any>(index, name, definition, alternativeNames).apply {
         addSingle(this)
     }
 
@@ -122,8 +128,9 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
     fun <K : Any, V : Any, CX : IsPropertyContext> add(
         index: UInt,
         name: String,
-        definition: MapDefinition<K, V, CX>
-    ) = MapDefinitionWrapper<K, V, Map<K, V>, CX, Any>(index, name, definition).apply {
+        definition: MapDefinition<K, V, CX>,
+        alternativeNames: Set<String>? = null
+    ) = MapDefinitionWrapper<K, V, Map<K, V>, CX, Any>(index, name, definition, alternativeNames).apply {
         addSingle(this)
     }
 
@@ -131,8 +138,9 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
     fun <E : TypeEnum<T>, T: Any, CX : IsPropertyContext> add(
         index: UInt,
         name: String,
-        definition: IsMultiTypeDefinition<E, T, CX>
-    ) = MultiTypeDefinitionWrapper<E, T, TypedValue<E, T>, CX, Any>(index, name, definition).apply {
+        definition: IsMultiTypeDefinition<E, T, CX>,
+        alternativeNames: Set<String>? = null
+    ) = MultiTypeDefinitionWrapper<E, T, TypedValue<E, T>, CX, Any>(index, name, definition, alternativeNames).apply {
         addSingle(this)
     }
 
@@ -140,8 +148,9 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
     fun <DM : IsValuesDataModel<P>, P : PropertyDefinitions, CX : IsPropertyContext> add(
         index: UInt,
         name: String,
-        definition: IsEmbeddedValuesDefinition<DM, P, CX>
-    ) = EmbeddedValuesDefinitionWrapper(index, name, definition).apply {
+        definition: IsEmbeddedValuesDefinition<DM, P, CX>,
+        alternativeNames: Set<String>? = null
+    ) = EmbeddedValuesDefinitionWrapper(index, name, definition, alternativeNames).apply {
         addSingle(this)
     }
 
@@ -153,7 +162,16 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
         require(propertyDefinitionWrapper.index.toInt() in (0..Short.MAX_VALUE)) { "${propertyDefinitionWrapper.index} for ${propertyDefinitionWrapper.name} is outside range $(0..Short.MAX_VALUE)" }
         require(indexToDefinition[propertyDefinitionWrapper.index] == null) { "Duplicate index ${propertyDefinitionWrapper.index} for ${propertyDefinitionWrapper.name} and ${indexToDefinition[propertyDefinitionWrapper.index]?.name}" }
         indexToDefinition[propertyDefinitionWrapper.index] = propertyDefinitionWrapper
-        nameToDefinition[propertyDefinitionWrapper.name] = propertyDefinitionWrapper
+
+        val addName = { name: String ->
+            if (nameToDefinition.containsKey(name)) {
+                throw ParseException("Model already has a definition for $name")
+            }
+            nameToDefinition[name] = propertyDefinitionWrapper
+        }
+
+        propertyDefinitionWrapper.name.let(addName)
+        propertyDefinitionWrapper.alternativeNames?.forEach(addName)
     }
 
     /** Get PropertyReference by [referenceName] */

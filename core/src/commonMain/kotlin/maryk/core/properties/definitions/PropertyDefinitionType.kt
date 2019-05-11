@@ -64,23 +64,25 @@ internal val mapOfPropertyDefEmbeddedObjectDefinitions =
         PropertyDefinitionType.Value to EmbeddedObjectDefinition(dataModel = { ValueModelDefinition.Model })
     )
 
-typealias WrapperCreator = (index: UInt, name: String, definition: IsPropertyDefinition<out Any>) -> IsDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>
+typealias WrapperCreator = (index: UInt, name: String, altNames: Set<String>?, definition: IsPropertyDefinition<out Any>) -> IsDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>
 
 @Suppress("UNCHECKED_CAST")
-val createFixedBytesWrapper: WrapperCreator = { index, name, definition ->
+val createFixedBytesWrapper: WrapperCreator = { index, name, altNames, definition ->
     FixedBytesDefinitionWrapper(
         index,
         name,
-        definition as IsSerializableFixedBytesEncodable<Any, IsPropertyContext>
+        definition as IsSerializableFixedBytesEncodable<Any, IsPropertyContext>,
+        altNames
     )
 }
 
 @Suppress("UNCHECKED_CAST")
-val createFlexBytesWrapper: WrapperCreator = { index, name, definition ->
+val createFlexBytesWrapper: WrapperCreator = { index, name, altNames, definition ->
     FlexBytesDefinitionWrapper(
         index,
         name,
-        definition as IsSerializableFlexBytesEncodable<Any, IsPropertyContext>
+        definition as IsSerializableFlexBytesEncodable<Any, IsPropertyContext>,
+        altNames
     )
 }
 
@@ -91,47 +93,52 @@ internal val mapOfPropertyDefWrappers = mapOf(
     PropertyDefinitionType.Enum to createFixedBytesWrapper,
     PropertyDefinitionType.FixedBytes to createFixedBytesWrapper,
     PropertyDefinitionType.FlexBytes to createFlexBytesWrapper,
-    PropertyDefinitionType.List to { index, name, definition ->
+    PropertyDefinitionType.List to { index, name, altNames, definition ->
         @Suppress("UNCHECKED_CAST")
         ListDefinitionWrapper<Any, List<Any>, IsPropertyContext, Any>(
             index,
             name,
-            definition as ListDefinition<Any, IsPropertyContext>
+            definition as ListDefinition<Any, IsPropertyContext>,
+            altNames
         )
     },
-    PropertyDefinitionType.Map to { index, name, definition ->
+    PropertyDefinitionType.Map to { index, name, altNames, definition ->
         @Suppress("UNCHECKED_CAST")
         MapDefinitionWrapper(
             index,
             name,
-            definition as MapDefinition<Any, Any, IsPropertyContext>
+            definition as MapDefinition<Any, Any, IsPropertyContext>,
+            altNames
         )
     },
-    PropertyDefinitionType.MultiType to { index, name, definition ->
+    PropertyDefinitionType.MultiType to { index, name, altNames, definition ->
         @Suppress("UNCHECKED_CAST")
         MultiTypeDefinitionWrapper(
             index,
             name,
-            definition as IsMultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>
+            definition as IsMultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>,
+            altNames
         )
     },
     PropertyDefinitionType.Number to createFixedBytesWrapper,
     PropertyDefinitionType.Reference to createFixedBytesWrapper,
-    PropertyDefinitionType.Set to { index, name, definition ->
+    PropertyDefinitionType.Set to { index, name, altNames, definition ->
         @Suppress("UNCHECKED_CAST")
         SetDefinitionWrapper(
             index,
             name,
-            definition as SetDefinition<Any, IsPropertyContext>
+            definition as SetDefinition<Any, IsPropertyContext>,
+            altNames
         )
     },
     PropertyDefinitionType.String to createFlexBytesWrapper,
-    PropertyDefinitionType.Embed to { index, name, definition ->
+    PropertyDefinitionType.Embed to { index, name, altNames, definition ->
         @Suppress("UNCHECKED_CAST")
         EmbeddedValuesDefinitionWrapper(
             index,
             name,
-            definition as EmbeddedValuesDefinition<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
+            definition as EmbeddedValuesDefinition<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>,
+            altNames
         )
     },
     PropertyDefinitionType.Time to createFixedBytesWrapper,

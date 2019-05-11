@@ -39,7 +39,8 @@ data class DataObjectChange<out DM : IsRootDataModel<*>> internal constructor(
             }
         ), DataObjectChange<*>::key)
 
-        val changes = add(2u, "changes",
+        val changes = add(
+            2u, "changes",
             ListDefinition(
                 default = emptyList(),
                 valueDefinition = MultiTypeDefinition(

@@ -4,6 +4,7 @@ package maryk.generator.kotlin
 internal class KotlinForProperty(
     val name: String,
     val index: UInt,
+    val altNames: Set<String>?,
     val value: String,
     val assign: String,
     val definition: String,

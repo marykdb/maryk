@@ -21,7 +21,8 @@ data class And(
     constructor(vararg filters: IsFilter) : this(filters.toList())
 
     object Properties : ObjectPropertyDefinitions<And>() {
-        val filters = add(1u, "filters",
+        val filters = add(
+            1u, "filters",
             ListDefinition(
                 valueDefinition = MultiTypeDefinition(
                     typeEnum = FilterType,

@@ -33,6 +33,7 @@ data class EmbeddedObjectDefinitionWrapper<
     override val index: UInt,
     override val name: String,
     override val definition: IsEmbeddedObjectDefinition<EODO, P, DM, CXI, CX>,
+    override val alternativeNames: Set<String>? = null,
     override val getter: (DO) -> TO?,
     override val capturer: ((CXI, EODO) -> Unit)? = null,
     override val toSerializable: ((TO?, CXI?) -> EODO?)? = null,

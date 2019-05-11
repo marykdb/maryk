@@ -28,7 +28,7 @@ interface IsTimeDefinition<T : IsTime<T>> :
                     default = TimePrecision.SECONDS
                 ),
                 getter,
-                capturer
+                capturer = capturer
             )
         }
     }

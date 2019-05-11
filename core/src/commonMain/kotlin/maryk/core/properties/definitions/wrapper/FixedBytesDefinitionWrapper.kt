@@ -16,6 +16,7 @@ data class FixedBytesDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext
     override val index: UInt,
     override val name: String,
     override val definition: D,
+    override val alternativeNames: Set<String>? = null,
     override val getter: (DO) -> TO? = { null },
     override val capturer: ((CX, T) -> Unit)? = null,
     override val toSerializable: ((TO?, CX?) -> T?)? = null,

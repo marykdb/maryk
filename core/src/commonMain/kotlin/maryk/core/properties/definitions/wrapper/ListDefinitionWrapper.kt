@@ -14,6 +14,7 @@ data class ListDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext, in D
     override val index: UInt,
     override val name: String,
     override val definition: ListDefinition<T, CX>,
+    override val alternativeNames: Set<String>? = null,
     override val getter: (DO) -> List<TO>? = { null },
     override val capturer: ((CX, List<T>) -> Unit)? = null,
     override val toSerializable: ((List<TO>?, CX?) -> List<T>?)? = null,

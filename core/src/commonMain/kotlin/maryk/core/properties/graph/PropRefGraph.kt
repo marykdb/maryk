@@ -225,6 +225,7 @@ internal fun <DO : Any> ObjectPropertyDefinitions<DO>.addProperties(
                 typeEnum = PropRefGraphType
             )
         ),
+        getter = getter,
         toSerializable = { value: IsPropRefGraphNode<*> ->
             value.let {
                 when (it) {
@@ -239,8 +240,7 @@ internal fun <DO : Any> ObjectPropertyDefinitions<DO>.addProperties(
                 PropRef -> (value.value as IsPropertyReferenceForValues<*, *, *, *>).propertyDefinition
                 Graph -> value.value as IsPropRefGraphNode<*>
             }
-        },
-        getter = getter
+        }
     )
 
 /** Write properties to JSON with [writer] in [context] */

@@ -80,7 +80,7 @@ object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>
 ) {
     object Properties : PropertyDefinitions() {
         val string = add(
-            index = 1u, name = "string",
+            index = 1u, name = "string", alternativeNames = setOf("str", "stringValue"),
             definition = StringDefinition(
                 default = "haha",
                 regEx = "ha.*"

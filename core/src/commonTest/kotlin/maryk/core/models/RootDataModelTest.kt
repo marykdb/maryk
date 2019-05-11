@@ -110,6 +110,7 @@ internal class RootDataModelTest {
           "properties": [{
             "index": 1,
             "name": "string",
+            "alternativeNames": ["str", "stringValue"],
             "definition": ["String", {
               "required": true,
               "final": false,
@@ -374,7 +375,7 @@ internal class RootDataModelTest {
         - !Ref multi.*
         reservedIndices: [99]
         reservedNames: [reserved]
-        ? 1: string
+        ? 1: [string, str, stringValue]
         : !String
           required: true
           final: false
@@ -550,7 +551,7 @@ internal class RootDataModelTest {
     fun convertBasicDefinitionFromYAML() {
         val simpleYaml = """
         name: SimpleModel
-        ? 1: string
+        ? 1: [string, str]
         : !String
         ? 2: int
         : !Number
@@ -626,7 +627,10 @@ internal class RootDataModelTest {
             properties["string"]!!.let {
                 it.index shouldBe 1u
                 it.definition shouldBe StringDefinition()
+                it.alternativeNames shouldBe setOf("str")
             }
+            properties["str"] shouldBe properties["string"]
+
             properties["int"]!!.let {
                 it.index shouldBe 2u
                 it.definition shouldBe NumberDefinition(type = SInt32)

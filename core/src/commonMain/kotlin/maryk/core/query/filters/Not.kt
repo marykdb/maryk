@@ -21,7 +21,8 @@ data class Not(
     override val filterType = FilterType.Not
 
     object Properties : ObjectPropertyDefinitions<Not>() {
-        val filters = add(1u, "filters",
+        val filters = add(
+            1u, "filters",
             ListDefinition(
                 valueDefinition = MultiTypeDefinition(
                     typeEnum = FilterType,

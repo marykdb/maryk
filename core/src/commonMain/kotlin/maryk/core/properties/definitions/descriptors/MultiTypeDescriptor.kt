@@ -198,7 +198,8 @@ private data class MultiTypeDescriptorDefinitionWrapper internal constructor(
     override val fromSerializable: ((List<MultiTypeDescriptor>?) -> List<MultiTypeDescriptor>?)? = null,
     override val shouldSerialize: ((Any) -> Boolean)? = null,
     override val capturer: ((MultiTypeDefinitionContext, List<MultiTypeDescriptor>) -> Unit)? = null,
-    override val getter: (MultiTypeDefinition<*, *, ContainsDefinitionsContext>) -> List<MultiTypeDescriptor>?
+    override val getter: (MultiTypeDefinition<*, *, ContainsDefinitionsContext>) -> List<MultiTypeDescriptor>?,
+    override val alternativeNames: Set<String>? = null
 ) :
     IsSerializablePropertyDefinition<List<MultiTypeDescriptor>, MultiTypeDefinitionContext> by definition,
     IsDefinitionWrapper<List<MultiTypeDescriptor>, List<MultiTypeDescriptor>, MultiTypeDefinitionContext, MultiTypeDefinition<*, *, ContainsDefinitionsContext>> {

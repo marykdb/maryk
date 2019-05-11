@@ -21,7 +21,8 @@ data class Or(
     constructor(vararg filters: IsFilter) : this(filters.toList())
 
     object Properties : ObjectPropertyDefinitions<Or>() {
-        val filters = add(1u, "filters",
+        val filters = add(
+            1u, "filters",
             ListDefinition(
                 valueDefinition = MultiTypeDefinition(
                     typeEnum = FilterType,

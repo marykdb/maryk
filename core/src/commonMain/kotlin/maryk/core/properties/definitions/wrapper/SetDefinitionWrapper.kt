@@ -19,6 +19,7 @@ data class SetDefinitionWrapper<T : Any, CX : IsPropertyContext, in DO : Any> in
     override val index: UInt,
     override val name: String,
     override val definition: SetDefinition<T, CX>,
+    override val alternativeNames: Set<String>? = null,
     override val getter: (DO) -> Set<T>? = { null },
     override val capturer: ((CX, Set<T>) -> Unit)? = null,
     override val toSerializable: ((Set<T>?, CX?) -> Set<T>?)? = null,

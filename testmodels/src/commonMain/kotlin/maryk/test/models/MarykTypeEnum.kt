@@ -7,9 +7,10 @@ import maryk.core.values.Values
 import maryk.test.models.EmbeddedMarykModel.Properties
 
 sealed class MarykTypeEnum<T: Any>(
-    index: UInt
-) : IndexedEnumImpl<MarykTypeEnum<*>>(index), TypeEnum<T> {
-    object O1: MarykTypeEnum<String>(1u)
+    index: UInt,
+    alternativeNames: Set<String>? = null
+) : IndexedEnumImpl<MarykTypeEnum<*>>(index, alternativeNames), TypeEnum<T> {
+    object O1: MarykTypeEnum<String>(1u, setOf("Object1"))
     object O2: MarykTypeEnum<Short>(2u)
     object O3: MarykTypeEnum<Values<EmbeddedMarykModel, Properties>>(3u)
     object O4: MarykTypeEnum<List<String>>(4u)

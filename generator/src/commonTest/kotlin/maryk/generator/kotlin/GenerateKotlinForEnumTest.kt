@@ -11,9 +11,10 @@ import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IndexedEnumImpl
 
 sealed class MarykTypeEnum(
-    index: UInt
-) : IndexedEnumImpl<MarykTypeEnum>(index) {
-    object O1: MarykTypeEnum(1u)
+    index: UInt,
+    alternativeNames: Set<String>? = null
+) : IndexedEnumImpl<MarykTypeEnum>(index, alternativeNames) {
+    object O1: MarykTypeEnum(1u, setOf("Object1"))
     object O2: MarykTypeEnum(2u)
     object O3: MarykTypeEnum(3u)
     object O4: MarykTypeEnum(4u)

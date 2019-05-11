@@ -81,8 +81,9 @@ import maryk.test.models.CompleteMarykModel.Properties.subModel
 import maryk.test.models.SimpleMarykModel.Properties.value
 
 sealed class MarykEnumEmbedded(
-    index: UInt
-) : IndexedEnumImpl<MarykEnumEmbedded>(index) {
+    index: UInt,
+    alternativeNames: Set<String>? = null
+) : IndexedEnumImpl<MarykEnumEmbedded>(index, alternativeNames) {
     object E1: MarykEnumEmbedded(1u)
     object E2: MarykEnumEmbedded(2u)
     object E3: MarykEnumEmbedded(3u)

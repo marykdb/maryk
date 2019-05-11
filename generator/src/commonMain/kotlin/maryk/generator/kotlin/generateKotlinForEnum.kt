@@ -35,10 +35,14 @@ fun IndexedEnumDefinition<*>.generateKotlinClass(addImport: (String) -> Unit): S
 
     return """
     sealed class ${this.name}(
-        index: UInt
-    ) : IndexedEnumImpl<${this.name}>(index) {
+        index: UInt,
+        alternativeNames: Set<String>? = null
+    ) : IndexedEnumImpl<${this.name}>(index, alternativeNames) {
         ${this.cases().joinToString("") {
-            "object ${it.name}: ${this.name}(${it.index}u)\n"
+            val alternativeNames = it.alternativeNames?.let {
+                ", setOf(${it.joinToString(", ") { """"$it""""} })"
+            } ?: ""
+            "object ${it.name}: ${this.name}(${it.index}u$alternativeNames)\n"
         }.prependIndent().prependIndent().trimStart()}
         class Unknown${this.name}(index: UInt, override val name: String): ${this.name}(index)
 

@@ -7,7 +7,8 @@ import maryk.core.properties.enum.TypeEnum
 
 /** Indexed type of changes */
 enum class ValidationExceptionType(
-    override val index: UInt
+    override val index: UInt,
+    override val alternativeNames: Set<String>? = null
 ) : IndexedEnumComparable<ValidationExceptionType>, IsCoreEnum, TypeEnum<ValidationException> {
     ALREADY_SET(1u),
     INVALID_VALUE(2u),

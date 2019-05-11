@@ -3,7 +3,7 @@ package maryk.core.properties.enum
 /** Comparable indexed enum */
 interface IndexedEnumComparable<in E> : Comparable<E>, IndexedEnum {
     companion object {
-        internal operator fun invoke(index: UInt, name: String) = object : IndexedEnumImpl<IndexedEnumComparable<Any>>(index) {
+        internal operator fun invoke(index: UInt, name: String, alternativeNames: Set<String>? = null) = object : IndexedEnumImpl<IndexedEnumComparable<Any>>(index, alternativeNames) {
             init {
                 require(index > 0u) { "Only indices of 1 and higher are allowed" }
             }

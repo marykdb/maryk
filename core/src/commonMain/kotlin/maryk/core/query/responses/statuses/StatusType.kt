@@ -7,7 +7,8 @@ import maryk.core.properties.enum.TypeEnum
 
 /** Indexed type of changes */
 enum class StatusType(
-    override val index: UInt
+    override val index: UInt,
+    override val alternativeNames: Set<String>? = null
 ) : IndexedEnumComparable<StatusType>, TypeEnum<IsResponseStatus>, IsCoreEnum {
     SUCCESS(1u),
     ADD_SUCCESS(2u),

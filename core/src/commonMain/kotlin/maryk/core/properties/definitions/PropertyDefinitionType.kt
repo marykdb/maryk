@@ -5,6 +5,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.wrapper.EmbeddedValuesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ListDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.MapDefinitionWrapper
@@ -14,7 +15,6 @@ import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IsCoreEnum
 import maryk.core.properties.enum.TypeEnum
-import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.ValuesImpl
@@ -22,7 +22,8 @@ import maryk.json.MapType
 
 /** Indexed type of property definitions */
 enum class PropertyDefinitionType(
-    override val index: UInt
+    override val index: UInt,
+    override val alternativeNames: kotlin.collections.Set<kotlin.String>? = null
 ) : IndexedEnumComparable<PropertyDefinitionType>, MapType, IsCoreEnum, TypeEnum<IsTransportablePropertyDefinitionType<*>> {
     Boolean(1u),
     Date(2u),

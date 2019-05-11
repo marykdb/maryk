@@ -61,8 +61,8 @@ class IndexedEnumTest {
         name: Option
         cases:
           1: V1
-          2: V2
-          3: V3
+          2: [V2, VERSION2]
+          3: [V3, VERSION3]
         reservedIndices: [4]
         reservedNames: [V4]
 

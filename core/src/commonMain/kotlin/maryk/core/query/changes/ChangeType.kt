@@ -7,7 +7,8 @@ import maryk.core.properties.enum.TypeEnum
 
 /** Indexed type of changes */
 enum class ChangeType(
-    override val index: UInt
+    override val index: UInt,
+    override val alternativeNames: Set<String>? = null
 ) : IndexedEnumComparable<ChangeType>, IsCoreEnum, TypeEnum<IsChange> {
     Check(1u),
     Change(2u),

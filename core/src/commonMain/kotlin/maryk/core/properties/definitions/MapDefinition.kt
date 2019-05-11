@@ -179,7 +179,7 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
         writer: (byte: Byte) -> Unit,
         context: CX?
     ) {
-        value.forEach { (key, item) ->
+        for ((key, item) in value) {
             ProtoBuf.writeKey(index, LENGTH_DELIMITED, writer)
             cacheGetter.nextLengthFromCache().writeVarBytes(writer)
             keyDefinition.writeTransportBytesWithKey(1u, key, cacheGetter, writer, context)
@@ -193,37 +193,33 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
         context: CX?,
         earlierValue: Map<K, V>?
     ): Map<K, V> {
-        val value = this.readMapTransportBytes(
-            reader,
-            context
-        )
-
-        return if (earlierValue != null) {
-            val map = earlierValue as MutableMap<K, V>
-            map[value.first] = value.second
-            map
-        } else {
-            mutableMapOf(value)
+        var lengthToGo = length
+        val countingReader = {
+            lengthToGo--
+            reader()
         }
-    }
 
-    /** Read the transport bytes on [reader] with [context] into a map key/value pair */
-    private fun readMapTransportBytes(reader: () -> Byte, context: CX? = null): Pair<K, V> {
-        val keyOfMapKey = ProtoBuf.readKey(reader)
+        val map = earlierValue as MutableMap<K, V>? ?: mutableMapOf()
+
+        val keyOfMapKey = ProtoBuf.readKey(countingReader)
         val key = keyDefinition.readTransportBytes(
-            ProtoBuf.getLength(keyOfMapKey.wireType, reader),
-            reader,
+            ProtoBuf.getLength(keyOfMapKey.wireType, countingReader),
+            countingReader,
             context
         )
 
-        val keyOfMapValue = ProtoBuf.readKey(reader)
-        val value = valueDefinition.readTransportBytes(
-            ProtoBuf.getLength(keyOfMapValue.wireType, reader),
-            reader,
-            context
-        )
+        // Read values until length is exhausted
+        do {
+            val keyOfMapValue = ProtoBuf.readKey(countingReader)
+            map[key] = valueDefinition.readTransportBytes(
+                ProtoBuf.getLength(keyOfMapValue.wireType, countingReader),
+                countingReader,
+                context,
+                map[key]
+            )
+        } while (lengthToGo > 0)
 
-        return Pair(key, value)
+        return map
     }
 
     object Model :

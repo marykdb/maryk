@@ -7,7 +7,8 @@ import maryk.core.properties.enum.TypeEnum
 import maryk.core.query.requests.IsOperation
 
 enum class Operation(
-    override val index: UInt
+    override val index: UInt,
+    override val alternativeNames: Set<String>? = null
 ) : IndexedEnumComparable<Operation>, TypeEnum<IsOperation>, IsCoreEnum {
     Define(1u), Request(2u);
 

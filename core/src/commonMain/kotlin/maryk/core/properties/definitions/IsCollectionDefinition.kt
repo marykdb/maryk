@@ -96,6 +96,8 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
                 && this.valueDefinition !is ContextualEmbeddedObjectDefinition<*>
                 && this.valueDefinition !is ContextualEmbeddedValuesDefinition<*>
                 && this.valueDefinition !is MultiTypeDefinition<*, *, *>
+                && this.valueDefinition !is IsCollectionDefinition<*, *, *, *>
+                && this.valueDefinition !is IsMapDefinition<*, *, *>
                 && value.size < 5
         writer.writeStartArray(renderCompact)
         for (it in value) {
@@ -208,14 +210,11 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
                 }
             }
             else -> {
+                @Suppress("UNCHECKED_CAST")
+                val collection = earlierValue as? MutableCollection<T>?
+                    ?: newMutableCollection(context)
+
                 val value = valueDefinition.readTransportBytes(length, reader, context)
-                val collection = when(earlierValue) {
-                    null -> newMutableCollection(context)
-                    else -> {
-                        @Suppress("UNCHECKED_CAST")
-                        (earlierValue as MutableCollection<T>)
-                    }
-                }
                 collection.add(value)
 
                 @Suppress("UNCHECKED_CAST")

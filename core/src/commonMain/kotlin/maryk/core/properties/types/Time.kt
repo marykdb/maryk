@@ -7,7 +7,10 @@ import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IsCoreEnum
 import maryk.lib.time.Time
 
-enum class TimePrecision(override val index: UInt) : IndexedEnumComparable<TimePrecision>, IsCoreEnum {
+enum class TimePrecision(
+    override val index: UInt,
+    override val alternativeNames: Set<String>? = null
+) : IndexedEnumComparable<TimePrecision>, IsCoreEnum {
     SECONDS(1u), MILLIS(2u);
 
     companion object : IndexedEnumDefinition<TimePrecision>(

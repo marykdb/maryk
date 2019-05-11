@@ -4,7 +4,7 @@ package maryk.core.properties.enum
 @Suppress("unused")
 interface TypeEnum<out T: Any>: IndexedEnum {
     companion object {
-        internal operator fun invoke(index: UInt, name: String) = object : IndexedEnumImpl<IndexedEnumComparable<Any>>(index), TypeEnum<Any> {
+        internal operator fun invoke(index: UInt, name: String, alternativeNames: Set<String>? = null) = object : IndexedEnumImpl<IndexedEnumComparable<Any>>(index, alternativeNames), TypeEnum<Any> {
             init {
                 require(index > 0u) { "Only indices of 1 and higher are allowed" }
             }

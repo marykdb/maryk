@@ -13,6 +13,7 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.SingleOrListDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.types.numeric.UInt32
@@ -43,9 +44,18 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
     override val final = true
 
     // Because of compilation issue in Native this map contains IndexedEnum<E> instead of E as value
-    private val valueByString: Map<String, E> by lazy {
-        cases().associate { Pair(it.name, it) }
+    private val valueByString: Map<String, E> by lazy<Map<String, E>> {
+        mutableMapOf<String, E>().also { output ->
+            cases().forEach {
+                output[it.name] = it
+                it.alternativeNames?.forEach { name: String ->
+                    if (output.containsKey(name)) throw ParseException("Enum ${this.name} already has a case for $name")
+                    output[name] = it
+                }
+            }
+        }
     }
+
     // Because of compilation issue in Native this map contains IndexedEnum<E> instead of E as value
     private val valueByIndex: Map<UInt, E> by lazy {
         cases().associate { Pair(it.index, it) }
@@ -156,8 +166,10 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
                     type = UInt32,
                     minValue = 1u
                 ),
-                valueDefinition = StringDefinition()
-            ) as MapDefinition<UInt, String, EnumNameContext>,
+                valueDefinition = SingleOrListDefinition(
+                    valueDefinition = StringDefinition()
+                )
+            ) as MapDefinition<UInt, List<String>, EnumNameContext>,
             IndexedEnumDefinition<*>::cases,
             toSerializable = { value, context ->
                 // If Enum was defined before and is thus available in context, don't include the cases again
@@ -179,15 +191,22 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
                 if (toReturnNull) {
                     null
                 } else {
-                    value?.invoke()?.map { v: IndexedEnum -> Pair(v.index, v.name) }?.toMap()
+                    value?.invoke()?.map { v: IndexedEnum ->
+                        // Combine name and alternative names into a list
+                        val names: List<String> = v.alternativeNames?.toMutableList()?.also {
+                            it.add(0, v.name)
+                        } ?: listOf(v.name)
+                        Pair(v.index, names)
+                    }?.toMap() as Map<UInt, List<String>>
                 }
             },
             fromSerializable = {
                 {
-                    it?.map { entry ->
+                    it?.map { (key, value) ->
                         IndexedEnumComparable(
-                            entry.key,
-                            entry.value
+                            key,
+                            value.first(),
+                            value.subList(1, value.size).toSet()
                         )
                     }?.toTypedArray() as Array<IndexedEnum>
                 }

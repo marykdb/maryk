@@ -30,7 +30,10 @@ import maryk.yaml.UnknownYamlTag
 import maryk.yaml.YamlWriter
 
 /** Direction Enumeration */
-enum class Direction(override val index: UInt) : IndexedEnumComparable<Direction>, IsCoreEnum {
+enum class Direction(
+    override val index: UInt,
+    override val alternativeNames: Set<String>? = null
+) : IndexedEnumComparable<Direction>, IsCoreEnum {
     ASC(1u), DESC(2u);
 
     companion object : IndexedEnumDefinition<Direction>("Direction", ::values)

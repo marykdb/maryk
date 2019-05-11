@@ -6,7 +6,8 @@ import maryk.core.exceptions.DefNotFoundException
  * Implementation for IndexedEnumComparable so they are easier to implement
  */
 abstract class IndexedEnumImpl<E: IndexedEnum>(
-    final override val index: UInt
+    final override val index: UInt,
+    final override val alternativeNames: Set<String>? = null
 ) : IndexedEnumComparable<E> {
     // The get() is for native and JS
     override val name get() = this::class.simpleName ?: throw DefNotFoundException("Missing enum option name")

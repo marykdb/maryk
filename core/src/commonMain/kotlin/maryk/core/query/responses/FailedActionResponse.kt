@@ -11,7 +11,8 @@ import maryk.core.values.SimpleObjectValues
 
 /** Types of failures */
 enum class FailType(
-    override val index: UInt
+    override val index: UInt,
+    override val alternativeNames: Set<String>? = null
 ) : IndexedEnumComparable<FailType>, IsCoreEnum {
     CONNECTION(1u), // Problems with Connection at the server
     STORE_STATE(2u), // Problems with the state of the store

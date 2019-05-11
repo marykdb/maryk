@@ -4,4 +4,5 @@ package maryk.core.properties.enum
 interface IndexedEnum {
     val index: UInt
     val name: String
+    val alternativeNames: Set<String>?
 }

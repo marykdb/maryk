@@ -7,7 +7,8 @@ import maryk.core.properties.enum.TypeEnum
 
 /** Indexed type of property reference graph elements */
 enum class PropRefGraphType(
-    override val index: UInt
+    override val index: UInt,
+    override val alternativeNames: Set<String>? = null
 ) : IndexedEnumComparable<PropRefGraphType>, IsCoreEnum, TypeEnum<IsTransportablePropRefGraphNode> {
     PropRef(1u),
     Graph(2u);

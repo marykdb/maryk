@@ -10,7 +10,8 @@ import maryk.core.query.orders.OrderType.ORDERS
 
 /** Defines the type of order */
 enum class OrderType(
-    override val index: UInt
+    override val index: UInt,
+    override val alternativeNames: Set<String>? = null
 ) : IndexedEnumComparable<OrderType>, TypeEnum<IsOrder>, IsCoreEnum {
     ORDER(1u),
     ORDERS(2u);

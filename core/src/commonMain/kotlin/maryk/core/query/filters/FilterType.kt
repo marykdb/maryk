@@ -7,7 +7,8 @@ import maryk.core.properties.enum.TypeEnum
 
 /** Indexed type of changes */
 enum class FilterType(
-    override val index: UInt
+    override val index: UInt,
+    override val alternativeNames: Set<String>? = null
 ) : IndexedEnumComparable<FilterType>, IsCoreEnum, TypeEnum<IsFilter> {
     And(1u),
     Or(2u),

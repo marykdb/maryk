@@ -12,7 +12,7 @@ import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
-import maryk.core.properties.definitions.MultiTypeDefinitionContext
+import maryk.core.properties.definitions.contextual.MultiTypeDefinitionContext
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.properties.definitions.StringDefinition

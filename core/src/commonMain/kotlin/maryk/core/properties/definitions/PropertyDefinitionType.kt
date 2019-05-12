@@ -22,7 +22,11 @@ import maryk.json.MapType
 enum class PropertyDefinitionType(
     override val index: UInt,
     override val alternativeNames: kotlin.collections.Set<kotlin.String>? = null
-) : IndexedEnumComparable<PropertyDefinitionType>, MapType, IsCoreEnum, TypeEnum<IsTransportablePropertyDefinitionType<*>> {
+) : IndexedEnumComparable<PropertyDefinitionType>,
+    MapType,
+    IsCoreEnum,
+    TypeEnum<IsTransportablePropertyDefinitionType<*>> {
+
     Boolean(1u),
     Date(2u),
     DateTime(3u),
@@ -45,7 +49,7 @@ enum class PropertyDefinitionType(
 }
 
 internal val mapOfPropertyDefEmbeddedObjectDefinitions =
-    mapOf<PropertyDefinitionType, IsSubDefinition<out Any, ContainsDefinitionsContext>>(
+    mapOf<PropertyDefinitionType, IsUsableInMultiType<out Any, ContainsDefinitionsContext>>(
         PropertyDefinitionType.Boolean to EmbeddedObjectDefinition(dataModel = { BooleanDefinition.Model }),
         PropertyDefinitionType.Date to EmbeddedObjectDefinition(dataModel = { DateDefinition.Model }),
         PropertyDefinitionType.DateTime to EmbeddedObjectDefinition(dataModel = { DateTimeDefinition.Model }),

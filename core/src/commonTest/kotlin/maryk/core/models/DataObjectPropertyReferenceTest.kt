@@ -10,10 +10,11 @@ import maryk.lib.time.Date
 import maryk.lib.time.Time
 import maryk.test.models.ComplexModel
 import maryk.test.models.EmbeddedMarykModel.Properties
-import maryk.test.models.MultiTypeEnum.T1
-import maryk.test.models.MultiTypeEnum.T3
-import maryk.test.models.MultiTypeEnum.T4
-import maryk.test.models.MultiTypeEnum.T5
+import maryk.test.models.MarykTypeEnum.T3
+import maryk.test.models.MarykTypeEnum.T4
+import maryk.test.models.MarykTypeEnum.T5
+import maryk.test.models.SimpleMarykTypeEnum.S1
+import maryk.test.models.SimpleMarykTypeEnum.S3
 import maryk.test.models.TestMarykModel
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -40,11 +41,11 @@ internal class DataObjectPropertyReferenceTest {
         TestMarykModel { embeddedValues { marykModel { map refToKey Time(12, 23) } } }.completeName shouldBe """embeddedValues.marykModel.map.#12:23"""
         TestMarykModel { embeddedValues { marykModel { map refAt Time(12, 23) } } }.completeName shouldBe "embeddedValues.marykModel.map.@12:23"
 
-        TestMarykModel { multi refAtType T1 }.completeName shouldBe "multi.*T1"
+        TestMarykModel { multi refAtType S1 }.completeName shouldBe "multi.*S1"
         TestMarykModel { multi.refToType() }.completeName shouldBe "multi.*"
 
-        TestMarykModel { multi.withType(T3) { value::ref } }.completeName shouldBe "multi.*T3.value"
-        TestMarykModel { multi.withType(T3) { model { value::ref } } }.completeName shouldBe "multi.*T3.model.value"
+        TestMarykModel { multi.withType(S3) { value::ref } }.completeName shouldBe "multi.*S3.value"
+        TestMarykModel { multi.withType(S3) { model { value::ref } } }.completeName shouldBe "multi.*S3.model.value"
 
         ComplexModel { mapIntObject refToKey 2u }.completeName shouldBe "mapIntObject.#2"
         ComplexModel { mapIntObject refAt 2u }.completeName shouldBe "mapIntObject.@2"
@@ -87,11 +88,11 @@ internal class DataObjectPropertyReferenceTest {
 
         TestMarykModel { embeddedValues { marykModel { map refAt Time(12, 23) } } }.toStorageByteArray().toHex() shouldBe "661e540300ae24"
 
-        TestMarykModel { multi refAtType T1 }.toStorageByteArray().toHex() shouldBe "690d"
+        TestMarykModel { multi refAtType S1 }.toStorageByteArray().toHex() shouldBe "690d"
         TestMarykModel { multi.refToType() }.toStorageByteArray().toHex() shouldBe "6905"
 
-        TestMarykModel { multi.withType(T3) { value::ref } }.toStorageByteArray().toHex() shouldBe "691d09"
-        TestMarykModel { multi.withType(T3) { model { value::ref } } }.toStorageByteArray().toHex() shouldBe "691d1609"
+        TestMarykModel { multi.withType(S3) { value::ref } }.toStorageByteArray().toHex() shouldBe "691d09"
+        TestMarykModel { multi.withType(S3) { model { value::ref } } }.toStorageByteArray().toHex() shouldBe "691d1609"
 
         ComplexModel { mapIntObject.at(2u) { value::ref } }.toStorageByteArray().toHex() shouldBe "1c040000000209"
         ComplexModel { mapIntObject.at(2u) { model { value::ref } } }.toStorageByteArray().toHex() shouldBe "1c04000000021609"

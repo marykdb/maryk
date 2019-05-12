@@ -8,7 +8,7 @@ import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.ComplexModel
 import maryk.test.models.EmbeddedMarykModel
-import maryk.test.models.MultiTypeEnum.T3
+import maryk.test.models.MarykTypeEnum.T3
 import maryk.test.shouldBe
 import maryk.yaml.YamlWriter
 import kotlin.test.Test

@@ -22,8 +22,8 @@ import maryk.test.models.CompleteMarykModel
 import maryk.test.models.CompleteMarykModel.Properties.number
 import maryk.test.models.CompleteMarykModel.Properties.string
 import maryk.test.models.CompleteMarykModel.Properties.time
-import maryk.test.models.MarykTypeEnum.O1
 import maryk.test.models.MarykEnumEmbedded.E1
+import maryk.test.models.SimpleMarykTypeEnum.S1
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -52,7 +52,7 @@ class IndexableScanRangesTest {
         time = Time(12, 11, 10),
         booleanForKey = true,
         dateForKey = Date(2019, 3, 20),
-        multiForKey = TypedValue(O1, "test"),
+        multiForKey = TypedValue(S1, "test"),
         enumEmbedded = E1
     )
     private val earlierKey = CompleteMarykModel.key(earlierDO)
@@ -66,7 +66,7 @@ class IndexableScanRangesTest {
         time = Time(11, 10, 9),
         booleanForKey = true,
         dateForKey = Date(2019, 3, 3),
-        multiForKey = TypedValue(O1, "test"),
+        multiForKey = TypedValue(S1, "test"),
         enumEmbedded = E1
     )
     private val matchKey = CompleteMarykModel.key(matchDO)
@@ -80,7 +80,7 @@ class IndexableScanRangesTest {
         time = Time(9, 8, 7),
         booleanForKey = true,
         dateForKey = Date(2019, 3, 1),
-        multiForKey = TypedValue(O1, "test"),
+        multiForKey = TypedValue(S1, "test"),
         enumEmbedded = E1
     )
     private val laterKey = CompleteMarykModel.key(laterDO)

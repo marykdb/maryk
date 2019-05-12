@@ -14,16 +14,19 @@ sealed class MarykTypeEnum(
     index: UInt,
     alternativeNames: Set<String>? = null
 ) : IndexedEnumImpl<MarykTypeEnum>(index, alternativeNames) {
-    object O1: MarykTypeEnum(1u, setOf("Object1"))
-    object O2: MarykTypeEnum(2u)
-    object O3: MarykTypeEnum(3u)
-    object O4: MarykTypeEnum(4u)
+    object T1: MarykTypeEnum(1u, setOf("Type1"))
+    object T2: MarykTypeEnum(2u)
+    object T3: MarykTypeEnum(3u)
+    object T4: MarykTypeEnum(4u)
+    object T5: MarykTypeEnum(5u)
+    object T6: MarykTypeEnum(6u)
+    object T7: MarykTypeEnum(7u)
 
     class UnknownMarykTypeEnum(index: UInt, override val name: String): MarykTypeEnum(index)
 
     companion object : IndexedEnumDefinition<MarykTypeEnum>(
         MarykTypeEnum::class,
-        values = { arrayOf(O1, O2, O3, O4) },
+        values = { arrayOf(T1, T2, T3, T4, T5, T6, T7) },
         reservedIndices = listOf(99u),
         reservedNames = listOf("O99"),
         unknownCreator = ::UnknownMarykTypeEnum

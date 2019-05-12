@@ -10,8 +10,8 @@ import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsEmbeddedDefinition
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsListDefinition
+import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsValueDefinition
-import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCacheReader
@@ -37,7 +37,7 @@ class ListItemReference<T : Any, CX : IsPropertyContext> internal constructor(
         when (this.propertyDefinition) {
             is IsEmbeddedDefinition<*, *> ->
                 this.propertyDefinition.resolveReferenceByName(name, this)
-            is MultiTypeDefinition<*, *, *> -> {
+            is IsMultiTypeDefinition<*, *, *> -> {
                 this.propertyDefinition.resolveReferenceByName(name, this)
             }
             else -> throw DefNotFoundException("ListItem can not contain embedded name references ($name)")
@@ -48,7 +48,7 @@ class ListItemReference<T : Any, CX : IsPropertyContext> internal constructor(
             is IsEmbeddedDefinition<*, *> -> {
                 this.propertyDefinition.resolveReference(reader, this)
             }
-            is MultiTypeDefinition<*, *, *> -> {
+            is IsMultiTypeDefinition<*, *, *> -> {
                 this.propertyDefinition.resolveReference(reader, this)
             }
             else -> throw DefNotFoundException("ListItem can not contain embedded index references ($index)")
@@ -65,7 +65,7 @@ class ListItemReference<T : Any, CX : IsPropertyContext> internal constructor(
             is IsEmbeddedObjectDefinition<*, *, *, *, *> -> {
                 this.propertyDefinition.resolveReferenceFromStorage(reader, this, context, isDoneReading)
             }
-            is MultiTypeDefinition<*, *, *> -> {
+            is IsMultiTypeDefinition<*, *, *> -> {
                 this.propertyDefinition.resolveReferenceFromStorage(reader, this)
             }
             else -> throw DefNotFoundException("ListItem can not contain embedded index references ($index)")

@@ -27,6 +27,7 @@ import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TimePrecision
 import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.numeric.SInt16
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.values.Values
@@ -39,10 +40,15 @@ import maryk.test.models.CompleteMarykModel.Properties.dateTime
 import maryk.test.models.CompleteMarykModel.Properties.multiForKey
 import maryk.test.models.CompleteMarykModel.Properties.number
 import maryk.test.models.CompleteMarykModel.Properties.subModel
-import maryk.test.models.MarykTypeEnum.O1
-import maryk.test.models.MarykTypeEnum.O2
-import maryk.test.models.MarykTypeEnum.O3
+import maryk.test.models.MarykTypeEnum.T1
+import maryk.test.models.MarykTypeEnum.T2
+import maryk.test.models.MarykTypeEnum.T4
+import maryk.test.models.Option.V1
+import maryk.test.models.Option.V3
 import maryk.test.models.SimpleMarykModel.Properties.value
+import maryk.test.models.SimpleMarykTypeEnum.S1
+import maryk.test.models.SimpleMarykTypeEnum.S2
+import maryk.test.models.SimpleMarykTypeEnum.S3
 
 sealed class MarykEnumEmbedded(
     index: UInt,
@@ -122,10 +128,10 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 required = false,
                 final = true,
                 unique = true,
-                enum = MarykTypeEnum,
-                minValue = O1,
-                maxValue = O3,
-                default = O1
+                enum = Option,
+                minValue = V1,
+                maxValue = V3,
+                default = V1
             )
         )
         val date = add(
@@ -282,15 +288,15 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 final = true,
                 typeEnum = MarykTypeEnum,
                 definitionMap = definitionMap(
-                    O1 to StringDefinition(
+                    T1 to StringDefinition(
                         regEx = "hi.*"
                     ),
-                    O2 to BooleanDefinition(),
-                    O3 to ListDefinition(
+                    T2 to NumberDefinition(type = SInt32),
+                    T4 to ListDefinition(
                         valueDefinition = StringDefinition()
                     )
                 ),
-                default = TypedValue(O1, "a value")
+                default = TypedValue(T1, "a value")
             )
         )
         val booleanForKey = add(
@@ -309,14 +315,14 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
             index = 19u, name = "multiForKey",
             definition = MultiTypeDefinition(
                 final = true,
-                typeEnum = MarykTypeEnum,
+                typeEnum = SimpleMarykTypeEnum,
                 definitionMap = definitionMap(
-                    O1 to StringDefinition(
+                    S1 to StringDefinition(
                         regEx = "hi.*"
                     ),
-                    O2 to BooleanDefinition(),
-                    O3 to ListDefinition(
-                        valueDefinition = StringDefinition()
+                    S2 to NumberDefinition(type = SInt16),
+                    S3 to EmbeddedValuesDefinition(
+                        dataModel = { EmbeddedMarykModel }
                     )
                 )
             )
@@ -382,7 +388,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
         string: String = "string",
         number: UInt = 42u,
         boolean: Boolean = true,
-        enum: MarykTypeEnum<*> = O1,
+        enum: Option = V1,
         date: Date = Date(2018, 5, 2),
         dateTime: DateTime = DateTime(2018, 5, 2, 10, 11, 12),
         time: Time = Time(10, 11, 12),
@@ -399,10 +405,10 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
         list: List<String> = listOf("ha1", "ha2", "ha3"),
         set: Set<Int> = setOf(1, 2, 3),
         map: Map<Date, Int> = mapOf(Date(2010, 11, 12) to 1, Date(2011, 12, 13) to 1),
-        multi: TypedValue<MarykTypeEnum<*>, *> = TypedValue(O1, "a value"),
+        multi: TypedValue<MarykTypeEnum<*>, *> = TypedValue(T1, "a value"),
         booleanForKey: Boolean,
         dateForKey: Date,
-        multiForKey: TypedValue<MarykTypeEnum<*>, *>,
+        multiForKey: TypedValue<SimpleMarykTypeEnum<*>, *>,
         enumEmbedded: MarykEnumEmbedded,
         mapWithEnum: Map<MarykEnumEmbedded, String> = mapOf(MarykEnumEmbedded.E1 to "value"),
         mapWithList: Map<String, List<String>> = mapOf("a" to listOf("b", "c")),

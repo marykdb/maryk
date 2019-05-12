@@ -14,8 +14,8 @@ import maryk.core.query.requests.getChanges
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.test.models.ComplexModel
 import maryk.test.models.EmbeddedMarykModel
-import maryk.test.models.MultiTypeEnum.T1
-import maryk.test.models.MultiTypeEnum.T3
+import maryk.test.models.MarykTypeEnum.T1
+import maryk.test.models.MarykTypeEnum.T3
 import maryk.test.runSuspendingTest
 import maryk.test.shouldBe
 import maryk.test.shouldBeOfType

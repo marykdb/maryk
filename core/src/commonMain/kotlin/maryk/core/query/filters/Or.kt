@@ -2,8 +2,8 @@ package maryk.core.query.filters
 
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
@@ -24,7 +24,7 @@ data class Or(
         val filters = add(
             1u, "filters",
             ListDefinition(
-                valueDefinition = MultiTypeDefinition(
+                valueDefinition = InternalMultiTypeDefinition(
                     typeEnum = FilterType,
                     definitionMap = mapOfFilterDefinitions
                 )

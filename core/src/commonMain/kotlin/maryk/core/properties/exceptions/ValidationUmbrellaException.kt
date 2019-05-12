@@ -2,8 +2,8 @@ package maryk.core.properties.exceptions
 
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.exceptions.ValidationExceptionType.UMBRELLA
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.types.TypedValue
@@ -29,7 +29,7 @@ data class ValidationUmbrellaException internal constructor(
                     2u, "exceptions",
                     ListDefinition(
                         default = emptyList(),
-                        valueDefinition = MultiTypeDefinition(
+                        valueDefinition = InternalMultiTypeDefinition(
                             typeEnum = ValidationExceptionType,
                             definitionMap = mapOfValidationExceptionDefinitions
                         )

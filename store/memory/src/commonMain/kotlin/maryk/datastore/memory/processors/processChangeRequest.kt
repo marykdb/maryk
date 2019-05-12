@@ -18,7 +18,7 @@ import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
-import maryk.core.properties.enum.TypeEnum
+import maryk.core.properties.enum.MultiTypeEnum
 import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationException
@@ -257,15 +257,15 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                     }
                                     @Suppress("UNCHECKED_CAST")
                                     val multiTypeReference =
-                                        reference as MultiTypePropertyReference<TypeEnum<Any>, Any, Any, *, *>
+                                        reference as MultiTypePropertyReference<MultiTypeEnum<Any>, Any, Any, *, *>
                                     @Suppress("UNCHECKED_CAST")
                                     val multiTypeDefinition =
-                                        multiTypeReference.propertyDefinition.definition as MultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>
+                                        multiTypeReference.propertyDefinition.definition as MultiTypeDefinition<MultiTypeEnum<Any>, Any, IsPropertyContext>
 
                                     // Previous value to find
-                                    var prevValue: TypedValue<*, *>? = null
+                                    var prevValue: TypedValue<MultiTypeEnum<Any>, *>? = null
                                     // Delete all existing values in placeholder
-                                    val hadPrevValue = deleteByReference(
+                                    val hadPrevValue = deleteByReference<TypedValue<MultiTypeEnum<Any>, Any>>(
                                         newValueList,
                                         multiTypeReference,
                                         version,
@@ -274,9 +274,10 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                         prevValue = prevTypedValue
                                     }
 
+                                    @Suppress("UNCHECKED_CAST")
                                     multiTypeDefinition.validateWithRef(
                                         if (hadPrevValue) prevValue else null,
-                                        value
+                                        value as TypedValue<MultiTypeEnum<Any>, Any>
                                     ) { multiTypeReference }
 
                                     val valueWriter = createValueWriter(newValueList, version, keepAllVersions)

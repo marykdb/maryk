@@ -15,13 +15,13 @@ import maryk.core.query.pairs.with
 import maryk.core.query.pairs.withType
 import maryk.lib.extensions.initByteArrayByHex
 import maryk.test.models.ComplexModel
-import maryk.test.models.MarykTypeEnum.O3
-import maryk.test.models.MultiTypeEnum.T1
-import maryk.test.models.MultiTypeEnum.T3
-import maryk.test.models.MultiTypeEnum.T4
-import maryk.test.models.MultiTypeEnum.T5
-import maryk.test.models.MultiTypeEnum.T6
-import maryk.test.models.MultiTypeEnum.T7
+import maryk.test.models.MarykTypeEnum.T1
+import maryk.test.models.MarykTypeEnum.T3
+import maryk.test.models.MarykTypeEnum.T4
+import maryk.test.models.MarykTypeEnum.T5
+import maryk.test.models.MarykTypeEnum.T6
+import maryk.test.models.MarykTypeEnum.T7
+import maryk.test.models.SimpleMarykTypeEnum.S3
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -62,7 +62,7 @@ private val complexValuesAsStorablesWithVersion = arrayOf(
     "24040000000935040400000005" to arrayOf(1234uL to "e"),
     "24040000000935040400000006" to arrayOf(1234uL to "f"),
     "24040000000a" to arrayOf(1234uL to TypedValue(T7, Unit)),
-    "24040000000a3d" to arrayOf(1234uL to TypedValue(O3, Unit)),
+    "24040000000a3d" to arrayOf(1234uL to TypedValue(S3, Unit)),
     "24040000000a3d1d" to arrayOf(1234uL to Unit),
     "24040000000a3d1d09" to arrayOf(1234uL to "g"),
     "2c" to arrayOf(1234uL to 1),
@@ -127,7 +127,7 @@ class ReadStorageToChangesComplexKtTest {
                         ComplexModel { mapIntMulti.at(7u) { atType(T4) { refAt(1u) } } } with "b",
                         ComplexModel { mapIntMulti.at(9u) { atType(T6) { refAt(5u) } } } with "e",
                         ComplexModel { mapIntMulti.at(9u) { atType(T6) { refAt(6u) }  } } with "f",
-                        ComplexModel { mapIntMulti.at(10u) { atType(T7) { atType(O3) { value::ref } } } } with "g",
+                        ComplexModel { mapIntMulti.at(10u) { atType(T7) { atType(S3) { value::ref } } } } with "g",
                         ComplexModel { mapWithList.at("a") { refAt(0u) } } with "a1",
                         ComplexModel { mapWithList.at("a") { refAt(1u) } } with "a2",
                         ComplexModel { mapWithMap.at("c") { refAt("c1")  }} with "c2"

@@ -14,8 +14,8 @@ import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.ByteCollector
 import maryk.test.models.EmbeddedMarykModel
-import maryk.test.models.MultiTypeEnum.T3
 import maryk.test.models.Option
+import maryk.test.models.SimpleMarykTypeEnum.S3
 import maryk.test.models.TestMarykModel
 import maryk.test.models.TestValueObject
 import maryk.test.shouldBe
@@ -51,16 +51,15 @@ val testExtendedMarykModelObject = TestMarykModel(
     ),
     valueObject = TestValueObject(6, DateTime(2017, 4, 1, 12, 55), true),
     embeddedValues = EmbeddedMarykModel("test"),
-    multi = TypedValue(T3, EmbeddedMarykModel("subInMulti!")),
+    multi = TypedValue(S3, EmbeddedMarykModel("subInMulti!")),
     listOfString = listOf("test1", "another test", "🤗")
 )
 
 private const val JSON =
-    """{"string":"hay","int":4,"uint":32,"double":"3.555","dateTime":"2017-12-04T12:13","bool":true,"enum":"V1(1)","list":[34,2352,3423,766],"set":["2017-12-05","2016-03-02","1981-12-05"],"map":{"12:55":"yes","10:03":"ahum"},"valueObject":{"int":6,"dateTime":"2017-04-01T12:55","bool":true},"embeddedValues":{"value":"test"},"multi":["T3(3)",{"value":"subInMulti!"}],"listOfString":["test1","another test","🤗"]}"""
+    """{"string":"hay","int":4,"uint":32,"double":"3.555","dateTime":"2017-12-04T12:13","bool":true,"enum":"V1(1)","list":[34,2352,3423,766],"set":["2017-12-05","2016-03-02","1981-12-05"],"map":{"12:55":"yes","10:03":"ahum"},"valueObject":{"int":6,"dateTime":"2017-04-01T12:55","bool":true},"embeddedValues":{"value":"test"},"multi":["S3(3)",{"value":"subInMulti!"}],"listOfString":["test1","another test","🤗"]}"""
 
 private const val ALT_JSON =
-    """{"str":"hay","int":4,"uint":32,"double":"3.555","dateTime":"2017-12-04T12:13","bool":true,"enum":"V1(1)","list":[34,2352,3423,766],"set":["2017-12-05","2016-03-02","1981-12-05"],"map":{"12:55":"yes","10:03":"ahum"},"valueObject":{"int":6,"dateTime":"2017-04-01T12:55","bool":true},"embeddedValues":{"value":"test"},"multi":["T3(3)",{"value":"subInMulti!"}],"listOfString":["test1","another test","🤗"]}"""
-
+    """{"str":"hay","int":4,"uint":32,"double":"3.555","dateTime":"2017-12-04T12:13","bool":true,"enum":"V1(1)","list":[34,2352,3423,766],"set":["2017-12-05","2016-03-02","1981-12-05"],"map":{"12:55":"yes","10:03":"ahum"},"valueObject":{"int":6,"dateTime":"2017-04-01T12:55","bool":true},"embeddedValues":{"value":"test"},"multi":["S3(3)",{"value":"subInMulti!"}],"listOfString":["test1","another test","🤗"]}"""
 
 // Test if unknown values will be skipped
 private const val PRETTY_JSON_WITH_SKIP = """{
@@ -86,7 +85,7 @@ private const val PRETTY_JSON_WITH_SKIP = """{
   "embeddedValues": {
     "value": "test"
   },
-  "multi": ["T3(3)", {
+  "multi": ["S3(3)", {
     "value": "subInMulti!"
   }],
   "listOfString": ["test1", "another test", "🤗"]
@@ -210,7 +209,7 @@ internal class DataModelTest {
           "embeddedValues": {
             "value": "test"
           },
-          "multi": ["T3(3)", {
+          "multi": ["S3(3)", {
             "value": "subInMulti!"
           }],
           "listOfString": ["test1", "another test", "🤗"]
@@ -246,7 +245,7 @@ internal class DataModelTest {
           bool: true
         embeddedValues:
           value: test
-        multi: !T3(3)
+        multi: !S3(3)
           value: subInMulti!
         listOfString: [test1, another test, 🤗]
 

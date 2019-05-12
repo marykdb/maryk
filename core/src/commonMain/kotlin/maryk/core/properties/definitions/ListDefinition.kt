@@ -50,7 +50,7 @@ data class ListDefinition<T : Any, CX : IsPropertyContext> internal constructor(
                     add(5u, "valueDefinition",
                         ContextTransformerDefinition(
                             contextTransformer = { it?.definitionsContext },
-                            definition = MultiTypeDefinition(
+                            definition = InternalMultiTypeDefinition(
                                 typeEnum = PropertyDefinitionType,
                                 definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
                             )

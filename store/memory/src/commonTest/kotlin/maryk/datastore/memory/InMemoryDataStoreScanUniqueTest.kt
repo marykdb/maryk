@@ -10,10 +10,10 @@ import maryk.core.query.responses.statuses.AddSuccess
 import maryk.lib.time.Date
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.CompleteMarykModel.Properties.string
-import maryk.test.models.MarykTypeEnum.O1
-import maryk.test.models.MarykTypeEnum.O2
 import maryk.test.models.MarykEnumEmbedded.E1
+import maryk.test.models.MarykTypeEnum.T2
 import maryk.test.models.SimpleMarykModel
+import maryk.test.models.SimpleMarykTypeEnum.S1
 import maryk.test.runSuspendingTest
 import maryk.test.shouldBe
 import maryk.test.shouldBeOfType
@@ -31,10 +31,10 @@ class InMemoryDataStoreScanUniqueTest {
             subModel = SimpleMarykModel(
                 value = "haha"
             ),
-            multi=TypedValue(O2, true),
+            multi=TypedValue(T2, true),
             booleanForKey= true,
             dateForKey= Date(2018, 3, 29),
-            multiForKey= TypedValue(O1, "hii"),
+            multiForKey= TypedValue(S1, "hii"),
             enumEmbedded= E1
         )
     )

@@ -4,7 +4,7 @@ import maryk.core.models.SingleTypedValueDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.MultiTypeDefinition
+import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DefinitionsContext
@@ -21,7 +21,7 @@ data class RootMaryk(
     object Properties : ObjectPropertyDefinitions<RootMaryk>() {
         val operations = add(1u, "operations",
             ListDefinition(
-                valueDefinition = MultiTypeDefinition(
+                valueDefinition = InternalMultiTypeDefinition(
                     typeEnum = Operation,
                     definitionMap = mapOf(
                         Operation.Define to ContextTransformerDefinition<Definitions, DefinitionsContext, DefinitionsConversionContext>(

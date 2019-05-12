@@ -15,9 +15,9 @@ import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.Success
 import maryk.test.models.ComplexModel
 import maryk.test.models.EmbeddedMarykModel
-import maryk.test.models.MultiTypeEnum
-import maryk.test.models.MultiTypeEnum.T1
-import maryk.test.models.MultiTypeEnum.T3
+import maryk.test.models.MarykTypeEnum
+import maryk.test.models.MarykTypeEnum.T1
+import maryk.test.models.MarykTypeEnum.T3
 import maryk.test.runSuspendingTest
 import maryk.test.shouldBe
 import maryk.test.shouldBeOfType
@@ -286,7 +286,7 @@ class InMemoryDataStoreChangeComplexTest {
         val newMultiValue = TypedValue(T3, EmbeddedMarykModel("a5", EmbeddedMarykModel("ae5")))
         val newMapStringString = mapOf("e" to "f", "g" to "h")
         val newMapIntObject = mapOf(4u to EmbeddedMarykModel("v100"), 8u to EmbeddedMarykModel("v200"))
-        val newMapIntMulti = mapOf<UInt, TypedValue<MultiTypeEnum<*>, *>>(
+        val newMapIntMulti = mapOf<UInt, TypedValue<MarykTypeEnum<*>, *>>(
             5u to TypedValue(
                 T3,
                 EmbeddedMarykModel("v101", EmbeddedMarykModel("suba1", EmbeddedMarykModel("suba2")))

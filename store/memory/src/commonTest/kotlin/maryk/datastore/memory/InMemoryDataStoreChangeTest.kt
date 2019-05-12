@@ -21,7 +21,7 @@ import maryk.core.query.responses.statuses.ValidationFail
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.models.EmbeddedMarykModel
-import maryk.test.models.MultiTypeEnum.T1
+import maryk.test.models.SimpleMarykTypeEnum.S1
 import maryk.test.models.TestMarykModel
 import maryk.test.runSuspendingTest
 import maryk.test.shouldBe
@@ -78,7 +78,7 @@ class InMemoryDataStoreChangeTest {
                         1.644,
                         DateTime(2019, 1, 2),
                         false,
-                        multi = TypedValue(T1, "string"),
+                        multi = TypedValue(S1, "string"),
                         listOfString = listOf("f", "g", "h"),
                         map = mapOf(Time(1, 33, 45) to "an other", Time(13, 44, 55) to "an other2"),
                         set = setOf(Date(2015, 11, 25), Date(2001, 12, 5))
@@ -90,7 +90,7 @@ class InMemoryDataStoreChangeTest {
                         3.44,
                         DateTime(1, 1, 2),
                         true,
-                        multi = TypedValue(T1, "v1"),
+                        multi = TypedValue(S1, "v1"),
                         listOfString = listOf("f", "g", "h"),
                         map = mapOf(Time(3, 3, 3) to "three", Time(4, 4, 4) to "4"),
                         set = setOf(Date(2001, 1, 1), Date(2002, 2, 2))
@@ -341,7 +341,7 @@ class InMemoryDataStoreChangeTest {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[4].change(
-                    Delete(TestMarykModel { multi refAtType T1 })
+                    Delete(TestMarykModel { multi refAtType S1 })
                 )
             )
         )

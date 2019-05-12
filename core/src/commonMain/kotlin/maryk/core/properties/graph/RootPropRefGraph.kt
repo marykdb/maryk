@@ -6,7 +6,7 @@ import maryk.core.models.ContextualDataModel
 import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.definitions.MultiTypeDefinition
+import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.graph.PropRefGraphType.Graph
 import maryk.core.properties.graph.PropRefGraphType.PropRef
@@ -100,7 +100,7 @@ data class RootPropRefGraph<P : IsPropertyDefinitions> internal constructor(
                     }
                     is Value<*> -> {
                         val multiTypeDefinition =
-                            Properties.properties.valueDefinition as MultiTypeDefinition<PropRefGraphType, IsTransportablePropRefGraphNode, GraphContext>
+                            Properties.properties.valueDefinition as IsMultiTypeDefinition<PropRefGraphType, IsTransportablePropRefGraphNode, GraphContext>
 
                         propertiesList.add(
                             TypedValue(

@@ -95,7 +95,7 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
                 && this.valueDefinition !is ValueModelDefinition<*, *, *>
                 && this.valueDefinition !is ContextualEmbeddedObjectDefinition<*>
                 && this.valueDefinition !is ContextualEmbeddedValuesDefinition<*>
-                && this.valueDefinition !is MultiTypeDefinition<*, *, *>
+                && this.valueDefinition !is IsMultiTypeDefinition<*, *, *>
                 && this.valueDefinition !is IsCollectionDefinition<*, *, *, *>
                 && this.valueDefinition !is IsMapDefinition<*, *, *>
                 && value.size < 5

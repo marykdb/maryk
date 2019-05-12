@@ -12,9 +12,9 @@ import maryk.core.models.SingleValueDataModel
 import maryk.core.models.ValueDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
+import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.contextual.ContextValueTransformDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
@@ -45,7 +45,7 @@ data class Definitions(
         @Suppress("UNCHECKED_CAST")
         val definitions = add(1u, "definitions",
             ListDefinition(
-                valueDefinition = MultiTypeDefinition(
+                valueDefinition = InternalMultiTypeDefinition(
                     typeEnum = PrimitiveType,
                     definitionMap = mapOf(
                         Model to ContextCaptureDefinition(

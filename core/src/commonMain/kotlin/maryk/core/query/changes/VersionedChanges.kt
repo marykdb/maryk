@@ -2,6 +2,7 @@ package maryk.core.query.changes
 
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
@@ -29,7 +30,7 @@ data class VersionedChanges(
             2u, "changes",
             ListDefinition(
                 default = emptyList(),
-                valueDefinition = MultiTypeDefinition(
+                valueDefinition = InternalMultiTypeDefinition(
                     typeEnum = ChangeType,
                     definitionMap = mapOfChangeDefinitions
                 )

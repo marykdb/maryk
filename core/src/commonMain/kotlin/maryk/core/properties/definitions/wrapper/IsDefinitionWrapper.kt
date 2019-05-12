@@ -6,10 +6,10 @@ import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
-import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.properties.definitions.SetDefinition
@@ -162,7 +162,7 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
         ) =
             definitions.add(
                 4u, "definition",
-                MultiTypeDefinition(
+                InternalMultiTypeDefinition(
                     typeEnum = PropertyDefinitionType,
                     definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
                 ),

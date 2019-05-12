@@ -6,8 +6,8 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.types.Key
@@ -43,7 +43,7 @@ data class DataObjectChange<out DM : IsRootDataModel<*>> internal constructor(
             2u, "changes",
             ListDefinition(
                 default = emptyList(),
-                valueDefinition = MultiTypeDefinition(
+                valueDefinition = InternalMultiTypeDefinition(
                     typeEnum = ChangeType,
                     definitionMap = mapOfChangeDefinitions
                 )

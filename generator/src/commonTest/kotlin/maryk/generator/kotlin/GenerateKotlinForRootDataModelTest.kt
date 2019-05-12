@@ -2,6 +2,7 @@ package maryk.generator.kotlin
 
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.MarykTypeEnum
+import maryk.test.models.Option
 import maryk.test.models.SimpleMarykModel
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -158,10 +159,10 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 required = false,
                 final = true,
                 unique = true,
-                enum = MarykTypeEnum,
-                minValue = MarykTypeEnum.O1,
-                maxValue = MarykTypeEnum.O3,
-                default = MarykTypeEnum.O1
+                enum = Option,
+                minValue = Option.V1,
+                maxValue = Option.V3,
+                default = Option.V1
             )
         )
         val date = add(
@@ -318,15 +319,17 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 final = true,
                 typeEnum = MarykTypeEnum,
                 definitionMap = definitionMap(
-                    MarykTypeEnum.O1 to StringDefinition(
+                    MarykTypeEnum.T1 to StringDefinition(
                         regEx = "hi.*"
                     ),
-                    MarykTypeEnum.O2 to BooleanDefinition(),
-                    MarykTypeEnum.O3 to ListDefinition(
+                    MarykTypeEnum.T2 to NumberDefinition(
+                        type = SInt32
+                    ),
+                    MarykTypeEnum.T4 to ListDefinition(
                         valueDefinition = StringDefinition()
                     )
                 ),
-                default = TypedValue(MarykTypeEnum.O1, "a value")
+                default = TypedValue(MarykTypeEnum.T1, "a value")
             )
         )
         val booleanForKey = add(
@@ -345,14 +348,16 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
             index = 19u, name = "multiForKey",
             definition = MultiTypeDefinition(
                 final = true,
-                typeEnum = MarykTypeEnum,
+                typeEnum = SimpleMarykTypeEnum,
                 definitionMap = definitionMap(
-                    MarykTypeEnum.O1 to StringDefinition(
+                    SimpleMarykTypeEnum.S1 to StringDefinition(
                         regEx = "hi.*"
                     ),
-                    MarykTypeEnum.O2 to BooleanDefinition(),
-                    MarykTypeEnum.O3 to ListDefinition(
-                        valueDefinition = StringDefinition()
+                    SimpleMarykTypeEnum.S2 to NumberDefinition(
+                        type = SInt16
+                    ),
+                    SimpleMarykTypeEnum.S3 to EmbeddedValuesDefinition(
+                        dataModel = { EmbeddedMarykModel }
                     )
                 )
             )
@@ -418,7 +423,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
         string: String = "string",
         number: UInt = 42u,
         boolean: Boolean = true,
-        enum: MarykTypeEnum = MarykTypeEnum.O1,
+        enum: Option = Option.V1,
         date: Date = Date(2018, 5, 2),
         dateTime: DateTime = DateTime(2018, 5, 2, 10, 11, 12),
         time: Time = Time(10, 11, 12),
@@ -435,10 +440,10 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
         list: List<String> = listOf("ha1", "ha2", "ha3"),
         set: Set<Int> = setOf(1, 2, 3),
         map: Map<Date, Int> = mapOf(Date(2010, 11, 12) to 1, Date(2011, 12, 13) to 1),
-        multi: TypedValue<MarykTypeEnum, *> = TypedValue(MarykTypeEnum.O1, "a value"),
+        multi: TypedValue<MarykTypeEnum, *> = TypedValue(MarykTypeEnum.T1, "a value"),
         booleanForKey: Boolean,
         dateForKey: Date,
-        multiForKey: TypedValue<MarykTypeEnum, *>,
+        multiForKey: TypedValue<SimpleMarykTypeEnum, *>,
         enumEmbedded: MarykEnumEmbedded,
         mapWithEnum: Map<MarykEnumEmbedded, String> = mapOf(MarykEnumEmbedded.E1 to "value"),
         mapWithList: Map<String, List<String>> = mapOf("a" to listOf("b", "c")),
@@ -492,7 +497,7 @@ class GenerateKotlinForRootDataModelTest {
         var output = ""
 
         val generationContext = GenerationContext(
-            enums = mutableListOf(MarykTypeEnum)
+            enums = mutableListOf(MarykTypeEnum, Option)
         )
 
         CompleteMarykModel.generateKotlin("maryk.test.models", generationContext) {

@@ -7,9 +7,9 @@ import maryk.core.properties.MutablePropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.PropertyDefinitionsCollectionDefinitionWrapper
+import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.index.IndexKeyPartType
@@ -82,7 +82,7 @@ abstract class RootDataModel<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
         override val properties = addProperties(this as ObjectPropertyDefinitions<RootDataModel<*, *>>)
         val key = add(
             3u, "key",
-            MultiTypeDefinition(
+            InternalMultiTypeDefinition(
                 typeEnum = IndexKeyPartType,
                 definitionMap = mapOfIndexKeyPartDefinitions
             ),
@@ -95,7 +95,7 @@ abstract class RootDataModel<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
         val indices = add(
             4u, "indices",
             ListDefinition(
-                valueDefinition = MultiTypeDefinition(
+                valueDefinition = InternalMultiTypeDefinition(
                     typeEnum = IndexKeyPartType,
                     definitionMap = mapOfIndexKeyPartDefinitions
                 )

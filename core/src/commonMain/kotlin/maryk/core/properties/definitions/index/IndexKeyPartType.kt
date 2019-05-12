@@ -14,6 +14,7 @@ import maryk.core.query.DefinitionsConversionContext
 import maryk.json.ArrayType
 import maryk.json.TokenType
 import maryk.json.ValueType
+import maryk.json.ValueType.IsNullValueType
 import maryk.core.properties.definitions.index.Multiple as MultipleInstance
 import maryk.core.properties.definitions.index.Reversed as ReversedInstance
 
@@ -21,7 +22,7 @@ import maryk.core.properties.definitions.index.Reversed as ReversedInstance
 sealed class IndexKeyPartType<out T: IsIndexable>(
     index: UInt
 ) : IndexedEnumImpl<IndexKeyPartType<*>>(index), TokenType, IsCoreEnum, TypeEnum<T> {
-    object UUID : IndexKeyPartType<UUIDKey>(1u), ValueType.IsNullValueType, TypeEnum<UUIDKey>
+    object UUID : IndexKeyPartType<UUIDKey>(1u), IsNullValueType
     object Reference : ValueType<String>, IndexKeyPartType<IsIndexablePropertyReference<*>>(2u) {
         override val name = "Ref"
     }

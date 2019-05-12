@@ -4,6 +4,7 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
@@ -33,7 +34,7 @@ data class AddSuccess<DM : IsRootDataModel<*>>(
                     3u, "changes",
                     ListDefinition(
                         default = emptyList(),
-                        valueDefinition = MultiTypeDefinition(
+                        valueDefinition = InternalMultiTypeDefinition(
                             typeEnum = ChangeType,
                             definitionMap = mapOfChangeDefinitions
                         )

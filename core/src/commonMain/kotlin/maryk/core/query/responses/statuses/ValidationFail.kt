@@ -4,8 +4,8 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.ValidationExceptionType
 import maryk.core.properties.exceptions.ValidationUmbrellaException
@@ -35,7 +35,7 @@ data class ValidationFail<DM : IsRootDataModel<*>>(
                     1u, "exceptions",
                     ListDefinition(
                         default = emptyList(),
-                        valueDefinition = MultiTypeDefinition(
+                        valueDefinition = InternalMultiTypeDefinition(
                             typeEnum = ValidationExceptionType,
                             definitionMap = mapOfValidationExceptionDefinitions
                         )

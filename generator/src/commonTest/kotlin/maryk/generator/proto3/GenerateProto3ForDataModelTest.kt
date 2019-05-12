@@ -33,18 +33,24 @@ val generatedProto3ForCompleteMarykModel = """
 message CompleteMarykModel {
   reserved 99;
   reserved "reserved";
+  enum Option {
+    UNKNOWN = 0;
+    V1 = 1;
+    V2 = 2;
+    V3 = 3;
+  }
   message MultiType {
     oneof multi {
-      string o1 = 1;
-      bool o2 = 2;
-      repeated string o3 = 3;
+      string t1 = 1;
+      sint32 t2 = 2;
+      repeated string t4 = 4;
     }
   }
   message MultiForKeyType {
     oneof multiForKey {
-      string o1 = 1;
-      bool o2 = 2;
-      repeated string o3 = 3;
+      string s1 = 1;
+      sint32 s2 = 2;
+      EmbeddedMarykModel s3 = 3;
     }
   }
   enum MarykEnumEmbedded {
@@ -60,7 +66,7 @@ message CompleteMarykModel {
   string string = 1;
   uint64 number = 2;
   bool boolean = 3;
-  MarykTypeEnum enum = 4;
+  Option enum = 4;
   sint32 date = 5;
   int64 dateTime = 6;
   uint32 time = 7;

@@ -9,7 +9,7 @@ import maryk.core.properties.definitions.contextual.MultiTypeDefinitionContext
 import maryk.core.properties.definitions.descriptors.addDescriptorPropertyWrapperWrapper
 import maryk.core.properties.definitions.descriptors.convertMultiTypeDescriptors
 import maryk.core.properties.enum.IndexedEnumDefinition
-import maryk.core.properties.enum.TypeEnum
+import maryk.core.properties.enum.MultiTypeEnum
 import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.query.ContainsDefinitionsContext
@@ -20,14 +20,13 @@ import maryk.core.values.SimpleObjectValues
  * The type mapping is defined in the given [definitionMap] mapped by enum [E].
  * Receives context of [CX]
  */
-data class MultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyContext> internal constructor(
+data class MultiTypeDefinition<E : MultiTypeEnum<T>, T: Any, in CX : IsPropertyContext>(
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val typeEnum: IndexedEnumDefinition<E>,
     override val typeIsFinal: Boolean = true,
-    override val definitionMap: Map<E, IsSubDefinition<out Any, CX>>,
-    override val default: TypedValue<E, T>? = null,
-    internal val keepAsValues: Boolean = false
+    override val definitionMap: Map<E, IsUsableInMultiType<out Any, CX>>,
+    override val default: TypedValue<E, T>? = null
 ) : IsMultiTypeDefinition<E, T, CX>, IsUsableInMultiType<TypedValue<E, T>, CX> {
     override val propertyDefinitionType = PropertyDefinitionType.MultiType
     override val wireType = LENGTH_DELIMITED
@@ -40,25 +39,9 @@ data class MultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyContex
         }
     }
 
-    constructor(
-        required: Boolean = true,
-        final: Boolean = false,
-        typeEnum: IndexedEnumDefinition<E>,
-        typeIsFinal: Boolean = true,
-        definitionMap: Map<E, IsUsableInMultiType<out Any, CX>>,
-        default: TypedValue<E, T>? = null
-    ) : this(
-        required = required,
-        final = final,
-        typeEnum = typeEnum,
-        typeIsFinal = typeIsFinal,
-        definitionMap = definitionMap as Map<E, IsSubDefinition<out Any, CX>>,
-        default = default
-    )
-
     override fun definition(index: UInt) = definitionMapByIndex[index]
 
-    override fun keepAsValues() = this.keepAsValues
+    override fun keepAsValues() = false
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -104,7 +87,7 @@ data class MultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyContex
                         capturer = { context: MultiTypeDefinitionContext, value: String ->
                             context.typeEnumName = value
                         },
-                        toSerializable = { value: IndexedEnumDefinition<out TypeEnum<Any>>?, _ ->
+                        toSerializable = { value: IndexedEnumDefinition<out MultiTypeEnum<Any>>?, _ ->
                             value?.name
                         },
                         fromSerializable = { null }
@@ -129,7 +112,7 @@ data class MultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyContex
                 }
             }
         ) {
-        override fun invoke(values: SimpleObjectValues<MultiTypeDefinition<*, *, *>>): MultiTypeDefinition<TypeEnum<Any>, Any, ContainsDefinitionsContext> {
+        override fun invoke(values: SimpleObjectValues<MultiTypeDefinition<*, *, *>>): MultiTypeDefinition<MultiTypeEnum<Any>, Any, ContainsDefinitionsContext> {
             val definitionMap = convertMultiTypeDescriptors(
                 values(5u)
             )

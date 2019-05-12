@@ -5,8 +5,8 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.WriteCache
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
-import maryk.test.models.MultiTypeEnum.T1
-import maryk.test.models.MultiTypeEnum.T2
+import maryk.test.models.MarykTypeEnum.T1
+import maryk.test.models.SimpleMarykTypeEnum.S2
 import maryk.test.models.TestMarykModel
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
@@ -14,7 +14,7 @@ import kotlin.test.Test
 
 class TypedValueReferenceTest {
     private val typeReference =
-        TestMarykModel { multi refAtType T2 }
+        TestMarykModel { multi refAtType S2 }
 
     @Test
     fun getValueFromMap() {
@@ -32,7 +32,7 @@ class TypedValueReferenceTest {
 
     @Test
     fun testCompleteName() {
-        typeReference.completeName shouldBe "multi.*T2"
+        typeReference.completeName shouldBe "multi.*S2"
     }
 
     @Test

@@ -9,8 +9,9 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
+import maryk.core.properties.definitions.InternalMultiTypeDefinition
+import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.wrapper.EmbeddedValuesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
@@ -175,7 +176,7 @@ data class PropRefGraph<P : PropertyDefinitions, DM : IsValuesDataModel<PS>, PS 
                     }
                     is Value<*> -> {
                         val multiTypeDefinition =
-                            Properties.properties.valueDefinition as MultiTypeDefinition<PropRefGraphType, IsTransportablePropRefGraphNode, GraphContext>
+                            Properties.properties.valueDefinition as IsMultiTypeDefinition<PropRefGraphType, IsTransportablePropRefGraphNode, GraphContext>
 
                         propertiesValue.add(
                             TypedValue(
@@ -213,7 +214,7 @@ internal fun <DO : Any> ObjectPropertyDefinitions<DO>.addProperties(
 ) =
     add(index, "properties",
         ListDefinition(
-            valueDefinition = MultiTypeDefinition(
+            valueDefinition = InternalMultiTypeDefinition(
                 definitionMap = mapOf(
                     Graph to EmbeddedObjectDefinition(
                         dataModel = { PropRefGraph }

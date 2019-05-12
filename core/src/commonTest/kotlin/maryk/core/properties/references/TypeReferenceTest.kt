@@ -4,7 +4,7 @@ import maryk.core.models.RootDataModel
 import maryk.core.models.key
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.definitions.IsSubDefinition
+import maryk.core.properties.definitions.IsUsableInMultiType
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.StringDefinition
@@ -14,8 +14,8 @@ import maryk.core.properties.types.numeric.UInt32
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.MarykTypeEnum
-import maryk.test.models.MarykTypeEnum.O1
-import maryk.test.models.MarykTypeEnum.O2
+import maryk.test.models.MarykTypeEnum.T1
+import maryk.test.models.MarykTypeEnum.T2
 import maryk.test.shouldBe
 import maryk.test.shouldBeOfType
 import kotlin.test.Test
@@ -32,9 +32,9 @@ internal class TypeReferenceTest {
                 MultiTypeDefinition(
                     final = true,
                     typeEnum = MarykTypeEnum,
-                    definitionMap = mapOf<MarykTypeEnum<*>, IsSubDefinition<*, IsPropertyContext>>(
-                        O1 to StringDefinition(),
-                        O2 to NumberDefinition(type = UInt32)
+                    definitionMap = mapOf<MarykTypeEnum<*>, IsUsableInMultiType<*, IsPropertyContext>>(
+                        T1 to StringDefinition(),
+                        T2 to NumberDefinition(type = UInt32)
                     )
                 )
             )
@@ -52,7 +52,7 @@ internal class TypeReferenceTest {
     @Test
     fun testKey() {
         val obj = MarykModel(
-            multi = TypedValue(O2, 23)
+            multi = TypedValue(T2, 23)
         )
 
         val key = MarykModel.key(obj)
@@ -63,12 +63,12 @@ internal class TypeReferenceTest {
         val specificDef = shouldBeOfType<TypeReference<MarykTypeEnum<*>, *, *>>(keyDef)
         specificDef shouldBe multi.typeRef()
 
-        specificDef.getValue(obj) shouldBe O2
+        specificDef.getValue(obj) shouldBe T2
 
         val bc = ByteCollector()
         bc.reserve(2)
-        specificDef.writeStorageBytes(O1, bc::write)
-        specificDef.readStorageBytes(bc.size, bc::read) shouldBe O1
+        specificDef.writeStorageBytes(T1, bc::write)
+        specificDef.readStorageBytes(bc.size, bc::read) shouldBe T1
     }
 
     @Test

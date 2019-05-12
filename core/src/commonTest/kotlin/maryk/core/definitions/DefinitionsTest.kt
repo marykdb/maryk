@@ -223,34 +223,26 @@ class DefinitionsTest {
           : !MultiType
             required: false
             final: false
-            typeEnum: MultiTypeEnum
+            typeEnum: SimpleMarykTypeEnum
             typeIsFinal: true
             definitionMap:
-              ? 1: T1
+              ? 1: S1
               : !String
                 required: true
                 final: false
                 unique: false
-              ? 2: T2
+              ? 2: S2
               : !Number
                 required: true
                 final: false
                 unique: false
                 type: SInt32
                 random: false
-              ? 3: T3
+              ? 3: S3
               : !Embed
                 required: true
                 final: false
                 dataModel: EmbeddedMarykModel
-              ? 4: T4
-              : !List
-                required: true
-                final: false
-                valueDefinition: !String
-                  required: true
-                  final: false
-                  unique: false
           ? 14: reference
           : !Reference
             required: false

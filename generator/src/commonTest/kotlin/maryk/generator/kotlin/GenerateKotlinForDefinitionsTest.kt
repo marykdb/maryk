@@ -4,6 +4,7 @@ import maryk.core.definitions.Definitions
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.EmbeddedModel
 import maryk.test.models.MarykTypeEnum
+import maryk.test.models.Option
 import maryk.test.models.SimpleMarykModel
 import maryk.test.models.ValueMarykObject
 import maryk.test.shouldBe
@@ -14,6 +15,7 @@ class GenerateKotlinForDefinitionsTest {
     @Test
     fun generateMixedMarykPrimitives() {
         val mapOfWriters = mutableMapOf(
+            "Option" to Writer(),
             "MarykTypeEnum" to Writer(),
             "ValueMarykObject" to Writer(),
             "EmbeddedModel" to Writer(),
@@ -24,6 +26,7 @@ class GenerateKotlinForDefinitionsTest {
         val setOfNames = mutableSetOf<String>()
 
         Definitions(
+            Option,
             MarykTypeEnum,
             ValueMarykObject,
             EmbeddedModel,
@@ -36,7 +39,7 @@ class GenerateKotlinForDefinitionsTest {
             writer::writer
         }
 
-        setOfNames.size shouldBe 5
+        setOfNames.size shouldBe 6
 
         mapOfWriters["MarykTypeEnum"]!!.output shouldBe generatedKotlinForEnum
         mapOfWriters["ValueMarykObject"]!!.output shouldBe generatedKotlinForValueDataModel

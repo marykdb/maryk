@@ -16,16 +16,16 @@ import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.values.Values
 import maryk.test.models.ComplexModel.Properties
-import maryk.test.models.MarykTypeEnum.O1
-import maryk.test.models.MarykTypeEnum.O2
-import maryk.test.models.MarykTypeEnum.O3
-import maryk.test.models.MultiTypeEnum.T1
-import maryk.test.models.MultiTypeEnum.T2
-import maryk.test.models.MultiTypeEnum.T3
-import maryk.test.models.MultiTypeEnum.T4
-import maryk.test.models.MultiTypeEnum.T5
-import maryk.test.models.MultiTypeEnum.T6
-import maryk.test.models.MultiTypeEnum.T7
+import maryk.test.models.MarykTypeEnum.T1
+import maryk.test.models.MarykTypeEnum.T2
+import maryk.test.models.MarykTypeEnum.T3
+import maryk.test.models.MarykTypeEnum.T4
+import maryk.test.models.MarykTypeEnum.T5
+import maryk.test.models.MarykTypeEnum.T6
+import maryk.test.models.MarykTypeEnum.T7
+import maryk.test.models.SimpleMarykTypeEnum.S1
+import maryk.test.models.SimpleMarykTypeEnum.S2
+import maryk.test.models.SimpleMarykTypeEnum.S3
 
 object ComplexModel : RootDataModel<ComplexModel, Properties>(
     properties = Properties
@@ -33,9 +33,9 @@ object ComplexModel : RootDataModel<ComplexModel, Properties>(
     object Properties : PropertyDefinitions() {
         val multi = add(
             index = 1u, name = "multi",
-            definition = MultiTypeDefinition<MultiTypeEnum<*>, Any, IsPropertyContext>(
+            definition = MultiTypeDefinition<MarykTypeEnum<*>, Any, IsPropertyContext>(
                 required = false,
-                typeEnum = MultiTypeEnum,
+                typeEnum = MarykTypeEnum,
                 typeIsFinal = false,
                 definitionMap = mapOf(
                     T1 to StringDefinition(),
@@ -85,7 +85,7 @@ object ComplexModel : RootDataModel<ComplexModel, Properties>(
                     type = UInt32
                 ),
                 valueDefinition = MultiTypeDefinition(
-                    typeEnum = MultiTypeEnum,
+                    typeEnum = MarykTypeEnum,
                     definitionMap = definitionMap(
                         T1 to StringDefinition(),
                         T2 to NumberDefinition(type = SInt32),
@@ -102,12 +102,12 @@ object ComplexModel : RootDataModel<ComplexModel, Properties>(
                             keyDefinition = NumberDefinition(type = UInt32),
                             valueDefinition = StringDefinition()
                         ),
-                        T7 to MultiTypeDefinition<MarykTypeEnum<*>, Any, IsPropertyContext>(
-                            typeEnum = MarykTypeEnum,
+                        T7 to MultiTypeDefinition<SimpleMarykTypeEnum<*>, Any, IsPropertyContext>(
+                            typeEnum = SimpleMarykTypeEnum,
                             definitionMap = mapOf(
-                                O1 to StringDefinition(),
-                                O2 to NumberDefinition(type = SInt16),
-                                O3 to EmbeddedValuesDefinition(
+                                S1 to StringDefinition(),
+                                S2 to NumberDefinition(type = SInt16),
+                                S3 to EmbeddedValuesDefinition(
                                     dataModel = { EmbeddedMarykModel }
                                 )
                             )
@@ -153,10 +153,10 @@ object ComplexModel : RootDataModel<ComplexModel, Properties>(
     }
 
     operator fun invoke(
-        multi: TypedValue<MultiTypeEnum<*>, Any>? = null,
+        multi: TypedValue<MarykTypeEnum<*>, Any>? = null,
         mapStringString: Map<String, String>? = null,
         mapIntObject: Map<UInt, Values<EmbeddedMarykModel, EmbeddedMarykModel.Properties>>? = null,
-        mapIntMulti: Map<UInt, TypedValue<MultiTypeEnum<*>, Any>>? = null,
+        mapIntMulti: Map<UInt, TypedValue<MarykTypeEnum<*>, Any>>? = null,
         mapWithList: Map<String, List<String>>? = null,
         mapWithSet: Map<String, Set<String>>? = null,
         mapWithMap: Map<String, Map<String, String>>? = null

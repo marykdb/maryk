@@ -29,8 +29,8 @@ import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.ByteCollector
 import maryk.test.models.MarykTypeEnum
-import maryk.test.models.MarykTypeEnum.O1
-import maryk.test.models.MarykTypeEnum.O2
+import maryk.test.models.MarykTypeEnum.T1
+import maryk.test.models.MarykTypeEnum.T2
 import maryk.test.models.Option
 import maryk.test.models.Option.V3
 import maryk.test.models.TestMarykModel
@@ -259,11 +259,11 @@ internal class RootDataModelTest {
             "definition": ["MultiType", {
               "required": false,
               "final": false,
-              "typeEnum": "MultiTypeEnum",
+              "typeEnum": "SimpleMarykTypeEnum",
               "typeIsFinal": true,
               "definitionMap": [{
                 "index": 1,
-                "name": "T1",
+                "name": "S1",
                 "definition": ["String", {
                   "required": true,
                   "final": false,
@@ -271,7 +271,7 @@ internal class RootDataModelTest {
                 }]
               }, {
                 "index": 2,
-                "name": "T2",
+                "name": "S2",
                 "definition": ["Number", {
                   "required": true,
                   "final": false,
@@ -281,23 +281,11 @@ internal class RootDataModelTest {
                 }]
               }, {
                 "index": 3,
-                "name": "T3",
+                "name": "S3",
                 "definition": ["Embed", {
                   "required": true,
                   "final": false,
                   "dataModel": "EmbeddedMarykModel"
-                }]
-              }, {
-                "index": 4,
-                "name": "T4",
-                "definition": ["List", {
-                  "required": true,
-                  "final": false,
-                  "valueDefinition": ["String", {
-                    "required": true,
-                    "final": false,
-                    "unique": false
-                  }]
                 }]
               }]
             }]
@@ -482,34 +470,26 @@ internal class RootDataModelTest {
         : !MultiType
           required: false
           final: false
-          typeEnum: MultiTypeEnum
+          typeEnum: SimpleMarykTypeEnum
           typeIsFinal: true
           definitionMap:
-            ? 1: T1
+            ? 1: S1
             : !String
               required: true
               final: false
               unique: false
-            ? 2: T2
+            ? 2: S2
             : !Number
               required: true
               final: false
               unique: false
               type: SInt32
               random: false
-            ? 3: T3
+            ? 3: S3
             : !Embed
               required: true
               final: false
               dataModel: EmbeddedMarykModel
-            ? 4: T4
-            : !List
-              required: true
-              final: false
-              valueDefinition: !String
-                required: true
-                final: false
-                unique: false
         ? 14: reference
         : !Reference
           required: false
@@ -598,9 +578,9 @@ internal class RootDataModelTest {
         : !MultiType
           typeEnum: MarykTypeEnum
           definitionMap:
-            ? 1: O1
+            ? 1: T1
             : !String
-            ? 2: O2
+            ? 2: T2
             : !Boolean
         ? 16: isTrue
         : !Boolean
@@ -701,8 +681,8 @@ internal class RootDataModelTest {
                 it.definition shouldBe MultiTypeDefinition<MarykTypeEnum<*>, Any, IsPropertyContext>(
                     typeEnum = MarykTypeEnum,
                     definitionMap = mapOf(
-                        O1 to StringDefinition(),
-                        O2 to BooleanDefinition()
+                        T1 to StringDefinition(),
+                        T2 to BooleanDefinition()
                     )
                 )
             }

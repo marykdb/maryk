@@ -7,7 +7,7 @@ import maryk.lib.time.Date
 import maryk.lib.time.Time
 import maryk.test.models.ComplexModel
 import maryk.test.models.EmbeddedMarykModel
-import maryk.test.models.MultiTypeEnum.T1
+import maryk.test.models.SimpleMarykTypeEnum.S1
 import maryk.test.models.TestMarykModel
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -112,7 +112,7 @@ class ReadStorageToValuesKtTest {
     fun convertStorageToValuesWithWrongMultis() {
         // This is incorrect data but still the processor should skip the complex type ids
         val valuesUnset = arrayOf(
-            "69" to TypedValue(T1, "test"),
+            "69" to TypedValue(S1, "test"),
             "691d" to Unit,
             "691d09" to "m3"
         )
@@ -130,7 +130,7 @@ class ReadStorageToValuesKtTest {
 
         values shouldBe TestMarykModel.values {
             mapNonNulls(
-                multi with TypedValue(T1, "test")
+                multi with TypedValue(S1, "test")
             )
         }
     }

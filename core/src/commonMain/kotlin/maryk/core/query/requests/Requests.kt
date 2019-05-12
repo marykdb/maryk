@@ -6,8 +6,8 @@ import maryk.core.models.SingleTypedValueDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
+import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.contextual.ContextInjectCollectionOnWriteDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.types.TypedValue
@@ -31,7 +31,7 @@ data class Requests internal constructor(
     object Properties : ObjectPropertyDefinitions<Requests>() {
         val requests = add(1u, "requests",
             ListDefinition(
-                valueDefinition = MultiTypeDefinition(
+                valueDefinition = InternalMultiTypeDefinition(
                     typeEnum = RequestType,
                     definitionMap = mapOfRequestTypeEmbeddedObjectDefinitions,
                     keepAsValues = true

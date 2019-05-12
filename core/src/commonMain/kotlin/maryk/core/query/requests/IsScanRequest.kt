@@ -5,9 +5,9 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
-import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.types.Key
@@ -77,7 +77,7 @@ interface IsScanRequest<DM : IsRootDataModel<P>, P : PropertyDefinitions, RP : I
     }
 }
 
-private val multiTypeDefinition = MultiTypeDefinition(
+private val multiTypeDefinition = InternalMultiTypeDefinition(
     typeEnum = OrderType,
     definitionMap = mapOfOrderTypeToEmbeddedObject
 )

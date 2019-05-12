@@ -5,8 +5,8 @@ import maryk.lib.time.Date
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.models.EmbeddedMarykModel
-import maryk.test.models.MultiTypeEnum.T1
 import maryk.test.models.Option.V1
+import maryk.test.models.SimpleMarykTypeEnum.S1
 import maryk.test.models.TestMarykModel
 
 val testMaryk = TestMarykModel(
@@ -33,7 +33,7 @@ val testMaryk = TestMarykModel(
             value = "another test"
         )
     ),
-    multi = TypedValue(T1, "test"),
+    multi = TypedValue(S1, "test"),
     setOfString = setOf(
         "abc", "def", "ghi"
     )
@@ -57,7 +57,7 @@ val valuesAsStorables = arrayOf(
     "6609" to "test",
     "6616" to Unit,
     "661609" to "another test",
-    "69" to TypedValue(T1, "test"),
+    "69" to TypedValue(S1, "test"),
     "7a" to 3,
     "7a00000000" to "v1",
     "7a00000001" to "v2",

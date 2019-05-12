@@ -5,45 +5,46 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.MultiTypeEnum.INT
-import maryk.core.properties.definitions.MultiTypeEnum.LIST
-import maryk.core.properties.definitions.MultiTypeEnum.MAP
-import maryk.core.properties.definitions.MultiTypeEnum.MULTI
-import maryk.core.properties.definitions.MultiTypeEnum.SET
-import maryk.core.properties.definitions.MultiTypeEnum.STRING
-import maryk.core.properties.definitions.MultiTypeEnum.UNUSED
+import maryk.core.properties.definitions.MultiTypeEnumImpl.INT
+import maryk.core.properties.definitions.MultiTypeEnumImpl.LIST
+import maryk.core.properties.definitions.MultiTypeEnumImpl.MAP
+import maryk.core.properties.definitions.MultiTypeEnumImpl.MULTI
+import maryk.core.properties.definitions.MultiTypeEnumImpl.SET
+import maryk.core.properties.definitions.MultiTypeEnumImpl.STRING
+import maryk.core.properties.definitions.MultiTypeEnumImpl.UNUSED
 import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IndexedEnumImpl
-import maryk.core.properties.enum.TypeEnum
+import maryk.core.properties.enum.MultiTypeEnum
 import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.numeric.SInt16
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.protobuf.WriteCache
 import maryk.test.ByteCollector
-import maryk.test.models.MarykTypeEnum
-import maryk.test.models.MarykTypeEnum.O1
-import maryk.test.models.MarykTypeEnum.O2
+import maryk.test.models.SimpleMarykTypeEnum
+import maryk.test.models.SimpleMarykTypeEnum.S1
+import maryk.test.models.SimpleMarykTypeEnum.S2
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
 
-private sealed class MultiTypeEnum(
+private sealed class MultiTypeEnumImpl(
     index: UInt
-) : IndexedEnumImpl<MultiTypeEnum>(index), TypeEnum<Any> {
-    object STRING: MultiTypeEnum(1u)
-    object INT: MultiTypeEnum(2u)
-    object LIST: MultiTypeEnum(3u)
-    object SET: MultiTypeEnum(4u)
-    object MAP: MultiTypeEnum(5u)
-    object MULTI: MultiTypeEnum(6u)
-    object UNUSED: MultiTypeEnum(99u)
+) : IndexedEnumImpl<MultiTypeEnumImpl>(index), MultiTypeEnum<Any> {
+    object STRING: MultiTypeEnumImpl(1u)
+    object INT: MultiTypeEnumImpl(2u)
+    object LIST: MultiTypeEnumImpl(3u)
+    object SET: MultiTypeEnumImpl(4u)
+    object MAP: MultiTypeEnumImpl(5u)
+    object MULTI: MultiTypeEnumImpl(6u)
+    object UNUSED: MultiTypeEnumImpl(99u)
 
-    companion object : IndexedEnumDefinition<MultiTypeEnum>(MultiTypeEnum::class, { arrayOf(STRING, INT, LIST, SET, MAP, MULTI, UNUSED) })
+    companion object : IndexedEnumDefinition<MultiTypeEnumImpl>(MultiTypeEnumImpl::class, { arrayOf(STRING, INT, LIST, SET, MAP, MULTI, UNUSED) })
 }
 
 internal class MultiTypeDefinitionTest {
@@ -67,16 +68,19 @@ internal class MultiTypeDefinitionTest {
         keyDefinition = intDef,
         valueDefinition = stringDef
     )
-    private val subMultiDef = MultiTypeDefinition<MarykTypeEnum<*>, Any, IsPropertyContext>(
-        typeEnum = MarykTypeEnum,
+    private val subMultiDef = MultiTypeDefinition<SimpleMarykTypeEnum<*>, Any, IsPropertyContext>(
+        typeEnum = SimpleMarykTypeEnum,
         definitionMap = mapOf(
-            O1 to stringDef,
-            O2 to intDef
+            S1 to stringDef,
+            S2 to NumberDefinition(
+                type = SInt16,
+                maxValue = 1000.toShort()
+            )
         )
     )
 
-    private val def = MultiTypeDefinition<MultiTypeEnum, Any, IsPropertyContext>(
-        typeEnum = MultiTypeEnum,
+    private val def = MultiTypeDefinition<MultiTypeEnumImpl, Any, IsPropertyContext>(
+        typeEnum = MultiTypeEnumImpl,
         definitionMap = mapOf(
             STRING to stringDef,
             INT to intDef,
@@ -87,10 +91,10 @@ internal class MultiTypeDefinitionTest {
         )
     )
 
-    private val defMaxDefined = MultiTypeDefinition<MultiTypeEnum, Any, IsPropertyContext>(
+    private val defMaxDefined = MultiTypeDefinition<MultiTypeEnumImpl, Any, IsPropertyContext>(
         final = true,
         required = false,
-        typeEnum = MultiTypeEnum,
+        typeEnum = MultiTypeEnumImpl,
         definitionMap = mapOf(
             STRING to stringDef,
             INT to intDef,
@@ -102,17 +106,17 @@ internal class MultiTypeDefinitionTest {
         default = TypedValue(STRING, "test")
     )
 
-    private val defWrapper = MultiTypeDefinitionWrapper<MultiTypeEnum, Any, Any, IsPropertyContext, Any>(
+    private val defWrapper = MultiTypeDefinitionWrapper<MultiTypeEnumImpl, Any, Any, IsPropertyContext, Any>(
         1u, "multi", def
     )
 
-    private val multisToTest = arrayOf<TypedValue<MultiTypeEnum, Any>>(
+    private val multisToTest = arrayOf<TypedValue<MultiTypeEnumImpl, Any>>(
         TypedValue(STRING, "#test"),
         TypedValue(INT, 400),
         TypedValue(LIST, listOf("#a", "#b", "#c")),
         TypedValue(SET, setOf("#a", "#b", "#c")),
         TypedValue(MAP, mapOf(1 to "#a", 2 to "#b", 3 to "#c")),
-        TypedValue(MULTI, TypedValue(O1, "#test"))
+        TypedValue(MULTI, TypedValue(S1, "#test"))
     )
 
     @Test
@@ -148,7 +152,7 @@ internal class MultiTypeDefinitionTest {
             def.validateWithRef(newValue = TypedValue(MAP, mapOf(1 to "WRONG")))
         }
         shouldThrow<InvalidValueException> {
-            def.validateWithRef(newValue = TypedValue(MULTI, TypedValue(O1, "WRONG")))
+            def.validateWithRef(newValue = TypedValue(MULTI, TypedValue(S1, "WRONG")))
         }
 
         shouldThrow<AlreadySetException> {
@@ -226,7 +230,7 @@ internal class MultiTypeDefinitionTest {
         checkYamlConversion(this.defMaxDefined, MultiTypeDefinition.Model) shouldBe """
         required: false
         final: true
-        typeEnum: MultiTypeEnum
+        typeEnum: MultiTypeEnumImpl
         typeIsFinal: true
         definitionMap:
           ? 1: STRING
@@ -281,21 +285,21 @@ internal class MultiTypeDefinitionTest {
           : !MultiType
             required: true
             final: false
-            typeEnum: MarykTypeEnum
+            typeEnum: SimpleMarykTypeEnum
             typeIsFinal: true
             definitionMap:
-              ? 1: O1
+              ? 1: S1
               : !String
                 required: true
                 final: false
                 unique: false
                 regEx: '#.*'
-              ? 2: O2
+              ? 2: S2
               : !Number
                 required: true
                 final: false
                 unique: false
-                type: SInt32
+                type: SInt16
                 maxValue: 1000
                 random: false
         default: !STRING(1) test

@@ -5,21 +5,22 @@ import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
+import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
-import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
+import maryk.core.properties.definitions.IsUsableInMultiType
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
-import maryk.core.properties.definitions.contextual.MultiTypeDefinitionContext
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.contextual.ContextCollectionTransformerDefinition
+import maryk.core.properties.definitions.contextual.MultiTypeDefinitionContext
 import maryk.core.properties.definitions.mapOfPropertyDefEmbeddedObjectDefinitions
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
-import maryk.core.properties.enum.TypeEnum
+import maryk.core.properties.enum.MultiTypeEnum
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
@@ -50,7 +51,7 @@ import maryk.yaml.YamlWriter
 internal data class MultiTypeDescriptor(
     val index: UInt,
     val name: String,
-    val definition: IsSubDefinition<out Any, ContainsDefinitionsContext>
+    val definition: IsUsableInMultiType<out Any, ContainsDefinitionsContext>
 ) {
     internal object Properties : ObjectPropertyDefinitions<MultiTypeDescriptor>() {
         val index = add(
@@ -62,7 +63,7 @@ internal data class MultiTypeDescriptor(
 
         val definition = add(
             3u, "definition",
-            MultiTypeDefinition(
+            InternalMultiTypeDefinition(
                 typeEnum = PropertyDefinitionType,
                 definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
             ),
@@ -79,7 +80,7 @@ internal data class MultiTypeDescriptor(
         override fun invoke(values: ObjectValues<MultiTypeDescriptor, Properties>) = MultiTypeDescriptor(
             index = values(1u),
             name = values(2u),
-            definition = values<TypedValue<*, IsSubDefinition<out Any, IsPropertyContext>>>(3u).value
+            definition = values<TypedValue<*, IsUsableInMultiType<out Any, IsPropertyContext>>>(3u).value
         )
 
         override fun readJson(
@@ -251,13 +252,13 @@ internal fun ObjectPropertyDefinitions<MultiTypeDefinition<*, *, *>>.addDescript
  * Convert multi type descriptors in a list in [value] to an indexed map of definitions.
  * Will throw an exception if it fails to convert
  */
-internal fun convertMultiTypeDescriptors(value: List<MultiTypeDescriptor>?): Map<TypeEnum<Any>, IsSubDefinition<out Any, ContainsDefinitionsContext>> {
+internal fun convertMultiTypeDescriptors(value: List<MultiTypeDescriptor>?): Map<MultiTypeEnum<Any>, IsUsableInMultiType<out Any, ContainsDefinitionsContext>> {
     val descriptorList = value
         ?: throw ParseException("Multi type definition descriptor cannot be empty")
 
     return descriptorList.map {
         Pair(
-            TypeEnum(it.index, it.name),
+            MultiTypeEnum(it.index, it.name),
             it.definition
         )
     }.toMap()

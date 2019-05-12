@@ -4,9 +4,9 @@ import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.SingleValueDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DefinitionsConversionContext
@@ -87,7 +87,7 @@ data class Multiple(
         val references = add(
             1u, "references",
             ListDefinition(
-                valueDefinition = MultiTypeDefinition(
+                valueDefinition = InternalMultiTypeDefinition(
                     typeEnum = IndexKeyPartType,
                     definitionMap = mapOfSimpleIndexKeyPartDefinitions
                 ) as IsValueDefinition<TypedValue<IndexKeyPartType<IsIndexable>, IsIndexable>, DefinitionsConversionContext>

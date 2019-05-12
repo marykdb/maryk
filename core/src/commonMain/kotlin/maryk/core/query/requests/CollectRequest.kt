@@ -2,7 +2,7 @@ package maryk.core.query.requests
 
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.definitions.MultiTypeDefinition
+import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.RequestContext
@@ -31,7 +31,7 @@ data class CollectRequest<RQ : IsRequest<RP>, RP : IsResponse>(
         // It transmits any instead of IsRequest so the ObjectValues can also be transmitted
         val request = add(
             2u, "request",
-            MultiTypeDefinition(
+            InternalMultiTypeDefinition(
                 typeEnum = RequestType,
                 definitionMap = mapOfRequestTypeEmbeddedObjectDefinitions
             ),

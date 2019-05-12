@@ -235,7 +235,7 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
                     add(5u, "keyDefinition",
                         ContextTransformerDefinition(
                             contextTransformer = { it?.definitionsContext },
-                            definition = MultiTypeDefinition(
+                            definition = InternalMultiTypeDefinition(
                                 typeEnum = PropertyDefinitionType,
                                 definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
                             )
@@ -258,7 +258,7 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
                     add(6u, "valueDefinition",
                         ContextTransformerDefinition(
                             contextTransformer = { it?.definitionsContext },
-                            definition = MultiTypeDefinition(
+                            definition = InternalMultiTypeDefinition(
                                 typeEnum = PropertyDefinitionType,
                                 definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
                             )

@@ -19,9 +19,6 @@ import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.definitions.ValueModelDefinition
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.Reversed
-import maryk.core.properties.enum.IndexedEnumDefinition
-import maryk.core.properties.enum.IndexedEnumImpl
-import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.Float64
@@ -31,11 +28,9 @@ import maryk.core.values.Values
 import maryk.lib.time.Date
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
-import maryk.test.models.EmbeddedMarykModel.Properties
-import maryk.test.models.MultiTypeEnum.T1
-import maryk.test.models.MultiTypeEnum.T2
-import maryk.test.models.MultiTypeEnum.T3
-import maryk.test.models.MultiTypeEnum.T4
+import maryk.test.models.SimpleMarykTypeEnum.S1
+import maryk.test.models.SimpleMarykTypeEnum.S2
+import maryk.test.models.SimpleMarykTypeEnum.S3
 import maryk.test.models.TestMarykModel.Properties.bool
 import maryk.test.models.TestMarykModel.Properties.dateTime
 import maryk.test.models.TestMarykModel.Properties.double
@@ -43,20 +38,6 @@ import maryk.test.models.TestMarykModel.Properties.enum
 import maryk.test.models.TestMarykModel.Properties.int
 import maryk.test.models.TestMarykModel.Properties.multi
 import maryk.test.models.TestMarykModel.Properties.uint
-
-sealed class MultiTypeEnum<T: Any>(
-    index: UInt
-) : IndexedEnumImpl<MultiTypeEnum<T>>(index), TypeEnum<T> {
-    object T1: MultiTypeEnum<String>(1u)
-    object T2: MultiTypeEnum<String>(2u)
-    object T3: MultiTypeEnum<Values<EmbeddedMarykModel, Properties>>(3u)
-    object T4: MultiTypeEnum<List<String>>(4u)
-    object T5: MultiTypeEnum<Set<String>>(5u)
-    object T6: MultiTypeEnum<Map<UInt, String>>(6u)
-    object T7: MultiTypeEnum<TypedValue<MarykTypeEnum<*>, Any>>(7u)
-
-    companion object : IndexedEnumDefinition<MultiTypeEnum<*>>(MultiTypeEnum::class, { arrayOf(T1, T2, T3, T4, T5, T6, T7) })
-}
 
 object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>(
     keyDefinition = Multiple(
@@ -184,15 +165,12 @@ object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>
             index = 13u, name = "multi",
             definition = MultiTypeDefinition(
                 required = false,
-                typeEnum = MultiTypeEnum,
+                typeEnum = SimpleMarykTypeEnum,
                 definitionMap = definitionMap(
-                    T1 to StringDefinition(),
-                    T2 to NumberDefinition(type = SInt32),
-                    T3 to EmbeddedValuesDefinition(
+                    S1 to StringDefinition(),
+                    S2 to NumberDefinition(type = SInt32),
+                    S3 to EmbeddedValuesDefinition(
                         dataModel = { EmbeddedMarykModel }
-                    ),
-                    T4 to ListDefinition(
-                        valueDefinition = StringDefinition()
                     )
                 )
             )
@@ -252,7 +230,7 @@ object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>
         map: Map<Time, String>? = null,
         valueObject: TestValueObject? = null,
         embeddedValues: Values<EmbeddedMarykModel, EmbeddedMarykModel.Properties>? = null,
-        multi: TypedValue<MultiTypeEnum<*>, *>? = null,
+        multi: TypedValue<SimpleMarykTypeEnum<*>, *>? = null,
         reference: Key<TestMarykModel>? = null,
         listOfString: List<String>? = null,
         selfReference: Key<TestMarykModel>? = null,

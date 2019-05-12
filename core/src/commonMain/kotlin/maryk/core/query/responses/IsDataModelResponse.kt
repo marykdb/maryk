@@ -5,8 +5,8 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
+import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.types.TypedValue
@@ -72,7 +72,7 @@ interface IsDataModelResponse<out DM : IsRootDataModel<*>> : IsResponse {
 }
 
 private val listOfStatuses = ListDefinition(
-    valueDefinition = MultiTypeDefinition(
+    valueDefinition = InternalMultiTypeDefinition(
         typeEnum = StatusType,
         definitionMap = mapOf(
             SUCCESS to EmbeddedObjectDefinition(dataModel = { Success }),

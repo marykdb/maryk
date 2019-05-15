@@ -4,8 +4,12 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.properties.WriteCacheFailer
+import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.VAR_INT
+import maryk.core.query.DefinitionsContext
+import maryk.core.yaml.MarykYamlReaders
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.Option
@@ -130,6 +134,38 @@ internal class EnumDefinitionTest {
         default: V2(2)
 
         """.trimIndent()
+    }
+
+    @Test
+    fun convertDefinitionFromYaml() {
+        val chars = """
+        enum: Option
+        minValue: V1(1)
+        maxValue: V3(3)
+        default: V2(2)
+        """.iterator()
+
+        val reader = MarykYamlReaders {
+            chars.nextChar().also {
+                if (it == '\u0000') {
+                    throw Throwable("0 char encountered")
+                }
+            }
+        }
+        @Suppress("UNCHECKED_CAST")
+        val context = EnumDefinition.Model.transformContext(
+            DefinitionsContext(
+                enums = mutableMapOf(
+                    "Option" to Option as IndexedEnumDefinition<IndexedEnum>
+                )
+            )
+        )
+        EnumDefinition.Model.readJson(reader, context).toDataObject() shouldBe EnumDefinition(
+            enum = Option,
+            minValue = V1,
+            maxValue = V3,
+            default = V2
+        )
     }
 }
 

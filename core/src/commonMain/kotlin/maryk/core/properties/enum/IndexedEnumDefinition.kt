@@ -146,6 +146,38 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
         value.index.writeBytes(writer, 2)
     }
 
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is IndexedEnumDefinition<*>) return false
+
+        if (optionalCases != null || other.optionalCases != null) {
+            return if (optionalCases != null) {
+                other.optionalCases?.invoke()?.contentEquals(optionalCases.invoke()) ?: false
+            } else false
+        }
+        if (name != other.name) return false
+        if (reservedIndices != other.reservedIndices) return false
+        if (reservedNames != other.reservedNames) return false
+        if (primitiveType != other.primitiveType) return false
+        if (byteSize != other.byteSize) return false
+        if (required != other.required) return false
+        if (final != other.final) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = optionalCases?.invoke().hashCode()
+        result = 31 * result + name.hashCode()
+        result = 31 * result + reservedIndices.hashCode()
+        result = 31 * result + reservedNames.hashCode()
+        result = 31 * result + primitiveType.hashCode()
+        result = 31 * result + byteSize
+        result = 31 * result + required.hashCode()
+        result = 31 * result + final.hashCode()
+        return result
+    }
+
     internal object Properties : ObjectPropertyDefinitions<IndexedEnumDefinition<IndexedEnum>>() {
         val name = add(1u, "name",
             ContextCaptureDefinition(

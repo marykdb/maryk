@@ -23,7 +23,7 @@ import maryk.core.values.SimpleObjectValues
 import maryk.lib.exceptions.ParseException
 
 /** Definition for Enum properties */
-class EnumDefinition<E : IndexedEnumComparable<E>>(
+data class EnumDefinition<E : IndexedEnumComparable<E>>(
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val unique: Boolean = false,

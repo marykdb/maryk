@@ -23,7 +23,7 @@ class YamlWriter(
 ) : AbstractJsonLikeWriter() {
     private val spacing: String = "  "
     private val arraySpacing: String = "- "
-    private val toSanitizeRegex = Regex(".*[#:\n]+.*")
+    private val toSanitizeRegex = Regex("[\\[{]+.*|.*[#:\n]+.*")
 
     private var prefix: String = ""
     private var prefixWasWritten = false

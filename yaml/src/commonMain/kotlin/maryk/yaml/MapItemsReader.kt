@@ -118,7 +118,7 @@ internal class MapItemsReader<out P : IsYamlCharWithIndentsReader>(
         tag: TokenType?,
         extraIndent: Int
     ): JsonToken {
-        while (this.lastChar.isSpacing()) {
+        while (this.lastChar.isSpacing() && !this.yamlReader.hasException) {
             read()
         }
 

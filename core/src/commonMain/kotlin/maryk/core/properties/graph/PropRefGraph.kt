@@ -181,8 +181,7 @@ data class PropRefGraph<P : PropertyDefinitions, DM : IsValuesDataModel<PS>, PS 
                         propertiesValue.add(
                             TypedValue(
                                 PropRef,
-                                multiTypeDefinition.definitionMap.getValue(PropRef)
-                                    .readJson(reader, context) as IsTransportablePropRefGraphNode
+                                multiTypeDefinition.definition(PropRef)!!.readJson(reader, context)
                             )
                         )
                     }

@@ -12,7 +12,7 @@ import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.ByteCollector
 import maryk.test.models.EmbeddedMarykObject
-import maryk.test.models.SimpleMarykTypeEnum.S3
+import maryk.test.models.SimpleMarykTypeEnumWithObject.S3
 import maryk.test.models.TestMarykObject
 import maryk.test.models.TestValueObject
 import maryk.test.shouldBe

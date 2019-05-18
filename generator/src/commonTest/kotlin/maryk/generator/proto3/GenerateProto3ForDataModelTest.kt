@@ -39,11 +39,22 @@ message CompleteMarykModel {
     V2 = 2;
     V3 = 3;
   }
+  message T7Type {
+    oneof T7 {
+      string s1 = 1;
+      sint32 s2 = 2;
+      EmbeddedMarykModel s3 = 3;
+    }
+  }
   message MultiType {
     oneof multi {
       string t1 = 1;
       sint32 t2 = 2;
+      EmbeddedMarykModel t3 = 3;
       repeated string t4 = 4;
+      repeated string t5 = 5;
+      map<uint64, string> t6 = 6;
+      T7Type t7 = 7;
     }
   }
   message MultiForKeyType {

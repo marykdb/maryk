@@ -22,7 +22,7 @@ import maryk.core.values.Values
  * It contains an [index] and [name] to which it is referred inside DataModel and a [getter]
  * function to retrieve value on dataObject of [DO] in context [CX]
  */
-data class MultiTypeDefinitionWrapper<E : TypeEnum<T>, T: Any, TO : Any, CX : IsPropertyContext, DO : Any> internal constructor(
+data class MultiTypeDefinitionWrapper<E : TypeEnum<T>, T: Any, TO : Any, in CX : IsPropertyContext, DO : Any> internal constructor(
     override val index: UInt,
     override val name: String,
     override val definition: IsMultiTypeDefinition<E, T, CX>,
@@ -67,7 +67,7 @@ data class MultiTypeDefinitionWrapper<E : TypeEnum<T>, T: Any, TO : Any, CX : Is
         {
             val typeRef = this.typedValueRef(type, this.ref(it))
             @Suppress("UNCHECKED_CAST")
-            (this.definitionMap[type] as EmbeddedValuesDefinition<IsValuesDataModel<P>, P>).dataModel(
+            (this.definition(type) as EmbeddedValuesDefinition<IsValuesDataModel<P>, P>).dataModel(
                 typeRef,
                 referenceGetter
             )
@@ -82,7 +82,7 @@ data class MultiTypeDefinitionWrapper<E : TypeEnum<T>, T: Any, TO : Any, CX : Is
     ): (AnyOutPropertyReference?) -> R  =
         {
             val typeRef = this.typedValueRef(type as E, this.ref(it))
-            (this.definitionMap[type] as EmbeddedValuesDefinition<IsValuesDataModel<P>, P>).dataModel(
+            (this.definition(type) as EmbeddedValuesDefinition<IsValuesDataModel<P>, P>).dataModel(
                 typeRef,
                 referenceGetter
             )

@@ -17,7 +17,7 @@ data class InternalMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsProper
     override val final: Boolean = false,
     override val typeEnum: IndexedEnumDefinition<E>,
     override val typeIsFinal: Boolean = true,
-    override val definitionMap: Map<E, IsSubDefinition<out Any, CX>>,
+    val definitionMap: Map<E, IsSubDefinition<out Any, CX>>,
     override val default: TypedValue<E, T>? = null,
     internal val keepAsValues: Boolean = false
 ) : IsMultiTypeDefinition<E, T, CX>, IsUsableInMultiType<TypedValue<E, T>, CX> {

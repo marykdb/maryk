@@ -171,13 +171,13 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(
         }
         is EmbeddedValuesDefinition<*, *> -> this.dataModel.name
         is EmbeddedObjectDefinition<*, *, *, *, *> -> (this.dataModel as IsNamedDataModel<*>).name
-        is MultiTypeDefinition<*, *, *> -> {
+        is MultiTypeDefinition<*, *> -> {
             val multiTypeName = "${name.capitalize()}Type"
 
             val multiTypes = mutableListOf<String>()
-            for (it in this.definitionMap.keys) {
-                val type = this.definitionMap[it]!!.toProtoBufType(it.name, generationContext, messageAdder)
-                multiTypes += "$type ${it.name.decapitalize()} = ${it.index};"
+            for (typeCase in this.typeEnum.cases()) {
+                val type = typeCase.definition!!.toProtoBufType(typeCase.name, generationContext, messageAdder)
+                multiTypes += "$type ${typeCase.name.decapitalize()} = ${typeCase.index};"
             }
             messageAdder("""
             message $multiTypeName {

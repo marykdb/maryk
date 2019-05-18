@@ -28,9 +28,6 @@ import maryk.core.values.Values
 import maryk.lib.time.Date
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
-import maryk.test.models.SimpleMarykTypeEnum.S1
-import maryk.test.models.SimpleMarykTypeEnum.S2
-import maryk.test.models.SimpleMarykTypeEnum.S3
 import maryk.test.models.TestMarykModel.Properties.bool
 import maryk.test.models.TestMarykModel.Properties.dateTime
 import maryk.test.models.TestMarykModel.Properties.double
@@ -165,14 +162,7 @@ object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>
             index = 13u, name = "multi",
             definition = MultiTypeDefinition(
                 required = false,
-                typeEnum = SimpleMarykTypeEnum,
-                definitionMap = definitionMap(
-                    S1 to StringDefinition(),
-                    S2 to NumberDefinition(type = SInt32),
-                    S3 to EmbeddedValuesDefinition(
-                        dataModel = { EmbeddedMarykModel }
-                    )
-                )
+                typeEnum = SimpleMarykTypeEnum
             )
         )
 

@@ -39,6 +39,19 @@ internal fun <DM : IsNamedDataModel<*>, P : IsDataModelPropertyDefinitions<DM, *
         } as IsMutablePropertyDefinitions<IsDefinitionWrapper<*, *, *, *>>
     }
 
+    // Inject name if it was defined as a map key in a higher level
+    context?.currentDefinitionName?.let { name ->
+        if (name.isNotBlank()) {
+            if (values.contains(properties.name.index)) {
+                throw RequestException("Name $name was already defined by map")
+            }
+            // Reset it so no deeper value can reuse it
+            context.currentDefinitionName = ""
+
+            values[properties.name.index] = name
+        }
+    }
+
     walker@ do {
         val token = reader.currentToken
         when (token) {
@@ -81,18 +94,5 @@ internal fun <DM : IsNamedDataModel<*>, P : IsDataModelPropertyDefinitions<DM, *
 
     if (propertyDefinitions.isInitialized()) {
         values[propertiesAsWrapper.index] = propertyDefinitions.value
-    }
-
-    // Inject name if it was defined as a map key in a higher level
-    context?.currentDefinitionName?.let { name ->
-        if (name.isNotBlank()) {
-            if (values.contains(properties.name.index)) {
-                throw RequestException("Name $name was already defined by map")
-            }
-            // Reset it so no deeper value can reuse it
-            context.currentDefinitionName = ""
-
-            values[properties.name.index] = name
-        }
     }
 }

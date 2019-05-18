@@ -3,7 +3,6 @@ package maryk.core.models
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
@@ -28,11 +27,10 @@ import maryk.core.yaml.MarykYamlReaders
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.ByteCollector
-import maryk.test.models.MarykTypeEnum
-import maryk.test.models.MarykTypeEnum.T1
-import maryk.test.models.MarykTypeEnum.T2
+import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.Option
 import maryk.test.models.Option.V3
+import maryk.test.models.SimpleMarykTypeEnum
 import maryk.test.models.TestMarykModel
 import maryk.test.models.TestValueObject
 import maryk.test.shouldBe
@@ -259,35 +257,40 @@ internal class RootDataModelTest {
             "definition": ["MultiType", {
               "required": false,
               "final": false,
-              "typeEnum": "SimpleMarykTypeEnum",
-              "typeIsFinal": true,
-              "definitionMap": [{
-                "index": 1,
-                "name": "S1",
-                "definition": ["String", {
-                  "required": true,
-                  "final": false,
-                  "unique": false
-                }]
-              }, {
-                "index": 2,
-                "name": "S2",
-                "definition": ["Number", {
-                  "required": true,
-                  "final": false,
-                  "unique": false,
-                  "type": "SInt32",
-                  "random": false
-                }]
-              }, {
-                "index": 3,
-                "name": "S3",
-                "definition": ["Embed", {
-                  "required": true,
-                  "final": false,
-                  "dataModel": "EmbeddedMarykModel"
-                }]
-              }]
+              "typeEnum": {
+                "name": "SimpleMarykTypeEnum",
+                "cases": [{
+                  "index": 1,
+                  "name": "S1",
+                  "definition": ["String", {
+                    "required": true,
+                    "final": false,
+                    "unique": false,
+                    "regEx": "[^&]+"
+                  }]
+                }, {
+                  "index": 2,
+                  "name": "S2",
+                  "definition": ["Number", {
+                    "required": true,
+                    "final": false,
+                    "unique": false,
+                    "type": "SInt16",
+                    "random": false
+                  }]
+                }, {
+                  "index": 3,
+                  "name": "S3",
+                  "definition": ["Embed", {
+                    "required": true,
+                    "final": false,
+                    "dataModel": "EmbeddedMarykModel"
+                  }]
+                }],
+                "reservedIndices": [99],
+                "reservedNames": ["O99"]
+              },
+              "typeIsFinal": true
             }]
           }, {
             "index": 14,
@@ -470,26 +473,30 @@ internal class RootDataModelTest {
         : !MultiType
           required: false
           final: false
-          typeEnum: SimpleMarykTypeEnum
+          typeEnum:
+            name: SimpleMarykTypeEnum
+            cases:
+              ? 1: S1
+              : !String
+                required: true
+                final: false
+                unique: false
+                regEx: '[^&]+'
+              ? 2: S2
+              : !Number
+                required: true
+                final: false
+                unique: false
+                type: SInt16
+                random: false
+              ? 3: S3
+              : !Embed
+                required: true
+                final: false
+                dataModel: EmbeddedMarykModel
+            reservedIndices: [99]
+            reservedNames: [O99]
           typeIsFinal: true
-          definitionMap:
-            ? 1: S1
-            : !String
-              required: true
-              final: false
-              unique: false
-            ? 2: S2
-            : !Number
-              required: true
-              final: false
-              unique: false
-              type: SInt32
-              random: false
-            ? 3: S3
-            : !Embed
-              required: true
-              final: false
-              dataModel: EmbeddedMarykModel
         ? 14: reference
         : !Reference
           required: false
@@ -576,12 +583,29 @@ internal class RootDataModelTest {
           dataModel: TestMarykModel
         ? 15: multi
         : !MultiType
-          typeEnum: MarykTypeEnum
-          definitionMap:
-            ? 1: T1
-            : !String
-            ? 2: T2
-            : !Boolean
+          typeEnum:
+            name: SimpleMarykTypeEnum
+            cases:
+              ? 1: S1
+              : !String
+                required: true
+                final: false
+                unique: false
+                regEx: '[^&]+'
+              ? 2: S2
+              : !Number
+                required: true
+                final: false
+                unique: false
+                type: SInt16
+                random: false
+              ? 3: S3
+              : !Embed
+                required: true
+                final: false
+                dataModel: EmbeddedMarykModel
+            reservedIndices: [99]
+            reservedNames: [O99]
         ? 16: isTrue
         : !Boolean
 
@@ -600,6 +624,7 @@ internal class RootDataModelTest {
         val newContext = DefinitionsConversionContext()
         newContext.dataModels["TestMarykModel"] = { TestMarykModel }
         newContext.dataModels["TestValueObject"] = { TestValueObject }
+        newContext.dataModels["EmbeddedMarykModel"] = { EmbeddedMarykModel }
 
         RootDataModel.Model.readJson(reader, newContext).toDataObject().apply {
             name shouldBe "SimpleModel"
@@ -678,12 +703,8 @@ internal class RootDataModelTest {
             }
             properties["multi"]!!.let {
                 it.index shouldBe 15u
-                it.definition shouldBe MultiTypeDefinition<MarykTypeEnum<*>, Any, IsPropertyContext>(
-                    typeEnum = MarykTypeEnum,
-                    definitionMap = mapOf(
-                        T1 to StringDefinition(),
-                        T2 to BooleanDefinition()
-                    )
+                it.definition shouldBe MultiTypeDefinition(
+                    typeEnum = SimpleMarykTypeEnum
                 )
             }
             properties["isTrue"]!!.let {

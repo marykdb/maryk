@@ -149,17 +149,17 @@ private val definitionNamesMap = mapOf(
         propertyValueOverride = mapOf(
             "definitionMap" to { definition, _, _ ->
                 val multiTypeDefinition =
-                    definition as MultiTypeDefinition<*, *, *>
+                    definition as MultiTypeDefinition<*, *>
 
                 val typeName = multiTypeDefinition.typeEnum.name
 
                 val typeValues = mutableListOf<String>()
 
-                for (typeDefinition in multiTypeDefinition.definitionMap) {
-                    val value = typeDefinition.value as IsTransportablePropertyDefinitionType<*>
+                for (type in multiTypeDefinition.typeEnum.cases()) {
+                    val value = type.definition as IsTransportablePropertyDefinitionType<*>
                     val valueDefinition = value.getKotlinDescriptor()
                     val valueAsString = valueDefinition.definitionToKotlin(value) {}.trimStart()
-                    typeValues.add("$typeName.${typeDefinition.key.name} to $valueAsString")
+                    typeValues.add("$typeName.${type.name} to $valueAsString")
                 }
 
                 val types = typeValues.joinToString(",\n").prependIndent()

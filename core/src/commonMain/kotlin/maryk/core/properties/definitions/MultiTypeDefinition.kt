@@ -2,36 +2,31 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
-import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
+import maryk.core.properties.definitions.contextual.ContextValueTransformDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.contextual.MultiTypeDefinitionContext
-import maryk.core.properties.definitions.descriptors.addDescriptorPropertyWrapperWrapper
-import maryk.core.properties.definitions.descriptors.convertMultiTypeDescriptors
-import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.MultiTypeEnum
+import maryk.core.properties.enum.MultiTypeEnumDefinition
 import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.SimpleObjectValues
+import maryk.lib.exceptions.ParseException
 
 /**
  * Definition for objects which can be of multiple defined types.
- * The type mapping is defined in the given [definitionMap] mapped by enum [E].
- * Receives context of [CX]
  */
-data class MultiTypeDefinition<E : MultiTypeEnum<T>, T: Any, in CX : IsPropertyContext>(
+data class MultiTypeDefinition<E : MultiTypeEnum<out T>, T: Any>(
     override val required: Boolean = true,
     override val final: Boolean = false,
-    override val typeEnum: IndexedEnumDefinition<E>,
+    override val typeEnum: MultiTypeEnumDefinition<E>,
     override val typeIsFinal: Boolean = true,
-    override val definitionMap: Map<E, IsUsableInMultiType<out Any, CX>>,
     override val default: TypedValue<E, T>? = null
-) : IsMultiTypeDefinition<E, T, CX>, IsUsableInMultiType<TypedValue<E, T>, CX> {
+) : IsMultiTypeDefinition<E, T, ContainsDefinitionsContext>, IsUsableInMultiType<TypedValue<E, T>, ContainsDefinitionsContext> {
     override val propertyDefinitionType = PropertyDefinitionType.MultiType
     override val wireType = LENGTH_DELIMITED
-
-    private val definitionMapByIndex = definitionMap.map { Pair(it.key.index, it.value) }.toMap()
 
     init {
         if (this.final) {
@@ -39,66 +34,55 @@ data class MultiTypeDefinition<E : MultiTypeEnum<T>, T: Any, in CX : IsPropertyC
         }
     }
 
-    override fun definition(index: UInt) = definitionMapByIndex[index]
+    @Suppress("UNCHECKED_CAST")
+    override fun definition(index: UInt) = typeEnum.resolve(index)?.definition as? IsSubDefinition<out Any, ContainsDefinitionsContext>?
+    @Suppress("UNCHECKED_CAST")
+    override fun definition(type: E) = type.definition as IsSubDefinition<T, ContainsDefinitionsContext>?
 
     override fun keepAsValues() = false
 
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is MultiTypeDefinition<*, *, *>) return false
-
-        if (required != other.required) return false
-        if (final != other.final) return false
-        if (typeIsFinal != other.typeIsFinal) return false
-        if (definitionMap != other.definitionMap) {
-            if (definitionMap.size != other.definitionMap.size) return false
-            definitionMap.entries.zip(other.definitionMap.entries).map {
-                if (it.first.key.index != it.second.key.index
-                    || it.first.key.name != it.second.key.name
-                    || it.first.value != it.second.value
-                ) {
-                    return false
-                }
-            }
-        }
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = required.hashCode()
-        result = 31 * result + final.hashCode()
-        result = 31 * result + definitionMap.hashCode()
-        result = 31 * result + typeIsFinal.hashCode()
-        return result
-    }
-
     object Model :
-        ContextualDataModel<MultiTypeDefinition<*, *, *>, ObjectPropertyDefinitions<MultiTypeDefinition<*, *, *>>, ContainsDefinitionsContext, MultiTypeDefinitionContext>(
+        ContextualDataModel<MultiTypeDefinition<*, *>, ObjectPropertyDefinitions<MultiTypeDefinition<*, *>>, ContainsDefinitionsContext, MultiTypeDefinitionContext>(
             contextTransformer = { MultiTypeDefinitionContext(it) },
-            properties = object : ObjectPropertyDefinitions<MultiTypeDefinition<*, *, *>>() {
+            properties = object : ObjectPropertyDefinitions<MultiTypeDefinition<*, *>>() {
                 init {
-                    IsPropertyDefinition.addRequired(this, MultiTypeDefinition<*, *, *>::required)
-                    IsPropertyDefinition.addFinal(this, MultiTypeDefinition<*, *, *>::final)
+                    IsPropertyDefinition.addRequired(this, MultiTypeDefinition<*, *>::required)
+                    IsPropertyDefinition.addFinal(this, MultiTypeDefinition<*, *>::final)
 
+                    @Suppress("UNCHECKED_CAST")
                     add(3u, "typeEnum",
-                        StringDefinition(),
-                        getter = MultiTypeDefinition<*, *, *>::typeEnum,
-                        capturer = { context: MultiTypeDefinitionContext, value: String ->
-                            context.typeEnumName = value
-                        },
-                        toSerializable = { value: IndexedEnumDefinition<out MultiTypeEnum<Any>>?, _ ->
-                            value?.name
-                        },
-                        fromSerializable = { null }
+                        ContextValueTransformDefinition(
+                            definition = ContextTransformerDefinition(
+                                definition = EmbeddedObjectDefinition(
+                                    dataModel = { MultiTypeEnumDefinition.Model }
+                                ),
+                                contextTransformer = {
+                                    it?.definitionsContext
+                                }
+                            ),
+                            valueTransformer = { context: MultiTypeDefinitionContext?, value ->
+                                if (value.optionalCases == null) {
+                                    context?.let { c ->
+                                        c.definitionsContext?.let {
+                                            it.typeEnums[value.name]
+                                                ?: throw ParseException("TypeEnum ${value.name} is not Defined")
+                                        }
+                                    } ?: throw ContextNotFoundException()
+                                } else {
+                                    value
+                                }
+                            }
+                        ),
+                        getter = MultiTypeDefinition<*, *>::typeEnum as (MultiTypeDefinition<*, *>) -> MultiTypeEnumDefinition<MultiTypeEnum<*>>?,
+                        capturer = { context, value ->
+                            context.multiTypeEnumDefinition = value
+                        }
                     )
 
-                    add(4u, "typeIsFinal", BooleanDefinition(default = true), MultiTypeDefinition<*, *, *>::typeIsFinal)
+                    add(4u, "typeIsFinal", BooleanDefinition(default = true), MultiTypeDefinition<*, *>::typeIsFinal)
 
-                    this.addDescriptorPropertyWrapperWrapper(5u, "definitionMap")
-
-                    add(6u, "default",
-                        ContextualValueDefinition(
+                    add(5u, "default",
+                        ContextualValueDefinition<MultiTypeDefinitionContext, ContainsDefinitionsContext, TypedValue<MultiTypeEnum<*>, *>, IsMultiTypeDefinition<MultiTypeEnum<*>, Any, ContainsDefinitionsContext>>(
                             required = false,
                             contextTransformer = { context: MultiTypeDefinitionContext? ->
                                 context?.definitionsContext
@@ -106,32 +90,19 @@ data class MultiTypeDefinition<E : MultiTypeEnum<T>, T: Any, in CX : IsPropertyC
                             contextualResolver = { context: MultiTypeDefinitionContext? ->
                                 context?.multiTypeDefinition ?: throw ContextNotFoundException()
                             }
-                        ),
-                        MultiTypeDefinition<*, *, *>::default
+                        ) as ContextualValueDefinition<MultiTypeDefinitionContext, ContainsDefinitionsContext, TypedValue<MultiTypeEnum<*>, *>, *>,
+                        MultiTypeDefinition<*, *>::default as (MultiTypeDefinition<*, *>) -> TypedValue<MultiTypeEnum<*>, *>?
                     )
                 }
             }
         ) {
-        override fun invoke(values: SimpleObjectValues<MultiTypeDefinition<*, *, *>>): MultiTypeDefinition<MultiTypeEnum<Any>, Any, ContainsDefinitionsContext> {
-            val definitionMap = convertMultiTypeDescriptors(
-                values(5u)
-            )
-
-            val typeOptions = definitionMap.keys.toTypedArray()
-
-            val typeEnum = IndexedEnumDefinition(
-                name = values(3u),
-                values = { typeOptions }
-            )
-
-            return MultiTypeDefinition(
+        override fun invoke(values: SimpleObjectValues<MultiTypeDefinition<*, *>>) =
+            MultiTypeDefinition(
                 required = values(1u),
                 final = values(2u),
-                typeEnum = typeEnum,
+                typeEnum = values(3u),
                 typeIsFinal = values(4u),
-                definitionMap = definitionMap,
-                default = values(6u)
+                default = values(5u)
             )
-        }
     }
 }

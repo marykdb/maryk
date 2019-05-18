@@ -5,6 +5,7 @@ import maryk.core.processors.datastore.StorageTypeEnum.TypeValue
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
+import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.references.ReferenceType.TYPE
 import maryk.core.properties.types.TypedValue
 
@@ -17,8 +18,8 @@ fun <T : IsPropertyDefinition<*>> writeTypedValueToStorage(
     definition: T,
     typedValue: TypedValue<*, *>
 ) {
-    val multiDefinition = definition as IsMultiTypeDefinition<*, *, *>
-    val valueDefinition = multiDefinition.definitionMap[typedValue.type] as IsPropertyDefinition<Any>
+    val multiDefinition = definition as IsMultiTypeDefinition<TypeEnum<*>, *, *>
+    val valueDefinition = multiDefinition.definition(typedValue.type) as IsPropertyDefinition<Any>
 
     if (valueDefinition is IsSimpleValueDefinition<*, *>) {
         val qualifier = writeQualifier(qualifierSize, qualifierWriter)

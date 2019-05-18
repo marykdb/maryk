@@ -4,175 +4,116 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.MultiTypeEnumImpl.INT
-import maryk.core.properties.definitions.MultiTypeEnumImpl.LIST
-import maryk.core.properties.definitions.MultiTypeEnumImpl.MAP
-import maryk.core.properties.definitions.MultiTypeEnumImpl.MULTI
-import maryk.core.properties.definitions.MultiTypeEnumImpl.SET
-import maryk.core.properties.definitions.MultiTypeEnumImpl.STRING
-import maryk.core.properties.definitions.MultiTypeEnumImpl.UNUSED
+import maryk.core.extensions.toUnitLambda
 import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
-import maryk.core.properties.enum.IndexedEnumDefinition
-import maryk.core.properties.enum.IndexedEnumImpl
-import maryk.core.properties.enum.MultiTypeEnum
 import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
-import maryk.core.properties.types.numeric.SInt16
-import maryk.core.properties.types.numeric.SInt32
 import maryk.core.protobuf.WriteCache
+import maryk.core.query.DefinitionsConversionContext
+import maryk.core.query.RequestContext
 import maryk.test.ByteCollector
-import maryk.test.models.SimpleMarykTypeEnum
+import maryk.test.models.EmbeddedMarykModel
+import maryk.test.models.MarykTypeEnum
+import maryk.test.models.MarykTypeEnum.T1
+import maryk.test.models.MarykTypeEnum.T2
+import maryk.test.models.MarykTypeEnum.T4
+import maryk.test.models.MarykTypeEnum.T5
+import maryk.test.models.MarykTypeEnum.T6
+import maryk.test.models.MarykTypeEnum.T7
 import maryk.test.models.SimpleMarykTypeEnum.S1
-import maryk.test.models.SimpleMarykTypeEnum.S2
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
 
-private sealed class MultiTypeEnumImpl(
-    index: UInt
-) : IndexedEnumImpl<MultiTypeEnumImpl>(index), MultiTypeEnum<Any> {
-    object STRING: MultiTypeEnumImpl(1u)
-    object INT: MultiTypeEnumImpl(2u)
-    object LIST: MultiTypeEnumImpl(3u)
-    object SET: MultiTypeEnumImpl(4u)
-    object MAP: MultiTypeEnumImpl(5u)
-    object MULTI: MultiTypeEnumImpl(6u)
-    object UNUSED: MultiTypeEnumImpl(99u)
-
-    companion object : IndexedEnumDefinition<MultiTypeEnumImpl>(MultiTypeEnumImpl::class, { arrayOf(STRING, INT, LIST, SET, MAP, MULTI, UNUSED) })
-}
-
 internal class MultiTypeDefinitionTest {
-    private val stringDef = StringDefinition(
-        regEx = "#.*"
+    private val def = MultiTypeDefinition(
+        typeEnum = MarykTypeEnum
     )
 
-    private val intDef = NumberDefinition(
-        type = SInt32,
-        maxValue = 1000
-    )
-
-    private val listDef = ListDefinition(
-        valueDefinition = stringDef
-    )
-
-    private val setDef = SetDefinition(
-        valueDefinition = stringDef
-    )
-    private val mapDef = MapDefinition(
-        keyDefinition = intDef,
-        valueDefinition = stringDef
-    )
-    private val subMultiDef = MultiTypeDefinition<SimpleMarykTypeEnum<*>, Any, IsPropertyContext>(
-        typeEnum = SimpleMarykTypeEnum,
-        definitionMap = mapOf(
-            S1 to stringDef,
-            S2 to NumberDefinition(
-                type = SInt16,
-                maxValue = 1000.toShort()
-            )
-        )
-    )
-
-    private val def = MultiTypeDefinition<MultiTypeEnumImpl, Any, IsPropertyContext>(
-        typeEnum = MultiTypeEnumImpl,
-        definitionMap = mapOf(
-            STRING to stringDef,
-            INT to intDef,
-            LIST to listDef,
-            SET to setDef,
-            MAP to mapDef,
-            MULTI to subMultiDef
-        )
-    )
-
-    private val defMaxDefined = MultiTypeDefinition<MultiTypeEnumImpl, Any, IsPropertyContext>(
+    private val defMaxDefined = MultiTypeDefinition(
         final = true,
         required = false,
-        typeEnum = MultiTypeEnumImpl,
-        definitionMap = mapOf(
-            STRING to stringDef,
-            INT to intDef,
-            LIST to listDef,
-            SET to setDef,
-            MAP to mapDef,
-            MULTI to subMultiDef
-        ),
-        default = TypedValue(STRING, "test")
+        typeEnum = MarykTypeEnum,
+        default = TypedValue(T1, "test")
     )
 
-    private val defWrapper = MultiTypeDefinitionWrapper<MultiTypeEnumImpl, Any, Any, IsPropertyContext, Any>(
+    private val defWrapper = MultiTypeDefinitionWrapper<MarykTypeEnum<out Any>, Any, Any, DefinitionsConversionContext, Any>(
         1u, "multi", def
     )
 
-    private val multisToTest = arrayOf<TypedValue<MultiTypeEnumImpl, Any>>(
-        TypedValue(STRING, "#test"),
-        TypedValue(INT, 400),
-        TypedValue(LIST, listOf("#a", "#b", "#c")),
-        TypedValue(SET, setOf("#a", "#b", "#c")),
-        TypedValue(MAP, mapOf(1 to "#a", 2 to "#b", 3 to "#c")),
-        TypedValue(MULTI, TypedValue(S1, "#test"))
+    private val multisToTest = arrayOf<TypedValue<MarykTypeEnum<out Any>, Any>>(
+        TypedValue(T1, "#test"),
+        TypedValue(T2, 400),
+        TypedValue(T4, listOf("#a", "#b", "#c")),
+        TypedValue(T5, setOf("#a", "#b", "#c")),
+        TypedValue(T6, mapOf(1u to "#a", 2u to "#b", 3u to "#c")),
+        TypedValue(T7, TypedValue(S1, "#test"))
+    )
+
+    private val context = RequestContext(
+        dataModels = mapOf(
+            EmbeddedMarykModel.name toUnitLambda { EmbeddedMarykModel }
+        )
     )
 
     @Test
     fun getProperties() {
-        def.definitionMap[STRING] shouldBe stringDef
-        def.definitionMap[INT] shouldBe intDef
-        def.definitionMap[LIST] shouldBe listDef
-        def.definitionMap[SET] shouldBe setDef
-        def.definitionMap[MAP] shouldBe mapDef
+        def.definition(T1.index) shouldBe T1.definition
+        def.definition(T2.index) shouldBe T2.definition
+        def.definition(T4.index) shouldBe T4.definition
+        def.definition(T5.index) shouldBe T5.definition
+        def.definition(T6.index) shouldBe T6.definition
     }
 
     @Test
     fun validateContent() {
-        def.validateWithRef(newValue = TypedValue(STRING, "#test"))
-        def.validateWithRef(newValue = TypedValue(INT, 400))
-        def.validateWithRef(newValue = TypedValue(LIST, listOf("#a", "#b", "#c")))
-        def.validateWithRef(newValue = TypedValue(SET, setOf("#a", "#b", "#c")))
-        def.validateWithRef(newValue = TypedValue(MAP, mapOf(1 to "#a")))
+        def.validateWithRef(newValue = TypedValue(T1, "#test"))
+        def.validateWithRef(newValue = TypedValue(T2, 400))
+        def.validateWithRef(newValue = TypedValue(T4, listOf("#a", "#b", "#c")))
+        def.validateWithRef(newValue = TypedValue(T5, setOf("#a", "#b", "#c")))
+        def.validateWithRef(newValue = TypedValue(T6, mapOf(1 to "#a")))
 
         shouldThrow<OutOfRangeException> {
-            def.validateWithRef(newValue = TypedValue(INT, 3000))
+            def.validateWithRef(newValue = TypedValue(T2, 3000))
         }
         shouldThrow<InvalidValueException> {
-            def.validateWithRef(newValue = TypedValue(STRING, "WRONG"))
+            def.validateWithRef(newValue = TypedValue(T1, "&WRONG"))
         }
         shouldThrow<ValidationUmbrellaException> {
-            def.validateWithRef(newValue = TypedValue(LIST, listOf("WRONG")))
+            def.validateWithRef(newValue = TypedValue(T4, listOf("&WRONG")))
         }
         shouldThrow<ValidationUmbrellaException> {
-            def.validateWithRef(newValue = TypedValue(SET, setOf("WRONG")))
+            def.validateWithRef(newValue = TypedValue(T5, setOf("&WRONG")))
         }
         shouldThrow<ValidationUmbrellaException> {
-            def.validateWithRef(newValue = TypedValue(MAP, mapOf(1 to "WRONG")))
+            def.validateWithRef(newValue = TypedValue(T6, mapOf(1 to "&WRONG")))
         }
         shouldThrow<InvalidValueException> {
-            def.validateWithRef(newValue = TypedValue(MULTI, TypedValue(S1, "WRONG")))
+            def.validateWithRef(newValue = TypedValue(T7, TypedValue(S1, "&WRONG")))
         }
 
         shouldThrow<AlreadySetException> {
             def.validateWithRef(
-                previousValue = TypedValue(STRING, "WRONG"),
-                newValue = TypedValue(INT, 400),
+                previousValue = TypedValue(T1, "WRONG"),
+                newValue = TypedValue(T2, 400),
                 refGetter = { defWrapper.ref() }
             )
-        }.reference.toString() shouldBe "multi.*INT"
+        }.reference.toString() shouldBe "multi.*T2"
     }
 
     @Test
     fun resolveReferenceByName() {
-        def.resolveReferenceByName("*STRING") shouldBe def.typedValueRef(STRING, null)
+        def.resolveReferenceByName("*T1") shouldBe def.typedValueRef(T1, null)
         def.resolveReferenceByName("*") shouldBe def.typeRef(null)
     }
 
     @Test
     fun resolveReferenceFromStorageByAnyTypeName() {
-        writeAndReadStorageReference(def.typedValueRef(STRING, null))
+        writeAndReadStorageReference(def.typedValueRef(T1, null))
         writeAndReadStorageReference(def.typeRef(null))
     }
 
@@ -186,7 +127,7 @@ internal class MultiTypeDefinitionTest {
 
     @Test
     fun resolveReferenceFromTransportByAnyTypeName() {
-        writeAndReadTransportReference(def.typedValueRef(STRING, null))
+        writeAndReadTransportReference(def.typedValueRef(T1, null))
         writeAndReadTransportReference(def.typeRef(null))
     }
 
@@ -202,107 +143,121 @@ internal class MultiTypeDefinitionTest {
     @Test
     fun convertValuesToTransportBytesAndBack() {
         val bc = ByteCollector()
-        multisToTest.forEach { checkProtoBufConversion(bc, it, this.def) }
+        multisToTest.forEach { checkProtoBufConversion(bc, it, this.def, context = context) }
     }
 
     @Test
     fun invalidFieldShouldThrowException() {
         shouldThrow<DefNotFoundException> {
-            def.validateWithRef(newValue = TypedValue(UNUSED, "NonExistingField"))
+            def.validateWithRef(newValue = TypedValue(MarykTypeEnum.UnknownMarykTypeEnum(99u, "UNKNOWN"), "NonExistingField"))
         }
     }
 
     @Test
     fun convertDefinitionToProtoBufAndBack() {
-        checkProtoBufConversion(this.def, MultiTypeDefinition.Model)
-        checkProtoBufConversion(this.defMaxDefined, MultiTypeDefinition.Model)
+        checkProtoBufConversion(this.def, MultiTypeDefinition.Model, { context })
+        checkProtoBufConversion(this.defMaxDefined, MultiTypeDefinition.Model, { context })
     }
 
     @Test
     fun convertDefinitionToJSONAndBack() {
-        checkJsonConversion(this.def, MultiTypeDefinition.Model)
-        checkJsonConversion(this.defMaxDefined, MultiTypeDefinition.Model)
+        checkJsonConversion(this.def, MultiTypeDefinition.Model, { context })
+        checkJsonConversion(this.defMaxDefined, MultiTypeDefinition.Model, { context })
     }
 
     @Test
     fun convertDefinitionToYAMLAndBack() {
-        checkYamlConversion(this.def, MultiTypeDefinition.Model)
-        checkYamlConversion(this.defMaxDefined, MultiTypeDefinition.Model) shouldBe """
+        checkYamlConversion(this.def, MultiTypeDefinition.Model, { context })
+        checkYamlConversion(this.defMaxDefined, MultiTypeDefinition.Model, { context }) shouldBe """
         required: false
         final: true
-        typeEnum: MultiTypeEnumImpl
-        typeIsFinal: true
-        definitionMap:
-          ? 1: STRING
-          : !String
-            required: true
-            final: false
-            unique: false
-            regEx: '#.*'
-          ? 2: INT
-          : !Number
-            required: true
-            final: false
-            unique: false
-            type: SInt32
-            maxValue: 1000
-            random: false
-          ? 3: LIST
-          : !List
-            required: true
-            final: false
-            valueDefinition: !String
+        typeEnum:
+          name: MarykTypeEnum
+          cases:
+            ? 1: T1
+            : !String
               required: true
               final: false
               unique: false
-              regEx: '#.*'
-          ? 4: SET
-          : !Set
-            required: true
-            final: false
-            valueDefinition: !String
-              required: true
-              final: false
-              unique: false
-              regEx: '#.*'
-          ? 5: MAP
-          : !Map
-            required: true
-            final: false
-            keyDefinition: !Number
+              regEx: '[^&]+'
+            ? 2: T2
+            : !Number
               required: true
               final: false
               unique: false
               type: SInt32
-              maxValue: 1000
+              maxValue: 2000
               random: false
-            valueDefinition: !String
+            ? 3: T3
+            : !Embed
               required: true
               final: false
-              unique: false
-              regEx: '#.*'
-          ? 6: MULTI
-          : !MultiType
-            required: true
-            final: false
-            typeEnum: SimpleMarykTypeEnum
-            typeIsFinal: true
-            definitionMap:
-              ? 1: S1
-              : !String
+              dataModel: EmbeddedMarykModel
+            ? 4: T4
+            : !List
+              required: true
+              final: false
+              valueDefinition: !String
                 required: true
                 final: false
                 unique: false
-                regEx: '#.*'
-              ? 2: S2
-              : !Number
+                regEx: '[^&]+'
+            ? 5: T5
+            : !Set
+              required: true
+              final: false
+              valueDefinition: !String
                 required: true
                 final: false
                 unique: false
-                type: SInt16
-                maxValue: 1000
+                regEx: '[^&]+'
+            ? 6: T6
+            : !Map
+              required: true
+              final: false
+              keyDefinition: !Number
+                required: true
+                final: false
+                unique: false
+                type: UInt32
                 random: false
-        default: !STRING(1) test
+              valueDefinition: !String
+                required: true
+                final: false
+                unique: false
+                regEx: '[^&]+'
+            ? 7: T7
+            : !MultiType
+              required: true
+              final: false
+              typeEnum:
+                name: SimpleMarykTypeEnum
+                cases:
+                  ? 1: S1
+                  : !String
+                    required: true
+                    final: false
+                    unique: false
+                    regEx: '[^&]+'
+                  ? 2: S2
+                  : !Number
+                    required: true
+                    final: false
+                    unique: false
+                    type: SInt16
+                    random: false
+                  ? 3: S3
+                  : !Embed
+                    required: true
+                    final: false
+                    dataModel: EmbeddedMarykModel
+                reservedIndices: [99]
+                reservedNames: [O99]
+              typeIsFinal: true
+          reservedIndices: [99]
+          reservedNames: [O99]
+        typeIsFinal: true
+        default: !T1(1) test
 
         """.trimIndent()
     }

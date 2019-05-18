@@ -31,7 +31,7 @@ class InMemoryDataStoreScanUniqueTest {
             subModel = SimpleMarykModel(
                 value = "haha"
             ),
-            multi=TypedValue(T2, true),
+            multi=TypedValue(T2, 22),
             booleanForKey= true,
             dateForKey= Date(2018, 3, 29),
             multiForKey= TypedValue(S1, "hii"),

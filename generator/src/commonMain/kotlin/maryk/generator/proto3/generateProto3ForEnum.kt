@@ -1,9 +1,9 @@
 package maryk.generator.proto3
 
-import maryk.core.properties.enum.IndexedEnumDefinition
+import maryk.core.properties.enum.IsIndexedEnumDefinition
 
-/** Generates protobuf schema string for IndexedEnumDefinition */
-fun IndexedEnumDefinition<*>.generateProto3Schema(writer: (String) -> Unit) {
+/** Generates ProtoBuf schema string for IndexedEnumDefinition */
+fun IsIndexedEnumDefinition<*>.generateProto3Schema(writer: (String) -> Unit) {
     val values = mutableListOf<String>()
     for (value in this.cases()) {
         values.add("${value.name} = ${value.index};")

@@ -15,7 +15,8 @@ import maryk.core.properties.definitions.ValueModelDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.wrapper.AnyPropertyDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
-import maryk.core.properties.enum.IndexedEnumDefinition
+import maryk.core.properties.enum.IsIndexedEnumDefinition
+import maryk.core.properties.enum.MultiTypeEnum
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Date
 import maryk.core.properties.types.Key
@@ -75,7 +76,7 @@ internal fun generateKotlinValue(
         }
     }
     is Date -> "Date(${value.year}, ${value.month}, ${value.day})"
-    is IndexedEnumDefinition<*> -> value.name
+    is IsIndexedEnumDefinition<*> -> value.name
     is ValueDataModel<*, *> -> value.name
     is Key<*> -> """Key("$value")"""
     is Bytes -> {
@@ -146,8 +147,8 @@ internal fun generateKotlinValue(
     is TypedValue<*, *> -> {
         addImport("maryk.core.properties.types.TypedValue")
 
-        val multiTypeDefinition = definition as MultiTypeDefinition<*, *, *>
-        val valueDefinition = multiTypeDefinition.definitionMap[value.type]
+        val multiTypeDefinition = definition as MultiTypeDefinition<MultiTypeEnum<*>, *>
+        val valueDefinition = (value.type as MultiTypeEnum<*>).definition
 
         val valueAsString = generateKotlinValue(valueDefinition as IsPropertyDefinition<Any>, value.value, addImport)
         "TypedValue(${multiTypeDefinition.typeEnum.name}.${value.type.name}, $valueAsString)"

@@ -27,7 +27,6 @@ import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TimePrecision
 import maryk.core.properties.types.TypedValue
-import maryk.core.properties.types.numeric.SInt16
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.values.Values
@@ -41,14 +40,9 @@ import maryk.test.models.CompleteMarykModel.Properties.multiForKey
 import maryk.test.models.CompleteMarykModel.Properties.number
 import maryk.test.models.CompleteMarykModel.Properties.subModel
 import maryk.test.models.MarykTypeEnum.T1
-import maryk.test.models.MarykTypeEnum.T2
-import maryk.test.models.MarykTypeEnum.T4
 import maryk.test.models.Option.V1
 import maryk.test.models.Option.V3
 import maryk.test.models.SimpleMarykModel.Properties.value
-import maryk.test.models.SimpleMarykTypeEnum.S1
-import maryk.test.models.SimpleMarykTypeEnum.S2
-import maryk.test.models.SimpleMarykTypeEnum.S3
 
 sealed class MarykEnumEmbedded(
     index: UInt,
@@ -287,15 +281,6 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 required = false,
                 final = true,
                 typeEnum = MarykTypeEnum,
-                definitionMap = definitionMap(
-                    T1 to StringDefinition(
-                        regEx = "hi.*"
-                    ),
-                    T2 to NumberDefinition(type = SInt32),
-                    T4 to ListDefinition(
-                        valueDefinition = StringDefinition()
-                    )
-                ),
                 default = TypedValue(T1, "a value")
             )
         )
@@ -315,16 +300,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
             index = 19u, name = "multiForKey",
             definition = MultiTypeDefinition(
                 final = true,
-                typeEnum = SimpleMarykTypeEnum,
-                definitionMap = definitionMap(
-                    S1 to StringDefinition(
-                        regEx = "hi.*"
-                    ),
-                    S2 to NumberDefinition(type = SInt16),
-                    S3 to EmbeddedValuesDefinition(
-                        dataModel = { EmbeddedMarykModel }
-                    )
-                )
+                typeEnum = SimpleMarykTypeEnum
             )
         )
         val enumEmbedded = add(

@@ -1,11 +1,11 @@
 package maryk.generator.kotlin
 
-import maryk.core.properties.enum.IndexedEnumDefinition
+import maryk.core.properties.enum.IsIndexedEnumDefinition
 
 /**
  * Generates kotlin code to [writer] for IndexedEnumDefinition in [packageName]
  */
-fun IndexedEnumDefinition<*>.generateKotlin(packageName: String, writer: (String) -> Unit) {
+fun IsIndexedEnumDefinition<*>.generateKotlin(packageName: String, writer: (String) -> Unit) {
     val importsToAdd = mutableSetOf<String>()
 
     val code = this.generateKotlinClass {
@@ -16,7 +16,7 @@ fun IndexedEnumDefinition<*>.generateKotlin(packageName: String, writer: (String
 }
 
 /** Generates kotlin class string for IndexedEnumDefinition and adds imports to [addImport] */
-fun IndexedEnumDefinition<*>.generateKotlinClass(addImport: (String) -> Unit): String {
+fun IsIndexedEnumDefinition<*>.generateKotlinClass(addImport: (String) -> Unit): String {
     addImport("maryk.core.properties.enum.IndexedEnumImpl")
     addImport("maryk.core.properties.enum.IndexedEnumDefinition")
 
@@ -38,11 +38,11 @@ fun IndexedEnumDefinition<*>.generateKotlinClass(addImport: (String) -> Unit): S
         index: UInt,
         alternativeNames: Set<String>? = null
     ) : IndexedEnumImpl<${this.name}>(index, alternativeNames) {
-        ${this.cases().joinToString("") {
-            val alternativeNames = it.alternativeNames?.let {
+        ${this.cases().joinToString("") { case ->
+        val alternativeNames = case.alternativeNames?.let {
                 ", setOf(${it.joinToString(", ") { """"$it""""} })"
             } ?: ""
-            "object ${it.name}: ${this.name}(${it.index}u$alternativeNames)\n"
+            "object ${case.name}: ${this.name}(${case.index}u$alternativeNames)\n"
         }.prependIndent().prependIndent().trimStart()}
         class Unknown${this.name}(index: UInt, override val name: String): ${this.name}(index)
 

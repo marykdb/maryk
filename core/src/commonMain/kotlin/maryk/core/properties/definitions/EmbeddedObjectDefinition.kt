@@ -32,6 +32,7 @@ class EmbeddedObjectDefinition<DO : Any, P : ObjectPropertyDefinitions<DO>, out 
     dataModel: Unit.() -> DM,
     override val default: DO? = null
 ) :
+    IsUsableInMultiType<DO, CXI>,
     IsEmbeddedObjectDefinition<DO, P, DM, CXI, CX> {
     override val wireType = LENGTH_DELIMITED
 
@@ -60,7 +61,7 @@ class EmbeddedObjectDefinition<DO : Any, P : ObjectPropertyDefinitions<DO>, out 
         newValue: DO?,
         refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>, *>?
     ) {
-        super.validateWithRef(previousValue, newValue, refGetter)
+        super<IsEmbeddedObjectDefinition>.validateWithRef(previousValue, newValue, refGetter)
         if (newValue != null) {
             this.dataModel.validate(
                 refGetter = refGetter,

@@ -11,8 +11,8 @@ import maryk.core.models.IsTypedValuesDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
-import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IsCoreEnum
+import maryk.core.properties.enum.IsIndexedEnumDefinition
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.references.CanHaveComplexChildReference
@@ -45,8 +45,7 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
     HasDefaultValueDefinition<TypedValue<E, T>>,
     IsUsableInMapValue<TypedValue<E, T>, CX> {
     val typeIsFinal: Boolean
-    val typeEnum: IndexedEnumDefinition<E>
-    val definitionMap: Map<E, IsSubDefinition<out Any, CX>>
+    val typeEnum: IsIndexedEnumDefinition<E>
 
     /** Get definition by [index] */
     fun definition(index: UInt): IsSubDefinition<out Any, CX>?

@@ -1,6 +1,7 @@
 package maryk.core.properties.definitions.contextual
 
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
@@ -13,7 +14,7 @@ import maryk.json.IsJsonLikeWriter
 internal data class ContextCollectionTransformerDefinition<T : Any, C : Collection<T>, in CX : IsPropertyContext, CXI : IsPropertyContext>(
     val definition: IsSerializablePropertyDefinition<C, CXI>,
     private val contextTransformer: (CX?) -> CXI?
-) : IsSerializablePropertyDefinition<C, CX> {
+) : IsSerializablePropertyDefinition<C, CX>, IsContextualEncodable<C, CX> {
     override val required = definition.required
     override val final = definition.final
 

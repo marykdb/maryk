@@ -25,9 +25,6 @@ import maryk.core.values.ObjectValues
 import maryk.lib.time.Date
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
-import maryk.test.models.SimpleMarykTypeEnum.S1
-import maryk.test.models.SimpleMarykTypeEnum.S2
-import maryk.test.models.SimpleMarykTypeEnum.S3
 
 data class TestMarykObject(
     val string: String = "haha",
@@ -42,7 +39,7 @@ data class TestMarykObject(
     val map: Map<Time, String>? = null,
     val valueObject: TestValueObject? = null,
     val embeddedObject: EmbeddedMarykObject? = null,
-    val multi: TypedValue<SimpleMarykTypeEnum<*>, *>? = null,
+    val multi: TypedValue<SimpleMarykTypeEnumWithObject<*>, *>? = null,
     val reference: Key<TestMarykModel>? = null,
     val listOfString: List<String>? = null
 ) {
@@ -156,14 +153,7 @@ data class TestMarykObject(
             index = 13u, name = "multi",
             definition = MultiTypeDefinition(
                 required = false,
-                typeEnum = SimpleMarykTypeEnum,
-                definitionMap = definitionMap(
-                    S1 to StringDefinition(),
-                    S2 to NumberDefinition(type = SInt32),
-                    S3 to EmbeddedObjectDefinition(
-                        dataModel = { EmbeddedMarykObject }
-                    )
-                )
+                typeEnum = SimpleMarykTypeEnumWithObject
             ),
             getter = TestMarykObject::multi
         )

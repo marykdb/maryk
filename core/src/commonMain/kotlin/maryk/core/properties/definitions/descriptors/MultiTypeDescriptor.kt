@@ -6,25 +6,22 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
-import maryk.core.properties.definitions.IsCollectionDefinition
+import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.IsUsableInMultiType
 import maryk.core.properties.definitions.IsValueDefinition
-import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.contextual.ContextCollectionTransformerDefinition
 import maryk.core.properties.definitions.contextual.MultiTypeDefinitionContext
+import maryk.core.properties.definitions.descriptors.MultiTypeDescriptor.Model
 import maryk.core.properties.definitions.mapOfPropertyDefEmbeddedObjectDefinitions
-import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.ContextualDefinitionWrapper
 import maryk.core.properties.enum.MultiTypeEnum
-import maryk.core.properties.graph.PropRefGraphType.PropRef
-import maryk.core.properties.references.AnyPropertyReference
+import maryk.core.properties.enum.MultiTypeEnumDefinition
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.references.PropertyReferenceForValues
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.query.ContainsDefinitionsContext
@@ -122,14 +119,19 @@ internal data class MultiTypeDescriptor(
     }
 }
 
-/** Definition for Multi type descriptor List property */
-private data class MultiTypeDescriptorListDefinition(
-    override val valueDefinition: IsValueDefinition<MultiTypeDescriptor, IsPropertyContext>
-) : IsCollectionDefinition<MultiTypeDescriptor, List<MultiTypeDescriptor>, IsPropertyContext, IsValueDefinition<MultiTypeDescriptor, IsPropertyContext>> {
+/**
+ * Definition for Multi type descriptor List property.
+ * Overrides ListDefinition so it can write special Yaml notation with complex field names.
+ */
+internal class MultiTypeDescriptorListDefinition : IsListDefinition<MultiTypeDescriptor, IsPropertyContext> {
     override val required: Boolean = true
     override val final: Boolean = false
     override val minSize: UInt? = null
     override val maxSize: UInt? = null
+    override val default: List<MultiTypeDescriptor>? = null
+    override val valueDefinition: IsValueDefinition<MultiTypeDescriptor, IsPropertyContext> = EmbeddedObjectDefinition(
+        dataModel = { Model }
+    )
 
     override fun newMutableCollection(context: IsPropertyContext?) = mutableListOf<MultiTypeDescriptor>()
 
@@ -189,77 +191,38 @@ private data class MultiTypeDescriptorListDefinition(
 }
 
 /**
- * Describes the property wrapper for the List of type descriptors inside a Multi Typed property definition
- */
-private data class MultiTypeDescriptorDefinitionWrapper internal constructor(
-    override val index: UInt,
-    override val name: String,
-    override val definition: ContextCollectionTransformerDefinition<MultiTypeDescriptor, List<MultiTypeDescriptor>, MultiTypeDefinitionContext, ContainsDefinitionsContext>,
-    override val toSerializable: ((List<MultiTypeDescriptor>?, MultiTypeDefinitionContext?) -> List<MultiTypeDescriptor>?)? = null,
-    override val fromSerializable: ((List<MultiTypeDescriptor>?) -> List<MultiTypeDescriptor>?)? = null,
-    override val shouldSerialize: ((Any) -> Boolean)? = null,
-    override val capturer: ((MultiTypeDefinitionContext, List<MultiTypeDescriptor>) -> Unit)? = null,
-    override val getter: (MultiTypeDefinition<*, *, ContainsDefinitionsContext>) -> List<MultiTypeDescriptor>?,
-    override val alternativeNames: Set<String>? = null
-) :
-    IsSerializablePropertyDefinition<List<MultiTypeDescriptor>, MultiTypeDefinitionContext> by definition,
-    IsDefinitionWrapper<List<MultiTypeDescriptor>, List<MultiTypeDescriptor>, MultiTypeDefinitionContext, MultiTypeDefinition<*, *, ContainsDefinitionsContext>> {
-    override val graphType = PropRef
-
-    override fun ref(parentRef: AnyPropertyReference?) =
-        PropertyReferenceForValues(this, parentRef)
-}
-
-/**
  * Add a descriptor of multi types to a MultiTypeDefinition ObjectPropertyDefinitions
  * Set [index] and [name] to append it to model
  */
-internal fun ObjectPropertyDefinitions<MultiTypeDefinition<*, *, *>>.addDescriptorPropertyWrapperWrapper(
+internal fun ObjectPropertyDefinitions<MultiTypeEnumDefinition<MultiTypeEnum<*>>>.addDescriptorPropertyWrapperWrapper(
     index: UInt,
     name: String
-) {
-    MultiTypeDescriptorDefinitionWrapper(
-        index, name,
-        definition = ContextCollectionTransformerDefinition(
-            definition = MultiTypeDescriptorListDefinition(
-                valueDefinition = EmbeddedObjectDefinition(
-                    dataModel = { MultiTypeDescriptor.Model }
-                )
-            ),
-            contextTransformer = { context: MultiTypeDefinitionContext? ->
-                context?.definitionsContext
-            }
-        ),
-        getter = {
-            it.definitionMap.map { entry ->
-                MultiTypeDescriptor(
-                    index = entry.key.index,
-                    name = entry.key.name,
-                    definition = entry.value
-                )
-            }.toList()
-        },
-        capturer = { context: MultiTypeDefinitionContext, value ->
-            context.definitionMap = convertMultiTypeDescriptors(value)
+) = ContextualDefinitionWrapper<List<MultiTypeDescriptor>, Array<MultiTypeEnum<*>>, MultiTypeDefinitionContext, ContextCollectionTransformerDefinition<MultiTypeDescriptor, List<MultiTypeDescriptor>, MultiTypeDefinitionContext, ContainsDefinitionsContext>, MultiTypeEnumDefinition<MultiTypeEnum<*>>>(
+    index, name,
+    definition = ContextCollectionTransformerDefinition(
+        definition = MultiTypeDescriptorListDefinition(),
+        contextTransformer = { context: MultiTypeDefinitionContext? ->
+            context?.definitionsContext
         }
-    ).apply {
-        @Suppress("UNCHECKED_CAST")
-        addSingle(this as IsDefinitionWrapper<out Any, *, *, MultiTypeDefinition<*, *, *>>)
+    ),
+    toSerializable = { values: Array<MultiTypeEnum<*>>?, _ ->
+        values?.map { entry ->
+            @Suppress("UNCHECKED_CAST")
+            MultiTypeDescriptor(
+                index = entry.index,
+                name = entry.name,
+                definition = entry.definition as IsUsableInMultiType<out Any, ContainsDefinitionsContext>
+            )
+        }?.toList()
+    },
+    fromSerializable = { values ->
+        values?.map {
+            MultiTypeEnum(it.index, it.name, it.definition)
+        }?.toTypedArray()
+    },
+    getter = {
+        it.cases()
     }
-}
-
-/**
- * Convert multi type descriptors in a list in [value] to an indexed map of definitions.
- * Will throw an exception if it fails to convert
- */
-internal fun convertMultiTypeDescriptors(value: List<MultiTypeDescriptor>?): Map<MultiTypeEnum<Any>, IsUsableInMultiType<out Any, ContainsDefinitionsContext>> {
-    val descriptorList = value
-        ?: throw ParseException("Multi type definition descriptor cannot be empty")
-
-    return descriptorList.map {
-        Pair(
-            MultiTypeEnum(it.index, it.name),
-            it.definition
-        )
-    }.toMap()
+).apply {
+    addSingle(this)
 }

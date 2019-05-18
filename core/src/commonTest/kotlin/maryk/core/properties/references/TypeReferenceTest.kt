@@ -2,15 +2,10 @@ package maryk.core.properties.references
 
 import maryk.core.models.RootDataModel
 import maryk.core.models.key
-import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.definitions.IsUsableInMultiType
 import maryk.core.properties.definitions.MultiTypeDefinition
-import maryk.core.properties.definitions.NumberDefinition
-import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.references.TypeReferenceTest.MarykModel.Properties.multi
 import maryk.core.properties.types.TypedValue
-import maryk.core.properties.types.numeric.UInt32
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.MarykTypeEnum
@@ -31,11 +26,7 @@ internal class TypeReferenceTest {
                 "multi",
                 MultiTypeDefinition(
                     final = true,
-                    typeEnum = MarykTypeEnum,
-                    definitionMap = mapOf<MarykTypeEnum<*>, IsUsableInMultiType<*, IsPropertyContext>>(
-                        T1 to StringDefinition(),
-                        T2 to NumberDefinition(type = UInt32)
-                    )
+                    typeEnum = MarykTypeEnum
                 )
             )
         }

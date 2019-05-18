@@ -1,16 +1,15 @@
 package maryk.core.properties.enum
 
-import maryk.core.definitions.PrimitiveType.EnumDefinition
+import maryk.core.definitions.PrimitiveType.TypeDefinition
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.SerializationException
 import maryk.core.models.ContextualDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.NumberDefinition
-import maryk.core.properties.definitions.SingleOrListDefinition
 import maryk.core.properties.definitions.StringDefinition
-import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
+import maryk.core.properties.definitions.contextual.MultiTypeDefinitionContext
+import maryk.core.properties.definitions.descriptors.addDescriptorPropertyWrapperWrapper
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.ObjectValues
@@ -21,8 +20,8 @@ import maryk.json.JsonToken.Value
 import maryk.lib.exceptions.ParseException
 import kotlin.reflect.KClass
 
-/** Enum Definitions with a [name] and [cases] */
-open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
+/** Enum Definitions with a [name] and [cases] with types */
+open class MultiTypeEnumDefinition<E : MultiTypeEnum<*>> internal constructor(
     optionalCases: (() -> Array<E>)?,
     name: String,
     reservedIndices: List<UInt>? = null,
@@ -31,7 +30,27 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
 ) : AbstractIndexedEnumDefinition<E>(
     optionalCases, name, reservedIndices, reservedNames, unknownCreator
 ) {
-    override val primitiveType = EnumDefinition
+    override val primitiveType = TypeDefinition
+
+    // Because of compilation issue in Native this map contains IndexedEnum<E> instead of E as value
+    private val valueByString: Map<String, E> by lazy<Map<String, E>> {
+        mutableMapOf<String, E>().also { output ->
+            for (type in cases()) {
+                output[type.name] = type
+                type.alternativeNames?.forEach { name: String ->
+                    if (output.containsKey(name)) throw ParseException("Enum ${this.name} already has a case for $name")
+                    output[name] = type
+                }
+            }
+        }
+    }
+
+    // Because of compilation issue in Native this map contains IndexedEnum<E> instead of E as value
+    private val valueByIndex: Map<UInt, E> by lazy {
+        cases().associate { Pair(it.index, it) }
+    }
+
+    override val cases get() = optionalCases!!
 
     constructor(
         enumClass: KClass<E>,
@@ -61,73 +80,13 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
         unknownCreator = unknownCreator
     )
 
-
-    internal object Properties : ObjectPropertyDefinitions<IndexedEnumDefinition<IndexedEnum>>() {
+    internal object Properties : ObjectPropertyDefinitions<MultiTypeEnumDefinition<MultiTypeEnum<*>>>() {
         val name = add(1u, "name",
-            ContextCaptureDefinition(
-                definition = StringDefinition(),
-                capturer = { context: EnumNameContext?, value ->
-                    context?.let {
-                        it.name = value
-                    }
-                }
-            ),
-            IndexedEnumDefinition<*>::name
+            StringDefinition(),
+            MultiTypeEnumDefinition<*>::name
         )
 
-        @Suppress("UNCHECKED_CAST")
-        val cases = add(2u, "cases",
-            MapDefinition(
-                keyDefinition = NumberDefinition(
-                    type = UInt32,
-                    minValue = 1u
-                ),
-                valueDefinition = SingleOrListDefinition(
-                    valueDefinition = StringDefinition()
-                )
-            ) as MapDefinition<UInt, List<String>, EnumNameContext>,
-            IndexedEnumDefinition<*>::cases,
-            toSerializable = { value, context ->
-                // If Enum was defined before and is thus available in context, don't include the cases again
-                val toReturnNull = context?.let { enumNameContext ->
-                    if (enumNameContext.isOriginalDefinition == true) {
-                        false
-                    } else {
-                        enumNameContext.definitionsContext?.let {
-                            if (it.enums[enumNameContext.name] == null) {
-                                enumNameContext.isOriginalDefinition = true
-                                false
-                            } else {
-                                true
-                            }
-                        }
-                    }
-                } ?: false
-
-                if (toReturnNull) {
-                    null
-                } else {
-                    value?.invoke()?.map { v: IndexedEnum ->
-                        // Combine name and alternative names into a list
-                        val names: List<String> = v.alternativeNames?.toMutableList()?.also {
-                            it.add(0, v.name)
-                        } ?: listOf(v.name)
-                        Pair(v.index, names)
-                    }?.toMap() as Map<UInt, List<String>>
-                }
-            },
-            fromSerializable = {
-                {
-                    it?.map { (key, value) ->
-                        IndexedEnumComparable(
-                            key,
-                            value.first(),
-                            value.subList(1, value.size).toSet()
-                        )
-                    }?.toTypedArray() as Array<IndexedEnum>
-                }
-            }
-        )
+        val cases = addDescriptorPropertyWrapperWrapper(2u, "cases")
 
         init {
             add(
@@ -138,7 +97,7 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
                         minValue = 1u
                     )
                 ),
-                IndexedEnumDefinition<*>::reservedIndices
+                MultiTypeEnumDefinition<*>::reservedIndices
             )
 
             add(
@@ -146,39 +105,64 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
                 ListDefinition(
                     valueDefinition = StringDefinition()
                 ),
-                IndexedEnumDefinition<*>::reservedNames
+                MultiTypeEnumDefinition<*>::reservedNames
             )
         }
     }
 
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is MultiTypeEnumDefinition<*>) return false
+
+        if (optionalCases != null) {
+            return if (other.optionalCases != null) {
+                other.optionalCases.invoke().contentEquals(optionalCases.invoke())
+            } else false
+        }
+        if (name != other.name) return false
+        if (reservedIndices != other.reservedIndices) return false
+        if (reservedNames != other.reservedNames) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = optionalCases?.invoke().hashCode()
+        result = 31 * result + name.hashCode()
+        result = 31 * result + reservedIndices.hashCode()
+        result = 31 * result + reservedNames.hashCode()
+        return result
+    }
+
     internal object Model :
-        ContextualDataModel<IndexedEnumDefinition<IndexedEnum>, Properties, ContainsDefinitionsContext, EnumNameContext>(
+        ContextualDataModel<MultiTypeEnumDefinition<MultiTypeEnum<*>>, Properties, ContainsDefinitionsContext, MultiTypeDefinitionContext>(
             properties = Properties,
-            contextTransformer = { EnumNameContext(it) }
+            contextTransformer = { MultiTypeDefinitionContext(it) }
         ) {
-        override fun invoke(values: ObjectValues<IndexedEnumDefinition<IndexedEnum>, Properties>) =
-            IndexedEnumDefinition<IndexedEnum>(
+        override fun invoke(values: ObjectValues<MultiTypeEnumDefinition<MultiTypeEnum<*>>, Properties>): MultiTypeEnumDefinition<MultiTypeEnum<*>> {
+            return MultiTypeEnumDefinition(
                 name = values(1u),
-                optionalCases = values(2u),
+                optionalCases = values<Array<MultiTypeEnum<*>>?>(2u)?.let { { it } },
                 reservedIndices = values(3u),
                 reservedNames = values(4u),
-                unknownCreator = { index, name -> IndexedEnumComparable(index, name) }
+                unknownCreator = { index, name -> MultiTypeEnum.invoke(index, name, null) }
             )
+        }
 
         override fun writeJson(
-            values: ObjectValues<IndexedEnumDefinition<IndexedEnum>, Properties>,
+            values: ObjectValues<MultiTypeEnumDefinition<MultiTypeEnum<*>>, Properties>,
             writer: IsJsonLikeWriter,
-            context: EnumNameContext?
+            context: MultiTypeDefinitionContext?
         ) {
             throw SerializationException("Cannot write definitions from Values")
         }
 
         override fun writeJson(
-            obj: IndexedEnumDefinition<IndexedEnum>,
+            obj: MultiTypeEnumDefinition<MultiTypeEnum<*>>,
             writer: IsJsonLikeWriter,
-            context: EnumNameContext?
+            context: MultiTypeDefinitionContext?
         ) {
-            if (context?.definitionsContext?.enums?.containsKey(obj.name) == true) {
+            if (context?.definitionsContext?.typeEnums?.containsKey(obj.name) == true) {
                 // Write a single string name if no options was defined
                 val value = Properties.name.getPropertyAndSerialize(obj, context)
                     ?: throw ParseException("Missing requests in Requests")
@@ -200,8 +184,8 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
 
         override fun readJson(
             reader: IsJsonLikeReader,
-            context: EnumNameContext?
-        ): ObjectValues<IndexedEnumDefinition<IndexedEnum>, Properties> {
+            context: MultiTypeDefinitionContext?
+        ): ObjectValues<MultiTypeEnumDefinition<MultiTypeEnum<*>>, Properties> {
             if (reader.currentToken == StartDocument) {
                 reader.nextToken()
             }
@@ -220,7 +204,7 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
             }
         }
 
-        override fun readJsonToMap(reader: IsJsonLikeReader, context: EnumNameContext?) =
+        override fun readJsonToMap(reader: IsJsonLikeReader, context: MultiTypeDefinitionContext?) =
             context?.definitionsContext?.currentDefinitionName.let { name ->
                 when (name) {
                     null, "" -> super.readJsonToMap(reader, context)

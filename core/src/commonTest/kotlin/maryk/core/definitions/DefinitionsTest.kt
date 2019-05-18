@@ -9,8 +9,10 @@ import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.compareEnumDefinitions
 import maryk.core.query.DefinitionsConversionContext
 import maryk.test.models.EmbeddedMarykModel
+import maryk.test.models.MarykTypeEnum
 import maryk.test.models.Option
 import maryk.test.models.SimpleMarykModel
+import maryk.test.models.SimpleMarykTypeEnum
 import maryk.test.models.TestMarykModel
 import maryk.test.models.TestValueObject
 import maryk.test.shouldBe
@@ -22,6 +24,8 @@ class DefinitionsTest {
         TestValueObject,
         SimpleMarykModel,
         EmbeddedMarykModel,
+        SimpleMarykTypeEnum,
+        MarykTypeEnum,
         TestMarykModel
     )
 
@@ -108,6 +112,90 @@ class DefinitionsTest {
             required: false
             final: false
             dataModel: TestMarykModel
+        SimpleMarykTypeEnum: !TypeDefinition
+          cases:
+            ? 1: S1
+            : !String
+              required: true
+              final: false
+              unique: false
+              regEx: '[^&]+'
+            ? 2: S2
+            : !Number
+              required: true
+              final: false
+              unique: false
+              type: SInt16
+              random: false
+            ? 3: S3
+            : !Embed
+              required: true
+              final: false
+              dataModel: EmbeddedMarykModel
+          reservedIndices: [99]
+          reservedNames: [O99]
+        MarykTypeEnum: !TypeDefinition
+          cases:
+            ? 1: T1
+            : !String
+              required: true
+              final: false
+              unique: false
+              regEx: '[^&]+'
+            ? 2: T2
+            : !Number
+              required: true
+              final: false
+              unique: false
+              type: SInt32
+              maxValue: 2000
+              random: false
+            ? 3: T3
+            : !Embed
+              required: true
+              final: false
+              dataModel: EmbeddedMarykModel
+            ? 4: T4
+            : !List
+              required: true
+              final: false
+              valueDefinition: !String
+                required: true
+                final: false
+                unique: false
+                regEx: '[^&]+'
+            ? 5: T5
+            : !Set
+              required: true
+              final: false
+              valueDefinition: !String
+                required: true
+                final: false
+                unique: false
+                regEx: '[^&]+'
+            ? 6: T6
+            : !Map
+              required: true
+              final: false
+              keyDefinition: !Number
+                required: true
+                final: false
+                unique: false
+                type: UInt32
+                random: false
+              valueDefinition: !String
+                required: true
+                final: false
+                unique: false
+                regEx: '[^&]+'
+            ? 7: T7
+            : !MultiType
+              required: true
+              final: false
+              typeEnum: SimpleMarykTypeEnum
+              typeIsFinal: true
+          reservedIndices: [99]
+          reservedNames: [O99]
         TestMarykModel: !RootModel
           key: !Multiple
           - !Ref uint
@@ -225,24 +313,6 @@ class DefinitionsTest {
             final: false
             typeEnum: SimpleMarykTypeEnum
             typeIsFinal: true
-            definitionMap:
-              ? 1: S1
-              : !String
-                required: true
-                final: false
-                unique: false
-              ? 2: S2
-              : !Number
-                required: true
-                final: false
-                unique: false
-                type: SInt32
-                random: false
-              ? 3: S3
-              : !Embed
-                required: true
-                final: false
-                dataModel: EmbeddedMarykModel
           ? 14: reference
           : !Reference
             required: false

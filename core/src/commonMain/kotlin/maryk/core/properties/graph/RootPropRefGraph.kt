@@ -105,8 +105,7 @@ data class RootPropRefGraph<P : IsPropertyDefinitions> internal constructor(
                         propertiesList.add(
                             TypedValue(
                                 PropRef,
-                                multiTypeDefinition.definitionMap.getValue(PropRef)
-                                    .readJson(reader, context) as IsTransportablePropRefGraphNode
+                                multiTypeDefinition.definition(PropRef)!!.readJson(reader, context)
                             )
                         )
                     }

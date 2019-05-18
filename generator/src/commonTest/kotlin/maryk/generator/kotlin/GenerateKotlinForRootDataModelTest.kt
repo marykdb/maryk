@@ -318,17 +318,6 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 required = false,
                 final = true,
                 typeEnum = MarykTypeEnum,
-                definitionMap = definitionMap(
-                    MarykTypeEnum.T1 to StringDefinition(
-                        regEx = "hi.*"
-                    ),
-                    MarykTypeEnum.T2 to NumberDefinition(
-                        type = SInt32
-                    ),
-                    MarykTypeEnum.T4 to ListDefinition(
-                        valueDefinition = StringDefinition()
-                    )
-                ),
                 default = TypedValue(MarykTypeEnum.T1, "a value")
             )
         )
@@ -348,18 +337,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
             index = 19u, name = "multiForKey",
             definition = MultiTypeDefinition(
                 final = true,
-                typeEnum = SimpleMarykTypeEnum,
-                definitionMap = definitionMap(
-                    SimpleMarykTypeEnum.S1 to StringDefinition(
-                        regEx = "hi.*"
-                    ),
-                    SimpleMarykTypeEnum.S2 to NumberDefinition(
-                        type = SInt16
-                    ),
-                    SimpleMarykTypeEnum.S3 to EmbeddedValuesDefinition(
-                        dataModel = { EmbeddedMarykModel }
-                    )
-                )
+                typeEnum = SimpleMarykTypeEnum
             )
         )
         val enumEmbedded = add(

@@ -4,6 +4,7 @@ import maryk.core.definitions.Operation.Define
 import maryk.core.definitions.PrimitiveType.EnumDefinition
 import maryk.core.definitions.PrimitiveType.Model
 import maryk.core.definitions.PrimitiveType.RootModel
+import maryk.core.definitions.PrimitiveType.TypeDefinition
 import maryk.core.definitions.PrimitiveType.ValueModel
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.DataModel
@@ -19,6 +20,7 @@ import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.contextual.ContextValueTransformDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnumDefinition
+import maryk.core.properties.enum.MultiTypeEnumDefinition
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.requests.IsOperation
@@ -98,6 +100,29 @@ data class Definitions(
                             capturer = { context, value ->
                                 context?.let {
                                     it.enums[value.name] = value
+                                } ?: throw ContextNotFoundException()
+                            }
+                        ),
+                        TypeDefinition to ContextCaptureDefinition(
+                            // This transformer takes care to catch Enums without cases to replace them
+                            // with previously defined Enums which are stored in the context
+                            definition = ContextValueTransformDefinition(
+                                definition = EmbeddedObjectDefinition(
+                                    dataModel = { MultiTypeEnumDefinition.Model }
+                                ),
+                                valueTransformer = { context, value ->
+                                    if (value.optionalCases == null) {
+                                        context?.let {
+                                            it.typeEnums[value.name] ?: throw ParseException("Enum ${value.name} has not been defined")
+                                        } ?: throw ContextNotFoundException()
+                                    } else {
+                                        value
+                                    }
+                                }
+                            ),
+                            capturer = { context, value ->
+                                context?.let {
+                                    it.typeEnums[value.name] = value
                                 } ?: throw ContextNotFoundException()
                             }
                         )

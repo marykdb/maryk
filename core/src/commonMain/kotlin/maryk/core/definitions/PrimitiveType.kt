@@ -9,7 +9,7 @@ enum class PrimitiveType(
     override val index: UInt,
     override val alternativeNames: Set<String>? = null
 ) : IndexedEnumComparable<PrimitiveType>, TypeEnum<MarykPrimitive>, IsCoreEnum {
-    RootModel(1u), Model(2u), ValueModel(3u), EnumDefinition(4u);
+    RootModel(1u), Model(2u), ValueModel(3u), EnumDefinition(4u), TypeDefinition(5u);
 
     companion object : IndexedEnumDefinition<PrimitiveType>(
         "PrimitiveType", ::values

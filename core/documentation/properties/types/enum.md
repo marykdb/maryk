@@ -1,5 +1,5 @@
 # Enum
-Contains an enumaration value. Is limited to one of the values in an enum
+Contains an enumeration value. The value is limited to one of the values in an enum. 
 
 - Maryk Yaml Definition: `Enum`
 - Kotlin Definition: `EnumDefinition`
@@ -23,10 +23,15 @@ Contains an enumaration value. Is limited to one of the values in an enum
 
 ## Examples
 
-**Example of a YAML Enum property definition with previously defined Enum named Role**
+**Example of a YAML Enum property definition**
 ```yaml
 !Enum
-  enum: Role
+  enum:
+    name: Role
+    cases:
+      1: Admin
+      2: Moderator
+      3: User
   required: false
   unique: false
   final: true
@@ -35,16 +40,23 @@ Contains an enumaration value. Is limited to one of the values in an enum
   maxValue: User
 ```
 
-**Example of a YAML Enum property definition**
+**Example of a separately defined enum **
+This example is useful if the enum is used in multiple locations.
+
+Set in a definitions list
+```yaml
+Role: !EnumDefinition
+  cases:
+    1: Admin
+    2: Moderator
+    3: User
+```
+
+Set inside a property definition
 ```yaml
 !Enum
-  enum:
-    name: Role
-    values:
-      1: Admin
-      2: Moderator
-      3: User
   required: false
+  enum: Role
   unique: false
   final: true
   default: User

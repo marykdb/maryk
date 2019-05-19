@@ -1,15 +1,17 @@
 # Multi Type Property
-A property which can contain one of multiple types. The type is codified in an UInt16 value.
+A property which can contain a value of one of multiple predefined types. For each type you can 
+define a full property definition. Refer to [properties](../properties.md) to see which definition
+types can be used.
 
-This property type is particularly useful to implement different tastes of the same DataModel. 
-Imagine you want to create a Timeline in which multiple types of data like posts, photos, videos
-events and more are shown. You want to have them all stored together in one RootDataModel so it 
-is easy to query an ordered timeline but they have each different data requirements. For the post
-it is about the text and the event about the date. For this a multi type property is useful so you
-can store submodels of the different types in the same property.
+This multi type property could be useful to use different DataModels inside one field. 
+For example in a Timeline in which multiple types of data like posts, photos, videos
+events and more are shown, it is useful to store everything in one RootDataModel. This way it 
+is easy to query all the time ordered data while they each can have different data structures. 
+It is also easy to use other types of structures like single values, maps, sets or even deeper 
+multi types.
 
-It is also possible to store the type in the key so you can quickly filter all the events, posts
-or photos. 
+It is also possible to store the type in the key or index with a Type Reference. This way it will be
+cheaper to query on type.
 
 - Maryk Yaml Definition: `MultiType`
 - Kotlin Definition: `MultiTypeDefinition`
@@ -35,41 +37,55 @@ or photos.
 !MultiType
   required: false
   final: true
-  definitionMap:
-  ? 0: ByString
-  : !String
-  ? 1: ByInt
-  : !Number
-    type: SINT32
+  typeEnum:
+    name: MarykTypeEnum
+    cases:
+      ? 1: T1
+      : !String
+      ? 2: T2
+      : !Number
+        type: SInt32
+```
+
+**Example of a separately defined Multi type enum**
+This example is useful if the multi type definition is used in multiple locations.
+
+Set in a definitions list
+```yaml
+MarykTypeEnum: !TypeDefinition
+  cases:
+    ? 1: T1
+    : !String
+    ? 2: T2
+    : !Number
+      type: SInt32
+```
+
+Set inside a property definition
+```yaml
+!MultiType
+  required: false
+  final: true
+  typeEnum: MarykTypeEnum
 ```
 
 **Example of a Kotlin Multi type property definition**
 ```kotlin
-val intDef = NumberDefinition<Int>(
-    name = "int",
-    type = Int32
-)
+sealed class MultiType<T: Any>(
+    index: UInt,
+    override val definition: IsUsableInMultiType<T, IsPropertyContext>?
+) : IndexedEnumImpl<MultiType<*>>(index), MultiTypeEnum<T> {
+    object S1: MultiType<String>(1u, StringDefinition())
+    object S2: MultiType<Short>(2u, NumberDefinition(type = SInt16))
 
-val stringDef = StringDefinition(
-    name = "string"
-)
+    class UnknownMultiType(index: UInt, override val name: String): MultiType<Any>(index, null)
 
-sealed class MultiType(index: Int): IndexedEnumImpl<MultiType>(index) {
-    object ByString: MultiType(1)
-    object ByInt: MultiType(2)
-    
-    companion object: IndexedEnumDefinition<MultiType>(MultiType::class, { arrayOf(ByString, ByInt) })
-}
-
-val def = MultiTypeDefinition(
-    required = true,
-    final = true,
-    unique = true,
-    typeMap = mapOf(
-        MultiType.ByString to StringDefinition(),
-        MultiType.ByInt to NumberDefinition(type = Int32)
+    companion object : MultiTypeEnumDefinition<MultiType<out Any>>(
+        MultiType::class,
+        values = { arrayOf(S1, S2) },
+        unknownCreator = ::UnknownMultiType
     )
-)
+}
 ```
 
 ## Storage Byte representation

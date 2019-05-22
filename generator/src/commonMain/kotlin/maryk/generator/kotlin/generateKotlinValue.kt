@@ -13,7 +13,7 @@ import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.ValueModelDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
-import maryk.core.properties.definitions.wrapper.AnyPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.AnyDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IsIndexedEnumDefinition
 import maryk.core.properties.enum.MultiTypeEnum
@@ -182,7 +182,7 @@ private fun ObjectDataModel<*, *>.generateKotlinValue(value: Any, addImport: (St
 
     for (property in this.properties) {
         @Suppress("UNCHECKED_CAST")
-        val wrapper = property as AnyPropertyDefinitionWrapper
+        val wrapper = property as AnyDefinitionWrapper
         property.getter(value)?.let {
             values.add("${property.name} = ${generateKotlinValue(wrapper.definition, it, addImport)}")
         }

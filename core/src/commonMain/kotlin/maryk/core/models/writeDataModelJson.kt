@@ -3,7 +3,7 @@ package maryk.core.models
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsDataModelPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.wrapper.AnyPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.AnyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.json.IsJsonLikeWriter
@@ -34,7 +34,7 @@ internal fun <
     if (writer is YamlWriter) {
         // Write optimized format when writing yaml
         @Suppress("UNCHECKED_CAST")
-        for (property in obj.properties as Iterable<AnyPropertyDefinitionWrapper>) {
+        for (property in obj.properties as Iterable<AnyDefinitionWrapper>) {
             properties.properties.valueDefinition.writeJsonValue(property, writer, context)
         }
     } else {

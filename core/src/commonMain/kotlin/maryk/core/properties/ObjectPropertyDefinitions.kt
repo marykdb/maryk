@@ -15,7 +15,7 @@ import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.SetDefinition
-import maryk.core.properties.definitions.wrapper.AnyPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.AnyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ContextualDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.EmbeddedObjectDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.EmbeddedValuesDefinitionWrapper
@@ -317,15 +317,15 @@ internal class MutableObjectPropertyDefinitions<DO: Any> : ObjectPropertyDefinit
 internal data class ObjectPropertyDefinitionsCollectionDefinition(
     override val capturer: (DefinitionsConversionContext?, ObjectPropertyDefinitions<Any>) -> Unit
 ) : IsCollectionDefinition<
-        AnyPropertyDefinitionWrapper,
+        AnyDefinitionWrapper,
         ObjectPropertyDefinitions<Any>,
         DefinitionsConversionContext,
         EmbeddedObjectDefinition<
-                AnyPropertyDefinitionWrapper,
-                ObjectPropertyDefinitions<AnyPropertyDefinitionWrapper>,
+                AnyDefinitionWrapper,
+                ObjectPropertyDefinitions<AnyDefinitionWrapper>,
                 SimpleObjectDataModel<
-                        AnyPropertyDefinitionWrapper,
-                        ObjectPropertyDefinitions<AnyPropertyDefinitionWrapper>
+                        AnyDefinitionWrapper,
+                        ObjectPropertyDefinitions<AnyDefinitionWrapper>
                 >,
                 IsPropertyContext,
                 IsPropertyContext
@@ -339,14 +339,14 @@ internal data class ObjectPropertyDefinitionsCollectionDefinition(
     override val valueDefinition = EmbeddedObjectDefinition(
         dataModel = {
             @Suppress("UNCHECKED_CAST")
-            IsDefinitionWrapper.Model as SimpleObjectDataModel<AnyPropertyDefinitionWrapper, ObjectPropertyDefinitions<AnyPropertyDefinitionWrapper>>
+            IsDefinitionWrapper.Model as SimpleObjectDataModel<AnyDefinitionWrapper, ObjectPropertyDefinitions<AnyDefinitionWrapper>>
         }
     )
 
     override fun validateCollectionForExceptions(
         refGetter: () -> IsPropertyReference<ObjectPropertyDefinitions<Any>, IsPropertyDefinition<ObjectPropertyDefinitions<Any>>, *>?,
         newValue: ObjectPropertyDefinitions<Any>,
-        validator: (item: AnyPropertyDefinitionWrapper, itemRefFactory: () -> IsPropertyReference<AnyPropertyDefinitionWrapper, IsPropertyDefinition<AnyPropertyDefinitionWrapper>, *>?) -> Any
+        validator: (item: AnyDefinitionWrapper, itemRefFactory: () -> IsPropertyReference<AnyDefinitionWrapper, IsPropertyDefinition<AnyDefinitionWrapper>, *>?) -> Any
     ) {}
 
     override fun newMutableCollection(context: DefinitionsConversionContext?) =
@@ -403,7 +403,7 @@ internal data class ObjectPropertyDefinitionsCollectionDefinitionWrapper<in DO :
     override val getter: (DO) -> ObjectPropertyDefinitions<Any>?,
     override val alternativeNames: Set<String>? = null
 ) :
-    IsCollectionDefinition<AnyPropertyDefinitionWrapper, ObjectPropertyDefinitions<Any>, DefinitionsConversionContext, EmbeddedObjectDefinition<AnyPropertyDefinitionWrapper, ObjectPropertyDefinitions<AnyPropertyDefinitionWrapper>, SimpleObjectDataModel<AnyPropertyDefinitionWrapper, ObjectPropertyDefinitions<AnyPropertyDefinitionWrapper>>, IsPropertyContext, IsPropertyContext>> by definition,
+    IsCollectionDefinition<AnyDefinitionWrapper, ObjectPropertyDefinitions<Any>, DefinitionsConversionContext, EmbeddedObjectDefinition<AnyDefinitionWrapper, ObjectPropertyDefinitions<AnyDefinitionWrapper>, SimpleObjectDataModel<AnyDefinitionWrapper, ObjectPropertyDefinitions<AnyDefinitionWrapper>>, IsPropertyContext, IsPropertyContext>> by definition,
     IsDefinitionWrapper<ObjectPropertyDefinitions<Any>, ObjectPropertyDefinitions<Any>, DefinitionsConversionContext, DO>
 {
     override val graphType = PropRef

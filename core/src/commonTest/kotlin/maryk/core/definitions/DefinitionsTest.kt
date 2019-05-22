@@ -114,7 +114,7 @@ class DefinitionsTest {
             dataModel: TestMarykModel
         SimpleMarykTypeEnum: !TypeDefinition
           cases:
-            ? 1: S1
+            ? 1: [S1, Type1]
             : !String
               required: true
               final: false
@@ -136,7 +136,7 @@ class DefinitionsTest {
           reservedNames: [O99]
         MarykTypeEnum: !TypeDefinition
           cases:
-            ? 1: T1
+            ? 1: [T1, Type1]
             : !String
               required: true
               final: false

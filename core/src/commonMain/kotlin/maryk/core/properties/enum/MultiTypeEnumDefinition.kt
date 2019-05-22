@@ -4,12 +4,16 @@ import maryk.core.definitions.PrimitiveType.TypeDefinition
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.SerializationException
 import maryk.core.models.ContextualDataModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
+import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.definitions.contextual.ContextCollectionTransformerDefinition
 import maryk.core.properties.definitions.contextual.MultiTypeDefinitionContext
-import maryk.core.properties.definitions.descriptors.addDescriptorPropertyWrapperWrapper
+import maryk.core.properties.definitions.wrapper.ContextualDefinitionWrapper
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.ObjectValues
@@ -18,6 +22,7 @@ import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken.StartDocument
 import maryk.json.JsonToken.Value
 import maryk.lib.exceptions.ParseException
+import maryk.yaml.IsYamlReader
 import kotlin.reflect.KClass
 
 /** Enum Definitions with a [name] and [cases] with types */
@@ -86,7 +91,26 @@ open class MultiTypeEnumDefinition<E : MultiTypeEnum<*>> internal constructor(
             MultiTypeEnumDefinition<*>::name
         )
 
-        val cases = addDescriptorPropertyWrapperWrapper(2u, "cases")
+        val cases = ContextualDefinitionWrapper<List<MultiTypeEnum<*>>, Array<MultiTypeEnum<*>>, MultiTypeDefinitionContext, ContextCollectionTransformerDefinition<MultiTypeEnum<*>, List<MultiTypeEnum<*>>, MultiTypeDefinitionContext, ContainsDefinitionsContext>, MultiTypeEnumDefinition<MultiTypeEnum<*>>>(
+            2u, "cases",
+            definition = ContextCollectionTransformerDefinition(
+                definition = MultiTypeDescriptorListDefinition(),
+                contextTransformer = { context: MultiTypeDefinitionContext? ->
+                    context?.definitionsContext
+                }
+            ),
+            toSerializable = { values: Array<MultiTypeEnum<*>>?, _ ->
+                values?.toList()
+            },
+            fromSerializable = { values ->
+                values?.toTypedArray()
+            },
+            getter = {
+                it.cases()
+            }
+        ).apply {
+            addSingle(this)
+        }
 
         init {
             add(
@@ -216,5 +240,70 @@ open class MultiTypeEnumDefinition<E : MultiTypeEnum<*>> internal constructor(
                     }
                 }
             }
+    }
+}
+
+/**
+ * Definition for Multi type descriptor List property.
+ * Overrides ListDefinition so it can write special Yaml notation with complex field names.
+ */
+private class MultiTypeDescriptorListDefinition :
+    maryk.core.properties.definitions.IsListDefinition<MultiTypeEnum<*>, IsPropertyContext> {
+    override val required: Boolean = true
+    override val final: Boolean = false
+    override val minSize: UInt? = null
+    override val maxSize: UInt? = null
+    override val default: List<MultiTypeEnum<*>>? = null
+    override val valueDefinition: IsValueDefinition<MultiTypeEnum<*>, IsPropertyContext> =
+        EmbeddedObjectDefinition(
+            dataModel = { MultiTypeEnum.Model }
+        )
+
+    /** Write [value] to JSON [writer] with [context] */
+    override fun writeJsonValue(
+        value: List<MultiTypeEnum<*>>,
+        writer: IsJsonLikeWriter,
+        context: IsPropertyContext?
+    ) {
+        if (writer is maryk.yaml.YamlWriter) {
+            writer.writeStartObject()
+            for (it in value) {
+                this.valueDefinition.writeJsonValue(it, writer, context)
+            }
+            writer.writeEndObject()
+        } else {
+            writer.writeStartArray()
+            for (it in value) {
+                this.valueDefinition.writeJsonValue(it, writer, context)
+            }
+            writer.writeEndArray()
+        }
+    }
+
+    /** Read Collection from JSON [reader] within optional [context] */
+    override fun readJson(reader: IsJsonLikeReader, context: IsPropertyContext?): List<MultiTypeEnum<*>> {
+        val collection: MutableList<MultiTypeEnum<*>> = newMutableCollection(context)
+
+        if (reader is IsYamlReader) {
+            if (reader.currentToken !is maryk.json.JsonToken.StartObject) {
+                throw ParseException("YAML definition map should be an Object")
+            }
+
+            while (reader.nextToken() !== maryk.json.JsonToken.EndObject) {
+                collection.add(
+                    valueDefinition.readJson(reader, context)
+                )
+            }
+        } else {
+            if (reader.currentToken !is maryk.json.JsonToken.StartArray) {
+                throw ParseException("JSON value should be an Array")
+            }
+            while (reader.nextToken() !== maryk.json.JsonToken.EndArray) {
+                collection.add(
+                    valueDefinition.readJson(reader, context)
+                )
+            }
+        }
+        return collection
     }
 }

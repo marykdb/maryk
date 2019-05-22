@@ -262,6 +262,7 @@ internal class RootDataModelTest {
                 "cases": [{
                   "index": 1,
                   "name": "S1",
+                  "alternativeNames": ["Type1"],
                   "definition": ["String", {
                     "required": true,
                     "final": false,
@@ -476,7 +477,7 @@ internal class RootDataModelTest {
           typeEnum:
             name: SimpleMarykTypeEnum
             cases:
-              ? 1: S1
+              ? 1: [S1, Type1]
               : !String
                 required: true
                 final: false

@@ -62,7 +62,7 @@ class MultiTypeEnumTest {
         ) shouldBe """
         name: MarykTypeEnum
         cases:
-          ? 1: T1
+          ? 1: [T1, Type1]
           : !String
             required: true
             final: false
@@ -121,7 +121,7 @@ class MultiTypeEnumTest {
             typeEnum:
               name: SimpleMarykTypeEnum
               cases:
-                ? 1: S1
+                ? 1: [S1, Type1]
                 : !String
                   required: true
                   final: false

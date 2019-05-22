@@ -17,28 +17,6 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.values.Values
 import kotlin.jvm.JvmName
 
-/** Specific extension to support fetching deeper references on multi types by [type] and explicit [properties] */
-fun <P : PropertyDefinitions, T : Any, R : IsPropertyReference<T, IsDefinitionWrapper<T, *, *, *>, *>> IsMultiTypeDefinition<*, *, *>.atType(
-    type: TypeEnum<*>,
-    @Suppress("UNUSED_PARAMETER") properties: P, // So it is not needed to pass in types
-    referenceGetter: P.() -> (AnyOutPropertyReference?) -> R
-): (AnyOutPropertyReference?) -> R =
-    @Suppress("UNCHECKED_CAST")
-    {
-        val multiTypeDef = this as IsMultiTypeDefinition<TypeEnum<*>, *, *>
-
-        val parent = if (this is IsDefinitionWrapper<*, *, *, *>) {
-            this.ref(it)
-        } else it
-
-        val typedValueRef = multiTypeDef.typedValueRef(type, parent as CanHaveComplexChildReference<*, *, *, *>)
-        @Suppress("UNCHECKED_CAST")
-        (multiTypeDef.definition(type) as EmbeddedValuesDefinition<IsValuesDataModel<P>, P>).dataModel(
-            typedValueRef,
-            referenceGetter
-        )
-    }
-
 /** Specific extension to support fetching deeper references on multi types by [type] */
 @JvmName("atEmbedType")
 fun <P : PropertyDefinitions, T : Any, R : IsPropertyReference<T, IsDefinitionWrapper<T, *, *, *>, *>> IsMultiTypeDefinition<*, *, *>.atType(

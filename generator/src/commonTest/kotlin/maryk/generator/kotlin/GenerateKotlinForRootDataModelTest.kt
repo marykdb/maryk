@@ -4,6 +4,7 @@ import maryk.test.models.CompleteMarykModel
 import maryk.test.models.MarykTypeEnum
 import maryk.test.models.Option
 import maryk.test.models.SimpleMarykModel
+import maryk.test.models.SimpleMarykTypeEnum
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -58,9 +59,9 @@ import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.definitions.ValueModelDefinition
-import maryk.core.properties.definitions.key.Multiple
-import maryk.core.properties.definitions.key.Reversed
-import maryk.core.properties.definitions.key.UUIDKey
+import maryk.core.properties.definitions.index.Multiple
+import maryk.core.properties.definitions.index.Reversed
+import maryk.core.properties.definitions.index.UUIDKey
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IndexedEnumImpl
 import maryk.core.properties.types.Bytes
@@ -99,7 +100,7 @@ sealed class MarykEnumEmbedded(
 }
 
 object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel.Properties>(
-    keyDefinitions = Multiple(
+    keyDefinition = Multiple(
         UUIDKey,
         multiForKey.typeRef(),
         booleanForKey.ref(),
@@ -114,7 +115,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
         ),
         value.ref(subModel.ref())
     ),
-    reservedIndices = listOf(99),
+    reservedIndices = listOf(99u),
     reservedNames = listOf("reserved"),
     properties = Properties
 ) {
@@ -418,10 +419,10 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
         list: List<String> = listOf("ha1", "ha2", "ha3"),
         set: Set<Int> = setOf(1, 2, 3),
         map: Map<Date, Int> = mapOf(Date(2010, 11, 12) to 1, Date(2011, 12, 13) to 1),
-        multi: TypedValue<MarykTypeEnum, *> = TypedValue(MarykTypeEnum.T1, "a value"),
+        multi: TypedValue<MarykTypeEnum<out Any>, Any> = TypedValue(MarykTypeEnum.T1, "a value"),
         booleanForKey: Boolean,
         dateForKey: Date,
-        multiForKey: TypedValue<SimpleMarykTypeEnum, *>,
+        multiForKey: TypedValue<SimpleMarykTypeEnum<out Any>, Any>,
         enumEmbedded: MarykEnumEmbedded,
         mapWithEnum: Map<MarykEnumEmbedded, String> = mapOf(MarykEnumEmbedded.E1 to "value"),
         mapWithList: Map<String, List<String>> = mapOf("a" to listOf("b", "c")),
@@ -475,7 +476,7 @@ class GenerateKotlinForRootDataModelTest {
         var output = ""
 
         val generationContext = GenerationContext(
-            enums = mutableListOf(MarykTypeEnum, Option)
+            enums = mutableListOf(MarykTypeEnum, Option, SimpleMarykTypeEnum)
         )
 
         CompleteMarykModel.generateKotlin("maryk.test.models", generationContext) {

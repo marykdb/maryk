@@ -28,7 +28,7 @@ fun RootDataModel<*, *>.generateKotlin(
     val keyDefAsKotlin = if (this.keyDefinition != UUIDKey) {
         val keyDefs = this.keyDefinition.generateKotlin(packageName, name, addImport)
 
-        """keyDefinitions = ${keyDefs.prependIndent().prependIndent().trimStart()},
+        """keyDefinition = ${keyDefs.prependIndent().prependIndent().trimStart()},
         """.trimStart()
     } else ""
 
@@ -44,7 +44,7 @@ fun RootDataModel<*, *>.generateKotlin(
     val reservedIndices = this.reservedIndices.let { indices ->
         when {
             indices.isNullOrEmpty() -> ""
-            else -> "reservedIndices = listOf(${indices.joinToString(", ")}),\n        "
+            else -> "reservedIndices = listOf(${indices.joinToString(", ", postfix = "u")}),\n        "
         }
     }
     val reservedNames = this.reservedNames.let { names ->
@@ -89,7 +89,7 @@ private fun IsIndexable.generateKotlin(
     addImport: (String) -> Unit
 ): String = when (this) {
     is UUIDKey -> {
-        addImport("maryk.core.properties.definitions.key.UUIDKey")
+        addImport("maryk.core.properties.definitions.index.UUIDKey")
         "UUIDKey"
     }
     is TypeReference<*, *, *> -> {
@@ -98,7 +98,7 @@ private fun IsIndexable.generateKotlin(
         parentReference.generateRef(packageName, name, addImport, refFunction = "typeRef")
     }
     is Reversed<*> -> {
-        addImport("maryk.core.properties.definitions.key.Reversed")
+        addImport("maryk.core.properties.definitions.index.Reversed")
         "Reversed(${this.reference.generateRef(packageName, name, addImport)})"
     }
     is ValueWithFixedBytesPropertyReference<*, *, *, *> -> {
@@ -108,7 +108,7 @@ private fun IsIndexable.generateKotlin(
         generateRef(packageName, name, addImport)
     }
     is Multiple -> {
-        addImport("maryk.core.properties.definitions.key.Multiple")
+        addImport("maryk.core.properties.definitions.index.Multiple")
         val output = mutableListOf<String>()
 
         for (it in this.references) {

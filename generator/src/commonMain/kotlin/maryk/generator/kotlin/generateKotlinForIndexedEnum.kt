@@ -1,11 +1,11 @@
 package maryk.generator.kotlin
 
-import maryk.core.properties.enum.IsIndexedEnumDefinition
+import maryk.core.properties.enum.IndexedEnumDefinition
 
 /**
  * Generates kotlin code to [writer] for IndexedEnumDefinition in [packageName]
  */
-fun IsIndexedEnumDefinition<*>.generateKotlin(packageName: String, writer: (String) -> Unit) {
+fun IndexedEnumDefinition<*>.generateKotlin(packageName: String, writer: (String) -> Unit) {
     val importsToAdd = mutableSetOf<String>()
 
     val code = this.generateKotlinClass {
@@ -16,7 +16,7 @@ fun IsIndexedEnumDefinition<*>.generateKotlin(packageName: String, writer: (Stri
 }
 
 /** Generates kotlin class string for IndexedEnumDefinition and adds imports to [addImport] */
-fun IsIndexedEnumDefinition<*>.generateKotlinClass(addImport: (String) -> Unit): String {
+fun IndexedEnumDefinition<*>.generateKotlinClass(addImport: (String) -> Unit): String {
     addImport("maryk.core.properties.enum.IndexedEnumImpl")
     addImport("maryk.core.properties.enum.IndexedEnumDefinition")
 

@@ -43,6 +43,7 @@ internal fun <T : Any, D : IsTransportablePropertyDefinitionType<in T>, P : Obje
 private val dateImports = arrayOf("maryk.lib.time.Date")
 private val dateTimeImports = arrayOf("maryk.lib.time.DateTime")
 private val timeImports = arrayOf("maryk.lib.time.Time")
+private val multiTypeImports = arrayOf("maryk.core.properties.types.TypedValue")
 private val keyImports = arrayOf("maryk.core.properties.types.Key")
 private val uInt8Imports = arrayOf("maryk.core.properties.types.numeric.UInt8")
 private val uInt16Imports = arrayOf("maryk.core.properties.types.numeric.UInt16")
@@ -144,8 +145,9 @@ private val definitionNamesMap = mapOf(
     ),
     PropertyDefinitionType.MultiType to PropertyDefinitionKotlinDescriptor(
         className = "MultiTypeDefinition",
-        kotlinTypeName = { "TypedValue<${it.typeEnum.name}, *>" },
+        kotlinTypeName = { "TypedValue<${it.typeEnum.name}<out Any>, Any>" },
         definitionModel = MultiTypeDefinition.Model,
+        imports = { multiTypeImports },
         propertyValueOverride = mapOf(
             "definitionMap" to { definition, _, _ ->
                 val multiTypeDefinition =

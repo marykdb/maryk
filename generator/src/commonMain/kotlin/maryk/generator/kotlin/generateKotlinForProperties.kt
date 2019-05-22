@@ -5,6 +5,7 @@ import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
+import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitionType
 
 internal fun AbstractPropertyDefinitions<*>.generateKotlin(
@@ -22,12 +23,18 @@ internal fun AbstractPropertyDefinitions<*>.generateKotlin(
             definition.getKotlinDescriptor()
 
         if (definition.propertyDefinitionType == PropertyDefinitionType.Enum) {
-            (definition as EnumDefinition<*>).enum.let { enum ->
-                if (generationContext?.enums?.contains(enum) != true) {
-                    val enumDefinition = definition.enum
-
+            (definition as EnumDefinition<*>).enum.let { enumDefinition ->
+                if (generationContext?.enums?.contains(enumDefinition) != true) {
                     addEnumDefinition?.invoke(
                         enumDefinition.generateKotlinClass(addImport)
+                    )
+                }
+            }
+        } else if (definition.propertyDefinitionType == PropertyDefinitionType.MultiType) {
+            (definition as MultiTypeDefinition<*, *>).typeEnum.let { typeEnumDefinition ->
+                if (generationContext?.enums?.contains(typeEnumDefinition) != true) {
+                    addEnumDefinition?.invoke(
+                        typeEnumDefinition.generateKotlinClass(addImport)
                     )
                 }
             }

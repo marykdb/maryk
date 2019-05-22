@@ -1,3 +1,10 @@
+package maryk.generator.kotlin
+
+import maryk.test.models.MarykTypeEnum
+import maryk.test.shouldBe
+import kotlin.test.Test
+
+val generatedKotlinForTypeEnum = """
 package maryk.test.models
 
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
@@ -77,4 +84,18 @@ sealed class MarykTypeEnum<T: Any>(
         reservedNames = listOf("O99"),
         unknownCreator = ::UnknownMarykTypeEnum
     )
+}
+""".trimIndent()
+
+class GenerateKotlinForTypeEnumTest {
+    @Test
+    fun generateKotlinForTypeEnum() {
+        var output = ""
+
+        MarykTypeEnum.generateKotlin("maryk.test.models") {
+            output += it
+        }
+
+        output shouldBe generatedKotlinForTypeEnum
+    }
 }

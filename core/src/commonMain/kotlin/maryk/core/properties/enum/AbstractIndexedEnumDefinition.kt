@@ -1,6 +1,7 @@
 package maryk.core.properties.enum
 
 import maryk.lib.exceptions.ParseException
+import maryk.lib.safeLazy
 
 abstract class AbstractIndexedEnumDefinition<E: IndexedEnum>(
     internal val optionalCases: (() -> Array<E>)?,
@@ -14,12 +15,12 @@ abstract class AbstractIndexedEnumDefinition<E: IndexedEnum>(
     final override val final = true
 
     // Because of compilation issue in Native this map contains IndexedEnum<E> instead of E as value
-    private val valueByString: Map<String, E> by lazy<Map<String, E>> {
+    private val valueByString: Map<String, E> by safeLazy<Map<String, E>> {
         mutableMapOf<String, E>().also { output ->
             for (type in cases()) {
                 output[type.name] = type
                 type.alternativeNames?.forEach { name: String ->
-                    if (output.containsKey(name)) throw ParseException("Enum ${this.name} already has a case for $name")
+                    if (output.containsKey(name)) throw ParseException("Enum ${this@AbstractIndexedEnumDefinition.name} already has a case for $name")
                     output[name] = type
                 }
             }
@@ -27,7 +28,7 @@ abstract class AbstractIndexedEnumDefinition<E: IndexedEnum>(
     }
 
     // Because of compilation issue in Native this map contains IndexedEnum<E> instead of E as value
-    private val valueByIndex: Map<UInt, E> by lazy {
+    private val valueByIndex: Map<UInt, E> by safeLazy {
         cases().associate { Pair(it.index, it) }
     }
 

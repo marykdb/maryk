@@ -33,7 +33,7 @@ abstract class ValueDataModel<DO : ValueDataObject, P : ObjectPropertyDefinition
 ) : ObjectDataModel<DO, P>(name, properties), MarykPrimitive {
     override val primitiveType = ValueModel
 
-    internal val byteSize: Int by lazy {
+    internal val byteSize by lazy {
         var size = -1
         for (it in this.properties) {
             val def = it.definition as IsFixedStorageBytesEncodable<*>

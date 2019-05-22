@@ -28,7 +28,7 @@ abstract class AbstractIndexedEnumDefinition<E: IndexedEnum>(
     }
 
     // Because of compilation issue in Native this map contains IndexedEnum<E> instead of E as value
-    private val valueByIndex: Map<UInt, E> by safeLazy {
+    private val valueByIndex by safeLazy {
         cases().associate { Pair(it.index, it) }
     }
 

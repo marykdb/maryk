@@ -97,9 +97,7 @@ class ListDefinitionContext(
     val definitionsContext: ContainsDefinitionsContext?,
     var valueDefinion: IsValueDefinition<Any, IsPropertyContext>? = null
 ) : IsPropertyContext {
-    private var _listDefinition: Lazy<ListDefinition<in Any, IsPropertyContext>> = lazy {
+    val listDefinition by lazy {
         ListDefinition(valueDefinition = this.valueDefinion ?: throw ContextNotFoundException())
     }
-
-    val listDefinition: ListDefinition<in Any, IsPropertyContext> get() = this._listDefinition.value
 }

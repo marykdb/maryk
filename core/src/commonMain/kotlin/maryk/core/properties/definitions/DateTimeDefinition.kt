@@ -134,11 +134,9 @@ data class DateTimeDefinition(
 }
 
 class DateTimeDefinitionContext : TimePrecisionContext() {
-    private var _dateTimeDefinition: Lazy<DateTimeDefinition> = lazy {
+    val dateTimeDefinition by lazy {
         DateTimeDefinition(
             precision = precision ?: throw ContextNotFoundException()
         )
     }
-
-    val dateTimeDefinition: DateTimeDefinition get() = this._dateTimeDefinition.value
 }

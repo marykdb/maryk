@@ -51,7 +51,7 @@ open class MultiTypeEnumDefinition<E : MultiTypeEnum<*>> internal constructor(
     }
 
     // Because of compilation issue in Native this map contains IndexedEnum<E> instead of E as value
-    private val valueByIndex: Map<UInt, E> by lazy {
+    private val valueByIndex by lazy {
         cases().associate { Pair(it.index, it) }
     }
 

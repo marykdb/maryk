@@ -137,11 +137,9 @@ data class TimeDefinition(
 }
 
 class TimeDefinitionContext : TimePrecisionContext() {
-    private var _timeDefinition: Lazy<TimeDefinition> = lazy {
+    val timeDefinition by lazy {
         TimeDefinition(
             precision = precision ?: throw ContextNotFoundException()
         )
     }
-
-    val timeDefinition: TimeDefinition get() = this._timeDefinition.value
 }

@@ -309,13 +309,10 @@ class KeyValueDefinitionContext(
     var keyDefinition: IsSimpleValueDefinition<Any, IsPropertyContext>? = null,
     var valueDefinition: IsSubDefinition<Any, IsPropertyContext>? = null
 ) : IsPropertyContext {
-
-    private var _mapDefinition: Lazy<MapDefinition<Any, Any, IsPropertyContext>> = lazy {
+    val mapDefinition by lazy {
         MapDefinition(
             keyDefinition = this.keyDefinition ?: throw ContextNotFoundException(),
             valueDefinition = this.valueDefinition ?: throw ContextNotFoundException()
         )
     }
-
-    val mapDefinition: MapDefinition<Any, Any, IsPropertyContext> get() = this._mapDefinition.value
 }

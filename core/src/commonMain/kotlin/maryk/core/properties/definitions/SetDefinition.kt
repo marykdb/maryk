@@ -125,9 +125,7 @@ class SetDefinitionContext(
 ) : IsPropertyContext {
     var valueDefinion: IsValueDefinition<Any, ContainsDefinitionsContext>? = null
 
-    private var _setDefinition: Lazy<SetDefinition<Any, ContainsDefinitionsContext>> = lazy {
+    val setDefinition by lazy {
         SetDefinition(valueDefinition = this.valueDefinion ?: throw ContextNotFoundException())
     }
-
-    val setDefinition: SetDefinition<Any, ContainsDefinitionsContext> get() = this._setDefinition.value
 }

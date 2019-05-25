@@ -11,6 +11,7 @@ import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.BIT_32
 import maryk.core.protobuf.WireType.VAR_INT
 import maryk.lib.exceptions.ParseException
+import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
@@ -21,6 +22,11 @@ internal class NumberDefinitionTest {
         type = UInt32
     )
 
+    private val defReversed = NumberDefinition(
+        type = UInt32,
+        reversedStorage = true
+    )
+
     private val defMaxDefined = NumberDefinition(
         type = SInt32,
         required = false,
@@ -29,7 +35,8 @@ internal class NumberDefinitionTest {
         minValue = 3254765,
         maxValue = 92763478,
         random = true,
-        default = 4444444
+        default = 4444444,
+        reversedStorage = false
     )
 
     private val defFloat32 = NumberDefinition(
@@ -72,6 +79,32 @@ internal class NumberDefinitionTest {
             def.readStorageBytes(bc.size, bc::read) shouldBe it
             bc.reset()
         }
+    }
+
+    @Test
+    fun convertValueToStorageBytesAndBack() {
+        val bc = ByteCollector()
+        bc.reserve(
+            def.calculateStorageByteLength(32373957u)
+        )
+        def.writeStorageBytes(32373957u, bc::write)
+
+        bc.bytes?.toHex() shouldBe "01edfcc5"
+
+        def.readStorageBytes(bc.size, bc::read) shouldBe 32373957u
+    }
+
+    @Test
+    fun convertValueToReversedStorageBytesAndBack() {
+        val bc = ByteCollector()
+        bc.reserve(
+            defReversed.calculateStorageByteLength(32373957u)
+        )
+        defReversed.writeStorageBytes(32373957u, bc::write)
+
+        bc.bytes?.toHex() shouldBe "fe12033a"
+
+        defReversed.readStorageBytes(bc.size, bc::read) shouldBe 32373957u
     }
 
     @Test
@@ -155,6 +188,7 @@ internal class NumberDefinitionTest {
         maxValue: 92763478
         default: 4444444
         random: true
+        reversedStorage: false
 
         """.trimIndent()
     }

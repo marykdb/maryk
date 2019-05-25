@@ -1,6 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
+import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.models.ContextualDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -15,6 +16,7 @@ import maryk.core.protobuf.WriteCacheReader
 import maryk.core.values.SimpleObjectValues
 import maryk.json.IsJsonLikeWriter
 import maryk.lib.exceptions.ParseException
+import kotlin.experimental.xor
 
 /** Definition for Number properties */
 data class NumberDefinition<T : Comparable<T>>(
@@ -25,6 +27,7 @@ data class NumberDefinition<T : Comparable<T>>(
     override val maxValue: T? = null,
     override val default: T? = null,
     override val random: Boolean = false,
+    val reversedStorage: Boolean? = null,
     val type: NumberDescriptor<T>
 ) :
     IsNumericDefinition<T>,
@@ -38,12 +41,22 @@ data class NumberDefinition<T : Comparable<T>>(
     override fun createRandom() = type.createRandom()
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) =
-        this.type.fromStorageByteReader(length, reader)
+        when (this.reversedStorage) {
+            true -> this.type.fromStorageByteReader(length) {
+                MAX_BYTE xor reader()
+            }
+            else -> this.type.fromStorageByteReader(length, reader)
+        }
 
     override fun calculateStorageByteLength(value: T) = type.size
 
     override fun writeStorageBytes(value: T, writer: (byte: Byte) -> Unit) =
-        this.type.writeStorageBytes(value, writer)
+        when (this.reversedStorage) {
+            true -> this.type.writeStorageBytes(value) {
+                writer(MAX_BYTE xor it)
+            }
+            else -> this.type.writeStorageBytes(value, writer)
+        }
 
     override fun readTransportBytes(
         length: Int,
@@ -132,6 +145,7 @@ data class NumberDefinition<T : Comparable<T>>(
                         }
                     )
                     IsNumericDefinition.addRandom(8u, this, NumberDefinition<*>::random)
+                    add(9u, "reversedStorage", BooleanDefinition(required = false), NumberDefinition<*>::reversedStorage)
                 }
             }
         ) {
@@ -143,7 +157,8 @@ data class NumberDefinition<T : Comparable<T>>(
             minValue = values(5u),
             maxValue = values(6u),
             default = values(7u),
-            random = values(8u)
+            random = values(8u),
+            reversedStorage = values(9u)
         )
     }
 }

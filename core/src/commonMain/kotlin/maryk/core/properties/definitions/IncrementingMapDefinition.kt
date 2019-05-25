@@ -7,6 +7,7 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.NumberDescriptor
+import maryk.core.properties.types.numeric.NumberType
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.SimpleObjectValues
 
@@ -25,6 +26,8 @@ data class IncrementingMapDefinition<K : Comparable<K>, V : Any, CX : IsProperty
     IsTransportablePropertyDefinitionType<Map<K, V>> {
     override val propertyDefinitionType = PropertyDefinitionType.IncMap
 
+    val keyNumberDescriptor get() = keyDefinition.type
+
     init {
         require(keyDefinition.required) { "Definition for key should be required on map" }
         require(valueDefinition.required) { "Definition for value should be required on map" }
@@ -42,7 +45,7 @@ data class IncrementingMapDefinition<K : Comparable<K>, V : Any, CX : IsProperty
         final,
         minSize,
         maxSize,
-        NumberDefinition(type = keyNumberDescriptor),
+        NumberDefinition(type = keyNumberDescriptor, reversedStorage = true),
         valueDefinition as IsSubDefinition<V, CX>
     )
 
@@ -56,14 +59,20 @@ data class IncrementingMapDefinition<K : Comparable<K>, V : Any, CX : IsProperty
                     HasSizeDefinition.addMinSize(3u, this, IncrementingMapDefinition<*, *, *>::minSize)
                     HasSizeDefinition.addMaxSize(4u, this, IncrementingMapDefinition<*, *, *>::maxSize)
 
-                    add(5u, "keyDefinition",
-                        EmbeddedObjectDefinition(
-                            dataModel = { NumberDefinition.Model }
-                        ),
-                        getter = IncrementingMapDefinition<*, *, *>::keyDefinition,
-                        capturer = { context: KeyValueDefinitionContext, value: NumberDefinition<*> ->
-                            @Suppress("UNCHECKED_CAST")
+                    @Suppress("UNCHECKED_CAST")
+                    add(5u, "keyNumberDescriptor",
+                        definition = EnumDefinition(enum = NumberType),
+                        getter = IncrementingMapDefinition<*, *, *>::keyNumberDescriptor as (IncrementingMapDefinition<*, *, *>) -> NumberDescriptor<Comparable<Any>>?,
+                        capturer = { context: KeyValueDefinitionContext, value: NumberType ->
                             context.keyDefinition = value as IsSimpleValueDefinition<Any, IsPropertyContext>
+                        },
+                        fromSerializable = { value: NumberType? ->
+                            value?.let {
+                                it.descriptor() as NumberDescriptor<Comparable<Any>>
+                            }
+                        },
+                        toSerializable = { value: NumberDescriptor<Comparable<Any>>?, _: KeyValueDefinitionContext? ->
+                            value?.type
                         }
                     )
 
@@ -97,7 +106,10 @@ data class IncrementingMapDefinition<K : Comparable<K>, V : Any, CX : IsProperty
             final = values(2u),
             minSize = values(3u),
             maxSize = values(4u),
-            keyDefinition = values(5u),
+            keyDefinition = NumberDefinition(
+                type = values(5u),
+                reversedStorage = true
+            ),
             valueDefinition = values(6u)
         )
     }

@@ -135,7 +135,7 @@ private val definitionNamesMap = mapOf(
         propertyValueOverride = mapOf(
             "keyDefinition" to { definition, _, _ ->
                 val keyDefinition = definition as IncrementingMapDefinition<*, *, *>
-                keyDefinition.keyDefinition.type.type.name
+                keyDefinition.keyNumberDescriptor.type.name
             }
         ),
         propertyNameOverride = mapOf("keyDefinition" to "keyNumberDescriptor"),

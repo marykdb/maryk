@@ -30,19 +30,20 @@ enum class PropertyDefinitionType(
     Boolean(1u),
     Date(2u),
     DateTime(3u),
-    Enum(4u),
-    FixedBytes(5u),
-    FlexBytes(6u),
-    List(7u),
-    Map(8u),
-    MultiType(9u),
-    Number(10u),
-    Reference(11u),
-    Set(12u),
-    String(13u),
-    Embed(14u),
-    Time(15u),
-    Value(16u);
+    Embed(4u),
+    Enum(5u),
+    FixedBytes(6u),
+    FlexBytes(7u),
+    IncMap(8u),
+    List(9u),
+    Map(10u),
+    MultiType(11u),
+    Number(12u),
+    Reference(13u),
+    Set(14u),
+    String(15u),
+    Time(16u),
+    Value(17u);
 
     companion object :
         IndexedEnumDefinition<PropertyDefinitionType>("PropertyDefinitionType", PropertyDefinitionType::values)
@@ -53,9 +54,11 @@ internal val mapOfPropertyDefEmbeddedObjectDefinitions =
         PropertyDefinitionType.Boolean to EmbeddedObjectDefinition(dataModel = { BooleanDefinition.Model }),
         PropertyDefinitionType.Date to EmbeddedObjectDefinition(dataModel = { DateDefinition.Model }),
         PropertyDefinitionType.DateTime to EmbeddedObjectDefinition(dataModel = { DateTimeDefinition.Model }),
+        PropertyDefinitionType.Embed to EmbeddedObjectDefinition(dataModel = { EmbeddedValuesDefinition.Model }),
         PropertyDefinitionType.Enum to EmbeddedObjectDefinition(dataModel = { EnumDefinition.Model }),
         PropertyDefinitionType.FixedBytes to EmbeddedObjectDefinition(dataModel = { FixedBytesDefinition.Model }),
         PropertyDefinitionType.FlexBytes to EmbeddedObjectDefinition(dataModel = { FlexBytesDefinition.Model }),
+        PropertyDefinitionType.IncMap to EmbeddedObjectDefinition(dataModel = { IncrementingMapDefinition.Model }),
         PropertyDefinitionType.List to EmbeddedObjectDefinition(dataModel = { ListDefinition.Model }),
         PropertyDefinitionType.Map to EmbeddedObjectDefinition(dataModel = { MapDefinition.Model }),
         PropertyDefinitionType.MultiType to EmbeddedObjectDefinition(dataModel = { MultiTypeDefinition.Model }),
@@ -63,7 +66,6 @@ internal val mapOfPropertyDefEmbeddedObjectDefinitions =
         PropertyDefinitionType.Reference to EmbeddedObjectDefinition(dataModel = { ReferenceDefinition.Model }),
         PropertyDefinitionType.Set to EmbeddedObjectDefinition(dataModel = { SetDefinition.Model }),
         PropertyDefinitionType.String to EmbeddedObjectDefinition(dataModel = { StringDefinition.Model }),
-        PropertyDefinitionType.Embed to EmbeddedObjectDefinition(dataModel = { EmbeddedValuesDefinition.Model }),
         PropertyDefinitionType.Time to EmbeddedObjectDefinition(dataModel = { TimeDefinition.Model }),
         PropertyDefinitionType.Value to EmbeddedObjectDefinition(dataModel = { ValueModelDefinition.Model })
     )
@@ -94,9 +96,27 @@ internal val mapOfPropertyDefWrappers = mapOf(
     PropertyDefinitionType.Boolean to createFixedBytesWrapper,
     PropertyDefinitionType.Date to createFixedBytesWrapper,
     PropertyDefinitionType.DateTime to createFixedBytesWrapper,
+    PropertyDefinitionType.Embed to { index, name, altNames, definition ->
+        @Suppress("UNCHECKED_CAST")
+        EmbeddedValuesDefinitionWrapper(
+            index,
+            name,
+            definition as EmbeddedValuesDefinition<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>,
+            altNames
+        )
+    },
     PropertyDefinitionType.Enum to createFixedBytesWrapper,
     PropertyDefinitionType.FixedBytes to createFixedBytesWrapper,
     PropertyDefinitionType.FlexBytes to createFlexBytesWrapper,
+    PropertyDefinitionType.IncMap to { index, name, altNames, definition ->
+        @Suppress("UNCHECKED_CAST")
+        MapDefinitionWrapper(
+            index,
+            name,
+            definition as IncrementingMapDefinition<Comparable<Any>, Any, IsPropertyContext>,
+            altNames
+        )
+    },
     PropertyDefinitionType.List to { index, name, altNames, definition ->
         @Suppress("UNCHECKED_CAST")
         ListDefinitionWrapper<Any, List<Any>, IsPropertyContext, Any>(
@@ -136,15 +156,6 @@ internal val mapOfPropertyDefWrappers = mapOf(
         )
     },
     PropertyDefinitionType.String to createFlexBytesWrapper,
-    PropertyDefinitionType.Embed to { index, name, altNames, definition ->
-        @Suppress("UNCHECKED_CAST")
-        EmbeddedValuesDefinitionWrapper(
-            index,
-            name,
-            definition as EmbeddedValuesDefinition<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>,
-            altNames
-        )
-    },
     PropertyDefinitionType.Time to createFixedBytesWrapper,
     PropertyDefinitionType.Value to createFixedBytesWrapper
 )

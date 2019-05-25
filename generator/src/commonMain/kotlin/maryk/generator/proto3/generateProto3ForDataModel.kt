@@ -12,11 +12,11 @@ import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.FixedBytesDefinition
 import maryk.core.properties.definitions.FlexBytesDefinition
+import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.ReferenceDefinition
@@ -139,7 +139,7 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(
             generationContext,
             messageAdder
         )}"
-        is MapDefinition<*, *, *> -> {
+        is IsMapDefinition<*, *, *> -> {
             when (val keyDefinition = this.keyDefinition) {
                 is EnumDefinition<*>,
                 is FlexBytesDefinition,

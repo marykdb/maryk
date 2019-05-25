@@ -10,6 +10,7 @@ import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.FixedBytesDefinition
 import maryk.core.properties.definitions.FlexBytesDefinition
+import maryk.core.properties.definitions.IncrementingMapDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
@@ -119,6 +120,26 @@ private val definitionNamesMap = mapOf(
         className = "FlexBytesDefinition",
         kotlinTypeName = { "Bytes" },
         definitionModel = FlexBytesDefinition.Model
+    ),
+    PropertyDefinitionType.IncMap to PropertyDefinitionKotlinDescriptor(
+        className = "IncrementingMapDefinition",
+        kotlinTypeName = {
+            val transportableKeyDefinition = it.keyDefinition as IsTransportablePropertyDefinitionType<*>
+            val kotlinDescriptorForKeyDefinition =
+                transportableKeyDefinition.getKotlinDescriptor().kotlinTypeName(transportableKeyDefinition)
+            val transportableValueDefinition = it.valueDefinition as IsTransportablePropertyDefinitionType<*>
+            val kotlinDescriptorForValueDefinition =
+                transportableValueDefinition.getKotlinDescriptor().kotlinTypeName(transportableValueDefinition)
+            "Map<$kotlinDescriptorForKeyDefinition, $kotlinDescriptorForValueDefinition>"
+        },
+        propertyValueOverride = mapOf(
+            "keyDefinition" to { definition, _, _ ->
+                val keyDefinition = definition as IncrementingMapDefinition<*, *, *>
+                keyDefinition.keyDefinition.type.type.name
+            }
+        ),
+        propertyNameOverride = mapOf("keyDefinition" to "keyNumberDescriptor"),
+        definitionModel = IncrementingMapDefinition.Model
     ),
     PropertyDefinitionType.List to PropertyDefinitionKotlinDescriptor(
         className = "ListDefinition",

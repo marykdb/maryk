@@ -5,13 +5,13 @@ import maryk.core.extensions.bytes.initUIntByVar
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
+import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSerializableFixedBytesEncodable
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.definitions.IsUsableInMultiType
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.wrapper.ContextualDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.EmbeddedValuesDefinitionWrapper
@@ -128,7 +128,7 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
     fun <K : Any, V : Any, CX : IsPropertyContext> add(
         index: UInt,
         name: String,
-        definition: MapDefinition<K, V, CX>,
+        definition: IsMapDefinition<K, V, CX>,
         alternativeNames: Set<String>? = null
     ) = MapDefinitionWrapper<K, V, Map<K, V>, CX, Any>(index, name, definition, alternativeNames).apply {
         addSingle(this)

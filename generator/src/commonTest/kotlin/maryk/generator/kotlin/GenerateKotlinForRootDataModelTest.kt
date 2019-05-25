@@ -50,6 +50,7 @@ import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.FixedBytesDefinition
 import maryk.core.properties.definitions.FlexBytesDefinition
+import maryk.core.properties.definitions.IncrementingMapDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
@@ -396,6 +397,14 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 default = mapOf("a" to mapOf("b" to "c"))
             )
         )
+        val incMap = add(
+            index = 25u, name = "incMap",
+            definition = IncrementingMapDefinition(
+                required = false,
+                keyNumberDescriptor = UInt32,
+                valueDefinition = StringDefinition()
+            )
+        )
     }
 
     operator fun invoke(
@@ -427,7 +436,8 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
         mapWithEnum: Map<MarykEnumEmbedded, String> = mapOf(MarykEnumEmbedded.E1 to "value"),
         mapWithList: Map<String, List<String>> = mapOf("a" to listOf("b", "c")),
         mapWithSet: Map<String, Set<String>> = mapOf("a" to setOf("b", "c")),
-        mapWithMap: Map<String, Map<String, String>> = mapOf("a" to mapOf("b" to "c"))
+        mapWithMap: Map<String, Map<String, String>> = mapOf("a" to mapOf("b" to "c")),
+        incMap: Map<UInt, String>? = null
     ) = values {
         mapNonNulls(
             this.string with string,
@@ -453,7 +463,8 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
             this.mapWithEnum with mapWithEnum,
             this.mapWithList with mapWithList,
             this.mapWithSet with mapWithSet,
-            this.mapWithMap with mapWithMap
+            this.mapWithMap with mapWithMap,
+            this.incMap with incMap
         )
     }
 }

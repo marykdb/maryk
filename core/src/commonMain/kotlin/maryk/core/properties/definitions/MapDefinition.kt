@@ -24,6 +24,7 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
     IsUsableInMapValue<Map<K, V>, CX>,
     IsUsableInMultiType<Map<K, V>, CX>,
     IsMapDefinition<K, V, CX>,
+    HasSizeDefinition,
     IsTransportablePropertyDefinitionType<Map<K, V>>,
     HasDefaultValueDefinition<Map<K, V>> {
     override val propertyDefinitionType = PropertyDefinitionType.Map

@@ -42,6 +42,8 @@ internal fun AbstractPropertyDefinitions<*>.generateKotlin(
 
         val default = if (definition is HasDefaultValueDefinition<*> && definition.default != null) {
             " = ${generateKotlinValue(definition, definition.default as Any, addImport)}"
+        } else if (!definition.required) {
+            "? = null"
         } else {
             ""
         }

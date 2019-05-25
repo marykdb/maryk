@@ -2,7 +2,6 @@ package maryk.core.properties.definitions.wrapper
 
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsMapDefinition
-import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.AnyPropertyReference
@@ -20,7 +19,7 @@ import maryk.core.properties.references.MapValueReference
 data class MapDefinitionWrapper<K : Any, V : Any, TO : Any, CX : IsPropertyContext, in DO : Any> internal constructor(
     override val index: UInt,
     override val name: String,
-    override val definition: MapDefinition<K, V, CX>,
+    override val definition: IsMapDefinition<K, V, CX>,
     override val alternativeNames: Set<String>? = null,
     override val getter: (DO) -> TO? = { null },
     override val capturer: ((CX, Map<K, V>) -> Unit)? = null,
@@ -45,7 +44,7 @@ data class MapDefinitionWrapper<K : Any, V : Any, TO : Any, CX : IsPropertyConte
         this.definition.keyRef(key, this.ref(parentRef))
 
     /** Get a reference to a specific map value by [key] with optional [parentRef] */
-    internal fun valueRef(key: K, parentRef: AnyPropertyReference? = null) =
+    private fun valueRef(key: K, parentRef: AnyPropertyReference? = null) =
         this.definition.valueRef(key, this.ref(parentRef))
 
     /** Get a reference to any map value with optional [parentRef] */

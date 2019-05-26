@@ -7,9 +7,6 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.contextual.ContextualCollectionDefinition
-import maryk.core.properties.references.AnyPropertyReference
-import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.references.SetReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.DefinitionsContext
@@ -41,29 +38,6 @@ data class SetDefinition<T : Any, CX : IsPropertyContext> internal constructor(
         valueDefinition: IsUsableInCollection<T, CX>,
         default: Set<T>? = null
     ) : this(required, final, minSize, maxSize, valueDefinition as IsValueDefinition<T, CX>, default)
-
-    override fun newMutableCollection(context: CX?) = mutableSetOf<T>()
-
-    override fun getItemPropertyRefCreator(
-        index: UInt,
-        item: T
-    ) = { parentRef: AnyPropertyReference? ->
-        @Suppress("UNCHECKED_CAST")
-        this.itemRef(item, parentRef as SetReference<T, CX>?) as IsPropertyReference<Any, *, *>
-    }
-
-    override fun validateCollectionForExceptions(
-        refGetter: () -> IsPropertyReference<Set<T>, IsPropertyDefinition<Set<T>>, *>?,
-        newValue: Set<T>,
-        validator: (item: T, parentRefFactory: () -> IsPropertyReference<T, IsPropertyDefinition<T>, *>?) -> Any
-    ) {
-        for (it in newValue) {
-            validator(it) {
-                @Suppress("UNCHECKED_CAST")
-                this.itemRef(it, refGetter() as SetReference<T, CX>?)
-            }
-        }
-    }
 
     object Model :
         ContextualDataModel<SetDefinition<*, *>, ObjectPropertyDefinitions<SetDefinition<*, *>>, ContainsDefinitionsContext, SetDefinitionContext>(

@@ -15,7 +15,6 @@ import maryk.core.values.ObjectValues
 
 /**
  * Changes for a set property of [T] referred by [reference] with [addValues]
- * First values are deleted before adding new
  */
 data class SetValueChanges<T : Any> internal constructor(
     override val reference: IsPropertyReference<Set<T>, IsPropertyDefinition<Set<T>>, *>,

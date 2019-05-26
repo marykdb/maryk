@@ -6,9 +6,8 @@ import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsStorageBytesEncodable
+import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.IsValueDefinition
-import maryk.core.protobuf.ProtoBuf
-import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
@@ -38,14 +37,13 @@ class SetItemReference<T : Any, CX : IsPropertyContext> internal constructor(
 
     override fun calculateTransportByteLength(cacher: WriteCacheWriter): Int {
         val parentLength = this.parentReference?.calculateTransportByteLength(cacher) ?: 0
-        val valueLength = setDefinition.valueDefinition.calculateTransportByteLength(value, cacher)
-        return parentLength + 1 + valueLength
+        val valueLength = setDefinition.valueDefinition.calculateTransportByteLengthWithKey(0u, value, cacher)
+        return parentLength + valueLength
     }
 
     override fun writeTransportBytes(cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit) {
         this.parentReference?.writeTransportBytes(cacheGetter, writer)
-        ProtoBuf.writeKey(0u, VAR_INT, writer)
-        setDefinition.valueDefinition.writeTransportBytes(value, cacheGetter, writer)
+        setDefinition.valueDefinition.writeTransportBytesWithKey(0u, value, cacheGetter, writer)
     }
 
     override fun calculateSelfStorageByteLength(): Int {

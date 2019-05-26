@@ -28,7 +28,7 @@ class ContextualCollectionDefinitionTest {
     @Suppress("UNCHECKED_CAST")
     private val context = ListDefinitionContext(
         definitionsContext = null,
-        valueDefinion = TestMarykModel.properties.listOfString.valueDefinition as IsValueDefinition<Any, IsPropertyContext>
+        valueDefinition = TestMarykModel.properties.listOfString.valueDefinition as IsValueDefinition<Any, IsPropertyContext>
     )
 
     @Test

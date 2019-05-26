@@ -5,14 +5,14 @@ import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
-import maryk.core.properties.references.MapReference
+import maryk.core.properties.references.IncMapReference
 
 /**
- * Contains a Map property [definition] which contains keys [K] and values [V]
+ * Contains an incrementing Map property [definition] which contains keys [K] and values [V]
  * It contains an [index] and [name] to which it is referred inside DataModel and a [getter]
  * function to retrieve value on dataObject of [DO] in context [CX]
  */
-data class MapDefinitionWrapper<K : Any, V : Any, TO : Any, CX : IsPropertyContext, in DO : Any> internal constructor(
+data class IncMapDefinitionWrapper<K : Comparable<K>, V : Any, TO : Any, CX : IsPropertyContext, in DO : Any> internal constructor(
     override val index: UInt,
     override val name: String,
     override val definition: IsMapDefinition<K, V, CX>,
@@ -29,9 +29,9 @@ data class MapDefinitionWrapper<K : Any, V : Any, TO : Any, CX : IsPropertyConte
     override val graphType = PropRef
 
     @Suppress("UNCHECKED_CAST")
-    override fun ref(parentRef: AnyPropertyReference?): MapReference<K, V, CX> =
-        MapReference(
-            this as MapDefinitionWrapper<K, V, Any, CX, *>,
+    override fun ref(parentRef: AnyPropertyReference?): IncMapReference<K, V, CX> =
+        IncMapReference(
+            this as IncMapDefinitionWrapper<K, V, Any, CX, *>,
             parentRef as CanHaveComplexChildReference<*, *, *, *>?
         )
 }

@@ -4,7 +4,7 @@ import maryk.core.extensions.bytes.writeBytes
 import maryk.core.processors.datastore.StorageTypeEnum.ListSize
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.definitions.IsValueDefinition
+import maryk.core.properties.definitions.IsSubDefinition
 
 /** Write a complete [list] defined by [definition] with [qualifierWriter] of [qualifierCount] to storage with [valueWriter]. */
 @Suppress("UNCHECKED_CAST")
@@ -35,7 +35,7 @@ fun <T : IsPropertyDefinition<*>> writeListToStorage(
             null, qualifierCount + 4, listValueQualifierWriter,
             listValueDefinition,
             listItem,
-            valueWriter as ValueWriter<IsValueDefinition<*, *>>
+            valueWriter as ValueWriter<IsSubDefinition<*, *>>
         )
     }
 }

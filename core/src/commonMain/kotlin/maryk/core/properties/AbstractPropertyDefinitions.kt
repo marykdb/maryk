@@ -3,20 +3,22 @@ package maryk.core.properties
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initUIntByVar
 import maryk.core.models.IsValuesDataModel
+import maryk.core.properties.definitions.IncrementingMapDefinition
 import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
-import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSerializableFixedBytesEncodable
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.definitions.IsUsableInMultiType
 import maryk.core.properties.definitions.ListDefinition
+import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.wrapper.ContextualDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.EmbeddedValuesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IncMapDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ListDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.MapDefinitionWrapper
@@ -128,9 +130,19 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
     fun <K : Any, V : Any, CX : IsPropertyContext> add(
         index: UInt,
         name: String,
-        definition: IsMapDefinition<K, V, CX>,
+        definition: MapDefinition<K, V, CX>,
         alternativeNames: Set<String>? = null
     ) = MapDefinitionWrapper<K, V, Map<K, V>, CX, Any>(index, name, definition, alternativeNames).apply {
+        addSingle(this)
+    }
+
+    /** Add map property [definition] with [name] and [index] */
+    fun <K : Comparable<K>, V : Any, CX : IsPropertyContext> add(
+        index: UInt,
+        name: String,
+        definition: IncrementingMapDefinition<K, V, CX>,
+        alternativeNames: Set<String>? = null
+    ) = IncMapDefinitionWrapper<K, V, Map<K, V>, CX, Any>(index, name, definition, alternativeNames).apply {
         addSingle(this)
     }
 

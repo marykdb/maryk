@@ -32,7 +32,7 @@ import maryk.lib.exceptions.ParseException
 /**
  * Interface to define a Collection [C] containing [T] with context [CX]
  */
-interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyContext, out ST : IsValueDefinition<T, CX>> :
+interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyContext, out ST : IsSubDefinition<T, CX>> :
     IsSubDefinition<C, CX>,
     HasSizeDefinition {
     val valueDefinition: ST
@@ -134,8 +134,12 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
         context: CX?
     ): Int {
         var totalByteSize = 0
-        when (this.valueDefinition.wireType) {
+
+        when ((this.valueDefinition as? IsValueDefinition<*, *>)?.wireType) {
             BIT_64, BIT_32, VAR_INT -> {
+                @Suppress("UNCHECKED_CAST")
+                val valueDefinition = this.valueDefinition as IsValueDefinition<T, CX>
+
                 // Cache length for length delimiter
                 val container = ByteLengthContainer()
                 cacher.addLengthToCache(container)
@@ -144,7 +148,6 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
                     if (context is RequestContext) {
                         context.collectInjectLevel(this, this.getItemPropertyRefCreator(position.toUInt(), item))
                     }
-
                     totalByteSize += valueDefinition.calculateTransportByteLength(item, cacher, context)
                 }
                 container.length = totalByteSize
@@ -175,8 +178,11 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
         writer: (byte: Byte) -> Unit,
         context: CX?
     ) {
-        when (this.valueDefinition.wireType) {
+        when ((this.valueDefinition as? IsValueDefinition<*, *>)?.wireType) {
             BIT_64, BIT_32, VAR_INT -> {
+                @Suppress("UNCHECKED_CAST")
+                val valueDefinition = this.valueDefinition as IsValueDefinition<T, CX>
+
                 ProtoBuf.writeKey(index, LENGTH_DELIMITED, writer)
                 cacheGetter.nextLengthFromCache().writeVarBytes(writer)
                 value.forEach { item ->
@@ -224,10 +230,11 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
     }
 
     /** Packed is true when encoded with longer length than expected byte size for single */
-    private fun isPacked(length: Int) = when (this.valueDefinition.wireType) {
-        BIT_64, BIT_32, VAR_INT -> length > (this.valueDefinition as IsFixedStorageBytesEncodable<*>).byteSize
-        else -> false
-    }
+    private fun isPacked(length: Int) =
+        when ((this.valueDefinition as? IsValueDefinition<*, *>)?.wireType) {
+            BIT_64, BIT_32, VAR_INT -> length > (this.valueDefinition as IsFixedStorageBytesEncodable<*>).byteSize
+            else -> false
+        }
 
     /**
      * Reads the packed transport bytes from [reader] until [length] into a collection

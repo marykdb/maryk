@@ -11,7 +11,7 @@ import maryk.core.properties.definitions.IsEmbeddedDefinition
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
-import maryk.core.properties.definitions.IsValueDefinition
+import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCacheReader
@@ -24,8 +24,8 @@ class ListItemReference<T : Any, CX : IsPropertyContext> internal constructor(
     val listDefinition: IsListDefinition<T, CX>,
     parentReference: CanContainListItemReference<*, *, *>?
 ) : HasEmbeddedPropertyReference<T>,
-    IsPropertyReferenceWithParent<T, IsValueDefinition<T, CX>, CanContainListItemReference<*, *, *>, List<T>>,
-    CanHaveComplexChildReference<T, IsValueDefinition<T, CX>, CanContainListItemReference<*, *, *>, List<T>>(
+    IsPropertyReferenceWithParent<T, IsSubDefinition<T, CX>, CanContainListItemReference<*, *, *>, List<T>>,
+    CanHaveComplexChildReference<T, IsSubDefinition<T, CX>, CanContainListItemReference<*, *, *>, List<T>>(
         listDefinition.valueDefinition, parentReference
     ) {
     /** Convenience infix method to create Reference [value] pairs */

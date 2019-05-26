@@ -2,7 +2,6 @@ package maryk.core.properties.definitions.wrapper
 
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsListDefinition
-import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 
 /**
@@ -13,7 +12,7 @@ import maryk.core.properties.graph.PropRefGraphType.PropRef
 data class ListDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext, in DO : Any> internal constructor(
     override val index: UInt,
     override val name: String,
-    override val definition: ListDefinition<T, CX>,
+    override val definition: IsListDefinition<T, CX>,
     override val alternativeNames: Set<String>? = null,
     override val getter: (DO) -> List<TO>? = { null },
     override val capturer: ((CX, List<T>) -> Unit)? = null,
@@ -23,6 +22,6 @@ data class ListDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext, in D
 ) :
     AbstractDefinitionWrapper(index, name),
     IsListDefinition<T, CX> by definition,
-    IsListDefinitionWrapper<T, TO, ListDefinition<T, CX>, CX, DO> {
+    IsListDefinitionWrapper<T, TO, IsListDefinition<T, CX>, CX, DO> {
     override val graphType = PropRef
 }

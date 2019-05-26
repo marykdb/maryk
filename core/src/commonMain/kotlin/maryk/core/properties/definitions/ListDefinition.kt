@@ -66,7 +66,7 @@ data class ListDefinition<T : Any, CX : IsPropertyContext> internal constructor(
                         capturer = { context: ListDefinitionContext?, value ->
                             context?.apply {
                                 @Suppress("UNCHECKED_CAST")
-                                valueDefinion = value.value as IsValueDefinition<Any, IsPropertyContext>
+                                valueDefinition = value.value as IsValueDefinition<Any, IsPropertyContext>
                             } ?: throw ContextNotFoundException()
                         }
                     )
@@ -95,9 +95,9 @@ data class ListDefinition<T : Any, CX : IsPropertyContext> internal constructor(
 
 class ListDefinitionContext(
     val definitionsContext: ContainsDefinitionsContext?,
-    var valueDefinion: IsValueDefinition<Any, IsPropertyContext>? = null
+    var valueDefinition: IsValueDefinition<Any, IsPropertyContext>? = null
 ) : IsPropertyContext {
     val listDefinition by lazy {
-        ListDefinition(valueDefinition = this.valueDefinion ?: throw ContextNotFoundException())
+        ListDefinition(valueDefinition = this.valueDefinition ?: throw ContextNotFoundException())
     }
 }

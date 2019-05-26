@@ -3,6 +3,7 @@ package maryk.core.models
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.wrapper.ListDefinitionWrapper
@@ -52,7 +53,7 @@ abstract class ReferencesDataModel<DO : Any, P : ReferencesObjectPropertyDefinit
             is Value<*> -> {
                 ValueItems(
                     properties.references withNotNull listOf(
-                        properties.references.definition.valueDefinition.fromString(
+                        (properties.references.definition.valueDefinition as IsValueDefinition<*, RequestContext>).fromString(
                             currentToken.value as String,
                             context
                         )

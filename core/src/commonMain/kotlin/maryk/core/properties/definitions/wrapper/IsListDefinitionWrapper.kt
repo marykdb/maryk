@@ -15,7 +15,7 @@ import maryk.core.properties.references.ListReference
  * It contains an [index] and [name] to which it is referred inside DataModel and a [getter]
  * function to retrieve value on dataObject of [DO] in context [CX]
  */
-interface IsListDefinitionWrapper<T : Any, TO : Any, LD : ListDefinition<T, CX>, CX : IsPropertyContext, in DO : Any> :
+interface IsListDefinitionWrapper<T : Any, TO : Any, LD : IsListDefinition<T, CX>, CX : IsPropertyContext, in DO : Any> :
     IsListDefinition<T, CX>,
     IsDefinitionWrapper<List<T>, List<TO>, CX, DO> {
     override val definition: LD

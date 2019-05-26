@@ -8,13 +8,13 @@ import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
+import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSerializableFixedBytesEncodable
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
-import maryk.core.properties.definitions.ListDefinition
+import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.MapDefinition
-import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.wrapper.AnyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ContextualDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.EmbeddedObjectDefinitionWrapper
@@ -161,7 +161,7 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
     fun <T : Any, CX : IsPropertyContext> add(
         index: UInt,
         name: String,
-        definition: ListDefinition<T, CX>,
+        definition: IsListDefinition<T, CX>,
         getter: (DO) -> List<T>?,
         alternativeNames: Set<String>? = null,
         capturer: ((CX, List<T>) -> Unit)? = null
@@ -173,7 +173,7 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
     internal fun <T : Any, TO : Any, CX : IsPropertyContext> add(
         index: UInt,
         name: String,
-        definition: ListDefinition<T, CX>,
+        definition: IsListDefinition<T, CX>,
         getter: (DO) -> List<TO>?,
         alternativeNames: Set<String>? = null,
         capturer: ((CX, List<T>) -> Unit)? = null,
@@ -195,7 +195,7 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
     fun <T : Any, CX : IsPropertyContext> add(
         index: UInt,
         name: String,
-        definition: SetDefinition<T, CX>,
+        definition: IsSetDefinition<T, CX>,
         getter: (DO) -> Set<T>?,
         alternativeNames: Set<String>? = null,
         capturer: ((CX, Set<T>) -> Unit)? = null

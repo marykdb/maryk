@@ -5,7 +5,7 @@ import maryk.core.models.ContextualDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.contextual.ContextValueTransformDefinition
-import maryk.core.properties.definitions.contextual.ContextualValueDefinition
+import maryk.core.properties.definitions.contextual.ContextualSubDefinition
 import maryk.core.properties.definitions.contextual.MultiTypeDefinitionContext
 import maryk.core.properties.enum.MultiTypeEnum
 import maryk.core.properties.enum.MultiTypeEnumDefinition
@@ -82,7 +82,7 @@ data class MultiTypeDefinition<E : MultiTypeEnum<out T>, T: Any>(
                     add(4u, "typeIsFinal", BooleanDefinition(default = true), MultiTypeDefinition<*, *>::typeIsFinal)
 
                     add(5u, "default",
-                        ContextualValueDefinition<MultiTypeDefinitionContext, ContainsDefinitionsContext, TypedValue<MultiTypeEnum<*>, *>, IsMultiTypeDefinition<MultiTypeEnum<*>, Any, ContainsDefinitionsContext>>(
+                        ContextualSubDefinition<MultiTypeDefinitionContext, ContainsDefinitionsContext, TypedValue<MultiTypeEnum<*>, *>, IsMultiTypeDefinition<MultiTypeEnum<*>, Any, ContainsDefinitionsContext>>(
                             required = false,
                             contextTransformer = { context: MultiTypeDefinitionContext? ->
                                 context?.definitionsContext
@@ -90,7 +90,7 @@ data class MultiTypeDefinition<E : MultiTypeEnum<out T>, T: Any>(
                             contextualResolver = { context: MultiTypeDefinitionContext? ->
                                 context?.multiTypeDefinition ?: throw ContextNotFoundException()
                             }
-                        ) as ContextualValueDefinition<MultiTypeDefinitionContext, ContainsDefinitionsContext, TypedValue<MultiTypeEnum<*>, *>, *>,
+                        ) as ContextualSubDefinition<MultiTypeDefinitionContext, ContainsDefinitionsContext, TypedValue<MultiTypeEnum<*>, *>, *>,
                         MultiTypeDefinition<*, *>::default as (MultiTypeDefinition<*, *>) -> TypedValue<MultiTypeEnum<*>, *>?
                     )
                 }

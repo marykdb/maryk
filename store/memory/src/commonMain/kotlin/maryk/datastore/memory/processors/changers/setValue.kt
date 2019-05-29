@@ -18,15 +18,35 @@ internal fun <T : Any> setValue(
     version: ULong,
     keepAllVersions: Boolean = false,
     validate: ((DataRecordValue<T>, T?) -> Unit)? = null
-): Boolean {
-    val referenceToCompareTo = reference.toStorageByteArray()
+): Boolean = setValue(
+    values,
+    reference.toStorageByteArray(),
+    value,
+    version,
+    keepAllVersions,
+    validate
+)
 
+/**
+ * Set [value] at [reference] below [version] in [values]
+ * Use [keepAllVersions] on true to keep all previous values
+ * Add [validate] handler to pass previous value for validation
+ * Return true if changed
+ */
+internal fun <T : Any> setValue(
+    values: MutableList<DataRecordNode>,
+    reference: ByteArray,
+    value: T,
+    version: ULong,
+    keepAllVersions: Boolean = false,
+    validate: ((DataRecordValue<T>, T?) -> Unit)? = null
+): Boolean {
     val valueIndex = values.binarySearch {
-        it.reference.compareTo(referenceToCompareTo)
+        it.reference.compareTo(reference)
     }
 
     val newDataValue = setValueAtIndex(
-        values, valueIndex, referenceToCompareTo, value, version, keepAllVersions
+        values, valueIndex, reference, value, version, keepAllVersions
     )
 
     // Validate value if it changed

@@ -5,41 +5,40 @@ import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.definitions.wrapper.IncMapDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsMapDefinitionWrapper
 import maryk.core.properties.references.ReferenceType.MAP
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.values.AbstractValues
 import maryk.lib.exceptions.ParseException
 
 /**
- * Reference to an incrementing map with key [K] and value [V] and context [CX]
+ * Reference to a map with key [K] and value [V] and context [CX]
  */
-open class IncMapReference<K : Comparable<K>, V : Any, CX : IsPropertyContext> internal constructor(
-    propertyDefinition: IncMapDefinitionWrapper<K, V, Any, CX, *>,
-    parentReference: CanHaveComplexChildReference<*, *, *, *>?
-) : PropertyReferenceForValues<Map<K, V>, Any, IncMapDefinitionWrapper<K, V, Any, CX, *>, CanHaveComplexChildReference<*, *, *, *>>(
-        propertyDefinition,
-        parentReference
-    ),
-    CanContainMapItemReference<Map<K, V>, IncMapDefinitionWrapper<K, V, Any, CX, *>, AbstractValues<*, *, *>>,
-    HasEmbeddedPropertyReference<Map<K, V>>,
-    IsMapReference<K, V, CX, IncMapDefinitionWrapper<K, V, Any, CX, *>> {
+interface IsMapReference<K : Any, V : Any, CX : IsPropertyContext, D: IsMapDefinitionWrapper<K, V, Any, CX, *>> :
+    IsPropertyReferenceForValues<Map<K, V>, Any, D, CanHaveComplexChildReference<*, *, *, *>>,
+    CanContainMapItemReference<Map<K, V>, D, AbstractValues<*, *, *>>,
+    HasEmbeddedPropertyReference<Map<K, V>> {
     override fun getEmbedded(name: String, context: IsPropertyContext?): AnyPropertyReference = when (name[0]) {
         '@' -> MapValueReference(
-            propertyDefinition.keyDefinition.fromString(
+            propertyDefinition.definition.keyDefinition.fromString(
                 name.substring(1)
             ),
             propertyDefinition.definition,
             this
         )
         '#' -> MapKeyReference(
-            propertyDefinition.keyDefinition.fromString(
+            propertyDefinition.definition.keyDefinition.fromString(
                 name.substring(1)
             ),
             propertyDefinition.definition,
             this
         )
         '*' -> MapAnyValueReference(
+            propertyDefinition.definition,
+            this
+        )
+        '^' -> IncMapAddIndexReference(
+            name.substring(1).toInt(),
             propertyDefinition.definition,
             this
         )
@@ -57,31 +56,34 @@ open class IncMapReference<K : Comparable<K>, V : Any, CX : IsPropertyContext> i
         @Suppress("CascadeIf")
         return if (index == 0u) {
             MapValueReference(
-                this.propertyDefinition.keyDefinition.readTransportBytes(
+                this.propertyDefinition.definition.keyDefinition.readTransportBytes(
                     ProtoBuf.getLength(protoKey.wireType, reader),
                     reader
                 ),
                 this.propertyDefinition.definition,
                 this
             )
-        }
-        else if (index == 1u) {
+        } else if (index == 1u) {
             MapKeyReference(
-                this.propertyDefinition.keyDefinition.readTransportBytes(
+                this.propertyDefinition.definition.keyDefinition.readTransportBytes(
                     ProtoBuf.getLength(protoKey.wireType, reader),
                     reader
                 ),
                 this.propertyDefinition.definition,
                 this
             )
-        }
-        else if (index == 2u) {
+        } else if (index == 2u) {
             MapAnyValueReference(
                 this.propertyDefinition.definition,
                 this
             )
-        }
-        else throw ParseException("Unknown Key reference type ${protoKey.tag}")
+        } else if (index == 3u) {
+            IncMapAddIndexReference(
+                initIntByVar(reader),
+                this.propertyDefinition.definition,
+                this
+            )
+        } else throw ParseException("Unknown Key reference type ${protoKey.tag}")
     }
 
     override fun getEmbeddedStorageRef(
@@ -94,7 +96,7 @@ open class IncMapReference<K : Comparable<K>, V : Any, CX : IsPropertyContext> i
             MAP -> {
                 val mapKeyLength = initIntByVar(reader)
                 MapValueReference(
-                    this.propertyDefinition.keyDefinition.readStorageBytes(mapKeyLength, reader),
+                    this.propertyDefinition.definition.keyDefinition.readStorageBytes(mapKeyLength, reader),
                     this.propertyDefinition.definition,
                     this
                 )

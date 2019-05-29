@@ -27,6 +27,7 @@ import maryk.core.properties.exceptions.createValidationUmbrellaException
 import maryk.core.properties.references.CanContainListItemReference
 import maryk.core.properties.references.CanContainSetItemReference
 import maryk.core.properties.references.EmbeddedValuesPropertyRef
+import maryk.core.properties.references.IncMapReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceWithParent
 import maryk.core.properties.references.ListAnyItemReference
@@ -43,6 +44,7 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Check
 import maryk.core.query.changes.Delete
+import maryk.core.query.changes.IncMapChange
 import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.ListChange
 import maryk.core.query.changes.SetChange
@@ -58,6 +60,7 @@ import maryk.core.values.Values
 import maryk.datastore.memory.StoreAction
 import maryk.datastore.memory.processors.changers.createCountUpdater
 import maryk.datastore.memory.processors.changers.deleteByReference
+import maryk.datastore.memory.processors.changers.getCurrentIncMapKey
 import maryk.datastore.memory.processors.changers.getList
 import maryk.datastore.memory.processors.changers.getValue
 import maryk.datastore.memory.processors.changers.setListValue
@@ -70,6 +73,7 @@ import maryk.datastore.memory.records.DataStore
 import maryk.datastore.memory.records.index.UniqueException
 import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.compare.matches
+import maryk.lib.extensions.compare.prevByteInSameLength
 import maryk.lib.time.Instant
 
 internal typealias ChangeStoreAction<DM, P> = StoreAction<DM, P, ChangeRequest<DM>, ChangeResponse<DM>>
@@ -547,6 +551,52 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                 keepAllVersions
                             ) {
                                 setDefinition.validateSize(it) { setReference }
+                            }
+                        }
+                    }
+                    is IncMapChange -> {
+                        @Suppress("UNCHECKED_CAST")
+                        for (valueChange in change.valueChanges) {
+                            val incMapReference = valueChange.reference as IncMapReference<Comparable<Any>, Any, IsPropertyContext>
+                            val incMapDefinition = incMapReference.propertyDefinition
+                            var countChange = 0
+                            valueChange.addValues?.let { addValues ->
+                                var currentIncMapKey = getCurrentIncMapKey(
+                                    newValueList,
+                                    incMapReference
+                                )
+
+                                createValidationUmbrellaException({ incMapReference }) { addException ->
+                                    for ((index, value) in addValues.withIndex()) {
+                                        // Inc Map keys are stored in reverse order so latest is always first.
+                                        // So lower the latest value to get at the next value
+                                        currentIncMapKey = currentIncMapKey.prevByteInSameLength(incMapDefinition.definition.keyDefinition.byteSize)
+
+                                        try {
+                                            incMapDefinition.valueDefinition.validateWithRef(null, value) { incMapDefinition.addIndexRef(index, incMapReference) }
+                                            setValue(
+                                                newValueList,
+                                                currentIncMapKey,
+                                                value,
+                                                version
+                                            ) { _, prevValue ->
+                                                prevValue ?: countChange++ // Only count up when value did not exist
+                                            }.also(setChanged)
+                                        } catch (e: ValidationException) {
+                                            addException(e)
+                                        }
+                                    }
+                                }
+                            }
+
+                            createCountUpdater(
+                                newValueList,
+                                valueChange.reference,
+                                version,
+                                countChange,
+                                keepAllVersions
+                            ) {
+                                incMapDefinition.validateSize(it) { incMapReference }
                             }
                         }
                     }

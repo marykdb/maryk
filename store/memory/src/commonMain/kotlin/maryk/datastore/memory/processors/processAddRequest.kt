@@ -22,6 +22,7 @@ import maryk.datastore.memory.records.DataRecordNode
 import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.memory.records.index.UniqueException
+import maryk.lib.extensions.compare.compareTo
 import maryk.lib.time.Instant
 
 internal typealias AddStoreAction<DM, P> = StoreAction<DM, P, AddRequest<DM, P>, AddResponse<DM>>
@@ -88,6 +89,11 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
                         }
                         recordValues += dataRecordValue
                     }
+
+                    // Sort all nodes since some operations like map key values can be unsorted
+                    recordValues.sortWith(Comparator { a: DataRecordNode, b: DataRecordNode ->
+                        a.reference.compareTo(b.reference)
+                    })
 
                     uniquesToIndex?.forEach { value ->
                         dataStore.addToUniqueIndex(dataRecord, value.reference, value.value, version)

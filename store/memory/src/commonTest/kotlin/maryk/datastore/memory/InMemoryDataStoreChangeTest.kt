@@ -7,6 +7,7 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Check
 import maryk.core.query.changes.Delete
+import maryk.core.query.changes.IncMapChange
 import maryk.core.query.changes.ListChange
 import maryk.core.query.changes.SetChange
 import maryk.core.query.changes.change
@@ -60,7 +61,8 @@ class InMemoryDataStoreChangeTest {
                         list = listOf(1, 4, 6),
                         listOfString = listOf("c", "d", "e"),
                         map = mapOf(Time(12, 33, 45) to "another", Time(13, 44, 55) to "another2"),
-                        set = setOf(Date(2018, 11, 25), Date(1981, 12, 5))
+                        set = setOf(Date(2018, 11, 25), Date(1981, 12, 5)),
+                        incMap = mapOf(1u to "a", 2u to "b")
                     ),
                     TestMarykModel(
                         "haha3",
@@ -447,6 +449,46 @@ class InMemoryDataStoreChangeTest {
             Time(13, 44, 55) to "another2",
             Time(1, 2, 3) to "test1",
             Time(2, 3, 4) to "test2"
+        )
+    }
+
+    @Test
+    fun executeChangeIncMapRequest() = runSuspendingTest {
+        val changeResponse = dataStore.execute(
+            TestMarykModel.change(
+                keys[1].change(
+                    Change(
+                        TestMarykModel { incMap.refAt(1u) } with "newA"
+                    ),
+                    Delete(
+                        TestMarykModel { incMap.refAt(2u) }
+                    ),
+                    IncMapChange(
+                        TestMarykModel { incMap::ref }.change(
+                            addValues = listOf(
+                                "c", "d"
+                            )
+                        )
+                    )
+                )
+            )
+        )
+
+        changeResponse.statuses.size shouldBe 1
+        changeResponse.statuses[0].let { status ->
+            val success = shouldBeOfType<Success<*>>(status)
+            shouldBeRecent(success.version, 1000uL)
+        }
+
+        val getResponse = dataStore.execute(
+            TestMarykModel.get(keys[1])
+        )
+
+        getResponse.values.size shouldBe 1
+        getResponse.values.first().values { incMap } shouldBe mapOf(
+            1u to "newA",
+            3u to "c",
+            4u to "d"
         )
     }
 }

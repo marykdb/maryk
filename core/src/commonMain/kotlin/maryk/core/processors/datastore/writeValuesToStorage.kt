@@ -16,7 +16,6 @@ import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
-import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.references.ReferenceType
 import maryk.core.properties.references.ReferenceType.DELETE
@@ -130,8 +129,8 @@ internal fun <T : IsPropertyDefinition<*>> writeValue(
             writeMapToStorage(
                 mapQualifierCount,
                 mapQualifierWriter,
-                valueWriter as ValueWriter<MapDefinition<*, *, *>>,
-                definition as MapDefinition<*, *, *>,
+                valueWriter as ValueWriter<IsMapDefinition<*, *, *>>,
+                definition as IsMapDefinition<*, *, *>,
                 value as Map<Any, Any>
             )
         }

@@ -96,3 +96,25 @@ fun ByteArray.nextByteInSameLength(): ByteArray {
     }
     return newArray
 }
+
+/**
+ * Lower the range with 1 byte while keeping length the same
+ * Will throw IllegalStateException if byte array cannot be lowered further
+ */
+fun ByteArray.prevByteInSameLength(maxLengthToRead: Int? = null): ByteArray {
+    val newArray = this.copyOf()
+    val startIndex = maxLengthToRead?.let { newArray.lastIndex - it } ?: 0
+    for (i in newArray.lastIndex downTo startIndex) {
+        val v = newArray[i].toUByte()
+
+        if (v > 0u) {
+            newArray[i] = (v - 1.toUByte()).toByte()
+            break
+        } else if (i == 0) {
+            throw IllegalStateException("Byte array already reached the end")
+        } else {
+            newArray[i] = 0xFF.toByte()
+        }
+    }
+    return newArray
+}

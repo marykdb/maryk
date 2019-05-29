@@ -340,6 +340,19 @@ internal class RootDataModelTest {
                 "maxSize": 10
               }]
             }]
+          }, {
+            "index": 18,
+            "name": "incMap",
+            "definition": ["IncMap", {
+              "required": false,
+              "final": false,
+              "keyNumberDescriptor": "UInt32",
+              "valueDefinition": ["String", {
+                "required": true,
+                "final": false,
+                "unique": false
+              }]
+            }]
           }]
         }""".trimIndent()
     }
@@ -531,6 +544,15 @@ internal class RootDataModelTest {
             final: false
             unique: false
             maxSize: 10
+        ? 18: incMap
+        : !IncMap
+          required: false
+          final: false
+          keyNumberDescriptor: UInt32
+          valueDefinition: !String
+            required: true
+            final: false
+            unique: false
 
         """.trimIndent()
     }

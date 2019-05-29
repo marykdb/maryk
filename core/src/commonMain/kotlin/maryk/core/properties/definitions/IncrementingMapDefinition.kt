@@ -63,9 +63,6 @@ data class IncrementingMapDefinition<K : Comparable<K>, V : Any, CX : IsProperty
                     add(5u, "keyNumberDescriptor",
                         definition = EnumDefinition(enum = NumberType),
                         getter = IncrementingMapDefinition<*, *, *>::keyNumberDescriptor as (IncrementingMapDefinition<*, *, *>) -> NumberDescriptor<Comparable<Any>>?,
-                        capturer = { context: KeyValueDefinitionContext, value: NumberType ->
-                            context.keyDefinition = value as IsSimpleValueDefinition<Any, IsPropertyContext>
-                        },
                         fromSerializable = { value: NumberType? ->
                             value?.let {
                                 it.descriptor() as NumberDescriptor<Comparable<Any>>

@@ -8,6 +8,7 @@ import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.EnumDefinition
+import maryk.core.properties.definitions.IncrementingMapDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
@@ -186,7 +187,6 @@ object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>
             )
         )
 
-        @Suppress("unused")
         val selfReference = add(
             index = 16u, name = "selfReference",
             definition = ReferenceDefinition(
@@ -203,6 +203,15 @@ object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>
                 valueDefinition = StringDefinition(
                     maxSize = 10u
                 )
+            )
+        )
+
+        val incMap = add(
+            index = 18u, name = "incMap",
+            definition = IncrementingMapDefinition(
+                required = false,
+                keyNumberDescriptor = UInt32,
+                valueDefinition = StringDefinition()
             )
         )
     }
@@ -224,7 +233,8 @@ object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>
         reference: Key<TestMarykModel>? = null,
         listOfString: List<String>? = null,
         selfReference: Key<TestMarykModel>? = null,
-        setOfString: Set<String>? = null
+        setOfString: Set<String>? = null,
+        incMap: Map<UInt, String>? = null
     ) = this.values {
         mapNonNulls(
             this.string with string,
@@ -243,7 +253,8 @@ object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>
             this.reference with reference,
             this.listOfString with listOfString,
             this.selfReference with selfReference,
-            this.setOfString with setOfString
+            this.setOfString with setOfString,
+            this.incMap with incMap
         )
     }
 

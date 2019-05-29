@@ -130,7 +130,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
                 )
             } catch (e: Throwable) {
                 statuses.add(
-                    ServerFail(e.toString())
+                    ServerFail(e.toString(), e)
                 )
             }
         }

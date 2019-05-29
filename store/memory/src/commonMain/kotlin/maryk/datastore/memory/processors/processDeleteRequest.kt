@@ -82,7 +82,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
 
                 statuses.add(status)
             } catch (e: Throwable) {
-                statuses.add(ServerFail(e.toString()))
+                statuses.add(ServerFail(e.toString(), e))
             }
         }
     }

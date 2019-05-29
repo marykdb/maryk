@@ -10,7 +10,8 @@ import maryk.core.values.SimpleObjectValues
 
 /** Something went wrong with the server with [reason] */
 data class ServerFail<DM : IsRootDataModel<*>>(
-    val reason: String
+    val reason: String,
+    val cause: Throwable? = null // Not communicated to other servers
 ) : IsAddResponseStatus<DM>, IsChangeResponseStatus<DM>, IsDeleteResponseStatus<DM> {
     override val statusType = SERVER_FAIL
 
@@ -23,7 +24,7 @@ data class ServerFail<DM : IsRootDataModel<*>>(
     ) {
         override fun invoke(values: SimpleObjectValues<ServerFail<*>>) =
             ServerFail<IsRootDataModel<IsPropertyDefinitions>>(
-                values(1u)
+                reason = values(1u)
             )
     }
 }

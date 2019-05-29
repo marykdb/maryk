@@ -621,7 +621,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
         // Nothing skipped out so must be a success
         return Success(version)
     } catch (e: Throwable) {
-        return ServerFail(e.toString())
+        return ServerFail(e.toString(), e)
     }
 }
 

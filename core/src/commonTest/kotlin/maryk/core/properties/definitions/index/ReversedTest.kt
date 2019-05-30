@@ -14,8 +14,8 @@ import maryk.core.query.DefinitionsConversionContext
 import maryk.lib.extensions.toHex
 import maryk.lib.time.DateTime
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 internal class ReversedTest {
     object MarykModel : RootDataModel<MarykModel, MarykModel.Properties>(
@@ -65,10 +65,10 @@ internal class ReversedTest {
             val bc = ByteCollector()
             bc.reserve(7)
             this.writeStorageBytes(dt, bc::write)
-            this.readStorageBytes(bc.size, bc::read) shouldBe dt
+            expect(dt) { this.readStorageBytes(bc.size, bc::read) }
         }
 
-        key.toHex() shouldBe "fe7fffffa6540703"
+        expect("fe7fffffa6540703") { key.toHex() }
     }
 
     private val context = DefinitionsConversionContext(
@@ -95,15 +95,17 @@ internal class ReversedTest {
 
     @Test
     fun convertDefinitionToYAMLAndBack() {
-        checkYamlConversion(
-            value = Reversed(boolean.ref()),
-            dataModel = Reversed.Model,
-            context = { context }
-        ) shouldBe "bool"
+        expect("bool") {
+            checkYamlConversion(
+                value = Reversed(boolean.ref()),
+                dataModel = Reversed.Model,
+                context = { context }
+            )
+        }
     }
 
     @Test
     fun toReferenceStorageBytes() {
-        Reversed(boolean.ref()).toReferenceStorageByteArray().toHex() shouldBe "0b09"
+        expect("0b09") { Reversed(boolean.ref()).toReferenceStorageByteArray().toHex() }
     }
 }

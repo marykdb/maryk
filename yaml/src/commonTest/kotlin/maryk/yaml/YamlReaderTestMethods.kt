@@ -15,56 +15,55 @@ import maryk.json.JsonToken.Value
 import maryk.json.MapType
 import maryk.json.ValueType
 import maryk.lib.extensions.toHex
-import maryk.test.shouldBe
-import maryk.test.shouldBeOfType
-import maryk.test.shouldThrow
+import maryk.test.assertType
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.expect
 import kotlin.test.fail
 
 fun IsJsonLikeReader.assertStartDocument() {
-    this.nextToken() shouldBe StartDocument
+    expect(StartDocument) { this.nextToken() }
 }
 
 fun IsJsonLikeReader.assertStartObject(type: MapType = MapType.Map) {
-    shouldBeOfType<StartObject>(this.nextToken()).apply {
-        type.let {
-            this.type shouldBe it
-        }
+    assertType<StartObject>(this.nextToken()).apply {
+        assertEquals(type, this.type)
     }
 }
 
 fun IsJsonLikeReader.assertEndObject() {
-    this.nextToken() shouldBe EndObject
+    expect(EndObject) { this.nextToken() }
 }
 
 fun IsJsonLikeReader.assertFieldName(value: String?) {
-    shouldBeOfType<FieldName>(this.nextToken()).value shouldBe value
+    expect(value) {
+        assertType<FieldName>(this.nextToken()).value
+    }
 }
 
 fun IsJsonLikeReader.assertStartComplexFieldName() {
-    this.nextToken() shouldBe StartComplexFieldName
+    expect(StartComplexFieldName) { this.nextToken() }
 }
 
 fun IsJsonLikeReader.assertEndComplexFieldName() {
-    this.nextToken() shouldBe EndComplexFieldName
+    expect(EndComplexFieldName) { this.nextToken() }
 }
 
 fun IsJsonLikeReader.assertStartArray(type: ArrayType = ArrayType.Sequence) {
-    shouldBeOfType<StartArray>(this.nextToken()).apply {
-        type.let {
-            this.type shouldBe it
-        }
+    assertType<StartArray>(this.nextToken()).apply {
+        assertEquals(type, this.type)
     }
 }
 
 fun IsJsonLikeReader.assertEndArray() {
-    this.nextToken() shouldBe EndArray
+    expect(EndArray) { this.nextToken() }
 }
 
 fun <T : Any> IsJsonLikeReader.assertValue(value: T?, type: ValueType<T>? = null) {
-    shouldBeOfType<Value<*>>(this.nextToken()).apply {
-        this.value shouldBe value
+    assertType<Value<*>>(this.nextToken()).apply {
+        expect(value) { this.value }
         type?.let {
-            this.type shouldBe it
+            expect(type) { this.type }
         }
     }
 }
@@ -75,12 +74,10 @@ fun IsJsonLikeReader.assertByteArrayValue(value: ByteArray, type: ValueType<Byte
             val byteArray = this.value as? ByteArray
 
             byteArray?.let {
-                it.toHex() shouldBe value.toHex()
+                expect(value.toHex()) { it.toHex() }
             } ?: fail("$this should be bytearray")
 
-            type.let {
-                this.type shouldBe it
-            }
+            assertEquals(type, this.type)
         } else {
             fail("$this should be value '$value'")
         }
@@ -88,10 +85,10 @@ fun IsJsonLikeReader.assertByteArrayValue(value: ByteArray, type: ValueType<Byte
 }
 
 fun IsJsonLikeReader.assertEndDocument() {
-    this.nextToken() shouldBe EndDocument
+    expect(EndDocument) { this.nextToken() }
 }
 
 fun IsJsonLikeReader.assertInvalidYaml(): InvalidYamlContent =
-    shouldThrow {
+    assertFailsWith {
         println(this.nextToken())
     }

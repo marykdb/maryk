@@ -6,9 +6,10 @@ import maryk.lib.extensions.toHex
 import maryk.lib.time.Date
 import maryk.test.ByteCollector
 import maryk.test.models.TestMarykModel
-import maryk.test.shouldBe
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.expect
 
 class SetReferenceTest {
     private val setReference = TestMarykModel { embeddedValues { marykModel { set::ref } } }
@@ -23,9 +24,9 @@ class SetReferenceTest {
             Date(2013, 10, 1)
         )
 
-        this.reference.resolveFromAny(list) shouldBe Date(2001, 4, 2)
+        expect(Date(2001, 4, 2)) { this.reference.resolveFromAny(list) }
 
-        shouldThrow<UnexpectedValueException> {
+        assertFailsWith<UnexpectedValueException> {
             this.reference.resolveFromAny("wrongInput")
         }
     }
@@ -41,15 +42,15 @@ class SetReferenceTest {
         this.reference.writeTransportBytes(cache, bc::write)
 
         val converted = TestMarykModel.getPropertyReferenceByBytes(bc.size, bc::read)
-        converted shouldBe this.reference
+        assertEquals(this.reference, converted)
     }
 
     @Test
     fun convertToStringAndBack() {
-        this.reference.completeName shouldBe "set.#2001-04-02"
+        expect("set.#2001-04-02") { this.reference.completeName }
 
         val converted = TestMarykModel.getPropertyReferenceByName(this.reference.completeName)
-        converted shouldBe this.reference
+        expect(this.reference) { converted }
     }
 
     @Test
@@ -61,7 +62,7 @@ class SetReferenceTest {
         )
         setReference.writeStorageBytes(bc::write)
 
-        bc.bytes!!.toHex() shouldBe "661e4b"
+        expect("661e4b") { bc.bytes!!.toHex() }
     }
 
     @Test
@@ -73,9 +74,9 @@ class SetReferenceTest {
         )
         reference.writeStorageBytes(bc::write)
 
-        bc.bytes!!.toHex() shouldBe "4b0480002c96"
+        expect("4b0480002c96") { bc.bytes!!.toHex() }
 
-        TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) shouldBe reference
+        expect(reference) { TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) }
     }
 
     @Test
@@ -87,8 +88,8 @@ class SetReferenceTest {
         )
         subReference.writeStorageBytes(bc::write)
 
-        bc.bytes!!.toHex() shouldBe "661e4b0480002c96"
+        expect("661e4b0480002c96") { bc.bytes!!.toHex() }
 
-        TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) shouldBe subReference
+        expect(subReference) { TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) }
     }
 }

@@ -7,8 +7,8 @@ import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.core.query.pairs.with
 import maryk.test.models.TestMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class EqualsTest {
     private val equals = Equals(
@@ -30,20 +30,28 @@ class EqualsTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.equals, Equals, { this.context }) shouldBe """
-        {
-          "string": "test",
-          "int": 5
+        expect(
+            """
+            {
+              "string": "test",
+              "int": 5
+            }
+            """.trimIndent()
+        ) {
+            checkJsonConversion(this.equals, Equals, { this.context })
         }
-        """.trimIndent()
     }
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(this.equals, Equals, { this.context }) shouldBe """
-        string: test
-        int: 5
+        expect(
+            """
+            string: test
+            int: 5
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.equals, Equals, { this.context })
+        }
     }
 }

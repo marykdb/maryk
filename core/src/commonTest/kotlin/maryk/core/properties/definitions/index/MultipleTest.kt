@@ -10,8 +10,8 @@ import maryk.test.models.TestMarykModel.Properties.bool
 import maryk.test.models.TestMarykModel.Properties.int
 import maryk.test.models.TestMarykModel.Properties.multi
 import maryk.test.models.TestMarykModel.Properties.string
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class MultipleTest {
     private val multiple = Multiple(
@@ -47,23 +47,27 @@ class MultipleTest {
 
     @Test
     fun convertDefinitionToYAMLAndBack() {
-        checkYamlConversion(
-            value = multiple,
-            dataModel = Multiple.Model,
-            context = { context }
-        ) shouldBe """
-        - !UUID
-        - !Reversed bool
-        - !Ref multi.*
-        - !Ref string
-        - !Reversed string
-        - !Ref int
+        expect(
+            """
+            - !UUID
+            - !Reversed bool
+            - !Ref multi.*
+            - !Ref string
+            - !Reversed string
+            - !Ref int
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(
+                value = multiple,
+                dataModel = Multiple.Model,
+                context = { context }
+            )
+        }
     }
 
     @Test
     fun toReferenceStorageBytes() {
-        multiple.toReferenceStorageByteArray().toHex() shouldBe "040101020b31020a69020a09020b09020a11"
+        expect("040101020b31020a69020a09020b09020a11") { multiple.toReferenceStorageByteArray().toHex() }
     }
 }

@@ -1,7 +1,7 @@
 package maryk.core.models
 
 import maryk.core.properties.definitions.wrapper.comparePropertyDefinitionWrapper
-import maryk.test.shouldBe
+import kotlin.test.assertEquals
 
 /**
  * Compares if two DataModels are equal
@@ -17,7 +17,7 @@ internal fun <DM : AbstractDataModel<*, *, *, *, *>> compareDataModels(converted
         if (converted !is ObjectDataModel<*, *>) {
             throw AssertionError("Converted model should be a ObjectDataModel")
         }
-        converted.name shouldBe original.name
+        assertEquals(original.name, converted.name)
     }
 
     if (original is IsRootDataModel<*>) {
@@ -25,9 +25,9 @@ internal fun <DM : AbstractDataModel<*, *, *, *, *>> compareDataModels(converted
             throw AssertionError("Converted model should be a RootObjectDataModel")
         }
 
-        converted.keyDefinition shouldBe original.keyDefinition
+        assertEquals(original.keyDefinition, converted.keyDefinition)
 
-        converted.indices?.size shouldBe original.indices?.size
-        converted.indices shouldBe original.indices
+        assertEquals(original.indices?.size, converted.indices?.size)
+        assertEquals(original.indices, converted.indices)
     }
 }

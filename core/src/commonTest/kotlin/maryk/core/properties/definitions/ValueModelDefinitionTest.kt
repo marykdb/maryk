@@ -11,9 +11,10 @@ import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.ByteCollector
 import maryk.test.models.TestValueObject
-import maryk.test.shouldBe
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.expect
 
 internal class ValueModelDefinitionTest {
     private val def = ValueModelDefinition(
@@ -43,7 +44,7 @@ internal class ValueModelDefinitionTest {
 
     @Test
     fun hasValues() {
-        def.dataModel shouldBe TestValueObject
+        expect(TestValueObject) { def.dataModel }
     }
 
     val value = TestValueObject(
@@ -61,7 +62,7 @@ internal class ValueModelDefinitionTest {
         def.writeStorageBytes(value, bc::write)
         val new = def.readStorageBytes(bc.size, bc::read)
 
-        new shouldBe value
+        assertEquals(value, new)
     }
 
     @Test
@@ -73,9 +74,11 @@ internal class ValueModelDefinitionTest {
 
     @Test
     fun convertValuesToStringAndBack() {
-        def.fromString(
-            def.asString(value)
-        ) shouldBe value
+        expect(value) {
+            def.fromString(
+                def.asString(value)
+            )
+        }
     }
 
     @Test
@@ -87,7 +90,7 @@ internal class ValueModelDefinitionTest {
                 bool = true
             )
         )
-        val e = shouldThrow<ValidationUmbrellaException> {
+        val e = assertFailsWith<ValidationUmbrellaException> {
             def.validateWithRef(
                 newValue = TestValueObject(
                     int = 1000,
@@ -97,10 +100,10 @@ internal class ValueModelDefinitionTest {
             )
         }
 
-        e.exceptions.size shouldBe 1
+        expect(1) { e.exceptions.size }
 
         with(e.exceptions[0] as OutOfRangeException) {
-            this.reference!!.completeName shouldBe "int"
+            expect("int") { this.reference!!.completeName }
         }
     }
 
@@ -119,24 +122,29 @@ internal class ValueModelDefinitionTest {
     @Test
     fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, ValueModelDefinition.Model, { DefinitionsContext() })
-        checkYamlConversion(this.defMaxDefined, ValueModelDefinition.Model, { DefinitionsContext() }) shouldBe """
-        required: false
-        final: true
-        unique: true
-        dataModel: TestValueObject
-        minValue:
-          int: 0
-          dateTime: '2007-12-05T00:00'
-          bool: false
-        maxValue:
-          int: 999
-          dateTime: '2017-12-05T00:00'
-          bool: true
-        default:
-          int: 10
-          dateTime: '2010-10-10T00:00'
-          bool: true
 
-        """.trimIndent()
+        expect(
+            """
+            required: false
+            final: true
+            unique: true
+            dataModel: TestValueObject
+            minValue:
+              int: 0
+              dateTime: '2007-12-05T00:00'
+              bool: false
+            maxValue:
+              int: 999
+              dateTime: '2017-12-05T00:00'
+              bool: true
+            default:
+              int: 10
+              dateTime: '2010-10-10T00:00'
+              bool: true
+
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.defMaxDefined, ValueModelDefinition.Model, { DefinitionsContext() })
+        }
     }
 }

@@ -15,10 +15,11 @@ import maryk.json.JsonReader
 import maryk.json.JsonWriter
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
+import kotlin.test.expect
 
 internal class SetDefinitionTest {
     private val subDef = StringDefinition(
@@ -44,7 +45,7 @@ internal class SetDefinitionTest {
     fun validateRequired() {
         defMaxDefined.validateWithRef(newValue = null)
 
-        shouldThrow<RequiredException> {
+        assertFailsWith<RequiredException> {
             def.validateWithRef(newValue = null)
         }
     }
@@ -55,21 +56,21 @@ internal class SetDefinitionTest {
         def.validateWithRef(newValue = setOf("T", "T2", "T3"))
         def.validateWithRef(newValue = setOf("T", "T2", "T3", "T4"))
 
-        shouldThrow<NotEnoughItemsException> {
+        assertFailsWith<NotEnoughItemsException> {
             def.validateWithRef(newValue = setOf("T"))
         }
 
-        shouldThrow<TooManyItemsException> {
+        assertFailsWith<TooManyItemsException> {
             def.validateWithRef(newValue = setOf("T", "T2", "T3", "T4", "T5"))
         }
     }
 
     @Test
     fun validateSetContent() {
-        val e = shouldThrow<ValidationUmbrellaException> {
+        val e = assertFailsWith<ValidationUmbrellaException> {
             def.validateWithRef(newValue = setOf("T", "WRONG", "WRONG2"))
         }
-        e.exceptions.size shouldBe 2
+        expect(2) { e.exceptions.size }
 
         assertTrue(e.exceptions[0] is InvalidValueException)
         assertTrue(e.exceptions[1] is InvalidValueException)
@@ -88,12 +89,12 @@ internal class SetDefinitionTest {
         )
         def.writeTransportBytesWithKey(4u, value, cache, bc::write)
 
-        bc.bytes!!.toHex() shouldBe asHex
+        expect(asHex) { bc.bytes!!.toHex() }
 
         fun readKey() {
             val key = ProtoBuf.readKey(bc::read)
-            key.wireType shouldBe LENGTH_DELIMITED
-            key.tag shouldBe 4u
+            expect(LENGTH_DELIMITED) { key.wireType }
+            expect(4u) { key.tag }
         }
 
         fun readValue(set: Set<String>) = def.readTransportBytes(
@@ -108,7 +109,7 @@ internal class SetDefinitionTest {
         value.forEach {
             readKey()
             readValue(mutableSet)
-            mutableSet.contains(it) shouldBe true
+            assertTrue { mutableSet.contains(it) }
         }
     }
 
@@ -119,14 +120,14 @@ internal class SetDefinitionTest {
         var totalString = ""
         def.writeJsonValue(value, JsonWriter { totalString += it })
 
-        totalString shouldBe "[\"T\",\"T2\",\"T3\",\"T4\"]"
+        expect("""["T","T2","T3","T4"]""") { totalString }
 
         val iterator = totalString.iterator()
         val reader = JsonReader { iterator.nextChar() }
         reader.nextToken()
         val converted = def.readJson(reader)
 
-        converted shouldBe value
+        assertEquals(value, converted)
     }
 
     @Test
@@ -144,18 +145,22 @@ internal class SetDefinitionTest {
     @Test
     fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, SetDefinition.Model)
-        checkYamlConversion(this.defMaxDefined, SetDefinition.Model) shouldBe """
-        required: false
-        final: true
-        minSize: 2
-        maxSize: 4
-        valueDefinition: !String
-          required: true
-          final: false
-          unique: false
-          regEx: T.*
-        default: [T1, T2, T3]
+        expect(
+            """
+            required: false
+            final: true
+            minSize: 2
+            maxSize: 4
+            valueDefinition: !String
+              required: true
+              final: false
+              unique: false
+              regEx: T.*
+            default: [T1, T2, T3]
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.defMaxDefined, SetDefinition.Model)
+        }
     }
 }

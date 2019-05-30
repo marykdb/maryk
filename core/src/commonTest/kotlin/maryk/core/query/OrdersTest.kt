@@ -9,8 +9,9 @@ import maryk.core.query.orders.Orders
 import maryk.core.query.orders.ascending
 import maryk.core.query.orders.descending
 import maryk.test.models.SimpleMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.expect
 
 class OrdersTest {
     private val orders = Orders(
@@ -39,18 +40,22 @@ class OrdersTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(this.orders, Orders, { this.context }, ::compareRequest) shouldBe """
-        - !Desc value
-        - value
-        - !Asc
-        - !Desc
-        """.trimIndent()
+        expect(
+            """
+            - !Desc value
+            - value
+            - !Asc
+            - !Desc
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.orders, Orders, { this.context }, ::compareRequest)
+        }
     }
 
     private fun compareRequest(converted: Orders, original: Orders) {
         for ((first, second) in converted.orders.zip(original.orders)) {
-            first.propertyReference shouldBe second.propertyReference
-            first.direction shouldBe second.direction
+            assertEquals(second.propertyReference, first.propertyReference)
+            assertEquals(second.direction, first.direction)
         }
     }
 }

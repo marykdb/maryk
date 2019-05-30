@@ -11,10 +11,11 @@ import maryk.core.properties.references.Properties.modelDefinition
 import maryk.core.protobuf.WriteCache
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
-import maryk.test.shouldNotBe
-import maryk.test.shouldThrow
+import maryk.test.assertType
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNotEquals
+import kotlin.test.expect
 
 private object Properties : PropertyDefinitions() {
     val definition = add(1u, "test", StringDefinition())
@@ -39,9 +40,9 @@ internal class PropertyReferenceTest {
             )
         }
 
-        ref.resolveFromAny(values) shouldBe "±testValue"
+        expect("±testValue") { ref.resolveFromAny(values) }
 
-        shouldThrow<UnexpectedValueException> {
+        assertFailsWith<UnexpectedValueException> {
             ref.resolveFromAny(123)
         }
     }
@@ -50,25 +51,27 @@ internal class PropertyReferenceTest {
     fun unwrap() {
         val list = subRef.unwrap()
 
-        list[0].completeName shouldBe "embeddedObject"
-        list[1] shouldBe subRef
+        expect("embeddedObject") { list[0].completeName }
+        expect(subRef) { list[1] as ValueWithFlexBytesPropertyReference<*, *, *, *> }
     }
 
     @Test
     fun getCompleteName() {
-        ref.completeName shouldBe "test"
-        subRef.completeName shouldBe "embeddedObject.test"
+        expect("test") { ref.completeName }
+        expect("embeddedObject.test") { subRef.completeName }
     }
 
     @Test
     fun testHashCode() {
-        ref.hashCode() shouldBe "test".hashCode()
+        expect("test".hashCode()) { ref.hashCode() }
     }
 
     @Test
     fun testCompareTo() {
-        ref shouldBe definition.ref()
-        ref shouldNotBe modelDefinition.ref()
+        expect(definition.ref()) { ref }
+        assertNotEquals<IsPropertyReference<*, *, *>>(
+            modelDefinition.ref(), ref
+        )
     }
 
     @Test
@@ -81,9 +84,9 @@ internal class PropertyReferenceTest {
         )
         subRef.writeTransportBytes(cache, bc::write)
 
-        bc.bytes!!.toHex() shouldBe "0201"
+        expect("0201") { bc.bytes!!.toHex() }
 
-        Properties.getPropertyReferenceByBytes(bc.size, bc::read) shouldBe subRef
+        expect(subRef) { Properties.getPropertyReferenceByBytes(bc.size, bc::read) }
     }
 
     @Test
@@ -95,15 +98,17 @@ internal class PropertyReferenceTest {
         )
         subRef.writeStorageBytes(bc::write)
 
-        bc.bytes!!.toHex() shouldBe "1609"
+        expect("1609") { bc.bytes!!.toHex() }
 
-        Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) shouldBe subRef
+        expect(subRef) { Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) }
     }
 
     @Test
     fun createMatcher() {
         val matcher = subRef.toQualifierMatcher()
-        (matcher is QualifierExactMatcher) shouldBe true
-        (matcher as QualifierExactMatcher).qualifier.toHex() shouldBe "1609"
+
+        assertType<QualifierExactMatcher>(matcher).apply {
+            expect("1609") { qualifier.toHex() }
+        }
     }
 }

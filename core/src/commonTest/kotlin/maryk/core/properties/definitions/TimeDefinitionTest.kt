@@ -9,10 +9,10 @@ import maryk.lib.exceptions.ParseException
 import maryk.lib.time.Instant
 import maryk.lib.time.Time
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
+import kotlin.test.expect
 
 internal class TimeDefinitionTest {
     private val timesToTestMillis = arrayOf(
@@ -55,12 +55,12 @@ internal class TimeDefinitionTest {
     @Test
     fun convertMillisecondPrecisionValuesToStorageBytesAndBack() {
         val bc = ByteCollector()
-        for (it in arrayOf(Time.MAX_IN_MILLIS, Time.MIN)) {
+        for (time in arrayOf(Time.MAX_IN_MILLIS, Time.MIN)) {
             bc.reserve(
-                defMilli.calculateStorageByteLength(it)
+                defMilli.calculateStorageByteLength(time)
             )
-            defMilli.writeStorageBytes(it, bc::write)
-            defMilli.readStorageBytes(bc.size, bc::read) shouldBe it
+            defMilli.writeStorageBytes(time, bc::write)
+            expect(time) { defMilli.readStorageBytes(bc.size, bc::read) }
             bc.reset()
         }
     }
@@ -68,12 +68,12 @@ internal class TimeDefinitionTest {
     @Test
     fun convertSecondsPrecisionValuesToStorageBytesAndBack() {
         val bc = ByteCollector()
-        for (it in timesToTestSeconds) {
+        for (time in timesToTestSeconds) {
             bc.reserve(
-                def.calculateStorageByteLength(it)
+                def.calculateStorageByteLength(time)
             )
-            def.writeStorageBytes(it, bc::write)
-            def.readStorageBytes(bc.size, bc::read) shouldBe it
+            def.writeStorageBytes(time, bc::write)
+            expect(time) { def.readStorageBytes(bc.size, bc::read) }
             bc.reset()
         }
     }
@@ -83,10 +83,10 @@ internal class TimeDefinitionTest {
         val bc = ByteCollector()
         val cacheFailer = WriteCacheFailer()
 
-        for (it in timesToTestSeconds) {
-            bc.reserve(def.calculateTransportByteLength(it, cacheFailer))
-            def.writeTransportBytes(it, cacheFailer, bc::write)
-            def.readTransportBytes(bc.size, bc::read) shouldBe it
+        for (time in timesToTestSeconds) {
+            bc.reserve(def.calculateTransportByteLength(time, cacheFailer))
+            def.writeTransportBytes(time, cacheFailer, bc::write)
+            expect(time) { def.readTransportBytes(bc.size, bc::read) }
             bc.reset()
         }
     }
@@ -96,25 +96,25 @@ internal class TimeDefinitionTest {
         val bc = ByteCollector()
         val cacheFailer = WriteCacheFailer()
 
-        for (it in timesToTestMillis) {
-            bc.reserve(defMilli.calculateTransportByteLength(it, cacheFailer))
-            defMilli.writeTransportBytes(it, cacheFailer, bc::write)
-            defMilli.readTransportBytes(bc.size, bc::read) shouldBe it
+        for (time in timesToTestMillis) {
+            bc.reserve(defMilli.calculateTransportByteLength(time, cacheFailer))
+            defMilli.writeTransportBytes(time, cacheFailer, bc::write)
+            expect(time) { defMilli.readTransportBytes(bc.size, bc::read) }
             bc.reset()
         }
     }
 
     @Test
     fun convertValuesToStringAndBack() {
-        for (it in timesToTestMillis) {
-            val b = def.asString(it)
-            def.fromString(b) shouldBe it
+        for (time in timesToTestMillis) {
+            val b = def.asString(time)
+            expect(time) { def.fromString(b) }
         }
     }
 
     @Test
     fun invalidStringValueShouldThrowException() {
-        shouldThrow<ParseException> {
+        assertFailsWith<ParseException> {
             def.fromString("wrong")
         }
     }
@@ -134,22 +134,27 @@ internal class TimeDefinitionTest {
     @Test
     fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, TimeDefinition.Model)
-        checkYamlConversion(this.defMaxDefined, TimeDefinition.Model) shouldBe """
-        required: false
-        final: true
-        unique: true
-        precision: MILLIS
-        minValue: '00:00'
-        maxValue: '23:59:59.999'
-        default: '12:13:14'
-        fillWithNow: true
 
-        """.trimIndent()
+        expect(
+            """
+            required: false
+            final: true
+            unique: true
+            precision: MILLIS
+            minValue: '00:00'
+            maxValue: '23:59:59.999'
+            default: '12:13:14'
+            fillWithNow: true
+
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.defMaxDefined, TimeDefinition.Model)
+        }
     }
 
     @Test
     fun readNativeTimesToTime() {
-        this.def.fromNativeType(12345L) shouldBe Time(3, 25, 45)
-        this.def.fromNativeType(12346) shouldBe Time(3, 25, 46)
+        expect(Time(3, 25, 45)) { this.def.fromNativeType(12345L) }
+        expect(Time(3, 25, 46)) { this.def.fromNativeType(12346) }
     }
 }

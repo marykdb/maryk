@@ -1,9 +1,10 @@
 package maryk.core.properties.definitions
 
 import maryk.core.properties.exceptions.OutOfRangeException
-import maryk.test.shouldBe
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
+import kotlin.test.expect
 
 internal class IsComparableDefinitionTest {
     val test: String = "test"
@@ -16,19 +17,19 @@ internal class IsComparableDefinitionTest {
 
     @Test
     fun hasDefinedValues() {
-        def.unique shouldBe true
-        def.minValue shouldBe "bbb"
-        def.maxValue shouldBe "ddd"
+        assertTrue { def.unique }
+        expect("bbb") { def.minValue }
+        expect("ddd") { def.maxValue }
     }
 
     @Test
     fun validateWithValueRange() {
         def.validateWithRef(newValue = "ccc")
-        shouldThrow<OutOfRangeException> {
+        assertFailsWith<OutOfRangeException> {
             def.validateWithRef(newValue = "b")
         }
 
-        shouldThrow<OutOfRangeException> {
+        assertFailsWith<OutOfRangeException> {
             def.validateWithRef(newValue = "z")
         }
     }

@@ -7,8 +7,8 @@ import maryk.core.query.RequestContext
 import maryk.test.ByteCollector
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.TestMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class ContextualPropertyReferenceDefinitionTest {
     private val refsToTest = mapOf(
@@ -40,8 +40,8 @@ class ContextualPropertyReferenceDefinitionTest {
     fun convertString() {
         for ((toCompare, value) in refsToTest) {
             val b = def.asString(toCompare, this.context)
-            b shouldBe value
-            def.fromString(b, this.context) shouldBe toCompare
+            expect(value) { b }
+            expect(toCompare) { def.fromString(b, this.context) }
         }
     }
 }

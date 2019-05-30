@@ -9,13 +9,13 @@ import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
 import maryk.core.query.requests.scanChanges
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.test.assertType
 import maryk.test.models.Log
 import maryk.test.models.Severity.ERROR
 import maryk.test.models.Severity.INFO
 import maryk.test.runSuspendingTest
-import maryk.test.shouldBe
-import maryk.test.shouldBeOfType
 import kotlin.test.Test
+import kotlin.test.expect
 
 class InMemoryDataStoreScanChangesTest {
     private val dataStore = InMemoryDataStore()
@@ -35,7 +35,7 @@ class InMemoryDataStoreScanChangesTest {
                 Log.add(*logs)
             )
             addResponse.statuses.forEach { status ->
-                val response = shouldBeOfType<AddSuccess<Log>>(status)
+                val response = assertType<AddSuccess<Log>>(status)
                 keys.add(response.key)
                 if (response.version < lowestVersion) {
                     // Add lowest version for scan test
@@ -51,44 +51,54 @@ class InMemoryDataStoreScanChangesTest {
             Log.scanChanges(startKey = keys[2])
         )
 
-        scanResponse.changes.size shouldBe 3
+        expect(3) { scanResponse.changes.size }
 
         // Mind that Log is sorted in reverse so it goes back in time going forward
         scanResponse.changes[0].let {
-            it.changes shouldBe listOf(
-                VersionedChanges(version = lowestVersion, changes = listOf(
-                    Change(
-                        Log { message::ref } with "Something REALLY happened",
-                        Log { severity::ref } with INFO,
-                        Log { timestamp::ref } with DateTime(2018, 11, 14, 12, 33, 22, 111)
-                    )
-                ))
-            )
-            it.key shouldBe keys[2]
+            expect(
+                listOf(
+                    VersionedChanges(version = lowestVersion, changes = listOf(
+                        Change(
+                            Log { message::ref } with "Something REALLY happened",
+                            Log { severity::ref } with INFO,
+                            Log { timestamp::ref } with DateTime(2018, 11, 14, 12, 33, 22, 111)
+                        )
+                    ))
+                )
+            ) {
+                it.changes
+            }
+            expect(keys[2]) { it.key }
         }
         scanResponse.changes[1].let {
-            it.changes shouldBe listOf(
-                VersionedChanges(version = lowestVersion, changes = listOf(
-                    Change(
-                        Log { message::ref } with "Something else happened",
-                        Log { severity::ref } with INFO,
-                        Log { timestamp::ref } with DateTime(2018, 11, 14, 12, 0)
-                    )
-                ))
-            )
-            it.key shouldBe keys[1]
+            expect(
+                listOf(
+                    VersionedChanges(version = lowestVersion, changes = listOf(
+                        Change(
+                            Log { message::ref } with "Something else happened",
+                            Log { severity::ref } with INFO,
+                            Log { timestamp::ref } with DateTime(2018, 11, 14, 12, 0)
+                        )
+                    ))
+                )
+            ) { it.changes }
+            expect(keys[1]) { it.key }
         }
         scanResponse.changes[2].let {
-            it.changes shouldBe listOf(
-                VersionedChanges(version = lowestVersion, changes = listOf(
-                    Change(
-                        Log { message::ref } with "Something happened",
-                        Log { severity::ref } with INFO,
-                        Log { timestamp::ref } with DateTime(2018, 11, 14, 11, 22, 33, 40)
-                    )
-                ))
-            )
-            it.key shouldBe keys[0]
+            expect(
+                listOf(
+                    VersionedChanges(version = lowestVersion, changes = listOf(
+                        Change(
+                            Log { message::ref } with "Something happened",
+                            Log { severity::ref } with INFO,
+                            Log { timestamp::ref } with DateTime(2018, 11, 14, 11, 22, 33, 40)
+                        )
+                    ))
+                )
+            ) {
+                it.changes
+            }
+            expect(keys[0]) { it.key }
         }
     }
 
@@ -98,17 +108,17 @@ class InMemoryDataStoreScanChangesTest {
             Log.scanChanges(startKey = keys[2], order = descending)
         )
 
-        scanResponse.changes.size shouldBe 3
+        expect(3) { scanResponse.changes.size }
 
         // Mind that Log is sorted in reverse so it goes back in time going forward
-        scanResponse.changes[0].let {
-            it.key shouldBe keys[0]
+        scanResponse.changes[0].apply {
+            expect(keys[0]) { key }
         }
-        scanResponse.changes[1].let {
-            it.key shouldBe keys[1]
+        scanResponse.changes[1].apply {
+            expect(keys[1]) { key }
         }
-        scanResponse.changes[2].let {
-            it.key shouldBe keys[2]
+        scanResponse.changes[2].apply {
+            expect(keys[2]) { key }
         }
     }
 
@@ -118,20 +128,24 @@ class InMemoryDataStoreScanChangesTest {
             Log.scanChanges(startKey = keys[2], limit = 1u)
         )
 
-        scanResponse.changes.size shouldBe 1
+        expect(1) { scanResponse.changes.size }
 
         // Mind that Log is sorted in reverse so it goes back in time going forward
         scanResponse.changes[0].let {
-            it.changes shouldBe listOf(
-                VersionedChanges(version = lowestVersion, changes = listOf(
-                    Change(
-                        Log { message::ref } with "Something REALLY happened",
-                        Log { severity::ref } with INFO,
-                        Log { timestamp::ref } with DateTime(2018, 11, 14, 12, 33, 22, 111)
-                    )
-                ))
-            )
-            it.key shouldBe keys[2]
+            expect(
+                listOf(
+                    VersionedChanges(version = lowestVersion, changes = listOf(
+                        Change(
+                            Log { message::ref } with "Something REALLY happened",
+                            Log { severity::ref } with INFO,
+                            Log { timestamp::ref } with DateTime(2018, 11, 14, 12, 33, 22, 111)
+                        )
+                    ))
+                )
+            ) {
+                it.changes
+            }
+            expect(keys[2]) { it.key }
         }
     }
 
@@ -141,7 +155,7 @@ class InMemoryDataStoreScanChangesTest {
             Log.scanChanges(startKey = keys[2], toVersion = lowestVersion - 1uL)
         )
 
-        scanResponse.changes.size shouldBe 0
+        expect(0) { scanResponse.changes.size }
     }
 
     @Test
@@ -150,7 +164,7 @@ class InMemoryDataStoreScanChangesTest {
             Log.scanChanges(startKey = keys[2], fromVersion = lowestVersion + 1uL)
         )
 
-        scanResponse.changes.size shouldBe 0
+        expect(0) { scanResponse.changes.size }
     }
 
     @Test
@@ -166,18 +180,20 @@ class InMemoryDataStoreScanChangesTest {
             )
         )
 
-        scanResponse.changes.size shouldBe 3
+        expect(3) { scanResponse.changes.size }
 
         // Mind that Log is sorted in reverse so it goes back in time going forward
         scanResponse.changes[0].let {
-            it.changes shouldBe listOf(
-                VersionedChanges(version = lowestVersion, changes = listOf(
-                    Change(
-                        Log { timestamp::ref } with DateTime(2018, 11, 14, 12, 33, 22, 111)
-                    )
-                ))
-            )
-            it.key shouldBe keys[2]
+            expect(
+                listOf(
+                    VersionedChanges(version = lowestVersion, changes = listOf(
+                        Change(
+                            Log { timestamp::ref } with DateTime(2018, 11, 14, 12, 33, 22, 111)
+                        )
+                    ))
+                )
+            ) { it.changes }
+            expect(keys[2]) { it.key }
         }
     }
 }

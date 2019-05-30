@@ -22,9 +22,9 @@ import maryk.test.models.TestMarykModel.Properties.double
 import maryk.test.models.TestMarykModel.Properties.enum
 import maryk.test.models.TestMarykModel.Properties.int
 import maryk.test.models.TestMarykModel.Properties.uint
-import maryk.test.shouldBe
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
+import kotlin.test.expect
 
 class OrderToScanIndexKtTest {
     private val multipleIndex = Multiple(
@@ -35,265 +35,359 @@ class OrderToScanIndexKtTest {
 
     @Test
     fun defaultOrderToTableScan() {
-        TestMarykModel.orderToScanType(ascending, emptyList()) shouldBe TableScan(direction = ASC)
-        TestMarykModel.orderToScanType(descending, emptyList()) shouldBe TableScan(direction = DESC)
+        expect(TableScan(direction = ASC)) { TestMarykModel.orderToScanType(ascending, emptyList()) }
+        expect(TableScan(direction = DESC)) { TestMarykModel.orderToScanType(descending, emptyList()) }
 
-        TestMarykModel.orderToScanType(Orders(ascending), emptyList()) shouldBe TableScan(direction = ASC)
+        expect(TableScan(direction = ASC)) { TestMarykModel.orderToScanType(Orders(ascending), emptyList()) }
     }
 
     @Test
     fun intOrderToIndexScan() {
-        TestMarykModel.orderToScanType(
-            int.ref().ascending(),
-            emptyList()
-        ) shouldBe IndexScan(
-            int.ref(),
-            direction = ASC
-        )
+        expect(
+            IndexScan(
+                int.ref(),
+                direction = ASC
+            )
+        ) {
+            TestMarykModel.orderToScanType(
+                int.ref().ascending(),
+                emptyList()
+            )
+        }
 
-        TestMarykModel.orderToScanType(
-            int.ref().descending(),
-            emptyList()
-        ) shouldBe IndexScan(
-            int.ref(),
-            direction = DESC
-        )
 
-        TestMarykModel.orderToScanType(
-            Orders(int.ref().ascending()),
-            emptyList()
-        ) shouldBe IndexScan(
-            int.ref(),
-            direction = ASC
-        )
+        expect(
+            IndexScan(
+                int.ref(),
+                direction = DESC
+            )
+        ) {
+            TestMarykModel.orderToScanType(
+                int.ref().descending(),
+                emptyList()
+            )
+        }
 
-        TestMarykModel.orderToScanType(
-            Orders(int.ref().ascending(), ascending),
-            emptyList()
-        ) shouldBe IndexScan(
-            int.ref(),
-            direction = ASC
-        )
+        expect(
+            IndexScan(
+                int.ref(),
+                direction = ASC
+            )
+        ) {
+            TestMarykModel.orderToScanType(
+                Orders(int.ref().ascending()),
+                emptyList()
+            )
+        }
+
+
+        expect(
+            IndexScan(
+                int.ref(),
+                direction = ASC
+            )
+        ) {
+            TestMarykModel.orderToScanType(
+                Orders(int.ref().ascending(), ascending),
+                emptyList()
+            )
+        }
+
     }
 
     @Test
     fun doubleOrderToIndexScan() {
-        TestMarykModel.orderToScanType(
-            double.ref().ascending(),
-            emptyList()
-        ) shouldBe IndexScan(
-            Reversed(double.ref()),
-            direction = DESC
-        )
+        expect(
+            IndexScan(
+                Reversed(double.ref()),
+                direction = DESC
+            )
+        ) {
+            TestMarykModel.orderToScanType(
+                double.ref().ascending(),
+                emptyList()
+            )
+        }
 
-        TestMarykModel.orderToScanType(
-            double.ref().descending(),
-            emptyList()
-        ) shouldBe IndexScan(
-            Reversed(double.ref()),
-            direction = ASC
-        )
+
+        expect(
+            IndexScan(
+                Reversed(double.ref()),
+                direction = ASC
+            )
+        ) {
+            TestMarykModel.orderToScanType(
+                double.ref().descending(),
+                emptyList()
+            )
+        }
     }
 
     @Test
     fun dateTimeOrderToIndexScan() {
-        TestMarykModel.orderToScanType(
-            dateTime.ref().ascending(),
-            emptyList()
-        ) shouldBe IndexScan(
-            multipleIndex,
-            direction = DESC
-        )
+        expect(
+            IndexScan(
+                multipleIndex,
+                direction = DESC
+            )
+        ) {
 
-        TestMarykModel.orderToScanType(
-            dateTime.ref().descending(),
-            emptyList()
-        ) shouldBe IndexScan(
-            multipleIndex,
-            direction = ASC
-        )
+            TestMarykModel.orderToScanType(
+                dateTime.ref().ascending(),
+                emptyList()
+            )
+        }
+
+        expect(
+            IndexScan(
+                multipleIndex,
+                direction = ASC
+            )
+        ) {
+            TestMarykModel.orderToScanType(
+                dateTime.ref().descending(),
+                emptyList()
+            )
+        }
     }
 
     @Test
     fun dateTimeEnumOrderToIndexScan() {
-        TestMarykModel.orderToScanType(
-            Orders(
-                dateTime.ref().descending(),
-                enum.ref().ascending()
-            ),
-            emptyList()
-        ) shouldBe IndexScan(
-            multipleIndex,
-            direction = ASC
-        )
+        expect(
+            IndexScan(
+                multipleIndex,
+                direction = ASC
+            )
+        ) {
+            TestMarykModel.orderToScanType(
+                Orders(
+                    dateTime.ref().descending(),
+                    enum.ref().ascending()
+                ),
+                emptyList()
+            )
+        }
 
-        TestMarykModel.orderToScanType(
-            Orders(
-                dateTime.ref().ascending(),
-                enum.ref().descending()
-            ),
-            emptyList()
-        ) shouldBe IndexScan(
-            multipleIndex,
-            direction = DESC
-        )
+        expect(
+            IndexScan(
+                multipleIndex,
+                direction = DESC
+            )
+        ) {
+            TestMarykModel.orderToScanType(
+                Orders(
+                    dateTime.ref().ascending(),
+                    enum.ref().descending()
+                ),
+                emptyList()
+            )
+        }
     }
 
     @Test
     fun dateTimeEnumIntOrderToIndexScan() {
-        TestMarykModel.orderToScanType(
-            Orders(
-                dateTime.ref().descending(),
-                enum.ref().ascending(),
-                int.ref().ascending()
-            ),
-            emptyList()
-        ) shouldBe IndexScan(
-            multipleIndex,
-            direction = ASC
-        )
+        expect(
+            IndexScan(
+                multipleIndex,
+                direction = ASC
+            )
+        ) {
+            TestMarykModel.orderToScanType(
+                Orders(
+                    dateTime.ref().descending(),
+                    enum.ref().ascending(),
+                    int.ref().ascending()
+                ),
+                emptyList()
+            )
+        }
 
-        TestMarykModel.orderToScanType(
-            Orders(
-                dateTime.ref().descending(),
-                enum.ref().ascending(),
-                int.ref().ascending(),
-                ascending
-            ),
-            emptyList()
-        ) shouldBe IndexScan(
-            multipleIndex,
-            direction = ASC
-        )
+        expect(
+            IndexScan(
+                multipleIndex,
+                direction = ASC
+            )
+        ) {
+            TestMarykModel.orderToScanType(
+                Orders(
+                    dateTime.ref().descending(),
+                    enum.ref().ascending(),
+                    int.ref().ascending(),
+                    ascending
+                ),
+                emptyList()
+            )
+        }
 
-        TestMarykModel.orderToScanType(
-            Orders(
-                dateTime.ref().ascending(),
-                enum.ref().descending(),
-                int.ref().descending()
-            ),
-            emptyList()
-        ) shouldBe IndexScan(
-            multipleIndex,
-            direction = DESC
-        )
 
-        TestMarykModel.orderToScanType(
-            Orders(
-                dateTime.ref().ascending(),
-                enum.ref().descending(),
-                int.ref().descending(),
-                descending
-            ),
-            emptyList()
-        ) shouldBe IndexScan(
-            multipleIndex,
-            direction = DESC
-        )
+        expect(
+            IndexScan(
+                multipleIndex,
+                direction = DESC
+            )
+        ) {
+            TestMarykModel.orderToScanType(
+                Orders(
+                    dateTime.ref().ascending(),
+                    enum.ref().descending(),
+                    int.ref().descending()
+                ),
+                emptyList()
+            )
+        }
+
+        expect(
+            IndexScan(
+                multipleIndex,
+                direction = DESC
+            )
+        ) {
+            TestMarykModel.orderToScanType(
+                Orders(
+                    dateTime.ref().ascending(),
+                    enum.ref().descending(),
+                    int.ref().descending(),
+                    descending
+                ),
+                emptyList()
+            )
+        }
     }
 
     @Test
     fun dateTimeEnumIntOrderToIndexScanWithEqualPairs() {
-        TestMarykModel.orderToScanType(
-            Orders(
-                dateTime.ref().descending(),
-                int.ref().ascending()
-            ),
-            listOf(
-                enum.ref() with V1
+        expect(
+            IndexScan(
+                multipleIndex,
+                direction = ASC
             )
-        ) shouldBe IndexScan(
-            multipleIndex,
-            direction = ASC
-        )
+        ) {
+            TestMarykModel.orderToScanType(
+                Orders(
+                    dateTime.ref().descending(),
+                    int.ref().ascending()
+                ),
+                listOf(
+                    enum.ref() with V1
+                )
+            )
+        }
 
-        TestMarykModel.orderToScanType(
-            Orders(
-                dateTime.ref().descending(),
-                enum.ref().ascending(),
-                ascending
-            ),
-            listOf(
-                int.ref() with 4
-            )
-        ) shouldBe IndexScan(
-            multipleIndex,
-            direction = ASC
-        )
 
-        TestMarykModel.orderToScanType(
-            Orders(
-                enum.ref().descending(),
-                int.ref().descending()
-            ),
-            listOf(
-                dateTime.ref() with DateTime(2018, 5, 4)
+        expect(
+            IndexScan(
+                multipleIndex,
+                direction = ASC
             )
-        ) shouldBe IndexScan(
-            multipleIndex,
-            direction = DESC
-        )
+        ) {
+            TestMarykModel.orderToScanType(
+                Orders(
+                    dateTime.ref().descending(),
+                    enum.ref().ascending(),
+                    ascending
+                ),
+                listOf(
+                    int.ref() with 4
+                )
+            )
+        }
 
-        TestMarykModel.orderToScanType(
-            Orders(
-                enum.ref().ascending(),
-                int.ref().ascending(),
-                ascending
-            ),
-            listOf(
-                dateTime.ref() with DateTime(2018, 5, 4)
+
+        expect(
+            IndexScan(
+                multipleIndex,
+                direction = DESC
             )
-        ) shouldBe IndexScan(
-            multipleIndex,
-            direction = ASC
-        )
+        ) {
+            TestMarykModel.orderToScanType(
+                Orders(
+                    enum.ref().descending(),
+                    int.ref().descending()
+                ),
+                listOf(
+                    dateTime.ref() with DateTime(2018, 5, 4)
+                )
+            )
+        }
+
+
+        expect(
+            IndexScan(
+                multipleIndex,
+                direction = ASC
+            )
+        ) {
+            TestMarykModel.orderToScanType(
+                Orders(
+                    enum.ref().ascending(),
+                    int.ref().ascending(),
+                    ascending
+                ),
+                listOf(
+                    dateTime.ref() with DateTime(2018, 5, 4)
+                )
+            )
+        }
+
     }
 
     @Test
     fun defaultOrdersToIndexScanWithEqualPairs() {
-        TestMarykModel.orderToScanType(
-            Orders(
-                uint.ref().ascending(),
-                bool.ref().ascending(),
-                enum.ref().ascending()
-            ),
-            emptyList()
-        ) shouldBe TableScan(
-            direction = ASC
-        )
-
-        TestMarykModel.orderToScanType(
-            Orders(
-                uint.ref().descending()
-            ),
-            emptyList()
-        ) shouldBe TableScan(
-            direction = DESC
-        )
-
-        TestMarykModel.orderToScanType(
-            Orders(
-                uint.ref().ascending(),
-                enum.ref().ascending()
-            ),
-            listOf(
-                bool.ref() with true
+        expect(
+            TableScan(
+                direction = ASC
             )
-        ) shouldBe TableScan(
-            direction = ASC
-        )
+        ) {
+            TestMarykModel.orderToScanType(
+                Orders(
+                    uint.ref().ascending(),
+                    bool.ref().ascending(),
+                    enum.ref().ascending()
+                ),
+                emptyList()
+            )
+        }
+
+        expect(
+            TableScan(
+                direction = DESC
+            )
+        ) {
+            TestMarykModel.orderToScanType(
+                Orders(
+                    uint.ref().descending()
+                ),
+                emptyList()
+            )
+        }
+
+        expect(
+            TableScan(
+                direction = ASC
+            )
+        ) {
+            TestMarykModel.orderToScanType(
+                Orders(
+                    uint.ref().ascending(),
+                    enum.ref().ascending()
+                ),
+                listOf(
+                    bool.ref() with true
+                )
+            )
+        }
     }
 
     @Test
     fun orderNoIndexFound() {
-        shouldThrow<RequestException> {
+        assertFailsWith<RequestException> {
             TestMarykModel.orderToScanType(
                 bool.ref().ascending(),
                 emptyList()
             )
         }
 
-        shouldThrow<RequestException> {
+        assertFailsWith<RequestException> {
             TestMarykModel.orderToScanType(
                 Orders(
                     dateTime.ref().ascending(),
@@ -306,21 +400,21 @@ class OrderToScanIndexKtTest {
 
     @Test
     fun wrongTableOrder() {
-        shouldThrow<RequestException> {
+        assertFailsWith<RequestException> {
             TestMarykModel.orderToScanType(
                 Orders(int.ref().ascending(), descending),
                 emptyList()
             )
         }
 
-        shouldThrow<RequestException> {
+        assertFailsWith<RequestException> {
             TestMarykModel.orderToScanType(
                 Orders(double.ref().descending(), descending),
                 emptyList()
             )
         }
 
-        shouldThrow<RequestException> {
+        assertFailsWith<RequestException> {
             TestMarykModel.orderToScanType(
                 Orders(
                     dateTime.ref().ascending(),
@@ -330,7 +424,7 @@ class OrderToScanIndexKtTest {
             )
         }
 
-        shouldThrow<RequestException> {
+        assertFailsWith<RequestException> {
             TestMarykModel.orderToScanType(
                 Orders(
                     dateTime.ref().ascending(),
@@ -341,7 +435,7 @@ class OrderToScanIndexKtTest {
             )
         }
 
-        shouldThrow<RequestException> {
+        assertFailsWith<RequestException> {
             TestMarykModel.orderToScanType(
                 Orders(
                     dateTime.ref().ascending(),
@@ -353,7 +447,7 @@ class OrderToScanIndexKtTest {
             )
         }
 
-        shouldThrow<RequestException> {
+        assertFailsWith<RequestException> {
             TestMarykModel.orderToScanType(
                 Orders(
                     enum.ref().descending(),

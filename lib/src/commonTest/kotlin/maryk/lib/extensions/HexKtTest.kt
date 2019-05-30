@@ -1,36 +1,37 @@
 package maryk.lib.extensions
 
 import maryk.lib.exceptions.ParseException
-import maryk.test.shouldBe
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
+import kotlin.test.expect
 
 internal class HexKtTest {
     private val bytes = byteArrayOf(0, -1, 88)
 
     @Test
     fun testToHexConversion() {
-        bytes.toHex() shouldBe "00ff58"
+        expect("00ff58") { bytes.toHex() }
 
-        byteArrayOf(0, 0, 0, -1, 88).toHex(true) shouldBe "ff58"
-        byteArrayOf(4, 77).toHex(true) shouldBe "044d"
-        byteArrayOf(0, 0, 0).toHex(true) shouldBe ""
+        expect("ff58") { byteArrayOf(0, 0, 0, -1, 88).toHex(true) }
+        expect("044d") { byteArrayOf(4, 77).toHex(true) }
+        expect("") { byteArrayOf(0, 0, 0).toHex(true) }
     }
 
     @Test
     fun testFromHexConversion() {
-        bytes contentEquals initByteArrayByHex("00ff58") shouldBe true
-        bytes contentEquals initByteArrayByHex("00FF58") shouldBe true
+        assertTrue { bytes contentEquals initByteArrayByHex("00ff58") }
+        assertTrue { bytes contentEquals initByteArrayByHex("00FF58") }
     }
 
     @Test
     fun testHexConversionBothWays() {
-        bytes contentEquals initByteArrayByHex(bytes.toHex()) shouldBe true
+        assertTrue { bytes contentEquals initByteArrayByHex(bytes.toHex()) }
     }
 
     @Test
     fun testFromInvalidHexConversion() {
-        shouldThrow<ParseException> {
+        assertFailsWith<ParseException> {
             bytes contentEquals initByteArrayByHex("wrong")
         }
     }

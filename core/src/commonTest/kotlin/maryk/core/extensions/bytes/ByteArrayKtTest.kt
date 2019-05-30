@@ -3,8 +3,8 @@ package maryk.core.extensions.bytes
 import maryk.lib.bytes.Base64
 import maryk.lib.extensions.compare.compareTo
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 internal class ByteArrayKtTest {
     private val bytesToTest = arrayOf(
@@ -21,7 +21,7 @@ internal class ByteArrayKtTest {
             bc.reserve(it.size)
             it.writeBytes(bc::write)
 
-            initByteArray(it.size, bc::read).compareTo(it) shouldBe 0
+            expect(0) { initByteArray(it.size, bc::read).compareTo(it) }
             bc.reset()
         }
     }

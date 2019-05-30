@@ -14,10 +14,11 @@ import maryk.json.JsonReader
 import maryk.json.JsonWriter
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
-import maryk.test.shouldBeOfType
-import maryk.test.shouldThrow
+import maryk.test.assertType
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.expect
 
 internal class MapDefinitionWithMapTest {
     private val intDef = NumberDefinition(
@@ -48,7 +49,7 @@ internal class MapDefinitionWithMapTest {
 
     @Test
     fun validateMapContent() {
-        val e = shouldThrow<ValidationUmbrellaException> {
+        val e = assertFailsWith<ValidationUmbrellaException> {
             def.validateWithRef(
                 newValue = mapOf(
                     12 to mapOf(
@@ -64,16 +65,24 @@ internal class MapDefinitionWithMapTest {
                 )
             )
         }
-        e.exceptions.size shouldBe 2
+        expect(2) { e.exceptions.size }
 
-        shouldBeOfType<ValidationUmbrellaException>(e.exceptions[0]).let { se ->
-            shouldBeOfType<InvalidValueException>(se.exceptions[0]).reference!!.completeName shouldBe "@12.@40"
-            shouldBeOfType<OutOfRangeException>(se.exceptions[1]).reference!!.completeName shouldBe "@12.#1323"
-            shouldBeOfType<OutOfRangeException>(se.exceptions[2]).reference!!.completeName shouldBe "@12.#2938"
+        assertType<ValidationUmbrellaException>(e.exceptions[0]).let { se ->
+            expect("@12.@40") {
+                assertType<InvalidValueException>(se.exceptions[0]).reference!!.completeName
+            }
+            expect("@12.#1323") {
+                assertType<OutOfRangeException>(se.exceptions[1]).reference!!.completeName
+            }
+            expect("@12.#2938") {
+                assertType<OutOfRangeException>(se.exceptions[2]).reference!!.completeName
+            }
         }
 
-        shouldBeOfType<ValidationUmbrellaException>(e.exceptions[1]).let { se2 ->
-            shouldBeOfType<InvalidValueException>(se2.exceptions[0]).reference!!.completeName shouldBe "@13.@41"
+        assertType<ValidationUmbrellaException>(e.exceptions[1]).apply {
+            expect("@13.@41") {
+                assertType<InvalidValueException>(exceptions[0]).reference!!.completeName
+            }
         }
     }
 
@@ -87,12 +96,14 @@ internal class MapDefinitionWithMapTest {
         )
         def.writeTransportBytesWithKey(4u, value, cache, bc::write)
 
-        bc.bytes!!.toHex() shouldBe "220f0818120b08021207237477656c7665220f083c120b0804120723746869727479221108c801120c080612082368756e64726564221208d00f120d080812092374686f7573616e64"
+        expect("220f0818120b08021207237477656c7665220f083c120b0804120723746869727479221108c801120c080612082368756e64726564221208d00f120d080812092374686f7573616e64") {
+            bc.bytes!!.toHex()
+        }
 
         fun readKey() {
             val key = ProtoBuf.readKey(bc::read)
-            key.wireType shouldBe LENGTH_DELIMITED
-            key.tag shouldBe 4u
+            expect(LENGTH_DELIMITED) { key.wireType }
+            expect(4u) { key.tag }
         }
 
         fun readValue(map: Map<Int, Map<Int, String>>) {
@@ -105,7 +116,7 @@ internal class MapDefinitionWithMapTest {
         for (it in this.value) {
             readKey()
             readValue(mutableMap)
-            mutableMap[it.key] shouldBe it.value
+            expect(it.value) { mutableMap[it.key] }
         }
     }
 
@@ -114,14 +125,17 @@ internal class MapDefinitionWithMapTest {
         var totalString = ""
         def.writeJsonValue(value, JsonWriter { totalString += it })
 
-        totalString shouldBe """{"12":{"1":"#twelve"},"30":{"2":"#thirty"},"100":{"3":"#hundred"},"1000":{"4":"#thousand"}}"""
+        assertEquals(
+            """{"12":{"1":"#twelve"},"30":{"2":"#thirty"},"100":{"3":"#hundred"},"1000":{"4":"#thousand"}}""",
+            totalString
+        )
 
         val iterator = totalString.iterator()
         val reader = JsonReader { iterator.nextChar() }
         reader.nextToken()
         val converted = def.readJson(reader)
 
-        converted shouldBe this.value
+        assertEquals(this.value, converted)
     }
 
     @Test
@@ -136,34 +150,38 @@ internal class MapDefinitionWithMapTest {
 
     @Test
     fun convertDefinitionToYAMLAndBack() {
-        checkYamlConversion(this.def, MapDefinition.Model) shouldBe """
-        required: true
-        final: false
-        minSize: 2
-        maxSize: 4
-        keyDefinition: !Number
-          required: true
-          final: false
-          unique: false
-          type: SInt32
-          maxValue: 1000
-          random: false
-        valueDefinition: !Map
-          required: true
-          final: false
-          keyDefinition: !Number
+        expect(
+            """
             required: true
             final: false
-            unique: false
-            type: SInt32
-            maxValue: 1000
-            random: false
-          valueDefinition: !String
-            required: true
-            final: false
-            unique: false
-            regEx: '#.*'
+            minSize: 2
+            maxSize: 4
+            keyDefinition: !Number
+              required: true
+              final: false
+              unique: false
+              type: SInt32
+              maxValue: 1000
+              random: false
+            valueDefinition: !Map
+              required: true
+              final: false
+              keyDefinition: !Number
+                required: true
+                final: false
+                unique: false
+                type: SInt32
+                maxValue: 1000
+                random: false
+              valueDefinition: !String
+                required: true
+                final: false
+                unique: false
+                regEx: '#.*'
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.def, MapDefinition.Model)
+        }
     }
 }

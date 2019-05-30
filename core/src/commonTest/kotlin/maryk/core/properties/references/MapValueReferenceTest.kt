@@ -6,11 +6,11 @@ import maryk.core.protobuf.WriteCache
 import maryk.lib.extensions.toHex
 import maryk.lib.time.Time
 import maryk.test.ByteCollector
+import maryk.test.assertType
 import maryk.test.models.TestMarykModel
-import maryk.test.shouldBe
-import maryk.test.shouldBeOfType
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
+import kotlin.test.expect
 
 class MapValueReferenceTest {
     private val valReference = TestMarykModel { map refAt Time(15, 22, 55) }
@@ -25,9 +25,9 @@ class MapValueReferenceTest {
             Time(2, 14, 52) to "wrong again"
         )
 
-        this.valReference.resolveFromAny(map) shouldBe "right2"
+        expect("right2") { this.valReference.resolveFromAny(map) }
 
-        shouldThrow<UnexpectedValueException> {
+        assertFailsWith<UnexpectedValueException> {
             this.valReference.resolveFromAny("wrongInput")
         }
     }
@@ -42,14 +42,14 @@ class MapValueReferenceTest {
             )
             valReference.writeTransportBytes(cache, ::write)
 
-            TestMarykModel.getPropertyReferenceByBytes(size, ::read) shouldBe valReference
+            expect(valReference) { TestMarykModel.getPropertyReferenceByBytes(size, ::read) }
         }
     }
 
     @Test
     fun testStringConversion() {
-        valReference.completeName shouldBe "map.@15:22:55"
-        TestMarykModel.getPropertyReferenceByName(valReference.completeName) shouldBe valReference
+        expect("map.@15:22:55") { valReference.completeName }
+        expect(valReference) { TestMarykModel.getPropertyReferenceByName(valReference.completeName) }
     }
 
     @Test
@@ -60,9 +60,9 @@ class MapValueReferenceTest {
             )
             valReference.writeStorageBytes(::write)
 
-            bytes!!.toHex() shouldBe "540300d84f"
+            expect("540300d84f") { bytes!!.toHex() }
 
-            TestMarykModel.Properties.getPropertyReferenceByStorageBytes(size, ::read) shouldBe valReference
+            expect(valReference) { TestMarykModel.Properties.getPropertyReferenceByStorageBytes(size, ::read) }
         }
 
     }
@@ -75,9 +75,9 @@ class MapValueReferenceTest {
             )
             subReference.writeStorageBytes(::write)
 
-            bytes!!.toHex() shouldBe "661e540300d84f"
+            expect("661e540300d84f") { bytes!!.toHex() }
 
-            TestMarykModel.Properties.getPropertyReferenceByStorageBytes(size, ::read) shouldBe subReference
+            expect(subReference) { TestMarykModel.Properties.getPropertyReferenceByStorageBytes(size, ::read) }
         }
     }
 
@@ -85,6 +85,6 @@ class MapValueReferenceTest {
     fun createValueRefQualifierMatcher() {
         val matcher = subReference.toQualifierMatcher()
 
-        shouldBeOfType<QualifierExactMatcher>(matcher).qualifier.toHex() shouldBe "661e540300d84f"
+        expect("661e540300d84f") { assertType<QualifierExactMatcher>(matcher).qualifier.toHex() }
     }
 }

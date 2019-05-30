@@ -7,8 +7,8 @@ import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.collectRequest
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class CollectRequestTest {
     private val context = RequestContext(mapOf(
@@ -27,12 +27,16 @@ class CollectRequestTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(collectRequest, CollectRequest, { this.context }) shouldBe """
-        testName: !Get
-          from: SimpleMarykModel
-          keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
-          filterSoftDeleted: true
+        expect(
+            """
+            testName: !Get
+              from: SimpleMarykModel
+              keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
+              filterSoftDeleted: true
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(collectRequest, CollectRequest, { this.context })
+        }
     }
 }

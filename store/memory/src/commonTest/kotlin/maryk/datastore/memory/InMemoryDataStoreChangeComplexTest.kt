@@ -13,16 +13,17 @@ import maryk.core.query.requests.change
 import maryk.core.query.requests.get
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.Success
+import maryk.test.assertType
 import maryk.test.models.ComplexModel
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.MarykTypeEnum
 import maryk.test.models.MarykTypeEnum.T1
 import maryk.test.models.MarykTypeEnum.T3
 import maryk.test.runSuspendingTest
-import maryk.test.shouldBe
-import maryk.test.shouldBeOfType
-import maryk.test.shouldNotBe
 import kotlin.test.Test
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.expect
 
 class InMemoryDataStoreChangeComplexTest {
     private val dataStore = InMemoryDataStore()
@@ -86,7 +87,7 @@ class InMemoryDataStoreChangeComplexTest {
             )
 
             addResponse.statuses.forEach { status ->
-                val response = shouldBeOfType<AddSuccess<ComplexModel>>(status)
+                val response = assertType<AddSuccess<ComplexModel>>(status)
                 keys.add(response.key)
                 lastVersions.add(response.version)
             }
@@ -103,9 +104,9 @@ class InMemoryDataStoreChangeComplexTest {
             )
         )
 
-        changeResponse.statuses.size shouldBe 1
+        expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = shouldBeOfType<Success<*>>(status)
+            val success = assertType<Success<*>>(status)
             shouldBeRecent(success.version, 1000uL)
         }
 
@@ -113,9 +114,9 @@ class InMemoryDataStoreChangeComplexTest {
             ComplexModel.get(keys[0])
         )
 
-        getResponse.values.size shouldBe 1
+        expect(1) { getResponse.values.size }
 
-        getResponse.values.first().values { multi } shouldBe null
+        assertNull(getResponse.values.first().values { multi })
     }
 
     @Test
@@ -128,9 +129,9 @@ class InMemoryDataStoreChangeComplexTest {
             )
         )
 
-        changeResponse.statuses.size shouldBe 1
+        expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = shouldBeOfType<Success<*>>(status)
+            val success = assertType<Success<*>>(status)
             shouldBeRecent(success.version, 1000uL)
         }
 
@@ -138,8 +139,8 @@ class InMemoryDataStoreChangeComplexTest {
             ComplexModel.get(keys[2])
         )
 
-        getResponse.values.size shouldBe 1
-        getResponse.values.first().values { mapIntObject } shouldBe null
+        expect(1) { getResponse.values.size }
+        assertNull(getResponse.values.first().values { mapIntObject })
     }
 
     @Test
@@ -152,9 +153,9 @@ class InMemoryDataStoreChangeComplexTest {
             )
         )
 
-        changeResponse.statuses.size shouldBe 1
+        expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = shouldBeOfType<Success<*>>(status)
+            val success = assertType<Success<*>>(status)
             shouldBeRecent(success.version, 1000uL)
         }
 
@@ -162,11 +163,11 @@ class InMemoryDataStoreChangeComplexTest {
             ComplexModel.get(keys[2])
         )
 
-        getResponse.values.size shouldBe 1
-        getResponse.values.first().values { mapIntObject }.let {
-            it shouldNotBe null
-            it?.size shouldBe 1
-            it?.get(2u) shouldBe null
+        expect(1) { getResponse.values.size }
+        getResponse.values.first().values { mapIntObject }.let { map ->
+            assertNotNull(map)
+            expect(1) { map.size }
+            assertNull(map[2u])
         }
     }
 
@@ -180,9 +181,9 @@ class InMemoryDataStoreChangeComplexTest {
             )
         )
 
-        changeResponse.statuses.size shouldBe 1
+        expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = shouldBeOfType<Success<*>>(status)
+            val success = assertType<Success<*>>(status)
             shouldBeRecent(success.version, 1000uL)
         }
 
@@ -190,11 +191,11 @@ class InMemoryDataStoreChangeComplexTest {
             ComplexModel.get(keys[3])
         )
 
-        getResponse.values.size shouldBe 1
+        expect(1) { getResponse.values.size }
         getResponse.values.first().values { mapIntObject }.let {
-            it shouldNotBe null
-            it?.size shouldBe 2
-            it?.get(1u) shouldBe EmbeddedMarykModel("v1")
+            assertNotNull(it)
+            expect(2) { it.size }
+            expect(EmbeddedMarykModel("v1")) { it[1u] }
         }
     }
 
@@ -213,9 +214,9 @@ class InMemoryDataStoreChangeComplexTest {
             )
         )
 
-        changeResponse.statuses.size shouldBe 1
+        expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = shouldBeOfType<Success<*>>(status)
+            val success = assertType<Success<*>>(status)
             shouldBeRecent(success.version, 1000uL)
         }
 
@@ -223,12 +224,16 @@ class InMemoryDataStoreChangeComplexTest {
             ComplexModel.get(keys[4])
         )
 
-        getResponse.values.size shouldBe 1
-        getResponse.values.first().values { mapIntMulti }.let {
-            it shouldNotBe null
-            it?.size shouldBe 3
-            it?.get(1u) shouldBe TypedValue(T3, EmbeddedMarykModel("v1", EmbeddedMarykModel("sub1")))
-            it?.get(3u) shouldBe TypedValue(T3, EmbeddedMarykModel("v2"))
+        expect(1) { getResponse.values.size }
+        getResponse.values.first().values { mapIntMulti }.let { mapIntMulti ->
+            assertNotNull(mapIntMulti)
+            expect(3) { mapIntMulti.size }
+            expect(TypedValue(T3, EmbeddedMarykModel("v1", EmbeddedMarykModel("sub1")))) {
+                mapIntMulti[1u] as TypedValue<*, *>
+            }
+            expect(TypedValue(T3, EmbeddedMarykModel("v2"))) {
+                mapIntMulti[3u] as TypedValue<*, *>
+            }
         }
     }
 
@@ -248,9 +253,9 @@ class InMemoryDataStoreChangeComplexTest {
             )
         )
 
-        changeResponse.statuses.size shouldBe 1
+        expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = shouldBeOfType<Success<*>>(status)
+            val success = assertType<Success<*>>(status)
             shouldBeRecent(success.version, 1000uL)
         }
 
@@ -258,25 +263,24 @@ class InMemoryDataStoreChangeComplexTest {
             ComplexModel.get(keys[5])
         )
 
-        getResponse.values.size shouldBe 1
+        expect(1) { getResponse.values.size }
         getResponse.values.first().let { valuesWithMetaData ->
-            valuesWithMetaData.values { mapIntMulti }.let {
-                it shouldNotBe null
-                it?.size shouldBe 3
-                it?.get(1u) shouldBe TypedValue(
-                    T3,
-                    EmbeddedMarykModel("v1", EmbeddedMarykModel("sub1", EmbeddedMarykModel("changed")))
-                )
+            valuesWithMetaData.values { mapIntMulti }.let { mapIntMulti ->
+                assertNotNull(mapIntMulti)
+                expect(3) { mapIntMulti.size }
+                expect(
+                    TypedValue(T3, EmbeddedMarykModel("v1", EmbeddedMarykModel("sub1", EmbeddedMarykModel("changed"))))
+                ) { mapIntMulti[1u] as TypedValue<*, *> }
             }
 
-            valuesWithMetaData.values { mapIntObject }.let {
-                it shouldNotBe null
-                it?.size shouldBe 2
-                it?.get(1u) shouldBe EmbeddedMarykModel("mapIntObjectChanged")
+            valuesWithMetaData.values { mapIntObject }.let { mapIntObject ->
+                assertNotNull(mapIntObject)
+                expect(2) { mapIntObject.size }
+                expect(EmbeddedMarykModel("mapIntObjectChanged")) { mapIntObject[1u] }
             }
 
-            valuesWithMetaData.values { multi }.let {
-                it shouldBe TypedValue(T3, EmbeddedMarykModel("u3", EmbeddedMarykModel("multi sub changed")))
+            expect(TypedValue(T3, EmbeddedMarykModel("u3", EmbeddedMarykModel("multi sub changed")))) {
+                valuesWithMetaData.values { multi } as TypedValue<*, *>
             }
         }
     }
@@ -308,9 +312,9 @@ class InMemoryDataStoreChangeComplexTest {
             )
         )
 
-        changeResponse.statuses.size shouldBe 1
+        expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = shouldBeOfType<Success<*>>(status)
+            val success = assertType<Success<*>>(status)
             shouldBeRecent(success.version, 1000uL)
         }
 
@@ -318,12 +322,12 @@ class InMemoryDataStoreChangeComplexTest {
             ComplexModel.get(keys[5])
         )
 
-        getResponse.values.size shouldBe 1
+        expect(1) { getResponse.values.size }
         getResponse.values.first().let { valuesWithMetaData ->
-            valuesWithMetaData.values { multi } shouldBe newMultiValue
-            valuesWithMetaData.values { mapStringString } shouldBe newMapStringString
-            valuesWithMetaData.values { mapIntObject } shouldBe newMapIntObject
-            valuesWithMetaData.values { mapIntMulti } shouldBe newMapIntMulti
+            expect(newMultiValue) { valuesWithMetaData.values { multi } as TypedValue<*, *> }
+            expect(newMapStringString) { valuesWithMetaData.values { mapStringString } }
+            expect(newMapIntObject) { valuesWithMetaData.values { mapIntObject } }
+            expect(newMapIntMulti) { valuesWithMetaData.values { mapIntMulti } }
         }
     }
 }

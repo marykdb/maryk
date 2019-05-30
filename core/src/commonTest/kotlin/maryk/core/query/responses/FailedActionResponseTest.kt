@@ -7,8 +7,8 @@ import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.core.query.responses.FailType.CONNECTION
 import maryk.test.models.SimpleMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class FailedActionResponseTest {
     private val failedActionResponse = FailedActionResponse(
@@ -32,10 +32,14 @@ class FailedActionResponseTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(this.failedActionResponse, FailedActionResponse, { this.context }) shouldBe """
-        message: Something went wrong
-        failType: CONNECTION
+        expect(
+            """
+            message: Something went wrong
+            failType: CONNECTION
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.failedActionResponse, FailedActionResponse, { this.context })
+        }
     }
 }

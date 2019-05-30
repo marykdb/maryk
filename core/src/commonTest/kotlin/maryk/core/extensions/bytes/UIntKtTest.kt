@@ -3,9 +3,9 @@ package maryk.core.extensions.bytes
 import maryk.lib.exceptions.ParseException
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
+import kotlin.test.expect
 
 internal class UIntKtTest {
     @Test
@@ -22,9 +22,9 @@ internal class UIntKtTest {
             bc.reserve(4)
             value.writeBytes(bc::write)
 
-            bc.bytes?.toHex() shouldBe hex
+            expect(hex) { bc.bytes?.toHex() }
 
-            initUInt(bc::read) shouldBe value
+            expect(value) { initUInt(bc::read) }
             bc.reset()
         }
     }
@@ -37,18 +37,18 @@ internal class UIntKtTest {
             1u,
             2222u,
             0x7FFFFFu
-        ).forEach {
+        ).forEach { uInt ->
             bc.reserve(3)
-            it.writeBytes(bc::write, 3)
+            uInt.writeBytes(bc::write, 3)
 
-            initUInt(bc::read, 3) shouldBe it
+            expect(uInt) { initUInt(bc::read, 3) }
             bc.reset()
         }
     }
 
     @Test
     fun testOutOfRangeConversion() {
-        shouldThrow<IllegalArgumentException> {
+        assertFailsWith<IllegalArgumentException> {
             4u.writeBytes({}, 5)
         }
     }
@@ -65,13 +65,13 @@ internal class UIntKtTest {
         testByteContent(bc, UInt.MIN_VALUE, "00")
     }
 
-    private fun testByteContent(bc: ByteCollector, it: UInt, hexValue: String) {
-        bc.reserve(it.calculateVarByteLength())
-        it.writeVarBytes(bc::write)
+    private fun testByteContent(bc: ByteCollector, uInt: UInt, hexValue: String) {
+        bc.reserve(uInt.calculateVarByteLength())
+        uInt.writeVarBytes(bc::write)
 
-        initUIntByVar(bc::read) shouldBe it
+        expect(uInt) { initUIntByVar(bc::read) }
 
-        bc.bytes!!.toHex() shouldBe hexValue
+        expect(hexValue) { bc.bytes!!.toHex() }
         bc.reset()
     }
 
@@ -79,7 +79,7 @@ internal class UIntKtTest {
     fun testWrongVarUInt() {
         val bytes = ByteArray(6) { -1 }
         var index = 0
-        shouldThrow<ParseException> {
+        assertFailsWith<ParseException> {
             initUIntByVar { bytes[index++] }
         }
     }

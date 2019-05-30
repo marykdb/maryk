@@ -11,9 +11,10 @@ import maryk.core.protobuf.WriteCache
 import maryk.lib.bytes.calculateUTF8ByteLength
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
+import kotlin.test.expect
 
 internal class StringDefinitionTest {
 
@@ -56,10 +57,10 @@ internal class StringDefinitionTest {
         def.validateWithRef(newValue = "abc")
         def.validateWithRef(newValue = "abcdef")
 
-        shouldThrow<InvalidSizeException> {
+        assertFailsWith<InvalidSizeException> {
             def.validateWithRef(newValue = "ab")
         }
-        shouldThrow<InvalidSizeException> {
+        assertFailsWith<InvalidSizeException> {
             def.validateWithRef(newValue = "abcdefg")
         }
     }
@@ -69,7 +70,7 @@ internal class StringDefinitionTest {
         // Should succeed
         defRegEx.validateWithRef(newValue = "abc")
 
-        shouldThrow<InvalidValueException> {
+        assertFailsWith<InvalidValueException> {
             defRegEx.validateWithRef(newValue = "efgh")
         }
     }
@@ -82,8 +83,8 @@ internal class StringDefinitionTest {
                 def.calculateStorageByteLength(value)
             )
             def.writeStorageBytes(value, bc::write)
-            def.readStorageBytes(bc.size, bc::read) shouldBe value
-            bc.bytes!!.toHex() shouldBe asHex
+            expect(value) { def.readStorageBytes(bc.size, bc::read) }
+            expect(asHex) { bc.bytes!!.toHex() }
             bc.reset()
         }
     }
@@ -96,25 +97,27 @@ internal class StringDefinitionTest {
             bc.reserve(
                 def.calculateTransportByteLengthWithKey(14u, value, cache)
             )
-            bc.bytes!!.size shouldBe value.calculateUTF8ByteLength() + 2
+            expect(value.calculateUTF8ByteLength() + 2) { bc.bytes!!.size }
             def.writeTransportBytesWithKey(14u, value, cache, bc::write)
             val key = ProtoBuf.readKey(bc::read)
-            key.wireType shouldBe LENGTH_DELIMITED
-            key.tag shouldBe 14u
-            def.readTransportBytes(
-                ProtoBuf.getLength(key.wireType, bc::read),
-                bc::read
-            ) shouldBe value
-            bc.bytes!!.toHex().endsWith(asHex) shouldBe true
+            expect(LENGTH_DELIMITED) { key.wireType }
+            expect(14u) { key.tag }
+            expect(value) {
+                def.readTransportBytes(
+                    ProtoBuf.getLength(key.wireType, bc::read),
+                    bc::read
+                )
+            }
+            assertTrue { bc.bytes!!.toHex().endsWith(asHex) }
             bc.reset()
         }
     }
 
     @Test
     fun convertValuesToStringAndBack() {
-        for (it in stringsToTest.keys) {
-            val b = def.asString(it)
-            def.fromString(b) shouldBe it
+        for (string in stringsToTest.keys) {
+            val b = def.asString(string)
+            expect(string) { def.fromString(b) }
         }
     }
 
@@ -133,18 +136,23 @@ internal class StringDefinitionTest {
     @Test
     fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, StringDefinition.Model)
-        checkYamlConversion(this.defMaxDefined, StringDefinition.Model) shouldBe """
-        required: false
-        final: true
-        unique: true
-        minValue: aaa
-        maxValue: zzzzz
-        default: aaa
-        minSize: 3
-        maxSize: 6
-        regEx: ^[abcd]{3,4}${'$'}
 
-        """.trimIndent()
+        expect(
+            """
+            required: false
+            final: true
+            unique: true
+            minValue: aaa
+            maxValue: zzzzz
+            default: aaa
+            minSize: 3
+            maxSize: 6
+            regEx: ^[abcd]{3,4}${'$'}
+
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.defMaxDefined, StringDefinition.Model)
+        }
     }
 }
 

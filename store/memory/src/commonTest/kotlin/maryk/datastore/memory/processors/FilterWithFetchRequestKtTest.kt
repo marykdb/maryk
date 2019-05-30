@@ -25,8 +25,9 @@ import maryk.lib.time.Date
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.models.TestMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class FilterWithFetchRequestKtTest {
     private val value1 = TestMarykModel.createDataRecord(
@@ -66,329 +67,419 @@ class FilterWithFetchRequestKtTest {
 
     @Test
     fun doExistsFilter() {
-        filterMatches(
-            Exists(TestMarykModel { string::ref }),
-            value1,
-            null
-        ) shouldBe true
+        assertTrue {
+            filterMatches(
+                Exists(TestMarykModel { string::ref }),
+                value1,
+                null
+            )
+        }
 
         // Below version it did not exist
-        filterMatches(
-            Exists(TestMarykModel { string::ref }),
-            value1,
-            1233uL
-        ) shouldBe false
+        assertFalse {
+            filterMatches(
+                Exists(TestMarykModel { string::ref }),
+                value1,
+                1233uL
+            )
+        }
 
-        filterMatches(
-            Exists(TestMarykModel { reference::ref }),
-            value1,
-            null
-        ) shouldBe false
+        assertFalse {
+            filterMatches(
+                Exists(TestMarykModel { reference::ref }),
+                value1,
+                null
+            )
+        }
     }
 
     @Test
     fun doEqualsFilter() {
-        filterMatches(
-            Equals(TestMarykModel { string::ref } with "haha1"),
-            value1,
-            null
-        ) shouldBe true
+        assertTrue {
+            filterMatches(
+                Equals(TestMarykModel { string::ref } with "haha1"),
+                value1,
+                null
+            )
+        }
 
-        filterMatches(
-            Equals(TestMarykModel { string::ref } with "haha1"),
-            value1,
-            1233uL
-        ) shouldBe false
+        assertFalse {
+            filterMatches(
+                Equals(TestMarykModel { string::ref } with "haha1"),
+                value1,
+                1233uL
+            )
+        }
 
-        filterMatches(
-            Equals(TestMarykModel { string::ref } with "wrong"),
-            value1,
-            null
-        ) shouldBe false
+        assertFalse {
+            filterMatches(
+                Equals(TestMarykModel { string::ref } with "wrong"),
+                value1,
+                null
+            )
+        }
     }
 
     @Test
     fun doComplexMapListSetFilter() {
-        filterMatches(
-            Equals(TestMarykModel { map.refAt(Time(12, 13, 14)) } with "haha10"),
-            value1,
-            null
-        ) shouldBe true
+        assertTrue {
+            filterMatches(
+                Equals(TestMarykModel { map.refAt(Time(12, 13, 14)) } with "haha10"),
+                value1,
+                null
+            )
+        }
 
-        filterMatches(
-            Equals(TestMarykModel { map.refToAny() } with "haha10"),
-            value1,
-            null
-        ) shouldBe true
+        assertTrue {
+            filterMatches(
+                Equals(TestMarykModel { map.refToAny() } with "haha10"),
+                value1,
+                null
+            )
+        }
 
-        filterMatches(
-            Equals(TestMarykModel { map.refToAny() } with "haha11"),
-            value1,
-            null
-        ) shouldBe false
+        assertFalse {
+            filterMatches(
+                Equals(TestMarykModel { map.refToAny() } with "haha11"),
+                value1,
+                null
+            )
+        }
 
-        filterMatches(
-            Equals(TestMarykModel { map.refAt(Time(13, 13, 14)) } with "haha10"),
-            value1,
-            null
-        ) shouldBe false
+        assertFalse {
+            filterMatches(
+                Equals(TestMarykModel { map.refAt(Time(13, 13, 14)) } with "haha10"),
+                value1,
+                null
+            )
+        }
 
-        filterMatches(
-            Equals(TestMarykModel { list refAt 1u } with 6),
-            value1,
-            null
-        ) shouldBe true
+        assertTrue {
+            filterMatches(
+                Equals(TestMarykModel { list refAt 1u } with 6),
+                value1,
+                null
+            )
+        }
 
-        filterMatches(
-            Equals(TestMarykModel { list refAt 2u } with 6),
-            value1,
-            null
-        ) shouldBe false
+        assertFalse {
+            filterMatches(
+                Equals(TestMarykModel { list refAt 2u } with 6),
+                value1,
+                null
+            )
+        }
 
-        filterMatches(
-            Equals(TestMarykModel { list.refToAny() } with 6),
-            value1,
-            null
-        ) shouldBe true
+        assertTrue {
+            filterMatches(
+                Equals(TestMarykModel { list.refToAny() } with 6),
+                value1,
+                null
+            )
+        }
 
-        filterMatches(
-            Equals(TestMarykModel { list.refToAny() } with 2),
-            value1,
-            null
-        ) shouldBe false
+        assertFalse {
+            filterMatches(
+                Equals(TestMarykModel { list.refToAny() } with 2),
+                value1,
+                null
+            )
+        }
 
-        filterMatches(
-            Equals(TestMarykModel { list refAt 1u } with 6),
-            value1,
-            null
-        ) shouldBe true
+        assertTrue {
+            filterMatches(
+                Equals(TestMarykModel { list refAt 1u } with 6),
+                value1,
+                null
+            )
+        }
 
-        filterMatches(
-            Exists(TestMarykModel { set refAt Date(2018, 9, 9) }),
-            value1,
-            null
-        ) shouldBe true
+        assertTrue {
+            filterMatches(
+                Exists(TestMarykModel { set refAt Date(2018, 9, 9) }),
+                value1,
+                null
+            )
+        }
 
-        filterMatches(
-            Exists(TestMarykModel { set refAt Date(2017, 9, 9) }),
-            value1,
-            null
-        ) shouldBe false
+        assertFalse {
+            filterMatches(
+                Exists(TestMarykModel { set refAt Date(2017, 9, 9) }),
+                value1,
+                null
+            )
+        }
     }
 
     @Test
     fun doPrefixFilter() {
-        filterMatches(
-            Prefix(TestMarykModel { string::ref } with "ha"),
-            value1,
-            null
-        ) shouldBe true
+        assertTrue {
+            filterMatches(
+                Prefix(TestMarykModel { string::ref } with "ha"),
+                value1,
+                null
+            )
+        }
 
-        filterMatches(
-            Prefix(TestMarykModel { string::ref } with "wrong"),
-            value1,
-            null
-        ) shouldBe false
+        assertFalse {
+            filterMatches(
+                Prefix(TestMarykModel { string::ref } with "wrong"),
+                value1,
+                null
+            )
+        }
     }
 
     @Test
     fun doLessThanFilter() {
-        filterMatches(
-            LessThan(TestMarykModel { int::ref } with 6),
-            value1,
-            null
-        ) shouldBe true
+        assertTrue {
+            filterMatches(
+                LessThan(TestMarykModel { int::ref } with 6),
+                value1,
+                null
+            )
+        }
 
-        filterMatches(
-            LessThan(TestMarykModel { int::ref } with 5),
-            value1,
-            null
-        ) shouldBe false
+        assertFalse {
+            filterMatches(
+                LessThan(TestMarykModel { int::ref } with 5),
+                value1,
+                null
+            )
+        }
 
-        filterMatches(
-            LessThan(TestMarykModel { int::ref } with 2),
-            value1,
-            null
-        ) shouldBe false
+        assertFalse {
+            filterMatches(
+                LessThan(TestMarykModel { int::ref } with 2),
+                value1,
+                null
+            )
+        }
     }
 
     @Test
     fun doLessThanEqualsFilter() {
-        filterMatches(
-            LessThanEquals(TestMarykModel { int::ref } with 6),
-            value1,
-            null
-        ) shouldBe true
+        assertTrue {
+            filterMatches(
+                LessThanEquals(TestMarykModel { int::ref } with 6),
+                value1,
+                null
+            )
+        }
 
-        filterMatches(
-            LessThanEquals(TestMarykModel { int::ref } with 5),
-            value1,
-            null
-        ) shouldBe true
+        assertTrue {
+            filterMatches(
+                LessThanEquals(TestMarykModel { int::ref } with 5),
+                value1,
+                null
+            )
+        }
 
-        filterMatches(
-            LessThanEquals(TestMarykModel { int::ref } with 2),
-            value1,
-            null
-        ) shouldBe false
+        assertFalse {
+            filterMatches(
+                LessThanEquals(TestMarykModel { int::ref } with 2),
+                value1,
+                null
+            )
+        }
     }
 
     @Test
     fun doGreaterThanFilter() {
-        filterMatches(
-            GreaterThan(TestMarykModel { int::ref } with 4),
-            value1,
-            null
-        ) shouldBe true
+        assertTrue {
+            filterMatches(
+                GreaterThan(TestMarykModel { int::ref } with 4),
+                value1,
+                null
+            )
+        }
 
-        filterMatches(
-            GreaterThan(TestMarykModel { int::ref } with 5),
-            value1,
-            null
-        ) shouldBe false
+        assertFalse {
+            filterMatches(
+                GreaterThan(TestMarykModel { int::ref } with 5),
+                value1,
+                null
+            )
+        }
 
-        filterMatches(
-            GreaterThan(TestMarykModel { int::ref } with 6),
-            value1,
-            null
-        ) shouldBe false
+        assertFalse {
+            filterMatches(
+                GreaterThan(TestMarykModel { int::ref } with 6),
+                value1,
+                null
+            )
+        }
     }
 
     @Test
     fun doGreaterThanEqualsFilter() {
-        filterMatches(
-            GreaterThanEquals(TestMarykModel { int::ref } with 4),
-            value1,
-            null
-        ) shouldBe true
+        assertTrue {
+            filterMatches(
+                GreaterThanEquals(TestMarykModel { int::ref } with 4),
+                value1,
+                null
+            )
+        }
 
-        filterMatches(
-            GreaterThanEquals(TestMarykModel { int::ref } with 5),
-            value1,
-            null
-        ) shouldBe true
+        assertTrue {
+            filterMatches(
+                GreaterThanEquals(TestMarykModel { int::ref } with 5),
+                value1,
+                null
+            )
+        }
 
-        filterMatches(
-            GreaterThanEquals(TestMarykModel { int::ref } with 6),
-            value1,
-            null
-        ) shouldBe false
+        assertFalse {
+            filterMatches(
+                GreaterThanEquals(TestMarykModel { int::ref } with 6),
+                value1,
+                null
+            )
+        }
     }
 
     @Test
     fun doRangeFilter() {
-        filterMatches(
-            Range(TestMarykModel { int::ref } with (2..8)),
-            value1,
-            null
-        ) shouldBe true
+        assertTrue {
+            filterMatches(
+                Range(TestMarykModel { int::ref } with (2..8)),
+                value1,
+                null
+            )
+        }
 
-        filterMatches(
-            Range(TestMarykModel { int::ref } with (2..5)),
-            value1,
-            null
-        ) shouldBe true
+        assertTrue {
+            filterMatches(
+                Range(TestMarykModel { int::ref } with (2..5)),
+                value1,
+                null
+            )
+        }
 
-        filterMatches(
-            Range(TestMarykModel { int::ref } with (2..3)),
-            value1,
-            null
-        ) shouldBe false
+        assertFalse {
+            filterMatches(
+                Range(TestMarykModel { int::ref } with (2..3)),
+                value1,
+                null
+            )
+        }
     }
 
     @Test
     fun doRegExFilter() {
-        filterMatches(
-            RegEx(TestMarykModel { string::ref } with Regex("^h.*$")),
-            value1,
-            null
-        ) shouldBe true
+        assertTrue {
+            filterMatches(
+                RegEx(TestMarykModel { string::ref } with Regex("^h.*$")),
+                value1,
+                null
+            )
+        }
 
-        filterMatches(
-            RegEx(TestMarykModel { string::ref } with Regex("^b.*$")),
-            value1,
-            null
-        ) shouldBe false
+        assertFalse {
+            filterMatches(
+                RegEx(TestMarykModel { string::ref } with Regex("^b.*$")),
+                value1,
+                null
+            )
+        }
     }
 
     @Test
     fun doValueInFilter() {
-        filterMatches(
-            ValueIn(TestMarykModel { string::ref } with setOf("haha1", "haha2")),
-            value1,
-            null
-        ) shouldBe true
+        assertTrue {
+            filterMatches(
+                ValueIn(TestMarykModel { string::ref } with setOf("haha1", "haha2")),
+                value1,
+                null
+            )
+        }
 
-        filterMatches(
-            ValueIn(TestMarykModel { string::ref } with setOf("no1", "no2")),
-            value1,
-            null
-        ) shouldBe false
+        assertFalse {
+            filterMatches(
+                ValueIn(TestMarykModel { string::ref } with setOf("no1", "no2")),
+                value1,
+                null
+            )
+        }
     }
 
     @Test
     fun doNotFilter() {
-        filterMatches(
-            Not(Exists(TestMarykModel { string::ref })),
-            value1,
-            null
-        ) shouldBe false
+        assertFalse {
+            filterMatches(
+                Not(Exists(TestMarykModel { string::ref })),
+                value1,
+                null
+            )
+        }
 
-        filterMatches(
-            Not(Exists(TestMarykModel { reference::ref })),
-            value1,
-            null
-        ) shouldBe true
+        assertTrue {
+            filterMatches(
+                Not(Exists(TestMarykModel { reference::ref })),
+                value1,
+                null
+            )
+        }
     }
 
     @Test
     fun doAndFilter() {
-        filterMatches(
-            And(
-                Exists(TestMarykModel { int::ref }),
-                Exists(TestMarykModel { string::ref })
-            ),
-            value1,
-            null
-        ) shouldBe true
+        assertTrue {
+            filterMatches(
+                And(
+                    Exists(TestMarykModel { int::ref }),
+                    Exists(TestMarykModel { string::ref })
+                ),
+                value1,
+                null
+            )
+        }
 
-        filterMatches(
-            And(
-                Exists(TestMarykModel { reference::ref }),
-                Exists(TestMarykModel { string::ref })
-            ),
-            value1,
-            null
-        ) shouldBe false
+        assertFalse {
+            filterMatches(
+                And(
+                    Exists(TestMarykModel { reference::ref }),
+                    Exists(TestMarykModel { string::ref })
+                ),
+                value1,
+                null
+            )
+        }
     }
 
     @Test
     fun doOrFilter() {
-        filterMatches(
-            Or(
-                Exists(TestMarykModel { int::ref }),
-                Exists(TestMarykModel { string::ref })
-            ),
-            value1,
-            null
-        ) shouldBe true
+        assertTrue {
+            filterMatches(
+                Or(
+                    Exists(TestMarykModel { int::ref }),
+                    Exists(TestMarykModel { string::ref })
+                ),
+                value1,
+                null
+            )
+        }
 
-        filterMatches(
-            Or(
-                Exists(TestMarykModel { reference::ref }),
-                Exists(TestMarykModel { string::ref })
-            ),
-            value1,
-            null
-        ) shouldBe true
+        assertTrue {
+            filterMatches(
+                Or(
+                    Exists(TestMarykModel { reference::ref }),
+                    Exists(TestMarykModel { string::ref })
+                ),
+                value1,
+                null
+            )
+        }
 
-        filterMatches(
-            Or(
-                Exists(TestMarykModel { reference::ref }),
-                Not(Exists(TestMarykModel { string::ref }))
-            ),
-            value1,
-            null
-        ) shouldBe false
+        assertFalse {
+            filterMatches(
+                Or(
+                    Exists(TestMarykModel { reference::ref }),
+                    Not(Exists(TestMarykModel { string::ref }))
+                ),
+                value1,
+                null
+            )
+        }
     }
 }

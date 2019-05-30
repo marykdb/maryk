@@ -1,8 +1,10 @@
 package maryk.core.properties.types.numeric
 
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
+import kotlin.test.expect
 
 internal class SInt8Test {
     private val int8values = byteArrayOf(
@@ -21,21 +23,21 @@ internal class SInt8Test {
 
     @Test
     fun testStringConversion() {
-        Byte.MIN_VALUE.toString() shouldBe "-128"
-        Byte.MAX_VALUE.toString() shouldBe "127"
+        expect("-128") { Byte.MIN_VALUE.toString() }
+        expect("127") { Byte.MAX_VALUE.toString() }
 
-        for (it in int8values) {
-            SInt8.ofString(it.toString()) shouldBe it
+        for (byte in int8values) {
+            expect(byte) { SInt8.ofString(byte.toString()) }
         }
     }
 
     @Test
     fun testStorageBytesConversion() {
         val bc = ByteCollector()
-        for (it in int8values) {
+        for (byte in int8values) {
             bc.reserve(SInt8.size)
-            SInt8.writeStorageBytes(it, bc::write)
-            SInt8.fromStorageByteReader(bc.size, bc::read) shouldBe it
+            SInt8.writeStorageBytes(byte, bc::write)
+            expect(byte) { SInt8.fromStorageByteReader(bc.size, bc::read) }
             bc.reset()
         }
     }
@@ -43,24 +45,24 @@ internal class SInt8Test {
     @Test
     fun testTransportBytesConversion() {
         val bc = ByteCollector()
-        for (it in int8values) {
-            bc.reserve(SInt8.calculateTransportByteLength(it))
-            SInt8.writeTransportBytes(it, bc::write)
-            SInt8.readTransportBytes(bc::read) shouldBe it
+        for (byte in int8values) {
+            bc.reserve(SInt8.calculateTransportByteLength(byte))
+            SInt8.writeTransportBytes(byte, bc::write)
+            expect(byte) { SInt8.readTransportBytes(bc::read) }
             bc.reset()
         }
     }
 
     @Test
     fun testOfNativeTypes() {
-        SInt8.ofLong(123) shouldBe 123.toByte()
-        SInt8.ofDouble(12.0) shouldBe 12.toByte()
-        SInt8.ofInt(12) shouldBe 12.toByte()
+        expect(123.toByte()) { SInt8.ofLong(123) }
+        expect(12.toByte()) { SInt8.ofDouble(12.0) }
+        expect(12.toByte()) { SInt8.ofInt(12) }
     }
 
     @Test
     fun testIsOfType() {
-        SInt8.isOfType(12.toByte()) shouldBe true
-        SInt8.isOfType(1234L) shouldBe false
+        assertTrue { SInt8.isOfType(12.toByte()) }
+        assertFalse { SInt8.isOfType(1234L) }
     }
 }

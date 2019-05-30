@@ -8,8 +8,8 @@ import maryk.core.models.key
 import maryk.lib.time.DateTime
 import maryk.test.models.Option.V3
 import maryk.test.models.TestMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class ValuesWithMetaDataTest {
     private val value = TestMarykModel(
@@ -51,20 +51,25 @@ class ValuesWithMetaDataTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(this.valuesMetaData, ValuesWithMetaData, { this.context }) shouldBe """
-        key: AAACKwEAAw
-        values:
-          string: name
-          int: 5123123
-          uint: 555
-          double: 6.33
-          dateTime: '2017-12-05T01:33:55'
-          bool: true
-          enum: V3(3)
-        firstVersion: 12
-        lastVersion: 12345
-        isDeleted: false
+        expect(
+            """
+            key: AAACKwEAAw
+            values:
+              string: name
+              int: 5123123
+              uint: 555
+              double: 6.33
+              dateTime: '2017-12-05T01:33:55'
+              bool: true
+              enum: V3(3)
+            firstVersion: 12
+            lastVersion: 12345
+            isDeleted: false
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.valuesMetaData, ValuesWithMetaData, { this.context })
+        }
+
     }
 }

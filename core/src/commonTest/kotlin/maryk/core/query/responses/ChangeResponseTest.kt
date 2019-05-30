@@ -14,8 +14,8 @@ import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.Success
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.test.models.SimpleMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class ChangeResponseTest {
     private val key = SimpleMarykModel.key("+1xO4zD4R5sIMcS9pXTZEA")
@@ -54,24 +54,28 @@ class ChangeResponseTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(this.changeResponse, ChangeResponse, { this.context }) shouldBe """
-        dataModel: SimpleMarykModel
-        statuses:
-        - !SUCCESS
-          version: 32352
-        - !DOES_NOT_EXIST
-          key: +1xO4zD4R5sIMcS9pXTZEA
-        - !VALIDATION_FAIL
-          exceptions:
-          - !INVALID_VALUE
-            reference: value
-            value: wrong
-        - !REQUEST_FAIL
-          reason: Request was wrong
-        - !AUTH_FAIL
-        - !SERVER_FAIL
-          reason: Something went wrong
+        expect(
+            """
+            dataModel: SimpleMarykModel
+            statuses:
+            - !SUCCESS
+              version: 32352
+            - !DOES_NOT_EXIST
+              key: +1xO4zD4R5sIMcS9pXTZEA
+            - !VALIDATION_FAIL
+              exceptions:
+              - !INVALID_VALUE
+                reference: value
+                value: wrong
+            - !REQUEST_FAIL
+              reason: Request was wrong
+            - !AUTH_FAIL
+            - !SERVER_FAIL
+              reason: Something went wrong
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.changeResponse, ChangeResponse, { this.context })
+        }
     }
 }

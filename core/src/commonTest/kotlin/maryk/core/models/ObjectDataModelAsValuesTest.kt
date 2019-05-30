@@ -14,9 +14,10 @@ import maryk.test.models.Option.V1
 import maryk.test.models.SimpleMarykTypeEnumWithObject.S3
 import maryk.test.models.TestMarykObject
 import maryk.test.models.TestValueObject
-import maryk.test.shouldBe
 import maryk.yaml.YamlWriter
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.expect
 
 private val testExtendedObject = TestMarykObject.values {
     mapNonNulls(
@@ -91,7 +92,7 @@ internal class ObjectDataModelAsValuesTest {
 
         TestMarykObject.writeJson(testExtendedObject, writer)
 
-        output shouldBe JSON
+        assertEquals(JSON, output)
     }
 
     @Test
@@ -103,35 +104,38 @@ internal class ObjectDataModelAsValuesTest {
 
         TestMarykObject.writeJson(testExtendedObject, writer)
 
-        output shouldBe """
-        {
-          "string": "hay",
-          "int": 4,
-          "uint": 32,
-          "double": "3.555",
-          "dateTime": "2017-12-04T12:13",
-          "bool": true,
-          "enum": "V1(1)",
-          "list": [34, 2352, 3423, 766],
-          "set": ["2017-12-05", "2016-03-02", "1981-12-05"],
-          "map": {
-            "12:55": "yes",
-            "10:03": "ahum"
-          },
-          "valueObject": {
-            "int": 6,
-            "dateTime": "2017-04-01T12:55",
-            "bool": true
-          },
-          "embeddedObject": {
-            "value": "test"
-          },
-          "multi": ["S3(3)", {
-            "value": "subInMulti!"
-          }],
-          "listOfString": ["test1", "another test", "🤗"]
-        }
-        """.trimIndent()
+        assertEquals(
+            """
+            {
+              "string": "hay",
+              "int": 4,
+              "uint": 32,
+              "double": "3.555",
+              "dateTime": "2017-12-04T12:13",
+              "bool": true,
+              "enum": "V1(1)",
+              "list": [34, 2352, 3423, 766],
+              "set": ["2017-12-05", "2016-03-02", "1981-12-05"],
+              "map": {
+                "12:55": "yes",
+                "10:03": "ahum"
+              },
+              "valueObject": {
+                "int": 6,
+                "dateTime": "2017-04-01T12:55",
+                "bool": true
+              },
+              "embeddedObject": {
+                "value": "test"
+              },
+              "multi": ["S3(3)", {
+                "value": "subInMulti!"
+              }],
+              "listOfString": ["test1", "another test", "🤗"]
+            }
+            """.trimIndent(),
+            output
+        )
     }
 
     @Test
@@ -143,30 +147,33 @@ internal class ObjectDataModelAsValuesTest {
 
         TestMarykObject.writeJson(testExtendedObject, writer)
 
-        output shouldBe """
-        string: hay
-        int: 4
-        uint: 32
-        double: 3.555
-        dateTime: '2017-12-04T12:13'
-        bool: true
-        enum: V1(1)
-        list: [34, 2352, 3423, 766]
-        set: [2017-12-05, 2016-03-02, 1981-12-05]
-        map:
-          12:55: yes
-          10:03: ahum
-        valueObject:
-          int: 6
-          dateTime: '2017-04-01T12:55'
-          bool: true
-        embeddedObject:
-          value: test
-        multi: !S3(3)
-          value: subInMulti!
-        listOfString: [test1, another test, 🤗]
+        assertEquals(
+            """
+            string: hay
+            int: 4
+            uint: 32
+            double: 3.555
+            dateTime: '2017-12-04T12:13'
+            bool: true
+            enum: V1(1)
+            list: [34, 2352, 3423, 766]
+            set: [2017-12-05, 2016-03-02, 1981-12-05]
+            map:
+              12:55: yes
+              10:03: ahum
+            valueObject:
+              int: 6
+              dateTime: '2017-04-01T12:55'
+              bool: true
+            embeddedObject:
+              value: test
+            multi: !S3(3)
+              value: subInMulti!
+            listOfString: [test1, another test, 🤗]
 
-        """.trimIndent()
+            """.trimIndent(),
+            output
+        )
     }
 
     @Test
@@ -180,9 +187,11 @@ internal class ObjectDataModelAsValuesTest {
 
         TestMarykObject.writeProtoBuf(testExtendedObject, cache, bc::write)
 
-        bc.bytes!!.toHex() shouldBe "0a036861791008182021713d0ad7a3700c4028ccf794d10530013801420744e024be35fc0b4a08c29102bc87028844520908a4eb021203796573520a08d49a0212046168756d5a0e800000060180000058dfa324010162060a04746573746a0f1a0d0a0b737562496e4d756c7469217a0574657374317a0c616e6f7468657220746573747a04f09fa497"
+        expect("0a036861791008182021713d0ad7a3700c4028ccf794d10530013801420744e024be35fc0b4a08c29102bc87028844520908a4eb021203796573520a08d49a0212046168756d5a0e800000060180000058dfa324010162060a04746573746a0f1a0d0a0b737562496e4d756c7469217a0574657374317a0c616e6f7468657220746573747a04f09fa497") {
+            bc.bytes!!.toHex()
+        }
 
-        TestMarykObject.readProtoBuf(bc.size, bc::read) shouldBe testExtendedObject
+        expect(testExtendedObject) { TestMarykObject.readProtoBuf(bc.size, bc::read) }
     }
 
     @Test
@@ -198,7 +207,7 @@ internal class ObjectDataModelAsValuesTest {
         ).forEach { jsonInput ->
             input = jsonInput
             index = 0
-            TestMarykObject.readJson(reader = jsonReader()) shouldBe testExtendedObject
+            expect(testExtendedObject) { TestMarykObject.readJson(reader = jsonReader()) }
         }
     }
 
@@ -215,7 +224,7 @@ internal class ObjectDataModelAsValuesTest {
 
             var index = 0
             val reader = { JsonReader(reader = { output[index++] }) }
-            TestMarykObject.readJson(reader = reader()) shouldBe testExtendedObject
+            expect(testExtendedObject) { TestMarykObject.readJson(reader = reader()) }
 
             output = ""
         }

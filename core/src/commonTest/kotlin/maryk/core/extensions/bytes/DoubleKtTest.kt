@@ -1,8 +1,8 @@
 package maryk.core.extensions.bytes
 
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 internal class DoubleKtTest {
     private val doublesToTest = doubleArrayOf(
@@ -23,11 +23,11 @@ internal class DoubleKtTest {
     @Test
     fun testStreamingConversion() {
         val bc = ByteCollector()
-        doublesToTest.forEach {
+        doublesToTest.forEach { double ->
             bc.reserve(8)
-            it.writeBytes(bc::write)
+            double.writeBytes(bc::write)
 
-            initDouble(bc::read) shouldBe it
+            expect(double) { initDouble(bc::read) }
             bc.reset()
         }
     }

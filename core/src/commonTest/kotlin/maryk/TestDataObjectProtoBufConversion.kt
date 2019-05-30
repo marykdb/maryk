@@ -6,14 +6,14 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.protobuf.WriteCache
 import maryk.core.values.ObjectValues
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
+import kotlin.test.assertEquals
 
 /** Convert dataObject with a object DataModel */
 fun <DO : Any, P : ObjectPropertyDefinitions<DO>, CXI : IsPropertyContext, CX : IsPropertyContext> checkProtoBufConversion(
     value: DO,
     dataModel: AbstractObjectDataModel<DO, P, CXI, CX>,
     context: (() -> CXI)? = null,
-    checker: (DO, DO) -> Unit = { converted, original -> converted shouldBe original },
+    checker: (DO, DO) -> Unit = { converted, original -> assertEquals(original, converted) },
     resetContextBeforeRead: Boolean = false
 ) {
     var newContext = dataModel.transformContext(context?.invoke())
@@ -39,7 +39,7 @@ fun <DO : Any, P : ObjectPropertyDefinitions<DO>, CX : IsPropertyContext> checkP
     values: ObjectValues<DO, P>,
     dataModel: AbstractObjectDataModel<DO, P, CX, CX>,
     context: (() -> CX)? = null,
-    checker: (ObjectValues<DO, P>, ObjectValues<DO, P>) -> Unit = { converted, original -> converted shouldBe original },
+    checker: (ObjectValues<DO, P>, ObjectValues<DO, P>) -> Unit = { converted, original -> assertEquals(original, converted) },
     resetContextBeforeRead: Boolean = false
 ) {
     val bc = ByteCollector()

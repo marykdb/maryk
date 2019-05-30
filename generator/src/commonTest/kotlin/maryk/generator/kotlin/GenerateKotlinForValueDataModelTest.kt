@@ -1,8 +1,8 @@
 package maryk.generator.kotlin
 
 import maryk.test.models.ValueMarykObject
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 val generatedKotlinForValueDataModel = """
 package maryk.test.models
@@ -58,6 +58,6 @@ class GenerateKotlinForValueDataModelTest {
             output += it
         }
 
-        output shouldBe generatedKotlinForValueDataModel
+        assertEquals(generatedKotlinForValueDataModel, output)
     }
 }

@@ -7,8 +7,8 @@ import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.core.query.pairs.with
 import maryk.test.models.TestMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class GreaterThanTest {
     private val greaterThan = GreaterThan(
@@ -35,10 +35,14 @@ class GreaterThanTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(this.greaterThan, GreaterThan, { this.context }) shouldBe """
-        string: test
-        int: 5
+        expect(
+            """
+            string: test
+            int: 5
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.greaterThan, GreaterThan, { this.context })
+        }
     }
 }

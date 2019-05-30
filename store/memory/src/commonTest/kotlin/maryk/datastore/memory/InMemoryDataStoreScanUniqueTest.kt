@@ -8,6 +8,7 @@ import maryk.core.query.requests.add
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.lib.time.Date
+import maryk.test.assertType
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.CompleteMarykModel.Properties.string
 import maryk.test.models.MarykEnumEmbedded.E1
@@ -15,9 +16,8 @@ import maryk.test.models.MarykTypeEnum.T2
 import maryk.test.models.SimpleMarykModel
 import maryk.test.models.SimpleMarykTypeEnum.S1
 import maryk.test.runSuspendingTest
-import maryk.test.shouldBe
-import maryk.test.shouldBeOfType
 import kotlin.test.Test
+import kotlin.test.expect
 
 class InMemoryDataStoreScanUniqueTest {
     private val dataStore = InMemoryDataStore()
@@ -45,7 +45,7 @@ class InMemoryDataStoreScanUniqueTest {
                 CompleteMarykModel.add(*objects)
             )
             addResponse.statuses.forEach { status ->
-                val response = shouldBeOfType<AddSuccess<CompleteMarykModel>>(status)
+                val response = assertType<AddSuccess<CompleteMarykModel>>(status)
                 keys.add(response.key)
                 if (response.version < lowestVersion) {
                     // Add lowest version for scan test
@@ -65,11 +65,11 @@ class InMemoryDataStoreScanUniqueTest {
             )
         )
 
-        scanResponse.values.size shouldBe 1
+        expect(1) { scanResponse.values.size }
 
         scanResponse.values[0].let {
-            it.values shouldBe objects[0]
-            it.key shouldBe keys[0]
+            expect(objects[0]) { it.values }
+            expect(keys[0]) { it.key }
         }
     }
 }

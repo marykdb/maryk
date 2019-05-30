@@ -3,8 +3,8 @@ package maryk.core.properties.definitions.wrapper
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.references.EmbeddedObjectPropertyRef
 import maryk.test.models.EmbeddedMarykObject
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class EmbeddedObjectDefinitionWrapperTest {
     private val def = EmbeddedObjectDefinitionWrapper(
@@ -18,6 +18,8 @@ class EmbeddedObjectDefinitionWrapperTest {
 
     @Test
     fun getReference() {
-        def.ref() shouldBe EmbeddedObjectPropertyRef(def, null)
+        expect(EmbeddedObjectPropertyRef(def, null)) {
+            def.ref()
+        }
     }
 }

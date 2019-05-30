@@ -7,8 +7,8 @@ import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.core.query.pairs.with
 import maryk.test.models.TestMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class CheckTest {
     private val valueCheck = Check(
@@ -35,10 +35,14 @@ class CheckTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(this.valueCheck, Check, { this.context }) shouldBe """
-        string: test
-        int: 42
+        expect(
+            """
+            string: test
+            int: 42
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.valueCheck, Check, { this.context })
+        }
     }
 }

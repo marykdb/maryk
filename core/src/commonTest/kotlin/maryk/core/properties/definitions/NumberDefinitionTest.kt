@@ -13,9 +13,9 @@ import maryk.core.protobuf.WireType.VAR_INT
 import maryk.lib.exceptions.ParseException
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
+import kotlin.test.expect
 
 internal class NumberDefinitionTest {
     private val def = NumberDefinition(
@@ -60,7 +60,7 @@ internal class NumberDefinitionTest {
 
     @Test
     fun hasValuesSet() {
-        def.type shouldBe UInt32
+        expect(UInt32) { def.type }
     }
 
     @Test
@@ -71,12 +71,12 @@ internal class NumberDefinitionTest {
     @Test
     fun convertValuesToStorageBytesAndBack() {
         val bc = ByteCollector()
-        for (it in intArray) {
+        for (int in intArray) {
             bc.reserve(
-                def.calculateStorageByteLength(it)
+                def.calculateStorageByteLength(int)
             )
-            def.writeStorageBytes(it, bc::write)
-            def.readStorageBytes(bc.size, bc::read) shouldBe it
+            def.writeStorageBytes(int, bc::write)
+            expect(int) { def.readStorageBytes(bc.size, bc::read) }
             bc.reset()
         }
     }
@@ -89,9 +89,9 @@ internal class NumberDefinitionTest {
         )
         def.writeStorageBytes(32373957u, bc::write)
 
-        bc.bytes?.toHex() shouldBe "01edfcc5"
+        expect("01edfcc5") { bc.bytes?.toHex() }
 
-        def.readStorageBytes(bc.size, bc::read) shouldBe 32373957u
+        expect(32373957u) { def.readStorageBytes(bc.size, bc::read) }
     }
 
     @Test
@@ -102,9 +102,9 @@ internal class NumberDefinitionTest {
         )
         defReversed.writeStorageBytes(32373957u, bc::write)
 
-        bc.bytes?.toHex() shouldBe "fe12033a"
+        expect("fe12033a") { bc.bytes?.toHex() }
 
-        defReversed.readStorageBytes(bc.size, bc::read) shouldBe 32373957u
+        expect(32373957u) { defReversed.readStorageBytes(bc.size, bc::read) }
     }
 
     @Test
@@ -118,12 +118,14 @@ internal class NumberDefinitionTest {
             )
             def.writeTransportBytesWithKey(1u, value, cacheFailer, bc::write)
             val key = ProtoBuf.readKey(bc::read)
-            key.wireType shouldBe VAR_INT
-            key.tag shouldBe 1u
-            def.readTransportBytes(
-                ProtoBuf.getLength(key.wireType, bc::read),
-                bc::read
-            ) shouldBe value
+            expect(VAR_INT) { key.wireType }
+            expect(1u) { key.tag }
+            expect(value) {
+                def.readTransportBytes(
+                    ProtoBuf.getLength(key.wireType, bc::read),
+                    bc::read
+                )
+            }
             bc.reset()
         }
     }
@@ -139,27 +141,29 @@ internal class NumberDefinitionTest {
             )
             defFloat32.writeTransportBytesWithKey(2u, value, cacheFailer, bc::write)
             val key = ProtoBuf.readKey(bc::read)
-            key.wireType shouldBe BIT_32
-            key.tag shouldBe 2u
-            defFloat32.readTransportBytes(
-                ProtoBuf.getLength(key.wireType, bc::read),
-                bc::read
-            ) shouldBe value
+            expect(BIT_32) { key.wireType }
+            expect(2u) { key.tag }
+            expect(value) {
+                defFloat32.readTransportBytes(
+                    ProtoBuf.getLength(key.wireType, bc::read),
+                    bc::read
+                )
+            }
             bc.reset()
         }
     }
 
     @Test
     fun convertValuesToStringAndBack() {
-        for (it in intArray) {
-            val b = def.asString(it)
-            def.fromString(b) shouldBe it
+        for (int in intArray) {
+            val b = def.asString(int)
+            expect(int) { def.fromString(b) }
         }
     }
 
     @Test
     fun invalidStringValueShouldThrowException() {
-        shouldThrow<ParseException> {
+        assertFailsWith<ParseException> {
             def.fromString("wrong")
         }
     }
@@ -179,34 +183,38 @@ internal class NumberDefinitionTest {
     @Test
     fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, NumberDefinition.Model)
-        checkYamlConversion(this.defMaxDefined, NumberDefinition.Model) shouldBe """
-        required: false
-        final: true
-        unique: true
-        type: SInt32
-        minValue: 3254765
-        maxValue: 92763478
-        default: 4444444
-        random: true
-        reversedStorage: false
+        expect(
+            """
+            required: false
+            final: true
+            unique: true
+            type: SInt32
+            minValue: 3254765
+            maxValue: 92763478
+            default: 4444444
+            random: true
+            reversedStorage: false
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.defMaxDefined, NumberDefinition.Model)
+        }
     }
 
     @Test
     fun convertNativeType() {
-        def.fromNativeType(356725.000) shouldBe 356725u
-        def.fromNativeType(38762873) shouldBe 38762873u
+        expect(356725u) { def.fromNativeType(356725.000) }
+        expect(38762873u) { def.fromNativeType(38762873) }
 
-        shouldThrow<ParseException> {
+        assertFailsWith<ParseException> {
             def.fromNativeType(Long.MAX_VALUE.toDouble())
         }
 
-        shouldThrow<ParseException> {
+        assertFailsWith<ParseException> {
             def.fromNativeType(356.9)
         }
 
-        shouldThrow<ParseException> {
+        assertFailsWith<ParseException> {
             def.fromNativeType(Double.MAX_VALUE)
         }
     }

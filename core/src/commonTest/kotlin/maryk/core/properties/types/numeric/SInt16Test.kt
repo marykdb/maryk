@@ -1,8 +1,10 @@
 package maryk.core.properties.types.numeric
 
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
+import kotlin.test.expect
 
 internal class SInt16Test {
     private val int16values = shortArrayOf(
@@ -20,21 +22,21 @@ internal class SInt16Test {
 
     @Test
     fun testStringConversion() {
-        Short.MIN_VALUE.toString() shouldBe "-32768"
-        Short.MAX_VALUE.toString() shouldBe "32767"
+        expect("-32768") { Short.MIN_VALUE.toString() }
+        expect("32767") { Short.MAX_VALUE.toString() }
 
-        for (it in int16values) {
-            SInt16.ofString(it.toString()) shouldBe it
+        for (short in int16values) {
+            expect(short) { SInt16.ofString(short.toString()) }
         }
     }
 
     @Test
     fun testStorageBytesConversion() {
         val bc = ByteCollector()
-        for (it in int16values) {
+        for (short in int16values) {
             bc.reserve(SInt16.size)
-            SInt16.writeStorageBytes(it, bc::write)
-            SInt16.fromStorageByteReader(bc.size, bc::read) shouldBe it
+            SInt16.writeStorageBytes(short, bc::write)
+            expect(short) { SInt16.fromStorageByteReader(bc.size, bc::read) }
             bc.reset()
         }
     }
@@ -42,10 +44,10 @@ internal class SInt16Test {
     @Test
     fun testTransportBytesConversion() {
         val bc = ByteCollector()
-        for (it in int16values) {
-            bc.reserve(SInt16.calculateTransportByteLength(it))
-            SInt16.writeTransportBytes(it, bc::write)
-            SInt16.readTransportBytes(bc::read) shouldBe it
+        for (short in int16values) {
+            bc.reserve(SInt16.calculateTransportByteLength(short))
+            SInt16.writeTransportBytes(short, bc::write)
+            expect(short) { SInt16.readTransportBytes(bc::read) }
             bc.reset()
         }
     }
@@ -53,14 +55,14 @@ internal class SInt16Test {
 
     @Test
     fun testOfNativeTypes() {
-        SInt16.ofLong(12345) shouldBe 12345.toShort()
-        SInt16.ofDouble(12.0) shouldBe 12.toShort()
-        SInt16.ofInt(12) shouldBe 12.toShort()
+        expect(12345.toShort()) { SInt16.ofLong(12345) }
+        expect(12.toShort()) { SInt16.ofDouble(12.0) }
+        expect(12.toShort()) { SInt16.ofInt(12) }
     }
 
     @Test
     fun testIsOfType() {
-        SInt16.isOfType(12.toShort()) shouldBe true
-        SInt16.isOfType(1234L) shouldBe false
+        assertTrue { SInt16.isOfType(12.toShort()) }
+        assertFalse { SInt16.isOfType(1234L) }
     }
 }

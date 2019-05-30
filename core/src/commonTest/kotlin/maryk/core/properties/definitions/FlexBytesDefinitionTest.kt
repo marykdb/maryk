@@ -7,9 +7,9 @@ import maryk.core.properties.exceptions.InvalidSizeException
 import maryk.core.properties.types.Bytes
 import maryk.lib.exceptions.ParseException
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
+import kotlin.test.expect
 
 internal class FlexBytesDefinitionTest {
     private val flexBytesToTest = arrayOf(
@@ -41,10 +41,10 @@ internal class FlexBytesDefinitionTest {
         def.validateWithRef(newValue = Bytes(ByteArray(5) { 0x00.toByte() }))
         def.validateWithRef(newValue = Bytes(ByteArray(10) { 0x00.toByte() }))
 
-        shouldThrow<InvalidSizeException> {
+        assertFailsWith<InvalidSizeException> {
             def.validateWithRef(newValue = Bytes(ByteArray(1) { 0x00.toByte() }))
         }
-        shouldThrow<InvalidSizeException> {
+        assertFailsWith<InvalidSizeException> {
             def.validateWithRef(newValue = Bytes(ByteArray(20) { 0x00.toByte() }))
         }
     }
@@ -52,12 +52,12 @@ internal class FlexBytesDefinitionTest {
     @Test
     fun convertJSONToDataObjectvaluesToStorageBytesAndBack() {
         val bc = ByteCollector()
-        for (it in flexBytesToTest) {
+        for (flexBytes in flexBytesToTest) {
             bc.reserve(
-                def.calculateStorageByteLength(it)
+                def.calculateStorageByteLength(flexBytes)
             )
-            def.writeStorageBytes(it, bc::write)
-            def.readStorageBytes(bc.size, bc::read) shouldBe it
+            def.writeStorageBytes(flexBytes, bc::write)
+            expect(flexBytes) { def.readStorageBytes(bc.size, bc::read) }
             bc.reset()
         }
     }
@@ -72,15 +72,15 @@ internal class FlexBytesDefinitionTest {
 
     @Test
     fun convertValuesToStringAndBack() {
-        for (it in flexBytesToTest) {
-            val b = def.asString(it)
-            def.fromString(b) shouldBe it
+        for (flexBytes in flexBytesToTest) {
+            val b = def.asString(flexBytes)
+            expect(flexBytes) { def.fromString(b) }
         }
     }
 
     @Test
     fun invalidStringValueShouldThrowException() {
-        shouldThrow<ParseException> {
+        assertFailsWith<ParseException> {
             def.fromString("wrong§")
         }
     }
@@ -100,16 +100,21 @@ internal class FlexBytesDefinitionTest {
     @Test
     fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, FlexBytesDefinition.Model)
-        checkYamlConversion(this.defMaxDefined, FlexBytesDefinition.Model) shouldBe """
-        required: false
-        final: true
-        unique: true
-        minValue: AAAAAAA
-        maxValue: qqqqqqo
-        default: AAAAAAE
-        minSize: 4
-        maxSize: 10
 
-        """.trimIndent()
+        expect(
+            """
+            required: false
+            final: true
+            unique: true
+            minValue: AAAAAAA
+            maxValue: qqqqqqo
+            default: AAAAAAE
+            minSize: 4
+            maxSize: 10
+
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.defMaxDefined, FlexBytesDefinition.Model)
+        }
     }
 }

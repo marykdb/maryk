@@ -10,9 +10,9 @@ import maryk.json.JsonToken.FieldName
 import maryk.json.JsonToken.StartArray
 import maryk.json.JsonToken.StartObject
 import maryk.json.JsonToken.Value
-import maryk.test.shouldBe
-import maryk.test.shouldBeOfType
+import maryk.test.assertType
 import kotlin.test.Test
+import kotlin.test.expect
 
 fun createMarykYamlModelReader(yaml: String): IsJsonLikeReader {
     var index = 0
@@ -43,54 +43,48 @@ class MarykYamlTest {
         |    - !Ref test
         """.trimMargin()
         ).apply {
-            shouldBeOfType<StartArray>(nextToken())
+            assertType<StartArray>(nextToken())
 
-            shouldBeOfType<StartObject>(
-                nextToken()
-            ).type shouldBe PropertyDefinitionType.Boolean
-
-            shouldBeOfType<FieldName>(
-                nextToken()
-            ).value shouldBe "k1"
-
-            shouldBeOfType<Value<*>>(
-                nextToken()
-            ).value shouldBe "v1"
-
-            shouldBeOfType<EndObject>(nextToken())
-
-            shouldBeOfType<StartObject>(
-                nextToken()
-            ).type shouldBe PropertyDefinitionType.String
-
-            shouldBeOfType<FieldName>(
-                nextToken()
-            ).value shouldBe "k2"
-
-            shouldBeOfType<Value<*>>(
-                nextToken()
-            ).value shouldBe "v2"
-
-            shouldBeOfType<EndObject>(
-                nextToken()
-            )
-
-            shouldBeOfType<Value<*>>(
-                nextToken()
-            ).also {
-                it.type shouldBe IndexKeyPartType.UUID
-                it.value shouldBe null
+            expect(PropertyDefinitionType.Boolean) {
+                assertType<StartObject>(nextToken()).type
             }
 
-            shouldBeOfType<Value<*>>(
-                nextToken()
-            ).also {
-                it.type shouldBe IndexKeyPartType.Reference
-                it.value shouldBe "test"
+            expect("k1") {
+                assertType<FieldName>(nextToken()).value
             }
 
-            shouldBeOfType<EndArray>(nextToken())
-            shouldBeOfType<EndDocument>(nextToken())
+            expect("v1") {
+                assertType<Value<*>>(nextToken()).value
+            }
+
+            assertType<EndObject>(nextToken())
+
+            expect(PropertyDefinitionType.String) {
+                assertType<StartObject>(nextToken()).type
+            }
+
+            expect("k2") {
+                assertType<FieldName>(nextToken()).value
+            }
+
+            expect("v2") {
+                assertType<Value<*>>(nextToken()).value
+            }
+
+            assertType<EndObject>(nextToken())
+
+            assertType<Value<*>>(nextToken()).also {
+                expect(IndexKeyPartType.UUID) { it.type }
+                expect(null) { it.value }
+            }
+
+            assertType<Value<*>>(nextToken()).also {
+                expect(IndexKeyPartType.Reference) { it.type }
+                expect("test") { it.value }
+            }
+
+            assertType<EndArray>(nextToken())
+            assertType<EndDocument>(nextToken())
         }
     }
 }

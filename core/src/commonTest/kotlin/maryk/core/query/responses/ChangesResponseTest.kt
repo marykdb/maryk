@@ -20,8 +20,8 @@ import maryk.core.query.pairs.withType
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.SimpleMarykTypeEnum.S3
 import maryk.test.models.TestMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class ChangesResponseTest {
     private val key = TestMarykModel.key("AAACKwEAAg")
@@ -76,29 +76,33 @@ class ChangesResponseTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(this.objectChangesResponse, ChangesResponse, { this.context }) shouldBe """
-        dataModel: TestMarykModel
-        changes:
-        - key: AAACKwEAAg
-          changes:
-          - version: 219674127
+        expect(
+            """
+            dataModel: TestMarykModel
             changes:
-            - !ObjectDelete
-              isDeleted: true
-            - !ListChange
-              list:
-            - !SetChange
-              set:
-            - !TypeChange
-              multi: S3
-          - version: 319674127
-            changes:
-            - !Change
-              embeddedValues.value: new
-            - !Delete embeddedValues.value
-            - !Check
-              embeddedValues.value: current
+            - key: AAACKwEAAg
+              changes:
+              - version: 219674127
+                changes:
+                - !ObjectDelete
+                  isDeleted: true
+                - !ListChange
+                  list:
+                - !SetChange
+                  set:
+                - !TypeChange
+                  multi: S3
+              - version: 319674127
+                changes:
+                - !Change
+                  embeddedValues.value: new
+                - !Delete embeddedValues.value
+                - !Check
+                  embeddedValues.value: current
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.objectChangesResponse, ChangesResponse, { this.context })
+        }
     }
 }

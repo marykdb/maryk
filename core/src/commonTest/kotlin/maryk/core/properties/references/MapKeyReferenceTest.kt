@@ -5,9 +5,10 @@ import maryk.core.protobuf.WriteCache
 import maryk.lib.time.Time
 import maryk.test.ByteCollector
 import maryk.test.models.TestMarykModel
-import maryk.test.shouldBe
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.expect
 
 class MapKeyReferenceTest {
     private val keyReference = TestMarykModel { map refToKey Time(12, 0, 1) }
@@ -22,9 +23,9 @@ class MapKeyReferenceTest {
             Time(2, 14, 52) to "wrong again"
         )
 
-        this.keyReference.resolveFromAny(map) shouldBe Time(12, 0, 1)
+        expect(Time(12, 0, 1)) { this.keyReference.resolveFromAny(map) }
 
-        shouldThrow<UnexpectedValueException> {
+        assertFailsWith<UnexpectedValueException> {
             this.keyReference.resolveFromAny("wrongInput")
         }
     }
@@ -40,19 +41,19 @@ class MapKeyReferenceTest {
         keyReference.writeTransportBytes(cache, bc::write)
 
         val converted = TestMarykModel.getPropertyReferenceByBytes(bc.size, bc::read)
-        converted shouldBe keyReference
+        assertEquals(keyReference, converted)
         bc.reset()
     }
 
     @Test
     fun testStringConversion() {
-        keyReference.completeName shouldBe "map.#12:00:01"
-        TestMarykModel.getPropertyReferenceByName(keyReference.completeName) shouldBe keyReference
+        expect("map.#12:00:01") { keyReference.completeName }
+        expect(keyReference) { TestMarykModel.getPropertyReferenceByName(keyReference.completeName) }
     }
 
     @Test
     fun testStringConversionForSub() {
-        subKeyReference.completeName shouldBe "embeddedValues.marykModel.map.#15:22:55"
-        TestMarykModel.getPropertyReferenceByName(subKeyReference.completeName) shouldBe subKeyReference
+        expect("embeddedValues.marykModel.map.#15:22:55") { subKeyReference.completeName }
+        expect(subKeyReference) { TestMarykModel.getPropertyReferenceByName(subKeyReference.completeName) }
     }
 }

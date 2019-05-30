@@ -2,8 +2,8 @@ package maryk.core.properties.types.numeric
 
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 internal class UInt8Test {
     private val uInt8values = arrayOf(UInt8.MIN_VALUE, UInt8.MAX_VALUE, 89.toUByte(), 127.toUByte())
@@ -15,11 +15,11 @@ internal class UInt8Test {
 
     @Test
     fun testStringConversion() {
-        UInt8.MIN_VALUE.toString() shouldBe "0"
-        UInt8.MAX_VALUE.toString() shouldBe "255"
+        expect("0") { UInt8.MIN_VALUE.toString() }
+        expect("255") { UInt8.MAX_VALUE.toString() }
 
-        for (it in uInt8values) {
-            UInt8.ofString(it.toString()) shouldBe it
+        for (uByte in uInt8values) {
+            expect(uByte) { UInt8.ofString(uByte.toString()) }
         }
     }
 
@@ -35,9 +35,9 @@ internal class UInt8Test {
             bc.reserve(UInt8.size)
             UInt8.writeStorageBytes(value, bc::write)
 
-            bc.bytes?.toHex() shouldBe hexString
+            expect(hexString) { bc.bytes?.toHex() }
 
-            UInt8.fromStorageByteReader(bc.size, bc::read) shouldBe value
+            expect(value) { UInt8.fromStorageByteReader(bc.size, bc::read) }
             bc.reset()
         }
     }
@@ -54,9 +54,9 @@ internal class UInt8Test {
             bc.reserve(UInt8.calculateTransportByteLength(value))
             UInt8.writeTransportBytes(value, bc::write)
 
-            bc.bytes?.toHex() shouldBe hexString
+            expect(hexString) { bc.bytes?.toHex() }
 
-            UInt8.readTransportBytes(bc::read) shouldBe value
+            expect(value) { UInt8.readTransportBytes(bc::read) }
             bc.reset()
         }
     }

@@ -1,9 +1,9 @@
 package maryk.yaml
 
 import maryk.json.IllegalJsonOperation
-import maryk.test.shouldBe
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 internal class YamlWriterTest {
     @Test
@@ -30,16 +30,19 @@ internal class YamlWriterTest {
             writeEndArray()
         }
 
-        output shouldBe """
-        - 1
-        - '#Test''s'
-        - 3.5
-        - true
-        - test: false
-          test2: value
-        - another: yes
+        assertEquals(
+            """
+            - 1
+            - '#Test''s'
+            - 3.5
+            - true
+            - test: false
+              test2: value
+            - another: yes
 
-        """.trimIndent()
+            """.trimIndent(),
+            output
+        )
     }
 
     @Test
@@ -64,14 +67,17 @@ internal class YamlWriterTest {
             writeEndObject()
         }
 
-        output shouldBe """
-        t1:
-          c1: v1
-          c2: v2
-        t2:
-          c3: v3
+        assertEquals(
+            """
+            t1:
+              c1: v1
+              c2: v2
+            t2:
+              c3: v3
 
-        """.trimIndent()
+            """.trimIndent(),
+            output
+        )
     }
 
     @Test
@@ -97,11 +103,14 @@ internal class YamlWriterTest {
             writeEndObject()
         }
 
-        output shouldBe """
-        t1: {c1: v1, c2: v2}
-        t2: {c3: v3}
+        assertEquals(
+            """
+            t1: {c1: v1, c2: v2}
+            t2: {c3: v3}
 
-        """.trimIndent()
+            """.trimIndent(),
+            output
+        )
     }
 
     @Test
@@ -126,10 +135,13 @@ internal class YamlWriterTest {
             writeEndObject()
         }
 
-        output shouldBe """
-        {t1: {c1: v1, c2: v2}, t2: {c3: v3}}
+        assertEquals(
+            """
+            {t1: {c1: v1, c2: v2}, t2: {c3: v3}}
 
-        """.trimIndent()
+            """.trimIndent(),
+            output
+        )
     }
 
     @Test
@@ -150,13 +162,16 @@ internal class YamlWriterTest {
             writeEndArray()
         }
 
-        output shouldBe """
-        - - 1
-          - 2
-        - - 3
-          - 4
+        assertEquals(
+            """
+            - - 1
+              - 2
+            - - 3
+              - 4
 
-        """.trimIndent()
+            """.trimIndent(),
+            output
+        )
     }
 
     @Test
@@ -179,15 +194,18 @@ internal class YamlWriterTest {
             writeEndArray()
         }
 
-        output shouldBe """
-        - !tag
-          - 1
-          - 2
-        - !tag
-          - 3
-          - 4
+        assertEquals(
+            """
+            - !tag
+              - 1
+              - 2
+            - !tag
+              - 3
+              - 4
 
-        """.trimIndent()
+            """.trimIndent(),
+            output
+        )
     }
 
     @Test
@@ -208,11 +226,14 @@ internal class YamlWriterTest {
             writeEndArray()
         }
 
-        output shouldBe """
-        - [1, 2]
-        - [3, 4]
+        assertEquals(
+            """
+            - [1, 2]
+            - [3, 4]
 
-        """.trimIndent()
+            """.trimIndent(),
+            output
+        )
     }
 
     @Test
@@ -233,10 +254,13 @@ internal class YamlWriterTest {
             writeEndArray()
         }
 
-        output shouldBe """
-        [[1, 2],[3, 4]]
+        assertEquals(
+            """
+            [[1, 2],[3, 4]]
 
-        """.trimIndent()
+            """.trimIndent(),
+            output
+        )
     }
 
     @Test
@@ -278,17 +302,20 @@ internal class YamlWriterTest {
             writeEndObject()
         }
 
-        output shouldBe """
-        !!omap
-        t1: !!str true
-        t2: !!set
-        - !!int 30
-        t3: !!omap
-          a1: 1
-        t4: !!omap {a1: !!int 1}
-        t5: !!set [!!int 30]
+        assertEquals(
+            """
+            !!omap
+            t1: !!str true
+            t2: !!set
+            - !!int 30
+            t3: !!omap
+              a1: 1
+            t4: !!omap {a1: !!int 1}
+            t5: !!set [!!int 30]
 
-        """.trimIndent()
+            """.trimIndent(),
+            output
+        )
     }
 
     @Test
@@ -314,14 +341,17 @@ internal class YamlWriterTest {
             writeEndObject()
         }
 
-        output shouldBe """
-        key:
-        - !Foo
-          k1: 30
-        - !Bar
-          k2: 40
+        assertEquals(
+            """
+            key:
+            - !Foo
+              k1: 30
+            - !Bar
+              k2: 40
 
-        """.trimIndent()
+            """.trimIndent(),
+            output
+        )
     }
 
     @Test
@@ -382,22 +412,25 @@ internal class YamlWriterTest {
             writeEndArray()
         }
 
-        output shouldBe """
-        - ? - a1
-            - a2
-          : value 1
-          ? f1: v1
-            f2: v2
-          : !tag value 2
-          ? {f1: v1, f2: v2}
-          :
-          - a1
-          - a2
-          ? [a1, a2]
-          : f1: v1
-            f2: v2
+        assertEquals(
+            """
+            - ? - a1
+                - a2
+              : value 1
+              ? f1: v1
+                f2: v2
+              : !tag value 2
+              ? {f1: v1, f2: v2}
+              :
+              - a1
+              - a2
+              ? [a1, a2]
+              : f1: v1
+                f2: v2
 
-        """.trimIndent()
+            """.trimIndent(),
+            output
+        )
     }
 
     @Test
@@ -408,17 +441,17 @@ internal class YamlWriterTest {
             output += it
         }.apply {
             // Should not be able to start with end object
-            shouldThrow<IllegalJsonOperation> {
+            assertFailsWith<IllegalJsonOperation> {
                 writeEndObject()
             }
 
             // Should not be able to start with end array
-            shouldThrow<IllegalJsonOperation> {
+            assertFailsWith<IllegalJsonOperation> {
                 writeEndArray()
             }
 
             // Should not be able to start with field name
-            shouldThrow<IllegalJsonOperation> {
+            assertFailsWith<IllegalJsonOperation> {
                 writeFieldName("test")
             }
         }
@@ -433,12 +466,12 @@ internal class YamlWriterTest {
             writeStartArray()
 
             // Should not be able to write end object after start array
-            shouldThrow<IllegalJsonOperation> {
+            assertFailsWith<IllegalJsonOperation> {
                 writeEndObject()
             }
 
             // Should not be able to write fieldname to array
-            shouldThrow<IllegalJsonOperation> {
+            assertFailsWith<IllegalJsonOperation> {
                 writeFieldName("test")
             }
         }
@@ -455,17 +488,17 @@ internal class YamlWriterTest {
             writeStartObject()
 
             // Should not be able to write end array after start object
-            shouldThrow<IllegalJsonOperation> {
+            assertFailsWith<IllegalJsonOperation> {
                 writeEndArray()
             }
 
             // Should not be able to write value before a fieldname
-            shouldThrow<IllegalJsonOperation> {
+            assertFailsWith<IllegalJsonOperation> {
                 writeValue("false")
             }
 
             // Should not be able to write string value before a fieldname
-            shouldThrow<IllegalJsonOperation> {
+            assertFailsWith<IllegalJsonOperation> {
                 writeString("test")
             }
         }
@@ -481,17 +514,17 @@ internal class YamlWriterTest {
             writeFieldName("field")
 
             // Should not be able to write end array after fieldname
-            shouldThrow<IllegalJsonOperation> {
+            assertFailsWith<IllegalJsonOperation> {
                 writeEndArray()
             }
 
             // Should not be able to write end object after fieldname
-            shouldThrow<IllegalJsonOperation> {
+            assertFailsWith<IllegalJsonOperation> {
                 writeEndObject()
             }
 
             // Should not be able to write field name after field name
-            shouldThrow<IllegalJsonOperation> {
+            assertFailsWith<IllegalJsonOperation> {
                 writeFieldName("anotherField")
             }
         }

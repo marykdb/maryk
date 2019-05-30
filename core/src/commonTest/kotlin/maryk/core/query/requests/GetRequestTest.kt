@@ -10,8 +10,8 @@ import maryk.core.yaml.MarykYamlReaders
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.getMaxRequest
 import maryk.test.requests.getRequest
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class GetRequestTest {
     private val context = RequestContext(mapOf(
@@ -20,28 +20,32 @@ class GetRequestTest {
 
     @Test
     fun createAsMap() {
-        GetRequest.values(context) {
-            mapNonNulls(
-                dataModel with SimpleMarykModel,
-                keys with listOf(getRequest.keys[0], getRequest.keys[1])
-            )
-        }.toDataObject() shouldBe getRequest
+        expect(getRequest) {
+            GetRequest.values(context) {
+                mapNonNulls(
+                    dataModel with SimpleMarykModel,
+                    keys with listOf(getRequest.keys[0], getRequest.keys[1])
+                )
+            }.toDataObject()
+        }
     }
 
     @Test
     fun createAsMaxMap() {
-        GetRequest.values(context) {
-            mapNonNulls(
-                dataModel with SimpleMarykModel,
-                keys with listOf(getMaxRequest.keys[0], getMaxRequest.keys[1]),
-                where with Exists(SimpleMarykModel { value::ref }),
-                toVersion with 333uL,
-                filterSoftDeleted with true,
-                select with SimpleMarykModel.graph {
-                    listOf(value)
-                }
-            )
-        }.toDataObject() shouldBe getMaxRequest
+        expect(getMaxRequest) {
+            GetRequest.values(context) {
+                mapNonNulls(
+                    dataModel with SimpleMarykModel,
+                    keys with listOf(getMaxRequest.keys[0], getMaxRequest.keys[1]),
+                    where with Exists(SimpleMarykModel { value::ref }),
+                    toVersion with 333uL,
+                    filterSoftDeleted with true,
+                    select with SimpleMarykModel.graph {
+                        listOf(value)
+                    }
+                )
+            }.toDataObject()
+        }
     }
 
     @Test
@@ -58,23 +62,31 @@ class GetRequestTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(getRequest, GetRequest, { this.context }) shouldBe """
-        from: SimpleMarykModel
-        keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
-        filterSoftDeleted: true
+        expect(
+            """
+            from: SimpleMarykModel
+            keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
+            filterSoftDeleted: true
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(getRequest, GetRequest, { this.context })
+        }
 
-        checkYamlConversion(getMaxRequest, GetRequest, { this.context }) shouldBe """
-        from: SimpleMarykModel
-        keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
-        select:
-        - value
-        where: !Exists value
-        toVersion: 333
-        filterSoftDeleted: true
+        expect(
+            """
+            from: SimpleMarykModel
+            keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
+            select:
+            - value
+            where: !Exists value
+            toVersion: 333
+            filterSoftDeleted: true
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(getMaxRequest, GetRequest, { this.context })
+        }
     }
 
     @Test
@@ -98,11 +110,12 @@ class GetRequestTest {
             }
         }
 
+
         GetRequest.readJson(reader, this.context)
             .toDataObject()
             .apply {
-                dataModel shouldBe SimpleMarykModel
-                where shouldBe null
+                expect(SimpleMarykModel) { dataModel }
+                expect(null) { where }
             }
     }
 }

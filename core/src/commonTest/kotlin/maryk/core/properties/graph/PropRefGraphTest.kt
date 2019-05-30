@@ -6,8 +6,8 @@ import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.test.models.TestMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class PropRefGraphTest {
     private val graph = TestMarykModel.properties.run {
@@ -40,12 +40,16 @@ class PropRefGraphTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(this.graph, PropRefGraph, { this.context }) shouldBe """
-        embeddedValues:
-        - value
-        - model:
-          - marykModel
+        expect(
+            """
+            embeddedValues:
+            - value
+            - model:
+              - marykModel
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.graph, PropRefGraph, { this.context })
+        }
     }
 }

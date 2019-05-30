@@ -10,8 +10,8 @@ import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.Success
 import maryk.test.models.SimpleMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class DeleteResponseTest {
     private val key = SimpleMarykModel.key("+1xO4zD4R5sIMcS9pXTZEA")
@@ -42,17 +42,21 @@ class DeleteResponseTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(this.deleteResponse, DeleteResponse, { this.context }) shouldBe """
-        dataModel: SimpleMarykModel
-        statuses:
-        - !SUCCESS
-          version: 32352
-        - !DOES_NOT_EXIST
-          key: +1xO4zD4R5sIMcS9pXTZEA
-        - !AUTH_FAIL
-        - !SERVER_FAIL
-          reason: Something went wrong
+        expect(
+            """
+            dataModel: SimpleMarykModel
+            statuses:
+            - !SUCCESS
+              version: 32352
+            - !DOES_NOT_EXIST
+              key: +1xO4zD4R5sIMcS9pXTZEA
+            - !AUTH_FAIL
+            - !SERVER_FAIL
+              reason: Something went wrong
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.deleteResponse, DeleteResponse, { this.context })
+        }
     }
 }

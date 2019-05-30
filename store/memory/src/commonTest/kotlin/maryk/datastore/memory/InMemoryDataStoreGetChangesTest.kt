@@ -6,12 +6,12 @@ import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.getChanges
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.test.assertType
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.addRequest
 import maryk.test.runSuspendingTest
-import maryk.test.shouldBe
-import maryk.test.shouldBeOfType
 import kotlin.test.Test
+import kotlin.test.expect
 
 class InMemoryDataStoreGetChangesTest {
     private val dataStore = InMemoryDataStore()
@@ -24,7 +24,7 @@ class InMemoryDataStoreGetChangesTest {
                 addRequest
             )
             addResponse.statuses.forEach { status ->
-                val response = shouldBeOfType<AddSuccess<SimpleMarykModel>>(status)
+                val response = assertType<AddSuccess<SimpleMarykModel>>(status)
                 keys.add(response.key)
                 if (response.version < lowestVersion) {
                     // Add lowest version for scan test
@@ -40,19 +40,27 @@ class InMemoryDataStoreGetChangesTest {
             SimpleMarykModel.getChanges(*keys.toTypedArray())
         )
 
-        getResponse.changes.size shouldBe 2
+        expect(2) { getResponse.changes.size }
 
-        getResponse.changes[0].changes shouldBe listOf(
-            VersionedChanges(version = lowestVersion, changes = listOf(
-                Change(SimpleMarykModel { value::ref} with "haha1")
-            ))
-        )
+        expect(
+            listOf(
+                VersionedChanges(version = lowestVersion, changes = listOf(
+                    Change(SimpleMarykModel { value::ref} with "haha1")
+                ))
+            )
+        ) {
+            getResponse.changes[0].changes
+        }
 
-        getResponse.changes[1].changes shouldBe listOf(
-            VersionedChanges(version = lowestVersion, changes = listOf(
-                Change(SimpleMarykModel { value::ref } with "haha2")
-            ))
-        )
+        expect(
+            listOf(
+                VersionedChanges(version = lowestVersion, changes = listOf(
+                    Change(SimpleMarykModel { value::ref } with "haha2")
+                ))
+            )
+        ) {
+            getResponse.changes[1].changes
+        }
     }
 
     @Test
@@ -61,7 +69,7 @@ class InMemoryDataStoreGetChangesTest {
             SimpleMarykModel.getChanges(*keys.toTypedArray(), toVersion = lowestVersion - 1uL)
         )
 
-        getResponse.changes.size shouldBe 0
+        expect(0) { getResponse.changes.size }
     }
 
     @Test
@@ -70,7 +78,7 @@ class InMemoryDataStoreGetChangesTest {
             SimpleMarykModel.getChanges(*keys.toTypedArray(), fromVersion = lowestVersion + 1uL)
         )
 
-        getResponse.changes.size shouldBe 0
+        expect(0) { getResponse.changes.size }
     }
 
     @Test
@@ -84,15 +92,19 @@ class InMemoryDataStoreGetChangesTest {
             )
         )
 
-        scanResponse.changes.size shouldBe 2
+        expect(2) { scanResponse.changes.size }
 
         scanResponse.changes[0].let {
-            it.changes shouldBe listOf(
-                VersionedChanges(version = lowestVersion, changes = listOf(
-                    Change(SimpleMarykModel { value::ref } with "haha1")
-                ))
-            )
-            it.key shouldBe keys[0]
+            expect(
+                listOf(
+                    VersionedChanges(version = lowestVersion, changes = listOf(
+                        Change(SimpleMarykModel { value::ref } with "haha1")
+                    ))
+                )
+            ) {
+                it.changes
+            }
+            expect(keys[0]) { it.key }
         }
     }
 }

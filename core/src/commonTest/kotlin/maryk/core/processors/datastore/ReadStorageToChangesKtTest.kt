@@ -13,8 +13,8 @@ import maryk.lib.time.Time
 import maryk.test.models.Option.V1
 import maryk.test.models.Option.V2
 import maryk.test.models.TestMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 private val valuesAsStorablesWithVersion = arrayOf(
     "09" to arrayOf(1234uL to "hello world", 1235uL to "hello universe"),
@@ -69,87 +69,90 @@ class ReadStorageToChangesKtTest {
             }
         )
 
-        values shouldBe listOf(
-            VersionedChanges(
-                1233UL,
-                listOf(
-                    Delete(TestMarykModel { double::ref }),
-                    Change(
-                        TestMarykModel { dateTime::ref } with DateTime(2018, 7, 18),
-                        TestMarykModel { map refAt Time(10, 14, 1) } with "ten",
-                        TestMarykModel { listOfString refAt 0u } with "v1"
-                    ),
-                    SetChange(
-                        TestMarykModel { set::ref }.change(
-                            addValues = setOf(Date(2018, 9, 9))
+        assertEquals(
+            listOf(
+                VersionedChanges(
+                    1233UL,
+                    listOf(
+                        Delete(TestMarykModel { double::ref }),
+                        Change(
+                            TestMarykModel { dateTime::ref } with DateTime(2018, 7, 18),
+                            TestMarykModel { map refAt Time(10, 14, 1) } with "ten",
+                            TestMarykModel { listOfString refAt 0u } with "v1"
                         ),
-                        TestMarykModel { setOfString::ref }.change(
-                            addValues = setOf("abc", "def")
+                        SetChange(
+                            TestMarykModel { set::ref }.change(
+                                addValues = setOf(Date(2018, 9, 9))
+                            ),
+                            TestMarykModel { setOfString::ref }.change(
+                                addValues = setOf("abc", "def")
+                            )
+                        )
+                    )
+                ),
+                VersionedChanges(
+                    1234UL,
+                    listOf(
+                        Change(
+                            TestMarykModel { string::ref } with "hello world",
+                            TestMarykModel { int::ref } with 5,
+                            TestMarykModel { enum::ref } with V2,
+                            TestMarykModel { map refAt Time(11, 22, 33) } with "eleven",
+                            TestMarykModel { map refAt Time(12, 23, 34) } with "twelve",
+                            TestMarykModel { embeddedValues { value::ref } } with "test",
+                            TestMarykModel { embeddedValues { model { value::ref } } } with "another test",
+                            TestMarykModel { listOfString refAt 1u } with "v2",
+                            TestMarykModel { listOfString refAt 2u } with "v3"
+                        ),
+                        Delete(
+                            TestMarykModel { map refAt Time(11, 22, 17) },
+                            TestMarykModel { map refAt Time(12, 15, 2) },
+                            TestMarykModel { listOfString refAt 3u },
+                            TestMarykModel { listOfString refAt 4u }
+                        )
+                    )
+                ),
+                VersionedChanges(
+                    1235UL,
+                    listOf(
+                        Change(
+                            TestMarykModel { string::ref } with "hello universe",
+                            TestMarykModel { int::ref } with 7,
+                            TestMarykModel { uint::ref } with 3u,
+                            TestMarykModel { enum::ref } with V1
+                        ),
+                        Delete(
+                            TestMarykModel { dateTime::ref },
+                            TestMarykModel { set refAt Date(1989, 5, 15) },
+                            TestMarykModel { set refAt Date(1989, 5, 16) },
+                            TestMarykModel { map refAt Time(10, 14, 1) },
+                            TestMarykModel { embeddedValues { model { value::ref } } },
+                            TestMarykModel { listOfString.refAt(2u) },
+                            TestMarykModel { setOfString refAt "abc" },
+                            TestMarykModel { setOfString refAt "def" }
+                        ),
+                        SetChange(
+                            TestMarykModel { set::ref }.change(
+                                addValues = setOf(Date(1981, 12, 5), Date(1981, 12, 6))
+                            ),
+                            TestMarykModel { setOfString::ref }.change(
+                                addValues = setOf("ghi")
+                            )
+                        )
+                    )
+                ),
+                VersionedChanges(
+                    1236UL,
+                    listOf(
+                        Delete(
+                            TestMarykModel { set refAt Date(1981, 12, 6) },
+                            TestMarykModel { map::ref },
+                            TestMarykModel { embeddedValues::ref }
                         )
                     )
                 )
             ),
-            VersionedChanges(
-                1234UL,
-                listOf(
-                    Change(
-                        TestMarykModel { string::ref } with "hello world",
-                        TestMarykModel { int::ref } with 5,
-                        TestMarykModel { enum::ref } with V2,
-                        TestMarykModel { map refAt Time(11, 22, 33) } with "eleven",
-                        TestMarykModel { map refAt Time(12, 23, 34) } with "twelve",
-                        TestMarykModel { embeddedValues { value::ref } } with "test",
-                        TestMarykModel { embeddedValues { model { value::ref } } } with "another test",
-                        TestMarykModel { listOfString refAt 1u } with "v2",
-                        TestMarykModel { listOfString refAt 2u } with "v3"
-                    ),
-                    Delete(
-                        TestMarykModel { map refAt Time(11, 22, 17) },
-                        TestMarykModel { map refAt Time(12, 15, 2) },
-                        TestMarykModel { listOfString refAt 3u },
-                        TestMarykModel { listOfString refAt 4u }
-                    )
-                )
-            ),
-            VersionedChanges(
-                1235UL,
-                listOf(
-                    Change(
-                        TestMarykModel { string::ref } with "hello universe",
-                        TestMarykModel { int::ref } with 7,
-                        TestMarykModel { uint::ref } with 3u,
-                        TestMarykModel { enum::ref } with V1
-                    ),
-                    Delete(
-                        TestMarykModel { dateTime::ref },
-                        TestMarykModel { set refAt Date(1989, 5, 15) },
-                        TestMarykModel { set refAt Date(1989, 5, 16) },
-                        TestMarykModel { map refAt Time(10, 14, 1) },
-                        TestMarykModel { embeddedValues { model { value::ref } } },
-                        TestMarykModel { listOfString.refAt(2u) },
-                        TestMarykModel { setOfString refAt "abc" },
-                        TestMarykModel { setOfString refAt "def" }
-                    ),
-                    SetChange(
-                        TestMarykModel { set::ref }.change(
-                            addValues = setOf(Date(1981, 12, 5), Date(1981, 12, 6))
-                        ),
-                        TestMarykModel { setOfString::ref }.change(
-                            addValues = setOf("ghi")
-                        )
-                    )
-                )
-            ),
-            VersionedChanges(
-                1236UL,
-                listOf(
-                    Delete(
-                        TestMarykModel { set refAt Date(1981, 12, 6) },
-                        TestMarykModel { map::ref },
-                        TestMarykModel { embeddedValues::ref }
-                    )
-                )
-            )
+            values
         )
     }
 }

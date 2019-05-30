@@ -5,11 +5,11 @@ import maryk.core.processors.datastore.matchers.QualifierExactMatcher
 import maryk.core.protobuf.WriteCache
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
+import maryk.test.assertType
 import maryk.test.models.TestMarykModel
-import maryk.test.shouldBe
-import maryk.test.shouldBeOfType
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
+import kotlin.test.expect
 
 class ListItemReferenceTest {
     private val reference = TestMarykModel { listOfString refAt 5u }
@@ -20,9 +20,9 @@ class ListItemReferenceTest {
     fun getValueFromList() {
         val list = listOf('a', 'b', 'c', 'd', 'e', 'f', 'g')
 
-        this.reference.resolveFromAny(list) shouldBe 'f'
+        expect('f') { this.reference.resolveFromAny(list) }
 
-        shouldThrow<UnexpectedValueException> {
+        assertFailsWith<UnexpectedValueException> {
             this.reference.resolveFromAny("wrongInput")
         }
     }
@@ -35,16 +35,16 @@ class ListItemReferenceTest {
             )
             reference.writeTransportBytes(cache, ::write)
 
-            TestMarykModel.getPropertyReferenceByBytes(size, ::read) shouldBe reference
+            expect(reference) { TestMarykModel.getPropertyReferenceByBytes(size, ::read) }
         }
     }
 
     @Test
     fun convertToStringAndBack() {
-        this.reference.completeName shouldBe "listOfString.@5"
+        expect("listOfString.@5") { this.reference.completeName }
 
         val converted = TestMarykModel.getPropertyReferenceByName(this.reference.completeName)
-        converted shouldBe this.reference
+        expect(this.reference) { converted }
     }
 
     @Test
@@ -55,9 +55,9 @@ class ListItemReferenceTest {
             )
             reference.writeStorageBytes(::write)
 
-            bytes!!.toHex() shouldBe "7a00000005"
+            expect("7a00000005") { bytes!!.toHex() }
 
-            TestMarykModel.Properties.getPropertyReferenceByStorageBytes(size, ::read) shouldBe reference
+            expect(reference) { TestMarykModel.Properties.getPropertyReferenceByStorageBytes(size, ::read) }
         }
     }
 
@@ -69,9 +69,9 @@ class ListItemReferenceTest {
             )
             subReference.writeStorageBytes(::write)
 
-            bytes!!.toHex() shouldBe "661e7a00000016"
+            expect("661e7a00000016") { bytes!!.toHex() }
 
-            TestMarykModel.Properties.getPropertyReferenceByStorageBytes(size, ::read) shouldBe subReference
+            expect(subReference) { TestMarykModel.Properties.getPropertyReferenceByStorageBytes(size, ::read) }
         }
     }
 
@@ -79,6 +79,8 @@ class ListItemReferenceTest {
     fun createItemRefQualifierMatcher() {
         val matcher = reference.toQualifierMatcher()
 
-        shouldBeOfType<QualifierExactMatcher>(matcher).qualifier.toHex()  shouldBe "7a00000005"
+        expect("7a00000005") {
+            assertType<QualifierExactMatcher>(matcher).qualifier.toHex()
+        }
     }
 }

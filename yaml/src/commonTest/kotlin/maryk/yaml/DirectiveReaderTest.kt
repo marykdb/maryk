@@ -1,7 +1,7 @@
 package maryk.yaml
 
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class DirectiveReaderTest {
     @Test
@@ -63,11 +63,11 @@ class DirectiveReaderTest {
         reader.apply {
             assertValue("test")
 
-            tags["!"] shouldBe "tag:maryk.io,2018:"
-            tags["!!"] shouldBe "tag:maryk.io,2016:"
-            tags["!yaml!"] shouldBe "tag:yaml.org,2002"
-            tags["!prefix!"] shouldBe "!my-"
-            tags["ignored"] shouldBe null
+            expect("tag:maryk.io,2018:") { tags["!"] }
+            expect("tag:maryk.io,2016:") { tags["!!"] }
+            expect("tag:yaml.org,2002") { tags["!yaml!"] }
+            expect("!my-") { tags["!prefix!"] }
+            expect(null) { tags["ignored"] }
         }
     }
 

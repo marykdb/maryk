@@ -15,97 +15,97 @@ import maryk.test.models.MarykTypeEnum.T5
 import maryk.test.models.SimpleMarykTypeEnum.S1
 import maryk.test.models.SimpleMarykTypeEnum.S3
 import maryk.test.models.TestMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 internal class DataObjectPropertyReferenceTest {
     @Test
     fun testReference() {
-        TestMarykModel { string::ref }.completeName shouldBe "string"
-        TestMarykModel { bool::ref }.completeName shouldBe "bool"
+        expect("string") { TestMarykModel { string::ref }.completeName }
+        expect("bool") { TestMarykModel { bool::ref }.completeName }
 
-        TestMarykModel { embeddedValues { value::ref } }.completeName shouldBe "embeddedValues.value"
+        expect("embeddedValues.value") { TestMarykModel { embeddedValues { value::ref } }.completeName }
 
-        TestMarykModel { embeddedValues { model::ref } }.completeName shouldBe "embeddedValues.model"
-        TestMarykModel { embeddedValues { model { model { value::ref } } } }.completeName shouldBe "embeddedValues.model.model.value"
-        TestMarykModel { embeddedValues { model { model { model { value::ref } } } } }.completeName shouldBe "embeddedValues.model.model.model.value"
+        expect("embeddedValues.model") { TestMarykModel { embeddedValues { model::ref } }.completeName }
+        expect("embeddedValues.model.model.value") { TestMarykModel { embeddedValues { model { model { value::ref } } } }.completeName }
+        expect("embeddedValues.model.model.model.value") { TestMarykModel { embeddedValues { model { model { model { value::ref } } } } }.completeName }
 
-        TestMarykModel { embeddedValues { marykModel { list refAt 5u } } }.completeName shouldBe "embeddedValues.marykModel.list.@5"
-        TestMarykModel { embeddedValues { marykModel { list.refToAny() } } }.completeName shouldBe "embeddedValues.marykModel.list.*"
+        expect("embeddedValues.marykModel.list.@5") { TestMarykModel { embeddedValues { marykModel { list refAt 5u } } }.completeName }
+        expect("embeddedValues.marykModel.list.*") { TestMarykModel { embeddedValues { marykModel { list.refToAny() } } }.completeName }
 
-        TestMarykModel { setOfString::ref }.completeName shouldBe "setOfString"
-        TestMarykModel { setOfString refAt "v1" }.completeName shouldBe "setOfString.#v1"
-        TestMarykModel { embeddedValues { marykModel { set refAt Date(2017, 12, 5) } } }.completeName shouldBe "embeddedValues.marykModel.set.#2017-12-05"
+        expect("setOfString") { TestMarykModel { setOfString::ref }.completeName }
+        expect("setOfString.#v1") { TestMarykModel { setOfString refAt "v1" }.completeName }
+        expect("embeddedValues.marykModel.set.#2017-12-05") { TestMarykModel { embeddedValues { marykModel { set refAt Date(2017, 12, 5) } } }.completeName }
 
-        TestMarykModel { embeddedValues { marykModel { map refToKey Time(12, 23) } } }.completeName shouldBe """embeddedValues.marykModel.map.#12:23"""
-        TestMarykModel { embeddedValues { marykModel { map refAt Time(12, 23) } } }.completeName shouldBe "embeddedValues.marykModel.map.@12:23"
+        expect("""embeddedValues.marykModel.map.#12:23""") { TestMarykModel { embeddedValues { marykModel { map refToKey Time(12, 23) } } }.completeName }
+        expect("embeddedValues.marykModel.map.@12:23") { TestMarykModel { embeddedValues { marykModel { map refAt Time(12, 23) } } }.completeName }
 
-        TestMarykModel { multi refAtType S1 }.completeName shouldBe "multi.*S1"
-        TestMarykModel { multi.refToType() }.completeName shouldBe "multi.*"
+        expect("multi.*S1") { TestMarykModel { multi refAtType S1 }.completeName }
+        expect("multi.*") { TestMarykModel { multi.refToType() }.completeName }
 
-        TestMarykModel { multi.withType(S3) { value::ref } }.completeName shouldBe "multi.*S3.value"
-        TestMarykModel { multi.withType(S3) { model { value::ref } } }.completeName shouldBe "multi.*S3.model.value"
+        expect("multi.*S3.value") { TestMarykModel { multi.withType(S3) { value::ref } }.completeName }
+        expect("multi.*S3.model.value") { TestMarykModel { multi.withType(S3) { model { value::ref } } }.completeName }
 
-        ComplexModel { mapIntObject refToKey 2u }.completeName shouldBe "mapIntObject.#2"
-        ComplexModel { mapIntObject refAt 2u }.completeName shouldBe "mapIntObject.@2"
-        ComplexModel { mapIntObject.at(2u) { value::ref } }.completeName shouldBe "mapIntObject.@2.value"
-        ComplexModel { mapIntObject.any { value::ref } }.completeName shouldBe "mapIntObject.*.value"
-        ComplexModel { mapIntObject.at(2u) { model { value::ref } } }.completeName shouldBe "mapIntObject.@2.model.value"
-        ComplexModel { mapIntObject.any { model { value::ref } } }.completeName shouldBe "mapIntObject.*.model.value"
+        expect("mapIntObject.#2") { ComplexModel { mapIntObject refToKey 2u }.completeName }
+        expect("mapIntObject.@2") { ComplexModel { mapIntObject refAt 2u }.completeName }
+        expect("mapIntObject.@2.value") { ComplexModel { mapIntObject.at(2u) { value::ref } }.completeName }
+        expect("mapIntObject.*.value") { ComplexModel { mapIntObject.any { value::ref } }.completeName }
+        expect("mapIntObject.@2.model.value") { ComplexModel { mapIntObject.at(2u) { model { value::ref } } }.completeName }
+        expect("mapIntObject.*.model.value") { ComplexModel { mapIntObject.any { model { value::ref } } }.completeName }
 
-        ComplexModel { mapWithList.at("a") { refAt(23u) } }.completeName shouldBe "mapWithList.@a.@23"
+        expect("mapWithList.@a.@23") { ComplexModel { mapWithList.at("a") { refAt(23u) } }.completeName }
 
-        ComplexModel { mapWithSet.at("b") { refAt("b3") } }.completeName shouldBe "mapWithSet.@b.#b3"
+        expect("mapWithSet.@b.#b3") { ComplexModel { mapWithSet.at("b") { refAt("b3") } }.completeName }
 
-        ComplexModel { mapWithMap.at("b") { refAt("c") } }.completeName shouldBe "mapWithMap.@b.@c"
+        expect("mapWithMap.@b.@c") { ComplexModel { mapWithMap.at("b") { refAt("c") } }.completeName }
 
-        ComplexModel { mapIntMulti.at(2u) { refAtType(T3) } }.completeName shouldBe "mapIntMulti.@2.*T3"
-        ComplexModel { mapIntMulti.at(2u) { atType(T3) { value::ref } } }.completeName shouldBe "mapIntMulti.@2.*T3.value"
-        ComplexModel { mapIntMulti.at(2u) { atType(T3) { model { value::ref } } } }.completeName shouldBe "mapIntMulti.@2.*T3.model.value"
+        expect("mapIntMulti.@2.*T3") { ComplexModel { mapIntMulti.at(2u) { refAtType(T3) } }.completeName }
+        expect("mapIntMulti.@2.*T3.value") { ComplexModel { mapIntMulti.at(2u) { atType(T3) { value::ref } } }.completeName }
+        expect("mapIntMulti.@2.*T3.model.value") { ComplexModel { mapIntMulti.at(2u) { atType(T3) { model { value::ref } } } }.completeName }
 
-        ComplexModel { mapIntMulti.at(2u) { atType(T4) { refAt(5u) } } }.completeName shouldBe "mapIntMulti.@2.*T4.@5"
-        ComplexModel { mapIntMulti.at(2u) { atType(T5) { refAt("value") } } }.completeName shouldBe "mapIntMulti.@2.*T5.#value"
+        expect("mapIntMulti.@2.*T4.@5") { ComplexModel { mapIntMulti.at(2u) { atType(T4) { refAt(5u) } } }.completeName }
+        expect("mapIntMulti.@2.*T5.#value") { ComplexModel { mapIntMulti.at(2u) { atType(T5) { refAt("value") } } }.completeName }
     }
 
     @Test
     fun testReferenceAsStorage() {
-        TestMarykModel { string::ref }.toStorageByteArray().toHex() shouldBe "09"
-        TestMarykModel { bool::ref }.toStorageByteArray().toHex() shouldBe "31"
+        expect("09") { TestMarykModel { string::ref }.toStorageByteArray().toHex() }
+        expect("31") { TestMarykModel { bool::ref }.toStorageByteArray().toHex() }
 
-        TestMarykModel { embeddedValues { value::ref } }.toStorageByteArray().toHex() shouldBe "6609"
+        expect("6609") { TestMarykModel { embeddedValues { value::ref } }.toStorageByteArray().toHex() }
 
-        TestMarykModel { embeddedValues { model::ref } }.toStorageByteArray().toHex() shouldBe "6616"
-        TestMarykModel { embeddedValues { model { model { value::ref } } } }.toStorageByteArray().toHex() shouldBe "66161609"
-        TestMarykModel { embeddedValues { model { model { model { value::ref } } } } }.toStorageByteArray().toHex() shouldBe "6616161609"
+        expect("6616") { TestMarykModel { embeddedValues { model::ref } }.toStorageByteArray().toHex() }
+        expect("66161609") { TestMarykModel { embeddedValues { model { model { value::ref } } } }.toStorageByteArray().toHex() }
+        expect("6616161609") { TestMarykModel { embeddedValues { model { model { model { value::ref } } } } }.toStorageByteArray().toHex() }
 
-        TestMarykModel { embeddedValues { marykModel { list refAt 5u } } }.toStorageByteArray().toHex() shouldBe "661e4200000005"
+        expect("661e4200000005") { TestMarykModel { embeddedValues { marykModel { list refAt 5u } } }.toStorageByteArray().toHex() }
 
-        TestMarykModel { embeddedValues { marykModel { set refAt Date(2017, 12, 5) } } }.toStorageByteArray().toHex() shouldBe "661e4b0480004461"
-        TestMarykModel { setOfString::ref }.toStorageByteArray().toHex() shouldBe "8b01"
-        TestMarykModel { setOfString refAt "v1" }.toStorageByteArray().toHex() shouldBe "8b01027631"
+        expect("661e4b0480004461") { TestMarykModel { embeddedValues { marykModel { set refAt Date(2017, 12, 5) } } }.toStorageByteArray().toHex() }
+        expect("8b01") { TestMarykModel { setOfString::ref }.toStorageByteArray().toHex() }
+        expect("8b01027631") { TestMarykModel { setOfString refAt "v1" }.toStorageByteArray().toHex() }
 
-        TestMarykModel { embeddedValues { marykModel { map refAt Time(12, 23) } } }.toStorageByteArray().toHex() shouldBe "661e540300ae24"
+        expect("661e540300ae24") { TestMarykModel { embeddedValues { marykModel { map refAt Time(12, 23) } } }.toStorageByteArray().toHex() }
 
-        TestMarykModel { multi refAtType S1 }.toStorageByteArray().toHex() shouldBe "690d"
-        TestMarykModel { multi.refToType() }.toStorageByteArray().toHex() shouldBe "6905"
+        expect("690d") { TestMarykModel { multi refAtType S1 }.toStorageByteArray().toHex() }
+        expect("6905") { TestMarykModel { multi.refToType() }.toStorageByteArray().toHex() }
 
-        TestMarykModel { multi.withType(S3) { value::ref } }.toStorageByteArray().toHex() shouldBe "691d09"
-        TestMarykModel { multi.withType(S3) { model { value::ref } } }.toStorageByteArray().toHex() shouldBe "691d1609"
+        expect("691d09") { TestMarykModel { multi.withType(S3) { value::ref } }.toStorageByteArray().toHex() }
+        expect("691d1609") { TestMarykModel { multi.withType(S3) { model { value::ref } } }.toStorageByteArray().toHex() }
 
-        ComplexModel { mapIntObject.at(2u) { value::ref } }.toStorageByteArray().toHex() shouldBe "1c040000000209"
-        ComplexModel { mapIntObject.at(2u) { model { value::ref } } }.toStorageByteArray().toHex() shouldBe "1c04000000021609"
+        expect("1c040000000209") { ComplexModel { mapIntObject.at(2u) { value::ref } }.toStorageByteArray().toHex() }
+        expect("1c04000000021609") { ComplexModel { mapIntObject.at(2u) { model { value::ref } } }.toStorageByteArray().toHex() }
 
-        ComplexModel { mapWithList.at("a") { refAt(23u) } }.toStorageByteArray().toHex() shouldBe "2c016100000017"
+        expect("2c016100000017") { ComplexModel { mapWithList.at("a") { refAt(23u) } }.toStorageByteArray().toHex() }
 
-        ComplexModel { mapWithSet.at("b") { refAt("b3") } }.toStorageByteArray().toHex() shouldBe "340162026233"
+        expect("340162026233") { ComplexModel { mapWithSet.at("b") { refAt("b3") } }.toStorageByteArray().toHex() }
 
-        ComplexModel { mapWithMap.at("b") { refAt("c") } }.toStorageByteArray().toHex() shouldBe "3c01620163"
+        expect("3c01620163") { ComplexModel { mapWithMap.at("b") { refAt("c") } }.toStorageByteArray().toHex() }
 
-        ComplexModel { mapIntMulti.at(2u) { refAtType(T3) } }.toStorageByteArray().toHex() shouldBe "2404000000021d"
-        ComplexModel { mapIntMulti.at(2u) { atType(T3) { value::ref } } }.toStorageByteArray().toHex() shouldBe "2404000000021d09"
-        ComplexModel { mapIntMulti.at(2u) { atType(T3) { model { value::ref } } } }.toStorageByteArray().toHex() shouldBe "2404000000021d1609"
+        expect("2404000000021d") { ComplexModel { mapIntMulti.at(2u) { refAtType(T3) } }.toStorageByteArray().toHex() }
+        expect("2404000000021d09") { ComplexModel { mapIntMulti.at(2u) { atType(T3) { value::ref } } }.toStorageByteArray().toHex() }
+        expect("2404000000021d1609") { ComplexModel { mapIntMulti.at(2u) { atType(T3) { model { value::ref } } } }.toStorageByteArray().toHex() }
 
-        ComplexModel { mapIntMulti.at(2u) { atType(T4) { refAt(5u) } } }.toStorageByteArray().toHex() shouldBe "2404000000022500000005"
-        ComplexModel { mapIntMulti.at(2u) { atType(T5) { refAt("value") } } }.toStorageByteArray().toHex() shouldBe "2404000000022d0576616c7565"
+        expect("2404000000022500000005") { ComplexModel { mapIntMulti.at(2u) { atType(T4) { refAt(5u) } } }.toStorageByteArray().toHex() }
+        expect("2404000000022d0576616c7565") { ComplexModel { mapIntMulti.at(2u) { atType(T5) { refAt("value") } } }.toStorageByteArray().toHex() }
     }
 }

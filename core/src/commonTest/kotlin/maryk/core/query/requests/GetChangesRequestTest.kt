@@ -8,8 +8,8 @@ import maryk.core.query.RequestContext
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.getChangesMaxRequest
 import maryk.test.requests.getChangesRequest
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class GetChangesRequestTest {
     private val context = RequestContext(mapOf(
@@ -30,26 +30,35 @@ class GetChangesRequestTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(getChangesRequest, GetChangesRequest, { this.context }) shouldBe """
-        from: SimpleMarykModel
-        keys: [WWurg6ysTsozoMei/SurOw, awfbjYrVQ+cdXblfQKV10A]
-        filterSoftDeleted: true
-        fromVersion: 0
-        maxVersions: 1
+        expect(
+            """
+            from: SimpleMarykModel
+            keys: [WWurg6ysTsozoMei/SurOw, awfbjYrVQ+cdXblfQKV10A]
+            filterSoftDeleted: true
+            fromVersion: 0
+            maxVersions: 1
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(getChangesRequest, GetChangesRequest, { this.context })
+        }
 
-        checkYamlConversion(getChangesMaxRequest, GetChangesRequest, { this.context }) shouldBe """
-        from: SimpleMarykModel
-        keys: [WWurg6ysTsozoMei/SurOw, awfbjYrVQ+cdXblfQKV10A]
-        select:
-        - value
-        where: !Exists value
-        toVersion: 12345
-        filterSoftDeleted: true
-        fromVersion: 1234
-        maxVersions: 5
+        expect(
+            """
+            from: SimpleMarykModel
+            keys: [WWurg6ysTsozoMei/SurOw, awfbjYrVQ+cdXblfQKV10A]
+            select:
+            - value
+            where: !Exists value
+            toVersion: 12345
+            filterSoftDeleted: true
+            fromVersion: 1234
+            maxVersions: 5
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(getChangesMaxRequest, GetChangesRequest, { this.context })
+        }
+
     }
 }

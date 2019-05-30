@@ -6,8 +6,8 @@ import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.test.models.TestMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class ListChangeTest {
     private val listPropertyChange = ListChange(
@@ -37,14 +37,18 @@ class ListChangeTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(this.listPropertyChange, ListChange, { this.context }) shouldBe """
-        listOfString:
-          addValuesToEnd: [four, five]
-          addValuesAtIndex:
-            2: a
-            3: abc
-          deleteValues: [three]
+        expect(
+            """
+            listOfString:
+              addValuesToEnd: [four, five]
+              addValuesAtIndex:
+                2: a
+                3: abc
+              deleteValues: [three]
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.listPropertyChange, ListChange, { this.context })
+        }
     }
 }

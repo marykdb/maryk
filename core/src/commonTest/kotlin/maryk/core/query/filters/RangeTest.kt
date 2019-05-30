@@ -8,8 +8,8 @@ import maryk.core.query.RequestContext
 import maryk.core.query.ValueRange
 import maryk.core.query.pairs.with
 import maryk.test.models.TestMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class RangeTest {
     private val range = Range(
@@ -41,10 +41,14 @@ class RangeTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(this.range, Range, { this.context }) shouldBe """
-        string: [!Exclude test, !Exclude test999]
-        int: [3, 5]
+        expect(
+            """
+            string: [!Exclude test, !Exclude test999]
+            int: [3, 5]
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.range, Range, { this.context })
+        }
     }
 }

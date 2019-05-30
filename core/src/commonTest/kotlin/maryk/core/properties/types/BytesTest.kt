@@ -2,9 +2,9 @@ package maryk.core.properties.types
 
 import maryk.lib.exceptions.ParseException
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
+import kotlin.test.expect
 
 internal class BytesTest {
     private val bytesToTest = arrayOf(
@@ -15,59 +15,63 @@ internal class BytesTest {
 
     @Test
     fun testCompare() {
-        Bytes("//").compareTo(
-            Bytes("//")
-        ) shouldBe 0
+        expect(0) {
+            Bytes("//").compareTo(
+                Bytes("//")
+            )
+        }
 
-        Bytes("AAAA").compareTo(
-            Bytes("BBBBBB")
-        ) shouldBe -4
+        expect(-4) {
+            Bytes("AAAA").compareTo(
+                Bytes("BBBBBB")
+            )
+        }
     }
 
     @Test
     fun hashcode() {
-        Bytes("//").hashCode() shouldBe 30
-        Bytes("AAAA").hashCode() shouldBe 29791
+        expect(30) { Bytes("//").hashCode() }
+        expect(29791) { Bytes("AAAA").hashCode() }
     }
 
     @Test
     fun testGet() {
-        bytesToTest[0][0] shouldBe (-1).toByte()
-        bytesToTest[1][3] shouldBe 0.toByte()
+        expect((-1).toByte()) { bytesToTest[0][0] }
+        expect(0.toByte()) { bytesToTest[1][3] }
     }
 
     @Test
     fun testStreamingConversion() {
         val bc = ByteCollector()
-        for (it in bytesToTest) {
-            bc.reserve(it.size)
-            it.writeBytes(bc::write)
-            Bytes.fromByteReader(bc.size, bc::read) shouldBe it
+        for (byte in bytesToTest) {
+            bc.reserve(byte.size)
+            byte.writeBytes(bc::write)
+            expect(byte) { Bytes.fromByteReader(bc.size, bc::read) }
             bc.reset()
         }
     }
 
     @Test
     fun testStringConversion() {
-        for (it in bytesToTest) {
-            Bytes(
-                it.toString()
-            ) shouldBe it
+        for (bytes in bytesToTest) {
+            expect(bytes) {
+                Bytes(bytes.toString())
+            }
         }
     }
 
     @Test
     fun testHexConversion() {
-        for (it in bytesToTest) {
-            Bytes.ofHex(
-                it.toHex()
-            ) shouldBe it
+        for (bytes in bytesToTest) {
+            expect(bytes) {
+                Bytes.ofHex(bytes.toHex())
+            }
         }
     }
 
     @Test
     fun testStringConversionExceptions() {
-        shouldThrow<ParseException> {
+        assertFailsWith<ParseException> {
             Bytes("wrong±")
         }
     }

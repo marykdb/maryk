@@ -8,8 +8,8 @@ import maryk.core.query.RequestContext
 import maryk.core.query.pairs.with
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.TestMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class DataObjectVersionedChangeTest {
     private val key1 = TestMarykModel.key(
@@ -60,25 +60,29 @@ class DataObjectVersionedChangeTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(this.dataObjectVersionedChanges, DataObjectVersionedChange, { this.context }) shouldBe """
-        key: AAACKwEAAg
-        changes:
-        - version: 219674127
-          changes:
-          - !ObjectDelete
-            isDeleted: true
-          - !ListChange
-            list:
-          - !SetChange
-            set:
-        - version: 319674127
-          changes:
-          - !Change
-            embeddedValues.value: new
-          - !Delete embeddedValues.value
-          - !Check
-            embeddedValues.value: current
+        expect(
+            """
+            key: AAACKwEAAg
+            changes:
+            - version: 219674127
+              changes:
+              - !ObjectDelete
+                isDeleted: true
+              - !ListChange
+                list:
+              - !SetChange
+                set:
+            - version: 319674127
+              changes:
+              - !Change
+                embeddedValues.value: new
+              - !Delete embeddedValues.value
+              - !Check
+                embeddedValues.value: current
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.dataObjectVersionedChanges, DataObjectVersionedChange, { this.context })
+        }
     }
 }

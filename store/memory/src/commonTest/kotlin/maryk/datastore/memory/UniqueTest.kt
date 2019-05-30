@@ -14,10 +14,10 @@ import maryk.core.query.requests.delete
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.datastore.memory.UniqueModel.Properties
+import maryk.test.assertType
 import maryk.test.runSuspendingTest
-import maryk.test.shouldBe
-import maryk.test.shouldBeOfType
 import kotlin.test.Test
+import kotlin.test.expect
 
 object UniqueModel : RootDataModel<UniqueModel, Properties>(
     properties = Properties
@@ -52,13 +52,13 @@ class UniqueTest {
         runSuspendingTest {
             dataStore.execute(addItems).also {
                 it.statuses.forEach { status ->
-                    val response = shouldBeOfType<AddSuccess<UniqueModel>>(status)
+                    val response = assertType<AddSuccess<UniqueModel>>(status)
                     keys.add(response.key)
                 }
             }
             dataStoreWithHistory.execute(addItems).also {
                 it.statuses.forEach { status ->
-                    val response = shouldBeOfType<AddSuccess<UniqueModel>>(status)
+                    val response = assertType<AddSuccess<UniqueModel>>(status)
                     keysForHistory.add(response.key)
                 }
             }
@@ -73,15 +73,15 @@ class UniqueTest {
     fun checkUnique() = runSuspendingTest {
         val addResponse = dataStore.execute(addUniqueItem)
         addResponse.statuses.forEach { status ->
-            val fail = shouldBeOfType<ValidationFail<UniqueModel>>(status)
-            val alreadySet = shouldBeOfType<AlreadySetException>(fail.exceptions.first())
-            alreadySet.reference shouldBe UniqueModel { email::ref }
+            val fail = assertType<ValidationFail<UniqueModel>>(status)
+            val alreadySet = assertType<AlreadySetException>(fail.exceptions.first())
+            expect(UniqueModel { email::ref }) { alreadySet.reference }
         }
 
         dataStore.execute(UniqueModel.delete(keys[0]))
 
         dataStore.execute(addUniqueItem).statuses.forEach { status ->
-            shouldBeOfType<AddSuccess<UniqueModel>>(status)
+            assertType<AddSuccess<UniqueModel>>(status)
         }
     }
 
@@ -90,15 +90,15 @@ class UniqueTest {
         val addResponse = dataStoreWithHistory.execute(addUniqueItem)
 
         addResponse.statuses.forEach { status ->
-            val fail = shouldBeOfType<ValidationFail<UniqueModel>>(status)
-            val alreadySet = shouldBeOfType<AlreadySetException>(fail.exceptions.first())
-            alreadySet.reference shouldBe UniqueModel { email::ref }
+            val fail = assertType<ValidationFail<UniqueModel>>(status)
+            val alreadySet = assertType<AlreadySetException>(fail.exceptions.first())
+            expect(UniqueModel { email::ref }) { alreadySet.reference }
         }
 
         dataStoreWithHistory.execute(UniqueModel.delete(keysForHistory[0]))
 
         dataStoreWithHistory.execute(addUniqueItem).statuses.forEach { status ->
-            shouldBeOfType<AddSuccess<UniqueModel>>(status)
+            assertType<AddSuccess<UniqueModel>>(status)
         }
     }
 
@@ -114,15 +114,15 @@ class UniqueTest {
             )
         )
         changeResponse.statuses.forEach { status ->
-            val fail = shouldBeOfType<ValidationFail<UniqueModel>>(status)
-            val alreadySet = shouldBeOfType<AlreadySetException>(fail.exceptions.first())
-            alreadySet.reference shouldBe UniqueModel { email::ref }
+            val fail = assertType<ValidationFail<UniqueModel>>(status)
+            val alreadySet = assertType<AlreadySetException>(fail.exceptions.first())
+            expect(UniqueModel { email::ref }) { alreadySet.reference }
         }
 
         dataStore.execute(UniqueModel.delete(keys[0]))
 
         dataStore.execute(addUniqueItem).statuses.forEach { status ->
-            shouldBeOfType<AddSuccess<UniqueModel>>(status)
+            assertType<AddSuccess<UniqueModel>>(status)
         }
     }
 }

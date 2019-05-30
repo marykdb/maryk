@@ -12,8 +12,9 @@ import maryk.core.values.ValueItems
 import maryk.lib.time.DateTime
 import maryk.test.ByteCollector
 import maryk.test.models.TestValueObject
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.expect
 
 internal class ValueDataModelTest {
     @Test
@@ -49,7 +50,7 @@ internal class ValueDataModelTest {
                 convertedValueModel.writeProtoBuf(value, cache, bc::write, context)
                 val convertedValue = convertedValueModel.readProtoBuf(byteLength, bc::read, context).toDataObject()
 
-                convertedValue shouldBe value
+                assertEquals(value, convertedValue)
             }
         )
     }
@@ -66,34 +67,38 @@ internal class ValueDataModelTest {
 
     @Test
     fun convertDefinitionToYAMLAndBack() {
-        checkYamlConversion(
-            TestValueObject,
-            ValueDataModel.Model,
-            { DefinitionsConversionContext() },
-            ::compareDataModels
-        ) shouldBe """
-        name: TestValueObject
-        ? 1: int
-        : !Number
-          required: true
-          final: false
-          unique: false
-          type: SInt32
-          maxValue: 6
-          random: false
-        ? 2: dateTime
-        : !DateTime
-          required: true
-          final: false
-          unique: false
-          precision: SECONDS
-          fillWithNow: false
-        ? 3: bool
-        : !Boolean
-          required: true
-          final: false
+        expect(
+            """
+            name: TestValueObject
+            ? 1: int
+            : !Number
+              required: true
+              final: false
+              unique: false
+              type: SInt32
+              maxValue: 6
+              random: false
+            ? 2: dateTime
+            : !DateTime
+              required: true
+              final: false
+              unique: false
+              precision: SECONDS
+              fillWithNow: false
+            ? 3: bool
+            : !Boolean
+              required: true
+              final: false
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(
+                TestValueObject,
+                ValueDataModel.Model,
+                { DefinitionsConversionContext() },
+                ::compareDataModels
+            )
+        }
     }
 }
 

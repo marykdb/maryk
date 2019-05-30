@@ -10,8 +10,9 @@ import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.EmbeddedMarykObject
 import maryk.test.models.TestMarykModel
 import maryk.test.models.TestMarykObject
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.expect
 
 class ContextualModelReferenceDefinitionTest {
     private val modelsToTest = listOf<IsNamedDataModel<*>>(
@@ -45,16 +46,16 @@ class ContextualModelReferenceDefinitionTest {
                 this.def,
                 this.context
             ) { converted, original ->
-                converted.get(Unit) shouldBe original.get(Unit)
+                assertEquals(original.get(Unit), converted.get(Unit))
             }
         }
     }
 
     @Test
     fun convertString() {
-        for (it in modelsToTest) {
-            val b = def.asString(DataModelReference(it.name) { it }, this.context)
-            def.fromString(b, this.context).get.invoke(Unit) shouldBe it
+        for (namedDataModel in modelsToTest) {
+            val b = def.asString(DataModelReference(namedDataModel.name) { namedDataModel }, this.context)
+            expect(namedDataModel) { def.fromString(b, this.context).get.invoke(Unit) }
         }
     }
 }

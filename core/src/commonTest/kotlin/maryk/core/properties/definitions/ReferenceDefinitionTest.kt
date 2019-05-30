@@ -10,9 +10,9 @@ import maryk.core.query.DefinitionsContext
 import maryk.lib.exceptions.ParseException
 import maryk.test.ByteCollector
 import maryk.test.models.TestMarykModel
-import maryk.test.shouldBe
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
+import kotlin.test.expect
 
 internal class ReferenceDefinitionTest {
     private val refToTest = arrayOf<Key<TestMarykModel>>(
@@ -36,20 +36,20 @@ internal class ReferenceDefinitionTest {
 
     @Test
     fun hasValues() {
-        def.dataModel shouldBe TestMarykModel
+        expect(TestMarykModel) { def.dataModel }
     }
 
     @Test
     fun convertValuesToStringAndBack() {
-        for (it in refToTest) {
-            val b = def.asString(it)
-            def.fromString(b) shouldBe it
+        for (key in refToTest) {
+            val b = def.asString(key)
+            expect(key) { def.fromString(b) }
         }
     }
 
     @Test
     fun invalidStringValueShouldThrowException() {
-        shouldThrow<ParseException> {
+        assertFailsWith<ParseException> {
             def.fromString("wrong§")
         }
     }
@@ -57,12 +57,12 @@ internal class ReferenceDefinitionTest {
     @Test
     fun convertValuesToStorageBytesAndBack() {
         val bc = ByteCollector()
-        for (it in refToTest) {
+        for (key in refToTest) {
             bc.reserve(
-                def.calculateStorageByteLength(it)
+                def.calculateStorageByteLength(key)
             )
-            def.writeStorageBytes(it, bc::write)
-            def.readStorageBytes(bc.size, bc::read) shouldBe it
+            def.writeStorageBytes(key, bc::write)
+            expect(key) { def.readStorageBytes(bc.size, bc::read) }
             bc.reset()
         }
     }
@@ -90,15 +90,20 @@ internal class ReferenceDefinitionTest {
     @Test
     fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, ReferenceDefinition.Model, { DefinitionsContext() })
-        checkYamlConversion(this.defMaxDefined, ReferenceDefinition.Model, { DefinitionsContext() }) shouldBe """
-        required: false
-        final: true
-        unique: true
-        minValue: AAAAAAAAAA
-        maxValue: /////////w
-        default: AQEBAQEBAQ
-        dataModel: TestMarykModel
 
-        """.trimIndent()
+        expect(
+            """
+            required: false
+            final: true
+            unique: true
+            minValue: AAAAAAAAAA
+            maxValue: /////////w
+            default: AQEBAQEBAQ
+            dataModel: TestMarykModel
+
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.defMaxDefined, ReferenceDefinition.Model, { DefinitionsContext() })
+        }
     }
 }

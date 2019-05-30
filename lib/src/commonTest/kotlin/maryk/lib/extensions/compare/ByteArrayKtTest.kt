@@ -2,38 +2,40 @@ package maryk.lib.extensions.compare
 
 import maryk.lib.extensions.initByteArrayByHex
 import maryk.lib.extensions.toHex
-import maryk.test.shouldBe
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
+import kotlin.test.expect
 
 class ByteArrayKtTest {
 
     @Test
     fun matchPart() {
-        byteArrayOf(1, 2, 3).matchPart(0, byteArrayOf(1, 2)) shouldBe true
-        byteArrayOf(1, 2, 3).matchPart(1, byteArrayOf(2, 3)) shouldBe true
-        byteArrayOf(1, 2, 3).matchPart(1, byteArrayOf(3, 3)) shouldBe false
+        assertTrue { byteArrayOf(1, 2, 3).matchPart(0, byteArrayOf(1, 2)) }
+        assertTrue { byteArrayOf(1, 2, 3).matchPart(1, byteArrayOf(2, 3)) }
+        assertFalse { byteArrayOf(1, 2, 3).matchPart(1, byteArrayOf(3, 3)) }
     }
 
     @Test
     fun nextByteInSameLength() {
-        initByteArrayByHex("000000").nextByteInSameLength().toHex() shouldBe "000001"
-        initByteArrayByHex("0000ff").nextByteInSameLength().toHex() shouldBe "0001ff"
-        initByteArrayByHex("00ffff").nextByteInSameLength().toHex() shouldBe "01ffff"
-        initByteArrayByHex("ffffff").nextByteInSameLength().toHex() shouldBe "ffffff"
-        initByteArrayByHex("0000fe").nextByteInSameLength().toHex() shouldBe "0000ff"
+        expect("000001") { initByteArrayByHex("000000").nextByteInSameLength().toHex() }
+        expect("0001ff") { initByteArrayByHex("0000ff").nextByteInSameLength().toHex() }
+        expect("01ffff") { initByteArrayByHex("00ffff").nextByteInSameLength().toHex() }
+        expect("ffffff") { initByteArrayByHex("ffffff").nextByteInSameLength().toHex() }
+        expect("0000ff") { initByteArrayByHex("0000fe").nextByteInSameLength().toHex() }
     }
 
     @Test
     fun prevByteInSameLength() {
-        shouldThrow<IllegalStateException> {
+        assertFailsWith<IllegalStateException> {
             initByteArrayByHex("000000").prevByteInSameLength()
         }
 
-        initByteArrayByHex("000001").prevByteInSameLength().toHex() shouldBe "000000"
-        initByteArrayByHex("0000ff").prevByteInSameLength().toHex() shouldBe "0000fe"
-        initByteArrayByHex("000100").prevByteInSameLength().toHex() shouldBe "0000ff"
-        initByteArrayByHex("010000").prevByteInSameLength().toHex() shouldBe "00ffff"
-        initByteArrayByHex("ffffff").prevByteInSameLength().toHex() shouldBe "fffffe"
+        expect("000000") { initByteArrayByHex("000001").prevByteInSameLength().toHex() }
+        expect("0000fe") { initByteArrayByHex("0000ff").prevByteInSameLength().toHex() }
+        expect("0000ff") { initByteArrayByHex("000100").prevByteInSameLength().toHex() }
+        expect("00ffff") { initByteArrayByHex("010000").prevByteInSameLength().toHex() }
+        expect("fffffe") { initByteArrayByHex("ffffff").prevByteInSameLength().toHex() }
     }
 }

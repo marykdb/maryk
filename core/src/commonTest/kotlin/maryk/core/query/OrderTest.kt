@@ -7,8 +7,9 @@ import maryk.core.extensions.toUnitLambda
 import maryk.core.query.orders.Direction.DESC
 import maryk.core.query.orders.Order
 import maryk.test.models.SimpleMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.expect
 
 class OrderTest {
     private val order = Order(
@@ -28,8 +29,8 @@ class OrderTest {
 
     @Test
     fun testOrder() {
-        this.order.direction shouldBe DESC
-        this.order.propertyReference shouldBe SimpleMarykModel { value::ref }
+        expect(DESC) { this.order.direction }
+        expect(SimpleMarykModel { value::ref }) { this.order.propertyReference }
     }
 
     @Test
@@ -44,9 +45,13 @@ class OrderTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(this.order, Order, { this.context }, ::compareRequest) shouldBe """
-        !Desc value
-        """.trimIndent()
+        expect(
+            """
+            !Desc value
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.order, Order, { this.context }, ::compareRequest)
+        }
     }
 
     @Test
@@ -61,7 +66,9 @@ class OrderTest {
 
     @Test
     fun convertDefaultToYAMLAndBack() {
-        checkYamlConversion(this.orderDefault, Order, { this.context }, ::compareRequest) shouldBe "!Asc"
+        expect("!Asc") {
+            checkYamlConversion(this.orderDefault, Order, { this.context }, ::compareRequest)
+        }
     }
 
     @Test
@@ -76,13 +83,17 @@ class OrderTest {
 
     @Test
     fun convertDescToYAMLAndBack() {
-        checkYamlConversion(this.orderDesc, Order, { this.context }, ::compareRequest) shouldBe """
-        !Desc
-        """.trimIndent()
+        expect(
+            """
+            !Desc
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.orderDesc, Order, { this.context }, ::compareRequest)
+        }
     }
 
     private fun compareRequest(converted: Order, original: Order) {
-        converted.propertyReference shouldBe original.propertyReference
-        converted.direction shouldBe original.direction
+        assertEquals(original.propertyReference, converted.propertyReference)
+        assertEquals(original.direction, converted.direction)
     }
 }

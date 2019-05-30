@@ -2,8 +2,8 @@ package maryk.lib.bytes
 
 import maryk.lib.extensions.initByteArrayByHex
 import maryk.lib.extensions.toHex
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class StringTest {
     private val stringsAndBytes = mapOf(
@@ -17,9 +17,11 @@ class StringTest {
             val b = initByteArrayByHex(hex)
 
             var i = 0
-            initString(b.size) {
-                b[i++]
-            } shouldBe value
+            expect(value) {
+                initString(b.size) {
+                    b[i++]
+                }
+            }
         }
     }
 
@@ -35,7 +37,7 @@ class StringTest {
                 b[i++] = it
             }
 
-            b.toHex() shouldBe hex
+            expect(hex) { b.toHex() }
         }
     }
 }

@@ -1,8 +1,10 @@
 package maryk.core.properties.types.numeric
 
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
+import kotlin.test.expect
 
 internal class SInt64Test {
     private val int64values = arrayOf(
@@ -20,21 +22,21 @@ internal class SInt64Test {
 
     @Test
     fun testStringConversion() {
-        Long.MIN_VALUE.toString() shouldBe "-9223372036854775808"
-        Long.MAX_VALUE.toString() shouldBe "9223372036854775807"
+        expect("-9223372036854775808") { Long.MIN_VALUE.toString() }
+        expect("9223372036854775807") { Long.MAX_VALUE.toString() }
 
-        for (it in int64values) {
-            SInt64.ofString(it.toString()) shouldBe it
+        for (long in int64values) {
+            expect(long) { SInt64.ofString(long.toString()) }
         }
     }
 
     @Test
     fun testStorageBytesConversion() {
         val bc = ByteCollector()
-        for (it in int64values) {
+        for (long in int64values) {
             bc.reserve(SInt64.size)
-            SInt64.writeStorageBytes(it, bc::write)
-            SInt64.fromStorageByteReader(bc.size, bc::read) shouldBe it
+            SInt64.writeStorageBytes(long, bc::write)
+            expect(long) { SInt64.fromStorageByteReader(bc.size, bc::read) }
             bc.reset()
         }
     }
@@ -42,24 +44,24 @@ internal class SInt64Test {
     @Test
     fun testTransportBytesConversion() {
         val bc = ByteCollector()
-        int64values.forEach {
-            bc.reserve(SInt64.calculateTransportByteLength(it))
-            SInt64.writeTransportBytes(it, bc::write)
-            SInt64.readTransportBytes(bc::read) shouldBe it
+        int64values.forEach { long ->
+            bc.reserve(SInt64.calculateTransportByteLength(long))
+            SInt64.writeTransportBytes(long, bc::write)
+            expect(long) { SInt64.readTransportBytes(bc::read) }
             bc.reset()
         }
     }
 
     @Test
     fun testOfNativeTypes() {
-        SInt64.ofLong(123) shouldBe 123L
-        SInt64.ofDouble(12.0) shouldBe 12L
-        SInt64.ofInt(12) shouldBe 12L
+        expect(123L) { SInt64.ofLong(123) }
+        expect(12L) { SInt64.ofDouble(12.0) }
+        expect(12L) { SInt64.ofInt(12) }
     }
 
     @Test
     fun testIsOfType() {
-        SInt64.isOfType(12L) shouldBe true
-        SInt64.isOfType(1234) shouldBe false
+        assertTrue { SInt64.isOfType(12L) }
+        assertFalse { SInt64.isOfType(1234) }
     }
 }

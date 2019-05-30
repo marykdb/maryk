@@ -33,25 +33,30 @@ import maryk.test.models.Option.V3
 import maryk.test.models.SimpleMarykTypeEnum
 import maryk.test.models.TestMarykModel
 import maryk.test.models.TestValueObject
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.expect
 
 internal class RootDataModelTest {
     @Test
     fun testKey() {
-        TestMarykModel.key(
-            TestMarykModel(
-                string = "name",
-                int = 5123123,
-                uint = 555u,
-                double = 6.33,
-                bool = true,
-                enum = V3,
-                dateTime = DateTime.nowUTC()
+        expect(
+            Key(
+                byteArrayOf(0, 0, 2, 43, 1, 0, 3)
             )
-        ) shouldBe Key<TestMarykModel>(
-            byteArrayOf(0, 0, 2, 43, 1, 0, 3)
-        )
+        ) {
+            TestMarykModel.key(
+                TestMarykModel(
+                    string = "name",
+                    int = 5123123,
+                    uint = 555u,
+                    double = 6.33,
+                    bool = true,
+                    enum = V3,
+                    dateTime = DateTime.nowUTC()
+                )
+            )
+        }
     }
 
     private val subModelRef = TestMarykModel { embeddedValues { value::ref } }
@@ -60,8 +65,8 @@ internal class RootDataModelTest {
 
     @Test
     fun testPropertyReferenceByName() {
-        TestMarykModel.getPropertyReferenceByName(mapRef.completeName) shouldBe mapRef
-        TestMarykModel.getPropertyReferenceByName(subModelRef.completeName) shouldBe subModelRef
+        expect(mapRef) { TestMarykModel.getPropertyReferenceByName(mapRef.completeName) }
+        expect(subModelRef) { TestMarykModel.getPropertyReferenceByName(subModelRef.completeName) }
     }
 
     @Test
@@ -69,13 +74,13 @@ internal class RootDataModelTest {
         val bc = ByteCollector()
         val cache = WriteCache()
 
-        arrayOf(subModelRef, mapRef, mapKeyRef).forEach {
+        arrayOf(subModelRef, mapRef, mapKeyRef).forEach { reference ->
             bc.reserve(
-                it.calculateTransportByteLength(cache)
+                reference.calculateTransportByteLength(cache)
             )
-            it.writeTransportBytes(cache, bc::write)
+            reference.writeTransportBytes(cache, bc::write)
 
-            TestMarykModel.getPropertyReferenceByBytes(bc.size, bc::read) shouldBe it
+            expect(reference) { TestMarykModel.getPropertyReferenceByBytes(bc.size, bc::read) }
 
             bc.reset()
         }
@@ -93,468 +98,476 @@ internal class RootDataModelTest {
 
     @Test
     fun convertDefinitionToJSONAndBack() {
-        checkJsonConversion(
-            TestMarykModel,
-            RootDataModel.Model,
-            { DefinitionsConversionContext() },
-            ::compareDataModels
-        ) shouldBe """
-        {
-          "name": "TestMarykModel",
-          "key": ["Multiple", [["Ref", "uint"], ["Ref", "bool"], ["Ref", "enum"]]],
-          "indices": [["Multiple", [["Reversed", "dateTime"], ["Ref", "enum"], ["Ref", "int"]]], ["Ref", "int"], ["Reversed", "double"], ["Ref", "multi.*"]],
-          "reservedIndices": [99],
-          "reservedNames": ["reserved"],
-          "properties": [{
-            "index": 1,
-            "name": "string",
-            "alternativeNames": ["str", "stringValue"],
-            "definition": ["String", {
-              "required": true,
-              "final": false,
-              "unique": false,
-              "default": "haha",
-              "regEx": "ha.*"
-            }]
-          }, {
-            "index": 2,
-            "name": "int",
-            "definition": ["Number", {
-              "required": true,
-              "final": false,
-              "unique": false,
-              "type": "SInt32",
-              "maxValue": 6,
-              "random": false
-            }]
-          }, {
-            "index": 3,
-            "name": "uint",
-            "definition": ["Number", {
-              "required": true,
-              "final": true,
-              "unique": false,
-              "type": "UInt32",
-              "random": false
-            }]
-          }, {
-            "index": 4,
-            "name": "double",
-            "definition": ["Number", {
-              "required": true,
-              "final": false,
-              "unique": false,
-              "type": "Float64",
-              "random": false
-            }]
-          }, {
-            "index": 5,
-            "name": "dateTime",
-            "definition": ["DateTime", {
-              "required": true,
-              "final": false,
-              "unique": false,
-              "precision": "SECONDS",
-              "fillWithNow": false
-            }]
-          }, {
-            "index": 6,
-            "name": "bool",
-            "definition": ["Boolean", {
-              "required": true,
-              "final": true
-            }]
-          }, {
-            "index": 7,
-            "name": "enum",
-            "definition": ["Enum", {
-              "required": true,
-              "final": true,
-              "unique": false,
-              "enum": {
-                "name": "Option",
-                "cases": {
-                  "1": "V1",
-                  "2": ["V2", "VERSION2"],
-                  "3": ["V3", "VERSION3"]
-                },
-                "reservedIndices": [4],
-                "reservedNames": ["V4"]
-              },
-              "default": "V1(1)"
-            }]
-          }, {
-            "index": 8,
-            "name": "list",
-            "definition": ["List", {
-              "required": false,
-              "final": false,
-              "valueDefinition": ["Number", {
-                "required": true,
-                "final": false,
-                "unique": false,
-                "type": "SInt32",
-                "random": false
-              }]
-            }]
-          }, {
-            "index": 9,
-            "name": "set",
-            "definition": ["Set", {
-              "required": false,
-              "final": false,
-              "maxSize": 5,
-              "valueDefinition": ["Date", {
-                "required": true,
-                "final": false,
-                "unique": false,
-                "maxValue": "2100-12-31",
-                "fillWithNow": false
-              }]
-            }]
-          }, {
-            "index": 10,
-            "name": "map",
-            "definition": ["Map", {
-              "required": false,
-              "final": false,
-              "maxSize": 5,
-              "keyDefinition": ["Time", {
-                "required": true,
-                "final": false,
-                "unique": false,
-                "precision": "SECONDS",
-                "maxValue": "23:00",
-                "fillWithNow": false
-              }],
-              "valueDefinition": ["String", {
-                "required": true,
-                "final": false,
-                "unique": false,
-                "maxSize": 10
-              }]
-            }]
-          }, {
-            "index": 11,
-            "name": "valueObject",
-            "definition": ["Value", {
-              "required": false,
-              "final": false,
-              "unique": false,
-              "dataModel": "TestValueObject"
-            }]
-          }, {
-            "index": 12,
-            "name": "embeddedValues",
-            "definition": ["Embed", {
-              "required": false,
-              "final": false,
-              "dataModel": "EmbeddedMarykModel"
-            }]
-          }, {
-            "index": 13,
-            "name": "multi",
-            "definition": ["MultiType", {
-              "required": false,
-              "final": false,
-              "typeEnum": {
-                "name": "SimpleMarykTypeEnum",
-                "cases": [{
-                  "index": 1,
-                  "name": "S1",
-                  "alternativeNames": ["Type1"],
-                  "definition": ["String", {
+        expect(
+            """
+            {
+              "name": "TestMarykModel",
+              "key": ["Multiple", [["Ref", "uint"], ["Ref", "bool"], ["Ref", "enum"]]],
+              "indices": [["Multiple", [["Reversed", "dateTime"], ["Ref", "enum"], ["Ref", "int"]]], ["Ref", "int"], ["Reversed", "double"], ["Ref", "multi.*"]],
+              "reservedIndices": [99],
+              "reservedNames": ["reserved"],
+              "properties": [{
+                "index": 1,
+                "name": "string",
+                "alternativeNames": ["str", "stringValue"],
+                "definition": ["String", {
+                  "required": true,
+                  "final": false,
+                  "unique": false,
+                  "default": "haha",
+                  "regEx": "ha.*"
+                }]
+              }, {
+                "index": 2,
+                "name": "int",
+                "definition": ["Number", {
+                  "required": true,
+                  "final": false,
+                  "unique": false,
+                  "type": "SInt32",
+                  "maxValue": 6,
+                  "random": false
+                }]
+              }, {
+                "index": 3,
+                "name": "uint",
+                "definition": ["Number", {
+                  "required": true,
+                  "final": true,
+                  "unique": false,
+                  "type": "UInt32",
+                  "random": false
+                }]
+              }, {
+                "index": 4,
+                "name": "double",
+                "definition": ["Number", {
+                  "required": true,
+                  "final": false,
+                  "unique": false,
+                  "type": "Float64",
+                  "random": false
+                }]
+              }, {
+                "index": 5,
+                "name": "dateTime",
+                "definition": ["DateTime", {
+                  "required": true,
+                  "final": false,
+                  "unique": false,
+                  "precision": "SECONDS",
+                  "fillWithNow": false
+                }]
+              }, {
+                "index": 6,
+                "name": "bool",
+                "definition": ["Boolean", {
+                  "required": true,
+                  "final": true
+                }]
+              }, {
+                "index": 7,
+                "name": "enum",
+                "definition": ["Enum", {
+                  "required": true,
+                  "final": true,
+                  "unique": false,
+                  "enum": {
+                    "name": "Option",
+                    "cases": {
+                      "1": "V1",
+                      "2": ["V2", "VERSION2"],
+                      "3": ["V3", "VERSION3"]
+                    },
+                    "reservedIndices": [4],
+                    "reservedNames": ["V4"]
+                  },
+                  "default": "V1(1)"
+                }]
+              }, {
+                "index": 8,
+                "name": "list",
+                "definition": ["List", {
+                  "required": false,
+                  "final": false,
+                  "valueDefinition": ["Number", {
                     "required": true,
                     "final": false,
                     "unique": false,
-                    "regEx": "[^&]+"
-                  }]
-                }, {
-                  "index": 2,
-                  "name": "S2",
-                  "definition": ["Number", {
-                    "required": true,
-                    "final": false,
-                    "unique": false,
-                    "type": "SInt16",
+                    "type": "SInt32",
                     "random": false
                   }]
-                }, {
-                  "index": 3,
-                  "name": "S3",
-                  "definition": ["Embed", {
+                }]
+              }, {
+                "index": 9,
+                "name": "set",
+                "definition": ["Set", {
+                  "required": false,
+                  "final": false,
+                  "maxSize": 5,
+                  "valueDefinition": ["Date", {
                     "required": true,
                     "final": false,
-                    "dataModel": "EmbeddedMarykModel"
+                    "unique": false,
+                    "maxValue": "2100-12-31",
+                    "fillWithNow": false
                   }]
-                }],
-                "reservedIndices": [99],
-                "reservedNames": ["O99"]
-              },
-              "typeIsFinal": true
-            }]
-          }, {
-            "index": 14,
-            "name": "reference",
-            "definition": ["Reference", {
-              "required": false,
-              "final": false,
-              "unique": false,
-              "dataModel": "TestMarykModel"
-            }]
-          }, {
-            "index": 15,
-            "name": "listOfString",
-            "definition": ["List", {
-              "required": false,
-              "final": false,
-              "minSize": 1,
-              "maxSize": 6,
-              "valueDefinition": ["String", {
-                "required": true,
-                "final": false,
-                "unique": false,
-                "maxSize": 10
+                }]
+              }, {
+                "index": 10,
+                "name": "map",
+                "definition": ["Map", {
+                  "required": false,
+                  "final": false,
+                  "maxSize": 5,
+                  "keyDefinition": ["Time", {
+                    "required": true,
+                    "final": false,
+                    "unique": false,
+                    "precision": "SECONDS",
+                    "maxValue": "23:00",
+                    "fillWithNow": false
+                  }],
+                  "valueDefinition": ["String", {
+                    "required": true,
+                    "final": false,
+                    "unique": false,
+                    "maxSize": 10
+                  }]
+                }]
+              }, {
+                "index": 11,
+                "name": "valueObject",
+                "definition": ["Value", {
+                  "required": false,
+                  "final": false,
+                  "unique": false,
+                  "dataModel": "TestValueObject"
+                }]
+              }, {
+                "index": 12,
+                "name": "embeddedValues",
+                "definition": ["Embed", {
+                  "required": false,
+                  "final": false,
+                  "dataModel": "EmbeddedMarykModel"
+                }]
+              }, {
+                "index": 13,
+                "name": "multi",
+                "definition": ["MultiType", {
+                  "required": false,
+                  "final": false,
+                  "typeEnum": {
+                    "name": "SimpleMarykTypeEnum",
+                    "cases": [{
+                      "index": 1,
+                      "name": "S1",
+                      "alternativeNames": ["Type1"],
+                      "definition": ["String", {
+                        "required": true,
+                        "final": false,
+                        "unique": false,
+                        "regEx": "[^&]+"
+                      }]
+                    }, {
+                      "index": 2,
+                      "name": "S2",
+                      "definition": ["Number", {
+                        "required": true,
+                        "final": false,
+                        "unique": false,
+                        "type": "SInt16",
+                        "random": false
+                      }]
+                    }, {
+                      "index": 3,
+                      "name": "S3",
+                      "definition": ["Embed", {
+                        "required": true,
+                        "final": false,
+                        "dataModel": "EmbeddedMarykModel"
+                      }]
+                    }],
+                    "reservedIndices": [99],
+                    "reservedNames": ["O99"]
+                  },
+                  "typeIsFinal": true
+                }]
+              }, {
+                "index": 14,
+                "name": "reference",
+                "definition": ["Reference", {
+                  "required": false,
+                  "final": false,
+                  "unique": false,
+                  "dataModel": "TestMarykModel"
+                }]
+              }, {
+                "index": 15,
+                "name": "listOfString",
+                "definition": ["List", {
+                  "required": false,
+                  "final": false,
+                  "minSize": 1,
+                  "maxSize": 6,
+                  "valueDefinition": ["String", {
+                    "required": true,
+                    "final": false,
+                    "unique": false,
+                    "maxSize": 10
+                  }]
+                }]
+              }, {
+                "index": 16,
+                "name": "selfReference",
+                "definition": ["Reference", {
+                  "required": false,
+                  "final": false,
+                  "unique": false,
+                  "dataModel": "TestMarykModel"
+                }]
+              }, {
+                "index": 17,
+                "name": "setOfString",
+                "definition": ["Set", {
+                  "required": false,
+                  "final": false,
+                  "maxSize": 6,
+                  "valueDefinition": ["String", {
+                    "required": true,
+                    "final": false,
+                    "unique": false,
+                    "maxSize": 10
+                  }]
+                }]
+              }, {
+                "index": 18,
+                "name": "incMap",
+                "definition": ["IncMap", {
+                  "required": false,
+                  "final": false,
+                  "keyNumberDescriptor": "UInt32",
+                  "valueDefinition": ["String", {
+                    "required": true,
+                    "final": false,
+                    "unique": false
+                  }]
+                }]
               }]
-            }]
-          }, {
-            "index": 16,
-            "name": "selfReference",
-            "definition": ["Reference", {
-              "required": false,
-              "final": false,
-              "unique": false,
-              "dataModel": "TestMarykModel"
-            }]
-          }, {
-            "index": 17,
-            "name": "setOfString",
-            "definition": ["Set", {
-              "required": false,
-              "final": false,
-              "maxSize": 6,
-              "valueDefinition": ["String", {
-                "required": true,
-                "final": false,
-                "unique": false,
-                "maxSize": 10
-              }]
-            }]
-          }, {
-            "index": 18,
-            "name": "incMap",
-            "definition": ["IncMap", {
-              "required": false,
-              "final": false,
-              "keyNumberDescriptor": "UInt32",
-              "valueDefinition": ["String", {
-                "required": true,
-                "final": false,
-                "unique": false
-              }]
-            }]
-          }]
-        }""".trimIndent()
+            }""".trimIndent()
+        ) {
+            checkJsonConversion(
+                TestMarykModel,
+                RootDataModel.Model,
+                { DefinitionsConversionContext() },
+                ::compareDataModels
+            )
+        }
     }
 
     @Test
     fun convertDefinitionToYAMLAndBack() {
-        checkYamlConversion(
-            TestMarykModel,
-            RootDataModel.Model,
-            { DefinitionsConversionContext() },
-            ::compareDataModels
-        ) shouldBe """
-        name: TestMarykModel
-        key: !Multiple
-        - !Ref uint
-        - !Ref bool
-        - !Ref enum
-        indices:
-        - !Multiple
-          - !Reversed dateTime
-          - !Ref enum
-          - !Ref int
-        - !Ref int
-        - !Reversed double
-        - !Ref multi.*
-        reservedIndices: [99]
-        reservedNames: [reserved]
-        ? 1: [string, str, stringValue]
-        : !String
-          required: true
-          final: false
-          unique: false
-          default: haha
-          regEx: ha.*
-        ? 2: int
-        : !Number
-          required: true
-          final: false
-          unique: false
-          type: SInt32
-          maxValue: 6
-          random: false
-        ? 3: uint
-        : !Number
-          required: true
-          final: true
-          unique: false
-          type: UInt32
-          random: false
-        ? 4: double
-        : !Number
-          required: true
-          final: false
-          unique: false
-          type: Float64
-          random: false
-        ? 5: dateTime
-        : !DateTime
-          required: true
-          final: false
-          unique: false
-          precision: SECONDS
-          fillWithNow: false
-        ? 6: bool
-        : !Boolean
-          required: true
-          final: true
-        ? 7: enum
-        : !Enum
-          required: true
-          final: true
-          unique: false
-          enum:
-            name: Option
-            cases:
-              1: V1
-              2: [V2, VERSION2]
-              3: [V3, VERSION3]
-            reservedIndices: [4]
-            reservedNames: [V4]
-          default: V1(1)
-        ? 8: list
-        : !List
-          required: false
-          final: false
-          valueDefinition: !Number
-            required: true
-            final: false
-            unique: false
-            type: SInt32
-            random: false
-        ? 9: set
-        : !Set
-          required: false
-          final: false
-          maxSize: 5
-          valueDefinition: !Date
-            required: true
-            final: false
-            unique: false
-            maxValue: 2100-12-31
-            fillWithNow: false
-        ? 10: map
-        : !Map
-          required: false
-          final: false
-          maxSize: 5
-          keyDefinition: !Time
-            required: true
-            final: false
-            unique: false
-            precision: SECONDS
-            maxValue: '23:00'
-            fillWithNow: false
-          valueDefinition: !String
-            required: true
-            final: false
-            unique: false
-            maxSize: 10
-        ? 11: valueObject
-        : !Value
-          required: false
-          final: false
-          unique: false
-          dataModel: TestValueObject
-        ? 12: embeddedValues
-        : !Embed
-          required: false
-          final: false
-          dataModel: EmbeddedMarykModel
-        ? 13: multi
-        : !MultiType
-          required: false
-          final: false
-          typeEnum:
-            name: SimpleMarykTypeEnum
-            cases:
-              ? 1: [S1, Type1]
-              : !String
-                required: true
-                final: false
-                unique: false
-                regEx: '[^&]+'
-              ? 2: S2
-              : !Number
-                required: true
-                final: false
-                unique: false
-                type: SInt16
-                random: false
-              ? 3: S3
-              : !Embed
-                required: true
-                final: false
-                dataModel: EmbeddedMarykModel
+        expect(
+            """
+            name: TestMarykModel
+            key: !Multiple
+            - !Ref uint
+            - !Ref bool
+            - !Ref enum
+            indices:
+            - !Multiple
+              - !Reversed dateTime
+              - !Ref enum
+              - !Ref int
+            - !Ref int
+            - !Reversed double
+            - !Ref multi.*
             reservedIndices: [99]
-            reservedNames: [O99]
-          typeIsFinal: true
-        ? 14: reference
-        : !Reference
-          required: false
-          final: false
-          unique: false
-          dataModel: TestMarykModel
-        ? 15: listOfString
-        : !List
-          required: false
-          final: false
-          minSize: 1
-          maxSize: 6
-          valueDefinition: !String
-            required: true
-            final: false
-            unique: false
-            maxSize: 10
-        ? 16: selfReference
-        : !Reference
-          required: false
-          final: false
-          unique: false
-          dataModel: TestMarykModel
-        ? 17: setOfString
-        : !Set
-          required: false
-          final: false
-          maxSize: 6
-          valueDefinition: !String
-            required: true
-            final: false
-            unique: false
-            maxSize: 10
-        ? 18: incMap
-        : !IncMap
-          required: false
-          final: false
-          keyNumberDescriptor: UInt32
-          valueDefinition: !String
-            required: true
-            final: false
-            unique: false
+            reservedNames: [reserved]
+            ? 1: [string, str, stringValue]
+            : !String
+              required: true
+              final: false
+              unique: false
+              default: haha
+              regEx: ha.*
+            ? 2: int
+            : !Number
+              required: true
+              final: false
+              unique: false
+              type: SInt32
+              maxValue: 6
+              random: false
+            ? 3: uint
+            : !Number
+              required: true
+              final: true
+              unique: false
+              type: UInt32
+              random: false
+            ? 4: double
+            : !Number
+              required: true
+              final: false
+              unique: false
+              type: Float64
+              random: false
+            ? 5: dateTime
+            : !DateTime
+              required: true
+              final: false
+              unique: false
+              precision: SECONDS
+              fillWithNow: false
+            ? 6: bool
+            : !Boolean
+              required: true
+              final: true
+            ? 7: enum
+            : !Enum
+              required: true
+              final: true
+              unique: false
+              enum:
+                name: Option
+                cases:
+                  1: V1
+                  2: [V2, VERSION2]
+                  3: [V3, VERSION3]
+                reservedIndices: [4]
+                reservedNames: [V4]
+              default: V1(1)
+            ? 8: list
+            : !List
+              required: false
+              final: false
+              valueDefinition: !Number
+                required: true
+                final: false
+                unique: false
+                type: SInt32
+                random: false
+            ? 9: set
+            : !Set
+              required: false
+              final: false
+              maxSize: 5
+              valueDefinition: !Date
+                required: true
+                final: false
+                unique: false
+                maxValue: 2100-12-31
+                fillWithNow: false
+            ? 10: map
+            : !Map
+              required: false
+              final: false
+              maxSize: 5
+              keyDefinition: !Time
+                required: true
+                final: false
+                unique: false
+                precision: SECONDS
+                maxValue: '23:00'
+                fillWithNow: false
+              valueDefinition: !String
+                required: true
+                final: false
+                unique: false
+                maxSize: 10
+            ? 11: valueObject
+            : !Value
+              required: false
+              final: false
+              unique: false
+              dataModel: TestValueObject
+            ? 12: embeddedValues
+            : !Embed
+              required: false
+              final: false
+              dataModel: EmbeddedMarykModel
+            ? 13: multi
+            : !MultiType
+              required: false
+              final: false
+              typeEnum:
+                name: SimpleMarykTypeEnum
+                cases:
+                  ? 1: [S1, Type1]
+                  : !String
+                    required: true
+                    final: false
+                    unique: false
+                    regEx: '[^&]+'
+                  ? 2: S2
+                  : !Number
+                    required: true
+                    final: false
+                    unique: false
+                    type: SInt16
+                    random: false
+                  ? 3: S3
+                  : !Embed
+                    required: true
+                    final: false
+                    dataModel: EmbeddedMarykModel
+                reservedIndices: [99]
+                reservedNames: [O99]
+              typeIsFinal: true
+            ? 14: reference
+            : !Reference
+              required: false
+              final: false
+              unique: false
+              dataModel: TestMarykModel
+            ? 15: listOfString
+            : !List
+              required: false
+              final: false
+              minSize: 1
+              maxSize: 6
+              valueDefinition: !String
+                required: true
+                final: false
+                unique: false
+                maxSize: 10
+            ? 16: selfReference
+            : !Reference
+              required: false
+              final: false
+              unique: false
+              dataModel: TestMarykModel
+            ? 17: setOfString
+            : !Set
+              required: false
+              final: false
+              maxSize: 6
+              valueDefinition: !String
+                required: true
+                final: false
+                unique: false
+                maxSize: 10
+            ? 18: incMap
+            : !IncMap
+              required: false
+              final: false
+              keyNumberDescriptor: UInt32
+              valueDefinition: !String
+                required: true
+                final: false
+                unique: false
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(
+                TestMarykModel,
+                RootDataModel.Model,
+                { DefinitionsConversionContext() },
+                ::compareDataModels
+            )
+        }
     }
 
     @Test
@@ -650,89 +663,102 @@ internal class RootDataModelTest {
         newContext.dataModels["EmbeddedMarykModel"] = { EmbeddedMarykModel }
 
         RootDataModel.Model.readJson(reader, newContext).toDataObject().apply {
-            name shouldBe "SimpleModel"
+            assertEquals("SimpleModel", name)
 
             properties["string"]!!.let {
-                it.index shouldBe 1u
-                it.definition shouldBe StringDefinition()
-                it.alternativeNames shouldBe setOf("str")
+                expect(1u) { it.index }
+                expect(StringDefinition()) {
+                    it.definition as StringDefinition
+                }
+                expect(setOf("str")) { it.alternativeNames }
             }
-            properties["str"] shouldBe properties["string"]
+            expect(properties["string"]) { properties["str"] }
 
             properties["int"]!!.let {
-                it.index shouldBe 2u
-                it.definition shouldBe NumberDefinition(type = SInt32)
+                expect(2u) { it.index }
+                expect(NumberDefinition(type = SInt32)) {
+                    it.definition as NumberDefinition<*>
+                }
             }
             properties["date"]!!.let {
-                it.index shouldBe 3u
-                it.definition shouldBe DateDefinition()
+                expect(3u) { it.index }
+                expect(DateDefinition()) { it.definition as DateDefinition }
             }
             properties["time"]!!.let {
-                it.index shouldBe 4u
-                it.definition shouldBe TimeDefinition()
+                expect(4u) { it.index }
+                expect(TimeDefinition()) { it.definition as TimeDefinition }
             }
             properties["dateTime"]!!.let {
-                it.index shouldBe 5u
-                it.definition shouldBe DateTimeDefinition()
+                expect(5u) { it.index }
+                expect(DateTimeDefinition()) {
+                    it.definition as DateTimeDefinition
+                }
             }
             properties["options"]!!.let {
-                it.index shouldBe 6u
-                it.definition shouldBe EnumDefinition(enum = Option)
+                expect(6u) { it.index }
+                expect(EnumDefinition(enum = Option)) {
+                    it.definition as EnumDefinition<*>
+                }
             }
             properties["fixed"]!!.let {
-                it.index shouldBe 7u
-                it.definition shouldBe FixedBytesDefinition(byteSize = 4)
+                expect(7u) { it.index }
+                expect(FixedBytesDefinition(byteSize = 4)) {
+                    it.definition as FixedBytesDefinition
+                }
             }
             properties["flex"]!!.let {
-                it.index shouldBe 8u
-                it.definition shouldBe FlexBytesDefinition()
+                expect(8u) { it.index }
+                expect(FlexBytesDefinition()) {
+                    it.definition as FlexBytesDefinition
+                }
             }
             properties["list"]!!.let {
-                it.index shouldBe 9u
-                it.definition shouldBe ListDefinition(
-                    valueDefinition = StringDefinition()
-                )
+                expect(9u) { it.index }
+                expect(ListDefinition(valueDefinition = StringDefinition())) {
+                    it.definition as ListDefinition<*, *>
+                }
             }
             properties["set"]!!.let {
-                it.index shouldBe 10u
-                it.definition shouldBe SetDefinition(
-                    valueDefinition = BooleanDefinition()
-                )
+                expect(10u) { it.index }
+                expect(SetDefinition(valueDefinition = BooleanDefinition())) {
+                    it.definition as SetDefinition<*, *>
+                }
             }
             properties["map"]!!.let {
-                it.index shouldBe 11u
-                it.definition shouldBe MapDefinition(
-                    keyDefinition = DateDefinition(),
-                    valueDefinition = StringDefinition()
-                )
+                expect(11u) { it.index }
+                expect(MapDefinition(keyDefinition = DateDefinition(), valueDefinition = StringDefinition())) {
+                    it.definition as MapDefinition<*, *, *>
+                }
             }
             properties["embedded"]!!.let {
-                it.index shouldBe 12u
-                it.definition shouldBe EmbeddedValuesDefinition(
-                    dataModel = { TestMarykModel }
-                )
+                expect(12u) { it.index }
+                expect(EmbeddedValuesDefinition(dataModel = { TestMarykModel })) {
+                    it.definition as EmbeddedValuesDefinition<*, *>
+                }
             }
             properties["value"]!!.let {
-                it.index shouldBe 13u
-                it.definition shouldBe ValueModelDefinition(
-                    dataModel = TestValueObject
-                )
+                expect(13u) { it.index }
+                expect(ValueModelDefinition(dataModel = TestValueObject)) {
+                    it.definition as ValueModelDefinition<*, *, *>
+                }
             }
             properties["ref"]!!.let {
-                it.index shouldBe 14u
-                it.definition shouldBe ReferenceDefinition(
-                    dataModel = { TestMarykModel }
-                )
+                expect(14u) { it.index }
+                expect(ReferenceDefinition(dataModel = { TestMarykModel })) {
+                    it.definition as ReferenceDefinition<*>
+                }
             }
             properties["multi"]!!.let {
-                it.index shouldBe 15u
-                it.definition shouldBe MultiTypeDefinition(
-                    typeEnum = SimpleMarykTypeEnum
-                )
+                expect(15u) { it.index }
+                expect(MultiTypeDefinition(typeEnum = SimpleMarykTypeEnum)) {
+                    it.definition as MultiTypeDefinition<*, *>
+                }
             }
             properties["isTrue"]!!.let {
-                it.index shouldBe 16u
-                it.definition shouldBe BooleanDefinition()
+                expect(16u) { it.index }
+                expect(BooleanDefinition()) {
+                    it.definition as BooleanDefinition
+                }
             }
         }
     }

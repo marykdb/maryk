@@ -10,8 +10,10 @@ import maryk.core.properties.definitions.StringDefinition
 import maryk.lib.extensions.initByteArrayByHex
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
+import maryk.test.assertType
 import kotlin.test.Test
+import kotlin.test.assertTrue
+import kotlin.test.expect
 
 internal class UUIDKeyTest {
     object MarykModel : RootDataModel<MarykModel, MarykModel.Properties>(
@@ -45,8 +47,8 @@ internal class UUIDKeyTest {
             b[i++]
         }
 
-        uuid.first shouldBe msb
-        uuid.second shouldBe lsb
+        expect(msb) { uuid.first }
+        expect(lsb) { uuid.second }
     }
 
     @Test
@@ -54,23 +56,24 @@ internal class UUIDKeyTest {
         val obj = MarykModel("test")
 
         val key = MarykModel.key(obj)
-        key.bytes.size shouldBe 16
+        expect(16) { key.bytes.size }
 
         val keyDef = MarykModel.keyDefinition
 
-        (keyDef === UUIDKey) shouldBe true
-        val specificDef = keyDef as UUIDKey
+        assertType<UUIDKey>(keyDef).apply {
+            var index = 0
+            val uuid = readStorageBytes(key.size) {
+                key.bytes[index++]
+            }
 
-        var index = 0
-        val uuid = specificDef.readStorageBytes(key.size) {
-            key.bytes[index++]
+            val bc = ByteCollector()
+            bc.reserve(16)
+            writeStorageBytes(uuid, bc::write)
+
+            assertTrue {
+                bc.bytes!! contentEquals key.bytes
+            }
         }
-
-        val bc = ByteCollector()
-        bc.reserve(16)
-        specificDef.writeStorageBytes(uuid, bc::write)
-
-        bc.bytes!! contentEquals key.bytes shouldBe true
     }
 
     @Test
@@ -90,6 +93,6 @@ internal class UUIDKeyTest {
 
     @Test
     fun toReferenceStorageBytes() {
-        UUIDKey.toReferenceStorageByteArray().toHex() shouldBe "01"
+        expect("01") { UUIDKey.toReferenceStorageByteArray().toHex() }
     }
 }

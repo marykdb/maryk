@@ -8,9 +8,9 @@ import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.VAR_INT
 import maryk.lib.exceptions.ParseException
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
+import kotlin.test.expect
 
 internal class BooleanDefinitionTest {
     val def = BooleanDefinition()
@@ -23,12 +23,12 @@ internal class BooleanDefinitionTest {
     @Test
     fun convertValuesToStorageBytesAndBack() {
         val bc = ByteCollector()
-        for (it in booleanArrayOf(true, false)) {
+        for (bool in booleanArrayOf(true, false)) {
             bc.reserve(
-                def.calculateStorageByteLength(it)
+                def.calculateStorageByteLength(bool)
             )
-            def.writeStorageBytes(it, bc::write)
-            def.readStorageBytes(bc.size, bc::read) shouldBe it
+            def.writeStorageBytes(bool, bc::write)
+            expect(bool) { def.readStorageBytes(bc.size, bc::read) }
             bc.reset()
         }
     }
@@ -38,33 +38,35 @@ internal class BooleanDefinitionTest {
         val bc = ByteCollector()
         val cacheFailer = WriteCacheFailer()
 
-        for (it in booleanArrayOf(true, false)) {
+        for (boolean in booleanArrayOf(true, false)) {
             bc.reserve(
-                def.calculateTransportByteLengthWithKey(23u, it, cacheFailer, null)
+                def.calculateTransportByteLengthWithKey(23u, boolean, cacheFailer, null)
             )
-            def.writeTransportBytesWithKey(23u, it, cacheFailer, bc::write, null)
+            def.writeTransportBytesWithKey(23u, boolean, cacheFailer, bc::write, null)
             val key = ProtoBuf.readKey(bc::read)
-            key.tag shouldBe 23u
-            key.wireType shouldBe VAR_INT
-            def.readTransportBytes(
-                ProtoBuf.getLength(VAR_INT, bc::read),
-                bc::read
-            ) shouldBe it
+            expect(23u) { key.tag }
+            expect(VAR_INT) { key.wireType }
+            expect(boolean) {
+                def.readTransportBytes(
+                    ProtoBuf.getLength(VAR_INT, bc::read),
+                    bc::read
+                )
+            }
             bc.reset()
         }
     }
 
     @Test
     fun convertValuesToStringAndBack() {
-        for (it in booleanArrayOf(true, false)) {
-            val b = def.asString(it)
-            def.fromString(b) shouldBe it
+        for (bool in booleanArrayOf(true, false)) {
+            val b = def.asString(bool)
+            expect(bool) { def.fromString(b) }
         }
     }
 
     @Test
     fun invalidStringValueShouldThrowException() {
-        shouldThrow<ParseException> {
+        assertFailsWith<ParseException> {
             def.fromString("wrong")
         }
     }
@@ -84,11 +86,16 @@ internal class BooleanDefinitionTest {
     @Test
     fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, BooleanDefinition.Model)
-        checkYamlConversion(this.defMaxDefined, BooleanDefinition.Model) shouldBe """
-        required: false
-        final: true
-        default: true
 
-        """.trimIndent()
+        expect(
+            """
+            required: false
+            final: true
+            default: true
+
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.defMaxDefined, BooleanDefinition.Model)
+        }
     }
 }

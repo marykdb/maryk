@@ -1,14 +1,14 @@
 package maryk.lib.uuid
 
-import maryk.test.shouldNotBe
 import kotlin.test.Test
+import kotlin.test.assertNotEquals
 
 class UUIDKtTest {
     @Test
     fun testGenerateUUID() {
         val uuid = generateUUID()
 
-        uuid.first shouldNotBe 0
-        uuid.second shouldNotBe 0
+        assertNotEquals(0, uuid.first)
+        assertNotEquals(0, uuid.second)
     }
 }

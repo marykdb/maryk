@@ -1,12 +1,13 @@
 package maryk.core.processors.datastore.scanRange
 
+import maryk.core.properties.definitions.StringDefinition
 import maryk.core.query.filters.Equals
 import maryk.core.query.filters.ValueIn
 import maryk.core.query.pairs.with
 import maryk.lib.extensions.toHex
 import maryk.test.models.CompleteMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 import kotlin.test.fail
 
 class KeyScanRangesUniqueTest {
@@ -18,11 +19,13 @@ class KeyScanRangesUniqueTest {
 
         val scanRange = CompleteMarykModel.createScanRange(filter, null)
 
-        scanRange.uniques?.size shouldBe 1
+        expect(1) { scanRange.uniques?.size }
         scanRange.uniques?.get(0)?.let {
-            it.reference.toHex() shouldBe "09"
-            it.definition shouldBe CompleteMarykModel.Properties.string.definition
-            it.value shouldBe "🦄"
+            expect("09") { it.reference.toHex() }
+            expect(CompleteMarykModel.Properties.string.definition) {
+                it.definition as StringDefinition
+            }
+            expect("🦄") { it.value }
 
             true
         } ?: fail("Should be defined")
@@ -36,19 +39,23 @@ class KeyScanRangesUniqueTest {
 
         val scanRange = CompleteMarykModel.createScanRange(filter, null)
 
-        scanRange.uniques?.size shouldBe 4
+        expect(4) { scanRange.uniques?.size }
         scanRange.uniques?.get(0)?.let {
-            it.reference.toHex() shouldBe "09"
-            it.definition shouldBe CompleteMarykModel.Properties.string.definition
-            it.value shouldBe "🦄"
+            expect("09") { it.reference.toHex() }
+            expect(CompleteMarykModel.Properties.string.definition) {
+                it.definition as StringDefinition
+            }
+            expect("🦄") { it.value }
 
             true
         } ?: fail("Should be defined")
 
         scanRange.uniques?.get(3)?.let {
-            it.reference.toHex() shouldBe "09"
-            it.definition shouldBe CompleteMarykModel.Properties.string.definition
-            it.value shouldBe "🤖"
+            expect("09") { it.reference.toHex() }
+            expect(CompleteMarykModel.Properties.string.definition) {
+                it.definition as StringDefinition
+            }
+            expect("🤖") { it.value }
 
             true
         } ?: fail("Should be defined")

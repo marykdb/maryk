@@ -6,8 +6,8 @@ import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.test.models.SimpleMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class ObjectSoftDeleteTest {
     private val objectSoftDeleteChange = ObjectSoftDeleteChange(
@@ -33,8 +33,13 @@ class ObjectSoftDeleteTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(this.objectSoftDeleteChange, ObjectSoftDeleteChange, { this.context }) shouldBe """
-        |isDeleted: true
-        |""".trimMargin()
+        expect(
+            """
+            isDeleted: true
+
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.objectSoftDeleteChange, ObjectSoftDeleteChange, { this.context })
+        }
     }
 }

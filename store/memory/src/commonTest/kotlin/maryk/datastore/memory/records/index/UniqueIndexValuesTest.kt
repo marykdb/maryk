@@ -5,8 +5,8 @@ import maryk.datastore.memory.records.DataRecord
 import maryk.test.models.SimpleMarykModel
 import maryk.test.models.SimpleMarykModel.Properties
 import maryk.test.models.SimpleMarykModel.Properties.value
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class UniqueIndexValuesTest {
     private val valueReference = value.ref().toStorageByteArray()
@@ -37,32 +37,32 @@ class UniqueIndexValuesTest {
     @Test
     fun addToIndex() {
         uniqueIndex.addToIndex(dataRecord, "test", 1uL)
-        uniqueIndex["test"] shouldBe dataRecord
+        expect(dataRecord) { uniqueIndex["test"] }
     }
 
     @Test
     fun removeIndexAndAdd() {
         val value = "test2"
         uniqueIndex.addToIndex(dataRecord, value, 1uL)
-        uniqueIndex[value] shouldBe dataRecord
+        expect(dataRecord) { uniqueIndex[value] }
         uniqueIndex.removeFromIndex(dataRecord, value, 2uL, false)
-        uniqueIndex[value] shouldBe null
+        expect(null) { uniqueIndex[value] }
         uniqueIndex.addToIndex(dataRecord2, value, 3uL)
-        uniqueIndex[value] shouldBe dataRecord2
+        expect(dataRecord2) { uniqueIndex[value] }
     }
 
     @Test
     fun removeIndexAndAddHistorical() {
         val value = "test3"
         uniqueIndex.addToIndex(dataRecord, value, 1uL)
-        uniqueIndex[value] shouldBe dataRecord
+        expect(dataRecord) { uniqueIndex[value] }
         uniqueIndex.removeFromIndex(dataRecord, value, 2uL, true)
-        uniqueIndex[value] shouldBe null
+        expect(null) { uniqueIndex[value] }
         uniqueIndex.addToIndex(dataRecord2, value, 3uL)
-        uniqueIndex[value] shouldBe dataRecord2
+        expect(dataRecord2) { uniqueIndex[value] }
 
-        uniqueIndex[value, 1uL] shouldBe dataRecord
-        uniqueIndex[value, 2uL] shouldBe null
-        uniqueIndex[value, 3uL] shouldBe dataRecord2
+        expect(dataRecord) { uniqueIndex[value, 1uL] }
+        expect(null) { uniqueIndex[value, 2uL] }
+        expect(dataRecord2) { uniqueIndex[value, 3uL] }
     }
 }

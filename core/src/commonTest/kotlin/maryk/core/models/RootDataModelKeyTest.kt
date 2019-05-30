@@ -10,8 +10,8 @@ import maryk.core.properties.definitions.DateTimeDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.index.Multiple
 import maryk.lib.time.DateTime
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 
 internal object WrongProperties : PropertyDefinitions() {
     val boolean = add(
@@ -31,7 +31,7 @@ internal object WrongProperties : PropertyDefinitions() {
 class RootDataModelKeyTest {
     @Test
     fun notAcceptNonRequiredDefinitions() {
-        shouldThrow<IllegalArgumentException> {
+        assertFailsWith<IllegalArgumentException> {
             object : RootDataModel<IsRootValuesDataModel<WrongProperties>, WrongProperties>(
                 keyDefinition = boolean.ref(),
                 properties = WrongProperties
@@ -45,7 +45,7 @@ class RootDataModelKeyTest {
 
     @Test
     fun notAcceptNonFinalDefinitions() {
-        shouldThrow<IllegalArgumentException> {
+        assertFailsWith<IllegalArgumentException> {
             object : RootDataModel<IsRootValuesDataModel<WrongProperties>, WrongProperties>(
                 keyDefinition = Multiple(
                     dateTime.ref()
@@ -61,7 +61,7 @@ class RootDataModelKeyTest {
 
     @Test
     fun notAcceptFlexByteDefinitions() {
-        shouldThrow<InvalidDefinitionException> {
+        assertFailsWith<InvalidDefinitionException> {
             object : RootDataModel<IsRootValuesDataModel<WrongProperties>, WrongProperties>(
                 keyDefinition = Multiple(
                     string.ref()

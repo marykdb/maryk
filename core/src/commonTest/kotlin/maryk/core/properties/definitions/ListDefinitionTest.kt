@@ -18,9 +18,10 @@ import maryk.json.JsonReader
 import maryk.json.JsonWriter
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.expect
 
 internal class ListDefinitionTest {
     private val subDef = StringDefinition(
@@ -58,7 +59,7 @@ internal class ListDefinitionTest {
     fun validateRequired() {
         defMaxDefined.validateWithRef(newValue = null)
 
-        shouldThrow<RequiredException> {
+        assertFailsWith<RequiredException> {
             def.validateWithRef(newValue = null)
         }
     }
@@ -69,27 +70,27 @@ internal class ListDefinitionTest {
         def.validateWithRef(newValue = listOf("T", "T2", "T3"))
         def.validateWithRef(newValue = listOf("T", "T2", "T3", "T4"))
 
-        shouldThrow<NotEnoughItemsException> {
+        assertFailsWith<NotEnoughItemsException> {
             def.validateWithRef(newValue = listOf("T"))
         }
 
-        shouldThrow<TooManyItemsException> {
+        assertFailsWith<TooManyItemsException> {
             def.validateWithRef(newValue = listOf("T", "T2", "T3", "T4", "T5"))
         }
     }
 
     @Test
     fun validateListContent() {
-        val e = shouldThrow<ValidationUmbrellaException> {
+        val e = assertFailsWith<ValidationUmbrellaException> {
             def.validateWithRef(newValue = listOf("T", "WRONG", "WRONG2"))
         }
-        e.exceptions.size shouldBe 2
+        expect(2) { e.exceptions.size }
 
         with(e.exceptions[0] as InvalidValueException) {
-            this.reference!!.completeName shouldBe "@1"
+            expect("@1") { this.reference!!.completeName }
         }
         with(e.exceptions[1] as InvalidValueException) {
-            this.reference!!.completeName shouldBe "@2"
+            expect("@2") { this.reference!!.completeName }
         }
     }
 
@@ -97,22 +98,22 @@ internal class ListDefinitionTest {
     fun convertValuesToTransportBytesAndBack() {
         val bc = ByteCollector()
 
-        val value = listOf("T", "T2", "T3", "T4")
+        val values = listOf("T", "T2", "T3", "T4")
         val asHex = "0a01540a0254320a0254330a025434"
 
         val cache = WriteCache()
 
         bc.reserve(
-            def.calculateTransportByteLengthWithKey(1u, value, cache)
+            def.calculateTransportByteLengthWithKey(1u, values, cache)
         )
-        def.writeTransportBytesWithKey(1u, value, cache, bc::write)
+        def.writeTransportBytesWithKey(1u, values, cache, bc::write)
 
-        bc.bytes!!.toHex() shouldBe asHex
+        expect(asHex) { bc.bytes!!.toHex() }
 
         fun readKey() {
             val key = ProtoBuf.readKey(bc::read)
-            key.wireType shouldBe LENGTH_DELIMITED
-            key.tag shouldBe 1u
+            expect(LENGTH_DELIMITED) { key.wireType }
+            expect(1u) { key.tag }
         }
 
         fun readValue(list: List<String>) = def.readTransportBytes(
@@ -124,10 +125,10 @@ internal class ListDefinitionTest {
 
         val mutableList = mutableListOf<String>()
 
-        for (it in value) {
+        for (value in values) {
             readKey()
             readValue(mutableList)
-            mutableList.last() shouldBe it
+            expect(value) { mutableList.last() }
         }
     }
 
@@ -184,18 +185,18 @@ internal class ListDefinitionTest {
         )
         def.writeTransportBytesWithKey(index, list, cache, bc::write)
 
-        bc.bytes!!.toHex() shouldBe hex
+        expect(hex) { bc.bytes!!.toHex() }
 
         val key = ProtoBuf.readKey(bc::read)
-        key.wireType shouldBe LENGTH_DELIMITED
-        key.tag shouldBe index
+        expect(LENGTH_DELIMITED) { key.wireType }
+        expect(index) { key.tag }
 
         val readList = def.readTransportBytes(
             ProtoBuf.getLength(LENGTH_DELIMITED, bc::read),
             bc::read
         )
 
-        readList shouldBe list
+        expect(list) { readList }
     }
 
     @Test
@@ -205,14 +206,14 @@ internal class ListDefinitionTest {
         var totalString = ""
         def.writeJsonValue(value, JsonWriter { totalString += it })
 
-        totalString shouldBe "[\"T\",\"T2\",\"T3\",\"T4\"]"
+        expect("""["T","T2","T3","T4"]""") { totalString }
 
         val iterator = totalString.iterator()
         val reader = JsonReader { iterator.nextChar() }
         reader.nextToken()
         val converted = def.readJson(reader)
 
-        converted shouldBe value
+        assertEquals(value, converted)
     }
 
     @Test
@@ -230,18 +231,23 @@ internal class ListDefinitionTest {
     @Test
     fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, ListDefinition.Model)
-        checkYamlConversion(this.defMaxDefined, ListDefinition.Model) shouldBe """
-        required: false
-        final: true
-        minSize: 2
-        maxSize: 4
-        valueDefinition: !String
-          required: true
-          final: false
-          unique: false
-          regEx: T.*
-        default: [Tic, Tac, Toe]
 
-        """.trimIndent()
+        expect(
+            """
+            required: false
+            final: true
+            minSize: 2
+            maxSize: 4
+            valueDefinition: !String
+              required: true
+              final: false
+              unique: false
+              regEx: T.*
+            default: [Tic, Tac, Toe]
+
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.defMaxDefined, ListDefinition.Model)
+        }
     }
 }

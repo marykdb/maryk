@@ -21,14 +21,15 @@ import maryk.core.query.responses.statuses.Success
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
+import maryk.test.assertType
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.SimpleMarykTypeEnum.S1
 import maryk.test.models.TestMarykModel
 import maryk.test.runSuspendingTest
-import maryk.test.shouldBe
-import maryk.test.shouldBeOfType
-import maryk.test.shouldNotBe
 import kotlin.test.Test
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.expect
 
 class InMemoryDataStoreChangeTest {
     private val dataStore = InMemoryDataStore()
@@ -102,7 +103,7 @@ class InMemoryDataStoreChangeTest {
             )
 
             addResponse.statuses.forEach { status ->
-                val response = shouldBeOfType<AddSuccess<TestMarykModel>>(status)
+                val response = assertType<AddSuccess<TestMarykModel>>(status)
                 keys.add(response.key)
                 lastVersions.add(response.version)
             }
@@ -134,22 +135,22 @@ class InMemoryDataStoreChangeTest {
             )
         )
 
-        changeResponse.statuses.size shouldBe 3
+        expect(3) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = shouldBeOfType<Success<*>>(status)
+            val success = assertType<Success<*>>(status)
             shouldBeRecent(success.version, 1000uL)
         }
 
         changeResponse.statuses[1].let { status ->
-            val validationFail = shouldBeOfType<ValidationFail<*>>(status)
-            validationFail.exceptions.size shouldBe 1
-            shouldBeOfType<InvalidValueException>(validationFail.exceptions[0])
+            val validationFail = assertType<ValidationFail<*>>(status)
+            expect(1) { validationFail.exceptions.size }
+            assertType<InvalidValueException>(validationFail.exceptions[0])
         }
 
         changeResponse.statuses[2].let { status ->
-            val validationFail = shouldBeOfType<ValidationFail<*>>(status)
-            validationFail.exceptions.size shouldBe 1
-            shouldBeOfType<InvalidValueException>(validationFail.exceptions[0])
+            val validationFail = assertType<ValidationFail<*>>(status)
+            expect(1) { validationFail.exceptions.size }
+            assertType<InvalidValueException>(validationFail.exceptions[0])
         }
     }
 
@@ -174,9 +175,9 @@ class InMemoryDataStoreChangeTest {
             )
         )
 
-        changeResponse.statuses.size shouldBe 1
+        expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = shouldBeOfType<Success<*>>(status)
+            val success = assertType<Success<*>>(status)
             shouldBeRecent(success.version, 1000uL)
         }
 
@@ -184,14 +185,14 @@ class InMemoryDataStoreChangeTest {
             TestMarykModel.get(keys[1])
         )
 
-        getResponse.values.size shouldBe 1
+        expect(1) { getResponse.values.size }
         getResponse.values.first().let {
-            it.values { string } shouldBe "haha3"
-            it.values { listOfString }?.get(0) shouldBe "z"
-            it.values { map }?.get(Time(12, 33, 45)) shouldBe "changed"
-            it.values { list } shouldBe newIntList
-            it.values { set } shouldBe newDateSet
-            it.values { embeddedValues } shouldBe newValues
+            expect("haha3") { it.values { string } }
+            expect("z") { it.values { listOfString }?.get(0) }
+            expect("changed") { it.values { map }?.get(Time(12, 33, 45)) }
+            expect(newIntList) { it.values { list } }
+            expect(newDateSet) { it.values { set } }
+            expect(newValues) { it.values { embeddedValues } }
         }
     }
 
@@ -207,8 +208,8 @@ class InMemoryDataStoreChangeTest {
             )
         )
 
-        changeResponse.statuses.size shouldBe 1
-        shouldBeOfType<ServerFail<*>>(changeResponse.statuses[0])
+        expect(1) { changeResponse.statuses.size }
+        assertType<ServerFail<*>>(changeResponse.statuses[0])
     }
 
     @Test
@@ -223,8 +224,8 @@ class InMemoryDataStoreChangeTest {
             )
         )
 
-        changeResponse.statuses.size shouldBe 1
-        shouldBeOfType<ServerFail<*>>(changeResponse.statuses[0])
+        expect(1) { changeResponse.statuses.size }
+        assertType<ServerFail<*>>(changeResponse.statuses[0])
     }
 
     @Test
@@ -239,8 +240,8 @@ class InMemoryDataStoreChangeTest {
             )
         )
 
-        changeResponse.statuses.size shouldBe 1
-        shouldBeOfType<ServerFail<*>>(changeResponse.statuses[0])
+        expect(1) { changeResponse.statuses.size }
+        assertType<ServerFail<*>>(changeResponse.statuses[0])
     }
 
     @Test
@@ -253,9 +254,9 @@ class InMemoryDataStoreChangeTest {
             )
         )
 
-        changeResponse.statuses.size shouldBe 1
+        expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = shouldBeOfType<Success<*>>(status)
+            val success = assertType<Success<*>>(status)
             shouldBeRecent(success.version, 1000uL)
         }
 
@@ -263,8 +264,8 @@ class InMemoryDataStoreChangeTest {
             TestMarykModel.get(keys[2])
         )
 
-        getResponse.values.size shouldBe 1
-        getResponse.values.first().values { reference } shouldBe null
+        expect(1) { getResponse.values.size }
+        assertNull(getResponse.values.first().values { reference })
     }
 
     @Test
@@ -280,9 +281,9 @@ class InMemoryDataStoreChangeTest {
             )
         )
 
-        changeResponse.statuses.size shouldBe 1
+        expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = shouldBeOfType<Success<*>>(status)
+            val success = assertType<Success<*>>(status)
             shouldBeRecent(success.version, 1000uL)
         }
 
@@ -290,11 +291,11 @@ class InMemoryDataStoreChangeTest {
             TestMarykModel.get(keys[3])
         )
 
-        getResponse.values.size shouldBe 1
-        getResponse.values.first().values { map } shouldBe null
-        getResponse.values.first().values { listOfString } shouldBe null
-        getResponse.values.first().values { set } shouldBe null
-        getResponse.values.first().values { multi } shouldBe null
+        expect(1) { getResponse.values.size }
+        assertNull(getResponse.values.first().values { map })
+        assertNull(getResponse.values.first().values { listOfString })
+        assertNull(getResponse.values.first().values { set })
+        assertNull(getResponse.values.first().values { multi })
     }
 
     @Test
@@ -309,9 +310,9 @@ class InMemoryDataStoreChangeTest {
             )
         )
 
-        changeResponse.statuses.size shouldBe 1
+        expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = shouldBeOfType<Success<*>>(status)
+            val success = assertType<Success<*>>(status)
             shouldBeRecent(success.version, 1000uL)
         }
 
@@ -319,22 +320,22 @@ class InMemoryDataStoreChangeTest {
             TestMarykModel.get(keys[4])
         )
 
-        getResponse.values.size shouldBe 1
+        expect(1) { getResponse.values.size }
         getResponse.values.first().values { map }.let {
-            it shouldNotBe null
-            it?.size shouldBe 1
+            assertNotNull(it)
+            expect(1) { it.size }
         }
         getResponse.values.first().values { listOfString }.let {
-            it shouldNotBe null
-            it!! shouldBe listOf("f", "h")
-            it.size shouldBe 2
+            assertNotNull(it)
+            expect(listOf("f", "h")) { it }
+            expect(2) { it.size }
         }
         getResponse.values.first().values { set }.let {
-            it shouldNotBe null
-            it?.size shouldBe 1
+            assertNotNull(it)
+            expect(1) { it.size }
         }
         getResponse.values.first().values { multi }.let {
-            it shouldNotBe null
+            assertNotNull(it)
         }
     }
 
@@ -348,8 +349,8 @@ class InMemoryDataStoreChangeTest {
             )
         )
 
-        changeResponse.statuses.size shouldBe 1
-        shouldBeOfType<ServerFail<*>>(changeResponse.statuses[0])
+        expect(1) { changeResponse.statuses.size }
+        assertType<ServerFail<*>>(changeResponse.statuses[0])
     }
 
     @Test
@@ -373,9 +374,9 @@ class InMemoryDataStoreChangeTest {
             )
         )
 
-        changeResponse.statuses.size shouldBe 1
+        expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = shouldBeOfType<Success<*>>(status)
+            val success = assertType<Success<*>>(status)
             shouldBeRecent(success.version, 1000uL)
         }
 
@@ -383,8 +384,8 @@ class InMemoryDataStoreChangeTest {
             TestMarykModel.get(keys[0])
         )
 
-        getResponse.values.size shouldBe 1
-        getResponse.values.first().values { listOfString } shouldBe listOf("zero", "a", "x", "y", "z")
+        expect(1) { getResponse.values.size }
+        expect(listOf("zero", "a", "x", "y", "z")) { getResponse.values.first().values { listOfString } }
     }
 
     @Test
@@ -404,9 +405,9 @@ class InMemoryDataStoreChangeTest {
             )
         )
 
-        changeResponse.statuses.size shouldBe 1
+        expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = shouldBeOfType<Success<*>>(status)
+            val success = assertType<Success<*>>(status)
             shouldBeRecent(success.version, 1000uL)
         }
 
@@ -414,8 +415,8 @@ class InMemoryDataStoreChangeTest {
             TestMarykModel.get(keys[1])
         )
 
-        getResponse.values.size shouldBe 1
-        getResponse.values.first().values { set } shouldBe setOf(Date(2018, 11, 26), Date(1981, 12, 5))
+        expect(1) { getResponse.values.size }
+        expect(setOf(Date(2018, 11, 26), Date(1981, 12, 5))) { getResponse.values.first().values { set } }
     }
 
     @Test
@@ -434,9 +435,9 @@ class InMemoryDataStoreChangeTest {
             )
         )
 
-        changeResponse.statuses.size shouldBe 1
+        expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = shouldBeOfType<Success<*>>(status)
+            val success = assertType<Success<*>>(status)
             shouldBeRecent(success.version, 1000uL)
         }
 
@@ -444,12 +445,14 @@ class InMemoryDataStoreChangeTest {
             TestMarykModel.get(keys[1])
         )
 
-        getResponse.values.size shouldBe 1
-        getResponse.values.first().values { map } shouldBe mapOf(
-            Time(13, 44, 55) to "another2",
-            Time(1, 2, 3) to "test1",
-            Time(2, 3, 4) to "test2"
-        )
+        expect(1) { getResponse.values.size }
+        expect(
+            mapOf(
+                Time(13, 44, 55) to "another2",
+                Time(1, 2, 3) to "test1",
+                Time(2, 3, 4) to "test2"
+            )
+        ) { getResponse.values.first().values { map } }
     }
 
     @Test
@@ -474,9 +477,9 @@ class InMemoryDataStoreChangeTest {
             )
         )
 
-        changeResponse.statuses.size shouldBe 1
+        expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = shouldBeOfType<Success<*>>(status)
+            val success = assertType<Success<*>>(status)
             shouldBeRecent(success.version, 1000uL)
         }
 
@@ -484,11 +487,13 @@ class InMemoryDataStoreChangeTest {
             TestMarykModel.get(keys[1])
         )
 
-        getResponse.values.size shouldBe 1
-        getResponse.values.first().values { incMap } shouldBe mapOf(
-            1u to "newA",
-            3u to "c",
-            4u to "d"
-        )
+        expect(1) { getResponse.values.size }
+        expect(
+            mapOf(
+                1u to "newA",
+                3u to "c",
+                4u to "d"
+            )
+        ) { getResponse.values.first().values { incMap } }
     }
 }

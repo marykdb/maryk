@@ -6,8 +6,8 @@ import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.test.models.TestMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class DeleteTest {
     private val propertyDelete = Delete(
@@ -41,15 +41,23 @@ class DeleteTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(this.propertyDelete, Delete, { this.context }) shouldBe """
-        string
-        """.trimIndent()
+        expect(
+            """
+            string
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.propertyDelete, Delete, { this.context })
+        }
 
-        checkYamlConversion(this.propertyDeleteMultiple, Delete, { this.context }) shouldBe """
-        - string
-        - int
-        - dateTime
+        expect(
+            """
+            - string
+            - int
+            - dateTime
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.propertyDeleteMultiple, Delete, { this.context })
+        }
     }
 }

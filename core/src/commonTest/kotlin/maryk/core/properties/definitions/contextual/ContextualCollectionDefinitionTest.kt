@@ -12,8 +12,8 @@ import maryk.json.JsonWriter
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.TestMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class ContextualCollectionDefinitionTest {
     private val listToTest = listOf(
@@ -36,20 +36,20 @@ class ContextualCollectionDefinitionTest {
         val bc = ByteCollector()
         val cache = WriteCache()
 
-        val value = listOf("T", "T2", "T3", "T4")
+        val values = listOf("T", "T2", "T3", "T4")
         val asHex = "ea020154ea02025432ea02025433ea02025434"
 
         bc.reserve(
-            def.calculateTransportByteLengthWithKey(45u, value, cache, this.context)
+            def.calculateTransportByteLengthWithKey(45u, values, cache, this.context)
         )
-        def.writeTransportBytesWithKey(45u, value, cache, bc::write, this.context)
+        def.writeTransportBytesWithKey(45u, values, cache, bc::write, this.context)
 
-        bc.bytes!!.toHex() shouldBe asHex
+        expect(asHex) { bc.bytes!!.toHex() }
 
         fun readKey() {
             val key = ProtoBuf.readKey(bc::read)
-            key.wireType shouldBe LENGTH_DELIMITED
-            key.tag shouldBe 45u
+            expect(LENGTH_DELIMITED) { key.wireType }
+            expect(45u) { key.tag }
         }
 
         fun readValue(list: List<String>) = def.readTransportBytes(
@@ -61,11 +61,11 @@ class ContextualCollectionDefinitionTest {
 
         val mutableList = mutableListOf<String>()
 
-        value.forEach {
+        values.forEach { value ->
             readKey()
             readValue(mutableList)
 
-            mutableList.last() shouldBe it
+            expect(value) { mutableList.last() }
         }
     }
 
@@ -74,13 +74,13 @@ class ContextualCollectionDefinitionTest {
         var totalString = ""
         def.writeJsonValue(listToTest, JsonWriter { totalString += it }, this.context)
 
-        totalString shouldBe "[\"T1\",\"T2\",\"T3\"]"
+        expect("""["T1","T2","T3"]""") { totalString }
 
         val iterator = totalString.iterator()
         val reader = JsonReader { iterator.nextChar() }
         reader.nextToken()
         val converted = def.readJson(reader, this.context)
 
-        converted shouldBe listToTest
+        expect(listToTest) { converted }
     }
 }

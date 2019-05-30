@@ -12,14 +12,14 @@ import maryk.core.query.pairs.withType
 import maryk.core.query.requests.add
 import maryk.core.query.requests.getChanges
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.test.assertType
 import maryk.test.models.ComplexModel
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.MarykTypeEnum.T1
 import maryk.test.models.MarykTypeEnum.T3
 import maryk.test.runSuspendingTest
-import maryk.test.shouldBe
-import maryk.test.shouldBeOfType
 import kotlin.test.Test
+import kotlin.test.expect
 
 class InMemoryDataStoreGetChangesComplexTest {
     private val dataStore = InMemoryDataStore()
@@ -55,7 +55,7 @@ class InMemoryDataStoreGetChangesComplexTest {
                 )
             )
             addResponse.statuses.forEach { status ->
-                val response = shouldBeOfType<AddSuccess<ComplexModel>>(status)
+                val response = assertType<AddSuccess<ComplexModel>>(status)
                 keys.add(response.key)
                 if (response.version < lowestVersion) {
                     // Add lowest version for scan test
@@ -71,33 +71,37 @@ class InMemoryDataStoreGetChangesComplexTest {
             ComplexModel.getChanges(*keys.toTypedArray())
         )
 
-        getResponse.changes.size shouldBe 1
+        expect(1) { getResponse.changes.size }
 
-        getResponse.changes[0].changes shouldBe listOf(
-            VersionedChanges(version = lowestVersion, changes = listOf(
-                MultiTypeChange(
-                    ComplexModel { multi::ref } withType T3,
-                    ComplexModel { mapIntMulti.refAt(1u) } withType T3,
-                    ComplexModel { mapIntMulti.refAt(3u) } withType T3
-                ),
-                Change(
-                    ComplexModel { multi.withType(T3) { value::ref } } with "u3",
-                    ComplexModel { multi.withType(T3) { model { value::ref } } } with "ue3",
-                    ComplexModel { mapStringString refAt "a" } with "b",
-                    ComplexModel { mapStringString refAt "c" } with "d",
-                    ComplexModel { mapIntObject refAt 1u } with Unit,
-                    ComplexModel { mapIntObject.at(1u) { value::ref } } with "v1",
-                    ComplexModel { mapIntObject refAt 2u } with Unit,
-                    ComplexModel { mapIntObject.at(2u) { value::ref } } with "v2",
-                    ComplexModel { mapIntMulti.at(1u) { atType(T3) { value::ref } } } with "v1",
-                    ComplexModel { mapIntMulti.at(1u) { atType(T3) { model { value::ref } } } } with "sub1",
-                    ComplexModel { mapIntMulti.at(1u) { atType(T3) { model { model { value::ref } } } } } with "sub2",
-                    ComplexModel { mapIntMulti refAt 2u } with TypedValue(T1, "string"),
-                    ComplexModel { mapIntMulti.at(3u) { atType(T3) { value::ref } } } with "v2",
-                    ComplexModel { mapIntMulti.at(3u) { atType(T3) { model { value::ref } } } } with "2sub1",
-                    ComplexModel { mapIntMulti.at(3u) { atType(T3) { model { model { value::ref } } } } } with "2sub2"
-                )
-            ))
-        )
+        expect(
+            listOf(
+                VersionedChanges(version = lowestVersion, changes = listOf(
+                    MultiTypeChange(
+                        ComplexModel { multi::ref } withType T3,
+                        ComplexModel { mapIntMulti.refAt(1u) } withType T3,
+                        ComplexModel { mapIntMulti.refAt(3u) } withType T3
+                    ),
+                    Change(
+                        ComplexModel { multi.withType(T3) { value::ref } } with "u3",
+                        ComplexModel { multi.withType(T3) { model { value::ref } } } with "ue3",
+                        ComplexModel { mapStringString refAt "a" } with "b",
+                        ComplexModel { mapStringString refAt "c" } with "d",
+                        ComplexModel { mapIntObject refAt 1u } with Unit,
+                        ComplexModel { mapIntObject.at(1u) { value::ref } } with "v1",
+                        ComplexModel { mapIntObject refAt 2u } with Unit,
+                        ComplexModel { mapIntObject.at(2u) { value::ref } } with "v2",
+                        ComplexModel { mapIntMulti.at(1u) { atType(T3) { value::ref } } } with "v1",
+                        ComplexModel { mapIntMulti.at(1u) { atType(T3) { model { value::ref } } } } with "sub1",
+                        ComplexModel { mapIntMulti.at(1u) { atType(T3) { model { model { value::ref } } } } } with "sub2",
+                        ComplexModel { mapIntMulti refAt 2u } with TypedValue(T1, "string"),
+                        ComplexModel { mapIntMulti.at(3u) { atType(T3) { value::ref } } } with "v2",
+                        ComplexModel { mapIntMulti.at(3u) { atType(T3) { model { value::ref } } } } with "2sub1",
+                        ComplexModel { mapIntMulti.at(3u) { atType(T3) { model { model { value::ref } } } } } with "2sub2"
+                    )
+                ))
+            )
+        ) {
+            getResponse.changes[0].changes
+        }
     }
 }

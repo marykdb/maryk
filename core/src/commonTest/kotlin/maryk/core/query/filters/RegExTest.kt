@@ -7,8 +7,8 @@ import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.core.query.pairs.with
 import maryk.test.models.TestMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class RegExTest {
     private val regEx = RegEx(
@@ -34,9 +34,13 @@ class RegExTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(this.regEx, RegEx, { this.context }) shouldBe """
-        string: .*
+        expect(
+            """
+            string: .*
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.regEx, RegEx, { this.context })
+        }
     }
 }

@@ -5,8 +5,8 @@ import maryk.test.models.CompleteMarykModel
 import maryk.test.models.MarykTypeEnum
 import maryk.test.models.NumericMarykModel
 import maryk.test.models.SimpleMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 val generatedProto3ForSimpleMarykModel = """
 message SimpleMarykModel {
@@ -115,7 +115,7 @@ class GenerateProto3ForDataModelTest {
             output += it
         }
 
-        output shouldBe generatedProto3ForCompleteMarykModel
+        assertEquals(generatedProto3ForCompleteMarykModel, output)
     }
 
     @Test
@@ -128,7 +128,7 @@ class GenerateProto3ForDataModelTest {
             output += it
         }
 
-        output shouldBe generatedProto3ForNumericMarykModel
+        assertEquals(generatedProto3ForNumericMarykModel, output)
     }
 
     @Test
@@ -143,6 +143,6 @@ class GenerateProto3ForDataModelTest {
             output += it
         }
 
-        output shouldBe generatedProto3ForSimpleMarykModel
+        assertEquals(generatedProto3ForSimpleMarykModel, output)
     }
 }

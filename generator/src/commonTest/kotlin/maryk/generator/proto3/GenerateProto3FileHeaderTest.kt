@@ -3,8 +3,8 @@ package maryk.generator.proto3
 import maryk.generator.kotlin.GenerationContext
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.MarykTypeEnum
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class GenerateProto3FileHeaderTest {
     @Test
@@ -23,13 +23,16 @@ class GenerateProto3FileHeaderTest {
             output += it
         }
 
-        output shouldBe """
-        syntax = "proto3";
+        assertEquals(
+            """
+            syntax = "proto3";
 
-        option java_package = "maryk";
+            option java_package = "maryk";
 
-        ${generatedProto3ForCompleteMarykModel.prependIndent().prependIndent().trimStart()}
-        """.trimIndent()
+            ${generatedProto3ForCompleteMarykModel.prependIndent().prependIndent().prependIndent().trimStart()}
+            """.trimIndent(),
+            output
+        )
     }
 
     @Test
@@ -51,15 +54,18 @@ class GenerateProto3FileHeaderTest {
             output += it
         }
 
-        output shouldBe """
-        syntax = "proto3";
+        assertEquals(
+            """
+            syntax = "proto3";
 
-        import "SimpleMarykModel.proto";
-        import "MarykEnumEmbedded.proto";
+            import "SimpleMarykModel.proto";
+            import "MarykEnumEmbedded.proto";
 
-        option java_package = "maryk";
+            option java_package = "maryk";
 
-        ${generatedProto3ForCompleteMarykModel.prependIndent().prependIndent().trimStart()}
-        """.trimIndent()
+            ${generatedProto3ForCompleteMarykModel.prependIndent().prependIndent().prependIndent().trimStart()}
+            """.trimIndent(),
+            output
+        )
     }
 }

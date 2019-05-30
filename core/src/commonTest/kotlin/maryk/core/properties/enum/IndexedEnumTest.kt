@@ -8,21 +8,22 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.query.DefinitionsContext
 import maryk.core.yaml.createMarykYamlModelReader
 import maryk.test.models.Option
-import maryk.test.shouldBe
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.expect
 
 class IndexedEnumTest {
     @Test
     fun hasReservedIndex() {
-        shouldThrow<IllegalArgumentException> {
+        assertFailsWith<IllegalArgumentException> {
             object : IndexedEnumDefinition<Option>(optionalCases = Option.cases,name = "Option",  reservedIndices = listOf(1u), reservedNames = listOf("name")) {}.check()
         }
     }
 
     @Test
     fun hasReservedName() {
-        shouldThrow<IllegalArgumentException> {
+        assertFailsWith<IllegalArgumentException> {
             object : IndexedEnumDefinition<Option>(name = "Option", optionalCases = Option.cases, reservedNames = listOf("V2")) {}.check()
         }
     }
@@ -51,22 +52,26 @@ class IndexedEnumTest {
 
     @Test
     fun convertDefinitionToYAMLAndBack() {
-        @Suppress("UNCHECKED_CAST")
-        checkYamlConversion(
-            Option,
-            IndexedEnumDefinition.Model as AbstractObjectDataModel<Option.Companion, ObjectPropertyDefinitions<Option.Companion>, DefinitionsContext, DefinitionsContext>,
-            null,
-            ::compareEnumDefinitions
-        ) shouldBe """
-        name: Option
-        cases:
-          1: V1
-          2: [V2, VERSION2]
-          3: [V3, VERSION3]
-        reservedIndices: [4]
-        reservedNames: [V4]
+        expect(
+            """
+            name: Option
+            cases:
+              1: V1
+              2: [V2, VERSION2]
+              3: [V3, VERSION3]
+            reservedIndices: [4]
+            reservedNames: [V4]
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            @Suppress("UNCHECKED_CAST")
+            checkYamlConversion(
+                Option,
+                IndexedEnumDefinition.Model as AbstractObjectDataModel<Option.Companion, ObjectPropertyDefinitions<Option.Companion>, DefinitionsContext, DefinitionsContext>,
+                null,
+                ::compareEnumDefinitions
+            )
+        }
     }
 
     @Test
@@ -81,8 +86,8 @@ class IndexedEnumTest {
             reader
         ).toDataObject()
 
-        enum.name shouldBe "Option"
-        enum.optionalCases shouldBe null
+        expect("Option") { enum.name }
+        expect(null) { enum.optionalCases }
     }
 }
 
@@ -90,12 +95,12 @@ internal fun compareEnumDefinitions(
     value: IndexedEnumDefinition<*>,
     against: IndexedEnumDefinition<*>
 ) {
-    value.name shouldBe against.name
-    value.cases().size shouldBe against.cases().size
+    assertEquals(against.name, value.name)
+    assertEquals(against.cases().size, value.cases().size)
 
     val valueMap = value.cases().map { Pair(it.index, it.name) }.toMap()
 
     for (enum in against.cases()) {
-        valueMap[enum.index] shouldBe enum.name
+        expect(enum.name) { valueMap[enum.index] }
     }
 }

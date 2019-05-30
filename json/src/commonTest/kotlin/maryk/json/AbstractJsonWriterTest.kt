@@ -1,7 +1,7 @@
 package maryk.json
 
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 
 internal abstract class AbstractJsonWriterTest {
     abstract fun createJsonWriter(writer: (String) -> Unit): IsJsonLikeWriter
@@ -13,27 +13,27 @@ internal abstract class AbstractJsonWriterTest {
             output += it
         }.apply {
             // Should not be able to start with end object
-            shouldThrow<IllegalJsonOperation> {
+            assertFailsWith<IllegalJsonOperation> {
                 writeEndObject()
             }
 
             // Should not be able to start with end array
-            shouldThrow<IllegalJsonOperation> {
+            assertFailsWith<IllegalJsonOperation> {
                 writeEndArray()
             }
 
             // Should not be able to start with value
-            shouldThrow<IllegalJsonOperation> {
+            assertFailsWith<IllegalJsonOperation> {
                 writeValue("test")
             }
 
             // Should not be able to start with string value
-            shouldThrow<IllegalJsonOperation> {
+            assertFailsWith<IllegalJsonOperation> {
                 writeString("test")
             }
 
             // Should not be able to start with field name
-            shouldThrow<IllegalJsonOperation> {
+            assertFailsWith<IllegalJsonOperation> {
                 writeFieldName("test")
             }
         }
@@ -48,12 +48,12 @@ internal abstract class AbstractJsonWriterTest {
             writeStartArray()
 
             // Should not be able to write end object after start array
-            shouldThrow<IllegalJsonOperation> {
+            assertFailsWith<IllegalJsonOperation> {
                 writeEndObject()
             }
 
             // Should not be able to write fieldname to array
-            shouldThrow<IllegalJsonOperation> {
+            assertFailsWith<IllegalJsonOperation> {
                 writeFieldName("test")
             }
         }
@@ -69,17 +69,17 @@ internal abstract class AbstractJsonWriterTest {
             writeStartObject()
 
             // Should not be able to write end array after start object
-            shouldThrow<IllegalJsonOperation> {
+            assertFailsWith<IllegalJsonOperation> {
                 writeEndArray()
             }
 
             // Should not be able to write value before a field name
-            shouldThrow<IllegalJsonOperation> {
+            assertFailsWith<IllegalJsonOperation> {
                 writeValue("false")
             }
 
             // Should not be able to write string value before a field name
-            shouldThrow<IllegalJsonOperation> {
+            assertFailsWith<IllegalJsonOperation> {
                 writeString("test")
             }
         }
@@ -95,17 +95,17 @@ internal abstract class AbstractJsonWriterTest {
             writeFieldName("field")
 
             // Should not be able to write end array after field name
-            shouldThrow<IllegalJsonOperation> {
+            assertFailsWith<IllegalJsonOperation> {
                 writeEndArray()
             }
 
             // Should not be able to write end object after field name
-            shouldThrow<IllegalJsonOperation> {
+            assertFailsWith<IllegalJsonOperation> {
                 writeEndObject()
             }
 
             // Should not be able to write field name after field name
-            shouldThrow<IllegalJsonOperation> {
+            assertFailsWith<IllegalJsonOperation> {
                 writeFieldName("anotherField")
             }
         }

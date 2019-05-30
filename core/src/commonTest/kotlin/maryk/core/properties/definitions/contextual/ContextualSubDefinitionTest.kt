@@ -6,8 +6,9 @@ import maryk.core.properties.definitions.StringDefinition
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WriteCache
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.expect
 
 private class SubContext : IsPropertyContext {
     val valueDefinition = StringDefinition()
@@ -39,7 +40,7 @@ class ContextualSubDefinitionTest {
             )
             def.writeTransportBytesWithKey(22u, value, cache, bc::write, context)
             val key = ProtoBuf.readKey(bc::read)
-            key.tag shouldBe 22u
+            expect(22u) { key.tag }
 
             val converted = def.readTransportBytes(
                 ProtoBuf.getLength(key.wireType, bc::read),
@@ -47,7 +48,7 @@ class ContextualSubDefinitionTest {
                 context
             )
 
-            converted shouldBe value
+            assertEquals(value, converted)
             bc.reset()
         }
     }

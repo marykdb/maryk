@@ -1,12 +1,11 @@
 package maryk.core.properties.definitions.wrapper
 
-import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.references.ListReference
 import maryk.test.models.SimpleMarykObject
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class ObjectListDefinitionWrapperTest {
     private val def = ObjectListDefinitionWrapper(
@@ -18,15 +17,13 @@ class ObjectListDefinitionWrapperTest {
                 dataModel = { SimpleMarykObject }
             )
         ),
-        getter = { _: Any -> listOf<Nothing>() }
+        getter = { _: Any -> listOf<Any>() }
     )
 
     @Test
     fun getReference() {
-        @Suppress("UNCHECKED_CAST")
-        def.ref() shouldBe ListReference(
-            def as IsListDefinitionWrapper<SimpleMarykObject, Any, ListDefinition<SimpleMarykObject, IsPropertyContext>, IsPropertyContext, *>,
-            null
-        )
+        expect(ListReference(def, null)) {
+            def.ref()
+        }
     }
 }

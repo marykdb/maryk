@@ -7,8 +7,8 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.values.ValuesImpl
 import maryk.test.ByteCollector
 import maryk.test.models.SimpleMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class ContextualEmbeddedValuesDefinitionTest {
     private val subModelsToTest = listOf(
@@ -42,13 +42,13 @@ class ContextualEmbeddedValuesDefinitionTest {
 
     @Test
     fun convertString() {
-        for (it in subModelsToTest) {
+        for (subModel in subModelsToTest) {
             @Suppress("UNCHECKED_CAST")
             val b = def.asString(
-                it as ValuesImpl,
+                subModel as ValuesImpl,
                 this.context
             )
-            def.fromString(b, this.context) shouldBe it
+            expect(subModel) { def.fromString(b, this.context) }
         }
     }
 }

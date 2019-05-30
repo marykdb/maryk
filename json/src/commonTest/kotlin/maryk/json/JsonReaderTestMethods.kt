@@ -7,38 +7,38 @@ import maryk.json.JsonToken.FieldName
 import maryk.json.JsonToken.StartArray
 import maryk.json.JsonToken.StartObject
 import maryk.json.JsonToken.Value
-import maryk.test.shouldBe
-import maryk.test.shouldBeOfType
+import maryk.test.assertType
+import kotlin.test.expect
 
 fun IsJsonLikeReader.assertStartObject(type: MapType = MapType.Map) {
-    shouldBeOfType<StartObject>(this.nextToken()).type shouldBe type
+    expect(type) { assertType<StartObject>(this.nextToken()).type }
 }
 
 fun IsJsonLikeReader.assertEndObject() {
-    this.nextToken() shouldBe EndObject
+    expect(EndObject) { this.nextToken() }
 }
 
 fun IsJsonLikeReader.assertFieldName(value: String?) {
-    shouldBeOfType<FieldName>(this.nextToken()).value shouldBe value
+    expect(value) { assertType<FieldName>(this.nextToken()).value }
 }
 
 fun IsJsonLikeReader.assertStartArray(type: ArrayType = ArrayType.Sequence) {
-    shouldBeOfType<StartArray>(this.nextToken()).type shouldBe type
+    expect(type) { assertType<StartArray>(this.nextToken()).type }
 }
 
 fun IsJsonLikeReader.assertEndArray() {
-    this.nextToken() shouldBe EndArray
+    expect(EndArray) { this.nextToken() }
 }
 
 fun <T : Any> IsJsonLikeReader.assertValue(value: T?, type: ValueType<T>? = null) {
-    shouldBeOfType<Value<*>>(this.nextToken()).apply {
-        this.value shouldBe value
+    assertType<Value<*>>(this.nextToken()).apply {
+        expect(value) { this.value }
         type?.let {
-            this.type shouldBe it
+            expect(type) { this.type }
         }
     }
 }
 
 fun IsJsonLikeReader.assertEndDocument() {
-    this.nextToken() shouldBe EndDocument
+    expect(EndDocument) { this.nextToken() }
 }

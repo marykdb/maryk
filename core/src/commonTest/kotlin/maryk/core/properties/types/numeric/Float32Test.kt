@@ -1,8 +1,10 @@
 package maryk.core.properties.types.numeric
 
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
+import kotlin.test.expect
 
 internal class Float32Test {
 
@@ -24,18 +26,18 @@ internal class Float32Test {
 
     @Test
     fun testStringConversion() {
-        for (it in float32values) {
-            Float32.ofString(it.toString()) shouldBe it
+        for (float in float32values) {
+            expect(float) { Float32.ofString(float.toString()) }
         }
     }
 
     @Test
     fun testStorageBytesConversion() {
         val bc = ByteCollector()
-        for (it in float32values) {
+        for (float in float32values) {
             bc.reserve(Float32.size)
-            Float32.writeStorageBytes(it, bc::write)
-            Float32.fromStorageByteReader(bc.size, bc::read) shouldBe it
+            Float32.writeStorageBytes(float, bc::write)
+            expect(float) { Float32.fromStorageByteReader(bc.size, bc::read) }
             bc.reset()
         }
     }
@@ -43,24 +45,24 @@ internal class Float32Test {
     @Test
     fun testTransportBytesConversion() {
         val bc = ByteCollector()
-        for (it in float32values) {
-            bc.reserve(Float32.calculateTransportByteLength(it))
-            Float32.writeTransportBytes(it, bc::write)
-            Float32.readTransportBytes(bc::read) shouldBe it
+        for (float in float32values) {
+            bc.reserve(Float32.calculateTransportByteLength(float))
+            Float32.writeTransportBytes(float, bc::write)
+            expect(float) { Float32.readTransportBytes(bc::read) }
             bc.reset()
         }
     }
 
     @Test
     fun testOfNativeTypes() {
-        Float32.ofLong(2131232) shouldBe 2131232F
-        Float32.ofDouble(12213.121) shouldBe 12213.121F
-        Float32.ofInt(1221321) shouldBe 1221321F
+        expect(2131232F) { Float32.ofLong(2131232) }
+        expect(12213.121F) { Float32.ofDouble(12213.121) }
+        expect(1221321F) { Float32.ofInt(1221321) }
     }
 
     @Test
     fun testIsOfType() {
-        Float32.isOfType(22.0F) shouldBe true
-        Float32.isOfType(24L) shouldBe false
+        assertTrue { Float32.isOfType(22.0F) }
+        assertFalse { Float32.isOfType(24L) }
     }
 }

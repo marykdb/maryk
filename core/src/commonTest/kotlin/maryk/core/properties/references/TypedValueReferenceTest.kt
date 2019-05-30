@@ -8,9 +8,9 @@ import maryk.test.ByteCollector
 import maryk.test.models.MarykTypeEnum.T1
 import maryk.test.models.SimpleMarykTypeEnum.S2
 import maryk.test.models.TestMarykModel
-import maryk.test.shouldBe
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
+import kotlin.test.expect
 
 class TypedValueReferenceTest {
     private val typeReference =
@@ -23,21 +23,21 @@ class TypedValueReferenceTest {
             "string"
         )
 
-        this.typeReference.resolveFromAny(typedValue) shouldBe "string"
+        expect("string") { this.typeReference.resolveFromAny(typedValue) }
 
-        shouldThrow<UnexpectedValueException> {
+        assertFailsWith<UnexpectedValueException> {
             this.typeReference.resolveFromAny("wrongInput")
         }
     }
 
     @Test
     fun testCompleteName() {
-        typeReference.completeName shouldBe "multi.*S2"
+        expect("multi.*S2") { typeReference.completeName }
     }
 
     @Test
     fun writeAndReadStringValue() {
-        TestMarykModel.Properties.getPropertyReferenceByName(typeReference.completeName) shouldBe typeReference
+        expect(typeReference) { TestMarykModel.Properties.getPropertyReferenceByName(typeReference.completeName) }
     }
 
     @Test
@@ -50,9 +50,9 @@ class TypedValueReferenceTest {
         )
         typeReference.writeTransportBytes(cache, bc::write)
 
-        bc.bytes!!.toHex() shouldBe "0d0002"
+        expect("0d0002") { bc.bytes!!.toHex() }
 
-        TestMarykModel.Properties.getPropertyReferenceByBytes(bc.size, bc::read) shouldBe typeReference
+        expect(typeReference) { TestMarykModel.Properties.getPropertyReferenceByBytes(bc.size, bc::read) }
     }
 
     @Test
@@ -64,8 +64,8 @@ class TypedValueReferenceTest {
         )
         typeReference.writeStorageBytes(bc::write)
 
-        bc.bytes!!.toHex() shouldBe "6915"
+        expect("6915") { bc.bytes!!.toHex() }
 
-        TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) shouldBe typeReference
+        expect(typeReference) { TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) }
     }
 }

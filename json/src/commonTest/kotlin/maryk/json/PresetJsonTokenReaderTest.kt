@@ -7,8 +7,8 @@ import maryk.json.JsonToken.SimpleStartObject
 import maryk.json.JsonToken.Stopped
 import maryk.json.JsonToken.Value
 import maryk.json.ValueType.String
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class PresetJsonTokenReaderTest {
     @Test
@@ -36,7 +36,7 @@ class PresetJsonTokenReaderTest {
         do {
             if (tokens.lastIndex > index) {
                 tokenReader.currentToken.let {
-                    it shouldBe tokens[index]
+                    expect(tokens[index]) { it }
 
                     if (it is FieldName && it.value == "b") {
                         tokenReader.skipUntilNextField()

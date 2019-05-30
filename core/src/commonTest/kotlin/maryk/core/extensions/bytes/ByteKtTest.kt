@@ -3,9 +3,9 @@ package maryk.core.extensions.bytes
 import maryk.lib.exceptions.ParseException
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
+import kotlin.test.expect
 
 internal class ByteKtTest {
     private val bytesToTest = byteArrayOf(
@@ -20,19 +20,19 @@ internal class ByteKtTest {
     @Test
     fun testStreamingConversion() {
         val bc = ByteCollector()
-        bytesToTest.forEach {
+        bytesToTest.forEach { byte ->
             bc.reserve(1)
-            it.writeBytes(bc::write)
+            byte.writeBytes(bc::write)
 
-            initByte(bc::read) shouldBe it
+            expect(byte) { initByte(bc::read) }
             bc.reset()
         }
     }
 
     @Test
     fun testZigZagAndBack() {
-        bytesToTest.forEach {
-            it.encodeZigZag().decodeZigZag() shouldBe it
+        bytesToTest.forEach { byte ->
+            expect(byte) { byte.encodeZigZag().decodeZigZag() }
         }
     }
 
@@ -65,12 +65,12 @@ internal class ByteKtTest {
         testZigZagByteContent(bc, Byte.MIN_VALUE, "ff01")
     }
 
-    private fun testByteContent(bc: ByteCollector, it: Byte, hexValue: String) {
-        bc.reserve(it.calculateVarByteLength())
-        it.writeVarBytes(bc::write)
-        initByteByVar(bc::read) shouldBe it
+    private fun testByteContent(bc: ByteCollector, byte: Byte, hexValue: String) {
+        bc.reserve(byte.calculateVarByteLength())
+        byte.writeVarBytes(bc::write)
+        expect(byte) { initByteByVar(bc::read) }
 
-        bc.bytes!!.toHex() shouldBe hexValue
+        expect(hexValue) { bc.bytes!!.toHex() }
         bc.reset()
     }
 
@@ -78,7 +78,7 @@ internal class ByteKtTest {
     fun testWrongVarInt() {
         val bytes = ByteArray(3) { -1 }
         var index = 0
-        shouldThrow<ParseException> {
+        assertFailsWith<ParseException> {
             initByteByVar { bytes[index++] }
         }
     }

@@ -18,9 +18,10 @@ import maryk.core.query.responses.ValuesResponse
 import maryk.core.values.ObjectValues
 import maryk.test.models.ReferencesModel
 import maryk.test.models.SimpleMarykModel
-import maryk.test.shouldBe
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFails
+import kotlin.test.expect
 
 private val context = RequestContext(mapOf(
     SimpleMarykModel.name toUnitLambda { SimpleMarykModel },
@@ -60,9 +61,11 @@ class InjectIntoRequestTest {
             )
         }
 
-        shouldThrow<InjectException> {
-            getRequest { keys }
-        } shouldBe InjectException("referencedKeys")
+        expect(InjectException("referencedKeys")) {
+            assertFails {
+                getRequest { keys }
+            }
+        }
 
         val expectedKeys = listOf(
             SimpleMarykModel.key(SimpleMarykModel("v1")),
@@ -102,7 +105,7 @@ class InjectIntoRequestTest {
 
         context.dataModel = ReferencesModel
 
-        getRequest { keys } shouldBe expectedKeys
+        expect(expectedKeys) { getRequest { keys } }
     }
 
     private fun checker(
@@ -112,46 +115,55 @@ class InjectIntoRequestTest {
         when (val originalKeys = converted.original { keys } as Any?) {
             null -> error("Keys should not be null")
             is ObjectValues<*, *> ->
-                originalKeys.toDataObject() shouldBe original.original { keys }
-            else -> originalKeys shouldBe original.original { keys }
+                assertEquals<Any?>(originalKeys.toDataObject(), original.original { keys })
+            else ->
+                expect(original.original { keys }) { originalKeys }
         }
-        converted { where } shouldBe original { where }
+        assertEquals(original { where }, converted { where })
     }
 
     @Test
     fun convertToYAMLAndBack() {
         context.addToCollect("keysToInject", GetRequest)
 
-        checkYamlConversion(
-            getRequestWithInjectable,
-            GetRequest,
-            { context },
-            checker = ::checker
-        ) shouldBe """
-        from: SimpleMarykModel
-        keys: !:Inject
-          keysToInject: keys
-        select:
-        - value
-        where: !Exists value
-        toVersion: 333
-        filterSoftDeleted: true
+        expect(
+            """
+            from: SimpleMarykModel
+            keys: !:Inject
+              keysToInject: keys
+            select:
+            - value
+            where: !Exists value
+            toVersion: 333
+            filterSoftDeleted: true
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(
+                getRequestWithInjectable,
+                GetRequest,
+                { context },
+                checker = ::checker
+            )
+        }
     }
 
     @Test
     fun convertToJSONAndBack() {
         context.addToCollect("keysToInject", GetRequest)
 
-        checkJsonConversion(
-            getRequestWithInjectable,
-            GetRequest,
-            { context },
-            checker = ::checker
-        ) shouldBe """
-        {"from":"SimpleMarykModel","?keys":{"keysToInject":"keys"},"select":["value"],"where":["Exists","value"],"toVersion":"333","filterSoftDeleted":true}
-        """.trimIndent()
+        expect(
+            """
+            {"from":"SimpleMarykModel","?keys":{"keysToInject":"keys"},"select":["value"],"where":["Exists","value"],"toVersion":"333","filterSoftDeleted":true}
+            """.trimIndent()
+        ) {
+            checkJsonConversion(
+                getRequestWithInjectable,
+                GetRequest,
+                { context },
+                checker = ::checker
+            )
+        }
     }
 
     @Test

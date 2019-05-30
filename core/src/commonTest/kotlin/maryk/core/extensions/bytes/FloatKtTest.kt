@@ -1,8 +1,8 @@
 package maryk.core.extensions.bytes
 
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 internal class FloatKtTest {
     private val floatsToTest = floatArrayOf(
@@ -21,11 +21,11 @@ internal class FloatKtTest {
     @Test
     fun testStreamingConversion() {
         val bc = ByteCollector()
-        floatsToTest.forEach {
+        floatsToTest.forEach { float ->
             bc.reserve(4)
-            it.writeBytes(bc::write)
+            float.writeBytes(bc::write)
 
-            initFloat(bc::read) shouldBe it
+            expect(float) { initFloat(bc::read) }
             bc.reset()
         }
     }

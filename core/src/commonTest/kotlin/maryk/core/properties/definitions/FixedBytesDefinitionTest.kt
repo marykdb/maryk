@@ -6,9 +6,9 @@ import maryk.checkYamlConversion
 import maryk.core.properties.types.Bytes
 import maryk.lib.exceptions.ParseException
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
+import kotlin.test.expect
 
 internal class FixedBytesDefinitionTest {
     private val fixedBytesToTest = arrayOf(
@@ -40,12 +40,12 @@ internal class FixedBytesDefinitionTest {
     @Test
     fun convertValuesToStorageBytesAndBack() {
         val bc = ByteCollector()
-        for (it in fixedBytesToTest) {
+        for (fixedBytes in fixedBytesToTest) {
             bc.reserve(
-                def.calculateStorageByteLength(it)
+                def.calculateStorageByteLength(fixedBytes)
             )
-            def.writeStorageBytes(it, bc::write)
-            def.readStorageBytes(bc.size, bc::read) shouldBe it
+            def.writeStorageBytes(fixedBytes, bc::write)
+            expect(fixedBytes) { def.readStorageBytes(bc.size, bc::read) }
             bc.reset()
         }
     }
@@ -60,15 +60,15 @@ internal class FixedBytesDefinitionTest {
 
     @Test
     fun convertValuesToStringAndBack() {
-        for (it in fixedBytesToTest) {
-            val b = def.asString(it)
-            def.fromString(b) shouldBe it
+        for (fixedBytes in fixedBytesToTest) {
+            val b = def.asString(fixedBytes)
+            expect(fixedBytes) { def.fromString(b) }
         }
     }
 
     @Test
     fun invalidStringValueShouldThrowException() {
-        shouldThrow<ParseException> {
+        assertFailsWith<ParseException> {
             def.fromString("wrong§")
         }
     }
@@ -88,16 +88,21 @@ internal class FixedBytesDefinitionTest {
     @Test
     fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, FixedBytesDefinition.Model)
-        checkYamlConversion(this.defMaxDefined, FixedBytesDefinition.Model) shouldBe """
-        required: false
-        final: true
-        unique: true
-        minValue: AAAAAAA
-        maxValue: qqqqqqo
-        default: AAAAAAE
-        random: true
-        byteSize: 5
 
-        """.trimIndent()
+        expect(
+            """
+            required: false
+            final: true
+            unique: true
+            minValue: AAAAAAA
+            maxValue: qqqqqqo
+            default: AAAAAAE
+            random: true
+            byteSize: 5
+
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.defMaxDefined, FixedBytesDefinition.Model)
+        }
     }
 }

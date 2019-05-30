@@ -3,9 +3,9 @@ package maryk.core.extensions.bytes
 import maryk.lib.exceptions.ParseException
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
+import kotlin.test.expect
 
 internal class IntKtTest {
     private val intsToTest = intArrayOf(
@@ -23,11 +23,11 @@ internal class IntKtTest {
     @Test
     fun testStreamingConversion() {
         val bc = ByteCollector()
-        intsToTest.forEach {
+        intsToTest.forEach { int ->
             bc.reserve(4)
-            it.writeBytes(bc::write)
+            int.writeBytes(bc::write)
 
-            initInt(bc::read) shouldBe it
+            expect(int) { initInt(bc::read) }
             bc.reset()
         }
     }
@@ -42,26 +42,26 @@ internal class IntKtTest {
             1,
             2222,
             0x7FFFFF
-        ).forEach {
+        ).forEach { int ->
             bc.reserve(3)
-            it.writeBytes(bc::write, 3)
+            int.writeBytes(bc::write, 3)
 
-            initInt(bc::read, 3) shouldBe it
+            expect(int) { initInt(bc::read, 3) }
             bc.reset()
         }
     }
 
     @Test
     fun testOutOfRangeConversion() {
-        shouldThrow<IllegalArgumentException> {
+        assertFailsWith<IllegalArgumentException> {
             4.writeBytes({}, 5)
         }
     }
 
     @Test
     fun testZigZagAndBack() {
-        intsToTest.forEach {
-            it.encodeZigZag().decodeZigZag() shouldBe it
+        intsToTest.forEach { int ->
+            expect(int) { int.encodeZigZag().decodeZigZag() }
         }
     }
 
@@ -114,23 +114,23 @@ internal class IntKtTest {
         this.testByteContent(bc, it.encodeZigZag(), hexValue)
     }
 
-    private fun testByteContent(bc: ByteCollector, it: Int, hexValue: String) {
-        bc.reserve(it.calculateVarByteLength())
-        it.writeVarBytes(bc::write)
+    private fun testByteContent(bc: ByteCollector, int: Int, hexValue: String) {
+        bc.reserve(int.calculateVarByteLength())
+        int.writeVarBytes(bc::write)
 
-        initIntByVar(bc::read) shouldBe it
+        expect(int) { initIntByVar(bc::read) }
 
-        bc.bytes!!.toHex() shouldBe hexValue
+        expect(hexValue) { bc.bytes!!.toHex() }
         bc.reset()
     }
 
-    private fun testLittleEndianByteContent(bc: ByteCollector, it: Int, hexValue: String) {
+    private fun testLittleEndianByteContent(bc: ByteCollector, int: Int, hexValue: String) {
         bc.reserve(4)
-        it.writeLittleEndianBytes(bc::write)
+        int.writeLittleEndianBytes(bc::write)
 
-        initIntLittleEndian(bc::read) shouldBe it
+        expect(int) { initIntLittleEndian(bc::read) }
 
-        bc.bytes!!.toHex() shouldBe hexValue
+        expect(hexValue) { bc.bytes!!.toHex() }
         bc.reset()
     }
 
@@ -138,7 +138,7 @@ internal class IntKtTest {
     fun testWrongVarInt() {
         val bytes = ByteArray(6) { -1 }
         var index = 0
-        shouldThrow<ParseException> {
+        assertFailsWith<ParseException> {
             initIntByVar { bytes[index++] }
         }
     }

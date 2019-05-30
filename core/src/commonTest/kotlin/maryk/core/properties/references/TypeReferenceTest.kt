@@ -8,12 +8,12 @@ import maryk.core.properties.references.TypeReferenceTest.MarykModel.Properties.
 import maryk.core.properties.types.TypedValue
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
+import maryk.test.assertType
 import maryk.test.models.MarykTypeEnum
 import maryk.test.models.MarykTypeEnum.T1
 import maryk.test.models.MarykTypeEnum.T2
-import maryk.test.shouldBe
-import maryk.test.shouldBeOfType
 import kotlin.test.Test
+import kotlin.test.expect
 
 internal class TypeReferenceTest {
     object MarykModel : RootDataModel<MarykModel, MarykModel.Properties>(
@@ -47,23 +47,23 @@ internal class TypeReferenceTest {
         )
 
         val key = MarykModel.key(obj)
-        key.bytes.toHex() shouldBe "0002"
+        expect("0002") { key.bytes.toHex() }
 
         val keyDef = MarykModel.keyDefinition
 
-        val specificDef = shouldBeOfType<TypeReference<MarykTypeEnum<*>, *, *>>(keyDef)
-        specificDef shouldBe multi.typeRef()
+        val specificDef = assertType<TypeReference<MarykTypeEnum<*>, *, *>>(keyDef)
+        expect(multi.typeRef()) { specificDef }
 
-        specificDef.getValue(obj) shouldBe T2
+        expect(T2) { specificDef.getValue(obj) }
 
         val bc = ByteCollector()
         bc.reserve(2)
         specificDef.writeStorageBytes(T1, bc::write)
-        specificDef.readStorageBytes(bc.size, bc::read) shouldBe T1
+        expect(T1) { specificDef.readStorageBytes(bc.size, bc::read) }
     }
 
     @Test
     fun toReferenceStorageBytes() {
-        multi.typeRef().toReferenceStorageByteArray().toHex() shouldBe "0a09"
+        expect("0a09") { multi.typeRef().toReferenceStorageByteArray().toHex() }
     }
 }

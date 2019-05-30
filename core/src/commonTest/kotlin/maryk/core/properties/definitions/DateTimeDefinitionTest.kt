@@ -9,10 +9,10 @@ import maryk.lib.exceptions.ParseException
 import maryk.lib.time.DateTime
 import maryk.lib.time.Instant
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
+import kotlin.test.expect
 
 internal class DateTimeDefinitionTest {
     private val dateTimesToTest = arrayOf(
@@ -52,12 +52,14 @@ internal class DateTimeDefinitionTest {
     @Test
     fun convertValuesWithMillisecondsPrecisionToStorageBytesAndBack() {
         val bc = ByteCollector()
-        for (it in arrayOf(DateTime.nowUTC(), DateTime.MAX_IN_MILLIS)) {
+        for (dateTime in arrayOf(DateTime.nowUTC(), DateTime.MAX_IN_MILLIS)) {
             bc.reserve(
-                defMilli.calculateStorageByteLength(it)
+                defMilli.calculateStorageByteLength(dateTime)
             )
-            defMilli.writeStorageBytes(it, bc::write)
-            defMilli.readStorageBytes(bc.size, bc::read) shouldBe it
+            defMilli.writeStorageBytes(dateTime, bc::write)
+            expect(dateTime) {
+                defMilli.readStorageBytes(bc.size, bc::read)
+            }
             bc.reset()
         }
     }
@@ -65,12 +67,14 @@ internal class DateTimeDefinitionTest {
     @Test
     fun convertValuesWithSecondsPrecisionToStorageBytesAndBack() {
         val bc = ByteCollector()
-        for (it in arrayOf(DateTime.MAX_IN_SECONDS, DateTime.MIN)) {
+        for (dateTime in arrayOf(DateTime.MAX_IN_SECONDS, DateTime.MIN)) {
             bc.reserve(
-                def.calculateStorageByteLength(it)
+                def.calculateStorageByteLength(dateTime)
             )
-            def.writeStorageBytes(it, bc::write)
-            def.readStorageBytes(bc.size, bc::read) shouldBe it
+            def.writeStorageBytes(dateTime, bc::write)
+            expect(dateTime) {
+                def.readStorageBytes(bc.size, bc::read)
+            }
             bc.reset()
         }
     }
@@ -80,10 +84,12 @@ internal class DateTimeDefinitionTest {
         val bc = ByteCollector()
         val cacheFailer = WriteCacheFailer()
 
-        for (it in arrayOf(DateTime.MIN, DateTime.nowUTC(), DateTime.MAX_IN_MILLIS)) {
-            bc.reserve(defMilli.calculateTransportByteLength(it, cacheFailer))
-            defMilli.writeTransportBytes(it, cacheFailer, bc::write)
-            defMilli.readTransportBytes(bc.size, bc::read) shouldBe it
+        for (dateTime in arrayOf(DateTime.MIN, DateTime.nowUTC(), DateTime.MAX_IN_MILLIS)) {
+            bc.reserve(defMilli.calculateTransportByteLength(dateTime, cacheFailer))
+            defMilli.writeTransportBytes(dateTime, cacheFailer, bc::write)
+            expect(dateTime) {
+                defMilli.readTransportBytes(bc.size, bc::read)
+            }
             bc.reset()
         }
     }
@@ -93,25 +99,25 @@ internal class DateTimeDefinitionTest {
         val bc = ByteCollector()
         val cacheFailer = WriteCacheFailer()
 
-        for (it in arrayOf(DateTime.MAX_IN_SECONDS, DateTime.MIN)) {
-            bc.reserve(def.calculateTransportByteLength(it, cacheFailer))
-            def.writeTransportBytes(it, cacheFailer, bc::write)
-            def.readTransportBytes(bc.size, bc::read) shouldBe it
+        for (dateTime in arrayOf(DateTime.MAX_IN_SECONDS, DateTime.MIN)) {
+            bc.reserve(def.calculateTransportByteLength(dateTime, cacheFailer))
+            def.writeTransportBytes(dateTime, cacheFailer, bc::write)
+            expect(dateTime) { def.readTransportBytes(bc.size, bc::read) }
             bc.reset()
         }
     }
 
     @Test
     fun convertValuesToStringAndBack() {
-        for (it in dateTimesToTest) {
-            val b = def.asString(it)
-            def.fromString(b) shouldBe it
+        for (dateTime in dateTimesToTest) {
+            val b = def.asString(dateTime)
+            expect(dateTime) { def.fromString(b) }
         }
     }
 
     @Test
     fun invalidStringValueShouldThrowException() {
-        shouldThrow<ParseException> {
+        assertFailsWith<ParseException> {
             def.fromString("wrong")
         }
     }
@@ -131,16 +137,21 @@ internal class DateTimeDefinitionTest {
     @Test
     fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, DateTimeDefinition.Model)
-        checkYamlConversion(this.defMaxDefined, DateTimeDefinition.Model) shouldBe """
-        required: false
-        final: true
-        unique: true
-        precision: MILLIS
-        minValue: '-999999-01-01T00:00'
-        maxValue: '999999-12-31T23:59:59.999'
-        default: '1971-01-12T13:34:22'
-        fillWithNow: true
 
-        """.trimIndent()
+        expect(
+            """
+            required: false
+            final: true
+            unique: true
+            precision: MILLIS
+            minValue: '-999999-01-01T00:00'
+            maxValue: '999999-12-31T23:59:59.999'
+            default: '1971-01-12T13:34:22'
+            fillWithNow: true
+
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.defMaxDefined, DateTimeDefinition.Model)
+        }
     }
 }

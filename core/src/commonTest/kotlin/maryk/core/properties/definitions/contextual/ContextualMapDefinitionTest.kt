@@ -12,8 +12,8 @@ import maryk.json.JsonWriter
 import maryk.lib.time.Time
 import maryk.test.ByteCollector
 import maryk.test.models.TestMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class ContextualMapDefinitionTest {
     @Suppress("UNCHECKED_CAST")
@@ -47,8 +47,8 @@ class ContextualMapDefinitionTest {
 
         fun readKey() {
             val key = ProtoBuf.readKey(bc::read)
-            key.wireType shouldBe LENGTH_DELIMITED
-            key.tag shouldBe 8u
+            expect(LENGTH_DELIMITED) { key.wireType }
+            expect(8u) { key.tag }
         }
 
         fun readValue(map: MutableMap<Any, Any>) {
@@ -61,7 +61,7 @@ class ContextualMapDefinitionTest {
         value.forEach {
             readKey()
             readValue(mutableMap)
-            mutableMap[it.key] shouldBe it.value
+            expect(it.value) { mutableMap[it.key] }
         }
     }
 
@@ -70,13 +70,13 @@ class ContextualMapDefinitionTest {
         var totalString = ""
         def.writeJsonValue(mapToTest, JsonWriter { totalString += it }, this.context)
 
-        totalString shouldBe "{\"01:55:33\":\"hello\",\"14:22:23\":\"goodBye\"}"
+        expect("""{"01:55:33":"hello","14:22:23":"goodBye"}""") { totalString }
 
         val iterator = totalString.iterator()
         val reader = JsonReader { iterator.nextChar() }
         reader.nextToken()
         val converted = def.readJson(reader, this.context)
 
-        converted shouldBe this.mapToTest
+        expect(this.mapToTest) { converted }
     }
 }

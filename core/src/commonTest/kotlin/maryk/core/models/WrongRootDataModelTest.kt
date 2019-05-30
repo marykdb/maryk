@@ -3,8 +3,8 @@ package maryk.core.models
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.test.models.TestMarykModel
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 
 object WrongModelIndex : RootDataModel<WrongModelIndex, WrongModelIndex.Properties>(
     properties = Properties,
@@ -39,11 +39,11 @@ internal class WrongRootDataModelTest {
     fun checkDataModel() {
         TestMarykModel.check()
 
-        shouldThrow<IllegalArgumentException> {
+        assertFailsWith<IllegalArgumentException> {
             WrongModelIndex.check()
         }
 
-        shouldThrow<IllegalArgumentException> {
+        assertFailsWith<IllegalArgumentException> {
             WrongModelName.check()
         }
     }

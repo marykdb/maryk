@@ -8,9 +8,9 @@ import maryk.lib.exceptions.ParseException
 import maryk.lib.time.Date
 import maryk.lib.time.Instant
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
+import kotlin.test.expect
 
 internal class DateDefinitionTest {
     private val datesToTest = arrayOf(
@@ -33,18 +33,18 @@ internal class DateDefinitionTest {
     @Test
     fun createNowDate() {
         val currentEpochDay = Instant.getCurrentEpochTimeInMillis() / (24 * 60 * 60 * 1000)
-        def.createNow().epochDay shouldBe currentEpochDay.toInt()
+        expect(currentEpochDay.toInt()) { def.createNow().epochDay }
     }
 
     @Test
     fun convertValuesToStorageBytesAndBack() {
         val bc = ByteCollector()
-        for (it in datesToTest) {
+        for (date in datesToTest) {
             bc.reserve(
-                def.calculateStorageByteLength(it)
+                def.calculateStorageByteLength(date)
             )
-            def.writeStorageBytes(it, bc::write)
-            def.readStorageBytes(bc.size, bc::read) shouldBe it
+            def.writeStorageBytes(date, bc::write)
+            expect(date) { def.readStorageBytes(bc.size, bc::read) }
             bc.reset()
         }
     }
@@ -54,27 +54,27 @@ internal class DateDefinitionTest {
         val bc = ByteCollector()
         val cacheFailer = WriteCacheFailer()
 
-        for (it in datesToTest) {
+        for (date in datesToTest) {
             bc.reserve(
-                def.calculateTransportByteLength(it, cacheFailer)
+                def.calculateTransportByteLength(date, cacheFailer)
             )
-            def.writeTransportBytes(it, cacheFailer, bc::write)
-            def.readTransportBytes(bc.size, bc::read) shouldBe it
+            def.writeTransportBytes(date, cacheFailer, bc::write)
+            expect(date) { def.readTransportBytes(bc.size, bc::read) }
             bc.reset()
         }
     }
 
     @Test
     fun convertValuesToStringAndBack() {
-        for (it in datesToTest) {
-            val b = def.asString(it)
-            def.fromString(b) shouldBe it
+        for (date in datesToTest) {
+            val b = def.asString(date)
+            expect(date) { def.fromString(b) }
         }
     }
 
     @Test
     fun invalidStringValueShouldThrowException() {
-        shouldThrow<ParseException> {
+        assertFailsWith<ParseException> {
             def.fromString("wrong")
         }
     }
@@ -94,15 +94,20 @@ internal class DateDefinitionTest {
     @Test
     fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, DateDefinition.Model)
-        checkYamlConversion(this.defMaxDefined, DateDefinition.Model) shouldBe """
-        required: false
-        final: true
-        unique: true
-        minValue: -999999-01-01
-        maxValue: 999999-12-31
-        default: 1970-12-01
-        fillWithNow: true
 
-        """.trimIndent()
+        expect(
+            """
+            required: false
+            final: true
+            unique: true
+            minValue: -999999-01-01
+            maxValue: 999999-12-31
+            default: 1970-12-01
+            fillWithNow: true
+
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.defMaxDefined, DateDefinition.Model)
+        }
     }
 }

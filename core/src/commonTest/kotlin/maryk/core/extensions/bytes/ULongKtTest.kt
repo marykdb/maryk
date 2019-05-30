@@ -2,9 +2,9 @@ package maryk.core.extensions.bytes
 
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
+import kotlin.test.expect
 
 internal class ULongKtTest {
     private val longsToTest = ulongArrayOf(
@@ -18,11 +18,11 @@ internal class ULongKtTest {
     @Test
     fun testStreamingConversion() {
         val bc = ByteCollector()
-        longsToTest.forEach {
+        longsToTest.forEach { uLong ->
             bc.reserve(8)
-            it.writeBytes(bc::write, 8)
+            uLong.writeBytes(bc::write, 8)
 
-            initULong(bc::read, 8) shouldBe it
+            expect(uLong) { initULong(bc::read, 8) }
             bc.reset()
         }
     }
@@ -36,18 +36,18 @@ internal class ULongKtTest {
             1504201744uL,
             999999999uL,
             MAX_SEVEN_VALUE.toULong()
-        ).forEach {
+        ).forEach { uLong ->
             bc.reserve(7)
-            it.writeBytes(bc::write, 7)
+            uLong.writeBytes(bc::write, 7)
 
-            initULong(bc::read, 7) shouldBe it
+            expect(uLong) { initULong(bc::read, 7) }
             bc.reset()
         }
     }
 
     @Test
     fun testOutOfRangeConversion() {
-        shouldThrow<IllegalArgumentException> {
+        assertFailsWith<IllegalArgumentException> {
             4uL.writeBytes({}, 9)
         }
     }
@@ -63,13 +63,13 @@ internal class ULongKtTest {
         testByteContent(bc, ULong.MIN_VALUE, "00")
     }
 
-    private fun testByteContent(bc: ByteCollector, it: ULong, hexValue: String) {
-        bc.reserve(it.calculateVarByteLength())
-        it.writeVarBytes(bc::write)
+    private fun testByteContent(bc: ByteCollector, uLong: ULong, hexValue: String) {
+        bc.reserve(uLong.calculateVarByteLength())
+        uLong.writeVarBytes(bc::write)
 
-        initULongByVar(bc::read) shouldBe it
+        expect(uLong) { initULongByVar(bc::read) }
 
-        bc.bytes!!.toHex() shouldBe hexValue
+        expect(hexValue) { bc.bytes!!.toHex() }
         bc.reset()
     }
 }

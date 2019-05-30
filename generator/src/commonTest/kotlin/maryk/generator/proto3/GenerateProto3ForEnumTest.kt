@@ -1,8 +1,8 @@
 package maryk.generator.proto3
 
 import maryk.test.models.MarykTypeEnum
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 val generatedProto3ForMarykEnum = """
 enum MarykTypeEnum {
@@ -26,6 +26,6 @@ class GenerateProto3ForEnumTest {
             output += it
         }
 
-        output shouldBe generatedProto3ForMarykEnum
+        assertEquals(generatedProto3ForMarykEnum, output)
     }
 }

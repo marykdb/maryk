@@ -1,22 +1,22 @@
 package maryk.lib.bytes
 
 import maryk.lib.extensions.toHex
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class Base64Test {
     @Test
     fun fromBase64() {
-        Base64.encode(byteArrayOf(0)) shouldBe "AA"
-        Base64.encode(byteArrayOf(1)) shouldBe "AQ"
-        Base64.encode(byteArrayOf(2)) shouldBe "Ag"
+        expect("AA") { Base64.encode(byteArrayOf(0)) }
+        expect("AQ") { Base64.encode(byteArrayOf(1)) }
+        expect("Ag") { Base64.encode(byteArrayOf(2)) }
     }
 
     @Test
     fun toBase64() {
-        Base64.decode("AA").toHex() shouldBe "00"
-        Base64.decode("7g").toHex() shouldBe "ee"
-        Base64.decode("0w").toHex() shouldBe "d3"
-        Base64.decode("//").toHex() shouldBe "ff"
+        expect("00") { Base64.decode("AA").toHex() }
+        expect("ee") { Base64.decode("7g").toHex() }
+        expect("d3") { Base64.decode("0w").toHex() }
+        expect("ff") { Base64.decode("//").toHex() }
     }
 }

@@ -5,8 +5,8 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 private class ValueContext : IsPropertyContext {
     val valueDefinition = StringDefinition()
@@ -37,9 +37,9 @@ class ContextualValueDefinitionTest {
 
     @Test
     fun convertString() {
-        for (it in valuesToTest) {
-            val b = def.asString(it, this.context)
-            def.fromString(b, this.context) shouldBe it
+        for (value in valuesToTest) {
+            val b = def.asString(value, this.context)
+            expect(value) { def.fromString(b, this.context) }
         }
     }
 }

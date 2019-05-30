@@ -20,9 +20,10 @@ import maryk.core.query.requests.get
 import maryk.core.query.responses.ValuesResponse
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.TestMarykModel
-import maryk.test.shouldBe
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertFails
+import kotlin.test.assertFailsWith
+import kotlin.test.expect
 
 class InjectTest {
     private val definitionsContext = DefinitionsContext(
@@ -84,18 +85,18 @@ class InjectTest {
 
     @Test
     fun testGetToCollect() {
-        context.getToCollectModel("testCollection")?.model shouldBe ValuesResponse
+        expect(ValuesResponse) { context.getToCollectModel("testCollection")?.model }
     }
 
     @Test
     fun testResolve() {
-        inject.resolve(context) shouldBe "hay"
-        injectDeep.resolve(context) shouldBe "test"
+        expect("hay") { inject.resolve(context) }
+        expect("test") { injectDeep.resolve(context) }
     }
 
     @Test
     fun testResolveAny() {
-        injectFromAny.resolve(context) shouldBe listOf("hay", "haas")
+        expect(listOf("hay", "haas")) { injectFromAny.resolve(context) as List<*> }
     }
 
     private val valuesToCollect = EmbeddedMarykModel(
@@ -115,13 +116,15 @@ class InjectTest {
             )
         }
 
-        shouldThrow<InjectException> {
-            values { string }
-        } shouldBe InjectException("testCollection2")
+        expect(InjectException("testCollection2")) {
+            assertFails {
+                values { string }
+            }
+        }
 
         context.collectResult("testCollection2", valuesToCollect)
 
-        values { string } shouldBe "embedded value"
+        expect("embedded value") { values { string } }
     }
 
     @Test
@@ -132,7 +135,7 @@ class InjectTest {
             )
         }
 
-        values { string } shouldBe "test"
+        expect("test") { values { string } }
     }
 
     @Test
@@ -145,9 +148,11 @@ class InjectTest {
             )
         }
 
-        shouldThrow<InjectException> {
-            getRequest { where }
-        } shouldBe InjectException("where")
+        expect(InjectException("where")) {
+            assertFailsWith {
+                getRequest { where }
+            }
+        }
 
         val equals = Equals(
             EmbeddedMarykModel { value::ref } with "hoi"
@@ -155,7 +160,7 @@ class InjectTest {
 
         context.collectResult("where", Equals.asValues(equals))
 
-        getRequest { where } shouldBe equals
+        expect(equals) { getRequest { where } }
     }
 
     @Test
@@ -170,17 +175,25 @@ class InjectTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(this.inject, Inject, { this.context }) shouldBe """
-        testCollection: values.@0.values.string
+        expect(
+            """
+            testCollection: values.@0.values.string
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.inject, Inject, { this.context })
+        }
     }
 
     @Test
     fun convertCompleteObjectToYAMLAndBack() {
-        checkYamlConversion(injectCompleteObject, Inject, { this.context }) shouldBe """
-        testCompleteConvert
-        """.trimIndent()
+        expect(
+            """
+            testCompleteConvert
+            """.trimIndent()
+        ) {
+            checkYamlConversion(injectCompleteObject, Inject, { this.context })
+        }
     }
 
     @Test
@@ -195,19 +208,27 @@ class InjectTest {
 
     @Test
     fun convertAnyToYAMLAndBack() {
-        checkYamlConversion(this.injectFromAny, Inject, { this.context }) shouldBe """
-        testCollection: values.*.values.string
+        expect(
+            """
+            testCollection: values.*.values.string
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.injectFromAny, Inject, { this.context })
+        }
     }
 
     @Test
     fun convertAnyToJSONAndBack() {
-        checkJsonConversion(this.injectFromAny, Inject, { this.context }) shouldBe """
-        {
-          "testCollection": "values.*.values.string"
+        expect(
+            """
+            {
+              "testCollection": "values.*.values.string"
+            }
+            """.trimIndent()
+        ) {
+            checkJsonConversion(this.injectFromAny, Inject, { this.context })
         }
-        """.trimIndent()
     }
 
     @Test

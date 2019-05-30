@@ -7,8 +7,8 @@ import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.core.query.pairs.with
 import maryk.test.models.TestMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class LessThanEqualsTest {
     private val lessThanEquals = LessThanEquals(
@@ -35,10 +35,14 @@ class LessThanEqualsTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(this.lessThanEquals, LessThanEquals, { this.context }) shouldBe """
-        string: test
-        int: 6
+        expect(
+            """
+            string: test
+            int: 6
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.lessThanEquals, LessThanEquals, { this.context })
+        }
     }
 }

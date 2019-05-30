@@ -8,8 +8,8 @@ import maryk.test.models.Option
 import maryk.test.models.SimpleMarykModel
 import maryk.test.models.SimpleMarykTypeEnum
 import maryk.test.models.ValueMarykObject
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 import kotlin.test.fail
 
 class GenerateKotlinForDefinitionsTest {
@@ -42,14 +42,14 @@ class GenerateKotlinForDefinitionsTest {
             writer::writer
         }
 
-        setOfNames.size shouldBe 7
+        expect(7) { setOfNames.size }
 
-        mapOfWriters["Option"]!!.output shouldBe generatedKotlinForIndexedEnum
-        mapOfWriters["MarykTypeEnum"]!!.output shouldBe generatedKotlinForTypeEnum
-        mapOfWriters["ValueMarykObject"]!!.output shouldBe generatedKotlinForValueDataModel
-        mapOfWriters["EmbeddedModel"]!!.output shouldBe generatedKotlinForEmbeddedDataModel
-        mapOfWriters["CompleteMarykModel"]!!.output shouldBe generatedKotlinForCompleteDataModel
-        mapOfWriters["SimpleMarykModel"]!!.output shouldBe generatedKotlinForSimpleDataModel
+        expect(generatedKotlinForIndexedEnum) { mapOfWriters["Option"]!!.output }
+        expect(generatedKotlinForTypeEnum) { mapOfWriters["MarykTypeEnum"]!!.output }
+        expect(generatedKotlinForValueDataModel) { mapOfWriters["ValueMarykObject"]!!.output }
+        expect(generatedKotlinForEmbeddedDataModel) { mapOfWriters["EmbeddedModel"]!!.output }
+        expect(generatedKotlinForCompleteDataModel) { mapOfWriters["CompleteMarykModel"]!!.output }
+        expect(generatedKotlinForSimpleDataModel) { mapOfWriters["SimpleMarykModel"]!!.output }
     }
 }
 

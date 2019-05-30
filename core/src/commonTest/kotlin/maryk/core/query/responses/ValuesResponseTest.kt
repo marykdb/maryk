@@ -9,8 +9,8 @@ import maryk.core.query.RequestContext
 import maryk.core.query.ValuesWithMetaData
 import maryk.test.models.SimpleMarykModel
 import maryk.test.models.SimpleMarykObject
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class ValuesResponseTest {
     private val simpleValue = SimpleMarykModel(value = "haha1")
@@ -46,17 +46,21 @@ class ValuesResponseTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(this.objectsResponse, ValuesResponse, { this.context }) shouldBe """
-        dataModel: SimpleMarykModel
-        values:
-        - key: +1xO4zD4R5sIMcS9pXTZEA
-          values:
-            value: haha1
-          firstVersion: 0
-          lastVersion: 14141
-          isDeleted: false
+        expect(
+            """
+            dataModel: SimpleMarykModel
+            values:
+            - key: +1xO4zD4R5sIMcS9pXTZEA
+              values:
+                value: haha1
+              firstVersion: 0
+              lastVersion: 14141
+              isDeleted: false
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.objectsResponse, ValuesResponse, { this.context })
+        }
     }
 
     @Test
@@ -64,11 +68,11 @@ class ValuesResponseTest {
         val valuesResponseRef = ValuesResponse { values.refAt(0u) { values } }
         val simpleValueRef = SimpleMarykObject(valuesResponseRef) { value::ref }
 
-        valuesResponseRef.completeName shouldBe "values.@0.values"
-        simpleValueRef.completeName shouldBe "values.@0.values.value"
+        expect("values.@0.values") { valuesResponseRef.completeName }
+        expect("values.@0.values.value") { simpleValueRef.completeName }
 
         val objectValues = ValuesResponse.asValues(objectsResponse)
 
-        objectValues[simpleValueRef] shouldBe "haha1"
+        expect("haha1") { objectValues[simpleValueRef] }
     }
 }

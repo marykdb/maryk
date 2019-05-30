@@ -7,8 +7,8 @@ import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.core.query.pairs.with
 import maryk.test.models.SimpleMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class AndTest {
     private val and = And(
@@ -37,11 +37,15 @@ class AndTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(this.and, And, { this.context }) shouldBe """
-        - !Exists value
-        - !Equals
-          value: hoi
+        expect(
+            """
+            - !Exists value
+            - !Equals
+              value: hoi
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.and, And, { this.context })
+        }
     }
 }

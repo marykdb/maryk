@@ -16,8 +16,8 @@ import maryk.test.models.MarykEnumEmbedded.E1
 import maryk.test.models.MarykEnumEmbedded.E2
 import maryk.test.models.NumericMarykModel
 import maryk.test.models.SimpleMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class Proto3ConversionTest {
     @Test
@@ -38,7 +38,7 @@ class Proto3ConversionTest {
         val protoBufByteArray = simpleObjectProto.toByteArray()
 
         // Compare result
-        protoBufByteArray.toHex() shouldBe bc.bytes!!.toHex()
+        expect(bc.bytes!!.toHex()) { protoBufByteArray.toHex() }
     }
 
     @Test
@@ -59,7 +59,9 @@ class Proto3ConversionTest {
             .setFloat64(2345762.3123)
             .build()
 
-        42.345F.toRawBits() shouldBe java.lang.Float.floatToRawIntBits(42.345F)
+        expect(java.lang.Float.floatToRawIntBits(42.345F)) {
+            42.345F.toRawBits()
+        }
 
         // Write protobuf
         val bc = ByteCollector()
@@ -72,7 +74,7 @@ class Proto3ConversionTest {
         val protoBufByteArray = numericObjectProto.toByteArray()
 
         // Compare result
-        protoBufByteArray.toHex() shouldBe bc.bytes!!.toHex()
+        expect(bc.bytes!!.toHex()) { protoBufByteArray.toHex() }
     }
 
     @Test
@@ -131,6 +133,6 @@ class Proto3ConversionTest {
 
         val protoBytes = completeObjectProto.toByteArray()
 
-        protoBytes.toHex() shouldBe bc.bytes!!.toHex()
+        expect(bc.bytes!!.toHex()) { protoBytes.toHex() }
     }
 }

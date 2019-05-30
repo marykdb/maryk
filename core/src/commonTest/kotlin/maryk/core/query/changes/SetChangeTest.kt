@@ -7,8 +7,8 @@ import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.lib.time.Date
 import maryk.test.models.TestMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class SetChangeTest {
     private val setPropertyChange = SetChange(
@@ -39,10 +39,14 @@ class SetChangeTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(this.setPropertyChange, SetChange, { this.context }) shouldBe """
-        set:
-          addValues: [2014-04-14, 2013-03-13]
+        expect(
+            """
+            set:
+              addValues: [2014-04-14, 2013-03-13]
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.setPropertyChange, SetChange, { this.context })
+        }
     }
 }

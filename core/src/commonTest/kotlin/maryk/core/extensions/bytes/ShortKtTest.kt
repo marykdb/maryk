@@ -3,9 +3,9 @@ package maryk.core.extensions.bytes
 import maryk.lib.exceptions.ParseException
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
+import kotlin.test.expect
 
 internal class ShortKtTest {
     private val shortsToTest = shortArrayOf(
@@ -19,19 +19,19 @@ internal class ShortKtTest {
     @Test
     fun testStreamingConversion() {
         val bc = ByteCollector()
-        shortsToTest.forEach {
+        shortsToTest.forEach { short ->
             bc.reserve(2)
-            it.writeBytes(bc::write)
+            short.writeBytes(bc::write)
 
-            initShort(bc::read) shouldBe it
+            expect(short) { initShort(bc::read) }
             bc.reset()
         }
     }
 
     @Test
     fun testZigZagAndBack() {
-        shortsToTest.forEach {
-            it.encodeZigZag().decodeZigZag() shouldBe it
+        shortsToTest.forEach { short ->
+            expect(short) { short.encodeZigZag().decodeZigZag() }
         }
     }
 
@@ -65,12 +65,12 @@ internal class ShortKtTest {
         this.testByteContent(bc, it.encodeZigZag(), hexValue)
     }
 
-    private fun testByteContent(bc: ByteCollector, it: Short, hexValue: String) {
-        bc.reserve(it.calculateVarByteLength())
-        it.writeVarBytes(bc::write)
-        initShortByVar(bc::read) shouldBe it
+    private fun testByteContent(bc: ByteCollector, short: Short, hexValue: String) {
+        bc.reserve(short.calculateVarByteLength())
+        short.writeVarBytes(bc::write)
+        expect(short) { initShortByVar(bc::read) }
 
-        bc.bytes!!.toHex() shouldBe hexValue
+        expect(hexValue) { bc.bytes!!.toHex() }
 
         bc.reset()
     }
@@ -79,7 +79,7 @@ internal class ShortKtTest {
     fun testWrongVarInt() {
         val bytes = ByteArray(4) { -1 }
         var index = 0
-        shouldThrow<ParseException> {
+        assertFailsWith<ParseException> {
             initShortByVar { bytes[index++] }
         }
     }

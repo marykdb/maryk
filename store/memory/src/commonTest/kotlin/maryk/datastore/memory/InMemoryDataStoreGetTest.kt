@@ -3,12 +3,12 @@ package maryk.datastore.memory
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.get
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.test.assertType
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.addRequest
 import maryk.test.runSuspendingTest
-import maryk.test.shouldBe
-import maryk.test.shouldBeOfType
 import kotlin.test.Test
+import kotlin.test.expect
 
 class InMemoryDataStoreGetTest {
     private val dataStore = InMemoryDataStore()
@@ -21,7 +21,7 @@ class InMemoryDataStoreGetTest {
                 addRequest
             )
             addResponse.statuses.forEach { status ->
-                val response = shouldBeOfType<AddSuccess<SimpleMarykModel>>(status)
+                val response = assertType<AddSuccess<SimpleMarykModel>>(status)
                 keys.add(response.key)
                 if (response.version < lowestVersion) {
                     // Add lowest version for scan test
@@ -37,10 +37,10 @@ class InMemoryDataStoreGetTest {
             SimpleMarykModel.get(*keys.toTypedArray())
         )
 
-        getResponse.values.size shouldBe 2
+        expect(2) { getResponse.values.size }
 
         getResponse.values.forEachIndexed { index, value ->
-            value.values shouldBe addRequest.objects[index]
+            expect(addRequest.objects[index]) { value.values }
         }
     }
 
@@ -50,7 +50,7 @@ class InMemoryDataStoreGetTest {
             SimpleMarykModel.get(*keys.toTypedArray(), toVersion = lowestVersion - 1uL)
         )
 
-        getResponse.values.size shouldBe 0
+        expect(0) { getResponse.values.size }
     }
 
     @Test
@@ -64,11 +64,11 @@ class InMemoryDataStoreGetTest {
             )
         )
 
-        scanResponse.values.size shouldBe 2
+        expect(2) { scanResponse.values.size }
 
         scanResponse.values[0].let {
-            it.values shouldBe SimpleMarykModel(value = "haha1")
-            it.key shouldBe keys[0]
+            expect(SimpleMarykModel(value = "haha1")) { it.values }
+            expect(keys[0]) { it.key }
         }
     }
 }

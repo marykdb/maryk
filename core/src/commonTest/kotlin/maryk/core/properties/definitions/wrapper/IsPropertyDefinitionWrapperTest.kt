@@ -1,12 +1,12 @@
 package maryk.core.properties.definitions.wrapper
 
-import maryk.test.shouldBe
+import kotlin.test.assertEquals
 
 internal fun comparePropertyDefinitionWrapper(
     converted: IsDefinitionWrapper<out Any, out Any, *, Any>,
     original: IsDefinitionWrapper<out Any, out Any, *, Any>
 ) {
-    converted.index shouldBe original.index
-    converted.name shouldBe original.name
-    converted.definition shouldBe original.definition
+    assertEquals(original.index, converted.index)
+    assertEquals(original.name, converted.name)
+    assertEquals(original.definition, converted.definition)
 }

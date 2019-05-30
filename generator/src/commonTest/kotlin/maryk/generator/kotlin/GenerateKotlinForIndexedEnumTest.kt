@@ -1,8 +1,8 @@
 package maryk.generator.kotlin
 
 import maryk.test.models.Option
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 val generatedKotlinForIndexedEnum = """
 package maryk.test.models
@@ -39,6 +39,6 @@ class GenerateKotlinForIndexedEnumTest {
             output += it
         }
 
-        output shouldBe generatedKotlinForIndexedEnum
+        assertEquals(generatedKotlinForIndexedEnum, output)
     }
 }

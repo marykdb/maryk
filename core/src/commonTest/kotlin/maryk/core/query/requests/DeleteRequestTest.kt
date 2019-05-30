@@ -7,8 +7,8 @@ import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.deleteRequest
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class DeleteRequestTest {
     private val context = RequestContext(mapOf(
@@ -27,11 +27,15 @@ class DeleteRequestTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(deleteRequest, DeleteRequest, { this.context }) shouldBe """
-        from: SimpleMarykModel
-        keys: [B4CeT0fDRxYnEmSTQuLA2A, oDHjQh7GSDwyPX2kTUAniQ]
-        hardDelete: true
+        expect(
+            """
+            from: SimpleMarykModel
+            keys: [B4CeT0fDRxYnEmSTQuLA2A, oDHjQh7GSDwyPX2kTUAniQ]
+            hardDelete: true
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(deleteRequest, DeleteRequest, { this.context })
+        }
     }
 }

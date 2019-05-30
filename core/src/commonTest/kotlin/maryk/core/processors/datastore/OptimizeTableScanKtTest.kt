@@ -13,57 +13,71 @@ import maryk.test.models.TestMarykModel.Properties.dateTime
 import maryk.test.models.TestMarykModel.Properties.double
 import maryk.test.models.TestMarykModel.Properties.enum
 import maryk.test.models.TestMarykModel.Properties.int
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class OptimizeTableScanKtTest {
     private val tableScan = TableScan()
 
     @Test
     fun optimizeTableScanNoMatch() {
-        TestMarykModel.optimizeTableScan(tableScan, listOf()) shouldBe tableScan
+        expect(tableScan) {
+            TestMarykModel.optimizeTableScan(tableScan, listOf())
+        }
     }
 
     @Test
     fun optimizeTableScanInt() {
-        TestMarykModel.optimizeTableScan(
-            tableScan,
-            listOf(
-                enum.ref() with V3,
-                int.ref() with 245
+        expect(
+            IndexScan(
+                int.ref(),
+                ASC
             )
-        ) shouldBe IndexScan(
-            int.ref(),
-            ASC
-        )
+        ) {
+            TestMarykModel.optimizeTableScan(
+                tableScan,
+                listOf(
+                    enum.ref() with V3,
+                    int.ref() with 245
+                )
+            )
+        }
     }
 
     @Test
     fun optimizeTableScanDoubleReversed() {
-        TestMarykModel.optimizeTableScan(
-            tableScan,
-            listOf(
-                double.ref() with 2.5
+        expect(
+            IndexScan(Reversed(double.ref()), ASC)
+        ) {
+            TestMarykModel.optimizeTableScan(
+                tableScan,
+                listOf(
+                    double.ref() with 2.5
+                )
             )
-        ) shouldBe IndexScan(Reversed(double.ref()), ASC)
+        }
     }
 
     @Test
     fun optimizeTableScanMultiple() {
-        TestMarykModel.optimizeTableScan(
-            tableScan,
-            listOf(
-                dateTime.ref() with DateTime(2018, 3, 3),
-                enum.ref() with V3,
-                int.ref() with 245
+        expect(
+            IndexScan(
+                Multiple(
+                    Reversed(dateTime.ref()),
+                    enum.ref(),
+                    int.ref()
+                ),
+                ASC
             )
-        ) shouldBe IndexScan(
-            Multiple(
-                Reversed(dateTime.ref()),
-                enum.ref(),
-                int.ref()
-            ),
-            ASC
-        )
+        ) {
+            TestMarykModel.optimizeTableScan(
+                tableScan,
+                listOf(
+                    dateTime.ref() with DateTime(2018, 3, 3),
+                    enum.ref() with V3,
+                    int.ref() with 245
+                )
+            )
+        }
     }
 }

@@ -9,7 +9,16 @@ open class ByteCollector {
     val size: Int get() = bytes!!.size
 
     fun reserve(count: Int) {
-        bytes = ByteArray(count)
+        bytes.apply {
+            if (this != null && this.size == count) {
+                // recycle
+                for (it in 0..this.lastIndex) {
+                    this[it] = 0
+                }
+            } else {
+                bytes = ByteArray(count)
+            }
+        }
     }
 
     fun write(byte: Byte) {

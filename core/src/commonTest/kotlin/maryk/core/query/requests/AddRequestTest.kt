@@ -7,8 +7,8 @@ import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.addRequest
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class AddRequestTest {
     private val context = RequestContext(mapOf(
@@ -27,12 +27,16 @@ class AddRequestTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(addRequest, AddRequest, { this.context }) shouldBe """
-        to: SimpleMarykModel
-        objects:
-        - value: haha1
-        - value: haha2
+        expect(
+            """
+            to: SimpleMarykModel
+            objects:
+            - value: haha1
+            - value: haha2
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(addRequest, AddRequest, { this.context })
+        }
     }
 }

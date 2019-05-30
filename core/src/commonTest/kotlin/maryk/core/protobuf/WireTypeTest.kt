@@ -1,13 +1,13 @@
 package maryk.core.protobuf
 
 import maryk.lib.exceptions.ParseException
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 
 class WireTypeTest {
     @Test
     fun testUnknownWireType() {
-        shouldThrow<ParseException> {
+        assertFailsWith<ParseException> {
             wireTypeOf(9)
         }
     }

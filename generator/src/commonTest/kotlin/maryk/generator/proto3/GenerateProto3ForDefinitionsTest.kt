@@ -4,8 +4,8 @@ import maryk.core.definitions.Definitions
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.MarykTypeEnum
 import maryk.test.models.ValueMarykObject
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 import kotlin.test.fail
 
 class MixedKotlinGenerationTest {
@@ -30,11 +30,11 @@ class MixedKotlinGenerationTest {
             writer::writer
         }
 
-        setOfNames.size shouldBe 3
+        expect(3) { setOfNames.size }
 
-        mapOfWriters["MarykTypeEnum"]!!.output shouldBe generatedProto3ForMarykEnum
-        mapOfWriters["ValueMarykObject"]!!.output shouldBe generatedProto3ForValueDataModel
-        mapOfWriters["CompleteMarykModel"]!!.output shouldBe generatedProto3ForCompleteMarykModel
+        expect(generatedProto3ForMarykEnum) { mapOfWriters["MarykTypeEnum"]!!.output }
+        expect(generatedProto3ForValueDataModel) { mapOfWriters["ValueMarykObject"]!!.output }
+        expect(generatedProto3ForCompleteMarykModel) { mapOfWriters["CompleteMarykModel"]!!.output }
     }
 }
 

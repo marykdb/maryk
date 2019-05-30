@@ -8,8 +8,9 @@ import maryk.core.query.RequestContext
 import maryk.core.query.filters.Exists
 import maryk.core.query.requests.GetRequest
 import maryk.test.models.SimpleMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.expect
 
 private val key1 = SimpleMarykModel.key("dR9gVdRcSPw2molM1AiOng")
 private val key2 = SimpleMarykModel.key("Vc4WgX/mQHYCSEoLtfLSUQ")
@@ -34,23 +35,27 @@ class ObjectAsMapConversionTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(
-            getRequestWithInjectable,
-            GetRequest,
-            { context },
-            checker = { a, b ->
-                a.toDataObject() shouldBe b.toDataObject()
-            }
-        ) shouldBe """
-        from: SimpleMarykModel
-        keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
-        select:
-        - value
-        where: !Exists value
-        toVersion: 333
-        filterSoftDeleted: true
+        expect(
+            """
+            from: SimpleMarykModel
+            keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
+            select:
+            - value
+            where: !Exists value
+            toVersion: 333
+            filterSoftDeleted: true
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(
+                getRequestWithInjectable,
+                GetRequest,
+                { context },
+                checker = { a, b ->
+                    assertEquals(b.toDataObject(), a.toDataObject())
+                }
+            )
+        }
     }
 
     @Test
@@ -60,7 +65,7 @@ class ObjectAsMapConversionTest {
             GetRequest,
             { context },
             checker = { a, b ->
-                a.toDataObject() shouldBe b.toDataObject()
+                assertEquals(b.toDataObject(), a.toDataObject())
             }
         )
     }
@@ -72,7 +77,7 @@ class ObjectAsMapConversionTest {
             GetRequest,
             { context },
             checker = { a, b ->
-                a.toDataObject() shouldBe b.toDataObject()
+                assertEquals(b.toDataObject(), a.toDataObject())
             }
         )
     }

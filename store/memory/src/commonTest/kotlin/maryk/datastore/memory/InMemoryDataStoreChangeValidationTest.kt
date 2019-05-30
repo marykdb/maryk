@@ -21,11 +21,11 @@ import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
+import maryk.test.assertType
 import maryk.test.models.TestMarykModel
 import maryk.test.runSuspendingTest
-import maryk.test.shouldBe
-import maryk.test.shouldBeOfType
 import kotlin.test.Test
+import kotlin.test.expect
 
 class InMemoryDataStoreChangeValidationTest {
     private val dataStore = InMemoryDataStore()
@@ -72,7 +72,7 @@ class InMemoryDataStoreChangeValidationTest {
             )
 
             addResponse.statuses.forEach { status ->
-                val response = shouldBeOfType<AddSuccess<TestMarykModel>>(status)
+                val response = assertType<AddSuccess<TestMarykModel>>(status)
                 keys.add(response.key)
                 lastVersions.add(response.version)
             }
@@ -91,12 +91,12 @@ class InMemoryDataStoreChangeValidationTest {
             )
         )
 
-        changeResponse.statuses.size shouldBe 1
+        expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val validationFail = shouldBeOfType<ValidationFail<*>>(status)
+            val validationFail = assertType<ValidationFail<*>>(status)
             validationFail.exceptions.apply {
-                size shouldBe 1
-                shouldBeOfType<InvalidValueException>(first())
+                expect(1) { size }
+                assertType<InvalidValueException>(first())
             }
         }
 
@@ -105,8 +105,8 @@ class InMemoryDataStoreChangeValidationTest {
         )
 
         // Should not have changes
-        getResponse.values.size shouldBe 1
-        getResponse.values.first().values { string } shouldBe "haha2"
+        expect(1) { getResponse.values.size }
+        expect("haha2") { getResponse.values.first().values { string } }
     }
 
     @Test
@@ -119,12 +119,12 @@ class InMemoryDataStoreChangeValidationTest {
             )
         )
 
-        changeResponse.statuses.size shouldBe 1
+        expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val validationFail = shouldBeOfType<ValidationFail<*>>(status)
+            val validationFail = assertType<ValidationFail<*>>(status)
             validationFail.exceptions.apply {
-                size shouldBe 1
-                shouldBeOfType<AlreadySetException>(first())
+                expect(1) { size }
+                assertType<AlreadySetException>(first())
             }
         }
 
@@ -133,8 +133,8 @@ class InMemoryDataStoreChangeValidationTest {
         )
 
         // Should stay the same
-        getResponse.values.size shouldBe 1
-        getResponse.values.first().values { uint } shouldBe 12u
+        expect(1) { getResponse.values.size }
+        expect(12u) { getResponse.values.first().values { uint } }
     }
 
     @Test
@@ -151,13 +151,13 @@ class InMemoryDataStoreChangeValidationTest {
             )
         )
 
-        changeResponse.statuses.size shouldBe 1
+        expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val validationFail = shouldBeOfType<ValidationFail<*>>(status)
+            val validationFail = assertType<ValidationFail<*>>(status)
             validationFail.exceptions.apply {
-                size shouldBe 1
-                shouldBeOfType<TooManyItemsException>(first()).apply {
-                    size shouldBe 9u
+                expect(1) { size }
+                assertType<TooManyItemsException>(first()).apply {
+                    expect(9u) { size }
                 }
             }
         }
@@ -166,8 +166,8 @@ class InMemoryDataStoreChangeValidationTest {
             TestMarykModel.get(keys[0])
         )
 
-        getResponse.values.size shouldBe 1
-        getResponse.values.first().values { listOfString } shouldBe listOf("a", "b", "c")
+        expect(1) { getResponse.values.size }
+        expect(listOf("a", "b", "c")) { getResponse.values.first().values { listOfString } }
     }
 
     @Test
@@ -186,14 +186,14 @@ class InMemoryDataStoreChangeValidationTest {
             )
         )
 
-        changeResponse.statuses.size shouldBe 1
+        expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val validationFail = shouldBeOfType<ValidationFail<*>>(status)
+            val validationFail = assertType<ValidationFail<*>>(status)
             validationFail.exceptions.apply {
-                size shouldBe 1
-                shouldBeOfType<InvalidSizeException>(first()).apply {
-                    reference shouldBe TestMarykModel { listOfString refAt 0u }
-                    value shouldBe "verylongwrongvalue"
+                expect(1) { size }
+                assertType<InvalidSizeException>(first()).apply {
+                    expect(TestMarykModel { listOfString refAt 0u }) { reference }
+                    expect("verylongwrongvalue") { value }
                 }
             }
         }
@@ -202,8 +202,8 @@ class InMemoryDataStoreChangeValidationTest {
             TestMarykModel.get(keys[0])
         )
 
-        getResponse.values.size shouldBe 1
-        getResponse.values.first().values { listOfString } shouldBe listOf("a", "b", "c")
+        expect(1) { getResponse.values.size }
+        expect(listOf("a", "b", "c")) { getResponse.values.first().values { listOfString } }
     }
 
     @Test
@@ -225,13 +225,13 @@ class InMemoryDataStoreChangeValidationTest {
             )
         )
 
-        changeResponse.statuses.size shouldBe 1
+        expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val validationFail = shouldBeOfType<ValidationFail<*>>(status)
+            val validationFail = assertType<ValidationFail<*>>(status)
             validationFail.exceptions.apply {
-                size shouldBe 1
-                shouldBeOfType<TooManyItemsException>(first()).apply {
-                    size shouldBe 6u
+                expect(1) { size }
+                assertType<TooManyItemsException>(first()).apply {
+                    expect(6u) { size }
                 }
             }
         }
@@ -240,8 +240,8 @@ class InMemoryDataStoreChangeValidationTest {
         val getResponse = dataStore.execute(
             TestMarykModel.get(keys[1])
         )
-        getResponse.values.size shouldBe 1
-        getResponse.values.first().values { set } shouldBe setOf(Date(2018, 11, 25), Date(1981, 12, 5))
+        expect(1) { getResponse.values.size }
+        expect(setOf(Date(2018, 11, 25), Date(1981, 12, 5))) { getResponse.values.first().values { set } }
     }
 
     @Test
@@ -260,13 +260,13 @@ class InMemoryDataStoreChangeValidationTest {
             )
         )
 
-        changeResponse.statuses.size shouldBe 1
+        expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val validationFail = shouldBeOfType<ValidationFail<*>>(status)
+            val validationFail = assertType<ValidationFail<*>>(status)
             validationFail.exceptions.apply {
-                size shouldBe 1
-                shouldBeOfType<OutOfRangeException>(first()).apply {
-                    value shouldBe Date(2101, 12, 33).toString()
+                expect(1) { size }
+                assertType<OutOfRangeException>(first()).apply {
+                    expect(Date(2101, 12, 33).toString()) { value }
                 }
             }
         }
@@ -275,8 +275,8 @@ class InMemoryDataStoreChangeValidationTest {
         val getResponse = dataStore.execute(
             TestMarykModel.get(keys[1])
         )
-        getResponse.values.size shouldBe 1
-        getResponse.values.first().values { set } shouldBe setOf(Date(2018, 11, 25), Date(1981, 12, 5))
+        expect(1) { getResponse.values.size }
+        expect(setOf(Date(2018, 11, 25), Date(1981, 12, 5))) { getResponse.values.first().values { set } }
     }
 
     @Test
@@ -294,13 +294,13 @@ class InMemoryDataStoreChangeValidationTest {
             )
         )
 
-        changeResponse.statuses.size shouldBe 1
+        expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val validationFail = shouldBeOfType<ValidationFail<*>>(status)
+            val validationFail = assertType<ValidationFail<*>>(status)
             validationFail.exceptions.apply {
-                size shouldBe 1
-                shouldBeOfType<TooManyItemsException>(first()).apply {
-                    size shouldBe 6u
+                expect(1) { size }
+                assertType<TooManyItemsException>(first()).apply {
+                    expect(6u) { size }
                 }
             }
         }
@@ -309,11 +309,16 @@ class InMemoryDataStoreChangeValidationTest {
             TestMarykModel.get(keys[1])
         )
 
-        getResponse.values.size shouldBe 1
-        getResponse.values.first().values { map } shouldBe mapOf(
-            Time(12, 33, 45) to "another",
-            Time(13, 44, 55) to "another2"
-        )
+        expect(1) { getResponse.values.size }
+
+        expect(
+            mapOf(
+                Time(12, 33, 45) to "another",
+                Time(13, 44, 55) to "another2"
+            )
+        ) {
+            getResponse.values.first().values { map }
+        }
     }
 
     @Test
@@ -329,16 +334,16 @@ class InMemoryDataStoreChangeValidationTest {
             )
         )
 
-        changeResponse.statuses.size shouldBe 1
+        expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val validationFail = shouldBeOfType<ValidationFail<*>>(status)
+            val validationFail = assertType<ValidationFail<*>>(status)
             validationFail.exceptions.apply {
-                size shouldBe 2
-                shouldBeOfType<OutOfRangeException>(first()).apply {
-                    reference shouldBe TestMarykModel { map refToKey Time(23, 52, 53) }
+                expect(2) { size }
+                assertType<OutOfRangeException>(first()).apply {
+                    expect(TestMarykModel { map refToKey Time(23, 52, 53) }) { reference }
                 }
-                shouldBeOfType<InvalidSizeException>(this[1]).apply {
-                    reference shouldBe TestMarykModel { map refAt Time(1, 52, 53) }
+                assertType<InvalidSizeException>(this[1]).apply {
+                    expect(TestMarykModel { map refAt Time(1, 52, 53) }) { reference }
                 }
             }
         }
@@ -347,11 +352,15 @@ class InMemoryDataStoreChangeValidationTest {
             TestMarykModel.get(keys[1])
         )
 
-        getResponse.values.size shouldBe 1
-        getResponse.values.first().values { map } shouldBe mapOf(
-            Time(12, 33, 45) to "another",
-            Time(13, 44, 55) to "another2"
-        )
+        expect(1) { getResponse.values.size }
+        expect(
+            mapOf(
+                Time(12, 33, 45) to "another",
+                Time(13, 44, 55) to "another2"
+            )
+        ) {
+            getResponse.values.first().values { map }
+        }
     }
 
     @Test
@@ -366,13 +375,13 @@ class InMemoryDataStoreChangeValidationTest {
             )
         )
 
-        changeResponse.statuses.size shouldBe 1
+        expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val validationFail = shouldBeOfType<ValidationFail<*>>(status)
+            val validationFail = assertType<ValidationFail<*>>(status)
             validationFail.exceptions.apply {
-                size shouldBe 1
-                shouldBeOfType<NotEnoughItemsException>(first()).apply {
-                    size shouldBe 0u
+                expect(1) { size }
+                assertType<NotEnoughItemsException>(first()).apply {
+                    expect(0u) { size }
                 }
             }
         }

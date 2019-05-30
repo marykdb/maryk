@@ -6,8 +6,8 @@ import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.test.models.CompleteMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class IncMapChangeTest {
     val a = CompleteMarykModel { incMap::ref }
@@ -40,10 +40,14 @@ class IncMapChangeTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(this.incMapChange, IncMapChange, { this.context }) shouldBe """
-        incMap:
-          addValues: [a, b]
+        expect(
+            """
+            incMap:
+              addValues: [a, b]
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.incMapChange, IncMapChange, { this.context })
+        }
     }
 }

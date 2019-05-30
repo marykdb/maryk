@@ -1,5 +1,7 @@
 package maryk.core.models
 
+import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.WriteCache
@@ -15,10 +17,11 @@ import maryk.test.models.EmbeddedMarykObject
 import maryk.test.models.SimpleMarykTypeEnumWithObject.S3
 import maryk.test.models.TestMarykObject
 import maryk.test.models.TestValueObject
-import maryk.test.shouldBe
-import maryk.test.shouldThrow
 import maryk.yaml.YamlWriter
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.expect
 
 private val testObject = TestMarykObject(
     string = "haas",
@@ -88,17 +91,19 @@ private const val PRETTY_JSON_WITH_SKIP = """{
 internal class ObjectDataModelTest {
     @Test
     fun constructByMap() {
-        TestMarykObject.values {
-            mapNonNulls(
-                string with testObject.string,
-                int with testObject.int,
-                uint with testObject.uint,
-                double with testObject.double,
-                dateTime with testObject.dateTime,
-                bool with testObject.bool,
-                enum with testObject.enum
-            )
-        }.toDataObject() shouldBe testObject
+        expect(testObject) {
+            TestMarykObject.values {
+                mapNonNulls(
+                    string with testObject.string,
+                    int with testObject.int,
+                    uint with testObject.uint,
+                    double with testObject.double,
+                    dateTime with testObject.dateTime,
+                    bool with testObject.bool,
+                    enum with testObject.enum
+                )
+            }.toDataObject()
+        }
     }
 
     @Test
@@ -108,45 +113,85 @@ internal class ObjectDataModelTest {
 
     @Test
     fun failValidationWithIncorrectValues() {
-        shouldThrow<ValidationUmbrellaException> {
+        assertFailsWith<ValidationUmbrellaException> {
             TestMarykObject.validate(testObject.copy(int = 9))
         }
     }
 
     @Test
     fun getPropertyDefinitionByName() {
-        TestMarykObject.properties["string"] shouldBe TestMarykObject.Properties.string
-        TestMarykObject.properties["int"] shouldBe TestMarykObject.Properties.int
-        TestMarykObject.properties["dateTime"] shouldBe TestMarykObject.Properties.dateTime
-        TestMarykObject.properties["bool"] shouldBe TestMarykObject.Properties.bool
+        expect(TestMarykObject.Properties.string) {
+            TestMarykObject.properties["string"] as FlexBytesDefinitionWrapper<*, *, *, *, *>
+        }
+        expect(TestMarykObject.Properties.int) {
+            TestMarykObject.properties["int"] as FixedBytesDefinitionWrapper<*, *, *, *, *>
+        }
+        expect(TestMarykObject.Properties.dateTime) {
+            TestMarykObject.properties["dateTime"] as FixedBytesDefinitionWrapper<*, *, *, *, *>
+        }
+        expect(TestMarykObject.Properties.bool) {
+            TestMarykObject.properties["bool"] as FixedBytesDefinitionWrapper<*, *, *, *, *>
+        }
     }
 
     @Test
     fun getPropertyDefinitionByIndex() {
-        TestMarykObject.properties[1u] shouldBe TestMarykObject.Properties.string
-        TestMarykObject.properties[2u] shouldBe TestMarykObject.Properties.int
-        TestMarykObject.properties[3u] shouldBe TestMarykObject.Properties.uint
-        TestMarykObject.properties[4u] shouldBe TestMarykObject.Properties.double
-        TestMarykObject.properties[5u] shouldBe TestMarykObject.Properties.dateTime
-        TestMarykObject.properties[6u] shouldBe TestMarykObject.Properties.bool
+        expect(TestMarykObject.Properties.string) {
+            TestMarykObject.properties[1u] as FlexBytesDefinitionWrapper<*, *, *, *, *>
+        }
+        expect(TestMarykObject.Properties.int) {
+            TestMarykObject.properties[2u] as FixedBytesDefinitionWrapper<*, *, *, *, *>
+        }
+        expect(TestMarykObject.Properties.uint) {
+            TestMarykObject.properties[3u] as FixedBytesDefinitionWrapper<*, *, *, *, *>
+        }
+        expect(TestMarykObject.Properties.double) {
+            TestMarykObject.properties[4u] as FixedBytesDefinitionWrapper<*, *, *, *, *>
+        }
+        expect(TestMarykObject.Properties.dateTime) {
+            TestMarykObject.properties[5u] as FixedBytesDefinitionWrapper<*, *, *, *, *>
+        }
+        expect(TestMarykObject.Properties.bool) {
+            TestMarykObject.properties[6u] as FixedBytesDefinitionWrapper<*, *, *, *, *>
+        }
     }
 
     @Test
     fun getPropertiesByName() {
-        TestMarykObject.properties.getPropertyGetter("string")!!.invoke(testExtendedObject) shouldBe "hay"
-        TestMarykObject.properties.getPropertyGetter("int")!!.invoke(testExtendedObject) shouldBe 4
-        TestMarykObject.properties.getPropertyGetter("dateTime")!!.invoke(testExtendedObject) shouldBe DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13)
-        TestMarykObject.properties.getPropertyGetter("bool")!!.invoke(testExtendedObject) shouldBe true
+        expect("hay") {
+            TestMarykObject.properties.getPropertyGetter("string")!!.invoke(testExtendedObject)
+        }
+        expect(4) {
+            TestMarykObject.properties.getPropertyGetter("int")!!.invoke(testExtendedObject)
+        }
+        expect(DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13)) {
+            TestMarykObject.properties.getPropertyGetter("dateTime")!!.invoke(testExtendedObject)
+        }
+        expect(true) {
+            TestMarykObject.properties.getPropertyGetter("bool")!!.invoke(testExtendedObject)
+        }
     }
 
     @Test
     fun getPropertiesByIndex() {
-        TestMarykObject.properties.getPropertyGetter(1u)!!.invoke(testExtendedObject) shouldBe "hay"
-        TestMarykObject.properties.getPropertyGetter(2u)!!.invoke(testExtendedObject) shouldBe 4
-        TestMarykObject.properties.getPropertyGetter(3u)!!.invoke(testExtendedObject) shouldBe 32u
-        TestMarykObject.properties.getPropertyGetter(4u)!!.invoke(testExtendedObject) shouldBe 3.555
-        TestMarykObject.properties.getPropertyGetter(5u)!!.invoke(testExtendedObject) shouldBe DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13)
-        TestMarykObject.properties.getPropertyGetter(6u)!!.invoke(testExtendedObject) shouldBe true
+        expect("hay") {
+            TestMarykObject.properties.getPropertyGetter(1u)!!.invoke(testExtendedObject)
+        }
+        expect(4) {
+            TestMarykObject.properties.getPropertyGetter(2u)!!.invoke(testExtendedObject)
+        }
+        expect(32u) {
+            TestMarykObject.properties.getPropertyGetter(3u)!!.invoke(testExtendedObject)
+        }
+        expect(3.555) {
+            TestMarykObject.properties.getPropertyGetter(4u)!!.invoke(testExtendedObject)
+        }
+        expect(DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13)) {
+            TestMarykObject.properties.getPropertyGetter(5u)!!.invoke(testExtendedObject)
+        }
+        expect(true) {
+            TestMarykObject.properties.getPropertyGetter(6u)!!.invoke(testExtendedObject)
+        }
     }
 
     @Test
@@ -158,7 +203,7 @@ internal class ObjectDataModelTest {
 
         TestMarykObject.writeJson(testExtendedObject, writer)
 
-        output shouldBe JSON
+        assertEquals(JSON, output)
     }
 
     @Test
@@ -170,35 +215,38 @@ internal class ObjectDataModelTest {
 
         TestMarykObject.writeJson(testExtendedObject, writer)
 
-        output shouldBe """
-        {
-          "string": "hay",
-          "int": 4,
-          "uint": 32,
-          "double": "3.555",
-          "dateTime": "2017-12-04T12:13",
-          "bool": true,
-          "enum": "V1(1)",
-          "list": [34, 2352, 3423, 766],
-          "set": ["2017-12-05", "2016-03-02", "1981-12-05"],
-          "map": {
-            "12:55": "yes",
-            "10:03": "ahum"
-          },
-          "valueObject": {
-            "int": 6,
-            "dateTime": "2017-04-01T12:55",
-            "bool": true
-          },
-          "embeddedObject": {
-            "value": "test"
-          },
-          "multi": ["S3(3)", {
-            "value": "subInMulti!"
-          }],
-          "listOfString": ["test1", "another test", "🤗"]
-        }
-        """.trimIndent()
+        assertEquals(
+            """
+            {
+              "string": "hay",
+              "int": 4,
+              "uint": 32,
+              "double": "3.555",
+              "dateTime": "2017-12-04T12:13",
+              "bool": true,
+              "enum": "V1(1)",
+              "list": [34, 2352, 3423, 766],
+              "set": ["2017-12-05", "2016-03-02", "1981-12-05"],
+              "map": {
+                "12:55": "yes",
+                "10:03": "ahum"
+              },
+              "valueObject": {
+                "int": 6,
+                "dateTime": "2017-04-01T12:55",
+                "bool": true
+              },
+              "embeddedObject": {
+                "value": "test"
+              },
+              "multi": ["S3(3)", {
+                "value": "subInMulti!"
+              }],
+              "listOfString": ["test1", "another test", "🤗"]
+            }
+            """.trimIndent(),
+            output
+        )
     }
 
     @Test
@@ -210,30 +258,33 @@ internal class ObjectDataModelTest {
 
         TestMarykObject.writeJson(testExtendedObject, writer)
 
-        output shouldBe """
-        string: hay
-        int: 4
-        uint: 32
-        double: 3.555
-        dateTime: '2017-12-04T12:13'
-        bool: true
-        enum: V1(1)
-        list: [34, 2352, 3423, 766]
-        set: [2017-12-05, 2016-03-02, 1981-12-05]
-        map:
-          12:55: yes
-          10:03: ahum
-        valueObject:
-          int: 6
-          dateTime: '2017-04-01T12:55'
-          bool: true
-        embeddedObject:
-          value: test
-        multi: !S3(3)
-          value: subInMulti!
-        listOfString: [test1, another test, 🤗]
+        assertEquals(
+            """
+            string: hay
+            int: 4
+            uint: 32
+            double: 3.555
+            dateTime: '2017-12-04T12:13'
+            bool: true
+            enum: V1(1)
+            list: [34, 2352, 3423, 766]
+            set: [2017-12-05, 2016-03-02, 1981-12-05]
+            map:
+              12:55: yes
+              10:03: ahum
+            valueObject:
+              int: 6
+              dateTime: '2017-04-01T12:55'
+              bool: true
+            embeddedObject:
+              value: test
+            multi: !S3(3)
+              value: subInMulti!
+            listOfString: [test1, another test, 🤗]
 
-        """.trimIndent()
+            """.trimIndent(),
+            output
+        )
     }
 
     @Test
@@ -247,9 +298,11 @@ internal class ObjectDataModelTest {
 
         TestMarykObject.writeProtoBuf(testExtendedObject, cache, bc::write)
 
-        bc.bytes!!.toHex() shouldBe "0a036861791008182021713d0ad7a3700c4028ccf794d10530013801420744e024be35fc0b4a08c29102bc87028844520908a4eb021203796573520a08d49a0212046168756d5a0e800000060180000058dfa324010162060a04746573746a0f1a0d0a0b737562496e4d756c7469217a0574657374317a0c616e6f7468657220746573747a04f09fa497"
+        expect("0a036861791008182021713d0ad7a3700c4028ccf794d10530013801420744e024be35fc0b4a08c29102bc87028844520908a4eb021203796573520a08d49a0212046168756d5a0e800000060180000058dfa324010162060a04746573746a0f1a0d0a0b737562496e4d756c7469217a0574657374317a0c616e6f7468657220746573747a04f09fa497") {
+            bc.bytes!!.toHex()
+        }
 
-        TestMarykObject.readProtoBuf(bc.size, bc::read).toDataObject() shouldBe testExtendedObject
+        expect(testExtendedObject) { TestMarykObject.readProtoBuf(bc.size, bc::read).toDataObject() }
     }
 
     @Test
@@ -262,7 +315,7 @@ internal class ObjectDataModelTest {
             bytes[index++]
         })
 
-        map.size shouldBe 0
+        expect(0) { map.size }
     }
 
     @Test
@@ -278,7 +331,7 @@ internal class ObjectDataModelTest {
         ).forEach { jsonInput ->
             input = jsonInput
             index = 0
-            TestMarykObject.readJson(reader = jsonReader()).toDataObject() shouldBe testExtendedObject
+            expect(testExtendedObject) { TestMarykObject.readJson(reader = jsonReader()).toDataObject() }
         }
     }
 
@@ -295,7 +348,7 @@ internal class ObjectDataModelTest {
 
             var index = 0
             val reader = { JsonReader(reader = { output[index++] }) }
-            TestMarykObject.readJson(reader = reader()).toDataObject() shouldBe testExtendedObject
+            expect(testExtendedObject) { TestMarykObject.readJson(reader = reader()).toDataObject() }
 
             output = ""
         }

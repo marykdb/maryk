@@ -6,8 +6,8 @@ import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.test.models.SimpleMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class NotTest {
     private val not = Not(
@@ -33,9 +33,13 @@ class NotTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(this.not, Not, { this.context }) shouldBe """
-        - !Exists value
+        expect(
+            """
+            - !Exists value
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.not, Not, { this.context })
+        }
     }
 }

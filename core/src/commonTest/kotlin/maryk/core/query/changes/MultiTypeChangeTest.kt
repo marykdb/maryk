@@ -8,8 +8,8 @@ import maryk.core.query.RequestContext
 import maryk.core.query.pairs.withType
 import maryk.test.models.SimpleMarykTypeEnum.S3
 import maryk.test.models.TestMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class MultiTypeChangeTest {
     val ref = TestMarykModel { multi::ref }
@@ -38,9 +38,13 @@ class MultiTypeChangeTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(this.multiTypeChange, MultiTypeChange, { this.context }) shouldBe """
-        multi: S3
+        expect(
+            """
+            multi: S3
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.multiTypeChange, MultiTypeChange, { this.context })
+        }
     }
 }

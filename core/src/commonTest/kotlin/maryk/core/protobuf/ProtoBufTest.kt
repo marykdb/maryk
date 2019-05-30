@@ -11,8 +11,8 @@ import maryk.core.protobuf.WireType.VAR_INT
 import maryk.lib.extensions.initByteArrayByHex
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class ProtoBufTest {
     private class PBKey(val tag: UInt, val wireType: WireType, val hexBytes: String)
@@ -36,7 +36,7 @@ class ProtoBufTest {
         fun testGenerateKey(bc: ByteCollector, value: PBKey) {
             bc.reserve(ProtoBuf.calculateKeyLength(value.tag))
             ProtoBuf.writeKey(value.tag, value.wireType, bc::write)
-            bc.bytes!!.toHex() shouldBe value.hexBytes
+            expect(value.hexBytes) { bc.bytes!!.toHex() }
             bc.reset()
         }
 
@@ -53,8 +53,8 @@ class ProtoBufTest {
             val bytes = initByteArrayByHex(value.hexBytes)
             var index = 0
             val result = ProtoBuf.readKey { bytes[index++] }
-            result.tag shouldBe value.tag
-            result.wireType shouldBe value.wireType
+            expect(value.tag) { result.tag }
+            expect(value.wireType) { result.wireType }
         }
 
         for (it in testValues) {
@@ -97,10 +97,10 @@ class ProtoBufTest {
         333.writeBytes(bc::write)
 
         fun testSkip(bc: ByteCollector, wireType: WireType, readIndex: Int) {
-            ProtoBuf.readKey(bc::read).wireType shouldBe wireType
+            expect(wireType) { ProtoBuf.readKey(bc::read).wireType }
             ProtoBuf.skipField(wireType, bc::read)
 
-            bc.readIndex shouldBe readIndex
+            expect(readIndex) { bc.readIndex }
         }
 
         testSkip(bc, VAR_INT, 3)

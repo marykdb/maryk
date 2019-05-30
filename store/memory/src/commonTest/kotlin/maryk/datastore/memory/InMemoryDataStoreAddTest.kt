@@ -8,12 +8,13 @@ import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.AlreadyExists
 import maryk.core.values.Values
 import maryk.lib.time.DateTime
+import maryk.test.assertType
 import maryk.test.models.Log
 import maryk.test.models.Severity.ERROR
 import maryk.test.runSuspendingTest
-import maryk.test.shouldBe
-import maryk.test.shouldBeOfType
 import kotlin.test.Test
+import kotlin.test.assertTrue
+import kotlin.test.expect
 
 class InMemoryDataStoreAddTest {
     private val dataStore = InMemoryDataStore()
@@ -31,16 +32,16 @@ class InMemoryDataStoreAddTest {
             Log.add(*logs)
         )
 
-        addResponse.dataModel shouldBe Log
-        addResponse.statuses.count() shouldBe 4
+        expect(Log) { addResponse.dataModel }
+        expect(4) { addResponse.statuses.count() }
 
         val keysToOriginal = mutableMapOf<Key<*>, Values<Log, *>>()
         val keys = mutableListOf<Key<Log>>()
         addResponse.statuses.forEachIndexed { index, it ->
-            val response = shouldBeOfType<AddSuccess<Log>>(it)
+            val response = assertType<AddSuccess<Log>>(it)
             shouldBeRecent(response.version, 1000uL)
-            response.changes.isEmpty() shouldBe true
-            shouldBeOfType<Key<Log>>(response.key).size shouldBe 11
+            assertTrue { response.changes.isEmpty() }
+            expect(11) { assertType<Key<Log>>(response.key).size }
             keys.add(response.key)
             keysToOriginal[response.key] = logs[index]
         }
@@ -49,10 +50,10 @@ class InMemoryDataStoreAddTest {
             Log.get(*keys.toTypedArray())
         )
 
-        getResponse.values.size shouldBe 4
+        expect(4) { getResponse.values.size }
 
         getResponse.values.forEachIndexed { index, value ->
-            value.values shouldBe logs[index]
+            expect(logs[index]) { value.values }
         }
     }
 
@@ -64,8 +65,8 @@ class InMemoryDataStoreAddTest {
             Log.add(log)
         )
 
-        addResponse.dataModel shouldBe Log
-        addResponse.statuses.count() shouldBe 1
+        expect(Log) { addResponse.dataModel }
+        expect(1) { addResponse.statuses.count() }
 
         val key = Log.key(log)
 
@@ -73,9 +74,9 @@ class InMemoryDataStoreAddTest {
             Log.add(log)
         )
 
-        addResponseAgain.dataModel shouldBe Log
-        addResponseAgain.statuses.count() shouldBe 1
+        expect(Log) { addResponseAgain.dataModel }
+        expect(1) { addResponseAgain.statuses.count() }
 
-        addResponseAgain.statuses[0] shouldBe AlreadyExists(key)
+        expect(AlreadyExists(key)) { addResponseAgain.statuses[0] }
     }
 }

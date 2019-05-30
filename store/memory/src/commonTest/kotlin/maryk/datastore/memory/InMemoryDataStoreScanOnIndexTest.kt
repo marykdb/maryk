@@ -11,15 +11,15 @@ import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.test.assertType
 import maryk.test.models.Log
 import maryk.test.models.Log.Properties.severity
 import maryk.test.models.Severity.DEBUG
 import maryk.test.models.Severity.ERROR
 import maryk.test.models.Severity.INFO
 import maryk.test.runSuspendingTest
-import maryk.test.shouldBe
-import maryk.test.shouldBeOfType
 import kotlin.test.Test
+import kotlin.test.expect
 
 class InMemoryDataStoreScanOnIndexTest {
     private val dataStore = InMemoryDataStore()
@@ -39,7 +39,7 @@ class InMemoryDataStoreScanOnIndexTest {
                 Log.add(*logs)
             )
             addResponse.statuses.forEach { status ->
-                val response = shouldBeOfType<AddSuccess<Log>>(status)
+                val response = assertType<AddSuccess<Log>>(status)
                 keys.add(response.key)
                 if (response.version < lowestVersion) {
                     // Add lowest version for scan test
@@ -55,24 +55,24 @@ class InMemoryDataStoreScanOnIndexTest {
             Log.scan(order = severity.ref().ascending())
         )
 
-        scanResponse.values.size shouldBe 4
+        expect(4) { scanResponse.values.size }
 
         // Sorted on severity
         scanResponse.values[0].let {
-            it.values shouldBe logs[2]
-            it.key shouldBe keys[2]
+            expect(logs[2]) { it.values }
+            expect(keys[2]) { it.key }
         }
         scanResponse.values[1].let {
-            it.values shouldBe logs[0]
-            it.key shouldBe keys[0]
+            expect(logs[0]) { it.values }
+            expect(keys[0]) { it.key }
         }
         scanResponse.values[2].let {
-            it.values shouldBe logs[1]
-            it.key shouldBe keys[1]
+            expect(logs[1]) { it.values }
+            expect(keys[1]) { it.key }
         }
         scanResponse.values[3].let {
-            it.values shouldBe logs[3]
-            it.key shouldBe keys[3]
+            expect(logs[3]) { it.values }
+            expect(keys[3]) { it.key }
         }
     }
 
@@ -82,20 +82,20 @@ class InMemoryDataStoreScanOnIndexTest {
             Log.scan(startKey = keys[2], order = severity.ref().ascending())
         )
 
-        scanResponse.values.size shouldBe 3
+        expect(3) { scanResponse.values.size }
 
         // Sorted on severity
         scanResponse.values[0].let {
-            it.values shouldBe logs[2]
-            it.key shouldBe keys[2]
+            expect(logs[2]) { it.values }
+            expect(keys[2]) { it.key }
         }
         scanResponse.values[1].let {
-            it.values shouldBe logs[0]
-            it.key shouldBe keys[0]
+            expect(logs[0]) { it.values }
+            expect(keys[0]) { it.key }
         }
         scanResponse.values[2].let {
-            it.values shouldBe logs[1]
-            it.key shouldBe keys[1]
+            expect(logs[1]) { it.values }
+            expect(keys[1]) { it.key }
         }
     }
 
@@ -105,24 +105,24 @@ class InMemoryDataStoreScanOnIndexTest {
             Log.scan(order = severity.ref().descending())
         )
 
-        scanResponse.values.size shouldBe 4
+        expect(4) { scanResponse.values.size }
 
         // Sorted on severity
         scanResponse.values[0].let {
-            it.values shouldBe logs[3]
-            it.key shouldBe keys[3]
+            expect(logs[3]) { it.values }
+            expect(keys[3]) { it.key }
         }
         scanResponse.values[1].let {
-            it.values shouldBe logs[1]
-            it.key shouldBe keys[1]
+            expect(logs[1]) { it.values }
+            expect(keys[1]) { it.key }
         }
         scanResponse.values[2].let {
-            it.values shouldBe logs[0]
-            it.key shouldBe keys[0]
+            expect(logs[0]) { it.values }
+            expect(keys[0]) { it.key }
         }
         scanResponse.values[3].let {
-            it.values shouldBe logs[2]
-            it.key shouldBe keys[2]
+            expect(logs[2]) { it.values }
+            expect(keys[2]) { it.key }
         }
     }
 
@@ -132,11 +132,11 @@ class InMemoryDataStoreScanOnIndexTest {
             Log.scan(limit = 1u, order = severity.ref().ascending())
         )
 
-        scanResponse.values.size shouldBe 1
+        expect(1) { scanResponse.values.size }
 
         scanResponse.values[0].let {
-            it.values shouldBe logs[2]
-            it.key shouldBe keys[2]
+            expect(logs[2]) { it.values }
+            expect(keys[2]) { it.key }
         }
     }
 
@@ -146,7 +146,7 @@ class InMemoryDataStoreScanOnIndexTest {
             Log.scan(toVersion = lowestVersion - 1uL, order = severity.ref().ascending())
         )
 
-        scanResponse.values.size shouldBe 0
+        expect(0) { scanResponse.values.size }
     }
 
     @Test
@@ -163,17 +163,19 @@ class InMemoryDataStoreScanOnIndexTest {
             )
         )
 
-        scanResponse.values.size shouldBe 4
+        expect(4) { scanResponse.values.size }
 
         // Mind that Log is sorted in reverse so it goes back in time going forward
         scanResponse.values[0].let {
-            it.values shouldBe Log.values {
-                mapNonNulls(
-                    this.severity with INFO,
-                    this.timestamp with DateTime(2018, 11, 14, 12, 33, 22, 111)
-                )
-            }
-            it.key shouldBe keys[2]
+            expect(
+                Log.values {
+                    mapNonNulls(
+                        this.severity with INFO,
+                        this.timestamp with DateTime(2018, 11, 14, 12, 33, 22, 111)
+                    )
+                }
+            ) { it.values }
+            expect(keys[2]) { it.key }
         }
     }
 
@@ -188,11 +190,11 @@ class InMemoryDataStoreScanOnIndexTest {
             )
         )
 
-        scanResponse.values.size shouldBe 1
+        expect(1) { scanResponse.values.size }
 
         scanResponse.values[0].let {
-            it.values shouldBe logs[1]
-            it.key shouldBe keys[1]
+            expect(logs[1]) { it.values }
+            expect(keys[1]) { it.key }
         }
     }
 
@@ -207,15 +209,15 @@ class InMemoryDataStoreScanOnIndexTest {
             )
         )
 
-        scanResponse.values.size shouldBe 2
+        expect(2) { scanResponse.values.size }
 
         scanResponse.values[0].let {
-            it.values shouldBe logs[1]
-            it.key shouldBe keys[1]
+            expect(logs[1]) { it.values }
+            expect(keys[1]) { it.key }
         }
         scanResponse.values[1].let {
-            it.values shouldBe logs[3]
-            it.key shouldBe keys[3]
+            expect(logs[3]) { it.values }
+            expect(keys[3]) { it.key }
         }
     }
 
@@ -230,19 +232,19 @@ class InMemoryDataStoreScanOnIndexTest {
             )
         )
 
-        scanResponse.values.size shouldBe 3
+        expect(3) { scanResponse.values.size }
 
         scanResponse.values[0].let {
-            it.values shouldBe logs[1]
-            it.key shouldBe keys[1]
+            expect(logs[1]) { it.values }
+            expect(keys[1]) { it.key }
         }
         scanResponse.values[1].let {
-            it.values shouldBe logs[0]
-            it.key shouldBe keys[0]
+            expect(logs[0]) { it.values }
+            expect(keys[0]) { it.key }
         }
         scanResponse.values[2].let {
-            it.values shouldBe logs[2]
-            it.key shouldBe keys[2]
+            expect(logs[2]) { it.values }
+            expect(keys[2]) { it.key }
         }
     }
 }

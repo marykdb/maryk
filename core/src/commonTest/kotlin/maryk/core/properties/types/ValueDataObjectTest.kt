@@ -2,8 +2,8 @@ package maryk.core.properties.types
 
 import maryk.lib.time.Time
 import maryk.test.models.TestValueObject
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 internal class ValueDataObjectTest {
     private val value = TestValueObject(
@@ -21,9 +21,9 @@ internal class ValueDataObjectTest {
 
     @Test
     fun testCompareToBytes() {
-        value.compareTo(value) shouldBe 0
-        value.compareTo(value2) shouldBe -1
-        value2.compareTo(value) shouldBe 1
+        expect(0) { value.compareTo(value) }
+        expect(-1) { value.compareTo(value2) }
+        expect(1) { value2.compareTo(value) }
     }
 
     @Test
@@ -31,7 +31,7 @@ internal class ValueDataObjectTest {
         val bytes = value.toByteArray()
         val new = TestValueObject.readFromBytes(bytes.iterator()::nextByte)
 
-        new.compareTo(value) shouldBe 0
+        expect(0) { new.compareTo(value) }
     }
 
     @Test
@@ -39,6 +39,6 @@ internal class ValueDataObjectTest {
         val string = value.toBase64()
         val new = TestValueObject.fromBase64(string)
 
-        new.compareTo(value) shouldBe 0
+        expect(0) { new.compareTo(value) }
     }
 }

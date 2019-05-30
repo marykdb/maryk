@@ -14,9 +14,9 @@ import maryk.json.JsonReader
 import maryk.json.JsonWriter
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
+import kotlin.test.expect
 
 internal class EmbeddedValuesDefinitionTest {
     object MarykModel : DataModel<MarykModel, MarykModel.Properties>(
@@ -52,13 +52,13 @@ internal class EmbeddedValuesDefinitionTest {
 
     @Test
     fun hasValues() {
-        def.dataModel shouldBe MarykModel
+        expect(MarykModel) { def.dataModel }
     }
 
     @Test
     fun validate() {
         def.validateWithRef(newValue = MarykModel())
-        shouldThrow<ValidationUmbrellaException> {
+        assertFailsWith<ValidationUmbrellaException> {
             def.validateWithRef(newValue = MarykModel("wrong"))
         }
     }
@@ -78,7 +78,7 @@ internal class EmbeddedValuesDefinitionTest {
             output[index++]
         }
 
-        def.readJson(reader) shouldBe value
+        expect(value) { def.readJson(reader) }
     }
 
     @Test
@@ -91,19 +91,21 @@ internal class EmbeddedValuesDefinitionTest {
         bc.reserve(
             def.calculateTransportByteLengthWithKey(5u, value, cache)
         )
-        bc.bytes!!.size shouldBe 7
+        expect(7) { bc.bytes!!.size }
         def.writeTransportBytesWithKey(5u, value, cache, bc::write, null)
 
-        bc.bytes!!.toHex() shouldBe "2a050a036a7572"
+        expect("2a050a036a7572") { bc.bytes!!.toHex() }
 
         val key = ProtoBuf.readKey(bc::read)
-        key.wireType shouldBe LENGTH_DELIMITED
-        key.tag shouldBe 5u
+        expect(LENGTH_DELIMITED) { key.wireType }
+        expect(5u) { key.tag }
 
-        def.readTransportBytes(
-            ProtoBuf.getLength(LENGTH_DELIMITED, bc::read),
-            bc::read
-        ) shouldBe value
+        expect(value) {
+            def.readTransportBytes(
+                ProtoBuf.getLength(LENGTH_DELIMITED, bc::read),
+                bc::read
+            )
+        }
     }
 
     @Test
@@ -121,13 +123,18 @@ internal class EmbeddedValuesDefinitionTest {
     @Test
     fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, EmbeddedValuesDefinition.Model, { DefinitionsContext() })
-        checkYamlConversion(this.defMaxDefined, EmbeddedValuesDefinition.Model, { DefinitionsContext() }) shouldBe """
-        required: false
-        final: true
-        dataModel: MarykModel
-        default:
-          string: default
 
-        """.trimIndent()
+        expect(
+            """
+            required: false
+            final: true
+            dataModel: MarykModel
+            default:
+              string: default
+
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.defMaxDefined, EmbeddedValuesDefinition.Model, { DefinitionsContext() })
+        }
     }
 }

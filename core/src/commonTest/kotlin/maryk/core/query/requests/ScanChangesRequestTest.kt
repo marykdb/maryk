@@ -8,8 +8,8 @@ import maryk.core.query.RequestContext
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.scanChangesMaxRequest
 import maryk.test.requests.scanChangesRequest
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class ScanChangesRequestTest {
     private val context = RequestContext(mapOf(
@@ -30,28 +30,36 @@ class ScanChangesRequestTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(scanChangesRequest, ScanChangesRequest, { this.context }) shouldBe """
-        from: SimpleMarykModel
-        filterSoftDeleted: true
-        limit: 100
-        fromVersion: 0
-        maxVersions: 1
+        expect(
+            """
+            from: SimpleMarykModel
+            filterSoftDeleted: true
+            limit: 100
+            fromVersion: 0
+            maxVersions: 1
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(scanChangesRequest, ScanChangesRequest, { this.context })
+        }
 
-        checkYamlConversion(scanChangesMaxRequest, ScanChangesRequest, { this.context }) shouldBe """
-        from: SimpleMarykModel
-        startKey: Zk6m4QpZQegUg5s13JVYlQ
-        select:
-        - value
-        where: !Exists value
-        toVersion: 2345
-        filterSoftDeleted: true
-        order: !Desc value
-        limit: 300
-        fromVersion: 1234
-        maxVersions: 10
+        expect(
+            """
+            from: SimpleMarykModel
+            startKey: Zk6m4QpZQegUg5s13JVYlQ
+            select:
+            - value
+            where: !Exists value
+            toVersion: 2345
+            filterSoftDeleted: true
+            order: !Desc value
+            limit: 300
+            fromVersion: 1234
+            maxVersions: 10
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(scanChangesMaxRequest, ScanChangesRequest, { this.context })
+        }
     }
 }

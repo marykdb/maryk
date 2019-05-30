@@ -10,8 +10,8 @@ import maryk.core.values.Values
 import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataRecordValue
 import maryk.test.models.ComplexModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.assertTrue
 
 class FilterWithFetchRequestComplexKtTest {
     private val value1 = ComplexModel.createDataRecord(
@@ -40,25 +40,31 @@ class FilterWithFetchRequestComplexKtTest {
 
     @Test
     fun doExistsFilter() {
-        filterMatches(
-            Exists(ComplexModel { mapStringString.refAt("k1") }),
-            value1,
-            null
-        ) shouldBe true
+        assertTrue {
+            filterMatches(
+                Exists(ComplexModel { mapStringString.refAt("k1") }),
+                value1,
+                null
+            )
+        }
     }
 
     @Test
     fun doEqualsFilter() {
-        filterMatches(
-            Equals(ComplexModel { mapStringString.refAt("k1") } with "v1"),
-            value1,
-            null
-        ) shouldBe true
+        assertTrue {
+            filterMatches(
+                Equals(ComplexModel { mapStringString.refAt("k1") } with "v1"),
+                value1,
+                null
+            )
+        }
 
-        filterMatches(
-            Equals(ComplexModel { mapStringString.refToAny() } with "v2"),
-            value1,
-            null
-        ) shouldBe true
+        assertTrue {
+            filterMatches(
+                Equals(ComplexModel { mapStringString.refToAny() } with "v2"),
+                value1,
+                null
+            )
+        }
     }
 }

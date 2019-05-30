@@ -3,10 +3,10 @@ package maryk.yaml
 import maryk.json.IsJsonLikeReader
 import maryk.json.JsonToken.FieldName
 import maryk.json.ValueType
-import maryk.test.shouldBe
-import maryk.test.shouldBeOfType
-import maryk.test.shouldThrow
+import maryk.test.assertType
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
+import kotlin.test.expect
 
 class YamlReaderTest {
     @Test
@@ -63,7 +63,7 @@ class YamlReaderTest {
 
     private fun IsJsonLikeReader.assertCurrentFieldName(value: String) {
         this.currentToken.apply {
-            shouldBeOfType<FieldName>(this).value shouldBe value
+            expect(value) { assertType<FieldName>(this).value }
         }
     }
 
@@ -73,10 +73,10 @@ class YamlReaderTest {
             assertStartObject()
             assertFieldName("key")
             val a = assertInvalidYaml()
-            a.columnNumber shouldBe 1
-            a.lineNumber shouldBe 2
-            this.columnNumber shouldBe 1
-            this.lineNumber shouldBe 2
+            expect(1) { a.columnNumber }
+            expect(2) { a.lineNumber }
+            expect(1) { this.columnNumber }
+            expect(2) { this.lineNumber }
         }
     }
 
@@ -84,20 +84,20 @@ class YamlReaderTest {
     fun readPrefixTag() {
         val reader = createYamlReader("%TAG !prefix! !B\n---") as YamlReaderImpl
         reader.nextToken()
-        reader.resolveTag("!prefix!", "ar") shouldBe TestType.Bar
+        expect(TestType.Bar) { reader.resolveTag("!prefix!", "ar") }
     }
 
     @Test
     fun failOnInvalidURITag() {
         val reader = createYamlReader("") as YamlReaderImpl
-        shouldThrow<InvalidYamlContent> {
+        assertFailsWith<InvalidYamlContent> {
             reader.resolveTag("!", "<wrong>")
         }
     }
 
     @Test
     fun failOnUnknownURITag() {
-        shouldThrow<InvalidYamlContent> {
+        assertFailsWith<InvalidYamlContent> {
             (createYamlReader("") as YamlReaderImpl)
                 .resolveTag("!", "<tag:unknown.org,2002>")
         }
@@ -105,7 +105,7 @@ class YamlReaderTest {
 
     @Test
     fun failOnUnknownTag() {
-        shouldThrow<InvalidYamlContent> {
+        assertFailsWith<InvalidYamlContent> {
             (createYamlReader("") as YamlReaderImpl)
                 .resolveTag("!", "unknown")
         }
@@ -113,7 +113,7 @@ class YamlReaderTest {
 
     @Test
     fun failOnUnknownDefaultTag() {
-        shouldThrow<InvalidYamlContent> {
+        assertFailsWith<InvalidYamlContent> {
             (createYamlReader("") as YamlReaderImpl)
                 .resolveTag("!!", "unknown")
         }
@@ -121,7 +121,7 @@ class YamlReaderTest {
 
     @Test
     fun failOnUnknownNamedTag() {
-        shouldThrow<InvalidYamlContent> {
+        assertFailsWith<InvalidYamlContent> {
             (createYamlReader("%TAG !known! tag:unknown.org,2002\n---") as YamlReaderImpl).let {
                 it.nextToken()
                 it.resolveTag("!known!", "unknown")

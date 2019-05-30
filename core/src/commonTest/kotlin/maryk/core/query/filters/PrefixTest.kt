@@ -7,8 +7,8 @@ import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.core.query.pairs.with
 import maryk.test.models.TestMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class PrefixTest {
     private val prefix = Prefix(
@@ -34,9 +34,13 @@ class PrefixTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(this.prefix, Prefix, { this.context }) shouldBe """
-        string: te
+        expect(
+            """
+            string: te
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.prefix, Prefix, { this.context })
+        }
     }
 }

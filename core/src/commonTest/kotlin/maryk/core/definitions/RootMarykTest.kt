@@ -10,8 +10,8 @@ import maryk.test.models.Option
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.addRequest
 import maryk.test.requests.getMaxRequest
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class RootMarykTest {
     private val rootMaryk = RootMaryk(
@@ -46,49 +46,53 @@ class RootMarykTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(this.rootMaryk, RootMaryk, { DefinitionsContext() }, ::compareRootMaryk, true) shouldBe """
-        - !Define
-          Option: !EnumDefinition
-            cases:
-              1: V1
-              2: [V2, VERSION2]
-              3: [V3, VERSION3]
-            reservedIndices: [4]
-            reservedNames: [V4]
-          SimpleMarykModel: !RootModel
-            key: !UUID
-            ? 1: value
-            : !String
-              required: true
-              final: false
-              unique: false
-              default: haha
-              regEx: ha.*
-        - !Request
-          - !Add
-            to: SimpleMarykModel
-            objects:
-            - value: haha1
-            - value: haha2
-          - !Get
-            from: SimpleMarykModel
-            keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
-            select:
-            - value
-            where: !Exists value
-            toVersion: 333
-            filterSoftDeleted: true
+        expect(
+            """
+            - !Define
+              Option: !EnumDefinition
+                cases:
+                  1: V1
+                  2: [V2, VERSION2]
+                  3: [V3, VERSION3]
+                reservedIndices: [4]
+                reservedNames: [V4]
+              SimpleMarykModel: !RootModel
+                key: !UUID
+                ? 1: value
+                : !String
+                  required: true
+                  final: false
+                  unique: false
+                  default: haha
+                  regEx: ha.*
+            - !Request
+              - !Add
+                to: SimpleMarykModel
+                objects:
+                - value: haha1
+                - value: haha2
+              - !Get
+                from: SimpleMarykModel
+                keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
+                select:
+                - value
+                where: !Exists value
+                toVersion: 333
+                filterSoftDeleted: true
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.rootMaryk, RootMaryk, { DefinitionsContext() }, ::compareRootMaryk, true)
+        }
     }
 
     private fun compareRootMaryk(converted: RootMaryk, original: RootMaryk) {
-        converted.operations.size shouldBe original.operations.size
+        expect(original.operations.size) { converted.operations.size }
 
         for ((index, item) in original.operations.withIndex()) {
             val convertedItem = converted.operations[index]
 
-            item.type shouldBe convertedItem.type
+            expect(convertedItem.type) { item.type }
 
             when (item.type) {
                 Operation.Define -> {
@@ -98,7 +102,7 @@ class RootMarykTest {
                     val originalRequests = item.value as Requests
                     val convertedRequests = convertedItem.value as Requests
 
-                    originalRequests.requests.size shouldBe convertedRequests.requests.size
+                    expect(convertedRequests.requests.size) { originalRequests.requests.size }
                     // Skip testing here since model instances are different
                     // Internal conversion is tested in RequestsTest
                 }

@@ -6,8 +6,8 @@ import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.test.models.TestMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class ExistsTest {
     private val exists = Exists(
@@ -38,15 +38,23 @@ class ExistsTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(this.exists, Exists, { this.context }) shouldBe """
-        string
-        """.trimIndent()
+        expect(
+            """
+            string
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.exists, Exists, { this.context })
+        }
 
-        checkYamlConversion(this.existsMultiple, Exists, { this.context }) shouldBe """
-        - string
-        - int
-        - dateTime
+        expect(
+            """
+            - string
+            - int
+            - dateTime
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.existsMultiple, Exists, { this.context })
+        }
     }
 }

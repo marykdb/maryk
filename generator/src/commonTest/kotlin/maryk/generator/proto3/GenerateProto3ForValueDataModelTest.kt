@@ -3,8 +3,8 @@ package maryk.generator.proto3
 import maryk.generator.kotlin.GenerationContext
 import maryk.test.models.MarykTypeEnum
 import maryk.test.models.ValueMarykObject
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 val generatedProto3ForValueDataModel = """
 message ValueMarykObject {
@@ -26,6 +26,6 @@ class GenerateProto3ForValueDataModelTest {
             output += it
         }
 
-        output shouldBe generatedProto3ForValueDataModel
+        assertEquals(generatedProto3ForValueDataModel, output)
     }
 }

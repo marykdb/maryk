@@ -10,8 +10,8 @@ import maryk.core.query.RequestContext
 import maryk.test.ByteCollector
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.TestMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class ContextualReferenceDefinitionTest {
     private val refsToTest = arrayOf<Key<TestMarykModel>>(
@@ -42,9 +42,9 @@ class ContextualReferenceDefinitionTest {
 
     @Test
     fun convertString() {
-        for (it in refsToTest) {
-            val b = def.asString(it, this.context)
-            def.fromString(b, this.context) shouldBe it
+        for (key in refsToTest) {
+            val b = def.asString(key, this.context)
+            expect(key) { def.fromString(b, this.context) }
         }
     }
 }

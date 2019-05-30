@@ -8,8 +8,8 @@ import maryk.core.query.RequestContext
 import maryk.core.query.pairs.with
 import maryk.lib.time.DateTime
 import maryk.test.models.TestMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class LessThanTest {
     private val lessThan = LessThan(
@@ -36,10 +36,14 @@ class LessThanTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(this.lessThan, LessThan, { this.context }) shouldBe """
-        int: 2
-        dateTime: '2018-01-01T13:22:34'
+        expect(
+            """
+            int: 2
+            dateTime: '2018-01-01T13:22:34'
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.lessThan, LessThan, { this.context })
+        }
     }
 }

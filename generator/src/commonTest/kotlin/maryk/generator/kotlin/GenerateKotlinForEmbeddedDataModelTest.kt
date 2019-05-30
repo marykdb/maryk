@@ -1,8 +1,8 @@
 package maryk.generator.kotlin
 
 import maryk.test.models.EmbeddedModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 val generatedKotlinForEmbeddedDataModel = """
 package maryk.test.models
@@ -43,6 +43,6 @@ class GenerateKotlinForEmbeddedDataModelTest {
             output += it
         }
 
-        output shouldBe generatedKotlinForEmbeddedDataModel
+        assertEquals(generatedKotlinForEmbeddedDataModel, output)
     }
 }

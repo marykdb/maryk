@@ -7,14 +7,14 @@ import maryk.core.values.ObjectValues
 import maryk.core.yaml.MarykYamlReaders
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
-import maryk.test.shouldBe
 import maryk.yaml.YamlWriter
+import kotlin.test.assertEquals
 
 fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : IsPropertyContext> checkJsonConversion(
     value: T,
     dataModel: AbstractObjectDataModel<T, P, CXI, CX>,
     context: (() -> CXI)? = null,
-    checker: (T, T) -> Unit = { converted, original -> converted shouldBe original },
+    checker: (T, T) -> Unit = { converted, original -> assertEquals(original, converted) },
     resetContextBeforeRead: Boolean = false
 ): String {
     var output = ""
@@ -44,7 +44,7 @@ fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : Is
     value: T,
     dataModel: AbstractObjectDataModel<T, P, CXI, CX>,
     context: (() -> CXI)? = null,
-    checker: (T, T) -> Unit = { converted, original -> converted shouldBe original },
+    checker: (T, T) -> Unit = { converted, original -> assertEquals(original, converted) },
     resetContextBeforeRead: Boolean = false
 ): String {
     var output = ""
@@ -80,7 +80,7 @@ fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : Is
     value: ObjectValues<T, P>,
     dataModel: AbstractObjectDataModel<T, P, CXI, CX>,
     context: (() -> CXI)? = null,
-    checker: (ObjectValues<T, P>, ObjectValues<T, P>) -> Unit = { converted, original -> converted shouldBe original },
+    checker: (ObjectValues<T, P>, ObjectValues<T, P>) -> Unit = { converted, original -> assertEquals(original, converted) },
     resetContextBeforeRead: Boolean = false
 ): String {
     var output = ""
@@ -117,7 +117,7 @@ fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : Is
     value: ObjectValues<T, P>,
     dataModel: AbstractObjectDataModel<T, P, CXI, CX>,
     context: (() -> CXI)? = null,
-    checker: (ObjectValues<T, P>, ObjectValues<T, P>) -> Unit = { converted, original -> converted shouldBe original },
+    checker: (ObjectValues<T, P>, ObjectValues<T, P>) -> Unit = { converted, original -> assertEquals(original, converted) },
     resetContextBeforeRead: Boolean = false
 ): String {
     var output = ""

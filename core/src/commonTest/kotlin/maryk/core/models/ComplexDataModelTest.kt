@@ -9,9 +9,10 @@ import maryk.test.ByteCollector
 import maryk.test.models.ComplexModel
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.MarykTypeEnum.T3
-import maryk.test.shouldBe
 import maryk.yaml.YamlWriter
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.expect
 
 val testComplexMap = ComplexModel(
     multi = TypedValue(T3, EmbeddedMarykModel("u3", EmbeddedMarykModel("ue3"))),
@@ -30,37 +31,40 @@ internal class ComplexDataModelMapTest {
 
         ComplexModel.writeJson(testComplexMap, writer)
 
-        output shouldBe """
-        {
-          "multi": ["T3(3)", {
-            "value": "u3",
-            "model": {
-              "value": "ue3"
+        assertEquals(
+            """
+            {
+              "multi": ["T3(3)", {
+                "value": "u3",
+                "model": {
+                  "value": "ue3"
+                }
+              }],
+              "mapStringString": {
+                "v1": "a",
+                "v2": "b"
+              },
+              "mapIntObject": {
+                "1": {
+                  "value": "t1"
+                },
+                "2": {
+                  "value": "t2"
+                }
+              },
+              "mapIntMulti": {
+                "2": ["T3(3)", {
+                  "value": "m3"
+                }]
+              }
             }
-          }],
-          "mapStringString": {
-            "v1": "a",
-            "v2": "b"
-          },
-          "mapIntObject": {
-            "1": {
-              "value": "t1"
-            },
-            "2": {
-              "value": "t2"
-            }
-          },
-          "mapIntMulti": {
-            "2": ["T3(3)", {
-              "value": "m3"
-            }]
-          }
-        }
-        """.trimIndent()
+            """.trimIndent(),
+            output
+        )
 
         var index = 0
         val reader = { JsonReader(reader = { output[index++] }) }
-        ComplexModel.readJson(reader = reader()) shouldBe testComplexMap
+        expect(testComplexMap) { ComplexModel.readJson(reader = reader()) }
     }
 
     @Test
@@ -72,24 +76,27 @@ internal class ComplexDataModelMapTest {
 
         ComplexModel.writeJson(testComplexMap, writer)
 
-        output shouldBe """
-        multi: !T3(3)
-          value: u3
-          model:
-            value: ue3
-        mapStringString:
-          v1: a
-          v2: b
-        mapIntObject:
-          1:
-            value: t1
-          2:
-            value: t2
-        mapIntMulti:
-          2: !T3(3)
-            value: m3
+        assertEquals(
+            """
+            multi: !T3(3)
+              value: u3
+              model:
+                value: ue3
+            mapStringString:
+              v1: a
+              v2: b
+            mapIntObject:
+              1:
+                value: t1
+              2:
+                value: t2
+            mapIntMulti:
+              2: !T3(3)
+                value: m3
 
-        """.trimIndent()
+            """.trimIndent(),
+            output
+        )
     }
 
     @Test
@@ -103,8 +110,10 @@ internal class ComplexDataModelMapTest {
 
         ComplexModel.writeProtoBuf(testComplexMap, cache, bc::write)
 
-        bc.bytes!!.toHex() shouldBe "0a0d1a0b0a02753312050a0375653312070a02763112016112070a0276321201621a08080112040a0274311a08080212040a027432220a080212061a040a026d33"
+        expect("0a0d1a0b0a02753312050a0375653312070a02763112016112070a0276321201621a08080112040a0274311a08080212040a027432220a080212061a040a026d33") {
+            bc.bytes!!.toHex()
+        }
 
-        ComplexModel.readProtoBuf(bc.size, bc::read) shouldBe testComplexMap
+        expect(testComplexMap) { ComplexModel.readProtoBuf(bc.size, bc::read) }
     }
 }

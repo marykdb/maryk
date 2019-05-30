@@ -7,8 +7,8 @@ import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.changeRequest
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class ChangeRequestTest {
     private val context = RequestContext(mapOf(
@@ -17,8 +17,8 @@ class ChangeRequestTest {
 
     @Test
     fun testChangeRequest() {
-        changeRequest.objects.size shouldBe 2
-        changeRequest.dataModel shouldBe SimpleMarykModel
+        expect(2) { changeRequest.objects.size }
+        expect(SimpleMarykModel) { changeRequest.dataModel }
     }
 
     @Test
@@ -33,14 +33,18 @@ class ChangeRequestTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(changeRequest, ChangeRequest, { this.context }) shouldBe """
-        to: SimpleMarykModel
-        objects:
-        - key: MYc6LBYcT38nWxoE1ahNxA
-          changes:
-        - key: lneV6ioyQL0vnbkLqwVw+A
-          changes:
+        expect(
+            """
+            to: SimpleMarykModel
+            objects:
+            - key: MYc6LBYcT38nWxoE1ahNxA
+              changes:
+            - key: lneV6ioyQL0vnbkLqwVw+A
+              changes:
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(changeRequest, ChangeRequest, { this.context })
+        }
     }
 }

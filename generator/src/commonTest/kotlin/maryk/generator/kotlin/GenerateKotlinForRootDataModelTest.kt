@@ -5,8 +5,8 @@ import maryk.test.models.MarykTypeEnum
 import maryk.test.models.Option
 import maryk.test.models.SimpleMarykModel
 import maryk.test.models.SimpleMarykTypeEnum
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 val generatedKotlinForSimpleDataModel = """
 package maryk.test.models
@@ -479,7 +479,7 @@ class GenerateKotlinForRootDataModelTest {
             output += it
         }
 
-        output shouldBe generatedKotlinForSimpleDataModel
+        assertEquals(generatedKotlinForSimpleDataModel, output)
     }
 
     @Test
@@ -494,6 +494,6 @@ class GenerateKotlinForRootDataModelTest {
             output += it
         }
 
-        output shouldBe generatedKotlinForCompleteDataModel
+        assertEquals(generatedKotlinForCompleteDataModel, output)
     }
 }

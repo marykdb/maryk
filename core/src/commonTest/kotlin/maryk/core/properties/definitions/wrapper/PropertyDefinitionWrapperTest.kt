@@ -3,16 +3,16 @@ package maryk.core.properties.definitions.wrapper
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.properties.definitions.StringDefinition
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 fun comparePropertyDefinitionWrapper(
     converted: IsDefinitionWrapper<*, *, *, *>,
     original: IsDefinitionWrapper<*, *, *, *>
 ) {
-    converted.index shouldBe original.index
-    converted.name shouldBe original.name
+    assertEquals(original.index, converted.index)
+    assertEquals(original.name, converted.name)
     // Make sure JS tests correct
     assertTrue("${converted.name} should match with original ${original.name}. $converted to $original") {
         original.definition == converted.definition

@@ -5,8 +5,8 @@ import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.test.ByteCollector
 import maryk.test.models.SimpleMarykObject
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class ContextualEmbeddedObjectDefinitionTest {
     private val subModelsToTest = listOf(
@@ -34,9 +34,9 @@ class ContextualEmbeddedObjectDefinitionTest {
 
     @Test
     fun convertString() {
-        for (it in subModelsToTest) {
-            val b = def.asString(it, this.context)
-            def.fromString(b, this.context) shouldBe it
+        for (subModel in subModelsToTest) {
+            val b = def.asString(subModel, this.context)
+            expect(subModel) { def.fromString(b, this.context) }
         }
     }
 }

@@ -2,8 +2,8 @@ package maryk.core.properties.types.numeric
 
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 internal class UInt16Test {
     private val uInt16values = arrayOf(UInt16.MIN_VALUE, UInt16.MAX_VALUE, 839.toUShort(), 12312.toUShort())
@@ -15,11 +15,11 @@ internal class UInt16Test {
 
     @Test
     fun testStringConversion() {
-        UInt16.MIN_VALUE.toString() shouldBe "0"
-        UInt16.MAX_VALUE.toString() shouldBe "65535"
+        expect("0") { UInt16.MIN_VALUE.toString() }
+        expect("65535") { UInt16.MAX_VALUE.toString() }
 
-        for (it in uInt16values) {
-            UInt16.ofString(it.toString()) shouldBe it
+        for (uShort in uInt16values) {
+            expect(uShort) { UInt16.ofString(uShort.toString()) }
         }
     }
 
@@ -35,9 +35,9 @@ internal class UInt16Test {
             bc.reserve(UInt16.size)
             UInt16.writeStorageBytes(value, bc::write)
 
-            bc.bytes?.toHex() shouldBe hexString
+            expect(hexString) { bc.bytes?.toHex() }
 
-            UInt16.fromStorageByteReader(bc.size, bc::read) shouldBe value
+            expect(value) { UInt16.fromStorageByteReader(bc.size, bc::read) }
             bc.reset()
         }
     }
@@ -54,9 +54,9 @@ internal class UInt16Test {
             bc.reserve(UInt16.calculateTransportByteLength(value))
             UInt16.writeTransportBytes(value, bc::write)
 
-            bc.bytes?.toHex() shouldBe hexString
+            expect(hexString) { bc.bytes?.toHex() }
 
-            UInt16.readTransportBytes(bc::read) shouldBe value
+            expect(value) { UInt16.readTransportBytes(bc::read) }
             bc.reset()
         }
     }

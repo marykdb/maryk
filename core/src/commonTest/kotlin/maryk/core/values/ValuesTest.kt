@@ -5,8 +5,8 @@ import maryk.lib.time.Time
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.Option.V2
 import maryk.test.models.TestMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class ValuesTest {
     @Test
@@ -26,9 +26,9 @@ class ValuesTest {
             )
         }
 
-        copy.size shouldBe 6
-        copy { string } shouldBe "bye world"
-        copy { enum } shouldBe V2
+        expect(6) { copy.size }
+        expect("bye world") { copy { string } }
+        expect(V2) { copy { enum } }
     }
 
     @Test
@@ -54,13 +54,13 @@ class ValuesTest {
             )
         )
 
-        values[TestMarykModel { string::ref }] shouldBe "hello world"
-        values[TestMarykModel { double::ref }] shouldBe 2.3
-        values[TestMarykModel { dateTime::ref }] shouldBe DateTime(2018, 7, 18)
-        values[TestMarykModel { listOfString refAt 2u }] shouldBe "v3"
-        values[TestMarykModel { listOfString.refToAny() }] shouldBe listOf("v1", "v2", "v3")
-        values[TestMarykModel { map refAt Time(12, 23, 34) }] shouldBe "twelve"
-        values[TestMarykModel { embeddedValues { value::ref } }] shouldBe "test"
-        values[TestMarykModel { embeddedValues { model { value::ref } } }] shouldBe "another test"
+        expect("hello world") { values[TestMarykModel { string::ref }] }
+        expect(2.3) { values[TestMarykModel { double::ref }] }
+        expect(DateTime(2018, 7, 18)) { values[TestMarykModel { dateTime::ref }] }
+        expect("v3") { values[TestMarykModel { listOfString refAt 2u }] }
+        expect(listOf("v1", "v2", "v3")) { values[TestMarykModel { listOfString.refToAny() }] }
+        expect("twelve") { values[TestMarykModel { map refAt Time(12, 23, 34) }] }
+        expect("test") { values[TestMarykModel { embeddedValues { value::ref } }] }
+        expect("another test") { values[TestMarykModel { embeddedValues { model { value::ref } } }] }
     }
 }

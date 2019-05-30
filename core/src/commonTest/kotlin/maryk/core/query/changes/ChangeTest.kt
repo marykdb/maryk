@@ -4,11 +4,12 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
+import maryk.core.properties.references.ValueWithFlexBytesPropertyReference
 import maryk.core.query.RequestContext
 import maryk.core.query.pairs.with
 import maryk.test.models.TestMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class ChangeTest {
     private val valueChange = Change(
@@ -25,8 +26,10 @@ class ChangeTest {
 
     @Test
     fun testValueChange() {
-        valueChange.referenceValuePairs[0].reference shouldBe TestMarykModel { string::ref }
-        valueChange.referenceValuePairs[0].value shouldBe "test"
+        expect(TestMarykModel { string::ref }) {
+            valueChange.referenceValuePairs[0].reference as ValueWithFlexBytesPropertyReference<*, *, *, *>
+        }
+        expect("test") { valueChange.referenceValuePairs[0].value }
     }
 
     @Test
@@ -41,10 +44,14 @@ class ChangeTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(this.valueChange, Change, { this.context }) shouldBe """
-        string: test
-        int: 5
+        expect(
+            """
+            string: test
+            int: 5
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.valueChange, Change, { this.context })
+        }
     }
 }

@@ -1,8 +1,8 @@
 package maryk.core.extensions.bytes
 
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 internal class BooleanKtTest {
     private val booleansToTest = booleanArrayOf(
@@ -13,11 +13,11 @@ internal class BooleanKtTest {
     @Test
     fun testStreamingConversion() {
         val bc = ByteCollector()
-        booleansToTest.forEach {
+        booleansToTest.forEach { boolean ->
             bc.reserve(1)
-            it.writeBytes(bc::write)
+            boolean.writeBytes(bc::write)
 
-            initBoolean(bc::read) shouldBe it
+            expect(boolean) { initBoolean(bc::read) }
             bc.reset()
         }
     }

@@ -1,5 +1,7 @@
 package maryk.core.models
 
+import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
@@ -13,15 +15,17 @@ import maryk.lib.time.Date
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.ByteCollector
+import maryk.test.assertType
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.Option
 import maryk.test.models.SimpleMarykTypeEnum.S3
 import maryk.test.models.TestMarykModel
 import maryk.test.models.TestValueObject
-import maryk.test.shouldBe
-import maryk.test.shouldThrow
 import maryk.yaml.YamlWriter
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.expect
 
 val testMarykModelObject = TestMarykModel(
     string = "haas",
@@ -94,17 +98,19 @@ private const val PRETTY_JSON_WITH_SKIP = """{
 internal class DataModelTest {
     @Test
     fun constructByMap() {
-        TestMarykModel.values {
-            mapNonNulls(
-                string with testMarykModelObject { string },
-                int with testMarykModelObject { int },
-                uint with testMarykModelObject { uint },
-                double with testMarykModelObject { double },
-                dateTime with testMarykModelObject { dateTime },
-                bool with testMarykModelObject { bool },
-                enum with testMarykModelObject { enum }
-            )
-        } shouldBe testMarykModelObject
+        expect(testMarykModelObject) {
+            TestMarykModel.values {
+                mapNonNulls(
+                    string with testMarykModelObject { string },
+                    int with testMarykModelObject { int },
+                    uint with testMarykModelObject { uint },
+                    double with testMarykModelObject { double },
+                    dateTime with testMarykModelObject { dateTime },
+                    bool with testMarykModelObject { bool },
+                    enum with testMarykModelObject { enum }
+                )
+            }
+        }
     }
 
     @Test
@@ -114,7 +120,7 @@ internal class DataModelTest {
 
     @Test
     fun failValidationWithIncorrectValuesInDataObject() {
-        shouldThrow<ValidationUmbrellaException> {
+        assertFailsWith<ValidationUmbrellaException> {
             TestMarykModel.validate(
                 TestMarykModel(
                     string = "haas",
@@ -130,7 +136,7 @@ internal class DataModelTest {
 
     @Test
     fun failValidationWithIncorrectValuesInMap() {
-        val e = shouldThrow<ValidationUmbrellaException> {
+        val e = assertFailsWith<ValidationUmbrellaException> {
             TestMarykModel.validate(
                 TestMarykModel.values {
                     mapNonNulls(
@@ -141,28 +147,48 @@ internal class DataModelTest {
             )
         }
 
-        e.exceptions.size shouldBe 2
+        expect(2) { e.exceptions.size }
 
-        (e.exceptions[0] is InvalidValueException) shouldBe true
-        (e.exceptions[1] is OutOfRangeException) shouldBe true
+        assertType<InvalidValueException>(e.exceptions[0])
+        assertType<OutOfRangeException>(e.exceptions[1])
     }
 
     @Test
     fun getPropertyDefinitionByName() {
-        TestMarykModel.properties["string"] shouldBe TestMarykModel.Properties.string
-        TestMarykModel.properties["int"] shouldBe TestMarykModel.Properties.int
-        TestMarykModel.properties["dateTime"] shouldBe TestMarykModel.Properties.dateTime
-        TestMarykModel.properties["bool"] shouldBe TestMarykModel.Properties.bool
+        expect(TestMarykModel.Properties.string) {
+            TestMarykModel.properties["string"] as FlexBytesDefinitionWrapper<*, *, *, *, *>
+        }
+        expect(TestMarykModel.Properties.int) {
+            TestMarykModel.properties["int"] as FixedBytesDefinitionWrapper<*, *, *, *, *>
+        }
+        expect(TestMarykModel.Properties.dateTime) {
+            TestMarykModel.properties["dateTime"] as FixedBytesDefinitionWrapper<*, *, *, *, *>
+        }
+        expect(TestMarykModel.Properties.bool) {
+            TestMarykModel.properties["bool"] as FixedBytesDefinitionWrapper<*, *, *, *, *>
+        }
     }
 
     @Test
     fun getPropertyDefinitionByIndex() {
-        TestMarykModel.properties[1u] shouldBe TestMarykModel.Properties.string
-        TestMarykModel.properties[2u] shouldBe TestMarykModel.Properties.int
-        TestMarykModel.properties[3u] shouldBe TestMarykModel.Properties.uint
-        TestMarykModel.properties[4u] shouldBe TestMarykModel.Properties.double
-        TestMarykModel.properties[5u] shouldBe TestMarykModel.Properties.dateTime
-        TestMarykModel.properties[6u] shouldBe TestMarykModel.Properties.bool
+        expect(TestMarykModel.Properties.string) {
+            TestMarykModel.properties[1u] as FlexBytesDefinitionWrapper<*, *, *, *, *>
+        }
+        expect(TestMarykModel.Properties.int) {
+            TestMarykModel.properties[2u] as FixedBytesDefinitionWrapper<*, *, *, *, *>
+        }
+        expect(TestMarykModel.Properties.uint) {
+            TestMarykModel.properties[3u] as FixedBytesDefinitionWrapper<*, *, *, *, *>
+        }
+        expect(TestMarykModel.Properties.double) {
+            TestMarykModel.properties[4u] as FixedBytesDefinitionWrapper<*, *, *, *, *>
+        }
+        expect(TestMarykModel.Properties.dateTime) {
+            TestMarykModel.properties[5u] as FixedBytesDefinitionWrapper<*, *, *, *, *>
+        }
+        expect(TestMarykModel.Properties.bool) {
+            TestMarykModel.properties[6u] as FixedBytesDefinitionWrapper<*, *, *, *, *>
+        }
     }
 
     @Test
@@ -174,7 +200,7 @@ internal class DataModelTest {
 
         TestMarykModel.writeJson(testExtendedMarykModelObject, writer)
 
-        output shouldBe JSON
+        assertEquals(JSON, output)
     }
 
     @Test
@@ -186,35 +212,38 @@ internal class DataModelTest {
 
         TestMarykModel.writeJson(testExtendedMarykModelObject, writer)
 
-        output shouldBe """
-        {
-          "string": "hay",
-          "int": 4,
-          "uint": 32,
-          "double": "3.555",
-          "dateTime": "2017-12-04T12:13",
-          "bool": true,
-          "enum": "V1(1)",
-          "list": [34, 2352, 3423, 766],
-          "set": ["2017-12-05", "2016-03-02", "1981-12-05"],
-          "map": {
-            "12:55": "yes",
-            "10:03": "ahum"
-          },
-          "valueObject": {
-            "int": 6,
-            "dateTime": "2017-04-01T12:55",
-            "bool": true
-          },
-          "embeddedValues": {
-            "value": "test"
-          },
-          "multi": ["S3(3)", {
-            "value": "subInMulti!"
-          }],
-          "listOfString": ["test1", "another test", "🤗"]
-        }
-        """.trimIndent()
+        assertEquals(
+            """
+            {
+              "string": "hay",
+              "int": 4,
+              "uint": 32,
+              "double": "3.555",
+              "dateTime": "2017-12-04T12:13",
+              "bool": true,
+              "enum": "V1(1)",
+              "list": [34, 2352, 3423, 766],
+              "set": ["2017-12-05", "2016-03-02", "1981-12-05"],
+              "map": {
+                "12:55": "yes",
+                "10:03": "ahum"
+              },
+              "valueObject": {
+                "int": 6,
+                "dateTime": "2017-04-01T12:55",
+                "bool": true
+              },
+              "embeddedValues": {
+                "value": "test"
+              },
+              "multi": ["S3(3)", {
+                "value": "subInMulti!"
+              }],
+              "listOfString": ["test1", "another test", "🤗"]
+            }
+            """.trimIndent(),
+            output
+        );
     }
 
     @Test
@@ -226,30 +255,33 @@ internal class DataModelTest {
 
         TestMarykModel.writeJson(testExtendedMarykModelObject, writer)
 
-        output shouldBe """
-        string: hay
-        int: 4
-        uint: 32
-        double: 3.555
-        dateTime: '2017-12-04T12:13'
-        bool: true
-        enum: V1(1)
-        list: [34, 2352, 3423, 766]
-        set: [2017-12-05, 2016-03-02, 1981-12-05]
-        map:
-          12:55: yes
-          10:03: ahum
-        valueObject:
-          int: 6
-          dateTime: '2017-04-01T12:55'
-          bool: true
-        embeddedValues:
-          value: test
-        multi: !S3(3)
-          value: subInMulti!
-        listOfString: [test1, another test, 🤗]
+        assertEquals(
+            """
+            string: hay
+            int: 4
+            uint: 32
+            double: 3.555
+            dateTime: '2017-12-04T12:13'
+            bool: true
+            enum: V1(1)
+            list: [34, 2352, 3423, 766]
+            set: [2017-12-05, 2016-03-02, 1981-12-05]
+            map:
+              12:55: yes
+              10:03: ahum
+            valueObject:
+              int: 6
+              dateTime: '2017-04-01T12:55'
+              bool: true
+            embeddedValues:
+              value: test
+            multi: !S3(3)
+              value: subInMulti!
+            listOfString: [test1, another test, 🤗]
 
-        """.trimIndent()
+            """.trimIndent(),
+            output
+        )
     }
 
     @Test
@@ -276,7 +308,7 @@ internal class DataModelTest {
 
         TestMarykModel.writeProtoBuf(map, cache, bc::write)
 
-        bc.bytes!!.toHex() shouldBe "0a036861791008182021713d0ad7a3700c4028ccf794d10530013803720701050105010501"
+        expect("0a036861791008182021713d0ad7a3700c4028ccf794d10530013803720701050105010501") { bc.bytes!!.toHex() }
     }
 
     @Test
@@ -290,9 +322,9 @@ internal class DataModelTest {
 
         TestMarykModel.writeProtoBuf(testExtendedMarykModelObject, cache, bc::write)
 
-        bc.bytes!!.toHex() shouldBe "0a036861791008182021713d0ad7a3700c4028ccf794d10530013801420744e024be35fc0b4a08c29102bc87028844520908a4eb021203796573520a08d49a0212046168756d5a0e800000060180000058dfa324010162060a04746573746a0f1a0d0a0b737562496e4d756c7469217a0574657374317a0c616e6f7468657220746573747a04f09fa497"
+        expect("0a036861791008182021713d0ad7a3700c4028ccf794d10530013801420744e024be35fc0b4a08c29102bc87028844520908a4eb021203796573520a08d49a0212046168756d5a0e800000060180000058dfa324010162060a04746573746a0f1a0d0a0b737562496e4d756c7469217a0574657374317a0c616e6f7468657220746573747a04f09fa497") { bc.bytes!!.toHex() }
 
-        TestMarykModel.readProtoBuf(bc.size, bc::read) shouldBe testExtendedMarykModelObject
+        expect(testExtendedMarykModelObject) { TestMarykModel.readProtoBuf(bc.size, bc::read) }
     }
 
     @Test
@@ -305,7 +337,7 @@ internal class DataModelTest {
             bytes[index++]
         })
 
-        map.size shouldBe 0
+        expect(0) { map.size }
     }
 
     @Test
@@ -322,7 +354,7 @@ internal class DataModelTest {
         ).forEach { jsonInput ->
             input = jsonInput
             index = 0
-            TestMarykModel.readJson(reader = jsonReader()) shouldBe testExtendedMarykModelObject
+            expect(testExtendedMarykModelObject) { TestMarykModel.readJson(reader = jsonReader()) }
         }
     }
 
@@ -339,7 +371,9 @@ internal class DataModelTest {
 
             var index = 0
             val reader = { JsonReader(reader = { output[index++] }) }
-            TestMarykModel.readJson(reader = reader()) shouldBe testExtendedMarykModelObject
+            expect(testExtendedMarykModelObject) {
+                TestMarykModel.readJson(reader = reader())
+            }
 
             output = ""
         }

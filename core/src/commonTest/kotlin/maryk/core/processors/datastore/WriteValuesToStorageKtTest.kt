@@ -15,9 +15,9 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.lib.extensions.toHex
-import maryk.test.shouldBe
-import maryk.test.shouldBeOfType
+import maryk.test.assertType
 import kotlin.test.Test
+import kotlin.test.expect
 
 class WriteValuesToStorageKtTest {
     @Test
@@ -25,27 +25,27 @@ class WriteValuesToStorageKtTest {
         var counter = 0
         testMaryk.writeToStorage { type: StorageTypeEnum<*>, bytes: ByteArray, definition: IsPropertyDefinition<*>, value ->
             valuesAsStorables[counter].let { (hex, compareValue) ->
-                bytes.toHex() shouldBe hex
-                value shouldBe compareValue
+                expect(hex) { bytes.toHex() }
+                expect(compareValue) { value }
             }
             when (type) {
                 Value -> {
-                    shouldBeOfType<IsSimpleValueDefinition<*, *>>(type.castDefinition(definition))
+                    assertType<IsSimpleValueDefinition<*, *>>(type.castDefinition(definition))
                 }
                 ListSize -> {
-                    shouldBeOfType<IsListDefinition<*, *>>(type.castDefinition(definition))
+                    assertType<IsListDefinition<*, *>>(type.castDefinition(definition))
                 }
                 SetSize -> {
-                    shouldBeOfType<IsSetDefinition<*, *>>(type.castDefinition(definition))
+                    assertType<IsSetDefinition<*, *>>(type.castDefinition(definition))
                 }
                 MapSize -> {
-                    shouldBeOfType<IsMapDefinition<*, *, *>>(type.castDefinition(definition))
+                    assertType<IsMapDefinition<*, *, *>>(type.castDefinition(definition))
                 }
                 TypeValue -> {
-                    shouldBeOfType<IsMultiTypeDefinition<*, *, *>>(type.castDefinition(definition))
+                    assertType<IsMultiTypeDefinition<*, *, *>>(type.castDefinition(definition))
                 }
                 Embed -> {
-                    shouldBeOfType<EmbeddedValuesDefinition<*, *>>(type.castDefinition(definition))
+                    assertType<EmbeddedValuesDefinition<*, *>>(type.castDefinition(definition))
                 }
                 ObjectDelete -> {
                     // Not in this write
@@ -53,7 +53,7 @@ class WriteValuesToStorageKtTest {
             }
             counter++
         }
-        counter shouldBe 26
+        expect(26) { counter }
     }
 
     @Test
@@ -61,11 +61,11 @@ class WriteValuesToStorageKtTest {
         var counter = 0
         complexValues.writeToStorage { _: StorageTypeEnum<*>, bytes: ByteArray, _: IsPropertyDefinition<*>, value ->
             complexValuesAsStorables[counter].let { (hex, compareValue) ->
-                bytes.toHex() shouldBe hex
-                value shouldBe compareValue
+                expect(hex) { bytes.toHex() }
+                expect(compareValue) { value }
             }
             counter++
         }
-        counter shouldBe 49
+        expect(49) { counter }
     }
 }

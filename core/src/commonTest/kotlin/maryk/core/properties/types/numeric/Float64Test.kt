@@ -1,8 +1,10 @@
 package maryk.core.properties.types.numeric
 
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
+import kotlin.test.expect
 
 internal class Float64Test {
     private val float64values = doubleArrayOf(
@@ -23,18 +25,18 @@ internal class Float64Test {
 
     @Test
     fun testStringConversion() {
-        for (it in float64values) {
-            Float64.ofString(it.toString()) shouldBe it
+        for (double in float64values) {
+            expect(double) { Float64.ofString(double.toString()) }
         }
     }
 
     @Test
     fun testStorageBytesConversion() {
         val bc = ByteCollector()
-        for (it in float64values) {
+        for (double in float64values) {
             bc.reserve(Float64.size)
-            Float64.writeStorageBytes(it, bc::write)
-            Float64.fromStorageByteReader(bc.size, bc::read) shouldBe it
+            Float64.writeStorageBytes(double, bc::write)
+            expect(double) { Float64.fromStorageByteReader(bc.size, bc::read) }
             bc.reset()
         }
     }
@@ -42,25 +44,25 @@ internal class Float64Test {
     @Test
     fun testTransportBytesConversion() {
         val bc = ByteCollector()
-        for (it in float64values) {
-            bc.reserve(Float64.calculateTransportByteLength(it))
-            Float64.writeTransportBytes(it, bc::write)
+        for (double in float64values) {
+            bc.reserve(Float64.calculateTransportByteLength(double))
+            Float64.writeTransportBytes(double, bc::write)
             val value = Float64.readTransportBytes(bc::read)
-            value shouldBe it
+            expect(double) { value }
             bc.reset()
         }
     }
 
     @Test
     fun testOfNativeTypes() {
-        Float64.ofLong(21312321) shouldBe 21312321.00
-        Float64.ofDouble(1221321.12131657) shouldBe 1221321.12131657
-        Float64.ofInt(1221321) shouldBe 1221321.0
+        expect(21312321.00) { Float64.ofLong(21312321) }
+        expect(1221321.12131657) { Float64.ofDouble(1221321.12131657) }
+        expect(1221321.0) { Float64.ofInt(1221321) }
     }
 
     @Test
     fun testIsOfType() {
-        Float64.isOfType(22.02) shouldBe true
-        Float64.isOfType(24L) shouldBe false
+        assertTrue { Float64.isOfType(22.02) }
+        assertFalse { Float64.isOfType(24L) }
     }
 }

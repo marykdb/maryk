@@ -4,8 +4,8 @@ import maryk.core.protobuf.WriteCache
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.TestMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class MapReferenceTest {
     private val mapReference = TestMarykModel { map::ref }
@@ -20,15 +20,14 @@ class MapReferenceTest {
             )
             mapReference.writeTransportBytes(cache, ::write)
 
-            TestMarykModel.getPropertyReferenceByBytes(size, ::read) shouldBe mapReference
+            expect(mapReference) { TestMarykModel.getPropertyReferenceByBytes(size, ::read) }
         }
     }
 
     @Test
     fun testStringConversion() {
-        mapReference.completeName shouldBe "map"
-
-        TestMarykModel.getPropertyReferenceByName(mapReference.completeName) shouldBe mapReference
+        expect("map") { mapReference.completeName }
+        expect(mapReference) { TestMarykModel.getPropertyReferenceByName(mapReference.completeName) }
     }
 
     @Test
@@ -39,9 +38,9 @@ class MapReferenceTest {
             )
             mapReference.writeStorageBytes(::write)
 
-            bytes!!.toHex() shouldBe "54"
+            expect("54") { bytes!!.toHex() }
 
-            TestMarykModel.Properties.getPropertyReferenceByStorageBytes(size, ::read) shouldBe mapReference
+            expect(mapReference) { TestMarykModel.Properties.getPropertyReferenceByStorageBytes(size, ::read) }
         }
     }
 }

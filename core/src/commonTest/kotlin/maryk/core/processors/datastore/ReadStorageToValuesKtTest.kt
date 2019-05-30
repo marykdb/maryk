@@ -9,8 +9,8 @@ import maryk.test.models.ComplexModel
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.SimpleMarykTypeEnum.S1
 import maryk.test.models.TestMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class ReadStorageToValuesKtTest {
     @Test
@@ -26,7 +26,7 @@ class ReadStorageToValuesKtTest {
             processValue = { _, _ -> valuesAsStorables[qualifierIndex].second }
         )
 
-        values shouldBe testMaryk
+        assertEquals(testMaryk, values)
     }
 
     @Test
@@ -42,7 +42,7 @@ class ReadStorageToValuesKtTest {
             processValue = { _, _ -> complexValuesAsStorables[qualifierIndex].second }
         )
 
-        values shouldBe complexValues
+        assertEquals(complexValues, values)
     }
 
     @Test
@@ -58,24 +58,27 @@ class ReadStorageToValuesKtTest {
             processValue = { _, _ -> valuesAsStorablesWithNulls[qualifierIndex].second }
         )
 
-        values shouldBe TestMarykModel.values {
-            mapNonNulls(
-                set with setOf(
-                    Date(1981, 12, 5)
-                ),
-                map with mapOf(
-                    Time(12, 23, 34) to "twelve"
-                ),
-                embeddedValues with EmbeddedMarykModel.values {
-                    mapNonNulls(
-                        value with "test",
-                        model with EmbeddedMarykModel.values { mapNonNulls() }
-                    )
-                },
-                listOfString with listOf("v1"),
-                setOfString with setOf("def")
-            )
-        }
+        assertEquals(
+            TestMarykModel.values {
+                mapNonNulls(
+                    set with setOf(
+                        Date(1981, 12, 5)
+                    ),
+                    map with mapOf(
+                        Time(12, 23, 34) to "twelve"
+                    ),
+                    embeddedValues with EmbeddedMarykModel.values {
+                        mapNonNulls(
+                            value with "test",
+                            model with EmbeddedMarykModel.values { mapNonNulls() }
+                        )
+                    },
+                    listOfString with listOf("v1"),
+                    setOfString with setOf("def")
+                )
+            },
+            values
+        )
     }
 
     @Test
@@ -103,9 +106,12 @@ class ReadStorageToValuesKtTest {
             processValue = { _, _ -> valuesUnset[qualifierIndex].second }
         )
 
-        values shouldBe TestMarykModel.values {
-            EmptyValueItems
-        }
+        assertEquals(
+            TestMarykModel.values {
+                EmptyValueItems
+            },
+            values
+        )
     }
 
     @Test
@@ -128,10 +134,13 @@ class ReadStorageToValuesKtTest {
             processValue = { _, _ -> valuesUnset[qualifierIndex].second }
         )
 
-        values shouldBe TestMarykModel.values {
-            mapNonNulls(
-                multi with TypedValue(S1, "test")
-            )
-        }
+        assertEquals(
+            TestMarykModel.values {
+                mapNonNulls(
+                    multi with TypedValue(S1, "test")
+                )
+            },
+            values
+        )
     }
 }

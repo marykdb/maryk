@@ -7,8 +7,8 @@ import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.core.query.pairs.with
 import maryk.test.models.SimpleMarykModel
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.expect
 
 class OrTest {
     private val or = Or(
@@ -35,11 +35,15 @@ class OrTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(this.or, Or, { this.context }) shouldBe """
-        - !Exists value
-        - !Equals
-          value: hoi
+        expect(
+            """
+            - !Exists value
+            - !Equals
+              value: hoi
 
-        """.trimIndent()
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.or, Or, { this.context })
+        }
     }
 }

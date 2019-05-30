@@ -7,9 +7,10 @@ import maryk.lib.extensions.initByteArrayByHex
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.SimpleMarykModel
-import maryk.test.shouldBe
 import maryk.yaml.YamlWriter
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.expect
 
 private val testValues = SimpleMarykModel(
     value = "haas"
@@ -18,11 +19,13 @@ private val testValues = SimpleMarykModel(
 internal class SimpleDataModelTest {
     @Test
     fun constructByMap() {
-        SimpleMarykModel.values {
-            mapNonNulls(
-                value with testValues { value }
-            )
-        } shouldBe testValues
+        expect(testValues) {
+            SimpleMarykModel.values {
+                mapNonNulls(
+                    value with testValues { value }
+                )
+            }
+        }
     }
 
     @Test
@@ -39,7 +42,7 @@ internal class SimpleDataModelTest {
 
         SimpleMarykModel.writeJson(testValues, writer)
 
-        output shouldBe """{"value":"haas"}""".trimIndent()
+        assertEquals("""{"value":"haas"}""".trimIndent(), output)
     }
 
     @Test
@@ -51,11 +54,14 @@ internal class SimpleDataModelTest {
 
         SimpleMarykModel.writeJson(testValues, writer)
 
-        output shouldBe """
-        {
-          "value": "haas"
-        }
-        """.trimIndent()
+        assertEquals(
+            """
+            {
+              "value": "haas"
+            }
+            """.trimIndent(),
+            output
+        )
     }
 
     @Test
@@ -67,10 +73,13 @@ internal class SimpleDataModelTest {
 
         SimpleMarykModel.writeJson(testValues, writer)
 
-        output shouldBe """
-        value: haas
+        assertEquals(
+            """
+            value: haas
 
-        """.trimIndent()
+            """.trimIndent(),
+            output
+        )
     }
 
     @Test
@@ -88,7 +97,7 @@ internal class SimpleDataModelTest {
 
         SimpleMarykModel.writeProtoBuf(map, cache, bc::write)
 
-        bc.bytes!!.toHex() shouldBe "0a03686179"
+        expect("0a03686179") { bc.bytes!!.toHex() }
     }
 
     @Test
@@ -100,8 +109,8 @@ internal class SimpleDataModelTest {
             bytes[index++]
         })
 
-        map.size shouldBe 1
-        map { value } shouldBe "hay"
+        expect(1) { map.size }
+        expect("hay") { map { value } }
     }
 
     @Test
@@ -115,9 +124,9 @@ internal class SimpleDataModelTest {
 
         SimpleMarykModel.writeProtoBuf(testValues, cache, bc::write)
 
-        bc.bytes!!.toHex() shouldBe "0a0468616173"
+        expect("0a0468616173") { bc.bytes!!.toHex() }
 
-        SimpleMarykModel.readProtoBuf(bc.size, bc::read) shouldBe testValues
+        expect(testValues) { SimpleMarykModel.readProtoBuf(bc.size, bc::read) }
     }
 
     @Test
@@ -133,7 +142,7 @@ internal class SimpleDataModelTest {
 
             var index = 0
             val reader = { JsonReader(reader = { output[index++] }) }
-            SimpleMarykModel.readJson(reader = reader()) shouldBe testValues
+            expect(testValues) { SimpleMarykModel.readJson(reader = reader()) }
 
             output = ""
         }

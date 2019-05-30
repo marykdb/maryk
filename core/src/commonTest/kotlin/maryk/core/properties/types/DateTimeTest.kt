@@ -2,9 +2,9 @@ package maryk.core.properties.types
 
 import maryk.lib.time.Time
 import maryk.test.ByteCollector
-import maryk.test.shouldBe
-import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
+import kotlin.test.expect
 
 internal class DateTimeTest {
     private fun cleanToSeconds(it: maryk.lib.time.DateTime) = DateTime(it.date, Time(it.hour, it.minute, it.day))
@@ -35,10 +35,10 @@ internal class DateTimeTest {
     @Test
     fun testStreamingConversion() {
         val bc = ByteCollector()
-        for (it in dateTimesWithSecondsToTest) {
+        for (dateTime in dateTimesWithSecondsToTest) {
             bc.reserve(7)
-            it.writeBytes(TimePrecision.SECONDS, bc::write)
-            DateTime.fromByteReader(bc.size, bc::read) shouldBe it
+            dateTime.writeBytes(TimePrecision.SECONDS, bc::write)
+            expect(dateTime) { DateTime.fromByteReader(bc.size, bc::read) }
             bc.reset()
         }
     }
@@ -46,17 +46,17 @@ internal class DateTimeTest {
     @Test
     fun testStreamingMillisConversion() {
         val bc = ByteCollector()
-        for (it in dateTimesWithMillisToTest) {
+        for (dateTime in dateTimesWithMillisToTest) {
             bc.reserve(9)
-            it.writeBytes(TimePrecision.MILLIS, bc::write)
-            DateTime.fromByteReader(bc.size, bc::read) shouldBe it
+            dateTime.writeBytes(TimePrecision.MILLIS, bc::write)
+            expect(dateTime) { DateTime.fromByteReader(bc.size, bc::read) }
             bc.reset()
         }
     }
 
     @Test
     fun testWrongByteSizeError() {
-        shouldThrow<IllegalArgumentException> {
+        assertFailsWith<IllegalArgumentException> {
             DateTime.fromByteReader(22) {
                 1
             }

@@ -1,8 +1,8 @@
 package maryk.generator.kotlin
 
 import maryk.test.models.MarykTypeEnum
-import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 val generatedKotlinForTypeEnum = """
 package maryk.test.models
@@ -96,6 +96,6 @@ class GenerateKotlinForTypeEnumTest {
             output += it
         }
 
-        output shouldBe generatedKotlinForTypeEnum
+        assertEquals(generatedKotlinForTypeEnum, output)
     }
 }

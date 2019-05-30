@@ -3,6 +3,7 @@ package maryk.test.models
 import maryk.core.models.RootDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
+import maryk.core.properties.definitions.IncrementingMapDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
@@ -103,6 +104,17 @@ object ComplexModel : RootDataModel<ComplexModel, Properties>(
                 )
             )
         )
+
+        val incMap = add(
+            index = 8u, name = "incMap",
+            definition = IncrementingMapDefinition(
+                required = false,
+                keyNumberDescriptor = UInt32,
+                valueDefinition = EmbeddedValuesDefinition(
+                    dataModel = { EmbeddedMarykModel }
+                )
+            )
+        )
     }
 
     operator fun invoke(
@@ -112,7 +124,8 @@ object ComplexModel : RootDataModel<ComplexModel, Properties>(
         mapIntMulti: Map<UInt, TypedValue<MarykTypeEnum<*>, Any>>? = null,
         mapWithList: Map<String, List<String>>? = null,
         mapWithSet: Map<String, Set<String>>? = null,
-        mapWithMap: Map<String, Map<String, String>>? = null
+        mapWithMap: Map<String, Map<String, String>>? = null,
+        incMap: Map<UInt, Values<EmbeddedMarykModel, EmbeddedMarykModel.Properties>>? = null
     ) = this.values {
         mapNonNulls(
             this.multi with multi,
@@ -121,7 +134,8 @@ object ComplexModel : RootDataModel<ComplexModel, Properties>(
             this.mapIntMulti with mapIntMulti,
             this.mapWithList with mapWithList,
             this.mapWithSet with mapWithSet,
-            this.mapWithMap with mapWithMap
+            this.mapWithMap with mapWithMap,
+            this.incMap with incMap
         )
     }
 }

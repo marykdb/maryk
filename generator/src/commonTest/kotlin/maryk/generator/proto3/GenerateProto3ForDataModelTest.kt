@@ -98,7 +98,7 @@ message CompleteMarykModel {
   map<string, repeated string> mapWithList = 22;
   map<string, repeated string> mapWithSet = 23;
   map<string, map<string, string>> mapWithMap = 24;
-  map<uint64, string> incMap = 25;
+  map<uint64, EmbeddedMarykModel> incMap = 25;
 }
 """.trimIndent()
 

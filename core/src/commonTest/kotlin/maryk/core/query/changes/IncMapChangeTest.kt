@@ -6,6 +6,7 @@ import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.test.models.CompleteMarykModel
+import maryk.test.models.EmbeddedMarykModel
 import kotlin.test.Test
 import kotlin.test.expect
 
@@ -13,8 +14,8 @@ class IncMapChangeTest {
     private val incMapChange = IncMapChange(
         CompleteMarykModel { incMap::ref }.change(
             addValues = listOf(
-                "a",
-                "b"
+                EmbeddedMarykModel("a"),
+                EmbeddedMarykModel("b")
             )
         )
     )
@@ -41,7 +42,9 @@ class IncMapChangeTest {
         expect(
             """
             incMap:
-              addValues: [a, b]
+              addValues:
+              - value: a
+              - value: b
 
             """.trimIndent()
         ) {

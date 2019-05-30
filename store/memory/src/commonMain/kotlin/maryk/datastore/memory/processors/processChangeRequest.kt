@@ -7,6 +7,7 @@ import maryk.core.models.IsValuesDataModel
 import maryk.core.models.values
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.ValueWriter
+import maryk.core.processors.datastore.writeIncMapAdditionsToStorage
 import maryk.core.processors.datastore.writeListToStorage
 import maryk.core.processors.datastore.writeMapToStorage
 import maryk.core.processors.datastore.writeSetToStorage
@@ -75,7 +76,6 @@ import maryk.datastore.memory.records.DataStore
 import maryk.datastore.memory.records.index.UniqueException
 import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.compare.matches
-import maryk.lib.extensions.compare.prevByteInSameLength
 import maryk.lib.time.Instant
 
 internal typealias ChangeStoreAction<DM, P> = StoreAction<DM, P, ChangeRequest<DM>, ChangeResponse<DM>>
@@ -563,66 +563,49 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                         for (valueChange in change.valueChanges) {
                             val incMapReference = valueChange.reference as IncMapReference<Comparable<Any>, Any, IsPropertyContext>
                             val incMapDefinition = incMapReference.propertyDefinition
-                            var countChange = 0
-
-                            val addedKeys = mutableListOf<Comparable<Any>>()
 
                             valueChange.addValues?.let { addValues ->
-                                var currentIncMapKey = getCurrentIncMapKey(
-                                    newValueList,
-                                    incMapReference
-                                )
-
                                 createValidationUmbrellaException({ incMapReference }) { addException ->
                                     for ((index, value) in addValues.withIndex()) {
-                                        // Inc Map keys are stored in reverse order so latest is always first.
-                                        // So lower the latest value to get at the next value
-                                        currentIncMapKey = currentIncMapKey.prevByteInSameLength(incMapDefinition.definition.keyDefinition.byteSize)
-
                                         try {
                                             incMapDefinition.valueDefinition.validateWithRef(null, value) { incMapDefinition.addIndexRef(index, incMapReference) }
-
-                                            setValue(
-                                                newValueList,
-                                                currentIncMapKey,
-                                                value,
-                                                version
-                                            ) { _, prevValue ->
-                                                prevValue ?: countChange++ // Only count up when value did not exist
-                                            }.also { changed ->
-                                                setChanged(changed)
-                                                // Add key to list to send back to requester
-                                                var keyIndex = currentIncMapKey.size - incMapDefinition.definition.keyDefinition.byteSize
-                                                addedKeys.add(
-                                                    incMapDefinition.keyDefinition.readStorageBytes(incMapDefinition.definition.keyDefinition.byteSize) {
-                                                        currentIncMapKey[keyIndex++]
-                                                    }
-                                                )
-                                            }
                                         } catch (e: ValidationException) {
                                             addException(e)
                                         }
                                     }
                                 }
-                            }
 
-                            // Add increment keys to out changes so requester knows at what key values where added to
-                            if (addedKeys.isNotEmpty()) {
-                                val addition = outChanges.find { it is IncMapAddition } as IncMapAddition?
-                                    ?: IncMapAddition(additions = mutableListOf()).also { outChanges.add(it) }
-                                (addition.additions as MutableList<IncMapKeyAdditions<*, *>>).add(
-                                    IncMapKeyAdditions(incMapReference, addedKeys)
+                                val currentIncMapKey = getCurrentIncMapKey(
+                                    newValueList,
+                                    incMapReference
                                 )
-                            }
 
-                            createCountUpdater(
-                                newValueList,
-                                valueChange.reference,
-                                version,
-                                countChange,
-                                keepAllVersions
-                            ) {
-                                incMapDefinition.validateSize(it) { incMapReference }
+                                val addedKeys = writeIncMapAdditionsToStorage(
+                                    currentIncMapKey,
+                                    createValueWriter(newValueList, version, keepAllVersions),
+                                    incMapDefinition.definition,
+                                    addValues
+                                )
+
+                                // Add increment keys to out changes so requester knows at what key values where added to
+                                if (addedKeys.isNotEmpty()) {
+                                    setChanged(true)
+                                    val addition = outChanges.find { it is IncMapAddition } as IncMapAddition?
+                                        ?: IncMapAddition(additions = mutableListOf()).also { outChanges.add(it) }
+                                    (addition.additions as MutableList<IncMapKeyAdditions<*, *>>).add(
+                                        IncMapKeyAdditions(incMapReference, addedKeys)
+                                    )
+                                }
+
+                                createCountUpdater(
+                                    newValueList,
+                                    valueChange.reference,
+                                    version,
+                                    addValues.size,
+                                    keepAllVersions
+                                ) {
+                                    incMapDefinition.validateSize(it) { incMapReference }
+                                }
                             }
                         }
                     }

@@ -5,6 +5,8 @@ import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedValuesDefinition
+import maryk.core.properties.definitions.contextual.ContextualSubDefinition
+import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.exceptions.NotEnoughItemsException
 import maryk.core.properties.exceptions.TooManyItemsException
@@ -90,14 +92,22 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
 
     /** Write [value] to JSON [writer] with [context] */
     override fun writeJsonValue(value: C, writer: IsJsonLikeWriter, context: CX?) {
-        val renderCompact = this.valueDefinition !is EmbeddedValuesDefinition<*, *>
-                && this.valueDefinition !is IsEmbeddedObjectDefinition<*, *, *, *, *>
-                && this.valueDefinition !is ValueModelDefinition<*, *, *>
-                && this.valueDefinition !is ContextualEmbeddedObjectDefinition<*>
-                && this.valueDefinition !is ContextualEmbeddedValuesDefinition<*>
-                && this.valueDefinition !is IsMultiTypeDefinition<*, *, *>
-                && this.valueDefinition !is IsCollectionDefinition<*, *, *, *>
-                && this.valueDefinition !is IsMapDefinition<*, *, *>
+        @Suppress("UNCHECKED_CAST")
+        val definition = when(val def = this.valueDefinition) {
+            is ContextualSubDefinition<*, *, *, *> -> (def as ContextualSubDefinition<IsPropertyContext, IsPropertyContext, *, *>).contextualResolver(def.contextTransformer(context))
+            is ContextualValueDefinition<*, *, *, *> -> (def as ContextualValueDefinition<IsPropertyContext, IsPropertyContext, *, *>).contextualResolver(def.contextTransformer(context) as IsPropertyContext)
+            else -> this.valueDefinition
+        }
+
+        val renderCompact = definition !is IsEmbeddedValuesDefinition<*, *, *>
+                && definition !is IsEmbeddedObjectDefinition<*, *, *, *, *>
+                && definition !is ValueModelDefinition<*, *, *>
+                && definition !is ContextualEmbeddedObjectDefinition<*>
+                && definition !is ContextualEmbeddedValuesDefinition<*>
+                && definition !is IsMultiTypeDefinition<*, *, *>
+                && definition !is IsCollectionDefinition<*, *, *, *>
+                && definition !is IsMapDefinition<*, *, *>
+
                 && value.size < 5
         writer.writeStartArray(renderCompact)
         for (it in value) {

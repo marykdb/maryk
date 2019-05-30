@@ -361,7 +361,9 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
             definition = IncrementingMapDefinition(
                 required = false,
                 keyNumberDescriptor = UInt32,
-                valueDefinition = StringDefinition()
+                valueDefinition = EmbeddedValuesDefinition(
+                    dataModel = { EmbeddedMarykModel }
+                )
             )
         )
     }
@@ -396,7 +398,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
         mapWithList: Map<String, List<String>> = mapOf("a" to listOf("b", "c")),
         mapWithSet: Map<String, Set<String>> = mapOf("a" to setOf("b", "c")),
         mapWithMap: Map<String, Map<String, String>> = mapOf("a" to mapOf("b" to "c")),
-        incMap: Map<UInt, String>? = null
+        incMap: Map<UInt, Values<EmbeddedMarykModel, EmbeddedMarykModel.Properties>>? = null
     ) = values {
         mapNonNulls(
             this.string with string,

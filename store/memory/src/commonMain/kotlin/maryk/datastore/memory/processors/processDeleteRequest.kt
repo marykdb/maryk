@@ -7,7 +7,7 @@ import maryk.core.query.responses.DeleteResponse
 import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.IsDeleteResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
-import maryk.core.query.responses.statuses.Success
+import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.datastore.memory.StoreAction
 import maryk.datastore.memory.processors.changers.setValueAtIndex
 import maryk.datastore.memory.records.DataStore
@@ -75,7 +75,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
                             )
                             dataStore.records[index] = newRecord
                         }
-                        Success(version)
+                        DeleteSuccess(version)
                     }
                     else -> DoesNotExist(key)
                 }

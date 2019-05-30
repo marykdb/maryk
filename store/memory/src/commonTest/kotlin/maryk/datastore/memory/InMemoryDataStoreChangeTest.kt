@@ -7,7 +7,9 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Check
 import maryk.core.query.changes.Delete
+import maryk.core.query.changes.IncMapAddition
 import maryk.core.query.changes.IncMapChange
+import maryk.core.query.changes.IncMapKeyAdditions
 import maryk.core.query.changes.ListChange
 import maryk.core.query.changes.SetChange
 import maryk.core.query.changes.change
@@ -16,8 +18,8 @@ import maryk.core.query.requests.add
 import maryk.core.query.requests.change
 import maryk.core.query.requests.get
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.ServerFail
-import maryk.core.query.responses.statuses.Success
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
@@ -137,8 +139,8 @@ class InMemoryDataStoreChangeTest {
 
         expect(3) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = assertType<Success<*>>(status)
-            shouldBeRecent(success.version, 1000uL)
+            val success = assertType<ChangeSuccess<*>>(status)
+            assertRecent(success.version, 1000uL)
         }
 
         changeResponse.statuses[1].let { status ->
@@ -177,8 +179,8 @@ class InMemoryDataStoreChangeTest {
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = assertType<Success<*>>(status)
-            shouldBeRecent(success.version, 1000uL)
+            val success = assertType<ChangeSuccess<*>>(status)
+            assertRecent(success.version, 1000uL)
         }
 
         val getResponse = dataStore.execute(
@@ -256,8 +258,8 @@ class InMemoryDataStoreChangeTest {
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = assertType<Success<*>>(status)
-            shouldBeRecent(success.version, 1000uL)
+            val success = assertType<ChangeSuccess<*>>(status)
+            assertRecent(success.version, 1000uL)
         }
 
         val getResponse = dataStore.execute(
@@ -283,8 +285,8 @@ class InMemoryDataStoreChangeTest {
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = assertType<Success<*>>(status)
-            shouldBeRecent(success.version, 1000uL)
+            val success = assertType<ChangeSuccess<*>>(status)
+            assertRecent(success.version, 1000uL)
         }
 
         val getResponse = dataStore.execute(
@@ -312,8 +314,8 @@ class InMemoryDataStoreChangeTest {
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = assertType<Success<*>>(status)
-            shouldBeRecent(success.version, 1000uL)
+            val success = assertType<ChangeSuccess<*>>(status)
+            assertRecent(success.version, 1000uL)
         }
 
         val getResponse = dataStore.execute(
@@ -376,8 +378,8 @@ class InMemoryDataStoreChangeTest {
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = assertType<Success<*>>(status)
-            shouldBeRecent(success.version, 1000uL)
+            val success = assertType<ChangeSuccess<*>>(status)
+            assertRecent(success.version, 1000uL)
         }
 
         val getResponse = dataStore.execute(
@@ -407,8 +409,8 @@ class InMemoryDataStoreChangeTest {
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = assertType<Success<*>>(status)
-            shouldBeRecent(success.version, 1000uL)
+            val success = assertType<ChangeSuccess<*>>(status)
+            assertRecent(success.version, 1000uL)
         }
 
         val getResponse = dataStore.execute(
@@ -437,8 +439,8 @@ class InMemoryDataStoreChangeTest {
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = assertType<Success<*>>(status)
-            shouldBeRecent(success.version, 1000uL)
+            val success = assertType<ChangeSuccess<*>>(status)
+            assertRecent(success.version, 1000uL)
         }
 
         val getResponse = dataStore.execute(
@@ -479,8 +481,18 @@ class InMemoryDataStoreChangeTest {
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = assertType<Success<*>>(status)
-            shouldBeRecent(success.version, 1000uL)
+            assertType<ChangeSuccess<*>>(status).apply {
+                expect(
+                    listOf(
+                       IncMapAddition(
+                           IncMapKeyAdditions(
+                               TestMarykModel { incMap::ref }, listOf(3u, 4u)
+                           )
+                       )
+                    )
+                ) { changes }
+                assertRecent(version, 1000uL)
+            }
         }
 
         val getResponse = dataStore.execute(

@@ -9,12 +9,13 @@ import maryk.test.models.CompleteMarykModel
 import kotlin.test.Test
 import kotlin.test.expect
 
-class IncMapChangeTest {
-    private val incMapChange = IncMapChange(
-        CompleteMarykModel { incMap::ref }.change(
-            addValues = listOf(
-                "a",
-                "b"
+class IncMapAdditionTest {
+    private val indMapAddition = IncMapAddition(
+        IncMapKeyAdditions(
+            CompleteMarykModel { incMap::ref },
+            listOf(
+                22u,
+                23u
             )
         )
     )
@@ -28,12 +29,12 @@ class IncMapChangeTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.incMapChange, IncMapChange, { this.context })
+        checkProtoBufConversion(this.indMapAddition, IncMapAddition, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.incMapChange, IncMapChange, { this.context })
+        checkJsonConversion(this.indMapAddition, IncMapAddition, { this.context })
     }
 
     @Test
@@ -41,11 +42,11 @@ class IncMapChangeTest {
         expect(
             """
             incMap:
-              addValues: [a, b]
+              addedKeys: [22, 23]
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.incMapChange, IncMapChange, { this.context })
+            checkYamlConversion(this.indMapAddition, IncMapAddition, { this.context })
         }
     }
 }

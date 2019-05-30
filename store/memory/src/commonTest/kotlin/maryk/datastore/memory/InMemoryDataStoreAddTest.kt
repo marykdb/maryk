@@ -39,7 +39,7 @@ class InMemoryDataStoreAddTest {
         val keys = mutableListOf<Key<Log>>()
         addResponse.statuses.forEachIndexed { index, it ->
             val response = assertType<AddSuccess<Log>>(it)
-            shouldBeRecent(response.version, 1000uL)
+            assertRecent(response.version, 1000uL)
             assertTrue { response.changes.isEmpty() }
             expect(11) { assertType<Key<Log>>(response.key).size }
             keys.add(response.key)

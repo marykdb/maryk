@@ -6,8 +6,8 @@ import maryk.core.query.requests.delete
 import maryk.core.query.requests.get
 import maryk.core.query.requests.getChanges
 import maryk.core.query.responses.statuses.AddSuccess
-import maryk.core.query.responses.statuses.StatusType.SUCCESS
-import maryk.core.query.responses.statuses.Success
+import maryk.core.query.responses.statuses.DeleteSuccess
+import maryk.core.query.responses.statuses.StatusType.DELETE_SUCCESS
 import maryk.test.assertType
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.addRequest
@@ -42,10 +42,10 @@ class InMemoryDataStoreDeleteTest {
         )
 
         expect(1) { deleteResponse.statuses.size }
-        expect(SUCCESS) { deleteResponse.statuses[0].statusType }
+        expect(DELETE_SUCCESS) { deleteResponse.statuses[0].statusType }
         with(deleteResponse.statuses[0]) {
-            expect(SUCCESS) { statusType }
-            assertType<Success<SimpleMarykModel>>(this)
+            expect(DELETE_SUCCESS) { statusType }
+            assertType<DeleteSuccess<SimpleMarykModel>>(this)
         }
 
         val getResponse = dataStore.execute(
@@ -87,9 +87,9 @@ class InMemoryDataStoreDeleteTest {
         )
 
         expect(1) { deleteResponse.statuses.size }
-        expect(SUCCESS) { deleteResponse.statuses[0].statusType }
+        expect(DELETE_SUCCESS) { deleteResponse.statuses[0].statusType }
         with(deleteResponse.statuses[0]) {
-            assertType<Success<SimpleMarykModel>>(this)
+            assertType<DeleteSuccess<SimpleMarykModel>>(this)
         }
 
         val getResponse = dataStore.execute(

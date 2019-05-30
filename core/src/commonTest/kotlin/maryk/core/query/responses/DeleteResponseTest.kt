@@ -6,9 +6,9 @@ import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.core.query.responses.statuses.AuthFail
+import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.ServerFail
-import maryk.core.query.responses.statuses.Success
 import maryk.test.models.SimpleMarykModel
 import kotlin.test.Test
 import kotlin.test.expect
@@ -19,7 +19,7 @@ class DeleteResponseTest {
     private val deleteResponse = DeleteResponse(
         SimpleMarykModel,
         listOf(
-            Success(32352uL),
+            DeleteSuccess(32352uL),
             DoesNotExist(key),
             AuthFail(),
             ServerFail("Something went wrong")
@@ -46,7 +46,7 @@ class DeleteResponseTest {
             """
             dataModel: SimpleMarykModel
             statuses:
-            - !SUCCESS
+            - !DELETE_SUCCESS
               version: 32352
             - !DOES_NOT_EXIST
               key: +1xO4zD4R5sIMcS9pXTZEA

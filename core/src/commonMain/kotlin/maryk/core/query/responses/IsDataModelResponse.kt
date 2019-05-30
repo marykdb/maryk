@@ -14,6 +14,8 @@ import maryk.core.query.RequestContext
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.AlreadyExists
 import maryk.core.query.responses.statuses.AuthFail
+import maryk.core.query.responses.statuses.ChangeSuccess
+import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.IsResponseStatus
 import maryk.core.query.responses.statuses.RequestFail
@@ -22,12 +24,12 @@ import maryk.core.query.responses.statuses.StatusType
 import maryk.core.query.responses.statuses.StatusType.ADD_SUCCESS
 import maryk.core.query.responses.statuses.StatusType.ALREADY_EXISTS
 import maryk.core.query.responses.statuses.StatusType.AUTH_FAIL
+import maryk.core.query.responses.statuses.StatusType.CHANGE_SUCCESS
+import maryk.core.query.responses.statuses.StatusType.DELETE_SUCCESS
 import maryk.core.query.responses.statuses.StatusType.DOES_NOT_EXIST
 import maryk.core.query.responses.statuses.StatusType.REQUEST_FAIL
 import maryk.core.query.responses.statuses.StatusType.SERVER_FAIL
-import maryk.core.query.responses.statuses.StatusType.SUCCESS
 import maryk.core.query.responses.statuses.StatusType.VALIDATION_FAIL
-import maryk.core.query.responses.statuses.Success
 import maryk.core.query.responses.statuses.ValidationFail
 
 /** A response for a data operation on a DataModel */
@@ -75,8 +77,9 @@ private val listOfStatuses = ListDefinition(
     valueDefinition = InternalMultiTypeDefinition(
         typeEnum = StatusType,
         definitionMap = mapOf(
-            SUCCESS to EmbeddedObjectDefinition(dataModel = { Success }),
             ADD_SUCCESS to EmbeddedObjectDefinition(dataModel = { AddSuccess }),
+            CHANGE_SUCCESS to EmbeddedObjectDefinition(dataModel = { ChangeSuccess }),
+            DELETE_SUCCESS to EmbeddedObjectDefinition(dataModel = { DeleteSuccess }),
             AUTH_FAIL to EmbeddedObjectDefinition(dataModel = { AuthFail }),
             REQUEST_FAIL to EmbeddedObjectDefinition(dataModel = { RequestFail }),
             SERVER_FAIL to EmbeddedObjectDefinition(dataModel = { ServerFail }),

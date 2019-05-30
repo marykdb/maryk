@@ -29,6 +29,9 @@ class DataObjectChangeTest {
             )
         ),
         SetChange(TestMarykModel { set::ref }.change()),
+        IncMapChange(TestMarykModel { incMap::ref }.change(
+            addValues = listOf("a","b")
+        )),
         lastVersion = 12345uL
     )
 
@@ -67,6 +70,9 @@ class DataObjectChangeTest {
                 addValuesToEnd: [1, 2, 3]
             - !SetChange
               set:
+            - !IncMapChange
+              incMap:
+                addValues: [a, b]
             lastVersion: 12345
 
             """.trimIndent()

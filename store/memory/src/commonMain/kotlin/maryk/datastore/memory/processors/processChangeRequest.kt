@@ -44,16 +44,18 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Check
 import maryk.core.query.changes.Delete
+import maryk.core.query.changes.IncMapAddition
 import maryk.core.query.changes.IncMapChange
+import maryk.core.query.changes.IncMapKeyAdditions
 import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.ListChange
 import maryk.core.query.changes.SetChange
 import maryk.core.query.requests.ChangeRequest
 import maryk.core.query.responses.ChangeResponse
+import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.IsChangeResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
-import maryk.core.query.responses.statuses.Success
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.core.values.EmptyValueItems
 import maryk.core.values.Values
@@ -164,6 +166,8 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
 
         var isChanged = false
         val setChanged = { didChange: Boolean -> if (didChange) isChanged = true }
+
+        val outChanges = mutableListOf<IsChange>()
 
         for (change in changes) {
             try {
@@ -560,6 +564,9 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                             val incMapReference = valueChange.reference as IncMapReference<Comparable<Any>, Any, IsPropertyContext>
                             val incMapDefinition = incMapReference.propertyDefinition
                             var countChange = 0
+
+                            val addedKeys = mutableListOf<Comparable<Any>>()
+
                             valueChange.addValues?.let { addValues ->
                                 var currentIncMapKey = getCurrentIncMapKey(
                                     newValueList,
@@ -574,6 +581,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
 
                                         try {
                                             incMapDefinition.valueDefinition.validateWithRef(null, value) { incMapDefinition.addIndexRef(index, incMapReference) }
+
                                             setValue(
                                                 newValueList,
                                                 currentIncMapKey,
@@ -581,12 +589,30 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                                 version
                                             ) { _, prevValue ->
                                                 prevValue ?: countChange++ // Only count up when value did not exist
-                                            }.also(setChanged)
+                                            }.also { changed ->
+                                                setChanged(changed)
+                                                // Add key to list to send back to requester
+                                                var keyIndex = currentIncMapKey.size - incMapDefinition.definition.keyDefinition.byteSize
+                                                addedKeys.add(
+                                                    incMapDefinition.keyDefinition.readStorageBytes(incMapDefinition.definition.keyDefinition.byteSize) {
+                                                        currentIncMapKey[keyIndex++]
+                                                    }
+                                                )
+                                            }
                                         } catch (e: ValidationException) {
                                             addException(e)
                                         }
                                     }
                                 }
+                            }
+
+                            // Add increment keys to out changes so requester knows at what key values where added to
+                            if (addedKeys.isNotEmpty()) {
+                                val addition = outChanges.find { it is IncMapAddition } as IncMapAddition?
+                                    ?: IncMapAddition(additions = mutableListOf()).also { outChanges.add(it) }
+                                (addition.additions as MutableList<IncMapKeyAdditions<*, *>>).add(
+                                    IncMapKeyAdditions(incMapReference, addedKeys)
+                                )
                             }
 
                             createCountUpdater(
@@ -669,7 +695,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
         objectToChange.values = newValueList
 
         // Nothing skipped out so must be a success
-        return Success(version)
+        return ChangeSuccess(version, outChanges)
     } catch (e: Throwable) {
         return ServerFail(e.toString(), e)
     }

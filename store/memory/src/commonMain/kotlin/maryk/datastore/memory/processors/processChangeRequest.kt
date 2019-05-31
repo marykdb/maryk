@@ -16,9 +16,12 @@ import maryk.core.processors.datastore.writeTypedValueToStorage
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsComparableDefinition
+import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
+import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsMapDefinition
+import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.definitions.MultiTypeDefinition
+import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.enum.MultiTypeEnum
 import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.exceptions.InvalidValueException
@@ -27,7 +30,6 @@ import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
 import maryk.core.properties.references.CanContainListItemReference
 import maryk.core.properties.references.CanContainSetItemReference
-import maryk.core.properties.references.EmbeddedValuesPropertyRef
 import maryk.core.properties.references.IncMapReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceWithParent
@@ -38,7 +40,6 @@ import maryk.core.properties.references.MapAnyValueReference
 import maryk.core.properties.references.MapKeyReference
 import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.MapValueReference
-import maryk.core.properties.references.MultiTypePropertyReference
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
 import maryk.core.properties.types.TypedValue
@@ -185,18 +186,19 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                         for ((reference, value) in change.referenceValuePairs) {
                             when (value) {
                                 is Map<*, *> -> {
-                                    if (reference !is MapReference<*, *, *>) {
-                                        throw TypeException("Expected a MapReference for a map")
-                                    }
                                     @Suppress("UNCHECKED_CAST")
-                                    val mapReference = reference as MapReference<Any, Any, IsPropertyContext>
+                                    val mapDefinition = reference.propertyDefinition as? IsMapDefinition<Any, Any, IsPropertyContext>
+                                        ?: throw TypeException("Expected a Reference to IsMapDefinition for Map change")
+
+                                    @Suppress("UNCHECKED_CAST")
+                                    val mapReference = reference as IsPropertyReference<Map<Any, Any>, IsPropertyDefinition<Map<Any, Any>>, *>
 
                                     // Delete all existing values in placeholder
                                     val hadPrevValue =
                                         deleteByReference(newValueList, mapReference, version, keepAllVersions)
 
                                     @Suppress("UNCHECKED_CAST")
-                                    reference.propertyDefinition.definition.validateWithRef(
+                                    mapDefinition.validateWithRef(
                                         if (hadPrevValue) mapOf() else null,
                                         value as Map<Any, Any>
                                     ) { mapReference }
@@ -207,23 +209,23 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                         reference.calculateStorageByteLength(),
                                         reference::writeStorageBytes,
                                         valueWriter,
-                                        reference.propertyDefinition,
+                                        mapDefinition,
                                         value
                                     )
                                 }
                                 is List<*> -> {
-                                    if (reference !is ListReference<*, *>) {
-                                        throw TypeException("Expected a ListReference for a List")
-                                    }
+                                    @Suppress("UNCHECKED_CAST")
+                                    val listDefinition = reference.propertyDefinition as? IsListDefinition<Any, IsPropertyContext>
+                                        ?: throw TypeException("Expected a Reference to IsListDefinition for List change")
 
                                     // Delete all existing values in placeholder
                                     val hadPrevValue = deleteByReference(newValueList, reference, version, keepAllVersions)
 
                                     @Suppress("UNCHECKED_CAST")
-                                    (reference as ListReference<Any, IsPropertyContext>).propertyDefinition.definition.validateWithRef(
+                                    listDefinition.validateWithRef(
                                         if (hadPrevValue) listOf() else null,
                                         value as List<Any>
-                                    ) { reference }
+                                    ) { reference as IsPropertyReference<List<Any>, IsPropertyDefinition<List<Any>>, *> }
 
                                     val valueWriter = createValueWriter(newValueList, version, keepAllVersions)
 
@@ -236,18 +238,18 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                     )
                                 }
                                 is Set<*> -> {
-                                    if (reference !is SetReference<*, *>) {
-                                        throw TypeException("Expected a SetReference for a Set")
-                                    }
+                                    @Suppress("UNCHECKED_CAST")
+                                    val setDefinition = reference.propertyDefinition as? IsSetDefinition<Any, IsPropertyContext>
+                                        ?: throw TypeException("Expected a Reference to IsSetDefinition for Set change")
 
                                     // Delete all existing values in placeholder
                                     val hadPrevValue = deleteByReference(newValueList, reference, version, keepAllVersions)
 
                                     @Suppress("UNCHECKED_CAST")
-                                    (reference as SetReference<Any, IsPropertyContext>).propertyDefinition.definition.validateWithRef(
+                                    setDefinition.validateWithRef(
                                         if (hadPrevValue) setOf() else null,
                                         value as Set<Any>
-                                    ) { reference }
+                                    ) { reference as IsPropertyReference<Set<Any>, IsPropertyDefinition<Set<Any>>, *> }
 
                                     val valueWriter = createValueWriter(newValueList, version, keepAllVersions)
 
@@ -260,20 +262,19 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                     )
                                 }
                                 is TypedValue<*, *> -> {
-                                    if (reference !is MultiTypePropertyReference<*, *, *, *, *>) {
-                                        throw TypeException("Expected a MultiTypePropertyReference for a typedValue")
+                                    if (reference.propertyDefinition !is IsMultiTypeDefinition<*, *, *>) {
+                                        throw TypeException("Expected a Reference to IsMultiTypeDefinition for TypedValue change")
                                     }
                                     @Suppress("UNCHECKED_CAST")
-                                    val multiTypeReference =
-                                        reference as MultiTypePropertyReference<MultiTypeEnum<Any>, Any, Any, *, *>
-                                    @Suppress("UNCHECKED_CAST")
                                     val multiTypeDefinition =
-                                        multiTypeReference.propertyDefinition.definition as MultiTypeDefinition<MultiTypeEnum<Any>, Any>
+                                        reference.propertyDefinition as IsMultiTypeDefinition<MultiTypeEnum<Any>, Any, IsPropertyContext>
+                                    @Suppress("UNCHECKED_CAST")
+                                    val multiTypeReference = reference as IsPropertyReference<TypedValue<MultiTypeEnum<Any>, Any>, IsPropertyDefinition<TypedValue<MultiTypeEnum<Any>, Any>>, *>
 
                                     // Previous value to find
                                     var prevValue: TypedValue<MultiTypeEnum<Any>, *>? = null
                                     // Delete all existing values in placeholder
-                                    val hadPrevValue = deleteByReference<TypedValue<MultiTypeEnum<Any>, Any>>(
+                                    val hadPrevValue = deleteByReference(
                                         newValueList,
                                         multiTypeReference,
                                         version,
@@ -299,20 +300,20 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                     )
                                 }
                                 is Values<*, *> -> {
-                                    if (reference !is EmbeddedValuesPropertyRef<*, *, *>) {
-                                        throw TypeException("Expected a EmbeddedValuesPropertyRef for Values")
+                                    // Process any reference containing values
+                                    if (reference.propertyDefinition !is IsEmbeddedValuesDefinition<*, *, *>) {
+                                        throw TypeException("Expected a Reference to IsEmbeddedValuesDefinition for Values change")
                                     }
 
                                     @Suppress("UNCHECKED_CAST")
-                                    val valuesReference =
-                                        reference as EmbeddedValuesPropertyRef<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, IsPropertyContext>
-                                    val valuesDefinition = valuesReference.propertyDefinition.definition
+                                    val valuesDefinition = reference.propertyDefinition as IsEmbeddedValuesDefinition<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, IsPropertyContext>
+                                    @Suppress("UNCHECKED_CAST")
+                                    val valuesReference = reference as IsPropertyReference<Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>, IsPropertyDefinition<Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>>, *>
 
                                     // Delete all existing values in placeholder
-                                    @Suppress("UNCHECKED_CAST")
                                     val hadPrevValue = deleteByReference(
                                         newValueList,
-                                        valuesReference as IsPropertyReference<Values<*, *>, IsPropertyDefinition<Values<*, *>>, *>,
+                                        valuesReference,
                                         version,
                                         keepAllVersions
                                     )

@@ -344,6 +344,9 @@ class InMemoryDataStoreChangeComplexTest {
         val changeResponse = dataStore.execute(
             ComplexModel.change(
                 keys[0].change(
+                    Change(
+                        ComplexModel { incMap.refAt(1u) } with EmbeddedMarykModel("n")
+                    ),
                     Delete(
                         ComplexModel { incMap.refAt(2u) }
                     ),
@@ -382,7 +385,7 @@ class InMemoryDataStoreChangeComplexTest {
         expect(1) { getResponse.values.size }
         expect(
             mapOf(
-                1u to EmbeddedMarykModel("o"),
+                1u to EmbeddedMarykModel("n"),
                 3u to EmbeddedMarykModel("q"),
                 4u to EmbeddedMarykModel("r")
             )

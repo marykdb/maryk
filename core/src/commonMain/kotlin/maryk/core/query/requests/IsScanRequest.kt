@@ -52,7 +52,7 @@ interface IsScanRequest<DM : IsRootDataModel<P>, P : PropertyDefinitions, RP : I
 
         internal fun <DM : Any> addOrder(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> IsOrder?) =
             definitions.add(
-                7u, "order",
+                8u, "order",
                 OrderTypesDefinition,
                 getter = getter,
                 toSerializable = { value, _ ->
@@ -67,7 +67,7 @@ interface IsScanRequest<DM : IsRootDataModel<P>, P : PropertyDefinitions, RP : I
 
         internal fun <DO : Any> addLimit(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> UInt?) =
             definitions.add(
-                8u, "limit",
+                9u, "limit",
                 NumberDefinition(
                     default = 100u,
                     type = UInt32

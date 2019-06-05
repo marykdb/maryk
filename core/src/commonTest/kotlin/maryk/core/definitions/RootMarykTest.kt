@@ -79,6 +79,9 @@ class RootMarykTest {
                 where: !Exists value
                 toVersion: 333
                 filterSoftDeleted: true
+                aggregations:
+                  totalValues: !ValueCount
+                    of: value
 
             """.trimIndent()
         ) {

@@ -1,5 +1,7 @@
 package maryk.test.requests
 
+import maryk.core.aggregations.Aggregations
+import maryk.core.aggregations.metric.ValueCount
 import maryk.core.query.filters.Exists
 import maryk.core.query.orders.descending
 import maryk.core.query.requests.scanChanges
@@ -18,6 +20,11 @@ val scanChangesMaxRequest = SimpleMarykModel.run {
         toVersion = 2345uL,
         fromVersion = 1234uL,
         maxVersions = 10u,
-        select = graph { listOf(value) }
+        select = graph { listOf(value) },
+        aggregations = Aggregations(
+            "totalValues" to ValueCount(
+                SimpleMarykModel { value::ref }
+            )
+        )
     )
 }

@@ -1,5 +1,6 @@
 package maryk.core.query.requests
 
+import maryk.core.aggregations.Aggregations
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -25,9 +26,10 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.scan(
     order: IsOrder? = null,
     limit: UInt = 100u,
     toVersion: ULong? = null,
-    filterSoftDeleted: Boolean = true
+    filterSoftDeleted: Boolean = true,
+    aggregations: Aggregations? = null
 ) =
-    ScanRequest(this, startKey, select, where, order, limit, toVersion, filterSoftDeleted)
+    ScanRequest(this, startKey, select, where, order, limit, toVersion, filterSoftDeleted, aggregations)
 
 /**
  * A Request to scan DataObjects by key from [startKey] until [limit]
@@ -44,7 +46,8 @@ data class ScanRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> i
     override val order: IsOrder? = null,
     override val limit: UInt = 100u,
     override val toVersion: ULong? = null,
-    override val filterSoftDeleted: Boolean = true
+    override val filterSoftDeleted: Boolean = true,
+    override val aggregations: Aggregations? = null
 ) : IsScanRequest<DM, P, ValuesResponse<DM, P>> {
     override val requestType = Scan
     override val responseModel = ValuesResponse
@@ -56,6 +59,7 @@ data class ScanRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> i
         val where = IsFetchRequest.addFilter(this, ScanRequest<*, *>::where)
         val toVersion = IsFetchRequest.addToVersion(this, ScanRequest<*, *>::toVersion)
         val filterSoftDeleted = IsFetchRequest.addFilterSoftDeleted(this, ScanRequest<*, *>::filterSoftDeleted)
+        val aggregations = IsFetchRequest.addAggregationsDefinition(this, ScanRequest<*, *>::aggregations)
         val order = IsScanRequest.addOrder(this, ScanRequest<*, *>::order)
         val limit = IsScanRequest.addLimit(this, ScanRequest<*, *>::limit)
     }
@@ -70,8 +74,9 @@ data class ScanRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> i
             where = values(4u),
             toVersion = values(5u),
             filterSoftDeleted = values(6u),
-            order = values(7u),
-            limit = values(8u)
+            aggregations = values(7u),
+            order = values(8u),
+            limit = values(9u)
         )
     }
 }

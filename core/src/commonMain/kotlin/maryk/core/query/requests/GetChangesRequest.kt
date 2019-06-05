@@ -2,6 +2,7 @@
 
 package maryk.core.query.requests
 
+import maryk.core.aggregations.Aggregations
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -25,7 +26,8 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.getChanges(
     toVersion: ULong? = null,
     maxVersions: UInt = 1u,
     select: RootPropRefGraph<P>? = null,
-    filterSoftDeleted: Boolean = true
+    filterSoftDeleted: Boolean = true,
+    aggregations: Aggregations? = null
 ) =
     GetChangesRequest(
         this,
@@ -35,7 +37,8 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.getChanges(
         toVersion,
         maxVersions,
         select,
-        filterSoftDeleted
+        filterSoftDeleted,
+        aggregations
     )
 
 /**
@@ -52,7 +55,8 @@ data class GetChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
     override val toVersion: ULong? = null,
     override val maxVersions: UInt = 1u,
     override val select: RootPropRefGraph<P>? = null,
-    override val filterSoftDeleted: Boolean = true
+    override val filterSoftDeleted: Boolean = true,
+    override val aggregations: Aggregations? = null
 ) : IsGetRequest<DM, P, ChangesResponse<DM>>, IsChangesRequest<DM, P, ChangesResponse<DM>> {
     override val requestType = GetChanges
     override val responseModel = ChangesResponse
@@ -64,8 +68,9 @@ data class GetChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
         val where = IsFetchRequest.addFilter(this, GetChangesRequest<*, *>::where)
         val toVersion = IsFetchRequest.addToVersion(this, GetChangesRequest<*, *>::toVersion)
         val filterSoftDeleted = IsFetchRequest.addFilterSoftDeleted(this, GetChangesRequest<*, *>::filterSoftDeleted)
-        val fromVersion = IsChangesRequest.addFromVersion(7u, this, GetChangesRequest<*, *>::fromVersion)
-        val maxVersions = IsChangesRequest.addMaxVersions(8u, this, GetChangesRequest<*, *>::maxVersions)
+        val aggregations = IsFetchRequest.addAggregationsDefinition(this, GetChangesRequest<*, *>::aggregations)
+        val fromVersion = IsChangesRequest.addFromVersion(8u, this, GetChangesRequest<*, *>::fromVersion)
+        val maxVersions = IsChangesRequest.addMaxVersions(9u, this, GetChangesRequest<*, *>::maxVersions)
     }
 
     companion object : QueryDataModel<GetChangesRequest<*, *>, Properties>(
@@ -79,8 +84,9 @@ data class GetChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
                 where = values(4u),
                 toVersion = values(5u),
                 filterSoftDeleted = values(6u),
-                fromVersion = values(7u),
-                maxVersions = values(8u)
+                aggregations = values(7u),
+                fromVersion = values(8u),
+                maxVersions = values(9u)
             )
     }
 }

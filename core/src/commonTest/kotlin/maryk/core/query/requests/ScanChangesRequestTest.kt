@@ -52,6 +52,9 @@ class ScanChangesRequestTest {
             where: !Exists value
             toVersion: 2345
             filterSoftDeleted: true
+            aggregations:
+              totalValues: !ValueCount
+                of: value
             order: !Desc value
             limit: 300
             fromVersion: 1234

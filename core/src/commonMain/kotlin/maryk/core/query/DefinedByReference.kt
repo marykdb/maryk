@@ -18,10 +18,11 @@ interface DefinedByReference<out T : Any> {
     companion object {
         internal fun <DO : Any> addReference(
             definitions: ObjectPropertyDefinitions<DO>,
-            getter: (DO) -> AnyPropertyReference?
+            getter: (DO) -> AnyPropertyReference?,
+            name: String = "reference"
         ) =
             definitions.add(
-                index = 1u, name = "reference",
+                index = 1u, name = name,
                 definition = ContextualPropertyReferenceDefinition<RequestContext>(
                     contextualResolver = {
                         it?.dataModel?.properties as? AbstractPropertyDefinitions<*>?

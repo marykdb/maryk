@@ -3,6 +3,8 @@ package maryk.core.query.requests
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
+import maryk.core.aggregations.Aggregations
+import maryk.core.aggregations.metric.ValueCount
 import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.core.query.filters.Exists
@@ -42,7 +44,12 @@ class GetRequestTest {
                     filterSoftDeleted with true,
                     select with SimpleMarykModel.graph {
                         listOf(value)
-                    }
+                    },
+                    aggregations with Aggregations(
+                        namedAggregations = mapOf(
+                            "totalValues" to ValueCount(SimpleMarykModel { value::ref })
+                        )
+                    )
                 )
             }.toDataObject()
         }
@@ -82,6 +89,9 @@ class GetRequestTest {
             where: !Exists value
             toVersion: 333
             filterSoftDeleted: true
+            aggregations:
+              totalValues: !ValueCount
+                of: value
 
             """.trimIndent()
         ) {

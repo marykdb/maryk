@@ -9,6 +9,7 @@ import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsListDefinition
+import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSerializableFixedBytesEncodable
@@ -222,7 +223,7 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
     fun <K : Any, V : Any, TO : Any, CX : IsPropertyContext> add(
         index: UInt,
         name: String,
-        definition: MapDefinition<K, V, CX>,
+        definition: IsMapDefinition<K, V, CX>,
         getter: (DO) -> TO?,
         alternativeNames: Set<String>? = null,
         capturer: ((CX, Map<K, V>) -> Unit)? = null,

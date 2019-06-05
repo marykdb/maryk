@@ -1,5 +1,6 @@
 package maryk.core.query.requests
 
+import maryk.core.aggregations.Aggregations
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -8,7 +9,7 @@ import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
 import maryk.core.query.filters.IsFilter
 import maryk.core.query.orders.IsOrder
-import maryk.core.query.requests.RequestType.*
+import maryk.core.query.requests.RequestType.ScanChanges
 import maryk.core.query.responses.ChangesResponse
 import maryk.core.values.ObjectValues
 
@@ -27,7 +28,8 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.scanChanges(
     toVersion: ULong? = null,
     maxVersions: UInt = 1u,
     select: RootPropRefGraph<P>? = null,
-    filterSoftDeleted: Boolean = true
+    filterSoftDeleted: Boolean = true,
+    aggregations: Aggregations? = null
 ) =
     ScanChangesRequest(
         this,
@@ -39,7 +41,8 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.scanChanges(
         toVersion,
         maxVersions,
         select,
-        filterSoftDeleted
+        filterSoftDeleted,
+        aggregations
     )
 
 /**
@@ -58,7 +61,8 @@ data class ScanChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinit
     override val toVersion: ULong? = null,
     override val maxVersions: UInt = 1u,
     override val select: RootPropRefGraph<P>? = null,
-    override val filterSoftDeleted: Boolean = true
+    override val filterSoftDeleted: Boolean = true,
+    override val aggregations: Aggregations? = null
 ) : IsScanRequest<DM, P, ChangesResponse<DM>>, IsChangesRequest<DM, P, ChangesResponse<DM>> {
     override val requestType = ScanChanges
     override val responseModel = ChangesResponse
@@ -71,10 +75,11 @@ data class ScanChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinit
         val where = IsFetchRequest.addFilter(this, ScanChangesRequest<*, *>::where)
         val toVersion = IsFetchRequest.addToVersion(this, ScanChangesRequest<*, *>::toVersion)
         val filterSoftDeleted = IsFetchRequest.addFilterSoftDeleted(this, ScanChangesRequest<*, *>::filterSoftDeleted)
+        val aggregations = IsFetchRequest.addAggregationsDefinition(this, ScanChangesRequest<*, *>::aggregations)
         val order = IsScanRequest.addOrder(this, ScanChangesRequest<*, *>::order)
         val limit = IsScanRequest.addLimit(this, ScanChangesRequest<*, *>::limit)
-        val fromVersion = IsChangesRequest.addFromVersion(9u, this, ScanChangesRequest<*, *>::fromVersion)
-        val maxVersions = IsChangesRequest.addMaxVersions(10u, this, ScanChangesRequest<*, *>::maxVersions)
+        val fromVersion = IsChangesRequest.addFromVersion(10u, this, ScanChangesRequest<*, *>::fromVersion)
+        val maxVersions = IsChangesRequest.addMaxVersions(11u, this, ScanChangesRequest<*, *>::maxVersions)
     }
 
     companion object : QueryDataModel<ScanChangesRequest<*, *>, Properties>(
@@ -88,10 +93,11 @@ data class ScanChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinit
                 where = values(4u),
                 toVersion = values(5u),
                 filterSoftDeleted = values(6u),
-                order = values(7u),
-                limit = values(8u),
-                fromVersion = values(9u),
-                maxVersions = values(10u)
+                aggregations = values(7u),
+                order = values(8u),
+                limit = values(9u),
+                fromVersion = values(10u),
+                maxVersions = values(11u)
             )
     }
 }

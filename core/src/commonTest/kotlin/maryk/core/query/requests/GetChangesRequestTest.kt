@@ -52,6 +52,9 @@ class GetChangesRequestTest {
             where: !Exists value
             toVersion: 12345
             filterSoftDeleted: true
+            aggregations:
+              totalValues: !ValueCount
+                of: value
             fromVersion: 1234
             maxVersions: 5
 

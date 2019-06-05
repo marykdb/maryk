@@ -1,5 +1,6 @@
 package maryk.core.query.requests
 
+import maryk.core.aggregations.Aggregations
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
@@ -7,9 +8,11 @@ import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.wrapper.EmbeddedObjectDefinitionWrapper
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt64
+import maryk.core.query.RequestContext
 import maryk.core.query.filters.FilterType
 import maryk.core.query.filters.IsFilter
 import maryk.core.query.filters.mapOfFilterDefinitions
@@ -21,6 +24,7 @@ interface IsFetchRequest<DM : IsRootDataModel<P>, P : PropertyDefinitions, RP : 
     val where: IsFilter?
     val toVersion: ULong?
     val filterSoftDeleted: Boolean
+    val aggregations: Aggregations?
 
     companion object {
         internal fun <DM : Any> addSelect(
@@ -73,6 +77,16 @@ interface IsFetchRequest<DM : IsRootDataModel<P>, P : PropertyDefinitions, RP : 
                     default = true
                 ),
                 getter
+            )
+
+        @Suppress("UNCHECKED_CAST")
+        internal fun <DM: Any> addAggregationsDefinition(definitions: ObjectPropertyDefinitions<*>, getter: (DM) -> Aggregations?): EmbeddedObjectDefinitionWrapper<Aggregations, Aggregations, *, *, RequestContext, RequestContext, Nothing> =
+            definitions.add(
+                7u,
+                "aggregations",
+                EmbeddedObjectDefinition(dataModel = { Aggregations }),
+                getter as (Any) -> Aggregations?,
+                alternativeNames = setOf("aggs")
             )
     }
 }

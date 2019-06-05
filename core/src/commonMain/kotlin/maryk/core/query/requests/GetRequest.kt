@@ -1,5 +1,6 @@
 package maryk.core.query.requests
 
+import maryk.core.aggregations.Aggregations
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -21,9 +22,10 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.get(
     select: RootPropRefGraph<P>? = null,
     where: IsFilter? = null,
     toVersion: ULong? = null,
-    filterSoftDeleted: Boolean = true
+    filterSoftDeleted: Boolean = true,
+    aggregations: Aggregations? = null
 ) =
-    GetRequest(this, keys.toList(), select, where, toVersion, filterSoftDeleted)
+    GetRequest(this, keys.toList(), select, where, toVersion, filterSoftDeleted, aggregations)
 
 /**
  * A Request to get [select] values of DataObjects by [keys] and [where] filter for specific DataModel of type [DM].
@@ -36,7 +38,8 @@ data class GetRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> in
     override val select: RootPropRefGraph<P>? = null,
     override val where: IsFilter?,
     override val toVersion: ULong?,
-    override val filterSoftDeleted: Boolean
+    override val filterSoftDeleted: Boolean,
+    override val aggregations: Aggregations? = null
 ) : IsGetRequest<DM, P, ValuesResponse<DM, P>> {
     override val requestType = Get
     override val responseModel = ValuesResponse
@@ -48,6 +51,7 @@ data class GetRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> in
         val where = IsFetchRequest.addFilter(this, GetRequest<*, *>::where)
         val toVersion = IsFetchRequest.addToVersion(this, GetRequest<*, *>::toVersion)
         val filterSoftDeleted = IsFetchRequest.addFilterSoftDeleted(this, GetRequest<*, *>::filterSoftDeleted)
+        val aggregations = IsFetchRequest.addAggregationsDefinition(this, GetRequest<*, *>::aggregations)
     }
 
     companion object : QueryDataModel<GetRequest<*, *>, Properties>(
@@ -59,7 +63,8 @@ data class GetRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> in
             select = values(3u),
             where = values(4u),
             toVersion = values(5u),
-            filterSoftDeleted = values(6u)
+            filterSoftDeleted = values(6u),
+            aggregations = values(7u)
         )
     }
 }

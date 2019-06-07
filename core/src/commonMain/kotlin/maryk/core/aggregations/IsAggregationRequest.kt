@@ -5,7 +5,7 @@ import maryk.core.properties.definitions.EmbeddedObjectDefinition
 
 /** Defines an aggregation with a type so it can be transported */
 interface IsAggregationRequest {
-    val aggregationType: AggregationType
+    val aggregationType: AggregationRequestType
 
     companion object {
         fun <DM: Any> addAggregationsDefinition(definitions: ObjectPropertyDefinitions<*>, getter: (DM) -> Aggregations?) {

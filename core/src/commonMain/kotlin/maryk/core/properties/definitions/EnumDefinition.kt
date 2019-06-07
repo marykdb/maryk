@@ -1,11 +1,6 @@
 package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.extensions.bytes.calculateVarByteLength
-import maryk.core.extensions.bytes.initUInt
-import maryk.core.extensions.bytes.initUIntByVar
-import maryk.core.extensions.bytes.writeBytes
-import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.ContextualDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -16,7 +11,6 @@ import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IsCoreEnum
-import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.SimpleObjectValues
@@ -37,8 +31,8 @@ data class EnumDefinition<E : IndexedEnumComparable<E>>(
     IsTransportablePropertyDefinitionType<E>,
     HasDefaultValueDefinition<E> {
     override val propertyDefinitionType = PropertyDefinitionType.Enum
-    override val wireType = VAR_INT
-    override val byteSize = 2
+    override val wireType = enum.wireType
+    override val byteSize = enum.byteSize
 
     init {
         // Check enum
@@ -49,12 +43,12 @@ data class EnumDefinition<E : IndexedEnumComparable<E>>(
         enum.resolve(index) ?: throw ParseException("Enum index does not exist $index")
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) =
-        getEnumByIndex(initUInt(reader, 2))
+        enum.readStorageBytes(length, reader)
 
-    override fun calculateStorageByteLength(value: E) = this.byteSize
+    override fun calculateStorageByteLength(value: E) = enum.calculateStorageByteLength(value)
 
     override fun writeStorageBytes(value: E, writer: (byte: Byte) -> Unit) {
-        value.index.writeBytes(writer, 2)
+        enum.writeStorageBytes(value, writer)
     }
 
     override fun readTransportBytes(
@@ -63,10 +57,10 @@ data class EnumDefinition<E : IndexedEnumComparable<E>>(
         context: IsPropertyContext?,
         earlierValue: E?
     ) =
-        getEnumByIndex(initUIntByVar(reader))
+        enum.readTransportBytes(length, reader, context, earlierValue)
 
     override fun calculateTransportByteLength(value: E) =
-        value.index.calculateVarByteLength()
+        enum.calculateTransportByteLength(value)
 
     override fun writeTransportBytes(
         value: E,
@@ -74,7 +68,7 @@ data class EnumDefinition<E : IndexedEnumComparable<E>>(
         writer: (byte: Byte) -> Unit,
         context: IsPropertyContext?
     ) =
-        value.index.writeVarBytes(writer)
+        enum.writeTransportBytes(value, cacheGetter, writer, context)
 
     override fun asString(value: E) =
         if (value is IsCoreEnum) {
@@ -86,7 +80,8 @@ data class EnumDefinition<E : IndexedEnumComparable<E>>(
     override fun fromString(string: String): E =
         enum.resolve(string) ?: throw ParseException(string)
 
-    override fun fromNativeType(value: Any): E? = null
+    @Suppress("UNCHECKED_CAST")
+    override fun fromNativeType(value: Any): E? = value as? E
 
     /** Override equals to handle enum cases comparison */
     override fun equals(other: Any?): Boolean {

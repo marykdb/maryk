@@ -1,5 +1,6 @@
 package maryk.core.query.responses
 
+import maryk.core.aggregations.AggregationsResponse
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -13,7 +14,8 @@ import maryk.core.values.ObjectValues
 /** Response with [values] to an objects (Get/Scan) request to [dataModel] */
 data class ValuesResponse<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions>(
     override val dataModel: DM,
-    val values: List<ValuesWithMetaData<DM, P>>
+    val values: List<ValuesWithMetaData<DM, P>>,
+    val aggregations: AggregationsResponse? = null
 ) : IsDataModelResponse<DM> {
     object Properties : ObjectPropertyDefinitions<ValuesResponse<*, *>>() {
         val dataModel = IsDataModelResponse.addDataModel(this, ValuesResponse<*, *>::dataModel)
@@ -29,6 +31,16 @@ data class ValuesResponse<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions
         ).also {
             addSingle(it)
         }
+
+        init {
+            add(
+                3u,
+                "aggregations",
+                EmbeddedObjectDefinition(dataModel = { AggregationsResponse }),
+                ValuesResponse<*, *>::aggregations,
+                alternativeNames = setOf("aggs")
+            )
+        }
     }
 
     companion object : QueryDataModel<ValuesResponse<*, *>, Properties>(
@@ -36,7 +48,8 @@ data class ValuesResponse<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions
     ) {
         override fun invoke(values: ObjectValues<ValuesResponse<*, *>, Properties>) = ValuesResponse(
             dataModel = values(1u),
-            values = values<List<ValuesWithMetaData<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>>>(2u)
+            values = values<List<ValuesWithMetaData<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>>>(2u),
+            aggregations = values(3u)
         )
     }
 }

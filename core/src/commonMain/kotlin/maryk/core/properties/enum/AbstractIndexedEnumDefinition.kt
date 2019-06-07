@@ -1,5 +1,7 @@
 package maryk.core.properties.enum
 
+import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WireType.VAR_INT
 import maryk.lib.exceptions.ParseException
 import maryk.lib.safeLazy
 
@@ -10,6 +12,8 @@ abstract class AbstractIndexedEnumDefinition<E: IndexedEnum>(
     final override val reservedNames: List<String>? = null,
     private val unknownCreator: ((UInt, String) -> E)? = null
 ): IsIndexedEnumDefinition<E> {
+    override val wireType: WireType = VAR_INT
+
     final override val byteSize = 2
     final override val required = true
     final override val final = true

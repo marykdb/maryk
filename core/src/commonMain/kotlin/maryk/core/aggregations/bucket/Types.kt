@@ -1,6 +1,6 @@
 package maryk.core.aggregations.bucket
 
-import maryk.core.aggregations.AggregationType.TypesType
+import maryk.core.aggregations.AggregationRequestType.TypesType
 import maryk.core.aggregations.Aggregations
 import maryk.core.aggregations.IsAggregationRequest
 import maryk.core.models.SimpleQueryDataModel

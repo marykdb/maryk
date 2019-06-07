@@ -36,6 +36,19 @@ data class ContextualValueDefinition<CX : IsPropertyContext, CXI : IsPropertyCon
     override fun readJson(reader: IsJsonLikeReader, context: CX?) =
         contextualResolver(context).readJson(reader, contextTransformer(context))
 
+    override fun calculateTransportByteLengthWithKey(index: UInt, value: T, cacher: WriteCacheWriter, context: CX?) =
+        contextualResolver(context).calculateTransportByteLengthWithKey(index, value, cacher, contextTransformer(context))
+
+    override fun writeTransportBytesWithKey(
+        index: UInt,
+        value: T,
+        cacheGetter: WriteCacheReader,
+        writer: (byte: Byte) -> Unit,
+        context: CX?
+    ) {
+        contextualResolver(context).writeTransportBytesWithKey(index, value, cacheGetter, writer, contextTransformer(context))
+    }
+
     override fun writeTransportBytes(
         value: T,
         cacheGetter: WriteCacheReader,

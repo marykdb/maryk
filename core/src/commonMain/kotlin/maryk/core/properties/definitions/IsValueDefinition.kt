@@ -20,7 +20,6 @@ interface IsValueDefinition<T : Any, in CX : IsPropertyContext> : IsSubDefinitio
     val wireType: WireType
 
     override fun getEmbeddedByName(name: String): IsDefinitionWrapper<*, *, *, *>? = null
-
     override fun getEmbeddedByIndex(index: UInt): IsDefinitionWrapper<*, *, *, *>? = null
 
     /**

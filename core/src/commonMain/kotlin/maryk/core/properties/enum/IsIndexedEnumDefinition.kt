@@ -2,15 +2,24 @@ package maryk.core.properties.enum
 
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.exceptions.DefNotFoundException
+import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initUInt
+import maryk.core.extensions.bytes.initUIntByVar
 import maryk.core.extensions.bytes.writeBytes
+import maryk.core.extensions.bytes.writeVarBytes
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.IsSimpleValueDefinition
+import maryk.core.protobuf.WriteCacheReader
+import maryk.lib.exceptions.ParseException
 
 interface IsIndexedEnumDefinition<E: IndexedEnum>:
     MarykPrimitive,
     IsPropertyDefinition<E>,
-    IsFixedStorageBytesEncodable<E> {
+    IsFixedStorageBytesEncodable<E>,
+    IsSimpleValueDefinition<E, IsPropertyContext> {
+
     val reservedIndices: List<UInt>?
     val reservedNames: List<String>?
 
@@ -35,6 +44,33 @@ interface IsIndexedEnumDefinition<E: IndexedEnum>:
                 }
             }
         }
+    }
+
+    override fun fromString(string: String) =
+        resolve(string) ?: throw ParseException(string)
+
+    @Suppress("UNCHECKED_CAST")
+    override fun fromNativeType(value: Any): E? = value as? E
+
+    override fun calculateTransportByteLength(value: E) = //calculateStorageByteLength(value)
+         value.index.calculateVarByteLength()
+
+    override fun writeTransportBytes(
+        value: E,
+        cacheGetter: WriteCacheReader,
+        writer: (byte: Byte) -> Unit,
+        context: IsPropertyContext?
+    ) {
+        value.index.writeVarBytes(writer)
+    }
+
+    override fun calculateStorageByteLength(value: E) =
+        super.calculateStorageByteLength(value)
+
+    override fun readTransportBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?, earlierValue: E?): E {
+        val index = initUIntByVar(reader)
+        return resolve(index)
+            ?: throw DefNotFoundException("Unknown index $index for $name")
     }
 
     /** Get Enum value by [index] */

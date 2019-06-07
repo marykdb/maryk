@@ -14,8 +14,8 @@ data class DateTime(
 {
     constructor(
         year: Int,
-        month: Byte,
-        day: Byte,
+        month: Byte = 1,
+        day: Byte = 1,
         hour: Byte = 0,
         minute: Byte = 0,
         second: Byte = 0,

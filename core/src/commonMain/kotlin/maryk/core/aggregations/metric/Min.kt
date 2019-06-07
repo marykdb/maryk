@@ -1,6 +1,6 @@
 package maryk.core.aggregations.metric
 
-import maryk.core.aggregations.AggregationType.MinType
+import maryk.core.aggregations.AggregationRequestType.MinType
 import maryk.core.aggregations.IsAggregationRequest
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions

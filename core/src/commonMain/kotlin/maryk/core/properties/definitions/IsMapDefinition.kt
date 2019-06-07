@@ -96,7 +96,7 @@ interface IsMapDefinition<K : Any, V : Any, CX : IsPropertyContext> :
         writer.writeStartObject()
         value.forEach { (k, v) ->
             writer.writeFieldName(
-                keyDefinition.asString(k)
+                keyDefinition.asString(k, context)
             )
             valueDefinition.writeJsonValue(v, writer, context)
         }
@@ -113,7 +113,7 @@ interface IsMapDefinition<K : Any, V : Any, CX : IsPropertyContext> :
             reader.currentToken.apply {
                 if (this is FieldName) {
                     val key = this.value?.let {
-                        keyDefinition.fromString(it)
+                        keyDefinition.fromString(it, context)
                     } ?: throw ParseException("Map key cannot be null")
 
                     reader.nextToken()

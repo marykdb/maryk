@@ -3,6 +3,8 @@ package maryk.core.query.responses
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
+import maryk.core.aggregations.AggregationsResponse
+import maryk.core.aggregations.metric.ValueCountResponse
 import maryk.core.extensions.toUnitLambda
 import maryk.core.models.asValues
 import maryk.core.query.RequestContext
@@ -26,6 +28,11 @@ class ValuesResponseTest {
                 firstVersion = 0uL,
                 lastVersion = 14141uL,
                 isDeleted = false
+            )
+        ),
+        AggregationsResponse(
+            mapOf(
+                "total" to ValueCountResponse(SimpleMarykObject { value::ref }, 1uL)
             )
         )
     )
@@ -56,6 +63,10 @@ class ValuesResponseTest {
               firstVersion: 0
               lastVersion: 14141
               isDeleted: false
+            aggregations:
+              total: !ValueCount
+                of: value
+                value: 1
 
             """.trimIndent()
         ) {

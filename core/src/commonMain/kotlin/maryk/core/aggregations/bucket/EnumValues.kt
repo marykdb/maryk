@@ -1,6 +1,6 @@
 package maryk.core.aggregations.bucket
 
-import maryk.core.aggregations.AggregationType.EnumValuesType
+import maryk.core.aggregations.AggregationRequestType.EnumValuesType
 import maryk.core.aggregations.Aggregations
 import maryk.core.aggregations.IsAggregationRequest
 import maryk.core.models.SimpleQueryDataModel

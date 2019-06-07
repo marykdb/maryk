@@ -21,12 +21,12 @@ import maryk.core.query.RequestContext
 import maryk.json.MapType
 
 /** Indexed type of Aggregation */
-sealed class AggregationType(
+sealed class AggregationRequestType(
     index: UInt,
     override val name: String,
     dataModel: IsObjectDataModel<out IsAggregationRequest, *>,
     alternativeNames: Set<String>? = null
-) : IndexedEnumImpl<AggregationType>(index, alternativeNames),
+) : IndexedEnumImpl<AggregationRequestType>(index, alternativeNames),
     MapType,
     IsCoreEnum,
     MultiTypeEnum<IsAggregationRequest> {
@@ -36,19 +36,19 @@ sealed class AggregationType(
         dataModel = { dataModel as AbstractObjectDataModel<IsAggregationRequest, ObjectPropertyDefinitions<IsAggregationRequest>, RequestContext, RequestContext> }
     )
 
-    object ValueCountType : AggregationType(1u, "ValueCount", ValueCount)
-    object SumType : AggregationType(2u, "Sum", Sum)
-    object AverageType : AggregationType(3u, "Average", Average)
-    object MinType : AggregationType(4u, "Min", Min)
-    object MaxType : AggregationType(5u, "Max", Max)
-    object StatsType : AggregationType(6u, "Stats", Stats)
+    object ValueCountType : AggregationRequestType(1u, "ValueCount", ValueCount)
+    object SumType : AggregationRequestType(2u, "Sum", Sum)
+    object AverageType : AggregationRequestType(3u, "Average", Average)
+    object MinType : AggregationRequestType(4u, "Min", Min)
+    object MaxType : AggregationRequestType(5u, "Max", Max)
+    object StatsType : AggregationRequestType(6u, "Stats", Stats)
 
-    object EnumValuesType : AggregationType(50u, "EnumValues", EnumValues)
-    object TypesType : AggregationType(51u, "Types", Types)
-    object DateHistogramType : AggregationType(52u, "DateHistogram", DateHistogram)
+    object EnumValuesType : AggregationRequestType(50u, "EnumValues", EnumValues)
+    object TypesType : AggregationRequestType(51u, "Types", Types)
+    object DateHistogramType : AggregationRequestType(52u, "DateHistogram", DateHistogram)
 
-    companion object : MultiTypeEnumDefinition<AggregationType>(
-        "AggregationType",
+    companion object : MultiTypeEnumDefinition<AggregationRequestType>(
+        "AggregationRequestType",
         {
             arrayOf(
                 ValueCountType,

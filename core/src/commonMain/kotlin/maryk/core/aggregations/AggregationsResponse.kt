@@ -9,24 +9,17 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 
-/**
- * For defining aggregations to run on Scan or Get.
- * They are each defined as a pair with a String and the aggregation definition. This way the output can be referred to.
- */
-data class Aggregations internal constructor(
-    val namedAggregations: Map<String, IsAggregationRequest>
+/** For multiple aggregations responses named by a String */
+data class AggregationsResponse internal constructor(
+    val namedAggregations: Map<String, IsAggregationResponse>
 ) {
-    constructor(
-        vararg aggregationPair: Pair<String, IsAggregationRequest>
-    ) : this(aggregationPair.toMap())
-
-    internal object Properties : ObjectPropertyDefinitions<Aggregations>() {
+    internal object Properties : ObjectPropertyDefinitions<AggregationsResponse>() {
         val namedAggregations = add(
             1u, "namedAggregations",
             MapDefinition(
                 keyDefinition = StringDefinition(),
                 valueDefinition = MultiTypeDefinition(
-                    typeEnum = AggregationRequestType
+                    typeEnum = AggregationResponseType
                 )
             ),
             toSerializable = { value, _ ->
@@ -34,20 +27,20 @@ data class Aggregations internal constructor(
                     TypedValue(value.aggregationType, value)
                 }
             },
-            fromSerializable = { values ->
+            fromSerializable = { values: Map<String, TypedValue<AggregationResponseType, IsAggregationResponse>>? ->
                 values?.mapValues { (_, value) ->
                     value.value
                 }
             },
-            getter = Aggregations::namedAggregations
+            getter = AggregationsResponse::namedAggregations
         )
     }
 
-    internal companion object : SingleValueDataModel<Map<String, TypedValue<AggregationRequestType, IsAggregationRequest>>, Map<String, IsAggregationRequest>, Aggregations, Properties, RequestContext>(
+    internal companion object : SingleValueDataModel<Map<String, TypedValue<AggregationResponseType, IsAggregationResponse>>, Map<String, IsAggregationResponse>, AggregationsResponse, Properties, RequestContext>(
         properties = Properties,
         singlePropertyDefinition = Properties.namedAggregations
     ) {
-        override fun invoke(values: ObjectValues<Aggregations, Properties>) = Aggregations(
+        override fun invoke(values: ObjectValues<AggregationsResponse, Properties>) = AggregationsResponse(
             namedAggregations = values(1u)
         )
     }

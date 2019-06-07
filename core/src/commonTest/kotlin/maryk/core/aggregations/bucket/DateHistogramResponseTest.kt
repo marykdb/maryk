@@ -27,6 +27,18 @@ class DateHistogramResponseTest {
                     )
                 ),
                 15uL
+            ),
+            Bucket(
+                DateTime(2011),
+                AggregationsResponse(
+                    mapOf(
+                        "total" to SumResponse(
+                            TestMarykModel { int::ref },
+                            98373
+                        )
+                    )
+                ),
+                12uL
             )
         )
     )
@@ -58,6 +70,15 @@ class DateHistogramResponseTest {
                   }]
                 },
                 "count": "15"
+              }, {
+                "key": "2011-01-01T00:00",
+                "aggregations": {
+                  "total": ["Sum", {
+                    "of": "int",
+                    "value": 98373
+                  }]
+                },
+                "count": "12"
               }]
             }
             """.trimIndent()
@@ -78,6 +99,12 @@ class DateHistogramResponseTest {
                   of: int
                   value: 123456789
               count: 15
+            - key: '2011-01-01T00:00'
+              aggregations:
+                total: !Sum
+                  of: int
+                  value: 98373
+              count: 12
 
             """.trimIndent()
         ) {

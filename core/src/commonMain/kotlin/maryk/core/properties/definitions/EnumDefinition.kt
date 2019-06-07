@@ -10,7 +10,6 @@ import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.enum.IndexedEnumDefinition
-import maryk.core.properties.enum.IsCoreEnum
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.SimpleObjectValues
@@ -38,9 +37,6 @@ data class EnumDefinition<E : IndexedEnumComparable<E>>(
         // Check enum
         enum.check()
     }
-
-    private fun getEnumByIndex(index: UInt) =
-        enum.resolve(index) ?: throw ParseException("Enum index does not exist $index")
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) =
         enum.readStorageBytes(length, reader)
@@ -71,11 +67,7 @@ data class EnumDefinition<E : IndexedEnumComparable<E>>(
         enum.writeTransportBytes(value, cacheGetter, writer, context)
 
     override fun asString(value: E) =
-        if (value is IsCoreEnum) {
-            value.name
-        } else {
-            "${value.name}(${value.index})"
-        }
+        enum.asString(value)
 
     override fun fromString(string: String): E =
         enum.resolve(string) ?: throw ParseException(string)

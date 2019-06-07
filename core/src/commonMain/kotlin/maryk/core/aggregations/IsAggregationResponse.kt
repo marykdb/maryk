@@ -2,6 +2,8 @@ package maryk.core.aggregations
 
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
+import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
+import maryk.core.query.RequestContext
 
 /** Defines an aggregation response with a type so it can be transported */
 interface IsAggregationResponse {
@@ -13,7 +15,9 @@ interface IsAggregationResponse {
             definitions.add(
                 2u,
                 "aggregations",
-                EmbeddedObjectDefinition(dataModel = { AggregationsResponse }),
+                ContextTransformerDefinition(
+                    EmbeddedObjectDefinition(dataModel = { AggregationsResponse })
+                ) { context: RequestContext? -> context?.let { RequestContext(context.definitionsContext, context.dataModel) } },
                 getter as (Any) -> AggregationsResponse?,
                 alternativeNames = setOf("aggs")
             )

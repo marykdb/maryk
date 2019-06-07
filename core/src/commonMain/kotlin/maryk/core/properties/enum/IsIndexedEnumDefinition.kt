@@ -49,6 +49,13 @@ interface IsIndexedEnumDefinition<E: IndexedEnum>:
     override fun fromString(string: String) =
         resolve(string) ?: throw ParseException(string)
 
+    override fun asString(value: E) =
+        if (value is IsCoreEnum) {
+            value.name
+        } else {
+            "${value.name}(${value.index})"
+        }
+
     @Suppress("UNCHECKED_CAST")
     override fun fromNativeType(value: Any): E? = value as? E
 

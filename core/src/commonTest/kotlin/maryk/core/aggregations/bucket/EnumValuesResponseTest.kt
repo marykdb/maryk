@@ -9,6 +9,7 @@ import maryk.core.aggregations.metric.SumResponse
 import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.test.models.Option.V1
+import maryk.test.models.Option.V2
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.expect
@@ -33,6 +34,23 @@ class EnumValuesResponseTest {
                     )
                 ),
                 15uL
+            ),
+            Bucket(
+                V2,
+                AggregationsResponse(
+                    mapOf(
+                        "total" to SumResponse(
+                            TestMarykModel { int::ref },
+                            1
+                        ),
+                        "avg" to AverageResponse(
+                            TestMarykModel { int::ref },
+                            5322,
+                            2uL
+                        )
+                    )
+                ),
+                2uL
             )
         )
     )
@@ -69,6 +87,20 @@ class EnumValuesResponseTest {
                   }]
                 },
                 "count": "15"
+              }, {
+                "key": "V2(2)",
+                "aggregations": {
+                  "total": ["Sum", {
+                    "of": "int",
+                    "value": 1
+                  }],
+                  "avg": ["Average", {
+                    "of": "int",
+                    "value": 5322,
+                    "valueCount": "2"
+                  }]
+                },
+                "count": "2"
               }]
             }
             """.trimIndent()
@@ -93,6 +125,16 @@ class EnumValuesResponseTest {
                   value: 43728
                   valueCount: 32
               count: 15
+            - key: V2(2)
+              aggregations:
+                total: !Sum
+                  of: int
+                  value: 1
+                avg: !Average
+                  of: int
+                  value: 5322
+                  valueCount: 2
+              count: 2
 
             """.trimIndent()
         ) {

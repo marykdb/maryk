@@ -9,6 +9,7 @@ import maryk.core.aggregations.metric.SumResponse
 import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.test.models.SimpleMarykTypeEnum.S1
+import maryk.test.models.SimpleMarykTypeEnum.S2
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.expect
@@ -33,6 +34,23 @@ class TypesResponseTest {
                     )
                 ),
                 15uL
+            ),
+            Bucket(
+                S2,
+                AggregationsResponse(
+                    mapOf(
+                        "total" to SumResponse(
+                            TestMarykModel { int::ref },
+                            213683
+                        ),
+                        "avg" to AverageResponse(
+                            TestMarykModel { int::ref },
+                            8823234,
+                            64uL
+                        )
+                    )
+                ),
+                23uL
             )
         )
     )
@@ -56,7 +74,7 @@ class TypesResponseTest {
             {
               "of": "multi.*",
               "buckets": [{
-                "key": "S1",
+                "key": "S1(1)",
                 "aggregations": {
                   "total": ["Sum", {
                     "of": "int",
@@ -69,6 +87,20 @@ class TypesResponseTest {
                   }]
                 },
                 "count": "15"
+              }, {
+                "key": "S2(2)",
+                "aggregations": {
+                  "total": ["Sum", {
+                    "of": "int",
+                    "value": 213683
+                  }],
+                  "avg": ["Average", {
+                    "of": "int",
+                    "value": 8823234,
+                    "valueCount": "64"
+                  }]
+                },
+                "count": "23"
               }]
             }
             """.trimIndent()
@@ -83,7 +115,7 @@ class TypesResponseTest {
             """
             of: multi.*
             buckets:
-            - key: S1
+            - key: S1(1)
               aggregations:
                 total: !Sum
                   of: int
@@ -93,6 +125,16 @@ class TypesResponseTest {
                   value: 43728
                   valueCount: 32
               count: 15
+            - key: S2(2)
+              aggregations:
+                total: !Sum
+                  of: int
+                  value: 213683
+                avg: !Average
+                  of: int
+                  value: 8823234
+                  valueCount: 64
+              count: 23
 
             """.trimIndent()
         ) {

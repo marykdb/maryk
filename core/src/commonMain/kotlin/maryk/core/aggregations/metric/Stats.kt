@@ -12,19 +12,19 @@ import maryk.core.values.SimpleObjectValues
  * Creates a stats overview for [reference] which is a combination of Value Count,
  * SumType, MinType, Max and Average values
  */
-data class Stats(
-    val reference: IsPropertyReference<out Comparable<*>, *, *>
-) : IsAggregationRequest {
+data class Stats<T: Comparable<T>>(
+    override val reference: IsPropertyReference<out T, *, *>
+) : IsAggregationRequest<IsPropertyReference<out T, *, *>, StatsResponse<T>> {
     override val aggregationType = StatsType
 
-    companion object : SimpleQueryDataModel<Stats>(
-        properties = object : ObjectPropertyDefinitions<Stats>() {
+    companion object : SimpleQueryDataModel<Stats<*>>(
+        properties = object : ObjectPropertyDefinitions<Stats<*>>() {
             init {
-                DefinedByReference.addReference(this, Stats::reference, name = "of")
+                DefinedByReference.addReference(this, Stats<*>::reference, name = "of")
             }
         }
     ) {
-        override fun invoke(values: SimpleObjectValues<Stats>) = Stats(
+        override fun invoke(values: SimpleObjectValues<Stats<*>>) = Stats<Comparable<Any>>(
             reference = values(1u)
         )
     }

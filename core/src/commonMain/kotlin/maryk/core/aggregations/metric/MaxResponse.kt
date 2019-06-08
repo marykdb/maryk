@@ -16,7 +16,7 @@ import maryk.core.values.SimpleObjectValues
 /** The response of the find maximum aggregation */
 data class MaxResponse<T: Comparable<T>>(
     val reference: IsPropertyReference<out T, *, *>,
-    val value: T
+    val value: T?
 ) : IsAggregationResponse {
     override val aggregationType = MaxType
 
@@ -26,6 +26,7 @@ data class MaxResponse<T: Comparable<T>>(
                 DefinedByReference.addReference(this, MaxResponse<*>::reference, name = "of")
                 add(2u, "value",
                     ContextualValueDefinition(
+                        required = false,
                         contextualResolver = { context: RequestContext? ->
                             context?.reference?.let {
                                 @Suppress("UNCHECKED_CAST")

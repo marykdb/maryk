@@ -12,25 +12,26 @@ import maryk.core.values.SimpleObjectValues
 import maryk.lib.time.IsTemporal
 
 /** Bucket all together that are on same date/time for [reference] */
-data class DateHistogram(
-    override val reference: IsPropertyReference<out IsTemporal<*>, *, *>,
-    val dateUnit: DateHistogramUnit,
+data class DateHistogram<T: IsTemporal<*>>(
+    override val reference: IsPropertyReference<out T, *, *>,
+    val dateUnit: DateUnit,
     val aggregations: Aggregations? = null
-) : IsAggregationRequest, DefinedByReference<IsTemporal<*>> {
+) : IsAggregationRequest<IsPropertyReference<out T, *, *>, DateHistogramResponse<T>>,
+    DefinedByReference<IsTemporal<*>> {
     override val aggregationType = DateHistogramType
 
-    companion object : SimpleQueryDataModel<DateHistogram>(
-        properties = object : ObjectPropertyDefinitions<DateHistogram>() {
+    companion object : SimpleQueryDataModel<DateHistogram<*>>(
+        properties = object : ObjectPropertyDefinitions<DateHistogram<*>>() {
             init {
-                DefinedByReference.addReference(this, DateHistogram::reference, name = "of")
+                DefinedByReference.addReference(this, DateHistogram<*>::reference, name = "of")
                 add(
-                    3u, "dateUnit", EnumDefinition(enum = DateHistogramUnit), DateHistogram::dateUnit
+                    3u, "dateUnit", EnumDefinition(enum = DateUnit), DateHistogram<*>::dateUnit
                 )
-                IsAggregationRequest.addAggregationsDefinition(this, DateHistogram::aggregations)
+                IsAggregationRequest.addAggregationsDefinition(this, DateHistogram<*>::aggregations)
             }
         }
     ) {
-        override fun invoke(values: SimpleObjectValues<DateHistogram>) = DateHistogram(
+        override fun invoke(values: SimpleObjectValues<DateHistogram<*>>) = DateHistogram<IsTemporal<Any>>(
             reference = values(1u),
             aggregations = values(2u),
             dateUnit = values(3u)

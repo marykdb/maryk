@@ -6,13 +6,13 @@ import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DefinedByReference
 import maryk.core.values.SimpleObjectValues
 
 /** The [buckets] found for all enum values at [reference] */
-data class EnumValuesResponse<T: IndexedEnum>(
+data class EnumValuesResponse<T: IndexedEnumComparable<T>>(
     val reference: IsPropertyReference<out T, *, *>,
     val buckets: List<Bucket<T>> = emptyList()
 ) : IsAggregationResponse {
@@ -35,7 +35,7 @@ data class EnumValuesResponse<T: IndexedEnum>(
         }
     ) {
         override fun invoke(values: SimpleObjectValues<EnumValuesResponse<*>>) =
-            EnumValuesResponse(
+            EnumValuesResponse<IndexedEnumComparable<Any>>(
                 reference = values(1u),
                 buckets = values(2u)
             )

@@ -2,9 +2,11 @@ package maryk.core.aggregations
 
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
+import maryk.core.properties.references.IsPropertyReference
 
 /** Defines an aggregation with a type so it can be transported */
-interface IsAggregationRequest {
+interface IsAggregationRequest<R: IsPropertyReference<*, *, *>, RS: IsAggregationResponse> {
+    val reference: R
     val aggregationType: AggregationRequestType
 
     companion object {

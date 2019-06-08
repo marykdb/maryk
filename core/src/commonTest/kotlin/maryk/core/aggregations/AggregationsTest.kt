@@ -4,7 +4,7 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.aggregations.bucket.DateHistogram
-import maryk.core.aggregations.bucket.DateHistogramUnit.Days
+import maryk.core.aggregations.bucket.DateUnit.Days
 import maryk.core.aggregations.bucket.EnumValues
 import maryk.core.aggregations.bucket.Types
 import maryk.core.aggregations.metric.Average

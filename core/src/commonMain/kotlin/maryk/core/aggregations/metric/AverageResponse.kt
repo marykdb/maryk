@@ -15,10 +15,10 @@ import maryk.core.query.DefinedByReference
 import maryk.core.query.RequestContext
 import maryk.core.values.SimpleObjectValues
 
-/** The response of the find maximum aggregation */
+/** The response of the find average value aggregation */
 data class AverageResponse<T: Comparable<T>>(
     val reference: IsPropertyReference<out T, *, *>,
-    val value: T,
+    val value: T?,
     val valueCount: ULong // The value count is included so multiple responses of sharded tables can be joined
 ) : IsAggregationResponse {
     override val aggregationType = AverageType
@@ -29,6 +29,7 @@ data class AverageResponse<T: Comparable<T>>(
                 DefinedByReference.addReference(this, AverageResponse<*>::reference, name = "of")
                 add(2u, "value",
                     ContextualValueDefinition(
+                        required = false,
                         contextualResolver = { context: RequestContext? ->
                             context?.reference?.let {
                                 @Suppress("UNCHECKED_CAST")

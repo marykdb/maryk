@@ -14,9 +14,9 @@ import maryk.core.query.RequestContext
 import maryk.core.values.SimpleObjectValues
 
 /** The response of the sum aggregation */
-data class SumResponse<T: Comparable<T>>(
+data class SumResponse<T: Any>(
     val reference: IsPropertyReference<out T, *, *>,
-    val value: T
+    val value: T?
 ) : IsAggregationResponse {
     override val aggregationType = SumType
 
@@ -26,6 +26,7 @@ data class SumResponse<T: Comparable<T>>(
                 DefinedByReference.addReference(this, SumResponse<*>::reference, name = "of")
                 add(2u, "value",
                     ContextualValueDefinition(
+                        required = false,
                         contextualResolver = { context: RequestContext? ->
                             context?.reference?.let {
                                 @Suppress("UNCHECKED_CAST")

@@ -9,40 +9,20 @@ import maryk.core.query.DefinedByReference
 import maryk.core.values.SimpleObjectValues
 
 /** Does a sum over all values encountered at [reference] */
-data class Sum(
-    val reference: IsPropertyReference<out Comparable<*>, *, *>
-) : IsAggregationRequest {
+data class Sum<T: Any>(
+    override val reference: IsPropertyReference<out T, *, *>
+) : IsAggregationRequest<IsPropertyReference<out T, *, *>, SumResponse<T>> {
     override val aggregationType = SumType
 
-    companion object : SimpleQueryDataModel<Sum>(
-        properties = object : ObjectPropertyDefinitions<Sum>() {
+    companion object : SimpleQueryDataModel<Sum<*>>(
+        properties = object : ObjectPropertyDefinitions<Sum<*>>() {
             init {
-                DefinedByReference.addReference(this, Sum::reference, name = "of")
+                DefinedByReference.addReference(this, Sum<*>::reference, name = "of")
             }
         }
     ) {
-        override fun invoke(values: SimpleObjectValues<Sum>) = Sum(
+        override fun invoke(values: SimpleObjectValues<Sum<*>>) = Sum<Any>(
             reference = values(1u)
         )
     }
 }
-//
-///** Does a sum over all values encountered at [reference] */
-//data class SumResponse(
-//    val value: Comparable<*>,
-//    val numberType: NumberType
-//) : IsAggregationRequest {
-//    override val aggregationType = SumType
-//
-//    companion object : SimpleQueryDataModel<Sum>(
-//        properties = object : ObjectPropertyDefinitions<Sum>() {
-//            init {
-//                DefinedByReference.addReference(this, Sum::reference, name = "of")
-//            }
-//        }
-//    ) {
-//        override fun invoke(values: SimpleObjectValues<Sum>) = Sum(
-//            reference = values(1u)
-//        )
-//    }
-//}

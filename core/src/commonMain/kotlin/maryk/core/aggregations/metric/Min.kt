@@ -9,19 +9,19 @@ import maryk.core.query.DefinedByReference
 import maryk.core.values.SimpleObjectValues
 
 /** Finds the minimum value for [reference] */
-data class Min(
-    val reference: IsPropertyReference<out Comparable<*>, *, *>
-) : IsAggregationRequest {
+data class Min<T: Comparable<T>>(
+    override val reference: IsPropertyReference<out T, *, *>
+) : IsAggregationRequest<IsPropertyReference<out T, *, *>, MinResponse<T>> {
     override val aggregationType = MinType
 
-    companion object : SimpleQueryDataModel<Min>(
-        properties = object : ObjectPropertyDefinitions<Min>() {
+    companion object : SimpleQueryDataModel<Min<*>>(
+        properties = object : ObjectPropertyDefinitions<Min<*>>() {
             init {
-                DefinedByReference.addReference(this, Min::reference, name = "of")
+                DefinedByReference.addReference(this, Min<*>::reference, name = "of")
             }
         }
     ) {
-        override fun invoke(values: SimpleObjectValues<Min>) = Min(
+        override fun invoke(values: SimpleObjectValues<Min<*>>) = Min<Comparable<Any>>(
             reference = values(1u)
         )
     }

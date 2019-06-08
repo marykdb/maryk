@@ -9,19 +9,19 @@ import maryk.core.query.DefinedByReference
 import maryk.core.values.SimpleObjectValues
 
 /** Finds the maximum value for [reference] */
-data class Max(
-    val reference: IsPropertyReference<out Comparable<*>, *, *>
-) : IsAggregationRequest {
+data class Max<T: Comparable<T>>(
+    override val reference: IsPropertyReference<out T, *, *>
+) : IsAggregationRequest<IsPropertyReference<out Comparable<*>, *, *>, MaxResponse<T>> {
     override val aggregationType = MaxType
 
-    companion object : SimpleQueryDataModel<Max>(
-        properties = object : ObjectPropertyDefinitions<Max>() {
+    companion object : SimpleQueryDataModel<Max<*>>(
+        properties = object : ObjectPropertyDefinitions<Max<*>>() {
             init {
-                DefinedByReference.addReference(this, Max::reference, name = "of")
+                DefinedByReference.addReference(this, Max<*>::reference, name = "of")
             }
         }
     ) {
-        override fun invoke(values: SimpleObjectValues<Max>) = Max(
+        override fun invoke(values: SimpleObjectValues<Max<*>>) = Max<Comparable<Any>>(
             reference = values(1u)
         )
     }

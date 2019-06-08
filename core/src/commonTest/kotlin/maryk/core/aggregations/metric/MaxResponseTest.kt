@@ -15,6 +15,11 @@ class MaxResponseTest {
         value = 1234
     )
 
+    private val maxResponseNull = MaxResponse(
+        reference = TestMarykModel { int::ref },
+        value = null
+    )
+
     private val context = RequestContext(
         mapOf(
             TestMarykModel.name toUnitLambda { TestMarykModel }
@@ -25,6 +30,7 @@ class MaxResponseTest {
     @Test
     fun convertToProtoBufAndBack() {
         checkProtoBufConversion(this.maxResponse, MaxResponse, { this.context })
+        checkProtoBufConversion(this.maxResponseNull, MaxResponse, { this.context })
     }
 
     @Test
@@ -39,6 +45,16 @@ class MaxResponseTest {
         ) {
             checkJsonConversion(this.maxResponse, MaxResponse, { this.context })
         }
+
+        expect(
+            """
+            {
+              "of": "int"
+            }
+            """.trimIndent()
+        ) {
+            checkJsonConversion(this.maxResponseNull, MaxResponse, { this.context })
+        }
     }
 
     @Test
@@ -46,11 +62,10 @@ class MaxResponseTest {
         expect(
             """
             of: int
-            value: 1234
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.maxResponse, MaxResponse, { this.context })
+            checkYamlConversion(this.maxResponseNull, MaxResponse, { this.context })
         }
     }
 }

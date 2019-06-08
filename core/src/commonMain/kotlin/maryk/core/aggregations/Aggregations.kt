@@ -14,10 +14,10 @@ import maryk.core.values.ObjectValues
  * They are each defined as a pair with a String and the aggregation definition. This way the output can be referred to.
  */
 data class Aggregations internal constructor(
-    val namedAggregations: Map<String, IsAggregationRequest>
+    val namedAggregations: Map<String, IsAggregationRequest<*, *>>
 ) {
     constructor(
-        vararg aggregationPair: Pair<String, IsAggregationRequest>
+        vararg aggregationPair: Pair<String, IsAggregationRequest<*, *>>
     ) : this(aggregationPair.toMap())
 
     internal object Properties : ObjectPropertyDefinitions<Aggregations>() {
@@ -43,7 +43,7 @@ data class Aggregations internal constructor(
         )
     }
 
-    internal companion object : SingleValueDataModel<Map<String, TypedValue<AggregationRequestType, IsAggregationRequest>>, Map<String, IsAggregationRequest>, Aggregations, Properties, RequestContext>(
+    internal companion object : SingleValueDataModel<Map<String, TypedValue<AggregationRequestType, IsAggregationRequest<*, *>>>, Map<String, IsAggregationRequest<*, *>>, Aggregations, Properties, RequestContext>(
         properties = Properties,
         singlePropertyDefinition = Properties.namedAggregations
     ) {

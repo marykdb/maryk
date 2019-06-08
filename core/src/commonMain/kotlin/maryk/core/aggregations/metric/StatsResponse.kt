@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package maryk.core.aggregations.metric
 
 import maryk.core.aggregations.AggregationResponseType.StatsType
@@ -19,10 +21,10 @@ import maryk.core.values.SimpleObjectValues
 data class StatsResponse<T: Comparable<T>>(
     val reference: IsPropertyReference<out T, *, *>,
     val valueCount: ULong,
-    val average: T,
-    val min: T,
-    val max: T,
-    val sum: T
+    val average: T?,
+    val min: T?,
+    val max: T?,
+    var sum: T?
 ) : IsAggregationResponse {
     override val aggregationType = StatsType
 
@@ -34,6 +36,7 @@ data class StatsResponse<T: Comparable<T>>(
                     NumberDefinition(type = UInt64), StatsResponse<*>::valueCount)
 
                 val contextualValueDefinition = ContextualValueDefinition(
+                    required = false,
                     contextualResolver = { context: RequestContext? ->
                         context?.reference?.let {
                             @Suppress("UNCHECKED_CAST")

@@ -16,6 +16,12 @@ class AverageResponseTest {
         valueCount = 32uL
     )
 
+    private val avgResponseNull = AverageResponse(
+        reference = TestMarykModel { int::ref },
+        value = null,
+        valueCount = 0uL
+    )
+
     private val context = RequestContext(
         mapOf(
             TestMarykModel.name toUnitLambda { TestMarykModel }
@@ -26,6 +32,7 @@ class AverageResponseTest {
     @Test
     fun convertToProtoBufAndBack() {
         checkProtoBufConversion(this.avgResponse, AverageResponse, { this.context })
+        checkProtoBufConversion(this.avgResponseNull, AverageResponse, { this.context })
     }
 
     @Test
@@ -41,6 +48,17 @@ class AverageResponseTest {
         ) {
             checkJsonConversion(this.avgResponse, AverageResponse, { this.context })
         }
+
+        expect(
+            """
+            {
+              "of": "int",
+              "valueCount": "0"
+            }
+            """.trimIndent()
+        ) {
+            checkJsonConversion(this.avgResponseNull, AverageResponse, { this.context })
+        }
     }
 
     @Test
@@ -54,6 +72,16 @@ class AverageResponseTest {
             """.trimIndent()
         ) {
             checkYamlConversion(this.avgResponse, AverageResponse, { this.context })
+        }
+
+        expect(
+            """
+            of: int
+            valueCount: 0
+
+            """.trimIndent()
+        ) {
+            checkYamlConversion(this.avgResponseNull, AverageResponse, { this.context })
         }
     }
 }

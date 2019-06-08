@@ -13,8 +13,11 @@ object UInt16 : UnsignedNumberDescriptor<UShort>(
     size = 2,
     MIN_VALUE = UShort.MIN_VALUE,
     MAX_VALUE = UShort.MAX_VALUE,
-    type = UInt16Type
+    type = UInt16Type,
+    zero = 0.toUShort()
 ) {
+    override fun sum(value1: UShort, value2: UShort) = (value1 + value2).toUShort()
+    override fun divide(value1: UShort, value2: UShort) = (value1 / value2).toUShort()
     override fun fromStorageByteReader(length: Int, reader: () -> Byte) =
         (initShort(reader) + Short.MIN_VALUE).toUShort()
 
@@ -28,10 +31,10 @@ object UInt16 : UnsignedNumberDescriptor<UShort>(
     }
 
     override fun ofString(value: String) = value.toUShort()
-    override fun ofDouble(value: Double) = value.toInt().toUShort()
+    override fun ofDouble(double: Double) = double.toInt().toUShort()
     override fun toDouble(value: UShort) = value.toLong().toDouble()
-    override fun ofInt(value: Int) = value.toUShort()
-    override fun ofLong(value: Long) = value.toUShort()
+    override fun ofInt(int: Int) = int.toUShort()
+    override fun ofLong(long: Long) = long.toUShort()
     override fun createRandom() = Random.nextInt(UShort.MAX_VALUE.toInt()).toUShort()
     override fun isOfType(value: Any) = value == UShort
 }

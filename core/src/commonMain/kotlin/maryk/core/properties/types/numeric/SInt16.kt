@@ -14,8 +14,11 @@ import kotlin.random.Random
 object SInt16 : NumberDescriptor<Short>(
     size = 2,
     wireType = VAR_INT,
-    type = SInt16Type
+    type = SInt16Type,
+    zero = 0.toShort()
 ) {
+    override fun sum(value1: Short, value2: Short) = (value1 + value2).toShort()
+    override fun divide(value1: Short, value2: Short) = (value1 / value2).toShort()
     override fun fromStorageByteReader(length: Int, reader: () -> Byte): Short = initShort(reader)
     override fun writeStorageBytes(value: Short, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
     override fun readTransportBytes(reader: () -> Byte) = initShortByVar(reader).decodeZigZag()
@@ -26,10 +29,10 @@ object SInt16 : NumberDescriptor<Short>(
     }
 
     override fun ofString(value: String) = value.toShort()
-    override fun ofDouble(value: Double) = value.toShort()
+    override fun ofDouble(double: Double) = double.toShort()
     override fun toDouble(value: Short) = value.toDouble()
-    override fun ofInt(value: Int) = value.toShort()
-    override fun ofLong(value: Long) = value.toShort()
+    override fun ofInt(int: Int) = int.toShort()
+    override fun ofLong(long: Long) = long.toShort()
     override fun createRandom() = Random.nextInt(32767).toShort()
     override fun isOfType(value: Any) = value is Short
 }

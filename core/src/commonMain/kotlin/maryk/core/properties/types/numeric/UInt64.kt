@@ -14,8 +14,11 @@ object UInt64 : UnsignedNumberDescriptor<ULong>(
     size = ULong.SIZE_BYTES,
     MIN_VALUE = ULong.MIN_VALUE,
     MAX_VALUE = ULong.MAX_VALUE,
-    type = UInt64Type
+    type = UInt64Type,
+    zero = 0.toULong()
 ) {
+    override fun sum(value1: ULong, value2: ULong) = value1 + value2
+    override fun divide(value1: ULong, value2: ULong) = value1 / value2
     override fun fromStorageByteReader(length: Int, reader: () -> Byte) = initULong(reader).toULong()
     override fun writeStorageBytes(value: ULong, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
     override fun readTransportBytes(reader: () -> Byte) = initULongByVar(reader)
@@ -25,10 +28,10 @@ object UInt64 : UnsignedNumberDescriptor<ULong>(
     }
 
     override fun ofString(value: String) = value.toULong()
-    override fun ofDouble(value: Double) = value.toLong().toULong()
+    override fun ofDouble(double: Double) = double.toLong().toULong()
     override fun toDouble(value: ULong) = value.toLong().toDouble()
-    override fun ofInt(value: Int) = value.toULong()
-    override fun ofLong(value: Long) = value.toULong()
+    override fun ofInt(int: Int) = int.toULong()
+    override fun ofLong(long: Long) = long.toULong()
     override fun createRandom() = Random.nextULong()
     override fun isOfType(value: Any) = value == UInt64
 }

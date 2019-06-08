@@ -14,8 +14,11 @@ object UInt8 : UnsignedNumberDescriptor<UByte>(
     size = UByte.SIZE_BYTES,
     MIN_VALUE = UByte.MIN_VALUE,
     MAX_VALUE = UByte.MAX_VALUE,
-    type = UInt8Type
+    type = UInt8Type,
+    zero = 0.toUByte()
 ) {
+    override fun sum(value1: UByte, value2: UByte) = (value1 + value2).toUByte()
+    override fun divide(value1: UByte, value2: UByte) = (value1 / value2).toUByte()
     override fun fromStorageByteReader(length: Int, reader: () -> Byte) = (initByte(reader) + Byte.MIN_VALUE).toUByte()
     override fun writeStorageBytes(value: UByte, writer: (byte: Byte) -> Unit) =
         (value.toByte() - Byte.MIN_VALUE).toByte().writeBytes(writer)
@@ -27,10 +30,10 @@ object UInt8 : UnsignedNumberDescriptor<UByte>(
     }
 
     override fun ofString(value: String) = value.toUByte()
-    override fun ofDouble(value: Double) = value.toInt().toUByte()
+    override fun ofDouble(double: Double) = double.toInt().toUByte()
     override fun toDouble(value: UByte) = value.toLong().toDouble()
-    override fun ofInt(value: Int) = value.toUByte()
-    override fun ofLong(value: Long) = value.toUByte()
+    override fun ofInt(int: Int) = int.toUByte()
+    override fun ofLong(long: Long) = long.toUByte()
     override fun createRandom() = Random.nextUInt(UByte.MAX_VALUE.toUInt()).toUByte()
     override fun isOfType(value: Any) = value == UByte
 }

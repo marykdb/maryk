@@ -14,8 +14,11 @@ import kotlin.random.Random
 object SInt8 : NumberDescriptor<Byte>(
     size = 1,
     wireType = VAR_INT,
-    type = SInt8Type
+    type = SInt8Type,
+    zero = 0.toByte()
 ) {
+    override fun sum(value1: Byte, value2: Byte) = (value1 + value2).toByte()
+    override fun divide(value1: Byte, value2: Byte) = (value1 / value2).toByte()
     override fun fromStorageByteReader(length: Int, reader: () -> Byte): Byte = initByte(reader)
     override fun writeStorageBytes(value: Byte, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
     override fun readTransportBytes(reader: () -> Byte) = initByteByVar(reader).decodeZigZag()
@@ -26,10 +29,10 @@ object SInt8 : NumberDescriptor<Byte>(
     }
 
     override fun ofString(value: String) = value.toByte()
-    override fun ofDouble(value: Double) = value.toByte()
+    override fun ofDouble(double: Double) = double.toByte()
     override fun toDouble(value: Byte) = value.toDouble()
-    override fun ofInt(value: Int) = value.toByte()
-    override fun ofLong(value: Long) = value.toByte()
+    override fun ofInt(int: Int) = int.toByte()
+    override fun ofLong(long: Long) = long.toByte()
     override fun createRandom() = Random.nextInt(127).toByte()
     override fun isOfType(value: Any) = value is Byte
 }

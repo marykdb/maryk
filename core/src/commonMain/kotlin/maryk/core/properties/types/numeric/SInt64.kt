@@ -14,8 +14,11 @@ import kotlin.random.Random
 object SInt64 : NumberDescriptor<Long>(
     size = 8,
     wireType = VAR_INT,
-    type = SInt64Type
+    type = SInt64Type,
+    zero = 0L
 ) {
+    override fun sum(value1: Long, value2: Long) = value1 + value2
+    override fun divide(value1: Long, value2: Long) = value1 / value2
     override fun fromStorageByteReader(length: Int, reader: () -> Byte): Long = initLong(reader)
     override fun writeStorageBytes(value: Long, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
     override fun readTransportBytes(reader: () -> Byte) = initLongByVar(reader).decodeZigZag()
@@ -26,10 +29,10 @@ object SInt64 : NumberDescriptor<Long>(
     }
 
     override fun ofString(value: String) = value.toLong()
-    override fun ofDouble(value: Double) = value.toLong()
+    override fun ofDouble(double: Double) = double.toLong()
     override fun toDouble(value: Long) = value.toDouble()
-    override fun ofInt(value: Int) = value.toLong()
-    override fun ofLong(value: Long) = value
+    override fun ofInt(int: Int) = int.toLong()
+    override fun ofLong(long: Long) = long
     override fun createRandom() = Random.nextLong()
     override fun isOfType(value: Any) = value is Long
 }

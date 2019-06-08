@@ -14,8 +14,11 @@ object UInt32 : UnsignedNumberDescriptor<UInt>(
     size = UInt.SIZE_BYTES,
     MIN_VALUE = UInt.MIN_VALUE,
     MAX_VALUE = UInt.MAX_VALUE,
-    type = UInt32Type
+    type = UInt32Type,
+    zero = 0.toUInt()
 ) {
+    override fun sum(value1: UInt, value2: UInt) = value1 + value2
+    override fun divide(value1: UInt, value2: UInt) = value1 / value2
     override fun fromStorageByteReader(length: Int, reader: () -> Byte) = initUInt(reader)
     override fun writeStorageBytes(value: UInt, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
     override fun readTransportBytes(reader: () -> Byte) = initUIntByVar(reader)
@@ -25,10 +28,10 @@ object UInt32 : UnsignedNumberDescriptor<UInt>(
     }
 
     override fun ofString(value: String) = value.toUInt()
-    override fun ofDouble(value: Double) = value.toLong().toUInt()
+    override fun ofDouble(double: Double) = double.toLong().toUInt()
     override fun toDouble(value: UInt) = value.toLong().toDouble()
-    override fun ofInt(value: Int) = value.toUInt()
-    override fun ofLong(value: Long) = value.toUInt()
+    override fun ofInt(int: Int) = int.toUInt()
+    override fun ofLong(long: Long) = long.toUInt()
     override fun createRandom() = Random.nextUInt()
     override fun isOfType(value: Any) = value == UInt
 }

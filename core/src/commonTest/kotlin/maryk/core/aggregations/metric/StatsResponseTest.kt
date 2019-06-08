@@ -11,12 +11,12 @@ import kotlin.test.expect
 
 class StatsResponseTest {
     private val statsResponse = StatsResponse(
-        reference = TestMarykModel { double::ref },
+        reference = TestMarykModel { int::ref },
         valueCount = 123456uL,
-        average = 456.0,
-        min = 1.234,
-        max = 53214.234,
-        sum = 9.6554673E7
+        average = 25435,
+        min = 1234,
+        max = 83672,
+        sum = 12651245
     )
 
     private val context = RequestContext(
@@ -36,12 +36,12 @@ class StatsResponseTest {
         expect(
             """
             {
-              "of": "double",
+              "of": "int",
               "valueCount": "123456",
-              "average": "456.0",
-              "min": "1.234",
-              "max": "53214.234",
-              "sum": "9.6554673E7"
+              "average": 25435,
+              "min": 1234,
+              "max": 83672,
+              "sum": 12651245
             }
             """.trimIndent()
         ) {
@@ -53,12 +53,12 @@ class StatsResponseTest {
     fun convertToYAMLAndBack() {
         expect(
             """
-            of: double
+            of: int
             valueCount: 123456
-            average: 456.0
-            min: 1.234
-            max: 53214.234
-            sum: 9.6554673E7
+            average: 25435
+            min: 1234
+            max: 83672
+            sum: 12651245
 
             """.trimIndent()
         ) {

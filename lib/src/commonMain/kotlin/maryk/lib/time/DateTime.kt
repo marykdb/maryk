@@ -14,14 +14,22 @@ data class DateTime(
 {
     constructor(
         year: Int,
-        month: Byte = 1,
-        day: Byte = 1,
-        hour: Byte = 0,
+        month: Byte,
+        day: Byte,
+        hour: Byte,
         minute: Byte = 0,
         second: Byte = 0,
         milli: Short = 0
     ) : this(
         Date(year, month, day), Time(hour, minute, second, milli)
+    )
+
+    constructor(
+        year: Int,
+        month: Byte = 1,
+        day: Byte = 1
+    ) : this(
+        Date(year, month, day), Time.MIDNIGHT
     )
 
     override fun compareTo(other: DateTime): Int {

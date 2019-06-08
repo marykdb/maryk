@@ -6,8 +6,8 @@ import maryk.lib.extensions.zeroFill
 /** Date by year, month and day. */
 data class Date(
     override val year: Int,
-    override val month: Byte,
-    override val day: Byte
+    override val month: Byte = 1,
+    override val day: Byte = 1
 ) :
     DateInterface,
     IsTemporal<Date>()

@@ -21,9 +21,9 @@ class AverageAggregatorTest {
             averageAggregator.toResponse()
         }
 
-        averageAggregator.aggregate(125)
-        averageAggregator.aggregate(452)
-        averageAggregator.aggregate(789)
+        averageAggregator.aggregate { 125 }
+        averageAggregator.aggregate { 452 }
+        averageAggregator.aggregate { 789 }
 
         expect(
             AverageResponse(

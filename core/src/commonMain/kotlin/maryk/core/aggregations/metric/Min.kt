@@ -11,8 +11,11 @@ import maryk.core.values.SimpleObjectValues
 /** Finds the minimum value for [reference] */
 data class Min<T: Comparable<T>>(
     override val reference: IsPropertyReference<out T, *, *>
-) : IsAggregationRequest<IsPropertyReference<out T, *, *>, MinResponse<T>> {
+) : IsAggregationRequest<T, IsPropertyReference<out T, *, *>, MinResponse<T>> {
     override val aggregationType = MinType
+
+    override fun createAggregator() =
+        MinAggregator(this)
 
     companion object : SimpleQueryDataModel<Min<*>>(
         properties = object : ObjectPropertyDefinitions<Min<*>>() {

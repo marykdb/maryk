@@ -14,8 +14,11 @@ import maryk.core.values.SimpleObjectValues
 data class Types<T: TypeEnum<*>>(
     override val reference: TypeReference<T, *, *>,
     val aggregations: Aggregations? = null
-) : IsAggregationRequest<TypeReference<T, *, *>, TypesResponse<T>> {
+) : IsAggregationRequest<T, TypeReference<T, *, *>, TypesResponse<T>> {
     override val aggregationType = TypesType
+
+    override fun createAggregator() =
+        TypesAggregator(this)
 
     companion object : SimpleQueryDataModel<Types<*>>(
         properties = object : ObjectPropertyDefinitions<Types<*>>() {

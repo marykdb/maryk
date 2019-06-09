@@ -1,26 +1,29 @@
 package maryk.core.aggregations.bucket
 
+import maryk.core.aggregations.Aggregations
+import maryk.core.aggregations.Aggregator
 import maryk.core.aggregations.AggregationsResponse
-import maryk.core.aggregations.IsAggregator
+import maryk.core.aggregations.ValueByPropertyReference
 
 /** Bucket to be used while aggregating */
-data class BucketAggregator<out T: Any>(
-    val key: T
+internal class BucketAggregator<out T: Any>(
+    val key: T,
+    val aggregations: Aggregations?
 ) {
-    val aggregations: MutableMap<String, IsAggregator<*, *, *>> = mutableMapOf()
+    private val aggregationsAggregator = aggregations?.let {
+        Aggregator(aggregations)
+    }
     var count: ULong = 0uL
+
+    /** Aggregate values to a response */
+    fun aggregate(valueFetcher: ValueByPropertyReference<*>) {
+        count++
+        aggregationsAggregator?.aggregate(valueFetcher)
+    }
 
     fun toResponse() = Bucket(
         key,
-        AggregationsResponse(
-            aggregations.map { (key, value) ->
-                Pair(key, value.toResponse())
-            }.toMap()
-        ),
+        aggregationsAggregator?.toResponse() ?: AggregationsResponse(emptyMap()),
         count
     )
-
-    fun aggregate() {
-        count++
-    }
 }

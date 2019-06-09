@@ -24,16 +24,16 @@ import maryk.json.MapType
 sealed class AggregationRequestType(
     index: UInt,
     override val name: String,
-    dataModel: IsObjectDataModel<out IsAggregationRequest<*, *>, *>,
+    dataModel: IsObjectDataModel<out IsAggregationRequest<*, *, *>, *>,
     alternativeNames: Set<String>? = null
 ) : IndexedEnumImpl<AggregationRequestType>(index, alternativeNames),
     MapType,
     IsCoreEnum,
-    MultiTypeEnum<IsAggregationRequest<*, *>> {
+    MultiTypeEnum<IsAggregationRequest<*, *, *>> {
 
     @Suppress("UNCHECKED_CAST")
     override val definition = EmbeddedObjectDefinition(
-        dataModel = { dataModel as AbstractObjectDataModel<IsAggregationRequest<*, *>, ObjectPropertyDefinitions<IsAggregationRequest<*, *>>, RequestContext, RequestContext> }
+        dataModel = { dataModel as AbstractObjectDataModel<IsAggregationRequest<*, *, *>, ObjectPropertyDefinitions<IsAggregationRequest<*, *, *>>, RequestContext, RequestContext> }
     )
 
     object ValueCountType : AggregationRequestType(1u, "ValueCount", ValueCount)

@@ -20,9 +20,9 @@ class ValueCountAggregatorTest {
             valueCountAggregator.toResponse()
         }
 
-        valueCountAggregator.aggregate(12936)
-        valueCountAggregator.aggregate(452)
-        valueCountAggregator.aggregate(789)
+        valueCountAggregator.aggregate { 12936 }
+        valueCountAggregator.aggregate { 452 }
+        valueCountAggregator.aggregate { 789 }
         expect(
             ValueCountResponse(
                 TestMarykModel { int::ref },

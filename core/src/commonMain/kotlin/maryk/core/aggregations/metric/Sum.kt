@@ -9,10 +9,13 @@ import maryk.core.query.DefinedByReference
 import maryk.core.values.SimpleObjectValues
 
 /** Does a sum over all values encountered at [reference] */
-data class Sum<T: Any>(
+data class Sum<T: Comparable<T>>(
     override val reference: IsPropertyReference<out T, *, *>
-) : IsAggregationRequest<IsPropertyReference<out T, *, *>, SumResponse<T>> {
+) : IsAggregationRequest<T, IsPropertyReference<out T, *, *>, SumResponse<T>> {
     override val aggregationType = SumType
+
+    override fun createAggregator() =
+        SumAggregator(this)
 
     companion object : SimpleQueryDataModel<Sum<*>>(
         properties = object : ObjectPropertyDefinitions<Sum<*>>() {
@@ -21,7 +24,7 @@ data class Sum<T: Any>(
             }
         }
     ) {
-        override fun invoke(values: SimpleObjectValues<Sum<*>>) = Sum<Any>(
+        override fun invoke(values: SimpleObjectValues<Sum<*>>) = Sum<Comparable<Any>>(
             reference = values(1u)
         )
     }

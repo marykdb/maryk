@@ -20,9 +20,9 @@ class MinAggregatorTest {
             minAggregator.toResponse()
         }
 
-        minAggregator.aggregate(12936)
-        minAggregator.aggregate(452)
-        minAggregator.aggregate(789)
+        minAggregator.aggregate { 12936 }
+        minAggregator.aggregate { 452 }
+        minAggregator.aggregate { 789 }
 
         expect(
             MinResponse(

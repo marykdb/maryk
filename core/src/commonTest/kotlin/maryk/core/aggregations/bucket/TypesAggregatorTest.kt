@@ -1,6 +1,11 @@
 package maryk.core.aggregations.bucket
 
+import maryk.core.aggregations.Aggregations
 import maryk.core.aggregations.AggregationsResponse
+import maryk.core.aggregations.metric.Sum
+import maryk.core.aggregations.metric.SumResponse
+import maryk.core.properties.types.TypedValue
+import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.SimpleMarykTypeEnum.S1
 import maryk.test.models.SimpleMarykTypeEnum.S3
 import maryk.test.models.TestMarykModel
@@ -10,9 +15,12 @@ import kotlin.test.expect
 class TypesAggregatorTest {
     @Test
     fun aggregate() {
-        val typesAggregator = TypesAggregator(
-            Types(TestMarykModel { multi.refToType() })
-        )
+        val typesAggregator = Types(
+            TestMarykModel { multi.refToType() },
+            aggregations = Aggregations(
+                "totalInt" to Sum(TestMarykModel { int::ref })
+            )
+        ).createAggregator()
 
         expect(
             TypesResponse(
@@ -22,12 +30,54 @@ class TypesAggregatorTest {
             typesAggregator.toResponse()
         }
 
-        typesAggregator.aggregate(S1)
-        typesAggregator.aggregate(S1)
+        typesAggregator.aggregate(
+            createAggregator(
+                TestMarykModel.values {
+                    mapNonNulls(
+                        multi with TypedValue(S1, "value 1"),
+                        int with 2324
+                    )
+                }
+            )
+        )
+        typesAggregator.aggregate(
+            createAggregator(
+                TestMarykModel.values {
+                    mapNonNulls(
+                        multi with TypedValue(S1, "value 2"),
+                        int with 872364
+                    )
+                }
+            )
+        )
 
-        typesAggregator.aggregate(S3)
-        typesAggregator.aggregate(S3)
-        typesAggregator.aggregate(S3)
+        typesAggregator.aggregate(
+            createAggregator(
+                TestMarykModel.values {
+                    mapNonNulls(
+                        multi with TypedValue(S3, EmbeddedMarykModel("E1"))
+                    )
+                }
+            )
+        )
+        typesAggregator.aggregate(
+            createAggregator(
+                TestMarykModel.values {
+                    mapNonNulls(
+                        multi with TypedValue(S3, EmbeddedMarykModel("E1"))
+                    )
+                }
+            )
+        )
+        typesAggregator.aggregate(
+            createAggregator(
+                TestMarykModel.values {
+                    mapNonNulls(
+                        multi with TypedValue(S3, EmbeddedMarykModel("E1"))
+                    )
+                }
+            )
+        )
 
         expect(
             TypesResponse(
@@ -36,14 +86,24 @@ class TypesAggregatorTest {
                     Bucket(
                         S1,
                         AggregationsResponse(
-                            mapOf()
+                            mapOf(
+                                "totalInt" to SumResponse(
+                                    TestMarykModel { int::ref },
+                                    874688
+                                )
+                            )
                         ),
                         2uL
                     ),
                     Bucket(
                         S3,
                         AggregationsResponse(
-                            mapOf()
+                            mapOf(
+                                "totalInt" to SumResponse(
+                                    TestMarykModel { int::ref },
+                                    null
+                                )
+                            )
                         ),
                         3uL
                     )

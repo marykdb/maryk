@@ -16,9 +16,11 @@ data class DateHistogram<T: IsTemporal<*>>(
     override val reference: IsPropertyReference<out T, *, *>,
     val dateUnit: DateUnit,
     val aggregations: Aggregations? = null
-) : IsAggregationRequest<IsPropertyReference<out T, *, *>, DateHistogramResponse<T>>,
+) : IsAggregationRequest<T, IsPropertyReference<out T, *, *>, DateHistogramResponse<T>>,
     DefinedByReference<IsTemporal<*>> {
     override val aggregationType = DateHistogramType
+
+    override fun createAggregator() = DateHistogramAggregator(this)
 
     companion object : SimpleQueryDataModel<DateHistogram<*>>(
         properties = object : ObjectPropertyDefinitions<DateHistogram<*>>() {

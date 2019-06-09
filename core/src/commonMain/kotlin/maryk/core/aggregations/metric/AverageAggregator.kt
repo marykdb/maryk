@@ -1,6 +1,7 @@
 package maryk.core.aggregations.metric
 
 import maryk.core.aggregations.IsAggregator
+import maryk.core.aggregations.ValueByPropertyReference
 import maryk.core.properties.definitions.NumberDefinition
 
 /** The aggregator to find average value */
@@ -13,11 +14,16 @@ data class AverageAggregator<T: Comparable<T>>(
     private var summedValue: T? = null
     private var valueCount: Long = 0L
 
-    override fun aggregate(value: T) {
-        this.summedValue = summedValue?.let {
-            numberDefinition.type.sum(it, value)
-        } ?: value
-        this.valueCount++
+    override fun aggregate(valueFetcher: ValueByPropertyReference<*>) {
+        @Suppress("UNCHECKED_CAST")
+        val value = valueFetcher(request.reference) as T?
+
+        if (value != null) {
+            this.summedValue = summedValue?.let {
+                numberDefinition.type.sum(it, value)
+            } ?: value
+            this.valueCount++
+        }
     }
 
     override fun toResponse() =

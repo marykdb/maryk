@@ -14,8 +14,11 @@ import maryk.core.values.SimpleObjectValues
 data class EnumValues<T: IndexedEnumComparable<T>>(
     override val reference: IsPropertyReference<out T, *, *>,
     val aggregations: Aggregations? = null
-) : IsAggregationRequest<IsPropertyReference<out T, *, *>, EnumValuesResponse<T>> {
+) : IsAggregationRequest<T, IsPropertyReference<out T, *, *>, EnumValuesResponse<T>> {
     override val aggregationType = EnumValuesType
+
+    override fun createAggregator() =
+        EnumValuesAggregator(this)
 
     companion object : SimpleQueryDataModel<EnumValues<*>>(
         properties = object : ObjectPropertyDefinitions<EnumValues<*>>() {

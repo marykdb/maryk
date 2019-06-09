@@ -14,8 +14,11 @@ import maryk.core.values.SimpleObjectValues
  */
 data class Stats<T: Comparable<T>>(
     override val reference: IsPropertyReference<out T, *, *>
-) : IsAggregationRequest<IsPropertyReference<out T, *, *>, StatsResponse<T>> {
+) : IsAggregationRequest<T, IsPropertyReference<out T, *, *>, StatsResponse<T>> {
     override val aggregationType = StatsType
+
+    override fun createAggregator() =
+        StatsAggregator(this)
 
     companion object : SimpleQueryDataModel<Stats<*>>(
         properties = object : ObjectPropertyDefinitions<Stats<*>>() {

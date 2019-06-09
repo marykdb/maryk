@@ -11,8 +11,11 @@ import maryk.core.values.SimpleObjectValues
 /** Counts all values defined for [reference] */
 data class ValueCount<T: Comparable<T>>(
     override val reference: IsPropertyReference<T, *, *>
-) : IsAggregationRequest<IsPropertyReference<T, *, *>, ValueCountResponse<T>> {
+) : IsAggregationRequest<T, IsPropertyReference<T, *, *>, ValueCountResponse<T>> {
     override val aggregationType = ValueCountType
+
+    override fun createAggregator() =
+        ValueCountAggregator(this)
 
     companion object : SimpleQueryDataModel<ValueCount<*>>(
         properties = object : ObjectPropertyDefinitions<ValueCount<*>>() {

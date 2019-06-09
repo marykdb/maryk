@@ -1,6 +1,7 @@
 package maryk.core.aggregations.metric
 
 import maryk.core.aggregations.IsAggregator
+import maryk.core.aggregations.ValueByPropertyReference
 import maryk.core.properties.definitions.NumberDefinition
 
 /** The aggregator to find stats for given reference */
@@ -15,20 +16,25 @@ data class StatsAggregator<T: Comparable<T>>(
     private var minValue: T? = null
     private var maxValue: T? = null
 
-    override fun aggregate(value: T) {
-        this.summedValue = summedValue?.let {
-            numberDefinition.type.sum(it, value)
-        } ?: value
+    override fun aggregate(valueFetcher: ValueByPropertyReference<*>) {
+        @Suppress("UNCHECKED_CAST")
+        val value = valueFetcher(request.reference) as T?
 
-        this.maxValue = this.maxValue?.let {
-            maxOf(value, maxValue!!)
-        } ?: value
+        if (value != null) {
+            this.summedValue = summedValue?.let {
+                numberDefinition.type.sum(it, value)
+            } ?: value
 
-        this.minValue = this.minValue?.let {
-            minOf(value, minValue!!)
-        } ?: value
+            this.maxValue = this.maxValue?.let {
+                maxOf(value, maxValue!!)
+            } ?: value
 
-        this.valueCount++
+            this.minValue = this.minValue?.let {
+                minOf(value, minValue!!)
+            } ?: value
+
+            this.valueCount++
+        }
     }
 
     override fun toResponse() =

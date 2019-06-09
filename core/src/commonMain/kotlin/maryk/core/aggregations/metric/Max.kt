@@ -11,8 +11,11 @@ import maryk.core.values.SimpleObjectValues
 /** Finds the maximum value for [reference] */
 data class Max<T: Comparable<T>>(
     override val reference: IsPropertyReference<out T, *, *>
-) : IsAggregationRequest<IsPropertyReference<out Comparable<*>, *, *>, MaxResponse<T>> {
+) : IsAggregationRequest<T, IsPropertyReference<out Comparable<*>, *, *>, MaxResponse<T>> {
     override val aggregationType = MaxType
+
+    override fun createAggregator() =
+        MaxAggregator(this)
 
     companion object : SimpleQueryDataModel<Max<*>>(
         properties = object : ObjectPropertyDefinitions<Max<*>>() {

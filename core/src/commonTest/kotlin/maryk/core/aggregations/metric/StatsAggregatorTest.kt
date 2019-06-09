@@ -24,9 +24,9 @@ class StatsAggregatorTest {
             statsAggregator.toResponse()
         }
 
-        statsAggregator.aggregate(12936)
-        statsAggregator.aggregate(452)
-        statsAggregator.aggregate(789)
+        statsAggregator.aggregate { 12936 }
+        statsAggregator.aggregate { 452 }
+        statsAggregator.aggregate { 789 }
         expect(
             StatsResponse(
                 TestMarykModel { int::ref },

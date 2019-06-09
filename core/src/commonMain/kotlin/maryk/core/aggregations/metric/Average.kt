@@ -11,8 +11,11 @@ import maryk.core.values.SimpleObjectValues
 /** Finds the average value for [reference] */
 data class Average<T: Comparable<T>>(
     override val reference: IsPropertyReference<out T, *, *>
-) : IsAggregationRequest<IsPropertyReference<out T, *, *>, AverageResponse<T>> {
+) : IsAggregationRequest<T, IsPropertyReference<out T, *, *>, AverageResponse<T>> {
     override val aggregationType = AverageType
+
+    override fun createAggregator() =
+        AverageAggregator(this)
 
     companion object : SimpleQueryDataModel<Average<*>>(
         properties = object : ObjectPropertyDefinitions<Average<*>>() {

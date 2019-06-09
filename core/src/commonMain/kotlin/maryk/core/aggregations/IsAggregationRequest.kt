@@ -5,9 +5,12 @@ import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.references.IsPropertyReference
 
 /** Defines an aggregation with a type so it can be transported */
-interface IsAggregationRequest<R: IsPropertyReference<*, *, *>, RS: IsAggregationResponse> {
+interface IsAggregationRequest<T: Any, R: IsPropertyReference<*, *, *>, RS: IsAggregationResponse> {
     val reference: R
     val aggregationType: AggregationRequestType
+
+    /** Create a value aggregator for this request */
+    fun createAggregator(): IsAggregator<T, out IsAggregationRequest<T, R, RS>, RS>
 
     companion object {
         fun <DM: Any> addAggregationsDefinition(definitions: ObjectPropertyDefinitions<*>, getter: (DM) -> Aggregations?) {

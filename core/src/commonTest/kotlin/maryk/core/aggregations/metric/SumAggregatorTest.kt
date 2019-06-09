@@ -20,9 +20,9 @@ class SumAggregatorTest {
             sumAggregator.toResponse()
         }
 
-        sumAggregator.aggregate(12936)
-        sumAggregator.aggregate(452)
-        sumAggregator.aggregate(789)
+        sumAggregator.aggregate { 12936 }
+        sumAggregator.aggregate { 452 }
+        sumAggregator.aggregate { 789 }
         expect(
             SumResponse(
                 TestMarykModel { int::ref },

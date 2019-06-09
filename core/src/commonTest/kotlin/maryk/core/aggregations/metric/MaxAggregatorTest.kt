@@ -20,9 +20,9 @@ class MaxAggregatorTest {
             maxAggregator.toResponse()
         }
 
-        maxAggregator.aggregate(12936)
-        maxAggregator.aggregate(452)
-        maxAggregator.aggregate(789)
+        maxAggregator.aggregate { 12936 }
+        maxAggregator.aggregate { 452 }
+        maxAggregator.aggregate { 789 }
         expect(
             MaxResponse(
                 TestMarykModel { int::ref },

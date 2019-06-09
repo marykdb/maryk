@@ -1,5 +1,9 @@
 package maryk.datastore.memory
 
+import maryk.core.aggregations.Aggregations
+import maryk.core.aggregations.AggregationsResponse
+import maryk.core.aggregations.metric.ValueCount
+import maryk.core.aggregations.metric.ValueCountResponse
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.get
 import maryk.core.query.responses.statuses.AddSuccess
@@ -41,6 +45,32 @@ class InMemoryDataStoreGetTest {
 
         getResponse.values.forEachIndexed { index, value ->
             expect(addRequest.objects[index]) { value.values }
+        }
+    }
+
+    @Test
+    fun executeSimpleGetWithAggregationRequest() = runSuspendingTest {
+        val getResponse = dataStore.execute(
+            SimpleMarykModel.get(
+                *keys.toTypedArray(),
+                aggregations = Aggregations(
+                    "count" to ValueCount(
+                        SimpleMarykModel { value::ref }
+                    )
+                )
+            )
+        )
+
+        expect(2) { getResponse.values.size }
+
+        expect(
+            AggregationsResponse(
+                "count" to ValueCountResponse(
+                    SimpleMarykModel { value::ref }, 2uL
+                )
+            )
+        ) {
+            getResponse.aggregations
         }
     }
 

@@ -1,5 +1,11 @@
 package maryk.datastore.memory
 
+import maryk.core.aggregations.Aggregations
+import maryk.core.aggregations.AggregationsResponse
+import maryk.core.aggregations.metric.Max
+import maryk.core.aggregations.metric.MaxResponse
+import maryk.core.aggregations.metric.Min
+import maryk.core.aggregations.metric.MinResponse
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.Key
 import maryk.core.query.filters.Equals
@@ -68,6 +74,38 @@ class InMemoryDataStoreScanTest {
         scanResponse.values[2].let {
             expect(logs[0]) { it.values }
             expect(keys[0]) { it.key }
+        }
+    }
+
+    @Test
+    fun executeSimpleScanWithAggregationRequest() = runSuspendingTest {
+        val scanResponse = dataStore.execute(
+            Log.scan(
+                startKey = keys[2],
+                aggregations = Aggregations(
+                    "last" to Max(
+                        Log { timestamp::ref }
+                    ),
+                    "first" to Min(
+                        Log { timestamp::ref }
+                    )
+                )
+            )
+        )
+
+        expect(3) { scanResponse.values.size }
+
+        expect(
+            AggregationsResponse(
+                "last" to MaxResponse(
+                    Log { timestamp::ref }, DateTime(2018, 11, 14, 12, 33, 22, 111)
+                ),
+                "first" to MinResponse(
+                    Log { timestamp::ref }, DateTime(2018, 11, 14, 11, 22, 33, 40)
+                )
+            )
+        ) {
+            scanResponse.aggregations
         }
     }
 

@@ -26,8 +26,7 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.getChanges(
     toVersion: ULong? = null,
     maxVersions: UInt = 1u,
     select: RootPropRefGraph<P>? = null,
-    filterSoftDeleted: Boolean = true,
-    aggregations: Aggregations? = null
+    filterSoftDeleted: Boolean = true
 ) =
     GetChangesRequest(
         this,
@@ -37,8 +36,7 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.getChanges(
         toVersion,
         maxVersions,
         select,
-        filterSoftDeleted,
-        aggregations
+        filterSoftDeleted
     )
 
 /**
@@ -55,11 +53,13 @@ data class GetChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
     override val toVersion: ULong? = null,
     override val maxVersions: UInt = 1u,
     override val select: RootPropRefGraph<P>? = null,
-    override val filterSoftDeleted: Boolean = true,
-    override val aggregations: Aggregations? = null
+    override val filterSoftDeleted: Boolean = true
 ) : IsGetRequest<DM, P, ChangesResponse<DM>>, IsChangesRequest<DM, P, ChangesResponse<DM>> {
     override val requestType = GetChanges
     override val responseModel = ChangesResponse
+
+    // Aggregations are not allowed on a get changes request
+    override val aggregations: Aggregations? = null
 
     object Properties : ObjectPropertyDefinitions<GetChangesRequest<*, *>>() {
         val dataModel = IsObjectRequest.addDataModel("from", this, GetChangesRequest<*, *>::dataModel)
@@ -68,7 +68,6 @@ data class GetChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
         val where = IsFetchRequest.addFilter(this, GetChangesRequest<*, *>::where)
         val toVersion = IsFetchRequest.addToVersion(this, GetChangesRequest<*, *>::toVersion)
         val filterSoftDeleted = IsFetchRequest.addFilterSoftDeleted(this, GetChangesRequest<*, *>::filterSoftDeleted)
-        val aggregations = IsFetchRequest.addAggregationsDefinition(this, GetChangesRequest<*, *>::aggregations)
         val fromVersion = IsChangesRequest.addFromVersion(8u, this, GetChangesRequest<*, *>::fromVersion)
         val maxVersions = IsChangesRequest.addMaxVersions(9u, this, GetChangesRequest<*, *>::maxVersions)
     }
@@ -84,7 +83,6 @@ data class GetChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
                 where = values(4u),
                 toVersion = values(5u),
                 filterSoftDeleted = values(6u),
-                aggregations = values(7u),
                 fromVersion = values(8u),
                 maxVersions = values(9u)
             )

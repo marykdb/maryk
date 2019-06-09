@@ -20,37 +20,35 @@ import kotlin.test.expect
 
 class AggregationsResponseTest {
     private val aggregationsResponse = AggregationsResponse(
-        mapOf(
-            "total" to SumResponse(
-                TestMarykModel { int::ref },
-                3765476
-            ),
-            "mediocre" to AverageResponse(
-                TestMarykModel { int::ref },
-                3526,
-                32uL
-            ),
-            "the least" to MinResponse(
-                TestMarykModel { dateTime::ref },
-                DateTime(2019, 12, 1, 12, 3, 45)
-            ),
-            "the most" to MaxResponse(
-                TestMarykModel { double::ref },
-                3456.231
-            ),
-            "count" to ValueCountResponse(TestMarykModel { string::ref }, 1234uL),
-            "by day" to DateHistogramResponse(
-                TestMarykModel { dateTime::ref },
-                listOf()
-            ),
-            "each enum" to EnumValuesResponse(
-                TestMarykModel { enum::ref },
-                listOf()
-            ),
-            "each type" to TypesResponse(
-                TestMarykModel { multi.refToType() },
-                listOf()
-            )
+        "total" to SumResponse(
+            TestMarykModel { int::ref },
+            3765476
+        ),
+        "mediocre" to AverageResponse(
+            TestMarykModel { int::ref },
+            3526,
+            32uL
+        ),
+        "the least" to MinResponse(
+            TestMarykModel { dateTime::ref },
+            DateTime(2019, 12, 1, 12, 3, 45)
+        ),
+        "the most" to MaxResponse(
+            TestMarykModel { double::ref },
+            3456.231
+        ),
+        "count" to ValueCountResponse(TestMarykModel { string::ref }, 1234uL),
+        "by day" to DateHistogramResponse(
+            TestMarykModel { dateTime::ref },
+            listOf()
+        ),
+        "each enum" to EnumValuesResponse(
+            TestMarykModel { enum::ref },
+            listOf()
+        ),
+        "each type" to TypesResponse(
+            TestMarykModel { multi.refToType() },
+            listOf()
         )
     )
 

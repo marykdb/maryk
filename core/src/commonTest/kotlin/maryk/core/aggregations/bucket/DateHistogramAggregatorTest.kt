@@ -76,11 +76,9 @@ class DateHistogramAggregatorTest {
                     Bucket(
                         DateTime(2019, 12, 11, 10),
                         AggregationsResponse(
-                            mapOf(
-                                "totalInt" to SumResponse(
-                                    TestMarykModel { int::ref },
-                                    2882
-                                )
+                            "totalInt" to SumResponse(
+                                TestMarykModel { int::ref },
+                                2882
                             )
                         ),
                         2uL
@@ -88,11 +86,9 @@ class DateHistogramAggregatorTest {
                     Bucket(
                         DateTime(2019, 12, 11, 11),
                         AggregationsResponse(
-                            mapOf(
-                                "totalInt" to SumResponse(
-                                    TestMarykModel { int::ref },
-                                    1
-                                )
+                            "totalInt" to SumResponse(
+                                TestMarykModel { int::ref },
+                                1
                             )
                         ),
                         1uL
@@ -100,11 +96,9 @@ class DateHistogramAggregatorTest {
                     Bucket(
                         DateTime(2019, 12, 11, 12),
                         AggregationsResponse(
-                            mapOf(
-                                "totalInt" to SumResponse(
-                                    TestMarykModel { int::ref },
-                                    null
-                                )
+                            "totalInt" to SumResponse(
+                                TestMarykModel { int::ref },
+                                null
                             )
                         ),
                         1uL

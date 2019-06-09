@@ -57,9 +57,7 @@ class ChangesResponseTest {
             )
         ),
         AggregationsResponse(
-            mapOf(
-                "total" to ValueCountResponse(TestMarykModel { string::ref }, 1uL)
-            )
+            "total" to ValueCountResponse(TestMarykModel { string::ref }, 1uL)
         )
     )
 

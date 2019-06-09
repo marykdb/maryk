@@ -10,9 +10,13 @@ import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 
 /** For multiple aggregations responses named by a String */
-data class AggregationsResponse(
+data class AggregationsResponse internal constructor(
     val namedAggregations: Map<String, IsAggregationResponse>
 ) {
+    constructor(
+        vararg aggregationPair: Pair<String, IsAggregationResponse>
+    ) : this(aggregationPair.toMap())
+
     internal object Properties : ObjectPropertyDefinitions<AggregationsResponse>() {
         val namedAggregations = add(
             1u, "namedAggregations",

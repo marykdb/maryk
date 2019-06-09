@@ -31,15 +31,13 @@ class AggregatorTest {
         aggregator.aggregate { 789 }
         expect(
             AggregationsResponse(
-                mapOf(
-                    "sum" to SumResponse(
-                        TestMarykModel { int::ref },
-                        14177
-                    ),
-                    "count" to ValueCountResponse(
-                        TestMarykModel { int::ref },
-                        3uL
-                    )
+                "sum" to SumResponse(
+                    TestMarykModel { int::ref },
+                    14177
+                ),
+                "count" to ValueCountResponse(
+                    TestMarykModel { int::ref },
+                    3uL
                 )
             )
         ) {

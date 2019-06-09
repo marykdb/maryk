@@ -21,16 +21,14 @@ class TypesResponseTest {
             Bucket(
                 S1,
                 AggregationsResponse(
-                    mapOf(
-                        "total" to SumResponse(
-                            TestMarykModel { int::ref },
-                            123456789
-                        ),
-                        "avg" to AverageResponse(
-                            TestMarykModel { int::ref },
-                            43728,
-                            32uL
-                        )
+                    "total" to SumResponse(
+                        TestMarykModel { int::ref },
+                        123456789
+                    ),
+                    "avg" to AverageResponse(
+                        TestMarykModel { int::ref },
+                        43728,
+                        32uL
                     )
                 ),
                 15uL
@@ -38,16 +36,14 @@ class TypesResponseTest {
             Bucket(
                 S2,
                 AggregationsResponse(
-                    mapOf(
-                        "total" to SumResponse(
-                            TestMarykModel { int::ref },
-                            213683
-                        ),
-                        "avg" to AverageResponse(
-                            TestMarykModel { int::ref },
-                            8823234,
-                            64uL
-                        )
+                    "total" to SumResponse(
+                        TestMarykModel { int::ref },
+                        213683
+                    ),
+                    "avg" to AverageResponse(
+                        TestMarykModel { int::ref },
+                        8823234,
+                        64uL
                     )
                 ),
                 23uL

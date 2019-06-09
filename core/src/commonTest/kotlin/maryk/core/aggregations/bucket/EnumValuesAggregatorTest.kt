@@ -84,11 +84,9 @@ class EnumValuesAggregatorTest {
                     Bucket(
                         V1,
                         AggregationsResponse(
-                            mapOf(
-                                "totalInt" to SumResponse(
-                                    TestMarykModel { int::ref },
-                                    null
-                                )
+                            "totalInt" to SumResponse(
+                                TestMarykModel { int::ref },
+                                null
                             )
                         ),
                         2uL
@@ -96,11 +94,9 @@ class EnumValuesAggregatorTest {
                     Bucket(
                         V3,
                         AggregationsResponse(
-                            mapOf(
-                                "totalInt" to SumResponse(
-                                    TestMarykModel { int::ref },
-                                    39206
-                                )
+                            "totalInt" to SumResponse(
+                                TestMarykModel { int::ref },
+                                39206
                             )
                         ),
                         3uL

@@ -21,16 +21,14 @@ class EnumValuesResponseTest {
             Bucket(
                 V1,
                 AggregationsResponse(
-                    mapOf(
-                        "total" to SumResponse(
-                            TestMarykModel { int::ref },
-                            123456789
-                        ),
-                        "avg" to AverageResponse(
-                            TestMarykModel { int::ref },
-                            43728,
-                            32uL
-                        )
+                    "total" to SumResponse(
+                        TestMarykModel { int::ref },
+                        123456789
+                    ),
+                    "avg" to AverageResponse(
+                        TestMarykModel { int::ref },
+                        43728,
+                        32uL
                     )
                 ),
                 15uL
@@ -38,16 +36,14 @@ class EnumValuesResponseTest {
             Bucket(
                 V2,
                 AggregationsResponse(
-                    mapOf(
-                        "total" to SumResponse(
-                            TestMarykModel { int::ref },
-                            1
-                        ),
-                        "avg" to AverageResponse(
-                            TestMarykModel { int::ref },
-                            5322,
-                            2uL
-                        )
+                    "total" to SumResponse(
+                        TestMarykModel { int::ref },
+                        1
+                    ),
+                    "avg" to AverageResponse(
+                        TestMarykModel { int::ref },
+                        5322,
+                        2uL
                     )
                 ),
                 2uL

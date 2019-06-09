@@ -98,11 +98,9 @@ class TypesAggregatorTest {
                     Bucket(
                         S3,
                         AggregationsResponse(
-                            mapOf(
-                                "totalInt" to SumResponse(
-                                    TestMarykModel { int::ref },
-                                    null
-                                )
+                            "totalInt" to SumResponse(
+                                TestMarykModel { int::ref },
+                                null
                             )
                         ),
                         3uL

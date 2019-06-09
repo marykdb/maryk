@@ -31,9 +31,7 @@ class ValuesResponseTest {
             )
         ),
         AggregationsResponse(
-            mapOf(
-                "total" to ValueCountResponse(SimpleMarykObject { value::ref }, 1uL)
-            )
+            "total" to ValueCountResponse(SimpleMarykObject { value::ref }, 1uL)
         )
     )
 

@@ -19,11 +19,9 @@ class DateHistogramResponseTest {
             Bucket(
                 DateTime(2010),
                 AggregationsResponse(
-                    mapOf(
-                        "total" to SumResponse(
-                            TestMarykModel { int::ref },
-                            123456789
-                        )
+                    "total" to SumResponse(
+                        TestMarykModel { int::ref },
+                        123456789
                     )
                 ),
                 15uL
@@ -31,11 +29,9 @@ class DateHistogramResponseTest {
             Bucket(
                 DateTime(2011),
                 AggregationsResponse(
-                    mapOf(
-                        "total" to SumResponse(
-                            TestMarykModel { int::ref },
-                            98373
-                        )
+                    "total" to SumResponse(
+                        TestMarykModel { int::ref },
+                        98373
                     )
                 ),
                 12uL

@@ -1,24 +1,33 @@
-package maryk.datastore.memory
+package maryk.datastore.test
 
+import maryk.core.processors.datastore.IsDataStore
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.pairs.with
+import maryk.core.query.requests.delete
 import maryk.core.query.requests.getChanges
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.test.assertType
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.addRequest
 import maryk.test.runSuspendingTest
-import kotlin.test.Test
 import kotlin.test.expect
 
-class InMemoryDataStoreGetChangesTest {
-    private val dataStore = InMemoryDataStore()
+class DataStoreGetChangesTest(
+    val dataStore: IsDataStore
+) : IsDataStoreTest {
     private val keys = mutableListOf<Key<SimpleMarykModel>>()
     private var lowestVersion = ULong.MAX_VALUE
 
-    init {
+    override val allTests = mapOf(
+        "executeSimpleGetChangesRequest" to ::executeSimpleGetChangesRequest,
+        "executeToVersionGetChangesRequest" to ::executeToVersionGetChangesRequest,
+        "executeFromVersionGetChangesRequest" to ::executeFromVersionGetChangesRequest,
+        "executeGetChangesRequestWithSelect" to ::executeGetChangesRequestWithSelect
+    )
+
+    override fun initData() {
         runSuspendingTest {
             val addResponse = dataStore.execute(
                 addRequest
@@ -34,8 +43,17 @@ class InMemoryDataStoreGetChangesTest {
         }
     }
 
-    @Test
-    fun executeSimpleGetChangesRequest() = runSuspendingTest {
+    override fun resetData() {
+        runSuspendingTest {
+            dataStore.execute(
+                SimpleMarykModel.delete(*keys.toTypedArray(), hardDelete = true)
+            )
+        }
+        keys.clear()
+        lowestVersion = ULong.MAX_VALUE
+    }
+
+    private fun executeSimpleGetChangesRequest() = runSuspendingTest {
         val getResponse = dataStore.execute(
             SimpleMarykModel.getChanges(*keys.toTypedArray())
         )
@@ -63,8 +81,7 @@ class InMemoryDataStoreGetChangesTest {
         }
     }
 
-    @Test
-    fun executeToVersionGetChangesRequest() = runSuspendingTest {
+    private fun executeToVersionGetChangesRequest() = runSuspendingTest {
         val getResponse = dataStore.execute(
             SimpleMarykModel.getChanges(*keys.toTypedArray(), toVersion = lowestVersion - 1uL)
         )
@@ -72,8 +89,7 @@ class InMemoryDataStoreGetChangesTest {
         expect(0) { getResponse.changes.size }
     }
 
-    @Test
-    fun executeFromVersionGetChangesRequest() = runSuspendingTest {
+    private fun executeFromVersionGetChangesRequest() = runSuspendingTest {
         val getResponse = dataStore.execute(
             SimpleMarykModel.getChanges(*keys.toTypedArray(), fromVersion = lowestVersion + 1uL)
         )
@@ -81,8 +97,7 @@ class InMemoryDataStoreGetChangesTest {
         expect(0) { getResponse.changes.size }
     }
 
-    @Test
-    fun executeGetChangesRequestWithSelect() = runSuspendingTest {
+    private fun executeGetChangesRequestWithSelect() = runSuspendingTest {
         val scanResponse = dataStore.execute(
             SimpleMarykModel.getChanges(
                 *keys.toTypedArray(),

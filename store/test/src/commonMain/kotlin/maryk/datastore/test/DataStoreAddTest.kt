@@ -1,23 +1,32 @@
-package maryk.datastore.memory
+package maryk.datastore.test
 
 import maryk.core.models.key
+import maryk.core.processors.datastore.IsDataStore
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.add
+import maryk.core.query.requests.delete
 import maryk.core.query.requests.get
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.AlreadyExists
 import maryk.core.values.Values
+import maryk.datastore.memory.assertRecent
 import maryk.lib.time.DateTime
 import maryk.test.assertType
 import maryk.test.models.Log
 import maryk.test.models.Severity.ERROR
 import maryk.test.runSuspendingTest
-import kotlin.test.Test
 import kotlin.test.assertTrue
 import kotlin.test.expect
 
-class InMemoryDataStoreAddTest {
-    private val dataStore = InMemoryDataStore()
+class DataStoreAddTest(
+    val dataStore: IsDataStore
+) : IsDataStoreTest {
+    override val allTests = mapOf(
+        "executeAddAndSimpleGetRequest" to ::executeAddAndSimpleGetRequest,
+        "notAddSameObjectTwice" to ::notAddSameObjectTwice
+    )
+
+    private val keys = mutableListOf<Key<Log>>()
 
     private val logs = arrayOf(
         Log("Something happened", timestamp = DateTime(2018, 11, 14, 11, 22, 33, 40)),
@@ -26,8 +35,16 @@ class InMemoryDataStoreAddTest {
         Log("WRONG", ERROR, DateTime(2018, 11, 14, 13, 0, 2, 0))
     )
 
-    @Test
-    fun executeAddAndSimpleGetRequest() = runSuspendingTest {
+    override fun resetData() {
+        runSuspendingTest {
+            dataStore.execute(
+                Log.delete(*keys.toTypedArray(), hardDelete = true)
+            )
+        }
+        keys.clear()
+    }
+
+    private fun executeAddAndSimpleGetRequest() = runSuspendingTest {
         val addResponse = dataStore.execute(
             Log.add(*logs)
         )
@@ -36,7 +53,6 @@ class InMemoryDataStoreAddTest {
         expect(4) { addResponse.statuses.count() }
 
         val keysToOriginal = mutableMapOf<Key<*>, Values<Log, *>>()
-        val keys = mutableListOf<Key<Log>>()
         addResponse.statuses.forEachIndexed { index, it ->
             val response = assertType<AddSuccess<Log>>(it)
             assertRecent(response.version, 1000uL)
@@ -57,9 +73,10 @@ class InMemoryDataStoreAddTest {
         }
     }
 
-    @Test
-    fun notAddSameObjectTwice() = runSuspendingTest {
+    private fun notAddSameObjectTwice() = runSuspendingTest {
         val log = Log("I am unique", timestamp = DateTime(2018, 9, 9, 14, 30, 0, 0))
+        val key = Log.key(log)
+        this.keys += key // make sure data gets cleaned
 
         val addResponse = dataStore.execute(
             Log.add(log)
@@ -67,8 +84,6 @@ class InMemoryDataStoreAddTest {
 
         expect(Log) { addResponse.dataModel }
         expect(1) { addResponse.statuses.count() }
-
-        val key = Log.key(log)
 
         val addResponseAgain = dataStore.execute(
             Log.add(log)

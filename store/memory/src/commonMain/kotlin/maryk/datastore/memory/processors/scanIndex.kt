@@ -80,7 +80,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
             for (indexRange in indexScanRange.ranges.reversed()) {
                 val startIndex = indexRange.end?.let { endRange ->
                     if (endRange.isEmpty()) {
-                        dataStore.records.lastIndex
+                        index.records.lastIndex
                     } else {
                         val endRangeToSearch = if (indexRange.endInclusive) {
                             endRange.nextByteInSameLength()

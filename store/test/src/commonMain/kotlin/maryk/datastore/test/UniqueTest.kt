@@ -1,6 +1,7 @@
-package maryk.datastore.memory
+package maryk.datastore.test
 
 import maryk.core.models.RootDataModel
+import maryk.core.processors.datastore.IsDataStore
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.exceptions.AlreadySetException
@@ -13,7 +14,7 @@ import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ValidationFail
-import maryk.datastore.memory.UniqueModel.Properties
+import maryk.datastore.test.UniqueModel.Properties
 import maryk.test.assertType
 import maryk.test.runSuspendingTest
 import kotlin.test.Test
@@ -36,14 +37,17 @@ object UniqueModel : RootDataModel<UniqueModel, Properties>(
     }
 }
 
-class UniqueTest {
-    private val dataStore = InMemoryDataStore()
+class UniqueTest(
+    val dataStore: IsDataStore
+) : IsDataStoreTest {
     private val keys = mutableListOf<Key<UniqueModel>>()
 
-    private val dataStoreWithHistory = InMemoryDataStore(true)
-    private val keysForHistory = mutableListOf<Key<UniqueModel>>()
+    override val allTests = mapOf(
+        "checkUnique" to ::checkUnique,
+        "checkUniqueChange" to ::checkUniqueChange
+    )
 
-    init {
+    override fun initData() {
         val addItems = UniqueModel.add(
             UniqueModel(email = "test@test.com"),
             UniqueModel(email = "bla@bla.com")
@@ -56,13 +60,16 @@ class UniqueTest {
                     keys.add(response.key)
                 }
             }
-            dataStoreWithHistory.execute(addItems).also {
-                it.statuses.forEach { status ->
-                    val response = assertType<AddSuccess<UniqueModel>>(status)
-                    keysForHistory.add(response.key)
-                }
-            }
         }
+    }
+
+    override fun resetData() {
+        runSuspendingTest {
+            dataStore.execute(
+                UniqueModel.delete(*keys.toTypedArray(), hardDelete = true)
+            )
+        }
+        this.keys.clear()
     }
 
     private val addUniqueItem = UniqueModel.add(
@@ -81,24 +88,9 @@ class UniqueTest {
         dataStore.execute(UniqueModel.delete(keys[0]))
 
         dataStore.execute(addUniqueItem).statuses.forEach { status ->
-            assertType<AddSuccess<UniqueModel>>(status)
-        }
-    }
-
-    @Test
-    fun checkUniqueWithHistory() = runSuspendingTest {
-        val addResponse = dataStoreWithHistory.execute(addUniqueItem)
-
-        addResponse.statuses.forEach { status ->
-            val fail = assertType<ValidationFail<UniqueModel>>(status)
-            val alreadySet = assertType<AlreadySetException>(fail.exceptions.first())
-            expect(UniqueModel { email::ref }) { alreadySet.reference }
-        }
-
-        dataStoreWithHistory.execute(UniqueModel.delete(keysForHistory[0]))
-
-        dataStoreWithHistory.execute(addUniqueItem).statuses.forEach { status ->
-            assertType<AddSuccess<UniqueModel>>(status)
+            assertType<AddSuccess<UniqueModel>>(status).also {
+                keys.add(it.key)
+            }
         }
     }
 
@@ -122,7 +114,9 @@ class UniqueTest {
         dataStore.execute(UniqueModel.delete(keys[0]))
 
         dataStore.execute(addUniqueItem).statuses.forEach { status ->
-            assertType<AddSuccess<UniqueModel>>(status)
+            assertType<AddSuccess<UniqueModel>>(status).also {
+                keys.add(it.key)
+            }
         }
     }
 }

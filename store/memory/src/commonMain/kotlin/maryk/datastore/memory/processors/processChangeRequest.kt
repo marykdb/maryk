@@ -95,36 +95,35 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processCha
     if (changeRequest.objects.isNotEmpty()) {
         objectChanges@ for (objectChange in changeRequest.objects) {
             val index = dataStore.records.binarySearch { it.key.compareTo(objectChange.key) }
-            val objectToChange = dataStore.records[index]
+            val status: IsChangeResponseStatus<DM> = if (index >= 0) {
+                val objectToChange = dataStore.records[index]
 
-            val lastVersion = objectChange.lastVersion
-            // Check if version is within range
-            if (lastVersion != null && objectToChange.lastVersion.compareTo(lastVersion) != 0) {
-                statuses.add(
-                    ValidationFail(
-                        listOf(
-                            InvalidValueException(
-                                null,
-                                "Version of object was different than given: ${objectChange.lastVersion} < ${objectToChange.lastVersion}"
+                val lastVersion = objectChange.lastVersion
+                // Check if version is within range
+                if (lastVersion != null && objectToChange.lastVersion.compareTo(lastVersion) != 0) {
+                    statuses.add(
+                        ValidationFail(
+                            listOf(
+                                InvalidValueException(
+                                    null,
+                                    "Version of object was different than given: ${objectChange.lastVersion} < ${objectToChange.lastVersion}"
+                                )
                             )
                         )
                     )
-                )
-                continue@objectChanges
-            }
-
-            val status: IsChangeResponseStatus<DM> = when {
-                index > -1 -> {
-                    applyChanges(
-                        changeRequest.dataModel,
-                        dataStore,
-                        objectToChange,
-                        objectChange.changes,
-                        version,
-                        dataStore.keepAllVersions
-                    )
+                    continue@objectChanges
                 }
-                else -> DoesNotExist(objectChange.key)
+
+                applyChanges(
+                    changeRequest.dataModel,
+                    dataStore,
+                    objectToChange,
+                    objectChange.changes,
+                    version,
+                    dataStore.keepAllVersions
+                )
+            } else {
+                DoesNotExist(objectChange.key)
             }
 
             statuses.add(status)

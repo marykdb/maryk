@@ -1,5 +1,6 @@
-package maryk.datastore.memory
+package maryk.datastore.test
 
+import maryk.core.processors.datastore.IsDataStore
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.Key
 import maryk.core.query.filters.Equals
@@ -9,6 +10,7 @@ import maryk.core.query.orders.ascending
 import maryk.core.query.orders.descending
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
+import maryk.core.query.requests.delete
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.test.assertType
@@ -18,13 +20,25 @@ import maryk.test.models.Severity.DEBUG
 import maryk.test.models.Severity.ERROR
 import maryk.test.models.Severity.INFO
 import maryk.test.runSuspendingTest
-import kotlin.test.Test
 import kotlin.test.expect
 
-class InMemoryDataStoreScanOnIndexTest {
-    private val dataStore = InMemoryDataStore()
+class DataStoreScanOnIndexTest(
+    val dataStore: IsDataStore
+) : IsDataStoreTest {
     private val keys = mutableListOf<Key<Log>>()
     private var lowestVersion = ULong.MAX_VALUE
+
+    override val allTests = mapOf(
+        "executeSimpleIndexScanRequest" to ::executeSimpleIndexScanRequest,
+        "executeSimpleIndexScanWithStartKeyRequest" to ::executeSimpleIndexScanWithStartKeyRequest,
+        "executeSimpleIndexScanRequestReverseOrder" to ::executeSimpleIndexScanRequestReverseOrder,
+        "executeIndexScanRequestWithLimit" to ::executeIndexScanRequestWithLimit,
+        "executeIndexScanRequestWithToVersion" to ::executeIndexScanRequestWithToVersion,
+        "executeIndexScanRequestWithSelect" to ::executeIndexScanRequestWithSelect,
+        "executeSimpleIndexFilterScanRequest" to ::executeSimpleIndexFilterScanRequest,
+        "executeSimpleIndexFilterGreaterScanRequest" to ::executeSimpleIndexFilterGreaterScanRequest,
+        "executeSimpleIndexFilterLessScanRequest" to ::executeSimpleIndexFilterLessScanRequest
+    )
 
     private val logs = arrayOf(
         Log("Something happened", INFO, DateTime(2018, 11, 14, 11, 22, 33, 40)),
@@ -33,7 +47,7 @@ class InMemoryDataStoreScanOnIndexTest {
         Log("WRONG", ERROR, DateTime(2018, 11, 14, 13, 0, 2, 0))
     )
 
-    init {
+    override fun initData() {
         runSuspendingTest {
             val addResponse = dataStore.execute(
                 Log.add(*logs)
@@ -49,8 +63,17 @@ class InMemoryDataStoreScanOnIndexTest {
         }
     }
 
-    @Test
-    fun executeSimpleIndexScanRequest() = runSuspendingTest {
+    override fun resetData() {
+        runSuspendingTest {
+            dataStore.execute(
+                Log.delete(*keys.toTypedArray(), hardDelete = true)
+            )
+        }
+        keys.clear()
+        lowestVersion = ULong.MAX_VALUE
+    }
+
+    private fun executeSimpleIndexScanRequest() = runSuspendingTest {
         val scanResponse = dataStore.execute(
             Log.scan(order = severity.ref().ascending())
         )
@@ -76,8 +99,7 @@ class InMemoryDataStoreScanOnIndexTest {
         }
     }
 
-    @Test
-    fun executeSimpleIndexScanWithStartKeyRequest() = runSuspendingTest {
+    private fun executeSimpleIndexScanWithStartKeyRequest() = runSuspendingTest {
         val scanResponse = dataStore.execute(
             Log.scan(startKey = keys[2], order = severity.ref().ascending())
         )
@@ -99,8 +121,7 @@ class InMemoryDataStoreScanOnIndexTest {
         }
     }
 
-    @Test
-    fun executeSimpleIndexScanRequestReverseOrder() = runSuspendingTest {
+    private fun executeSimpleIndexScanRequestReverseOrder() = runSuspendingTest {
         val scanResponse = dataStore.execute(
             Log.scan(order = severity.ref().descending())
         )
@@ -126,8 +147,7 @@ class InMemoryDataStoreScanOnIndexTest {
         }
     }
 
-    @Test
-    fun executeIndexScanRequestWithLimit() = runSuspendingTest {
+    private fun executeIndexScanRequestWithLimit() = runSuspendingTest {
         val scanResponse = dataStore.execute(
             Log.scan(limit = 1u, order = severity.ref().ascending())
         )
@@ -140,8 +160,7 @@ class InMemoryDataStoreScanOnIndexTest {
         }
     }
 
-    @Test
-    fun executeIndexScanRequestWithToVersion() = runSuspendingTest {
+    private fun executeIndexScanRequestWithToVersion() = runSuspendingTest {
         val scanResponse = dataStore.execute(
             Log.scan(toVersion = lowestVersion - 1uL, order = severity.ref().ascending())
         )
@@ -149,8 +168,7 @@ class InMemoryDataStoreScanOnIndexTest {
         expect(0) { scanResponse.values.size }
     }
 
-    @Test
-    fun executeIndexScanRequestWithSelect() = runSuspendingTest {
+    private fun executeIndexScanRequestWithSelect() = runSuspendingTest {
         val scanResponse = dataStore.execute(
             Log.scan(
                 select = Log.graph {
@@ -179,8 +197,7 @@ class InMemoryDataStoreScanOnIndexTest {
         }
     }
 
-    @Test
-    fun executeSimpleIndexFilterScanRequest() = runSuspendingTest {
+    private fun executeSimpleIndexFilterScanRequest() = runSuspendingTest {
         val scanResponse = dataStore.execute(
             Log.scan(
                 where = Equals(
@@ -198,8 +215,7 @@ class InMemoryDataStoreScanOnIndexTest {
         }
     }
 
-    @Test
-    fun executeSimpleIndexFilterGreaterScanRequest() = runSuspendingTest {
+    private fun executeSimpleIndexFilterGreaterScanRequest() = runSuspendingTest {
         val scanResponse = dataStore.execute(
             Log.scan(
                 where = GreaterThanEquals(
@@ -221,8 +237,7 @@ class InMemoryDataStoreScanOnIndexTest {
         }
     }
 
-    @Test
-    fun executeSimpleIndexFilterLessScanRequest() = runSuspendingTest {
+    private fun executeSimpleIndexFilterLessScanRequest() = runSuspendingTest {
         val scanResponse = dataStore.execute(
             Log.scan(
                 where = LessThanEquals(

@@ -36,7 +36,7 @@ internal fun <T : Any> setValueAtIndex(
                         (values as MutableList<DataRecordNode>)[valueIndex] =
                             DataRecordHistoricValues(
                                 reference,
-                                listOf(
+                                mutableListOf(
                                     matchedValue as DataRecordValue<T>,
                                     it
                                 )

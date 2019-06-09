@@ -27,6 +27,7 @@ kotlin {
         commonTest {
             dependencies {
                 api(project(":testmodels"))
+                api(project(":store-test"))
             }
         }
         jvm().compilations["main"].defaultSourceSet {

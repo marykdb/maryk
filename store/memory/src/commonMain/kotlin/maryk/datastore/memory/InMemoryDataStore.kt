@@ -11,7 +11,6 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.responses.IsResponse
 import maryk.datastore.memory.records.DataStore
-import kotlin.coroutines.CoroutineContext
 
 internal typealias StoreExecutor<DM, P> = Unit.(StoreAction<DM, P, *, *>, dataStore: DataStore<DM, P>) -> Unit
 internal typealias StoreActor<DM, P> = SendChannel<StoreAction<DM, P, *, *>>
@@ -28,8 +27,7 @@ internal expect fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> Cor
 class InMemoryDataStore(
     val keepAllVersions: Boolean = false
 ) : IsDataStore, CoroutineScope {
-    override val coroutineContext: CoroutineContext
-        get() = GlobalScope.coroutineContext
+    override val coroutineContext = GlobalScope.coroutineContext
 
     private val dataActors: MutableMap<String, StoreActor<*, *>> = mutableMapOf()
 

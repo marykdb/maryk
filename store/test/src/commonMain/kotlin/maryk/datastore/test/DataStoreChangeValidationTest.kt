@@ -1,5 +1,6 @@
-package maryk.datastore.memory
+package maryk.datastore.test
 
+import maryk.core.processors.datastore.IsDataStore
 import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.exceptions.InvalidSizeException
 import maryk.core.properties.exceptions.InvalidValueException
@@ -16,6 +17,7 @@ import maryk.core.query.changes.change
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
 import maryk.core.query.requests.change
+import maryk.core.query.requests.delete
 import maryk.core.query.requests.get
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ValidationFail
@@ -24,15 +26,27 @@ import maryk.lib.time.Time
 import maryk.test.assertType
 import maryk.test.models.TestMarykModel
 import maryk.test.runSuspendingTest
-import kotlin.test.Test
 import kotlin.test.expect
 
-class InMemoryDataStoreChangeValidationTest {
-    private val dataStore = InMemoryDataStore()
+class DataStoreChangeValidationTest(
+    val dataStore: IsDataStore
+) : IsDataStoreTest {
     private val keys = mutableListOf<Key<TestMarykModel>>()
     private val lastVersions = mutableListOf<ULong>()
 
-    init {
+    override val allTests = mapOf(
+        "executeChangeChangeWithValidationExceptionRequest" to ::executeChangeChangeWithValidationExceptionRequest,
+        "executeChangeDeleteWithValidationExceptionRequest" to ::executeChangeDeleteWithValidationExceptionRequest,
+        "executeChangeListWithTooManyItemsValidationExceptionRequest" to ::executeChangeListWithTooManyItemsValidationExceptionRequest,
+        "executeChangeListWithContentValidationExceptionRequest" to ::executeChangeListWithContentValidationExceptionRequest,
+        "executeChangeSetWithMaxSizeValidationExceptionRequest" to ::executeChangeSetWithMaxSizeValidationExceptionRequest,
+        "executeChangeSetWithValueValidationExceptionRequest" to ::executeChangeSetWithValueValidationExceptionRequest,
+        "executeChangeMapWithSizeValidationExceptionRequest" to ::executeChangeMapWithSizeValidationExceptionRequest,
+        "executeChangeMapContentValidationExceptionRequest" to ::executeChangeMapContentValidationExceptionRequest,
+        "executeChangeListSizeValidationExceptionRequest" to ::executeChangeListSizeValidationExceptionRequest
+    )
+
+    override fun initData() {
         runSuspendingTest {
             val addResponse = dataStore.execute(
                 TestMarykModel.add(
@@ -79,8 +93,17 @@ class InMemoryDataStoreChangeValidationTest {
         }
     }
 
-    @Test
-    fun executeChangeChangeWithValidationExceptionRequest() = runSuspendingTest {
+    override fun resetData() {
+        runSuspendingTest {
+            dataStore.execute(
+                TestMarykModel.delete(*keys.toTypedArray(), hardDelete = true)
+            )
+        }
+        keys.clear()
+        lastVersions.clear()
+    }
+
+    private fun executeChangeChangeWithValidationExceptionRequest() = runSuspendingTest {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[1].change(
@@ -109,8 +132,7 @@ class InMemoryDataStoreChangeValidationTest {
         expect("haha2") { getResponse.values.first().values { string } }
     }
 
-    @Test
-    fun executeChangeDeleteWithValidationExceptionRequest() = runSuspendingTest {
+    private fun executeChangeDeleteWithValidationExceptionRequest() = runSuspendingTest {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[2].change(
@@ -137,8 +159,7 @@ class InMemoryDataStoreChangeValidationTest {
         expect(12u) { getResponse.values.first().values { uint } }
     }
 
-    @Test
-    fun executeChangeListWitTooManyItemsValidationExceptionRequest() = runSuspendingTest {
+    private fun executeChangeListWithTooManyItemsValidationExceptionRequest() = runSuspendingTest {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[0].change(
@@ -170,8 +191,7 @@ class InMemoryDataStoreChangeValidationTest {
         expect(listOf("a", "b", "c")) { getResponse.values.first().values { listOfString } }
     }
 
-    @Test
-    fun executeChangeListWithContentValidationExceptionRequest() = runSuspendingTest {
+    private fun executeChangeListWithContentValidationExceptionRequest() = runSuspendingTest {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[0].change(
@@ -206,8 +226,7 @@ class InMemoryDataStoreChangeValidationTest {
         expect(listOf("a", "b", "c")) { getResponse.values.first().values { listOfString } }
     }
 
-    @Test
-    fun executeChangeSetWithMaxSizeValidationExceptionRequest() = runSuspendingTest {
+    private fun executeChangeSetWithMaxSizeValidationExceptionRequest() = runSuspendingTest {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[1].change(
@@ -244,8 +263,7 @@ class InMemoryDataStoreChangeValidationTest {
         expect(setOf(Date(2018, 11, 25), Date(1981, 12, 5))) { getResponse.values.first().values { set } }
     }
 
-    @Test
-    fun executeChangeSetWithValueValidationExceptionRequest() = runSuspendingTest {
+    private fun executeChangeSetWithValueValidationExceptionRequest() = runSuspendingTest {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[1].change(
@@ -279,8 +297,7 @@ class InMemoryDataStoreChangeValidationTest {
         expect(setOf(Date(2018, 11, 25), Date(1981, 12, 5))) { getResponse.values.first().values { set } }
     }
 
-    @Test
-    fun executeChangeMapWithSizeValidationExceptionRequest() = runSuspendingTest {
+    private fun executeChangeMapWithSizeValidationExceptionRequest() = runSuspendingTest {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[1].change(
@@ -321,8 +338,7 @@ class InMemoryDataStoreChangeValidationTest {
         }
     }
 
-    @Test
-    fun executeChangeMapContentValidationExceptionRequest() = runSuspendingTest {
+    private fun executeChangeMapContentValidationExceptionRequest() = runSuspendingTest {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[1].change(
@@ -363,8 +379,7 @@ class InMemoryDataStoreChangeValidationTest {
         }
     }
 
-    @Test
-    fun executeChangeListSizeValidationExceptionRequest() = runSuspendingTest {
+    private fun executeChangeListSizeValidationExceptionRequest() = runSuspendingTest {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[2].change(

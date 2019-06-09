@@ -30,6 +30,7 @@ includeProjects(
     "testmodels",
     "generator",
     "generator-jvmTest",
+    "store-test",
     "store-memory"
 )
 

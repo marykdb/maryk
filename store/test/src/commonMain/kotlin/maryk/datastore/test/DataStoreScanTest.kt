@@ -1,4 +1,4 @@
-package maryk.datastore.memory
+package maryk.datastore.test
 
 import maryk.core.aggregations.Aggregations
 import maryk.core.aggregations.AggregationsResponse
@@ -6,12 +6,14 @@ import maryk.core.aggregations.metric.Max
 import maryk.core.aggregations.metric.MaxResponse
 import maryk.core.aggregations.metric.Min
 import maryk.core.aggregations.metric.MinResponse
+import maryk.core.processors.datastore.IsDataStore
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.Key
 import maryk.core.query.filters.Equals
 import maryk.core.query.orders.Order.Companion.descending
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
+import maryk.core.query.requests.delete
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.test.assertType
@@ -23,13 +25,25 @@ import maryk.test.models.Severity.DEBUG
 import maryk.test.models.Severity.ERROR
 import maryk.test.models.Severity.INFO
 import maryk.test.runSuspendingTest
-import kotlin.test.Test
 import kotlin.test.expect
 
-class InMemoryDataStoreScanTest {
-    private val dataStore = InMemoryDataStore()
+class DataStoreScanTest(
+    val dataStore: IsDataStore
+) : IsDataStoreTest {
     private val keys = mutableListOf<Key<Log>>()
     private var lowestVersion = ULong.MAX_VALUE
+
+    override val allTests = mapOf(
+        "executeSimpleScanRequest" to ::executeSimpleScanRequest,
+        "executeSimpleScanWithAggregationRequest" to ::executeSimpleScanWithAggregationRequest,
+        "executeSimpleScanRequestReverseOrder" to ::executeSimpleScanRequestReverseOrder,
+        "executeScanRequestWithLimit" to ::executeScanRequestWithLimit,
+        "executeScanRequestWithToVersion" to ::executeScanRequestWithToVersion,
+        "executeScanRequestWithSelect" to ::executeScanRequestWithSelect,
+        "executeSimpleScanFilterRequest" to ::executeSimpleScanFilterRequest,
+        "executeSimpleScanFilterExactMatchRequest" to ::executeSimpleScanFilterExactMatchRequest,
+        "executeSimpleScanFilterExactWrongMatchRequest" to ::executeSimpleScanFilterExactWrongMatchRequest
+    )
 
     private val logs = arrayOf(
         Log("Something happened", timestamp = DateTime(2018, 11, 14, 11, 22, 33, 40)),
@@ -38,7 +52,7 @@ class InMemoryDataStoreScanTest {
         Log("WRONG", ERROR, DateTime(2018, 11, 14, 13, 0, 2, 0))
     )
 
-    init {
+    override fun initData() {
         runSuspendingTest {
             val addResponse = dataStore.execute(
                 Log.add(*logs)
@@ -54,8 +68,17 @@ class InMemoryDataStoreScanTest {
         }
     }
 
-    @Test
-    fun executeSimpleScanRequest() = runSuspendingTest {
+    override fun resetData() {
+        runSuspendingTest {
+            dataStore.execute(
+                Log.delete(*keys.toTypedArray(), hardDelete = true)
+            )
+        }
+        keys.clear()
+        lowestVersion = ULong.MAX_VALUE
+    }
+
+    private fun executeSimpleScanRequest() = runSuspendingTest {
         val scanResponse = dataStore.execute(
             Log.scan(startKey = keys[2])
         )
@@ -77,8 +100,7 @@ class InMemoryDataStoreScanTest {
         }
     }
 
-    @Test
-    fun executeSimpleScanWithAggregationRequest() = runSuspendingTest {
+    private fun executeSimpleScanWithAggregationRequest() = runSuspendingTest {
         val scanResponse = dataStore.execute(
             Log.scan(
                 startKey = keys[2],
@@ -109,8 +131,7 @@ class InMemoryDataStoreScanTest {
         }
     }
 
-    @Test
-    fun executeSimpleScanRequestReverseOrder() = runSuspendingTest {
+    private fun executeSimpleScanRequestReverseOrder() = runSuspendingTest {
         val scanResponse = dataStore.execute(
             Log.scan(startKey = keys[2], order = descending)
         )
@@ -132,8 +153,7 @@ class InMemoryDataStoreScanTest {
         }
     }
 
-    @Test
-    fun executeScanRequestWithLimit() = runSuspendingTest {
+    private fun executeScanRequestWithLimit() = runSuspendingTest {
         val scanResponse = dataStore.execute(
             Log.scan(startKey = keys[2], limit = 1u)
         )
@@ -147,8 +167,7 @@ class InMemoryDataStoreScanTest {
         }
     }
 
-    @Test
-    fun executeScanRequestWithToVersion() = runSuspendingTest {
+    private fun executeScanRequestWithToVersion() = runSuspendingTest {
         val scanResponse = dataStore.execute(
             Log.scan(startKey = keys[2], toVersion = lowestVersion - 1uL)
         )
@@ -156,8 +175,7 @@ class InMemoryDataStoreScanTest {
         expect(0) { scanResponse.values.size }
     }
 
-    @Test
-    fun executeScanRequestWithSelect() = runSuspendingTest {
+    private fun executeScanRequestWithSelect() = runSuspendingTest {
         val scanResponse = dataStore.execute(
             Log.scan(
                 startKey = keys[2],
@@ -186,8 +204,7 @@ class InMemoryDataStoreScanTest {
         }
     }
 
-    @Test
-    fun executeSimpleScanFilterRequest() = runSuspendingTest {
+    private fun executeSimpleScanFilterRequest() = runSuspendingTest {
         val scanResponse = dataStore.execute(
             Log.scan(
                 where = Equals(
@@ -204,8 +221,7 @@ class InMemoryDataStoreScanTest {
         }
     }
 
-    @Test
-    fun executeSimpleScanFilterExactMatchRequest() = runSuspendingTest {
+    private fun executeSimpleScanFilterExactMatchRequest() = runSuspendingTest {
         val scanResponse = dataStore.execute(
             Log.scan(
                 where = Equals(
@@ -224,8 +240,7 @@ class InMemoryDataStoreScanTest {
         }
     }
 
-    @Test
-    fun executeSimpleScanFilterExactWrongMatchRequest() = runSuspendingTest {
+    private fun executeSimpleScanFilterExactWrongMatchRequest() = runSuspendingTest {
         val scanResponse = dataStore.execute(
             Log.scan(
                 where = Equals(

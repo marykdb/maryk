@@ -1,5 +1,6 @@
-package maryk.datastore.memory
+package maryk.datastore.test
 
+import maryk.core.processors.datastore.IsDataStore
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.types.Date
 import maryk.core.properties.types.Key
@@ -16,11 +17,13 @@ import maryk.core.query.changes.change
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
 import maryk.core.query.requests.change
+import maryk.core.query.requests.delete
 import maryk.core.query.requests.get
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.ValidationFail
+import maryk.datastore.memory.assertRecent
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.assertType
@@ -28,17 +31,33 @@ import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.SimpleMarykTypeEnum.S1
 import maryk.test.models.TestMarykModel
 import maryk.test.runSuspendingTest
-import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.expect
 
-class InMemoryDataStoreChangeTest {
-    private val dataStore = InMemoryDataStore()
+class DataStoreChangeTest(
+    val dataStore: IsDataStore
+) : IsDataStoreTest {
     private val keys = mutableListOf<Key<TestMarykModel>>()
     private val lastVersions = mutableListOf<ULong>()
 
-    init {
+    override val allTests = mapOf(
+        "executeChangeCheckRequest" to ::executeChangeCheckRequest,
+        "executeChangeChangeRequest" to ::executeChangeChangeRequest,
+        "executeChangeChangeListItemDoesNotExistRequest" to ::executeChangeChangeListItemDoesNotExistRequest,
+        "executeChangeChangeMapDoesNotExistRequest" to ::executeChangeChangeMapDoesNotExistRequest,
+        "executeChangeChangeEmbedDoesNotExistRequest" to ::executeChangeChangeEmbedDoesNotExistRequest,
+        "executeChangeDeleteRequest" to ::executeChangeDeleteRequest,
+        "executeChangeDeleteComplexRequest" to ::executeChangeDeleteComplexRequest,
+        "executeChangeDeleteComplexItemsRequest" to ::executeChangeDeleteComplexItemsRequest,
+        "executeChangeDeleteFailOnOfTypeRefsItemsRequest" to ::executeChangeDeleteFailOnOfTypeRefsItemsRequest,
+        "executeChangeListRequest" to ::executeChangeListRequest,
+        "executeChangeSetRequest" to ::executeChangeSetRequest,
+        "executeChangeMapRequest" to ::executeChangeMapRequest,
+        "executeChangeIncMapRequest" to ::executeChangeIncMapRequest
+    )
+
+    override fun initData() {
         runSuspendingTest {
             val addResponse = dataStore.execute(
                 TestMarykModel.add(
@@ -112,8 +131,17 @@ class InMemoryDataStoreChangeTest {
         }
     }
 
-    @Test
-    fun executeChangeCheckRequest() = runSuspendingTest {
+    override fun resetData() {
+        runSuspendingTest {
+            dataStore.execute(
+                TestMarykModel.delete(*keys.toTypedArray(), hardDelete = true)
+            )
+        }
+        keys.clear()
+        lastVersions.clear()
+    }
+
+    private fun executeChangeCheckRequest() = runSuspendingTest {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[0].change(
@@ -156,8 +184,7 @@ class InMemoryDataStoreChangeTest {
         }
     }
 
-    @Test
-    fun executeChangeChangeRequest() = runSuspendingTest {
+    private fun executeChangeChangeRequest() = runSuspendingTest {
         val newIntList = listOf(1, 2, 3)
         val newDateSet = setOf(Date(2019, 1, 19), Date(2019, 1, 18))
         val newValues = EmbeddedMarykModel("Different")
@@ -198,8 +225,7 @@ class InMemoryDataStoreChangeTest {
         }
     }
 
-    @Test
-    fun executeChangeChangeListItemDoesNotExistRequest() = runSuspendingTest {
+    private fun executeChangeChangeListItemDoesNotExistRequest() = runSuspendingTest {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[5].change(
@@ -214,8 +240,7 @@ class InMemoryDataStoreChangeTest {
         assertType<ServerFail<*>>(changeResponse.statuses[0])
     }
 
-    @Test
-    fun executeChangeChangeMapDoesNotExistRequest() = runSuspendingTest {
+    private fun executeChangeChangeMapDoesNotExistRequest() = runSuspendingTest {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[5].change(
@@ -230,8 +255,7 @@ class InMemoryDataStoreChangeTest {
         assertType<ServerFail<*>>(changeResponse.statuses[0])
     }
 
-    @Test
-    fun executeChangeChangeEmbedDoesNotExistRequest() = runSuspendingTest {
+    private fun executeChangeChangeEmbedDoesNotExistRequest() = runSuspendingTest {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[5].change(
@@ -246,8 +270,7 @@ class InMemoryDataStoreChangeTest {
         assertType<ServerFail<*>>(changeResponse.statuses[0])
     }
 
-    @Test
-    fun executeChangeDeleteRequest() = runSuspendingTest {
+    private fun executeChangeDeleteRequest() = runSuspendingTest {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[2].change(
@@ -270,8 +293,7 @@ class InMemoryDataStoreChangeTest {
         assertNull(getResponse.values.first().values { reference })
     }
 
-    @Test
-    fun executeChangeDeleteComplexRequest() = runSuspendingTest {
+    private fun executeChangeDeleteComplexRequest() = runSuspendingTest {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[3].change(
@@ -300,8 +322,7 @@ class InMemoryDataStoreChangeTest {
         assertNull(getResponse.values.first().values { multi })
     }
 
-    @Test
-    fun executeChangeDeleteComplexItemsRequest() = runSuspendingTest {
+    private fun executeChangeDeleteComplexItemsRequest() = runSuspendingTest {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[4].change(
@@ -341,8 +362,7 @@ class InMemoryDataStoreChangeTest {
         }
     }
 
-    @Test
-    fun executeChangeDeleteFailOnOfTypeRefsItemsRequest() = runSuspendingTest {
+    private fun executeChangeDeleteFailOnOfTypeRefsItemsRequest() = runSuspendingTest {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[4].change(
@@ -355,8 +375,7 @@ class InMemoryDataStoreChangeTest {
         assertType<ServerFail<*>>(changeResponse.statuses[0])
     }
 
-    @Test
-    fun executeChangeListRequest() = runSuspendingTest {
+    private fun executeChangeListRequest() = runSuspendingTest {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[0].change(
@@ -390,8 +409,7 @@ class InMemoryDataStoreChangeTest {
         expect(listOf("zero", "a", "x", "y", "z")) { getResponse.values.first().values { listOfString } }
     }
 
-    @Test
-    fun executeChangeSetRequest() = runSuspendingTest {
+    private fun executeChangeSetRequest() = runSuspendingTest {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[1].change(
@@ -421,8 +439,7 @@ class InMemoryDataStoreChangeTest {
         expect(setOf(Date(2018, 11, 26), Date(1981, 12, 5))) { getResponse.values.first().values { set } }
     }
 
-    @Test
-    fun executeChangeMapRequest() = runSuspendingTest {
+    private fun executeChangeMapRequest() = runSuspendingTest {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[1].change(
@@ -457,8 +474,7 @@ class InMemoryDataStoreChangeTest {
         ) { getResponse.values.first().values { map } }
     }
 
-    @Test
-    fun executeChangeIncMapRequest() = runSuspendingTest {
+    private fun executeChangeIncMapRequest() = runSuspendingTest {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[1].change(

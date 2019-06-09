@@ -1,10 +1,12 @@
-package maryk.datastore.memory
+package maryk.datastore.test
 
+import maryk.core.processors.datastore.IsDataStore
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.filters.Equals
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
+import maryk.core.query.requests.delete
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.lib.time.Date
@@ -16,13 +18,17 @@ import maryk.test.models.MarykTypeEnum.T2
 import maryk.test.models.SimpleMarykModel
 import maryk.test.models.SimpleMarykTypeEnum.S1
 import maryk.test.runSuspendingTest
-import kotlin.test.Test
 import kotlin.test.expect
 
-class InMemoryDataStoreScanUniqueTest {
-    private val dataStore = InMemoryDataStore()
+class DataStoreScanUniqueTest(
+    val dataStore: IsDataStore
+) : IsDataStoreTest {
     private val keys = mutableListOf<Key<CompleteMarykModel>>()
     private var lowestVersion = ULong.MAX_VALUE
+
+    override val allTests = mapOf(
+        "executeSimpleScanFilterRequest" to ::executeSimpleScanFilterRequest
+    )
 
     private val objects = arrayOf(
         CompleteMarykModel(
@@ -39,7 +45,7 @@ class InMemoryDataStoreScanUniqueTest {
         )
     )
 
-    init {
+    override fun initData() {
         runSuspendingTest {
             val addResponse = dataStore.execute(
                 CompleteMarykModel.add(*objects)
@@ -55,8 +61,17 @@ class InMemoryDataStoreScanUniqueTest {
         }
     }
 
-    @Test
-    fun executeSimpleScanFilterRequest() = runSuspendingTest {
+    override fun resetData() {
+        runSuspendingTest {
+            dataStore.execute(
+                CompleteMarykModel.delete(*keys.toTypedArray(), hardDelete = true)
+            )
+        }
+        keys.clear()
+        lowestVersion = ULong.MAX_VALUE
+    }
+
+    private fun executeSimpleScanFilterRequest() = runSuspendingTest {
         val scanResponse = dataStore.execute(
             CompleteMarykModel.scan(
                 where = Equals(

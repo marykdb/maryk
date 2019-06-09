@@ -1,5 +1,6 @@
-package maryk.datastore.memory
+package maryk.datastore.test
 
+import maryk.core.processors.datastore.IsDataStore
 import maryk.core.properties.references.dsl.at
 import maryk.core.properties.references.dsl.atType
 import maryk.core.properties.types.Key
@@ -13,9 +14,11 @@ import maryk.core.query.changes.change
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
 import maryk.core.query.requests.change
+import maryk.core.query.requests.delete
 import maryk.core.query.requests.get
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
+import maryk.datastore.memory.assertRecent
 import maryk.test.assertType
 import maryk.test.models.ComplexModel
 import maryk.test.models.EmbeddedMarykModel
@@ -24,17 +27,28 @@ import maryk.test.models.MarykTypeEnum.T1
 import maryk.test.models.MarykTypeEnum.T3
 import maryk.test.models.TestMarykModel
 import maryk.test.runSuspendingTest
-import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.expect
 
-class InMemoryDataStoreChangeComplexTest {
-    private val dataStore = InMemoryDataStore()
+class DataStoreChangeComplexTest(
+    val dataStore: IsDataStore
+) : IsDataStoreTest {
     private val keys = mutableListOf<Key<ComplexModel>>()
     private val lastVersions = mutableListOf<ULong>()
 
-    init {
+    override val allTests = mapOf(
+        "executeChangeDeleteMultiRequest" to ::executeChangeDeleteMultiRequest,
+        "executeChangeDeleteMapRequest" to ::executeChangeDeleteMapRequest,
+        "executeChangeDeleteMapValueRequest" to ::executeChangeDeleteMapValueRequest,
+        "executeChangeDeleteMapSubValueRequest" to ::executeChangeDeleteMapSubValueRequest,
+        "executeChangeDeleteMapTypedSubValueRequest" to ::executeChangeDeleteMapTypedSubValueRequest,
+        "executeChangeChangeValueRequest" to ::executeChangeChangeValueRequest,
+        "executeChangeChangeReplaceComplexValueRequest" to ::executeChangeChangeReplaceComplexValueRequest,
+        "executeChangeIncMapRequest" to ::executeChangeIncMapRequest
+    )
+
+    override fun initData() {
         runSuspendingTest {
             val addResponse = dataStore.execute(
                 ComplexModel.add(
@@ -90,6 +104,12 @@ class InMemoryDataStoreChangeComplexTest {
                                 EmbeddedMarykModel("v2", EmbeddedMarykModel("2sub1", EmbeddedMarykModel("2sub2")))
                             )
                         )
+                    ),
+                    ComplexModel(
+                        mapIntObject = mapOf(
+                            1u to EmbeddedMarykModel("v1"),
+                            2u to EmbeddedMarykModel("v2")
+                        )
                     )
                 )
             )
@@ -102,8 +122,17 @@ class InMemoryDataStoreChangeComplexTest {
         }
     }
 
-    @Test
-    fun executeChangeDeleteMultiRequest() = runSuspendingTest {
+    override fun resetData() {
+        runSuspendingTest {
+            dataStore.execute(
+                ComplexModel.delete(*keys.toTypedArray(), hardDelete = true)
+            )
+        }
+        keys.clear()
+        lastVersions.clear()
+    }
+
+    private fun executeChangeDeleteMultiRequest() = runSuspendingTest {
         val changeResponse = dataStore.execute(
             ComplexModel.change(
                 keys[0].change(
@@ -127,8 +156,7 @@ class InMemoryDataStoreChangeComplexTest {
         assertNull(getResponse.values.first().values { multi })
     }
 
-    @Test
-    fun executeChangeDeleteMapRequest() = runSuspendingTest {
+    private fun executeChangeDeleteMapRequest() = runSuspendingTest {
         val changeResponse = dataStore.execute(
             ComplexModel.change(
                 keys[2].change(
@@ -151,11 +179,10 @@ class InMemoryDataStoreChangeComplexTest {
         assertNull(getResponse.values.first().values { mapIntObject })
     }
 
-    @Test
-    fun executeChangeDeleteMapValueRequest() = runSuspendingTest {
+    private fun executeChangeDeleteMapValueRequest() = runSuspendingTest {
         val changeResponse = dataStore.execute(
             ComplexModel.change(
-                keys[2].change(
+                keys[6].change(
                     Delete(ComplexModel { mapIntObject refAt 2u })
                 )
             )
@@ -168,7 +195,7 @@ class InMemoryDataStoreChangeComplexTest {
         }
 
         val getResponse = dataStore.execute(
-            ComplexModel.get(keys[2])
+            ComplexModel.get(keys[6])
         )
 
         expect(1) { getResponse.values.size }
@@ -179,8 +206,7 @@ class InMemoryDataStoreChangeComplexTest {
         }
     }
 
-    @Test
-    fun executeChangeDeleteMapSubValueRequest() = runSuspendingTest {
+    private fun executeChangeDeleteMapSubValueRequest() = runSuspendingTest {
         val changeResponse = dataStore.execute(
             ComplexModel.change(
                 keys[3].change(
@@ -207,8 +233,7 @@ class InMemoryDataStoreChangeComplexTest {
         }
     }
 
-    @Test
-    fun executeChangeDeleteMapTypedSubValueRequest() = runSuspendingTest {
+    private fun executeChangeDeleteMapTypedSubValueRequest() = runSuspendingTest {
         val changeResponse = dataStore.execute(
             ComplexModel.change(
                 keys[4].change(
@@ -245,8 +270,7 @@ class InMemoryDataStoreChangeComplexTest {
         }
     }
 
-    @Test
-    fun executeChangeChangeValueRequest() = runSuspendingTest {
+    private fun executeChangeChangeValueRequest() = runSuspendingTest {
         val changeResponse = dataStore.execute(
             ComplexModel.change(
                 keys[5].change(
@@ -293,8 +317,7 @@ class InMemoryDataStoreChangeComplexTest {
         }
     }
 
-    @Test
-    fun executeChangeChangeReplaceComplexValueRequest() = runSuspendingTest {
+    private fun executeChangeChangeReplaceComplexValueRequest() = runSuspendingTest {
         val newMultiValue = TypedValue(T3, EmbeddedMarykModel("a5", EmbeddedMarykModel("ae5")))
         val newMapStringString = mapOf("e" to "f", "g" to "h")
         val newMapIntObject = mapOf(4u to EmbeddedMarykModel("v100"), 8u to EmbeddedMarykModel("v200"))
@@ -339,8 +362,7 @@ class InMemoryDataStoreChangeComplexTest {
         }
     }
 
-    @Test
-    fun executeChangeIncMapRequest() = runSuspendingTest {
+    private fun executeChangeIncMapRequest() = runSuspendingTest {
         val changeResponse = dataStore.execute(
             ComplexModel.change(
                 keys[0].change(

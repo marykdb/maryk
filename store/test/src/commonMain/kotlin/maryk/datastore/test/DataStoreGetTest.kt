@@ -1,25 +1,34 @@
-package maryk.datastore.memory
+package maryk.datastore.test
 
 import maryk.core.aggregations.Aggregations
 import maryk.core.aggregations.AggregationsResponse
 import maryk.core.aggregations.metric.ValueCount
 import maryk.core.aggregations.metric.ValueCountResponse
+import maryk.core.processors.datastore.IsDataStore
 import maryk.core.properties.types.Key
+import maryk.core.query.requests.delete
 import maryk.core.query.requests.get
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.test.assertType
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.addRequest
 import maryk.test.runSuspendingTest
-import kotlin.test.Test
 import kotlin.test.expect
 
-class InMemoryDataStoreGetTest {
-    private val dataStore = InMemoryDataStore()
+class DataStoreGetTest(
+    val dataStore: IsDataStore
+) : IsDataStoreTest {
     private val keys = mutableListOf<Key<SimpleMarykModel>>()
     private var lowestVersion = ULong.MAX_VALUE
 
-    init {
+    override val allTests = mapOf(
+        "executeSimpleGetRequest" to ::executeSimpleGetRequest,
+        "executeSimpleGetWithAggregationRequest" to ::executeSimpleGetWithAggregationRequest,
+        "executeToVersionGetRequest" to ::executeToVersionGetRequest,
+        "executeGetRequestWithSelect" to ::executeGetRequestWithSelect
+    )
+
+    override fun initData() {
         runSuspendingTest {
             val addResponse = dataStore.execute(
                 addRequest
@@ -35,8 +44,17 @@ class InMemoryDataStoreGetTest {
         }
     }
 
-    @Test
-    fun executeSimpleGetRequest() = runSuspendingTest {
+    override fun resetData() {
+        runSuspendingTest {
+            dataStore.execute(
+                SimpleMarykModel.delete(*keys.toTypedArray(), hardDelete = true)
+            )
+        }
+        keys.clear()
+        lowestVersion = ULong.MAX_VALUE
+    }
+
+    private fun executeSimpleGetRequest() = runSuspendingTest {
         val getResponse = dataStore.execute(
             SimpleMarykModel.get(*keys.toTypedArray())
         )
@@ -48,8 +66,7 @@ class InMemoryDataStoreGetTest {
         }
     }
 
-    @Test
-    fun executeSimpleGetWithAggregationRequest() = runSuspendingTest {
+    private fun executeSimpleGetWithAggregationRequest() = runSuspendingTest {
         val getResponse = dataStore.execute(
             SimpleMarykModel.get(
                 *keys.toTypedArray(),
@@ -74,8 +91,7 @@ class InMemoryDataStoreGetTest {
         }
     }
 
-    @Test
-    fun executeToVersionGetRequest() = runSuspendingTest {
+    private fun executeToVersionGetRequest() = runSuspendingTest {
         val getResponse = dataStore.execute(
             SimpleMarykModel.get(*keys.toTypedArray(), toVersion = lowestVersion - 1uL)
         )
@@ -83,8 +99,7 @@ class InMemoryDataStoreGetTest {
         expect(0) { getResponse.values.size }
     }
 
-    @Test
-    fun executeGetRequestWithSelect() = runSuspendingTest {
+    private fun executeGetRequestWithSelect() = runSuspendingTest {
         val scanResponse = dataStore.execute(
             SimpleMarykModel.get(
                 *keys.toTypedArray(),

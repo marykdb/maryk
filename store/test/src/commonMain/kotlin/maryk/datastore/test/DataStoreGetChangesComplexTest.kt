@@ -1,5 +1,6 @@
-package maryk.datastore.memory
+package maryk.datastore.test
 
+import maryk.core.processors.datastore.IsDataStore
 import maryk.core.properties.references.dsl.at
 import maryk.core.properties.references.dsl.atType
 import maryk.core.properties.types.Key
@@ -10,6 +11,7 @@ import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.pairs.with
 import maryk.core.query.pairs.withType
 import maryk.core.query.requests.add
+import maryk.core.query.requests.delete
 import maryk.core.query.requests.getChanges
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.test.assertType
@@ -18,15 +20,20 @@ import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.MarykTypeEnum.T1
 import maryk.test.models.MarykTypeEnum.T3
 import maryk.test.runSuspendingTest
-import kotlin.test.Test
 import kotlin.test.expect
 
-class InMemoryDataStoreGetChangesComplexTest {
-    private val dataStore = InMemoryDataStore()
+class DataStoreGetChangesComplexTest(
+    val dataStore: IsDataStore
+) : IsDataStoreTest {
     private val keys = mutableListOf<Key<ComplexModel>>()
     private var lowestVersion = ULong.MAX_VALUE
 
-    init {
+    override val allTests = mapOf(
+        "executeSimpleGetChangesRequest" to ::executeSimpleGetChangesRequest,
+        "executeSimpleGetChangesRequest" to ::executeSimpleGetChangesRequest
+    )
+
+    override fun initData() {
         runSuspendingTest {
             val addResponse = dataStore.execute(
                 ComplexModel.add(
@@ -65,8 +72,17 @@ class InMemoryDataStoreGetChangesComplexTest {
         }
     }
 
-    @Test
-    fun executeSimpleGetChangesRequest() = runSuspendingTest {
+    override fun resetData() {
+        runSuspendingTest {
+            dataStore.execute(
+                ComplexModel.delete(*keys.toTypedArray(), hardDelete = true)
+            )
+        }
+        keys.clear()
+        lowestVersion = ULong.MAX_VALUE
+    }
+
+    private fun executeSimpleGetChangesRequest() = runSuspendingTest {
         val getResponse = dataStore.execute(
             ComplexModel.getChanges(*keys.toTypedArray())
         )

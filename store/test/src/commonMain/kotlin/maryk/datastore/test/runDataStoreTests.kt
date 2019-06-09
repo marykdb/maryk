@@ -19,10 +19,10 @@ private val allTestClasses = arrayOf(
 )
 
 fun runDataStoreTests(dataStore: IsDataStore, runOnlyTest: String? = null) {
+    val exceptionList = mutableMapOf<String, Throwable>()
+
     for ((testClassName, testClassConstructor) in allTestClasses) {
         val testClass = testClassConstructor(dataStore)
-
-        val exceptionList = mutableMapOf<String, Throwable>()
 
         try {
             for ((testName, test) in testClass.allTests) {
@@ -43,13 +43,12 @@ fun runDataStoreTests(dataStore: IsDataStore, runOnlyTest: String? = null) {
         } catch (throwable: Throwable) {
             exceptionList["$testClassName:initData"] = throwable
         }
-
-        if (exceptionList.isNotEmpty()) {
-            var messages = "DataStore Tests failed: [\n"
-            for ((name, exception) in exceptionList) {
-                messages += "\t$name: $exception\n"
-            }
-            throw Exception("$messages]")
+    }
+    if (exceptionList.isNotEmpty()) {
+        var messages = "DataStore Tests failed: [\n"
+        for ((name, exception) in exceptionList) {
+            messages += "\t$name: $exception\n"
         }
+        throw Exception("$messages]")
     }
 }

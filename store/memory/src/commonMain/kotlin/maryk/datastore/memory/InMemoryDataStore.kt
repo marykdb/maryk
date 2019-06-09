@@ -2,7 +2,7 @@ package maryk.datastore.memory
 
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.SendChannel
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.RootDataModel
@@ -27,23 +27,22 @@ internal expect fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> Cor
 class InMemoryDataStore(
     val keepAllVersions: Boolean = false
 ) : IsDataStore, CoroutineScope {
-    override val coroutineContext = GlobalScope.coroutineContext
+    override val coroutineContext = Dispatchers.Default
 
     private val dataActors: MutableMap<String, StoreActor<*, *>> = mutableMapOf()
 
     private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> getStoreActor(
-        scope: CoroutineScope,
         dataModel: DM
     ) =
         dataActors.getOrPut(dataModel.name) {
             @Suppress("UNCHECKED_CAST")
-            scope.storeActor(this, storeExecutor as StoreExecutor<DM, P>) as StoreActor<*, *>
+            this.storeActor(this, storeExecutor as StoreExecutor<DM, P>) as StoreActor<*, *>
         }
 
     override suspend fun <DM : RootDataModel<DM, P>, P : PropertyDefinitions, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
         request: RQ
     ): RP {
-        val storeActor = this.getStoreActor(this, request.dataModel)
+        val storeActor = this.getStoreActor(request.dataModel)
         val response = CompletableDeferred<RP>()
 
         storeActor.send(

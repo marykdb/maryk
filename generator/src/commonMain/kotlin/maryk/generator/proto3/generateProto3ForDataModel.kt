@@ -12,6 +12,7 @@ import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.FixedBytesDefinition
 import maryk.core.properties.definitions.FlexBytesDefinition
+import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
@@ -140,6 +141,7 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(
             messageAdder
         )}"
         is IsMapDefinition<*, *, *> -> {
+            // The following types are not supported as key so should be an embedded map model
             when (val keyDefinition = this.keyDefinition) {
                 is EnumDefinition<*>,
                 is FlexBytesDefinition,
@@ -166,6 +168,21 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(
                 }
             }
 
+            // The following types are not supported as value so should be an embedded map model
+            when (val valueDefinition = this.valueDefinition) {
+                is IsMapDefinition<*, *, *>,
+                is IsCollectionDefinition<*, *, *, *> -> return createEmbeddedMapModel(
+                    name,
+                    keyDefinition,
+                    valueDefinition,
+                    generationContext,
+                    messageAdder
+                )
+                else -> {
+                    //continue
+                }
+            }
+
             // Separate object
             "map<${this.keyDefinition.toProtoBufType(name, generationContext, messageAdder)}, ${this.valueDefinition.toProtoBufType(name, generationContext, messageAdder)}>"
         }
@@ -175,17 +192,37 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(
             val multiTypeName = "${name.capitalize()}Type"
 
             val multiTypes = mutableListOf<String>()
+            val canBeAOneOf = this.typeEnum.cases().firstOrNull {
+                it.definition is IsCollectionDefinition<*, *, *, *> || it.definition is IsMapDefinition<*, *, *>
+            } == null
+
             for (typeCase in this.typeEnum.cases()) {
                 val type = typeCase.definition!!.toProtoBufType(typeCase.name, generationContext, messageAdder)
                 multiTypes += "$type ${typeCase.name.decapitalize()} = ${typeCase.index};"
             }
-            messageAdder("""
-            message $multiTypeName {
-              oneof $name {
-                ${multiTypes.joinToString(separator = "\n    ").prependIndent().prependIndent().prependIndent().trimStart()}
-              }
+
+            val properties = multiTypes.joinToString(separator = "\n    ").prependIndent().prependIndent().prependIndent()
+
+            if (canBeAOneOf) {
+                messageAdder(
+                """
+                message $multiTypeName {
+                  oneof $name {
+                    ${properties.prependIndent().trimStart()}
+                  }
+                }
+                """.trimIndent()
+                )
+            } else {
+                messageAdder(
+                """
+                // Only one of the properties can be set. Is not a `oneof` because of a repeated type or map
+                message $multiTypeName {
+                  ${properties.prependIndent("  ").trimStart()}
+                }
+                """.trimIndent()
+                )
             }
-            """.trimIndent())
 
             multiTypeName
         }

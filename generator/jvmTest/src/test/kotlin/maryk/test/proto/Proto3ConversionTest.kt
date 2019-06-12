@@ -11,11 +11,11 @@ import maryk.lib.extensions.toHex
 import maryk.lib.time.Date
 import maryk.test.ByteCollector
 import maryk.test.models.CompleteMarykModel
-import maryk.test.models.MarykTypeEnum.O1
 import maryk.test.models.MarykEnumEmbedded.E1
 import maryk.test.models.MarykEnumEmbedded.E2
 import maryk.test.models.NumericMarykModel
 import maryk.test.models.SimpleMarykModel
+import maryk.test.models.SimpleMarykTypeEnum.S1
 import kotlin.test.Test
 import kotlin.test.expect
 
@@ -83,7 +83,7 @@ class Proto3ConversionTest {
         val completeObject = CompleteMarykModel(
             booleanForKey = true,
             dateForKey = Date(2018, 7, 25),
-            multiForKey = TypedValue(O1, "string"),
+            multiForKey = TypedValue(S1, "string"),
             enumEmbedded = E1,
             mapWithEnum = mapOf(
                 E2 to "mapped"
@@ -94,7 +94,7 @@ class Proto3ConversionTest {
             .setString(completeObject { string })
             .setNumber(completeObject { number }!!.toLong())
             .setBoolean(completeObject { boolean }!!)
-            .setEnum(MarykTestProtos.MarykEnum.O1)
+            .setEnum(MarykTestProtos.Option.V1)
             .setDate(completeObject { date }!!.epochDay)
             .setDateTime(completeObject { dateTime }!!.toEpochMilli())
             .setTime(completeObject { time }!!.toMillisOfDay())
@@ -106,12 +106,12 @@ class Proto3ConversionTest {
             .addAllList(mutableListOf("ha1", "ha2", "ha3"))
             .addAllSet(mutableListOf(1, 2, 3))
             .putMap(Date(2010, 11, 12).epochDay, 1)
-            .putMap(Date(2011, 12, 13).epochDay, 1)
-            .setMulti(MarykTestProtos.CompleteMarykModel.MultiType.newBuilder().setO1("a value"))
+            .putMap(Date(2011, 12, 13).epochDay, 1)/**/
+            .setMulti(MarykTestProtos.CompleteMarykModel.MultiType.newBuilder().setT1("a value"))
             .setBooleanForKey(completeObject { booleanForKey }!!)
             .setDateForKey(completeObject { dateForKey }!!.epochDay)
             .setMultiForKey(
-                MarykTestProtos.CompleteMarykModel.MultiForKeyType.newBuilder().setO1("string")
+                MarykTestProtos.CompleteMarykModel.MultiForKeyType.newBuilder().setS1("string")
             )
             .setEnumEmbedded(
                 MarykTestProtos.CompleteMarykModel.MarykEnumEmbedded.E1
@@ -120,6 +120,21 @@ class Proto3ConversionTest {
                 MarykTestProtos.CompleteMarykModel.MapWithEnumEntry.newBuilder().setKey(
                     MarykTestProtos.CompleteMarykModel.MarykEnumEmbedded.E2
                 ).setValue("mapped")
+            )
+            .addMapWithList(
+                MarykTestProtos.CompleteMarykModel.MapWithListEntry.newBuilder().setKey(
+                    "a"
+                ).addValue("b").addValue("c")
+            )
+            .addMapWithSet(
+                MarykTestProtos.CompleteMarykModel.MapWithSetEntry.newBuilder().setKey(
+                    "a"
+                ).addValue("b").addValue("c")
+            )
+            .addMapWithMap(
+                MarykTestProtos.CompleteMarykModel.MapWithMapEntry.newBuilder().setKey(
+                    "a"
+                ).putAllValue(mapOf("b" to "c"))
             )
             .build()
 

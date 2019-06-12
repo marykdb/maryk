@@ -6,7 +6,7 @@ import kotlin.test.assertEquals
 
 val generatedProto3ForMarykEnum = """
 enum MarykTypeEnum {
-  UNKNOWN = 0;
+  UNKNOWN_MARYKTYPEENUM = 0;
   T1 = 1;
   T2 = 2;
   T3 = 3;

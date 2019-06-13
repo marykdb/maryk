@@ -1,6 +1,11 @@
 package maryk.datastore.test
 
 import maryk.datastore.shared.IsDataStore
+import maryk.test.models.CompleteMarykModel
+import maryk.test.models.ComplexModel
+import maryk.test.models.Log
+import maryk.test.models.SimpleMarykModel
+import maryk.test.models.TestMarykModel
 
 private val allTestClasses = arrayOf(
     "DataStoreAddTest" to ::DataStoreAddTest,
@@ -16,6 +21,15 @@ private val allTestClasses = arrayOf(
     "DataStoreScanTest" to ::DataStoreScanTest,
     "DataStoreScanUniqueTest" to ::DataStoreScanUniqueTest,
     "UniqueTest" to ::UniqueTest
+)
+
+val dataModelsForTests = mapOf(
+    1u to TestMarykModel,
+    2u to SimpleMarykModel,
+    3u to ComplexModel,
+    4u to Log,
+    5u to CompleteMarykModel,
+    6u to UniqueModel
 )
 
 fun runDataStoreTests(dataStore: IsDataStore, runOnlyTest: String? = null) {

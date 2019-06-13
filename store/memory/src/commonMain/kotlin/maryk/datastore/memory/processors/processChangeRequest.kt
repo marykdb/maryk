@@ -62,7 +62,6 @@ import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.core.values.EmptyValueItems
 import maryk.core.values.Values
-import maryk.datastore.shared.StoreAction
 import maryk.datastore.memory.processors.changers.createCountUpdater
 import maryk.datastore.memory.processors.changers.deleteByReference
 import maryk.datastore.memory.processors.changers.getCurrentIncMapKey
@@ -75,7 +74,8 @@ import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataRecordNode
 import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DataStore
-import maryk.datastore.memory.records.index.UniqueException
+import maryk.datastore.shared.StoreAction
+import maryk.datastore.shared.UniqueException
 import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.compare.matches
 

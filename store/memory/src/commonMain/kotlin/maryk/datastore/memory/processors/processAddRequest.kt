@@ -6,7 +6,6 @@ import maryk.core.processors.datastore.writeToStorage
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.exceptions.AlreadySetException
-import maryk.core.properties.exceptions.RequiredException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.query.requests.AddRequest
@@ -16,12 +15,12 @@ import maryk.core.query.responses.statuses.AlreadyExists
 import maryk.core.query.responses.statuses.IsAddResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.ValidationFail
-import maryk.datastore.shared.StoreAction
 import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataRecordNode
 import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DataStore
-import maryk.datastore.memory.records.index.UniqueException
+import maryk.datastore.shared.StoreAction
+import maryk.datastore.shared.UniqueException
 import maryk.lib.extensions.compare.compareTo
 
 internal typealias AddStoreAction<DM, P> = StoreAction<DM, P, AddRequest<DM, P>, AddResponse<DM>>
@@ -59,19 +58,12 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
 
                     // Find new index values to write
                     addRequest.dataModel.indices?.forEach { indexDefinition ->
-                        try {
-                            val indexValueSize = indexDefinition.calculateStorageByteLengthForIndex(objectToAdd, key.bytes)
-                            val valueBytes = ByteArray(indexValueSize)
-                            var writeIndex = 0
-                            val writer = { byte: Byte -> valueBytes[writeIndex++] = byte }
-                            indexDefinition.writeStorageBytesForIndex(objectToAdd, key.bytes, writer)
+                        val valueBytes = indexDefinition.toStorageByteArrayForIndex(objectToAdd, key.bytes)
+                            ?: return@forEach // skip if no complete values to index are found
 
-                            if (toIndex == null) toIndex = mutableMapOf()
-                            toIndex?.let {
-                                it[indexDefinition.toReferenceStorageByteArray()] = valueBytes
-                            }
-                        } catch (e: RequiredException) {
-                            return@forEach // skip if no complete values to index found
+                        if (toIndex == null) toIndex = mutableMapOf()
+                        toIndex?.let {
+                            it[indexDefinition.toReferenceStorageByteArray()] = valueBytes
                         }
                     }
 

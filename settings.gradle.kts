@@ -32,7 +32,9 @@ includeProjects(
     "generator-jvmTest",
     "store-test",
     "store-shared",
-    "store-memory"
+    "store-memory",
+    "store-rocksdb",
+    "rocksdb"
 )
 
 rootProject.name = "maryk"

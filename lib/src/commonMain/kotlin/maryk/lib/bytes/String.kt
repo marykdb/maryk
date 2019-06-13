@@ -8,6 +8,25 @@ expect fun codePointAt(string: String, index: Int): Int
 
 fun String.writeUTF8Bytes(writer: (byte: Byte) -> Unit) = this.toUTF8Bytes(writer)
 
+fun initString(byteArray: ByteArray) {
+    var index = 0
+    initString(byteArray.size) {
+        byteArray[index++]
+    }
+}
+
+fun String.toByteArray(): ByteArray {
+    val byteArray = ByteArray(
+        this.calculateUTF8ByteLength()
+    )
+    var index = 0
+
+    this.toUTF8Bytes {
+        byteArray[index++] = it
+    }
+    return byteArray
+}
+
 /**
  * Calculates the length of a String in UTF8 bytes in an optimized way
  * @throws IllegalArgumentException when string contains invalid UTF-16: unpaired surrogates

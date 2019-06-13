@@ -5,8 +5,8 @@ import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.datastore.memory.processors.changers.getValue
 import maryk.datastore.memory.records.index.IndexValues
-import maryk.datastore.memory.records.index.UniqueException
 import maryk.datastore.memory.records.index.UniqueIndexValues
+import maryk.datastore.shared.UniqueException
 import maryk.lib.extensions.compare.compareTo
 
 internal typealias AnyDataStore = DataStore<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>

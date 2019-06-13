@@ -74,7 +74,7 @@ internal fun UInt.calculateVarByteLength(): Int = when {
 }
 
 /** Write the key for ProtoBuf field */
-internal fun UInt.writeVarIntWithExtraInfo(extraInfo: Byte, writer: (byte: Byte) -> Unit) {
+fun UInt.writeVarIntWithExtraInfo(extraInfo: Byte, writer: (byte: Byte) -> Unit) {
     val byteSize = this.calculateVarIntWithExtraInfoByteSize()
 
     // Write Int (I) + Extra Info (X) + potential sign byte (S) (SIII IXXX)
@@ -102,7 +102,7 @@ internal fun UInt.writeVarIntWithExtraInfo(extraInfo: Byte, writer: (byte: Byte)
  *
  * This is based on ProtoBuf encoding
  */
-internal fun <T> initUIntByVarWithExtraInfo(reader: () -> Byte, objectCreator: (UInt, Byte) -> T): T {
+fun <T> initUIntByVarWithExtraInfo(reader: () -> Byte, objectCreator: (UInt, Byte) -> T): T {
     var byte = reader()
 
     val wireTypeByte = byte and 0b111

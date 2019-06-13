@@ -1,5 +1,8 @@
 package maryk.core.clock
 
+import maryk.core.extensions.bytes.initULong
+import maryk.core.extensions.bytes.writeBytes
+import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.lib.time.Instant
 
 private const val LOGICAL_BYTE_SIZE = 20
@@ -68,4 +71,16 @@ inline class HLC constructor(
     /** Compare against [other] timestamps and return difference */
     operator fun compareTo(other: ULong) =
         this.timestamp.compareTo(other)
+
+    companion object: IsStorageBytesEncodable<HLC> {
+        override fun readStorageBytes(length: Int, reader: () -> Byte) =
+            HLC(initULong(reader))
+
+        override fun calculateStorageByteLength(value: HLC) =
+            ULong.SIZE_BYTES
+
+        override fun writeStorageBytes(value: HLC, writer: (byte: Byte) -> Unit) {
+            value.timestamp.writeBytes(writer)
+        }
+    }
 }

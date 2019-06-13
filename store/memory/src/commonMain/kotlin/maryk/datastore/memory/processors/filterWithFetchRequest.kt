@@ -1,5 +1,6 @@
 package maryk.datastore.memory.processors
 
+import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.ValueRange
@@ -28,7 +29,7 @@ import maryk.datastore.memory.records.DataRecord
  */
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> IsFetchRequest<DM, P, *>.shouldBeFiltered(
     dataRecord: DataRecord<DM, P>,
-    toVersion: ULong?
+    toVersion: HLC?
 ) = when {
     this.filterSoftDeleted && dataRecord.isDeleted(toVersion) -> true
     this.where != null -> !filterMatches(where as IsFilter, dataRecord, toVersion)
@@ -39,7 +40,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> IsFetchReq
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> filterMatches(
     filter: IsFilter,
     dataRecord: DataRecord<DM, P>,
-    toVersion: ULong?
+    toVersion: HLC?
 ): Boolean {
     when (filter.filterType) {
         FilterType.And -> {

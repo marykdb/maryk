@@ -1,5 +1,6 @@
 package maryk.datastore.memory.processors
 
+import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.requests.DeleteRequest
@@ -12,7 +13,6 @@ import maryk.datastore.memory.StoreAction
 import maryk.datastore.memory.processors.changers.setValueAtIndex
 import maryk.datastore.memory.records.DataStore
 import maryk.lib.extensions.compare.compareTo
-import maryk.lib.time.Instant
 
 internal typealias DeleteStoreAction<DM, P> = StoreAction<DM, P, DeleteRequest<DM>, DeleteResponse<DM>>
 internal typealias AnyDeleteStoreAction = DeleteStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
@@ -28,7 +28,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
     val statuses = mutableListOf<IsDeleteResponseStatus<DM>>()
 
     if (deleteRequest.keys.isNotEmpty()) {
-        val version = Instant.getCurrentEpochTimeInMillis().toULong()
+        val version = HLC()
 
         for (key in deleteRequest.keys) {
             try {
@@ -75,7 +75,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
                             )
                             dataStore.records[index] = newRecord
                         }
-                        DeleteSuccess(version)
+                        DeleteSuccess(version.timestamp)
                     }
                     else -> DoesNotExist(key)
                 }

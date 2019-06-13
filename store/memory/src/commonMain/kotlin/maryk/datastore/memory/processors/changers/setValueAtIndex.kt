@@ -1,5 +1,6 @@
 package maryk.datastore.memory.processors.changers
 
+import maryk.core.clock.HLC
 import maryk.datastore.memory.records.DataRecordHistoricValues
 import maryk.datastore.memory.records.DataRecordNode
 import maryk.datastore.memory.records.DataRecordValue
@@ -15,7 +16,7 @@ internal fun <T : Any> setValueAtIndex(
     valueIndex: Int,
     reference: ByteArray,
     value: T,
-    version: ULong,
+    version: HLC,
     keepAllVersions: Boolean
 ): DataRecordValue<T>? {
     return if (valueIndex < 0) {

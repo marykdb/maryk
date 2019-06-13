@@ -1,5 +1,6 @@
 package maryk.datastore.memory.processors
 
+import maryk.core.clock.HLC
 import maryk.core.exceptions.TypeException
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.convertStorageToValues
@@ -16,7 +17,7 @@ import maryk.datastore.memory.records.DeletedValue
  */
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordToValueWithMeta(
     select: RootPropRefGraph<P>?,
-    toVersion: ULong?,
+    toVersion: HLC?,
     record: DataRecord<DM, P>
 ): ValuesWithMetaData<DM, P>? {
     var valueIndex = -1
@@ -62,7 +63,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordT
         key = record.key,
         values = values,
         isDeleted = record.isDeleted(toVersion),
-        firstVersion = record.firstVersion,
-        lastVersion = maxVersion
+        firstVersion = record.firstVersion.timestamp,
+        lastVersion = maxVersion.timestamp
     )
 }

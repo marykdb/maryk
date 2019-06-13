@@ -1,5 +1,6 @@
 package maryk.datastore.memory.processors.changers
 
+import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.models.IsDataModelWithValues
 import maryk.core.properties.IsPropertyContext
@@ -30,7 +31,7 @@ import maryk.lib.extensions.compare.matchPart
 internal fun <T : Any> deleteByReference(
     values: MutableList<DataRecordNode>,
     reference: TypedPropertyReference<out T>,
-    version: ULong,
+    version: HLC,
     keepAllVersions: Boolean,
     handlePreviousValue: ((ByteArray, T?) -> Unit)? = null
 ): Boolean {

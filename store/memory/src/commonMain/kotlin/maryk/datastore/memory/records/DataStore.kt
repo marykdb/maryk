@@ -1,5 +1,6 @@
 package maryk.datastore.memory.records
 
+import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.datastore.memory.processors.changers.getValue
@@ -25,7 +26,7 @@ internal class DataStore<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions>
         record: DataRecord<DM, P>,
         indexName: ByteArray,
         value: ByteArray,
-        version: ULong,
+        version: HLC,
         previousValue: ByteArray? = null
     ) {
         val index = getOrCreateIndex(indexName)
@@ -39,7 +40,7 @@ internal class DataStore<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions>
     fun removeFromIndex(
         record: DataRecord<DM, P>,
         indexName: ByteArray,
-        version: ULong,
+        version: HLC,
         previousValue: ByteArray? = null
     ) {
         val index = getOrCreateIndex(indexName)
@@ -53,7 +54,7 @@ internal class DataStore<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions>
         record: DataRecord<DM, P>,
         indexName: ByteArray,
         value: Comparable<Any>,
-        version: ULong,
+        version: HLC,
         previousValue: Comparable<Any>? = null
     ) {
         val index = getOrCreateUniqueIndex(indexName)
@@ -64,7 +65,7 @@ internal class DataStore<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions>
     }
 
     /** Remove [dataRecord] from all unique indices and register removal below [version] */
-    fun removeFromUniqueIndices(dataRecord: DataRecord<DM, P>, version: ULong) {
+    fun removeFromUniqueIndices(dataRecord: DataRecord<DM, P>, version: HLC) {
         for (indexValues in uniqueIndices) {
             getValue<Comparable<Any>>(dataRecord.values, indexValues.indexReference)?.let {
                 indexValues.removeFromIndex(dataRecord, it.value, version, keepAllVersions)

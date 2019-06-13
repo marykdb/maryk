@@ -1,5 +1,6 @@
 package maryk.datastore.memory.processors
 
+import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.key
 import maryk.core.processors.datastore.writeToStorage
@@ -27,13 +28,13 @@ class FilterWithFetchRequestComplexKtTest {
         val recordValues = mutableListOf<DataRecordValue<*>>()
 
         values.writeToStorage { _, reference, _, value ->
-            recordValues += DataRecordValue(reference, value, 1234uL)
+            recordValues += DataRecordValue(reference, value, HLC(1234uL))
         }
 
         return DataRecord(
             key = this.key(values),
-            firstVersion = 1234uL,
-            lastVersion = 1234uL,
+            firstVersion = HLC(1234uL),
+            lastVersion = HLC(1234uL),
             values = recordValues
         )
     }

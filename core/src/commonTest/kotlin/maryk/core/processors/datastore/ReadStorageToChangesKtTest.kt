@@ -1,5 +1,6 @@
 package maryk.core.processors.datastore
 
+import maryk.core.clock.HLC
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Delete
 import maryk.core.query.changes.SetChange
@@ -17,38 +18,38 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 private val valuesAsStorablesWithVersion = arrayOf(
-    "09" to arrayOf(1234uL to "hello world", 1235uL to "hello universe"),
-    "11" to arrayOf(1234uL to 5, 1235uL to 7),
-    "19" to arrayOf(1235uL to 3u),
-    "21" to arrayOf(1233uL to null),
-    "29" to arrayOf(1233uL to DateTime(2018, 7, 18), 1235uL to null),
-    "39" to arrayOf(1234uL to V2, 1235uL to V1),
-    "4b" to arrayOf(1233uL to 1, 1235uL to 2, 1236uL to 2),
-    "4b0480004577" to arrayOf(1233uL to Date(2018, 9, 9)),
-    "4b0480001104" to arrayOf(1235uL to Date(1981, 12, 5)),
-    "4b0480001105" to arrayOf(1235uL to Date(1981, 12, 6), 1236uL to null),
-    "4b0480001ba2" to arrayOf(1235uL to null),
-    "4b0480001ba3" to arrayOf(1235uL to null),
-    "54" to arrayOf(1234uL to 3, 1236uL to null),
-    "5403008fe9" to arrayOf(1233uL to "ten", 1235uL to null),
-    "5403009ff9" to arrayOf(1234uL to "eleven", 1236uL to null),
-    "5403009fe9" to arrayOf(1234uL to null),
-    "540300ae46" to arrayOf(1234uL to "twelve", 1236uL to null),
-    "540300ac46" to arrayOf(1234uL to null),
-    "66" to arrayOf(1233uL to Unit, 1236uL to null),
-    "6609" to arrayOf(1234uL to "test", 1236uL to null),
-    "6616" to arrayOf(1234uL to Unit),
-    "661609" to arrayOf(1234uL to "another test", 1235uL to null),
-    "7a" to arrayOf(1234uL to 3, 1235uL to 2),
-    "7a00000000" to arrayOf(1233uL to "v1"),
-    "7a00000001" to arrayOf(1234uL to "v2"),
-    "7a00000002" to arrayOf(1234uL to "v3", 1235uL to null),
-    "7a00000003" to arrayOf(1234uL to null),
-    "7a00000004" to arrayOf(1234uL to null),
-    "8b01" to arrayOf(1233uL to 2, 1235uL to 1),
-    "8b0103616263" to arrayOf(1233uL to "abc", 1235uL to null),
-    "8b0103646566" to arrayOf(1233uL to "def", 1235uL to null),
-    "8b0103676869" to arrayOf(1235uL to "ghi")
+    "09" to arrayOf(HLC(1234uL) to "hello world", HLC(1235uL) to "hello universe"),
+    "11" to arrayOf(HLC(1234uL) to 5, HLC(1235uL) to 7),
+    "19" to arrayOf(HLC(1235uL) to 3u),
+    "21" to arrayOf(HLC(1233uL) to null),
+    "29" to arrayOf(HLC(1233uL) to DateTime(2018, 7, 18), HLC(1235uL) to null),
+    "39" to arrayOf(HLC(1234uL) to V2, HLC(1235uL) to V1),
+    "4b" to arrayOf(HLC(1233uL) to 1, HLC(1235uL) to 2, HLC(1236uL) to 2),
+    "4b0480004577" to arrayOf(HLC(1233uL) to Date(2018, 9, 9)),
+    "4b0480001104" to arrayOf(HLC(1235uL) to Date(1981, 12, 5)),
+    "4b0480001105" to arrayOf(HLC(1235uL) to Date(1981, 12, 6), HLC(1236uL) to null),
+    "4b0480001ba2" to arrayOf(HLC(1235uL) to null),
+    "4b0480001ba3" to arrayOf(HLC(1235uL) to null),
+    "54" to arrayOf(HLC(1234uL) to 3, HLC(1236uL) to null),
+    "5403008fe9" to arrayOf(HLC(1233uL) to "ten", HLC(1235uL) to null),
+    "5403009ff9" to arrayOf(HLC(1234uL) to "eleven", HLC(1236uL) to null),
+    "5403009fe9" to arrayOf(HLC(1234uL) to null),
+    "540300ae46" to arrayOf(HLC(1234uL) to "twelve", HLC(1236uL) to null),
+    "540300ac46" to arrayOf(HLC(1234uL) to null),
+    "66" to arrayOf(HLC(1233uL) to Unit, HLC(1236uL) to null),
+    "6609" to arrayOf(HLC(1234uL) to "test", HLC(1236uL) to null),
+    "6616" to arrayOf(HLC(1234uL) to Unit),
+    "661609" to arrayOf(HLC(1234uL) to "another test", HLC(1235uL) to null),
+    "7a" to arrayOf(HLC(1234uL) to 3, HLC(1235uL) to 2),
+    "7a00000000" to arrayOf(HLC(1233uL) to "v1"),
+    "7a00000001" to arrayOf(HLC(1234uL) to "v2"),
+    "7a00000002" to arrayOf(HLC(1234uL) to "v3", HLC(1235uL) to null),
+    "7a00000003" to arrayOf(HLC(1234uL) to null),
+    "7a00000004" to arrayOf(HLC(1234uL) to null),
+    "8b01" to arrayOf(HLC(1233uL) to 2, HLC(1235uL) to 1),
+    "8b0103616263" to arrayOf(HLC(1233uL) to "abc", HLC(1235uL) to null),
+    "8b0103646566" to arrayOf(HLC(1233uL) to "def", HLC(1235uL) to null),
+    "8b0103676869" to arrayOf(HLC(1235uL) to "ghi")
 )
 
 class ReadStorageToChangesKtTest {

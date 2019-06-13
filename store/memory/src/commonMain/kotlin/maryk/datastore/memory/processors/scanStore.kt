@@ -1,5 +1,6 @@
 package maryk.datastore.memory.processors
 
+import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.properties.PropertyDefinitions
@@ -19,6 +20,8 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
     scanRange: KeyScanRanges,
     processStoreValue: (DataRecord<DM, P>) -> Unit
 ) {
+    val toVersion = scanRequest.toVersion?.let { HLC(it) }
+
     when (direction) {
         ASC -> {
             for (range in scanRange.ranges) {
@@ -45,7 +48,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
                         continue
                     }
 
-                    if (scanRequest.shouldBeFiltered(record, scanRequest.toVersion)) {
+                    if (scanRequest.shouldBeFiltered(record, toVersion)) {
                         continue
                     }
 
@@ -81,7 +84,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
                         continue
                     }
 
-                    if (scanRequest.shouldBeFiltered(record, scanRequest.toVersion)) {
+                    if (scanRequest.shouldBeFiltered(record, toVersion)) {
                         continue
                     }
 

@@ -1,5 +1,6 @@
 package maryk.datastore.memory.processors
 
+import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.key
 import maryk.core.processors.datastore.writeToStorage
@@ -36,7 +37,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
     val addRequest = storeAction.request
     val statuses = mutableListOf<IsAddResponseStatus<DM>>()
 
-    val version = Instant.getCurrentEpochTimeInMillis().toULong()
+    val version = HLC()
 
     if (addRequest.objects.isNotEmpty()) {
         for (objectToAdd in addRequest.objects) {
@@ -105,7 +106,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
 
                     dataStore.records.add((index * -1) - 1, dataRecord)
                     statuses.add(
-                        AddSuccess(key, version, listOf())
+                        AddSuccess(key, version.timestamp, listOf())
                     )
                 } else {
                     statuses.add(

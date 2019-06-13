@@ -1,5 +1,6 @@
 package maryk.datastore.memory.processors.changers
 
+import maryk.core.clock.HLC
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.references.TypedPropertyReference
@@ -17,7 +18,7 @@ fun <T : Any> setListValue(
     reference: TypedPropertyReference<out List<T>>,
     newList: List<T>,
     originalCount: Int,
-    version: ULong,
+    version: HLC,
     keepAllVersions: Boolean
 ): Boolean {
     @Suppress("UNCHECKED_CAST")

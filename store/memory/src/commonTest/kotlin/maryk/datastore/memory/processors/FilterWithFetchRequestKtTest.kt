@@ -1,5 +1,6 @@
 package maryk.datastore.memory.processors
 
+import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.key
 import maryk.core.processors.datastore.writeToStorage
@@ -54,13 +55,13 @@ class FilterWithFetchRequestKtTest {
         val recordValues = mutableListOf<DataRecordValue<*>>()
 
         values.writeToStorage { _, reference, _, value ->
-            recordValues += DataRecordValue(reference, value, 1234uL)
+            recordValues += DataRecordValue(reference, value, HLC(1234uL))
         }
 
         return DataRecord(
             key = this.key(values),
-            firstVersion = 1234uL,
-            lastVersion = 1234uL,
+            firstVersion = HLC(1234uL),
+            lastVersion = HLC(1234uL),
             values = recordValues
         )
     }
@@ -80,7 +81,7 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 Exists(TestMarykModel { string::ref }),
                 value1,
-                1233uL
+                HLC(1233uL)
             )
         }
 
@@ -107,7 +108,7 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 Equals(TestMarykModel { string::ref } with "haha1"),
                 value1,
-                1233uL
+                HLC(1233uL)
             )
         }
 

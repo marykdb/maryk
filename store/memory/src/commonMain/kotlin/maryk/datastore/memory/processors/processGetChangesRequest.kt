@@ -1,5 +1,6 @@
 package maryk.datastore.memory.processors
 
+import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.changes.DataObjectVersionedChange
@@ -26,7 +27,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
         if (index > -1) {
             val record = dataStore.records[index]
 
-            if (getRequest.shouldBeFiltered(record, getRequest.toVersion)) {
+            if (getRequest.shouldBeFiltered(record, getRequest.toVersion?.let { HLC(it) })) {
                 continue
             }
 

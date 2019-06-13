@@ -1,5 +1,6 @@
 package maryk.datastore.memory.processors
 
+import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.ScanType.IndexScan
 import maryk.core.processors.datastore.ScanType.TableScan
@@ -40,7 +41,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
                     val value = firstReference.value as Comparable<Any>
 
                     val record = scanRequest.toVersion?.let { version ->
-                        uniqueIndex[value, version]
+                        uniqueIndex[value, HLC(version)]
                     } ?: uniqueIndex[value]
 
                     record?.let {
@@ -93,5 +94,5 @@ internal fun <DM: IsRootValuesDataModel<P>, P:PropertyDefinitions> shouldProcess
         return false
     }
 
-    return !scanRequest.shouldBeFiltered(record, scanRequest.toVersion)
+    return !scanRequest.shouldBeFiltered(record, scanRequest.toVersion?.let { HLC(it) })
 }

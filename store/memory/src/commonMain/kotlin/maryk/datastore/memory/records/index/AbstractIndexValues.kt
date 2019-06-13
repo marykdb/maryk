@@ -1,5 +1,6 @@
 package maryk.datastore.memory.records.index
 
+import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.datastore.memory.records.DataRecord
@@ -20,7 +21,7 @@ internal abstract class AbstractIndexValues<DM : IsRootValuesDataModel<P>, P : P
     fun addToIndex(
         record: DataRecord<DM, P>,
         value: T,
-        version: ULong
+        version: HLC
     ): Boolean {
         val i = records.binarySearch { it.value.compareTo(value) }
         return when {
@@ -56,7 +57,7 @@ internal abstract class AbstractIndexValues<DM : IsRootValuesDataModel<P>, P : P
     fun removeFromIndex(
         record: DataRecord<DM, P>,
         value: T,
-        version: ULong,
+        version: HLC,
         keepAllVersions: Boolean
     ): Boolean {
         val i = records.binarySearch { it.value.compareTo(value) }
@@ -90,7 +91,7 @@ internal abstract class AbstractIndexValues<DM : IsRootValuesDataModel<P>, P : P
         }
 
     /** Get DataRecord for [value] if exists or null */
-    operator fun get(value: T, version: ULong) =
+    operator fun get(value: T, version: HLC) =
         this.records.binarySearch { it.value.compareTo(value) }.let { index ->
             if (index >= 0) {
                 this.records[index].recordAtVersion(version)

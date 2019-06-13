@@ -1,5 +1,6 @@
 package maryk.datastore.memory.processors
 
+import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
 import maryk.core.models.IsRootValuesDataModel
@@ -77,7 +78,6 @@ import maryk.datastore.memory.records.DataStore
 import maryk.datastore.memory.records.index.UniqueException
 import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.compare.matches
-import maryk.lib.time.Instant
 
 internal typealias ChangeStoreAction<DM, P> = StoreAction<DM, P, ChangeRequest<DM>, ChangeResponse<DM>>
 internal typealias AnyChangeStoreAction = ChangeStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
@@ -88,7 +88,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processCha
     dataStore: DataStore<DM, P>
 ) {
     val changeRequest = storeAction.request
-    val version = Instant.getCurrentEpochTimeInMillis().toULong()
+    val version = HLC()
 
     val statuses = mutableListOf<IsChangeResponseStatus<DM>>()
 
@@ -147,7 +147,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
     dataStore: DataStore<DM, P>,
     objectToChange: DataRecord<DM, P>,
     changes: List<IsChange>,
-    version: ULong,
+    version: HLC,
     keepAllVersions: Boolean
 ): IsChangeResponseStatus<DM> {
     try {
@@ -678,7 +678,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
         objectToChange.values = newValueList
 
         // Nothing skipped out so must be a success
-        return ChangeSuccess(version, outChanges)
+        return ChangeSuccess(version.timestamp, outChanges)
     } catch (e: Throwable) {
         return ServerFail(e.toString(), e)
     }
@@ -690,7 +690,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
  */
 private fun createValueWriter(
     newValueList: MutableList<DataRecordNode>,
-    version: ULong,
+    version: HLC,
     keepAllVersions: Boolean
 ): ValueWriter<IsPropertyDefinition<*>> = { _, qualifier, _, mapValue ->
     val valueIndex = newValueList.binarySearch {

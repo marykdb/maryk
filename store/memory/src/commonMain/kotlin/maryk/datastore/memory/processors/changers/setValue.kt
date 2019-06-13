@@ -1,5 +1,6 @@
 package maryk.datastore.memory.processors.changers
 
+import maryk.core.clock.HLC
 import maryk.core.properties.references.TypedPropertyReference
 import maryk.datastore.memory.records.DataRecordNode
 import maryk.datastore.memory.records.DataRecordValue
@@ -15,7 +16,7 @@ internal fun <T : Any> setValue(
     values: MutableList<DataRecordNode>,
     reference: TypedPropertyReference<out T>,
     value: T,
-    version: ULong,
+    version: HLC,
     keepAllVersions: Boolean = false,
     validate: ((DataRecordValue<T>, T?) -> Unit)? = null
 ): Boolean = setValue(
@@ -37,7 +38,7 @@ internal fun <T : Any> setValue(
     values: MutableList<DataRecordNode>,
     reference: ByteArray,
     value: T,
-    version: ULong,
+    version: HLC,
     keepAllVersions: Boolean = false,
     validate: ((DataRecordValue<T>, T?) -> Unit)? = null
 ): Boolean {

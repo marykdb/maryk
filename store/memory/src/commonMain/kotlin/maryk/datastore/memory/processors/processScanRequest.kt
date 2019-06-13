@@ -1,6 +1,7 @@
 package maryk.datastore.memory.processors
 
 import maryk.core.aggregations.Aggregator
+import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -27,9 +28,11 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
     }
 
     processScan(scanRequest, dataStore) { record ->
+        val toVersion = scanRequest.toVersion?.let { HLC(it) }
+
         val valuesWithMetaData = scanRequest.dataModel.recordToValueWithMeta(
             scanRequest.select,
-            scanRequest.toVersion,
+            toVersion,
             record
         )?.also {
             valuesWithMeta += it
@@ -39,7 +42,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
         aggregator?.aggregate {
             @Suppress("UNCHECKED_CAST")
             valuesWithMetaData?.values?.get(it as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>)
-                ?: record[it, scanRequest.toVersion]
+                ?: record[it, toVersion]
         }
     }
 

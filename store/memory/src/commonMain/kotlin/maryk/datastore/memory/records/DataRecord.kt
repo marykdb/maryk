@@ -1,5 +1,6 @@
 package maryk.datastore.memory.records
 
+import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.matchers.FuzzyMatchResult.MATCH
 import maryk.core.processors.datastore.matchers.FuzzyMatchResult.NO_MATCH
@@ -24,18 +25,18 @@ import maryk.lib.extensions.compare.compareTo
 internal data class DataRecord<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions>(
     val key: Key<DM>,
     var values: List<DataRecordNode>,
-    val firstVersion: ULong,
-    var lastVersion: ULong
+    val firstVersion: HLC,
+    var lastVersion: HLC
 ) : IsValuesGetter {
     override fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(
         propertyReference: IsPropertyReference<T, D, C>
     ): T? =
         getValue<T>(this.values, propertyReference.toStorageByteArray())?.value
 
-    fun isDeleted(toVersion: ULong?): Boolean =
+    fun isDeleted(toVersion: HLC?): Boolean =
         getValue<Boolean>(this.values, objectSoftDeleteQualifier, toVersion)?.value ?: false
 
-    fun <T : Any> matchQualifier(reference: IsPropertyReference<T, *, *>, toVersion: ULong?, matcher: (T?) -> Boolean): Boolean {
+    fun <T : Any> matchQualifier(reference: IsPropertyReference<T, *, *>, toVersion: HLC?, matcher: (T?) -> Boolean): Boolean {
         when (val qualifierMatcher = reference.toQualifierMatcher()) {
             is QualifierExactMatcher -> {
                 val value = get<T>(qualifierMatcher.qualifier, toVersion)
@@ -66,10 +67,10 @@ internal data class DataRecord<DM : IsRootValuesDataModel<P>, P : PropertyDefini
     }
 
     /** Get value by [reference] */
-    operator fun <T : Any> get(reference: IsPropertyReference<T, *, *>, toVersion: ULong? = null): T? =
+    operator fun <T : Any> get(reference: IsPropertyReference<T, *, *>, toVersion: HLC? = null): T? =
         get(reference.toStorageByteArray(), toVersion)
 
     /** Get value by [reference] */
-    operator fun <T : Any> get(reference: ByteArray, toVersion: ULong? = null): T? =
+    operator fun <T : Any> get(reference: ByteArray, toVersion: HLC? = null): T? =
         getValue<T>(this.values, reference, toVersion)?.value
 }

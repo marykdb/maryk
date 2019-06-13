@@ -1,5 +1,6 @@
 package maryk.datastore.memory.processors.changers
 
+import maryk.core.clock.HLC
 import maryk.datastore.memory.records.DataRecordNode
 import maryk.datastore.memory.records.DataRecordValue
 import maryk.lib.extensions.compare.compareTo
@@ -8,7 +9,7 @@ import maryk.lib.extensions.compare.compareTo
 internal fun <T : Any> getValue(
     values: List<DataRecordNode>,
     reference: ByteArray,
-    toVersion: ULong? = null
+    toVersion: HLC? = null
 ): DataRecordValue<T>? {
     val valueIndex = values.binarySearch {
         it.reference.compareTo(reference)

@@ -1,5 +1,6 @@
 package maryk.datastore.memory.processors.changers
 
+import maryk.core.clock.HLC
 import maryk.datastore.memory.records.DataRecordHistoricValues
 import maryk.datastore.memory.records.DataRecordNode
 import maryk.datastore.memory.records.DataRecordValue
@@ -11,7 +12,7 @@ internal fun <T : Any> deleteByIndex(
     values: MutableList<DataRecordNode>,
     valueIndex: Int,
     reference: ByteArray,
-    version: ULong
+    version: HLC
 ) =
     if (valueIndex < 0) {
         null

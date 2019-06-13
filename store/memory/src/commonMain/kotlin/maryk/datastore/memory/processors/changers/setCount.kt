@@ -1,5 +1,6 @@
 package maryk.datastore.memory.processors.changers
 
+import maryk.core.clock.HLC
 import maryk.core.properties.references.TypedPropertyReference
 import maryk.datastore.memory.records.DataRecordNode
 import maryk.lib.extensions.compare.compareTo
@@ -11,7 +12,7 @@ import maryk.lib.extensions.compare.compareTo
 internal fun <T : Any> createCountUpdater(
     values: MutableList<DataRecordNode>,
     reference: TypedPropertyReference<out T>,
-    version: ULong,
+    version: HLC,
     countChange: Int,
     keepAllVersions: Boolean,
     sizeValidator: (UInt) -> Unit

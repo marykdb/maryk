@@ -1,4 +1,4 @@
-package maryk.core.processors.datastore
+package maryk.datastore.shared
 
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.query.orders.Direction

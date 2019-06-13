@@ -1,7 +1,6 @@
 package maryk.datastore.test
 
 import maryk.core.models.RootDataModel
-import maryk.core.processors.datastore.IsDataStore
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.exceptions.AlreadySetException
@@ -14,6 +13,7 @@ import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ValidationFail
+import maryk.datastore.shared.IsDataStore
 import maryk.datastore.test.UniqueModel.Properties
 import maryk.test.assertType
 import maryk.test.runSuspendingTest

@@ -1,11 +1,10 @@
-package maryk.datastore.core
+package maryk.datastore.shared
 
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.SendChannel
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.RootDataModel
-import maryk.core.processors.datastore.IsDataStore
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.responses.IsResponse

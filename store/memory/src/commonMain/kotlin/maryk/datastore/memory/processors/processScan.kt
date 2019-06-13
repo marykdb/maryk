@@ -2,10 +2,10 @@ package maryk.datastore.memory.processors
 
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
-import maryk.core.processors.datastore.ScanType.IndexScan
-import maryk.core.processors.datastore.ScanType.TableScan
-import maryk.core.processors.datastore.optimizeTableScan
-import maryk.core.processors.datastore.orderToScanType
+import maryk.datastore.shared.ScanType.IndexScan
+import maryk.datastore.shared.ScanType.TableScan
+import maryk.datastore.shared.optimizeTableScan
+import maryk.datastore.shared.orderToScanType
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.properties.PropertyDefinitions

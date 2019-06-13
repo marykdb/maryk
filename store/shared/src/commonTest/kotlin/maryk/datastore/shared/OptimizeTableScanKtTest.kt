@@ -1,11 +1,11 @@
-package maryk.core.processors.datastore
+package maryk.datastore.shared
 
-import maryk.core.processors.datastore.ScanType.IndexScan
-import maryk.core.processors.datastore.ScanType.TableScan
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.Reversed
 import maryk.core.query.orders.Direction.ASC
 import maryk.core.query.pairs.with
+import maryk.datastore.shared.ScanType.IndexScan
+import maryk.datastore.shared.ScanType.TableScan
 import maryk.lib.time.DateTime
 import maryk.test.models.Option.V3
 import maryk.test.models.TestMarykModel

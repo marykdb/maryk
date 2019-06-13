@@ -1,6 +1,5 @@
 package maryk.datastore.test
 
-import maryk.core.processors.datastore.IsDataStore
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.requests.delete
@@ -9,6 +8,7 @@ import maryk.core.query.requests.getChanges
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.statuses.StatusType.DELETE_SUCCESS
+import maryk.datastore.shared.IsDataStore
 import maryk.test.assertType
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.addRequest

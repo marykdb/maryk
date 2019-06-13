@@ -1,6 +1,6 @@
 package maryk.datastore.test
 
-import maryk.core.processors.datastore.IsDataStore
+import maryk.datastore.shared.IsDataStore
 
 private val allTestClasses = arrayOf(
     "DataStoreAddTest" to ::DataStoreAddTest,

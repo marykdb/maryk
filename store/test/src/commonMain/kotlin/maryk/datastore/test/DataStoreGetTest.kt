@@ -4,11 +4,11 @@ import maryk.core.aggregations.Aggregations
 import maryk.core.aggregations.AggregationsResponse
 import maryk.core.aggregations.metric.ValueCount
 import maryk.core.aggregations.metric.ValueCountResponse
-import maryk.core.processors.datastore.IsDataStore
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.get
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.datastore.shared.IsDataStore
 import maryk.test.assertType
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.addRequest

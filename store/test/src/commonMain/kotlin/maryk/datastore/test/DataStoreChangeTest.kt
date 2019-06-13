@@ -1,6 +1,5 @@
 package maryk.datastore.test
 
-import maryk.core.processors.datastore.IsDataStore
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.types.Date
 import maryk.core.properties.types.Key
@@ -24,6 +23,7 @@ import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.datastore.memory.assertRecent
+import maryk.datastore.shared.IsDataStore
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.assertType

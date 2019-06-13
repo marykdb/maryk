@@ -62,7 +62,7 @@ import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.core.values.EmptyValueItems
 import maryk.core.values.Values
-import maryk.datastore.core.StoreAction
+import maryk.datastore.shared.StoreAction
 import maryk.datastore.memory.processors.changers.createCountUpdater
 import maryk.datastore.memory.processors.changers.deleteByReference
 import maryk.datastore.memory.processors.changers.getCurrentIncMapKey

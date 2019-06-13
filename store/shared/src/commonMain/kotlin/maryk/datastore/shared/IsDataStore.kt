@@ -1,4 +1,4 @@
-package maryk.core.processors.datastore
+package maryk.datastore.shared
 
 import maryk.core.models.RootDataModel
 import maryk.core.properties.PropertyDefinitions

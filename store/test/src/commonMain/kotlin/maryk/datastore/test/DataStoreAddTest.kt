@@ -1,7 +1,6 @@
 package maryk.datastore.test
 
 import maryk.core.models.key
-import maryk.core.processors.datastore.IsDataStore
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.add
 import maryk.core.query.requests.delete
@@ -10,6 +9,7 @@ import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.AlreadyExists
 import maryk.core.values.Values
 import maryk.datastore.memory.assertRecent
+import maryk.datastore.shared.IsDataStore
 import maryk.lib.time.DateTime
 import maryk.test.assertType
 import maryk.test.models.Log

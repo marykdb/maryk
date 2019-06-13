@@ -1,6 +1,5 @@
 package maryk.datastore.test
 
-import maryk.core.processors.datastore.IsDataStore
 import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.exceptions.InvalidSizeException
 import maryk.core.properties.exceptions.InvalidValueException
@@ -21,6 +20,7 @@ import maryk.core.query.requests.delete
 import maryk.core.query.requests.get
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ValidationFail
+import maryk.datastore.shared.IsDataStore
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.assertType

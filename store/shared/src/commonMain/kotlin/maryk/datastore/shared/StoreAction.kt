@@ -1,4 +1,4 @@
-package maryk.datastore.core
+package maryk.datastore.shared
 
 import kotlinx.coroutines.CompletableDeferred
 import maryk.core.clock.HLC

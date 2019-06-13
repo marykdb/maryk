@@ -4,9 +4,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
-import maryk.datastore.core.AbstractDataStore
-import maryk.datastore.core.StoreAction
-import maryk.datastore.core.StoreActor
+import maryk.datastore.shared.AbstractDataStore
+import maryk.datastore.shared.StoreAction
+import maryk.datastore.shared.StoreActor
 import maryk.datastore.memory.records.DataStore
 
 internal typealias StoreExecutor<DM, P> = Unit.(StoreAction<DM, P, *, *>, dataStore: DataStore<DM, P>) -> Unit

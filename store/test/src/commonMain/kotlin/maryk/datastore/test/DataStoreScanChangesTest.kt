@@ -1,6 +1,5 @@
 package maryk.datastore.test
 
-import maryk.core.processors.datastore.IsDataStore
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
@@ -11,6 +10,7 @@ import maryk.core.query.requests.add
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.scanChanges
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.datastore.shared.IsDataStore
 import maryk.test.assertType
 import maryk.test.models.Log
 import maryk.test.models.Severity.ERROR

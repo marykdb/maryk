@@ -1,10 +1,10 @@
-package maryk.core.processors.datastore
+package maryk.datastore.shared
 
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
 import maryk.core.models.IsRootDataModel
-import maryk.core.processors.datastore.ScanType.IndexScan
-import maryk.core.processors.datastore.ScanType.TableScan
+import maryk.datastore.shared.ScanType.IndexScan
+import maryk.datastore.shared.ScanType.TableScan
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.Reversed

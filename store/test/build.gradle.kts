@@ -16,7 +16,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                api(project(":core"))
+                api(project(":store-shared"))
                 api(project(":testmodels"))
             }
         }

@@ -21,7 +21,7 @@ kotlin {
                 implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$coroutinesVersion")
 
-                api(project(":store-shared"))
+                api(project(":core"))
             }
         }
         commonTest {

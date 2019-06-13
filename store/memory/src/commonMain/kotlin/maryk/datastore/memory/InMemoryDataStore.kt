@@ -1,19 +1,15 @@
 package maryk.datastore.memory
 
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.SendChannel
 import maryk.core.models.IsRootValuesDataModel
-import maryk.core.models.RootDataModel
-import maryk.core.processors.datastore.IsDataStore
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.query.requests.IsStoreRequest
-import maryk.core.query.responses.IsResponse
+import maryk.datastore.core.AbstractDataStore
+import maryk.datastore.core.StoreAction
+import maryk.datastore.core.StoreActor
 import maryk.datastore.memory.records.DataStore
 
 internal typealias StoreExecutor<DM, P> = Unit.(StoreAction<DM, P, *, *>, dataStore: DataStore<DM, P>) -> Unit
-internal typealias StoreActor<DM, P> = SendChannel<StoreAction<DM, P, *, *>>
 
 internal expect fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> CoroutineScope.storeActor(
     store: InMemoryDataStore,
@@ -26,36 +22,13 @@ internal expect fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> Cor
  */
 class InMemoryDataStore(
     val keepAllVersions: Boolean = false
-) : IsDataStore, CoroutineScope {
+) : AbstractDataStore() {
     override val coroutineContext = Dispatchers.Default
-
     private val dataActors: MutableMap<String, StoreActor<*, *>> = mutableMapOf()
 
-    // Holds latest version
-    internal val clockActor = this.clockActor()
-
-    private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> getStoreActor(
-        dataModel: DM
-    ) =
+    override fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> getStoreActor(dataModel: DM) =
         dataActors.getOrPut(dataModel.name) {
             @Suppress("UNCHECKED_CAST")
             this.storeActor(this, storeExecutor as StoreExecutor<DM, P>) as StoreActor<*, *>
         }
-
-    override suspend fun <DM : RootDataModel<DM, P>, P : PropertyDefinitions, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
-        request: RQ
-    ): RP {
-        val storeActor = this.getStoreActor(request.dataModel)
-        val response = CompletableDeferred<RP>()
-
-        val clock = DeferredClock().also {
-            clockActor.send(it)
-        }.completableDeferred.await()
-
-        storeActor.send(
-            StoreAction(clock, request, response)
-        )
-
-        return response.await()
-    }
 }

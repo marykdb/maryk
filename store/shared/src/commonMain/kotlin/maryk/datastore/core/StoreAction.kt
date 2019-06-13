@@ -1,4 +1,4 @@
-package maryk.datastore.memory
+package maryk.datastore.core
 
 import kotlinx.coroutines.CompletableDeferred
 import maryk.core.clock.HLC
@@ -8,7 +8,7 @@ import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.responses.IsResponse
 
 /** A combination of a store [request] and a deferred [response]. Can be passed to a StoreExecutor */
-internal class StoreAction<DM : IsRootDataModel<P>, P : PropertyDefinitions, RQ : IsStoreRequest<DM, RP>, RP : IsResponse>(
+class StoreAction<DM : IsRootDataModel<P>, P : PropertyDefinitions, RQ : IsStoreRequest<DM, RP>, RP : IsResponse>(
     val version: HLC,
     val request: RQ,
     val response: CompletableDeferred<RP>

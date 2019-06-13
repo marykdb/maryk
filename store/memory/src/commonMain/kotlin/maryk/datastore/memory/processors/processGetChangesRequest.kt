@@ -6,7 +6,7 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.requests.GetChangesRequest
 import maryk.core.query.responses.ChangesResponse
-import maryk.datastore.memory.StoreAction
+import maryk.datastore.core.StoreAction
 import maryk.datastore.memory.records.DataStore
 
 internal typealias GetChangesStoreAction<DM, P> = StoreAction<DM, P, GetChangesRequest<DM, P>, ChangesResponse<DM>>

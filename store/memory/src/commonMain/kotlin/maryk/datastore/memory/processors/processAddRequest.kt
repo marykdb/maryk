@@ -16,7 +16,7 @@ import maryk.core.query.responses.statuses.AlreadyExists
 import maryk.core.query.responses.statuses.IsAddResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.ValidationFail
-import maryk.datastore.memory.StoreAction
+import maryk.datastore.core.StoreAction
 import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataRecordNode
 import maryk.datastore.memory.records.DataRecordValue

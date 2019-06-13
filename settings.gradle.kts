@@ -31,6 +31,7 @@ includeProjects(
     "generator",
     "generator-jvmTest",
     "store-test",
+    "store-shared",
     "store-memory"
 )
 

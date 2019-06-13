@@ -8,7 +8,7 @@ import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.IsDeleteResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
-import maryk.datastore.memory.StoreAction
+import maryk.datastore.core.StoreAction
 import maryk.datastore.memory.processors.changers.setValueAtIndex
 import maryk.datastore.memory.records.DataStore
 import maryk.lib.extensions.compare.compareTo

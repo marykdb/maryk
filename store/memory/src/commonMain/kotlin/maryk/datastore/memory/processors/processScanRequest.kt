@@ -9,7 +9,7 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.requests.ScanRequest
 import maryk.core.query.responses.ValuesResponse
-import maryk.datastore.memory.StoreAction
+import maryk.datastore.core.StoreAction
 import maryk.datastore.memory.records.DataStore
 
 internal typealias ScanStoreAction<DM, P> = StoreAction<DM, P, ScanRequest<DM, P>, ValuesResponse<DM, P>>

@@ -1,4 +1,4 @@
-package maryk.datastore.memory
+package maryk.datastore.core
 
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope

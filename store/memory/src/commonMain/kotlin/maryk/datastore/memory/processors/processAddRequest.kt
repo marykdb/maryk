@@ -1,6 +1,5 @@
 package maryk.datastore.memory.processors
 
-import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.key
 import maryk.core.processors.datastore.writeToStorage
@@ -24,7 +23,6 @@ import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.memory.records.index.UniqueException
 import maryk.lib.extensions.compare.compareTo
-import maryk.lib.time.Instant
 
 internal typealias AddStoreAction<DM, P> = StoreAction<DM, P, AddRequest<DM, P>, AddResponse<DM>>
 internal typealias AnyAddStoreAction = AddStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
@@ -37,7 +35,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
     val addRequest = storeAction.request
     val statuses = mutableListOf<IsAddResponseStatus<DM>>()
 
-    val version = HLC()
+    val version = storeAction.version
 
     if (addRequest.objects.isNotEmpty()) {
         for (objectToAdd in addRequest.objects) {

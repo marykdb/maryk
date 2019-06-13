@@ -31,6 +31,9 @@ class InMemoryDataStore(
 
     private val dataActors: MutableMap<String, StoreActor<*, *>> = mutableMapOf()
 
+    // Holds latest version
+    internal val clockActor = this.clockActor()
+
     private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> getStoreActor(
         dataModel: DM
     ) =
@@ -45,8 +48,12 @@ class InMemoryDataStore(
         val storeActor = this.getStoreActor(request.dataModel)
         val response = CompletableDeferred<RP>()
 
+        val clock = DeferredClock().also {
+            clockActor.send(it)
+        }.completableDeferred.await()
+
         storeActor.send(
-            StoreAction(request, response)
+            StoreAction(clock, request, response)
         )
 
         return response.await()

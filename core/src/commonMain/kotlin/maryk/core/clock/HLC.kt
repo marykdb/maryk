@@ -43,9 +43,11 @@ inline class HLC constructor(
      * By default it will get a new time by `Instant.getCurrentEpochTimeInMillis()`, override [newTimeCreator]
      * for custom new time. Useful for tests or custom clocks.
      */
-    fun calculateMaxTimeStamp(other: HLC, newTimeCreator: () -> HLC = ::HLC) = HLC(
+    fun calculateMaxTimeStamp(other: HLC? = null, newTimeCreator: () -> HLC = ::HLC) = HLC(
         maxOf(
-            maxOf(this.timestamp, other.timestamp)+1u,
+            other?.let {
+                maxOf(this.timestamp, other.timestamp) + 1u
+            } ?: this.timestamp + 1u,
             newTimeCreator().timestamp
         )
     )

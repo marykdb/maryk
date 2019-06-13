@@ -13,10 +13,10 @@ import maryk.test.assertType
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.addRequest
 import maryk.test.runSuspendingTest
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlin.test.expect
-import kotlin.test.fail
 
 class DataStoreDeleteTest(
     val dataStore: IsDataStore
@@ -86,21 +86,12 @@ class DataStoreDeleteTest(
 
         expect(1) { getChangesWithDeletedResponse.changes.size }
 
-        // Timing is vast so sometimes creation and deletion are combined into one change. Catch both
-        when (getChangesWithDeletedResponse.changes.first().changes.size) {
-            1 -> {
-                getChangesWithDeletedResponse.changes.first().changes.first().let {
-                    expect(2) { it.changes.size }
-                    expect(ObjectSoftDeleteChange(true)) { it.changes.first() }
-                }
-            }
-            2 -> {
-                getChangesWithDeletedResponse.changes[0].changes.last().let {
-                    expect(1) { it.changes.size }
-                    expect(ObjectSoftDeleteChange(true)) { it.changes.first() }
-                }
-            }
-            else -> fail("Unexpected size")
+        val firstChanges = getChangesWithDeletedResponse.changes.first().changes
+        assertEquals(2, firstChanges.size)
+
+        firstChanges.last().let {
+            expect(1) { it.changes.size }
+            expect(ObjectSoftDeleteChange(true)) { it.changes.first() }
         }
     }
 

@@ -88,7 +88,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processCha
     dataStore: DataStore<DM, P>
 ) {
     val changeRequest = storeAction.request
-    val version = HLC()
+    val version = storeAction.version
 
     val statuses = mutableListOf<IsChangeResponseStatus<DM>>()
 

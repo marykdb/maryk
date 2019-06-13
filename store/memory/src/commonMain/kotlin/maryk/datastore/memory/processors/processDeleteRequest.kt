@@ -1,6 +1,5 @@
 package maryk.datastore.memory.processors
 
-import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.requests.DeleteRequest
@@ -28,7 +27,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
     val statuses = mutableListOf<IsDeleteResponseStatus<DM>>()
 
     if (deleteRequest.keys.isNotEmpty()) {
-        val version = HLC()
+        val version = storeAction.version
 
         for (key in deleteRequest.keys) {
             try {

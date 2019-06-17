@@ -67,16 +67,6 @@ fun ByteArray.matchPart(fromIndex: Int, bytes: ByteArray): Boolean {
     return true
 }
 
-/** Match given [bytes] */
-fun ByteArray.matches(bytes: ByteArray): Boolean {
-    if (this.size != bytes.size) return false
-
-    bytes.forEachIndexed { index, byte ->
-        if (this[index] != byte) return false
-    }
-    return true
-}
-
 /**
  * Higher the range with 1 byte while keeping length the same
  * Will return same byte array if it cannot be highered

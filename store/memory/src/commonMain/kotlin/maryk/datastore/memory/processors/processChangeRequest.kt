@@ -77,7 +77,6 @@ import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.UniqueException
 import maryk.lib.extensions.compare.compareTo
-import maryk.lib.extensions.compare.matches
 
 internal typealias ChangeStoreAction<DM, P> = StoreAction<DM, P, ChangeRequest<DM>, ChangeResponse<DM>>
 internal typealias AnyChangeStoreAction = ChangeStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
@@ -669,7 +668,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                 if (oldValue != null) {
                     dataStore.removeFromIndex(objectToChange, it.toReferenceStorageByteArray(), version, oldValue)
                 } // else ignore since did not exist
-            } else if (oldValue == null || !newValue.matches(oldValue)) {
+            } else if (oldValue == null || !newValue.contentEquals(oldValue)) {
                 dataStore.addToIndex(objectToChange, it.toReferenceStorageByteArray(), newValue, version, oldValue)
             }
         }

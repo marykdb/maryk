@@ -1,6 +1,6 @@
 buildscript {
-    extra["kotlinVersion"] = "1.3.31"
-    extra["coroutinesVersion"] = "1.2.0"
+    extra["kotlinVersion"] = "1.3.40"
+    extra["coroutinesVersion"] = "1.2.2"
     extra["marykRocksDBVersion"] = "0.1.3"
 
     repositories {
@@ -9,11 +9,6 @@ buildscript {
     dependencies {
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${extra["kotlinVersion"]}")
     }
-}
-
-// For JS projects
-plugins {
-    id("com.moowork.node").version("1.3.1")
 }
 
 allprojects {

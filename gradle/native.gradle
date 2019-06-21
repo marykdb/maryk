@@ -1,6 +1,12 @@
 // Gradle script to setup a Native multi-platform project
-ext.setupNative = {
-    kotlin {
-        macosX64('macos')
+kotlin {
+    macosX64('macos') {
+        binaries {
+            test("integration")
+        }
+        tasks.getByName(targetName + "Test").testLogging {
+            events "FAILED", "SKIPPED"
+        }
     }
 }
+

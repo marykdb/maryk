@@ -1,5 +1,3 @@
-import groovy.lang.Closure
-
 plugins {
     id("kotlin-multiplatform")
 }
@@ -10,11 +8,6 @@ apply {
     from("../gradle/jvm.gradle")
     from("../gradle/native.gradle")
 }
-
-(extra["setupCommon"] as Closure<*>)()
-(extra["setupJVM"] as Closure<*>)()
-(extra["setupJS"] as Closure<*>)()
-(extra["setupNative"] as Closure<*>)()
 
 kotlin {
     sourceSets {

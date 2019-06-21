@@ -1,5 +1,3 @@
-import groovy.lang.Closure
-
 plugins {
     kotlin("multiplatform")
 }
@@ -8,9 +6,6 @@ apply {
     from("../../gradle/common.gradle")
     from("../../gradle/jvm.gradle")
 }
-
-(extra["setupCommon"] as Closure<*>)()
-(extra["setupJVM"] as Closure<*>)()
 
 val coroutinesVersion = rootProject.extra["coroutinesVersion"]
 

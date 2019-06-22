@@ -63,17 +63,17 @@ fun createValidationUmbrellaException(
     refGetter: () -> AnyPropertyReference?,
     exceptionCollector: (exceptionAdder: (e: ValidationException) -> Unit) -> Unit
 ) {
-    var hasExceptions = false
-    val exceptions by lazy {
-        hasExceptions = true
-        mutableListOf<ValidationException>()
-    }
+    var exceptions: MutableList<ValidationException>? = null
 
     exceptionCollector {
-        exceptions.add(it)
+        when (val ex = exceptions) {
+            null -> exceptions = mutableListOf(it)
+            else -> ex.add(it)
+        }
     }
 
-    if (hasExceptions) {
-        throw ValidationUmbrellaException(refGetter(), exceptions)
+    // If set throw umbrella exception
+    exceptions?.let {
+        throw ValidationUmbrellaException(refGetter(), it)
     }
 }

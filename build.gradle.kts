@@ -1,7 +1,7 @@
 buildscript {
     extra["kotlinVersion"] = "1.3.31"
     extra["coroutinesVersion"] = "1.2.0"
-    extra["marykRocksDBVersion"] = "0.1.0"
+    extra["marykRocksDBVersion"] = "0.1.1"
 
     repositories {
         jcenter()

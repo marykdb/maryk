@@ -21,6 +21,8 @@ import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.UniqueException
+import maryk.rocksdb.WriteOptions
+import maryk.rocksdb.use
 
 internal typealias AddStoreAction<DM, P> = StoreAction<DM, P, AddRequest<DM, P>, AddResponse<DM>>
 internal typealias AnyAddStoreAction = AddStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
@@ -36,7 +38,6 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
 
     if (addRequest.objects.isNotEmpty()) {
         val version = storeAction.version
-
         val columnFamilies = dataStore.getColumnFamilies(storeAction.dbIndex)
 
         for (objectToAdd in addRequest.objects) {
@@ -59,66 +60,79 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
                     val versionBytes = HLC.toStorageBytes(version)
                     val lastVersionRef = key.bytes.copyOf(key.bytes.size + 1)
                     lastVersionRef[lastVersionRef.lastIndex] = LAST_VERSION
-                    // Store first and last version
-                    dataStore.db.put(columnFamilies.table, key.bytes, versionBytes)
-                    dataStore.db.put(columnFamilies.table, lastVersionRef, versionBytes)
-                    if (columnFamilies is HistoricTableColumnFamilies) {
-                        dataStore.db.put(columnFamilies.historic.table, key.bytes, versionBytes)
-                        dataStore.db.put(columnFamilies.historic.table, lastVersionRef, versionBytes)
-                    }
 
-                    // Find new index values to write
-                    addRequest.dataModel.indices?.forEach { indexDefinition ->
-                        val indexReference = indexDefinition.toReferenceStorageByteArray()
-                        val valueBytes = indexDefinition.toStorageByteArrayForIndex(objectToAdd, key.bytes)
-                            ?: return@forEach // skip if no complete values to index are found
-
-                        dataStore.db.put(columnFamilies.index, indexReference, key.bytes)
+                    dataStore.db.beginTransaction(WriteOptions()).use { transaction ->
+                        // Store first and last version
+                        transaction.put(columnFamilies.table, key.bytes, versionBytes)
+                        transaction.put(columnFamilies.table, lastVersionRef, versionBytes)
                         if (columnFamilies is HistoricTableColumnFamilies) {
-                            dataStore.db.put(columnFamilies.historic.index, byteArrayOf(*indexReference, *versionBytes), key.bytes)
+                            transaction.put(columnFamilies.historic.table, key.bytes, versionBytes)
+                            transaction.put(columnFamilies.historic.table, lastVersionRef, versionBytes)
                         }
-                    }
 
-                    objectToAdd.writeToStorage { _, reference, definition, value ->
-                        @Suppress("UNCHECKED_CAST")
-                        val storableDefinition = (definition as IsStorageBytesEncodable<in Any>)
+                        // Find new index values to write
+                        addRequest.dataModel.indices?.forEach { indexDefinition ->
+                            val indexReference = indexDefinition.toReferenceStorageByteArray()
+                            val valueBytes = indexDefinition.toStorageByteArrayForIndex(objectToAdd, key.bytes)
+                                ?: return@forEach // skip if no complete values to index are found
 
-                        val valueBytes = storableDefinition.toStorageBytes(value)
+                            transaction.put(columnFamilies.index, indexReference, key.bytes)
+                            if (columnFamilies is HistoricTableColumnFamilies) {
+                                transaction.put(
+                                    columnFamilies.historic.index,
+                                    byteArrayOf(*indexReference, *versionBytes),
+                                    key.bytes
+                                )
+                            }
+                        }
 
-                        // If a unique index, check if exists, and then write
-                        if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
-                            val uniqueReference = byteArrayOf(*reference, *valueBytes)
+                        objectToAdd.writeToStorage { _, reference, definition, value ->
+                            @Suppress("UNCHECKED_CAST")
+                            val storableDefinition = (definition as IsStorageBytesEncodable<in Any>)
 
-                            checksBeforeWrite.add {
-                                // Since it is an addition we only need to check the current uniques
-                                dataStore.db.get(columnFamilies.unique, uniqueReference)?.let {
-                                    throw UniqueException(reference)
+                            val valueBytes = storableDefinition.toStorageBytes(value)
+
+                            // If a unique index, check if exists, and then write
+                            if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
+                                val uniqueReference = byteArrayOf(*reference, *valueBytes)
+
+                                checksBeforeWrite.add {
+                                    // Since it is an addition we only need to check the current uniques
+                                    dataStore.db.get(columnFamilies.unique, uniqueReference)?.let {
+                                        throw UniqueException(reference)
+                                    }
+                                }
+
+                                transaction.put(columnFamilies.unique, uniqueReference, key.bytes)
+                                if (columnFamilies is HistoricTableColumnFamilies) {
+                                    transaction.put(
+                                        columnFamilies.historic.unique,
+                                        byteArrayOf(*uniqueReference, *versionBytes),
+                                        key.bytes
+                                    )
                                 }
                             }
 
-                            dataStore.db.put(columnFamilies.unique, uniqueReference, key.bytes)
+                            transaction.put(
+                                columnFamilies.table,
+                                byteArrayOf(*key.bytes, *reference),
+                                byteArrayOf(*versionBytes, *valueBytes)
+                            )
+
                             if (columnFamilies is HistoricTableColumnFamilies) {
-                                dataStore.db.put(columnFamilies.historic.unique, byteArrayOf(*uniqueReference, *versionBytes), key.bytes)
+                                transaction.put(
+                                    columnFamilies.historic.table,
+                                    byteArrayOf(*key.bytes, *reference, *versionBytes),
+                                    valueBytes
+                                )
                             }
                         }
 
-                        dataStore.db.put(
-                            columnFamilies.table,
-                            byteArrayOf(*key.bytes, *reference),
-                            byteArrayOf(*versionBytes, *valueBytes)
-                        )
-
-                        if (columnFamilies is HistoricTableColumnFamilies) {
-                            dataStore.db.put(
-                                columnFamilies.historic.table,
-                                byteArrayOf(*key.bytes, *reference, *versionBytes),
-                                valueBytes
-                            )
+                        for (check in checksBeforeWrite) {
+                            check()
                         }
-                    }
 
-                    for (check in checksBeforeWrite) {
-                        check()
+                        transaction.commit()
                     }
 
                     statuses.add(

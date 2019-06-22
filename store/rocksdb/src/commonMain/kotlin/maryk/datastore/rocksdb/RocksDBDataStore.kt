@@ -15,10 +15,12 @@ import maryk.datastore.rocksdb.TableType.Unique
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.StoreActor
-import maryk.rocksdb.ColumnFamilyOptions
+import maryk.rocksdb.ColumnFamilyDescriptor
+import maryk.rocksdb.ColumnFamilyHandle
 import maryk.rocksdb.Options
-import maryk.rocksdb.RocksDB
-import maryk.rocksdb.openRocksDB
+import maryk.rocksdb.TransactionDB
+import maryk.rocksdb.TransactionDBOptions
+import maryk.rocksdb.openTransactionDB
 
 internal typealias StoreExecutor = Unit.(StoreAction<*, *, *, *>, RocksDBDataStore) -> Unit
 internal typealias StoreActor = SendChannel<StoreAction<*, *, *, *>>
@@ -38,7 +40,9 @@ class RocksDBDataStore(
 
     private val columnFamilyHandlesByDataModelIndex = mutableMapOf<UInt, TableColumnFamilies>()
 
-    internal val db: RocksDB = openRocksDB(rocksDBOptions, relativePath)
+    private val transactionDBOptions = TransactionDBOptions()
+
+    internal val db: TransactionDB = openTransactionDB(rocksDBOptions, transactionDBOptions, relativePath)
 
     private val storeActor = this.storeActor(this, storeExecutor)
 
@@ -54,16 +58,14 @@ class RocksDBDataStore(
         var index = 0
         val tableTypes = if (keepAllVersions) TableType.values() else arrayOf(Table, Index, Unique)
 
-        val familiesToCreate = mutableListOf<ByteArray>()
+        val handles = mutableListOf<ColumnFamilyHandle>()
 
         for (tableType in tableTypes) {
             val name = ByteArray(columnFamilyNameSize)
             tableIndex.writeVarIntWithExtraInfo(tableType.byte) { name[index++] = it }
             index = 0
-            familiesToCreate += name
+            handles += db.createColumnFamily(ColumnFamilyDescriptor(name))
         }
-
-        val handles = db.createColumnFamilies(ColumnFamilyOptions(), familiesToCreate)
 
         return if (keepAllVersions) {
             HistoricTableColumnFamilies(
@@ -82,7 +84,12 @@ class RocksDBDataStore(
 
     override fun close() {
         db.close()
+        transactionDBOptions.close()
         rocksDBOptions.close()
+
+        columnFamilyHandlesByDataModelIndex.values.forEach {
+            it.close()
+        }
     }
 
     fun getColumnFamilies(dbIndex: UInt) =

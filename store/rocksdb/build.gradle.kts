@@ -16,7 +16,9 @@ val coroutinesVersion = rootProject.extra["coroutinesVersion"]
 val marykRocksDBVersion = rootProject.extra["marykRocksDBVersion"]
 
 repositories {
-    mavenLocal()
+    maven {
+        setUrl("https://dl.bintray.com/maryk/maven")
+    }
     jcenter()
 }
 

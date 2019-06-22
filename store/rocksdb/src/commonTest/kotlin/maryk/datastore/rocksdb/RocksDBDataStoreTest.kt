@@ -8,6 +8,7 @@ import kotlin.test.Test
 class RocksDBDataStoreTest {
     private val rocksDBOptions = Options().apply {
         setCreateIfMissing(true)
+        setCreateMissingColumnFamilies(true)
     }
 
     private val basePath = "./build/test-database"

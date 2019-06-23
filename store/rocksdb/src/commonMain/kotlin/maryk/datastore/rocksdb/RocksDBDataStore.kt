@@ -32,17 +32,20 @@ internal expect fun CoroutineScope.storeActor(
 
 class RocksDBDataStore(
     val keepAllVersions: Boolean = true,
-    private val rocksDBOptions: Options = Options(),
     relativePath: String,
-    dataModelsById: Map<UInt, RootDataModel<*, *>>
+    dataModelsById: Map<UInt, RootDataModel<*, *>>,
+    rocksDBOptions: Options? = null
 ) : AbstractDataStore(dataModelsById) {
     override val coroutineContext = GlobalScope.coroutineContext
 
     private val columnFamilyHandlesByDataModelIndex = mutableMapOf<UInt, TableColumnFamilies>()
 
+    // Only create Options if no Options were passed. Will take ownership and close it if this object is closed
+    private val ownRocksDBOptions: Options? = if (rocksDBOptions == null) Options() else null
+
     private val transactionDBOptions = TransactionDBOptions()
 
-    internal val db: TransactionDB = openTransactionDB(rocksDBOptions, transactionDBOptions, relativePath)
+    internal val db: TransactionDB = openTransactionDB(rocksDBOptions ?: ownRocksDBOptions!!, transactionDBOptions, relativePath)
 
     private val storeActor = this.storeActor(this, storeExecutor)
 
@@ -85,7 +88,7 @@ class RocksDBDataStore(
     override fun close() {
         db.close()
         transactionDBOptions.close()
-        rocksDBOptions.close()
+        ownRocksDBOptions?.close()
 
         columnFamilyHandlesByDataModelIndex.values.forEach {
             it.close()

@@ -6,8 +6,9 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.requests.GetChangesRequest
 import maryk.core.query.responses.ChangesResponse
-import maryk.datastore.shared.StoreAction
 import maryk.datastore.memory.records.DataStore
+import maryk.datastore.shared.StoreAction
+import maryk.datastore.shared.checkToVersion
 
 internal typealias GetChangesStoreAction<DM, P> = StoreAction<DM, P, GetChangesRequest<DM, P>, ChangesResponse<DM>>
 internal typealias AnyGetChangesStoreAction = GetChangesStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
@@ -19,6 +20,8 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
 ) {
     val getRequest = storeAction.request
     val objectChanges = mutableListOf<DataObjectVersionedChange<DM>>()
+
+    getRequest.checkToVersion(dataStore.keepAllVersions)
 
     for (key in getRequest.keys) {
         val index = dataStore.records.binarySearch { it.key.compareTo(key) }

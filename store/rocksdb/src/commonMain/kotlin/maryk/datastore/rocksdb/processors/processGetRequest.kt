@@ -10,6 +10,7 @@ import maryk.core.query.requests.GetRequest
 import maryk.core.query.responses.ValuesResponse
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.shared.StoreAction
+import maryk.datastore.shared.checkToVersion
 import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.WriteOptions
 import maryk.rocksdb.use
@@ -30,19 +31,20 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
         Aggregator(it)
     }
 
-    for (key in getRequest.keys) {
-        val mayExist = dataStore.db.keyMayExist(columnFamilies.table, key.bytes, StringBuilder())
+    getRequest.checkToVersion(dataStore.keepAllVersions)
 
-        if (mayExist) {
-            WriteOptions().use { writeOptions ->
-                dataStore.db.beginTransaction(writeOptions).use { transaction ->
-                    ReadOptions().use { readOptions ->
+    WriteOptions().use { writeOptions ->
+        dataStore.db.beginTransaction(writeOptions).use { transaction ->
+            ReadOptions().use { readOptions ->
+                keyWalk@ for (key in getRequest.keys) {
+                    val mayExist = dataStore.db.keyMayExist(columnFamilies.table, key.bytes, StringBuilder())
+                    if (mayExist) {
                         val creationVersion = transaction.get(columnFamilies.table, readOptions, key.bytes)
 
                         if (creationVersion != null) {
-            //            if (getRequest.shouldBeFiltered(record, toVersion)) {
-            //                continue
-            //            }
+                            if (getRequest.shouldBeFiltered(transaction, columnFamilies, readOptions, key.bytes, getRequest.toVersion)) {
+                                continue@keyWalk
+                            }
 
                             val valuesWithMetaData = getRequest.dataModel.readTransactionIntoValuesWithMetaData(
                                 transaction,

@@ -5,9 +5,9 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.requests.ScanChangesRequest
 import maryk.core.query.responses.ChangesResponse
-import maryk.datastore.shared.StoreAction
 import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataStore
+import maryk.datastore.shared.StoreAction
 
 internal typealias ScanChangesStoreAction<DM, P> = StoreAction<DM, P, ScanChangesRequest<DM, P>, ChangesResponse<DM>>
 internal typealias AnyScanChangesStoreAction = ScanChangesStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>

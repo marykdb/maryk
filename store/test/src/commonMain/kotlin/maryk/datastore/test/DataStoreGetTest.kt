@@ -4,6 +4,7 @@ import maryk.core.aggregations.Aggregations
 import maryk.core.aggregations.AggregationsResponse
 import maryk.core.aggregations.metric.ValueCount
 import maryk.core.aggregations.metric.ValueCountResponse
+import maryk.core.exceptions.RequestException
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.get
@@ -13,6 +14,7 @@ import maryk.test.assertType
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.addRequest
 import maryk.test.runSuspendingTest
+import kotlin.test.assertFailsWith
 import kotlin.test.expect
 
 class DataStoreGetTest(
@@ -92,11 +94,21 @@ class DataStoreGetTest(
     }
 
     private fun executeToVersionGetRequest() = runSuspendingTest {
-        val getResponse = dataStore.execute(
-            SimpleMarykModel.get(*keys.toTypedArray(), toVersion = lowestVersion - 1uL)
-        )
+        if (dataStore.keepAllVersions) {
+            val getResponse = dataStore.execute(
+                SimpleMarykModel.get(*keys.toTypedArray(), toVersion = lowestVersion - 1uL)
+            )
 
-        expect(0) { getResponse.values.size }
+            expect(0) { getResponse.values.size }
+        } else {
+            assertFailsWith<RequestException> {
+                runSuspendingTest {
+                    dataStore.execute(
+                        SimpleMarykModel.get(*keys.toTypedArray(), toVersion = lowestVersion - 1uL)
+                    )
+                }
+            }
+        }
     }
 
     private fun executeGetRequestWithSelect() = runSuspendingTest {

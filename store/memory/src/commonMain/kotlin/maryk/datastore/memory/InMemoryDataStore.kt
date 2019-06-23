@@ -23,7 +23,7 @@ internal expect fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> Cor
  * Very useful for tests.
  */
 class InMemoryDataStore(
-    val keepAllVersions: Boolean = false,
+    override val keepAllVersions: Boolean = false,
     dataModelsById: Map<UInt, RootDataModel<*, *>>
 ) : AbstractDataStore(dataModelsById) {
     override val coroutineContext = Dispatchers.Default

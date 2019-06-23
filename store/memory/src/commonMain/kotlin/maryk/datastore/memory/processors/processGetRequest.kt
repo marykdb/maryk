@@ -11,6 +11,7 @@ import maryk.core.query.requests.GetRequest
 import maryk.core.query.responses.ValuesResponse
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.StoreAction
+import maryk.datastore.shared.checkToVersion
 
 internal typealias GetStoreAction<DM, P> = StoreAction<DM, P, GetRequest<DM, P>, ValuesResponse<DM, P>>
 internal typealias AnyGetStoreAction = GetStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
@@ -23,6 +24,8 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
     val getRequest = storeAction.request
     val valuesWithMeta = mutableListOf<ValuesWithMetaData<DM, P>>()
     val toVersion = getRequest.toVersion?.let { HLC(it) }
+
+    getRequest.checkToVersion(dataStore.keepAllVersions)
 
     val aggregator = getRequest.aggregations?.let {
         Aggregator(it)

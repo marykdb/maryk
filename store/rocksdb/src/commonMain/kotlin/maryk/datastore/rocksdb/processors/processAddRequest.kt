@@ -88,12 +88,12 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
                             val valueBytes = indexDefinition.toStorageByteArrayForIndex(objectToAdd, key.bytes)
                                 ?: return@forEach // skip if no complete values to index are found
 
-                            transaction.put(columnFamilies.index, byteArrayOf(*indexReference, *valueBytes), TRUE)
+                            transaction.put(columnFamilies.index, byteArrayOf(*indexReference, *valueBytes), TRUE_ARRAY)
                             if (columnFamilies is HistoricTableColumnFamilies) {
                                 transaction.put(
                                     columnFamilies.historic.index,
                                     byteArrayOf(*indexReference, *valueBytes, *versionBytes),
-                                    TRUE
+                                    TRUE_ARRAY
                                 )
                             }
                         }
@@ -187,14 +187,14 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
                                     transaction.put(
                                         columnFamilies.table,
                                         byteArrayOf(*key.bytes, *reference),
-                                        byteArrayOf(*versionBytes, *TRUE)
+                                        byteArrayOf(*versionBytes, TRUE)
                                     )
 
                                     if (columnFamilies is HistoricTableColumnFamilies) {
                                         transaction.put(
                                             columnFamilies.historic.table,
                                             byteArrayOf(*key.bytes, *reference, *versionBytes),
-                                            TRUE
+                                            TRUE_ARRAY
                                         )
                                     }
                                 }

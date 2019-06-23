@@ -46,7 +46,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
     val values: Values<DM, P> = if (toVersion == null) {
         val iterator = transaction.getIterator(readOptions, columnFamilies.table)
 
-        isDeleted = transaction.get(columnFamilies.table, readOptions, byteArrayOf(*key.bytes, SOFT_DELETE_INDICATOR))?.contentEquals(TRUE) ?: true
+        isDeleted = transaction.get(columnFamilies.table, readOptions, byteArrayOf(*key.bytes, SOFT_DELETE_INDICATOR))?.last() == TRUE
 
         // Start at begin of record
         iterator.seek(key.bytes)

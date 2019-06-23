@@ -12,7 +12,7 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.datastore.rocksdb.TableType.Index
 import maryk.datastore.rocksdb.TableType.Table
 import maryk.datastore.rocksdb.TableType.Unique
-import maryk.datastore.rocksdb.processors.TRUE
+import maryk.datastore.rocksdb.processors.TRUE_ARRAY
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.StoreActor
@@ -33,7 +33,7 @@ internal expect fun CoroutineScope.storeActor(
 ): StoreActor<*, *>
 
 class RocksDBDataStore(
-    val keepAllVersions: Boolean = true,
+    override val keepAllVersions: Boolean = true,
     relativePath: String,
     dataModelsById: Map<UInt, RootDataModel<*, *>>,
     rocksDBOptions: Options? = null
@@ -113,7 +113,7 @@ class RocksDBDataStore(
 
         if (existingValue == null) {
             val uniqueReference = byteArrayOf(0, *uniqueName)
-            db.put(uniqueHandle, uniqueReference, TRUE)
+            db.put(uniqueHandle, uniqueReference, TRUE_ARRAY)
             existingDbUniques.add(uniqueName)
         }
     }

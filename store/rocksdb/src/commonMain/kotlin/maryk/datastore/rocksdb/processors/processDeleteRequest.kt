@@ -55,7 +55,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
                                             val newValue = value.copyOfRange(ULong.SIZE_BYTES, value.size)
                                             transaction.delete(columnFamilies.unique, byteArrayOf(*ref, *newValue))
                                             if (columnFamilies is HistoricTableColumnFamilies) {
-                                                transaction.put(columnFamilies.unique, byteArrayOf(*ref, *newValue, *versionBytes), FALSE)
+                                                transaction.put(columnFamilies.unique, byteArrayOf(*ref, *newValue, *versionBytes), FALSE_ARRAY)
                                             }
                                         }
                                     }
@@ -85,7 +85,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
                                     transaction.put(
                                         columnFamilies.table,
                                         byteArrayOf(*key.bytes, SOFT_DELETE_INDICATOR),
-                                        byteArrayOf(*versionBytes, 1)
+                                        byteArrayOf(*versionBytes, TRUE)
                                     )
                                     transaction.put(columnFamilies.table, lastVersionRef, versionBytes)
 
@@ -94,7 +94,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
                                         transaction.put(
                                             columnFamilies.historic.table,
                                             byteArrayOf(*key.bytes, SOFT_DELETE_INDICATOR, *versionBytes),
-                                            byteArrayOf(1)
+                                            TRUE_ARRAY
                                         )
                                     }
 

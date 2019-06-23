@@ -2,16 +2,17 @@ package maryk.datastore.memory.processors
 
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
-import maryk.datastore.shared.ScanType.IndexScan
-import maryk.datastore.shared.ScanType.TableScan
-import maryk.datastore.shared.optimizeTableScan
-import maryk.datastore.shared.orderToScanType
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.requests.IsScanRequest
 import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataStore
+import maryk.datastore.shared.ScanType.IndexScan
+import maryk.datastore.shared.ScanType.TableScan
+import maryk.datastore.shared.checkToVersion
+import maryk.datastore.shared.optimizeTableScan
+import maryk.datastore.shared.orderToScanType
 
 /** Walk with [scanRequest] on [dataStore] and do [processRecord] */
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processScan(
@@ -20,6 +21,8 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
     processRecord: (DataRecord<DM, P>) -> Unit
 ) {
     val scanRange = scanRequest.dataModel.createScanRange(scanRequest.where, scanRequest.startKey?.bytes)
+
+    scanRequest.checkToVersion(dataStore.keepAllVersions)
 
     when {
         // If hard key match then quit with direct record

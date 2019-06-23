@@ -9,6 +9,7 @@ import maryk.core.query.responses.IsResponse
 interface IsDataStore {
     val dataModelsById: Map<UInt, RootDataModel<*, *>>
     val dataModelIdsByString: Map<String, UInt>
+    val keepAllVersions: Boolean
 
     /** Execute a single store [request] and retrieve response */
     suspend fun <DM : RootDataModel<DM, P>, P : PropertyDefinitions, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(

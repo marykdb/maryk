@@ -13,6 +13,7 @@ import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.shared.StoreAction
 import maryk.lib.extensions.compare.nextByteInSameLength
+import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.WriteOptions
 import maryk.rocksdb.use
 
@@ -37,19 +38,33 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
 
                 val exists = if (mayExist) {
                     // Really check if item exists
-                    dataStore.db.get(columnFamilies.table, key.bytes) == null
+                    dataStore.db.get(columnFamilies.table, key.bytes) != null
                 } else false
 
                 val status: IsDeleteResponseStatus<DM> = when {
                     exists -> {
                         WriteOptions().use { writeOptions ->
                             dataStore.db.beginTransaction(writeOptions).use { transaction ->
+                                // Create version bytes
+                                val versionBytes = HLC.toStorageBytes(version)
+                                ReadOptions().use { readOptions ->
+                                    dataStore.getUniqueIndices(storeAction.dbIndex, columnFamilies.unique).forEach { ref ->
+                                        val value = transaction.get(columnFamilies.table, readOptions, byteArrayOf(*key.bytes, *ref))
 
-                                //                        dataStore.removeFromUniqueIndices(objectToDelete, version)
+                                        if (value != null) {
+                                            val newValue = value.copyOfRange(ULong.SIZE_BYTES, value.size)
+                                            transaction.delete(columnFamilies.unique, byteArrayOf(*ref, *newValue))
+                                            if (columnFamilies is HistoricTableColumnFamilies) {
+                                                transaction.put(columnFamilies.unique, byteArrayOf(*ref, *newValue, *versionBytes), FALSE)
+                                            }
+                                        }
+                                    }
 
-//                                // Delete indexed values
-//                                deleteRequest.dataModel.indices?.forEach { indexable ->
-//                                }
+//                                    // Delete indexed values
+//                                    deleteRequest.dataModel.indices?.forEach { indexable ->
+//                                        val indexRef = indexable.toReferenceStorageByteArray()
+//                                    }
+                                }
 
                                 if (deleteRequest.hardDelete) {
                                     dataStore.db.deleteRange(
@@ -65,8 +80,6 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
                                         )
                                     }
                                 } else {
-                                    // Create version bytes
-                                    val versionBytes = HLC.toStorageBytes(version)
                                     val lastVersionRef = byteArrayOf(*key.bytes, LAST_VERSION_INDICATOR)
 
                                     transaction.put(

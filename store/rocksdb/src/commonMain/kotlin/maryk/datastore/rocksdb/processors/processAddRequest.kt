@@ -117,6 +117,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
                                             }
                                         }
 
+                                        dataStore.createUniqueIndexIfNotExists(storeAction.dbIndex, columnFamilies.unique, reference)
                                         transaction.put(columnFamilies.unique, uniqueReference, key.bytes)
                                         if (columnFamilies is HistoricTableColumnFamilies) {
                                             transaction.put(

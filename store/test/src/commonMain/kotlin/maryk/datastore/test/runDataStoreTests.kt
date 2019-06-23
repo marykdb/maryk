@@ -63,6 +63,6 @@ fun runDataStoreTests(dataStore: IsDataStore, runOnlyTest: String? = null) {
         for ((name, exception) in exceptionList) {
             messages += "\t$name: $exception\n"
         }
-        throw Exception("$messages]")
+        throw AssertionError("$messages]")
     }
 }

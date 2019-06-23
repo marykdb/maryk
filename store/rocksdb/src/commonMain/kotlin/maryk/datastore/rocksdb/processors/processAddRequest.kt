@@ -3,10 +3,16 @@ package maryk.datastore.rocksdb.processors
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.key
+import maryk.core.processors.datastore.StorageTypeEnum.Embed
+import maryk.core.processors.datastore.StorageTypeEnum.ListSize
+import maryk.core.processors.datastore.StorageTypeEnum.MapSize
+import maryk.core.processors.datastore.StorageTypeEnum.ObjectDelete
+import maryk.core.processors.datastore.StorageTypeEnum.SetSize
+import maryk.core.processors.datastore.StorageTypeEnum.TypeValue
+import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.processors.datastore.writeToStorage
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsComparableDefinition
-import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
@@ -50,7 +56,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
 
                 val exists = if (mayExist) {
                     // Really check if item exists
-                    dataStore.db.get(columnFamilies.table, key.bytes) == null
+                    dataStore.db.get(columnFamilies.table, key.bytes) != null
                 } else false
 
                 if (!exists) {
@@ -85,45 +91,54 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
                             }
                         }
 
-                        objectToAdd.writeToStorage { _, reference, definition, value ->
-                            @Suppress("UNCHECKED_CAST")
-                            val storableDefinition = (definition as IsStorageBytesEncodable<in Any>)
+                        objectToAdd.writeToStorage { type, reference, definition, value ->
+                            when (type) {
+                                ObjectDelete -> {} // Cannot happen on new add
+                                Value -> {
+                                    val storableDefinition = Value.castDefinition(definition)
 
-                            val valueBytes = storableDefinition.toStorageBytes(value)
+                                    val valueBytes = storableDefinition.toStorageBytes(value)
 
-                            // If a unique index, check if exists, and then write
-                            if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
-                                val uniqueReference = byteArrayOf(*reference, *valueBytes)
+                                    // If a unique index, check if exists, and then write
+                                    if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
+                                        val uniqueReference = byteArrayOf(*reference, *valueBytes)
 
-                                checksBeforeWrite.add {
-                                    // Since it is an addition we only need to check the current uniques
-                                    dataStore.db.get(columnFamilies.unique, uniqueReference)?.let {
-                                        throw UniqueException(reference)
+                                        checksBeforeWrite.add {
+                                            // Since it is an addition we only need to check the current uniques
+                                            dataStore.db.get(columnFamilies.unique, uniqueReference)?.let {
+                                                throw UniqueException(reference)
+                                            }
+                                        }
+
+                                        transaction.put(columnFamilies.unique, uniqueReference, key.bytes)
+                                        if (columnFamilies is HistoricTableColumnFamilies) {
+                                            transaction.put(
+                                                columnFamilies.historic.unique,
+                                                byteArrayOf(*uniqueReference, *versionBytes),
+                                                key.bytes
+                                            )
+                                        }
+                                    }
+
+                                    transaction.put(
+                                        columnFamilies.table,
+                                        byteArrayOf(*key.bytes, *reference),
+                                        byteArrayOf(*versionBytes, *valueBytes)
+                                    )
+
+                                    if (columnFamilies is HistoricTableColumnFamilies) {
+                                        transaction.put(
+                                            columnFamilies.historic.table,
+                                            byteArrayOf(*key.bytes, *reference, *versionBytes),
+                                            valueBytes
+                                        )
                                     }
                                 }
-
-                                transaction.put(columnFamilies.unique, uniqueReference, key.bytes)
-                                if (columnFamilies is HistoricTableColumnFamilies) {
-                                    transaction.put(
-                                        columnFamilies.historic.unique,
-                                        byteArrayOf(*uniqueReference, *versionBytes),
-                                        key.bytes
-                                    )
-                                }
-                            }
-
-                            transaction.put(
-                                columnFamilies.table,
-                                byteArrayOf(*key.bytes, *reference),
-                                byteArrayOf(*versionBytes, *valueBytes)
-                            )
-
-                            if (columnFamilies is HistoricTableColumnFamilies) {
-                                transaction.put(
-                                    columnFamilies.historic.table,
-                                    byteArrayOf(*key.bytes, *reference, *versionBytes),
-                                    valueBytes
-                                )
+                                ListSize -> TODO("LIST SIZE")
+                                SetSize -> TODO("SET SIZE")
+                                MapSize -> TODO("MAP SIZE")
+                                TypeValue -> TODO("TYPE VALUE")
+                                Embed -> TODO("EMBED")
                             }
                         }
 

@@ -18,18 +18,19 @@ interface IsSimpleValueDefinition<T : Any, in CX : IsPropertyContext> :
     IsValueDefinition<T, CX>,
     IsUsableInMultiType<T, CX>,
     IsUsableInMapValue<T, CX>,
-    IsUsableInCollection<T, CX> {
+    IsUsableInCollection<T, CX>,
+    IsStorageBytesEncodable<T> {
     /**
      * Read stored bytes with [reader] until [length] and return value
      * @throws DefNotFoundException if definition is not found to translate bytes
      */
-    fun readStorageBytes(length: Int, reader: () -> Byte): T
+    override fun readStorageBytes(length: Int, reader: () -> Byte): T
 
     /** Calculate byte length of a [value] */
-    fun calculateStorageByteLength(value: T): Int
+    override fun calculateStorageByteLength(value: T): Int
 
     /** Write a [value] to bytes with [writer] */
-    fun writeStorageBytes(value: T, writer: (byte: Byte) -> Unit)
+    override fun writeStorageBytes(value: T, writer: (byte: Byte) -> Unit)
 
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?, earlierValue: T?) = readStorageBytes(length, reader)
 

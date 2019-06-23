@@ -58,8 +58,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
 
                     // Create version bytes and last version ref
                     val versionBytes = HLC.toStorageBytes(version)
-                    val lastVersionRef = key.bytes.copyOf(key.bytes.size + 1)
-                    lastVersionRef[lastVersionRef.lastIndex] = LAST_VERSION
+                    val lastVersionRef = byteArrayOf(*key.bytes, LAST_VERSION_INDICATOR)
 
                     dataStore.db.beginTransaction(WriteOptions()).use { transaction ->
                         // Store first and last version
@@ -76,12 +75,12 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
                             val valueBytes = indexDefinition.toStorageByteArrayForIndex(objectToAdd, key.bytes)
                                 ?: return@forEach // skip if no complete values to index are found
 
-                            transaction.put(columnFamilies.index, indexReference, key.bytes)
+                            transaction.put(columnFamilies.index, byteArrayOf(*indexReference, *valueBytes), TRUE)
                             if (columnFamilies is HistoricTableColumnFamilies) {
                                 transaction.put(
                                     columnFamilies.historic.index,
-                                    byteArrayOf(*indexReference, *versionBytes),
-                                    key.bytes
+                                    byteArrayOf(*indexReference, *valueBytes, *versionBytes),
+                                    TRUE
                                 )
                             }
                         }

@@ -110,7 +110,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                         qualifier,
                         currentOffset,
                         offset,
-                        definition,
+                        definition.definition,
                         index,
                         refStoreType,
                         select,
@@ -148,7 +148,7 @@ private fun readQualifierOfType(
             val valueAdder: AddValue = { addValueToOutput(index, it) }
 
             if (isAtEnd) {
-                when (val value = readValueFromStorage(Embed, definition)) {
+                when (val value = readValueFromStorage(Value, definition)) {
                     null -> // Ensure that next potential embedded values are not read because is deleted
                         addToCache(partOffset) {
                             // Ignore reading and return

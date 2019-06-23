@@ -9,8 +9,8 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.requests.GetRequest
 import maryk.core.query.responses.ValuesResponse
-import maryk.datastore.shared.StoreAction
 import maryk.datastore.memory.records.DataStore
+import maryk.datastore.shared.StoreAction
 
 internal typealias GetStoreAction<DM, P> = StoreAction<DM, P, GetRequest<DM, P>, ValuesResponse<DM, P>>
 internal typealias AnyGetStoreAction = GetStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
@@ -22,6 +22,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
 ) {
     val getRequest = storeAction.request
     val valuesWithMeta = mutableListOf<ValuesWithMetaData<DM, P>>()
+    val toVersion = getRequest.toVersion?.let { HLC(it) }
 
     val aggregator = getRequest.aggregations?.let {
         Aggregator(it)
@@ -33,8 +34,6 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
         // Only return if found
         if (index > -1) {
             val record = dataStore.records[index]
-            val toVersion = getRequest.toVersion?.let { HLC(it) }
-
             if (getRequest.shouldBeFiltered(record, toVersion)) {
                 continue
             }

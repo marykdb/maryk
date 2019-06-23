@@ -15,7 +15,7 @@ internal fun ULong.writeBytes(writer: (byte: Byte) -> Unit, length: Int = 8) {
 }
 
 /** Reads ULong from [reader] with bytes until [length] */
-internal fun initULong(reader: () -> Byte, length: Int = 8): ULong {
+fun initULong(reader: () -> Byte, length: Int = 8): ULong {
     var long = 0uL
     // Skip bytes if below certain length
     if (length < 8) {
@@ -28,6 +28,12 @@ internal fun initULong(reader: () -> Byte, length: Int = 8): ULong {
         long = long xor (reader().toULong() and 0xFFu)
     }
     return long
+}
+
+/** Create ULong from byte array */
+fun ByteArray.toULong(): ULong {
+    var index = 0
+    return initULong(reader = { this[index++] })
 }
 
 /** Write the bytes of this Long as a variable int to a [writer] */

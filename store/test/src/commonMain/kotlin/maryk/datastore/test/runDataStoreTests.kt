@@ -59,7 +59,7 @@ fun runDataStoreTests(dataStore: IsDataStore, runOnlyTest: String? = null) {
         }
     }
     if (exceptionList.isNotEmpty()) {
-        var messages = "DataStore Tests failed: [\n"
+        var messages = "DataStore Tests failed: (${exceptionList.size})[\n"
         for ((name, exception) in exceptionList) {
             messages += "\t$name: $exception\n"
         }

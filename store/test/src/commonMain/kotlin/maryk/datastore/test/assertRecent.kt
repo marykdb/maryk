@@ -6,5 +6,5 @@ import kotlin.test.assertTrue
 
 fun assertRecent(time: ULong, maxDifference: ULong) {
     val timeSinceInsert = (Instant.getCurrentEpochTimeInMillis().toULong() - HLC(time).toPhysicalUnixTime())
-    assertTrue { timeSinceInsert in (0uL..maxDifference) }
+    assertTrue("Time to be recent: $timeSinceInsert within $maxDifference") { timeSinceInsert in (0uL..maxDifference) }
 }

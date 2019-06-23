@@ -38,7 +38,7 @@ sealed class StorageTypeEnum<out T : IsPropertyDefinition<*>>(val referenceType:
     object Embed : StorageTypeEnum<IsEmbeddedValuesDefinition<*, *, *>>(EMBED)
 
     @Suppress("UNCHECKED_CAST")
-    fun castDefinition(definition: IsPropertyDefinition<*>) = definition as T
+    fun castDefinition(definition: IsPropertyDefinition<*>?) = definition as T
 }
 
 typealias ValueWriter<T> = (StorageTypeEnum<T>, ByteArray, T, Any) -> Unit

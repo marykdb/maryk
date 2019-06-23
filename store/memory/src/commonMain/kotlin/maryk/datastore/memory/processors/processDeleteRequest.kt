@@ -8,9 +8,9 @@ import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.IsDeleteResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
-import maryk.datastore.shared.StoreAction
 import maryk.datastore.memory.processors.changers.setValueAtIndex
 import maryk.datastore.memory.records.DataStore
+import maryk.datastore.shared.StoreAction
 import maryk.lib.extensions.compare.compareTo
 
 internal typealias DeleteStoreAction<DM, P> = StoreAction<DM, P, DeleteRequest<DM>, DeleteResponse<DM>>
@@ -39,12 +39,12 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
                         dataStore.removeFromUniqueIndices(objectToDelete, version)
 
                         // Delete indexed values
-                        deleteRequest.dataModel.indices?.forEach {
-                            val oldValue = it.toStorageByteArrayForIndex(objectToDelete, objectToDelete.key.bytes)
+                        deleteRequest.dataModel.indices?.forEach { indexable ->
+                            val oldValue = indexable.toStorageByteArrayForIndex(objectToDelete, objectToDelete.key.bytes)
                             if (oldValue != null) {
                                 dataStore.removeFromIndex(
                                     objectToDelete,
-                                    it.toReferenceStorageByteArray(),
+                                    indexable.toReferenceStorageByteArray(),
                                     version,
                                     oldValue
                                 )

@@ -1,6 +1,7 @@
 package maryk.datastore.rocksdb.processors
 
 import maryk.core.clock.HLC
+import maryk.core.extensions.bytes.toVarBytes
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.key
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
@@ -13,9 +14,13 @@ import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.processors.datastore.writeToStorage
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsComparableDefinition
+import maryk.core.properties.definitions.IsSimpleValueDefinition
+import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
+import maryk.core.properties.types.Key
+import maryk.core.properties.types.TypedValue
 import maryk.core.query.requests.AddRequest
 import maryk.core.query.responses.AddResponse
 import maryk.core.query.responses.statuses.AddSuccess
@@ -25,8 +30,10 @@ import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
+import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.UniqueException
+import maryk.rocksdb.Transaction
 import maryk.rocksdb.WriteOptions
 import maryk.rocksdb.use
 
@@ -134,11 +141,62 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
                                         )
                                     }
                                 }
-                                ListSize -> TODO("LIST SIZE")
-                                SetSize -> TODO("SET SIZE")
-                                MapSize -> TODO("MAP SIZE")
-                                TypeValue -> TODO("TYPE VALUE")
-                                Embed -> TODO("EMBED")
+                                ListSize -> writeSize(transaction, columnFamilies, key, reference, versionBytes, value)
+                                SetSize -> writeSize(transaction, columnFamilies, key, reference, versionBytes, value)
+                                MapSize -> writeSize(transaction, columnFamilies, key, reference, versionBytes, value)
+                                TypeValue -> {
+                                    val typedValue = value as TypedValue<TypeEnum<*>, *>
+                                    val typeDefinition = TypeValue.castDefinition(definition)
+                                    val typeBytes = typeDefinition.typeEnum.toStorageBytes(value.type)
+
+                                    if (typedValue.value == Unit) {
+                                        transaction.put(
+                                            columnFamilies.table,
+                                            byteArrayOf(*key.bytes, *reference),
+                                            byteArrayOf(*versionBytes, COMPLEX_TYPE_INDICATOR, *typeBytes)
+                                        )
+
+                                        if (columnFamilies is HistoricTableColumnFamilies) {
+                                            transaction.put(
+                                                columnFamilies.historic.table,
+                                                byteArrayOf(*key.bytes, *reference, *versionBytes),
+                                                byteArrayOf(COMPLEX_TYPE_INDICATOR, *typeBytes)
+                                            )
+                                        }
+                                    } else {
+                                        val typeValueDefinition = typeDefinition.definition(typedValue.type) as IsSimpleValueDefinition<Any, *>
+                                        val valueBytes = typeValueDefinition.toStorageBytes(typedValue.value)
+
+                                        transaction.put(
+                                            columnFamilies.table,
+                                            byteArrayOf(*key.bytes, *reference),
+                                            byteArrayOf(*versionBytes, SIMPLE_TYPE_INDICATOR, *typeBytes, *valueBytes)
+                                        )
+
+                                        if (columnFamilies is HistoricTableColumnFamilies) {
+                                            transaction.put(
+                                                columnFamilies.historic.table,
+                                                byteArrayOf(*key.bytes, *reference, *versionBytes),
+                                                byteArrayOf(SIMPLE_TYPE_INDICATOR, *typeBytes, *valueBytes)
+                                            )
+                                        }
+                                    }
+                                }
+                                Embed -> {
+                                    transaction.put(
+                                        columnFamilies.table,
+                                        byteArrayOf(*key.bytes, *reference),
+                                        byteArrayOf(*versionBytes, *TRUE)
+                                    )
+
+                                    if (columnFamilies is HistoricTableColumnFamilies) {
+                                        transaction.put(
+                                            columnFamilies.historic.table,
+                                            byteArrayOf(*key.bytes, *reference, *versionBytes),
+                                            TRUE
+                                        )
+                                    }
+                                }
                             }
                         }
 
@@ -193,4 +251,28 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
             statuses
         )
     )
+}
+
+private fun writeSize(
+    transaction: Transaction,
+    columnFamilies: TableColumnFamilies,
+    key: Key<*>,
+    reference: ByteArray,
+    versionBytes: ByteArray,
+    value: Any
+) {
+    val countBytes = (value as Int).toVarBytes()
+    transaction.put(
+        columnFamilies.table,
+        byteArrayOf(*key.bytes, *reference),
+        byteArrayOf(*versionBytes, *countBytes)
+    )
+
+    if (columnFamilies is HistoricTableColumnFamilies) {
+        transaction.put(
+            columnFamilies.historic.table,
+            byteArrayOf(*key.bytes, *reference, *versionBytes),
+            countBytes
+        )
+    }
 }

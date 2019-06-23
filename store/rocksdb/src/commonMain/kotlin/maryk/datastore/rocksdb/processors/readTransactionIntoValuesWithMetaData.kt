@@ -1,6 +1,7 @@
 package maryk.datastore.rocksdb.processors
 
 import maryk.core.exceptions.RequestException
+import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.initULong
 import maryk.core.extensions.bytes.toULong
 import maryk.core.models.IsRootValuesDataModel
@@ -13,8 +14,10 @@ import maryk.core.processors.datastore.StorageTypeEnum.TypeValue
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.processors.datastore.convertStorageToValues
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
+import maryk.core.properties.types.TypedValue
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.values.Values
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
@@ -74,23 +77,59 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
         this.convertStorageToValues(
             getQualifier = getQualifier,
             select = select,
-            processValue = { type, definition ->
-                when (type) {
+            processValue = { storageType, definition ->
+                when (storageType) {
                     ObjectDelete -> null
                     Value -> {
-                        val value = iterator.value()
+                        val valueBytes = iterator.value()
                         index = 0
-                        maxVersion = maxOf(initULong({ value[index++] }), maxVersion)
+                        maxVersion = maxOf(initULong({ valueBytes[index++] }), maxVersion)
 
-                        Value.castDefinition(definition).readStorageBytes(value.size - index) {
-                            value[index++]
+                        Value.castDefinition(definition).readStorageBytes(valueBytes.size - index) {
+                            valueBytes[index++]
                         }
                     }
-                    ListSize -> TODO()
-                    SetSize -> TODO()
-                    MapSize -> TODO()
-                    TypeValue -> TODO()
-                    Embed -> TODO()
+                    ListSize -> {
+                        val valueBytes = iterator.value()
+                        index = 0
+                        maxVersion = maxOf(initULong({ valueBytes[index++] }), maxVersion)
+
+                        initIntByVar { valueBytes[index++] }
+                    }
+                    SetSize -> {
+                        val valueBytes = iterator.value()
+                        index = 0
+                        maxVersion = maxOf(initULong({ valueBytes[index++] }), maxVersion)
+
+                        initIntByVar { valueBytes[index++] }
+                    }
+                    MapSize -> {
+                        val valueBytes = iterator.value()
+                        index = 0
+                        maxVersion = maxOf(initULong({ valueBytes[index++] }), maxVersion)
+
+                        initIntByVar { valueBytes[index++] }
+                    }
+                    TypeValue -> {
+                        val valueBytes = iterator.value()
+                        index = 0
+                        val reader = { valueBytes[index++] }
+
+                        maxVersion = maxOf(initULong(reader), maxVersion)
+                        val typeDefinition = TypeValue.castDefinition(definition)
+
+                        val indicatorByte = reader()
+
+                        val type = typeDefinition.typeEnum.readStorageBytes(typeDefinition.typeEnum.byteSize, reader)
+
+                        if (indicatorByte == COMPLEX_TYPE_INDICATOR) {
+                            TypedValue(type, Unit)
+                        } else {
+                            val valueDefinition = typeDefinition.definition(type) as IsSimpleValueDefinition<*, *>
+                            valueDefinition.readStorageBytes(valueBytes.size - index, reader)
+                        }
+                    }
+                    Embed -> { Unit }
                 }
             }
         ).also {

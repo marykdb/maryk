@@ -63,8 +63,17 @@ internal fun Int.writeVarBytes(writer: (byte: Byte) -> Unit) {
     }
 }
 
+/** Convert Int to byte array with variable encoding */
+fun Int.toVarBytes() =
+    ByteArray(this.calculateVarByteLength()).also { bytes ->
+        var index = 0
+        this.writeVarBytes {
+            bytes[index++] = it
+        }
+    }
+
 /** Creates Integer by reading bytes encoded with variable length from [reader] */
-internal fun initIntByVar(reader: () -> Byte): Int {
+fun initIntByVar(reader: () -> Byte): Int {
     var shift = 0
     var result = 0
     while (shift < 32) {

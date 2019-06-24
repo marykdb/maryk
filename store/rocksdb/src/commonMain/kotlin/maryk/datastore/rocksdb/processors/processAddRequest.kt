@@ -19,7 +19,6 @@ import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
-import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.requests.AddRequest
 import maryk.core.query.responses.AddResponse
@@ -28,12 +27,14 @@ import maryk.core.query.responses.statuses.AlreadyExists
 import maryk.core.query.responses.statuses.IsAddResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.ValidationFail
-import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
-import maryk.datastore.rocksdb.TableColumnFamilies
+import maryk.datastore.rocksdb.processors.helpers.setCreatedVersion
+import maryk.datastore.rocksdb.processors.helpers.setIndexValue
+import maryk.datastore.rocksdb.processors.helpers.setLatestVersion
+import maryk.datastore.rocksdb.processors.helpers.setUniqueIndexValue
+import maryk.datastore.rocksdb.processors.helpers.setValue
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.UniqueException
-import maryk.rocksdb.Transaction
 import maryk.rocksdb.WriteOptions
 import maryk.rocksdb.use
 
@@ -58,7 +59,6 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
                 objectToAdd.validate()
 
                 val key = addRequest.dataModel.key(objectToAdd)
-
                 val mayExist = dataStore.db.keyMayExist(columnFamilies.table, key.bytes, StringBuilder())
 
                 val exists = if (mayExist) {
@@ -71,31 +71,19 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
 
                     // Create version bytes and last version ref
                     val versionBytes = HLC.toStorageBytes(version)
-                    val lastVersionRef = byteArrayOf(*key.bytes, LAST_VERSION_INDICATOR)
 
                     dataStore.db.beginTransaction(WriteOptions()).use { transaction ->
                         // Store first and last version
-                        transaction.put(columnFamilies.table, key.bytes, versionBytes)
-                        transaction.put(columnFamilies.table, lastVersionRef, versionBytes)
-                        if (columnFamilies is HistoricTableColumnFamilies) {
-                            transaction.put(columnFamilies.historic.table, key.bytes, versionBytes)
-                            transaction.put(columnFamilies.historic.table, lastVersionRef, versionBytes)
-                        }
+                        setCreatedVersion(transaction, columnFamilies, key, versionBytes)
+                        setLatestVersion(transaction, columnFamilies, key, versionBytes)
 
                         // Find new index values to write
                         addRequest.dataModel.indices?.forEach { indexDefinition ->
                             val indexReference = indexDefinition.toReferenceStorageByteArray()
-                            val valueBytes = indexDefinition.toStorageByteArrayForIndex(objectToAdd, key.bytes)
+                            val valueAndKeyBytes = indexDefinition.toStorageByteArrayForIndex(objectToAdd, key.bytes)
                                 ?: return@forEach // skip if no complete values to index are found
 
-                            transaction.put(columnFamilies.index, byteArrayOf(*indexReference, *valueBytes), TRUE_ARRAY)
-                            if (columnFamilies is HistoricTableColumnFamilies) {
-                                transaction.put(
-                                    columnFamilies.historic.index,
-                                    byteArrayOf(*indexReference, *valueBytes, *versionBytes),
-                                    TRUE_ARRAY
-                                )
-                            }
+                            setIndexValue(transaction, columnFamilies, indexReference, valueAndKeyBytes, versionBytes)
                         }
 
                         objectToAdd.writeToStorage { type, reference, definition, value ->
@@ -103,7 +91,6 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
                                 ObjectDelete -> {} // Cannot happen on new add
                                 Value -> {
                                     val storableDefinition = Value.castDefinition(definition)
-
                                     val valueBytes = storableDefinition.toStorageBytes(value)
 
                                     // If a unique index, check if exists, and then write
@@ -118,85 +105,30 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
                                         }
 
                                         dataStore.createUniqueIndexIfNotExists(storeAction.dbIndex, columnFamilies.unique, reference)
-                                        transaction.put(columnFamilies.unique, uniqueReference, key.bytes)
-                                        if (columnFamilies is HistoricTableColumnFamilies) {
-                                            transaction.put(
-                                                columnFamilies.historic.unique,
-                                                byteArrayOf(*uniqueReference, *versionBytes),
-                                                key.bytes
-                                            )
-                                        }
+                                        setUniqueIndexValue(columnFamilies, transaction, uniqueReference, versionBytes, key)
                                     }
 
-                                    transaction.put(
-                                        columnFamilies.table,
-                                        byteArrayOf(*key.bytes, *reference),
-                                        byteArrayOf(*versionBytes, *valueBytes)
-                                    )
-
-                                    if (columnFamilies is HistoricTableColumnFamilies) {
-                                        transaction.put(
-                                            columnFamilies.historic.table,
-                                            byteArrayOf(*key.bytes, *reference, *versionBytes),
-                                            valueBytes
-                                        )
-                                    }
+                                    setValue(transaction, columnFamilies, key, reference, versionBytes, valueBytes)
                                 }
-                                ListSize -> writeSize(transaction, columnFamilies, key, reference, versionBytes, value)
-                                SetSize -> writeSize(transaction, columnFamilies, key, reference, versionBytes, value)
-                                MapSize -> writeSize(transaction, columnFamilies, key, reference, versionBytes, value)
+                                ListSize,
+                                SetSize,
+                                MapSize -> setValue(transaction, columnFamilies, key, reference, versionBytes, (value as Int).toVarBytes())
                                 TypeValue -> {
                                     val typedValue = value as TypedValue<TypeEnum<*>, *>
                                     val typeDefinition = TypeValue.castDefinition(definition)
                                     val typeBytes = typeDefinition.typeEnum.toStorageBytes(value.type)
 
                                     if (typedValue.value == Unit) {
-                                        transaction.put(
-                                            columnFamilies.table,
-                                            byteArrayOf(*key.bytes, *reference),
-                                            byteArrayOf(*versionBytes, COMPLEX_TYPE_INDICATOR, *typeBytes)
-                                        )
-
-                                        if (columnFamilies is HistoricTableColumnFamilies) {
-                                            transaction.put(
-                                                columnFamilies.historic.table,
-                                                byteArrayOf(*key.bytes, *reference, *versionBytes),
-                                                byteArrayOf(COMPLEX_TYPE_INDICATOR, *typeBytes)
-                                            )
-                                        }
+                                        setValue(transaction, columnFamilies, key, reference, versionBytes, byteArrayOf(COMPLEX_TYPE_INDICATOR, *typeBytes))
                                     } else {
                                         val typeValueDefinition = typeDefinition.definition(typedValue.type) as IsSimpleValueDefinition<Any, *>
                                         val valueBytes = typeValueDefinition.toStorageBytes(typedValue.value)
 
-                                        transaction.put(
-                                            columnFamilies.table,
-                                            byteArrayOf(*key.bytes, *reference),
-                                            byteArrayOf(*versionBytes, SIMPLE_TYPE_INDICATOR, *typeBytes, *valueBytes)
-                                        )
-
-                                        if (columnFamilies is HistoricTableColumnFamilies) {
-                                            transaction.put(
-                                                columnFamilies.historic.table,
-                                                byteArrayOf(*key.bytes, *reference, *versionBytes),
-                                                byteArrayOf(SIMPLE_TYPE_INDICATOR, *typeBytes, *valueBytes)
-                                            )
-                                        }
+                                        setValue(transaction, columnFamilies, key, reference, versionBytes, byteArrayOf(SIMPLE_TYPE_INDICATOR, *typeBytes, *valueBytes))
                                     }
                                 }
                                 Embed -> {
-                                    transaction.put(
-                                        columnFamilies.table,
-                                        byteArrayOf(*key.bytes, *reference),
-                                        byteArrayOf(*versionBytes, TRUE)
-                                    )
-
-                                    if (columnFamilies is HistoricTableColumnFamilies) {
-                                        transaction.put(
-                                            columnFamilies.historic.table,
-                                            byteArrayOf(*key.bytes, *reference, *versionBytes),
-                                            TRUE_ARRAY
-                                        )
-                                    }
+                                    setValue(transaction, columnFamilies, key, reference, versionBytes, TRUE_ARRAY)
                                 }
                             }
                         }
@@ -252,28 +184,4 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
             statuses
         )
     )
-}
-
-private fun writeSize(
-    transaction: Transaction,
-    columnFamilies: TableColumnFamilies,
-    key: Key<*>,
-    reference: ByteArray,
-    versionBytes: ByteArray,
-    value: Any
-) {
-    val countBytes = (value as Int).toVarBytes()
-    transaction.put(
-        columnFamilies.table,
-        byteArrayOf(*key.bytes, *reference),
-        byteArrayOf(*versionBytes, *countBytes)
-    )
-
-    if (columnFamilies is HistoricTableColumnFamilies) {
-        transaction.put(
-            columnFamilies.historic.table,
-            byteArrayOf(*key.bytes, *reference, *versionBytes),
-            countBytes
-        )
-    }
 }

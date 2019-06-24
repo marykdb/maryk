@@ -11,6 +11,8 @@ import maryk.core.query.responses.statuses.IsDeleteResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
+import maryk.datastore.rocksdb.processors.helpers.deleteUniqueIndexValue
+import maryk.datastore.rocksdb.processors.helpers.setLatestVersion
 import maryk.datastore.shared.StoreAction
 import maryk.lib.extensions.compare.nextByteInSameLength
 import maryk.rocksdb.ReadOptions
@@ -53,10 +55,13 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
 
                                         if (value != null) {
                                             val newValue = value.copyOfRange(ULong.SIZE_BYTES, value.size)
-                                            transaction.delete(columnFamilies.unique, byteArrayOf(*ref, *newValue))
-                                            if (columnFamilies is HistoricTableColumnFamilies) {
-                                                transaction.put(columnFamilies.unique, byteArrayOf(*ref, *newValue, *versionBytes), FALSE_ARRAY)
-                                            }
+                                            deleteUniqueIndexValue(
+                                                transaction,
+                                                columnFamilies,
+                                                ref,
+                                                newValue,
+                                                versionBytes
+                                            )
                                         }
                                     }
 
@@ -80,17 +85,15 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
                                         )
                                     }
                                 } else {
-                                    val lastVersionRef = byteArrayOf(*key.bytes, LAST_VERSION_INDICATOR)
+                                    setLatestVersion(transaction, columnFamilies, key, versionBytes)
 
                                     transaction.put(
                                         columnFamilies.table,
                                         byteArrayOf(*key.bytes, SOFT_DELETE_INDICATOR),
                                         byteArrayOf(*versionBytes, TRUE)
                                     )
-                                    transaction.put(columnFamilies.table, lastVersionRef, versionBytes)
 
                                     if (columnFamilies is HistoricTableColumnFamilies) {
-                                        transaction.put(columnFamilies.historic.table, lastVersionRef, versionBytes)
                                         transaction.put(
                                             columnFamilies.historic.table,
                                             byteArrayOf(*key.bytes, SOFT_DELETE_INDICATOR, *versionBytes),

@@ -1,6 +1,5 @@
 package maryk.core.processors.datastore
 
-import maryk.core.clock.HLC
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.StorageException
 import maryk.core.exceptions.TypeException
@@ -69,8 +68,8 @@ import maryk.core.query.pairs.ReferenceTypePair
 import maryk.core.query.pairs.ReferenceValuePair
 import maryk.lib.exceptions.ParseException
 
-typealias ValueWithVersionReader = (StorageTypeEnum<IsPropertyDefinition<out Any>>, IsPropertyDefinition<out Any>?, (HLC, Any?) -> Unit) -> Unit
-private typealias ChangeAdder = (HLC, ChangeType, Any) -> Unit
+typealias ValueWithVersionReader = (StorageTypeEnum<IsPropertyDefinition<out Any>>, IsPropertyDefinition<out Any>?, (ULong, Any?) -> Unit) -> Unit
+private typealias ChangeAdder = (ULong, ChangeType, Any) -> Unit
 
 private enum class ChangeType {
     OBJECT_DELETE, CHANGE, DELETE, SET_ADD, TYPE
@@ -92,13 +91,13 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readStorageToCha
     val mutableVersionedChanges = mutableListOf<VersionedChanges>()
 
     // Adds changes to versionedChangesCollection
-    val changeAdder: ChangeAdder = { version: HLC, changeType: ChangeType, changePart: Any ->
-        val index = mutableVersionedChanges.binarySearch { it.version.compareTo(version.timestamp) }
+    val changeAdder: ChangeAdder = { version: ULong, changeType: ChangeType, changePart: Any ->
+        val index = mutableVersionedChanges.binarySearch { it.version.compareTo(version) }
 
         if (index < 0) {
             mutableVersionedChanges.add(
                 (index * -1) - 1,
-                VersionedChanges(version.timestamp, mutableListOf(createChange(changeType, changePart)))
+                VersionedChanges(version, mutableListOf(createChange(changeType, changePart)))
             )
         } else {
             (mutableVersionedChanges[index].changes as MutableList<IsChange>).addChange(changeType, changePart)

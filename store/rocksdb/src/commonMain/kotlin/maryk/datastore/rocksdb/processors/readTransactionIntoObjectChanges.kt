@@ -1,6 +1,5 @@
 package maryk.datastore.rocksdb.processors
 
-import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.initULong
@@ -119,7 +118,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
                     }
                 }
                 if (currentVersion >= fromVersion) {
-                    valueWithVersionReader(HLC(currentVersion), value)
+                    valueWithVersionReader(currentVersion, value)
                 }
             }
         )
@@ -194,7 +193,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
                     Embed -> { Unit }
                 }
                 if (currentVersion >= fromVersion) {
-                    valueWithVersionReader(HLC(currentVersion), value)
+                    valueWithVersionReader(currentVersion, value)
                 }
             }
         )

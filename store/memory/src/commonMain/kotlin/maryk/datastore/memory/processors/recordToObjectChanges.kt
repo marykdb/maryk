@@ -40,7 +40,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordT
                 is DataRecordValue<*> -> {
                     // Only add if  below expected version
                     if (node.version >= fromVersion && (toVersion == null || node.version < toVersion)) {
-                        valueWithVersionReader(node.version, node.value)
+                        valueWithVersionReader(node.version.timestamp, node.value)
                     }
                 }
                 is DataRecordHistoricValues<*> -> {
@@ -50,10 +50,10 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordT
                         when (val latest = node.history.findLast { it.version >= fromVersion && (toVersion == null || it.version < toVersion) }) {
                             null -> {} // skip because not a value
                             is DataRecordValue<*> -> {
-                                valueWithVersionReader(latest.version, latest.value)
+                                valueWithVersionReader(latest.version.timestamp, latest.value)
                             }
                             is DeletedValue<*> -> {
-                                valueWithVersionReader(latest.version, null)
+                                valueWithVersionReader(latest.version.timestamp, null)
                             }
                             else -> throw TypeException("Unknown value type")
                         }
@@ -61,7 +61,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordT
                 }
                 is DeletedValue<*> -> {
                     if (node.version >= fromVersion && (toVersion == null || node.version < toVersion)) {
-                        valueWithVersionReader(node.version, null)
+                        valueWithVersionReader(node.version.timestamp, null)
                     }
                 }
             }

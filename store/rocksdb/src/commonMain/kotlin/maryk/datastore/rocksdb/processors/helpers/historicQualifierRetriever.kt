@@ -1,8 +1,6 @@
 package maryk.datastore.rocksdb.processors.helpers
 
 import maryk.core.extensions.bytes.initULong
-import maryk.core.extensions.bytes.invert
-import maryk.core.extensions.bytes.writeBytes
 import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.processors.LAST_VERSION_INDICATOR
 import maryk.lib.extensions.compare.compareWithOffsetTo
@@ -18,10 +16,7 @@ fun RocksIterator.historicQualifierRetriever(
 ): () -> ByteArray? {
     var lastQualifier: ByteArray? = null
 
-    val toVersionBytes = ByteArray(ULong.SIZE_BYTES)
-    var index = 0
-    toVersion.writeBytes({ toVersionBytes[index++] = it })
-    toVersionBytes.invert()
+    val toVersionBytes = toVersion.createReversedVersionBytes()
 
     return {
         var toReturn: ByteArray? = null

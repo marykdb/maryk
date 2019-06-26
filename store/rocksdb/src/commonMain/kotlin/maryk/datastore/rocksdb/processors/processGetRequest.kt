@@ -43,7 +43,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
                         val creationVersion = transaction.get(columnFamilies.table, readOptions, key.bytes)?.toULong()
 
                         if (creationVersion != null) {
-                            if (getRequest.shouldBeFiltered(transaction, columnFamilies, readOptions, key.bytes, creationVersion, getRequest.toVersion)) {
+                            if (getRequest.shouldBeFiltered(transaction, columnFamilies, readOptions, key, creationVersion, getRequest.toVersion)) {
                                 continue@keyWalk
                             }
 

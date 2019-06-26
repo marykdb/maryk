@@ -4,6 +4,11 @@ kotlin {
         binaries {
             test("integration")
         }
+        compilations.all {
+            kotlinOptions {
+                freeCompilerArgs += "-Xdisable-phases=Devirtualization,BuildDFG"
+            }
+        }
         tasks.getByName(targetName + "Test").testLogging {
             events "FAILED", "SKIPPED"
         }

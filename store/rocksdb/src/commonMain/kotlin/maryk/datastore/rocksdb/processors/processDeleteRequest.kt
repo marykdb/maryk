@@ -1,6 +1,7 @@
 package maryk.datastore.rocksdb.processors
 
 import maryk.core.clock.HLC
+import maryk.core.extensions.bytes.invert
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.requests.DeleteRequest
@@ -94,9 +95,13 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
                                     )
 
                                     if (columnFamilies is HistoricTableColumnFamilies) {
+                                        val historicReference = byteArrayOf(*key.bytes, SOFT_DELETE_INDICATOR, *versionBytes)
+                                        // Invert so the time is sorted in reverse order with newest on top
+                                        historicReference.invert(historicReference.size - versionBytes.size)
+
                                         transaction.put(
                                             columnFamilies.historic.table,
-                                            byteArrayOf(*key.bytes, SOFT_DELETE_INDICATOR, *versionBytes),
+                                            historicReference,
                                             TRUE_ARRAY
                                         )
                                     }

@@ -1,5 +1,6 @@
 package maryk.datastore.rocksdb.processors.helpers
 
+import maryk.core.extensions.bytes.invert
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.FALSE_ARRAY
@@ -15,6 +16,10 @@ internal fun deleteUniqueIndexValue(
 ) {
     transaction.delete(columnFamilies.unique, byteArrayOf(*indexReference, *value))
     if (columnFamilies is HistoricTableColumnFamilies) {
-        transaction.put(columnFamilies.unique, byteArrayOf(*indexReference, *value, *version), FALSE_ARRAY)
+        val historicReference = byteArrayOf(*indexReference, *value, *version)
+        // Invert so the time is sorted in reverse order with newest on top
+        historicReference.invert(historicReference.size - version.size)
+
+        transaction.put(columnFamilies.unique, historicReference, FALSE_ARRAY)
     }
 }

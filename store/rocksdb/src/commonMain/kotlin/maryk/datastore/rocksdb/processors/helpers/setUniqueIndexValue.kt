@@ -1,5 +1,6 @@
 package maryk.datastore.rocksdb.processors.helpers
 
+import maryk.core.extensions.bytes.invert
 import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
@@ -15,9 +16,13 @@ internal fun setUniqueIndexValue(
 ) {
     transaction.put(columnFamilies.unique, uniqueReferenceWithValue, key.bytes)
     if (columnFamilies is HistoricTableColumnFamilies) {
+        val historicReference = byteArrayOf(*uniqueReferenceWithValue, *version)
+        // Invert so the time is sorted in reverse order with newest on top
+        historicReference.invert(historicReference.size - version.size)
+
         transaction.put(
             columnFamilies.historic.unique,
-            byteArrayOf(*uniqueReferenceWithValue, *version),
+            historicReference,
             key.bytes
         )
     }

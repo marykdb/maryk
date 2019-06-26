@@ -12,7 +12,7 @@ import maryk.datastore.shared.StoreAction
 internal typealias ScanChangesStoreAction<DM, P> = StoreAction<DM, P, ScanChangesRequest<DM, P>, ChangesResponse<DM>>
 internal typealias AnyScanChangesStoreAction = ScanChangesStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
 
-/** Processes a ScanRequest in a [storeAction] into a [dataStore] */
+/** Processes a ScanChangesRequest in a [storeAction] into a [dataStore] */
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processScanChangesRequest(
     storeAction: ScanChangesStoreAction<DM, P>,
     dataStore: DataStore<DM, P>

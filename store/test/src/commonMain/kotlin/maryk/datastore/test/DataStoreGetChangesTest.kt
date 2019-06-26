@@ -1,5 +1,6 @@
 package maryk.datastore.test
 
+import maryk.core.exceptions.RequestException
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.VersionedChanges
@@ -12,6 +13,7 @@ import maryk.test.assertType
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.addRequest
 import maryk.test.runSuspendingTest
+import kotlin.test.assertFailsWith
 import kotlin.test.expect
 
 class DataStoreGetChangesTest(
@@ -82,11 +84,21 @@ class DataStoreGetChangesTest(
     }
 
     private fun executeToVersionGetChangesRequest() = runSuspendingTest {
-        val getResponse = dataStore.execute(
-            SimpleMarykModel.getChanges(*keys.toTypedArray(), toVersion = lowestVersion - 1uL)
-        )
+        if (dataStore.keepAllVersions) {
+            val getResponse = dataStore.execute(
+                SimpleMarykModel.getChanges(*keys.toTypedArray(), toVersion = lowestVersion - 1uL)
+            )
 
-        expect(0) { getResponse.changes.size }
+            expect(0) { getResponse.changes.size }
+        } else {
+            assertFailsWith<RequestException> {
+                runSuspendingTest {
+                    dataStore.execute(
+                        SimpleMarykModel.getChanges(*keys.toTypedArray(), toVersion = lowestVersion - 1uL)
+                    )
+                }
+            }
+        }
     }
 
     private fun executeFromVersionGetChangesRequest() = runSuspendingTest {

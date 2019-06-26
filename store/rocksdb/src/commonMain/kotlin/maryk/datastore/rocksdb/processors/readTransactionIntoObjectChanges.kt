@@ -1,5 +1,6 @@
 package maryk.datastore.rocksdb.processors
 
+import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.initULong
@@ -11,14 +12,14 @@ import maryk.core.processors.datastore.StorageTypeEnum.ObjectDelete
 import maryk.core.processors.datastore.StorageTypeEnum.SetSize
 import maryk.core.processors.datastore.StorageTypeEnum.TypeValue
 import maryk.core.processors.datastore.StorageTypeEnum.Value
-import maryk.core.processors.datastore.convertStorageToValues
+import maryk.core.processors.datastore.readStorageToChanges
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
-import maryk.core.query.ValuesWithMetaData
-import maryk.core.values.Values
+import maryk.core.query.changes.DataObjectVersionedChange
+import maryk.core.query.changes.VersionedChanges
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.checkExistence
@@ -27,23 +28,20 @@ import maryk.datastore.rocksdb.processors.helpers.nonHistoricQualifierRetriever
 import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.Transaction
 
-/**
- * Read values for [key] from a [transaction] with [readOptions] from [columnFamilies]
- * to a ValuesWithMeta object. Filter results on [select] and use [toVersion]
- */
-internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTransactionIntoValuesWithMetaData(
+/** Processes values for [key] from transaction to a DataObjectWithChanges object */
+internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTransactionIntoObjectChanges(
     transaction: Transaction,
     readOptions: ReadOptions,
     creationVersion: ULong,
     columnFamilies: TableColumnFamilies,
     key: Key<DM>,
     select: RootPropRefGraph<P>?,
+    fromVersion: ULong,
     toVersion: ULong?
-): ValuesWithMetaData<DM, P>? {
-    var maxVersion = creationVersion
-    var isDeleted = false
+): DataObjectVersionedChange<DM>? {
+    val changes: List<VersionedChanges>
 
-    val values: Values<DM, P> = if (toVersion == null) {
+    if (toVersion == null) {
         val iterator = transaction.getIterator(readOptions, columnFamilies.table)
 
         checkExistence(iterator, key)
@@ -52,25 +50,25 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
         val getQualifier = iterator.nonHistoricQualifierRetriever(key)
 
         var index: Int
-        this.convertStorageToValues(
+        changes = this.readStorageToChanges(
             getQualifier = getQualifier,
             select = select,
-            processValue = { storageType, definition ->
-                when (storageType) {
+            processValue = { storageType, definition, valueWithVersionReader ->
+                val currentVersion: ULong
+                val value = when (storageType) {
                     ObjectDelete -> {
-                        if (iterator.key().last() == 0.toByte()) {
-                            val value = iterator.value()
-                            index = 0
-                            maxVersion = maxOf(initULong({ value[index++] }), maxVersion)
-                            isDeleted = value[index] == TRUE
-                        }
-                        null
+                        val valueBytes = iterator.value()
+                        val value = if (iterator.key()[key.size] == 0.toByte()) {
+                            valueBytes.last() == TRUE
+                        } else null
+                        index = 0
+                        currentVersion = initULong({ valueBytes[index++] })
+                        value
                     }
                     Value -> {
                         val valueBytes = iterator.value()
                         index = 0
-                        maxVersion = maxOf(initULong({ valueBytes[index++] }), maxVersion)
-
+                        currentVersion = initULong({ valueBytes[index++] })
                         Value.castDefinition(definition).readStorageBytes(valueBytes.size - index) {
                             valueBytes[index++]
                         }
@@ -78,22 +76,19 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
                     ListSize -> {
                         val valueBytes = iterator.value()
                         index = 0
-                        maxVersion = maxOf(initULong({ valueBytes[index++] }), maxVersion)
-
+                        currentVersion = initULong({ valueBytes[index++] })
                         initIntByVar { valueBytes[index++] }
                     }
                     SetSize -> {
                         val valueBytes = iterator.value()
                         index = 0
-                        maxVersion = maxOf(initULong({ valueBytes[index++] }), maxVersion)
-
+                        currentVersion = initULong({ valueBytes[index++] })
                         initIntByVar { valueBytes[index++] }
                     }
                     MapSize -> {
                         val valueBytes = iterator.value()
                         index = 0
-                        maxVersion = maxOf(initULong({ valueBytes[index++] }), maxVersion)
-
+                        currentVersion = initULong({ valueBytes[index++] })
                         initIntByVar { valueBytes[index++] }
                     }
                     TypeValue -> {
@@ -101,11 +96,11 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
                         index = 0
                         val reader = { valueBytes[index++] }
 
-                        maxVersion = maxOf(initULong(reader), maxVersion)
+                        currentVersion = initULong(reader)
+
                         val typeDefinition = TypeValue.castDefinition(definition)
 
                         val indicatorByte = reader()
-
                         val type = typeDefinition.typeEnum.readStorageBytes(typeDefinition.typeEnum.byteSize, reader)
 
                         if (indicatorByte == COMPLEX_TYPE_INDICATOR) {
@@ -115,38 +110,47 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
                             valueDefinition.readStorageBytes(valueBytes.size - index, reader)
                         }
                     }
-                    Embed -> { Unit }
+                    Embed -> {
+                        val valueBytes = iterator.value()
+                        index = 0
+                        val reader = { valueBytes[index++] }
+
+                        currentVersion = initULong(reader)
+                    }
+                }
+                if (currentVersion >= fromVersion) {
+                    valueWithVersionReader(HLC(currentVersion), value)
                 }
             }
-        ).also {
-            iterator.close()
-        }
+        )
     } else {
         if (columnFamilies !is HistoricTableColumnFamilies) {
-            throw RequestException("No historic table present so cannot use `toVersion` on get")
+            throw RequestException("No historic table present so cannot use `toVersion` on get changes")
         }
 
         val iterator = transaction.getIterator(readOptions, columnFamilies.historic.table)
 
         checkExistence(iterator, key)
 
+        var currentVersion: ULong = creationVersion
+
         // Will start by going to next key so will miss the creation timestamp
         val getQualifier = iterator.historicQualifierRetriever(key, toVersion) { version ->
-            maxVersion = maxOf(version, maxVersion)
+            currentVersion = version
         }
 
         var index: Int
-        this.convertStorageToValues(
+        changes = this.readStorageToChanges(
             getQualifier = getQualifier,
             select = select,
-            processValue = { storageType, definition ->
-                when (storageType) {
+            processValue = { storageType, definition, valueWithVersionReader ->
+                val value = when (storageType) {
                     ObjectDelete -> {
-                        if (iterator.key().last() == 0.toByte()) {
+                        val value = if (iterator.key().last() == 0.toByte()) {
                             val value = iterator.value()
-                            isDeleted = value[0] == TRUE
-                        }
-                        null
+                            value[0] == TRUE
+                        } else null
+                        value
                     }
                     Value -> {
                         val valueBytes = iterator.value()
@@ -189,20 +193,19 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
                     }
                     Embed -> { Unit }
                 }
+                if (currentVersion >= fromVersion) {
+                    valueWithVersionReader(HLC(currentVersion), value)
+                }
             }
         )
     }
 
-    if (values.size == 0) {
+    if (changes.isEmpty()) {
         // Return null if no ValueItems were found
         return null
     }
-
-    return ValuesWithMetaData(
+    return DataObjectVersionedChange(
         key = key,
-        values = values,
-        isDeleted = isDeleted,
-        firstVersion = creationVersion,
-        lastVersion = maxVersion
+        changes = changes
     )
 }

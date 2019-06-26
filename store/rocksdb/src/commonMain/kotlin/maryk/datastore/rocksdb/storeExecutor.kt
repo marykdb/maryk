@@ -10,9 +10,11 @@ import maryk.core.query.requests.ScanChangesRequest
 import maryk.core.query.requests.ScanRequest
 import maryk.datastore.rocksdb.processors.AnyAddStoreAction
 import maryk.datastore.rocksdb.processors.AnyDeleteStoreAction
+import maryk.datastore.rocksdb.processors.AnyGetChangesStoreAction
 import maryk.datastore.rocksdb.processors.AnyGetStoreAction
 import maryk.datastore.rocksdb.processors.processAddRequest
 import maryk.datastore.rocksdb.processors.processDeleteRequest
+import maryk.datastore.rocksdb.processors.processGetChangesRequest
 import maryk.datastore.rocksdb.processors.processGetRequest
 
 /** Executor of StoreActions onto DataStore */
@@ -24,7 +26,7 @@ internal val storeExecutor: StoreExecutor = { storeAction, db ->
         is GetRequest<*, *> ->
             processGetRequest(storeAction as AnyGetStoreAction, db)
         is GetChangesRequest<*, *> ->
-            TODO("GET CHANGES")
+            processGetChangesRequest(storeAction as AnyGetChangesStoreAction, db)
         is ChangeRequest<*> ->
             TODO("CHANGE")
         is DeleteRequest<*> ->

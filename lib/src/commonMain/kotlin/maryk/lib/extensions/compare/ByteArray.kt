@@ -64,6 +64,7 @@ fun ByteArray.compareDefinedTo(other: ByteArray, offset: Int): Int {
  * It will match in reverse order since that usage is faster in sorted lists
  */
 fun ByteArray.matchPart(fromIndex: Int, bytes: ByteArray): Boolean {
+    if (bytes.size > this.size - fromIndex) return false
     for (index in bytes.lastIndex downTo 0) {
         if (this[index + fromIndex] != bytes[index]) return false
     }

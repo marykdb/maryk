@@ -1,5 +1,6 @@
 package maryk.datastore.test
 
+import maryk.core.exceptions.RequestException
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
@@ -16,6 +17,7 @@ import maryk.test.models.Log
 import maryk.test.models.Severity.ERROR
 import maryk.test.models.Severity.INFO
 import maryk.test.runSuspendingTest
+import kotlin.test.assertFailsWith
 import kotlin.test.expect
 
 class DataStoreScanChangesTest(
@@ -168,11 +170,21 @@ class DataStoreScanChangesTest(
     }
 
     private fun executeScanChangesRequestWithToVersion() = runSuspendingTest {
-        val scanResponse = dataStore.execute(
-            Log.scanChanges(startKey = keys[2], toVersion = lowestVersion - 1uL)
-        )
+        if (dataStore.keepAllVersions) {
+            val scanResponse = dataStore.execute(
+                Log.scanChanges(startKey = keys[2], toVersion = lowestVersion - 1uL)
+            )
 
-        expect(0) { scanResponse.changes.size }
+            expect(0) { scanResponse.changes.size }
+        } else {
+            assertFailsWith<RequestException> {
+                runSuspendingTest {
+                    dataStore.execute(
+                        Log.scanChanges(startKey = keys[2], toVersion = lowestVersion - 1uL)
+                    )
+                }
+            }
+        }
     }
 
     private fun executeScanChangesRequestWithFromVersion() = runSuspendingTest {

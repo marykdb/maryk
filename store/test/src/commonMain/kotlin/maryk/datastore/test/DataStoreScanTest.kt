@@ -6,6 +6,7 @@ import maryk.core.aggregations.metric.Max
 import maryk.core.aggregations.metric.MaxResponse
 import maryk.core.aggregations.metric.Min
 import maryk.core.aggregations.metric.MinResponse
+import maryk.core.exceptions.RequestException
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.Key
 import maryk.core.query.filters.Equals
@@ -25,6 +26,7 @@ import maryk.test.models.Severity.DEBUG
 import maryk.test.models.Severity.ERROR
 import maryk.test.models.Severity.INFO
 import maryk.test.runSuspendingTest
+import kotlin.test.assertFailsWith
 import kotlin.test.expect
 
 class DataStoreScanTest(
@@ -168,11 +170,21 @@ class DataStoreScanTest(
     }
 
     private fun executeScanRequestWithToVersion() = runSuspendingTest {
-        val scanResponse = dataStore.execute(
-            Log.scan(startKey = keys[2], toVersion = lowestVersion - 1uL)
-        )
+        if (dataStore.keepAllVersions) {
+            val scanResponse = dataStore.execute(
+                Log.scan(startKey = keys[2], toVersion = lowestVersion - 1uL)
+            )
 
-        expect(0) { scanResponse.values.size }
+            expect(0) { scanResponse.values.size }
+        } else {
+            assertFailsWith<RequestException> {
+                runSuspendingTest {
+                    dataStore.execute(
+                        Log.scan(startKey = keys[2], toVersion = lowestVersion - 1uL)
+                    )
+                }
+            }
+        }
     }
 
     private fun executeScanRequestWithSelect() = runSuspendingTest {

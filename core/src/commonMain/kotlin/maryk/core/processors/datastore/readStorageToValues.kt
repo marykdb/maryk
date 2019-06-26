@@ -13,6 +13,7 @@ import maryk.core.models.values
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.ListSize
 import maryk.core.processors.datastore.StorageTypeEnum.MapSize
+import maryk.core.processors.datastore.StorageTypeEnum.ObjectDelete
 import maryk.core.processors.datastore.StorageTypeEnum.SetSize
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.PropertyDefinitions
@@ -102,7 +103,8 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
         } else {
             when (val refStoreType = referenceStorageTypeOf(type)) {
                 DELETE -> {
-                } // Ignore since it should be handled on higher level
+                    readValueFromStorage(ObjectDelete, null)
+                }
                 else -> {
                     val definition = this.properties[index]
                         ?: throw DefNotFoundException("No definition for $index in $this at $index")

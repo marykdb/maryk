@@ -3,7 +3,7 @@ package maryk.core.extensions.bytes
 import maryk.lib.exceptions.ParseException
 
 /** Write the bytes of this ULong to a [writer] */
-internal fun ULong.writeBytes(writer: (byte: Byte) -> Unit, length: Int = 8) {
+fun ULong.writeBytes(writer: (byte: Byte) -> Unit, length: Int = 8) {
     if (length !in 5..8) {
         throw IllegalArgumentException("Length should be within range of 5 to 8")
     }

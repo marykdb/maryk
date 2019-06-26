@@ -1,6 +1,7 @@
 package maryk.datastore.rocksdb.processors
 
 import maryk.core.aggregations.Aggregator
+import maryk.core.extensions.bytes.toULong
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -39,16 +40,17 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
                 keyWalk@ for (key in getRequest.keys) {
                     val mayExist = dataStore.db.keyMayExist(columnFamilies.table, key.bytes, StringBuilder())
                     if (mayExist) {
-                        val creationVersion = transaction.get(columnFamilies.table, readOptions, key.bytes)
+                        val creationVersion = transaction.get(columnFamilies.table, readOptions, key.bytes)?.toULong()
 
                         if (creationVersion != null) {
-                            if (getRequest.shouldBeFiltered(transaction, columnFamilies, readOptions, key.bytes, getRequest.toVersion)) {
+                            if (getRequest.shouldBeFiltered(transaction, columnFamilies, readOptions, key.bytes, creationVersion, getRequest.toVersion)) {
                                 continue@keyWalk
                             }
 
                             val valuesWithMetaData = getRequest.dataModel.readTransactionIntoValuesWithMetaData(
                                 transaction,
                                 readOptions,
+                                creationVersion,
                                 columnFamilies,
                                 key,
                                 getRequest.select,

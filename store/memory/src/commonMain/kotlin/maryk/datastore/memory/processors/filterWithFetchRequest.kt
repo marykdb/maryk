@@ -31,6 +31,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> IsFetchReq
     dataRecord: DataRecord<DM, P>,
     toVersion: HLC?
 ) = when {
+    toVersion != null && dataRecord.firstVersion > toVersion -> true
     this.filterSoftDeleted && dataRecord.isDeleted(toVersion) -> true
     this.where != null -> !filterMatches(where as IsFilter, dataRecord, toVersion)
     else -> false

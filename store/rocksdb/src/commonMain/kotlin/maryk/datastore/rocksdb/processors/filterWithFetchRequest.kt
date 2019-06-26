@@ -4,6 +4,7 @@ import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.requests.IsFetchRequest
 import maryk.datastore.rocksdb.TableColumnFamilies
+import maryk.datastore.rocksdb.processors.helpers.get
 import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.Transaction
 
@@ -17,25 +18,15 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> IsFetchReq
     columnFamilies: TableColumnFamilies,
     readOptions: ReadOptions,
     key: ByteArray,
+    createdVersion: ULong,
     toVersion: ULong?
 ) = when {
+    toVersion != null && createdVersion > toVersion -> true
     this.filterSoftDeleted && transaction.get(columnFamilies, readOptions, toVersion, byteArrayOf(*key, SOFT_DELETE_INDICATOR))?.last() == TRUE -> true
 //    this.where != null -> !filterMatches(where as IsFilter, transaction, columnFamilies, readOptions, toVersion)
     else -> false
 }
 
-private fun Transaction.get(
-    columnFamilies: TableColumnFamilies,
-    readOptions: ReadOptions,
-    toVersion: ULong?,
-    reference: ByteArray
-): ByteArray? {
-    return if (toVersion == null) {
-        this.get(columnFamilies.table, readOptions, reference)
-    } else {
-        TODO("IMPLEMENT HISTORIC GET")
-    }
-}
 //
 ///** Test if [dataRecord] is passing given [filter]. True if filter matches */
 //internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> filterMatches(

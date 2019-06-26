@@ -59,10 +59,13 @@ fun ByteArray.compareDefinedTo(other: ByteArray, offset: Int): Int {
     }
 }
 
-/** Match given [bytes] to a part from index [fromIndex] */
+/**
+ * Match given [bytes] to a part from index [fromIndex]
+ * It will match in reverse order since that usage is faster in sorted lists
+ */
 fun ByteArray.matchPart(fromIndex: Int, bytes: ByteArray): Boolean {
-    bytes.forEachIndexed { index, byte ->
-        if (this[index + fromIndex] != byte) return false
+    for (index in bytes.lastIndex downTo 0) {
+        if (this[index + fromIndex] != bytes[index]) return false
     }
     return true
 }

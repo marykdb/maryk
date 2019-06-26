@@ -3,7 +3,6 @@ package maryk.datastore.rocksdb.processors
 import maryk.core.exceptions.RequestException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.initULong
-import maryk.core.extensions.bytes.toULong
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.ListSize
@@ -22,8 +21,10 @@ import maryk.core.query.ValuesWithMetaData
 import maryk.core.values.Values
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
-import maryk.lib.extensions.compare.matchPart
+import maryk.datastore.rocksdb.processors.helpers.historicQualifierRetriever
+import maryk.datastore.rocksdb.processors.helpers.nonHistoricQualifierRetriever
 import maryk.rocksdb.ReadOptions
+import maryk.rocksdb.RocksIterator
 import maryk.rocksdb.Transaction
 
 /**
@@ -33,45 +34,22 @@ import maryk.rocksdb.Transaction
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTransactionIntoValuesWithMetaData(
     transaction: Transaction,
     readOptions: ReadOptions,
+    creationVersion: ULong,
     columnFamilies: TableColumnFamilies,
     key: Key<DM>,
     select: RootPropRefGraph<P>?,
     toVersion: ULong?
 ): ValuesWithMetaData<DM, P>? {
-    val firstVersion = transaction.get(columnFamilies.table, readOptions, key.bytes)?.toULong()
-        ?: return null
-    var maxVersion = firstVersion
-    val isDeleted: Boolean
+    var maxVersion = creationVersion
+    var isDeleted = false
 
     val values: Values<DM, P> = if (toVersion == null) {
         val iterator = transaction.getIterator(readOptions, columnFamilies.table)
 
-        isDeleted = transaction.get(columnFamilies.table, readOptions, byteArrayOf(*key.bytes, SOFT_DELETE_INDICATOR))?.last() == TRUE
+        checkExistence(iterator, key)
 
-        // Start at begin of record
-        iterator.seek(key.bytes)
-        iterator.key()
-
-        val getQualifier = {
-            iterator.next()
-            if (!iterator.isValid()) {
-                null
-            } else {
-                var qualifier: ByteArray? = iterator.key()
-                if (qualifier?.size == key.bytes.size) {
-                    iterator.next()
-                    qualifier = if (!iterator.isValid()) {
-                        null
-                    } else {
-                        iterator.key()
-                    }
-                }
-
-                if (qualifier != null && qualifier.matchPart(0, key.bytes)) {
-                    qualifier.copyOfRange(key.bytes.size, qualifier.size)
-                } else null
-            }
-        }
+        // Will start by going to next key so will miss the creation timestamp
+        val getQualifier = iterator.nonHistoricQualifierRetriever(key)
 
         var index: Int
         this.convertStorageToValues(
@@ -79,7 +57,15 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
             select = select,
             processValue = { storageType, definition ->
                 when (storageType) {
-                    ObjectDelete -> null
+                    ObjectDelete -> {
+                        if (iterator.key().last() == 0.toByte()) {
+                            val value = iterator.value()
+                            index = 0
+                            maxVersion = maxOf(initULong({ value[index++] }), maxVersion)
+                            isDeleted = value[index] == TRUE
+                        }
+                        null
+                    }
                     Value -> {
                         val valueBytes = iterator.value()
                         index = 0
@@ -140,16 +126,71 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
             throw RequestException("No historic table present so cannot use `toVersion`")
         }
 
-//        val iterator = transaction.getIterator(readOptions, columnFamilies.historic.table)
-//
-//        this.convertStorageToValues(
-//            getQualifier = { record.values.getOrNull(++valueIndex)?.reference },
-//            select = select,
-//            processValue = { _, _ ->
-//
-//            }
-//        )
-        TODO("IMPLEMENT")
+        val iterator = transaction.getIterator(readOptions, columnFamilies.historic.table)
+
+        checkExistence(iterator, key)
+
+        // Will start by going to next key so will miss the creation timestamp
+        val getQualifier = iterator.historicQualifierRetriever(key, toVersion) { version ->
+            maxVersion = maxOf(version, maxVersion)
+        }
+
+        var index: Int
+        this.convertStorageToValues(
+            getQualifier = getQualifier,
+            select = select,
+            processValue = { storageType, definition ->
+                when (storageType) {
+                    ObjectDelete -> {
+                        if (iterator.key().last() == 0.toByte()) {
+                            val value = iterator.value()
+                            isDeleted = value[0] == TRUE
+                        }
+                        null
+                    }
+                    Value -> {
+                        val valueBytes = iterator.value()
+                        index = 0
+                        Value.castDefinition(definition).readStorageBytes(valueBytes.size) {
+                            valueBytes[index++]
+                        }
+                    }
+                    ListSize -> {
+                        val valueBytes = iterator.value()
+                        index = 0
+                        initIntByVar { valueBytes[index++] }
+                    }
+                    SetSize -> {
+                        val valueBytes = iterator.value()
+                        index = 0
+                        initIntByVar { valueBytes[index++] }
+                    }
+                    MapSize -> {
+                        val valueBytes = iterator.value()
+                        index = 0
+                        initIntByVar { valueBytes[index++] }
+                    }
+                    TypeValue -> {
+                        val valueBytes = iterator.value()
+                        index = 0
+                        val reader = { valueBytes[index++] }
+
+                        val typeDefinition = TypeValue.castDefinition(definition)
+
+                        val indicatorByte = reader()
+                        val type = typeDefinition.typeEnum.readStorageBytes(typeDefinition.typeEnum.byteSize, reader)
+
+                        if (indicatorByte == COMPLEX_TYPE_INDICATOR) {
+                            TypedValue(type, Unit)
+                        } else {
+                            val valueDefinition = typeDefinition.definition(type) as IsSimpleValueDefinition<*, *>
+                            valueDefinition.readStorageBytes(valueBytes.size - index, reader)
+                        }
+                    }
+                    Embed -> { Unit }
+                }
+            }
+        )
     }
 
     if (values.size == 0) {
@@ -161,7 +202,28 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
         key = key,
         values = values,
         isDeleted = isDeleted,
-        firstVersion = firstVersion,
+        firstVersion = creationVersion,
         lastVersion = maxVersion
     )
+}
+
+/** Check existence of the [key] on [iterator] by checking existence of creation time */
+private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> checkExistence(
+    iterator: RocksIterator,
+    key: Key<DM>
+) {
+    // Start at begin of record
+    iterator.seek(key.bytes)
+    if (!iterator.isValid()) {
+        // Is already past key so key does not exist
+        // Should not happen since this needs to be checked before
+        throw Exception("Key does not exist while it should have existed")
+    }
+
+    val creationDateKey = iterator.key()
+    if (!key.bytes.contentEquals(creationDateKey)) {
+        // Is already past key so key does not exist
+        // Should not happen since this needs to be checked before
+        throw Exception("Key does not exist while it should have existed")
+    }
 }

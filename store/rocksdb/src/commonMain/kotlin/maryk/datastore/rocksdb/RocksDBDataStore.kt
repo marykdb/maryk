@@ -5,10 +5,12 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.SendChannel
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
-import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.RootDataModel
 import maryk.core.properties.PropertyDefinitions
+import maryk.datastore.rocksdb.TableType.HistoricIndex
+import maryk.datastore.rocksdb.TableType.HistoricTable
+import maryk.datastore.rocksdb.TableType.HistoricUnique
 import maryk.datastore.rocksdb.TableType.Index
 import maryk.datastore.rocksdb.TableType.Table
 import maryk.datastore.rocksdb.TableType.Unique
@@ -16,8 +18,8 @@ import maryk.datastore.rocksdb.processors.TRUE_ARRAY
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.StoreActor
-import maryk.rocksdb.ColumnFamilyDescriptor
 import maryk.rocksdb.ColumnFamilyHandle
+import maryk.rocksdb.ColumnFamilyOptions
 import maryk.rocksdb.Options
 import maryk.rocksdb.TransactionDB
 import maryk.rocksdb.TransactionDBOptions
@@ -53,35 +55,40 @@ class RocksDBDataStore(
     private val storeActor = this.storeActor(this, storeExecutor)
 
     init {
-        for (index in dataModelsById.keys) {
-            columnFamilyHandlesByDataModelIndex[index] = createColumnFamilyHandles(index)
+        for ((index, db) in dataModelsById) {
+            columnFamilyHandlesByDataModelIndex[index] = createColumnFamilyHandles(index, db)
         }
     }
 
-    private fun createColumnFamilyHandles(tableIndex: UInt) : TableColumnFamilies {
-        val columnFamilyNameSize = tableIndex.calculateVarIntWithExtraInfoByteSize()
+    private fun createColumnFamilyHandles(tableIndex: UInt, db: RootDataModel<*, *>) : TableColumnFamilies {
+        val nameSize = tableIndex.calculateVarIntWithExtraInfoByteSize()
 
-        var index = 0
-        val tableTypes = if (keepAllVersions) TableType.values() else arrayOf(Table, Index, Unique)
-
-        val handles = mutableListOf<ColumnFamilyHandle>()
-
-        for (tableType in tableTypes) {
-            val name = ByteArray(columnFamilyNameSize)
-            tableIndex.writeVarIntWithExtraInfo(tableType.byte) { name[index++] = it }
-            index = 0
-            handles += db.createColumnFamily(ColumnFamilyDescriptor(name))
+        // Prefix set to key size for more optimal search.
+        val tableOptions = ColumnFamilyOptions().apply {
+            useFixedLengthPrefixExtractor(db.keyByteSize)
         }
 
+        val tableDesc = this.db.createColumnFamily(Table.getDescriptor(tableIndex, nameSize, tableOptions))
+        val indexDesc = this.db.createColumnFamily(Index.getDescriptor(tableIndex, nameSize))
+        val uniqueDesc = this.db.createColumnFamily(Unique.getDescriptor(tableIndex, nameSize))
+
         return if (keepAllVersions) {
+            val historicTableDesc = this.db.createColumnFamily(HistoricTable.getDescriptor(tableIndex, nameSize, tableOptions))
+            val historicIndexDesc = this.db.createColumnFamily(HistoricIndex.getDescriptor(tableIndex, nameSize))
+            val historicUniqueDesc = this.db.createColumnFamily(HistoricUnique.getDescriptor(tableIndex, nameSize))
+
             HistoricTableColumnFamilies(
-                handles[0],
-                handles[1],
-                handles[2],
-                TableColumnFamilies(handles[3], handles[4], handles[5])
+                tableDesc,
+                indexDesc,
+                uniqueDesc,
+                TableColumnFamilies(
+                    historicTableDesc,
+                    historicIndexDesc,
+                    historicUniqueDesc
+                )
             )
         } else {
-            TableColumnFamilies(handles[0], handles[1], handles[2])
+            TableColumnFamilies(tableDesc, indexDesc, uniqueDesc)
         }
     }
 

@@ -51,6 +51,8 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
                                 // Create version bytes
                                 val versionBytes = HLC.toStorageBytes(version)
                                 ReadOptions().use { readOptions ->
+                                    // On iteration, dont iterate past the prefix/key
+                                    readOptions.setPrefixSameAsStart(true)
                                     dataStore.getUniqueIndices(storeAction.dbIndex, columnFamilies.unique).forEach { ref ->
                                         val value = transaction.get(columnFamilies.table, readOptions, byteArrayOf(*key.bytes, *ref))
 

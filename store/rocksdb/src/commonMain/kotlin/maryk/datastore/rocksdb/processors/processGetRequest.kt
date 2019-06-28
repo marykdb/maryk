@@ -39,6 +39,8 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
     WriteOptions().use { writeOptions ->
         dataStore.db.beginTransaction(writeOptions).use { transaction ->
             ReadOptions().use { readOptions ->
+                // On iteration, dont iterate past the prefix/key
+                readOptions.setPrefixSameAsStart(true)
                 keyWalk@ for (key in getRequest.keys) {
                     val mayExist = dataStore.db.keyMayExist(columnFamilies.table, key.bytes, StringBuilder())
                     if (mayExist) {

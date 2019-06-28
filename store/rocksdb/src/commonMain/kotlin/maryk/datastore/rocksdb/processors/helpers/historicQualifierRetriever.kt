@@ -25,34 +25,30 @@ fun RocksIterator.historicQualifierRetriever(
             if (!isValid()) {
                 break // At end of iterator
             } else {
-                val qualifier: ByteArray? = key()
-                if (qualifier != null && qualifier.matchPart(0, key.bytes)) {
-                    val qualifierToCheck = lastQualifier
-                    if (qualifierToCheck != null && qualifier.matchPart(key.size, qualifierToCheck)) {
-                        continue@qualifierFinder // Already returned this qualifier so skip
-                    }
-
-                    // Skip last version indicator
-                    if (qualifier[key.size] == LAST_VERSION_INDICATOR) {
-                        continue
-                    }
-
-                    var versionOffset = qualifier.size - toVersionBytes.size
-                    if (toVersionBytes.compareWithOffsetTo(qualifier, versionOffset) <= 0) {
-                        toReturn = qualifier.copyOfRange(key.bytes.size, versionOffset)
-
-                        // Return version. Invert it so it is in normal order
-                        handleVersion(
-                            initULong({ qualifier[versionOffset++] xor -1 })
-                        )
-
-                        lastQualifier = toReturn
-                        break
-                    } else continue
-                } else {
-                    // Does not match key so break
-                    break
+                // key range check is ensured with setPrefixSameAsStart
+                val qualifier: ByteArray = key()
+                val qualifierToCheck = lastQualifier
+                if (qualifierToCheck != null && qualifier.matchPart(key.size, qualifierToCheck)) {
+                    continue@qualifierFinder // Already returned this qualifier so skip
                 }
+
+                // Skip last version indicator
+                if (qualifier[key.size] == LAST_VERSION_INDICATOR) {
+                    continue
+                }
+
+                var versionOffset = qualifier.size - toVersionBytes.size
+                if (toVersionBytes.compareWithOffsetTo(qualifier, versionOffset) <= 0) {
+                    toReturn = qualifier.copyOfRange(key.bytes.size, versionOffset)
+
+                    // Return version. Invert it so it is in normal order
+                    handleVersion(
+                        initULong({ qualifier[versionOffset++] xor -1 })
+                    )
+
+                    lastQualifier = toReturn
+                    break
+                } else continue
             }
         }
         toReturn

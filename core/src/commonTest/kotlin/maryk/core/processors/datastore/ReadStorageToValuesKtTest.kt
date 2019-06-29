@@ -17,10 +17,11 @@ class ReadStorageToValuesKtTest {
     fun convertStorageToValues() {
         var qualifierIndex = -1
         val values = TestMarykModel.convertStorageToValues(
-            getQualifier = {
-                valuesAsStorables.getOrNull(++qualifierIndex)?.let {
+            getQualifier = { resultHander ->
+                val qualifier = valuesAsStorables.getOrNull(++qualifierIndex)?.let {
                     initByteArrayByHex(it.first)
                 }
+                qualifier?.let { resultHander({ qualifier[it] }, qualifier.size); true } ?: false
             },
             select = null,
             processValue = { _, _ -> valuesAsStorables[qualifierIndex].second }
@@ -33,10 +34,11 @@ class ReadStorageToValuesKtTest {
     fun convertStorageToComplexValues() {
         var qualifierIndex = -1
         val values = ComplexModel.convertStorageToValues(
-            getQualifier = {
-                complexValuesAsStorables.getOrNull(++qualifierIndex)?.let {
+            getQualifier = { resultHandler ->
+                val qualifier = complexValuesAsStorables.getOrNull(++qualifierIndex)?.let {
                     initByteArrayByHex(it.first)
                 }
+                qualifier?.let { resultHandler({ qualifier[it] }, qualifier.size); true } ?: false
             },
             select = null,
             processValue = { _, _ -> complexValuesAsStorables[qualifierIndex].second }
@@ -49,10 +51,11 @@ class ReadStorageToValuesKtTest {
     fun convertStorageToValuesWithNullsInComplex() {
         var qualifierIndex = -1
         val values = TestMarykModel.convertStorageToValues(
-            getQualifier = {
-                valuesAsStorablesWithNulls.getOrNull(++qualifierIndex)?.let {
+            getQualifier = { resultHandler ->
+                val qualifier = valuesAsStorablesWithNulls.getOrNull(++qualifierIndex)?.let {
                     initByteArrayByHex(it.first)
                 }
+                qualifier?.let { resultHandler({ qualifier[it] }, qualifier.size); true } ?: false
             },
             select = null,
             processValue = { _, _ -> valuesAsStorablesWithNulls[qualifierIndex].second }
@@ -97,10 +100,11 @@ class ReadStorageToValuesKtTest {
 
         var qualifierIndex = -1
         val values = TestMarykModel.convertStorageToValues(
-            getQualifier = {
-                valuesUnset.getOrNull(++qualifierIndex)?.let {
+            getQualifier = { resultHandler ->
+                val qualifier = valuesUnset.getOrNull(++qualifierIndex)?.let {
                     initByteArrayByHex(it.first)
                 }
+                qualifier?.let { resultHandler({ qualifier[it] }, qualifier.size); true } ?: false
             },
             select = null,
             processValue = { _, _ -> valuesUnset[qualifierIndex].second }
@@ -125,10 +129,11 @@ class ReadStorageToValuesKtTest {
 
         var qualifierIndex = -1
         val values = TestMarykModel.convertStorageToValues(
-            getQualifier = {
-                valuesUnset.getOrNull(++qualifierIndex)?.let {
+            getQualifier = { resultHandler ->
+                val qualifier = valuesUnset.getOrNull(++qualifierIndex)?.let {
                     initByteArrayByHex(it.first)
                 }
+                qualifier?.let { resultHandler({ qualifier[it] }, qualifier.size); true } ?: false
             },
             select = null,
             processValue = { _, _ -> valuesUnset[qualifierIndex].second }

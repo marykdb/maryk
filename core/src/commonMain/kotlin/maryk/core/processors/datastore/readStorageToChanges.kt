@@ -83,7 +83,7 @@ private val objectDeletePropertyDefinition = BooleanDefinition()
  * [processValue] processes the storage value with given type and definition
  */
 fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readStorageToChanges(
-    getQualifier: () -> ByteArray?,
+    getQualifier: (((Int) -> Byte, Int) -> Unit) -> Boolean,
     select: RootPropRefGraph<P>?,
     processValue: ValueWithVersionReader
 ): List<VersionedChanges> {
@@ -104,9 +104,9 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readStorageToCha
         }
     }
 
-    processQualifiers(getQualifier) { qualifier, addToCache ->
+    processQualifiers(getQualifier) { qualifierReader, qualifierLength, addToCache ->
         // Otherwise try to get a new qualifier processor from DataModel
-        (this as IsDataModel<P>).readQualifier(qualifier, 0, select, null, changeAdder, processValue, addToCache)
+        (this as IsDataModel<P>).readQualifier(qualifierReader, qualifierLength, 0, select, null, changeAdder, processValue, addToCache)
     }
 
     // Create Values
@@ -182,13 +182,14 @@ private fun createChange(changeType: ChangeType, changePart: Any) = when (change
 }
 
 /**
- * Read specific [qualifier] from [offset].
+ * Read specific [qualifierReader] from [offset].
  * [addChangeToOutput] is used to add changes to output
  * [readValueFromStorage] is used to fetch actual value from storage layer
  * [addToCache] is used to add a sub reader to cache so it does not need to reprocess qualifier from start
  */
 private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
-    qualifier: ByteArray,
+    qualifierReader: (Int) -> Byte,
+    qualifierLength: Int,
     offset: Int,
     select: IsPropRefGraph<P>?,
     parentReference: IsPropertyReference<*, *, *>?,
@@ -198,7 +199,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
 ) {
     var currentOffset = offset
 
-    initUIntByVarWithExtraInfo({ qualifier[currentOffset++] }) { index, type ->
+    initUIntByVarWithExtraInfo({ qualifierReader(currentOffset++) }) { index, type ->
         val subSelect = select?.selectNodeOrNull(index)
 
         if (select != null && subSelect == null) {
@@ -217,7 +218,8 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                     val definition = this.properties[index]
                         ?: throw DefNotFoundException("No definition for $index in $this at $index")
                     readQualifierOfType(
-                        qualifier,
+                        qualifierReader,
+                        qualifierLength,
                         currentOffset,
                         definition.definition,
                         refStoreType,
@@ -234,9 +236,10 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
     }
 }
 
-/** Read qualifier from [qualifier] at [currentOffset] with [definition] into changes */
+/** Read qualifier from [qualifierReader] at [currentOffset] with [definition] into changes */
 private fun <P : PropertyDefinitions> readQualifierOfType(
-    qualifier: ByteArray,
+    qualifierReader: (Int) -> Byte,
+    qualifierLength: Int,
     currentOffset: Int,
     definition: IsPropertyDefinition<out Any>,
     refStoreType: ReferenceType,
@@ -248,7 +251,7 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
     addToCache: CacheProcessor
 ) {
     var offset = currentOffset
-    val isAtEnd = qualifier.size <= offset
+    val isAtEnd = qualifierLength <= offset
 
     when (refStoreType) {
         DELETE -> {
@@ -268,7 +271,8 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
                         } else { // Is a TypedValue with Unit as value
                             @Suppress("UNCHECKED_CAST")
                             readTypedValue(
-                                qualifier,
+                                qualifierReader,
+                                qualifierLength,
                                 offset,
                                 readValueFromStorage,
                                 definition as IsMultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>,
@@ -287,7 +291,8 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
                 }
                 @Suppress("UNCHECKED_CAST")
                 readTypedValue(
-                    qualifier,
+                    qualifierReader,
+                    qualifierLength,
                     offset,
                     readValueFromStorage,
                     definition as IsMultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>,
@@ -312,7 +317,8 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
                     throw TypeException("Only Embeds types are allowed to be encoded as EMBED type with complex qualifiers. Not $definition")
                 }
                 readEmbeddedValues(
-                    qualifier,
+                    qualifierReader,
+                    qualifierLength,
                     offset,
                     readValueFromStorage,
                     definition,
@@ -340,7 +346,7 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
                 val valueDefinition =
                     ((definition as IsListDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
 
-                val listIndex = initUInt({ qualifier[offset++] })
+                val listIndex = initUInt({ qualifierReader(offset++) })
 
                 readValueFromStorage(Value, valueDefinition) { version, value ->
                     if (value == null) {
@@ -375,8 +381,8 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
                 // Read set contents. Always a simple value for set since it is in qualifier
                 val valueDefinition =
                     ((definition as IsSetDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
-                val setItemLength = initIntByVar { qualifier[offset++] }
-                val key = valueDefinition.readStorageBytes(setItemLength) { qualifier[offset++] }
+                val setItemLength = initIntByVar { qualifierReader(offset++) }
+                val key = valueDefinition.readStorageBytes(setItemLength) { qualifierReader(offset++) }
 
                 readValueFromStorage(Value, valueDefinition) { version, value ->
                     if (value == null) {
@@ -409,10 +415,10 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
                     ((definition as IsMapDefinition<*, *, *>).keyDefinition as IsSimpleValueDefinition<*, *>)
                 val valueDefinition =
                     ((definition as IsMapDefinition<*, *, *>).valueDefinition as IsSubDefinition<*, *>)
-                val keySize = initIntByVar { qualifier[offset++] }
-                val key = keyDefinition.readStorageBytes(keySize) { qualifier[offset++] }
+                val keySize = initIntByVar { qualifierReader(offset++) }
+                val key = keyDefinition.readStorageBytes(keySize) { qualifierReader(offset++) }
 
-                if (qualifier.size <= offset) {
+                if (qualifierLength <= offset) {
                     readValueFromStorage(Value, valueDefinition) { version, value ->
                         val valueReference = mapDefinition.valueRef(key, mapReference)
                         if (value == null) {
@@ -423,7 +429,8 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
                             } else {
                                 @Suppress("UNCHECKED_CAST")
                                 readTypedValue(
-                                    qualifier,
+                                    qualifierReader,
+                                    qualifierLength,
                                     offset,
                                     readValueFromStorage,
                                     valueDefinition as IsMultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>,
@@ -437,7 +444,8 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
                     }
                 } else {
                     readComplexChanges(
-                        qualifier,
+                        qualifierReader,
+                        qualifierLength,
                         offset,
                         valueDefinition,
                         mapDefinition.valueRef(key, mapReference),
@@ -456,7 +464,8 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
                     ?: throw TypeException("Definition($index) $definition should be a TypedDefinition")
 
             typedDefinition.readComplexTypedValue(
-                qualifier,
+                qualifierReader,
+                qualifierLength,
                 offset,
                 readValueFromStorage,
                 index.toUInt(),
@@ -470,7 +479,8 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
 }
 
 private fun <P : PropertyDefinitions> readComplexChanges(
-    qualifier: ByteArray,
+    qualifierReader: (Int) -> Byte,
+    qualifierLength: Int,
     offset: Int,
     definition: IsSubDefinition<*, *>,
     parentReference: IsPropertyReference<*, *, *>?,
@@ -483,7 +493,8 @@ private fun <P : PropertyDefinitions> readComplexChanges(
         is IsMultiTypeDefinition<*, *, *> -> {
             @Suppress("UNCHECKED_CAST")
             readTypedValue(
-                qualifier,
+                qualifierReader,
+                qualifierLength,
                 offset,
                 readValueFromStorage,
                 definition as IsMultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>,
@@ -495,7 +506,8 @@ private fun <P : PropertyDefinitions> readComplexChanges(
         }
         is IsEmbeddedDefinition<*, *> -> {
             readEmbeddedValues(
-                qualifier,
+                qualifierReader,
+                qualifierLength,
                 offset,
                 readValueFromStorage,
                 definition,
@@ -507,7 +519,8 @@ private fun <P : PropertyDefinitions> readComplexChanges(
         }
         is IsListDefinition<*, *> -> {
             readQualifierOfType(
-                qualifier = qualifier,
+                qualifierReader = qualifierReader,
+                qualifierLength = qualifierLength,
                 currentOffset = offset + 1,
                 definition = definition,
                 refStoreType = LIST,
@@ -521,7 +534,8 @@ private fun <P : PropertyDefinitions> readComplexChanges(
         }
         is IsSetDefinition<*, *> -> {
             readQualifierOfType(
-                qualifier = qualifier,
+                qualifierReader = qualifierReader,
+                qualifierLength = qualifierLength,
                 currentOffset = offset + 1,
                 definition = definition,
                 refStoreType = SET,
@@ -535,7 +549,8 @@ private fun <P : PropertyDefinitions> readComplexChanges(
         }
         is IsMapDefinition<*, *, *> -> {
             readQualifierOfType(
-                qualifier = qualifier,
+                qualifierReader = qualifierReader,
+                qualifierLength = qualifierLength,
                 currentOffset = offset + 1,
                 definition = definition,
                 refStoreType = MAP,
@@ -553,7 +568,8 @@ private fun <P : PropertyDefinitions> readComplexChanges(
 
 /** Read a typed value */
 private fun readTypedValue(
-    qualifier: ByteArray,
+    qualifierReader: (Int) -> Byte,
+    qualifierLength: Int,
     offset: Int,
     readValueFromStorage: ValueWithVersionReader,
     valueDefinition: IsMultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>,
@@ -563,7 +579,7 @@ private fun readTypedValue(
     addChangeToOutput: ChangeAdder
 ) {
     var qIndex1 = offset
-    if (qualifier.size <= qIndex1) {
+    if (qualifierLength <= qIndex1) {
         readValueFromStorage(Value, valueDefinition) { version, value ->
             if (value == null) {
                 addChangeToOutput(version, ChangeType.DELETE, reference as Any)
@@ -595,9 +611,10 @@ private fun readTypedValue(
             }
         }
     } else {
-        initUIntByVarWithExtraInfo({ qualifier[qIndex1++] }) { typeIndex, _ ->
+        initUIntByVarWithExtraInfo({ qualifierReader(qIndex1++) }) { typeIndex, _ ->
             valueDefinition.readComplexTypedValue(
-                qualifier,
+                qualifierReader,
+                qualifierLength,
                 qIndex1,
                 readValueFromStorage,
                 typeIndex,
@@ -610,9 +627,10 @@ private fun readTypedValue(
     }
 }
 
-/** Read a complex Typed value from [qualifier] */
+/** Read a complex Typed value from [qualifierReader] */
 private fun IsMultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>.readComplexTypedValue(
-    qualifier: ByteArray,
+    qualifierReader: (Int) -> Byte,
+    qualifierLength: Int,
     offset: Int,
     readValueFromStorage: ValueWithVersionReader,
     index: UInt,
@@ -627,12 +645,13 @@ private fun IsMultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>.readCom
         ?: throw DefNotFoundException("Unknown type $index for $this")
     val typedValueReference = TypedValueReference(type, this, reference as CanHaveComplexChildReference<*, *, *, *>?)
 
-    if (qualifier.size <= offset) {
+    if (qualifierLength <= offset) {
         return // Skip because is only complex exists indicator
     }
 
     readComplexChanges(
-        qualifier,
+        qualifierReader,
+        qualifierLength,
         offset,
         definition,
         typedValueReference,
@@ -644,7 +663,8 @@ private fun IsMultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>.readCom
 }
 
 private fun <P : PropertyDefinitions> readEmbeddedValues(
-    qualifier: ByteArray,
+    qualifierReader: (Int) -> Byte,
+    qualifierLength: Int,
     offset: Int,
     readValueFromStorage: ValueWithVersionReader,
     definition: IsEmbeddedDefinition<*, *>,
@@ -664,9 +684,9 @@ private fun <P : PropertyDefinitions> readEmbeddedValues(
         select as IsPropRefGraph<PropertyDefinitions>
     } else null
 
-    addToCache(offset - 1) { q ->
+    addToCache(offset - 1) { qr, l ->
         dataModel.readQualifier(
-            q,
+            qr, l,
             offset,
             specificSelect,
             parentReference,
@@ -677,7 +697,8 @@ private fun <P : PropertyDefinitions> readEmbeddedValues(
     }
 
     dataModel.readQualifier(
-        qualifier,
+        qualifierReader,
+        qualifierLength,
         offset,
         specificSelect,
         parentReference,

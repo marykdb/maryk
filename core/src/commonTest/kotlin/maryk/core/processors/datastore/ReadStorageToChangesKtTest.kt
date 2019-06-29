@@ -57,15 +57,16 @@ class ReadStorageToChangesKtTest {
     fun convertStorageToChanges() {
         var qualifierIndex = -1
         val values = TestMarykModel.readStorageToChanges(
-            getQualifier = {
-                valuesAsStorablesWithVersion.getOrNull(++qualifierIndex)?.let {
+            getQualifier = { resultHandler ->
+                val qualifier = valuesAsStorablesWithVersion.getOrNull(++qualifierIndex)?.let {
                     initByteArrayByHex(it.first)
                 }
+                qualifier?.let { resultHandler({ qualifier[it] }, qualifier.size); true } ?: false
             },
             select = null,
             processValue = { _, _, changer ->
                 valuesAsStorablesWithVersion[qualifierIndex].second.forEach {
-                    changer(it.first, it.second)
+                    changer(it.first.timestamp, it.second)
                 }
             }
         )

@@ -1,6 +1,6 @@
 package maryk.core.processors.datastore
 
-private typealias QualifierProcessor = (ByteArray) -> Unit
+private typealias QualifierProcessor = ((Int) -> Byte, Int) -> Unit
 typealias CacheProcessor = (Int, QualifierProcessor) -> Unit
 
 /**
@@ -8,19 +8,33 @@ typealias CacheProcessor = (Int, QualifierProcessor) -> Unit
  * Uses [readQualifierAndProcessContent] if there is no suitable cached processor
  */
 fun processQualifiers(
-    getQualifier: () -> ByteArray?,
-    readQualifierAndProcessContent: (ByteArray, CacheProcessor) -> Unit
+    getQualifier: (((Int) -> Byte, Int) -> Unit) -> Boolean,
+    readQualifierAndProcessContent: ((Int) -> Byte, Int, CacheProcessor) -> Unit
 ) {
-    var lastQualifier: ByteArray? = null
-    var qualifier = getQualifier()
+    var lastQualifierReader: ((Int) -> Byte)? = null
+    var lastQualifierLength: Int = -1
+
+    var currentQualifierReader: ((Int) -> Byte)? = null
+    var currentQualifierLength: Int = -1
+
+    val qualifierSetter: ((Int) -> Byte, Int) -> Unit = { qr, l ->
+        currentQualifierReader = qr
+        currentQualifierLength = l
+    }
+
+    var qualifierPresent = getQualifier(qualifierSetter)
     // Stack of processors to process qualifier and if matched the values.
     // Since definitions are nested we need a stack
     val processorStack = mutableListOf<Pair<Int, QualifierProcessor>>()
 
-    while (qualifier != null) {
+    while (qualifierPresent) {
+        val qualifierReader = currentQualifierReader ?: throw Exception("Unexpected null for qualifier bytes")
         // Remove anything from processor stack that does not match anymore
-        lastQualifier?.let { last ->
-            val nonMatchIndex = last.firstNonMatchIndex(qualifier!!)
+        lastQualifierReader?.let { lastReader ->
+            val nonMatchIndex = firstNonMatchIndex(
+                lastReader, lastQualifierLength,
+                qualifierReader, currentQualifierLength
+            )
             for (i in (processorStack.size - 1 downTo 0)) {
                 if (processorStack[i].first >= nonMatchIndex) {
                     processorStack.removeAt(i)
@@ -29,24 +43,31 @@ fun processQualifiers(
         }
 
         // Try to process qualifier with last qualifier processor in list
-        processorStack.lastOrNull()?.second?.invoke(qualifier)
-            ?: readQualifierAndProcessContent(qualifier) { index, processor ->
+        processorStack.lastOrNull()?.second?.invoke(qualifierReader, currentQualifierLength)
+            ?: readQualifierAndProcessContent(qualifierReader, currentQualifierLength) { index, processor ->
                 processorStack += Pair(index, processor)
             }
 
         // Last qualifier to remove processors in next iteration
-        lastQualifier = qualifier
+        lastQualifierReader = currentQualifierReader
+        lastQualifierLength = currentQualifierLength
 
         // Get next qualifier
-        qualifier = getQualifier()
+        qualifierPresent = getQualifier(qualifierSetter)
     }
 }
 
-/** Find the first non match index against [comparedTo] */
-private fun ByteArray.firstNonMatchIndex(comparedTo: ByteArray): Int {
+/** Find the first non match index against [compareQualifierReader] */
+private fun firstNonMatchIndex(
+    lastQualifierReader: (Int) -> Byte,
+    lastQualifierLength: Int,
+    compareQualifierReader: (Int) -> Byte,
+    compareQualifierLength: Int
+): Int {
     var index = -1
-    while (++index < this.size) {
-        if (comparedTo[index] != this[index]) break
+    val shortestLength = minOf(compareQualifierLength, lastQualifierLength)
+    while (++index < shortestLength) {
+        if (compareQualifierReader(index) != lastQualifierReader(index)) break
     }
     return index
 }

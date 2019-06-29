@@ -22,7 +22,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordT
     var valueIndex = -1
 
     val changes = this.readStorageToChanges(
-        getQualifier = {
+        getQualifier = { resultHandler ->
             valueIndex++
 
             // skip deleted values
@@ -31,8 +31,10 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordT
             }
 
             if (valueIndex < record.values.size) {
-                record.values[valueIndex].reference
-            } else null
+                val qualifier = record.values[valueIndex].reference
+                resultHandler({ qualifier[it] }, qualifier.size)
+                true
+            } else false
         },
         select = select,
         processValue = { _, _, valueWithVersionReader ->

@@ -6,14 +6,13 @@ import maryk.rocksdb.RocksIterator
 /** Find non historic qualifiers on [iterator] for [key] */
 fun RocksIterator.nonHistoricQualifierRetriever(
     key: Key<*>
-): () -> ByteArray? = {
+): (((Int) -> Byte, Int) -> Unit) -> Boolean = { resultHandler ->
     next()
     if (!isValid()) {
-        null
+        false
     } else {
-        val qualifier: ByteArray? = key()
-
-        // key range check is ensured with setPrefixSameAsStart
-        qualifier?.copyOfRange(key.bytes.size, qualifier.size)
+        val qualifier: ByteArray = key()
+        resultHandler({ qualifier[key.bytes.size + it] }, qualifier.size - key.bytes.size)
+        true
     }
 }

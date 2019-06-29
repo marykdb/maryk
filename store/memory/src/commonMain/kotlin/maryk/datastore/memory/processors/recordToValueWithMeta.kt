@@ -24,7 +24,12 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordT
     var maxVersion = record.firstVersion
 
     val values = this.convertStorageToValues(
-        getQualifier = { record.values.getOrNull(++valueIndex)?.reference },
+        getQualifier = { resultHandler ->
+            val qualifier = record.values.getOrNull(++valueIndex)?.reference
+            qualifier?.let { q ->
+                resultHandler({ q[it] }, q.size); true
+            } ?: false
+        },
         select = select,
         processValue = { _, _ ->
             when (val node = record.values[valueIndex]) {

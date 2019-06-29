@@ -57,12 +57,13 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
                                         val value = transaction.get(columnFamilies.table, readOptions, byteArrayOf(*key.bytes, *ref))
 
                                         if (value != null) {
-                                            val newValue = value.copyOfRange(ULong.SIZE_BYTES, value.size)
                                             deleteUniqueIndexValue(
                                                 transaction,
                                                 columnFamilies,
                                                 ref,
-                                                newValue,
+                                                value,
+                                                ULong.SIZE_BYTES,
+                                                value.size - ULong.SIZE_BYTES,
                                                 versionBytes
                                             )
                                         }

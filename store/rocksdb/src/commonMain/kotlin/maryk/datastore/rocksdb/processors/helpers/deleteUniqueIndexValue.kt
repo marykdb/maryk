@@ -12,13 +12,19 @@ internal fun deleteUniqueIndexValue(
     columnFamilies: TableColumnFamilies,
     indexReference: ByteArray,
     value: ByteArray,
+    valueOffset: Int,
+    valueLength: Int,
     version: ByteArray
 ) {
-    transaction.delete(columnFamilies.unique, byteArrayOf(*indexReference, *value))
+    val reference = ByteArray(indexReference.size + valueLength)
+    indexReference.copyInto(reference)
+    value.copyInto(reference, indexReference.size, valueOffset, valueLength + valueOffset)
+    transaction.delete(columnFamilies.unique, reference)
+
     if (columnFamilies is HistoricTableColumnFamilies) {
-        val historicReference = byteArrayOf(*indexReference, *value, *version)
+        val historicReference = byteArrayOf(*reference, *version)
         // Invert so the time is sorted in reverse order with newest on top
-        historicReference.invert(historicReference.size - version.size)
+        historicReference.invert(reference.size)
 
         transaction.put(columnFamilies.unique, historicReference, FALSE_ARRAY)
     }

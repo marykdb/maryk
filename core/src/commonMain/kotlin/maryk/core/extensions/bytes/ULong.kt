@@ -31,8 +31,8 @@ fun initULong(reader: () -> Byte, length: Int = 8): ULong {
 }
 
 /** Create ULong from byte array */
-fun ByteArray.toULong(): ULong {
-    var index = 0
+fun ByteArray.toULong(offset: Int = 0): ULong {
+    var index = offset
     return initULong(reader = { this[index++] })
 }
 

@@ -15,8 +15,10 @@ import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.processors.helpers.deleteUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setLatestVersion
 import maryk.datastore.shared.StoreAction
+import maryk.lib.extensions.compare.matchPart
 import maryk.lib.extensions.compare.nextByteInSameLength
 import maryk.rocksdb.ReadOptions
+import maryk.rocksdb.Transaction
 import maryk.rocksdb.WriteOptions
 import maryk.rocksdb.use
 
@@ -53,8 +55,9 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
                                 ReadOptions().use { readOptions ->
                                     // On iteration, dont iterate past the prefix/key
                                     readOptions.setPrefixSameAsStart(true)
-                                    dataStore.getUniqueIndices(storeAction.dbIndex, columnFamilies.unique).forEach { ref ->
-                                        val value = transaction.get(columnFamilies.table, readOptions, byteArrayOf(*key.bytes, *ref))
+                                    for (ref in dataStore.getUniqueIndices(storeAction.dbIndex, columnFamilies.unique)) {
+                                        val reference = byteArrayOf(*key.bytes, *ref)
+                                        val value = transaction.get(columnFamilies.table, readOptions, reference)
 
                                         if (value != null) {
                                             deleteUniqueIndexValue(
@@ -64,7 +67,19 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
                                                 value,
                                                 ULong.SIZE_BYTES,
                                                 value.size - ULong.SIZE_BYTES,
-                                                versionBytes
+                                                versionBytes,
+                                                deleteRequest.hardDelete
+                                            )
+                                        }
+
+                                        // Delete it from history if it is a hard delete
+                                        if (deleteRequest.hardDelete && columnFamilies is HistoricTableColumnFamilies) {
+                                            hardDeleteHistoricalUniqueValues(
+                                                transaction,
+                                                columnFamilies,
+                                                readOptions,
+                                                reference,
+                                                ref
                                             )
                                         }
                                     }
@@ -131,4 +146,35 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
             statuses
         )
     )
+}
+
+/** Take care of hard deleting the historical unique values */
+private fun hardDeleteHistoricalUniqueValues(
+    transaction: Transaction,
+    columnFamilies: HistoricTableColumnFamilies,
+    readOptions: ReadOptions,
+    reference: ByteArray,
+    ref: ByteArray
+) {
+    transaction.getIterator(readOptions, columnFamilies.historic.table).use { iterator ->
+        iterator.seek(reference)
+
+        while (iterator.isValid()) {
+            val qualifier = iterator.key()
+
+            if (qualifier.matchPart(0, reference)) {
+                val valueBytes = iterator.value()
+                val historicReference = ByteArray(ref.size + valueBytes.size + ULong.SIZE_BYTES)
+                ref.copyInto(historicReference)
+                valueBytes.copyInto(historicReference, ref.size)
+                qualifier.copyInto(historicReference, valueBytes.size + ref.size, qualifier.size - ULong.SIZE_BYTES)
+
+                transaction.delete(columnFamilies.historic.unique, historicReference)
+                iterator.next()
+            } else {
+                // Not same value anymore
+                break
+            }
+        }
+    }
 }

@@ -28,7 +28,7 @@ internal fun setValue(
 
         transaction.put(
             columnFamilies.historic.table,
-            byteArrayOf(*key.bytes, *reference, *version),
+            historicReference,
             value
         )
     }

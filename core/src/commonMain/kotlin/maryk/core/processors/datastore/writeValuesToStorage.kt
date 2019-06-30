@@ -24,6 +24,7 @@ import maryk.core.properties.references.ReferenceType.LIST
 import maryk.core.properties.references.ReferenceType.MAP
 import maryk.core.properties.references.ReferenceType.SET
 import maryk.core.properties.references.ReferenceType.TYPE
+import maryk.core.properties.references.ReferenceType.VALUE
 import maryk.core.properties.types.TypedValue
 import maryk.core.values.AbstractValues
 import maryk.core.values.AnyAbstractValues
@@ -161,7 +162,7 @@ internal fun <T : IsPropertyDefinition<*>> writeValue(
             }
 
             val valueQualifierWriter = if (index != null) {
-                createQualifierWriter(qualifierWriter, index, ReferenceType.VALUE)
+                createQualifierWriter(qualifierWriter, index, VALUE)
             } else qualifierWriter
             val valueQualifierSize = if (index != null) {
                 qualifierLength + index.calculateVarIntWithExtraInfoByteSize()

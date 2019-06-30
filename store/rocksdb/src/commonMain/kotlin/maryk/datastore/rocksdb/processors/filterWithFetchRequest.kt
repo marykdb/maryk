@@ -40,7 +40,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> IsFetchReq
     toVersion: ULong?
 ) = when {
     toVersion != null && createdVersion > toVersion -> true
-    this.filterSoftDeleted && transaction.getValue(columnFamilies, readOptions, toVersion, byteArrayOf(*key.bytes, SOFT_DELETE_INDICATOR)) { b, _, l -> b[l-1] == TRUE } ?: false -> true
+    this.filterSoftDeleted && transaction.getValue(columnFamilies, readOptions, toVersion, byteArrayOf(*key.bytes, SOFT_DELETE_INDICATOR)) { b, o, l -> b[l+o-1] == TRUE } ?: false -> true
     this.where != null -> !filterMatches(key, where as IsFilter, transaction, columnFamilies, readOptions, toVersion)
     else -> false
 }

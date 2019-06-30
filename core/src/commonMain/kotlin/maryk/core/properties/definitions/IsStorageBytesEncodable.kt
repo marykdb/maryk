@@ -20,12 +20,19 @@ interface IsStorageBytesEncodable<T : Any> {
     }
 
     /** write value to storage bytes */
-    fun toStorageBytes(value: T): ByteArray {
+    fun toStorageBytes(value: T, vararg prependWith: Byte): ByteArray {
         val bytes = ByteArray(
-            this.calculateStorageByteLength(value)
+            prependWith.size + this.calculateStorageByteLength(value)
         )
         var index = 0
-        this.writeStorageBytes(value) { bytes[index++] = it }
+
+        val writer: (Byte) -> Unit = { bytes[index++] = it }
+
+        for (prependByte in prependWith) {
+            writer(prependByte)
+        }
+
+        this.writeStorageBytes(value, writer)
         return bytes
     }
 }

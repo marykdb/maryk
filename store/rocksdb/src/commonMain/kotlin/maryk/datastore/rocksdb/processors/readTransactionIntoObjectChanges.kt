@@ -1,6 +1,7 @@
 package maryk.datastore.rocksdb.processors
 
 import maryk.core.exceptions.RequestException
+import maryk.core.exceptions.StorageException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.initULong
 import maryk.core.models.IsRootValuesDataModel
@@ -13,10 +14,8 @@ import maryk.core.processors.datastore.StorageTypeEnum.TypeValue
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.processors.datastore.readStorageToChanges
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
-import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.changes.VersionedChanges
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
@@ -24,6 +23,7 @@ import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.checkExistence
 import maryk.datastore.rocksdb.processors.helpers.historicQualifierRetriever
 import maryk.datastore.rocksdb.processors.helpers.nonHistoricQualifierRetriever
+import maryk.datastore.rocksdb.processors.helpers.readValue
 import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.Transaction
 
@@ -67,9 +67,12 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
                     Value -> {
                         val valueBytes = iterator.value()
                         index = 0
-                        currentVersion = initULong({ valueBytes[index++] })
-                        Value.castDefinition(definition).readStorageBytes(valueBytes.size - index) {
-                            valueBytes[index++]
+                        val reader = { valueBytes[index++] }
+
+                        currentVersion = initULong(reader)
+
+                        readValue(definition, reader)  {
+                            valueBytes.size - index
                         }
                     }
                     ListSize -> {
@@ -90,25 +93,6 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
                         currentVersion = initULong({ valueBytes[index++] })
                         initIntByVar { valueBytes[index++] }
                     }
-                    TypeValue -> {
-                        val valueBytes = iterator.value()
-                        index = 0
-                        val reader = { valueBytes[index++] }
-
-                        currentVersion = initULong(reader)
-
-                        val typeDefinition = TypeValue.castDefinition(definition)
-
-                        val indicatorByte = reader()
-                        val type = typeDefinition.typeEnum.readStorageBytes(typeDefinition.typeEnum.byteSize, reader)
-
-                        if (indicatorByte == COMPLEX_TYPE_INDICATOR) {
-                            TypedValue(type, Unit)
-                        } else {
-                            val valueDefinition = typeDefinition.definition(type) as IsSimpleValueDefinition<*, *>
-                            valueDefinition.readStorageBytes(valueBytes.size - index, reader)
-                        }
-                    }
                     Embed -> {
                         val valueBytes = iterator.value()
                         index = 0
@@ -116,6 +100,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
 
                         currentVersion = initULong(reader)
                     }
+                    TypeValue -> throw StorageException("Not used in direct encoding")
                 }
                 if (currentVersion >= fromVersion) {
                     valueWithVersionReader(currentVersion, value)
@@ -154,8 +139,10 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
                     Value -> {
                         val valueBytes = iterator.value()
                         index = 0
-                        Value.castDefinition(definition).readStorageBytes(valueBytes.size) {
-                            valueBytes[index++]
+                        val reader = { valueBytes[index++] }
+
+                        readValue(definition, reader)  {
+                            valueBytes.size - index
                         }
                     }
                     ListSize -> {
@@ -173,24 +160,8 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
                         index = 0
                         initIntByVar { valueBytes[index++] }
                     }
-                    TypeValue -> {
-                        val valueBytes = iterator.value()
-                        index = 0
-                        val reader = { valueBytes[index++] }
-
-                        val typeDefinition = TypeValue.castDefinition(definition)
-
-                        val indicatorByte = reader()
-                        val type = typeDefinition.typeEnum.readStorageBytes(typeDefinition.typeEnum.byteSize, reader)
-
-                        if (indicatorByte == COMPLEX_TYPE_INDICATOR) {
-                            TypedValue(type, Unit)
-                        } else {
-                            val valueDefinition = typeDefinition.definition(type) as IsSimpleValueDefinition<*, *>
-                            valueDefinition.readStorageBytes(valueBytes.size - index, reader)
-                        }
-                    }
                     Embed -> { Unit }
+                    TypeValue -> throw StorageException("Not used in direct encoding")
                 }
                 if (currentVersion >= fromVersion) {
                     valueWithVersionReader(currentVersion, value)

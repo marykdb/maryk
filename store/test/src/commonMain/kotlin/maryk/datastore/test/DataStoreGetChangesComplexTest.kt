@@ -29,7 +29,6 @@ class DataStoreGetChangesComplexTest(
     private var lowestVersion = ULong.MAX_VALUE
 
     override val allTests = mapOf(
-        "executeSimpleGetChangesRequest" to ::executeSimpleGetChangesRequest,
         "executeSimpleGetChangesRequest" to ::executeSimpleGetChangesRequest
     )
 

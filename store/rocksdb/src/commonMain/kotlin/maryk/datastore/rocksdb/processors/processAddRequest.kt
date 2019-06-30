@@ -1,7 +1,9 @@
 package maryk.datastore.rocksdb.processors
 
 import maryk.core.clock.HLC
+import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.toVarBytes
+import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.key
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
@@ -91,7 +93,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
                                 ObjectDelete -> {} // Cannot happen on new add
                                 Value -> {
                                     val storableDefinition = Value.castDefinition(definition)
-                                    val valueBytes = storableDefinition.toStorageBytes(value)
+                                    val valueBytes = storableDefinition.toStorageBytes(value, NO_TYPE_INDICATOR)
 
                                     // If a unique index, check if exists, and then write
                                     if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
@@ -116,19 +118,32 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
                                 TypeValue -> {
                                     val typedValue = value as TypedValue<TypeEnum<*>, *>
                                     val typeDefinition = TypeValue.castDefinition(definition)
-                                    val typeBytes = typeDefinition.typeEnum.toStorageBytes(value.type)
 
+                                    var index = 0
                                     if (typedValue.value == Unit) {
-                                        setValue(transaction, columnFamilies, key, reference, versionBytes, byteArrayOf(COMPLEX_TYPE_INDICATOR, *typeBytes))
+                                        val valueBytes = ByteArray(value.type.index.calculateVarIntWithExtraInfoByteSize())
+                                        typedValue.type.index.writeVarIntWithExtraInfo(COMPLEX_TYPE_INDICATOR) { valueBytes[index++] = it }
+
+                                        setValue(transaction, columnFamilies, key, reference, versionBytes, valueBytes)
                                     } else {
                                         val typeValueDefinition = typeDefinition.definition(typedValue.type) as IsSimpleValueDefinition<Any, *>
-                                        val valueBytes = typeValueDefinition.toStorageBytes(typedValue.value)
+                                        val valueBytes = ByteArray(
+                                            typedValue.type.index.calculateVarIntWithExtraInfoByteSize() +
+                                            typeValueDefinition.calculateStorageByteLength(typedValue.value)
+                                        )
+                                        val writer: (Byte) -> Unit = { valueBytes[index++] = it }
 
-                                        setValue(transaction, columnFamilies, key, reference, versionBytes, byteArrayOf(SIMPLE_TYPE_INDICATOR, *typeBytes, *valueBytes))
+                                        typedValue.type.index.writeVarIntWithExtraInfo(SIMPLE_TYPE_INDICATOR, writer)
+                                        typeValueDefinition.writeStorageBytes(typedValue.value, writer)
+
+                                        setValue(transaction, columnFamilies, key, reference, versionBytes, valueBytes)
                                     }
                                 }
                                 Embed -> {
-                                    setValue(transaction, columnFamilies, key, reference, versionBytes, TRUE_ARRAY)
+                                    // Indicates value exists and is an embed
+                                    // Is for the root of embed
+                                    val valueBytes = byteArrayOf(EMBED_INDICATOR, TRUE)
+                                    setValue(transaction, columnFamilies, key, reference, versionBytes, valueBytes)
                                 }
                             }
                         }

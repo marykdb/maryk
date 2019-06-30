@@ -22,7 +22,7 @@ fun <T: Any> Transaction.getValue(
 ): T? {
     return if (toVersion == null) {
         this.get(columnFamilies.table, readOptions, reference)?.let {
-            handleResult(it, ULong.SIZE_BYTES, it.size)
+            handleResult(it, ULong.SIZE_BYTES, it.size - ULong.SIZE_BYTES)
         }
     } else {
         val versionBytes = toVersion.createReversedVersionBytes()

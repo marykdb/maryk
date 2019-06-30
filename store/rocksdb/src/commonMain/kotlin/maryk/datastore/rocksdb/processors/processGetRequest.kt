@@ -67,7 +67,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
                             aggregator?.aggregate {
                                 @Suppress("UNCHECKED_CAST")
                                 valuesWithMetaData?.values?.get(it as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>)
-                                  ?: transaction.getValue(columnFamilies, readOptions, creationVersion, it.toStorageByteArray()) { valueBytes, offset, length ->
+                                  ?: transaction.getValue(columnFamilies, readOptions, getRequest.toVersion, it.toStorageByteArray()) { valueBytes, offset, length ->
                                       (it.propertyDefinition as IsStorageBytesEncodable<Any>).fromStorageBytes(valueBytes, offset, length)
                                   }
                             }

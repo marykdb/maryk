@@ -5,7 +5,6 @@ import maryk.core.processors.datastore.matchers.FuzzyMatchResult.NO_MATCH
 import maryk.core.processors.datastore.matchers.FuzzyMatchResult.OUT_OF_RANGE
 import maryk.core.processors.datastore.matchers.QualifierExactMatcher
 import maryk.core.processors.datastore.matchers.QualifierFuzzyMatcher
-import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.TableColumnFamilies
@@ -49,20 +48,5 @@ fun <T : Any> Transaction.matchQualifier(
             }
             return false
         }
-    }
-}
-
-/**
- * Convert a byte array from [offset] until [length] with [reference] to a value of [T]
- */
-private fun <T : Any> ByteArray.convertToValue(
-    reference: IsPropertyReference<T, *, *>,
-    offset: Int = 0,
-    length: Int = this.size - offset
-): T {
-    var readIndex = offset
-    @Suppress("UNCHECKED_CAST")
-    return (reference.propertyDefinition as IsStorageBytesEncodable<T>).readStorageBytes(length-offset) {
-        this[readIndex++]
     }
 }

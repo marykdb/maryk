@@ -12,6 +12,7 @@ import maryk.core.query.responses.statuses.IsDeleteResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
+import maryk.datastore.rocksdb.processors.helpers.deleteIndexValue
 import maryk.datastore.rocksdb.processors.helpers.deleteUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setLatestVersion
 import maryk.datastore.shared.StoreAction
@@ -84,10 +85,20 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
                                         }
                                     }
 
-//                                    // Delete indexed values
-//                                    deleteRequest.dataModel.indices?.forEach { indexable ->
-//                                        val indexRef = indexable.toReferenceStorageByteArray()
-//                                    }
+                                    val valuesGetter = StoreValuesGetter(
+                                        key,
+                                        transaction,
+                                        columnFamilies,
+                                        readOptions
+                                    )
+
+                                    // Delete indexed values
+                                    deleteRequest.dataModel.indices?.forEach { indexable ->
+                                        val indexReference = indexable.toReferenceStorageByteArray()
+                                        val valueAndKeyBytes = indexable.toStorageByteArrayForIndex(valuesGetter, key.bytes)
+                                            ?: return@forEach // skip if no complete values to index are found
+                                        deleteIndexValue(transaction, columnFamilies, indexReference, valueAndKeyBytes, versionBytes, deleteRequest.hardDelete)
+                                    }
                                 }
 
                                 if (deleteRequest.hardDelete) {

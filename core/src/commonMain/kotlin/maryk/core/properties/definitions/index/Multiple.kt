@@ -22,7 +22,7 @@ data class Multiple(
     /** Convenience method to set with each [reference] as separate argument */
     constructor(vararg reference: IsIndexablePropertyReference<*>) : this(listOf(*reference))
 
-    override fun calculateStorageByteLengthForIndex(values: IsValuesGetter, key: ByteArray): Int {
+    override fun calculateStorageByteLengthForIndex(values: IsValuesGetter, keySize: Int): Int {
         var totalBytes = 0
         for (reference in references) {
             val value = reference.getValue(values)
@@ -30,7 +30,7 @@ data class Multiple(
             val length = (reference as IsIndexablePropertyReference<Any>).calculateStorageByteLength(value)
             totalBytes += length + length.calculateVarByteLength()
         }
-        return totalBytes + key.size
+        return totalBytes + keySize
     }
 
     override fun writeStorageBytesForIndex(values: IsValuesGetter, key: ByteArray, writer: (byte: Byte) -> Unit) {

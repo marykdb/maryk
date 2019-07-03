@@ -20,7 +20,7 @@ interface IsIndexable {
     /** Convert indexable to a ByteArray so it can be referenced */
     fun toStorageByteArrayForIndex(values: IsValuesGetter, key: ByteArray) = try {
         var index = 0
-        ByteArray(this.calculateStorageByteLengthForIndex(values, key)).also { bytes ->
+        ByteArray(this.calculateStorageByteLengthForIndex(values, key.size)).also { bytes ->
             this.writeStorageBytesForIndex(values, key) { bytes[index++] = it }
         }
     } catch (e: RequiredException) {
@@ -33,8 +33,8 @@ interface IsIndexable {
     /** Write storage bytes for reference to this indexable with [writer] */
     fun writeReferenceStorageBytes(writer: (Byte) -> Unit)
 
-    /** Calculates the byte size of the storage bytes for index for [values] and [key] */
-    fun calculateStorageByteLengthForIndex(values: IsValuesGetter, key: ByteArray): Int
+    /** Calculates the byte size of the storage bytes for index for [values] and [keySize] */
+    fun calculateStorageByteLengthForIndex(values: IsValuesGetter, keySize: Int): Int
 
     /**
      * Write bytes for storage of indexable for [values] to [writer]

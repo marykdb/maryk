@@ -16,7 +16,7 @@ internal fun setIndexValue(
 ) {
     transaction.put(columnFamilies.index, byteArrayOf(*indexReference, *valueAndKey), TRUE_ARRAY)
     if (columnFamilies is HistoricTableColumnFamilies) {
-        val historicReference = byteArrayOf(*indexReference, *version)
+        val historicReference = byteArrayOf(*indexReference, *valueAndKey, *version)
         // Invert so the time is sorted in reverse order with newest on top
         historicReference.invert(historicReference.size - version.size)
 

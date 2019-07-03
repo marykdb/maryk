@@ -21,8 +21,10 @@ import maryk.datastore.shared.StoreActor
 import maryk.rocksdb.ColumnFamilyHandle
 import maryk.rocksdb.ColumnFamilyOptions
 import maryk.rocksdb.Options
+import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.TransactionDB
 import maryk.rocksdb.TransactionDBOptions
+import maryk.rocksdb.WriteOptions
 import maryk.rocksdb.openTransactionDB
 import maryk.rocksdb.use
 
@@ -53,6 +55,11 @@ class RocksDBDataStore(
     internal val db: TransactionDB = openTransactionDB(rocksDBOptions ?: ownRocksDBOptions!!, transactionDBOptions, relativePath)
 
     private val storeActor = this.storeActor(this, storeExecutor)
+
+    internal val defaultWriteOptions = WriteOptions()
+    internal val defaultReadOptions = ReadOptions().apply {
+        setPrefixSameAsStart(true)
+    }
 
     init {
         for ((index, db) in dataModelsById) {
@@ -99,6 +106,8 @@ class RocksDBDataStore(
         db.close()
         transactionDBOptions.close()
         ownRocksDBOptions?.close()
+        defaultWriteOptions.close()
+        defaultReadOptions.close()
 
         columnFamilyHandlesByDataModelIndex.values.forEach {
             it.close()

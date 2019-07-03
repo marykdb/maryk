@@ -14,8 +14,6 @@ import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.processors.helpers.getValue
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkToVersion
-import maryk.rocksdb.ReadOptions
-import maryk.rocksdb.WriteOptions
 import maryk.rocksdb.use
 
 internal typealias GetStoreAction<DM, P> = StoreAction<DM, P, GetRequest<DM, P>, ValuesResponse<DM, P>>
@@ -36,42 +34,54 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
 
     getRequest.checkToVersion(dataStore.keepAllVersions)
 
-    WriteOptions().use { writeOptions ->
-        dataStore.db.beginTransaction(writeOptions).use { transaction ->
-            ReadOptions().use { readOptions ->
-                // On iteration, dont iterate past the prefix/key
-                readOptions.setPrefixSameAsStart(true)
-                keyWalk@ for (key in getRequest.keys) {
-                    val mayExist = dataStore.db.keyMayExist(columnFamilies.table, key.bytes, StringBuilder())
-                    if (mayExist) {
-                        val creationVersion = transaction.get(columnFamilies.table, readOptions, key.bytes)?.toULong()
+    dataStore.db.beginTransaction(dataStore.defaultWriteOptions).use { transaction ->
+        keyWalk@ for (key in getRequest.keys) {
+            val mayExist = dataStore.db.keyMayExist(columnFamilies.table, key.bytes, StringBuilder())
+            if (mayExist) {
+                val creationVersion =
+                    transaction.get(columnFamilies.table, dataStore.defaultReadOptions, key.bytes)?.toULong()
 
-                        if (creationVersion != null) {
-                            if (getRequest.shouldBeFiltered(transaction, columnFamilies, readOptions, key, creationVersion, getRequest.toVersion)) {
-                                continue@keyWalk
-                            }
+                if (creationVersion != null) {
+                    if (getRequest.shouldBeFiltered(
+                            transaction,
+                            columnFamilies,
+                            dataStore.defaultReadOptions,
+                            key,
+                            creationVersion,
+                            getRequest.toVersion
+                        )
+                    ) {
+                        continue@keyWalk
+                    }
 
-                            val valuesWithMetaData = getRequest.dataModel.readTransactionIntoValuesWithMetaData(
-                                transaction,
-                                readOptions,
-                                creationVersion,
+                    val valuesWithMetaData = getRequest.dataModel.readTransactionIntoValuesWithMetaData(
+                        transaction,
+                        dataStore.defaultReadOptions,
+                        creationVersion,
+                        columnFamilies,
+                        key,
+                        getRequest.select,
+                        getRequest.toVersion
+                    )?.also {
+                        // Only add if not null
+                        valuesWithMeta += it
+                    }
+
+                    aggregator?.aggregate {
+                        @Suppress("UNCHECKED_CAST")
+                        valuesWithMetaData?.values?.get(it as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>)
+                            ?: transaction.getValue(
                                 columnFamilies,
-                                key,
-                                getRequest.select,
-                                getRequest.toVersion
-                            )?.also {
-                                // Only add if not null
-                                valuesWithMeta += it
+                                dataStore.defaultReadOptions,
+                                getRequest.toVersion,
+                                it.toStorageByteArray()
+                            ) { valueBytes, offset, length ->
+                                (it.propertyDefinition as IsStorageBytesEncodable<Any>).fromStorageBytes(
+                                    valueBytes,
+                                    offset,
+                                    length
+                                )
                             }
-
-                            aggregator?.aggregate {
-                                @Suppress("UNCHECKED_CAST")
-                                valuesWithMetaData?.values?.get(it as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>)
-                                  ?: transaction.getValue(columnFamilies, readOptions, getRequest.toVersion, it.toStorageByteArray()) { valueBytes, offset, length ->
-                                      (it.propertyDefinition as IsStorageBytesEncodable<Any>).fromStorageBytes(valueBytes, offset, length)
-                                  }
-                            }
-                        }
                     }
                 }
             }

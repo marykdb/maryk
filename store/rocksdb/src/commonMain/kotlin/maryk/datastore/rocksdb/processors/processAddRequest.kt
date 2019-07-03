@@ -37,7 +37,6 @@ import maryk.datastore.rocksdb.processors.helpers.setUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setValue
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.UniqueException
-import maryk.rocksdb.WriteOptions
 import maryk.rocksdb.use
 
 internal typealias AddStoreAction<DM, P> = StoreAction<DM, P, AddRequest<DM, P>, AddResponse<DM>>
@@ -74,7 +73,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
                     // Create version bytes and last version ref
                     val versionBytes = HLC.toStorageBytes(version)
 
-                    dataStore.db.beginTransaction(WriteOptions()).use { transaction ->
+                    dataStore.db.beginTransaction(dataStore.defaultWriteOptions).use { transaction ->
                         // Store first and last version
                         setCreatedVersion(transaction, columnFamilies, key, versionBytes)
                         setLatestVersion(transaction, columnFamilies, key, versionBytes)

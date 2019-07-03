@@ -20,7 +20,6 @@ import maryk.lib.extensions.compare.matchPart
 import maryk.lib.extensions.compare.nextByteInSameLength
 import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.Transaction
-import maryk.rocksdb.WriteOptions
 import maryk.rocksdb.use
 
 internal typealias DeleteStoreAction<DM, P> = StoreAction<DM, P, DeleteRequest<DM>, DeleteResponse<DM>>
@@ -49,95 +48,102 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
 
                 val status: IsDeleteResponseStatus<DM> = when {
                     exists -> {
-                        WriteOptions().use { writeOptions ->
-                            dataStore.db.beginTransaction(writeOptions).use { transaction ->
-                                // Create version bytes
-                                val versionBytes = HLC.toStorageBytes(version)
-                                ReadOptions().use { readOptions ->
-                                    // On iteration, dont iterate past the prefix/key
-                                    readOptions.setPrefixSameAsStart(true)
-                                    for (ref in dataStore.getUniqueIndices(storeAction.dbIndex, columnFamilies.unique)) {
-                                        val reference = byteArrayOf(*key.bytes, *ref)
-                                        val value = transaction.get(columnFamilies.table, readOptions, reference)
+                        dataStore.db.beginTransaction(dataStore.defaultWriteOptions).use { transaction ->
+                            // Create version bytes
+                            val versionBytes = HLC.toStorageBytes(version)
 
-                                        if (value != null) {
-                                            deleteUniqueIndexValue(
-                                                transaction,
-                                                columnFamilies,
-                                                ref,
-                                                value,
-                                                ULong.SIZE_BYTES,
-                                                value.size - ULong.SIZE_BYTES,
-                                                versionBytes,
-                                                deleteRequest.hardDelete
-                                            )
-                                        }
+                            for (ref in dataStore.getUniqueIndices(
+                                storeAction.dbIndex,
+                                columnFamilies.unique
+                            )) {
+                                val reference = byteArrayOf(*key.bytes, *ref)
+                                val value = transaction.get(columnFamilies.table, dataStore.defaultReadOptions, reference)
 
-                                        // Delete it from history if it is a hard delete
-                                        if (deleteRequest.hardDelete && columnFamilies is HistoricTableColumnFamilies) {
-                                            hardDeleteHistoricalUniqueValues(
-                                                transaction,
-                                                columnFamilies,
-                                                readOptions,
-                                                reference,
-                                                ref
-                                            )
-                                        }
-                                    }
-
-                                    val valuesGetter = StoreValuesGetter(
-                                        key,
+                                if (value != null) {
+                                    deleteUniqueIndexValue(
                                         transaction,
                                         columnFamilies,
-                                        readOptions
+                                        ref,
+                                        value,
+                                        ULong.SIZE_BYTES,
+                                        value.size - ULong.SIZE_BYTES,
+                                        versionBytes,
+                                        deleteRequest.hardDelete
                                     )
-
-                                    // Delete indexed values
-                                    deleteRequest.dataModel.indices?.forEach { indexable ->
-                                        val indexReference = indexable.toReferenceStorageByteArray()
-                                        val valueAndKeyBytes = indexable.toStorageByteArrayForIndex(valuesGetter, key.bytes)
-                                            ?: return@forEach // skip if no complete values to index are found
-                                        deleteIndexValue(transaction, columnFamilies, indexReference, valueAndKeyBytes, versionBytes, deleteRequest.hardDelete)
-                                    }
                                 }
 
-                                if (deleteRequest.hardDelete) {
+                                // Delete it from history if it is a hard delete
+                                if (deleteRequest.hardDelete && columnFamilies is HistoricTableColumnFamilies) {
+                                    hardDeleteHistoricalUniqueValues(
+                                        transaction,
+                                        columnFamilies,
+                                        dataStore.defaultReadOptions,
+                                        reference,
+                                        ref
+                                    )
+                                }
+                            }
+
+                            val valuesGetter = StoreValuesGetter(
+                                key,
+                                transaction,
+                                columnFamilies,
+                                dataStore.defaultReadOptions
+                            )
+
+                            // Delete indexed values
+                            deleteRequest.dataModel.indices?.forEach { indexable ->
+                                val indexReference = indexable.toReferenceStorageByteArray()
+                                val valueAndKeyBytes =
+                                    indexable.toStorageByteArrayForIndex(valuesGetter, key.bytes)
+                                        ?: return@forEach // skip if no complete values to index are found
+                                deleteIndexValue(
+                                    transaction,
+                                    columnFamilies,
+                                    indexReference,
+                                    valueAndKeyBytes,
+                                    versionBytes,
+                                    deleteRequest.hardDelete
+                                )
+                            }
+
+                            if (deleteRequest.hardDelete) {
+                                dataStore.db.deleteRange(
+                                    columnFamilies.table,
+                                    key.bytes,
+                                    key.bytes.nextByteInSameLength()
+                                )
+                                if (columnFamilies is HistoricTableColumnFamilies) {
                                     dataStore.db.deleteRange(
-                                        columnFamilies.table,
+                                        columnFamilies.historic.table,
                                         key.bytes,
                                         key.bytes.nextByteInSameLength()
                                     )
-                                    if (columnFamilies is HistoricTableColumnFamilies) {
-                                        dataStore.db.deleteRange(
-                                            columnFamilies.historic.table,
-                                            key.bytes,
-                                            key.bytes.nextByteInSameLength()
-                                        )
-                                    }
-                                } else {
-                                    setLatestVersion(transaction, columnFamilies, key, versionBytes)
+                                }
+                            } else {
+                                setLatestVersion(transaction, columnFamilies, key, versionBytes)
+
+                                transaction.put(
+                                    columnFamilies.table,
+                                    byteArrayOf(*key.bytes, SOFT_DELETE_INDICATOR),
+                                    byteArrayOf(*versionBytes, TRUE)
+                                )
+
+                                if (columnFamilies is HistoricTableColumnFamilies) {
+                                    val historicReference =
+                                        byteArrayOf(*key.bytes, SOFT_DELETE_INDICATOR, *versionBytes)
+                                    // Invert so the time is sorted in reverse order with newest on top
+                                    historicReference.invert(historicReference.size - versionBytes.size)
 
                                     transaction.put(
-                                        columnFamilies.table,
-                                        byteArrayOf(*key.bytes, SOFT_DELETE_INDICATOR),
-                                        byteArrayOf(*versionBytes, TRUE)
+                                        columnFamilies.historic.table,
+                                        historicReference,
+                                        TRUE_ARRAY
                                     )
-
-                                    if (columnFamilies is HistoricTableColumnFamilies) {
-                                        val historicReference = byteArrayOf(*key.bytes, SOFT_DELETE_INDICATOR, *versionBytes)
-                                        // Invert so the time is sorted in reverse order with newest on top
-                                        historicReference.invert(historicReference.size - versionBytes.size)
-
-                                        transaction.put(
-                                            columnFamilies.historic.table,
-                                            historicReference,
-                                            TRUE_ARRAY
-                                        )
-                                    }
-
                                 }
-                                transaction.commit()
+
                             }
+                            transaction.commit()
                         }
                         DeleteSuccess(version.timestamp)
                     }

@@ -9,8 +9,6 @@ import maryk.core.query.responses.ChangesResponse
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkToVersion
-import maryk.rocksdb.ReadOptions
-import maryk.rocksdb.WriteOptions
 import maryk.rocksdb.use
 
 internal typealias GetChangesStoreAction<DM, P> = StoreAction<DM, P, GetChangesRequest<DM, P>, ChangesResponse<DM>>
@@ -27,35 +25,38 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
 
     getRequest.checkToVersion(dataStore.keepAllVersions)
 
-    WriteOptions().use { writeOptions ->
-        dataStore.db.beginTransaction(writeOptions).use { transaction ->
-            ReadOptions().use { readOptions ->
-                // On iteration, dont iterate past the prefix/key
-                readOptions.setPrefixSameAsStart(true)
-                keyWalk@for (key in getRequest.keys) {
-                    val mayExist = dataStore.db.keyMayExist(columnFamilies.table, key.bytes, StringBuilder())
-                    if (mayExist) {
-                        val creationVersion = transaction.get(columnFamilies.table, readOptions, key.bytes)?.toULong()
+    dataStore.db.beginTransaction(dataStore.defaultWriteOptions).use { transaction ->
+        keyWalk@ for (key in getRequest.keys) {
+            val mayExist = dataStore.db.keyMayExist(columnFamilies.table, key.bytes, StringBuilder())
+            if (mayExist) {
+                val creationVersion =
+                    transaction.get(columnFamilies.table, dataStore.defaultReadOptions, key.bytes)?.toULong()
 
-                        if (creationVersion != null) {
-                            if (getRequest.shouldBeFiltered(transaction, columnFamilies, readOptions, key, creationVersion, getRequest.toVersion)) {
-                                continue@keyWalk
-                            }
+                if (creationVersion != null) {
+                    if (getRequest.shouldBeFiltered(
+                            transaction,
+                            columnFamilies,
+                            dataStore.defaultReadOptions,
+                            key,
+                            creationVersion,
+                            getRequest.toVersion
+                        )
+                    ) {
+                        continue@keyWalk
+                    }
 
-                            getRequest.dataModel.readTransactionIntoObjectChanges(
-                                transaction,
-                                readOptions,
-                                creationVersion,
-                                columnFamilies,
-                                key,
-                                getRequest.select,
-                                getRequest.fromVersion,
-                                getRequest.toVersion
-                            )?.also {
-                                // Only add if not null
-                                objectChanges += it
-                            }
-                        }
+                    getRequest.dataModel.readTransactionIntoObjectChanges(
+                        transaction,
+                        dataStore.defaultReadOptions,
+                        creationVersion,
+                        columnFamilies,
+                        key,
+                        getRequest.select,
+                        getRequest.fromVersion,
+                        getRequest.toVersion
+                    )?.also {
+                        // Only add if not null
+                        objectChanges += it
                     }
                 }
             }

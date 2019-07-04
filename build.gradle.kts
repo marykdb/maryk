@@ -1,5 +1,5 @@
 buildscript {
-    extra["kotlinVersion"] = "1.3.40"
+    extra["kotlinVersion"] = "1.3.41"
     extra["coroutinesVersion"] = "1.2.2"
     extra["marykRocksDBVersion"] = "0.1.3"
 

@@ -1,7 +1,6 @@
 package maryk.datastore.rocksdb.processors.helpers
 
 import maryk.core.exceptions.RequestException
-import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.lib.extensions.compare.compareWithOffsetTo
@@ -17,7 +16,7 @@ fun <R: Any> Transaction.iterateValues(
     columnFamilies: TableColumnFamilies,
     readOptions: ReadOptions,
     toVersion: ULong?,
-    key: Key<*>,
+    keyLength: Int,
     reference: ByteArray,
     handleValue: (ByteArray, Int, Int, ByteArray, Int, Int) -> R?
 ): R? {
@@ -29,7 +28,7 @@ fun <R: Any> Transaction.iterateValues(
                 val referenceBytes = iterator.key()
                 val value = iterator.value()
                 handleValue(
-                    referenceBytes, key.size, referenceBytes.size - key.size,
+                    referenceBytes, keyLength, referenceBytes.size - keyLength,
                     value, ULong.SIZE_BYTES, value.size - ULong.SIZE_BYTES
                 )?.let { return it }
                 iterator.next()
@@ -50,7 +49,7 @@ fun <R: Any> Transaction.iterateValues(
                 if (toVersionBytes.compareWithOffsetTo(referenceBytes, versionOffset) <= 0) {
                     val value = iterator.value()
                     handleValue(
-                        referenceBytes, key.size, versionOffset,
+                        referenceBytes, keyLength, versionOffset,
                         value, 0, value.size
                     )?.let { return it }
                 }

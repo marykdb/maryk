@@ -10,14 +10,14 @@ class IndexableScanRanges internal constructor(
     partialMatches: List<IsIndexPartialToMatch>? = null,
     val keyScanRange: KeyScanRanges
 ): ScanRanges(ranges, partialMatches) {
-    override fun matchesPartials(key: ByteArray, offset: Int): Boolean {
+    override fun matchesPartials(key: ByteArray, offset: Int, length: Int): Boolean {
         val keyIndex = key.size - keyScanRange.keySize
 
         return when {
             // If key or parts do not match, skip
             !keyScanRange.keyWithinRanges(key, keyIndex) || !keyScanRange.matchesPartials(key, keyIndex) ->
                 false
-            else -> super.matchesPartials(key, offset)
+            else -> super.matchesPartials(key, offset, length)
         }
     }
 }

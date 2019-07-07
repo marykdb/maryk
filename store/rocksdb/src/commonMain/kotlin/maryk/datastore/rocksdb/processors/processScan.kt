@@ -91,14 +91,15 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
                     )
                 }
                 is IndexScan -> {
-//                    scanIndex(
-//                        dataStore,
-//                        scanRequest,
-//                        processedScanIndex,
-//                        scanRange,
-//                        processRecord
-//                    )
-                    TODO("SCAN INDEX")
+                    scanIndex(
+                        dataStore,
+                        transaction,
+                        columnFamilies,
+                        scanRequest,
+                        processedScanIndex,
+                        scanRange,
+                        processRecord
+                    )
                 }
             }
         }
@@ -123,5 +124,5 @@ internal fun <DM: IsRootValuesDataModel<P>, P:PropertyDefinitions> shouldProcess
         return false
     }
 
-    return !scanRequest.shouldBeFiltered(transaction, columnFamilies, readOptions, key, createdVersion, scanRequest.toVersion)
+    return !scanRequest.shouldBeFiltered(transaction, columnFamilies, readOptions, key.bytes, 0, key.size, createdVersion, scanRequest.toVersion)
 }

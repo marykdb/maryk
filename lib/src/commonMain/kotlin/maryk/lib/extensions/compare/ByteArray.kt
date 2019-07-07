@@ -43,17 +43,16 @@ fun ByteArray.compareWithOffsetTo(other: ByteArray, offset: Int): Int {
  * a negative number if it's less than [other],
  * or a positive number if it's greater than [other].
  */
-fun ByteArray.compareDefinedTo(other: ByteArray, offset: Int): Int {
-    val otherSize = other.size - offset
-    for (it in 0 until minOf(this.size, otherSize)) {
+fun ByteArray.compareDefinedTo(other: ByteArray, offset: Int = 0, length: Int = other.size - offset): Int {
+    for (it in 0 until minOf(this.size, length)) {
         val a = this[it].toUByte() and MAX_BYTE
         val b = other[it + offset].toUByte() and MAX_BYTE
         if (a != b) {
             return a.toUByte().toInt() - b.toUByte().toInt()
         }
     }
-    return if (otherSize < this.size){
-        this.size - otherSize
+    return if (length < this.size){
+        this.size - length
     } else {
         0
     }

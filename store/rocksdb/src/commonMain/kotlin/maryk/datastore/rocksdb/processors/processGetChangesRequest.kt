@@ -43,7 +43,9 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
                             transaction,
                             columnFamilies,
                             dataStore.defaultReadOptions,
-                            key,
+                            key.bytes,
+                            0,
+                            key.size,
                             creationVersion,
                             getRequest.toVersion
                         )

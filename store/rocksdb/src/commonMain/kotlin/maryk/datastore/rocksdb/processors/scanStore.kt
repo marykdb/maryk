@@ -51,7 +51,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
 
                     val creationVersion = iterator.value().toULong()
 
-                    if (scanRequest.shouldBeFiltered(transaction, columnFamilies, dataStore.defaultReadOptions, key, creationVersion, scanRequest.toVersion)) {
+                    if (scanRequest.shouldBeFiltered(transaction, columnFamilies, dataStore.defaultReadOptions, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion)) {
                         iterator.next()
                         continue
                     }
@@ -93,7 +93,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
 
                     val creationVersion = iterator.value().toULong()
 
-                    if (scanRequest.shouldBeFiltered(transaction, columnFamilies, dataStore.defaultReadOptions, key, creationVersion, scanRequest.toVersion)) {
+                    if (scanRequest.shouldBeFiltered(transaction, columnFamilies, dataStore.defaultReadOptions, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion)) {
                         iterator.prev()
                         continue
                     }

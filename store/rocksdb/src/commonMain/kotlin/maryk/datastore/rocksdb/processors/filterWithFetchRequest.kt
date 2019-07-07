@@ -2,7 +2,6 @@ package maryk.datastore.rocksdb.processors
 
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.types.Key
 import maryk.core.query.ValueRange
 import maryk.core.query.filters.And
 import maryk.core.query.filters.Equals
@@ -35,14 +34,23 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> IsFetchReq
     transaction: Transaction,
     columnFamilies: TableColumnFamilies,
     readOptions: ReadOptions,
-    key: Key<*>,
+    key: ByteArray,
+    keyOffset: Int,
+    keyLength: Int,
     createdVersion: ULong,
     toVersion: ULong?
 ) = when {
     toVersion != null && createdVersion > toVersion -> true
-    this.filterSoftDeleted && transaction.getValue(columnFamilies, readOptions, toVersion, byteArrayOf(*key.bytes, SOFT_DELETE_INDICATOR)) { b, o, l -> b[l+o-1] == TRUE } ?: false -> true
-    this.where != null -> !filterMatches(key, where as IsFilter, transaction, columnFamilies, readOptions, toVersion)
+    this.filterSoftDeleted && transaction.getValue(columnFamilies, readOptions, toVersion, softDeleteQualifier(key, keyOffset, keyLength)) { b, o, l -> b[l+o-1] == TRUE } ?: false -> true
+    this.where != null -> !filterMatches(key, keyOffset, keyLength, where as IsFilter, transaction, columnFamilies, readOptions, toVersion)
     else -> false
+}
+
+private fun softDeleteQualifier(key: ByteArray, keyOffset: Int, keyLength: Int): ByteArray {
+    val qualifier = ByteArray(keyLength + 1)
+    key.copyInto(qualifier, 0, keyOffset, keyLength)
+    qualifier[keyLength] = SOFT_DELETE_INDICATOR
+    return qualifier
 }
 
 /**
@@ -50,7 +58,9 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> IsFetchReq
  * True if filter matches
  */
 internal fun filterMatches(
-    key: Key<*>,
+    key: ByteArray,
+    keyOffset: Int,
+    keyLength: Int,
     filter: IsFilter,
     transaction: Transaction,
     columnFamilies: TableColumnFamilies,
@@ -61,14 +71,14 @@ internal fun filterMatches(
         FilterType.And -> {
             val and = filter as And
             for (f in and.filters) {
-                if (!filterMatches(key, f, transaction, columnFamilies, readOptions, toVersion)) return false
+                if (!filterMatches(key, keyOffset, keyLength, f, transaction, columnFamilies, readOptions, toVersion)) return false
             }
             return true
         }
         FilterType.Or -> {
             val or = filter as Or
             for (f in or.filters) {
-                if (filterMatches(key, f, transaction, columnFamilies, readOptions, toVersion)) return true
+                if (filterMatches(key, keyOffset, keyLength, f, transaction, columnFamilies, readOptions, toVersion)) return true
             }
             return false
         }
@@ -76,21 +86,21 @@ internal fun filterMatches(
             val notFilter = (filter as Not)
             for (aFilter in notFilter.filters) {
                 // If internal filter succeeds, then fail
-                if (filterMatches(key, aFilter, transaction, columnFamilies, readOptions, toVersion)) return false
+                if (filterMatches(key, keyOffset, keyLength, aFilter, transaction, columnFamilies, readOptions, toVersion)) return false
             }
             return true
         }
         FilterType.Exists -> {
             val exists = filter as Exists
             for (propRef in exists.references) {
-                if (!transaction.matchQualifier(columnFamilies, readOptions, key, propRef, toVersion) { it != null }) return false
+                if (!transaction.matchQualifier(columnFamilies, readOptions, key, keyOffset, keyLength, propRef, toVersion) { it != null }) return false
             }
             return true
         }
         FilterType.Equals -> {
             val equals = filter as Equals
             for ((propRef, value) in equals.referenceValuePairs) {
-                if (!transaction.matchQualifier(columnFamilies, readOptions, key, propRef, toVersion) { it == value }) return false
+                if (!transaction.matchQualifier(columnFamilies, readOptions, key, keyOffset, keyLength, propRef, toVersion) { it == value }) return false
             }
             return true
         }
@@ -98,7 +108,7 @@ internal fun filterMatches(
             val lessThan = filter as LessThan
             for ((propRef, value) in lessThan.referenceValuePairs) {
                 @Suppress("UNCHECKED_CAST")
-                if (!transaction.matchQualifier(columnFamilies, readOptions, key, propRef, toVersion) { it != null && (value as Comparable<Any>) > it }) return false
+                if (!transaction.matchQualifier(columnFamilies, readOptions, key, keyOffset, keyLength, propRef, toVersion) { it != null && (value as Comparable<Any>) > it }) return false
             }
             return true
         }
@@ -106,7 +116,7 @@ internal fun filterMatches(
             val lessThanEquals = filter as LessThanEquals
             for ((propRef, value) in lessThanEquals.referenceValuePairs) {
                 @Suppress("UNCHECKED_CAST")
-                if (!transaction.matchQualifier(columnFamilies, readOptions, key, propRef, toVersion) { it != null && (value as Comparable<Any>) >= it }) return false
+                if (!transaction.matchQualifier(columnFamilies, readOptions, key, keyOffset, keyLength, propRef, toVersion) { it != null && (value as Comparable<Any>) >= it }) return false
             }
             return true
         }
@@ -114,7 +124,7 @@ internal fun filterMatches(
             val greaterThan = filter as GreaterThan
             for ((propRef, value) in greaterThan.referenceValuePairs) {
                 @Suppress("UNCHECKED_CAST")
-                if (!transaction.matchQualifier(columnFamilies, readOptions, key, propRef, toVersion) { it != null && (value as Comparable<Any>) < it }) return false
+                if (!transaction.matchQualifier(columnFamilies, readOptions, key, keyOffset, keyLength, propRef, toVersion) { it != null && (value as Comparable<Any>) < it }) return false
             }
             return true
         }
@@ -122,14 +132,14 @@ internal fun filterMatches(
             val greaterThanEquals = filter as GreaterThanEquals
             for ((propRef, value) in greaterThanEquals.referenceValuePairs) {
                 @Suppress("UNCHECKED_CAST")
-                if (!transaction.matchQualifier(columnFamilies, readOptions, key, propRef, toVersion) { it != null && (value as Comparable<Any>) <= it }) return false
+                if (!transaction.matchQualifier(columnFamilies, readOptions, key, keyOffset, keyLength, propRef, toVersion) { it != null && (value as Comparable<Any>) <= it }) return false
             }
             return true
         }
         FilterType.Prefix -> {
             val prefixFilter = filter as Prefix
             for ((propRef, prefix) in prefixFilter.referenceValuePairs) {
-                if (!transaction.matchQualifier(columnFamilies, readOptions, key, propRef, toVersion) { it != null && it.startsWith(prefix) }) return false
+                if (!transaction.matchQualifier(columnFamilies, readOptions, key, keyOffset, keyLength, propRef, toVersion) { it != null && it.startsWith(prefix) }) return false
             }
             return true
         }
@@ -137,21 +147,21 @@ internal fun filterMatches(
             val rangeFilter = filter as Range
             for ((propRef, range) in rangeFilter.referenceRangePairs) {
                 @Suppress("UNCHECKED_CAST")
-                if (!transaction.matchQualifier(columnFamilies, readOptions, key, propRef, toVersion) { it != null && (it as Comparable<Any>) in range as ValueRange<Comparable<Any>> }) return false
+                if (!transaction.matchQualifier(columnFamilies, readOptions, key, keyOffset, keyLength, propRef, toVersion) { it != null && (it as Comparable<Any>) in range as ValueRange<Comparable<Any>> }) return false
             }
             return true
         }
         FilterType.RegEx -> {
             val regExFilter = filter as RegEx
             for ((propRef, regEx) in regExFilter.referenceValuePairs) {
-                if (!transaction.matchQualifier(columnFamilies, readOptions, key, propRef, toVersion) { it != null && regEx.matches(it) }) return false
+                if (!transaction.matchQualifier(columnFamilies, readOptions, key, keyOffset, keyLength, propRef, toVersion) { it != null && regEx.matches(it) }) return false
             }
             return true
         }
         FilterType.ValueIn -> {
             val valueInFilter = filter as ValueIn
             for ((propRef, values) in valueInFilter.referenceValuePairs) {
-                if (!transaction.matchQualifier(columnFamilies, readOptions, key, propRef, toVersion) { it != null && values.contains(it) }) return false
+                if (!transaction.matchQualifier(columnFamilies, readOptions, key, keyOffset, keyLength, propRef, toVersion) { it != null && values.contains(it) }) return false
             }
             return true
         }

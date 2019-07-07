@@ -20,7 +20,7 @@ sealed class IsIndexPartialToMatch {
         keySize
     )
 
-    abstract fun match(bytes: ByteArray, offset: Int = 0): Boolean
+    abstract fun match(bytes: ByteArray, offset: Int = 0, length:Int = bytes.size - offset): Boolean
 }
 
 /** Matcher for exact matches */
@@ -32,8 +32,8 @@ internal class IndexPartialToMatch(
     val partialMatch: Boolean = false
 ) : IsIndexPartialToMatch() {
     /** Matches [bytes] to partial and returns true if matches */
-    override fun match(bytes: ByteArray, offset: Int) =
-        bytes.matchPart(offset + getByteIndex(bytes), toMatch)
+    override fun match(bytes: ByteArray, offset: Int, length: Int) =
+        bytes.matchPart(offset + getByteIndex(bytes), toMatch, length)
 }
 
 /** Matcher for regex matches */
@@ -46,7 +46,7 @@ internal class IndexPartialToRegexMatch(
     override val fromByteIndex: Int? = null
 
     /** Matches [bytes] to partial and returns true if matches */
-    override fun match(bytes: ByteArray, offset: Int): Boolean {
+    override fun match(bytes: ByteArray, offset: Int, length: Int): Boolean {
         val (internalOffset, size) = findByteIndexAndSizeByPartIndex(
             indexableIndex,
             bytes,
@@ -68,7 +68,7 @@ internal class IndexPartialSizeToMatch(
     val size: Int
 ) : IsIndexPartialToMatch() {
     /** Matches size encoded in [bytes] to partial size and returns true if matches */
-    override fun match(bytes: ByteArray, offset: Int): Boolean {
+    override fun match(bytes: ByteArray, offset: Int, length: Int): Boolean {
         return findByteIndexAndSizeByPartIndex(indexableIndex, bytes, keySize).second == size
     }
 }
@@ -82,7 +82,7 @@ internal class IndexPartialToBeBigger(
     val inclusive: Boolean
 ) : IsIndexPartialToMatch() {
     /** Matches [bytes] to be bigger to partial and returns true if is bigger */
-    override fun match(bytes: ByteArray, offset: Int): Boolean {
+    override fun match(bytes: ByteArray, offset: Int, length: Int): Boolean {
         val fromIndex = offset + getByteIndex(bytes)
         toBeSmaller.forEachIndexed { index, byte ->
             val smallerByte = byte.toUByte()
@@ -106,7 +106,7 @@ internal class IndexPartialToBeSmaller(
     val inclusive: Boolean
 ) : IsIndexPartialToMatch() {
     /** Matches [bytes] to be smaller to partial and returns true if is smaller */
-    override fun match(bytes: ByteArray, offset: Int): Boolean {
+    override fun match(bytes: ByteArray, offset: Int, length: Int): Boolean {
         val fromIndex = offset + getByteIndex(bytes)
         toBeBigger.forEachIndexed { index, byte ->
             val biggerByte = byte.toUByte()
@@ -129,10 +129,10 @@ internal class IndexPartialToBeOneOf(
     val toBeOneOf: List<ByteArray>
 ) : IsIndexPartialToMatch() {
     /** Matches [bytes] to be one of partials in list */
-    override fun match(bytes: ByteArray, offset: Int): Boolean {
+    override fun match(bytes: ByteArray, offset: Int, length: Int): Boolean {
         val fromIndex = offset + getByteIndex(bytes)
         for (item in toBeOneOf) {
-            if (bytes.matchPart(fromIndex, item)) return true
+            if (bytes.matchPart(fromIndex, item, length)) return true
         }
         return false
     }

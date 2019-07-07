@@ -3,11 +3,13 @@ package maryk.datastore.rocksdb
 import maryk.rocksdb.ColumnFamilyHandle
 
 class HistoricTableColumnFamilies(
+    model: ColumnFamilyHandle,
+    keys: ColumnFamilyHandle,
     table: ColumnFamilyHandle,
     index: ColumnFamilyHandle,
     unique: ColumnFamilyHandle,
-    val historic: TableColumnFamilies
-) : TableColumnFamilies(table, index, unique) {
+    val historic: BasicTableColumnFamilies
+) : TableColumnFamilies(model, keys, table, index, unique) {
     override fun close() {
         super.close()
         historic.close()

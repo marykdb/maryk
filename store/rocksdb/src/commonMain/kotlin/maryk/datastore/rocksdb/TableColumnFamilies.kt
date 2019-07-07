@@ -3,13 +3,15 @@ package maryk.datastore.rocksdb
 import maryk.rocksdb.ColumnFamilyHandle
 
 open class TableColumnFamilies(
-    val table: ColumnFamilyHandle,
-    val index: ColumnFamilyHandle,
-    val unique: ColumnFamilyHandle
-) {
-    open fun close() {
-        table.close()
-        index.close()
-        unique.close()
+    val model: ColumnFamilyHandle,
+    val keys: ColumnFamilyHandle,
+    table: ColumnFamilyHandle,
+    index: ColumnFamilyHandle,
+    unique: ColumnFamilyHandle
+) : BasicTableColumnFamilies(table, index, unique) {
+    override fun close() {
+        super.close()
+        model.close()
+        keys.close()
     }
 }

@@ -12,6 +12,7 @@ internal fun setCreatedVersion(
     key: Key<*>,
     version: ByteArray
 ) {
+    transaction.put(columnFamilies.keys, key.bytes, version)
     transaction.put(columnFamilies.table, key.bytes, version)
     if (columnFamilies is HistoricTableColumnFamilies) {
         transaction.put(columnFamilies.historic.table, key.bytes, version)

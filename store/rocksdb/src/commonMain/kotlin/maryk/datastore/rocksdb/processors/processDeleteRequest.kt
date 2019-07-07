@@ -113,6 +113,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
                             }
 
                             if (deleteRequest.hardDelete) {
+                                dataStore.db.delete(columnFamilies.keys, key.bytes)
                                 dataStore.db.deleteRange(
                                     columnFamilies.table,
                                     key.bytes,

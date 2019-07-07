@@ -10,6 +10,7 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.requests.GetRequest
 import maryk.core.query.responses.ValuesResponse
+import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.processors.helpers.getValue
 import maryk.datastore.shared.StoreAction
@@ -35,11 +36,16 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
     getRequest.checkToVersion(dataStore.keepAllVersions)
 
     dataStore.db.beginTransaction(dataStore.defaultWriteOptions).use { transaction ->
+        val columnToScan = if (getRequest.toVersion != null && columnFamilies is HistoricTableColumnFamilies) {
+            columnFamilies.historic.table
+        } else columnFamilies.table
+        val iterator = transaction.getIterator(dataStore.defaultReadOptions, columnToScan)
+
         keyWalk@ for (key in getRequest.keys) {
-            val mayExist = dataStore.db.keyMayExist(columnFamilies.table, key.bytes, StringBuilder())
+            val mayExist = dataStore.db.keyMayExist(columnFamilies.keys, key.bytes, StringBuilder())
             if (mayExist) {
                 val creationVersion =
-                    transaction.get(columnFamilies.table, dataStore.defaultReadOptions, key.bytes)?.toULong()
+                    transaction.get(columnFamilies.keys, dataStore.defaultReadOptions, key.bytes)?.toULong()
 
                 if (creationVersion != null) {
                     if (getRequest.shouldBeFiltered(
@@ -55,8 +61,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
                     }
 
                     val valuesWithMetaData = getRequest.dataModel.readTransactionIntoValuesWithMetaData(
-                        transaction,
-                        dataStore.defaultReadOptions,
+                        iterator,
                         creationVersion,
                         columnFamilies,
                         key,
@@ -86,6 +91,8 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
                 }
             }
         }
+
+        iterator.close()
     }
 
     storeAction.response.complete(

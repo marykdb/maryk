@@ -2,7 +2,6 @@ package maryk.datastore.rocksdb.processors.helpers
 
 import maryk.core.extensions.bytes.initULong
 import maryk.core.properties.types.Key
-import maryk.datastore.rocksdb.processors.LAST_VERSION_INDICATOR
 import maryk.lib.extensions.compare.compareWithOffsetTo
 import maryk.lib.extensions.compare.matchPart
 import maryk.rocksdb.RocksIterator
@@ -31,11 +30,6 @@ fun RocksIterator.historicQualifierRetriever(
             var versionOffset = qualifier.size - toVersionBytes.size
             if (lastQualifier != null && qualifier.matchPart(key.size, lastQualifier, versionOffset, offset, lastQualifierLength)) {
                 continue@qualifierFinder // Already returned this qualifier so skip
-            }
-
-            // Skip last version indicator
-            if (qualifier[key.size] == LAST_VERSION_INDICATOR) {
-                continue
             }
 
             if (toVersionBytes.compareWithOffsetTo(qualifier, versionOffset) <= 0) {

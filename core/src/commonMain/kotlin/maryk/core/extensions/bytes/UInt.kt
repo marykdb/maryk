@@ -35,7 +35,7 @@ internal fun initUInt(reader: () -> Byte, length: Int = 4): UInt {
 }
 
 /** Write the bytes of this UInt as a variable int to a [writer] */
-internal fun UInt.writeVarBytes(writer: (byte: Byte) -> Unit) {
+fun UInt.writeVarBytes(writer: (byte: Byte) -> Unit) {
     var value = this
     while (true) {
         if (value and 0x7Fu.inv() == 0u) {
@@ -65,7 +65,7 @@ internal fun initUIntByVar(reader: () -> Byte): UInt {
 
 
 /** Calculates the byte length of the variable unsigned int */
-internal fun UInt.calculateVarByteLength(): Int = when {
+fun UInt.calculateVarByteLength(): Int = when {
     this and (UInt.MAX_VALUE shl 7) == 0u -> 1
     this and (UInt.MAX_VALUE shl 14) == 0u -> 2
     this and (UInt.MAX_VALUE shl 21) == 0u -> 3

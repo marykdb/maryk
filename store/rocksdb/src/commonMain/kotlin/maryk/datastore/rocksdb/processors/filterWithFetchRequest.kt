@@ -45,7 +45,6 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> IsFetchReq
     else -> false
 }
 
-
 /**
  * Test if record at [key] read from [transaction], [readOptions] and [columnFamilies] is passing given [filter].
  * True if filter matches

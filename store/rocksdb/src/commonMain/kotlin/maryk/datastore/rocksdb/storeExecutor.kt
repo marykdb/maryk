@@ -12,10 +12,14 @@ import maryk.datastore.rocksdb.processors.AnyAddStoreAction
 import maryk.datastore.rocksdb.processors.AnyDeleteStoreAction
 import maryk.datastore.rocksdb.processors.AnyGetChangesStoreAction
 import maryk.datastore.rocksdb.processors.AnyGetStoreAction
+import maryk.datastore.rocksdb.processors.AnyScanChangesStoreAction
+import maryk.datastore.rocksdb.processors.AnyScanStoreAction
 import maryk.datastore.rocksdb.processors.processAddRequest
 import maryk.datastore.rocksdb.processors.processDeleteRequest
 import maryk.datastore.rocksdb.processors.processGetChangesRequest
 import maryk.datastore.rocksdb.processors.processGetRequest
+import maryk.datastore.rocksdb.processors.processScanChangesRequest
+import maryk.datastore.rocksdb.processors.processScanRequest
 
 /** Executor of StoreActions onto DataStore */
 @Suppress("UNCHECKED_CAST")
@@ -32,9 +36,9 @@ internal val storeExecutor: StoreExecutor = { storeAction, db ->
         is DeleteRequest<*> ->
             processDeleteRequest(storeAction as AnyDeleteStoreAction, db)
         is ScanRequest<*, *> ->
-            TODO("SCAN")
+            processScanRequest(storeAction as AnyScanStoreAction, db)
         is ScanChangesRequest<*, *> ->
-            TODO("SCAN CHANGES")
+            processScanChangesRequest(storeAction as AnyScanChangesStoreAction, db)
         else -> throw TypeException("Unknown request type ${storeAction.request}")
     }
 }

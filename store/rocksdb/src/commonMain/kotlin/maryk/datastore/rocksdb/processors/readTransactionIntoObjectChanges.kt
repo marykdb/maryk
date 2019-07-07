@@ -24,13 +24,11 @@ import maryk.datastore.rocksdb.processors.helpers.checkExistence
 import maryk.datastore.rocksdb.processors.helpers.historicQualifierRetriever
 import maryk.datastore.rocksdb.processors.helpers.nonHistoricQualifierRetriever
 import maryk.datastore.rocksdb.processors.helpers.readValue
-import maryk.rocksdb.ReadOptions
-import maryk.rocksdb.Transaction
+import maryk.rocksdb.RocksIterator
 
 /** Processes values for [key] from transaction to a DataObjectWithChanges object */
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTransactionIntoObjectChanges(
-    transaction: Transaction,
-    readOptions: ReadOptions,
+    iterator: RocksIterator,
     creationVersion: ULong,
     columnFamilies: TableColumnFamilies,
     key: Key<DM>,
@@ -41,8 +39,6 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
     val changes: List<VersionedChanges>
 
     if (toVersion == null) {
-        val iterator = transaction.getIterator(readOptions, columnFamilies.table)
-
         checkExistence(iterator, key)
 
         // Will start by going to next key so will miss the creation timestamp
@@ -111,8 +107,6 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
         if (columnFamilies !is HistoricTableColumnFamilies) {
             throw RequestException("No historic table present so cannot use `toVersion` on get changes")
         }
-
-        val iterator = transaction.getIterator(readOptions, columnFamilies.historic.table)
 
         checkExistence(iterator, key)
 

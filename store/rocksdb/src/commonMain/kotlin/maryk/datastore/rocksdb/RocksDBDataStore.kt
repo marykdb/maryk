@@ -4,7 +4,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.SendChannel
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
+import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.RootDataModel
 import maryk.core.properties.PropertyDefinitions
@@ -12,6 +12,8 @@ import maryk.datastore.rocksdb.TableType.HistoricIndex
 import maryk.datastore.rocksdb.TableType.HistoricTable
 import maryk.datastore.rocksdb.TableType.HistoricUnique
 import maryk.datastore.rocksdb.TableType.Index
+import maryk.datastore.rocksdb.TableType.Keys
+import maryk.datastore.rocksdb.TableType.Model
 import maryk.datastore.rocksdb.TableType.Table
 import maryk.datastore.rocksdb.TableType.Unique
 import maryk.datastore.rocksdb.processors.TRUE_ARRAY
@@ -68,13 +70,15 @@ class RocksDBDataStore(
     }
 
     private fun createColumnFamilyHandles(tableIndex: UInt, db: RootDataModel<*, *>) : TableColumnFamilies {
-        val nameSize = tableIndex.calculateVarIntWithExtraInfoByteSize()
+        val nameSize = tableIndex.calculateVarByteLength() + 1
 
         // Prefix set to key size for more optimal search.
         val tableOptions = ColumnFamilyOptions().apply {
             useFixedLengthPrefixExtractor(db.keyByteSize)
         }
 
+        val modelDesc = this.db.createColumnFamily(Model.getDescriptor(tableIndex, nameSize, tableOptions))
+        val keysDesc = this.db.createColumnFamily(Keys.getDescriptor(tableIndex, nameSize, tableOptions))
         val tableDesc = this.db.createColumnFamily(Table.getDescriptor(tableIndex, nameSize, tableOptions))
         val indexDesc = this.db.createColumnFamily(Index.getDescriptor(tableIndex, nameSize))
         val uniqueDesc = this.db.createColumnFamily(Unique.getDescriptor(tableIndex, nameSize))
@@ -85,17 +89,19 @@ class RocksDBDataStore(
             val historicUniqueDesc = this.db.createColumnFamily(HistoricUnique.getDescriptor(tableIndex, nameSize))
 
             HistoricTableColumnFamilies(
+                modelDesc,
+                keysDesc,
                 tableDesc,
                 indexDesc,
                 uniqueDesc,
-                TableColumnFamilies(
+                BasicTableColumnFamilies(
                     historicTableDesc,
                     historicIndexDesc,
                     historicUniqueDesc
                 )
             )
         } else {
-            TableColumnFamilies(tableDesc, indexDesc, uniqueDesc)
+            TableColumnFamilies(modelDesc, keysDesc, tableDesc, indexDesc, uniqueDesc)
         }
     }
 

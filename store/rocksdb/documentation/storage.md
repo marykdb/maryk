@@ -3,25 +3,33 @@
 # ColumnFamily structure
 
 Each table is represented by multiple column families in which the actual data
-is stored. It has at least a Table, Index and a UniqueIndex column family and
+is stored. It has at least a Model, Keys, Table, Index and a UniqueIndex column family and
 if `keepAllVersions` is true on the store historic variants of those 3 storing 
 the historical values. 
 
 The column family descriptor is a byte array consisting 2 parts, the index of the
-DB and a Type to indicate which of the 6 types it is.
+DB and a Type to indicate which of the types it is.
 
 - The index is retrieved from the database map as passed to the RocksDBDataStore
-- The type is created on init. At least Table, Index and a UniqueIndex, and if
-  `keepAllVersions` is true also historic version of the same 3. 
-  - Table - index 0
-  - Index - index 1
-  - Unique - index 2
-  - Historic Table - index 3 - Only if `keepAllVersions = true` on dataStore
-  - Historic Index - index 4 - Only if `keepAllVersions = true` on dataStore
-  - Historic Unique - index 5 - Only if `keepAllVersions = true` on dataStore
+- The type is created on init. At least Model, Keys, Table, Index and a UniqueIndex, 
+  and if `keepAllVersions` is true also historic version of the same 3.
+  - Model - index 0
+  - Keys - index 1 
+  - Table - index 2
+  - Index - index 3
+  - Unique - index 4
+  - Historic Table - index 5 - Only if `keepAllVersions = true` on dataStore
+  - Historic Index - index 6 - Only if `keepAllVersions = true` on dataStore
+  - Historic Unique - index 7 - Only if `keepAllVersions = true` on dataStore
+
+# Model
+Stores the model used for the data. Useful to get current structure and to check if current data can be
+read or updated with reference model from a client.
+
+# Keys
+Contains all the keys and creation dates for efficient scans for existence.
 
 # Record structure
-
 A record is stored in multiple key value pairs in multiple column families. Each 
 Type stores data different for its use case.
 

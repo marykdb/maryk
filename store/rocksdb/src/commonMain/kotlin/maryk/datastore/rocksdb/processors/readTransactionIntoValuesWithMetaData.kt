@@ -24,16 +24,14 @@ import maryk.datastore.rocksdb.processors.helpers.checkExistence
 import maryk.datastore.rocksdb.processors.helpers.historicQualifierRetriever
 import maryk.datastore.rocksdb.processors.helpers.nonHistoricQualifierRetriever
 import maryk.datastore.rocksdb.processors.helpers.readValue
-import maryk.rocksdb.ReadOptions
-import maryk.rocksdb.Transaction
+import maryk.rocksdb.RocksIterator
 
 /**
  * Read values for [key] from a [transaction] with [readOptions] from [columnFamilies]
  * to a ValuesWithMeta object. Filter results on [select] and use [toVersion]
  */
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTransactionIntoValuesWithMetaData(
-    transaction: Transaction,
-    readOptions: ReadOptions,
+    iterator: RocksIterator,
     creationVersion: ULong,
     columnFamilies: TableColumnFamilies,
     key: Key<DM>,
@@ -44,8 +42,6 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
     var isDeleted = false
 
     val values: Values<DM, P> = if (toVersion == null) {
-        val iterator = transaction.getIterator(readOptions, columnFamilies.table)
-
         checkExistence(iterator, key)
 
         // Will start by going to next key so will miss the creation timestamp
@@ -101,15 +97,11 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
                     TypeValue -> throw StorageException("Not used in direct encoding")
                 }
             }
-        ).also {
-            iterator.close()
-        }
+        )
     } else {
         if (columnFamilies !is HistoricTableColumnFamilies) {
             throw RequestException("No historic table present so cannot use `toVersion` on get")
         }
-
-        val iterator = transaction.getIterator(readOptions, columnFamilies.historic.table)
 
         checkExistence(iterator, key)
 

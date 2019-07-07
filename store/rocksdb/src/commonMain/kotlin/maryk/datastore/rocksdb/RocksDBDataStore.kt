@@ -77,8 +77,8 @@ class RocksDBDataStore(
             useFixedLengthPrefixExtractor(db.keyByteSize)
         }
 
-        val modelDesc = this.db.createColumnFamily(Model.getDescriptor(tableIndex, nameSize, tableOptions))
-        val keysDesc = this.db.createColumnFamily(Keys.getDescriptor(tableIndex, nameSize, tableOptions))
+        val modelDesc = this.db.createColumnFamily(Model.getDescriptor(tableIndex, nameSize))
+        val keysDesc = this.db.createColumnFamily(Keys.getDescriptor(tableIndex, nameSize))
         val tableDesc = this.db.createColumnFamily(Table.getDescriptor(tableIndex, nameSize, tableOptions))
         val indexDesc = this.db.createColumnFamily(Index.getDescriptor(tableIndex, nameSize))
         val uniqueDesc = this.db.createColumnFamily(Unique.getDescriptor(tableIndex, nameSize))

@@ -80,14 +80,15 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
 
             when (processedScanIndex) {
                 is TableScan -> {
-//                    scanStore(
-//                        dataStore,
-//                        scanRequest,
-//                        processedScanIndex.direction,
-//                        scanRange,
-//                        processRecord
-//                    )
-                    TODO("SCAN STORE")
+                    scanStore(
+                        dataStore,
+                        transaction,
+                        columnFamilies,
+                        scanRequest,
+                        processedScanIndex.direction,
+                        scanRange,
+                        processRecord
+                    )
                 }
                 is IndexScan -> {
 //                    scanIndex(

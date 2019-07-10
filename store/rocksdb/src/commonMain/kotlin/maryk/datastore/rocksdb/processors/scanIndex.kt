@@ -11,6 +11,7 @@ import maryk.core.query.orders.Direction.DESC
 import maryk.core.query.requests.IsScanRequest
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
+import maryk.datastore.rocksdb.processors.helpers.readCreationVersion
 import maryk.datastore.shared.ScanType.IndexScan
 import maryk.lib.extensions.compare.nextByteInSameLength
 import maryk.lib.extensions.compare.prevByteInSameLength
@@ -146,7 +147,9 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
                         indexRecord[readIndex++]
                     } as Key<DM>
 
-                    processStoreValue(key, setAtVersion)
+                    readCreationVersion(transaction, columnFamilies, dataStore.defaultReadOptions, key)?.let { createdVersion ->
+                        processStoreValue(key, createdVersion)
+                    }
 
                     // Break when limit is found
                     if (++currentSize == scanRequest.limit) break

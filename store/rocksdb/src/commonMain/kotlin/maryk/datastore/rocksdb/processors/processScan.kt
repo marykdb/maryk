@@ -4,11 +4,15 @@ import maryk.core.extensions.bytes.toULong
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.IsScanRequest
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
+import maryk.datastore.rocksdb.processors.helpers.getKeyByUniqueValue
+import maryk.datastore.rocksdb.processors.helpers.readCreationVersion
 import maryk.datastore.shared.ScanType.IndexScan
 import maryk.datastore.shared.ScanType.TableScan
 import maryk.datastore.shared.checkToVersion
@@ -50,25 +54,37 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
         else -> {
             // Process uniques as a fast path
             scanRange.uniques?.let {
+                scanRequest.toVersion?.let {
+                    TODO("SCAN unique toVersion")
+                }
+
                 if (it.isNotEmpty()) {
-                    TODO("SCAN UNIQUE")
-//                    // Only process the first unique
-//                    val firstReference = it.first()
-//
-//                    val uniqueIndex = dataStore.getOrCreateUniqueIndex(firstReference.reference)
-//                    @Suppress("UNCHECKED_CAST")
-//                    val value = firstReference.value as Comparable<Any>
-//
-//                    val record = scanRequest.toVersion?.let { version ->
-//                        uniqueIndex[value, HLC(version)]
-//                    } ?: uniqueIndex[value]
-//
-//                    record?.let {
-//                        if (shouldProcessRecord(record, scanRequest, scanRange)) {
-//                            processRecord(record)
-//                        }
-//                    }
-//                    return
+                    // Only process the first unique since it has to match every found unique matcher
+                    // and if first is set it can go to direct key to match further
+                    val firstMatcher = it.first()
+
+                    val uniqueReference = firstMatcher.reference
+                    @Suppress("UNCHECKED_CAST")
+                    val value = firstMatcher.value as Comparable<Any>
+                    @Suppress("UNCHECKED_CAST")
+                    val valueBytes = (firstMatcher.definition as IsComparableDefinition<Comparable<Any>, IsPropertyContext>).toStorageBytes(value)
+
+                    val reference = ByteArray(uniqueReference.size + 1 +valueBytes.size)
+                    uniqueReference.copyInto(reference)
+                    reference[uniqueReference.size] = NO_TYPE_INDICATOR
+                    valueBytes.copyInto(reference, uniqueReference.size + 1, 0, valueBytes.size)
+
+                    getKeyByUniqueValue(transaction, columnFamilies, readOptions, reference) { keyReader, setAtVersion ->
+                        @Suppress("UNCHECKED_CAST")
+                        val key = scanRequest.dataModel.key(keyReader) as Key<DM>
+
+                        if (shouldProcessRecord(transaction, columnFamilies, readOptions, key, setAtVersion, scanRequest, scanRange)) {
+                            readCreationVersion(transaction, columnFamilies, readOptions, key)?.let { createdVersion ->
+                                processRecord(key, createdVersion)
+                            }
+                        }
+                    }
+                    return
                 }
             }
 

@@ -105,6 +105,8 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
                                             }
                                         }
 
+                                        // Creates index reference on table if it not exists so delete can find
+                                        // what values to delete from the unique indices.
                                         dataStore.createUniqueIndexIfNotExists(storeAction.dbIndex, columnFamilies.unique, reference)
                                         setUniqueIndexValue(columnFamilies, transaction, uniqueReference, versionBytes, key)
                                     }

@@ -4,6 +4,7 @@ import maryk.core.exceptions.StorageException
 import maryk.core.extensions.bytes.initUIntByVarWithExtraInfo
 import maryk.core.processors.datastore.StorageTypeEnum.TypeValue
 import maryk.core.processors.datastore.StorageTypeEnum.Value
+import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.types.TypedValue
@@ -24,11 +25,15 @@ fun readValue(
 ): Any {
     return initUIntByVarWithExtraInfo(reader) { type, indicatorByte ->
         when (indicatorByte) {
-            NO_TYPE_INDICATOR ->
-                Value.castDefinition(definition).readStorageBytes(
+            NO_TYPE_INDICATOR -> {
+                val valueDefinition = if (definition is IsCollectionDefinition<*, *, *, *>) {
+                    definition.valueDefinition
+                } else definition
+                Value.castDefinition(valueDefinition).readStorageBytes(
                     valueBytesLeft(),
                     reader
                 )
+            }
             SIMPLE_TYPE_INDICATOR -> {
                 val typeDefinition =
                     TypeValue.castDefinition(definition)

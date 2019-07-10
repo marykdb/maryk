@@ -57,8 +57,8 @@ Index makes it easy to search records by values
 # Unique
 Unique stores a value which uniquely refers to a data record key. 
 
-- INDEX_REFERENCE:VALUE = KEY. An indexed value is prefixed by index and stores the
-  key so the record can be found by value. 
+- INDEX_REFERENCE:VALUE = VERSION-KEY. An indexed value is prefixed by index and stores the
+  key and version it was set so the record can be found by value. 
   
 # Historic Table
 This table stores all versions of values by appending the version to the reference. 

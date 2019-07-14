@@ -651,10 +651,8 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                 for (it in e.exceptions) {
                     addValidationFail(it)
                 }
-                transaction.rollbackToSavePoint()
             } catch (e: ValidationException) {
                 addValidationFail(e)
-                transaction.rollbackToSavePoint()
             } catch (ue: UniqueException) {
                 var index = 0
                 val ref = dataModel.getPropertyReferenceByStorageBytes(
@@ -665,12 +663,13 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                 addValidationFail(
                     AlreadySetException(ref)
                 )
-                transaction.rollbackToSavePoint()
             }
         }
 
         // Return fail if any validationExceptions were caught
         validationExceptions?.let {
+            // Undo snapshot because of validation exceptions
+            transaction.rollbackToSavePoint()
             return when {
                 it.size == 1 -> ValidationFail(it.first())
                 else -> ValidationFail(it)
@@ -723,8 +722,8 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
 
 
 /**
- * Create a ValueWriter to [newValueList] at [version]
- * Use [keepAllVersions] at true to keep all past versions
+ * Create a ValueWriter into [transaction] in [columnFamilies] at [versionBytes]
+ * for values at [key]
  */
 private fun createValueWriter(
     dataStore: RocksDBDataStore,

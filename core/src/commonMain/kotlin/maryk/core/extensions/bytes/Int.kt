@@ -50,7 +50,7 @@ internal fun Int.encodeZigZag() = this shl 1 xor (this shr 31)
 internal fun Int.decodeZigZag() = this ushr 1 xor -(this and 1)
 
 /** Write the bytes of this Int as a variable int to a [writer] */
-internal fun Int.writeVarBytes(writer: (byte: Byte) -> Unit) {
+fun Int.writeVarBytes(writer: (byte: Byte) -> Unit) {
     var value = this
     while (true) {
         if (value and 0x7F.inv() == 0) {
@@ -88,7 +88,7 @@ fun initIntByVar(reader: () -> Byte): Int {
 }
 
 /** Calculates the byte length of the variable int */
-internal fun Int.calculateVarByteLength(): Int = when {
+fun Int.calculateVarByteLength(): Int = when {
     this and (Int.MAX_VALUE shl 7) == 0 -> 1
     this and (Int.MAX_VALUE shl 14) == 0 -> 2
     this and (Int.MAX_VALUE shl 21) == 0 -> 3

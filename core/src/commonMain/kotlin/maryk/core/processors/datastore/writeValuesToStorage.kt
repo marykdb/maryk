@@ -180,7 +180,7 @@ internal fun <T : IsPropertyDefinition<*>> writeValue(
             val qualifier = if (index != null) {
                 writeQualifier(
                     qualifierLength + index.calculateVarIntWithExtraInfoByteSize(),
-                    createQualifierWriter(qualifierWriter, index, ReferenceType.VALUE)
+                    createQualifierWriter(qualifierWriter, index, VALUE)
                 )
             } else writeQualifier(qualifierLength, qualifierWriter)
 

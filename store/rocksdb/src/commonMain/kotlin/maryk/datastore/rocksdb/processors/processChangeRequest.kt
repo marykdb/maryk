@@ -3,19 +3,45 @@ package maryk.datastore.rocksdb.processors
 import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
+import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.toULong
+import maryk.core.extensions.bytes.toVarBytes
+import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.IsValuesDataModel
+import maryk.core.models.values
+import maryk.core.processors.datastore.StorageTypeEnum.Embed
+import maryk.core.processors.datastore.StorageTypeEnum.ListSize
+import maryk.core.processors.datastore.StorageTypeEnum.MapSize
+import maryk.core.processors.datastore.StorageTypeEnum.ObjectDelete
+import maryk.core.processors.datastore.StorageTypeEnum.SetSize
+import maryk.core.processors.datastore.StorageTypeEnum.TypeValue
+import maryk.core.processors.datastore.StorageTypeEnum.Value
+import maryk.core.processors.datastore.ValueWriter
+import maryk.core.processors.datastore.writeListToStorage
+import maryk.core.processors.datastore.writeMapToStorage
+import maryk.core.processors.datastore.writeSetToStorage
+import maryk.core.processors.datastore.writeToStorage
+import maryk.core.processors.datastore.writeTypedValueToStorage
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
+import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsMapDefinition
+import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.IsSetDefinition
+import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.IsStorageBytesEncodable
+import maryk.core.properties.enum.MultiTypeEnum
+import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
+import maryk.core.properties.exceptions.createValidationUmbrellaException
+import maryk.core.properties.references.IncMapReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceWithParent
 import maryk.core.properties.references.ListAnyItemReference
@@ -25,6 +51,8 @@ import maryk.core.properties.references.MapKeyReference
 import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.references.SetItemReference
+import maryk.core.properties.references.SetReference
+import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
@@ -41,6 +69,7 @@ import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.IsChangeResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.ValidationFail
+import maryk.core.values.EmptyValueItems
 import maryk.core.values.Values
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
@@ -50,6 +79,7 @@ import maryk.datastore.rocksdb.processors.helpers.getLastVersion
 import maryk.datastore.rocksdb.processors.helpers.getValue
 import maryk.datastore.rocksdb.processors.helpers.readValue
 import maryk.datastore.rocksdb.processors.helpers.setLatestVersion
+import maryk.datastore.rocksdb.processors.helpers.setUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setValue
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.UniqueException
@@ -98,6 +128,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processCha
                         applyChanges(
                             changeRequest.dataModel,
                             dataStore,
+                            storeAction,
                             transaction,
                             columnFamilies,
                             objectChange.key,
@@ -127,13 +158,14 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processCha
 }
 
 /**
- * Apply [changes] to a specific [objectToChange] and record them as [version]
+ * Apply [changes] to a specific [transaction] and record them as [version]
  * [keepAllVersions] determines if history is kept
  */
 @Suppress("UNUSED_PARAMETER")
 private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChanges(
     dataModel: DM,
     dataStore: RocksDBDataStore,
+    storeAction: ChangeStoreAction<DM, P>,
     transaction: Transaction,
     columnFamilies: TableColumnFamilies,
     key: Key<DM>,
@@ -152,8 +184,6 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
         }
 
 //        var uniquesToIndex: MutableMap<DataRecordValue<Comparable<Any>>, Any?>? = null
-
-//        val newValueList = objectToChange.values.toMutableList()
 
         var isChanged = false
         val setChanged = { didChange: Boolean -> if (didChange) isChanged = true }
@@ -186,124 +216,129 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                         for ((reference, value) in change.referenceValuePairs) {
                             when (value) {
                                 is Map<*, *> -> {
-                                    TODO("CHANGE CHANGE MAP")
+                                    @Suppress("UNCHECKED_CAST")
+                                    val mapDefinition = reference.propertyDefinition as? IsMapDefinition<Any, Any, IsPropertyContext>
+                                        ?: throw TypeException("Expected a Reference to IsMapDefinition for Map change")
 
-//                                    @Suppress("UNCHECKED_CAST")
-//                                    val mapDefinition = reference.propertyDefinition as? IsMapDefinition<Any, Any, IsPropertyContext>
-//                                        ?: throw TypeException("Expected a Reference to IsMapDefinition for Map change")
-//
-//                                    @Suppress("UNCHECKED_CAST")
-//                                    val mapReference = reference as IsPropertyReference<Map<Any, Any>, IsPropertyDefinition<Map<Any, Any>>, *>
-//
-//                                    // Delete all existing values in placeholder
-//                                    val hadPrevValue =
-//                                        deleteByReference(newValueList, mapReference, version, keepAllVersions)
-//
-//                                    @Suppress("UNCHECKED_CAST")
-//                                    mapDefinition.validateWithRef(
-//                                        if (hadPrevValue) mapOf() else null,
-//                                        value as Map<Any, Any>
-//                                    ) { mapReference }
-//
-//                                    val valueWriter = createValueWriter(newValueList, version, keepAllVersions)
-//
-//                                    writeMapToStorage(
-//                                        reference.calculateStorageByteLength(),
-//                                        reference::writeStorageBytes,
-//                                        valueWriter,
-//                                        mapDefinition,
-//                                        value
-//                                    )
+                                    @Suppress("UNCHECKED_CAST")
+                                    val mapReference = reference as IsPropertyReference<Map<Any, Any>, IsPropertyDefinition<Map<Any, Any>>, *>
+
+                                    // Delete all existing values in placeholder
+                                    val hadPrevValue =
+                                        deleteByReference(transaction, columnFamilies, dataStore.defaultReadOptions, key, mapReference, mapReference.toStorageByteArray(), versionBytes) { _, prevValue ->
+                                            prevValue != null // Check if parent was deleted
+                                        }
+
+                                    @Suppress("UNCHECKED_CAST")
+                                    mapDefinition.validateWithRef(
+                                        if (hadPrevValue) mapOf() else null,
+                                        value as Map<Any, Any>
+                                    ) { mapReference }
+
+                                    val valueWriter = createValueWriter(
+                                        dataStore, storeAction, transaction, columnFamilies, key, versionBytes
+                                    )
+
+                                    writeMapToStorage(
+                                        reference.calculateStorageByteLength(),
+                                        reference::writeStorageBytes,
+                                        valueWriter,
+                                        mapDefinition,
+                                        value
+                                    )
                                 }
                                 is List<*> -> {
-                                    TODO("CHANGE CHANGE LIST")
+                                    @Suppress("UNCHECKED_CAST")
+                                    val listDefinition = reference.propertyDefinition as? IsListDefinition<Any, IsPropertyContext>
+                                        ?: throw TypeException("Expected a Reference to IsListDefinition for List change")
 
-//                                    @Suppress("UNCHECKED_CAST")
-//                                    val listDefinition = reference.propertyDefinition as? IsListDefinition<Any, IsPropertyContext>
-//                                        ?: throw TypeException("Expected a Reference to IsListDefinition for List change")
-//
-//                                    // Delete all existing values in placeholder
-//                                    val hadPrevValue = deleteByReference(newValueList, reference, version, keepAllVersions)
-//
-//                                    @Suppress("UNCHECKED_CAST")
-//                                    listDefinition.validateWithRef(
-//                                        if (hadPrevValue) listOf() else null,
-//                                        value as List<Any>
-//                                    ) { reference as IsPropertyReference<List<Any>, IsPropertyDefinition<List<Any>>, *> }
-//
-//                                    val valueWriter = createValueWriter(newValueList, version, keepAllVersions)
-//
-//                                    writeListToStorage(
-//                                        reference.calculateStorageByteLength(),
-//                                        reference::writeStorageBytes,
-//                                        valueWriter,
-//                                        reference.propertyDefinition,
-//                                        value
-//                                    )
+                                    // Delete all existing values in placeholder
+                                    val hadPrevValue =
+                                        deleteByReference(transaction, columnFamilies, dataStore.defaultReadOptions, key, reference, reference.toStorageByteArray(), versionBytes) { _, prevValue ->
+                                            prevValue != null // Check if parent was deleted
+                                        }
+
+                                    @Suppress("UNCHECKED_CAST")
+                                    listDefinition.validateWithRef(
+                                        if (hadPrevValue) listOf() else null,
+                                        value as List<Any>
+                                    ) { reference as IsPropertyReference<List<Any>, IsPropertyDefinition<List<Any>>, *> }
+
+                                    val valueWriter = createValueWriter(
+                                        dataStore, storeAction, transaction, columnFamilies, key, versionBytes
+                                    )
+
+                                    writeListToStorage(
+                                        reference.calculateStorageByteLength(),
+                                        reference::writeStorageBytes,
+                                        valueWriter,
+                                        reference.propertyDefinition,
+                                        value
+                                    )
                                 }
                                 is Set<*> -> {
-                                    TODO("CHANGE CHANGE SET")
-//                                    @Suppress("UNCHECKED_CAST")
-//                                    val setDefinition = reference.propertyDefinition as? IsSetDefinition<Any, IsPropertyContext>
-//                                        ?: throw TypeException("Expected a Reference to IsSetDefinition for Set change")
-//
-//                                    // Delete all existing values in placeholder
-//                                    val hadPrevValue = deleteByReference(newValueList, reference, version, keepAllVersions)
-//
-//                                    @Suppress("UNCHECKED_CAST")
-//                                    setDefinition.validateWithRef(
-//                                        if (hadPrevValue) setOf() else null,
-//                                        value as Set<Any>
-//                                    ) { reference as IsPropertyReference<Set<Any>, IsPropertyDefinition<Set<Any>>, *> }
-//
-//                                    val valueWriter = createValueWriter(newValueList, version, keepAllVersions)
-//
-//                                    writeSetToStorage(
-//                                        reference.calculateStorageByteLength(),
-//                                        reference::writeStorageBytes,
-//                                        valueWriter,
-//                                        reference.propertyDefinition,
-//                                        value
-//                                    )
+                                    @Suppress("UNCHECKED_CAST")
+                                    val setDefinition = reference.propertyDefinition as? IsSetDefinition<Any, IsPropertyContext>
+                                        ?: throw TypeException("Expected a Reference to IsSetDefinition for Set change")
+
+                                    // Delete all existing values in placeholder
+                                    val hadPrevValue =
+                                        deleteByReference(transaction, columnFamilies, dataStore.defaultReadOptions, key, reference, reference.toStorageByteArray(), versionBytes) { _, prevValue ->
+                                            prevValue != null // Check if parent was deleted
+                                        }
+
+                                    @Suppress("UNCHECKED_CAST")
+                                    setDefinition.validateWithRef(
+                                        if (hadPrevValue) setOf() else null,
+                                        value as Set<Any>
+                                    ) { reference as IsPropertyReference<Set<Any>, IsPropertyDefinition<Set<Any>>, *> }
+
+                                    val valueWriter = createValueWriter(
+                                        dataStore, storeAction, transaction, columnFamilies, key, versionBytes
+                                    )
+
+                                    writeSetToStorage(
+                                        reference.calculateStorageByteLength(),
+                                        reference::writeStorageBytes,
+                                        valueWriter,
+                                        reference.propertyDefinition,
+                                        value
+                                    )
                                 }
                                 is TypedValue<*, *> -> {
-                                    TODO("CHANGE CHANGE TYPED")
-//                                    if (reference.propertyDefinition !is IsMultiTypeDefinition<*, *, *>) {
-//                                        throw TypeException("Expected a Reference to IsMultiTypeDefinition for TypedValue change")
-//                                    }
-//                                    @Suppress("UNCHECKED_CAST")
-//                                    val multiTypeDefinition =
-//                                        reference.propertyDefinition as IsMultiTypeDefinition<MultiTypeEnum<Any>, Any, IsPropertyContext>
-//                                    @Suppress("UNCHECKED_CAST")
-//                                    val multiTypeReference = reference as IsPropertyReference<TypedValue<MultiTypeEnum<Any>, Any>, IsPropertyDefinition<TypedValue<MultiTypeEnum<Any>, Any>>, *>
-//
-//                                    // Previous value to find
-//                                    var prevValue: TypedValue<MultiTypeEnum<Any>, *>? = null
-//                                    // Delete all existing values in placeholder
-//                                    val hadPrevValue = deleteByReference(
-//                                        newValueList,
-//                                        multiTypeReference,
-//                                        version,
-//                                        keepAllVersions
-//                                    ) { _, prevTypedValue ->
-//                                        prevValue = prevTypedValue
-//                                    }
-//
-//                                    @Suppress("UNCHECKED_CAST")
-//                                    multiTypeDefinition.validateWithRef(
-//                                        if (hadPrevValue) prevValue else null,
-//                                        value as TypedValue<MultiTypeEnum<Any>, Any>
-//                                    ) { multiTypeReference }
-//
-//                                    val valueWriter = createValueWriter(newValueList, version, keepAllVersions)
-//
-//                                    writeTypedValueToStorage(
-//                                        reference.calculateStorageByteLength(),
-//                                        reference::writeStorageBytes,
-//                                        valueWriter,
-//                                        reference.propertyDefinition,
-//                                        value
-//                                    )
+                                    if (reference.propertyDefinition !is IsMultiTypeDefinition<*, *, *>) {
+                                        throw TypeException("Expected a Reference to IsMultiTypeDefinition for TypedValue change")
+                                    }
+                                    @Suppress("UNCHECKED_CAST")
+                                    val multiTypeDefinition =
+                                        reference.propertyDefinition as IsMultiTypeDefinition<MultiTypeEnum<Any>, Any, IsPropertyContext>
+                                    @Suppress("UNCHECKED_CAST")
+                                    val multiTypeReference = reference as IsPropertyReference<TypedValue<MultiTypeEnum<Any>, Any>, IsPropertyDefinition<TypedValue<MultiTypeEnum<Any>, Any>>, *>
+
+                                    // Previous value to find
+                                    var prevValue: TypedValue<MultiTypeEnum<Any>, *>? = null
+                                    // Delete all existing values in placeholder
+                                    val hadPrevValue = deleteByReference(transaction, columnFamilies, dataStore.defaultReadOptions, key, reference, reference.toStorageByteArray(), versionBytes) { _, prevTypedValue ->
+                                        prevValue = prevTypedValue
+                                    }
+
+                                    @Suppress("UNCHECKED_CAST")
+                                    multiTypeDefinition.validateWithRef(
+                                        if (hadPrevValue) prevValue else null,
+                                        value as TypedValue<MultiTypeEnum<Any>, Any>
+                                    ) { multiTypeReference }
+
+                                    val valueWriter = createValueWriter(
+                                        dataStore, storeAction, transaction, columnFamilies, key, versionBytes
+                                    )
+
+                                    writeTypedValueToStorage(
+                                        reference.calculateStorageByteLength(),
+                                        reference::writeStorageBytes,
+                                        valueWriter,
+                                        reference.propertyDefinition,
+                                        value
+                                    )
                                 }
                                 is Values<*, *> -> {
                                     // Process any reference containing values
@@ -315,38 +350,36 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                     val valuesDefinition = reference.propertyDefinition as IsEmbeddedValuesDefinition<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, IsPropertyContext>
                                     @Suppress("UNCHECKED_CAST")
                                     val valuesReference = reference as IsPropertyReference<Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>, IsPropertyDefinition<Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>>, *>
-                                    TODO("CHANGE CHANGE VALUES")
-//
-//                                    // Delete all existing values in placeholder
-//                                    val hadPrevValue = deleteByReference(
-//                                        newValueList,
-//                                        valuesReference,
-//                                        version,
-//                                        keepAllVersions
-//                                    )
-//
-//                                    @Suppress("UNCHECKED_CAST")
-//                                    valuesDefinition.validateWithRef(
-//                                        if (hadPrevValue) valuesDefinition.dataModel.values(null) { EmptyValueItems } else null,
-//                                        value as Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
-//                                    ) { valuesReference }
-//
-//                                    val valueWriter = createValueWriter(newValueList, version, keepAllVersions)
-//
-//                                    // Write complex values existence indicator
-//                                    // Write parent value with Unit so it knows this one is not deleted. So possible lingering old types are not read.
-//                                    valueWriter(
-//                                        Embed,
-//                                        reference.toStorageByteArray(),
-//                                        valuesDefinition,
-//                                        Unit
-//                                    )
-//
-//                                    value.writeToStorage(
-//                                        reference.calculateStorageByteLength(),
-//                                        reference::writeStorageBytes,
-//                                        valueWriter
-//                                    )
+
+                                    // Delete all existing values in placeholder
+                                    val hadPrevValue = deleteByReference(transaction, columnFamilies, dataStore.defaultReadOptions, key, reference, reference.toStorageByteArray(), versionBytes) { _, prevValue ->
+                                        prevValue != null // Check if parent was deleted
+                                    }
+
+                                    @Suppress("UNCHECKED_CAST")
+                                    valuesDefinition.validateWithRef(
+                                        if (hadPrevValue) valuesDefinition.dataModel.values(null) { EmptyValueItems } else null,
+                                        value as Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
+                                    ) { valuesReference }
+
+                                    val valueWriter = createValueWriter(
+                                        dataStore, storeAction, transaction, columnFamilies, key, versionBytes
+                                    )
+
+                                    // Write complex values existence indicator
+                                    // Write parent value with Unit so it knows this one is not deleted. So possible lingering old types are not read.
+                                    valueWriter(
+                                        Embed,
+                                        reference.toStorageByteArray(),
+                                        valuesDefinition,
+                                        Unit
+                                    )
+
+                                    value.writeToStorage(
+                                        reference.calculateStorageByteLength(),
+                                        reference::writeStorageBytes,
+                                        valueWriter
+                                    )
                                 }
                                 else -> {
 //                                        val definition = reference.comparablePropertyDefinition
@@ -440,8 +473,13 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                         for (reference in change.references) {
                             @Suppress("UNCHECKED_CAST")
                             val ref = reference as IsPropertyReference<Any, IsPropertyDefinition<Any>, Any>
+                            val referenceAsBytes = reference.toStorageByteArray()
                             try {
-                                deleteByReference(transaction, columnFamilies, dataStore.defaultReadOptions, key, ref, versionBytes) { _, previousValue ->
+                                if (reference is TypedValueReference<*, *, *>) {
+                                    throw RequestException("Type Reference not allowed for deletes. Use the multi type parent.")
+                                }
+
+                                deleteByReference(transaction, columnFamilies, dataStore.defaultReadOptions, key, reference, referenceAsBytes, versionBytes) { _, previousValue ->
                                     ref.propertyDefinition.validateWithRef(
                                         previousValue = previousValue,
                                         newValue = null,
@@ -504,70 +542,80 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
 //                        }
                     }
                     is SetChange -> {
-                        TODO("CHANGE SET CHANGE")
-//                        @Suppress("UNCHECKED_CAST")
-//                        for (setChange in change.setValueChanges) {
-//                            val setReference = setChange.reference as SetReference<Any, IsPropertyContext>
-//                            val setDefinition = setReference.propertyDefinition
-//                            var countChange = 0
-//                            setChange.addValues?.let {
-//                                createValidationUmbrellaException({ setReference }) { addException ->
-//                                    for (value in it) {
-//                                        val setItemRef = setDefinition.itemRef(value, setReference)
-//                                        try {
-//                                            setDefinition.valueDefinition.validateWithRef(null, value) { setItemRef }
-//                                            setValue(
-//                                                newValueList,
-//                                                setItemRef,
-//                                                value,
-//                                                version
-//                                            ) { _, prevValue ->
-//                                                prevValue ?: countChange++ // Only count up when value did not exist
-//                                            }.also(setChanged)
-//                                        } catch (e: ValidationException) {
-//                                            addException(e)
-//                                        }
-//                                    }
-//                                }
-//                            }
-//
-//                            createCountUpdater(
-//                                newValueList,
-//                                setChange.reference,
-//                                version,
-//                                countChange,
-//                                keepAllVersions
-//                            ) {
-//                                setDefinition.validateSize(it) { setReference }
-//                            }
-//                        }
+                        @Suppress("UNCHECKED_CAST")
+                        for (setChange in change.setValueChanges) {
+                            val setReference = setChange.reference as SetReference<Any, IsPropertyContext>
+                            val setDefinition = setReference.propertyDefinition
+                            var countChange = 0
+                            setChange.addValues?.let {
+                                createValidationUmbrellaException({ setReference }) { addException ->
+                                    for (value in it) {
+                                        val setItemRef = setDefinition.itemRef(value, setReference)
+                                        try {
+                                            setDefinition.valueDefinition.validateWithRef(null, value) { setItemRef }
+
+                                            val keyAndReference = setItemRef.toStorageByteArray(key.bytes)
+
+                                            // Check previous value and delete it if needed
+                                            transaction.getValue(columnFamilies, dataStore.defaultReadOptions, null, keyAndReference) { b, o, _ ->
+                                                // Check if parent was deleted
+                                                if (b[o] == DELETED_INDICATOR) null else true
+                                            } ?: countChange++ // Add 1 because does not exist
+
+                                            @Suppress("UNCHECKED_CAST")
+                                            val valueBytes = (setItemRef.propertyDefinition as IsStorageBytesEncodable<Any>).toStorageBytes(value, NO_TYPE_INDICATOR)
+
+                                            setValue(transaction, columnFamilies, keyAndReference, versionBytes, valueBytes)
+                                            setChanged(true)
+                                        } catch (e: ValidationException) {
+                                            addException(e)
+                                        }
+                                    }
+                                }
+                            }
+
+                            createCountUpdater(
+                                transaction,
+                                columnFamilies,
+                                dataStore.defaultReadOptions,
+                                key,
+                                setChange.reference,
+                                versionBytes,
+                                countChange
+                            ) {
+                                setDefinition.validateSize(it) { setReference }
+                            }
+                        }
                     }
                     is IncMapChange -> {
-                        TODO("CHANGE INC MAP CHANGE")
-//                        @Suppress("UNCHECKED_CAST")
-//                        for (valueChange in change.valueChanges) {
-//                            val incMapReference = valueChange.reference as IncMapReference<Comparable<Any>, Any, IsPropertyContext>
-//                            val incMapDefinition = incMapReference.propertyDefinition
-//
-//                            valueChange.addValues?.let { addValues ->
-//                                createValidationUmbrellaException({ incMapReference }) { addException ->
-//                                    for ((index, value) in addValues.withIndex()) {
-//                                        try {
-//                                            incMapDefinition.valueDefinition.validateWithRef(null, value) { incMapDefinition.addIndexRef(index, incMapReference) }
-//                                        } catch (e: ValidationException) {
-//                                            addException(e)
-//                                        }
-//                                    }
-//                                }
+                        @Suppress("UNCHECKED_CAST")
+                        for (valueChange in change.valueChanges) {
+                            val incMapReference = valueChange.reference as IncMapReference<Comparable<Any>, Any, IsPropertyContext>
+                            val incMapDefinition = incMapReference.propertyDefinition
+
+                            valueChange.addValues?.let { addValues ->
+                                createValidationUmbrellaException({ incMapReference }) { addException ->
+                                    for ((index, value) in addValues.withIndex()) {
+                                        try {
+                                            incMapDefinition.valueDefinition.validateWithRef(null, value) { incMapDefinition.addIndexRef(index, incMapReference) }
+                                        } catch (e: ValidationException) {
+                                            addException(e)
+                                        }
+                                    }
+                                }
 //
 //                                val currentIncMapKey = getCurrentIncMapKey(
 //                                    newValueList,
 //                                    incMapReference
 //                                )
 //
+//                                val valueWriter = createValueWriter(
+//                                    dataStore, storeAction, transaction, columnFamilies, key, versionBytes
+//                                )
+//
 //                                val addedKeys = writeIncMapAdditionsToStorage(
 //                                    currentIncMapKey,
-//                                    createValueWriter(newValueList, version, keepAllVersions),
+//                                    valueWriter,
 //                                    incMapDefinition.definition,
 //                                    addValues
 //                                )
@@ -583,16 +631,19 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
 //                                }
 //
 //                                createCountUpdater(
-//                                    newValueList,
+//                                    transaction,
+//                                    columnFamilies,
+//                                    dataStore.defaultReadOptions,
+//                                    key,
 //                                    valueChange.reference,
-//                                    version,
-//                                    addValues.size,
-//                                    keepAllVersions
+//                                    versionBytes,
+//                                    addValues.size
 //                                ) {
 //                                    incMapDefinition.validateSize(it) { incMapReference }
 //                                }
-//                            }
-//                        }
+                                TODO("CHANGE INC MAP")
+                            }
+                        }
                     }
                     else -> return ServerFail("Unsupported operation $change")
                 }
@@ -670,20 +721,76 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
     }
 }
 
-//
-///**
-// * Create a ValueWriter to [newValueList] at [version]
-// * Use [keepAllVersions] at true to keep all past versions
-// */
-//private fun createValueWriter(
-//    newValueList: MutableList<DataRecordNode>,
-//    version: HLC,
-//    keepAllVersions: Boolean
-//): ValueWriter<IsPropertyDefinition<*>> = { _, qualifier, _, mapValue ->
-//    val valueIndex = newValueList.binarySearch {
-//        it.reference.compareTo(qualifier)
-//    }
-//    setValueAtIndex(
-//        newValueList, valueIndex, qualifier, mapValue, version, keepAllVersions
-//    )
-//}
+
+/**
+ * Create a ValueWriter to [newValueList] at [version]
+ * Use [keepAllVersions] at true to keep all past versions
+ */
+private fun createValueWriter(
+    dataStore: RocksDBDataStore,
+    storeAction: StoreAction<*, *, *, *>,
+    transaction: Transaction,
+    columnFamilies: TableColumnFamilies,
+    key: Key<*>,
+    versionBytes: ByteArray
+): ValueWriter<IsPropertyDefinition<*>> = { type, reference, definition, value ->
+    when (type) {
+        ObjectDelete -> {} // Cannot happen on new add
+        Value -> {
+            val storableDefinition = Value.castDefinition(definition)
+            val valueBytes = storableDefinition.toStorageBytes(value, NO_TYPE_INDICATOR)
+
+            // If a unique index, check if exists, and then write
+            if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
+                val uniqueReference = byteArrayOf(*reference, *valueBytes)
+
+//                checksBeforeWrite.add {
+//                    // Since it is an addition we only need to check the current uniques
+//                    dataStore.db.get(columnFamilies.unique, uniqueReference)?.let {
+//                        throw UniqueException(reference)
+//                    }
+//                }
+
+                // Creates index reference on table if it not exists so delete can find
+                // what values to delete from the unique indices.
+                dataStore.createUniqueIndexIfNotExists(storeAction.dbIndex, columnFamilies.unique, reference)
+                setUniqueIndexValue(columnFamilies, transaction, uniqueReference, versionBytes, key)
+            }
+
+            setValue(transaction, columnFamilies, key, reference, versionBytes, valueBytes)
+        }
+        ListSize,
+        SetSize,
+        MapSize -> setValue(transaction, columnFamilies, key, reference, versionBytes, (value as Int).toVarBytes())
+        TypeValue -> {
+            val typedValue = value as TypedValue<TypeEnum<*>, *>
+            val typeDefinition = TypeValue.castDefinition(definition)
+
+            var index = 0
+            if (typedValue.value == Unit) {
+                val valueBytes = ByteArray(value.type.index.calculateVarIntWithExtraInfoByteSize())
+                typedValue.type.index.writeVarIntWithExtraInfo(COMPLEX_TYPE_INDICATOR) { valueBytes[index++] = it }
+
+                setValue(transaction, columnFamilies, key, reference, versionBytes, valueBytes)
+            } else {
+                val typeValueDefinition = typeDefinition.definition(typedValue.type) as IsSimpleValueDefinition<Any, *>
+                val valueBytes = ByteArray(
+                    typedValue.type.index.calculateVarIntWithExtraInfoByteSize() +
+                        typeValueDefinition.calculateStorageByteLength(typedValue.value)
+                )
+                val writer: (Byte) -> Unit = { valueBytes[index++] = it }
+
+                typedValue.type.index.writeVarIntWithExtraInfo(SIMPLE_TYPE_INDICATOR, writer)
+                typeValueDefinition.writeStorageBytes(typedValue.value, writer)
+
+                setValue(transaction, columnFamilies, key, reference, versionBytes, valueBytes)
+            }
+        }
+        Embed -> {
+            // Indicates value exists and is an embed
+            // Is for the root of embed
+            val valueBytes = byteArrayOf(EMBED_INDICATOR, TRUE)
+            setValue(transaction, columnFamilies, key, reference, versionBytes, valueBytes)
+        }
+    }
+}

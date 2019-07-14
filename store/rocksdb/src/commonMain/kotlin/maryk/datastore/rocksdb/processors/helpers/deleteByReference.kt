@@ -1,6 +1,5 @@
 package maryk.datastore.rocksdb.processors.helpers
 
-import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
 import maryk.core.models.IsDataModelWithValues
 import maryk.core.properties.IsPropertyContext
@@ -23,7 +22,6 @@ import maryk.core.properties.references.MultiTypePropertyReference
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
 import maryk.core.properties.references.TypedPropertyReference
-import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.types.Key
 import maryk.core.values.EmptyValueItems
 import maryk.datastore.rocksdb.TableColumnFamilies
@@ -39,14 +37,11 @@ fun <T : Any> deleteByReference(
     readOptions: ReadOptions,
     key: Key<*>,
     reference: TypedPropertyReference<T>,
+    referenceAsBytes: ByteArray,
     version: ByteArray,
     handlePreviousValue: ((ByteArray, T?) -> Unit)?
 ): Boolean {
-    if (reference is TypedValueReference<*, *, *>) {
-        throw RequestException("Type Reference not allowed for deletes. Use the multi type parent.")
-    }
-
-    val referenceToCompareTo = byteArrayOf(*key.bytes, *reference.toStorageByteArray())
+    val referenceToCompareTo = byteArrayOf(*key.bytes, *referenceAsBytes)
     var referenceOfParent: ByteArray? = null
     var toShiftListCount = 0u
 

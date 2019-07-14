@@ -46,6 +46,7 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceWithParent
 import maryk.core.properties.references.ListAnyItemReference
 import maryk.core.properties.references.ListItemReference
+import maryk.core.properties.references.ListReference
 import maryk.core.properties.references.MapAnyValueReference
 import maryk.core.properties.references.MapKeyReference
 import maryk.core.properties.references.MapReference
@@ -76,9 +77,11 @@ import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.createCountUpdater
 import maryk.datastore.rocksdb.processors.helpers.deleteByReference
 import maryk.datastore.rocksdb.processors.helpers.getLastVersion
+import maryk.datastore.rocksdb.processors.helpers.getList
 import maryk.datastore.rocksdb.processors.helpers.getValue
 import maryk.datastore.rocksdb.processors.helpers.readValue
 import maryk.datastore.rocksdb.processors.helpers.setLatestVersion
+import maryk.datastore.rocksdb.processors.helpers.setListValue
 import maryk.datastore.rocksdb.processors.helpers.setUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setValue
 import maryk.datastore.shared.StoreAction
@@ -500,46 +503,53 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                         }
                     }
                     is ListChange -> {
-                        TODO("CHANGE LIST CHANGE")
-//                        for (listChange in change.listValueChanges) {
-//                            val originalList = getList(newValueList, listChange.reference)
-//                            val list = originalList?.toMutableList() ?: mutableListOf()
-//                            val originalCount = list.size
-//                            listChange.deleteValues?.let {
-//                                for (deleteValue in it) {
-//                                    list.remove(deleteValue)
-//                                }
-//                            }
-//                            listChange.addValuesAtIndex?.let {
-//                                for ((index, value) in it) {
-//                                    list.add(index.toInt(), value)
-//                                }
-//                            }
-//                            listChange.addValuesToEnd?.let {
-//                                for (value in it) {
-//                                    list.add(value)
-//                                }
-//                            }
-//
-//                            try {
-//                                @Suppress("UNCHECKED_CAST")
-//                                (listChange.reference as ListReference<Any, *>).propertyDefinition.validate(
-//                                    previousValue = originalList,
-//                                    newValue = list,
-//                                    parentRefFactory = { (listChange.reference as? IsPropertyReferenceWithParent<Any, *, *, *>)?.parentReference }
-//                                )
-//                            } catch (e: ValidationException) {
-//                                addValidationFail(e)
-//                            }
-//                            setListValue(
-//                                newValueList,
-//                                listChange.reference,
-//                                list,
-//                                originalCount,
-//                                version,
-//                                keepAllVersions
-//                            ).also(setChanged)
-//                        }
+                        for (listChange in change.listValueChanges) {
+                            @Suppress("UNCHECKED_CAST")
+                            val originalList = getList(transaction, columnFamilies, dataStore.defaultReadOptions, key, listChange.reference as ListReference<Any, *>)
+                            val list = originalList?.toMutableList() ?: mutableListOf()
+                            val originalCount = list.size
+                            listChange.deleteValues?.let {
+                                for (deleteValue in it) {
+                                    list.remove(deleteValue)
+                                }
+                            }
+                            listChange.addValuesAtIndex?.let {
+                                for ((index, value) in it) {
+                                    list.add(index.toInt(), value)
+                                }
+                            }
+                            listChange.addValuesToEnd?.let {
+                                for (value in it) {
+                                    list.add(value)
+                                }
+                            }
+
+                            try {
+                                @Suppress("UNCHECKED_CAST")
+                                val listReference = listChange.reference as ListReference<Any, *>
+
+                                listReference.propertyDefinition.validate(
+                                    previousValue = originalList,
+                                    newValue = list,
+                                    parentRefFactory = {
+                                        @Suppress("UNCHECKED_CAST")
+                                        (listChange.reference as? IsPropertyReferenceWithParent<Any, *, *, *>)?.parentReference
+                                    }
+                                )
+
+                                setListValue(
+                                    transaction,
+                                    columnFamilies,
+                                    key,
+                                    listReference,
+                                    list,
+                                    originalCount,
+                                    versionBytes
+                                ).also(setChanged)
+                            } catch (e: ValidationException) {
+                                addValidationFail(e)
+                            }
+                        }
                     }
                     is SetChange -> {
                         @Suppress("UNCHECKED_CAST")
@@ -556,7 +566,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
 
                                             val keyAndReference = setItemRef.toStorageByteArray(key.bytes)
 
-                                            // Check previous value and delete it if needed
+                                            // Check if previous value exists and raise count change if it does not
                                             transaction.getValue(columnFamilies, dataStore.defaultReadOptions, null, keyAndReference) { b, o, _ ->
                                                 // Check if parent was deleted
                                                 if (b[o] == DELETED_INDICATOR) null else true

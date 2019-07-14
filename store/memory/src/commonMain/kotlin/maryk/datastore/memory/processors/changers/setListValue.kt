@@ -32,8 +32,11 @@ fun <T : Any> setListValue(
     // Set the count
     setValueAtIndex(values, valueIndex, referenceToCompareTo, newList.size, version, keepAllVersions)
 
+    var changed = false
+
     val toDeleteCount = originalCount - newList.size
     if (toDeleteCount > 0) {
+        changed = true
         for (i in 0..toDeleteCount) {
             deleteByIndex<T>(values, valueIndex + i, getValueAtIndex<T>(values, valueIndex + i)!!.reference, version)
         }
@@ -43,8 +46,6 @@ fun <T : Any> setListValue(
     val lastAdditionIndex = if (valueIndex > 0 && toDeleteCount < 0) {
         valueIndex + originalCount
     } else 0
-
-    var changed = false
 
     // Walk all new values to store
     newList.forEachIndexed { index, item ->

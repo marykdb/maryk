@@ -88,6 +88,15 @@ interface IsPropertyReference<T : Any, out D : IsPropertyDefinition<T>, V : Any>
         return referenceToCompareTo
     }
 
+    /** Convert property reference to a ByteArray with [prefixBytes] as start */
+    fun toStorageByteArray(prefixBytes: ByteArray, offset: Int = 0, length: Int = prefixBytes.size): ByteArray {
+        val referenceToCompareTo = ByteArray(length + this.calculateStorageByteLength())
+        prefixBytes.copyInto(referenceToCompareTo, 0, offset, offset + length)
+        var index = length
+        this.writeStorageBytes { referenceToCompareTo[index++] = it }
+        return referenceToCompareTo
+    }
+
     fun toQualifierMatcher(): IsQualifierMatcher {
         val bytes = mutableListOf<Byte>()
         val byteArrays = mutableListOf<ByteArray>()

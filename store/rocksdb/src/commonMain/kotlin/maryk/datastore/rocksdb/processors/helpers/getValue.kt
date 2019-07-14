@@ -18,7 +18,7 @@ fun <T: Any> Transaction.getValue(
     readOptions: ReadOptions,
     toVersion: ULong?,
     reference: ByteArray,
-    handleResult: (ByteArray, Int, Int) -> T
+    handleResult: (ByteArray, Int, Int) -> T?
 ): T? {
     return if (toVersion == null) {
         this.get(columnFamilies.table, readOptions, reference)?.let {

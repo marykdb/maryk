@@ -53,6 +53,7 @@ internal fun <T : Any> deleteByReference(
     val prevValue: T = getValueAtIndex<T>(values, valueIndex)?.value.let {
         if (it == null) {
             // does not exist so nothing to delete
+            // So skip out early
             return false
         } else {
             // With delete the prev value for complex types needs to be set to check final and required states

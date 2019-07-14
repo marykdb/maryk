@@ -12,7 +12,7 @@ interface IsStorageBytesEncodable<T : Any> {
     fun writeStorageBytes(value: T, writer: (byte: Byte) -> Unit)
 
     /** Read storage [bytes] from [offset] until [length] */
-    fun fromStorageBytes(bytes: ByteArray, offset: Int, length: Int): T {
+    fun fromStorageBytes(bytes: ByteArray, offset: Int = 0, length: Int = bytes.size): T {
         var index = offset
         return this.readStorageBytes(length) {
             bytes[index++]

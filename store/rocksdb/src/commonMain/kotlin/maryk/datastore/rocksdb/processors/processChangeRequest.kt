@@ -6,18 +6,14 @@ import maryk.core.extensions.bytes.toULong
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListAnyItemReference
-import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.MapAnyValueReference
 import maryk.core.properties.references.MapKeyReference
-import maryk.core.properties.references.MapValueReference
-import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Check
@@ -38,6 +34,7 @@ import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.deleteByReference
 import maryk.datastore.rocksdb.processors.helpers.getLastVersion
 import maryk.datastore.rocksdb.processors.helpers.getValue
+import maryk.datastore.rocksdb.processors.helpers.readValue
 import maryk.datastore.rocksdb.processors.helpers.setLatestVersion
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.UniqueException
@@ -102,6 +99,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processCha
 
                 statuses.add(status)
             }
+            transaction.commit()
         }
     }
 
@@ -147,14 +145,19 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
 
         val outChanges = mutableListOf<IsChange>()
 
+        val versionBytes = HLC.toStorageBytes(version)
+
+        transaction.setSavePoint()
+
         for (change in changes) {
             try {
                 when (change) {
                     is Check -> {
                         for ((reference, value) in change.referenceValuePairs) {
-                            transaction.getValue(columnFamilies, dataStore.defaultReadOptions, null, reference.toStorageByteArray()) { b, o, l ->
-                                @Suppress("UNCHECKED_CAST")
-                                val storedValue = (reference.propertyDefinition as IsStorageBytesEncodable<Any>).fromStorageBytes(b, o, l)
+                            transaction.getValue(columnFamilies, dataStore.defaultReadOptions, null, reference.toStorageByteArray(key.bytes)) { b, o, l ->
+                                var readIndex = o
+                                // Convert stored value excluding defining byte
+                                val storedValue = readValue(reference.comparablePropertyDefinition, { b[readIndex++] }) { o + l - readIndex }
                                 if (storedValue != value) {
                                     addValidationFail(
                                         InvalidValueException(reference, value.toString())
@@ -405,8 +408,8 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                         for (reference in change.references) {
                             @Suppress("UNCHECKED_CAST")
                             val ref = reference as IsPropertyReference<Any, IsPropertyDefinition<Any>, Any>
-                            deleteByReference(transaction, columnFamilies, dataStore.defaultReadOptions, dataStore.defaultWriteOptions, ref, version) { _, previousValue ->
-                                try {
+                            try {
+                                deleteByReference(transaction, columnFamilies, dataStore.defaultReadOptions, key, ref, versionBytes) { _, previousValue ->
                                     ref.propertyDefinition.validateWithRef(
                                         previousValue = previousValue,
                                         newValue = null,
@@ -415,54 +418,15 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
 
                                     // Extra validations based on reference type
                                     when (ref) {
-                                        is MapValueReference<*, *, *> -> {
-                                            TODO("CHANGE DELETE MAP VALUE")
-//                                            createCountUpdater(
-//                                                newValueList,
-//                                                ref.parentReference as IsPropertyReference<*, *, *>,
-//                                                version,
-//                                                -1,
-//                                                keepAllVersions
-//                                            ) {
-//                                                @Suppress("UNCHECKED_CAST")
-//                                                (ref as MapValueReference<Any, Any, IsPropertyContext>).mapDefinition.validateSize(it) { ref as IsPropertyReference<Map<Any, Any>, IsPropertyDefinition<Map<Any, Any>>, *> }
-//                                            }
-                                        }
-                                        is SetItemReference<*, *> -> {
-                                            TODO("CHANGE DELETE SET ITEM")
-//                                            createCountUpdater(
-//                                                newValueList,
-//                                                ref.parentReference as CanContainSetItemReference<*, *, *>,
-//                                                version,
-//                                                -1,
-//                                                keepAllVersions
-//                                            ) {
-//                                                @Suppress("UNCHECKED_CAST")
-//                                                (ref as SetItemReference<Any, IsPropertyContext>).setDefinition.validateSize(it) { ref as IsPropertyReference<Set<Any>, IsPropertyDefinition<Set<Any>>, *> }
-//                                            }
-                                        }
-                                        is ListItemReference<*, *> -> {
-                                            TODO("CHANGE DELETE LIST ITEM")
-//                                            createCountUpdater(
-//                                                newValueList,
-//                                                ref.parentReference as CanContainListItemReference<*, *, *>,
-//                                                version,
-//                                                -1,
-//                                                keepAllVersions
-//                                            ) {
-//                                                @Suppress("UNCHECKED_CAST")
-//                                                (ref as ListItemReference<Any, IsPropertyContext>).listDefinition.validateSize(it) { ref as IsPropertyReference<List<Any>, IsPropertyDefinition<List<Any>>, *> }
-//                                            }
-                                        }
                                         is MapKeyReference<*, *, *> -> throw RequestException("Not allowed to delete Map key, delete value instead")
                                         is MapAnyValueReference<*, *, *> -> throw RequestException("Not allowed to delete Map with any key reference, delete by map reference instead")
                                         is ListAnyItemReference<*, *> -> throw RequestException("Not allowed to delete List with any item reference, delete by list reference instead")
                                         else -> {}
                                     }
-                                } catch (e: ValidationException) {
-                                    addValidationFail(e)
-                                }
-                            }.also(setChanged)
+                                }.also(setChanged)
+                            } catch (e: ValidationException) {
+                                addValidationFail(e)
+                            }
                         }
                     }
                     is ListChange -> {
@@ -604,8 +568,10 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                 for (it in e.exceptions) {
                     addValidationFail(it)
                 }
+                transaction.rollbackToSavePoint()
             } catch (e: ValidationException) {
                 addValidationFail(e)
+                transaction.rollbackToSavePoint()
             } catch (ue: UniqueException) {
                 var index = 0
                 val ref = dataModel.getPropertyReferenceByStorageBytes(
@@ -616,6 +582,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                 addValidationFail(
                     AlreadySetException(ref)
                 )
+                transaction.rollbackToSavePoint()
             }
         }
 

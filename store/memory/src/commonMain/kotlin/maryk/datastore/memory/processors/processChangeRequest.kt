@@ -29,8 +29,6 @@ import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
-import maryk.core.properties.references.CanContainListItemReference
-import maryk.core.properties.references.CanContainSetItemReference
 import maryk.core.properties.references.IncMapReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceWithParent
@@ -432,42 +430,6 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
 
                                     // Extra validations based on reference type
                                     when (ref) {
-                                        is MapValueReference<*, *, *> -> {
-                                            createCountUpdater(
-                                                newValueList,
-                                                ref.parentReference as IsPropertyReference<*, *, *>,
-                                                version,
-                                                -1,
-                                                keepAllVersions
-                                            ) {
-                                                @Suppress("UNCHECKED_CAST")
-                                                (ref as MapValueReference<Any, Any, IsPropertyContext>).mapDefinition.validateSize(it) { ref as IsPropertyReference<Map<Any, Any>, IsPropertyDefinition<Map<Any, Any>>, *> }
-                                            }
-                                        }
-                                        is SetItemReference<*, *> -> {
-                                            createCountUpdater(
-                                                newValueList,
-                                                ref.parentReference as CanContainSetItemReference<*, *, *>,
-                                                version,
-                                                -1,
-                                                keepAllVersions
-                                            ) {
-                                                @Suppress("UNCHECKED_CAST")
-                                                (ref as SetItemReference<Any, IsPropertyContext>).setDefinition.validateSize(it) { ref as IsPropertyReference<Set<Any>, IsPropertyDefinition<Set<Any>>, *> }
-                                            }
-                                        }
-                                        is ListItemReference<*, *> -> {
-                                            createCountUpdater(
-                                                newValueList,
-                                                ref.parentReference as CanContainListItemReference<*, *, *>,
-                                                version,
-                                                -1,
-                                                keepAllVersions
-                                            ) {
-                                                @Suppress("UNCHECKED_CAST")
-                                                (ref as ListItemReference<Any, IsPropertyContext>).listDefinition.validateSize(it) { ref as IsPropertyReference<List<Any>, IsPropertyDefinition<List<Any>>, *> }
-                                            }
-                                        }
                                         is MapKeyReference<*, *, *> -> throw RequestException("Not allowed to delete Map key, delete value instead")
                                         is MapAnyValueReference<*, *, *> -> throw RequestException("Not allowed to delete Map with any key reference, delete by map reference instead")
                                         is ListAnyItemReference<*, *> -> throw RequestException("Not allowed to delete List with any item reference, delete by list reference instead")

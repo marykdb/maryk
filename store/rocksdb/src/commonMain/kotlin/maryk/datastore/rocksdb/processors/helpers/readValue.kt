@@ -9,6 +9,7 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.types.TypedValue
 import maryk.datastore.rocksdb.processors.COMPLEX_TYPE_INDICATOR
+import maryk.datastore.rocksdb.processors.DELETED_INDICATOR
 import maryk.datastore.rocksdb.processors.EMBED_INDICATOR
 import maryk.datastore.rocksdb.processors.NO_TYPE_INDICATOR
 import maryk.datastore.rocksdb.processors.SIMPLE_TYPE_INDICATOR
@@ -22,7 +23,7 @@ fun readValue(
     definition: IsPropertyDefinition<out Any>?,
     reader: () -> Byte,
     valueBytesLeft: () -> Int
-): Any {
+): Any? {
     return initUIntByVarWithExtraInfo(reader) { type, indicatorByte ->
         when (indicatorByte) {
             NO_TYPE_INDICATOR -> {
@@ -55,6 +56,7 @@ fun readValue(
                 // Todo: skip deleted?
                 Unit
             }
+            DELETED_INDICATOR -> null
             else -> throw StorageException("Unknown Value type $indicatorByte in store")
         }
     }

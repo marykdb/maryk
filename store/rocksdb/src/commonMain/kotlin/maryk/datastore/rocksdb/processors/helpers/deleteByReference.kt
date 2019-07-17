@@ -12,8 +12,10 @@ import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.definitions.wrapper.IsMapDefinitionWrapper
 import maryk.core.properties.references.EmbeddedValuesPropertyRef
+import maryk.core.properties.references.IncMapReference
 import maryk.core.properties.references.IsMapReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.IsPropertyReferenceWithParent
 import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.references.MapReference
@@ -26,6 +28,7 @@ import maryk.core.properties.types.Key
 import maryk.core.values.EmptyValueItems
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.DELETED_INDICATOR
+import maryk.datastore.rocksdb.processors.DELETED_INDICATOR_ARRAY
 import maryk.lib.extensions.compare.matchPart
 import maryk.lib.extensions.compare.prevByteInSameLength
 import maryk.rocksdb.ReadOptions
@@ -153,8 +156,11 @@ fun <T : Any> deleteByReference(
         handlePreviousValue?.invoke(referenceToCompareTo, prevValue)
     }
 
-    // Delete value and complex sub parts below same reference
+    // Do not delete IncMap values since they are needed for incrementing
+    // Otherwise delete in normal table
+    val shouldNotDeleteCompletely = reference is IsPropertyReferenceWithParent<*, *, *, *> && reference.parentReference is IncMapReference<*, *, *>
 
+    // Delete value and complex sub parts below same reference
     val iterator = transaction.getIterator(readOptions, columnFamilies.table)
     iterator.seek(referenceToCompareTo)
     val refOfParent = referenceOfParent
@@ -162,9 +168,13 @@ fun <T : Any> deleteByReference(
         val ref = iterator.key()
 
         if (ref.matchPart(0, referenceToCompareTo)) {
+            // Delete if not a list or no further list items
             if (toShiftListCount <= 0u) {
-                // Delete if not a list or no further list items
-                deleteValue(transaction, columnFamilies, ref, version)
+                if (shouldNotDeleteCompletely) {
+                    setValue(transaction, columnFamilies, ref, version, DELETED_INDICATOR_ARRAY)
+                } else {
+                    deleteValue(transaction, columnFamilies, ref, version)
+                }
             }
         } else if (refOfParent != null && ref.matchPart(0, refOfParent)) {
             // To handle list shifting

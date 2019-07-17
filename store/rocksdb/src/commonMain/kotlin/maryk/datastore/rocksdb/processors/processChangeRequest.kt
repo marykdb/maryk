@@ -18,6 +18,7 @@ import maryk.core.processors.datastore.StorageTypeEnum.SetSize
 import maryk.core.processors.datastore.StorageTypeEnum.TypeValue
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.processors.datastore.ValueWriter
+import maryk.core.processors.datastore.writeIncMapAdditionsToStorage
 import maryk.core.processors.datastore.writeListToStorage
 import maryk.core.processors.datastore.writeMapToStorage
 import maryk.core.processors.datastore.writeSetToStorage
@@ -59,7 +60,9 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Check
 import maryk.core.query.changes.Delete
+import maryk.core.query.changes.IncMapAddition
 import maryk.core.query.changes.IncMapChange
+import maryk.core.query.changes.IncMapKeyAdditions
 import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.ListChange
 import maryk.core.query.changes.SetChange
@@ -76,6 +79,7 @@ import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.createCountUpdater
 import maryk.datastore.rocksdb.processors.helpers.deleteByReference
+import maryk.datastore.rocksdb.processors.helpers.getCurrentIncMapKey
 import maryk.datastore.rocksdb.processors.helpers.getLastVersion
 import maryk.datastore.rocksdb.processors.helpers.getList
 import maryk.datastore.rocksdb.processors.helpers.getValue
@@ -613,45 +617,47 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                         }
                                     }
                                 }
-//
-//                                val currentIncMapKey = getCurrentIncMapKey(
-//                                    newValueList,
-//                                    incMapReference
-//                                )
-//
-//                                val valueWriter = createValueWriter(
-//                                    dataStore, storeAction, transaction, columnFamilies, key, versionBytes
-//                                )
-//
-//                                val addedKeys = writeIncMapAdditionsToStorage(
-//                                    currentIncMapKey,
-//                                    valueWriter,
-//                                    incMapDefinition.definition,
-//                                    addValues
-//                                )
-//
-//                                // Add increment keys to out changes so requester knows at what key values where added to
-//                                if (addedKeys.isNotEmpty()) {
-//                                    setChanged(true)
-//                                    val addition = outChanges.find { it is IncMapAddition } as IncMapAddition?
-//                                        ?: IncMapAddition(additions = mutableListOf()).also { outChanges.add(it) }
-//                                    (addition.additions as MutableList<IncMapKeyAdditions<*, *>>).add(
-//                                        IncMapKeyAdditions(incMapReference, addedKeys)
-//                                    )
-//                                }
-//
-//                                createCountUpdater(
-//                                    transaction,
-//                                    columnFamilies,
-//                                    dataStore.defaultReadOptions,
-//                                    key,
-//                                    valueChange.reference,
-//                                    versionBytes,
-//                                    addValues.size
-//                                ) {
-//                                    incMapDefinition.validateSize(it) { incMapReference }
-//                                }
-                                TODO("CHANGE INC MAP")
+
+                                val currentIncMapKey = getCurrentIncMapKey(
+                                    transaction,
+                                    columnFamilies,
+                                    dataStore.defaultReadOptions,
+                                    null,
+                                    key,
+                                    incMapReference
+                                )
+                                val valueWriter = createValueWriter(
+                                    dataStore, storeAction, transaction, columnFamilies, key, versionBytes
+                                )
+
+                                val addedKeys = writeIncMapAdditionsToStorage(
+                                    currentIncMapKey,
+                                    valueWriter,
+                                    incMapDefinition.definition,
+                                    addValues
+                                )
+
+                                // Add increment keys to out changes so requester knows at what key values where added to
+                                if (addedKeys.isNotEmpty()) {
+                                    setChanged(true)
+                                    val addition = outChanges.find { it is IncMapAddition } as IncMapAddition?
+                                        ?: IncMapAddition(additions = mutableListOf()).also { outChanges.add(it) }
+                                    (addition.additions as MutableList<IncMapKeyAdditions<*, *>>).add(
+                                        IncMapKeyAdditions(incMapReference, addedKeys)
+                                    )
+                                }
+
+                                createCountUpdater(
+                                    transaction,
+                                    columnFamilies,
+                                    dataStore.defaultReadOptions,
+                                    key,
+                                    valueChange.reference,
+                                    versionBytes,
+                                    addValues.size
+                                ) {
+                                    incMapDefinition.validateSize(it) { incMapReference }
+                                }
                             }
                         }
                     }

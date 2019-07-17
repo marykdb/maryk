@@ -190,8 +190,6 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
             validationExceptions!!.add(ve)
         }
 
-//        var uniquesToIndex: MutableMap<DataRecordValue<Comparable<Any>>, Any?>? = null
-
         var isChanged = false
         val setChanged = { didChange: Boolean -> if (didChange) isChanged = true }
 
@@ -389,17 +387,6 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                     )
                                 }
                                 else -> {
-//                                        val definition = reference.comparablePropertyDefinition
-//                                        if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
-//                                            @Suppress("UNCHECKED_CAST")
-//                                            val comparableValue = dataRecordValue as DataRecordValue<Comparable<Any>>
-//                                            dataStore.validateUniqueNotExists(comparableValue, objectToChange)
-//                                            when (uniquesToIndex) {
-//                                                null -> uniquesToIndex = mutableMapOf(comparableValue to previousValue)
-//                                                else -> uniquesToIndex!![comparableValue] = previousValue
-//                                            }
-//                                        }
-//
                                     try {
                                         val referenceAsBytes = reference.toStorageByteArray()
                                         val keyAndReference = byteArrayOf(*key.bytes, *referenceAsBytes)
@@ -464,10 +451,9 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                             refGetter = { reference }
                                         )
 
-                                        @Suppress("UNCHECKED_CAST")
-                                        val valueBytes = (reference.propertyDefinition as IsStorageBytesEncodable<Any>).toStorageBytes(value, NO_TYPE_INDICATOR)
+                                        val valueWriter = createValueWriter(dataStore, storeAction, transaction, columnFamilies, key, versionBytes)
 
-                                        setValue(transaction, columnFamilies, key, referenceAsBytes, versionBytes, valueBytes)
+                                        valueWriter(Value, referenceAsBytes, reference.comparablePropertyDefinition, value)
                                         setChanged(true)
                                     } catch (e: ValidationException) {
                                         addValidationFail(e)
@@ -699,19 +685,6 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
             }
         }
 
-//        uniquesToIndex?.forEach { (value, previousValue) ->
-//            @Suppress("UNCHECKED_CAST")
-//            dataStore.addToUniqueIndex(
-//                objectToChange,
-//                value.reference,
-//                value.value,
-//                version,
-//                previousValue as Comparable<Any>
-//            )
-//        }
-
-//        val oldValueList = objectToChange.values
-
 //        // Process indices
 //        dataModel.indices?.forEach {
 //            val oldValue = it.toStorageByteArrayForIndex(objectToChange, objectToChange.key.bytes)
@@ -759,12 +732,10 @@ private fun createValueWriter(
             if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
                 val uniqueReference = byteArrayOf(*reference, *valueBytes)
 
-//                checksBeforeWrite.add {
-//                    // Since it is an addition we only need to check the current uniques
-//                    dataStore.db.get(columnFamilies.unique, uniqueReference)?.let {
-//                        throw UniqueException(reference)
-//                    }
-//                }
+                // Since it is an addition we only need to check the current uniques
+                transaction.getForUpdate(dataStore.defaultReadOptions, columnFamilies.unique, uniqueReference, true)?.let {
+                    throw UniqueException(reference)
+                }
 
                 // Creates index reference on table if it not exists so delete can find
                 // what values to delete from the unique indices.

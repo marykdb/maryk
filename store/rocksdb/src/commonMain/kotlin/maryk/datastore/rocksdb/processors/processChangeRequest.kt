@@ -79,11 +79,13 @@ import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.createCountUpdater
 import maryk.datastore.rocksdb.processors.helpers.deleteByReference
+import maryk.datastore.rocksdb.processors.helpers.deleteIndexValue
 import maryk.datastore.rocksdb.processors.helpers.getCurrentIncMapKey
 import maryk.datastore.rocksdb.processors.helpers.getLastVersion
 import maryk.datastore.rocksdb.processors.helpers.getList
 import maryk.datastore.rocksdb.processors.helpers.getValue
 import maryk.datastore.rocksdb.processors.helpers.readValue
+import maryk.datastore.rocksdb.processors.helpers.setIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setLatestVersion
 import maryk.datastore.rocksdb.processors.helpers.setListValue
 import maryk.datastore.rocksdb.processors.helpers.setUniqueIndexValue
@@ -685,22 +687,23 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
             }
         }
 
-//        // Process indices
-//        dataModel.indices?.forEach {
-//            val oldValue = it.toStorageByteArrayForIndex(objectToChange, objectToChange.key.bytes)
-//            // Use switch trick to use less object creation and still be able to get values
-//            objectToChange.values = newValueList
-//            val newValue = it.toStorageByteArrayForIndex(objectToChange, objectToChange.key.bytes)
-//            objectToChange.values = oldValueList
-//
-//            if (newValue == null) {
-//                if (oldValue != null) {
-//                    dataStore.removeFromIndex(objectToChange, it.toReferenceStorageByteArray(), version, oldValue)
-//                } // else ignore since did not exist
-//            } else if (oldValue == null || !newValue.contentEquals(oldValue)) {
-//                dataStore.addToIndex(objectToChange, it.toReferenceStorageByteArray(), newValue, version, oldValue)
-//            }
-//        }
+        // Process indices
+        dataModel.indices?.let {indices ->
+            val storeGetter = StoreValuesGetter(key, dataStore.db, columnFamilies, dataStore.defaultReadOptions)
+            val transactionGetter = TransactionValuesGetter(key, transaction, columnFamilies, dataStore.defaultReadOptions)
+            indices.forEach {
+                val oldKeyAndValue = it.toStorageByteArrayForIndex(storeGetter, key.bytes)
+                val newKeyAndValue = it.toStorageByteArrayForIndex(transactionGetter, key.bytes)
+
+                if (newKeyAndValue == null) {
+                    if (oldKeyAndValue != null) {
+                        deleteIndexValue(transaction, columnFamilies, it.toReferenceStorageByteArray(), oldKeyAndValue, versionBytes)
+                    } // else ignore since did not exist
+                } else if (oldKeyAndValue == null || !newKeyAndValue.contentEquals(oldKeyAndValue)) {
+                    setIndexValue(transaction, columnFamilies, it.toReferenceStorageByteArray(), newKeyAndValue, versionBytes)
+                }
+            }
+        }
 
         // Nothing skipped out so must be a success
         return ChangeSuccess(version.timestamp, outChanges)

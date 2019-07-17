@@ -89,7 +89,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
                                 }
                             }
 
-                            val valuesGetter = StoreValuesGetter(
+                            val valuesGetter = TransactionValuesGetter(
                                 key,
                                 transaction,
                                 columnFamilies,

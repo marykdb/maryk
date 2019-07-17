@@ -79,7 +79,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
                         val key = scanRequest.dataModel.key(keyReader) as Key<DM>
 
                         if (shouldProcessRecord(transaction, columnFamilies, readOptions, key, setAtVersion, scanRequest, scanRange)) {
-                            readCreationVersion(transaction, columnFamilies, readOptions, key)?.let { createdVersion ->
+                            readCreationVersion(transaction, columnFamilies, readOptions, key.bytes)?.let { createdVersion ->
                                 processRecord(key, createdVersion)
                             }
                         }

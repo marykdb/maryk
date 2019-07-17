@@ -1,21 +1,31 @@
 package maryk.datastore.rocksdb.processors
 
+import maryk.core.exceptions.StorageException
 import maryk.core.extensions.bytes.toULong
+import maryk.core.extensions.bytes.writeBytes
 import maryk.core.models.IsRootValuesDataModel
+import maryk.core.processors.datastore.scanRange.IndexableScanRanges
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.types.Key
+import maryk.core.query.orders.Direction
 import maryk.core.query.orders.Direction.ASC
 import maryk.core.query.orders.Direction.DESC
 import maryk.core.query.requests.IsScanRequest
+import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.readCreationVersion
 import maryk.datastore.shared.ScanType.IndexScan
+import maryk.lib.extensions.compare.compareWithOffsetTo
+import maryk.lib.extensions.compare.matchPart
 import maryk.lib.extensions.compare.nextByteInSameLength
 import maryk.lib.extensions.compare.prevByteInSameLength
+import maryk.rocksdb.ReadOptions
+import maryk.rocksdb.RocksIterator
 import maryk.rocksdb.Transaction
+import kotlin.experimental.xor
 
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
     dataStore: RocksDBDataStore,
@@ -30,11 +40,18 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
 
     val indexScanRange = indexScan.index.createScanRange(scanRequest.where, keyScanRange)
 
-    scanRequest.toVersion?.let {
-        TODO("SCAN index toVersion")
+    val indexColumnHandle = if(scanRequest.toVersion == null) {
+        columnFamilies.index
+    } else {
+        (columnFamilies as? HistoricTableColumnFamilies)?.historic?.index
+            ?: throw StorageException("No historic table stored so toVersion in query cannot be processed")
     }
 
-    val iterator = transaction.getIterator(dataStore.defaultReadOptions, columnFamilies.index)
+    val iterator = transaction.getIterator(dataStore.defaultReadOptions, indexColumnHandle)
+
+    val keySize = scanRequest.dataModel.keyByteSize
+    val valueOffset = indexReference.size
+    val toSubstractFromSize = keySize + indexReference.size + if(scanRequest.toVersion != null) ULong.SIZE_BYTES else 0
 
     when (indexScan.direction) {
         ASC -> {
@@ -50,43 +67,24 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
                     iterator.seek(byteArrayOf(*indexReference, *startRangeToSearch))
                 }
 
-                var currentSize: UInt = 0u
-
-                while (iterator.isValid()) {
-                    val indexRecord = iterator.key()
-                    val keySize = scanRequest.dataModel.keyByteSize
-                    val keyOffset = indexRecord.size - keySize
-                    val valueOffset = indexReference.size
-                    val valueSize = indexRecord.size - keySize - indexReference.size
-
-                    if (indexRange.keyOutOfRange(indexRecord, valueOffset, valueSize)) {
-                        break
-                    }
-
-                    if (!indexScanRange.matchesPartials(indexRecord, valueOffset, valueSize)) {
-                        iterator.next()
-                        continue
-                    }
-
-                    val setAtVersion = iterator.value().toULong()
-
-                    if (scanRequest.shouldBeFiltered(transaction, columnFamilies, dataStore.defaultReadOptions, indexRecord, keyOffset, keySize, setAtVersion, scanRequest.toVersion)) {
-                        iterator.next()
-                        continue
-                    }
-                    var readIndex = keyOffset
-                    @Suppress("UNCHECKED_CAST")
-                    val key = scanRequest.dataModel.key {
-                        indexRecord[readIndex++]
-                    } as Key<DM>
-
-                    processStoreValue(key, setAtVersion)
-
-                    // Break when limit is found
-                    if (++currentSize == scanRequest.limit) break
-
-                    iterator.next()
-                }
+                checkAndProcess(
+                    transaction,
+                    columnFamilies,
+                    dataStore.defaultReadOptions,
+                    iterator,
+                    keySize,
+                    scanRequest,
+                    indexScanRange,
+                    toSubstractFromSize,
+                    valueOffset,
+                    processStoreValue,
+                    { indexRecord, valueSize ->
+                        indexRange.keyOutOfRange(indexRecord, valueOffset, valueSize)
+                    },
+                    createVersionChecker(scanRequest.toVersion, iterator, indexScan.direction),
+                    createVersionReader(scanRequest.toVersion, iterator),
+                    createGotoNext(scanRequest, iterator, iterator::next)
+                )
             }
         }
         DESC -> {
@@ -116,47 +114,198 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
                     }
                 }
 
-                var currentSize: UInt = 0u
+                checkAndProcess(
+                    transaction,
+                    columnFamilies,
+                    dataStore.defaultReadOptions,
+                    iterator,
+                    keySize,
+                    scanRequest,
+                    indexScanRange,
+                    toSubstractFromSize,
+                    valueOffset,
+                    processStoreValue,
+                    { indexRecord, valueSize ->
+                        indexRange.keyBeforeStart(indexRecord, valueOffset, valueSize)
+                    },
+                    createVersionChecker(scanRequest.toVersion, iterator, indexScan.direction),
+                    createVersionReader(scanRequest.toVersion, iterator),
+                    createGotoNext(scanRequest, iterator, iterator::prev)
+                )
+            }
+        }
+    }
+}
 
-                while (iterator.isValid()) {
-                    val indexRecord = iterator.key()
-                    val keySize = scanRequest.dataModel.keyByteSize
-                    val keyOffset = indexRecord.size - keySize
-                    val valueOffset = indexReference.size
-                    val valueSize = indexRecord.size - keySize - indexReference.size
+/**
+ * Create a version checker to see if record has to be skipped or not.
+ */
+fun createVersionChecker(toVersion: ULong?, iterator: RocksIterator, direction: Direction): (ByteArray) -> Boolean =
+    if (toVersion == null) {
+        { true } // Version is always latest and thus valid, because is scanning on normal table
+    } else {
+        val versionBytesToMatch = ByteArray(ULong.SIZE_BYTES)
+        var writeIndex = 0
+        // Since index stores versions in reverse order, reverse the version here too
+        toVersion.writeBytes({ versionBytesToMatch[writeIndex++] = it xor -1 })
 
-                    if (indexRange.keyBeforeStart(indexRecord, valueOffset, valueSize)) {
-                        break
+        when (direction) {
+            ASC -> {
+                { indexKey ->
+                    var sameKey = true
+                    // Skip all
+                    while (iterator.isValid()) {
+                        if (indexKey.let { it.matchPart(0, indexKey, it.size, 0, indexKey.size - ULong.SIZE_BYTES) }) {
+                            sameKey = false // Key does not match anymore so break out
+                            break
+                        }
+
+                        if (indexKey.compareWithOffsetTo(versionBytesToMatch, indexKey.size - ULong.SIZE_BYTES) > 0
+                            // Check if is deleted and skip if so
+                            || iterator.value().contentEquals(FALSE_ARRAY)
+                        ) {
+                            iterator.next()
+                        }
                     }
 
-                    if (!indexScanRange.matchesPartials(indexRecord, valueOffset, valueSize)) {
-                        iterator.prev()
-                        continue
+                    sameKey
+                }
+            }
+            DESC -> {
+                { indexKey ->
+                    var sameKey = true
+                    var hadAKeyMatch = false
+                    // This iterator starts at the first version so has to walk past all, will correct back if a key match was found
+                    while (iterator.isValid()) {
+                        if (indexKey.let { it.matchPart(0, indexKey, it.size, 0, indexKey.size - ULong.SIZE_BYTES) }) {
+                            sameKey = false // Key does not match anymore so break out
+                            break
+                        }
+
+                        if (indexKey.compareWithOffsetTo(versionBytesToMatch, indexKey.size - ULong.SIZE_BYTES) <= 0) {
+                            // Only was a match if it was not deleted
+                            if (iterator.value().contentEquals(FALSE_ARRAY)) {
+                                hadAKeyMatch = true
+                            }
+                            iterator.prev()
+                        }
+                    }
+                    // If it found a matching key go back to last found one.
+                    if (hadAKeyMatch) {
+                        iterator.next()
+                        // Skip all deleted indices since it matched on a non deleted one
+                        while(iterator.isValid() && iterator.value().contentEquals(FALSE_ARRAY)) {
+                            iterator.next()
+                        }
                     }
 
-                    val setAtVersion = iterator.value().toULong()
-
-                    if (scanRequest.shouldBeFiltered(transaction, columnFamilies, dataStore.defaultReadOptions, indexRecord, keyOffset, keySize, setAtVersion, scanRequest.toVersion)) {
-                        iterator.prev()
-                        continue
-                    }
-
-                    var readIndex = keyOffset
-                    @Suppress("UNCHECKED_CAST")
-                    val key = scanRequest.dataModel.key {
-                        indexRecord[readIndex++]
-                    } as Key<DM>
-
-                    readCreationVersion(transaction, columnFamilies, dataStore.defaultReadOptions, key)?.let { createdVersion ->
-                        processStoreValue(key, createdVersion)
-                    }
-
-                    // Break when limit is found
-                    if (++currentSize == scanRequest.limit) break
-
-                    iterator.prev()
+                    sameKey
                 }
             }
         }
     }
+
+/** Create a version reader based on if it reads the historic table or the normal one. */
+fun createVersionReader(
+    toVersion: ULong?,
+    iterator: RocksIterator
+): (ByteArray) -> ULong =
+    if (toVersion == null) {
+        { iterator.value().toULong() }
+    } else {
+        { key -> key.toULong(key.size - ULong.SIZE_BYTES) }
+    }
+
+/**
+ * Create a handler to go to the next index record to read.
+ * If it is a versioned read, skip all index records but with older versions
+ * The order depends on what is defined in the [next] function
+ */
+private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> createGotoNext(
+    scanRequest: IsScanRequest<DM, P, *>,
+    iterator: RocksIterator,
+    next: () -> Unit
+): (ByteArray, Int, Int) -> Unit =
+    if (scanRequest.toVersion == null) {
+        { _, _, _ -> next() }
+    } else {
+        { key, keyOffset, keyLength ->
+            next() // First skip is for free since last processed key/value matches for sure
+            // Skip all of same index/value/key since they are different versions of the same
+            while (iterator.isValid() && iterator.key().let { it.matchPart(0, key, it.size, 0, keyOffset + keyLength) }) {
+                next()
+            }
+        }
+    }
+
+/** Walk through index and processes any valid keys and versions */
+private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> checkAndProcess(
+    transaction: Transaction,
+    columnFamilies: TableColumnFamilies,
+    readOptions: ReadOptions,
+    iterator: RocksIterator,
+    keySize: Int,
+    scanRequest: IsScanRequest<DM, P, *>,
+    indexScanRange: IndexableScanRanges,
+    toSubstractFromSize: Int,
+    valueOffset: Int,
+    processStoreValue: (Key<DM>, ULong) -> Unit,
+    isPastRange: (ByteArray, Int) -> Boolean,
+    checkVersion: (ByteArray) -> Boolean,
+    readVersion: (ByteArray) -> ULong,
+    next: (ByteArray, Int, Int) -> Unit
+) {
+    var currentSize: UInt = 0u
+    while (iterator.isValid()) {
+        val indexRecord = iterator.key()
+        val valueSize = indexRecord.size - toSubstractFromSize
+        val keyOffset = valueOffset + valueSize
+
+        if (isPastRange(indexRecord, valueSize)) {
+            break
+        }
+
+        if (indexScanRange.matchesPartials(indexRecord, valueOffset, valueSize) && checkVersion(indexRecord)) {
+            val setAtVersion = readVersion(indexRecord)
+
+            if (!scanRequest.shouldBeFiltered(
+                    transaction,
+                    columnFamilies,
+                    readOptions,
+                    indexRecord,
+                    keyOffset,
+                    keySize,
+                    setAtVersion,
+                    scanRequest.toVersion
+                )
+            ) {
+                val key = createKey(scanRequest.dataModel, indexRecord, keyOffset)
+                readCreationVersion(
+                    transaction,
+                    columnFamilies,
+                    readOptions,
+                    key.bytes
+                )?.let { createdVersion ->
+                    processStoreValue(key, createdVersion)
+                }
+
+                // Break when limit is found
+                if (++currentSize == scanRequest.limit) break
+            }
+        }
+        next(indexRecord, keyOffset, keySize)
+    }
+}
+
+/** Creates a Key out of a [indexRecord] by reading from [keyOffset] */
+private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> createKey(
+    dataModel: DM,
+    indexRecord: ByteArray,
+    keyOffset: Int
+): Key<DM> {
+    var readIndex = keyOffset
+    @Suppress("UNCHECKED_CAST")
+    return dataModel.key {
+        indexRecord[readIndex++]
+    } as Key<DM>
 }

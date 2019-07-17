@@ -54,11 +54,11 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
         else -> {
             // Process uniques as a fast path
             scanRange.uniques?.let {
-                scanRequest.toVersion?.let {
-                    TODO("SCAN unique toVersion")
-                }
-
                 if (it.isNotEmpty()) {
+                    scanRequest.toVersion?.let {
+                        TODO("SCAN unique toVersion")
+                    }
+
                     // Only process the first unique since it has to match every found unique matcher
                     // and if first is set it can go to direct key to match further
                     val firstMatcher = it.first()

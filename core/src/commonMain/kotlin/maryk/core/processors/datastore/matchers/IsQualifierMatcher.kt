@@ -3,7 +3,7 @@ package maryk.core.processors.datastore.matchers
 import maryk.core.processors.datastore.matchers.FuzzyMatchResult.MATCH
 import maryk.core.processors.datastore.matchers.FuzzyMatchResult.NO_MATCH
 import maryk.core.processors.datastore.matchers.FuzzyMatchResult.OUT_OF_RANGE
-import maryk.lib.extensions.compare.compareTo
+import maryk.lib.extensions.compare.compareToWithOffsetLength
 
 /** Defines a matcher for a qualifier. */
 sealed class IsQualifierMatcher
@@ -13,7 +13,7 @@ class QualifierExactMatcher(
     val qualifier: ByteArray
 ) : IsQualifierMatcher() {
     fun compareTo(qualifier: ByteArray, offset: Int): Int {
-        return this.qualifier.compareTo(qualifier, offset)
+        return this.qualifier.compareToWithOffsetLength(qualifier, offset)
     }
 }
 

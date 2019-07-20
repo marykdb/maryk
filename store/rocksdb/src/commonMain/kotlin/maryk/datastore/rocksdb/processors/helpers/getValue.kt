@@ -5,7 +5,7 @@ import maryk.core.extensions.bytes.invert
 import maryk.core.extensions.bytes.writeBytes
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
-import maryk.lib.extensions.compare.compareTo
+import maryk.lib.extensions.compare.compareToWithOffsetLength
 import maryk.lib.extensions.compare.matchPart
 import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.Transaction
@@ -46,7 +46,7 @@ fun <T: Any> Transaction.getValue(
                 if (key.matchPart(0, keyAndReference)) {
                     val versionOffset = key.size - versionBytes.size
                     // Only match if version is valid, else read next version
-                    if (versionBytes.compareTo(key, versionOffset) <= 0) {
+                    if (versionBytes.compareToWithOffsetLength(key, versionOffset) <= 0) {
                         val result = iterator.value()
                         return handleResult(result, 0, result.size)
                     }

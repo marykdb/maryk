@@ -1,6 +1,7 @@
 package maryk.datastore.rocksdb.processors
 
 import maryk.lib.extensions.compare.compareTo
+import maryk.lib.extensions.compare.compareToWithOffsetAndLength
 import maryk.rocksdb.ComparatorOptions
 import maryk.rocksdb.Slice
 
@@ -19,8 +20,8 @@ class VersionedComparator(
         val bBytes = b.data()
         return if (aBytes.size > keySize && bBytes.size > keySize) {
             when (val comparison =
-                aBytes.compareTo(0, aBytes.size - versionSize, bBytes, 0, bBytes.size - versionSize)) {
-                0 -> aBytes.compareTo(
+                aBytes.compareToWithOffsetAndLength(0, aBytes.size - versionSize, bBytes, 0, bBytes.size - versionSize)) {
+                0 -> aBytes.compareToWithOffsetAndLength(
                     aBytes.size - versionSize,
                     versionSize,
                     bBytes,

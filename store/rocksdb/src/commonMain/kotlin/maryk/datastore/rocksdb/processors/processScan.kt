@@ -22,7 +22,6 @@ import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.Transaction
 
 /** Walk with [scanRequest] on [dataStore] and do [processRecord] */
-@Suppress("UNUSED_PARAMETER")
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processScan(
     scanRequest: IsScanRequest<DM, P, *>,
     dataStore: RocksDBDataStore,
@@ -55,10 +54,6 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
             // Process uniques as a fast path
             scanRange.uniques?.let {
                 if (it.isNotEmpty()) {
-                    scanRequest.toVersion?.let {
-                        TODO("SCAN unique toVersion")
-                    }
-
                     // Only process the first unique since it has to match every found unique matcher
                     // and if first is set it can go to direct key to match further
                     val firstMatcher = it.first()
@@ -74,7 +69,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
                     reference[uniqueReference.size] = NO_TYPE_INDICATOR
                     valueBytes.copyInto(reference, uniqueReference.size + 1, 0, valueBytes.size)
 
-                    getKeyByUniqueValue(transaction, columnFamilies, readOptions, reference) { keyReader, setAtVersion ->
+                    getKeyByUniqueValue(transaction, columnFamilies, readOptions, reference, scanRequest.toVersion) { keyReader, setAtVersion ->
                         @Suppress("UNCHECKED_CAST")
                         val key = scanRequest.dataModel.key(keyReader) as Key<DM>
 

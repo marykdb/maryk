@@ -1,9 +1,11 @@
 package maryk.datastore.rocksdb.processors.helpers
 
+import maryk.core.exceptions.RequestException
 import maryk.core.extensions.bytes.invert
 import maryk.core.extensions.bytes.writeBytes
+import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
-import maryk.lib.extensions.compare.compareWithOffsetTo
+import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.compare.matchPart
 import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.Transaction
@@ -27,7 +29,11 @@ fun <T: Any> Transaction.getValue(
     } else {
         val versionBytes = toVersion.createReversedVersionBytes()
 
-        this.getIterator(readOptions).use { iterator ->
+        if (columnFamilies !is HistoricTableColumnFamilies) {
+            throw RequestException("Cannot use toVersion on a non historic table")
+        }
+
+        this.getIterator(readOptions, columnFamilies.historic.table).use { iterator ->
             val toSeek = keyAndReference.copyOf(keyAndReference.size + ULong.SIZE_BYTES)
             var writeIndex = keyAndReference.size
             toVersion.writeBytes({ toSeek[writeIndex++] = it })
@@ -40,7 +46,7 @@ fun <T: Any> Transaction.getValue(
                 if (key.matchPart(0, keyAndReference)) {
                     val versionOffset = key.size - versionBytes.size
                     // Only match if version is valid, else read next version
-                    if (versionBytes.compareWithOffsetTo(key, versionOffset) <= 0) {
+                    if (versionBytes.compareTo(key, versionOffset) <= 0) {
                         val result = iterator.value()
                         return handleResult(result, 0, result.size)
                     }

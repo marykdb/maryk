@@ -17,6 +17,7 @@ import maryk.datastore.rocksdb.TableType.Model
 import maryk.datastore.rocksdb.TableType.Table
 import maryk.datastore.rocksdb.TableType.Unique
 import maryk.datastore.rocksdb.processors.TRUE_ARRAY
+import maryk.datastore.rocksdb.processors.VersionedComparator
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.StoreActor
@@ -84,9 +85,21 @@ class RocksDBDataStore(
         val uniqueDesc = this.db.createColumnFamily(Unique.getDescriptor(tableIndex, nameSize))
 
         return if (keepAllVersions) {
-            val historicTableDesc = this.db.createColumnFamily(HistoricTable.getDescriptor(tableIndex, nameSize, tableOptions))
-            val historicIndexDesc = this.db.createColumnFamily(HistoricIndex.getDescriptor(tableIndex, nameSize))
-            val historicUniqueDesc = this.db.createColumnFamily(HistoricUnique.getDescriptor(tableIndex, nameSize))
+            val comparator = VersionedComparator(db.keyByteSize)
+            // Prefix set to key size for more optimal search.
+            val tableOptionsHistoric = ColumnFamilyOptions().apply {
+                useFixedLengthPrefixExtractor(db.keyByteSize)
+                setComparator(comparator)
+            }
+
+            // Prefix set to key size for more optimal search.
+            val indexOptionsHistoric = ColumnFamilyOptions().apply {
+                setComparator(comparator)
+            }
+
+            val historicTableDesc = this.db.createColumnFamily(HistoricTable.getDescriptor(tableIndex, nameSize, tableOptionsHistoric))
+            val historicIndexDesc = this.db.createColumnFamily(HistoricIndex.getDescriptor(tableIndex, nameSize, indexOptionsHistoric))
+            val historicUniqueDesc = this.db.createColumnFamily(HistoricUnique.getDescriptor(tableIndex, nameSize, indexOptionsHistoric))
 
             HistoricTableColumnFamilies(
                 modelDesc,

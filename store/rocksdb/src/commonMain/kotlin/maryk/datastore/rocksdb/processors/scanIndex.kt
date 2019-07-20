@@ -18,7 +18,7 @@ import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.readCreationVersion
 import maryk.datastore.shared.ScanType.IndexScan
-import maryk.lib.extensions.compare.compareWithOffsetTo
+import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.compare.matchPart
 import maryk.lib.extensions.compare.nextByteInSameLength
 import maryk.lib.extensions.compare.prevByteInSameLength
@@ -160,7 +160,7 @@ fun createVersionChecker(toVersion: ULong?, iterator: RocksIterator, direction: 
                             break
                         }
 
-                        if (indexKey.compareWithOffsetTo(versionBytesToMatch, indexKey.size - ULong.SIZE_BYTES) > 0
+                        if (indexKey.compareTo(versionBytesToMatch, indexKey.size - ULong.SIZE_BYTES) > 0
                             // Check if is deleted and skip if so
                             || iterator.value().contentEquals(FALSE_ARRAY)
                         ) {
@@ -182,7 +182,7 @@ fun createVersionChecker(toVersion: ULong?, iterator: RocksIterator, direction: 
                             break
                         }
 
-                        if (indexKey.compareWithOffsetTo(versionBytesToMatch, indexKey.size - ULong.SIZE_BYTES) <= 0) {
+                        if (indexKey.compareTo(versionBytesToMatch, indexKey.size - ULong.SIZE_BYTES) <= 0) {
                             // Only was a match if it was not deleted
                             if (iterator.value().contentEquals(FALSE_ARRAY)) {
                                 hadAKeyMatch = true

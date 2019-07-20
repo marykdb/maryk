@@ -67,9 +67,6 @@ This table stores all versions of values by appending the version to the referen
   indicating when the record was created. Is never changed afterwards.
 - KEY:SOFT_DELETE_INDICATOR:VERSION = Boolean. Indicates if the record was
   soft deleted. SoftDelete indicator is 0. Boolean is a value of 0 or 1.
-- KEY:LAST_UPDATE_INDICATOR = VERSION. This pair stores the latest
-  version which is stored and is always updated on any add, change, delete. 
-  The indicator is `0b1000`
 - KEY:REFERENCE:VERSION = VALUE. All values are stored with a key and property 
   reference and version.
 

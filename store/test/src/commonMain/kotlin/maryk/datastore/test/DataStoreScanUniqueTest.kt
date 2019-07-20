@@ -2,12 +2,16 @@ package maryk.datastore.test
 
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
+import maryk.core.query.changes.Change
+import maryk.core.query.changes.change
 import maryk.core.query.filters.Equals
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
+import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.datastore.shared.IsDataStore
 import maryk.lib.time.Date
 import maryk.test.assertType
@@ -27,7 +31,8 @@ class DataStoreScanUniqueTest(
     private var lowestVersion = ULong.MAX_VALUE
 
     override val allTests = mapOf(
-        "executeSimpleScanFilterRequest" to ::executeSimpleScanFilterRequest
+        "executeSimpleScanFilterRequest" to ::executeSimpleScanFilterRequest,
+        "executeSimpleScanFilterWithToVersionRequest" to ::executeSimpleScanFilterWithToVersionRequest
     )
 
     private val objects = arrayOf(
@@ -85,6 +90,47 @@ class DataStoreScanUniqueTest(
         scanResponse.values[0].let {
             expect(objects[0]) { it.values }
             expect(keys[0]) { it.key }
+        }
+    }
+
+    private fun executeSimpleScanFilterWithToVersionRequest() = runSuspendingTest {
+        val changeResponse = dataStore.execute(
+            CompleteMarykModel.change(
+                keys[0].change(
+                    Change(string.ref() with "haas2")
+                )
+            )
+        )
+
+        assertType<ChangeSuccess<*>>(changeResponse.statuses[0])
+
+        val scanResponseForLatest = dataStore.execute(
+            CompleteMarykModel.scan(
+                where = Equals(
+                    string.ref() with "haas"
+                )
+            )
+        )
+
+        expect(0) { scanResponseForLatest.values.size }
+
+        // Only test if all versions are kept
+        if (dataStore.keepAllVersions) {
+            val scanResponseBeforeChange = dataStore.execute(
+                CompleteMarykModel.scan(
+                    where = Equals(
+                        string.ref() with "haas"
+                    ),
+                    toVersion = lowestVersion
+                )
+            )
+
+            expect(1) { scanResponseBeforeChange.values.size }
+
+            scanResponseBeforeChange.values[0].let {
+                expect(objects[0]) { it.values }
+                expect(keys[0]) { it.key }
+            }
         }
     }
 }

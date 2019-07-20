@@ -25,7 +25,7 @@ operator fun ByteArray.compareTo(other: ByteArray): Int {
  * a negative number if it's less than [other],
  * or a positive number if it's greater than [other].
  */
-fun ByteArray.compareWithOffsetTo(other: ByteArray, offset: Int): Int {
+fun ByteArray.compareTo(other: ByteArray, offset: Int): Int {
     val otherSize = other.size - offset
     for (it in 0 until minOf(this.size, otherSize)) {
         val a = this[it].toUByte() and MAX_BYTE
@@ -35,6 +35,23 @@ fun ByteArray.compareWithOffsetTo(other: ByteArray, offset: Int): Int {
         }
     }
     return this.size - otherSize
+}
+
+/**
+ * Compares ByteArray to ByteArray [b], both with offsets and lengths.
+ * Returns zero if this object is equal to the specified [b] object,
+ * a negative number if it's less than [b],
+ * or a positive number if it's greater than [b].
+ */
+fun ByteArray.compareTo(aOffset: Int, aLength: Int, b: ByteArray, bOffset: Int, bLength: Int): Int {
+    for (it in 0 until minOf(aLength, bLength)) {
+        val aByte = this[it + aOffset].toUByte() and MAX_BYTE
+        val bByte = b[it + bOffset].toUByte() and MAX_BYTE
+        if (aByte != bByte) {
+            return aByte.toUByte().toInt() - bByte.toUByte().toInt()
+        }
+    }
+    return aLength - bLength
 }
 
 /**

@@ -84,7 +84,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
             index = 1u, name = "string", alternativeNames = setOf("str", "stringValue"),
             definition = StringDefinition(
                 required = false,
-                final = true,
+                final = false,
                 unique = true,
                 minValue = "a",
                 maxValue = "zzzz",

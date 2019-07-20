@@ -2,7 +2,7 @@ package maryk.datastore.rocksdb.processors.helpers
 
 import maryk.core.extensions.bytes.initULong
 import maryk.core.properties.types.Key
-import maryk.lib.extensions.compare.compareWithOffsetTo
+import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.compare.matchPart
 import maryk.rocksdb.RocksIterator
 import kotlin.experimental.xor
@@ -32,17 +32,18 @@ fun RocksIterator.historicQualifierRetriever(
                 continue@qualifierFinder // Already returned this qualifier so skip
             }
 
-            if (toVersionBytes.compareWithOffsetTo(qualifier, versionOffset) <= 0) {
+            if (toVersionBytes.compareTo(qualifier, versionOffset) <= 0) {
                 isValid = true
+
+                @Suppress("UNUSED_VALUE")
+                lastQualifier = qualifier
+                lastQualifierLength = versionOffset - offset
 
                 // Return version. Invert it so it is in normal order
                 handleVersion(
                     initULong({ qualifier[versionOffset++] xor -1 })
                 )
 
-                @Suppress("UNUSED_VALUE")
-                lastQualifier = qualifier
-                lastQualifierLength = versionOffset - offset
                 resultHandler({ qualifier[offset+it] }, lastQualifierLength)
                 break
             } else continue

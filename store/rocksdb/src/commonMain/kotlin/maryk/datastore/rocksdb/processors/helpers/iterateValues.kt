@@ -3,7 +3,7 @@ package maryk.datastore.rocksdb.processors.helpers
 import maryk.core.exceptions.RequestException
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
-import maryk.lib.extensions.compare.compareWithOffsetTo
+import maryk.lib.extensions.compare.compareTo
 import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.Transaction
 import maryk.rocksdb.use
@@ -46,7 +46,7 @@ fun <R: Any> Transaction.iterateValues(
             while (iterator.isValid()) {
                 val referenceBytes = iterator.key()
                 val versionOffset = referenceBytes.size - toVersionBytes.size
-                if (toVersionBytes.compareWithOffsetTo(referenceBytes, versionOffset) <= 0) {
+                if (toVersionBytes.compareTo(referenceBytes, versionOffset) <= 0) {
                     val value = iterator.value()
                     handleValue(
                         referenceBytes, keyLength, versionOffset,

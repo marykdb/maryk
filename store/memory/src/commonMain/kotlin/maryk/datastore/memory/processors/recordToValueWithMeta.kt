@@ -35,7 +35,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordT
             when (val node = record.values[valueIndex]) {
                 is DataRecordValue<*> -> {
                     // Only add if below expected version
-                    if (toVersion == null || node.version < toVersion) {
+                    if (toVersion == null || node.version <= toVersion) {
                         if (node.version > maxVersion) {
                             maxVersion = node.version
                         }
@@ -43,8 +43,8 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordT
                     } else null // Signal that at this moment the value does not exist
                 }
                 is DataRecordHistoricValues<*> -> {
-                    when (val latest = node.history.findLast { toVersion == null || it.version < toVersion }) {
-                        null -> Unit // skip because not a value
+                    when (val latest = node.history.findLast { toVersion == null || it.version <= toVersion }) {
+                        null -> null // skip because not a value
                         is DataRecordValue<*> -> {
                             if (latest.version > maxVersion) {
                                 maxVersion = latest.version

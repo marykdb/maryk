@@ -1,6 +1,7 @@
 package maryk.datastore.rocksdb.processors
 
 import maryk.core.exceptions.StorageException
+import maryk.core.extensions.bytes.initULong
 import maryk.core.extensions.bytes.toULong
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.models.IsRootValuesDataModel
@@ -91,7 +92,10 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
             for (indexRange in indexScanRange.ranges.reversed()) {
                 indexRange.end?.let { endRange ->
                     if (endRange.isEmpty()) {
-                        iterator.seekToLast()
+                        iterator.seek(indexReference.nextByteInSameLength())
+                        if (!iterator.isValid()) {
+                            iterator.seekToLast()
+                        }
                     } else {
                         val endRangeToSearch = if (indexRange.endInclusive) {
                             endRange.nextByteInSameLength()
@@ -101,7 +105,10 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
 
                         if (indexRange.endInclusive && endRangeToSearch === endRange) {
                             // If was not highered it was not possible so scan to lastIndex
-                            iterator.seekToLast()
+                            iterator.seek(indexReference.nextByteInSameLength())
+                            if (!iterator.isValid()) {
+                                iterator.seekToLast()
+                            }
                         } else {
                             val endRangeToSeek = if (indexRange.endInclusive) {
                                 endRangeToSearch
@@ -155,16 +162,19 @@ fun createVersionChecker(toVersion: ULong?, iterator: RocksIterator, direction: 
                     var sameKey = true
                     // Skip all
                     while (iterator.isValid()) {
-                        if (indexKey.let { it.matchPart(0, indexKey, it.size, 0, indexKey.size - ULong.SIZE_BYTES) }) {
+                        val newKey = iterator.key()
+                        if (newKey.let { !it.matchPart(0, indexKey, it.size, 0, indexKey.size - ULong.SIZE_BYTES) }) {
                             sameKey = false // Key does not match anymore so break out
                             break
                         }
 
-                        if (indexKey.compareTo(versionBytesToMatch, indexKey.size - ULong.SIZE_BYTES) > 0
+                        if (versionBytesToMatch.compareTo(newKey, newKey.size - ULong.SIZE_BYTES) > 0
                             // Check if is deleted and skip if so
                             || iterator.value().contentEquals(FALSE_ARRAY)
                         ) {
                             iterator.next()
+                        } else {
+                            break
                         }
                     }
 
@@ -173,18 +183,17 @@ fun createVersionChecker(toVersion: ULong?, iterator: RocksIterator, direction: 
             }
             DESC -> {
                 { indexKey ->
-                    var sameKey = true
                     var hadAKeyMatch = false
                     // This iterator starts at the first version so has to walk past all, will correct back if a key match was found
                     while (iterator.isValid()) {
-                        if (indexKey.let { it.matchPart(0, indexKey, it.size, 0, indexKey.size - ULong.SIZE_BYTES) }) {
-                            sameKey = false // Key does not match anymore so break out
+                        val newKey = iterator.key()
+                        if (newKey.let { !it.matchPart(0, indexKey, it.size - ULong.SIZE_BYTES, 0, indexKey.size - ULong.SIZE_BYTES) }) {
                             break
                         }
 
-                        if (indexKey.compareTo(versionBytesToMatch, indexKey.size - ULong.SIZE_BYTES) <= 0) {
+                        if (versionBytesToMatch.compareTo(newKey, newKey.size - ULong.SIZE_BYTES) <= 0) {
                             // Only was a match if it was not deleted
-                            if (iterator.value().contentEquals(FALSE_ARRAY)) {
+                            if (!iterator.value().contentEquals(FALSE_ARRAY)) {
                                 hadAKeyMatch = true
                             }
                             iterator.prev()
@@ -199,7 +208,7 @@ fun createVersionChecker(toVersion: ULong?, iterator: RocksIterator, direction: 
                         }
                     }
 
-                    sameKey
+                    hadAKeyMatch
                 }
             }
         }
@@ -209,11 +218,15 @@ fun createVersionChecker(toVersion: ULong?, iterator: RocksIterator, direction: 
 fun createVersionReader(
     toVersion: ULong?,
     iterator: RocksIterator
-): (ByteArray) -> ULong =
+): (ByteArray, Int) -> ULong =
     if (toVersion == null) {
-        { iterator.value().toULong() }
+        { _, _ -> iterator.value().toULong() }
     } else {
-        { key -> key.toULong(key.size - ULong.SIZE_BYTES) }
+        { key, offset ->
+            var index = offset
+            // Invert version
+            initULong(reader = { key[index++] xor -1 })
+        }
     }
 
 /**
@@ -252,7 +265,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> checkAndPro
     processStoreValue: (Key<DM>, ULong) -> Unit,
     isPastRange: (ByteArray, Int) -> Boolean,
     checkVersion: (ByteArray) -> Boolean,
-    readVersion: (ByteArray) -> ULong,
+    readVersion: (ByteArray, Int) -> ULong,
     next: (ByteArray, Int, Int) -> Unit
 ) {
     var currentSize: UInt = 0u
@@ -266,9 +279,10 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> checkAndPro
         }
 
         if (indexScanRange.matchesPartials(indexRecord, valueOffset, valueSize) && checkVersion(indexRecord)) {
-            val setAtVersion = readVersion(indexRecord)
+            val setAtVersion = readVersion(indexRecord, indexRecord.size - ULong.SIZE_BYTES)
 
-            if (!scanRequest.shouldBeFiltered(
+            if (
+                !scanRequest.shouldBeFiltered(
                     transaction,
                     columnFamilies,
                     readOptions,

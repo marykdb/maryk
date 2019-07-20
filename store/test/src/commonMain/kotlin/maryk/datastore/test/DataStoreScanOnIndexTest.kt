@@ -3,6 +3,8 @@ package maryk.datastore.test
 import maryk.core.exceptions.RequestException
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.Key
+import maryk.core.query.changes.Change
+import maryk.core.query.changes.change
 import maryk.core.query.filters.Equals
 import maryk.core.query.filters.GreaterThanEquals
 import maryk.core.query.filters.LessThanEquals
@@ -10,18 +12,22 @@ import maryk.core.query.orders.ascending
 import maryk.core.query.orders.descending
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
+import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.datastore.shared.IsDataStore
 import maryk.test.assertType
 import maryk.test.models.Log
+import maryk.test.models.Log.Properties.message
 import maryk.test.models.Log.Properties.severity
 import maryk.test.models.Severity.DEBUG
 import maryk.test.models.Severity.ERROR
 import maryk.test.models.Severity.INFO
 import maryk.test.runSuspendingTest
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertSame
 import kotlin.test.expect
 
 class DataStoreScanOnIndexTest(
@@ -31,15 +37,16 @@ class DataStoreScanOnIndexTest(
     private var lowestVersion = ULong.MAX_VALUE
 
     override val allTests = mapOf(
-        "executeSimpleIndexScanRequest" to ::executeSimpleIndexScanRequest,
-        "executeSimpleIndexScanWithStartKeyRequest" to ::executeSimpleIndexScanWithStartKeyRequest,
-        "executeSimpleIndexScanRequestReverseOrder" to ::executeSimpleIndexScanRequestReverseOrder,
-        "executeIndexScanRequestWithLimit" to ::executeIndexScanRequestWithLimit,
-        "executeIndexScanRequestWithToVersion" to ::executeIndexScanRequestWithToVersion,
-        "executeIndexScanRequestWithSelect" to ::executeIndexScanRequestWithSelect,
-        "executeSimpleIndexFilterScanRequest" to ::executeSimpleIndexFilterScanRequest,
-        "executeSimpleIndexFilterGreaterScanRequest" to ::executeSimpleIndexFilterGreaterScanRequest,
-        "executeSimpleIndexFilterLessScanRequest" to ::executeSimpleIndexFilterLessScanRequest
+//        "executeSimpleIndexScanRequest" to ::executeSimpleIndexScanRequest,
+//        "executeSimpleIndexScanWithStartKeyRequest" to ::executeSimpleIndexScanWithStartKeyRequest,
+//        "executeSimpleIndexScanRequestReverseOrder" to ::executeSimpleIndexScanRequestReverseOrder,
+//        "executeIndexScanRequestWithLimit" to ::executeIndexScanRequestWithLimit,
+        "executeIndexScanRequestWithToVersionAscending" to ::executeIndexScanRequestWithToVersionAscending,
+        "executeIndexScanRequestWithToVersionDescending" to ::executeIndexScanRequestWithToVersionDescending//,
+//        "executeIndexScanRequestWithSelect" to ::executeIndexScanRequestWithSelect,
+//        "executeSimpleIndexFilterScanRequest" to ::executeSimpleIndexFilterScanRequest,
+//        "executeSimpleIndexFilterGreaterScanRequest" to ::executeSimpleIndexFilterGreaterScanRequest,
+//        "executeSimpleIndexFilterLessScanRequest" to ::executeSimpleIndexFilterLessScanRequest
     )
 
     private val logs = arrayOf(
@@ -162,19 +169,67 @@ class DataStoreScanOnIndexTest(
         }
     }
 
-    private fun executeIndexScanRequestWithToVersion() = runSuspendingTest {
-        if (dataStore.keepAllVersions) {
-            val scanResponse = dataStore.execute(
-                Log.scan(toVersion = lowestVersion - 1uL, order = severity.ref().ascending())
+    private fun executeIndexScanRequestWithToVersionAscending() = runSuspendingTest {
+        dataStore.execute(
+            Log.change(
+                keys[0].change(
+                    Change(
+                        message.ref() with "new message"
+                    )
+                )
             )
+        )
 
-            expect(0) { scanResponse.values.size }
+        val scan = Log.scan(toVersion = lowestVersion, order = severity.ref().ascending())
+
+        if (dataStore.keepAllVersions) {
+            val scanResponse = dataStore.execute(scan)
+
+            expect(4) { scanResponse.values.size }
+
+            // Find the values of object that was changed
+            val value = scanResponse.values.find { it.key == keys[0] }
+
+            assertSame(value, scanResponse.values[1])
+
+            assertEquals("Something happened", value!!.values[message.ref()])
         } else {
             assertFailsWith<RequestException> {
                 runSuspendingTest {
-                    dataStore.execute(
-                        Log.scan(toVersion = lowestVersion - 1uL, order = severity.ref().ascending())
+                    dataStore.execute(scan)
+                }
+            }
+        }
+    }
+
+    private fun executeIndexScanRequestWithToVersionDescending() = runSuspendingTest {
+        dataStore.execute(
+            Log.change(
+                keys[0].change(
+                    Change(
+                        message.ref() with "new message"
                     )
+                )
+            )
+        )
+
+        val scan = Log.scan(toVersion = lowestVersion, order = severity.ref().descending())
+
+        if (dataStore.keepAllVersions) {
+            val scanResponse = dataStore.execute(scan)
+
+            expect(4) { scanResponse.values.size }
+
+            // Find the values of object that was changed
+            val value = scanResponse.values.find { it.key == keys[0] }
+
+            assertSame(value, scanResponse.values[2])
+
+            assertEquals("Something happened", value!!.values[message.ref()])
+        } else {
+            assertFailsWith<RequestException> {
+                runSuspendingTest {
+                    dataStore.execute(scan)
                 }
             }
         }

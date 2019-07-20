@@ -37,16 +37,16 @@ class DataStoreScanOnIndexTest(
     private var lowestVersion = ULong.MAX_VALUE
 
     override val allTests = mapOf(
-//        "executeSimpleIndexScanRequest" to ::executeSimpleIndexScanRequest,
-//        "executeSimpleIndexScanWithStartKeyRequest" to ::executeSimpleIndexScanWithStartKeyRequest,
-//        "executeSimpleIndexScanRequestReverseOrder" to ::executeSimpleIndexScanRequestReverseOrder,
-//        "executeIndexScanRequestWithLimit" to ::executeIndexScanRequestWithLimit,
+        "executeSimpleIndexScanRequest" to ::executeSimpleIndexScanRequest,
+        "executeSimpleIndexScanWithStartKeyRequest" to ::executeSimpleIndexScanWithStartKeyRequest,
+        "executeSimpleIndexScanRequestReverseOrder" to ::executeSimpleIndexScanRequestReverseOrder,
+        "executeIndexScanRequestWithLimit" to ::executeIndexScanRequestWithLimit,
         "executeIndexScanRequestWithToVersionAscending" to ::executeIndexScanRequestWithToVersionAscending,
-        "executeIndexScanRequestWithToVersionDescending" to ::executeIndexScanRequestWithToVersionDescending//,
-//        "executeIndexScanRequestWithSelect" to ::executeIndexScanRequestWithSelect,
-//        "executeSimpleIndexFilterScanRequest" to ::executeSimpleIndexFilterScanRequest,
-//        "executeSimpleIndexFilterGreaterScanRequest" to ::executeSimpleIndexFilterGreaterScanRequest,
-//        "executeSimpleIndexFilterLessScanRequest" to ::executeSimpleIndexFilterLessScanRequest
+        "executeIndexScanRequestWithToVersionDescending" to ::executeIndexScanRequestWithToVersionDescending,
+        "executeIndexScanRequestWithSelect" to ::executeIndexScanRequestWithSelect,
+        "executeSimpleIndexFilterScanRequest" to ::executeSimpleIndexFilterScanRequest,
+        "executeSimpleIndexFilterGreaterScanRequest" to ::executeSimpleIndexFilterGreaterScanRequest,
+        "executeSimpleIndexFilterLessScanRequest" to ::executeSimpleIndexFilterLessScanRequest
     )
 
     private val logs = arrayOf(

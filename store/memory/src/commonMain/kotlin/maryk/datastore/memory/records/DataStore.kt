@@ -65,10 +65,40 @@ internal class DataStore<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions>
     }
 
     /** Remove [dataRecord] from all unique indices and register removal below [version] */
-    fun removeFromUniqueIndices(dataRecord: DataRecord<DM, P>, version: HLC) {
-        for (indexValues in uniqueIndices) {
-            getValue<Comparable<Any>>(dataRecord.values, indexValues.indexReference)?.let {
-                indexValues.removeFromIndex(dataRecord, it.value, version, keepAllVersions)
+    fun removeFromUniqueIndices(
+        dataRecord: DataRecord<DM, P>,
+        version: HLC,
+        hardDelete: Boolean
+    ) {
+        if (hardDelete) {
+            for (indexValues in uniqueIndices) {
+                val valueIndex = dataRecord.values.binarySearch {
+                    it.reference.compareTo(indexValues.indexReference)
+                }
+                if (valueIndex >= 0) {
+                    when(val dataNode = dataRecord.values[valueIndex]) {
+                        is DataRecordHistoricValues<*> -> {
+                            dataNode.history.forEach { record ->
+                                @Suppress("UNCHECKED_CAST")
+                                indexValues.deleteHardFromIndex(
+                                    dataRecord,
+                                    (record as DataRecordValue<Comparable<Any>>)
+                                )
+                            }
+                        }
+                        is DataRecordValue<*> -> {
+                            @Suppress("UNCHECKED_CAST")
+                            indexValues.deleteHardFromIndex(dataRecord, dataNode as DataRecordValue<Comparable<Any>>)
+                        }
+                        else -> {}
+                    }
+                }
+            }
+        } else {
+            for (indexValues in uniqueIndices) {
+                getValue<Comparable<Any>>(dataRecord.values, indexValues.indexReference)?.let {
+                    indexValues.removeFromIndex(dataRecord, it.value, version, keepAllVersions)
+                }
             }
         }
     }

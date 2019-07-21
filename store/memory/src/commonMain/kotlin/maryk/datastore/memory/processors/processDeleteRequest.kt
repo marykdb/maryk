@@ -36,7 +36,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
                 val status: IsDeleteResponseStatus<DM> = when {
                     index > -1 -> {
                         val objectToDelete = dataStore.records[index]
-                        dataStore.removeFromUniqueIndices(objectToDelete, version)
+                        dataStore.removeFromUniqueIndices(objectToDelete, version, deleteRequest.hardDelete)
 
                         // Delete indexed values
                         deleteRequest.dataModel.indices?.forEach { indexable ->

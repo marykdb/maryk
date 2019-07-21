@@ -4,6 +4,7 @@ import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.datastore.memory.records.DataRecord
+import maryk.datastore.memory.records.DataRecordValue
 
 /**
  * Contains all index values and has methods to add, get or remove unique value references
@@ -99,5 +100,18 @@ internal abstract class AbstractIndexValues<DM : IsRootValuesDataModel<P>, P : P
                 null
             }
         }
+
+    fun deleteHardFromIndex(record: DataRecord<DM, P>, dataRecordValue: DataRecordValue<T>): Boolean {
+        val i = records.binarySearch { it.value.compareTo(dataRecordValue.value) }
+        return if (i >= 0 && records[i].record == record) {
+            val oldValue = records[i]
+            if (oldValue is HistoricalIndexValue<DM, P, T>) {
+                oldValue.records.removeAll { it.record == record }
+            } else {
+                records.removeAt(i)
+            }
+            true
+        } else false
+    }
 }
 

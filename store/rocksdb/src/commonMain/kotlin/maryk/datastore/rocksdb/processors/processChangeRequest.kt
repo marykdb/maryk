@@ -80,6 +80,7 @@ import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.createCountUpdater
 import maryk.datastore.rocksdb.processors.helpers.deleteByReference
 import maryk.datastore.rocksdb.processors.helpers.deleteIndexValue
+import maryk.datastore.rocksdb.processors.helpers.deleteUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.getCurrentIncMapKey
 import maryk.datastore.rocksdb.processors.helpers.getLastVersion
 import maryk.datastore.rocksdb.processors.helpers.getList
@@ -700,6 +701,9 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                         deleteIndexValue(transaction, columnFamilies, it.toReferenceStorageByteArray(), oldKeyAndValue, versionBytes)
                     } // else ignore since did not exist
                 } else if (oldKeyAndValue == null || !newKeyAndValue.contentEquals(oldKeyAndValue)) {
+                    if (oldKeyAndValue != null) {
+                        deleteIndexValue(transaction, columnFamilies, it.toReferenceStorageByteArray(), oldKeyAndValue, versionBytes)
+                    }
                     setIndexValue(transaction, columnFamilies, it.toReferenceStorageByteArray(), newKeyAndValue, versionBytes)
                 }
             }
@@ -738,6 +742,11 @@ private fun createValueWriter(
                 // Since it is an addition we only need to check the current uniques
                 transaction.getForUpdate(dataStore.defaultReadOptions, columnFamilies.unique, uniqueReference, true)?.let {
                     throw UniqueException(reference)
+                }
+
+                // we need to delete the old value if present
+                transaction.getValue(columnFamilies, dataStore.defaultReadOptions, null, byteArrayOf(*key.bytes, *reference)) { b, o, l ->
+                    deleteUniqueIndexValue(transaction, columnFamilies, reference, b, o, l, versionBytes, false)
                 }
 
                 // Creates index reference on table if it not exists so delete can find

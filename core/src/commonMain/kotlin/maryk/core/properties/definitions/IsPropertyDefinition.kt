@@ -23,8 +23,10 @@ interface IsPropertyDefinition<T : Any> {
         newValue: T?,
         refGetter: () -> IsPropertyReference<T, IsPropertyDefinition<T>, *>? = { null }
     ) = when {
-        this.final && previousValue != null -> throw AlreadySetException(refGetter())
-        this.required && newValue == null -> throw RequiredException(refGetter())
+        this.final && previousValue != null ->
+            throw AlreadySetException(refGetter())
+        this.required && newValue == null ->
+            throw RequiredException(refGetter())
         else -> Unit
     }
 

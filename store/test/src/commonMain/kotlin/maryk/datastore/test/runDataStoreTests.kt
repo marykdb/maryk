@@ -17,6 +17,7 @@ private val allTestClasses = arrayOf(
     "DataStoreGetChangesTest" to ::DataStoreGetChangesTest,
     "DataStoreGetTest" to ::DataStoreGetTest,
     "DataStoreScanChangesTest" to ::DataStoreScanChangesTest,
+    "DataStoreScanIndexTest" to ::DataStoreScanIndexTest,
     "DataStoreScanOnIndexTest" to ::DataStoreScanOnIndexTest,
     "DataStoreScanTest" to ::DataStoreScanTest,
     "DataStoreScanUniqueTest" to ::DataStoreScanUniqueTest,

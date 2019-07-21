@@ -89,7 +89,8 @@ private class HistoricStoreIndexValuesGetter(
         if (latestOverallVersion == iterableReference.lastVersion) {
             // Only seek the first time
             if (iterableReference.lastVersion == null) {
-                iterator.seek(keyAndReference)
+                // Add empty version so iterator works correctly
+                iterator.seek(keyAndReference.copyOf(keyAndReference.size + 8))
             }
 
             // Go to next version if it is the version to read past or not yet set

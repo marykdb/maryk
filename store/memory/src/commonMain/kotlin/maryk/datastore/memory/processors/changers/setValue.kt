@@ -46,13 +46,15 @@ internal fun <T : Any> setValue(
         it.reference.compareTo(reference)
     }
 
+    val prevValue = getValueAtIndex<T>(values, valueIndex)?.value
+
     val newDataValue = setValueAtIndex(
         values, valueIndex, reference, value, version, keepAllVersions
     )
 
     // Validate value if it changed
     newDataValue?.let {
-        validate?.invoke(newDataValue, getValueAtIndex<T>(values, valueIndex)?.value)
+        validate?.invoke(newDataValue, prevValue)
     }
 
     return newDataValue != null

@@ -97,12 +97,12 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
         val number = add(
             index = 2u, name = "number",
             definition = NumberDefinition(
-                final = true,
+                final = false,
                 unique = true,
                 type = UInt32,
                 minValue = 12u,
                 maxValue = 34u,
-                default = 42u,
+                default = 33u,
                 random = true
             )
         )

@@ -180,7 +180,8 @@ private fun hardDeleteHistoricalUniqueValues(
     reference: ByteArray
 ) {
     transaction.getIterator(readOptions, columnFamilies.historic.table).use { iterator ->
-        iterator.seek(referenceAndKey)
+        // Add empty version so iterator works correctly
+        iterator.seek(referenceAndKey.copyOf(referenceAndKey.size + 8))
 
         while (iterator.isValid()) {
             val qualifier = iterator.key()

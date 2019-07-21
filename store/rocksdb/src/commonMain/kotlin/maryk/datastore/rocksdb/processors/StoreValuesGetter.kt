@@ -10,7 +10,7 @@ import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.RocksDB
 
 /** Reads requested values from the RocksDB store. */
-class StoreValuesGetter(
+internal class StoreValuesGetter(
     val key: Key<*>,
     val db: RocksDB,
     val columnFamilies: TableColumnFamilies,

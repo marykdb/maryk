@@ -12,7 +12,7 @@ import maryk.rocksdb.use
  * Get a value for a [reference] from [columnFamilies] with [readOptions].
  * Depending on if [toVersion] is set it will be retrieved from the historic or current table.
  */
-fun <R: Any> Transaction.iterateValues(
+internal fun <R: Any> Transaction.iterateValues(
     columnFamilies: TableColumnFamilies,
     readOptions: ReadOptions,
     toVersion: ULong?,

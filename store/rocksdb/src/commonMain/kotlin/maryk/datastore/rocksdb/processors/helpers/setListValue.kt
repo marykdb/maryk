@@ -15,7 +15,7 @@ import maryk.rocksdb.Transaction
  * Use [keepAllVersions] on true to keep old versions
  * Returns true if changed
  */
-fun <T : Any> setListValue(
+internal fun <T : Any> setListValue(
     transaction: Transaction,
     columnFamilies: TableColumnFamilies,
     key: Key<*>,

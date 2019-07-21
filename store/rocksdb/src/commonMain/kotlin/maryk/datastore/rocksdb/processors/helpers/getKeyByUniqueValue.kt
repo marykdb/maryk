@@ -16,7 +16,7 @@ import kotlin.experimental.xor
 /**
  * Get a unique record key by value
  */
-fun getKeyByUniqueValue(
+internal fun getKeyByUniqueValue(
     transaction: Transaction,
     columnFamilies: TableColumnFamilies,
     readOptions: ReadOptions,

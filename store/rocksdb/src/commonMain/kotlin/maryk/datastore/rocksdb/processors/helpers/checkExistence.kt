@@ -4,7 +4,7 @@ import maryk.core.properties.types.Key
 import maryk.rocksdb.RocksIterator
 
 /** Check existence of the [key] on [iterator] by checking existence of creation time */
-fun checkExistence(
+internal fun checkExistence(
     iterator: RocksIterator,
     key: Key<*>
 ) {

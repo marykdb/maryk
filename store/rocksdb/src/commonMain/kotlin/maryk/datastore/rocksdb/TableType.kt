@@ -4,7 +4,7 @@ import maryk.core.extensions.bytes.writeVarBytes
 import maryk.rocksdb.ColumnFamilyDescriptor
 import maryk.rocksdb.ColumnFamilyOptions
 
-enum class TableType(
+internal enum class TableType(
     val byte: Byte
 ) {
     Model(0),

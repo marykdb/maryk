@@ -14,7 +14,7 @@ import maryk.rocksdb.Transaction
  * Match a qualifier from [reference] on transaction at [columnFamilies] and [readOptions] with [matcher] for [key].
  * Will search in history if [toVersion] is set.
  */
-fun <T : Any> Transaction.matchQualifier(
+internal fun <T : Any> Transaction.matchQualifier(
     columnFamilies: TableColumnFamilies,
     readOptions: ReadOptions,
     key: ByteArray,

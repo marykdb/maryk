@@ -11,7 +11,7 @@ import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.Transaction
 
 /** Reads requested values from the RocksDB [transaction]. */
-class TransactionValuesGetter(
+internal class TransactionValuesGetter(
     val key: Key<*>,
     val transaction: Transaction,
     val columnFamilies: TableColumnFamilies,

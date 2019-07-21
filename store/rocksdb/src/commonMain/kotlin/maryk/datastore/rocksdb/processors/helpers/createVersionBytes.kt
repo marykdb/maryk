@@ -4,7 +4,7 @@ import maryk.core.extensions.bytes.invert
 import maryk.core.extensions.bytes.writeBytes
 
 /** Create Version bytes out of a ULong */
-fun ULong.createReversedVersionBytes() =
+internal fun ULong.createReversedVersionBytes() =
     ByteArray(ULong.SIZE_BYTES).let { versionBytes ->
         var index = 0
         this.writeBytes({ versionBytes[index++] = it })

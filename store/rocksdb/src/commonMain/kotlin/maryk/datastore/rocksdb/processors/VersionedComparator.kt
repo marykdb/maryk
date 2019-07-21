@@ -11,7 +11,7 @@ private const val versionSize = ULong.SIZE_BYTES
  * Takes care that qualifiers are first sorted on their reference/value and then on version
  * Otherwise the version bytes could make values come before their root qualifiers.
  */
-class VersionedComparator(
+internal class VersionedComparator(
     val keySize: Int
 ) : maryk.rocksdb.Comparator(ComparatorOptions()) {
     override fun name() = "maryk.VersionedComparator"

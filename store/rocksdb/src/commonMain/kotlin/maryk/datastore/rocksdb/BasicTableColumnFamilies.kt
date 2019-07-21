@@ -2,7 +2,7 @@ package maryk.datastore.rocksdb
 
 import maryk.rocksdb.ColumnFamilyHandle
 
-open class BasicTableColumnFamilies(
+internal open class BasicTableColumnFamilies(
     val table: ColumnFamilyHandle,
     val index: ColumnFamilyHandle,
     val unique: ColumnFamilyHandle

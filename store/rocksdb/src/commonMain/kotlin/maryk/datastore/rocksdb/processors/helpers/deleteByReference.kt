@@ -34,7 +34,7 @@ import maryk.lib.extensions.compare.prevByteInSameLength
 import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.Transaction
 
-fun <T : Any> deleteByReference(
+internal fun <T : Any> deleteByReference(
     transaction: Transaction,
     columnFamilies: TableColumnFamilies,
     readOptions: ReadOptions,

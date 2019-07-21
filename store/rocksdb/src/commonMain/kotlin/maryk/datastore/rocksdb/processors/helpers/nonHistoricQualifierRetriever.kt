@@ -4,7 +4,7 @@ import maryk.core.properties.types.Key
 import maryk.rocksdb.RocksIterator
 
 /** Find non historic qualifiers on [iterator] for [key] */
-fun RocksIterator.nonHistoricQualifierRetriever(
+internal fun RocksIterator.nonHistoricQualifierRetriever(
     key: Key<*>
 ): (((Int) -> Byte, Int) -> Unit) -> Boolean = { resultHandler ->
     next()

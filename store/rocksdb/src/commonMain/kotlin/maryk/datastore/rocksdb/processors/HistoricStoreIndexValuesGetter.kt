@@ -19,7 +19,7 @@ import maryk.rocksdb.Transaction
 import kotlin.experimental.xor
 
 /** Reads historical index values from the RocksDB store. */
-class HistoricStoreIndexValuesWalker(
+internal class HistoricStoreIndexValuesWalker(
     val columnFamilies: HistoricTableColumnFamilies,
     private val readOptions: ReadOptions
 ) {

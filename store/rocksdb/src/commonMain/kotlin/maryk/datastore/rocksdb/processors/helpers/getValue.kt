@@ -15,7 +15,7 @@ import maryk.rocksdb.use
  * Get a value for a [keyAndReference] from [columnFamilies] with [readOptions].
  * Depending on if [toVersion] is set it will be retrieved from the historic or current table.
  */
-fun <T: Any> Transaction.getValue(
+internal fun <T: Any> Transaction.getValue(
     columnFamilies: TableColumnFamilies,
     readOptions: ReadOptions,
     toVersion: ULong?,

@@ -8,7 +8,7 @@ import maryk.rocksdb.RocksIterator
 import kotlin.experimental.xor
 
 /** Find historic qualifiers on [iterator] for [key] */
-fun RocksIterator.historicQualifierRetriever(
+internal fun RocksIterator.historicQualifierRetriever(
     key: Key<*>,
     toVersion: ULong,
     handleVersion: (ULong) -> Unit

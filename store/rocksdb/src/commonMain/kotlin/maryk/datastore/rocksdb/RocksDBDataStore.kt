@@ -133,19 +133,19 @@ class RocksDBDataStore(
         }
     }
 
-    fun getColumnFamilies(dbIndex: UInt) =
+    internal fun getColumnFamilies(dbIndex: UInt) =
         columnFamilyHandlesByDataModelIndex[dbIndex]
             ?: throw DefNotFoundException("DataModel definition not found for $dbIndex")
 
     /** Get the unique indices for [dbIndex] and [uniqueHandle] */
-    fun getUniqueIndices(dbIndex: UInt, uniqueHandle: ColumnFamilyHandle) =
+    internal fun getUniqueIndices(dbIndex: UInt, uniqueHandle: ColumnFamilyHandle) =
         uniqueIndicesByDataModelIndex[dbIndex] ?: searchExistingUniqueIndices(uniqueHandle)
 
     /**
      * Checks if unique index exists and creates it if not otherwise.
      * This is needed so delete knows which indices to scan for values to delete.
      */
-    fun createUniqueIndexIfNotExists(dbIndex: UInt, uniqueHandle: ColumnFamilyHandle, uniqueName: ByteArray) {
+    internal fun createUniqueIndexIfNotExists(dbIndex: UInt, uniqueHandle: ColumnFamilyHandle, uniqueName: ByteArray) {
         val existingDbUniques = uniqueIndicesByDataModelIndex[dbIndex] as MutableList<ByteArray>?
             ?: searchExistingUniqueIndices(uniqueHandle).also { uniqueIndicesByDataModelIndex[dbIndex] = it }
         val existingValue = existingDbUniques.find { it.contentEquals(uniqueName) }

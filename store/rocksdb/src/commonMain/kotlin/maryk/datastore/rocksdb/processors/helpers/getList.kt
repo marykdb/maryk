@@ -10,7 +10,7 @@ import maryk.rocksdb.Transaction
 import maryk.rocksdb.use
 
 /**
- * Get list from [values] at [reference] by reading and collecting all values from DataRecord
+ * Get list from [transaction] at [reference] by reading and collecting all values from DataRecord
  */
 internal fun <T : Any> getList(
     transaction: Transaction,

@@ -5,7 +5,7 @@ import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.rocksdb.Transaction
 
-/** Set [reference] = [value] (ByteArray) at [version] for object at [key] */
+/** Set [keyAndReference] = [value] (ByteArray) at [version] for object at [key] */
 internal fun setValue(
     transaction: Transaction,
     columnFamilies: TableColumnFamilies,

@@ -2,7 +2,7 @@ package maryk.datastore.rocksdb
 
 import maryk.rocksdb.ColumnFamilyHandle
 
-class HistoricTableColumnFamilies(
+internal class HistoricTableColumnFamilies(
     model: ColumnFamilyHandle,
     keys: ColumnFamilyHandle,
     table: ColumnFamilyHandle,

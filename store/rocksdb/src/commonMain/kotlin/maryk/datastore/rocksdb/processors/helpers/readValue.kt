@@ -19,7 +19,7 @@ import maryk.datastore.rocksdb.processors.SIMPLE_TYPE_INDICATOR
  * from [valueBytesLeft]
  * These values have an indicator byte to signal they are a normal value/multi type or embed
  */
-fun readValue(
+internal fun readValue(
     definition: IsPropertyDefinition<out Any>?,
     reader: () -> Byte,
     valueBytesLeft: () -> Int

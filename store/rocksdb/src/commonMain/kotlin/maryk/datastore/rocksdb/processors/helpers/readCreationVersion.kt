@@ -5,7 +5,7 @@ import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.Transaction
 
-fun readCreationVersion(
+internal fun readCreationVersion(
     transaction: Transaction,
     columnFamilies: TableColumnFamilies,
     readOptions: ReadOptions,

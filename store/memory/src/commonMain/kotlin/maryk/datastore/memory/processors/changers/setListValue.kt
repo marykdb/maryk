@@ -13,7 +13,7 @@ import maryk.lib.extensions.compare.compareTo
  * Use [keepAllVersions] on true to keep old versions
  * Returns true if changed
  */
-fun <T : Any> setListValue(
+internal fun <T : Any> setListValue(
     values: MutableList<DataRecordNode>,
     reference: TypedPropertyReference<out List<T>>,
     newList: List<T>,

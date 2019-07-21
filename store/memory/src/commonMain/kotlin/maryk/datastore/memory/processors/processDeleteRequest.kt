@@ -29,6 +29,11 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
     if (deleteRequest.keys.isNotEmpty()) {
         val version = storeAction.version
 
+        // Delete it from history if it is a hard delete
+        val historicStoreIndexValuesWalker = if (deleteRequest.hardDelete && dataStore.keepAllVersions) {
+            HistoricStoreIndexValuesWalker
+        } else null
+
         for (key in deleteRequest.keys) {
             try {
                 val index = dataStore.records.binarySearch { it.key.compareTo(key) }
@@ -41,14 +46,24 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
                         // Delete indexed values
                         deleteRequest.dataModel.indices?.forEach { indexable ->
                             val oldValue = indexable.toStorageByteArrayForIndex(objectToDelete, objectToDelete.key.bytes)
+                            val indexRef = indexable.toReferenceStorageByteArray()
                             if (oldValue != null) {
                                 dataStore.removeFromIndex(
                                     objectToDelete,
-                                    indexable.toReferenceStorageByteArray(),
+                                    indexRef,
                                     version,
                                     oldValue
                                 )
                             } // else ignore since did not exist
+
+                            // Delete all historic values if historicStoreIndexValuesWalker was set
+                            historicStoreIndexValuesWalker?.walkIndexHistory(objectToDelete, indexable) { value, _ ->
+                                dataStore.deleteHardFromIndex(
+                                    indexRef,
+                                    value,
+                                    objectToDelete
+                                )
+                            }
                         }
 
                         if (deleteRequest.hardDelete) {

@@ -22,7 +22,7 @@ internal class DataStore<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions>
     private val uniqueIndices: MutableList<UniqueIndexValues<DM, P, Comparable<Any>>> = mutableListOf()
 
     /** Add [record] to index for [value] and pass [previousValue] so that index reference can be deleted */
-    fun addToIndex(
+    internal fun addToIndex(
         record: DataRecord<DM, P>,
         indexName: ByteArray,
         value: ByteArray,
@@ -37,7 +37,7 @@ internal class DataStore<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions>
     }
 
     /** Remove [record] for [previousValue] from index */
-    fun removeFromIndex(
+    internal fun removeFromIndex(
         record: DataRecord<DM, P>,
         indexName: ByteArray,
         version: HLC,
@@ -49,8 +49,18 @@ internal class DataStore<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions>
         }
     }
 
+    /** Delete [value] completely from given [indexName] for [record] */
+    internal fun deleteHardFromIndex(
+        indexName: ByteArray,
+        value: ByteArray,
+        record: DataRecord<DM, P>
+    ) {
+        val index = getOrCreateIndex(indexName)
+        index.deleteHardFromIndex(record, value)
+    }
+
     /** Add [record] to unique index for [value] and pass [previousValue] so that index reference can be deleted */
-    fun addToUniqueIndex(
+    internal fun addToUniqueIndex(
         record: DataRecord<DM, P>,
         indexName: ByteArray,
         value: Comparable<Any>,
@@ -65,7 +75,7 @@ internal class DataStore<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions>
     }
 
     /** Remove [dataRecord] from all unique indices and register removal below [version] */
-    fun removeFromUniqueIndices(
+    internal fun removeFromUniqueIndices(
         dataRecord: DataRecord<DM, P>,
         version: HLC,
         hardDelete: Boolean
@@ -82,13 +92,13 @@ internal class DataStore<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions>
                                 @Suppress("UNCHECKED_CAST")
                                 indexValues.deleteHardFromIndex(
                                     dataRecord,
-                                    (record as DataRecordValue<Comparable<Any>>)
+                                    (record as DataRecordValue<Comparable<Any>>).value
                                 )
                             }
                         }
                         is DataRecordValue<*> -> {
                             @Suppress("UNCHECKED_CAST")
-                            indexValues.deleteHardFromIndex(dataRecord, dataNode as DataRecordValue<Comparable<Any>>)
+                            indexValues.deleteHardFromIndex(dataRecord, (dataNode as DataRecordValue<Comparable<Any>>).value)
                         }
                         else -> {}
                     }
@@ -104,7 +114,7 @@ internal class DataStore<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions>
     }
 
     /** Validate if value in [dataRecordValue] does not already exist and if it exists it is not [dataRecord] */
-    fun validateUniqueNotExists(
+    internal fun validateUniqueNotExists(
         dataRecordValue: DataRecordValue<Comparable<Any>>,
         dataRecord: DataRecord<DM, P>
     ) {
@@ -147,7 +157,7 @@ internal class DataStore<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions>
     }
 
     /** Get DataRecord by [key] */
-    fun getByKey(key: ByteArray): DataRecord<DM, P>? {
+    internal fun getByKey(key: ByteArray): DataRecord<DM, P>? {
         val index = this.records.binarySearch { it.key.bytes.compareTo(key) }
 
         return if (index >= 0) this.records[index] else null

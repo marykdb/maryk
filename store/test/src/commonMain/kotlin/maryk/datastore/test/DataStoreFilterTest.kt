@@ -129,6 +129,14 @@ class DataStoreFilterTest(
                     HLC(lastVersions.first() - 1u)
                 )
             }
+
+            // With higher version it should be found
+            assertTrue {
+                filterMatches(
+                    Exists(TestMarykModel { string::ref }),
+                    HLC(lastVersions.first() + 1u)
+                )
+            }
         }
 
         assertFalse {
@@ -152,6 +160,14 @@ class DataStoreFilterTest(
                     HLC(lastVersions.last() - 1u)
                 )
             }
+
+            // With higher version it should be found
+            assertTrue {
+                filterMatches(
+                    Equals(TestMarykModel { string::ref } with "haha1"),
+                    HLC(lastVersions.first() + 1u)
+                )
+            }
         }
 
         assertFalse {
@@ -172,6 +188,22 @@ class DataStoreFilterTest(
             filterMatches(
                 Equals(TestMarykModel { map.refToAny() } with "haha10")
             )
+        }
+
+        if (dataStore.keepAllVersions) {
+            assertFalse {
+                filterMatches(
+                    Equals(TestMarykModel { map.refToAny() } with "haha10"),
+                    HLC(lastVersions.last() - 1u)
+                )
+            }
+
+            assertTrue {
+                filterMatches(
+                    Equals(TestMarykModel { map.refToAny() } with "haha10"),
+                    HLC(lastVersions.last() + 1u)
+                )
+            }
         }
 
         assertFalse {

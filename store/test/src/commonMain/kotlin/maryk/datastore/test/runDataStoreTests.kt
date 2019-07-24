@@ -13,6 +13,7 @@ private val allTestClasses = arrayOf(
     "DataStoreChangeTest" to ::DataStoreChangeTest,
     "DataStoreChangeValidationTest" to ::DataStoreChangeValidationTest,
     "DataStoreDeleteTest" to ::DataStoreDeleteTest,
+    "DataStoreFilterTest" to ::DataStoreFilterTest,
     "DataStoreGetChangesComplexTest" to ::DataStoreGetChangesComplexTest,
     "DataStoreGetChangesTest" to ::DataStoreGetChangesTest,
     "DataStoreGetTest" to ::DataStoreGetTest,

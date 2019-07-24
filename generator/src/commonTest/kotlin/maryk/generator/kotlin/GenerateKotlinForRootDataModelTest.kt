@@ -125,7 +125,6 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
             index = 1u, name = "string", alternativeNames = setOf("str", "stringValue"),
             definition = StringDefinition(
                 required = false,
-                final = true,
                 unique = true,
                 minValue = "a",
                 maxValue = "zzzz",
@@ -138,12 +137,11 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
         val number = add(
             index = 2u, name = "number",
             definition = NumberDefinition(
-                final = true,
                 unique = true,
                 type = UInt32,
                 minValue = 12u,
                 maxValue = 34u,
-                default = 42u,
+                default = 33u,
                 random = true
             )
         )
@@ -411,7 +409,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
 
     operator fun invoke(
         string: String = "string",
-        number: UInt = 42u,
+        number: UInt = 33u,
         boolean: Boolean = true,
         enum: Option = Option.V1,
         date: Date = Date(2018, 5, 2),

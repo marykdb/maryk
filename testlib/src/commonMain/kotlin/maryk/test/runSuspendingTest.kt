@@ -1,3 +1,3 @@
 package maryk.test
 
-expect fun runSuspendingTest(block: suspend () -> Unit)
+expect fun <A> runSuspendingTest(block: suspend () -> A): A

@@ -32,10 +32,11 @@ class QualifierFuzzyMatcher(
     /** Compare current [qualifier] at [offset] */
     fun isMatch(qualifier: ByteArray, offset: Int, length: Int = qualifier.size) : FuzzyMatchResult {
         var index = offset
+        val lastIndexPlusOne = offset + length
 
         for ((qIndex, qPart) in qualifierParts.withIndex()) {
             for (byte in qPart) {
-                if (length <= index) { return NO_MATCH }
+                if (lastIndexPlusOne <= index) { return NO_MATCH }
                 if (byte != qualifier[index++]) {
                     // If first part does not match it is out of range. Otherwise possible matches so no match
                     return if (qIndex == 0) OUT_OF_RANGE else NO_MATCH
@@ -45,7 +46,7 @@ class QualifierFuzzyMatcher(
             if (fuzzyMatchers.lastIndex >= qIndex) {
                 try {
                     fuzzyMatchers[qIndex].skip {
-                        if (index >= length) {
+                        if (index >= lastIndexPlusOne) {
                             // So JS skips out.
                             throw Throwable("0 char encountered")
                         }

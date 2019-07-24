@@ -40,7 +40,12 @@ internal fun <T : Any> Transaction.matchQualifier(
             return matcher(value)
         }
         is QualifierFuzzyMatcher -> {
-            this.iterateValues(columnFamilies, readOptions, toVersion, keyLength, qualifierMatcher.firstPossible()) { referenceBytes, refOffset, refLength, valueBytes, valOffset, valLength ->
+            val firstPossible = qualifierMatcher.firstPossible()
+            val qualifier = ByteArray(keyLength + firstPossible.size)
+            key.copyInto(qualifier, 0, keyOffset, keyOffset + keyLength)
+            firstPossible.copyInto(qualifier, keyLength)
+
+            val result = this.iterateValues(columnFamilies, readOptions, toVersion, keyLength, qualifier) { referenceBytes, refOffset, refLength, valueBytes, valOffset, valLength ->
                 when (qualifierMatcher.isMatch(referenceBytes, refOffset, refLength)) {
                     NO_MATCH -> null
                     MATCH -> {
@@ -50,7 +55,7 @@ internal fun <T : Any> Transaction.matchQualifier(
                     OUT_OF_RANGE -> false
                 }
             }
-            return false
+            return result ?: false
         }
     }
 }

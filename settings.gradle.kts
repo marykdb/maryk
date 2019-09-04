@@ -33,8 +33,7 @@ includeProjects(
     "store-test",
     "store-shared",
     "store-memory",
-    "store-rocksdb",
-    "rocksdb"
+    "store-rocksdb"
 )
 
 rootProject.name = "maryk"

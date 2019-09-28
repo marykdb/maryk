@@ -47,7 +47,8 @@ interface IsSimpleValueDefinition<T : Any, in CX : IsPropertyContext> :
         this.calculateTransportByteLength(value)
 
     /** Calculates the needed bytes to transport the [value] */
-    fun calculateTransportByteLength(value: T): Int
+    fun calculateTransportByteLength(value: T): Int =
+        this.calculateStorageByteLength(value)
 
     /** Convert [value] to String */
     fun asString(value: T) = value.toString()

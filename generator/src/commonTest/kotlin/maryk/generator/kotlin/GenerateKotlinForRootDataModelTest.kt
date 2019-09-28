@@ -50,6 +50,7 @@ import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.FixedBytesDefinition
 import maryk.core.properties.definitions.FlexBytesDefinition
+import maryk.core.properties.definitions.GeoPointDefinition
 import maryk.core.properties.definitions.IncrementingMapDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
@@ -66,6 +67,7 @@ import maryk.core.properties.definitions.index.UUIDKey
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IndexedEnumImpl
 import maryk.core.properties.types.Bytes
+import maryk.core.properties.types.GeoPoint
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TimePrecision
 import maryk.core.properties.types.TypedValue
@@ -405,6 +407,14 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 )
             )
         )
+        val location = add(
+            index = 26u, name = "location",
+            definition = GeoPointDefinition(
+                required = false,
+                final = true,
+                default = 52.0906448,5.1212607
+            )
+        )
     }
 
     operator fun invoke(
@@ -437,7 +447,8 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
         mapWithList: Map<String, List<String>> = mapOf("a" to listOf("b", "c")),
         mapWithSet: Map<String, Set<String>> = mapOf("a" to setOf("b", "c")),
         mapWithMap: Map<String, Map<String, String>> = mapOf("a" to mapOf("b" to "c")),
-        incMap: Map<UInt, Values<EmbeddedMarykModel, EmbeddedMarykModel.Properties>>? = null
+        incMap: Map<UInt, Values<EmbeddedMarykModel, EmbeddedMarykModel.Properties>>? = null,
+        location: GeoPoint = 52.0906448,5.1212607
     ) = values {
         mapNonNulls(
             this.string with string,
@@ -464,7 +475,8 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
             this.mapWithList with mapWithList,
             this.mapWithSet with mapWithSet,
             this.mapWithMap with mapWithMap,
-            this.incMap with incMap
+            this.incMap with incMap,
+            this.location with location
         )
     }
 }

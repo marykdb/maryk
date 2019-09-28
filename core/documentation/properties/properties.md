@@ -13,6 +13,7 @@ and stored.
 |[Boolean](types/boolean.md)              |✅      |✅        |✅      |✅    |✅       |✅       |
 |[Number](types/number.md)🔢              |✅      |✅        |✅      |✅    |✅       |✅       |
 |[Enum](types/enum.md)                    |✅      |✅        |✅      |✅    |✅       |✅       |
+|[GeoPoint](types/geopoint.md)            |✅      |✅        |✅      |✅    |✅       |✅       |
 |[Date](types/date.md)                    |✅      |✅        |✅      |✅    |✅       |✅       |
 |[Time](types/time.md)                    |✅      |✅        |✅      |✅    |✅       |✅       |
 |[DateTime](types/datetime.md)            |✅      |✅        |✅      |✅    |✅       |✅       |

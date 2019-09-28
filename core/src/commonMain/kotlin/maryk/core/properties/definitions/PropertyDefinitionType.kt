@@ -34,16 +34,17 @@ enum class PropertyDefinitionType(
     Enum(5u),
     FixedBytes(6u),
     FlexBytes(7u),
-    IncMap(8u),
-    List(9u),
-    Map(10u),
-    MultiType(11u),
-    Number(12u),
-    Reference(13u),
-    Set(14u),
-    String(15u),
-    Time(16u),
-    Value(17u);
+    GeoPoint(8u),
+    IncMap(9u),
+    List(10u),
+    Map(11u),
+    MultiType(12u),
+    Number(13u),
+    Reference(14u),
+    Set(15u),
+    String(16u),
+    Time(17u),
+    Value(18u);
 
     companion object :
         IndexedEnumDefinition<PropertyDefinitionType>("PropertyDefinitionType", PropertyDefinitionType::values)

@@ -10,6 +10,7 @@ import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.FixedBytesDefinition
 import maryk.core.properties.definitions.FlexBytesDefinition
+import maryk.core.properties.definitions.GeoPointDefinition
 import maryk.core.properties.definitions.IncrementingMapDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.ListDefinition
@@ -43,6 +44,7 @@ internal fun <T : Any, D : IsTransportablePropertyDefinitionType<in T>, P : Obje
 
 private val dateImports = arrayOf("maryk.lib.time.Date")
 private val dateTimeImports = arrayOf("maryk.lib.time.DateTime")
+private val geoPointImports = arrayOf("maryk.core.properties.types.GeoPoint")
 private val timeImports = arrayOf("maryk.lib.time.Time")
 private val multiTypeImports = arrayOf("maryk.core.properties.types.TypedValue")
 private val keyImports = arrayOf("maryk.core.properties.types.Key")
@@ -120,6 +122,12 @@ private val definitionNamesMap = mapOf(
         className = "FlexBytesDefinition",
         kotlinTypeName = { "Bytes" },
         definitionModel = FlexBytesDefinition.Model
+    ),
+    PropertyDefinitionType.GeoPoint to PropertyDefinitionKotlinDescriptor(
+        className = "GeoPointDefinition",
+        kotlinTypeName = { "GeoPoint" },
+        definitionModel = GeoPointDefinition.Model,
+        imports = { geoPointImports }
     ),
     PropertyDefinitionType.IncMap to PropertyDefinitionKotlinDescriptor(
         className = "IncrementingMapDefinition",

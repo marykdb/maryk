@@ -12,6 +12,7 @@ import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.FixedBytesDefinition
 import maryk.core.properties.definitions.FlexBytesDefinition
+import maryk.core.properties.definitions.GeoPointDefinition
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
@@ -107,6 +108,7 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(
         is TimeDefinition -> "uint32"
         is DateDefinition -> "sint32"
         is DateTimeDefinition -> "int64"
+        is GeoPointDefinition -> "int64"
         is NumberDefinition<*> -> when (this.type.type) {
             SInt8Type,
             SInt16Type,

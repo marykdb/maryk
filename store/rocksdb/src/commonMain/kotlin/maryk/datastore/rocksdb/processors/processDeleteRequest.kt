@@ -89,26 +89,28 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
                                 }
                             }
 
-                            val valuesGetter = TransactionValuesGetter(
-                                key,
-                                transaction,
-                                columnFamilies,
-                                dataStore.defaultReadOptions
-                            )
-
                             // Delete indexed values
-                            deleteRequest.dataModel.indices?.forEach { indexable ->
-                                val indexReference = indexable.toReferenceStorageByteArray()
-                                val valueAndKeyBytes = indexable.toStorageByteArrayForIndex(valuesGetter, key.bytes)
-                                    ?: return@forEach // skip if no complete values to index are found
-                                deleteIndexValue(transaction, columnFamilies, indexReference, valueAndKeyBytes, versionBytes, deleteRequest.hardDelete)
+                            deleteRequest.dataModel.indices?.let { indices ->
+                                val valuesGetter = TransactionValuesGetter(
+                                    key,
+                                    transaction,
+                                    columnFamilies,
+                                    dataStore.defaultReadOptions
+                                )
 
-                                // Delete all historic values if historicStoreIndexValuesWalker was set
-                                historicStoreIndexValuesWalker?.walkIndexHistory(key, transaction, indexable, indexReference) { historicReference ->
-                                    transaction.delete(
-                                        historicStoreIndexValuesWalker.columnFamilies.historic.index,
-                                        historicReference
-                                    )
+                                indices.forEach { indexable ->
+                                    val indexReference = indexable.toReferenceStorageByteArray()
+                                    val valueAndKeyBytes = indexable.toStorageByteArrayForIndex(valuesGetter, key.bytes)
+                                        ?: return@forEach // skip if no complete values to index are found
+                                    deleteIndexValue(transaction, columnFamilies, indexReference, valueAndKeyBytes, versionBytes, deleteRequest.hardDelete)
+
+                                    // Delete all historic values if historicStoreIndexValuesWalker was set
+                                    historicStoreIndexValuesWalker?.walkIndexHistory(key, transaction, indexable, indexReference) { historicReference ->
+                                        transaction.delete(
+                                            historicStoreIndexValuesWalker.columnFamilies.historic.index,
+                                            historicReference
+                                        )
+                                    }
                                 }
                             }
 

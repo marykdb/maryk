@@ -7,6 +7,7 @@ import maryk.core.query.requests.ScanChangesRequest
 import maryk.core.query.responses.ChangesResponse
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
+import maryk.datastore.rocksdb.Transaction
 import maryk.datastore.shared.StoreAction
 import maryk.rocksdb.use
 
@@ -22,7 +23,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
     val objectChanges = mutableListOf<DataObjectVersionedChange<DM>>()
     val columnFamilies = dataStore.getColumnFamilies(storeAction.dbIndex)
 
-    dataStore.db.beginTransaction(dataStore.defaultWriteOptions).use { transaction ->
+    Transaction(dataStore).use { transaction ->
         val columnToScan = if (scanRequest.toVersion != null && columnFamilies is HistoricTableColumnFamilies) {
             columnFamilies.historic.table
         } else columnFamilies.table

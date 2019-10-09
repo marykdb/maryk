@@ -18,20 +18,20 @@ import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.values.Values
+import maryk.datastore.rocksdb.DBIterator
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.checkExistence
 import maryk.datastore.rocksdb.processors.helpers.historicQualifierRetriever
 import maryk.datastore.rocksdb.processors.helpers.nonHistoricQualifierRetriever
 import maryk.datastore.rocksdb.processors.helpers.readValue
-import maryk.rocksdb.RocksIterator
 
 /**
- * Read values for [key] from a [transaction] with [readOptions] from [columnFamilies]
- * to a ValuesWithMeta object. Filter results on [select] and use [toVersion]
+ * Read values for [key] from an [iterator] to a ValuesWithMeta object.
+ * Filter results on [select] and use [toVersion]
  */
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTransactionIntoValuesWithMetaData(
-    iterator: RocksIterator,
+    iterator: DBIterator,
     creationVersion: ULong,
     columnFamilies: TableColumnFamilies,
     key: Key<DM>,

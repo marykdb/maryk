@@ -30,6 +30,7 @@ import maryk.core.query.responses.statuses.IsAddResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.datastore.rocksdb.RocksDBDataStore
+import maryk.datastore.rocksdb.Transaction
 import maryk.datastore.rocksdb.processors.helpers.setCreatedVersion
 import maryk.datastore.rocksdb.processors.helpers.setIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setLatestVersion
@@ -73,7 +74,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
                     // Create version bytes and last version ref
                     val versionBytes = HLC.toStorageBytes(version)
 
-                    dataStore.db.beginTransaction(dataStore.defaultWriteOptions).use { transaction ->
+                    Transaction(dataStore).use { transaction ->
                         // Store first and last version
                         setCreatedVersion(transaction, columnFamilies, key, versionBytes)
                         setLatestVersion(transaction, columnFamilies, key, versionBytes)

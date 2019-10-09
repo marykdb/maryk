@@ -5,10 +5,10 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Key
 import maryk.core.values.IsValuesGetter
 import maryk.datastore.rocksdb.TableColumnFamilies
+import maryk.datastore.rocksdb.Transaction
 import maryk.datastore.rocksdb.processors.helpers.convertToValue
 import maryk.datastore.rocksdb.processors.helpers.getValue
 import maryk.rocksdb.ReadOptions
-import maryk.rocksdb.Transaction
 
 /** Reads requested values from the RocksDB [transaction]. */
 internal class TransactionValuesGetter(

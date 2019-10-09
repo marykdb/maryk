@@ -27,12 +27,12 @@ import maryk.core.properties.references.TypedPropertyReference
 import maryk.core.properties.types.Key
 import maryk.core.values.EmptyValueItems
 import maryk.datastore.rocksdb.TableColumnFamilies
+import maryk.datastore.rocksdb.Transaction
 import maryk.datastore.rocksdb.processors.DELETED_INDICATOR
 import maryk.datastore.rocksdb.processors.DELETED_INDICATOR_ARRAY
 import maryk.lib.extensions.compare.matchPart
 import maryk.lib.extensions.compare.prevByteInSameLength
 import maryk.rocksdb.ReadOptions
-import maryk.rocksdb.Transaction
 
 internal fun <T : Any> deleteByReference(
     transaction: Transaction,

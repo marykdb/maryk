@@ -2,13 +2,13 @@ package maryk.datastore.rocksdb.processors.helpers
 
 import maryk.core.extensions.bytes.initULong
 import maryk.core.properties.types.Key
+import maryk.datastore.rocksdb.DBIterator
 import maryk.lib.extensions.compare.compareToWithOffsetLength
 import maryk.lib.extensions.compare.matchPart
-import maryk.rocksdb.RocksIterator
 import kotlin.experimental.xor
 
 /** Find historic qualifiers on [iterator] for [key] */
-internal fun RocksIterator.historicQualifierRetriever(
+internal fun DBIterator.historicQualifierRetriever(
     key: Key<*>,
     toVersion: ULong,
     handleVersion: (ULong) -> Unit

@@ -77,6 +77,7 @@ import maryk.core.values.EmptyValueItems
 import maryk.core.values.Values
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
+import maryk.datastore.rocksdb.Transaction
 import maryk.datastore.rocksdb.processors.helpers.createCountUpdater
 import maryk.datastore.rocksdb.processors.helpers.deleteByReference
 import maryk.datastore.rocksdb.processors.helpers.deleteIndexValue
@@ -93,7 +94,6 @@ import maryk.datastore.rocksdb.processors.helpers.setUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setValue
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.UniqueException
-import maryk.rocksdb.Transaction
 import maryk.rocksdb.use
 
 internal typealias ChangeStoreAction<DM, P> = StoreAction<DM, P, ChangeRequest<DM>, ChangeResponse<DM>>
@@ -111,7 +111,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processCha
     val statuses = mutableListOf<IsChangeResponseStatus<DM>>()
 
     if (changeRequest.objects.isNotEmpty()) {
-        dataStore.db.beginTransaction(dataStore.defaultWriteOptions).use { transaction ->
+        Transaction(dataStore).use { transaction ->
             objectChanges@ for (objectChange in changeRequest.objects) {
                 val mayExist = dataStore.db.keyMayExist(columnFamilies.keys, objectChange.key.bytes, StringBuilder())
                 val status: IsChangeResponseStatus<DM> = if (mayExist) {
@@ -740,7 +740,7 @@ private fun createValueWriter(
                 val uniqueReference = byteArrayOf(*reference, *valueBytes)
 
                 // Since it is an addition we only need to check the current uniques
-                transaction.getForUpdate(dataStore.defaultReadOptions, columnFamilies.unique, uniqueReference, true)?.let {
+                transaction.getForUpdate(dataStore.defaultReadOptions, columnFamilies.unique, uniqueReference)?.let {
                     throw UniqueException(reference)
                 }
 

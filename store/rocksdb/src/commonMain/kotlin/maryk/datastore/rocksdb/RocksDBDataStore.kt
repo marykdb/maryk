@@ -25,10 +25,8 @@ import maryk.rocksdb.ColumnFamilyHandle
 import maryk.rocksdb.ColumnFamilyOptions
 import maryk.rocksdb.Options
 import maryk.rocksdb.ReadOptions
-import maryk.rocksdb.TransactionDB
-import maryk.rocksdb.TransactionDBOptions
 import maryk.rocksdb.WriteOptions
-import maryk.rocksdb.openTransactionDB
+import maryk.rocksdb.openRocksDB
 import maryk.rocksdb.use
 
 internal typealias StoreExecutor = Unit.(StoreAction<*, *, *, *>, RocksDBDataStore) -> Unit
@@ -48,18 +46,17 @@ class RocksDBDataStore(
     override val coroutineContext = GlobalScope.coroutineContext
 
     private val columnFamilyHandlesByDataModelIndex = mutableMapOf<UInt, TableColumnFamilies>()
+    private val prefixSizesByColumnFamilyHandlesIndex = mutableMapOf<Int, Int>()
     private val uniqueIndicesByDataModelIndex = mutableMapOf<UInt, List<ByteArray>>()
 
     // Only create Options if no Options were passed. Will take ownership and close it if this object is closed
     private val ownRocksDBOptions: Options? = if (rocksDBOptions == null) Options() else null
 
-    private val transactionDBOptions = TransactionDBOptions()
-
-    internal val db: TransactionDB = openTransactionDB(rocksDBOptions ?: ownRocksDBOptions!!, transactionDBOptions, relativePath)
+    internal val db = openRocksDB(rocksDBOptions ?: ownRocksDBOptions!!, relativePath)
 
     private val storeActor = this.storeActor(this, storeExecutor)
 
-    internal val defaultWriteOptions = WriteOptions()
+    private val defaultWriteOptions = WriteOptions()
     internal val defaultReadOptions = ReadOptions().apply {
         setPrefixSameAsStart(true)
     }
@@ -84,6 +81,8 @@ class RocksDBDataStore(
         val indexDesc = this.db.createColumnFamily(Index.getDescriptor(tableIndex, nameSize))
         val uniqueDesc = this.db.createColumnFamily(Unique.getDescriptor(tableIndex, nameSize))
 
+        prefixSizesByColumnFamilyHandlesIndex[tableDesc.getID()] = db.keyByteSize
+
         return if (keepAllVersions) {
             val comparator = VersionedComparator(db.keyByteSize)
             // Prefix set to key size for more optimal search.
@@ -100,6 +99,8 @@ class RocksDBDataStore(
             val historicTableDesc = this.db.createColumnFamily(HistoricTable.getDescriptor(tableIndex, nameSize, tableOptionsHistoric))
             val historicIndexDesc = this.db.createColumnFamily(HistoricIndex.getDescriptor(tableIndex, nameSize, indexOptionsHistoric))
             val historicUniqueDesc = this.db.createColumnFamily(HistoricUnique.getDescriptor(tableIndex, nameSize, indexOptionsHistoric))
+
+            prefixSizesByColumnFamilyHandlesIndex[historicTableDesc.getID()] = db.keyByteSize
 
             HistoricTableColumnFamilies(
                 modelDesc,
@@ -118,12 +119,14 @@ class RocksDBDataStore(
         }
     }
 
+    internal fun getPrefixSize(columnFamilyHandle: ColumnFamilyHandle) =
+        this.prefixSizesByColumnFamilyHandlesIndex.getOrElse(columnFamilyHandle.getID()) { 0 }
+
     override fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> getStoreActor(dataModel: DM) =
         this.storeActor
 
     override fun close() {
         db.close()
-        transactionDBOptions.close()
         ownRocksDBOptions?.close()
         defaultWriteOptions.close()
         defaultReadOptions.close()

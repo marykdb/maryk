@@ -1,11 +1,11 @@
 package maryk.datastore.rocksdb.processors.helpers
 
 import maryk.core.properties.types.Key
-import maryk.rocksdb.RocksIterator
+import maryk.datastore.rocksdb.DBIterator
 
 /** Check existence of the [key] on [iterator] by checking existence of creation time */
 internal fun checkExistence(
-    iterator: RocksIterator,
+    iterator: DBIterator,
     key: Key<*>
 ) {
     // Start at begin of record

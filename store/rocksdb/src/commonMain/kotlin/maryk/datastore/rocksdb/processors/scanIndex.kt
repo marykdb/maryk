@@ -14,9 +14,11 @@ import maryk.core.query.orders.Direction
 import maryk.core.query.orders.Direction.ASC
 import maryk.core.query.orders.Direction.DESC
 import maryk.core.query.requests.IsScanRequest
+import maryk.datastore.rocksdb.DBIterator
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
+import maryk.datastore.rocksdb.Transaction
 import maryk.datastore.rocksdb.processors.helpers.readCreationVersion
 import maryk.datastore.shared.ScanType.IndexScan
 import maryk.lib.extensions.compare.compareToWithOffsetLength
@@ -24,8 +26,6 @@ import maryk.lib.extensions.compare.matchPart
 import maryk.lib.extensions.compare.nextByteInSameLength
 import maryk.lib.extensions.compare.prevByteInSameLength
 import maryk.rocksdb.ReadOptions
-import maryk.rocksdb.RocksIterator
-import maryk.rocksdb.Transaction
 import kotlin.experimental.xor
 
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
@@ -147,7 +147,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
 /**
  * Create a version checker to see if record has to be skipped or not.
  */
-fun createVersionChecker(toVersion: ULong?, iterator: RocksIterator, direction: Direction): (ByteArray) -> Boolean =
+fun createVersionChecker(toVersion: ULong?, iterator: DBIterator, direction: Direction): (ByteArray) -> Boolean =
     if (toVersion == null) {
         { true } // Version is always latest and thus valid, because is scanning on normal table
     } else {
@@ -217,7 +217,7 @@ fun createVersionChecker(toVersion: ULong?, iterator: RocksIterator, direction: 
 /** Create a version reader based on if it reads the historic table or the normal one. */
 fun createVersionReader(
     toVersion: ULong?,
-    iterator: RocksIterator
+    iterator: DBIterator
 ): (ByteArray, Int) -> ULong =
     if (toVersion == null) {
         { _, _ -> iterator.value().toULong() }
@@ -236,7 +236,7 @@ fun createVersionReader(
  */
 private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> createGotoNext(
     scanRequest: IsScanRequest<DM, P, *>,
-    iterator: RocksIterator,
+    iterator: DBIterator,
     next: () -> Unit
 ): (ByteArray, Int, Int) -> Unit =
     if (scanRequest.toVersion == null) {
@@ -256,7 +256,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> checkAndPro
     transaction: Transaction,
     columnFamilies: TableColumnFamilies,
     readOptions: ReadOptions,
-    iterator: RocksIterator,
+    iterator: DBIterator,
     keySize: Int,
     scanRequest: IsScanRequest<DM, P, *>,
     indexScanRange: IndexableScanRanges,

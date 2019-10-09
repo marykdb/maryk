@@ -6,6 +6,7 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.requests.GetChangesRequest
 import maryk.core.query.responses.ChangesResponse
+import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.shared.StoreAction
@@ -26,7 +27,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
 
     getRequest.checkToVersion(dataStore.keepAllVersions)
 
-    dataStore.db.beginTransaction(dataStore.defaultWriteOptions).use { transaction ->
+    DBAccessor(dataStore.db).use { transaction ->
         val columnToScan = if (getRequest.toVersion != null && columnFamilies is HistoricTableColumnFamilies) {
             columnFamilies.historic.table
         } else columnFamilies.table

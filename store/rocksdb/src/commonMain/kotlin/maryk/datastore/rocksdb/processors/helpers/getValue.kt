@@ -3,19 +3,19 @@ package maryk.datastore.rocksdb.processors.helpers
 import maryk.core.exceptions.RequestException
 import maryk.core.extensions.bytes.invert
 import maryk.core.extensions.bytes.writeBytes
+import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.lib.extensions.compare.compareToWithOffsetLength
 import maryk.lib.extensions.compare.matchPart
 import maryk.rocksdb.ReadOptions
-import maryk.rocksdb.Transaction
 import maryk.rocksdb.use
 
 /**
  * Get a value for a [keyAndReference] from [columnFamilies] with [readOptions].
  * Depending on if [toVersion] is set it will be retrieved from the historic or current table.
  */
-internal fun <T: Any> Transaction.getValue(
+internal fun <T: Any> DBAccessor.getValue(
     columnFamilies: TableColumnFamilies,
     readOptions: ReadOptions,
     toVersion: ULong?,

@@ -7,7 +7,7 @@ import maryk.core.properties.references.ListReference
 import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.NO_TYPE_INDICATOR
-import maryk.rocksdb.Transaction
+import maryk.datastore.rocksdb.Transaction
 
 /**
  * Set a list value in [transaction] for [reference] with a [newList] at new [version].

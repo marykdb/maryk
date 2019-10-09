@@ -9,13 +9,13 @@ import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Key
 import maryk.core.values.IsValuesGetter
+import maryk.datastore.rocksdb.DBIterator
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
+import maryk.datastore.rocksdb.Transaction
 import maryk.datastore.rocksdb.processors.helpers.convertToValue
 import maryk.lib.extensions.compare.matchPart
 import maryk.rocksdb.AutoCloseable
 import maryk.rocksdb.ReadOptions
-import maryk.rocksdb.RocksIterator
-import maryk.rocksdb.Transaction
 import kotlin.experimental.xor
 
 /** Reads historical index values from the RocksDB store. */
@@ -148,7 +148,7 @@ private class HistoricStoreIndexValuesGetter(
 
 class IterableReference(
     val referenceAsBytes: ByteArray,
-    val iterator: RocksIterator,
+    val iterator: DBIterator,
     var lastVersion: ULong? = null,
     var lastValue: ByteArray? = null,
     var isPastBeginning: Boolean = false

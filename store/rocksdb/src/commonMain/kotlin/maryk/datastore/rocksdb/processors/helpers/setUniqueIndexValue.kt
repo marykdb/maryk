@@ -4,7 +4,7 @@ import maryk.core.extensions.bytes.invert
 import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
-import maryk.rocksdb.Transaction
+import maryk.datastore.rocksdb.Transaction
 
 /** Set the [uniqueReferenceWithValue] to [key] for [version] */
 internal fun setUniqueIndexValue(

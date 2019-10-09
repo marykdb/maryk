@@ -11,6 +11,7 @@ import maryk.core.properties.types.Key
 import maryk.core.query.requests.IsScanRequest
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
+import maryk.datastore.rocksdb.Transaction
 import maryk.datastore.rocksdb.processors.helpers.getKeyByUniqueValue
 import maryk.datastore.rocksdb.processors.helpers.readCreationVersion
 import maryk.datastore.shared.ScanType.IndexScan
@@ -19,7 +20,6 @@ import maryk.datastore.shared.checkToVersion
 import maryk.datastore.shared.optimizeTableScan
 import maryk.datastore.shared.orderToScanType
 import maryk.rocksdb.ReadOptions
-import maryk.rocksdb.Transaction
 
 /** Walk with [scanRequest] on [dataStore] and do [processRecord] */
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processScan(

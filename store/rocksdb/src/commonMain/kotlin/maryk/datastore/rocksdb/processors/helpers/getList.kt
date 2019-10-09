@@ -4,9 +4,9 @@ import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.TableColumnFamilies
+import maryk.datastore.rocksdb.Transaction
 import maryk.lib.extensions.compare.matchPart
 import maryk.rocksdb.ReadOptions
-import maryk.rocksdb.Transaction
 import maryk.rocksdb.use
 
 /**

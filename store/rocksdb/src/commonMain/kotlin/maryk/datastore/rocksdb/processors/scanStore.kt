@@ -11,7 +11,7 @@ import maryk.core.query.orders.Direction.DESC
 import maryk.core.query.requests.IsScanRequest
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
-import maryk.rocksdb.Transaction
+import maryk.datastore.rocksdb.Transaction
 
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
     dataStore: RocksDBDataStore,

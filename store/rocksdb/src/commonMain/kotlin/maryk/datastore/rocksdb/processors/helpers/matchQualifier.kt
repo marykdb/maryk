@@ -6,15 +6,16 @@ import maryk.core.processors.datastore.matchers.FuzzyMatchResult.OUT_OF_RANGE
 import maryk.core.processors.datastore.matchers.QualifierExactMatcher
 import maryk.core.processors.datastore.matchers.QualifierFuzzyMatcher
 import maryk.core.properties.references.IsPropertyReference
+import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.rocksdb.ReadOptions
-import maryk.rocksdb.Transaction
+import maryk.datastore.rocksdb.Transaction
 
 /**
  * Match a qualifier from [reference] on transaction at [columnFamilies] and [readOptions] with [matcher] for [key].
  * Will search in history if [toVersion] is set.
  */
-internal fun <T : Any> Transaction.matchQualifier(
+internal fun <T : Any> DBAccessor.matchQualifier(
     columnFamilies: TableColumnFamilies,
     readOptions: ReadOptions,
     key: ByteArray,

@@ -2,8 +2,8 @@ package maryk.datastore.rocksdb.processors.helpers
 
 import maryk.core.extensions.bytes.toULong
 import maryk.datastore.rocksdb.TableColumnFamilies
+import maryk.datastore.rocksdb.Transaction
 import maryk.rocksdb.ReadOptions
-import maryk.rocksdb.Transaction
 
 internal fun readCreationVersion(
     transaction: Transaction,

@@ -1,18 +1,18 @@
 package maryk.datastore.rocksdb.processors.helpers
 
 import maryk.core.exceptions.RequestException
+import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.lib.extensions.compare.compareToWithOffsetLength
 import maryk.rocksdb.ReadOptions
-import maryk.rocksdb.Transaction
 import maryk.rocksdb.use
 
 /**
  * Get a value for a [reference] from [columnFamilies] with [readOptions].
  * Depending on if [toVersion] is set it will be retrieved from the historic or current table.
  */
-internal fun <R: Any> Transaction.iterateValues(
+internal fun <R: Any> DBAccessor.iterateValues(
     columnFamilies: TableColumnFamilies,
     readOptions: ReadOptions,
     toVersion: ULong?,

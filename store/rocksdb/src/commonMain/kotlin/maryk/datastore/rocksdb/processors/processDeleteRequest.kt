@@ -12,6 +12,7 @@ import maryk.core.query.responses.statuses.IsDeleteResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
+import maryk.datastore.rocksdb.Transaction
 import maryk.datastore.rocksdb.processors.helpers.deleteIndexValue
 import maryk.datastore.rocksdb.processors.helpers.deleteUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setLatestVersion
@@ -19,7 +20,6 @@ import maryk.datastore.shared.StoreAction
 import maryk.lib.extensions.compare.matchPart
 import maryk.lib.extensions.compare.nextByteInSameLength
 import maryk.rocksdb.ReadOptions
-import maryk.rocksdb.Transaction
 import maryk.rocksdb.use
 
 internal typealias DeleteStoreAction<DM, P> = StoreAction<DM, P, DeleteRequest<DM>, DeleteResponse<DM>>
@@ -53,7 +53,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
 
                 val status: IsDeleteResponseStatus<DM> = when {
                     exists -> {
-                        dataStore.db.beginTransaction(dataStore.defaultWriteOptions).use { transaction ->
+                        Transaction(dataStore).use { transaction ->
                             // Create version bytes
                             val versionBytes = HLC.toStorageBytes(version)
 

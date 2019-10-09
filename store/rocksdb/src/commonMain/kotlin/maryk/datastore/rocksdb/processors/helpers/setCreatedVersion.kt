@@ -3,7 +3,7 @@ package maryk.datastore.rocksdb.processors.helpers
 import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
-import maryk.rocksdb.Transaction
+import maryk.datastore.rocksdb.Transaction
 
 /** Set the created [version] for [key] */
 internal fun setCreatedVersion(

@@ -3,7 +3,7 @@ package maryk.datastore.rocksdb.processors.helpers
 import maryk.core.extensions.bytes.invert
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
-import maryk.rocksdb.Transaction
+import maryk.datastore.rocksdb.Transaction
 
 /** Set [keyAndReference] = [value] (ByteArray) at [version] for object at [key] */
 internal fun setValue(

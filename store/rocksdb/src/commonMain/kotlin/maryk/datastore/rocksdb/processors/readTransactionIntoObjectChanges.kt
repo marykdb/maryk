@@ -18,17 +18,17 @@ import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.changes.VersionedChanges
+import maryk.datastore.rocksdb.DBIterator
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.checkExistence
 import maryk.datastore.rocksdb.processors.helpers.historicQualifierRetriever
 import maryk.datastore.rocksdb.processors.helpers.nonHistoricQualifierRetriever
 import maryk.datastore.rocksdb.processors.helpers.readValue
-import maryk.rocksdb.RocksIterator
 
 /** Processes values for [key] from transaction to a DataObjectWithChanges object */
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTransactionIntoObjectChanges(
-    iterator: RocksIterator,
+    iterator: DBIterator,
     creationVersion: ULong,
     columnFamilies: TableColumnFamilies,
     key: Key<DM>,

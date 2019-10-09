@@ -10,6 +10,7 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.requests.GetRequest
 import maryk.core.query.responses.ValuesResponse
+import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.processors.helpers.getValue
@@ -35,21 +36,22 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
 
     getRequest.checkToVersion(dataStore.keepAllVersions)
 
-    dataStore.db.beginTransaction(dataStore.defaultWriteOptions).use { transaction ->
+    DBAccessor(dataStore.db).use { dbAccessor ->
         val columnToScan = if (getRequest.toVersion != null && columnFamilies is HistoricTableColumnFamilies) {
             columnFamilies.historic.table
         } else columnFamilies.table
-        val iterator = transaction.getIterator(dataStore.defaultReadOptions, columnToScan)
+        val iterator = dbAccessor.getIterator(dataStore.defaultReadOptions, columnToScan)
 
         keyWalk@ for (key in getRequest.keys) {
             val mayExist = dataStore.db.keyMayExist(columnFamilies.keys, key.bytes, StringBuilder())
             if (mayExist) {
                 val creationVersion =
-                    transaction.get(columnFamilies.keys, dataStore.defaultReadOptions, key.bytes)?.toULong()
+                    dbAccessor.get(columnFamilies.keys, dataStore.defaultReadOptions, key.bytes)?.toULong()
 
                 if (creationVersion != null) {
-                    if (getRequest.shouldBeFiltered(
-                            transaction,
+                    if (
+                        getRequest.shouldBeFiltered(
+                            dbAccessor,
                             columnFamilies,
                             dataStore.defaultReadOptions,
                             key.bytes,
@@ -77,7 +79,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
                     aggregator?.aggregate {
                         @Suppress("UNCHECKED_CAST")
                         valuesWithMetaData?.values?.get(it as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>)
-                            ?: transaction.getValue(
+                            ?: dbAccessor.getValue(
                                 columnFamilies,
                                 dataStore.defaultReadOptions,
                                 getRequest.toVersion,

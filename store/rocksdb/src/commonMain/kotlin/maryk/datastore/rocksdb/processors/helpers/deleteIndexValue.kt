@@ -4,7 +4,7 @@ import maryk.core.extensions.bytes.invert
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.FALSE_ARRAY
-import maryk.rocksdb.Transaction
+import maryk.datastore.rocksdb.Transaction
 
 /** Delete the [indexReference] and [valueAndKey] for [version] */
 internal fun deleteIndexValue(

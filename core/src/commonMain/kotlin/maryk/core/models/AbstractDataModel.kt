@@ -26,6 +26,7 @@ import maryk.json.JsonToken.StartDocument
 import maryk.json.JsonToken.StartObject
 import maryk.json.JsonToken.Stopped
 import maryk.json.JsonToken.Value
+import maryk.json.JsonWriter
 import maryk.json.TokenWithType
 import maryk.lib.exceptions.ParseException
 import maryk.yaml.IsYamlReader
@@ -41,6 +42,20 @@ import maryk.yaml.YamlWriter
 abstract class AbstractDataModel<DO : Any, P : AbstractPropertyDefinitions<DO>, V : AbstractValues<DO, *, P>, in CXI : IsPropertyContext, CX : IsPropertyContext> internal constructor(
     final override val properties: P
 ) : IsDataModelWithValues<DO, P, V> {
+    /**
+     * Write [values] for this ObjectDataModel to JSON with [writer]
+     * Optionally pass a [context] when needed for more complex property types
+     */
+    fun writeJson(
+        values: V,
+        context: CX? = null,
+        pretty: Boolean = false
+    ): String {
+        var output = ""
+        val writer = JsonWriter(pretty = pretty) { output += it }
+        this.writeJson(values, writer, context)
+        return output
+    }
 
     /**
      * Write [values] for this ObjectDataModel to JSON with [writer]
@@ -81,6 +96,16 @@ abstract class AbstractDataModel<DO : Any, P : AbstractPropertyDefinitions<DO>, 
     ) {
         writer.writeFieldName(def.name)
         def.definition.writeJsonValue(value, writer, context)
+    }
+
+    /**
+     * Read JSON from [json] to a Map with values
+     * Optionally pass a [context] when needed to read more complex property types
+     */
+    fun readJson(json: String, context: CX? = null): V {
+        var i = 0
+        val reader = JsonReader { json[i++] }
+        return this.readJson(reader, context)
     }
 
     /**

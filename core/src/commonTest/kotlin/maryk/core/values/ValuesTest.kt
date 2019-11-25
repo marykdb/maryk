@@ -63,4 +63,52 @@ class ValuesTest {
         expect("test") { values[TestMarykModel { embeddedValues { value::ref } }] }
         expect("another test") { values[TestMarykModel { embeddedValues { model { value::ref } } }] }
     }
+
+    @Test
+    fun testToJson() {
+        val values = TestMarykModel(
+            string = "hello world",
+            int = 5,
+            uint = 3u,
+            double = 2.3,
+            dateTime = DateTime(2018, 7, 18),
+            listOfString = listOf(
+                "v1", "v2", "v3"
+            ),
+            map = mapOf(
+                Time(11, 22, 33) to "eleven",
+                Time(12, 23, 34) to "twelve"
+            ),
+            embeddedValues = EmbeddedMarykModel(
+                value = "test",
+                model = EmbeddedMarykModel(
+                    value = "another test"
+                )
+            )
+        )
+
+        expect("""
+        {
+          "string": "hello world",
+          "int": 5,
+          "uint": 3,
+          "double": "2.3",
+          "dateTime": "2018-07-18T00:00",
+          "enum": "V1(1)",
+          "map": {
+            "11:22:33": "eleven",
+            "12:23:34": "twelve"
+          },
+          "embeddedValues": {
+            "value": "test",
+            "model": {
+              "value": "another test"
+            }
+          },
+          "listOfString": ["v1", "v2", "v3"]
+        }
+        """.trimIndent()) {
+            values.toJson(pretty = true)
+        }
+    }
 }

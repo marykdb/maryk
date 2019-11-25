@@ -3,6 +3,7 @@ package maryk.core.values
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.inject.AnyInject
+import maryk.core.models.AbstractDataModel
 import maryk.core.models.IsDataModel
 import maryk.core.models.IsNamedDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
@@ -163,3 +164,10 @@ inline fun <reified T : Any, TO : Any> IsDefinitionWrapper<T, TO, *, *>.convertT
         }
     }
 }
+
+/** Output values to a json string with possible [context] provided */
+fun <V: AbstractValues<DO, DM, P>, DO: Any, DM: AbstractDataModel<DO, P, V, *, CX>, P: AbstractPropertyDefinitions<DO>, CX: IsPropertyContext> V.toJson(
+    context: CX? = null,
+    pretty: Boolean = false
+): String =
+    this.dataModel.writeJson(this, context = context, pretty = pretty)

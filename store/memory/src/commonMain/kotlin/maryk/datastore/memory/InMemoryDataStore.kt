@@ -44,6 +44,9 @@ class InMemoryDataStore(
         }
 
     override fun close() {
-        // Nothing to close
+        super.close()
+        dataActors.entries.forEach { (_, value) ->
+            value.close()
+        }
     }
 }

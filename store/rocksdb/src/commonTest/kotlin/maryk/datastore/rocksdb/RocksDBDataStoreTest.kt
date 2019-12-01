@@ -2,11 +2,11 @@ package maryk.datastore.rocksdb
 
 import maryk.datastore.test.dataModelsForTests
 import maryk.datastore.test.runDataStoreTests
-import maryk.rocksdb.Options
+import maryk.rocksdb.DBOptions
 import kotlin.test.Test
 
 class RocksDBDataStoreTest {
-    private val rocksDBOptions = Options().apply {
+    private val rocksDBOptions = DBOptions().apply {
         setCreateIfMissing(true)
         setCreateMissingColumnFamilies(true)
     }

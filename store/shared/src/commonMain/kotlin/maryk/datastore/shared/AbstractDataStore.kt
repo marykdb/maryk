@@ -47,4 +47,8 @@ abstract class AbstractDataStore(
 
         return response.await()
     }
+
+    override fun close() {
+        clockActor.close()
+    }
 }

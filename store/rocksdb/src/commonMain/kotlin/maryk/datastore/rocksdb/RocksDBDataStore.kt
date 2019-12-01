@@ -21,11 +21,14 @@ import maryk.datastore.rocksdb.processors.VersionedComparator
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.StoreActor
+import maryk.rocksdb.ColumnFamilyDescriptor
 import maryk.rocksdb.ColumnFamilyHandle
 import maryk.rocksdb.ColumnFamilyOptions
-import maryk.rocksdb.Options
+import maryk.rocksdb.DBOptions
 import maryk.rocksdb.ReadOptions
+import maryk.rocksdb.RocksDB
 import maryk.rocksdb.WriteOptions
+import maryk.rocksdb.defaultColumnFamily
 import maryk.rocksdb.openRocksDB
 import maryk.rocksdb.use
 
@@ -41,7 +44,7 @@ class RocksDBDataStore(
     override val keepAllVersions: Boolean = true,
     relativePath: String,
     dataModelsById: Map<UInt, RootDataModel<*, *>>,
-    rocksDBOptions: Options? = null
+    rocksDBOptions: DBOptions? = null
 ) : AbstractDataStore(dataModelsById) {
     override val coroutineContext = GlobalScope.coroutineContext
 
@@ -50,9 +53,9 @@ class RocksDBDataStore(
     private val uniqueIndicesByDataModelIndex = mutableMapOf<UInt, List<ByteArray>>()
 
     // Only create Options if no Options were passed. Will take ownership and close it if this object is closed
-    private val ownRocksDBOptions: Options? = if (rocksDBOptions == null) Options() else null
+    private val ownRocksDBOptions: DBOptions? = if (rocksDBOptions == null) DBOptions() else null
 
-    internal val db = openRocksDB(rocksDBOptions ?: ownRocksDBOptions!!, relativePath)
+    internal val db: RocksDB
 
     private val storeActor = this.storeActor(this, storeExecutor)
 
@@ -62,12 +65,48 @@ class RocksDBDataStore(
     }
 
     init {
+        val descriptors: MutableList<ColumnFamilyDescriptor> = mutableListOf()
+        descriptors.add(ColumnFamilyDescriptor(defaultColumnFamily))
         for ((index, db) in dataModelsById) {
-            columnFamilyHandlesByDataModelIndex[index] = createColumnFamilyHandles(index, db)
+            createColumnFamilyHandles(descriptors, index, db)
+        }
+
+        val handles = mutableListOf<ColumnFamilyHandle>()
+        this.db = openRocksDB(rocksDBOptions ?: ownRocksDBOptions!!, relativePath, descriptors, handles)
+
+        var handleIndex = 1
+        if (keepAllVersions) {
+            for ((index, db) in dataModelsById) {
+                prefixSizesByColumnFamilyHandlesIndex[handles[handleIndex+2].getID()] = db.keyByteSize
+                prefixSizesByColumnFamilyHandlesIndex[handles[handleIndex+5].getID()] = db.keyByteSize
+                columnFamilyHandlesByDataModelIndex[index] = HistoricTableColumnFamilies(
+                    model = handles[handleIndex++],
+                    keys = handles[handleIndex++],
+                    table = handles[handleIndex++],
+                    index = handles[handleIndex++],
+                    unique = handles[handleIndex++],
+                    historic = BasicTableColumnFamilies(
+                        table = handles[handleIndex++],
+                        index = handles[handleIndex++],
+                        unique = handles[handleIndex++]
+                    )
+                )
+            }
+        } else {
+            for ((index, db) in dataModelsById) {
+                prefixSizesByColumnFamilyHandlesIndex[handles[handleIndex+2].getID()] = db.keyByteSize
+                columnFamilyHandlesByDataModelIndex[index] = TableColumnFamilies(
+                    model = handles[handleIndex++],
+                    keys = handles[handleIndex++],
+                    table = handles[handleIndex++],
+                    index = handles[handleIndex++],
+                    unique = handles[handleIndex++]
+                )
+            }
         }
     }
 
-    private fun createColumnFamilyHandles(tableIndex: UInt, db: RootDataModel<*, *>) : TableColumnFamilies {
+    private fun createColumnFamilyHandles(descriptors: MutableList<ColumnFamilyDescriptor>, tableIndex: UInt, db: RootDataModel<*, *>) {
         val nameSize = tableIndex.calculateVarByteLength() + 1
 
         // Prefix set to key size for more optimal search.
@@ -75,15 +114,13 @@ class RocksDBDataStore(
             useFixedLengthPrefixExtractor(db.keyByteSize)
         }
 
-        val modelDesc = this.db.createColumnFamily(Model.getDescriptor(tableIndex, nameSize))
-        val keysDesc = this.db.createColumnFamily(Keys.getDescriptor(tableIndex, nameSize))
-        val tableDesc = this.db.createColumnFamily(Table.getDescriptor(tableIndex, nameSize, tableOptions))
-        val indexDesc = this.db.createColumnFamily(Index.getDescriptor(tableIndex, nameSize))
-        val uniqueDesc = this.db.createColumnFamily(Unique.getDescriptor(tableIndex, nameSize))
+        descriptors += Model.getDescriptor(tableIndex, nameSize)
+        descriptors += Keys.getDescriptor(tableIndex, nameSize)
+        descriptors += Table.getDescriptor(tableIndex, nameSize, tableOptions)
+        descriptors += Index.getDescriptor(tableIndex, nameSize)
+        descriptors += Unique.getDescriptor(tableIndex, nameSize)
 
-        prefixSizesByColumnFamilyHandlesIndex[tableDesc.getID()] = db.keyByteSize
-
-        return if (keepAllVersions) {
+        if (keepAllVersions) {
             val comparator = VersionedComparator(db.keyByteSize)
             // Prefix set to key size for more optimal search.
             val tableOptionsHistoric = ColumnFamilyOptions().apply {
@@ -96,26 +133,9 @@ class RocksDBDataStore(
                 setComparator(comparator)
             }
 
-            val historicTableDesc = this.db.createColumnFamily(HistoricTable.getDescriptor(tableIndex, nameSize, tableOptionsHistoric))
-            val historicIndexDesc = this.db.createColumnFamily(HistoricIndex.getDescriptor(tableIndex, nameSize, indexOptionsHistoric))
-            val historicUniqueDesc = this.db.createColumnFamily(HistoricUnique.getDescriptor(tableIndex, nameSize, indexOptionsHistoric))
-
-            prefixSizesByColumnFamilyHandlesIndex[historicTableDesc.getID()] = db.keyByteSize
-
-            HistoricTableColumnFamilies(
-                modelDesc,
-                keysDesc,
-                tableDesc,
-                indexDesc,
-                uniqueDesc,
-                BasicTableColumnFamilies(
-                    historicTableDesc,
-                    historicIndexDesc,
-                    historicUniqueDesc
-                )
-            )
-        } else {
-            TableColumnFamilies(modelDesc, keysDesc, tableDesc, indexDesc, uniqueDesc)
+            descriptors += HistoricTable.getDescriptor(tableIndex, nameSize, tableOptionsHistoric)
+            descriptors += HistoricIndex.getDescriptor(tableIndex, nameSize, indexOptionsHistoric)
+            descriptors += HistoricUnique.getDescriptor(tableIndex, nameSize, indexOptionsHistoric)
         }
     }
 
@@ -126,6 +146,8 @@ class RocksDBDataStore(
         this.storeActor
 
     override fun close() {
+        super.close()
+        storeActor.close()
         db.close()
         ownRocksDBOptions?.close()
         defaultWriteOptions.close()

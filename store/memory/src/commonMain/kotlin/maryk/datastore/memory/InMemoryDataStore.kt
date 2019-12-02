@@ -1,6 +1,5 @@
 package maryk.datastore.memory
 
-import kotlinx.coroutines.CoroutineScope
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.RootDataModel
@@ -11,11 +10,6 @@ import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.StoreActor
 
 internal typealias StoreExecutor<DM, P> = Unit.(StoreAction<DM, P, *, *>, dataStore: DataStore<DM, P>) -> Unit
-
-internal expect fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> CoroutineScope.storeActor(
-    store: InMemoryDataStore,
-    executor: StoreExecutor<DM, P>
-): StoreActor<DM, P>
 
 /**
  * DataProcessor that stores all data changes in local memory.

@@ -5,6 +5,8 @@ plugins {
 apply {
     from("../../gradle/common.gradle")
     from("../../gradle/jvm.gradle")
+    from("../../gradle/js.gradle")
+    from("../../gradle/native.gradle")
 }
 
 val coroutinesVersion = rootProject.extra["coroutinesVersion"]
@@ -28,6 +30,16 @@ kotlin {
         jvm().compilations["main"].defaultSourceSet {
             dependencies {
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$coroutinesVersion")
+            }
+        }
+        js().compilations["main"].defaultSourceSet {
+            dependencies {
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core-js:$coroutinesVersion")
+            }
+        }
+        macosX64("macos").compilations["main"].defaultSourceSet {
+            dependencies {
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core-macosx64:$coroutinesVersion")
             }
         }
     }

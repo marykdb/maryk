@@ -5,6 +5,8 @@ plugins {
 apply {
     from("../../gradle/common.gradle")
     from("../../gradle/jvm.gradle")
+    from("../../gradle/js.gradle")
+    from("../../gradle/native.gradle")
 }
 
 kotlin {

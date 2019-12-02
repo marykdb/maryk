@@ -1,7 +1,6 @@
 package maryk.datastore.memory
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.RootDataModel
@@ -26,8 +25,6 @@ class InMemoryDataStore(
     override val keepAllVersions: Boolean = false,
     dataModelsById: Map<UInt, RootDataModel<*, *>>
 ) : AbstractDataStore(dataModelsById) {
-    override val coroutineContext = Dispatchers.Default
-
     override val dataModelIdsByString = dataModelsById.map { (index, dataModel) ->
         Pair(dataModel.name, index)
     }.toMap()

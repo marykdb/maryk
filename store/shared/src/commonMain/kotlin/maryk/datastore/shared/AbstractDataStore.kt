@@ -2,6 +2,8 @@ package maryk.datastore.shared
 
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.SendChannel
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.IsRootValuesDataModel
@@ -18,12 +20,15 @@ typealias StoreActor<DM, P> = SendChannel<StoreAction<DM, P, *, *>>
 abstract class AbstractDataStore(
     final override val dataModelsById: Map<UInt, RootDataModel<*, *>>
 ): IsDataStore, CoroutineScope {
+    private val dataStoreJob = SupervisorJob()
+    override val coroutineContext = Dispatchers.Default + dataStoreJob
+
     override val dataModelIdsByString = dataModelsById.map { (index, dataModel) ->
         Pair(dataModel.name, index)
     }.toMap()
 
     // Clock actor holds/calculates the latest HLC clock instance
-    private val clockActor by lazy { this.clockActor() }
+    private val clockActor = this.clockActor()
 
     /** Get a StoreActor for [dataModel] to run actions against.*/
     abstract fun <DM: IsRootValuesDataModel<P>, P : PropertyDefinitions> getStoreActor(dataModel: DM): StoreActor<DM, P>
@@ -49,6 +54,7 @@ abstract class AbstractDataStore(
     }
 
     override fun close() {
+        dataStoreJob.cancel()
         clockActor.close()
     }
 }

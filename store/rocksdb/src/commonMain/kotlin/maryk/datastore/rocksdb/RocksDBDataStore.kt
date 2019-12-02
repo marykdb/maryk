@@ -1,7 +1,6 @@
 package maryk.datastore.rocksdb
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.SendChannel
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.calculateVarByteLength
@@ -46,8 +45,6 @@ class RocksDBDataStore(
     dataModelsById: Map<UInt, RootDataModel<*, *>>,
     rocksDBOptions: DBOptions? = null
 ) : AbstractDataStore(dataModelsById) {
-    override val coroutineContext = GlobalScope.coroutineContext
-
     private val columnFamilyHandlesByDataModelIndex = mutableMapOf<UInt, TableColumnFamilies>()
     private val prefixSizesByColumnFamilyHandlesIndex = mutableMapOf<Int, Int>()
     private val uniqueIndicesByDataModelIndex = mutableMapOf<UInt, List<ByteArray>>()

@@ -5,6 +5,7 @@ plugins {
 apply {
     from("../../gradle/common.gradle")
     from("../../gradle/jvm.gradle")
+    from("../../gradle/native.gradle")
 }
 
 val coroutinesVersion = rootProject.extra["coroutinesVersion"]
@@ -61,5 +62,11 @@ tasks.withType<Test> {
     this.dependsOn(createOrEraseDBFolders)
     this.doLast {
         File(project.buildDir, "test-database").deleteRecursively()
+    }
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().all {
+    kotlinOptions {
+        freeCompilerArgs = freeCompilerArgs + "-Xuse-experimental=kotlin.Experimental"
     }
 }

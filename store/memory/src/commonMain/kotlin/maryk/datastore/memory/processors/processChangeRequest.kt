@@ -24,7 +24,7 @@ import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.enum.MultiTypeEnum
-import maryk.core.properties.exceptions.AlreadySetException
+import maryk.core.properties.exceptions.AlreadyExistsException
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
@@ -586,15 +586,15 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                 )
 
                 addValidationFail(
-                    AlreadySetException(ref)
+                    AlreadyExistsException(ref, ue.key)
                 )
             }
         }
 
         // Return fail if any validationExceptions were caught
         validationExceptions?.let {
-            return when {
-                it.size == 1 -> ValidationFail(it.first())
+            return when (it.size) {
+                1 -> ValidationFail(it.first())
                 else -> ValidationFail(it)
             }
         }

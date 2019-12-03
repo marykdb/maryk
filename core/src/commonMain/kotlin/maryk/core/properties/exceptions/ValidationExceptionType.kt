@@ -10,14 +10,15 @@ enum class ValidationExceptionType(
     override val index: UInt,
     override val alternativeNames: Set<String>? = null
 ) : IndexedEnumComparable<ValidationExceptionType>, IsCoreEnum, TypeEnum<ValidationException> {
-    ALREADY_SET(1u),
-    INVALID_VALUE(2u),
-    INVALID_SIZE(3u),
-    OUT_OF_RANGE(4u),
-    REQUIRED(5u),
-    NOT_ENOUGH_ITEMS(6u),
-    TOO_MANY_ITEMS(7u),
-    UMBRELLA(8u);
+    ALREADY_EXISTS(1u),
+    ALREADY_SET(2u),
+    INVALID_VALUE(3u),
+    INVALID_SIZE(4u),
+    OUT_OF_RANGE(5u),
+    REQUIRED(6u),
+    NOT_ENOUGH_ITEMS(7u),
+    TOO_MANY_ITEMS(8u),
+    UMBRELLA(9u);
 
     companion object : IndexedEnumDefinition<ValidationExceptionType>(
         "ValidationExceptionType", ValidationExceptionType::values

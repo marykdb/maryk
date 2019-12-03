@@ -37,7 +37,7 @@ import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.enum.MultiTypeEnum
 import maryk.core.properties.enum.TypeEnum
-import maryk.core.properties.exceptions.AlreadySetException
+import maryk.core.properties.exceptions.AlreadyExistsException
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
@@ -666,7 +666,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                 )
 
                 addValidationFail(
-                    AlreadySetException(ref)
+                    AlreadyExistsException(ref, ue.key)
                 )
             }
         }
@@ -741,7 +741,13 @@ private fun createValueWriter(
 
                 // Since it is an addition we only need to check the current uniques
                 transaction.getForUpdate(dataStore.defaultReadOptions, columnFamilies.unique, uniqueReference)?.let {
-                    throw UniqueException(reference)
+                    throw UniqueException(
+                        reference,
+                        Key<IsRootValuesDataModel<PropertyDefinitions>>(
+                            // Get the key at the end of the stored unique index value
+                            it.copyOfRange(fromIndex = it.size - key.size, toIndex = it.size)
+                        )
+                    )
                 }
 
                 // we need to delete the old value if present

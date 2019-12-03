@@ -18,9 +18,10 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.enum.TypeEnum
-import maryk.core.properties.exceptions.AlreadySetException
+import maryk.core.properties.exceptions.AlreadyExistsException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
+import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.requests.AddRequest
 import maryk.core.query.responses.AddResponse
@@ -102,7 +103,13 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
                                         checksBeforeWrite.add {
                                             // Since it is an addition we only need to check the current uniques
                                             dataStore.db.get(columnFamilies.unique, uniqueReference)?.let {
-                                                throw UniqueException(reference)
+                                                throw UniqueException(
+                                                    reference,
+                                                    Key<DM>(
+                                                        // Get the key at the end of the stored unique index value
+                                                        it.copyOfRange(fromIndex = it.size - key.size, toIndex = it.size)
+                                                    )
+                                                )
                                             }
                                         }
 
@@ -183,7 +190,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
                 statuses.add(
                     ValidationFail(
                         listOf(
-                            AlreadySetException(ref)
+                            AlreadyExistsException(ref, ue.key)
                         )
                     )
                 )

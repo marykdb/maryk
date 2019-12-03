@@ -5,7 +5,7 @@ import maryk.core.models.key
 import maryk.core.processors.datastore.writeToStorage
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsComparableDefinition
-import maryk.core.properties.exceptions.AlreadySetException
+import maryk.core.properties.exceptions.AlreadyExistsException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.query.requests.AddRequest
@@ -121,7 +121,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
                 statuses.add(
                     ValidationFail(
                         listOf(
-                            AlreadySetException(ref)
+                            AlreadyExistsException(ref, ue.key)
                         )
                     )
                 )

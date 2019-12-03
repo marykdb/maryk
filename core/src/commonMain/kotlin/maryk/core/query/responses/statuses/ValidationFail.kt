@@ -28,6 +28,12 @@ data class ValidationFail<DM : IsRootDataModel<*>>(
 
     override val statusType = VALIDATION_FAIL
 
+    /** Create an Umbrella Exception of the Fail so it can be thrown */
+    fun createUmbrellaException() = ValidationUmbrellaException(
+        null,
+        this.exceptions
+    )
+
     internal companion object : SimpleQueryDataModel<ValidationFail<*>>(
         properties = object : ObjectPropertyDefinitions<ValidationFail<*>>() {
             init {

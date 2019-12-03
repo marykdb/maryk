@@ -3,7 +3,7 @@ package maryk.datastore.test
 import maryk.core.models.RootDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
-import maryk.core.properties.exceptions.AlreadySetException
+import maryk.core.properties.exceptions.AlreadyExistsException
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.change
@@ -81,8 +81,9 @@ class UniqueTest(
         val addResponse = dataStore.execute(addUniqueItem)
         addResponse.statuses.forEach { status ->
             val fail = assertType<ValidationFail<UniqueModel>>(status)
-            val alreadySet = assertType<AlreadySetException>(fail.exceptions.first())
-            expect(UniqueModel { email::ref }) { alreadySet.reference }
+            val alreadyExists = assertType<AlreadyExistsException>(fail.exceptions.first())
+            expect(UniqueModel { email::ref }) { alreadyExists.reference }
+            expect(keys[0]) { alreadyExists.key }
         }
 
         dataStore.execute(UniqueModel.delete(keys[0]))
@@ -107,8 +108,9 @@ class UniqueTest(
         )
         changeResponse.statuses.forEach { status ->
             val fail = assertType<ValidationFail<UniqueModel>>(status)
-            val alreadySet = assertType<AlreadySetException>(fail.exceptions.first())
-            expect(UniqueModel { email::ref }) { alreadySet.reference }
+            val alreadyExists = assertType<AlreadyExistsException>(fail.exceptions.first())
+            expect(UniqueModel { email::ref }) { alreadyExists.reference }
+            expect(keys[0]) { alreadyExists.key }
         }
 
         dataStore.execute(UniqueModel.delete(keys[0]))

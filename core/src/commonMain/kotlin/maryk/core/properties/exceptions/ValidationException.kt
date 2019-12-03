@@ -7,6 +7,7 @@ import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
+import maryk.core.properties.exceptions.ValidationExceptionType.ALREADY_EXISTS
 import maryk.core.properties.exceptions.ValidationExceptionType.ALREADY_SET
 import maryk.core.properties.exceptions.ValidationExceptionType.INVALID_SIZE
 import maryk.core.properties.exceptions.ValidationExceptionType.INVALID_VALUE
@@ -70,6 +71,7 @@ abstract class ValidationException internal constructor(
 }
 
 internal val mapOfValidationExceptionDefinitions = mapOf(
+    ALREADY_EXISTS to EmbeddedObjectDefinition(dataModel = { AlreadyExistsException }),
     ALREADY_SET to EmbeddedObjectDefinition(dataModel = { AlreadySetException }),
     INVALID_SIZE to EmbeddedObjectDefinition(dataModel = { InvalidSizeException }),
     INVALID_VALUE to EmbeddedObjectDefinition(dataModel = { InvalidValueException }),

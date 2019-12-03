@@ -121,7 +121,7 @@ internal class DataStore<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions>
         getOrCreateUniqueIndex(dataRecordValue.reference)[dataRecordValue.value]?.let {
             // if not deleted and not the given record it already exists.
             if (it != dataRecord) {
-                throw UniqueException(dataRecordValue.reference)
+                throw UniqueException(dataRecordValue.reference, it.key)
             }
         }
     }

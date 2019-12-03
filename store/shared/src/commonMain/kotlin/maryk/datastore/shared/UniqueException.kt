@@ -1,4 +1,12 @@
 package maryk.datastore.shared
 
-/** Exception thrown when unique value already exists in index */
-class UniqueException(val reference: ByteArray) : Throwable()
+import maryk.core.properties.types.Key
+
+/**
+ * Exception thrown when unique value already exists in index
+ * with [reference] to which unique index and [key] of existing object
+ */
+class UniqueException(
+    val reference: ByteArray,
+    val key: Key<*>
+) : Throwable()

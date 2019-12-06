@@ -38,7 +38,7 @@ open class Bytes(val bytes: ByteArray) : Comparable<Bytes> {
         else -> this.bytes contentEquals other.bytes
     }
 
-    internal fun writeBytes(writer: (byte: Byte) -> Unit) = bytes.writeBytes(writer)
+    fun writeBytes(writer: (byte: Byte) -> Unit) = bytes.writeBytes(writer)
 
     fun toHex() = this.bytes.toHex()
 
@@ -51,7 +51,7 @@ open class Bytes(val bytes: ByteArray) : Comparable<Bytes> {
  * Generic bytes class to help constructing bytes from different sources
  */
 abstract class BytesDescriptor<T> {
-    internal fun fromByteReader(length: Int, reader: () -> Byte) = this(
+    fun fromByteReader(length: Int, reader: () -> Byte) = this(
         initByteArray(length, reader)
     )
 

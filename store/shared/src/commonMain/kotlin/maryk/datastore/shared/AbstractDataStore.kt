@@ -33,7 +33,7 @@ abstract class AbstractDataStore(
     /** Get a StoreActor for [dataModel] to run actions against.*/
     abstract fun <DM: IsRootValuesDataModel<P>, P : PropertyDefinitions> getStoreActor(dataModel: DM): StoreActor<DM, P>
 
-    override suspend fun <DM : RootDataModel<DM, P>, P : PropertyDefinitions, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
+    override suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
         request: RQ
     ): RP {
         val storeActor = this.getStoreActor(request.dataModel)

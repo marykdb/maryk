@@ -39,7 +39,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
         scanRange.isSingleKey() -> {
             @Suppress("UNCHECKED_CAST")
             val key = scanRequest.dataModel.key(scanRange.ranges.first().start) as Key<DM>
-            val mayExist = dataStore.db.keyMayExist(columnFamilies.keys, key.bytes, StringBuilder())
+            val mayExist = dataStore.db.keyMayExist(columnFamilies.keys, key.bytes, null)
             if (mayExist) {
                 val createdVersion = transaction.get(columnFamilies.keys, readOptions, key.bytes)?.toULong()
                 // Only process it if it was created

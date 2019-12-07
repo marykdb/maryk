@@ -113,7 +113,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processCha
     if (changeRequest.objects.isNotEmpty()) {
         Transaction(dataStore).use { transaction ->
             objectChanges@ for (objectChange in changeRequest.objects) {
-                val mayExist = dataStore.db.keyMayExist(columnFamilies.keys, objectChange.key.bytes, StringBuilder())
+                val mayExist = dataStore.db.keyMayExist(columnFamilies.keys, objectChange.key.bytes, null)
                 val status: IsChangeResponseStatus<DM> = if (mayExist) {
                     val creationVersion =
                         transaction.get(columnFamilies.keys, dataStore.defaultReadOptions, objectChange.key.bytes)

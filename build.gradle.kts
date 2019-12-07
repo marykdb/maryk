@@ -3,9 +3,9 @@ plugins {
 }
 
 buildscript {
-    extra["kotlinVersion"] = "1.3.60"
+    extra["kotlinVersion"] = "1.3.61"
     extra["coroutinesVersion"] = "1.3.2-1.3.60"
-    extra["marykRocksDBVersion"] = "0.3.2"
+    extra["marykRocksDBVersion"] = "0.3.5"
 
     repositories {
         jcenter()
@@ -20,9 +20,4 @@ allprojects {
         jcenter()
         maven("https://kotlin.bintray.com/kotlinx")
     }
-}
-
-repositories {
-    jcenter()
-    maven("https://kotlin.bintray.com/kotlinx")
 }

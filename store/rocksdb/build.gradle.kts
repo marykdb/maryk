@@ -24,7 +24,7 @@ kotlin {
             dependencies {
                 implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$coroutinesVersion")
-                api("io.maryk.rocksdb:rocksdb:$marykRocksDBVersion")
+                api("io.maryk.rocksdb:rocksdb-multiplatform:$marykRocksDBVersion")
 
                 api(project(":store-shared"))
             }

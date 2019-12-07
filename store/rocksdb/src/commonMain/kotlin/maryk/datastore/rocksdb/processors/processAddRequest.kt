@@ -62,7 +62,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
                 objectToAdd.validate()
 
                 val key = addRequest.dataModel.key(objectToAdd)
-                val mayExist = dataStore.db.keyMayExist(columnFamilies.table, key.bytes, StringBuilder())
+                val mayExist = dataStore.db.keyMayExist(columnFamilies.keys, key.bytes, null)
 
                 val exists = if (mayExist) {
                     // Really check if item exists

@@ -34,7 +34,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
         val iterator = transaction.getIterator(dataStore.defaultReadOptions, columnToScan)
 
         keyWalk@ for (key in getRequest.keys) {
-            val mayExist = dataStore.db.keyMayExist(columnFamilies.keys, key.bytes, StringBuilder())
+            val mayExist = dataStore.db.keyMayExist(columnFamilies.keys, key.bytes, null)
             if (mayExist) {
                 val creationVersion =
                     transaction.get(columnFamilies.keys, dataStore.defaultReadOptions, key.bytes)?.toULong()

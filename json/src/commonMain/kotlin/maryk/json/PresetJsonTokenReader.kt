@@ -47,7 +47,7 @@ class PresetJsonTokenReader(
             nextToken()
             handleSkipToken?.invoke(this.currentToken)
         } while (
-            !(currentToken is FieldName && this.typeStackCount <= startDepth)
+            !((currentToken is FieldName || currentToken is EndObject) && this.typeStackCount <= startDepth)
             && currentToken !is Stopped
         )
     }

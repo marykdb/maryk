@@ -143,7 +143,7 @@ class JsonReader(
         val startDepth = typeStack.count()
         nextToken()
         while (
-            !(currentToken is FieldName && this.typeStack.count() <= startDepth)
+            !((currentToken is FieldName || currentToken is EndObject) && this.typeStack.count() <= startDepth)
             && currentToken !is Stopped
         ) {
             handleSkipToken?.invoke(this.currentToken)

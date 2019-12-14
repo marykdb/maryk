@@ -1,6 +1,7 @@
 package maryk.yaml
 
 import maryk.json.IsJsonLikeReader
+import maryk.json.JsonToken.EndObject
 import maryk.json.JsonToken.FieldName
 import maryk.json.ValueType
 import maryk.test.assertType
@@ -12,22 +13,23 @@ class YamlReaderTest {
     @Test
     fun testSkipFieldsStructure() {
         val input = """
-        |  1: 567
-        |  2: [a1, a2, a3]
-        |  3:
-        |      test1: 1
-        |      test2: 2
-        |      array: []
-        |  4: v4
-        |  5:
-        |      map: {}
-        |  6: v6
-        |  7:
-        |      seq:
-        |      - a
-        |      - b
-        |  8: v8
-        """.trimMargin()
+          1: 567
+          2: [a1, a2, a3]
+          3:
+              test1: 1
+              test2: 2
+              array: []
+          4: v4
+          5:
+              map: {}
+          6: v6
+          7:
+              seq:
+              - a
+              - b
+          8: v8
+          9: [v9, v10]
+        """.trimIndent()
 
         createSimpleYamlReader(input).apply {
             assertStartObject()
@@ -56,7 +58,10 @@ class YamlReaderTest {
             assertCurrentFieldName("8")
             assertValue("v8", ValueType.String)
 
-            assertEndObject()
+            assertFieldName("9")
+            skipUntilNextField()
+
+            expect(EndObject) { this.currentToken }
             assertEndDocument()
         }
     }

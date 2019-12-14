@@ -1,5 +1,6 @@
 package maryk.json
 
+import maryk.json.JsonToken.EndObject
 import maryk.json.JsonToken.FieldName
 import maryk.json.JsonToken.Stopped
 import maryk.json.JsonToken.Suspended
@@ -81,8 +82,14 @@ internal class JsonReaderTest {
                 "test2": 2,
                 "array": []
             },
-            "4" : true
-        }"""
+            "4" : true,
+            "5" : {
+                "test1": 1,
+                "test2": 2,
+                "array": []
+            }
+        }
+        """
         var index = 0
 
         JsonReader { input[index++] }.apply {
@@ -101,7 +108,12 @@ internal class JsonReaderTest {
 
             assertValue(true, Bool)
 
-            assertEndObject()
+            nextToken()
+
+            expect("5") { assertType<FieldName>(currentToken).value }
+            skipUntilNextField()
+
+            expect(EndObject) { this.currentToken }
             assertEndDocument()
         }
     }

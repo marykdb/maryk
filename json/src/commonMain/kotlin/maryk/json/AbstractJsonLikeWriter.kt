@@ -121,7 +121,7 @@ abstract class AbstractJsonLikeWriter : IsJsonLikeWriter {
     protected fun checkArrayValueAllowed() {
         checkTypeIsAllowed(
             ARRAY_VALUE,
-            arrayOf(START_ARRAY, ARRAY_VALUE, TAG)
+            arrayOf(START_ARRAY, ARRAY_VALUE, TAG, END_OBJ, END_ARRAY)
         )
     }
 }

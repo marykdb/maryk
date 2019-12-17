@@ -35,7 +35,23 @@ class OrdersTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.orders, Orders, { this.context }, ::compareRequest)
+        expect(
+            """
+            [{
+              "propertyReference": "value",
+              "direction": "DESC"
+            }, {
+              "propertyReference": "value",
+              "direction": "ASC"
+            }, {
+              "direction": "ASC"
+            }, {
+              "direction": "DESC"
+            }]
+            """.trimIndent()
+        ) {
+            checkJsonConversion(this.orders, Orders, { this.context }, ::compareRequest)
+        }
     }
 
     @Test

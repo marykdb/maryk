@@ -3,7 +3,6 @@ package maryk.lib
 import kotlin.native.concurrent.AtomicReference
 import kotlin.native.concurrent.freeze
 import kotlin.native.concurrent.isFrozen
-import kotlin.native.concurrent.atomicLazy as nativeAtomicLazy
 
 actual fun <T> safeLazy(initializer: Unit.() -> T): Lazy<T> = SafeLazyImpl(initializer)
 

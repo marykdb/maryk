@@ -108,7 +108,7 @@ class TransactionIterator(
 
             super.next()
         }
-        fromChanges = changes.isNotEmpty() && changesIndex < changes.size && rocksIterator.key() >= changes[changesIndex].key
+        fromChanges = changes.isNotEmpty() && changesIndex < changes.size && (!rocksIterator.isValid() || rocksIterator.key() >= changes[changesIndex].key)
 
         if (fromChanges) {
             changes.getOrNull(changesIndex)?.let {
@@ -149,7 +149,7 @@ class TransactionIterator(
 
             super.prev()
         }
-        fromChanges = changes.isNotEmpty() && changesIndex > 0 && rocksIterator.key() <= changes[changesIndex].key
+        fromChanges = changes.isNotEmpty() && changesIndex > 0 && (!rocksIterator.isValid() || rocksIterator.key() <= changes[changesIndex].key)
 
         if (fromChanges) {
             changes.getOrNull(changesIndex)?.let {

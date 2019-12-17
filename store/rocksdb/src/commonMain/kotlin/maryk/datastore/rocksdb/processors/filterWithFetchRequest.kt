@@ -48,7 +48,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> IsFetchReq
 
 private fun softDeleteQualifier(key: ByteArray, keyOffset: Int, keyLength: Int): ByteArray {
     val qualifier = ByteArray(keyLength + 1)
-    key.copyInto(qualifier, 0, keyOffset, keyLength)
+    key.copyInto(qualifier, 0, keyOffset, keyOffset + keyLength)
     qualifier[keyLength] = SOFT_DELETE_INDICATOR
     return qualifier
 }

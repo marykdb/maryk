@@ -24,7 +24,7 @@ kotlin {
                 }
             }
         }
-        jvm().compilations["main"].defaultSourceSet {
+        val jvmMain by getting {
             dependencies {
                 api(kotlin("reflect"))
             }

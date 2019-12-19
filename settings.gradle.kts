@@ -1,6 +1,9 @@
 pluginManagement {
     resolutionStrategy {
         eachPlugin {
+            if(requested.id.namespace == "com.android") {
+                useModule("com.android.tools.build:gradle:${requested.version}")
+            }
             if (requested.id.id == "kotlin-multiplatform") {
                 useModule("org.jetbrains.kotlin:kotlin-gradle-plugin:${requested.version}")
             }
@@ -8,8 +11,9 @@ pluginManagement {
     }
 
     repositories {
+        google()
         mavenCentral()
-        maven { setUrl("https://plugins.gradle.org/m2/") }
+        gradlePluginPortal()
     }
 }
 

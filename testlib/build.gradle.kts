@@ -22,7 +22,7 @@ kotlin {
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$coroutinesVersion")
             }
         }
-        jvm().compilations["main"].defaultSourceSet {
+        val jvmMain by getting {
             dependencies {
                 api(kotlin("stdlib-jdk8"))
                 api(kotlin("test"))
@@ -32,7 +32,7 @@ kotlin {
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$coroutinesVersion")
             }
         }
-        js().compilations["main"].defaultSourceSet {
+        val jsMain by getting {
             dependencies {
                 api(kotlin("stdlib-js"))
                 api(kotlin("test-js"))
@@ -40,7 +40,7 @@ kotlin {
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-core-js:$coroutinesVersion")
             }
         }
-        macosX64("macos").compilations["main"].defaultSourceSet {
+        val macosMain by getting {
             dependencies {
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-core-native:$coroutinesVersion")
             }

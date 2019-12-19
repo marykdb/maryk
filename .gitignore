@@ -3,3 +3,4 @@ out
 .gradle
 generator/jvm/gen
 generator/jvmTest/gen
+local.properties

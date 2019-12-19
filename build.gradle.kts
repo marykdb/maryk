@@ -1,5 +1,11 @@
+repositories {
+    google()
+    jcenter()
+}
+
 plugins {
-    id("com.jfrog.bintray").version("1.8.4")
+    id("com.jfrog.bintray") version "1.8.4"
+    id("com.android.library") version "3.5.3" apply false
 }
 
 buildscript {
@@ -18,6 +24,6 @@ buildscript {
 allprojects {
     repositories {
         jcenter()
-        maven("https://kotlin.bintray.com/kotlinx")
+        google()
     }
 }

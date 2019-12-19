@@ -8,5 +8,18 @@ kotlin {
             events "FAILED", "SKIPPED"
         }
     }
+    ios {
+        compilations["main"].defaultSourceSet {
+            kotlin {
+                srcDirs("src/macosMain/kotlin")
+            }
+        }
+
+        compilations["test"].defaultSourceSet {
+            kotlin {
+                srcDirs("src/macosTest/kotlin")
+            }
+        }
+    }
 }
 

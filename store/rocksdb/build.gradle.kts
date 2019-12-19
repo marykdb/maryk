@@ -3,6 +3,7 @@ plugins {
 }
 
 apply {
+    from("../../gradle/android.gradle")
     from("../../gradle/common.gradle")
     from("../../gradle/jvm.gradle")
     from("../../gradle/native.gradle")
@@ -35,7 +36,12 @@ kotlin {
                 api(project(":store-test"))
             }
         }
-        jvm().compilations["main"].defaultSourceSet {
+        val jvmMain by getting {
+            dependencies {
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$coroutinesVersion")
+            }
+        }
+        val androidMain by getting {
             dependencies {
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$coroutinesVersion")
             }

@@ -51,7 +51,7 @@ internal fun initByteByVar(reader: () -> Byte): Byte {
         }
         shift += 7
     }
-    throw ParseException("Malformed valInt")
+    throw ParseException("Malformed varByte")
 }
 
 /** Calculates the byte length of the variable int */

@@ -60,7 +60,7 @@ internal fun initUIntByVar(reader: () -> Byte): UInt {
         }
         shift += 7
     }
-    throw ParseException("Malformed valInt")
+    throw ParseException("Malformed varUInt")
 }
 
 

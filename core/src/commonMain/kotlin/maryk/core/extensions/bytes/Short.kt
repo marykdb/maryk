@@ -60,7 +60,7 @@ internal fun initShortByVar(reader: () -> Byte): Short {
         }
         shift += 7
     }
-    throw ParseException("Malformed valInt")
+    throw ParseException("Malformed varShort")
 }
 
 /** Calculates the byte length of the variable int */

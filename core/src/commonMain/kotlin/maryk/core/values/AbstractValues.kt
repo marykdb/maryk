@@ -81,6 +81,15 @@ abstract class AbstractValues<DO : Any, DM : IsDataModel<P>, P : AbstractPropert
         }
     }
 
+    /** Mutate Values with [pairToAddCreator]. */
+    fun mutate(pairToAddCreator: P.() -> Array<ValueItem>) {
+        val mutatableValues = values as MutableValueItems
+
+        for (toAdd in pairToAddCreator(this.dataModel.properties)) {
+            mutatableValues += toAdd
+        }
+    }
+
     /** Get property from values with wrapper in [getProperty] and convert it to native usage */
     inline operator fun <TI : Any, reified TO : Any> invoke(getProperty: P.() -> IsDefinitionWrapper<TI, TO, *, DO>): TO? {
         val index = getProperty(

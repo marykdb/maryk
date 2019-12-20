@@ -16,6 +16,7 @@ data class Values<DM : IsValuesDataModel<P>, P : PropertyDefinitions> internal c
     override val values: IsValueItems,
     override val context: RequestContext? = null
 ) : AbstractValues<Any, DM, P>() {
+    /** make a copy of Values and add new pairs from [pairCreator] */
     fun copy(pairCreator: P.() -> Array<ValueItem>) =
         Values(
             dataModel,

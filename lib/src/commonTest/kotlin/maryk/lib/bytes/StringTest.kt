@@ -12,7 +12,7 @@ class StringTest {
     )
 
     @Test
-    fun testBytesToString() {
+    fun testBytesWithReaderToString() {
         for ((hex, value) in stringsAndBytes) {
             val b = initByteArrayByHex(hex)
 
@@ -21,6 +21,16 @@ class StringTest {
                 initString(b.size) {
                     b[i++]
                 }
+            }
+        }
+    }
+
+    @Test
+    fun testBytesToString() {
+        for ((hex, value) in stringsAndBytes) {
+            val b = initByteArrayByHex(hex)
+            expect(value) {
+                initString(b, 0, b.size)
             }
         }
     }

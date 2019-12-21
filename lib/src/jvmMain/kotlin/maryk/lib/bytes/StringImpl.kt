@@ -1,5 +1,8 @@
 package maryk.lib.bytes
 
+actual fun initString(bytes: ByteArray, offset: Int, length: Int) =
+    String(bytes, offset, length)
+
 actual fun initString(length: Int, reader: () -> Byte) = String(
     ByteArray(length) {
         reader()

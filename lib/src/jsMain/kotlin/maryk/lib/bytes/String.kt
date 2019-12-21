@@ -15,6 +15,13 @@ actual fun codePointAt(string: String, index: Int) = (js("string.codePointAt(ind
 
 private const val SEVEN_BYTES: Byte = 0b0111_1111.toByte()
 
+actual fun initString(bytes: ByteArray, offset: Int, length: Int): String {
+    var readIndex = offset
+    return initString(length) {
+        bytes[readIndex++]
+    }
+}
+
 actual fun initString(length: Int, reader: () -> Byte): String {
     var index = 0
     val read = {

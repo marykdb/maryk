@@ -52,9 +52,8 @@ internal class IndexPartialToRegexMatch(
             bytes,
             keySize
         )
-        var readIndex= offset + internalOffset
 
-        val toMatch = initString(size) { bytes[readIndex++] }
+        val toMatch = initString(bytes, offset + internalOffset, size)
 
         return regex.matches(toMatch)
     }

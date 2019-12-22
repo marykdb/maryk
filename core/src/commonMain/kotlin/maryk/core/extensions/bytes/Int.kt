@@ -24,13 +24,10 @@ internal fun initInt(reader: () -> Byte, length: Int = 4): Int {
     val firstByte = reader()
     // Skip bytes if below certain length
     if (length < 4) {
-        val negative = firstByte and SIGN_BYTE != SIGN_BYTE
-        for (it in 0 until 8 - length) {
-            if (negative) { // Set to max byte to have correct value if negative
-                int = int xor 0xFF
-            }
-            int = int shl 8
+        if (firstByte and SIGN_BYTE != SIGN_BYTE) { // Set to max byte to have correct value if negative
+            int = int xor 0xFF
         }
+        int = int shl 8 * (8 - length)
     }
     int = int xor ((firstByte xor SIGN_BYTE).toInt() and 0xFF)
     for (it in 1 until length) {

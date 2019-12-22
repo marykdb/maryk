@@ -27,13 +27,10 @@ internal fun initLong(reader: () -> Byte, length: Int = 8): Long {
     val firstByte = reader()
     // Skip bytes if below certain length
     if (length < 8) {
-        val negative = firstByte and SIGN_BYTE != SIGN_BYTE
-        for (it in 0 until 8 - length) {
-            if (negative) { // Set to max byte to have correct value if negative
-                long = long xor 0xFF
-            }
-            long = long shl 8
+        if (firstByte and SIGN_BYTE != SIGN_BYTE) { // Set to max byte to have correct value if negative
+            long = long xor 0xFF
         }
+        long = long shl 8 * (8 - length)
     }
     long = long xor ((firstByte xor SIGN_BYTE).toLong() and 0xFF)
     for (it in 1 until length) {

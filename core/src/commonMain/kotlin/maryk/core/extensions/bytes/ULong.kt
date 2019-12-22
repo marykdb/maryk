@@ -19,9 +19,7 @@ fun initULong(reader: () -> Byte, length: Int = 8): ULong {
     var long = 0uL
     // Skip bytes if below certain length
     if (length < 8) {
-        for (it in 0 until 8 - length) {
-            long = long shl 8
-        }
+        long = long shl 8 * (8 - length)
     }
     for (it in 0 until length) {
         long = long shl 8

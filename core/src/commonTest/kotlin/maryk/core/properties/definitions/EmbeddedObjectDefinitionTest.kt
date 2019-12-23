@@ -68,13 +68,14 @@ internal class EmbeddedObjectDefinitionTest {
 
     @Test
     fun convertObjectToJSONAndBack() {
-        var output = ""
-        val writer = JsonWriter(true) {
-            output += it
-        }
         val value = MarykObject()
 
-        def.writeJsonValue(value, writer)
+        val output = buildString {
+            val writer = JsonWriter(pretty = true) {
+                append(it)
+            }
+            def.writeJsonValue(value, writer)
+        }
 
         var index = 0
         val reader = JsonReader {

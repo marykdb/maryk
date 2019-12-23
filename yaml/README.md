@@ -13,10 +13,12 @@ The [`YamlWriter`](src/commonMain/kotlin/maryk/yaml/YamlWriter.kt) constructor t
 
 Constructing a writer which writes to a String
 ```kotlin
-var output = ""
+var output = buildString {
+    val yamlWriter = YamlWriter {
+        append(it)
+    }
 
-val yamlWriter = YamlWriter {
-    output += it
+    // write YAML    
 }
 ```
 

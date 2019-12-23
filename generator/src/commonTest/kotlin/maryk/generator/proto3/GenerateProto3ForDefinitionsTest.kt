@@ -38,10 +38,11 @@ class MixedKotlinGenerationTest {
     }
 }
 
-private class Writer(
-    var output: String = ""
-) {
+private class Writer {
+    val builder: StringBuilder = StringBuilder()
+    val output get() = builder.toString()
+
     fun writer(input: String) {
-        this.output += input
+        builder.append(input)
     }
 }

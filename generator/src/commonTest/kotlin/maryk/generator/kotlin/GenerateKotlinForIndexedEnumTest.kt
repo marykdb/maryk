@@ -33,10 +33,10 @@ sealed class Option(
 class GenerateKotlinForIndexedEnumTest {
     @Test
     fun generateKotlinForOption() {
-        var output = ""
-
-        Option.generateKotlin("maryk.test.models") {
-            output += it
+        val output = buildString {
+            Option.generateKotlin("maryk.test.models") {
+                append(it)
+            }
         }
 
         assertEquals(generatedKotlinForIndexedEnum, output)

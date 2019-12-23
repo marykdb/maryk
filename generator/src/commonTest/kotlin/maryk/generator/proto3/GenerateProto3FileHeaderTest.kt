@@ -9,18 +9,17 @@ import kotlin.test.assertEquals
 class GenerateProto3FileHeaderTest {
     @Test
     fun testFileHeaderConversion() {
-        var output = ""
-
-        generateProto3FileHeader("maryk") {
-            output += it
-        }
-
-        CompleteMarykModel.generateProto3Schema(
-            GenerationContext(
-                enums = mutableListOf(MarykTypeEnum)
-            )
-        ) {
-            output += it
+        val output = buildString {
+            generateProto3FileHeader("maryk") {
+                append(it)
+            }
+            CompleteMarykModel.generateProto3Schema(
+                GenerationContext(
+                    enums = mutableListOf(MarykTypeEnum)
+                )
+            ) {
+                append(it)
+            }
         }
 
         assertEquals(
@@ -37,21 +36,20 @@ class GenerateProto3FileHeaderTest {
 
     @Test
     fun testFileHeaderWithImportsConversion() {
-        var output = ""
-
-        generateProto3FileHeader(
-            "maryk",
-            protosToImport = listOf("SimpleMarykModel", "MarykEnumEmbedded")
-        ) {
-            output += it
-        }
-
-        CompleteMarykModel.generateProto3Schema(
-            GenerationContext(
-                enums = mutableListOf(MarykTypeEnum)
-            )
-        ) {
-            output += it
+        var output = buildString {
+            generateProto3FileHeader(
+                "maryk",
+                protosToImport = listOf("SimpleMarykModel", "MarykEnumEmbedded")
+            ) {
+                append(it)
+            }
+            CompleteMarykModel.generateProto3Schema(
+                GenerationContext(
+                    enums = mutableListOf(MarykTypeEnum)
+                )
+            ) {
+                append(it)
+            }
         }
 
         assertEquals(

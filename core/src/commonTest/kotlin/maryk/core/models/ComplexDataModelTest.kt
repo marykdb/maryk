@@ -24,12 +24,12 @@ val testComplexMap = ComplexModel(
 internal class ComplexDataModelMapTest {
     @Test
     fun writeToJSONAndBack() {
-        var output = ""
-        val writer = JsonWriter(pretty = true) {
-            output += it
+        val output = buildString {
+            val writer = JsonWriter(pretty = true) {
+                append(it)
+            }
+            ComplexModel.writeJson(testComplexMap, writer)
         }
-
-        ComplexModel.writeJson(testComplexMap, writer)
 
         assertEquals(
             """
@@ -69,12 +69,13 @@ internal class ComplexDataModelMapTest {
 
     @Test
     fun writeIntoYAMLObject() {
-        var output = ""
-        val writer = YamlWriter {
-            output += it
-        }
+        val output = buildString {
+            val writer = YamlWriter {
+                append(it)
+            }
 
-        ComplexModel.writeJson(testComplexMap, writer)
+            ComplexModel.writeJson(testComplexMap, writer)
+        }
 
         assertEquals(
             """

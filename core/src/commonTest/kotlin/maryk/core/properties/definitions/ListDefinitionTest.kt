@@ -203,8 +203,9 @@ internal class ListDefinitionTest {
     fun convertValuesToJSONStringAndBack() {
         val value = listOf("T", "T2", "T3", "T4")
 
-        var totalString = ""
-        def.writeJsonValue(value, JsonWriter { totalString += it })
+        val totalString = buildString {
+            def.writeJsonValue(value, JsonWriter { append(it) })
+        }
 
         expect("""["T","T2","T3","T4"]""") { totalString }
 

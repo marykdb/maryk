@@ -50,11 +50,9 @@ abstract class AbstractDataModel<DO : Any, P : AbstractPropertyDefinitions<DO>, 
         values: V,
         context: CX? = null,
         pretty: Boolean = false
-    ): String {
-        var output = ""
-        val writer = JsonWriter(pretty = pretty) { output += it }
-        this.writeJson(values, writer, context)
-        return output
+    ) = buildString {
+        val writer = JsonWriter(pretty = pretty) { append(it) }
+        writeJson(values, writer, context)
     }
 
     /**

@@ -65,13 +65,14 @@ internal class EmbeddedValuesDefinitionTest {
 
     @Test
     fun convertObjectToJSONAndBack() {
-        var output = ""
-        val writer = JsonWriter(true) {
-            output += it
-        }
         val value = MarykModel()
 
-        def.writeJsonValue(value, writer)
+        val output = buildString {
+            val writer = JsonWriter(pretty = true) {
+                append(it)
+            }
+            def.writeJsonValue(value, writer)
+        }
 
         var index = 0
         val reader = JsonReader {

@@ -17,15 +17,15 @@ fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : Is
     checker: (T, T) -> Unit = { converted, original -> assertEquals(original, converted) },
     resetContextBeforeRead: Boolean = false
 ): String {
-    var output = ""
-
-    val writer = JsonWriter(pretty = true) {
-        output += it
-    }
-
     var newContext = dataModel.transformContext(context?.invoke())
 
-    dataModel.writeJson(value, writer, newContext)
+    val output = buildString {
+        val writer = JsonWriter(pretty = true) {
+            append(it)
+        }
+
+        dataModel.writeJson(value, writer, newContext)
+    }
 
     if (resetContextBeforeRead) {
         newContext = dataModel.transformContext(context?.invoke())
@@ -47,15 +47,15 @@ fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : Is
     checker: (T, T) -> Unit = { converted, original -> assertEquals(original, converted) },
     resetContextBeforeRead: Boolean = false
 ): String {
-    var output = ""
-
-    val writer = YamlWriter {
-        output += it
-    }
-
     var newContext = dataModel.transformContext(context?.invoke())
 
-    dataModel.writeJson(value, writer, newContext)
+    val output = buildString {
+        val writer = YamlWriter {
+            append(it)
+        }
+
+        dataModel.writeJson(value, writer, newContext)
+    }
 
     if (resetContextBeforeRead) {
         newContext = dataModel.transformContext(context?.invoke())
@@ -83,15 +83,15 @@ fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : Is
     checker: (ObjectValues<T, P>, ObjectValues<T, P>) -> Unit = { converted, original -> assertEquals(original, converted) },
     resetContextBeforeRead: Boolean = false
 ): String {
-    var output = ""
-
-    val writer = YamlWriter {
-        output += it
-    }
-
     var newContext = dataModel.transformContext(context?.invoke())
 
-    dataModel.writeJson(value, writer, newContext)
+    val output = buildString {
+        val writer = YamlWriter {
+            append(it)
+        }
+
+        dataModel.writeJson(value, writer, newContext)
+    }
 
     if (resetContextBeforeRead) {
         newContext = dataModel.transformContext(context?.invoke())
@@ -120,15 +120,15 @@ fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : Is
     checker: (ObjectValues<T, P>, ObjectValues<T, P>) -> Unit = { converted, original -> assertEquals(original, converted) },
     resetContextBeforeRead: Boolean = false
 ): String {
-    var output = ""
-
-    val writer = JsonWriter {
-        output += it
-    }
-
     var newContext = dataModel.transformContext(context?.invoke())
 
-    dataModel.writeJson(value, writer, newContext)
+    val output = buildString {
+        val writer = JsonWriter {
+            append(it)
+        }
+
+        dataModel.writeJson(value, writer, newContext)
+    }
 
     if (resetContextBeforeRead) {
         newContext = dataModel.transformContext(context?.invoke())

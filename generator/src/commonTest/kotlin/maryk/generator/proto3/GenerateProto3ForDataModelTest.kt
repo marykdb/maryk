@@ -165,14 +165,14 @@ message CompleteMarykModel {
 class GenerateProto3ForDataModelTest {
     @Test
     fun testDataModelConversion() {
-        var output = ""
-
-        CompleteMarykModel.generateProto3Schema(
-            GenerationContext(
-                enums = mutableListOf(MarykTypeEnum)
-            )
-        ) {
-            output += it
+        val output = buildString {
+            CompleteMarykModel.generateProto3Schema(
+                GenerationContext(
+                    enums = mutableListOf(MarykTypeEnum)
+                )
+            ) {
+                append(it)
+            }
         }
 
         assertEquals(generatedProto3ForCompleteMarykModel, output)
@@ -180,12 +180,12 @@ class GenerateProto3ForDataModelTest {
 
     @Test
     fun testNumericModelConversion() {
-        var output = ""
-
-        NumericMarykModel.generateProto3Schema(
-            GenerationContext()
-        ) {
-            output += it
+        val output = buildString {
+            NumericMarykModel.generateProto3Schema(
+                GenerationContext()
+            ) {
+                append(it)
+            }
         }
 
         assertEquals(generatedProto3ForNumericMarykModel, output)
@@ -193,14 +193,14 @@ class GenerateProto3ForDataModelTest {
 
     @Test
     fun testSimpleDataModelConversion() {
-        var output = ""
-
-        SimpleMarykModel.generateProto3Schema(
-            GenerationContext(
-                enums = mutableListOf(MarykTypeEnum)
-            )
-        ) {
-            output += it
+        val output = buildString {
+            SimpleMarykModel.generateProto3Schema(
+                GenerationContext(
+                    enums = mutableListOf(MarykTypeEnum)
+                )
+            ) {
+                append(it)
+            }
         }
 
         assertEquals(generatedProto3ForSimpleMarykModel, output)
@@ -208,14 +208,14 @@ class GenerateProto3ForDataModelTest {
 
     @Test
     fun testEmbeddedMarykModelConversion() {
-        var output = ""
-
-        EmbeddedMarykModel.generateProto3Schema(
-            GenerationContext(
-                enums = mutableListOf(MarykTypeEnum)
-            )
-        ) {
-            output += it
+        val output = buildString {
+            EmbeddedMarykModel.generateProto3Schema(
+                GenerationContext(
+                    enums = mutableListOf(MarykTypeEnum)
+                )
+            ) {
+                append(it)
+            }
         }
 
         assertEquals(generatedProto3ForEmbeddedMarykModel, output)
@@ -223,14 +223,14 @@ class GenerateProto3ForDataModelTest {
 
     @Test
     fun testTestMarykModelConversion() {
-        var output = ""
-
-        TestMarykModel.generateProto3Schema(
-            GenerationContext(
-                enums = mutableListOf(MarykTypeEnum)
-            )
-        ) {
-            output += it
+        val output = buildString {
+            TestMarykModel.generateProto3Schema(
+                GenerationContext(
+                    enums = mutableListOf(MarykTypeEnum)
+                )
+            ) {
+                append(it)
+            }
         }
 
         assertEquals(generatedProto3ForTestMarykModel, output)

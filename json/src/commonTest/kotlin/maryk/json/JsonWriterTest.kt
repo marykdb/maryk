@@ -7,12 +7,10 @@ import kotlin.test.assertFailsWith
 internal class JsonWriterTest {
     @Test
     fun writeExpectedJSON() {
-        var output = ""
-        val writer = { string: String -> output += string }
-
-        val generator = JsonWriter(writer = writer)
-
-        writeJson(generator)
+        val output = buildString {
+            val writer = JsonWriter { append(it) }
+            writeJson(writer)
+        }
 
         assertEquals(
             """[1,"#Test",3.5,true,{"test":false,"test2":"value"},{"another":"yes","null":null}]""",
@@ -22,12 +20,12 @@ internal class JsonWriterTest {
 
     @Test
     fun writeExpectedPrettyJSON() {
-        var output = ""
-        val writer = { string: String -> output += string }
-
-        val generator = JsonWriter(pretty = true, writer = writer)
-
-        writeJson(generator)
+        val output = buildString {
+            val writer = JsonWriter(pretty = true) {
+                append(it)
+            }
+            writeJson(writer)
+        }
 
         assertEquals(
             """
@@ -67,45 +65,46 @@ internal class JsonWriterTest {
 
     @Test
     fun notStartWithUnallowedJSONTypes() {
-        var output = ""
+        buildString {
+            JsonWriter {
+                append(it)
+            }.apply {
+                // Should not be able to start with end object
+                assertFailsWith<IllegalJsonOperation> {
+                    writeEndObject()
+                }
 
-        JsonWriter {
-            output += it
-        }.apply {
-            // Should not be able to start with end object
-            assertFailsWith<IllegalJsonOperation> {
-                writeEndObject()
-            }
+                // Should not be able to start with end array
+                assertFailsWith<IllegalJsonOperation> {
+                    writeEndArray()
+                }
 
-            // Should not be able to start with end array
-            assertFailsWith<IllegalJsonOperation> {
-                writeEndArray()
-            }
-
-            // Should not be able to start with field name
-            assertFailsWith<IllegalJsonOperation> {
-                writeFieldName("test")
+                // Should not be able to start with field name
+                assertFailsWith<IllegalJsonOperation> {
+                    writeFieldName("test")
+                }
             }
         }
+
     }
 
     @Test
     fun notAllowIllegalOperationsInsideAnArray() {
-        var output = ""
+        buildString {
+            JsonWriter {
+                append(it)
+            }.apply {
+                writeStartArray()
 
-        JsonWriter {
-            output += it
-        }.apply {
-            writeStartArray()
+                // Should not be able to write end object after start array
+                assertFailsWith<IllegalJsonOperation> {
+                    writeEndObject()
+                }
 
-            // Should not be able to write end object after start array
-            assertFailsWith<IllegalJsonOperation> {
-                writeEndObject()
-            }
-
-            // Should not be able to write field name to array
-            assertFailsWith<IllegalJsonOperation> {
-                writeFieldName("test")
+                // Should not be able to write field name to array
+                assertFailsWith<IllegalJsonOperation> {
+                    writeFieldName("test")
+                }
             }
         }
     }
@@ -113,54 +112,55 @@ internal class JsonWriterTest {
 
     @Test
     fun notAllowIllegalOperationsInsideAnObject() {
-        var output = ""
+        buildString {
+            JsonWriter {
+                append(it)
+            }.apply {
+                writeStartObject()
 
-        JsonWriter {
-            output += it
-        }.apply {
-            writeStartObject()
+                // Should not be able to write end array after start object
+                assertFailsWith<IllegalJsonOperation> {
+                    writeEndArray()
+                }
 
-            // Should not be able to write end array after start object
-            assertFailsWith<IllegalJsonOperation> {
-                writeEndArray()
-            }
+                // Should not be able to write value before a field name
+                assertFailsWith<IllegalJsonOperation> {
+                    writeValue("false")
+                }
 
-            // Should not be able to write value before a field name
-            assertFailsWith<IllegalJsonOperation> {
-                writeValue("false")
-            }
-
-            // Should not be able to write string value before a field name
-            assertFailsWith<IllegalJsonOperation> {
-                writeString("test")
+                // Should not be able to write string value before a field name
+                assertFailsWith<IllegalJsonOperation> {
+                    writeString("test")
+                }
             }
         }
+
 
     }
 
     @Test
     fun notAllowIllegalOperationsInsideAnObjectFieldName() {
-        var output = ""
+        buildString {
+            JsonWriter {
+                append(it)
+            }.apply {
+                writeStartObject()
+                writeFieldName("field")
 
-        JsonWriter {
-            output += it
-        }.apply {
-            writeStartObject()
-            writeFieldName("field")
+                // Should not be able to write end array after field name
+                assertFailsWith<IllegalJsonOperation> {
+                    writeEndArray()
+                }
 
-            // Should not be able to write end array after field name
-            assertFailsWith<IllegalJsonOperation> {
-                writeEndArray()
-            }
+                // Should not be able to write end object after field name
+                assertFailsWith<IllegalJsonOperation> {
+                    writeEndObject()
+                }
 
-            // Should not be able to write end object after field name
-            assertFailsWith<IllegalJsonOperation> {
-                writeEndObject()
-            }
-
-            // Should not be able to write field name after field name
-            assertFailsWith<IllegalJsonOperation> {
-                writeFieldName("anotherField")
+                // Should not be able to write field name after field name
+                assertFailsWith<IllegalJsonOperation> {
+                    writeFieldName("anotherField")
+                }
             }
         }
 

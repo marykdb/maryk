@@ -52,10 +52,10 @@ data class ValueMarykObject(
 class GenerateKotlinForValueDataModelTest {
     @Test
     fun generateKotlinForSimpleModel() {
-        var output = ""
-
-        ValueMarykObject.generateKotlin("maryk.test.models") {
-            output += it
+        val output = buildString {
+            ValueMarykObject.generateKotlin("maryk.test.models") {
+                append(it)
+            }
         }
 
         assertEquals(generatedKotlinForValueDataModel, output)

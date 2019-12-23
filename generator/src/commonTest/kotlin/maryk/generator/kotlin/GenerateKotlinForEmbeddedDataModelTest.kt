@@ -37,10 +37,10 @@ object EmbeddedModel : DataModel<EmbeddedModel, EmbeddedModel.Properties>(
 class GenerateKotlinForEmbeddedDataModelTest {
     @Test
     fun generateKotlinForSimpleModel() {
-        var output = ""
-
-        EmbeddedModel.generateKotlin("maryk.test.models") {
-            output += it
+        val output = buildString {
+            EmbeddedModel.generateKotlin("maryk.test.models") {
+                append(it)
+            }
         }
 
         assertEquals(generatedKotlinForEmbeddedDataModel, output)

@@ -90,10 +90,10 @@ sealed class MarykTypeEnum<T: Any>(
 class GenerateKotlinForTypeEnumTest {
     @Test
     fun generateKotlinForTypeEnum() {
-        var output = ""
-
-        MarykTypeEnum.generateKotlin("maryk.test.models") {
-            output += it
+        val output = buildString {
+            MarykTypeEnum.generateKotlin("maryk.test.models") {
+                append(it)
+            }
         }
 
         assertEquals(generatedKotlinForTypeEnum, output)

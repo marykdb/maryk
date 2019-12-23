@@ -16,15 +16,16 @@ message ValueMarykObject {
 class GenerateProto3ForValueDataModelTest {
     @Test
     fun testDataModelConversion() {
-        var output = ""
-
-        ValueMarykObject.generateProto3Schema(
-            GenerationContext(
-                enums = mutableListOf(MarykTypeEnum)
-            )
-        ) {
-            output += it
+        val output = buildString {
+            ValueMarykObject.generateProto3Schema(
+                GenerationContext(
+                    enums = mutableListOf(MarykTypeEnum)
+                )
+            ) {
+                append(it)
+            }
         }
+
 
         assertEquals(generatedProto3ForValueDataModel, output)
     }

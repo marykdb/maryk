@@ -485,10 +485,10 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
 class GenerateKotlinForRootDataModelTest {
     @Test
     fun generateKotlinForSimpleModel() {
-        var output = ""
-
-        SimpleMarykModel.generateKotlin("maryk.test.models") {
-            output += it
+        val output = buildString {
+            SimpleMarykModel.generateKotlin("maryk.test.models") {
+                append(it)
+            }
         }
 
         assertEquals(generatedKotlinForSimpleDataModel, output)
@@ -496,14 +496,13 @@ class GenerateKotlinForRootDataModelTest {
 
     @Test
     fun generateKotlinForCompleteModel() {
-        var output = ""
-
         val generationContext = GenerationContext(
             enums = mutableListOf(MarykTypeEnum, Option, SimpleMarykTypeEnum)
         )
-
-        CompleteMarykModel.generateKotlin("maryk.test.models", generationContext) {
-            output += it
+        val output = buildString {
+            CompleteMarykModel.generateKotlin("maryk.test.models", generationContext) {
+                append(it)
+            }
         }
 
         assertEquals(generatedKotlinForCompleteDataModel, output)

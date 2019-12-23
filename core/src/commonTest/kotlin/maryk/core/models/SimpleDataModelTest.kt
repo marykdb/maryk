@@ -35,24 +35,25 @@ internal class SimpleDataModelTest {
 
     @Test
     fun writeIntoJSONObject() {
-        var output = ""
-        val writer = JsonWriter {
-            output += it
-        }
+        val output = buildString {
+            val writer = JsonWriter {
+                append(it)
+            }
 
-        SimpleMarykModel.writeJson(testValues, writer)
+            SimpleMarykModel.writeJson(testValues, writer)
+        }
 
         assertEquals("""{"value":"haas"}""".trimIndent(), output)
     }
 
     @Test
     fun writeIntoPrettyJSONObject() {
-        var output = ""
-        val writer = JsonWriter(pretty = true) {
-            output += it
+        val output = buildString {
+            val writer = JsonWriter(pretty = true) {
+                append(it)
+            }
+            SimpleMarykModel.writeJson(testValues, writer)
         }
-
-        SimpleMarykModel.writeJson(testValues, writer)
 
         assertEquals(
             """
@@ -66,12 +67,13 @@ internal class SimpleDataModelTest {
 
     @Test
     fun writeIntoYAMLObject() {
-        var output = ""
-        val writer = YamlWriter {
-            output += it
-        }
+        val output = buildString {
+            val writer = YamlWriter {
+                append(it)
+            }
 
-        SimpleMarykModel.writeJson(testValues, writer)
+            SimpleMarykModel.writeJson(testValues, writer)
+        }
 
         assertEquals(
             """

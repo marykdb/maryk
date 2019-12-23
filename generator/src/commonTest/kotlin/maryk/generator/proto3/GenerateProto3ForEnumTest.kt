@@ -20,10 +20,10 @@ enum MarykTypeEnum {
 class GenerateProto3ForEnumTest {
     @Test
     fun generateProto3SchemaForEnum() {
-        var output = ""
-
-        MarykTypeEnum.generateProto3Schema {
-            output += it
+        val output = buildString {
+            MarykTypeEnum.generateProto3Schema {
+                append(it)
+            }
         }
 
         assertEquals(generatedProto3ForMarykEnum, output)

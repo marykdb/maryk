@@ -15,10 +15,10 @@ The [`JsonWriter`](src/commonMain/kotlin/maryk/json/JsonWriter.kt) constructor t
 
 Constructing a writer which writes to a String
 ```kotlin
-var output = ""
-
-val jsonWriter = JsonWriter(pretty = true) {
-    output += it
+var output = buildString { 
+    JsonWriter(pretty = true) {
+        append(it)
+    }
 }
 ```
 

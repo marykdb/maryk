@@ -8,53 +8,55 @@ internal abstract class AbstractJsonWriterTest {
 
     @Test
     fun notStartWithUnallowedJSONTypes() {
-        var output = ""
-        createJsonWriter {
-            output += it
-        }.apply {
-            // Should not be able to start with end object
-            assertFailsWith<IllegalJsonOperation> {
-                writeEndObject()
-            }
+        buildString {
+            createJsonWriter {
+                append(it)
+            }.apply {
+                // Should not be able to start with end object
+                assertFailsWith<IllegalJsonOperation> {
+                    writeEndObject()
+                }
 
-            // Should not be able to start with end array
-            assertFailsWith<IllegalJsonOperation> {
-                writeEndArray()
-            }
+                // Should not be able to start with end array
+                assertFailsWith<IllegalJsonOperation> {
+                    writeEndArray()
+                }
 
-            // Should not be able to start with value
-            assertFailsWith<IllegalJsonOperation> {
-                writeValue("test")
-            }
+                // Should not be able to start with value
+                assertFailsWith<IllegalJsonOperation> {
+                    writeValue("test")
+                }
 
-            // Should not be able to start with string value
-            assertFailsWith<IllegalJsonOperation> {
-                writeString("test")
-            }
+                // Should not be able to start with string value
+                assertFailsWith<IllegalJsonOperation> {
+                    writeString("test")
+                }
 
-            // Should not be able to start with field name
-            assertFailsWith<IllegalJsonOperation> {
-                writeFieldName("test")
+                // Should not be able to start with field name
+                assertFailsWith<IllegalJsonOperation> {
+                    writeFieldName("test")
+                }
             }
         }
     }
 
     @Test
     fun notAllowIllegalOperationsInsideAnArray() {
-        var output = ""
-        createJsonWriter {
-            output += it
-        }.apply {
-            writeStartArray()
+        buildString {
+            createJsonWriter {
+                append(it)
+            }.apply {
+                writeStartArray()
 
-            // Should not be able to write end object after start array
-            assertFailsWith<IllegalJsonOperation> {
-                writeEndObject()
-            }
+                // Should not be able to write end object after start array
+                assertFailsWith<IllegalJsonOperation> {
+                    writeEndObject()
+                }
 
-            // Should not be able to write fieldname to array
-            assertFailsWith<IllegalJsonOperation> {
-                writeFieldName("test")
+                // Should not be able to write fieldname to array
+                assertFailsWith<IllegalJsonOperation> {
+                    writeFieldName("test")
+                }
             }
         }
     }
@@ -62,51 +64,53 @@ internal abstract class AbstractJsonWriterTest {
 
     @Test
     fun notAllowIllegalOperationsInsideAnObject() {
-        var output = ""
-        createJsonWriter {
-            output += it
-        }.apply {
-            writeStartObject()
+        buildString {
+            createJsonWriter {
+                append(it)
+            }.apply {
+                writeStartObject()
 
-            // Should not be able to write end array after start object
-            assertFailsWith<IllegalJsonOperation> {
-                writeEndArray()
-            }
+                // Should not be able to write end array after start object
+                assertFailsWith<IllegalJsonOperation> {
+                    writeEndArray()
+                }
 
-            // Should not be able to write value before a field name
-            assertFailsWith<IllegalJsonOperation> {
-                writeValue("false")
-            }
+                // Should not be able to write value before a field name
+                assertFailsWith<IllegalJsonOperation> {
+                    writeValue("false")
+                }
 
-            // Should not be able to write string value before a field name
-            assertFailsWith<IllegalJsonOperation> {
-                writeString("test")
+                // Should not be able to write string value before a field name
+                assertFailsWith<IllegalJsonOperation> {
+                    writeString("test")
+                }
             }
         }
     }
 
     @Test
     fun notAllowIllegalOperationsInsideAnObjectFieldName() {
-        var output = ""
-        createJsonWriter {
-            output += it
-        }.apply {
-            writeStartObject()
-            writeFieldName("field")
+        buildString {
+            createJsonWriter {
+                append(it)
+            }.apply {
+                writeStartObject()
+                writeFieldName("field")
 
-            // Should not be able to write end array after field name
-            assertFailsWith<IllegalJsonOperation> {
-                writeEndArray()
-            }
+                // Should not be able to write end array after field name
+                assertFailsWith<IllegalJsonOperation> {
+                    writeEndArray()
+                }
 
-            // Should not be able to write end object after field name
-            assertFailsWith<IllegalJsonOperation> {
-                writeEndObject()
-            }
+                // Should not be able to write end object after field name
+                assertFailsWith<IllegalJsonOperation> {
+                    writeEndObject()
+                }
 
-            // Should not be able to write field name after field name
-            assertFailsWith<IllegalJsonOperation> {
-                writeFieldName("anotherField")
+                // Should not be able to write field name after field name
+                assertFailsWith<IllegalJsonOperation> {
+                    writeFieldName("anotherField")
+                }
             }
         }
     }

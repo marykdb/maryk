@@ -7,6 +7,7 @@ apply {
     from("../../gradle/common.gradle")
     from("../../gradle/jvm.gradle")
     from("../../gradle/native.gradle")
+    from("../../gradle/publish.gradle")
 }
 
 val coroutinesVersion = rootProject.extra["coroutinesVersion"]
@@ -23,8 +24,6 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$coroutinesVersion")
                 api("io.maryk.rocksdb:rocksdb-multiplatform:$marykRocksDBVersion")
 
                 api(project(":store-shared"))
@@ -34,16 +33,6 @@ kotlin {
             dependencies {
                 api(project(":testmodels"))
                 api(project(":store-test"))
-            }
-        }
-        val jvmMain by getting {
-            dependencies {
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$coroutinesVersion")
-            }
-        }
-        val androidMain by getting {
-            dependencies {
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$coroutinesVersion")
             }
         }
     }

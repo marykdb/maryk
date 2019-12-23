@@ -4,7 +4,6 @@ repositories {
 }
 
 plugins {
-    id("com.jfrog.bintray") version "1.8.4"
     id("com.android.library") version "3.5.3" apply false
 }
 

@@ -7,6 +7,7 @@ apply {
     from("../../gradle/jvm.gradle")
     from("../../gradle/js.gradle")
     from("../../gradle/native.gradle")
+    from("../../gradle/publish.gradle")
 }
 
 val coroutinesVersion = rootProject.extra["coroutinesVersion"]
@@ -15,7 +16,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
+                api ("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$coroutinesVersion")
 
                 api(project(":core"))
@@ -27,19 +28,29 @@ kotlin {
                 api(project(":store-test"))
             }
         }
-        jvm().compilations["main"].defaultSourceSet {
+        val jvmMain by getting {
             dependencies {
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$coroutinesVersion")
             }
         }
-        js().compilations["main"].defaultSourceSet {
+        val jsMain by getting {
             dependencies {
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-core-js:$coroutinesVersion")
             }
         }
-        macosX64("macos").compilations["main"].defaultSourceSet {
+        val macosMain by getting  {
             dependencies {
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-core-macosx64:$coroutinesVersion")
+            }
+        }
+        val iosArm64Main by getting  {
+            dependencies {
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core-iosarm64:$coroutinesVersion")
+            }
+        }
+        val iosX64Main by getting  {
+            dependencies {
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core-iosx64:$coroutinesVersion")
             }
         }
     }

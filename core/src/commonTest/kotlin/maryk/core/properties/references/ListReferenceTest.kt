@@ -7,11 +7,17 @@ import maryk.test.ByteCollector
 import maryk.test.assertType
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
+import kotlin.test.assertSame
 import kotlin.test.expect
 
 class ListReferenceTest {
     private val listReference = TestMarykModel { embeddedValues { marykModel { listOfString::ref } } }
     val cache = WriteCache()
+
+    @Test
+    fun cacheReferenceTest() {
+        assertSame(listReference, TestMarykModel { embeddedValues { marykModel { listOfString::ref } } })
+    }
 
     @Test
     fun convertToProtoBufAndBack() {

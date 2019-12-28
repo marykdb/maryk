@@ -15,6 +15,7 @@ import maryk.test.assertType
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotEquals
+import kotlin.test.assertSame
 import kotlin.test.expect
 
 private object Properties : PropertyDefinitions() {
@@ -32,6 +33,12 @@ private val ref = definition.ref()
 private val subRef = definition.ref(modelDefinition.ref())
 
 internal class PropertyReferenceTest {
+    @Test
+    fun cacheTest() {
+        assertSame(ref, definition.ref())
+        assertSame(subRef, definition.ref(modelDefinition.ref()))
+    }
+
     @Test
     fun getValueFromList() {
         val values = Model.values {

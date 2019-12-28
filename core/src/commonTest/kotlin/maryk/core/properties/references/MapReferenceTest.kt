@@ -5,10 +5,16 @@ import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
+import kotlin.test.assertSame
 import kotlin.test.expect
 
 class MapReferenceTest {
     private val mapReference = TestMarykModel { map::ref }
+
+    @Test
+    fun cacheReferenceTest() {
+        assertSame(mapReference, TestMarykModel { map::ref })
+    }
 
     @Test
     fun convertToProtoBufAndBack() {

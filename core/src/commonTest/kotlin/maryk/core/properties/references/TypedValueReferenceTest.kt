@@ -10,11 +10,17 @@ import maryk.test.models.SimpleMarykTypeEnum.S2
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
+import kotlin.test.assertSame
 import kotlin.test.expect
 
 class TypedValueReferenceTest {
-    private val typeReference =
+    private val typedValueReference =
         TestMarykModel { multi refAtType S2 }
+
+    @Test
+    fun cacheReferenceTest() {
+        assertSame(typedValueReference, TestMarykModel { multi refAtType S2 })
+    }
 
     @Test
     fun getValueFromMap() {
@@ -23,21 +29,21 @@ class TypedValueReferenceTest {
             "string"
         )
 
-        expect("string") { this.typeReference.resolveFromAny(typedValue) }
+        expect("string") { this.typedValueReference.resolveFromAny(typedValue) }
 
         assertFailsWith<UnexpectedValueException> {
-            this.typeReference.resolveFromAny("wrongInput")
+            this.typedValueReference.resolveFromAny("wrongInput")
         }
     }
 
     @Test
     fun testCompleteName() {
-        expect("multi.*S2") { typeReference.completeName }
+        expect("multi.*S2") { typedValueReference.completeName }
     }
 
     @Test
     fun writeAndReadStringValue() {
-        expect(typeReference) { TestMarykModel.Properties.getPropertyReferenceByName(typeReference.completeName) }
+        expect(typedValueReference) { TestMarykModel.Properties.getPropertyReferenceByName(typedValueReference.completeName) }
     }
 
     @Test
@@ -46,13 +52,13 @@ class TypedValueReferenceTest {
         val cache = WriteCache()
 
         bc.reserve(
-            typeReference.calculateTransportByteLength(cache)
+            typedValueReference.calculateTransportByteLength(cache)
         )
-        typeReference.writeTransportBytes(cache, bc::write)
+        typedValueReference.writeTransportBytes(cache, bc::write)
 
         expect("0d0002") { bc.bytes!!.toHex() }
 
-        expect(typeReference) { TestMarykModel.Properties.getPropertyReferenceByBytes(bc.size, bc::read) }
+        expect(typedValueReference) { TestMarykModel.Properties.getPropertyReferenceByBytes(bc.size, bc::read) }
     }
 
     @Test
@@ -60,12 +66,12 @@ class TypedValueReferenceTest {
         val bc = ByteCollector()
 
         bc.reserve(
-            typeReference.calculateStorageByteLength()
+            typedValueReference.calculateStorageByteLength()
         )
-        typeReference.writeStorageBytes(bc::write)
+        typedValueReference.writeStorageBytes(bc::write)
 
         expect("6915") { bc.bytes!!.toHex() }
 
-        expect(typeReference) { TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) }
+        expect(typedValueReference) { TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) }
     }
 }

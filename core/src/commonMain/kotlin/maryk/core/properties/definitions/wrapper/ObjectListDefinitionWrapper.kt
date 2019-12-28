@@ -12,7 +12,7 @@ import maryk.core.properties.references.IsPropertyReference
 
 /**
  * Contains a List property [definition] which contains values of type [ODO] and [P]
- * It contains an [index] and [name] to which it is referred inside DataModel and a [getter]
+ * It contains an [index] and [name] to which it is referred inside DataModel, and a [getter]
  * function to retrieve value on dataObject of [DO] in context [CX]
  */
 data class ObjectListDefinitionWrapper<
@@ -37,6 +37,11 @@ data class ObjectListDefinitionWrapper<
     IsListDefinition<ODO, CX> by definition,
     IsListDefinitionWrapper<ODO, TO, ListDefinition<ODO, CX>, CX, DO> {
     override val graphType = PropRef
+
+    override val anyItemRefCache =
+        mutableMapOf<IsPropertyReference<*, *, *>?, IsPropertyReference<*, *, *>>()
+    override val listItemRefCache =
+        mutableMapOf<UInt, MutableMap<IsPropertyReference<*, *, *>?, IsPropertyReference<*, *, *>>>()
 
     /** Get sub reference below an index */
     @Suppress("UNCHECKED_CAST")

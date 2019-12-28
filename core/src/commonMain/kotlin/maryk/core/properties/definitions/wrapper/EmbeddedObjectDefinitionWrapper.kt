@@ -45,13 +45,14 @@ data class EmbeddedObjectDefinitionWrapper<
     IsDefinitionWrapper<EODO, TO, CXI, DO> {
     override val graphType = PropRef
 
-    override fun ref(parentRef: AnyPropertyReference?) =
+    override fun ref(parentRef: AnyPropertyReference?) = cacheRef(parentRef) {
         EmbeddedObjectPropertyRef(
             this,
             parentRef?.let {
                 it as CanHaveComplexChildReference<*, *, *, *>
             }
         )
+    }
 
     /** Create an index [value] pair for maps */
     infix fun with(value: ObjectValues<EODO, P>?) = value?.let {

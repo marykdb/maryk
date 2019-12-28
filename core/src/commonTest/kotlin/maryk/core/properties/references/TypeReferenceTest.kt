@@ -12,7 +12,10 @@ import maryk.test.assertType
 import maryk.test.models.MarykTypeEnum
 import maryk.test.models.MarykTypeEnum.T1
 import maryk.test.models.MarykTypeEnum.T2
+import maryk.test.models.SimpleMarykTypeEnum.S2
+import maryk.test.models.TestMarykModel
 import kotlin.test.Test
+import kotlin.test.assertSame
 import kotlin.test.expect
 
 internal class TypeReferenceTest {
@@ -39,6 +42,15 @@ internal class TypeReferenceTest {
             )
         }
     }
+
+    private val typeReference =
+        TestMarykModel { multi.refToType() }
+
+    @Test
+    fun cacheReferenceTest() {
+        assertSame(typeReference, TestMarykModel { multi.refToType() })
+    }
+
 
     @Test
     fun testKey() {

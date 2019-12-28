@@ -8,11 +8,17 @@ import maryk.test.ByteCollector
 import maryk.test.assertType
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
+import kotlin.test.assertSame
 import kotlin.test.expect
 
 class ListAnyItemReferenceTest {
     private val anyReference = TestMarykModel { listOfString.refToAny() }
     val cache = WriteCache()
+
+    @Test
+    fun cacheReferenceTest() {
+        assertSame(anyReference, TestMarykModel { listOfString.refToAny() })
+    }
 
     @Test
     fun resolveValues() {

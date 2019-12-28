@@ -9,12 +9,18 @@ import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertSame
 import kotlin.test.expect
 
 class SetReferenceTest {
     private val setReference = TestMarykModel { embeddedValues { marykModel { set::ref } } }
     private val reference = TestMarykModel { set refAt Date(2001, 4, 2) }
     private val subReference = TestMarykModel { embeddedValues { marykModel { set refAt Date(2001, 4, 2) } } }
+
+    @Test
+    fun cacheReferenceTest() {
+        assertSame(setReference, TestMarykModel { embeddedValues { marykModel { set::ref } } })
+    }
 
     @Test
     fun getValueFromSet() {

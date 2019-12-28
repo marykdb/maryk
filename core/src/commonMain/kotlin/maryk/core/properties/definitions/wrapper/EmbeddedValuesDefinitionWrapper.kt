@@ -49,7 +49,7 @@ data class EmbeddedValuesDefinitionWrapper<
             }
         )
 
-    /** Get a top level reference on a model with [propertyDefinitionGetter]. Used for contextual embed values property definitions. */
+    /** Get a top-level reference on a model with [propertyDefinitionGetter]. Used for contextual embed values property definitions. */
     fun <T : Any, W : IsDefinitionWrapper<T, *, *, *>, DM: IsDataModel<P2>, P2: PropertyDefinitions> refWithDM(
         dataModel: DM,
         propertyDefinitionGetter: P2.() -> W

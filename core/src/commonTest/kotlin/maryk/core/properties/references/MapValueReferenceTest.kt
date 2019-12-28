@@ -10,11 +10,18 @@ import maryk.test.assertType
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
+import kotlin.test.assertSame
 import kotlin.test.expect
 
 class MapValueReferenceTest {
     private val valReference = TestMarykModel { map refAt Time(15, 22, 55) }
     private val subReference = TestMarykModel { embeddedValues { marykModel { map refAt Time(15, 22, 55) } } }
+
+    @Test
+    fun cacheReferenceTest() {
+        assertSame(valReference, TestMarykModel { map refAt Time(15, 22, 55) })
+        assertSame(subReference, TestMarykModel { embeddedValues { marykModel { map refAt Time(15, 22, 55) } } })
+    }
 
     @Test
     fun getValueFromMap() {

@@ -3,6 +3,7 @@ package maryk.core.properties.definitions.wrapper
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.graph.PropRefGraphType.PropRef
+import maryk.core.properties.references.IsPropertyReference
 
 /**
  * Contains a List property [definition] which contains items of type [T]
@@ -24,4 +25,10 @@ data class ListDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext, in D
     IsListDefinition<T, CX> by definition,
     IsListDefinitionWrapper<T, TO, IsListDefinition<T, CX>, CX, DO> {
     override val graphType = PropRef
+
+    override val anyItemRefCache =
+        mutableMapOf<IsPropertyReference<*, *, *>?, IsPropertyReference<*, *, *>>()
+
+    override val listItemRefCache =
+        mutableMapOf<UInt, MutableMap<IsPropertyReference<*, *, *>?, IsPropertyReference<*, *, *>>>()
 }

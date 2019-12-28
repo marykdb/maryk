@@ -9,12 +9,19 @@ import maryk.test.assertType
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
+import kotlin.test.assertSame
 import kotlin.test.expect
 
 class ListItemReferenceTest {
     private val reference = TestMarykModel { listOfString refAt 5u }
     private val subReference = TestMarykModel { embeddedValues { marykModel { listOfString refAt 22u } } }
     val cache = WriteCache()
+
+    @Test
+    fun cacheReferenceTest() {
+        assertSame(reference, TestMarykModel { listOfString refAt 5u })
+        assertSame(subReference, TestMarykModel { embeddedValues { marykModel { listOfString refAt 22u } } })
+    }
 
     @Test
     fun getValueFromList() {

@@ -30,6 +30,7 @@ data class FixedBytesDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext
     IsFixedStorageBytesEncodable<T> {
     override val graphType = PropRef
 
-    override fun ref(parentRef: AnyPropertyReference?) =
+    override fun ref(parentRef: AnyPropertyReference?) = cacheRef(parentRef) {
         ValueWithFixedBytesPropertyReference(this, parentRef)
+    }
 }

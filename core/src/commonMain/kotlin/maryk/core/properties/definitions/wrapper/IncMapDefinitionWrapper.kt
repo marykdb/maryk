@@ -9,10 +9,11 @@ import maryk.core.properties.references.CanContainMapItemReference
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IncMapAddIndexReference
 import maryk.core.properties.references.IncMapReference
+import maryk.core.properties.references.IsPropertyReference
 
 /**
  * Contains an incrementing Map property [definition] which contains keys [K] and values [V]
- * It contains an [index] and [name] to which it is referred inside DataModel and a [getter]
+ * It contains an [index] and [name] to which it is referred inside DataModel, and a [getter]
  * function to retrieve value on dataObject of [DO] in context [CX]
  */
 data class IncMapDefinitionWrapper<K : Comparable<K>, V : Any, TO : Any, CX : IsPropertyContext, in DO : Any> internal constructor(
@@ -31,12 +32,20 @@ data class IncMapDefinitionWrapper<K : Comparable<K>, V : Any, TO : Any, CX : Is
     IsMapDefinitionWrapper<K, V, TO, CX, DO> {
     override val graphType = PropRef
 
+    override val anyItemRefCache =
+        mutableMapOf<IsPropertyReference<*, *, *>?, IsPropertyReference<*, *, *>>()
+    override val keyRefCache =
+        mutableMapOf<K, MutableMap<IsPropertyReference<*, *, *>?, IsPropertyReference<*, *, *>>>()
+    override val valueRefCache =
+        mutableMapOf<K, MutableMap<IsPropertyReference<*, *, *>?, IsPropertyReference<*, *, *>>>()
+
     @Suppress("UNCHECKED_CAST")
-    override fun ref(parentRef: AnyPropertyReference?): IncMapReference<K, V, CX> =
+    override fun ref(parentRef: AnyPropertyReference?): IncMapReference<K, V, CX> = cacheRef(parentRef) {
         IncMapReference(
             this as IncMapDefinitionWrapper<K, V, Any, CX, *>,
             parentRef as CanHaveComplexChildReference<*, *, *, *>?
         )
+    }
 
     /** Create a reference which points to an [index] for an add of Incremental Map value */
     fun addIndexRef(index: Int, parentRef: AnyPropertyReference?) =

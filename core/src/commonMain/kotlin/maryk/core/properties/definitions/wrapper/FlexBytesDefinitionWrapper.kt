@@ -27,6 +27,7 @@ data class FlexBytesDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext,
     IsValueDefinitionWrapper<T, TO, CX, DO> {
     override val graphType = PropRef
 
-    override fun ref(parentRef: AnyPropertyReference?) =
+    override fun ref(parentRef: AnyPropertyReference?) = cacheRef(parentRef) {
         ValueWithFlexBytesPropertyReference(this, parentRef)
+    }
 }

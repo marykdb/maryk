@@ -6,6 +6,7 @@ import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
+import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
 
@@ -30,12 +31,19 @@ data class SetDefinitionWrapper<T : Any, CX : IsPropertyContext, in DO : Any> in
     IsDefinitionWrapper<Set<T>, Set<T>, CX, DO> {
     override val graphType = PropRef
 
-    override fun ref(parentRef: AnyPropertyReference?) =
+    private val setItemRefCache =
+        mutableMapOf<T, MutableMap<IsPropertyReference<*, *, *>?, IsPropertyReference<*, *, *>>>()
+
+    override fun ref(parentRef: AnyPropertyReference?) = cacheRef(parentRef) {
         SetReference(this, parentRef as CanHaveComplexChildReference<*, *, *, *>?)
+    }
 
     /** Get a reference to a specific set item by [value] with optional [parentRef] */
-    private fun itemRef(value: T, parentRef: AnyPropertyReference? = null) =
-        this.definition.itemRef(value, this.ref(parentRef))
+    private fun itemRef(value: T, parentRef: AnyPropertyReference? = null) = this.ref(parentRef).let {
+        cacheRef(it, setItemRefCache.getOrPut(value) { mutableMapOf() }) {
+            this.definition.itemRef(value, it)
+        }
+    }
 
     /** For quick notation to get a set [item] reference */
     infix fun refAt(item: T): (AnyOutPropertyReference?) -> SetItemReference<T, *> {

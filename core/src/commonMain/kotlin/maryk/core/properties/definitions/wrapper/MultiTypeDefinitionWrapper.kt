@@ -38,24 +38,33 @@ data class MultiTypeDefinitionWrapper<E : TypeEnum<T>, T: Any, TO : Any, in CX :
     IsDefinitionWrapper<TypedValue<E, T>, TO, CX, DO> {
     override val graphType = PropRef
 
-    override fun ref(parentRef: AnyPropertyReference?) =
-        MultiTypePropertyReference(this, parentRef)
+    val typeRefCache: MutableMap<IsPropertyReference<*, *, *>?, IsPropertyReference<*, *, *>> = mutableMapOf()
+    val typeValueRefCache: MutableMap<E, MutableMap<IsPropertyReference<*, *, *>?, IsPropertyReference<*, *, *>>> = mutableMapOf()
 
-    /** For quick notation to get a [type] reference */
-    infix fun refAtType(type: E): (AnyOutPropertyReference?) -> TypedValueReference<E, T, CX> {
-        return { this.typedValueRef(type, this.ref(it)) }
+    override fun ref(parentRef: AnyPropertyReference?) = cacheRef(parentRef) {
+        MultiTypePropertyReference(this, parentRef)
     }
 
-    /** For quick notation to get an any type reference */
-    fun refToType(): (AnyOutPropertyReference?) -> TypeReference<E, T, CX> {
-        return {
-            @Suppress("UNCHECKED_CAST")
-            this.typeRef(it as CanHaveComplexChildReference<TypedValue<E, T>, IsMultiTypeDefinition<E, T, *>, *, *>?)
+    override fun typeRef(parentReference: CanHaveComplexChildReference<TypedValue<E, T>, IsMultiTypeDefinition<E, T, *>, *, *>?) = this.ref(parentReference).let { parentRef ->
+        cacheRef(parentRef, typeRefCache) {
+            this.definition.typeRef(parentRef)
         }
     }
 
-    override fun typeRef(parentReference: CanHaveComplexChildReference<TypedValue<E, T>, IsMultiTypeDefinition<E, T, *>, *, *>?): TypeReference<E, T, CX> {
-        return this.definition.typeRef(this.ref(parentReference))
+    private fun typedValueReference(type: E, parentReference: AnyPropertyReference?) = this.ref(parentReference).let { parentRef ->
+        cacheRef(parentRef, typeValueRefCache.getOrPut(type) { mutableMapOf() }) {
+            super.typedValueRef(type, parentRef)
+        }
+    }
+
+    /** For quick notation to get a [type] reference */
+    infix fun refAtType(type: E): (AnyOutPropertyReference?) -> TypedValueReference<E, T, CX> =
+        { this.typedValueReference(type, it) }
+
+    /** For quick notation to get an any type reference */
+    fun refToType(): (AnyOutPropertyReference?) -> TypeReference<E, T, CX> = {
+        @Suppress("UNCHECKED_CAST")
+        this.typeRef(it as CanHaveComplexChildReference<TypedValue<E, T>, IsMultiTypeDefinition<E, T, *>, *, *>?)
     }
 
     /** Specific extension to support fetching deeper references with [type] */
@@ -66,7 +75,7 @@ data class MultiTypeDefinitionWrapper<E : TypeEnum<T>, T: Any, TO : Any, in CX :
             (AnyOutPropertyReference?) -> R
     ): (AnyOutPropertyReference?) -> R  =
         {
-            val typeRef = this.typedValueRef(type as E, this.ref(it))
+            val typeRef = this.typedValueReference(type as E, it)
             (this.definition(type) as EmbeddedValuesDefinition<IsValuesDataModel<P>, P>).dataModel(
                 typeRef,
                 referenceGetter

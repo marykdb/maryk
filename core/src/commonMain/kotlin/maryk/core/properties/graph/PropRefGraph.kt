@@ -1,7 +1,6 @@
 package maryk.core.properties.graph
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.exceptions.TypeException
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
@@ -54,18 +53,7 @@ data class PropRefGraph<P : PropertyDefinitions, DM : IsValuesDataModel<PS>, PS 
     override val index = parent.index
     override val graphType = Graph
 
-    override fun toString(): String {
-        var values = ""
-        properties.forEach {
-            if (values.isNotBlank()) values += ", "
-            values += when (it) {
-                is IsDefinitionWrapper<*, *, *, *> -> it.name
-                is PropRefGraph<*, *, *> -> it.toString()
-                else -> throw TypeException("Unknown Graphable type")
-            }
-        }
-        return "Graph { $values }"
-    }
+    override fun toString() = "Graph { ${renderPropsAsString()} }"
 
     object Properties : ObjectPropertyDefinitions<PropRefGraph<*, *, *>>() {
         val parent = add(1u, "parent",

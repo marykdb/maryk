@@ -1,13 +1,11 @@
 package maryk.core.properties.graph
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.exceptions.TypeException
 import maryk.core.models.ContextualDataModel
 import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsMultiTypeDefinition
-import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.graph.PropRefGraphType.Graph
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.types.TypedValue
@@ -36,18 +34,7 @@ data class RootPropRefGraph<P : IsPropertyDefinitions> internal constructor(
         }
     }
 
-    override fun toString(): String {
-        var values = ""
-        properties.forEach {
-            if (values.isNotBlank()) values += ", "
-            values += when (it) {
-                is IsDefinitionWrapper<*, *, *, *> -> it.name
-                is PropRefGraph<*, *, *> -> it.toString()
-                else -> throw TypeException("Unknown Graphable type")
-            }
-        }
-        return "RootPropRefGraph { $values }"
-    }
+    override fun toString() = "RootPropRefGraph { ${renderPropsAsString()} }"
 
     companion object : ContextualDataModel<RootPropRefGraph<*>, Properties, ContainsDataModelContext<*>, GraphContext>(
         properties = Properties,

@@ -1,6 +1,8 @@
 package maryk.core.properties.graph
 
+import maryk.core.exceptions.TypeException
 import maryk.core.properties.IsPropertyDefinitions
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 
 /** Defines a graph element */
 interface IsPropRefGraph<in P : IsPropertyDefinitions> {
@@ -14,5 +16,16 @@ interface IsPropRefGraph<in P : IsPropertyDefinitions> {
             return null
         }
         return this.properties[propertyIndex]
+    }
+
+    fun renderPropsAsString() = buildString {
+        properties.forEach {
+            if (isNotBlank()) append(", ")
+            when (it) {
+                is IsDefinitionWrapper<*, *, *, *> -> append(it.name)
+                is PropRefGraph<*, *, *> -> append(it)
+                else -> throw TypeException("Unknown Graphable type")
+            }
+        }
     }
 }

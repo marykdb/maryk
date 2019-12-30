@@ -19,7 +19,9 @@ import maryk.datastore.rocksdb.processors.helpers.setLatestVersion
 import maryk.datastore.shared.StoreAction
 import maryk.lib.extensions.compare.matchPart
 import maryk.lib.extensions.compare.nextByteInSameLength
+import maryk.lib.recyclableByteArray
 import maryk.rocksdb.ReadOptions
+import maryk.rocksdb.rocksDBNotFound
 import maryk.rocksdb.use
 
 internal typealias DeleteStoreAction<DM, P> = StoreAction<DM, P, DeleteRequest<DM>, DeleteResponse<DM>>
@@ -48,7 +50,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
 
                 val exists = if (mayExist) {
                     // Really check if item exists
-                    dataStore.db.get(columnFamilies.table, key.bytes) != null
+                    dataStore.db.get(columnFamilies.table, key.bytes, recyclableByteArray) != rocksDBNotFound
                 } else false
 
                 val status: IsDeleteResponseStatus<DM> = when {
@@ -62,16 +64,21 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
                                 columnFamilies.unique
                             )) {
                                 val referenceAndKey = byteArrayOf(*key.bytes, *reference)
-                                val value = transaction.get(columnFamilies.table, dataStore.defaultReadOptions, referenceAndKey)
+                                val valueLength = transaction.get(columnFamilies.table, dataStore.defaultReadOptions, referenceAndKey, recyclableByteArray)
 
-                                if (value != null) {
+                                if (valueLength != rocksDBNotFound) {
+                                    val value = if (valueLength > recyclableByteArray.size) {
+                                        // Large value which did not fit in recyclableByteArray
+                                        transaction.get(columnFamilies.table, dataStore.defaultReadOptions, referenceAndKey)!!
+                                    } else recyclableByteArray
+
                                     deleteUniqueIndexValue(
                                         transaction,
                                         columnFamilies,
                                         reference,
                                         value,
                                         ULong.SIZE_BYTES,
-                                        value.size - ULong.SIZE_BYTES,
+                                        valueLength - ULong.SIZE_BYTES,
                                         versionBytes,
                                         deleteRequest.hardDelete
                                     )

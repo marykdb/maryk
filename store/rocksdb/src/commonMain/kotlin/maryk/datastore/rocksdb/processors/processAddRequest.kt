@@ -39,6 +39,8 @@ import maryk.datastore.rocksdb.processors.helpers.setUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setValue
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.UniqueException
+import maryk.lib.recyclableByteArray
+import maryk.rocksdb.rocksDBNotFound
 import maryk.rocksdb.use
 
 internal typealias AddStoreAction<DM, P> = StoreAction<DM, P, AddRequest<DM, P>, AddResponse<DM>>
@@ -66,7 +68,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
 
                 val exists = if (mayExist) {
                     // Really check if item exists
-                    dataStore.db.get(columnFamilies.table, key.bytes) != null
+                    dataStore.db.get(columnFamilies.table, key.bytes, recyclableByteArray) != rocksDBNotFound
                 } else false
 
                 if (!exists) {
@@ -102,12 +104,13 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
 
                                         checksBeforeWrite.add {
                                             // Since it is an addition we only need to check the current uniques
-                                            dataStore.db.get(columnFamilies.unique, uniqueReference)?.let {
+                                            val uniqueCount = dataStore.db.get(columnFamilies.unique, uniqueReference, recyclableByteArray)
+                                            if (uniqueCount != rocksDBNotFound) {
                                                 throw UniqueException(
                                                     reference,
                                                     Key<DM>(
                                                         // Get the key at the end of the stored unique index value
-                                                        it.copyOfRange(fromIndex = it.size - key.size, toIndex = it.size)
+                                                        recyclableByteArray.copyOfRange(fromIndex = uniqueCount - key.size, toIndex = uniqueCount)
                                                     )
                                                 )
                                             }

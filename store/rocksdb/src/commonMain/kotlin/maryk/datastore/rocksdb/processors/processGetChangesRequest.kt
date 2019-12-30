@@ -9,8 +9,10 @@ import maryk.core.query.responses.ChangesResponse
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
+import maryk.lib.recyclableByteArray
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkToVersion
+import maryk.rocksdb.rocksDBNotFound
 import maryk.rocksdb.use
 
 internal typealias GetChangesStoreAction<DM, P> = StoreAction<DM, P, GetChangesRequest<DM, P>, ChangesResponse<DM>>
@@ -36,10 +38,11 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
         keyWalk@ for (key in getRequest.keys) {
             val mayExist = dataStore.db.keyMayExist(columnFamilies.keys, key.bytes, null)
             if (mayExist) {
-                val creationVersion =
-                    transaction.get(columnFamilies.keys, dataStore.defaultReadOptions, key.bytes)?.toULong()
+                val valueLength =
+                    transaction.get(columnFamilies.keys, dataStore.defaultReadOptions, key.bytes, recyclableByteArray)
 
-                if (creationVersion != null) {
+                if (valueLength != rocksDBNotFound) {
+                    val creationVersion = recyclableByteArray.toULong()
                     if (getRequest.shouldBeFiltered(
                             transaction,
                             columnFamilies,

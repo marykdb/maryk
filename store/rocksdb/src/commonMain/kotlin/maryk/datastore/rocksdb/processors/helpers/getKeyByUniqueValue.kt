@@ -7,9 +7,11 @@ import maryk.core.extensions.bytes.writeBytes
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.Transaction
+import maryk.lib.recyclableByteArray
 import maryk.lib.extensions.compare.compareToWithOffsetLength
 import maryk.lib.extensions.compare.matchPart
 import maryk.rocksdb.ReadOptions
+import maryk.rocksdb.rocksDBNotFound
 import maryk.rocksdb.use
 import kotlin.experimental.xor
 
@@ -25,9 +27,10 @@ internal fun getKeyByUniqueValue(
     processKey: (() -> Byte, ULong) -> Unit
 ) {
     if (toVersion == null) {
-        transaction.get(columnFamilies.unique, readOptions, reference)?.let { versionAndKey ->
+        val valueLength = transaction.get(columnFamilies.unique, readOptions, reference, recyclableByteArray)
+        if (valueLength != rocksDBNotFound) {
             var readIndex = 0
-            val versionAndKeyReader = { versionAndKey[readIndex++] }
+            val versionAndKeyReader = { recyclableByteArray[readIndex++] }
             val setAtVersion = initULong(versionAndKeyReader)
             processKey(versionAndKeyReader, setAtVersion)
         }

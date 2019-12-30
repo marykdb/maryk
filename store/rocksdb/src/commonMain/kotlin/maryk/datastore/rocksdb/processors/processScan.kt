@@ -14,12 +14,14 @@ import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.Transaction
 import maryk.datastore.rocksdb.processors.helpers.getKeyByUniqueValue
 import maryk.datastore.rocksdb.processors.helpers.readCreationVersion
+import maryk.lib.recyclableByteArray
 import maryk.datastore.shared.ScanType.IndexScan
 import maryk.datastore.shared.ScanType.TableScan
 import maryk.datastore.shared.checkToVersion
 import maryk.datastore.shared.optimizeTableScan
 import maryk.datastore.shared.orderToScanType
 import maryk.rocksdb.ReadOptions
+import maryk.rocksdb.rocksDBNotFound
 
 /** Walk with [scanRequest] on [dataStore] and do [processRecord] */
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processScan(
@@ -41,9 +43,10 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
             val key = scanRequest.dataModel.key(scanRange.ranges.first().start) as Key<DM>
             val mayExist = dataStore.db.keyMayExist(columnFamilies.keys, key.bytes, null)
             if (mayExist) {
-                val createdVersion = transaction.get(columnFamilies.keys, readOptions, key.bytes)?.toULong()
+                val valueLength = transaction.get(columnFamilies.keys, readOptions, key.bytes, recyclableByteArray)
                 // Only process it if it was created
-                if (createdVersion != null) {
+                if (valueLength != rocksDBNotFound) {
+                    val createdVersion = recyclableByteArray.toULong()
                     if (shouldProcessRecord(transaction, columnFamilies, readOptions, key, createdVersion, scanRequest, scanRange)) {
                         processRecord(key, createdVersion)
                     }

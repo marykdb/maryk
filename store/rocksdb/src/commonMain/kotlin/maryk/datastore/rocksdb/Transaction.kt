@@ -7,6 +7,7 @@ import maryk.lib.extensions.toHex
 import maryk.rocksdb.ColumnFamilyHandle
 import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.RocksDBException
+import maryk.rocksdb.rocksDBNotFound
 
 internal sealed class ChangeAction(
     val columnFamilyHandle: ColumnFamilyHandle,
@@ -51,6 +52,21 @@ class Transaction(val rocksDBDataStore: RocksDBDataStore): DBAccessor(rocksDBDat
         } else when (val change = columnChanges[index]) {
             is Put -> change.value
             is Delete -> null
+        }
+    }
+
+    override fun get(columnFamilyHandle: ColumnFamilyHandle, readOptions: ReadOptions, key: ByteArray, offset: Int, len: Int, value: ByteArray, vOffset: Int, vLen: Int): Int {
+        val columnChanges = this.changes.getOrPut(columnFamilyHandle.getID(), { mutableListOf() })
+        val index = columnChanges.binarySearch { it.key.compareTo(key) }
+
+        return if (index < 0) {
+            super.get(columnFamilyHandle, readOptions, key, offset, len, value, vOffset, vLen)
+        } else when (val change = columnChanges[index]) {
+            is Put -> {
+                change.value.copyInto(value, vOffset)
+                change.value.size
+            }
+            is Delete -> rocksDBNotFound
         }
     }
 

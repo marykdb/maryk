@@ -6,9 +6,11 @@ import maryk.core.extensions.bytes.writeBytes
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
+import maryk.lib.recyclableByteArray
 import maryk.lib.extensions.compare.compareToWithOffsetLength
 import maryk.lib.extensions.compare.matchPart
 import maryk.rocksdb.ReadOptions
+import maryk.rocksdb.rocksDBNotFound
 import maryk.rocksdb.use
 
 /**
@@ -23,8 +25,14 @@ internal fun <T: Any> DBAccessor.getValue(
     handleResult: (ByteArray, Int, Int) -> T?
 ): T? {
     return if (toVersion == null) {
-        this.get(columnFamilies.table, readOptions, keyAndReference)?.let {
-            handleResult(it, ULong.SIZE_BYTES, it.size - ULong.SIZE_BYTES)
+        val valueLength = this.get(columnFamilies.table, readOptions, keyAndReference, recyclableByteArray)
+
+        when {
+            valueLength == rocksDBNotFound -> null
+            valueLength > recyclableByteArray.size -> {
+                handleResult(this.get(columnFamilies.table, readOptions, keyAndReference)!!, ULong.SIZE_BYTES, valueLength - ULong.SIZE_BYTES)
+            }
+            else -> handleResult(recyclableByteArray, ULong.SIZE_BYTES, valueLength - ULong.SIZE_BYTES)
         }
     } else {
         val versionBytes = toVersion.createReversedVersionBytes()

@@ -4,7 +4,6 @@ import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
 import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
-import maryk.core.extensions.bytes.toULong
 import maryk.core.extensions.bytes.toVarBytes
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.models.IsRootValuesDataModel
@@ -94,6 +93,8 @@ import maryk.datastore.rocksdb.processors.helpers.setUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setValue
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.UniqueException
+import maryk.lib.recyclableByteArray
+import maryk.rocksdb.rocksDBNotFound
 import maryk.rocksdb.use
 
 internal typealias ChangeStoreAction<DM, P> = StoreAction<DM, P, ChangeRequest<DM>, ChangeResponse<DM>>
@@ -115,11 +116,10 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processCha
             objectChanges@ for (objectChange in changeRequest.objects) {
                 val mayExist = dataStore.db.keyMayExist(columnFamilies.keys, objectChange.key.bytes, null)
                 val status: IsChangeResponseStatus<DM> = if (mayExist) {
-                    val creationVersion =
-                        transaction.get(columnFamilies.keys, dataStore.defaultReadOptions, objectChange.key.bytes)
-                            ?.toULong()
+                    val valueLength =
+                        transaction.get(columnFamilies.keys, dataStore.defaultReadOptions, objectChange.key.bytes, recyclableByteArray)
 
-                    if (creationVersion != null) {
+                    if (valueLength != rocksDBNotFound) {
                         val lastVersionToCheck = objectChange.lastVersion
                         // Check if version is within range
                         if (lastVersionToCheck != null) {

@@ -45,7 +45,6 @@ import maryk.core.values.ValueItem
 import maryk.core.values.Values
 import maryk.lib.exceptions.ParseException
 
-typealias ValueReader = (StorageTypeEnum<IsPropertyDefinition<out Any>>, IsPropertyDefinition<out Any>?) -> Any?
 private typealias AddToValues = (UInt, Any) -> Unit
 private typealias AddValue = (Any) -> Unit
 
@@ -57,7 +56,7 @@ private typealias AddValue = (Any) -> Unit
 fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.convertStorageToValues(
     getQualifier: (((Int) -> Byte, Int) -> Unit) -> Boolean,
     select: RootPropRefGraph<P>?,
-    processValue: ValueReader
+    processValue: ValueWithVersionReader
 ): Values<DM, P> {
     // Used to collect all found ValueItems
     val mutableValuesItems = MutableValueItems()
@@ -90,7 +89,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
     offset: Int,
     select: IsPropRefGraph<*>?,
     addValueToOutput: AddToValues,
-    readValueFromStorage: ValueReader,
+    readValueFromStorage: ValueWithVersionReader,
     addToCache: CacheProcessor
 ) {
     var currentOffset = offset
@@ -104,7 +103,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
         } else {
             when (val refStoreType = referenceStorageTypeOf(type)) {
                 DELETE -> {
-                    readValueFromStorage(ObjectDelete, null)
+                    readValueFromStorage(ObjectDelete, null) { _, _ -> }
                 }
                 else -> {
                     val definition = this.properties[index]
@@ -139,7 +138,7 @@ private fun readQualifierOfType(
     refStoreType: ReferenceType,
     select: IsPropRefGraph<*>?,
     addValueToOutput: AddToValues,
-    readValueFromStorage: ValueReader,
+    readValueFromStorage: ValueWithVersionReader,
     addToCache: CacheProcessor
 ): Unit? {
     var offset = currentOffset
@@ -153,22 +152,24 @@ private fun readQualifierOfType(
             val valueAdder: AddValue = { addValueToOutput(index, it) }
 
             if (isAtEnd) {
-                when (val value = readValueFromStorage(Value, definition)) {
-                    null -> // Ensure that next potential embedded values are not read because is deleted
-                        addToCache(partOffset) { _, _ ->
-                            // Ignore reading and return
-                        }
-                    is TypedValue<TypeEnum<Any>, Any> -> readTypedValue(
-                        qualifierReader = qualifierReader,
-                        qualifierLength = qualifierLength,
-                        offset = offset,
-                        readValueFromStorage = readValueFromStorage,
-                        valueDefinition = definition as IsMultiTypeDefinition<*, *, *>,
-                        select = select,
-                        addToCache = addToCache,
-                        addValueToOutput = valueAdder
-                    )
-                    else -> valueAdder(value)
+                readValueFromStorage(Value, definition) { _, value ->
+                    when (value) {
+                        null -> // Ensure that next potential embedded values are not read because is deleted
+                            addToCache(partOffset) { _, _ ->
+                                // Ignore reading and return
+                            }
+                        is TypedValue<TypeEnum<Any>, Any> -> readTypedValue(
+                            qualifierReader = qualifierReader,
+                            qualifierLength = qualifierLength,
+                            offset = offset,
+                            readValueFromStorage = readValueFromStorage,
+                            valueDefinition = definition as IsMultiTypeDefinition<*, *, *>,
+                            select = select,
+                            addToCache = addToCache,
+                            addValueToOutput = valueAdder
+                        )
+                        else -> valueAdder(value)
+                    }
                 }
             } else {
                 throw ParseException("Only allowed complex value qualifier is for multi type and that is handled through a cached reader")
@@ -178,13 +179,14 @@ private fun readQualifierOfType(
             val valueAdder: AddValue = { addValueToOutput(index, it) }
 
             if (isAtEnd) {
-                val embedValue = readValueFromStorage(Embed, definition)
-                if (embedValue == null) {
-                    // Ensure that next embedded values are not read
-                    addToCache(partOffset) { _, _ ->
-                        // Ignore reading and return
+                readValueFromStorage(Embed, definition) { _, embedValue ->
+                    if (embedValue == null) {
+                        // Ensure that next embedded values are not read
+                        addToCache(partOffset) { _, _ ->
+                            // Ignore reading and return
+                        }
                     }
-                } else null // unknown value so ignore
+                }
             } else {
                 // Only embedded types can be encoded as complex EMBED qualifier
                 if (definition !is IsEmbeddedValuesDefinition<*, *, *>) {
@@ -204,24 +206,38 @@ private fun readQualifierOfType(
         }
         LIST -> {
             if (isAtEnd) {
-                // If at end it means that this is a list size
-                val listSize = readValueFromStorage(ListSize, definition) as Int?
+                // If at the end it means that this is a list size
+                readValueFromStorage(ListSize, definition) { _, listSizeValue ->
+                    val listSize = listSizeValue as Int?
 
-                if (listSize != null) {
-                    // If not null we can create an empty list of listSize
-                    val list = ArrayList<Any>(listSize)
-                    val listValueAdder: AddToValues = { i, value -> list.add(i.toInt(), value) }
+                    if (listSize != null) {
+                        // If not null we can create an empty list of listSize
+                        val list = ArrayList<Any>(listSize)
+                        val listValueAdder: AddToValues = { i, value -> list.add(i.toInt(), value) }
 
-                    // Add value processor to cache starting after list item
-                    addToCache(partOffset) { qr, l ->
-                        readQualifierOfType(qr, l, currentOffset, partOffset, definition, index, refStoreType, select, listValueAdder, readValueFromStorage, addToCache)
-                    }
+                        // Add value processor to cache starting after list item
+                        addToCache(partOffset) { qr, l ->
+                            readQualifierOfType(
+                                qr,
+                                l,
+                                currentOffset,
+                                partOffset,
+                                definition,
+                                index,
+                                refStoreType,
+                                select,
+                                listValueAdder,
+                                readValueFromStorage,
+                                addToCache
+                            )
+                        }
 
-                    addValueToOutput(index, list)
-                } else {
-                    // Ensure that next list values are not read
-                    addToCache(partOffset) { _, _ ->
-                        // Ignore reading and return
+                        addValueToOutput(index, list)
+                    } else {
+                        // Ensure that next list values will not be read
+                        addToCache(partOffset) { _, _ ->
+                            // Ignore reading and return
+                        }
                     }
                 }
             } else {
@@ -232,31 +248,47 @@ private fun readQualifierOfType(
                 }
 
                 // Read list item
-                readValueFromStorage(Value, definition)?.let {
-                    // Only add to output if value read from storage is not null
-                    addValueToOutput(itemIndex, it)
+                readValueFromStorage(Value, definition) { _, value ->
+                    if (value != null) {
+                        // Only add to output if value read from storage is not null
+                        addValueToOutput(itemIndex, value)
+                    }
                 }
             }
         }
         SET -> {
             if (isAtEnd) {
-                // If at end it means that this is a set size
-                val setSize = readValueFromStorage(SetSize, definition) as Int?
+                // If at the end it means that this is a set size
+                readValueFromStorage(SetSize, definition) { _, setSizeValue ->
+                    val setSize = setSizeValue as Int?
 
-                if (setSize != null) {
-                    // If not null we can create a set of setSize
-                    val set = LinkedHashSet<Any>(setSize)
-                    val setValueAdder: AddToValues = { _, value -> set += value }
+                    if (setSize != null) {
+                        // If not null we can create a set of setSize
+                        val set = LinkedHashSet<Any>(setSize)
+                        val setValueAdder: AddToValues = { _, value -> set += value }
 
-                    addToCache(partOffset) { qr, l ->
-                        readQualifierOfType(qr, l, currentOffset, partOffset, definition, index, refStoreType, select, setValueAdder, readValueFromStorage, addToCache)
-                    }
+                        addToCache(partOffset) { qr, l ->
+                            readQualifierOfType(
+                                qr,
+                                l,
+                                currentOffset,
+                                partOffset,
+                                definition,
+                                index,
+                                refStoreType,
+                                select,
+                                setValueAdder,
+                                readValueFromStorage,
+                                addToCache
+                            )
+                        }
 
-                    addValueToOutput(index, set)
-                } else {
-                    // Ensure that next set values are not read
-                    addToCache(partOffset) { _, _ ->
-                        // Ignore reading and return
+                        addValueToOutput(index, set)
+                    } else {
+                        // Ensure that next set values will not be read
+                        addToCache(partOffset) { _, _ ->
+                            // Ignore reading and return
+                        }
                     }
                 }
             } else {
@@ -266,39 +298,45 @@ private fun readQualifierOfType(
                 val setItemLength = initIntByVar { qualifierReader(offset++) }
                 val key = valueDefinition.readStorageBytes(setItemLength) { qualifierReader(offset++) }
 
-                readValueFromStorage(Value, definition)?.let {
-                    // Only add to output if value read from storage is not null
-                    addValueToOutput(index, key)
+                readValueFromStorage(Value, definition) { _, value ->
+                    if (value != null) {
+                        // Only add to output if value read from storage is not null
+                        addValueToOutput(index, key)
+                    }
                 }
             }
         }
         MAP -> {
             if (isAtEnd) {
-                // If at end it means that this is a map count
-                val mapSize = readValueFromStorage(MapSize, definition) as Int?
+                // If at the end it means that this is a map count
+                readValueFromStorage(MapSize, definition) { _, mapSizeValue ->
+                    val mapSize = mapSizeValue as Int?
 
-                if (mapSize != null) {
-                    // If not null we can create a map of mapSize
-                    val map = LinkedHashMap<Any, Any>(mapSize)
+                    if (mapSize != null) {
+                        // If not null we can create a map of mapSize
+                        val map = LinkedHashMap<Any, Any>(mapSize)
 
-                    @Suppress("UNCHECKED_CAST")
-                    val mapValueAdder: AddToValues = { _, value ->
-                        val (k, v) = value as Pair<Any, Any>
-                        map[k] = v
-                    }
+                        @Suppress("UNCHECKED_CAST")
+                        val mapValueAdder: AddToValues = { _, value ->
+                            val (k, v) = value as Pair<Any, Any>
+                            map[k] = v
+                        }
 
-                    // For later map items the above map value adder is used
-                    addToCache(partOffset) { qr, l ->
-                        readQualifierOfType(qr, l, currentOffset, partOffset, definition, index, refStoreType, select, mapValueAdder, readValueFromStorage, addToCache)
-                    }
+                        // For later map items the above map value adder will be used
+                        addToCache(partOffset) { qr, l ->
+                            readQualifierOfType(qr, l, currentOffset, partOffset, definition, index, refStoreType, select, mapValueAdder, readValueFromStorage, addToCache)
+                        }
 
-                    addValueToOutput(index, map)
-                } else {
-                    // Ensure that next map values are not read
-                    addToCache(partOffset) { _, _ ->
-                        // Ignore reading and return
+                        addValueToOutput(index, map)
+                    } else {
+                        // Ensure that next map values will not be read
+                        addToCache(partOffset) { _, _ ->
+                            // Ignore reading and return
+                        }
                     }
                 }
+
+
             } else {
                 val mapDefinition = definition as? IsMapDefinition<*, *, *>
                     ?: throw TypeException("Definition $definition should be a MapDefinition")
@@ -314,16 +352,16 @@ private fun readQualifierOfType(
 
                 // Begin to read map value
                 if (qualifierLength <= offset) {
-                    val value = readValueFromStorage(Value, mapDefinition.valueDefinition)
-
-                    when {
-                        value == null ->
-                            // Ensure that next map values are not read because they are deleted
-                            addToCache(offset - 1) { _, _ ->
-                                // Ignore reading and return
-                            }
-                        value != Unit -> mapItemAdder(value)
-                        else -> null
+                    readValueFromStorage(Value, mapDefinition.valueDefinition) { _, value ->
+                        when {
+                            value == null ->
+                                // Ensure that next map values are not read because they are deleted
+                                addToCache(offset - 1) { _, _ ->
+                                    // Ignore reading and return
+                                }
+                            value != Unit -> mapItemAdder(value)
+                            else -> Unit
+                        }
                     }
                 } else {
                     readComplexWithSubDefinition(
@@ -362,7 +400,7 @@ private fun <P : PropertyDefinitions> readEmbeddedValues(
     qualifierReader: (Int) -> Byte,
     qualifierLength: Int,
     offset: Int,
-    readValueFromStorage: ValueReader,
+    readValueFromStorage: ValueWithVersionReader,
     definition: IsEmbeddedDefinition<*, *>,
     select: IsPropRefGraph<P>?,
     addToCache: CacheProcessor,
@@ -412,7 +450,7 @@ private fun readTypedValue(
     qualifierReader: (Int) -> Byte,
     qualifierLength: Int,
     offset: Int,
-    readValueFromStorage: ValueReader,
+    readValueFromStorage: ValueWithVersionReader,
     valueDefinition: IsMultiTypeDefinition<*, *, *>,
     select: IsPropRefGraph<*>?,
     addToCache: CacheProcessor,
@@ -420,23 +458,25 @@ private fun readTypedValue(
     typeToCheck: IndexedEnum? = null
 ) {
     if (qualifierLength <= offset) {
-        readValueFromStorage(Value, valueDefinition)?.let {
-            // Pass type to check
-            addToCache(offset - 1) { qr, ql ->
-                readTypedValue(
-                    qualifierReader = qr,
-                    qualifierLength = ql,
-                    offset = offset,
-                    readValueFromStorage = readValueFromStorage,
-                    valueDefinition = valueDefinition,
-                    select = select,
-                    addToCache = addToCache,
-                    addValueToOutput = addValueToOutput,
-                    typeToCheck = (it as TypedValue<*, *>).type
-                )
-            }
+        readValueFromStorage(Value, valueDefinition) { _, value ->
+            if (value != null) {
+                // Pass type to check
+                addToCache(offset - 1) { qr, ql ->
+                    readTypedValue(
+                        qualifierReader = qr,
+                        qualifierLength = ql,
+                        offset = offset,
+                        readValueFromStorage = readValueFromStorage,
+                        valueDefinition = valueDefinition,
+                        select = select,
+                        addToCache = addToCache,
+                        addValueToOutput = addValueToOutput,
+                        typeToCheck = (value as TypedValue<*, *>).type
+                    )
+                }
 
-            addValueToOutput(it)
+                addValueToOutput(value)
+            }
         }
     } else {
         var qIndex = offset
@@ -468,7 +508,7 @@ private fun IsMultiTypeDefinition<*, *, *>.readComplexTypedValue(
     qualifierReader: (Int) -> Byte,
     qualifierLength: Int,
     offset: Int,
-    readValueFromStorage: ValueReader,
+    readValueFromStorage: ValueWithVersionReader,
     select: IsPropRefGraph<*>?,
     addToCache: CacheProcessor,
     addValueToOutput: AddValue
@@ -481,27 +521,25 @@ private fun IsMultiTypeDefinition<*, *, *>.readComplexTypedValue(
     val addMultiTypeToOutput: AddValue = { addValueToOutput(TypedValue(type, it)) }
 
     if (qualifierLength <= offset) {
-        val value = readValueFromStorage(Embed, definition)
-
-        if (value == null) {
-            // Ensure that next values are not read because Values is deleted
-            addToCache(offset - 1) { _, _ -> }
+        readValueFromStorage(Embed, definition) { _, value ->
+            if (value == null) {
+                // Ensure that next values are not read because Values is deleted
+                addToCache(offset - 1) { _, _ -> }
+            }
         }
-        // Dont process further
-        return
+    } else {
+        readComplexWithSubDefinition(
+            qualifierReader,
+            qualifierLength,
+            offset,
+            readValueFromStorage,
+            this,
+            definition,
+            select,
+            addToCache,
+            addMultiTypeToOutput
+        )
     }
-
-    readComplexWithSubDefinition(
-        qualifierReader,
-        qualifierLength,
-        offset,
-        readValueFromStorage,
-        this,
-        definition,
-        select,
-        addToCache,
-        addMultiTypeToOutput
-    )
 }
 
 /** Read values for a sub definition (used in map values and multi types) */
@@ -509,7 +547,7 @@ private fun readComplexWithSubDefinition(
     qualifierReader: (Int) -> Byte,
     qualifierLength: Int,
     offset: Int,
-    readValueFromStorage: ValueReader,
+    readValueFromStorage: ValueWithVersionReader,
     parentDefinition: IsPropertyDefinition<*>,
     valueDefinition: IsSubDefinition<out Any, Nothing>,
     select: IsPropRefGraph<*>?,

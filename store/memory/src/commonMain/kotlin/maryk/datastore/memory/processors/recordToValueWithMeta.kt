@@ -31,7 +31,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordT
             } ?: false
         },
         select = select,
-        processValue = { _, _ ->
+        processValue = { _, _, valueWithVersionReader ->
             when (val node = record.values[valueIndex]) {
                 is DataRecordValue<*> -> {
                     // Only add if below expected version
@@ -39,23 +39,27 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordT
                         if (node.version > maxVersion) {
                             maxVersion = node.version
                         }
-                        node.value
-                    } else null // Signal that at this moment the value does not exist
+                        valueWithVersionReader(node.version.timestamp, node.value)
+                    } else {
+                        valueWithVersionReader(node.version.timestamp, null)
+                    }
                 }
                 is DataRecordHistoricValues<*> -> {
                     when (val latest = node.history.findLast { toVersion == null || it.version <= toVersion }) {
-                        null -> null // skip because not a value
+                        null -> {} // skip because not a value
                         is DataRecordValue<*> -> {
                             if (latest.version > maxVersion) {
                                 maxVersion = latest.version
                             }
-                            latest.value
+                            valueWithVersionReader(latest.version.timestamp, latest.value)
                         }
-                        is DeletedValue<*> -> null
+                        is DeletedValue<*> -> valueWithVersionReader(latest.version.timestamp, null)
                         else -> throw TypeException("Unknown value type")
                     }
                 }
-                is DeletedValue<*> -> null
+                is DeletedValue<*> -> {
+                    valueWithVersionReader(node.version.timestamp, null)
+                }
             }
         }
     )

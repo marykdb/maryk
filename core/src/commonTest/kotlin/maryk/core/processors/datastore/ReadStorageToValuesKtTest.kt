@@ -24,7 +24,7 @@ class ReadStorageToValuesKtTest {
                 qualifier?.let { resultHander({ qualifier[it] }, qualifier.size); true } ?: false
             },
             select = null,
-            processValue = { _, _ -> valuesAsStorables[qualifierIndex].second }
+            processValue = { _, _, reader -> reader(0uL, valuesAsStorables[qualifierIndex].second) }
         )
 
         assertEquals(testMaryk, values)
@@ -41,7 +41,7 @@ class ReadStorageToValuesKtTest {
                 qualifier?.let { resultHandler({ qualifier[it] }, qualifier.size); true } ?: false
             },
             select = null,
-            processValue = { _, _ -> complexValuesAsStorables[qualifierIndex].second }
+            processValue = { _, _, reader -> reader(0uL, complexValuesAsStorables[qualifierIndex].second) }
         )
 
         assertEquals(complexValues, values)
@@ -58,7 +58,7 @@ class ReadStorageToValuesKtTest {
                 qualifier?.let { resultHandler({ qualifier[it] }, qualifier.size); true } ?: false
             },
             select = null,
-            processValue = { _, _ -> valuesAsStorablesWithNulls[qualifierIndex].second }
+            processValue = { _, _, reader -> reader(0uL, valuesAsStorablesWithNulls[qualifierIndex].second) }
         )
 
         assertEquals(
@@ -107,7 +107,7 @@ class ReadStorageToValuesKtTest {
                 qualifier?.let { resultHandler({ qualifier[it] }, qualifier.size); true } ?: false
             },
             select = null,
-            processValue = { _, _ -> valuesUnset[qualifierIndex].second }
+            processValue = { _, _, reader -> reader(0uL, valuesUnset[qualifierIndex].second) }
         )
 
         assertEquals(
@@ -136,7 +136,7 @@ class ReadStorageToValuesKtTest {
                 qualifier?.let { resultHandler({ qualifier[it] }, qualifier.size); true } ?: false
             },
             select = null,
-            processValue = { _, _ -> valuesUnset[qualifierIndex].second }
+            processValue = { _, _, reader -> reader(0uL, valuesUnset[qualifierIndex].second) }
         )
 
         assertEquals(

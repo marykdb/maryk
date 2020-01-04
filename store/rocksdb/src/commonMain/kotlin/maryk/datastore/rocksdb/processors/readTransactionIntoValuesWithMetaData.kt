@@ -51,51 +51,58 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
         this.convertStorageToValues(
             getQualifier = getQualifier,
             select = select,
-            processValue = { storageType, definition ->
-                when (storageType) {
+            processValue = { storageType, definition, valueWithVersionReader ->
+                val currentVersion: ULong
+                val value = when (storageType) {
                     ObjectDelete -> {
-                        if (iterator.key().last() == 0.toByte()) {
-                            val value = iterator.value()
-                            index = 0
-                            maxVersion = maxOf(initULong({ value[index++] }), maxVersion)
-                            isDeleted = value[index] == TRUE
-                        }
-                        null
+                        val valueBytes = iterator.value()
+                        val value = if (iterator.key()[key.size] == 0.toByte()) {
+                            isDeleted = valueBytes.last() == TRUE
+                        } else null
+                        index = 0
+                        currentVersion = initULong({ valueBytes[index++] })
+                        value
                     }
                     Value -> {
                         val valueBytes = iterator.value()
                         index = 0
                         val reader = { valueBytes[index++] }
-                        maxVersion = maxOf(initULong(reader), maxVersion)
 
-                        readValue(definition, reader) {
+                        currentVersion = initULong(reader)
+
+                        readValue(definition, reader)  {
                             valueBytes.size - index
                         }
                     }
                     ListSize -> {
                         val valueBytes = iterator.value()
                         index = 0
-                        maxVersion = maxOf(initULong({ valueBytes[index++] }), maxVersion)
-
+                        currentVersion = initULong({ valueBytes[index++] })
                         initIntByVar { valueBytes[index++] }
                     }
                     SetSize -> {
                         val valueBytes = iterator.value()
                         index = 0
-                        maxVersion = maxOf(initULong({ valueBytes[index++] }), maxVersion)
-
+                        currentVersion = initULong({ valueBytes[index++] })
                         initIntByVar { valueBytes[index++] }
                     }
                     MapSize -> {
                         val valueBytes = iterator.value()
                         index = 0
-                        maxVersion = maxOf(initULong({ valueBytes[index++] }), maxVersion)
-
+                        currentVersion = initULong({ valueBytes[index++] })
                         initIntByVar { valueBytes[index++] }
                     }
-                    Embed -> { Unit }
+                    Embed -> {
+                        val valueBytes = iterator.value()
+                        index = 0
+                        val reader = { valueBytes[index++] }
+
+                        currentVersion = initULong(reader)
+                    }
                     TypeValue -> throw StorageException("Not used in direct encoding")
                 }
+                maxVersion = maxOf(currentVersion, maxVersion)
+                valueWithVersionReader(currentVersion, value)
             }
         )
     } else {
@@ -114,14 +121,14 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
         this.convertStorageToValues(
             getQualifier = getQualifier,
             select = select,
-            processValue = { storageType, definition ->
-                when (storageType) {
+            processValue = { storageType, definition, valueWithVersionReader ->
+                val value = when (storageType) {
                     ObjectDelete -> {
                         if (iterator.key().last() == 0.toByte()) {
-                            val value = iterator.value()
-                            isDeleted = value[0] == TRUE
-                        }
-                        null
+                            iterator.value().also {
+                                isDeleted = it[0] == TRUE
+                            }
+                        } else null
                     }
                     Value -> {
                         val valueBytes = iterator.value()
@@ -150,6 +157,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
                     Embed -> { Unit }
                     TypeValue -> throw StorageException("Not used in direct encoding")
                 }
+                valueWithVersionReader(creationVersion, value)
             }
         )
     }

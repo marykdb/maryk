@@ -16,7 +16,7 @@ fun findByteIndexByPartIndex(partIndex: Int, indexable: ByteArray, keySize: Int)
 
     while (partIndex > partCount) {
         if (indexable[index] == SIGN_BYTE) {
-            throw ParseException("Expected no sign byte at end of var int")
+            throw ParseException("Expected no sign byte at the end of var int")
         }
 
         // Continue until start of var int is found

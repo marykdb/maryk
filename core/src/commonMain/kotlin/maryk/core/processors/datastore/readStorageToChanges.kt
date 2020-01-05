@@ -90,7 +90,7 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readStorageToCha
     // Used to collect all found ValueItems
     val mutableVersionedChanges = mutableListOf<VersionedChanges>()
 
-    // Adds changes to versionedChangesCollection
+    // Add changes to versionedChangesCollection
     val changeAdder: ChangeAdder = { version: ULong, changeType: ChangeType, changePart: Any ->
         val index = mutableVersionedChanges.binarySearch { it.version.compareTo(version) }
 
@@ -105,7 +105,7 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readStorageToCha
     }
 
     processQualifiers(getQualifier) { qualifierReader, qualifierLength, addToCache ->
-        // Otherwise try to get a new qualifier processor from DataModel
+        // Otherwise, try to get a new qualifier processor from DataModel
         (this as IsDataModel<P>).readQualifier(qualifierReader, qualifierLength, 0, select, null, changeAdder, processValue, addToCache)
     }
 
@@ -185,7 +185,7 @@ private fun createChange(changeType: ChangeType, changePart: Any) = when (change
  * Read specific [qualifierReader] from [offset].
  * [addChangeToOutput] is used to add changes to output
  * [readValueFromStorage] is used to fetch actual value from storage layer
- * [addToCache] is used to add a sub reader to cache so it does not need to reprocess qualifier from start
+ * [addToCache] is used to add a sub reader to cache, so it does not need to reprocess the qualifier from start
  */
 private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
     qualifierReader: (Int) -> Byte,
@@ -342,7 +342,7 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
                 @Suppress("UNCHECKED_CAST")
                 val listReference = reference as CanContainListItemReference<*, *, *>
 
-                // Read set contents. Always a simple value for set since it is in qualifier
+                // Read set contents. It is always a simple value for set since it is in the qualifier.
                 val valueDefinition =
                     ((definition as IsListDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
 
@@ -378,7 +378,7 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
                 @Suppress("UNCHECKED_CAST")
                 val setReference = reference as CanContainSetItemReference<*, *, *>
 
-                // Read set contents. Always a simple value for set since it is in qualifier
+                // Read set contents. It is always a simple value for set since it is in the qualifier.
                 val valueDefinition =
                     ((definition as IsSetDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
                 val setItemLength = initIntByVar { qualifierReader(offset++) }
@@ -410,7 +410,7 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
                     }
                 }
             } else {
-                // Read set contents. Always a simple value for set since it is in qualifier
+                // Read set contents. It is always a simple value for set since it is in the qualifier.
                 val keyDefinition =
                     ((definition as IsMapDefinition<*, *, *>).keyDefinition as IsSimpleValueDefinition<*, *>)
                 val valueDefinition =
@@ -678,7 +678,7 @@ private fun <P : PropertyDefinitions> readEmbeddedValues(
         (definition as IsAnyEmbeddedDefinition).dataModel as IsDataModelWithValues<*, PropertyDefinitions, *>
 
     // If select is Graph then resolve sub graph.
-    // Otherwise is null or is property itself so needs to be completely selected thus set as null.
+    // Otherwise, it is null or is property itself so needs to be completely selected thus set as null.
     val specificSelect = if (select is IsPropRefGraph<*>) {
         @Suppress("UNCHECKED_CAST")
         select as IsPropRefGraph<PropertyDefinitions>

@@ -68,7 +68,7 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.convertStorageTo
     }
 
     processQualifiers(getQualifier) { qualifierReader, qualifierLength, addToCache ->
-        // Otherwise try to get a new qualifier processor from DataModel
+        // Otherwise, try to get a new qualifier processor from DataModel
         (this as IsDataModel<P>).readQualifier(qualifierReader, qualifierLength, 0, select, valueAdder, processValue, addToCache)
     }
 
@@ -82,7 +82,7 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.convertStorageTo
  * Read specific [qualifierReader] from [offset].
  * [addValueToOutput] is used to add values to output
  * [readValueFromStorage] is used to fetch actual value from storage layer
- * [addToCache] is used to add a sub reader to cache so it does not need to reprocess qualifier from start
+ * [addToCache] is used to add a sub reader to cache, so it does not need to reprocess the qualifier from start
  */
 private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
     qualifierReader: (Int) -> Byte,
@@ -154,7 +154,7 @@ private fun readQualifierOfType(
 
             if (isAtEnd) {
                 when (val value = readValueFromStorage(Value, definition)) {
-                    null -> // Ensure that next potential embedded values are not read because is deleted
+                    null -> // Ensure that next potential embedded values will not be read because is deleted
                         addToCache(partOffset) { _, _ ->
                             // Ignore reading and return
                         }
@@ -180,7 +180,7 @@ private fun readQualifierOfType(
             if (isAtEnd) {
                 val embedValue = readValueFromStorage(Embed, definition)
                 if (embedValue == null) {
-                    // Ensure that next embedded values are not read
+                    // Ensure that next embedded values will not be read
                     addToCache(partOffset) { _, _ ->
                         // Ignore reading and return
                     }
@@ -204,7 +204,7 @@ private fun readQualifierOfType(
         }
         LIST -> {
             if (isAtEnd) {
-                // If at end it means that this is a list size
+                // If at the end it means that this is a list size
                 val listSize = readValueFromStorage(ListSize, definition) as Int?
 
                 if (listSize != null) {
@@ -219,7 +219,7 @@ private fun readQualifierOfType(
 
                     addValueToOutput(index, list)
                 } else {
-                    // Ensure that next list values are not read
+                    // Ensure that next list values will not be read
                     addToCache(partOffset) { _, _ ->
                         // Ignore reading and return
                     }
@@ -240,7 +240,7 @@ private fun readQualifierOfType(
         }
         SET -> {
             if (isAtEnd) {
-                // If at end it means that this is a set size
+                // If at the end it means that this is a set size
                 val setSize = readValueFromStorage(SetSize, definition) as Int?
 
                 if (setSize != null) {
@@ -254,13 +254,13 @@ private fun readQualifierOfType(
 
                     addValueToOutput(index, set)
                 } else {
-                    // Ensure that next set values are not read
+                    // Ensure that next set values will not be read
                     addToCache(partOffset) { _, _ ->
                         // Ignore reading and return
                     }
                 }
             } else {
-                // Read set contents. Always a simple value for set since it is in qualifier
+                // Read set contents. It is always a simple value for set since it is in the qualifier.
                 val valueDefinition =
                     ((definition as IsSetDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
                 val setItemLength = initIntByVar { qualifierReader(offset++) }
@@ -274,7 +274,7 @@ private fun readQualifierOfType(
         }
         MAP -> {
             if (isAtEnd) {
-                // If at end it means that this is a map count
+                // If at the end it means that this is a map count
                 val mapSize = readValueFromStorage(MapSize, definition) as Int?
 
                 if (mapSize != null) {
@@ -287,14 +287,14 @@ private fun readQualifierOfType(
                         map[k] = v
                     }
 
-                    // For later map items the above map value adder is used
+                    // For later map items the above map value adder will be used
                     addToCache(partOffset) { qr, l ->
                         readQualifierOfType(qr, l, currentOffset, partOffset, definition, index, refStoreType, select, mapValueAdder, readValueFromStorage, addToCache)
                     }
 
                     addValueToOutput(index, map)
                 } else {
-                    // Ensure that next map values are not read
+                    // Ensure that next map values will not be read
                     addToCache(partOffset) { _, _ ->
                         // Ignore reading and return
                     }
@@ -318,7 +318,7 @@ private fun readQualifierOfType(
 
                     when {
                         value == null ->
-                            // Ensure that next map values are not read because they are deleted
+                            // Ensure that next map values will not be read because they are deleted
                             addToCache(offset - 1) { _, _ ->
                                 // Ignore reading and return
                             }
@@ -379,7 +379,7 @@ private fun <P : PropertyDefinitions> readEmbeddedValues(
     }
 
     // If select is Graph then resolve sub graph.
-    // Otherwise is null or is property itself so needs to be completely selected thus set as null.
+    // Otherwise, it is null or is property itself so needs to be completely selected thus set as null.
     val specificSelect = if (select is IsPropRefGraph<*>) {
         @Suppress("UNCHECKED_CAST")
         select as IsPropRefGraph<PropertyDefinitions>
@@ -484,10 +484,10 @@ private fun IsMultiTypeDefinition<*, *, *>.readComplexTypedValue(
         val value = readValueFromStorage(Embed, definition)
 
         if (value == null) {
-            // Ensure that next values are not read because Values is deleted
+            // Ensure that next values will not be read because Values are deleted
             addToCache(offset - 1) { _, _ -> }
         }
-        // Dont process further
+        // Don't process further
         return
     }
 

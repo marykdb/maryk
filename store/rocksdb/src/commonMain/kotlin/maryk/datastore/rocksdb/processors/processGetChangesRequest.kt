@@ -3,15 +3,17 @@ package maryk.datastore.rocksdb.processors
 import maryk.core.extensions.bytes.toULong
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.requests.GetChangesRequest
 import maryk.core.query.responses.ChangesResponse
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
-import maryk.lib.recyclableByteArray
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkToVersion
+import maryk.lib.recyclableByteArray
 import maryk.rocksdb.rocksDBNotFound
 import maryk.rocksdb.use
 
@@ -57,6 +59,10 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
                         continue@keyWalk
                     }
 
+                    val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
+                        dataStore.readValueWithCache(storeAction.dbIndex, key, reference, version, valueReader)
+                    }
+
                     getRequest.dataModel.readTransactionIntoObjectChanges(
                         iterator,
                         creationVersion,
@@ -64,7 +70,8 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
                         key,
                         getRequest.select,
                         getRequest.fromVersion,
-                        getRequest.toVersion
+                        getRequest.toVersion,
+                        cacheReader
                     )?.also {
                         // Only add if not null
                         objectChanges += it

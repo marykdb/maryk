@@ -40,7 +40,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordT
         processValue = { _, _, valueWithVersionReader ->
             when (val node = record.values[valueIndex]) {
                 is DataRecordValue<*> -> {
-                    // Only add if  below expected version
+                    // Only add if below expected version
                     if (node.version >= fromVersion && (toVersion == null || node.version < toVersion)) {
                         valueWithVersionReader(node.version.timestamp, node.value)
                     }

@@ -2,6 +2,7 @@ package maryk.datastore.rocksdb.processors
 
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.requests.ScanChangesRequest
 import maryk.core.query.responses.ChangesResponse
@@ -36,6 +37,10 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
             columnFamilies,
             dataStore.defaultReadOptions
         ) { key, creationVersion ->
+            val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
+                dataStore.readValueWithCache(storeAction.dbIndex, key, reference, version, valueReader)
+            }
+
             scanRequest.dataModel.readTransactionIntoObjectChanges(
                 iterator,
                 creationVersion,
@@ -43,7 +48,8 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
                 key,
                 scanRequest.select,
                 scanRequest.fromVersion,
-                scanRequest.toVersion
+                scanRequest.toVersion,
+                cacheReader
             )?.let {
                 // Only add if not null
                 objectChanges += it

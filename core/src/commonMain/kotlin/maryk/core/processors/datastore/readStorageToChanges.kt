@@ -20,7 +20,6 @@ import maryk.core.processors.datastore.StorageTypeEnum.SetSize
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.IsAnyEmbeddedDefinition
 import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsEmbeddedDefinition
@@ -43,7 +42,9 @@ import maryk.core.properties.references.CanContainMapItemReference
 import maryk.core.properties.references.CanContainSetItemReference
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.properties.references.IsPropertyReferenceWithParent
+import maryk.core.properties.references.ObjectDeleteReference
 import maryk.core.properties.references.ReferenceType
 import maryk.core.properties.references.ReferenceType.DELETE
 import maryk.core.properties.references.ReferenceType.EMBED
@@ -68,14 +69,12 @@ import maryk.core.query.pairs.ReferenceTypePair
 import maryk.core.query.pairs.ReferenceValuePair
 import maryk.lib.exceptions.ParseException
 
-typealias ValueWithVersionReader = (StorageTypeEnum<IsPropertyDefinition<out Any>>, IsPropertyDefinition<out Any>?, (ULong, Any?) -> Unit) -> Unit
+typealias ValueWithVersionReader = (StorageTypeEnum<IsPropertyDefinition<out Any>>, IsPropertyReferenceForCache<*, *>, (ULong, Any?) -> Unit) -> Unit
 private typealias ChangeAdder = (ULong, ChangeType, Any) -> Unit
 
 private enum class ChangeType {
     OBJECT_DELETE, CHANGE, DELETE, SET_ADD, TYPE
 }
-
-private val objectDeletePropertyDefinition = BooleanDefinition()
 
 /**
  * Convert storage bytes to values.
@@ -208,7 +207,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
         } else {
             when (val refStoreType = referenceStorageTypeOf(type)) {
                 DELETE -> {
-                    readValueFromStorage(ObjectDelete, objectDeletePropertyDefinition) { version, value ->
+                    readValueFromStorage(ObjectDelete, ObjectDeleteReference) { version, value ->
                         if (value != null) {
                             addChangeToOutput(version, OBJECT_DELETE, value)
                         }
@@ -245,7 +244,7 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
     refStoreType: ReferenceType,
     index: UInt,
     select: IsPropRefGraph<P>?,
-    reference: IsPropertyReference<*, *, *>?,
+    reference: IsPropertyReference<*, *, *>,
     addChangeToOutput: ChangeAdder,
     readValueFromStorage: ValueWithVersionReader,
     addToCache: CacheProcessor
@@ -259,7 +258,7 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
         }
         VALUE -> {
             if (isAtEnd) {
-                readValueFromStorage(Value, definition) { version, value ->
+                readValueFromStorage(Value, reference) { version, value ->
                     @Suppress("UNCHECKED_CAST")
                     val ref =
                         reference as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>
@@ -306,7 +305,7 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
         EMBED -> {
             if (isAtEnd) {
                 // Handle embed deletes
-                readValueFromStorage(Value, definition) { version, value ->
+                readValueFromStorage(Value, reference) { version, value ->
                     if (value == null) {
                         addChangeToOutput(version, ChangeType.DELETE, reference as Any)
                     } // Else this value just exists
@@ -331,7 +330,7 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
         }
         LIST -> {
             if (isAtEnd) {
-                readValueFromStorage(ListSize, definition) { version, value ->
+                readValueFromStorage(ListSize, reference) { version, value ->
                     if (value == null) {
                         addChangeToOutput(version, ChangeType.DELETE, reference as Any)
                     }
@@ -342,24 +341,22 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
                 @Suppress("UNCHECKED_CAST")
                 val listReference = reference as CanContainListItemReference<*, *, *>
 
-                // Read set contents. It is always a simple value for set since it is in the qualifier.
-                val valueDefinition =
-                    ((definition as IsListDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
-
                 val listIndex = initUInt({ qualifierReader(offset++) })
 
-                readValueFromStorage(Value, valueDefinition) { version, value ->
+                val itemReference = listDefinition.itemRef(listIndex, listReference)
+
+                readValueFromStorage(Value, itemReference) { version, value ->
                     if (value == null) {
                         addChangeToOutput(
                             version,
                             ChangeType.DELETE,
-                            listDefinition.itemRef(listIndex, listReference)
+                            itemReference
                         )
                     } else {
                         addChangeToOutput(
                             version,
                             CHANGE,
-                            listDefinition.itemRef(listIndex, listReference) with value
+                            itemReference with value
                         )
                     }
                 }
@@ -367,7 +364,7 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
         }
         SET -> {
             if (isAtEnd) {
-                readValueFromStorage(SetSize, definition) { version, value ->
+                readValueFromStorage(SetSize, reference) { version, value ->
                     if (value == null) {
                         addChangeToOutput(version, ChangeType.DELETE, reference as Any)
                     }
@@ -384,15 +381,17 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
                 val setItemLength = initIntByVar { qualifierReader(offset++) }
                 val key = valueDefinition.readStorageBytes(setItemLength) { qualifierReader(offset++) }
 
-                readValueFromStorage(Value, valueDefinition) { version, value ->
+                val setItemReference = setDefinition.itemRef(key, setReference)
+
+                readValueFromStorage(Value, setItemReference) { version, value ->
                     if (value == null) {
                         addChangeToOutput(
                             version,
                             ChangeType.DELETE,
-                            setDefinition.itemRef(key, setReference)
+                            setItemReference
                         )
                     } else {
-                        addChangeToOutput(version, SET_ADD, setDefinition.itemRef(key, setReference))
+                        addChangeToOutput(version, SET_ADD, setItemReference)
                     }
                 }
             }
@@ -404,7 +403,7 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
             val mapReference = reference as CanContainMapItemReference<*, *, *>
 
             if (isAtEnd) {
-                readValueFromStorage(MapSize, definition) { version, value ->
+                readValueFromStorage(MapSize, mapReference) { version, value ->
                     if (value == null) {
                         addChangeToOutput(version, ChangeType.DELETE, reference as Any)
                     }
@@ -418,9 +417,10 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
                 val keySize = initIntByVar { qualifierReader(offset++) }
                 val key = keyDefinition.readStorageBytes(keySize) { qualifierReader(offset++) }
 
+                val valueReference = mapDefinition.valueRef(key, mapReference)
+
                 if (qualifierLength <= offset) {
-                    readValueFromStorage(Value, valueDefinition) { version, value ->
-                        val valueReference = mapDefinition.valueRef(key, mapReference)
+                    readValueFromStorage(Value, valueReference) { version, value ->
                         if (value == null) {
                             addChangeToOutput(version, ChangeType.DELETE, valueReference)
                         } else {
@@ -483,7 +483,7 @@ private fun <P : PropertyDefinitions> readComplexChanges(
     qualifierLength: Int,
     offset: Int,
     definition: IsSubDefinition<*, *>,
-    parentReference: IsPropertyReference<*, *, *>?,
+    parentReference: IsPropertyReference<*, *, *>,
     select: IsPropRefGraph<P>?,
     addToCache: CacheProcessor,
     addChangeToOutput: ChangeAdder,
@@ -573,14 +573,14 @@ private fun readTypedValue(
     offset: Int,
     readValueFromStorage: ValueWithVersionReader,
     valueDefinition: IsMultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>,
-    reference: IsPropertyReference<*, *, *>?,
+    reference: IsPropertyReference<*, *, *>,
     select: IsPropRefGraph<*>?,
     addToCache: CacheProcessor,
     addChangeToOutput: ChangeAdder
 ) {
     var qIndex1 = offset
     if (qualifierLength <= qIndex1) {
-        readValueFromStorage(Value, valueDefinition) { version, value ->
+        readValueFromStorage(Value, reference) { version, value ->
             if (value == null) {
                 addChangeToOutput(version, ChangeType.DELETE, reference as Any)
             } else {

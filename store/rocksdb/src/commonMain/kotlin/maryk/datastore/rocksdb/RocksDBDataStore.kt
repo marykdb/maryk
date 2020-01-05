@@ -1,11 +1,12 @@
 package maryk.datastore.rocksdb
 
-import kotlinx.coroutines.channels.SendChannel
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.RootDataModel
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.references.IsPropertyReferenceForCache
+import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.TableType.HistoricIndex
 import maryk.datastore.rocksdb.TableType.HistoricTable
 import maryk.datastore.rocksdb.TableType.HistoricUnique
@@ -30,7 +31,6 @@ import maryk.rocksdb.openRocksDB
 import maryk.rocksdb.use
 
 internal typealias StoreExecutor = Unit.(StoreAction<*, *, *, *>, RocksDBDataStore) -> Unit
-internal typealias StoreActor = SendChannel<StoreAction<*, *, *, *>>
 
 class RocksDBDataStore(
     override val keepAllVersions: Boolean = true,
@@ -53,6 +53,8 @@ class RocksDBDataStore(
     internal val defaultReadOptions = ReadOptions().apply {
         setPrefixSameAsStart(true)
     }
+
+    private val cache: MutableMap<UInt, MutableMap<Key<*>, MutableMap<IsPropertyReferenceForCache<*, *>, CachedValue>>> = mutableMapOf()
 
     init {
         val descriptors: MutableList<ColumnFamilyDescriptor> = mutableListOf()
@@ -185,5 +187,33 @@ class RocksDBDataStore(
                 list += key.copyOfRange(1, key.size)
             }
         }
+    }
+
+    /**
+     * Read value from the cache if it exists and is of same version, or read it from store and cache it if
+     * it is not of same version or does not exist in cache
+     */
+    internal fun readValueWithCache(
+        dbIndex: UInt,
+        key: Key<*>,
+        reference: IsPropertyReferenceForCache<*, *>,
+        version: ULong,
+        valueReader: () -> Any?
+    ): Any? {
+        val refMap = cache.getOrPut(dbIndex) { mutableMapOf() }.getOrPut(key) { mutableMapOf() }
+        val value = refMap[reference]
+
+        return if (value != null && version == value.version) {
+            value.value
+        } else {
+            valueReader().also { readValue ->
+                refMap[reference] = CachedValue(version, readValue)
+            }
+        }
+    }
+
+    /** Delete [key] from the table with [dbIndex] */
+    fun deleteCacheForKey(dbIndex: UInt, key: Key<*>) {
+        cache[dbIndex]?.remove(key)
     }
 }

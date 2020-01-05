@@ -14,18 +14,17 @@ import maryk.core.protobuf.WriteCacheWriter
 typealias AnyPropertyReference = IsPropertyReference<*, *, *>
 typealias TypedPropertyReference<T> = IsPropertyReference<T, IsPropertyDefinition<T>, *>
 typealias AnyOutPropertyReference = TypedPropertyReference<out Any>
-typealias AnyOutPrecisePropertyReference = TypedPropertyReference<Any>
 typealias AnySpecificWrappedPropertyReference = IsPropertyReference<Any, IsDefinitionWrapper<Any, *, *, *>, *>
 typealias AnyValuePropertyReference = IsPropertyReference<*, IsValueDefinitionWrapper<*, *, IsPropertyContext, *>, *>
 
 /**
  * Abstract for reference to a property of type [T] defined by [D] in Values [V]
  */
-interface IsPropertyReference<T : Any, out D : IsPropertyDefinition<T>, V : Any> {
+interface IsPropertyReference<T : Any, out D : IsPropertyDefinition<T>, V : Any> : IsPropertyReferenceForCache<T, D> {
     val completeName: String
-    val propertyDefinition: D
+    override val propertyDefinition: D
 
-    /** Wrapper could be passed. This makes sure it is the lowest property definition */
+    /** Wrapper could be passed. This makes sure it is the lowest property definition. */
     val comparablePropertyDefinition: D
         get() =
             this.propertyDefinition.let {

@@ -16,6 +16,7 @@ import maryk.core.processors.datastore.StorageTypeEnum.MapSize
 import maryk.core.processors.datastore.StorageTypeEnum.ObjectDelete
 import maryk.core.processors.datastore.StorageTypeEnum.SetSize
 import maryk.core.processors.datastore.StorageTypeEnum.Value
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsEmbeddedDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
@@ -30,6 +31,13 @@ import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.graph.IsPropRefGraph
 import maryk.core.properties.graph.RootPropRefGraph
+import maryk.core.properties.references.CanContainListItemReference
+import maryk.core.properties.references.CanContainMapItemReference
+import maryk.core.properties.references.CanContainSetItemReference
+import maryk.core.properties.references.CanHaveComplexChildReference
+import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.IsPropertyReferenceForCache
+import maryk.core.properties.references.ObjectDeleteReference
 import maryk.core.properties.references.ReferenceType
 import maryk.core.properties.references.ReferenceType.DELETE
 import maryk.core.properties.references.ReferenceType.EMBED
@@ -38,6 +46,7 @@ import maryk.core.properties.references.ReferenceType.MAP
 import maryk.core.properties.references.ReferenceType.SET
 import maryk.core.properties.references.ReferenceType.TYPE
 import maryk.core.properties.references.ReferenceType.VALUE
+import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.references.referenceStorageTypeOf
 import maryk.core.properties.types.TypedValue
 import maryk.core.values.MutableValueItems
@@ -45,7 +54,7 @@ import maryk.core.values.ValueItem
 import maryk.core.values.Values
 import maryk.lib.exceptions.ParseException
 
-typealias ValueReader = (StorageTypeEnum<IsPropertyDefinition<out Any>>, IsPropertyDefinition<out Any>?) -> Any?
+typealias ValueReader = (StorageTypeEnum<IsPropertyDefinition<out Any>>, IsPropertyReferenceForCache<*, *>) -> Any?
 private typealias AddToValues = (UInt, Any) -> Unit
 private typealias AddValue = (Any) -> Unit
 
@@ -54,7 +63,7 @@ private typealias AddValue = (Any) -> Unit
  * [getQualifier] gets a qualifier until none is available and returns null
  * [processValue] processes the storage value with given type and definition
  */
-fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.convertStorageToValues(
+fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readStorageToValues(
     getQualifier: (((Int) -> Byte, Int) -> Unit) -> Boolean,
     select: RootPropRefGraph<P>?,
     processValue: ValueReader
@@ -69,7 +78,7 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.convertStorageTo
 
     processQualifiers(getQualifier) { qualifierReader, qualifierLength, addToCache ->
         // Otherwise, try to get a new qualifier processor from DataModel
-        (this as IsDataModel<P>).readQualifier(qualifierReader, qualifierLength, 0, select, valueAdder, processValue, addToCache)
+        (this as IsDataModel<P>).readQualifier(qualifierReader, qualifierLength, 0, select, null, valueAdder, processValue, addToCache)
     }
 
     // Create Values
@@ -89,6 +98,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
     qualifierLength: Int,
     offset: Int,
     select: IsPropRefGraph<*>?,
+    parentReference: IsPropertyReference<*, *, *>?,
     addValueToOutput: AddToValues,
     readValueFromStorage: ValueReader,
     addToCache: CacheProcessor
@@ -104,11 +114,12 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
         } else {
             when (val refStoreType = referenceStorageTypeOf(type)) {
                 DELETE -> {
-                    readValueFromStorage(ObjectDelete, null)
+                    readValueFromStorage(ObjectDelete, ObjectDeleteReference)
                 }
                 else -> {
                     val definition = this.properties[index]
                         ?: throw DefNotFoundException("No definition for $index in $this at $index")
+
                     readQualifierOfType(
                         qualifierReader,
                         qualifierLength,
@@ -118,6 +129,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
                         index,
                         refStoreType,
                         select,
+                        definition.ref(parentReference),
                         addValueToOutput,
                         readValueFromStorage,
                         addToCache
@@ -138,6 +150,7 @@ private fun readQualifierOfType(
     index: UInt,
     refStoreType: ReferenceType,
     select: IsPropRefGraph<*>?,
+    reference: IsPropertyReference<*, *, *>,
     addValueToOutput: AddToValues,
     readValueFromStorage: ValueReader,
     addToCache: CacheProcessor
@@ -153,7 +166,8 @@ private fun readQualifierOfType(
             val valueAdder: AddValue = { addValueToOutput(index, it) }
 
             if (isAtEnd) {
-                when (val value = readValueFromStorage(Value, definition)) {
+                @Suppress("UNCHECKED_CAST")
+                when (val value = readValueFromStorage(Value, reference)) {
                     null -> // Ensure that next potential embedded values will not be read because is deleted
                         addToCache(partOffset) { _, _ ->
                             // Ignore reading and return
@@ -163,8 +177,9 @@ private fun readQualifierOfType(
                         qualifierLength = qualifierLength,
                         offset = offset,
                         readValueFromStorage = readValueFromStorage,
-                        valueDefinition = definition as IsMultiTypeDefinition<*, *, *>,
+                        valueDefinition = definition as IsMultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>,
                         select = select,
+                        parentReference = reference,
                         addToCache = addToCache,
                         addValueToOutput = valueAdder
                     )
@@ -178,7 +193,7 @@ private fun readQualifierOfType(
             val valueAdder: AddValue = { addValueToOutput(index, it) }
 
             if (isAtEnd) {
-                val embedValue = readValueFromStorage(Embed, definition)
+                val embedValue = readValueFromStorage(Embed, reference)
                 if (embedValue == null) {
                     // Ensure that next embedded values will not be read
                     addToCache(partOffset) { _, _ ->
@@ -196,6 +211,7 @@ private fun readQualifierOfType(
                     offset,
                     readValueFromStorage,
                     definition,
+                    reference,
                     select,
                     addToCache,
                     valueAdder
@@ -205,7 +221,7 @@ private fun readQualifierOfType(
         LIST -> {
             if (isAtEnd) {
                 // If at the end it means that this is a list size
-                val listSize = readValueFromStorage(ListSize, definition) as Int?
+                val listSize = readValueFromStorage(ListSize, reference) as Int?
 
                 if (listSize != null) {
                     // If not null we can create an empty list of listSize
@@ -214,7 +230,7 @@ private fun readQualifierOfType(
 
                     // Add value processor to cache starting after list item
                     addToCache(partOffset) { qr, l ->
-                        readQualifierOfType(qr, l, currentOffset, partOffset, definition, index, refStoreType, select, listValueAdder, readValueFromStorage, addToCache)
+                        readQualifierOfType(qr, l, currentOffset, partOffset, definition, index, refStoreType, select, reference, listValueAdder, readValueFromStorage, addToCache)
                     }
 
                     addValueToOutput(index, list)
@@ -225,23 +241,29 @@ private fun readQualifierOfType(
                     }
                 }
             } else {
-                val itemIndex = initUInt({ qualifierReader(offset++) })
+                @Suppress("UNCHECKED_CAST")
+                val listDefinition = definition as IsListDefinition<Any, IsPropertyContext>
+                @Suppress("UNCHECKED_CAST")
+                val listReference = reference as CanContainListItemReference<*, *, *>
+
+                val listIndex = initUInt({ qualifierReader(offset++) })
+                val itemReference = listDefinition.itemRef(listIndex, listReference)
 
                 if (qualifierLength > offset) {
                     throw ParseException("Lists cannot contain complex data")
                 }
 
                 // Read list item
-                readValueFromStorage(Value, definition)?.let {
+                readValueFromStorage(Value, itemReference)?.let {
                     // Only add to output if value read from storage is not null
-                    addValueToOutput(itemIndex, it)
+                    addValueToOutput(listIndex, it)
                 }
             }
         }
         SET -> {
             if (isAtEnd) {
                 // If at the end it means that this is a set size
-                val setSize = readValueFromStorage(SetSize, definition) as Int?
+                val setSize = readValueFromStorage(SetSize, reference) as Int?
 
                 if (setSize != null) {
                     // If not null we can create a set of setSize
@@ -249,7 +271,7 @@ private fun readQualifierOfType(
                     val setValueAdder: AddToValues = { _, value -> set += value }
 
                     addToCache(partOffset) { qr, l ->
-                        readQualifierOfType(qr, l, currentOffset, partOffset, definition, index, refStoreType, select, setValueAdder, readValueFromStorage, addToCache)
+                        readQualifierOfType(qr, l, currentOffset, partOffset, definition, index, refStoreType, select, reference, setValueAdder, readValueFromStorage, addToCache)
                     }
 
                     addValueToOutput(index, set)
@@ -260,13 +282,20 @@ private fun readQualifierOfType(
                     }
                 }
             } else {
+                @Suppress("UNCHECKED_CAST")
+                val setDefinition = definition as IsSetDefinition<Any, IsPropertyContext>
+                @Suppress("UNCHECKED_CAST")
+                val setReference = reference as CanContainSetItemReference<*, *, *>
+
                 // Read set contents. It is always a simple value for set since it is in the qualifier.
                 val valueDefinition =
                     ((definition as IsSetDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
                 val setItemLength = initIntByVar { qualifierReader(offset++) }
                 val key = valueDefinition.readStorageBytes(setItemLength) { qualifierReader(offset++) }
 
-                readValueFromStorage(Value, definition)?.let {
+                val setItemReference = setDefinition.itemRef(key, setReference)
+
+                readValueFromStorage(Value, setItemReference)?.let {
                     // Only add to output if value read from storage is not null
                     addValueToOutput(index, key)
                 }
@@ -275,7 +304,7 @@ private fun readQualifierOfType(
         MAP -> {
             if (isAtEnd) {
                 // If at the end it means that this is a map count
-                val mapSize = readValueFromStorage(MapSize, definition) as Int?
+                val mapSize = readValueFromStorage(MapSize, reference) as Int?
 
                 if (mapSize != null) {
                     // If not null we can create a map of mapSize
@@ -289,7 +318,7 @@ private fun readQualifierOfType(
 
                     // For later map items the above map value adder will be used
                     addToCache(partOffset) { qr, l ->
-                        readQualifierOfType(qr, l, currentOffset, partOffset, definition, index, refStoreType, select, mapValueAdder, readValueFromStorage, addToCache)
+                        readQualifierOfType(qr, l, currentOffset, partOffset, definition, index, refStoreType, select, reference, mapValueAdder, readValueFromStorage, addToCache)
                     }
 
                     addValueToOutput(index, map)
@@ -300,8 +329,11 @@ private fun readQualifierOfType(
                     }
                 }
             } else {
-                val mapDefinition = definition as? IsMapDefinition<*, *, *>
+                @Suppress("UNCHECKED_CAST")
+                val mapDefinition = definition as? IsMapDefinition<Any, Any, IsPropertyContext>
                     ?: throw TypeException("Definition $definition should be a MapDefinition")
+                @Suppress("UNCHECKED_CAST")
+                val mapReference = reference as CanContainMapItemReference<*, *, *>
                 val keyDefinition = mapDefinition.keyDefinition
 
                 val keySize = initIntByVar { qualifierReader(offset++) }
@@ -312,9 +344,11 @@ private fun readQualifierOfType(
                     addValueToOutput(index, Pair(key, value))
                 }
 
+                val valueReference = mapDefinition.valueRef(key, mapReference)
+
                 // Begin to read map value
                 if (qualifierLength <= offset) {
-                    val value = readValueFromStorage(Value, mapDefinition.valueDefinition)
+                    val value = readValueFromStorage(Value, valueReference)
 
                     when {
                         value == null ->
@@ -334,6 +368,7 @@ private fun readQualifierOfType(
                         mapDefinition,
                         mapDefinition.valueDefinition,
                         select,
+                        valueReference,
                         addToCache,
                         mapItemAdder
                     )
@@ -341,7 +376,8 @@ private fun readQualifierOfType(
             }
         }
         TYPE -> {
-            val typedDefinition = definition as? IsMultiTypeDefinition<*, *, *>
+            @Suppress("UNCHECKED_CAST")
+            val typedDefinition = definition as? IsMultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>
                 ?: throw TypeException("Definition($index) $definition should be a TypedDefinition")
 
             typedDefinition.readComplexTypedValue(
@@ -351,6 +387,7 @@ private fun readQualifierOfType(
                 offset,
                 readValueFromStorage,
                 select,
+                reference,
                 addToCache,
                 { addValueToOutput(index, it) })
         }
@@ -364,6 +401,7 @@ private fun <P : PropertyDefinitions> readEmbeddedValues(
     offset: Int,
     readValueFromStorage: ValueReader,
     definition: IsEmbeddedDefinition<*, *>,
+    parentReference: IsPropertyReference<*, *, *>,
     select: IsPropRefGraph<P>?,
     addToCache: CacheProcessor,
     addValueToOutput: AddValue
@@ -390,6 +428,7 @@ private fun <P : PropertyDefinitions> readEmbeddedValues(
             qr, l,
             offset,
             specificSelect,
+            parentReference,
             valuesItemAdder,
             readValueFromStorage,
             addToCache
@@ -401,6 +440,7 @@ private fun <P : PropertyDefinitions> readEmbeddedValues(
         qualifierLength,
         offset,
         specificSelect,
+        parentReference,
         valuesItemAdder,
         readValueFromStorage,
         addToCache
@@ -413,14 +453,15 @@ private fun readTypedValue(
     qualifierLength: Int,
     offset: Int,
     readValueFromStorage: ValueReader,
-    valueDefinition: IsMultiTypeDefinition<*, *, *>,
+    valueDefinition: IsMultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>,
     select: IsPropRefGraph<*>?,
+    parentReference: IsPropertyReference<*, *, *>,
     addToCache: CacheProcessor,
     addValueToOutput: AddValue,
     typeToCheck: IndexedEnum? = null
 ) {
     if (qualifierLength <= offset) {
-        readValueFromStorage(Value, valueDefinition)?.let {
+        readValueFromStorage(Value, parentReference)?.let {
             // Pass type to check
             addToCache(offset - 1) { qr, ql ->
                 readTypedValue(
@@ -430,6 +471,7 @@ private fun readTypedValue(
                     readValueFromStorage = readValueFromStorage,
                     valueDefinition = valueDefinition,
                     select = select,
+                    parentReference = parentReference,
                     addToCache = addToCache,
                     addValueToOutput = addValueToOutput,
                     typeToCheck = (it as TypedValue<*, *>).type
@@ -455,6 +497,7 @@ private fun readTypedValue(
                 qIndex,
                 readValueFromStorage,
                 select,
+                parentReference,
                 addToCache,
                 addValueToOutput
             )
@@ -463,13 +506,14 @@ private fun readTypedValue(
 }
 
 /** Read a complex Typed value from qualifier */
-private fun IsMultiTypeDefinition<*, *, *>.readComplexTypedValue(
+private fun IsMultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>.readComplexTypedValue(
     index: UInt,
     qualifierReader: (Int) -> Byte,
     qualifierLength: Int,
     offset: Int,
     readValueFromStorage: ValueReader,
     select: IsPropRefGraph<*>?,
+    reference: IsPropertyReference<*, *, *>?,
     addToCache: CacheProcessor,
     addValueToOutput: AddValue
 ) {
@@ -477,11 +521,12 @@ private fun IsMultiTypeDefinition<*, *, *>.readComplexTypedValue(
         ?: throw DefNotFoundException("No definition for $index in $this")
     val type = this.typeEnum.resolve(index)
         ?: throw DefNotFoundException("Unknown type $index for $this")
+    val typedValueReference = TypedValueReference(type, this, reference as CanHaveComplexChildReference<*, *, *, *>?)
 
     val addMultiTypeToOutput: AddValue = { addValueToOutput(TypedValue(type, it)) }
 
     if (qualifierLength <= offset) {
-        val value = readValueFromStorage(Embed, definition)
+        val value = readValueFromStorage(Embed, typedValueReference)
 
         if (value == null) {
             // Ensure that next values will not be read because Values are deleted
@@ -499,6 +544,7 @@ private fun IsMultiTypeDefinition<*, *, *>.readComplexTypedValue(
         this,
         definition,
         select,
+        typedValueReference,
         addToCache,
         addMultiTypeToOutput
     )
@@ -513,17 +559,20 @@ private fun readComplexWithSubDefinition(
     parentDefinition: IsPropertyDefinition<*>,
     valueDefinition: IsSubDefinition<out Any, Nothing>,
     select: IsPropRefGraph<*>?,
+    reference: IsPropertyReference<*, *, *>,
     addToCache: CacheProcessor,
     valueAdder: AddValue
 ) = when (valueDefinition) {
     is IsMultiTypeDefinition<*, *, *> -> {
+        @Suppress("UNCHECKED_CAST")
         readTypedValue(
             qualifierReader,
             qualifierLength,
             offset,
             readValueFromStorage,
-            valueDefinition,
+            valueDefinition as IsMultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>,
             select,
+            reference,
             addToCache,
             valueAdder
         )
@@ -535,6 +584,7 @@ private fun readComplexWithSubDefinition(
             offset,
             readValueFromStorage,
             valueDefinition,
+            reference,
             select,
             addToCache,
             valueAdder
@@ -550,6 +600,7 @@ private fun readComplexWithSubDefinition(
             index = 0u, // Is ignored by addValueToOutput
             refStoreType = LIST,
             select = select,
+            reference = reference,
             addValueToOutput = { _, value -> valueAdder(value) },
             readValueFromStorage = readValueFromStorage,
             addToCache = addToCache
@@ -565,6 +616,7 @@ private fun readComplexWithSubDefinition(
             index = 0u, // Is ignored by addValueToOutput
             refStoreType = SET,
             select = select,
+            reference = reference,
             addValueToOutput = { _, value -> valueAdder(value) },
             readValueFromStorage = readValueFromStorage,
             addToCache = addToCache
@@ -580,6 +632,7 @@ private fun readComplexWithSubDefinition(
             index = 0u, // Is ignored by addValueToOutput
             refStoreType = MAP,
             select = select,
+            reference = reference,
             addValueToOutput = { _, value -> valueAdder(value) },
             readValueFromStorage = readValueFromStorage,
             addToCache = addToCache

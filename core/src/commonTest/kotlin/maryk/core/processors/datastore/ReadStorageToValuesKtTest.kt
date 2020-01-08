@@ -16,7 +16,7 @@ class ReadStorageToValuesKtTest {
     @Test
     fun convertStorageToValues() {
         var qualifierIndex = -1
-        val values = TestMarykModel.convertStorageToValues(
+        val values = TestMarykModel.readStorageToValues(
             getQualifier = { resultHander ->
                 val qualifier = valuesAsStorables.getOrNull(++qualifierIndex)?.let {
                     initByteArrayByHex(it.first)
@@ -33,7 +33,7 @@ class ReadStorageToValuesKtTest {
     @Test
     fun convertStorageToComplexValues() {
         var qualifierIndex = -1
-        val values = ComplexModel.convertStorageToValues(
+        val values = ComplexModel.readStorageToValues(
             getQualifier = { resultHandler ->
                 val qualifier = complexValuesAsStorables.getOrNull(++qualifierIndex)?.let {
                     initByteArrayByHex(it.first)
@@ -50,7 +50,7 @@ class ReadStorageToValuesKtTest {
     @Test
     fun convertStorageToValuesWithNullsInComplex() {
         var qualifierIndex = -1
-        val values = TestMarykModel.convertStorageToValues(
+        val values = TestMarykModel.readStorageToValues(
             getQualifier = { resultHandler ->
                 val qualifier = valuesAsStorablesWithNulls.getOrNull(++qualifierIndex)?.let {
                     initByteArrayByHex(it.first)
@@ -99,7 +99,7 @@ class ReadStorageToValuesKtTest {
         )
 
         var qualifierIndex = -1
-        val values = TestMarykModel.convertStorageToValues(
+        val values = TestMarykModel.readStorageToValues(
             getQualifier = { resultHandler ->
                 val qualifier = valuesUnset.getOrNull(++qualifierIndex)?.let {
                     initByteArrayByHex(it.first)
@@ -128,7 +128,7 @@ class ReadStorageToValuesKtTest {
         )
 
         var qualifierIndex = -1
-        val values = TestMarykModel.convertStorageToValues(
+        val values = TestMarykModel.readStorageToValues(
             getQualifier = { resultHandler ->
                 val qualifier = valuesUnset.getOrNull(++qualifierIndex)?.let {
                     initByteArrayByHex(it.first)

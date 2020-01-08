@@ -6,6 +6,7 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.requests.ScanRequest
 import maryk.core.query.responses.ValuesResponse
@@ -45,13 +46,18 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
             columnFamilies,
             dataStore.defaultReadOptions
         ) { key, creationVersion ->
+            val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
+                dataStore.readValueWithCache(storeAction.dbIndex, key, reference, version, valueReader)
+            }
+
             val valuesWithMetaData = scanRequest.dataModel.readTransactionIntoValuesWithMetaData(
                 iterator,
                 creationVersion,
                 columnFamilies,
                 key,
                 scanRequest.select,
-                scanRequest.toVersion
+                scanRequest.toVersion,
+                cacheReader
             )?.also {
                 // Only add if not null
                 valuesWithMeta += it

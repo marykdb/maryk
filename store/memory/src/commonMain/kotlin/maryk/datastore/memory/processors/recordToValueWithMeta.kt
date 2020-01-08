@@ -3,7 +3,7 @@ package maryk.datastore.memory.processors
 import maryk.core.clock.HLC
 import maryk.core.exceptions.TypeException
 import maryk.core.models.IsRootValuesDataModel
-import maryk.core.processors.datastore.convertStorageToValues
+import maryk.core.processors.datastore.readStorageToValues
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.query.ValuesWithMetaData
@@ -23,7 +23,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordT
     var valueIndex = -1
     var maxVersion = record.firstVersion
 
-    val values = this.convertStorageToValues(
+    val values = this.readStorageToValues(
         getQualifier = { resultHandler ->
             val qualifier = record.values.getOrNull(++valueIndex)?.reference
             qualifier?.let { q ->

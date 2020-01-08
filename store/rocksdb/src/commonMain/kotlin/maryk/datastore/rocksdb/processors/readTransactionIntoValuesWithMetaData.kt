@@ -12,9 +12,11 @@ import maryk.core.processors.datastore.StorageTypeEnum.ObjectDelete
 import maryk.core.processors.datastore.StorageTypeEnum.SetSize
 import maryk.core.processors.datastore.StorageTypeEnum.TypeValue
 import maryk.core.processors.datastore.StorageTypeEnum.Value
-import maryk.core.processors.datastore.convertStorageToValues
+import maryk.core.processors.datastore.readStorageToValues
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.graph.RootPropRefGraph
+import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.properties.types.Key
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.values.Values
@@ -36,7 +38,8 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
     columnFamilies: TableColumnFamilies,
     key: Key<DM>,
     select: RootPropRefGraph<P>?,
-    toVersion: ULong?
+    toVersion: ULong?,
+    cachedRead: (IsPropertyReferenceForCache<*, *>, ULong, () -> Any?) -> Any?
 ): ValuesWithMetaData<DM, P>? {
     var maxVersion = creationVersion
     var isDeleted = false
@@ -48,17 +51,20 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
         val getQualifier = iterator.nonHistoricQualifierRetriever(key)
 
         var index: Int
-        this.convertStorageToValues(
+        this.readStorageToValues(
             getQualifier = getQualifier,
             select = select,
-            processValue = { storageType, definition ->
+            processValue = { storageType, reference ->
+                val currentVersion: ULong
                 when (storageType) {
                     ObjectDelete -> {
                         if (iterator.key().last() == 0.toByte()) {
                             val value = iterator.value()
                             index = 0
-                            maxVersion = maxOf(initULong({ value[index++] }), maxVersion)
+                            currentVersion = maxOf(initULong({ value[index++] }), maxVersion)
                             isDeleted = value[index] == TRUE
+                        } else {
+                            currentVersion = 0uL
                         }
                         null
                     }
@@ -66,35 +72,53 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
                         val valueBytes = iterator.value()
                         index = 0
                         val reader = { valueBytes[index++] }
-                        maxVersion = maxOf(initULong(reader), maxVersion)
+                        currentVersion = initULong(reader)
 
-                        readValue(definition, reader) {
-                            valueBytes.size - index
+                        cachedRead(reference, currentVersion) {
+                            val definition = (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
+                                ?: reference.propertyDefinition
+
+                            readValue(definition, reader) {
+                                valueBytes.size - index
+                            }
                         }
                     }
                     ListSize -> {
                         val valueBytes = iterator.value()
                         index = 0
-                        maxVersion = maxOf(initULong({ valueBytes[index++] }), maxVersion)
+                        currentVersion = initULong({ valueBytes[index++] })
 
-                        initIntByVar { valueBytes[index++] }
+                        cachedRead(reference, currentVersion) {
+                            initIntByVar { valueBytes[index++] }
+                        }
                     }
                     SetSize -> {
                         val valueBytes = iterator.value()
                         index = 0
-                        maxVersion = maxOf(initULong({ valueBytes[index++] }), maxVersion)
+                        currentVersion = initULong({ valueBytes[index++] })
 
-                        initIntByVar { valueBytes[index++] }
+                        cachedRead(reference, currentVersion) {
+                            initIntByVar { valueBytes[index++] }
+                        }
                     }
                     MapSize -> {
                         val valueBytes = iterator.value()
                         index = 0
-                        maxVersion = maxOf(initULong({ valueBytes[index++] }), maxVersion)
+                        currentVersion = initULong({ valueBytes[index++] })
 
-                        initIntByVar { valueBytes[index++] }
+                        cachedRead(reference, currentVersion) {
+                            initIntByVar { valueBytes[index++] }
+                        }
                     }
-                    Embed -> { Unit }
+                    Embed -> {
+                        val valueBytes = iterator.value()
+                        index = 0
+                        currentVersion = initULong({ valueBytes[index++] })
+                        Unit
+                    }
                     TypeValue -> throw StorageException("Not used in direct encoding")
+                }.also {
+                    maxVersion = maxOf(currentVersion, maxVersion)
                 }
             }
         )
@@ -105,50 +129,59 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
 
         checkExistence(iterator, key)
 
+        var currentVersion: ULong = 0uL
         // Will start by going to next key so will miss the creation timestamp
         val getQualifier = iterator.historicQualifierRetriever(key, toVersion) { version ->
-            maxVersion = maxOf(version, maxVersion)
+            currentVersion = version
+            maxVersion = maxOf(currentVersion, maxVersion)
         }
 
         var index: Int
-        this.convertStorageToValues(
+        this.readStorageToValues(
             getQualifier = getQualifier,
             select = select,
-            processValue = { storageType, definition ->
-                when (storageType) {
-                    ObjectDelete -> {
-                        if (iterator.key().last() == 0.toByte()) {
-                            val value = iterator.value()
-                            isDeleted = value[0] == TRUE
+            processValue = { storageType, reference ->
+                cachedRead(reference, currentVersion) {
+                    when (storageType) {
+                        ObjectDelete -> {
+                            if (iterator.key().last() == 0.toByte()) {
+                                val value = iterator.value()
+                                isDeleted = value[0] == TRUE
+                            }
+                            null
                         }
-                        null
-                    }
-                    Value -> {
-                        val valueBytes = iterator.value()
-                        index = 0
-                        val reader = { valueBytes[index++] }
+                        Value -> {
+                            val valueBytes = iterator.value()
+                            index = 0
+                            val reader = { valueBytes[index++] }
 
-                        readValue(definition, reader)  {
-                            valueBytes.size - index
+                            val definition =
+                                (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
+                                    ?: reference.propertyDefinition
+                            readValue(definition, reader) {
+                                valueBytes.size - index
+                            }
                         }
+                        ListSize -> {
+                            val valueBytes = iterator.value()
+                            index = 0
+                            initIntByVar { valueBytes[index++] }
+                        }
+                        SetSize -> {
+                            val valueBytes = iterator.value()
+                            index = 0
+                            initIntByVar { valueBytes[index++] }
+                        }
+                        MapSize -> {
+                            val valueBytes = iterator.value()
+                            index = 0
+                            initIntByVar { valueBytes[index++] }
+                        }
+                        Embed -> {
+                            Unit
+                        }
+                        TypeValue -> throw StorageException("Not used in direct encoding")
                     }
-                    ListSize -> {
-                        val valueBytes = iterator.value()
-                        index = 0
-                        initIntByVar { valueBytes[index++] }
-                    }
-                    SetSize -> {
-                        val valueBytes = iterator.value()
-                        index = 0
-                        initIntByVar { valueBytes[index++] }
-                    }
-                    MapSize -> {
-                        val valueBytes = iterator.value()
-                        index = 0
-                        initIntByVar { valueBytes[index++] }
-                    }
-                    Embed -> { Unit }
-                    TypeValue -> throw StorageException("Not used in direct encoding")
                 }
             }
         )

@@ -207,7 +207,9 @@ class RocksDBDataStore(
             value.value
         } else {
             valueReader().also { readValue ->
-                refMap[reference] = CachedValue(version, readValue)
+                if (value == null || value.version < version) {
+                    refMap[reference] = CachedValue(version, readValue)
+                }
             }
         }
     }

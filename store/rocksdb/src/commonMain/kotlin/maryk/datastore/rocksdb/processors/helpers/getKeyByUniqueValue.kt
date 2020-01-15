@@ -4,12 +4,12 @@ import maryk.core.exceptions.RequestException
 import maryk.core.extensions.bytes.initULong
 import maryk.core.extensions.bytes.invert
 import maryk.core.extensions.bytes.writeBytes
+import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
-import maryk.datastore.rocksdb.Transaction
-import maryk.lib.recyclableByteArray
 import maryk.lib.extensions.compare.compareToWithOffsetLength
 import maryk.lib.extensions.compare.matchPart
+import maryk.lib.recyclableByteArray
 import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.rocksDBNotFound
 import maryk.rocksdb.use
@@ -19,7 +19,7 @@ import kotlin.experimental.xor
  * Get a unique record key by value
  */
 internal fun getKeyByUniqueValue(
-    transaction: Transaction,
+    dbAccessor: DBAccessor,
     columnFamilies: TableColumnFamilies,
     readOptions: ReadOptions,
     reference: ByteArray,
@@ -27,7 +27,7 @@ internal fun getKeyByUniqueValue(
     processKey: (() -> Byte, ULong) -> Unit
 ) {
     if (toVersion == null) {
-        val valueLength = transaction.get(columnFamilies.unique, readOptions, reference, recyclableByteArray)
+        val valueLength = dbAccessor.get(columnFamilies.unique, readOptions, reference, recyclableByteArray)
         if (valueLength != rocksDBNotFound) {
             var readIndex = 0
             val versionAndKeyReader = { recyclableByteArray[readIndex++] }
@@ -41,7 +41,7 @@ internal fun getKeyByUniqueValue(
 
         val versionBytes = toVersion.createReversedVersionBytes()
 
-        transaction.getIterator(readOptions, columnFamilies.historic.unique).use { iterator ->
+        dbAccessor.getIterator(readOptions, columnFamilies.historic.unique).use { iterator ->
             val toSeek = reference.copyOf(reference.size + ULong.SIZE_BYTES)
             var writeIndex = reference.size
             toVersion.writeBytes({ toSeek[writeIndex++] = it })

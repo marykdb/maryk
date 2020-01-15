@@ -611,7 +611,6 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                     transaction,
                                     columnFamilies,
                                     dataStore.defaultReadOptions,
-                                    null,
                                     key,
                                     incMapReference
                                 )
@@ -691,7 +690,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
         // Process indices
         dataModel.indices?.let {indices ->
             val storeGetter = StoreValuesGetter(key, dataStore.db, columnFamilies, dataStore.defaultReadOptions)
-            val transactionGetter = TransactionValuesGetter(key, transaction, columnFamilies, dataStore.defaultReadOptions)
+            val transactionGetter = DBAccessorValuesGetter(key, transaction, columnFamilies, dataStore.defaultReadOptions)
             indices.forEach {
                 val oldKeyAndValue = it.toStorageByteArrayForIndex(storeGetter, key.bytes)
                 val newKeyAndValue = it.toStorageByteArrayForIndex(transactionGetter, key.bytes)

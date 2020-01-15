@@ -9,20 +9,20 @@ import maryk.core.query.orders.Direction
 import maryk.core.query.orders.Direction.ASC
 import maryk.core.query.orders.Direction.DESC
 import maryk.core.query.requests.IsScanRequest
+import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
-import maryk.datastore.rocksdb.Transaction
 
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
     dataStore: RocksDBDataStore,
-    transaction: Transaction,
+    dbAccessor: DBAccessor,
     columnFamilies: TableColumnFamilies,
     scanRequest: IsScanRequest<DM, P, *>,
     direction: Direction,
     scanRange: KeyScanRanges,
     processStoreValue: (Key<DM>, ULong) -> Unit
 ) {
-    val iterator = transaction.getIterator(dataStore.defaultReadOptions, columnFamilies.keys)
+    val iterator = dbAccessor.getIterator(dataStore.defaultReadOptions, columnFamilies.keys)
 
     when (direction) {
         ASC -> {
@@ -51,7 +51,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
 
                     val creationVersion = iterator.value().toULong()
 
-                    if (scanRequest.shouldBeFiltered(transaction, columnFamilies, dataStore.defaultReadOptions, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion)) {
+                    if (scanRequest.shouldBeFiltered(dbAccessor, columnFamilies, dataStore.defaultReadOptions, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion)) {
                         iterator.next()
                         continue
                     }
@@ -93,7 +93,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
 
                     val creationVersion = iterator.value().toULong()
 
-                    if (scanRequest.shouldBeFiltered(transaction, columnFamilies, dataStore.defaultReadOptions, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion)) {
+                    if (scanRequest.shouldBeFiltered(dbAccessor, columnFamilies, dataStore.defaultReadOptions, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion)) {
                         iterator.prev()
                         continue
                     }

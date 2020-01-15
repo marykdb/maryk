@@ -10,9 +10,9 @@ import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.requests.ScanRequest
 import maryk.core.query.responses.ValuesResponse
+import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
-import maryk.datastore.rocksdb.Transaction
 import maryk.datastore.rocksdb.processors.helpers.getValue
 import maryk.datastore.shared.StoreAction
 import maryk.rocksdb.use
@@ -33,7 +33,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
         Aggregator(it)
     }
 
-    Transaction(dataStore).use { transaction ->
+    DBAccessor(dataStore.db).use { transaction ->
         val columnToScan = if (scanRequest.toVersion != null && columnFamilies is HistoricTableColumnFamilies) {
             columnFamilies.historic.table
         } else columnFamilies.table

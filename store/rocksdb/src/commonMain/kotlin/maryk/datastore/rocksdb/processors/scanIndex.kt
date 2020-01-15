@@ -14,11 +14,11 @@ import maryk.core.query.orders.Direction
 import maryk.core.query.orders.Direction.ASC
 import maryk.core.query.orders.Direction.DESC
 import maryk.core.query.requests.IsScanRequest
+import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.DBIterator
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
-import maryk.datastore.rocksdb.Transaction
 import maryk.datastore.rocksdb.processors.helpers.readCreationVersion
 import maryk.datastore.shared.ScanType.IndexScan
 import maryk.lib.extensions.compare.compareToWithOffsetLength
@@ -30,7 +30,7 @@ import kotlin.experimental.xor
 
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
     dataStore: RocksDBDataStore,
-    transaction: Transaction,
+    transaction: DBAccessor,
     columnFamilies: TableColumnFamilies,
     scanRequest: IsScanRequest<DM, P, *>,
     indexScan: IndexScan,
@@ -253,7 +253,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> createGotoN
 
 /** Walk through index and processes any valid keys and versions */
 private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> checkAndProcess(
-    transaction: Transaction,
+    dbAccessor: DBAccessor,
     columnFamilies: TableColumnFamilies,
     readOptions: ReadOptions,
     iterator: DBIterator,
@@ -283,7 +283,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> checkAndPro
 
             if (
                 !scanRequest.shouldBeFiltered(
-                    transaction,
+                    dbAccessor,
                     columnFamilies,
                     readOptions,
                     indexRecord,
@@ -295,7 +295,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> checkAndPro
             ) {
                 val key = createKey(scanRequest.dataModel, indexRecord, keyOffset)
                 readCreationVersion(
-                    transaction,
+                    dbAccessor,
                     columnFamilies,
                     readOptions,
                     key.bytes

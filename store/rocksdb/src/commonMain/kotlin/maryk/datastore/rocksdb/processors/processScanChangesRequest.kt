@@ -6,9 +6,9 @@ import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.requests.ScanChangesRequest
 import maryk.core.query.responses.ChangesResponse
+import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
-import maryk.datastore.rocksdb.Transaction
 import maryk.datastore.shared.StoreAction
 import maryk.rocksdb.use
 
@@ -24,16 +24,16 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
     val objectChanges = mutableListOf<DataObjectVersionedChange<DM>>()
     val columnFamilies = dataStore.getColumnFamilies(storeAction.dbIndex)
 
-    Transaction(dataStore).use { transaction ->
+    DBAccessor(dataStore.db).use { dbAccessor ->
         val columnToScan = if (scanRequest.toVersion != null && columnFamilies is HistoricTableColumnFamilies) {
             columnFamilies.historic.table
         } else columnFamilies.table
-        val iterator = transaction.getIterator(dataStore.defaultReadOptions, columnToScan)
+        val iterator = dbAccessor.getIterator(dataStore.defaultReadOptions, columnToScan)
 
         processScan(
             scanRequest,
             dataStore,
-            transaction,
+            dbAccessor,
             columnFamilies,
             dataStore.defaultReadOptions
         ) { key, creationVersion ->

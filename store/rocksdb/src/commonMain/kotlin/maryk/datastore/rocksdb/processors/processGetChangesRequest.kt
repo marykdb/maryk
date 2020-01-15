@@ -3,7 +3,6 @@ package maryk.datastore.rocksdb.processors
 import maryk.core.extensions.bytes.toULong
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.requests.GetChangesRequest
@@ -31,22 +30,22 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
 
     getRequest.checkToVersion(dataStore.keepAllVersions)
 
-    DBAccessor(dataStore.db).use { transaction ->
+    DBAccessor(dataStore.db).use { dbAccessor ->
         val columnToScan = if (getRequest.toVersion != null && columnFamilies is HistoricTableColumnFamilies) {
             columnFamilies.historic.table
         } else columnFamilies.table
-        val iterator = transaction.getIterator(dataStore.defaultReadOptions, columnToScan)
+        val iterator = dbAccessor.getIterator(dataStore.defaultReadOptions, columnToScan)
 
         keyWalk@ for (key in getRequest.keys) {
             val mayExist = dataStore.db.keyMayExist(columnFamilies.keys, key.bytes, null)
             if (mayExist) {
                 val valueLength =
-                    transaction.get(columnFamilies.keys, dataStore.defaultReadOptions, key.bytes, recyclableByteArray)
+                    dbAccessor.get(columnFamilies.keys, dataStore.defaultReadOptions, key.bytes, recyclableByteArray)
 
                 if (valueLength != rocksDBNotFound) {
                     val creationVersion = recyclableByteArray.toULong()
                     if (getRequest.shouldBeFiltered(
-                            transaction,
+                            dbAccessor,
                             columnFamilies,
                             dataStore.defaultReadOptions,
                             key.bytes,

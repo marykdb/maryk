@@ -3,17 +3,17 @@ package maryk.datastore.rocksdb.processors.helpers
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.types.Key
+import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.TableColumnFamilies
-import maryk.datastore.rocksdb.Transaction
 import maryk.lib.extensions.compare.matchPart
 import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.use
 
 /**
- * Get list from [transaction] at [reference] by reading and collecting all values from DataRecord
+ * Get list from [dbAccessor] at [reference] by reading and collecting all values from DataRecord
  */
 internal fun <T : Any> getList(
-    transaction: Transaction,
+    dbAccessor: DBAccessor,
     columnFamilies: TableColumnFamilies,
     readOptions: ReadOptions,
     key: Key<*>,
@@ -21,7 +21,7 @@ internal fun <T : Any> getList(
 ): MutableList<T>? {
     val keyAndReference = reference.toStorageByteArray(key.bytes)
 
-    transaction.getIterator(readOptions, columnFamilies.table).use { iterator ->
+    dbAccessor.getIterator(readOptions, columnFamilies.table).use { iterator ->
         iterator.seek(keyAndReference)
 
         // First handle the count

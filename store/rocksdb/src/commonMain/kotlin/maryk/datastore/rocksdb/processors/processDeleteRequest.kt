@@ -98,7 +98,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
 
                             // Delete indexed values
                             deleteRequest.dataModel.indices?.let { indices ->
-                                val valuesGetter = TransactionValuesGetter(
+                                val valuesGetter = DBAccessorValuesGetter(
                                     key,
                                     transaction,
                                     columnFamilies,

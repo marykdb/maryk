@@ -9,9 +9,9 @@ import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Key
 import maryk.core.values.IsValuesGetter
+import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.DBIterator
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
-import maryk.datastore.rocksdb.Transaction
 import maryk.datastore.rocksdb.processors.helpers.convertToValue
 import maryk.lib.extensions.compare.matchPart
 import maryk.rocksdb.AutoCloseable
@@ -25,13 +25,13 @@ internal class HistoricStoreIndexValuesWalker(
 ) {
     fun walkIndexHistory(
         key: Key<*>,
-        transaction: Transaction,
+        dbAccessor: DBAccessor,
         indexable: IsIndexable,
         indexableBytes: ByteArray,
         handleIndexReference: (ByteArray) -> Unit
     ) {
         val getter = HistoricStoreIndexValuesGetter(
-            columnFamilies, transaction, readOptions, key
+            columnFamilies, dbAccessor, readOptions, key
         )
 
         var lastVersion: ULong?
@@ -65,7 +65,7 @@ internal class HistoricStoreIndexValuesWalker(
 
 private class HistoricStoreIndexValuesGetter(
     val columnFamilies: HistoricTableColumnFamilies,
-    var transaction: Transaction,
+    var dbAccessor: DBAccessor,
     val readOptions: ReadOptions,
     var key: Key<*>
 ) : IsValuesGetter, AutoCloseable {
@@ -79,7 +79,7 @@ private class HistoricStoreIndexValuesGetter(
         ) {
             IterableReference(
                 propertyReference.toStorageByteArray(),
-                transaction.getIterator(readOptions, columnFamilies.historic.table)
+                dbAccessor.getIterator(readOptions, columnFamilies.historic.table)
             )
         }
         val iterator = iterableReference.iterator

@@ -9,9 +9,9 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.IsScanRequest
+import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
-import maryk.datastore.rocksdb.Transaction
 import maryk.datastore.rocksdb.processors.helpers.getKeyByUniqueValue
 import maryk.datastore.rocksdb.processors.helpers.readCreationVersion
 import maryk.lib.recyclableByteArray
@@ -27,7 +27,7 @@ import maryk.rocksdb.rocksDBNotFound
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processScan(
     scanRequest: IsScanRequest<DM, P, *>,
     dataStore: RocksDBDataStore,
-    transaction: Transaction,
+    dbAccessor: DBAccessor,
     columnFamilies: TableColumnFamilies,
     readOptions: ReadOptions,
     processRecord: (Key<DM>, ULong) -> Unit
@@ -43,11 +43,11 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
             val key = scanRequest.dataModel.key(scanRange.ranges.first().start) as Key<DM>
             val mayExist = dataStore.db.keyMayExist(columnFamilies.keys, key.bytes, null)
             if (mayExist) {
-                val valueLength = transaction.get(columnFamilies.keys, readOptions, key.bytes, recyclableByteArray)
+                val valueLength = dbAccessor.get(columnFamilies.keys, readOptions, key.bytes, recyclableByteArray)
                 // Only process it if it was created
                 if (valueLength != rocksDBNotFound) {
                     val createdVersion = recyclableByteArray.toULong()
-                    if (shouldProcessRecord(transaction, columnFamilies, readOptions, key, createdVersion, scanRequest, scanRange)) {
+                    if (shouldProcessRecord(dbAccessor, columnFamilies, readOptions, key, createdVersion, scanRequest, scanRange)) {
                         processRecord(key, createdVersion)
                     }
                 }
@@ -72,12 +72,12 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
                     reference[uniqueReference.size] = NO_TYPE_INDICATOR
                     valueBytes.copyInto(reference, uniqueReference.size + 1, 0, valueBytes.size)
 
-                    getKeyByUniqueValue(transaction, columnFamilies, readOptions, reference, scanRequest.toVersion) { keyReader, setAtVersion ->
+                    getKeyByUniqueValue(dbAccessor, columnFamilies, readOptions, reference, scanRequest.toVersion) { keyReader, setAtVersion ->
                         @Suppress("UNCHECKED_CAST")
                         val key = scanRequest.dataModel.key(keyReader) as Key<DM>
 
-                        if (shouldProcessRecord(transaction, columnFamilies, readOptions, key, setAtVersion, scanRequest, scanRange)) {
-                            readCreationVersion(transaction, columnFamilies, readOptions, key.bytes)?.let { createdVersion ->
+                        if (shouldProcessRecord(dbAccessor, columnFamilies, readOptions, key, setAtVersion, scanRequest, scanRange)) {
+                            readCreationVersion(dbAccessor, columnFamilies, readOptions, key.bytes)?.let { createdVersion ->
                                 processRecord(key, createdVersion)
                             }
                         }
@@ -96,7 +96,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
                 is TableScan -> {
                     scanStore(
                         dataStore,
-                        transaction,
+                        dbAccessor,
                         columnFamilies,
                         scanRequest,
                         processedScanIndex.direction,
@@ -107,7 +107,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
                 is IndexScan -> {
                     scanIndex(
                         dataStore,
-                        transaction,
+                        dbAccessor,
                         columnFamilies,
                         scanRequest,
                         processedScanIndex,
@@ -121,7 +121,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
 }
 
 internal fun <DM: IsRootValuesDataModel<P>, P:PropertyDefinitions> shouldProcessRecord(
-    transaction: Transaction,
+    dbAccessor: DBAccessor,
     columnFamilies: TableColumnFamilies,
     readOptions: ReadOptions,
     key: Key<*>,
@@ -138,5 +138,5 @@ internal fun <DM: IsRootValuesDataModel<P>, P:PropertyDefinitions> shouldProcess
         return false
     }
 
-    return !scanRequest.shouldBeFiltered(transaction, columnFamilies, readOptions, key.bytes, 0, key.size, createdVersion, scanRequest.toVersion)
+    return !scanRequest.shouldBeFiltered(dbAccessor, columnFamilies, readOptions, key.bytes, 0, key.size, createdVersion, scanRequest.toVersion)
 }

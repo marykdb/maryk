@@ -3,6 +3,7 @@ package maryk.core.properties.definitions
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
 import maryk.core.properties.exceptions.InvalidSizeException
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.references.IsPropertyReference
@@ -28,7 +29,8 @@ data class StringDefinition(
     HasSizeDefinition,
     IsSerializableFlexBytesEncodable<String, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<String>,
-    HasDefaultValueDefinition<String> {
+    HasDefaultValueDefinition<String>,
+    IsWrappableDefinition<String, IsPropertyContext, FlexBytesDefinitionWrapper<String, String, IsPropertyContext, StringDefinition, Any>> {
     override val propertyDefinitionType = PropertyDefinitionType.String
     override val wireType = LENGTH_DELIMITED
 
@@ -78,6 +80,9 @@ data class StringDefinition(
             }
         }
     }
+
+    override fun wrap(index: UInt, name: String, alternativeNames: Set<String>?) =
+        FlexBytesDefinitionWrapper<String, String, IsPropertyContext, StringDefinition, Any>(index, name, this, alternativeNames)
 
     object Model : SimpleObjectDataModel<StringDefinition, ObjectPropertyDefinitions<StringDefinition>>(
         properties = object : ObjectPropertyDefinitions<StringDefinition>() {

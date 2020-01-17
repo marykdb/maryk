@@ -5,6 +5,7 @@ import maryk.core.extensions.bytes.writeBytes
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.values.SimpleObjectValues
 import maryk.json.IsJsonLikeWriter
@@ -19,7 +20,8 @@ data class BooleanDefinition(
     IsSimpleValueDefinition<Boolean, IsPropertyContext>,
     IsSerializableFixedBytesEncodable<Boolean, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<Boolean>,
-    HasDefaultValueDefinition<Boolean> {
+    HasDefaultValueDefinition<Boolean>,
+    IsWrappableDefinition<Boolean, IsPropertyContext, FixedBytesDefinitionWrapper<Boolean, Boolean, IsPropertyContext, BooleanDefinition, Any>> {
     override val propertyDefinitionType = PropertyDefinitionType.Boolean
     override val wireType = VAR_INT
     override val byteSize = 1
@@ -43,6 +45,13 @@ data class BooleanDefinition(
     override fun writeJsonValue(value: Boolean, writer: IsJsonLikeWriter, context: IsPropertyContext?) {
         writer.writeBoolean(value)
     }
+
+    override fun wrap(
+        index: UInt,
+        name: String,
+        alternativeNames: Set<String>?
+    ) =
+        FixedBytesDefinitionWrapper<Boolean, Boolean, IsPropertyContext, BooleanDefinition, Any>(index, name, this, alternativeNames)
 
     object Model : SimpleObjectDataModel<BooleanDefinition, ObjectPropertyDefinitions<BooleanDefinition>>(
         properties = object : ObjectPropertyDefinitions<BooleanDefinition>() {

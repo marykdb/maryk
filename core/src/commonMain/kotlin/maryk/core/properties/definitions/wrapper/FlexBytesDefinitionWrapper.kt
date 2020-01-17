@@ -1,10 +1,12 @@
 package maryk.core.properties.definitions.wrapper
 
+import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.ValueWithFlexBytesPropertyReference
+import kotlin.reflect.KProperty
 
 /**
  * Contains a Flex bytes property [definition] of type [T] which cannot be used in keys or ValueObjects
@@ -30,4 +32,7 @@ data class FlexBytesDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext,
     override fun ref(parentRef: AnyPropertyReference?) = cacheRef(parentRef) {
         ValueWithFlexBytesPropertyReference(this, parentRef)
     }
+
+    // For delegation in definition
+    operator fun getValue(thisRef: AbstractPropertyDefinitions<DO>, property: KProperty<*>) = this
 }

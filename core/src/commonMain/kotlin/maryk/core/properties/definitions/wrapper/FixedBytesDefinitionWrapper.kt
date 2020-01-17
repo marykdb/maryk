@@ -1,18 +1,20 @@
 package maryk.core.properties.definitions.wrapper
 
+import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 import maryk.core.properties.definitions.IsSerializableFixedBytesEncodable
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
+import kotlin.reflect.KProperty
 
 /**
  * Contains a Fixed Bytes property [definition] of [D] which can be used for keys.
  * It contains an [index] and [name] to which it is referred inside DataModel and a [getter]
  * function to retrieve value on dataObject of [DO] in context [CX]
  */
-data class FixedBytesDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext, out D : IsSerializableFixedBytesEncodable<T, CX>, in DO : Any> internal constructor(
+data class FixedBytesDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext, out D : IsSerializableFixedBytesEncodable<T, CX>, DO : Any> internal constructor(
     override val index: UInt,
     override val name: String,
     override val definition: D,
@@ -33,4 +35,7 @@ data class FixedBytesDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext
     override fun ref(parentRef: AnyPropertyReference?) = cacheRef(parentRef) {
         ValueWithFixedBytesPropertyReference(this, parentRef)
     }
+
+    // For delegation in definition
+    operator fun getValue(thisRef: AbstractPropertyDefinitions<DO>, property: KProperty<*>) = this
 }

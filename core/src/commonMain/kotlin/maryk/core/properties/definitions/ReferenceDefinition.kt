@@ -10,6 +10,7 @@ import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
+import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
@@ -31,7 +32,9 @@ class ReferenceDefinition<DM : IsRootDataModel<*>>(
     IsComparableDefinition<Key<DM>, IsPropertyContext>,
     IsSerializableFixedBytesEncodable<Key<DM>, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<Key<DM>>,
-    HasDefaultValueDefinition<Key<DM>> {
+    HasDefaultValueDefinition<Key<DM>>,
+    IsWrappableDefinition<Key<DM>, IsPropertyContext, FixedBytesDefinitionWrapper<Key<DM>, Key<DM>, IsPropertyContext, ReferenceDefinition<DM>, Any>>
+{
     override val propertyDefinitionType = PropertyDefinitionType.Reference
     override val wireType = LENGTH_DELIMITED
     override val byteSize get() = dataModel.keyByteSize
@@ -88,6 +91,13 @@ class ReferenceDefinition<DM : IsRootDataModel<*>>(
         result = 31 * result + dataModel.name.hashCode()
         return result
     }
+
+    override fun wrap(
+        index: UInt,
+        name: String,
+        alternativeNames: Set<String>?
+    ) =
+        FixedBytesDefinitionWrapper<Key<DM>, Key<DM>, IsPropertyContext, ReferenceDefinition<DM>, Any>(index, name, this, alternativeNames)
 
     object Model : DefinitionDataModel<ReferenceDefinition<*>>(
         properties = object : ObjectPropertyDefinitions<ReferenceDefinition<*>>() {

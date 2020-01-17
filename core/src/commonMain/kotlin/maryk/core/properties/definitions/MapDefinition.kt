@@ -7,6 +7,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.contextual.ContextualMapDefinition
+import maryk.core.properties.definitions.wrapper.MapDefinitionWrapper
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.SimpleObjectValues
@@ -26,7 +27,8 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
     IsMapDefinition<K, V, CX>,
     HasSizeDefinition,
     IsTransportablePropertyDefinitionType<Map<K, V>>,
-    HasDefaultValueDefinition<Map<K, V>> {
+    HasDefaultValueDefinition<Map<K, V>>,
+    IsWrappableDefinition<Map<K, V>, CX, MapDefinitionWrapper<K, V, Map<K, V>, CX, Any>> {
     override val propertyDefinitionType = PropertyDefinitionType.Map
 
     init {
@@ -43,6 +45,13 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
         valueDefinition: IsUsableInMapValue<V, CX>,
         default: Map<K, V>? = null
     ) : this(required, final, minSize, maxSize, keyDefinition, valueDefinition as IsSubDefinition<V, CX>, default)
+
+    override fun wrap(
+        index: UInt,
+        name: String,
+        alternativeNames: Set<String>?
+    ) =
+        MapDefinitionWrapper<K, V, Map<K, V>, CX, Any>(index, name, this, alternativeNames)
 
     object Model :
         ContextualDataModel<MapDefinition<*, *, *>, ObjectPropertyDefinitions<MapDefinition<*, *, *>>, ContainsDefinitionsContext, KeyValueDefinitionContext>(

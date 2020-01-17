@@ -7,6 +7,7 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.contextual.ContextValueTransformDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
+import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.enum.IndexedEnumDefinition
@@ -28,7 +29,8 @@ data class EnumDefinition<E : IndexedEnumComparable<E>>(
     IsComparableDefinition<E, IsPropertyContext>,
     IsSerializableFixedBytesEncodable<E, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<E>,
-    HasDefaultValueDefinition<E> {
+    HasDefaultValueDefinition<E>,
+    IsWrappableDefinition<E, IsPropertyContext, FixedBytesDefinitionWrapper<E, E, IsPropertyContext, EnumDefinition<E>, Any>> {
     override val propertyDefinitionType = PropertyDefinitionType.Enum
     override val wireType = enum.wireType
     override val byteSize = enum.byteSize
@@ -108,6 +110,13 @@ data class EnumDefinition<E : IndexedEnumComparable<E>>(
         result = 31 * result + byteSize
         return result
     }
+
+    override fun wrap(
+        index: UInt,
+        name: String,
+        alternativeNames: Set<String>?
+    ) =
+        FixedBytesDefinitionWrapper<E, E, IsPropertyContext, EnumDefinition<E>, Any>(index, name, this, alternativeNames)
 
     object Model :
         ContextualDataModel<EnumDefinition<*>, ObjectPropertyDefinitions<EnumDefinition<*>>, ContainsDefinitionsContext, EnumDefinitionContext>(

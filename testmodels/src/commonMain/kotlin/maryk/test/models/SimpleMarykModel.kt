@@ -8,13 +8,12 @@ object SimpleMarykModel : RootDataModel<SimpleMarykModel, SimpleMarykModel.Prope
     properties = Properties
 ) {
     object Properties : PropertyDefinitions() {
-        val value = add(
-            index = 1u, name = "value",
-            definition = StringDefinition(
+        val value by wrap(1u) {
+            StringDefinition(
                 default = "haha",
                 regEx = "ha.*"
             )
-        )
+        }
     }
 
     operator fun invoke(

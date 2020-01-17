@@ -14,18 +14,18 @@ import kotlin.test.Test
 import kotlin.test.assertFailsWith
 
 internal object WrongProperties : PropertyDefinitions() {
-    val boolean = add(
-        1u, "bool", BooleanDefinition(
+    val boolean by wrap(1u) {
+        BooleanDefinition(
             required = false,
             final = true
         )
-    )
-    val dateTime = add(
-        2u, "dateTime", DateTimeDefinition()
-    )
-    val string = add(
-        3u, "string", StringDefinition()
-    )
+    }
+    val dateTime by wrap(2u) {
+        DateTimeDefinition()
+    }
+    val string by wrap(3u) {
+        StringDefinition()
+    }
 }
 
 class RootDataModelKeyTest {

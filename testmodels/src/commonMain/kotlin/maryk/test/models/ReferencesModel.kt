@@ -10,14 +10,13 @@ object ReferencesModel : RootDataModel<ReferencesModel, ReferencesModel.Properti
     properties = Properties
 ) {
     object Properties : PropertyDefinitions() {
-        val references = add(
-            index = 1u, name = "references",
-            definition = ListDefinition(
+        val references by wrap(1u) {
+            ListDefinition(
                 valueDefinition = ReferenceDefinition(
                     dataModel = { SimpleMarykModel }
                 )
             )
-        )
+        }
     }
 
     operator fun invoke(

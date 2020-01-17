@@ -7,6 +7,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.contextual.ContextualCollectionDefinition
+import maryk.core.properties.definitions.wrapper.ListDefinitionWrapper
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.SimpleObjectValues
@@ -22,7 +23,8 @@ data class ListDefinition<T : Any, CX : IsPropertyContext> internal constructor(
 ) : IsListDefinition<T, CX>,
     IsUsableInMapValue<List<T>, CX>,
     IsUsableInMultiType<List<T>, CX>,
-    IsTransportablePropertyDefinitionType<List<T>> {
+    IsTransportablePropertyDefinitionType<List<T>>,
+    IsWrappableDefinition<List<T>, CX, ListDefinitionWrapper<T, T, CX, Any>> {
     override val propertyDefinitionType = PropertyDefinitionType.List
 
     init {
@@ -37,6 +39,13 @@ data class ListDefinition<T : Any, CX : IsPropertyContext> internal constructor(
         valueDefinition: IsUsableInCollection<T, CX>,
         default: List<T>? = null
     ) : this(required, final, minSize, maxSize, valueDefinition as IsValueDefinition<T, CX>, default)
+
+    override fun wrap(
+        index: UInt,
+        name: String,
+        alternativeNames: Set<String>?
+    ) =
+        ListDefinitionWrapper<T, T, CX, Any>(index, name, this, alternativeNames)
 
     object Model :
         ContextualDataModel<ListDefinition<*, *>, ObjectPropertyDefinitions<ListDefinition<*, *>>, ContainsDefinitionsContext, ListDefinitionContext>(

@@ -1,6 +1,7 @@
 package maryk.core.properties.definitions.wrapper
 
 import maryk.core.models.IsValuesDataModel
+import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
@@ -16,6 +17,7 @@ import maryk.core.properties.references.TypeReference
 import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.values.Values
+import kotlin.reflect.KProperty
 
 /**
  * Contains a Multi Type property [definition] containing type [E]
@@ -81,4 +83,7 @@ data class MultiTypeDefinitionWrapper<E : TypeEnum<T>, T: Any, TO : Any, in CX :
                 referenceGetter
             )
         }
+
+    // For delegation in definition
+    operator fun getValue(thisRef: AbstractPropertyDefinitions<DO>, property: KProperty<*>) = this
 }

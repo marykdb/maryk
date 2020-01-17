@@ -15,6 +15,7 @@ import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefi
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.definitions.contextual.IsDataModelReference
 import maryk.core.properties.definitions.contextual.ModelContext
+import maryk.core.properties.definitions.wrapper.EmbeddedValuesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
@@ -37,7 +38,8 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P : PropertyDefinition
     override val default: Values<DM, P>? = null
 ) :
     IsEmbeddedValuesDefinition<DM, P, IsPropertyContext>,
-    IsTransportablePropertyDefinitionType<Values<DM, P>> {
+    IsTransportablePropertyDefinitionType<Values<DM, P>>,
+    IsWrappableDefinition<Values<DM, P>, IsPropertyContext, EmbeddedValuesDefinitionWrapper<DM, P, IsPropertyContext>> {
     override val propertyDefinitionType = Embed
     override val wireType = LENGTH_DELIMITED
 
@@ -140,6 +142,13 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P : PropertyDefinition
         result = 31 * result + internalDataModel.value.hashCode()
         return result
     }
+
+    override fun wrap(
+        index: UInt,
+        name: String,
+        alternativeNames: Set<String>?
+    ) =
+        EmbeddedValuesDefinitionWrapper(index, name, this, alternativeNames)
 
     object Model :
         ContextualDataModel<EmbeddedValuesDefinition<*, *>, ObjectPropertyDefinitions<EmbeddedValuesDefinition<*, *>>, ContainsDefinitionsContext, ModelContext>(

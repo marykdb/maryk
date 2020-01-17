@@ -4,6 +4,7 @@ import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.PropertyDefinitionType.FlexBytes
+import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
 import maryk.core.properties.exceptions.InvalidSizeException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Bytes
@@ -25,7 +26,8 @@ data class FlexBytesDefinition(
     HasSizeDefinition,
     IsSerializableFlexBytesEncodable<Bytes, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<Bytes>,
-    HasDefaultValueDefinition<Bytes> {
+    HasDefaultValueDefinition<Bytes>,
+    IsWrappableDefinition<Bytes, IsPropertyContext, FlexBytesDefinitionWrapper<Bytes, Bytes, IsPropertyContext, FlexBytesDefinition, Any>> {
     override val propertyDefinitionType = FlexBytes
     override val wireType = LENGTH_DELIMITED
 
@@ -59,6 +61,14 @@ data class FlexBytesDefinition(
             )
         }
     }
+
+    override fun wrap(
+        index: UInt,
+        name: String,
+        alternativeNames: Set<String>?
+    ) =
+        FlexBytesDefinitionWrapper<Bytes, Bytes, IsPropertyContext, FlexBytesDefinition, Any>(index, name, this, alternativeNames)
+
 
     object Model : SimpleObjectDataModel<FlexBytesDefinition, ObjectPropertyDefinitions<FlexBytesDefinition>>(
         properties = object : ObjectPropertyDefinitions<FlexBytesDefinition>() {

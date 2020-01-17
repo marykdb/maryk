@@ -8,6 +8,7 @@ import maryk.core.models.ContextualDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
+import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.TimePrecision
 import maryk.core.properties.types.byteSize
@@ -34,7 +35,8 @@ data class DateTimeDefinition(
     IsTimeDefinition<DateTime>,
     IsSerializableFixedBytesEncodable<DateTime, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<DateTime>,
-    HasDefaultValueDefinition<DateTime> {
+    HasDefaultValueDefinition<DateTime>,
+    IsWrappableDefinition<DateTime, IsPropertyContext, FixedBytesDefinitionWrapper<DateTime, DateTime, IsPropertyContext, DateTimeDefinition, Any>> {
     override val propertyDefinitionType = PropertyDefinitionType.DateTime
     override val wireType = VAR_INT
     override val byteSize = DateTime.byteSize(precision)
@@ -77,6 +79,13 @@ data class DateTimeDefinition(
     override fun fromString(string: String) = DateTime.parse(string)
 
     override fun fromNativeType(value: Any) = value as? DateTime
+
+    override fun wrap(
+        index: UInt,
+        name: String,
+        alternativeNames: Set<String>?
+    ) =
+        FixedBytesDefinitionWrapper<DateTime, DateTime, IsPropertyContext, DateTimeDefinition, Any>(index, name, this, alternativeNames)
 
     object Model :
         ContextualDataModel<DateTimeDefinition, ObjectPropertyDefinitions<DateTimeDefinition>, ContainsDefinitionsContext, DateTimeDefinitionContext>(

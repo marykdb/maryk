@@ -7,6 +7,7 @@ import maryk.core.extensions.bytes.writeLittleEndianBytes
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.types.GeoPoint
 import maryk.core.properties.types.toGeoPoint
 import maryk.core.protobuf.WireType.BIT_64
@@ -22,7 +23,8 @@ data class GeoPointDefinition(
     IsSimpleValueDefinition<GeoPoint, IsPropertyContext>,
     IsSerializableFixedBytesEncodable<GeoPoint, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<GeoPoint>,
-    HasDefaultValueDefinition<GeoPoint> {
+    HasDefaultValueDefinition<GeoPoint>,
+    IsWrappableDefinition<GeoPoint, IsPropertyContext, FixedBytesDefinitionWrapper<GeoPoint, GeoPoint, IsPropertyContext, GeoPointDefinition, Any>> {
     override val propertyDefinitionType = PropertyDefinitionType.GeoPoint
     override val wireType = BIT_64
     override val byteSize = 8
@@ -64,6 +66,13 @@ data class GeoPointDefinition(
         value is GeoPoint -> value
         else -> null
     }
+
+    override fun wrap(
+        index: UInt,
+        name: String,
+        alternativeNames: Set<String>?
+    ) =
+        FixedBytesDefinitionWrapper<GeoPoint, GeoPoint, IsPropertyContext, GeoPointDefinition, Any>(index, name, this, alternativeNames)
 
     object Model : SimpleObjectDataModel<GeoPointDefinition, ObjectPropertyDefinitions<GeoPointDefinition>>(
         properties = object : ObjectPropertyDefinitions<GeoPointDefinition>() {

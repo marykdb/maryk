@@ -2,34 +2,16 @@ package maryk.core.properties
 
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initUIntByVar
-import maryk.core.models.IsValuesDataModel
-import maryk.core.properties.definitions.IncrementingMapDefinition
-import maryk.core.properties.definitions.IsContextualEncodable
-import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
-import maryk.core.properties.definitions.IsMapDefinition
-import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.definitions.IsSerializableFixedBytesEncodable
-import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.definitions.IsUsableInMultiType
-import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.SetDefinition
-import maryk.core.properties.definitions.wrapper.ContextualDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.EmbeddedValuesDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.IncMapDefinitionWrapper
+import maryk.core.properties.definitions.IsWrappableDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.ListDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.MapDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.SetDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.WrapperLoader
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.HasEmbeddedPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.decodeStorageIndex
-import maryk.core.properties.types.TypedValue
 import maryk.core.values.IsValueItems
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ValueItem
@@ -76,95 +58,12 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
     fun <E : TypeEnum<*>> definitionMap(vararg pair: Pair<E, IsUsableInMultiType<*, IsPropertyContext>>) =
         mapOf(*pair)
 
-    /** Add flex bytes encodable property [definition] with [name] and [index] */
-    fun <T : Any, CX : IsPropertyContext, D : IsSerializableFlexBytesEncodable<T, CX>> add(
+    /** Wrap definition from [definitionCreator] into property definitions at [index]. Optionally set [alternativeNames] */
+    fun <T : Any, D : IsWrappableDefinition<T, *, W>, W: IsDefinitionWrapper<T, T, *, DO>, DO : Any> wrap(
         index: UInt,
-        name: String,
-        definition: D,
-        alternativeNames: Set<String>? = null
-    ) = FlexBytesDefinitionWrapper<T, T, CX, D, Any>(index, name, definition, alternativeNames).apply {
-        addSingle(this)
-    }
-
-    /** Add flex bytes encodable property [definition] with [name] and [index] */
-    fun <T : Any, CX : IsPropertyContext, D : IsContextualEncodable<T, CX>> add(
-        index: UInt,
-        name: String,
-        definition: D,
-        alternativeNames: Set<String>? = null
-    ) = ContextualDefinitionWrapper<T, T, CX, D, Any>(index, name, definition, alternativeNames).apply {
-        addSingle(this)
-    }
-
-    /** Add fixed bytes encodable property [definition] with [name] and [index] */
-    fun <T : Any, CX : IsPropertyContext, D : IsSerializableFixedBytesEncodable<T, CX>> add(
-        index: UInt,
-        name: String,
-        definition: D,
-        alternativeNames: Set<String>? = null
-    ) = FixedBytesDefinitionWrapper<T, T, CX, D, Any>(index, name, definition, alternativeNames).apply {
-        addSingle(this)
-    }
-
-    /** Add list property [definition] with [name] and [index] */
-    fun <T : Any, CX : IsPropertyContext> add(
-        index: UInt,
-        name: String,
-        definition: ListDefinition<T, CX>,
-        alternativeNames: Set<String>? = null
-    ) = ListDefinitionWrapper<T, T, CX, Any>(index, name, definition, alternativeNames).apply {
-        addSingle(this)
-    }
-
-    /** Add set property [definition] with [name] and [index] */
-    fun <T : Any, CX : IsPropertyContext> add(
-        index: UInt,
-        name: String,
-        definition: SetDefinition<T, CX>,
-        alternativeNames: Set<String>? = null
-    ) = SetDefinitionWrapper<T, CX, Any>(index, name, definition, alternativeNames).apply {
-        addSingle(this)
-    }
-
-    /** Add map property [definition] with [name] and [index] */
-    fun <K : Any, V : Any, CX : IsPropertyContext> add(
-        index: UInt,
-        name: String,
-        definition: IsMapDefinition<K, V, CX>,
-        alternativeNames: Set<String>? = null
-    ) = MapDefinitionWrapper<K, V, Map<K, V>, CX, Any>(index, name, definition, alternativeNames).apply {
-        addSingle(this)
-    }
-
-    /** Add map property [definition] with [name] and [index] */
-    fun <K : Comparable<K>, V : Any, CX : IsPropertyContext> add(
-        index: UInt,
-        name: String,
-        definition: IncrementingMapDefinition<K, V, CX>,
-        alternativeNames: Set<String>? = null
-    ) = IncMapDefinitionWrapper<K, V, Map<K, V>, CX, Any>(index, name, definition, alternativeNames).apply {
-        addSingle(this)
-    }
-
-    /** Add multi type property [definition] with [name] and [index] */
-    fun <E : TypeEnum<T>, T: Any, CX : IsPropertyContext> add(
-        index: UInt,
-        name: String,
-        definition: IsMultiTypeDefinition<E, T, CX>,
-        alternativeNames: Set<String>? = null
-    ) = MultiTypeDefinitionWrapper<E, T, TypedValue<E, T>, CX, Any>(index, name, definition, alternativeNames).apply {
-        addSingle(this)
-    }
-
-    /** Add embedded object property [definition] with [name] and [index] */
-    fun <DM : IsValuesDataModel<P>, P : PropertyDefinitions, CX : IsPropertyContext> add(
-        index: UInt,
-        name: String,
-        definition: IsEmbeddedValuesDefinition<DM, P, CX>,
-        alternativeNames: Set<String>? = null
-    ) = EmbeddedValuesDefinitionWrapper(index, name, definition, alternativeNames).apply {
-        addSingle(this)
-    }
+        alternativeNames: Set<String>? = null,
+        definitionCreator: () -> D
+    ) = WrapperLoader(index, definitionCreator(), alternativeNames)
 
     /** Add a single property definition wrapper */
     fun addSingle(propertyDefinitionWrapper: IsDefinitionWrapper<out Any, *, *, DO>) {

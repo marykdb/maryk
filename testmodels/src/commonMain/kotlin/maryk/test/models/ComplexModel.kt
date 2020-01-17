@@ -19,18 +19,16 @@ object ComplexModel : RootDataModel<ComplexModel, Properties>(
     properties = Properties
 ) {
     object Properties : PropertyDefinitions() {
-        val multi = add(
-            index = 1u, name = "multi",
-            definition = MultiTypeDefinition(
+        val multi by wrap(1u) {
+            MultiTypeDefinition(
                 required = false,
                 typeEnum = MarykTypeEnum,
                 typeIsFinal = false
             )
-        )
+        }
 
-        val mapStringString = add(
-            index = 2u, name = "mapStringString",
-            definition = MapDefinition(
+        val mapStringString by wrap(2u) {
+            MapDefinition(
                 required = false,
                 minSize = 1u,
                 maxSize = 3u,
@@ -42,11 +40,10 @@ object ComplexModel : RootDataModel<ComplexModel, Properties>(
                     maxSize = 500u
                 )
             )
-        )
+        }
 
-        val mapIntObject = add(
-            index = 3u, name = "mapIntObject",
-            definition = MapDefinition(
+        val mapIntObject by wrap(3u) {
+            MapDefinition(
                 required = false,
                 keyDefinition = NumberDefinition(
                     type = UInt32
@@ -55,12 +52,11 @@ object ComplexModel : RootDataModel<ComplexModel, Properties>(
                     dataModel = { EmbeddedMarykModel }
                 )
             )
-        )
+        }
 
         @Suppress("RemoveExplicitTypeArguments")
-        val mapIntMulti = add(
-            index = 4u, name = "mapIntMulti",
-            definition = MapDefinition(
+        val mapIntMulti by wrap(4u) {
+            MapDefinition(
                 required = false,
                 keyDefinition = NumberDefinition(
                     type = UInt32
@@ -69,33 +65,30 @@ object ComplexModel : RootDataModel<ComplexModel, Properties>(
                     typeEnum = MarykTypeEnum
                 )
             )
-        )
+        }
 
-        val mapWithList = add(
-            index = 5u, name = "mapWithList",
-            definition = MapDefinition(
+        val mapWithList by wrap(5u) {
+            MapDefinition(
                 required = false,
                 keyDefinition = StringDefinition(),
                 valueDefinition = ListDefinition(
                     valueDefinition = StringDefinition()
                 )
             )
-        )
+        }
 
-        val mapWithSet = add(
-            index = 6u, name = "mapWithSet",
-            definition = MapDefinition(
+        val mapWithSet by wrap(6u) {
+            MapDefinition(
                 required = false,
                 keyDefinition = StringDefinition(),
                 valueDefinition = SetDefinition(
                     valueDefinition = StringDefinition()
                 )
             )
-        )
+        }
 
-        val mapWithMap = add(
-            index = 7u, name = "mapWithMap",
-            definition = MapDefinition(
+        val mapWithMap by wrap(7u) {
+            MapDefinition(
                 required = false,
                 keyDefinition = StringDefinition(),
                 valueDefinition = MapDefinition(
@@ -103,18 +96,17 @@ object ComplexModel : RootDataModel<ComplexModel, Properties>(
                     valueDefinition = StringDefinition()
                 )
             )
-        )
+        }
 
-        val incMap = add(
-            index = 8u, name = "incMap",
-            definition = IncrementingMapDefinition(
+        val incMap by wrap(8u) {
+            IncrementingMapDefinition(
                 required = false,
                 keyNumberDescriptor = UInt32,
                 valueDefinition = EmbeddedValuesDefinition(
                     dataModel = { EmbeddedMarykModel }
                 )
             )
-        )
+        }
     }
 
     operator fun invoke(

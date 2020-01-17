@@ -6,6 +6,7 @@ import maryk.core.models.ContextualDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualNumberDefinition
+import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.types.numeric.Float32
 import maryk.core.properties.types.numeric.Float64
 import maryk.core.properties.types.numeric.NumberDescriptor
@@ -33,7 +34,8 @@ data class NumberDefinition<T : Comparable<T>>(
     IsNumericDefinition<T>,
     IsSerializableFixedBytesEncodable<T, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<T>,
-    HasDefaultValueDefinition<T> {
+    HasDefaultValueDefinition<T>,
+    IsWrappableDefinition<T, IsPropertyContext, FixedBytesDefinitionWrapper<T, T, IsPropertyContext, NumberDefinition<T>, Any>> {
     override val propertyDefinitionType = PropertyDefinitionType.Number
     override val wireType = type.wireType
     override val byteSize = type.size
@@ -92,6 +94,9 @@ data class NumberDefinition<T : Comparable<T>>(
         }
         else -> super.writeJsonValue(value, writer, context)
     }
+
+    override fun wrap(index: UInt, name: String, alternativeNames: Set<String>?) =
+        FixedBytesDefinitionWrapper<T, T, IsPropertyContext, NumberDefinition<T>, Any>(index, name, this, alternativeNames)
 
     object Model :
         ContextualDataModel<NumberDefinition<*>, ObjectPropertyDefinitions<NumberDefinition<*>>, IsPropertyContext, NumericContext>(

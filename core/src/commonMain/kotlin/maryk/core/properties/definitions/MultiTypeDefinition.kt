@@ -7,6 +7,7 @@ import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.contextual.ContextValueTransformDefinition
 import maryk.core.properties.definitions.contextual.ContextualSubDefinition
 import maryk.core.properties.definitions.contextual.MultiTypeDefinitionContext
+import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
 import maryk.core.properties.enum.MultiTypeEnum
 import maryk.core.properties.enum.MultiTypeEnumDefinition
 import maryk.core.properties.types.TypedValue
@@ -24,7 +25,9 @@ data class MultiTypeDefinition<E : MultiTypeEnum<out T>, T: Any>(
     override val typeEnum: MultiTypeEnumDefinition<E>,
     override val typeIsFinal: Boolean = true,
     override val default: TypedValue<E, T>? = null
-) : IsMultiTypeDefinition<E, T, ContainsDefinitionsContext>, IsUsableInMultiType<TypedValue<E, T>, ContainsDefinitionsContext> {
+) : IsMultiTypeDefinition<E, T, ContainsDefinitionsContext>,
+    IsUsableInMultiType<TypedValue<E, T>, ContainsDefinitionsContext>,
+    IsWrappableDefinition<TypedValue<E, T>, ContainsDefinitionsContext, MultiTypeDefinitionWrapper<E, T, TypedValue<E, T>, ContainsDefinitionsContext, Any>> {
     override val propertyDefinitionType = PropertyDefinitionType.MultiType
     override val wireType = LENGTH_DELIMITED
 
@@ -40,6 +43,13 @@ data class MultiTypeDefinition<E : MultiTypeEnum<out T>, T: Any>(
     override fun definition(type: E) = type.definition as IsSubDefinition<T, ContainsDefinitionsContext>?
 
     override fun keepAsValues() = false
+
+    override fun wrap(
+        index: UInt,
+        name: String,
+        alternativeNames: Set<String>?
+    ) =
+        MultiTypeDefinitionWrapper<E, T, TypedValue<E, T>, ContainsDefinitionsContext, Any>(index, name, this, alternativeNames)
 
     object Model :
         ContextualDataModel<MultiTypeDefinition<*, *>, ObjectPropertyDefinitions<MultiTypeDefinition<*, *>>, ContainsDefinitionsContext, MultiTypeDefinitionContext>(

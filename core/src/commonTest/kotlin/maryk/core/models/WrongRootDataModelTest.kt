@@ -11,8 +11,8 @@ object WrongModelIndex : RootDataModel<WrongModelIndex, WrongModelIndex.Properti
     reservedIndices = listOf(1u)
 ) {
     object Properties : PropertyDefinitions() {
-        val value =
-            add(1u, "value", StringDefinition())
+        val value by
+            wrap(1u) { StringDefinition() }
     }
 
     operator fun invoke(value: String) = this.values {
@@ -25,8 +25,7 @@ object WrongModelName : RootDataModel<WrongModelName, WrongModelName.Properties>
     reservedNames = listOf("value")
 ) {
     object Properties : PropertyDefinitions() {
-        val value =
-            add(1u, "value", StringDefinition())
+        val value by wrap (1u) { StringDefinition() }
     }
 
     operator fun invoke(value: String) = this.values {

@@ -4,6 +4,7 @@ import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.PropertyDefinitionType.FixedBytes
+import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.types.Bytes
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.values.SimpleObjectValues
@@ -23,7 +24,8 @@ data class FixedBytesDefinition(
     IsNumericDefinition<Bytes>,
     IsSerializableFixedBytesEncodable<Bytes, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<Bytes>,
-    HasDefaultValueDefinition<Bytes> {
+    HasDefaultValueDefinition<Bytes>,
+    IsWrappableDefinition<Bytes, IsPropertyContext, FixedBytesDefinitionWrapper<Bytes, Bytes, IsPropertyContext, FixedBytesDefinition, Any>> {
     override val propertyDefinitionType = FixedBytes
     override val wireType = LENGTH_DELIMITED
 
@@ -45,6 +47,14 @@ data class FixedBytesDefinition(
         } else {
             value as? Bytes
         }
+
+    override fun wrap(
+        index: UInt,
+        name: String,
+        alternativeNames: Set<String>?
+    ) =
+        FixedBytesDefinitionWrapper<Bytes, Bytes, IsPropertyContext, FixedBytesDefinition, Any>(index, name, this, alternativeNames)
+
 
     object Model : SimpleObjectDataModel<FixedBytesDefinition, ObjectPropertyDefinitions<FixedBytesDefinition>>(
         properties = object : ObjectPropertyDefinitions<FixedBytesDefinition>() {

@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions.wrapper
 
+import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.graph.PropRefGraphType.PropRef
@@ -9,13 +10,14 @@ import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
+import kotlin.reflect.KProperty
 
 /**
  * Contains a Set property [definition] containing type [T]
- * It contains an [index] and [name] to which it is referred inside DataModel and a [getter]
+ * It contains an [index] and [name] to which it is referred inside DataModel, and a [getter]
  * function to retrieve value on dataObject of [DO] in context [CX]
  */
-data class SetDefinitionWrapper<T : Any, CX : IsPropertyContext, in DO : Any> internal constructor(
+data class SetDefinitionWrapper<T : Any, CX : IsPropertyContext, DO : Any> internal constructor(
     override val index: UInt,
     override val name: String,
     override val definition: IsSetDefinition<T, CX>,
@@ -49,4 +51,7 @@ data class SetDefinitionWrapper<T : Any, CX : IsPropertyContext, in DO : Any> in
     infix fun refAt(item: T): (AnyOutPropertyReference?) -> SetItemReference<T, *> {
         return { this.itemRef(item, it) }
     }
+
+    // For delegation in definition
+    operator fun getValue(thisRef: AbstractPropertyDefinitions<DO>, property: KProperty<*>) = this
 }

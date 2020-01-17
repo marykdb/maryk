@@ -6,8 +6,8 @@ import maryk.core.processors.datastore.matchers.QualifierExactMatcher
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.StringDefinition
-import maryk.core.properties.references.Properties.definition
-import maryk.core.properties.references.Properties.modelDefinition
+import maryk.core.properties.references.Properties.embeddedObject
+import maryk.core.properties.references.Properties.test
 import maryk.core.protobuf.WriteCache
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
@@ -19,31 +19,33 @@ import kotlin.test.assertSame
 import kotlin.test.expect
 
 private object Properties : PropertyDefinitions() {
-    val definition = add(1u, "test", StringDefinition())
-    val modelDefinition = add(2u, "embeddedObject", EmbeddedValuesDefinition(
-        dataModel = { Model }
-    ))
+    val test by wrap(1u) { StringDefinition() }
+    val embeddedObject by wrap(2u) {
+        EmbeddedValuesDefinition(
+            dataModel = { Model }
+        )
+    }
 }
 
 private object Model : RootDataModel<Model, Properties>(
     properties = Properties
 )
 
-private val ref = definition.ref()
-private val subRef = definition.ref(modelDefinition.ref())
+private val ref = test.ref()
+private val subRef = test.ref(embeddedObject.ref())
 
 internal class PropertyReferenceTest {
     @Test
     fun cacheTest() {
-        assertSame(ref, definition.ref())
-        assertSame(subRef, definition.ref(modelDefinition.ref()))
+        assertSame(ref, test.ref())
+        assertSame(subRef, test.ref(embeddedObject.ref()))
     }
 
     @Test
     fun getValueFromList() {
         val values = Model.values {
             mapNonNulls(
-                definition with "±testValue"
+                test with "±testValue"
             )
         }
 
@@ -75,9 +77,9 @@ internal class PropertyReferenceTest {
 
     @Test
     fun testCompareTo() {
-        expect(definition.ref()) { ref }
+        expect(test.ref()) { ref }
         assertNotEquals<IsPropertyReference<*, *, *>>(
-            modelDefinition.ref(), ref
+            embeddedObject.ref(), ref
         )
     }
 

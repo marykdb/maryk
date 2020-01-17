@@ -1,16 +1,18 @@
 package maryk.core.properties.definitions.wrapper
 
+import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.IsPropertyReference
+import kotlin.reflect.KProperty
 
 /**
  * Contains a List property [definition] which contains items of type [T]
- * It contains an [index] and [name] to which it is referred inside DataModel and a [getter]
+ * It contains an [index] and [name] to which it is referred inside DataModel, and a [getter]
  * function to retrieve value on dataObject of [DO] in context [CX]
  */
-data class ListDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext, in DO : Any> internal constructor(
+data class ListDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext, DO : Any> internal constructor(
     override val index: UInt,
     override val name: String,
     override val definition: IsListDefinition<T, CX>,
@@ -31,4 +33,7 @@ data class ListDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext, in D
 
     override val listItemRefCache =
         mutableMapOf<UInt, MutableMap<IsPropertyReference<*, *, *>?, IsPropertyReference<*, *, *>>>()
+
+    // For delegation in definition
+    operator fun getValue(thisRef: AbstractPropertyDefinitions<DO>, property: KProperty<*>) = this
 }

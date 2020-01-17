@@ -26,16 +26,16 @@ internal class ReversedTest {
         properties = Properties
     ) {
         object Properties : PropertyDefinitions() {
-            val boolean = add(
-                1u, "bool", BooleanDefinition(
+            val boolean by wrap(1u) {
+                BooleanDefinition(
                     final = true
                 )
-            )
-            val dateTime = add(
-                2u, "dateTime", DateTimeDefinition(
+            }
+            val dateTime by wrap(2u) {
+                DateTimeDefinition(
                     final = true
                 )
-            )
+            }
         }
 
         operator fun invoke(
@@ -95,7 +95,7 @@ internal class ReversedTest {
 
     @Test
     fun convertDefinitionToYAMLAndBack() {
-        expect("bool") {
+        expect("boolean") {
             checkYamlConversion(
                 value = Reversed(boolean.ref()),
                 dataModel = Reversed.Model,

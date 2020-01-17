@@ -82,9 +82,10 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
     properties = Properties
 ) {
     object Properties : PropertyDefinitions() {
-        val string = add(
-            index = 1u, name = "string", alternativeNames = setOf("str", "stringValue"),
-            definition = StringDefinition(
+        val string by wrap(
+            1u, alternativeNames = setOf("str", "stringValue")
+        ) {
+            StringDefinition(
                 required = false,
                 final = false,
                 unique = true,
@@ -95,10 +96,9 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 maxSize = 10u,
                 regEx = "ha.*"
             )
-        )
-        val number = add(
-            index = 2u, name = "number",
-            definition = NumberDefinition(
+        }
+        val number by wrap(2u) {
+            NumberDefinition(
                 final = false,
                 unique = true,
                 type = UInt32,
@@ -107,18 +107,16 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 default = 33u,
                 random = true
             )
-        )
-        val boolean = add(
-            index = 3u, name = "boolean",
-            definition = BooleanDefinition(
+        }
+        val boolean by wrap(3u) {
+            BooleanDefinition(
                 required = false,
                 final = true,
                 default = true
             )
-        )
-        val enum = add(
-            index = 4u, name = "enum",
-            definition = EnumDefinition(
+        }
+        val enum by wrap(4u) {
+            EnumDefinition(
                 required = false,
                 final = true,
                 unique = true,
@@ -127,10 +125,9 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 maxValue = Option.V3,
                 default = Option.V1
             )
-        )
-        val date = add(
-            index = 5u, name = "date",
-            definition = DateDefinition(
+        }
+        val date by wrap(5u) {
+            DateDefinition(
                 required = false,
                 final = true,
                 unique = true,
@@ -139,10 +136,9 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 default = Date(2018, 5, 2),
                 fillWithNow = true
             )
-        )
-        val dateTime = add(
-            index = 6u, name = "dateTime",
-            definition = DateTimeDefinition(
+        }
+        val dateTime by wrap(6u) {
+            DateTimeDefinition(
                 required = false,
                 final = true,
                 unique = true,
@@ -152,10 +148,9 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 default = DateTime(2018, 5, 2, 10, 11, 12),
                 fillWithNow = true
             )
-        )
-        val time = add(
-            index = 7u, name = "time",
-            definition = TimeDefinition(
+        }
+        val time by wrap(7u) {
+            TimeDefinition(
                 required = false,
                 final = true,
                 unique = true,
@@ -165,10 +160,9 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 default = Time(10, 11, 12),
                 fillWithNow = true
             )
-        )
-        val fixedBytes = add(
-            index = 8u, name = "fixedBytes",
-            definition = FixedBytesDefinition(
+        }
+        val fixedBytes by wrap(8u) {
+            FixedBytesDefinition(
                 required = false,
                 final = true,
                 unique = true,
@@ -178,10 +172,9 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 random = true,
                 byteSize = 5
             )
-        )
-        val flexBytes = add(
-            index = 9u, name = "flexBytes",
-            definition = FlexBytesDefinition(
+        }
+        val flexBytes by wrap(9u) {
+            FlexBytesDefinition(
                 required = false,
                 final = true,
                 unique = true,
@@ -191,10 +184,9 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 minSize = 1u,
                 maxSize = 7u
             )
-        )
-        val reference = add(
-            index = 10u, name = "reference",
-            definition = ReferenceDefinition(
+        }
+        val reference by wrap(10u) {
+            ReferenceDefinition(
                 required = false,
                 final = true,
                 unique = true,
@@ -203,10 +195,9 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 default = Key("AAECAQAAECAQAAECAQAAEA"),
                 dataModel = { SimpleMarykModel }
             )
-        )
-        val subModel = add(
-            index = 11u, name = "subModel",
-            definition = EmbeddedValuesDefinition(
+        }
+        val subModel by wrap(11u) {
+            EmbeddedValuesDefinition(
                 required = false,
                 final = true,
                 dataModel = { SimpleMarykModel },
@@ -214,10 +205,9 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                     value = "a default"
                 )
             )
-        )
-        val valueModel = add(
-            index = 12u, name = "valueModel",
-            definition = ValueModelDefinition(
+        }
+        val valueModel by wrap(12u) {
+            ValueModelDefinition(
                 required = false,
                 final = true,
                 dataModel = ValueMarykObject,
@@ -234,10 +224,9 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                     date = Date(2010, 10, 10)
                 )
             )
-        )
-        val list = add(
-            index = 13u, name = "list",
-            definition = ListDefinition(
+        }
+        val list by wrap(13u) {
+            ListDefinition(
                 required = false,
                 final = true,
                 minSize = 1u,
@@ -247,10 +236,9 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 ),
                 default = listOf("ha1", "ha2", "ha3")
             )
-        )
-        val set = add(
-            index = 14u, name = "set",
-            definition = SetDefinition(
+        }
+        val set by wrap(14u) {
+            SetDefinition(
                 required = false,
                 final = true,
                 minSize = 1u,
@@ -260,10 +248,9 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 ),
                 default = setOf(1, 2, 3)
             )
-        )
-        val map = add(
-            index = 15u, name = "map",
-            definition = MapDefinition(
+        }
+        val map by wrap(15u) {
+            MapDefinition(
                 required = false,
                 final = true,
                 minSize = 1u,
@@ -274,45 +261,39 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 ),
                 default = mapOf(Date(2010, 11, 12) to 1, Date(2011, 12, 13) to 1)
             )
-        )
-        val multi = add(
-            index = 16u, name = "multi",
-            definition = MultiTypeDefinition(
+        }
+        val multi by wrap(16u) {
+            MultiTypeDefinition(
                 required = false,
                 final = true,
                 typeEnum = MarykTypeEnum,
                 default = TypedValue(MarykTypeEnum.T1, "a value")
             )
-        )
-        val booleanForKey = add(
-            index = 17u, name = "booleanForKey",
-            definition = BooleanDefinition(
+        }
+        val booleanForKey by wrap(17u) {
+            BooleanDefinition(
                 final = true
             )
-        )
-        val dateForKey = add(
-            index = 18u, name = "dateForKey",
-            definition = DateDefinition(
+        }
+        val dateForKey by wrap(18u) {
+            DateDefinition(
                 final = true
             )
-        )
-        val multiForKey = add(
-            index = 19u, name = "multiForKey",
-            definition = MultiTypeDefinition(
+        }
+        val multiForKey by wrap(19u) {
+            MultiTypeDefinition(
                 final = true,
                 typeEnum = SimpleMarykTypeEnum
             )
-        )
-        val enumEmbedded = add(
-            index = 20u, name = "enumEmbedded",
-            definition = EnumDefinition(
+        }
+        val enumEmbedded by wrap(20u) {
+            EnumDefinition(
                 enum = MarykEnumEmbedded,
                 minValue = MarykEnumEmbedded.E1
             )
-        )
-        val mapWithEnum = add(
-            index = 21u, name = "mapWithEnum",
-            definition = MapDefinition(
+        }
+        val mapWithEnum by wrap(21u) {
+            MapDefinition(
                 required = false,
                 final = true,
                 minSize = 1u,
@@ -323,10 +304,9 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 valueDefinition = StringDefinition(),
                 default = mapOf<MarykEnumEmbedded, String>(MarykEnumEmbedded.E1 to "value")
             )
-        )
-        val mapWithList = add(
-            index = 22u, name = "mapWithList",
-            definition = MapDefinition(
+        }
+        val mapWithList by wrap(22u) {
+            MapDefinition(
                 required = false,
                 keyDefinition = StringDefinition(),
                 valueDefinition = ListDefinition(
@@ -334,10 +314,9 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 ),
                 default = mapOf("a" to listOf("b", "c"))
             )
-        )
-        val mapWithSet = add(
-            index = 23u, name = "mapWithSet",
-            definition = MapDefinition(
+        }
+        val mapWithSet by wrap(23u) {
+            MapDefinition(
                 required = false,
                 keyDefinition = StringDefinition(),
                 valueDefinition = SetDefinition(
@@ -345,10 +324,9 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 ),
                 default = mapOf("a" to setOf("b", "c"))
             )
-        )
-        val mapWithMap = add(
-            index = 24u, name = "mapWithMap",
-            definition = MapDefinition(
+        }
+        val mapWithMap by wrap(24u) {
+            MapDefinition(
                 required = false,
                 keyDefinition = StringDefinition(),
                 valueDefinition = MapDefinition(
@@ -357,25 +335,23 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 ),
                 default = mapOf("a" to mapOf("b" to "c"))
             )
-        )
-        val incMap = add(
-            index = 25u, name = "incMap",
-            definition = IncrementingMapDefinition(
+        }
+        val incMap by wrap(25u) {
+            IncrementingMapDefinition(
                 required = false,
                 keyNumberDescriptor = UInt32,
                 valueDefinition = EmbeddedValuesDefinition(
                     dataModel = { EmbeddedMarykModel }
                 )
             )
-        )
-        val location = add(
-            index = 26u, name = "location",
-            definition = GeoPointDefinition(
+        }
+        val location by wrap(26u) {
+            GeoPointDefinition(
                 required = false,
                 final = true,
                 default = GeoPoint(52.0906448, 5.1212607)
             )
-        )
+        }
     }
 
     operator fun invoke(

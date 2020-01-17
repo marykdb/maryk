@@ -14,6 +14,7 @@ import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefi
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.definitions.contextual.ModelContext
+import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.ValueDataObject
@@ -39,7 +40,8 @@ data class ValueModelDefinition<DO : ValueDataObject, DM : ValueDataModel<DO, P>
     IsComparableDefinition<DO, IsPropertyContext>,
     IsSerializableFixedBytesEncodable<DO, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<DO>,
-    HasDefaultValueDefinition<DO> {
+    HasDefaultValueDefinition<DO>,
+    IsWrappableDefinition<DO, IsPropertyContext, FixedBytesDefinitionWrapper<DO, DO, IsPropertyContext, ValueModelDefinition<DO, DM, P>, Any>> {
     override val propertyDefinitionType = Value
     override val wireType = LENGTH_DELIMITED
     override val byteSize = dataModel.byteSize
@@ -91,6 +93,13 @@ data class ValueModelDefinition<DO : ValueDataObject, DM : ValueDataModel<DO, P>
         } else {
             null
         }
+
+    override fun wrap(
+        index: UInt,
+        name: String,
+        alternativeNames: Set<String>?
+    ) =
+        FixedBytesDefinitionWrapper<DO, DO, IsPropertyContext, ValueModelDefinition<DO, DM, P>, Any>(index, name, this, alternativeNames)
 
     object Model :
         ContextualDataModel<ValueModelDefinition<*, *, *>, ObjectPropertyDefinitions<ValueModelDefinition<*, *, *>>, ContainsDefinitionsContext, ModelContext>(

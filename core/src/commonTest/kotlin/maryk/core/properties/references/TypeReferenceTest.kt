@@ -12,7 +12,6 @@ import maryk.test.assertType
 import maryk.test.models.MarykTypeEnum
 import maryk.test.models.MarykTypeEnum.T1
 import maryk.test.models.MarykTypeEnum.T2
-import maryk.test.models.SimpleMarykTypeEnum.S2
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertSame
@@ -24,14 +23,12 @@ internal class TypeReferenceTest {
         properties = Properties
     ) {
         object Properties : PropertyDefinitions() {
-            val multi = add(
-                1u,
-                "multi",
+            val multi by wrap(1u) {
                 MultiTypeDefinition(
                     final = true,
                     typeEnum = MarykTypeEnum
                 )
-            )
+            }
         }
 
         operator fun invoke(

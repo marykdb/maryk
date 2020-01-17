@@ -58,80 +58,73 @@ object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>
     properties = Properties
 ) {
     object Properties : PropertyDefinitions() {
-        val string = add(
-            index = 1u, name = "string", alternativeNames = setOf("str", "stringValue"),
-            definition = StringDefinition(
+        val string by wrap(
+            index = 1u,
+            alternativeNames = setOf("str", "stringValue")
+        ) {
+            StringDefinition(
                 default = "haha",
                 regEx = "ha.*"
             )
-        )
+        }
 
-        val int = add(
-            index = 2u, name = "int",
-            definition = NumberDefinition(
+        val int by wrap(2u) {
+            NumberDefinition(
                 type = SInt32,
                 maxValue = 6
             )
-        )
+        }
 
-        val uint = add(
-            index = 3u, name = "uint",
-            definition = NumberDefinition(
+        val uint by wrap(3u) {
+            NumberDefinition(
                 type = UInt32,
                 final = true
             )
-        )
+        }
 
-        val double = add(
-            index = 4u, name = "double",
-            definition = NumberDefinition(type = Float64)
-        )
+        val double by wrap(4u) {
+            NumberDefinition(type = Float64)
+        }
 
-        val dateTime = add(
-            index = 5u, name = "dateTime",
-            definition = DateTimeDefinition()
-        )
+        val dateTime by wrap(5u) {
+            DateTimeDefinition()
+        }
 
-        val bool = add(
-            index = 6u, name = "bool",
-            definition = BooleanDefinition(
+        val bool by wrap(6u) {
+            BooleanDefinition(
                 final = true
             )
-        )
+        }
 
-        val enum = add(
-            index = 7u, name = "enum",
-            definition = EnumDefinition(
+        val enum by wrap(7u) {
+            EnumDefinition(
                 enum = Option,
                 default = Option.V1,
                 final = true
             )
-        )
+        }
 
-        val list = add(
-            index = 8u, name = "list",
-            definition = ListDefinition(
+        val list by wrap(8u) {
+            ListDefinition(
                 required = false,
                 valueDefinition = NumberDefinition(
                     type = SInt32
                 )
             )
-        )
+        }
 
-        val set = add(
-            index = 9u, name = "set",
-            definition = SetDefinition(
+        val set by wrap(9u) {
+            SetDefinition(
                 required = false,
                 maxSize = 5u,
                 valueDefinition = DateDefinition(
                     maxValue = Date(2100, 12, 31)
                 )
             )
-        )
+        }
 
-        val map = add(
-            index = 10u, name = "map",
-            definition = MapDefinition(
+        val map by wrap(10u) {
+            MapDefinition(
                 required = false,
                 maxSize = 5u,
                 keyDefinition = TimeDefinition(
@@ -141,43 +134,38 @@ object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>
                     maxSize = 10u
                 )
             )
-        )
+        }
 
-        val valueObject = add(
-            index = 11u, name = "valueObject",
-            definition = ValueModelDefinition(
+        val valueObject by wrap(11u) {
+            ValueModelDefinition(
                 required = false,
                 dataModel = TestValueObject
             )
-        )
+        }
 
-        val embeddedValues = add(
-            index = 12u, name = "embeddedValues",
-            definition = EmbeddedValuesDefinition(
+        val embeddedValues by wrap(12u) {
+            EmbeddedValuesDefinition(
                 required = false,
                 dataModel = { EmbeddedMarykModel }
             )
-        )
+        }
 
-        val multi = add(
-            index = 13u, name = "multi",
-            definition = MultiTypeDefinition(
+        val multi by wrap(13u) {
+            MultiTypeDefinition(
                 required = false,
                 typeEnum = SimpleMarykTypeEnum
             )
-        )
+        }
 
-        val reference = add(
-            index = 14u, name = "reference",
-            definition = ReferenceDefinition(
+        val reference by wrap(14u) {
+            ReferenceDefinition(
                 required = false,
                 dataModel = { TestMarykModel }
             )
-        )
+        }
 
-        val listOfString = add(
-            index = 15u, name = "listOfString",
-            definition = ListDefinition(
+        val listOfString by wrap(15u) {
+            ListDefinition(
                 required = false,
                 minSize = 1u,
                 maxSize = 6u,
@@ -185,35 +173,32 @@ object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>
                     maxSize = 10u
                 )
             )
-        )
+        }
 
-        val selfReference = add(
-            index = 16u, name = "selfReference",
-            definition = ReferenceDefinition(
+        val selfReference by wrap(16u) {
+            ReferenceDefinition(
                 required = false,
                 dataModel = { TestMarykModel }
             )
-        )
+        }
 
-        val setOfString = add(
-            index = 17u, name = "setOfString",
-            definition = SetDefinition(
+        val setOfString by wrap(17u) {
+            SetDefinition(
                 required = false,
                 maxSize = 6u,
                 valueDefinition = StringDefinition(
                     maxSize = 10u
                 )
             )
-        )
+        }
 
-        val incMap = add(
-            index = 18u, name = "incMap",
-            definition = IncrementingMapDefinition(
+        val incMap by wrap(18u) {
+            IncrementingMapDefinition(
                 required = false,
                 keyNumberDescriptor = UInt32,
                 valueDefinition = StringDefinition()
             )
-        )
+        }
     }
 
     operator fun invoke(

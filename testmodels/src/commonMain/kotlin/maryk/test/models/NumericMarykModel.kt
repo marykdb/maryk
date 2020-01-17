@@ -18,76 +18,66 @@ object NumericMarykModel : RootDataModel<NumericMarykModel, NumericMarykModel.Pr
     properties = Properties
 ) {
     object Properties : PropertyDefinitions() {
-        val sInt8 = add(
-            index = 1u, name = "sInt8",
-            definition = NumberDefinition(
+        val sInt8 by wrap(1u) {
+            NumberDefinition(
                 type = SInt8,
                 default = 4.toByte()
             )
-        )
-        val sInt16 = add(
-            index = 2u, name = "sInt16",
-            definition = NumberDefinition(
+        }
+        val sInt16 by wrap(2u) {
+            NumberDefinition(
                 type = SInt16,
                 default = 42.toShort()
             )
-        )
-        val sInt32 = add(
-            index = 3u, name = "sInt32",
-            definition = NumberDefinition(
+        }
+        val sInt32 by wrap(3u) {
+            NumberDefinition(
                 type = SInt32,
                 default = 42
             )
-        )
-        val sInt64 = add(
-            index = 4u, name = "sInt64",
-            definition = NumberDefinition(
+        }
+        val sInt64 by wrap(4u) {
+            NumberDefinition(
                 type = SInt64,
                 default = 4123123344572L
             )
-        )
-        val uInt8 = add(
-            index = 5u, name = "uInt8",
-            definition = NumberDefinition(
+        }
+        val uInt8 by wrap(5u) {
+            NumberDefinition(
                 type = UInt8,
                 default = 4.toUByte()
             )
-        )
-        val uInt16 = add(
-            index = 6u, name = "uInt16",
-            definition = NumberDefinition(
+        }
+        val uInt16 by wrap(6u) {
+            NumberDefinition(
                 type = UInt16,
                 default = 42.toUShort()
             )
-        )
-        val uInt32 = add(
-            index = 7u, name = "uInt32",
-            definition = NumberDefinition(
+        }
+        val uInt32 by wrap(7u) {
+            NumberDefinition(
                 type = UInt32,
                 default = 42u
             )
-        )
-        val uInt64 = add(
-            index = 8u, name = "uInt64",
-            definition = NumberDefinition(
+        }
+        val uInt64 by wrap(8u) {
+            NumberDefinition(
                 type = UInt64,
                 default = 4123123344572uL
             )
-        )
-        val float32 = add(
-            index = 9u, name = "float32",
-            definition = NumberDefinition(
+        }
+        val float32 by wrap(9u) {
+            NumberDefinition(
                 type = Float32,
                 default = 42.345F
             )
-        )
-        val float64 = add(
-            index = 10u, name = "float64",
-            definition = NumberDefinition(
+        }
+        val float64 by wrap(10u) {
+            NumberDefinition(
                 type = Float64,
                 default = 2345762.3123
             )
-        )
+        }
     }
 
     operator fun invoke(

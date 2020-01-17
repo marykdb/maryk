@@ -24,12 +24,11 @@ object UniqueModel : RootDataModel<UniqueModel, Properties>(
     properties = Properties
 ) {
     object Properties : PropertyDefinitions() {
-        val email = add(
-            index = 1u, name = "email",
-            definition = StringDefinition(
+        val email by wrap(1u){
+            StringDefinition(
                 unique = true
             )
-        )
+        }
     }
 
     operator fun invoke(email: String) = this.values {

@@ -40,26 +40,23 @@ object Log : RootDataModel<Log, Properties>(
     properties = Properties
 ) {
     object Properties : PropertyDefinitions() {
-        val message = add(
-            index = 1u, name = "message",
-            definition = StringDefinition()
-        )
-        val severity = add(
-            index = 2u, name = "severity",
-            definition = EnumDefinition(
+        val message by wrap(1u) {
+            StringDefinition()
+        }
+        val severity by wrap(2u) {
+            EnumDefinition(
                 final = true,
                 enum = Severity,
                 default = INFO
             )
-        )
-        val timestamp = add(
-            index = 3u, name = "timestamp",
-            definition = DateTimeDefinition(
+        }
+        val timestamp by wrap(3u) {
+            DateTimeDefinition(
                 final = true,
                 precision = MILLIS,
                 fillWithNow = true
             )
-        )
+        }
     }
 
     operator fun invoke(

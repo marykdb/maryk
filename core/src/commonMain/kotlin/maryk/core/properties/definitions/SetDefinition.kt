@@ -7,6 +7,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.contextual.ContextualCollectionDefinition
+import maryk.core.properties.definitions.wrapper.SetDefinitionWrapper
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.DefinitionsContext
@@ -23,7 +24,8 @@ data class SetDefinition<T : Any, CX : IsPropertyContext> internal constructor(
 ) : IsSetDefinition<T, CX>,
     IsUsableInMapValue<Set<T>, CX>,
     IsUsableInMultiType<Set<T>, CX>,
-    IsTransportablePropertyDefinitionType<Set<T>> {
+    IsTransportablePropertyDefinitionType<Set<T>>,
+    IsWrappableDefinition<Set<T>, CX, SetDefinitionWrapper<T, CX, Any>> {
     override val propertyDefinitionType = PropertyDefinitionType.Set
 
     init {
@@ -38,6 +40,13 @@ data class SetDefinition<T : Any, CX : IsPropertyContext> internal constructor(
         valueDefinition: IsUsableInCollection<T, CX>,
         default: Set<T>? = null
     ) : this(required, final, minSize, maxSize, valueDefinition as IsValueDefinition<T, CX>, default)
+
+    override fun wrap(
+        index: UInt,
+        name: String,
+        alternativeNames: Set<String>?
+    ) =
+        SetDefinitionWrapper<T, CX, Any>(index, name, this, alternativeNames)
 
     object Model :
         ContextualDataModel<SetDefinition<*, *>, ObjectPropertyDefinitions<SetDefinition<*, *>>, ContainsDefinitionsContext, SetDefinitionContext>(

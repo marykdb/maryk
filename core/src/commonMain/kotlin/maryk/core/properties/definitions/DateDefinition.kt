@@ -8,6 +8,7 @@ import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.types.Date
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.fromByteReader
@@ -30,7 +31,8 @@ data class DateDefinition(
     IsMomentDefinition<Date>,
     IsSerializableFixedBytesEncodable<Date, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<Date>,
-    HasDefaultValueDefinition<Date> {
+    HasDefaultValueDefinition<Date>,
+    IsWrappableDefinition<Date, IsPropertyContext, FixedBytesDefinitionWrapper<Date, Date, IsPropertyContext, DateDefinition, Any>> {
     override val propertyDefinitionType = PropertyDefinitionType.Date
     override val wireType = VAR_INT
     override val byteSize = 4
@@ -70,6 +72,13 @@ data class DateDefinition(
         value is DateTime && value.time == Time.MIN -> value.date
         else -> null
     }
+
+    override fun wrap(
+        index: UInt,
+        name: String,
+        alternativeNames: Set<String>?
+    ) =
+        FixedBytesDefinitionWrapper<Date, Date, IsPropertyContext, DateDefinition, Any>(index, name, this, alternativeNames)
 
     object Model : SimpleObjectDataModel<DateDefinition, ObjectPropertyDefinitions<DateDefinition>>(
         properties = object : ObjectPropertyDefinitions<DateDefinition>() {

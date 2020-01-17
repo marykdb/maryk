@@ -2,6 +2,7 @@ package maryk.core.properties.definitions.wrapper
 
 import maryk.core.models.IsDataModel
 import maryk.core.models.IsValuesDataModel
+import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
@@ -14,6 +15,7 @@ import maryk.core.properties.references.EmbeddedValuesPropertyRef
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.values.IsValues
 import maryk.core.values.Values
+import kotlin.reflect.KProperty
 
 /**
  * Contains a Embedded Values property [definition] containing Values and Properties described by [P]
@@ -65,4 +67,7 @@ data class EmbeddedValuesDefinitionWrapper<
         referenceGetter: P.() -> (AnyOutPropertyReference?) -> R
     ): (AnyOutPropertyReference?) -> R =
         { this.definition.dataModel(this.ref(it), referenceGetter) }
+
+    // For delegation in definition
+    operator fun getValue(thisRef: AbstractPropertyDefinitions<Any>, property: KProperty<*>) = this
 }

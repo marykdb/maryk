@@ -5,6 +5,7 @@ import maryk.core.models.ContextualDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
+import maryk.core.properties.definitions.wrapper.IncMapDefinitionWrapper
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.NumberDescriptor
 import maryk.core.properties.types.numeric.NumberType
@@ -23,7 +24,8 @@ data class IncrementingMapDefinition<K : Comparable<K>, V : Any, CX : IsProperty
     IsUsableInMapValue<Map<K, V>, CX>,
     IsUsableInMultiType<Map<K, V>, CX>,
     IsMapDefinition<K, V, CX>,
-    IsTransportablePropertyDefinitionType<Map<K, V>> {
+    IsTransportablePropertyDefinitionType<Map<K, V>>,
+    IsWrappableDefinition<Map<K, V>, CX, IncMapDefinitionWrapper<K, V, Map<K, V>, CX, Any>> {
     override val propertyDefinitionType = PropertyDefinitionType.IncMap
 
     val keyNumberDescriptor get() = keyDefinition.type
@@ -48,6 +50,13 @@ data class IncrementingMapDefinition<K : Comparable<K>, V : Any, CX : IsProperty
         NumberDefinition(type = keyNumberDescriptor, reversedStorage = true),
         valueDefinition as IsSubDefinition<V, CX>
     )
+
+    override fun wrap(
+        index: UInt,
+        name: String,
+        alternativeNames: Set<String>?
+    ) =
+        IncMapDefinitionWrapper<K, V, Map<K, V>, CX, Any>(index, name, this, alternativeNames)
 
     object Model :
         ContextualDataModel<IncrementingMapDefinition<*, *, *>, ObjectPropertyDefinitions<IncrementingMapDefinition<*, *, *>>, ContainsDefinitionsContext, KeyValueDefinitionContext>(

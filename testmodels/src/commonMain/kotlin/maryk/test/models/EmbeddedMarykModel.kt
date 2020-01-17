@@ -10,24 +10,21 @@ object EmbeddedMarykModel : DataModel<EmbeddedMarykModel, EmbeddedMarykModel.Pro
     properties = Properties
 ) {
     object Properties : PropertyDefinitions() {
-        val value = add(
-            index = 1u, name = "value",
-            definition = StringDefinition()
-        )
-        val model = add(
-            index = 2u, name = "model",
-            definition = EmbeddedValuesDefinition(
+        val value by wrap(1u) {
+            StringDefinition()
+        }
+        val model by wrap(2u) {
+            EmbeddedValuesDefinition(
                 required = false,
                 dataModel = { EmbeddedMarykModel }
             )
-        )
-        val marykModel = add(
-            index = 3u, name = "marykModel",
-            definition = EmbeddedValuesDefinition(
+        }
+        val marykModel by wrap(3u) {
+            EmbeddedValuesDefinition(
                 required = false,
                 dataModel = { TestMarykModel }
             )
-        )
+        }
     }
 
     operator fun invoke(

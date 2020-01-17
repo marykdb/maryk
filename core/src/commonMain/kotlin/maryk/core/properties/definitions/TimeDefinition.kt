@@ -8,6 +8,7 @@ import maryk.core.models.ContextualDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
+import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.types.TimePrecision
 import maryk.core.properties.types.byteSize
 import maryk.core.properties.types.fromByteReader
@@ -32,7 +33,8 @@ data class TimeDefinition(
     IsTimeDefinition<Time>,
     IsSerializableFixedBytesEncodable<Time, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<Time>,
-    HasDefaultValueDefinition<Time> {
+    HasDefaultValueDefinition<Time>,
+    IsWrappableDefinition<Time, IsPropertyContext, FixedBytesDefinitionWrapper<Time, Time, IsPropertyContext, TimeDefinition, Any>> {
     override val propertyDefinitionType = PropertyDefinitionType.Time
     override val wireType = VAR_INT
     override val byteSize = Time.byteSize(precision)
@@ -80,6 +82,13 @@ data class TimeDefinition(
         is Int -> Time.ofSecondOfDay(value)
         else -> value as? Time
     }
+
+    override fun wrap(
+        index: UInt,
+        name: String,
+        alternativeNames: Set<String>?
+    ) =
+        FixedBytesDefinitionWrapper<Time, Time, IsPropertyContext, TimeDefinition, Any>(index, name, this, alternativeNames)
 
     object Model :
         ContextualDataModel<TimeDefinition, ObjectPropertyDefinitions<TimeDefinition>, ContainsDefinitionsContext, TimeDefinitionContext>(

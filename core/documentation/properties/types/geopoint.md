@@ -43,7 +43,9 @@ of 8 bytes. The integer is calculated by multiplying the latitude/longitude by 1
 and is rounded so it is accurate to 7 digits.
 
 ## Transport Byte representation
-The same format as storage bytes.
+The latitude and longitude value are combined into one Long by bitshifting the latitude as int
+in the front of the long and the longitude in the back. This is encoded as a little endian
+encoded long compatible with `fixed64` encoding in ProtoBuf. 
 
 ## String representation
 The two doubles separated by a comma: `52.0906448,5.1212607`

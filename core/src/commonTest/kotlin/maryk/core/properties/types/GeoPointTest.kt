@@ -28,6 +28,12 @@ class GeoPointTest {
     }
 
     @Test
+    fun convertToProtoBufLong() {
+        assertEquals(2415253385471452140L, GeoPoint(56.2345, 140.233214).asLong())
+        assertEquals(-1010691700701575804L, GeoPoint(-23.532, -90.18231).asLong())
+    }
+
+    @Test
     fun convertCoordinates() {
         val point = GeoPoint(56.2345, 140.233214)
         val lat = point.latitudeAsInt()

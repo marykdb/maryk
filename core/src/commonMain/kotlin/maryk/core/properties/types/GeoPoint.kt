@@ -30,6 +30,9 @@ data class GeoPoint(
     /** Represent latitude as an int. Will base it on 7th decimal (11mm accuracy)*/
     fun longitudeAsInt() = (longitude * 10000000).roundToInt()
 
+    /** Returns a long encoded GeoPoint */
+    fun asLong() = ((this.latitudeAsInt().toULong() shl 32) + this.longitudeAsInt().toUInt()).toLong()
+
     override fun toString() = "$latitude,$longitude"
 }
 

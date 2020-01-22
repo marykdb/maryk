@@ -136,6 +136,9 @@ class Proto3ConversionTest {
                     "a"
                 ).putAllValue(mapOf("b" to "c"))
             )
+            .setLocation(completeObject { location }!!.let { loc ->
+                loc.asLong()
+            })
             .build()
 
         // Write protobuf

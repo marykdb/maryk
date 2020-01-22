@@ -56,6 +56,7 @@ class ReadStorageToChangesKtTest {
     @Test
     fun convertStorageToChanges() {
         var qualifierIndex = -1
+
         val values = TestMarykModel.readStorageToChanges(
             getQualifier = { resultHandler ->
                 val qualifier = valuesAsStorablesWithVersion.getOrNull(++qualifierIndex)?.let {

@@ -12,7 +12,7 @@ object WrongModelIndex : RootDataModel<WrongModelIndex, WrongModelIndex.Properti
 ) {
     object Properties : PropertyDefinitions() {
         val value by
-            wrap(1u) { StringDefinition() }
+            define(1u) { StringDefinition() }
     }
 
     operator fun invoke(value: String) = this.values {
@@ -25,7 +25,7 @@ object WrongModelName : RootDataModel<WrongModelName, WrongModelName.Properties>
     reservedNames = listOf("value")
 ) {
     object Properties : PropertyDefinitions() {
-        val value by wrap (1u) { StringDefinition() }
+        val value by define (1u) { StringDefinition() }
     }
 
     operator fun invoke(value: String) = this.values {

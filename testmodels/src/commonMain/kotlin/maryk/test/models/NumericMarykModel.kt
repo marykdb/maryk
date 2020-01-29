@@ -18,61 +18,61 @@ object NumericMarykModel : RootDataModel<NumericMarykModel, NumericMarykModel.Pr
     properties = Properties
 ) {
     object Properties : PropertyDefinitions() {
-        val sInt8 by wrap(1u) {
+        val sInt8 by define(1u) {
             NumberDefinition(
                 type = SInt8,
                 default = 4.toByte()
             )
         }
-        val sInt16 by wrap(2u) {
+        val sInt16 by define(2u) {
             NumberDefinition(
                 type = SInt16,
                 default = 42.toShort()
             )
         }
-        val sInt32 by wrap(3u) {
+        val sInt32 by define(3u) {
             NumberDefinition(
                 type = SInt32,
                 default = 42
             )
         }
-        val sInt64 by wrap(4u) {
+        val sInt64 by define(4u) {
             NumberDefinition(
                 type = SInt64,
                 default = 4123123344572L
             )
         }
-        val uInt8 by wrap(5u) {
+        val uInt8 by define(5u) {
             NumberDefinition(
                 type = UInt8,
                 default = 4.toUByte()
             )
         }
-        val uInt16 by wrap(6u) {
+        val uInt16 by define(6u) {
             NumberDefinition(
                 type = UInt16,
                 default = 42.toUShort()
             )
         }
-        val uInt32 by wrap(7u) {
+        val uInt32 by define(7u) {
             NumberDefinition(
                 type = UInt32,
                 default = 42u
             )
         }
-        val uInt64 by wrap(8u) {
+        val uInt64 by define(8u) {
             NumberDefinition(
                 type = UInt64,
                 default = 4123123344572uL
             )
         }
-        val float32 by wrap(9u) {
+        val float32 by define(9u) {
             NumberDefinition(
                 type = Float32,
                 default = 42.345F
             )
         }
-        val float64 by wrap(10u) {
+        val float64 by define(10u) {
             NumberDefinition(
                 type = Float64,
                 default = 2345762.3123

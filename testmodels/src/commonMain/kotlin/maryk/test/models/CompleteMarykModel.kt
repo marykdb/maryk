@@ -82,7 +82,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
     properties = Properties
 ) {
     object Properties : PropertyDefinitions() {
-        val string by wrap(
+        val string by define(
             1u, alternativeNames = setOf("str", "stringValue")
         ) {
             StringDefinition(
@@ -97,7 +97,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 regEx = "ha.*"
             )
         }
-        val number by wrap(2u) {
+        val number by define(2u) {
             NumberDefinition(
                 final = false,
                 unique = true,
@@ -108,14 +108,14 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 random = true
             )
         }
-        val boolean by wrap(3u) {
+        val boolean by define(3u) {
             BooleanDefinition(
                 required = false,
                 final = true,
                 default = true
             )
         }
-        val enum by wrap(4u) {
+        val enum by define(4u) {
             EnumDefinition(
                 required = false,
                 final = true,
@@ -126,7 +126,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 default = Option.V1
             )
         }
-        val date by wrap(5u) {
+        val date by define(5u) {
             DateDefinition(
                 required = false,
                 final = true,
@@ -137,7 +137,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 fillWithNow = true
             )
         }
-        val dateTime by wrap(6u) {
+        val dateTime by define(6u) {
             DateTimeDefinition(
                 required = false,
                 final = true,
@@ -149,7 +149,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 fillWithNow = true
             )
         }
-        val time by wrap(7u) {
+        val time by define(7u) {
             TimeDefinition(
                 required = false,
                 final = true,
@@ -161,7 +161,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 fillWithNow = true
             )
         }
-        val fixedBytes by wrap(8u) {
+        val fixedBytes by define(8u) {
             FixedBytesDefinition(
                 required = false,
                 final = true,
@@ -173,7 +173,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 byteSize = 5
             )
         }
-        val flexBytes by wrap(9u) {
+        val flexBytes by define(9u) {
             FlexBytesDefinition(
                 required = false,
                 final = true,
@@ -185,7 +185,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 maxSize = 7u
             )
         }
-        val reference by wrap(10u) {
+        val reference by define(10u) {
             ReferenceDefinition(
                 required = false,
                 final = true,
@@ -196,7 +196,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 dataModel = { SimpleMarykModel }
             )
         }
-        val subModel by wrap(11u) {
+        val subModel by define(11u) {
             EmbeddedValuesDefinition(
                 required = false,
                 final = true,
@@ -206,7 +206,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 )
             )
         }
-        val valueModel by wrap(12u) {
+        val valueModel by define(12u) {
             ValueModelDefinition(
                 required = false,
                 final = true,
@@ -225,7 +225,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 )
             )
         }
-        val list by wrap(13u) {
+        val list by define(13u) {
             ListDefinition(
                 required = false,
                 final = true,
@@ -237,7 +237,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 default = listOf("ha1", "ha2", "ha3")
             )
         }
-        val set by wrap(14u) {
+        val set by define(14u) {
             SetDefinition(
                 required = false,
                 final = true,
@@ -249,7 +249,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 default = setOf(1, 2, 3)
             )
         }
-        val map by wrap(15u) {
+        val map by define(15u) {
             MapDefinition(
                 required = false,
                 final = true,
@@ -262,7 +262,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 default = mapOf(Date(2010, 11, 12) to 1, Date(2011, 12, 13) to 1)
             )
         }
-        val multi by wrap(16u) {
+        val multi by define(16u) {
             MultiTypeDefinition(
                 required = false,
                 final = true,
@@ -270,29 +270,29 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 default = TypedValue(MarykTypeEnum.T1, "a value")
             )
         }
-        val booleanForKey by wrap(17u) {
+        val booleanForKey by define(17u) {
             BooleanDefinition(
                 final = true
             )
         }
-        val dateForKey by wrap(18u) {
+        val dateForKey by define(18u) {
             DateDefinition(
                 final = true
             )
         }
-        val multiForKey by wrap(19u) {
+        val multiForKey by define(19u) {
             MultiTypeDefinition(
                 final = true,
                 typeEnum = SimpleMarykTypeEnum
             )
         }
-        val enumEmbedded by wrap(20u) {
+        val enumEmbedded by define(20u) {
             EnumDefinition(
                 enum = MarykEnumEmbedded,
                 minValue = MarykEnumEmbedded.E1
             )
         }
-        val mapWithEnum by wrap(21u) {
+        val mapWithEnum by define(21u) {
             MapDefinition(
                 required = false,
                 final = true,
@@ -305,7 +305,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 default = mapOf<MarykEnumEmbedded, String>(MarykEnumEmbedded.E1 to "value")
             )
         }
-        val mapWithList by wrap(22u) {
+        val mapWithList by define(22u) {
             MapDefinition(
                 required = false,
                 keyDefinition = StringDefinition(),
@@ -315,7 +315,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 default = mapOf("a" to listOf("b", "c"))
             )
         }
-        val mapWithSet by wrap(23u) {
+        val mapWithSet by define(23u) {
             MapDefinition(
                 required = false,
                 keyDefinition = StringDefinition(),
@@ -325,7 +325,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 default = mapOf("a" to setOf("b", "c"))
             )
         }
-        val mapWithMap by wrap(24u) {
+        val mapWithMap by define(24u) {
             MapDefinition(
                 required = false,
                 keyDefinition = StringDefinition(),
@@ -336,7 +336,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 default = mapOf("a" to mapOf("b" to "c"))
             )
         }
-        val incMap by wrap(25u) {
+        val incMap by define(25u) {
             IncrementingMapDefinition(
                 required = false,
                 keyNumberDescriptor = UInt32,
@@ -345,7 +345,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
                 )
             )
         }
-        val location by wrap(26u) {
+        val location by define(26u) {
             GeoPointDefinition(
                 required = false,
                 final = true,

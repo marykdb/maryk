@@ -8,7 +8,7 @@ object EmbeddedModel : DataModel<EmbeddedModel, EmbeddedModel.Properties>(
     properties = Properties
 ) {
     object Properties : PropertyDefinitions() {
-        val value by wrap(1u) {
+        val value by define(1u) {
             StringDefinition(
                 default = "haha",
                 regEx = "ha.*"

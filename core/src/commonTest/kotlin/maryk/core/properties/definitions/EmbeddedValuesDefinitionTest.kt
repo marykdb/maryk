@@ -23,7 +23,7 @@ internal class EmbeddedValuesDefinitionTest {
         properties = Properties
     ) {
         object Properties : PropertyDefinitions() {
-            val string by wrap(1u) {
+            val string by define(1u) {
                 StringDefinition(
                     regEx = "jur"
                 )

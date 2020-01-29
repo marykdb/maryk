@@ -19,7 +19,7 @@ object ComplexModel : RootDataModel<ComplexModel, Properties>(
     properties = Properties
 ) {
     object Properties : PropertyDefinitions() {
-        val multi by wrap(1u) {
+        val multi by define(1u) {
             MultiTypeDefinition(
                 required = false,
                 typeEnum = MarykTypeEnum,
@@ -27,7 +27,7 @@ object ComplexModel : RootDataModel<ComplexModel, Properties>(
             )
         }
 
-        val mapStringString by wrap(2u) {
+        val mapStringString by define(2u) {
             MapDefinition(
                 required = false,
                 minSize = 1u,
@@ -42,7 +42,7 @@ object ComplexModel : RootDataModel<ComplexModel, Properties>(
             )
         }
 
-        val mapIntObject by wrap(3u) {
+        val mapIntObject by define(3u) {
             MapDefinition(
                 required = false,
                 keyDefinition = NumberDefinition(
@@ -55,7 +55,7 @@ object ComplexModel : RootDataModel<ComplexModel, Properties>(
         }
 
         @Suppress("RemoveExplicitTypeArguments")
-        val mapIntMulti by wrap(4u) {
+        val mapIntMulti by define(4u) {
             MapDefinition(
                 required = false,
                 keyDefinition = NumberDefinition(
@@ -67,7 +67,7 @@ object ComplexModel : RootDataModel<ComplexModel, Properties>(
             )
         }
 
-        val mapWithList by wrap(5u) {
+        val mapWithList by define(5u) {
             MapDefinition(
                 required = false,
                 keyDefinition = StringDefinition(),
@@ -77,7 +77,7 @@ object ComplexModel : RootDataModel<ComplexModel, Properties>(
             )
         }
 
-        val mapWithSet by wrap(6u) {
+        val mapWithSet by define(6u) {
             MapDefinition(
                 required = false,
                 keyDefinition = StringDefinition(),
@@ -87,7 +87,7 @@ object ComplexModel : RootDataModel<ComplexModel, Properties>(
             )
         }
 
-        val mapWithMap by wrap(7u) {
+        val mapWithMap by define(7u) {
             MapDefinition(
                 required = false,
                 keyDefinition = StringDefinition(),
@@ -98,7 +98,7 @@ object ComplexModel : RootDataModel<ComplexModel, Properties>(
             )
         }
 
-        val incMap by wrap(8u) {
+        val incMap by define(8u) {
             IncrementingMapDefinition(
                 required = false,
                 keyNumberDescriptor = UInt32,

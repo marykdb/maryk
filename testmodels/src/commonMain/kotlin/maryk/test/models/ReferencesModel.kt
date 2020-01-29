@@ -10,7 +10,7 @@ object ReferencesModel : RootDataModel<ReferencesModel, ReferencesModel.Properti
     properties = Properties
 ) {
     object Properties : PropertyDefinitions() {
-        val references by wrap(1u) {
+        val references by define(1u) {
             ListDefinition(
                 valueDefinition = ReferenceDefinition(
                     dataModel = { SimpleMarykModel }

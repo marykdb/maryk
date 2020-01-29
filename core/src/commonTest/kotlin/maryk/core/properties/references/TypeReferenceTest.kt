@@ -23,7 +23,7 @@ internal class TypeReferenceTest {
         properties = Properties
     ) {
         object Properties : PropertyDefinitions() {
-            val multi by wrap(1u) {
+            val multi by define(1u) {
                 MultiTypeDefinition(
                     final = true,
                     typeEnum = MarykTypeEnum

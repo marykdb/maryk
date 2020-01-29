@@ -19,8 +19,8 @@ import kotlin.test.assertSame
 import kotlin.test.expect
 
 private object Properties : PropertyDefinitions() {
-    val test by wrap(1u) { StringDefinition() }
-    val embeddedObject by wrap(2u) {
+    val test by define(1u) { StringDefinition() }
+    val embeddedObject by define(2u) {
         EmbeddedValuesDefinition(
             dataModel = { Model }
         )

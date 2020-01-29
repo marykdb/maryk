@@ -40,17 +40,17 @@ object Log : RootDataModel<Log, Properties>(
     properties = Properties
 ) {
     object Properties : PropertyDefinitions() {
-        val message by wrap(1u) {
+        val message by define(1u) {
             StringDefinition()
         }
-        val severity by wrap(2u) {
+        val severity by define(2u) {
             EnumDefinition(
                 final = true,
                 enum = Severity,
                 default = INFO
             )
         }
-        val timestamp by wrap(3u) {
+        val timestamp by define(3u) {
             DateTimeDefinition(
                 final = true,
                 precision = MILLIS,

@@ -14,16 +14,16 @@ import kotlin.test.Test
 import kotlin.test.assertFailsWith
 
 internal object WrongProperties : PropertyDefinitions() {
-    val boolean by wrap(1u) {
+    val boolean by define(1u) {
         BooleanDefinition(
             required = false,
             final = true
         )
     }
-    val dateTime by wrap(2u) {
+    val dateTime by define(2u) {
         DateTimeDefinition()
     }
-    val string by wrap(3u) {
+    val string by define(3u) {
         StringDefinition()
     }
 }

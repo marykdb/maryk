@@ -10,16 +10,16 @@ object EmbeddedMarykModel : DataModel<EmbeddedMarykModel, EmbeddedMarykModel.Pro
     properties = Properties
 ) {
     object Properties : PropertyDefinitions() {
-        val value by wrap(1u) {
+        val value by define(1u) {
             StringDefinition()
         }
-        val model by wrap(2u) {
+        val model by define(2u) {
             EmbeddedValuesDefinition(
                 required = false,
                 dataModel = { EmbeddedMarykModel }
             )
         }
-        val marykModel by wrap(3u) {
+        val marykModel by define(3u) {
             EmbeddedValuesDefinition(
                 required = false,
                 dataModel = { TestMarykModel }

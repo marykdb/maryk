@@ -59,7 +59,7 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
         mapOf(*pair)
 
     /** Wrap definition from [definitionCreator] into property definitions at [index]. Optionally set [alternativeNames] */
-    fun <T : Any, D : IsWrappableDefinition<T, *, W>, W: IsDefinitionWrapper<T, T, *, DO>, DO : Any> wrap(
+    fun <T : Any, D : IsWrappableDefinition<T, *, W>, W: IsDefinitionWrapper<T, T, *, DO>, DO : Any> define(
         index: UInt,
         alternativeNames: Set<String>? = null,
         definitionCreator: () -> D

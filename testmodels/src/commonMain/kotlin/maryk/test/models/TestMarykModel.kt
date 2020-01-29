@@ -58,7 +58,7 @@ object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>
     properties = Properties
 ) {
     object Properties : PropertyDefinitions() {
-        val string by wrap(
+        val string by define(
             index = 1u,
             alternativeNames = setOf("str", "stringValue")
         ) {
@@ -68,35 +68,35 @@ object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>
             )
         }
 
-        val int by wrap(2u) {
+        val int by define(2u) {
             NumberDefinition(
                 type = SInt32,
                 maxValue = 6
             )
         }
 
-        val uint by wrap(3u) {
+        val uint by define(3u) {
             NumberDefinition(
                 type = UInt32,
                 final = true
             )
         }
 
-        val double by wrap(4u) {
+        val double by define(4u) {
             NumberDefinition(type = Float64)
         }
 
-        val dateTime by wrap(5u) {
+        val dateTime by define(5u) {
             DateTimeDefinition()
         }
 
-        val bool by wrap(6u) {
+        val bool by define(6u) {
             BooleanDefinition(
                 final = true
             )
         }
 
-        val enum by wrap(7u) {
+        val enum by define(7u) {
             EnumDefinition(
                 enum = Option,
                 default = Option.V1,
@@ -104,7 +104,7 @@ object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>
             )
         }
 
-        val list by wrap(8u) {
+        val list by define(8u) {
             ListDefinition(
                 required = false,
                 valueDefinition = NumberDefinition(
@@ -113,7 +113,7 @@ object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>
             )
         }
 
-        val set by wrap(9u) {
+        val set by define(9u) {
             SetDefinition(
                 required = false,
                 maxSize = 5u,
@@ -123,7 +123,7 @@ object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>
             )
         }
 
-        val map by wrap(10u) {
+        val map by define(10u) {
             MapDefinition(
                 required = false,
                 maxSize = 5u,
@@ -136,35 +136,35 @@ object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>
             )
         }
 
-        val valueObject by wrap(11u) {
+        val valueObject by define(11u) {
             ValueModelDefinition(
                 required = false,
                 dataModel = TestValueObject
             )
         }
 
-        val embeddedValues by wrap(12u) {
+        val embeddedValues by define(12u) {
             EmbeddedValuesDefinition(
                 required = false,
                 dataModel = { EmbeddedMarykModel }
             )
         }
 
-        val multi by wrap(13u) {
+        val multi by define(13u) {
             MultiTypeDefinition(
                 required = false,
                 typeEnum = SimpleMarykTypeEnum
             )
         }
 
-        val reference by wrap(14u) {
+        val reference by define(14u) {
             ReferenceDefinition(
                 required = false,
                 dataModel = { TestMarykModel }
             )
         }
 
-        val listOfString by wrap(15u) {
+        val listOfString by define(15u) {
             ListDefinition(
                 required = false,
                 minSize = 1u,
@@ -175,14 +175,14 @@ object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>
             )
         }
 
-        val selfReference by wrap(16u) {
+        val selfReference by define(16u) {
             ReferenceDefinition(
                 required = false,
                 dataModel = { TestMarykModel }
             )
         }
 
-        val setOfString by wrap(17u) {
+        val setOfString by define(17u) {
             SetDefinition(
                 required = false,
                 maxSize = 6u,
@@ -192,7 +192,7 @@ object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>
             )
         }
 
-        val incMap by wrap(18u) {
+        val incMap by define(18u) {
             IncrementingMapDefinition(
                 required = false,
                 keyNumberDescriptor = UInt32,

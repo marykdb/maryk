@@ -24,7 +24,7 @@ object UniqueModel : RootDataModel<UniqueModel, Properties>(
     properties = Properties
 ) {
     object Properties : PropertyDefinitions() {
-        val email by wrap(1u){
+        val email by define(1u){
             StringDefinition(
                 unique = true
             )

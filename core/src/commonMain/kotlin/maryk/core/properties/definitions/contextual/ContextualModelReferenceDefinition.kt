@@ -19,7 +19,7 @@ import maryk.lib.exceptions.ParseException
 /** Definition for a reference to another DataObject resolved from context by [contextualResolver]. */
 @Suppress("FunctionName")
 fun <DM : IsNamedDataModel<*>, CX : IsPropertyContext> ContextualModelReferenceDefinition(
-    contextualResolver: (context: CX?, name: String) -> Unit.() -> DM
+    contextualResolver: Unit.(context: CX?, name: String) -> Unit.() -> DM
 ) = ContextualModelReferenceDefinition<DM, CX, CX>(contextualResolver) {
     it
 }
@@ -29,8 +29,8 @@ fun <DM : IsNamedDataModel<*>, CX : IsPropertyContext> ContextualModelReferenceD
  * Has a [contextTransformer] to transform context.
  */
 data class ContextualModelReferenceDefinition<DM : IsNamedDataModel<*>, in CX : IsPropertyContext, CXI : IsPropertyContext>(
-    val contextualResolver: (context: CXI?, name: String) -> Unit.() -> DM,
-    val contextTransformer: (CX?) -> CXI?
+    val contextualResolver: Unit.(context: CXI?, name: String) -> Unit.() -> DM,
+    val contextTransformer: Unit.(CX?) -> CXI?
 ) : IsValueDefinition<IsDataModelReference<DM>, CX>, IsContextualEncodable<IsDataModelReference<DM>, CX> {
     override val required = true
     override val final = true
@@ -40,7 +40,7 @@ data class ContextualModelReferenceDefinition<DM : IsNamedDataModel<*>, in CX : 
         value.name
 
     override fun fromString(string: String, context: CX?) =
-        resolveContext(contextTransformer(context), string)
+        resolveContext(contextTransformer(Unit, context), string)
 
     override fun writeJsonValue(value: IsDataModelReference<DM>, writer: IsJsonLikeWriter, context: CX?) =
         writer.writeString(this.asString(value, context))
@@ -75,16 +75,16 @@ data class ContextualModelReferenceDefinition<DM : IsNamedDataModel<*>, in CX : 
         context: CX?,
         earlierValue: IsDataModelReference<DM>?
     ) =
-        resolveContext(contextTransformer(context), initString(length, reader))
+        resolveContext(contextTransformer(Unit, context), initString(length, reader))
 
     private fun resolveContext(context: CXI?, name: String): IsDataModelReference<DM> {
         try {
-            this.contextualResolver(context, name).let {
+            this.contextualResolver(Unit, context, name).let {
                 return DataModelReference(name, it)
             }
         } catch (e: DefNotFoundException) {
             return LazyDataModelReference(name) {
-                this.contextualResolver(context, name)
+                this.contextualResolver(Unit, context, name)
             }
         }
     }

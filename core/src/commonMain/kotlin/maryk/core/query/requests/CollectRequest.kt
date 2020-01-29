@@ -59,7 +59,7 @@ data class CollectRequest<RQ : IsRequest<RP>, RP : IsResponse>(
         override fun writeJson(obj: AnyCollectRequest, writer: IsJsonLikeWriter, context: RequestContext?) {
             writer.writeStartObject()
             writer.writeFieldName(obj.name)
-            val typedRequest = Properties.request.toSerializable?.invoke(obj.request, context)!!
+            val typedRequest = Properties.request.toSerializable?.invoke(Unit, obj.request, context)!!
             Properties.request.definition.writeJsonValue(typedRequest, writer, context)
             writer.writeEndObject()
         }

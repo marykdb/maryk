@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions.wrapper
 
+import co.touchlab.stately.concurrency.AtomicReference
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSetDefinition
@@ -23,27 +24,27 @@ data class SetDefinitionWrapper<T : Any, CX : IsPropertyContext, DO : Any> inter
     override val definition: IsSetDefinition<T, CX>,
     override val alternativeNames: Set<String>? = null,
     override val getter: (DO) -> Set<T>? = { null },
-    override val capturer: ((CX, Set<T>) -> Unit)? = null,
-    override val toSerializable: ((Set<T>?, CX?) -> Set<T>?)? = null,
-    override val fromSerializable: ((Set<T>?) -> Set<T>?)? = null,
-    override val shouldSerialize: ((Any) -> Boolean)? = null
+    override val capturer: (Unit.(CX, Set<T>) -> Unit)? = null,
+    override val toSerializable: (Unit.(Set<T>?, CX?) -> Set<T>?)? = null,
+    override val fromSerializable: (Unit.(Set<T>?) -> Set<T>?)? = null,
+    override val shouldSerialize: (Unit.(Any) -> Boolean)? = null
 ) :
     AbstractDefinitionWrapper(index, name),
     IsSetDefinition<T, CX> by definition,
     IsDefinitionWrapper<Set<T>, Set<T>, CX, DO> {
     override val graphType = PropRef
 
-    private val setItemRefCache =
-        mutableMapOf<T, MutableMap<IsPropertyReference<*, *, *>?, IsPropertyReference<*, *, *>>>()
+    private val setItemRefCache : AtomicReference<Array<IsPropertyReference<*, *, *>>?> =
+        AtomicReference(null)
 
     override fun ref(parentRef: AnyPropertyReference?) = cacheRef(parentRef) {
         SetReference(this, parentRef as CanHaveComplexChildReference<*, *, *, *>?)
     }
 
     /** Get a reference to a specific set item by [value] with optional [parentRef] */
-    private fun itemRef(value: T, parentRef: AnyPropertyReference? = null) = this.ref(parentRef).let {
-        cacheRef(it, setItemRefCache.getOrPut(value) { mutableMapOf() }) {
-            this.definition.itemRef(value, it)
+    private fun itemRef(value: T, parentRef: AnyPropertyReference? = null) = this.ref(parentRef).let { ref ->
+        cacheRef(ref, setItemRefCache, { (it.parentReference as SetReference<*, *>).parentReference === parentRef && it.value == value}) {
+            this.definition.itemRef(value, ref)
         }
     }
 

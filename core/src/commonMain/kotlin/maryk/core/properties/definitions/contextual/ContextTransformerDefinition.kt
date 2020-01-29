@@ -13,23 +13,23 @@ import maryk.json.IsJsonLikeWriter
  */
 data class ContextTransformerDefinition<T : Any, in CX : IsPropertyContext, CXI : IsPropertyContext>(
     val definition: IsValueDefinition<T, CXI>,
-    private val contextTransformer: (CX?) -> CXI?
+    private val contextTransformer: Unit.(CX?) -> CXI?
 ) : IsValueDefinition<T, CX>, IsContextualEncodable<T, CX> {
     override val wireType = definition.wireType
     override val required = definition.required
     override val final = definition.final
 
     override fun fromString(string: String, context: CX?) =
-        this.definition.fromString(string, contextTransformer(context))
+        this.definition.fromString(string, contextTransformer(Unit, context))
 
     override fun asString(value: T, context: CX?) =
-        this.definition.asString(value, contextTransformer(context))
+        this.definition.asString(value, contextTransformer(Unit, context))
 
     override fun calculateTransportByteLengthWithKey(index: UInt, value: T, cacher: WriteCacheWriter, context: CX?) =
-        this.definition.calculateTransportByteLengthWithKey(index, value, cacher, contextTransformer(context))
+        this.definition.calculateTransportByteLengthWithKey(index, value, cacher, contextTransformer(Unit, context))
 
     override fun calculateTransportByteLength(value: T, cacher: WriteCacheWriter, context: CX?) =
-        this.definition.calculateTransportByteLength(value, cacher, contextTransformer(context))
+        this.definition.calculateTransportByteLength(value, cacher, contextTransformer(Unit, context))
 
     override fun writeTransportBytes(
         value: T,
@@ -37,14 +37,14 @@ data class ContextTransformerDefinition<T : Any, in CX : IsPropertyContext, CXI 
         writer: (byte: Byte) -> Unit,
         context: CX?
     ) =
-        this.definition.writeTransportBytes(value, cacheGetter, writer, contextTransformer(context))
+        this.definition.writeTransportBytes(value, cacheGetter, writer, contextTransformer(Unit, context))
 
     override fun writeJsonValue(value: T, writer: IsJsonLikeWriter, context: CX?) =
-        this.definition.writeJsonValue(value, writer, contextTransformer(context))
+        this.definition.writeJsonValue(value, writer, contextTransformer(Unit, context))
 
     override fun readJson(reader: IsJsonLikeReader, context: CX?) =
-        this.definition.readJson(reader, contextTransformer(context))
+        this.definition.readJson(reader, contextTransformer(Unit, context))
 
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?, earlierValue: T?) =
-        this.definition.readTransportBytes(length, reader, contextTransformer(context), earlierValue)
+        this.definition.readTransportBytes(length, reader, contextTransformer(Unit, context), earlierValue)
 }

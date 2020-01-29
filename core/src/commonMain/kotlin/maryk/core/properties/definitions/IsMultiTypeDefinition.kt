@@ -219,8 +219,6 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
         }
     }
 
-
-
     override fun readJson(reader: IsJsonLikeReader, context: CX?): TypedValue<E, T> {
         if (reader is IsYamlReader) {
             val token = reader.currentToken as? TokenWithType
@@ -355,5 +353,4 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
 
     override fun getEmbeddedByName(name: String): IsDefinitionWrapper<*, *, *, *>? = null
     override fun getEmbeddedByIndex(index: UInt): IsDefinitionWrapper<*, *, *, *>? = null
-
 }

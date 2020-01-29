@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions.wrapper
 
+import co.touchlab.stately.concurrency.AtomicReference
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
@@ -21,7 +22,7 @@ import kotlin.reflect.KProperty
 
 /**
  * Contains a Multi Type property [definition] containing type [E]
- * It contains an [index] and [name] to which it is referred inside DataModel and a [getter]
+ * It contains an [index] and [name] to which it is referred inside DataModel, and a [getter]
  * function to retrieve value on dataObject of [DO] in context [CX]
  */
 data class MultiTypeDefinitionWrapper<E : TypeEnum<T>, T: Any, TO : Any, in CX : IsPropertyContext, DO : Any> internal constructor(
@@ -30,18 +31,20 @@ data class MultiTypeDefinitionWrapper<E : TypeEnum<T>, T: Any, TO : Any, in CX :
     override val definition: IsMultiTypeDefinition<E, T, CX>,
     override val alternativeNames: Set<String>? = null,
     override val getter: (DO) -> TO? = { null },
-    override val capturer: ((CX, TypedValue<E, T>) -> Unit)? = null,
-    override val toSerializable: ((TO?, CX?) -> TypedValue<E, T>?)? = null,
-    override val fromSerializable: ((TypedValue<E, T>?) -> TO?)? = null,
-    override val shouldSerialize: ((Any) -> Boolean)? = null
+    override val capturer: (Unit.(CX, TypedValue<E, T>) -> Unit)? = null,
+    override val toSerializable: (Unit.(TO?, CX?) -> TypedValue<E, T>?)? = null,
+    override val fromSerializable: (Unit.(TypedValue<E, T>?) -> TO?)? = null,
+    override val shouldSerialize: (Unit.(Any) -> Boolean)? = null
 ) :
     AbstractDefinitionWrapper(index, name),
     IsMultiTypeDefinition<E, T, CX> by definition,
     IsDefinitionWrapper<TypedValue<E, T>, TO, CX, DO> {
     override val graphType = PropRef
 
-    val typeRefCache: MutableMap<IsPropertyReference<*, *, *>?, IsPropertyReference<*, *, *>> = mutableMapOf()
-    val typeValueRefCache: MutableMap<E, MutableMap<IsPropertyReference<*, *, *>?, IsPropertyReference<*, *, *>>> = mutableMapOf()
+    val typeRefCache: AtomicReference<Array<IsPropertyReference<*, *, *>>?> =
+        AtomicReference(null)
+    val typeValueRefCache: AtomicReference<Array<IsPropertyReference<*, *, *>>?> =
+        AtomicReference(null)
 
     override fun ref(parentRef: AnyPropertyReference?) = cacheRef(parentRef) {
         MultiTypePropertyReference(this, parentRef)
@@ -53,9 +56,9 @@ data class MultiTypeDefinitionWrapper<E : TypeEnum<T>, T: Any, TO : Any, in CX :
         }
     }
 
-    private fun typedValueReference(type: E, parentReference: AnyPropertyReference?) = this.ref(parentReference).let { parentRef ->
-        cacheRef(parentRef, typeValueRefCache.getOrPut(type) { mutableMapOf() }) {
-            super.typedValueRef(type, parentRef)
+    private fun typedValueReference(type: E, parentReference: AnyPropertyReference?) = this.ref(parentReference).let { ref ->
+        cacheRef(ref, typeValueRefCache, { (it.parentReference as MultiTypePropertyReference<*, *, *, *, *>).parentReference === parentReference && it.type == type}) {
+            super.typedValueRef(type, ref)
         }
     }
 

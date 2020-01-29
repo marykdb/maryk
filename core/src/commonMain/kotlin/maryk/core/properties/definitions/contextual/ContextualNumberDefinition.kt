@@ -24,7 +24,7 @@ import maryk.lib.exceptions.ParseException
  */
 internal class ContextualNumberDefinition<in CX : IsPropertyContext>(
     override val required: Boolean = true,
-    val contextualResolver: (context: CX?) -> NumberDescriptor<Comparable<Any>>
+    val contextualResolver: Unit.(context: CX?) -> NumberDescriptor<Comparable<Any>>
 ) : IsSubDefinition<Comparable<Any>, CX>, IsContextualEncodable<Comparable<Any>, CX> {
     override val final = true
 
@@ -37,7 +37,7 @@ internal class ContextualNumberDefinition<in CX : IsPropertyContext>(
         cacher: WriteCacheWriter,
         context: CX?
     ) =
-        ProtoBuf.calculateKeyLength(index) + contextualResolver(context).calculateTransportByteLength(value)
+        ProtoBuf.calculateKeyLength(index) + contextualResolver(Unit, context).calculateTransportByteLength(value)
 
     override fun writeTransportBytesWithKey(
         index: UInt,
@@ -46,7 +46,7 @@ internal class ContextualNumberDefinition<in CX : IsPropertyContext>(
         writer: (byte: Byte) -> Unit,
         context: CX?
     ) {
-        val numType = contextualResolver(context)
+        val numType = contextualResolver(Unit, context)
         ProtoBuf.writeKey(index, numType.wireType, writer)
         numType.writeTransportBytes(value, writer)
     }
@@ -57,16 +57,16 @@ internal class ContextualNumberDefinition<in CX : IsPropertyContext>(
         context: CX?,
         earlierValue: Comparable<Any>?
     ) =
-        contextualResolver(context).readTransportBytes(reader)
+        contextualResolver(Unit, context).readTransportBytes(reader)
 
     override fun readJson(reader: IsJsonLikeReader, context: CX?): Comparable<Any> = reader.currentToken.let {
         when (it) {
             is Value<*> -> {
                 when (val jsonValue = it.value) {
                     null -> throw ParseException("Contextual number cannot be null in JSON")
-                    is String -> contextualResolver(context).ofString(jsonValue)
+                    is String -> contextualResolver(Unit, context).ofString(jsonValue)
                     else -> {
-                        fromNativeType(contextualResolver(context), jsonValue)
+                        fromNativeType(contextualResolver(Unit, context), jsonValue)
                             ?: throw ParseException("Contextual number was not defined as a number or string")
                     }
                 }
@@ -76,7 +76,7 @@ internal class ContextualNumberDefinition<in CX : IsPropertyContext>(
     }
 
     override fun writeJsonValue(value: Comparable<Any>, writer: IsJsonLikeWriter, context: CX?) = when {
-        contextualResolver(context) !in arrayOf(UInt64, SInt64, Float64, Float32) -> {
+        contextualResolver(Unit, context) !in arrayOf(UInt64, SInt64, Float64, Float32) -> {
             writer.writeValue(
                 value.toString()
             )

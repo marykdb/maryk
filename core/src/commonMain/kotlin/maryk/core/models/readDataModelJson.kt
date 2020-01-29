@@ -33,6 +33,7 @@ internal fun <DM : IsNamedDataModel<*>, P : IsDataModelPropertyDefinitions<DM, *
     val propertyDefinitions = lazy {
         propertyDefinitionsCreator().apply {
             (propertiesAsWrapper.definition as IsPropertyDefinitionsCollectionDefinition<IsPropertyDefinitions>).capturer.invoke(
+                Unit,
                 context as DefinitionsConversionContext,
                 this
             )

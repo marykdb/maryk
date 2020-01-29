@@ -80,7 +80,7 @@ abstract class DataModel<DM : IsValuesDataModel<P>, P : PropertyDefinitions>(
                     capturer = { context, propDefs ->
                         context?.apply {
                             this.propertyDefinitions = propDefs
-                        } ?: ContextNotFoundException()
+                        } ?: throw ContextNotFoundException()
                     }
                 ),
                 getter = { it.properties as PropertyDefinitions }

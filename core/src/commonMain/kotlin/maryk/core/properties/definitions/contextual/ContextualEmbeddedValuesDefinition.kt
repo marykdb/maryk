@@ -18,7 +18,7 @@ import maryk.json.JsonWriter
 
 /** Definition for an embedded Values from a context resolved from [contextualResolver] */
 internal data class ContextualEmbeddedValuesDefinition<CX : IsPropertyContext>(
-    val contextualResolver: (context: CX?) -> AbstractValuesDataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, CX>
+    val contextualResolver: Unit.(context: CX?) -> AbstractValuesDataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, CX>
 ) : IsEmbeddedValuesDefinition<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, CX> {
     override val dataModel: IsValuesDataModel<PropertyDefinitions>
         get() = throw DefNotFoundException("dataModel is contextually determined")
@@ -41,13 +41,13 @@ internal data class ContextualEmbeddedValuesDefinition<CX : IsPropertyContext>(
     }
 
     override fun writeJsonValue(value: ValuesImpl, writer: IsJsonLikeWriter, context: CX?) =
-        contextualResolver(context).writeJson(value, writer, context)
+        contextualResolver(Unit, context).writeJson(value, writer, context)
 
     override fun readJson(reader: IsJsonLikeReader, context: CX?) =
-        contextualResolver(context).readJson(reader, context)
+        contextualResolver(Unit, context).readJson(reader, context)
 
     override fun calculateTransportByteLength(value: ValuesImpl, cacher: WriteCacheWriter, context: CX?) =
-        contextualResolver(context).calculateProtoBufLength(value, cacher, null)
+        contextualResolver(Unit, context).calculateProtoBufLength(value, cacher, null)
 
     override fun writeTransportBytes(
         value: ValuesImpl,
@@ -55,7 +55,7 @@ internal data class ContextualEmbeddedValuesDefinition<CX : IsPropertyContext>(
         writer: (byte: Byte) -> Unit,
         context: CX?
     ) =
-        contextualResolver(context).writeProtoBuf(value, cacheGetter, writer, context)
+        contextualResolver(Unit, context).writeProtoBuf(value, cacheGetter, writer, context)
 
     override fun readTransportBytes(
         length: Int,
@@ -63,5 +63,5 @@ internal data class ContextualEmbeddedValuesDefinition<CX : IsPropertyContext>(
         context: CX?,
         earlierValue: Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>?
     ) =
-        contextualResolver(context).readProtoBuf(length, reader, context)
+        contextualResolver(Unit, context).readProtoBuf(length, reader, context)
 }

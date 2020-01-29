@@ -13,7 +13,7 @@ import maryk.json.IsJsonLikeWriter
  */
 internal data class ContextCollectionTransformerDefinition<T : Any, C : Collection<T>, in CX : IsPropertyContext, CXI : IsPropertyContext>(
     val definition: IsSerializablePropertyDefinition<C, CXI>,
-    private val contextTransformer: (CX?) -> CXI?
+    private val contextTransformer: Unit.(CX?) -> CXI?
 ) : IsSerializablePropertyDefinition<C, CX>, IsContextualEncodable<C, CX> {
     override val required = definition.required
     override val final = definition.final
@@ -22,25 +22,25 @@ internal data class ContextCollectionTransformerDefinition<T : Any, C : Collecti
     override fun getEmbeddedByIndex(index: UInt) = this.definition.getEmbeddedByIndex(index)
 
     override fun writeJsonValue(value: C, writer: IsJsonLikeWriter, context: CX?) {
-        this.definition.writeJsonValue(value, writer, contextTransformer(context))
+        this.definition.writeJsonValue(value, writer, contextTransformer(Unit, context))
     }
 
     override fun readJson(reader: IsJsonLikeReader, context: CX?) =
-        this.definition.readJson(reader, contextTransformer(context))
+        this.definition.readJson(reader, contextTransformer(Unit, context))
 
     override fun calculateTransportByteLengthWithKey(
         index: UInt,
         value: C,
         cacher: WriteCacheWriter,
         context: CX?
-    ) = this.definition.calculateTransportByteLengthWithKey(index, value, cacher, contextTransformer(context))
+    ) = this.definition.calculateTransportByteLengthWithKey(index, value, cacher, contextTransformer(Unit, context))
 
     override fun readTransportBytes(
         length: Int,
         reader: () -> Byte,
         context: CX?,
         earlierValue: C?
-    ) = this.definition.readTransportBytes(length, reader, contextTransformer(context), earlierValue)
+    ) = this.definition.readTransportBytes(length, reader, contextTransformer(Unit, context), earlierValue)
 
     override fun writeTransportBytesWithKey(
         index: UInt,
@@ -49,6 +49,6 @@ internal data class ContextCollectionTransformerDefinition<T : Any, C : Collecti
         writer: (byte: Byte) -> Unit,
         context: CX?
     ) {
-        this.definition.writeTransportBytesWithKey(index, value, cacheGetter, writer, contextTransformer(context))
+        this.definition.writeTransportBytesWithKey(index, value, cacheGetter, writer, contextTransformer(Unit, context))
     }
 }

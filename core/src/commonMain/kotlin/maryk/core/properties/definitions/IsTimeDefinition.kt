@@ -18,7 +18,7 @@ interface IsTimeDefinition<T : IsTime<T>> :
             index: UInt,
             definitions: ObjectPropertyDefinitions<DO>,
             getter: (DO) -> TimePrecision,
-            capturer: ((TimePrecisionContext, TimePrecision) -> Unit)? = null
+            capturer: (Unit.(TimePrecisionContext, TimePrecision) -> Unit)? = null
         ) {
             definitions.add(
                 index,

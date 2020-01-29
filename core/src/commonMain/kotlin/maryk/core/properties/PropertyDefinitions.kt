@@ -43,7 +43,7 @@ internal class MutablePropertyDefinitions : PropertyDefinitions(), IsMutableProp
 
 /** Definition for a collection of Property Definitions for in a ObjectPropertyDefinitions */
 internal data class PropertyDefinitionsCollectionDefinition(
-    override val capturer: (DefinitionsConversionContext?, PropertyDefinitions) -> Unit
+    override val capturer: Unit.(DefinitionsConversionContext?, PropertyDefinitions) -> Unit
 ) : IsCollectionDefinition<
     AnyDefinitionWrapper,
     PropertyDefinitions,
@@ -79,7 +79,7 @@ internal data class PropertyDefinitionsCollectionDefinition(
 
     override fun newMutableCollection(context: DefinitionsConversionContext?) =
         MutablePropertyDefinitions().apply {
-            capturer(context, this)
+            capturer(Unit, context, this)
         }
 
     /**
@@ -133,10 +133,10 @@ internal data class PropertyDefinitionsCollectionDefinitionWrapper<in DO : Any>(
 {
     override val graphType = PropRef
 
-    override val toSerializable: ((PropertyDefinitions?, DefinitionsConversionContext?) -> PropertyDefinitions?)? = null
-    override val fromSerializable: ((PropertyDefinitions?) -> PropertyDefinitions?)? = null
-    override val shouldSerialize: ((Any) -> Boolean)? = null
-    override val capturer: ((DefinitionsConversionContext, PropertyDefinitions) -> Unit)? = null
+    override val toSerializable: (Unit.(PropertyDefinitions?, DefinitionsConversionContext?) -> PropertyDefinitions?)? = null
+    override val fromSerializable: (Unit.(PropertyDefinitions?) -> PropertyDefinitions?)? = null
+    override val shouldSerialize: (Unit.(Any) -> Boolean)? = null
+    override val capturer: (Unit.(DefinitionsConversionContext, PropertyDefinitions) -> Unit)? = null
 
     override fun ref(parentRef: AnyPropertyReference?) = throw NotImplementedError()
 }

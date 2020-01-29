@@ -26,7 +26,7 @@ abstract class ObjectDataModel<DO : Any, P : ObjectPropertyDefinitions<DO>>(
                     capturer = { context, propDefs ->
                         context?.apply {
                             this.propertyDefinitions = propDefs
-                        } ?: ContextNotFoundException()
+                        } ?: throw ContextNotFoundException()
                     }
                 ),
                 getter = {

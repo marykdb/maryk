@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions.wrapper
 
+import co.touchlab.stately.concurrency.AtomicReference
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.ListDefinition
@@ -22,8 +23,8 @@ interface IsListDefinitionWrapper<T : Any, TO : Any, LD : IsListDefinition<T, CX
     CacheableReferenceCreator {
     override val definition: LD
 
-    val anyItemRefCache: MutableMap<IsPropertyReference<*, *, *>?, IsPropertyReference<*, *, *>>
-    val listItemRefCache: MutableMap<UInt, MutableMap<IsPropertyReference<*, *, *>?, IsPropertyReference<*, *, *>>>
+    val anyItemRefCache: AtomicReference<Array<IsPropertyReference<*, *, *>>?>
+    val listItemRefCache: AtomicReference<Array<IsPropertyReference<*, *, *>>?>
 
     @Suppress("UNCHECKED_CAST")
     override fun ref(parentRef: AnyPropertyReference?) = cacheRef(parentRef) {
@@ -34,12 +35,12 @@ interface IsListDefinitionWrapper<T : Any, TO : Any, LD : IsListDefinition<T, CX
     }
 
     /** Get a reference to a specific list item by [index] with optional [parentRef] */
-    fun getItemRef(index: UInt, parentRef: AnyPropertyReference? = null) = cacheRef(parentRef, listItemRefCache.getOrPut(index) { mutableMapOf() }) {
+    fun getItemRef(index: UInt, parentRef: AnyPropertyReference? = null) = cacheRef(parentRef, listItemRefCache, { (it.parentReference as ListReference<*, *>).parentReference === parentRef && it.index == index }) {
         this.definition.itemRef(index, this.ref(parentRef))
     }
 
     /** Get a reference to a specific list item at any index with optional [parentRef] */
-    fun getAnyItemRef(parentRef: AnyPropertyReference? = null): ListAnyItemReference<T, CX> = cacheRef(parentRef, anyItemRefCache) {
+    fun getAnyItemRef(parentRef: AnyPropertyReference? = null): ListAnyItemReference<T, CX> = cacheRef(parentRef, anyItemRefCache, { (it.parentReference as ListReference<*, *>).parentReference === parentRef }) {
         this.definition.anyItemRef(this.ref(parentRef))
     }
 

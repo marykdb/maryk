@@ -15,7 +15,7 @@ import maryk.json.JsonWriter
 
 /** Definition for an embedded DataObject from a context resolved from [contextualResolver] */
 internal data class ContextualEmbeddedObjectDefinition<CX : IsPropertyContext>(
-    val contextualResolver: (context: CX?) -> SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>
+    val contextualResolver: Unit.(context: CX?) -> SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>
 ) : IsValueDefinition<Any, CX>, IsContextualEncodable<Any, CX> {
     override val required = true
     override val final = true
@@ -35,13 +35,13 @@ internal data class ContextualEmbeddedObjectDefinition<CX : IsPropertyContext>(
     }
 
     override fun writeJsonValue(value: Any, writer: IsJsonLikeWriter, context: CX?) =
-        contextualResolver(context).writeJson(value, writer, context)
+        contextualResolver(Unit, context).writeJson(value, writer, context)
 
     override fun readJson(reader: IsJsonLikeReader, context: CX?) =
-        contextualResolver(context).readJson(reader, context).toDataObject()
+        contextualResolver(Unit, context).readJson(reader, context).toDataObject()
 
     override fun calculateTransportByteLength(value: Any, cacher: WriteCacheWriter, context: CX?) =
-        contextualResolver(context).calculateProtoBufLength(value, cacher, context)
+        contextualResolver(Unit, context).calculateProtoBufLength(value, cacher, context)
 
     override fun writeTransportBytes(
         value: Any,
@@ -49,7 +49,7 @@ internal data class ContextualEmbeddedObjectDefinition<CX : IsPropertyContext>(
         writer: (byte: Byte) -> Unit,
         context: CX?
     ) =
-        contextualResolver(context).writeProtoBuf(value, cacheGetter, writer, context)
+        contextualResolver(Unit, context).writeProtoBuf(value, cacheGetter, writer, context)
 
     override fun readTransportBytes(
         length: Int,
@@ -57,5 +57,5 @@ internal data class ContextualEmbeddedObjectDefinition<CX : IsPropertyContext>(
         context: CX?,
         earlierValue: Any?
     ) =
-        contextualResolver(context).readProtoBuf(length, reader, context).toDataObject()
+        contextualResolver(Unit, context).readProtoBuf(length, reader, context).toDataObject()
 }

@@ -13,7 +13,7 @@ import maryk.json.IsJsonLikeWriter
  */
 internal data class ContextValueTransformDefinition<T : Any, in CX : IsPropertyContext>(
     val definition: IsValueDefinition<T, CX>,
-    private val valueTransformer: (CX?, T) -> T
+    private val valueTransformer: Unit.(CX?, T) -> T
 ) : IsValueDefinition<T, CX>, IsContextualEncodable<T, CX> {
     override val wireType = definition.wireType
     override val required = definition.required
@@ -21,6 +21,7 @@ internal data class ContextValueTransformDefinition<T : Any, in CX : IsPropertyC
 
     override fun fromString(string: String, context: CX?) =
         this.valueTransformer(
+            Unit,
             context,
             this.definition.fromString(string, context)
         )
@@ -49,8 +50,8 @@ internal data class ContextValueTransformDefinition<T : Any, in CX : IsPropertyC
         this.definition.writeJsonValue(value, writer, context)
 
     override fun readJson(reader: IsJsonLikeReader, context: CX?) =
-        this.valueTransformer(context, this.definition.readJson(reader, context))
+        this.valueTransformer(Unit, context, this.definition.readJson(reader, context))
 
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?, earlierValue: T?) =
-        this.valueTransformer(context, this.definition.readTransportBytes(length, reader, context, earlierValue))
+        this.valueTransformer(Unit, context, this.definition.readTransportBytes(length, reader, context, earlierValue))
 }

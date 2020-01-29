@@ -192,12 +192,12 @@ data class PropRefGraph<P : PropertyDefinitions, DM : IsValuesDataModel<PS>, PS 
 }
 
 /**
- * Add properties to Property Reference PropRefGraph objects so they are encodable
+ * Add properties to Property Reference PropRefGraph objects, so they are encodable
  */
 internal fun <DO : Any> ObjectPropertyDefinitions<DO>.addProperties(
     index: UInt,
     getter: (DO) -> List<IsPropRefGraphNode<*>>,
-    contextResolver: (GraphContext?) -> PropertyDefinitions
+    contextResolver: Unit.(GraphContext?) -> PropertyDefinitions
 ) =
     add(index, "properties",
         ListDefinition(
@@ -237,7 +237,7 @@ internal fun writePropertiesToJson(
     writer: IsJsonLikeWriter,
     context: GraphContext?
 ) {
-    val transformed = PropRefGraph.Properties.properties.toSerializable!!.invoke(listOfPropRefGraphNodes, context)!!
+    val transformed = PropRefGraph.Properties.properties.toSerializable!!.invoke(Unit, listOfPropRefGraphNodes, context)!!
 
     writer.writeStartArray()
     for (graphable in transformed) {

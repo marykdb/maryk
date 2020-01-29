@@ -76,7 +76,7 @@ abstract class AbstractValues<DO : Any, DM : IsDataModel<P>, P : AbstractPropert
             }
             else -> throw ParseException(
                 "Property '${valueDef.name}' with value '$value' should be of type ${(valueDef.definition as? IsTransportablePropertyDefinitionType<*>)?.propertyDefinitionType?.name
-                    ?: "unknown"}"
+                    ?: "unknown"} ${valueDef.definition}"
             )
         }
     }
@@ -260,7 +260,7 @@ inline fun <reified T : Any, TO : Any> IsDefinitionWrapper<T, TO, *, *>.convertT
         }
         value is ObjectValues<*, *> -> value.toDataObject() as TO?
         else -> try {
-            this.fromSerializable?.invoke(value as? T?) ?: value as? TO?
+            this.fromSerializable?.invoke(Unit, value as? T?) ?: value as? TO?
         } catch (e: Throwable) {
             value as? TO?
         }

@@ -11,8 +11,8 @@ import maryk.json.IsJsonLikeWriter
 
 /** Definition which refers to specific property value definition based on context from [contextualResolver] */
 data class ContextualValueDefinition<CX : IsPropertyContext, CXI : IsPropertyContext, T : Any, out D : IsValueDefinition<T, CXI>>(
-    val contextualResolver: (context: CX?) -> D,
-    val contextTransformer: (context: CX?) -> CXI? = {
+    val contextualResolver: Unit.(context: CX?) -> D,
+    val contextTransformer: Unit.(context: CX?) -> CXI? = {
         @Suppress("UNCHECKED_CAST")
         it as CXI?
     },
@@ -22,22 +22,22 @@ data class ContextualValueDefinition<CX : IsPropertyContext, CXI : IsPropertyCon
     override val wireType = WireType.LENGTH_DELIMITED
 
     override fun asString(value: T, context: CX?) =
-        contextualResolver(context).asString(value, contextTransformer(context))
+        contextualResolver(Unit, context).asString(value, contextTransformer(Unit, context))
 
     override fun fromString(string: String, context: CX?) =
-        contextualResolver(context).fromString(string, contextTransformer(context))
+        contextualResolver(Unit, context).fromString(string, contextTransformer(Unit, context))
 
     override fun writeJsonValue(value: T, writer: IsJsonLikeWriter, context: CX?) =
-        contextualResolver(context).writeJsonValue(value, writer, contextTransformer(context))
+        contextualResolver(Unit, context).writeJsonValue(value, writer, contextTransformer(Unit, context))
 
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?, earlierValue: T?) =
-        contextualResolver(context).readTransportBytes(length, reader, contextTransformer(context), null)
+        contextualResolver(Unit, context).readTransportBytes(length, reader, contextTransformer(Unit, context), null)
 
     override fun readJson(reader: IsJsonLikeReader, context: CX?) =
-        contextualResolver(context).readJson(reader, contextTransformer(context))
+        contextualResolver(Unit, context).readJson(reader, contextTransformer(Unit, context))
 
     override fun calculateTransportByteLengthWithKey(index: UInt, value: T, cacher: WriteCacheWriter, context: CX?) =
-        contextualResolver(context).calculateTransportByteLengthWithKey(index, value, cacher, contextTransformer(context))
+        contextualResolver(Unit, context).calculateTransportByteLengthWithKey(index, value, cacher, contextTransformer(Unit, context))
 
     override fun writeTransportBytesWithKey(
         index: UInt,
@@ -46,7 +46,7 @@ data class ContextualValueDefinition<CX : IsPropertyContext, CXI : IsPropertyCon
         writer: (byte: Byte) -> Unit,
         context: CX?
     ) {
-        contextualResolver(context).writeTransportBytesWithKey(index, value, cacheGetter, writer, contextTransformer(context))
+        contextualResolver(Unit, context).writeTransportBytesWithKey(index, value, cacheGetter, writer, contextTransformer(Unit, context))
     }
 
     override fun writeTransportBytes(
@@ -55,8 +55,8 @@ data class ContextualValueDefinition<CX : IsPropertyContext, CXI : IsPropertyCon
         writer: (byte: Byte) -> Unit,
         context: CX?
     ) =
-        contextualResolver(context).writeTransportBytes(value, cacheGetter, writer, contextTransformer(context))
+        contextualResolver(Unit, context).writeTransportBytes(value, cacheGetter, writer, contextTransformer(Unit, context))
 
     override fun calculateTransportByteLength(value: T, cacher: WriteCacheWriter, context: CX?) =
-        contextualResolver(context).calculateTransportByteLength(value, cacher, contextTransformer(context))
+        contextualResolver(Unit, context).calculateTransportByteLength(value, cacher, contextTransformer(Unit, context))
 }

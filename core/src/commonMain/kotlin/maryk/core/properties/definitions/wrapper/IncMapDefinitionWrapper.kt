@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions.wrapper
 
+import co.touchlab.stately.concurrency.AtomicReference
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IncrementingMapDefinition
@@ -24,22 +25,22 @@ data class IncMapDefinitionWrapper<K : Comparable<K>, V : Any, TO : Any, CX : Is
     override val definition: IncrementingMapDefinition<K, V, CX>,
     override val alternativeNames: Set<String>? = null,
     override val getter: (DO) -> TO? = { null },
-    override val capturer: ((CX, Map<K, V>) -> Unit)? = null,
-    override val toSerializable: ((TO?, CX?) -> Map<K, V>?)? = null,
-    override val fromSerializable: ((Map<K, V>?) -> TO?)? = null,
-    override val shouldSerialize: ((Any) -> Boolean)? = null
+    override val capturer: (Unit.(CX, Map<K, V>) -> Unit)? = null,
+    override val toSerializable: (Unit.(TO?, CX?) -> Map<K, V>?)? = null,
+    override val fromSerializable: (Unit.(Map<K, V>?) -> TO?)? = null,
+    override val shouldSerialize: (Unit.(Any) -> Boolean)? = null
 ) :
     AbstractDefinitionWrapper(index, name),
     IsMapDefinition<K, V, CX> by definition,
     IsMapDefinitionWrapper<K, V, TO, CX, DO> {
     override val graphType = PropRef
 
-    override val anyItemRefCache =
-        mutableMapOf<IsPropertyReference<*, *, *>?, IsPropertyReference<*, *, *>>()
-    override val keyRefCache =
-        mutableMapOf<K, MutableMap<IsPropertyReference<*, *, *>?, IsPropertyReference<*, *, *>>>()
-    override val valueRefCache =
-        mutableMapOf<K, MutableMap<IsPropertyReference<*, *, *>?, IsPropertyReference<*, *, *>>>()
+    override val anyItemRefCache: AtomicReference<Array<IsPropertyReference<*, *, *>>?> =
+        AtomicReference(null)
+    override val keyRefCache: AtomicReference<Array<IsPropertyReference<*, *, *>>?> =
+        AtomicReference(null)
+    override val valueRefCache: AtomicReference<Array<IsPropertyReference<*, *, *>>?> =
+        AtomicReference(null)
 
     @Suppress("UNCHECKED_CAST")
     override fun ref(parentRef: AnyPropertyReference?): IncMapReference<K, V, CX> = cacheRef(parentRef) {

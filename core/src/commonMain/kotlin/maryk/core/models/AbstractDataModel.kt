@@ -126,7 +126,7 @@ abstract class AbstractDataModel<DO : Any, P : AbstractPropertyDefinitions<DO>, 
         }
 
         if (reader.currentToken !is StartObject) {
-            throw IllegalJsonOperation("Expected object at start of JSON")
+            throw IllegalJsonOperation("Expected object at start of JSON, not ${reader.currentToken}")
         }
 
         val valueMap = MutableValueItems()

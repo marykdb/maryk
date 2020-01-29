@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions.wrapper
 
+import co.touchlab.stately.concurrency.AtomicReference
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
@@ -28,20 +29,20 @@ data class ObjectListDefinitionWrapper<
     override val definition: ListDefinition<ODO, CX>,
     override val alternativeNames: Set<String>? = null,
     override val getter: (DO) -> List<TO>? = { null },
-    override val capturer: ((CX, List<ODO>) -> Unit)? = null,
-    override val toSerializable: ((List<TO>?, CX?) -> List<ODO>?)? = null,
-    override val fromSerializable: ((List<ODO>?) -> List<TO>?)? = null,
-    override val shouldSerialize: ((Any) -> Boolean)? = null
+    override val capturer: (Unit.(CX, List<ODO>) -> Unit)? = null,
+    override val toSerializable: (Unit.(List<TO>?, CX?) -> List<ODO>?)? = null,
+    override val fromSerializable: (Unit.(List<ODO>?) -> List<TO>?)? = null,
+    override val shouldSerialize: (Unit.(Any) -> Boolean)? = null
 ) :
     AbstractDefinitionWrapper(index, name),
     IsListDefinition<ODO, CX> by definition,
     IsListDefinitionWrapper<ODO, TO, ListDefinition<ODO, CX>, CX, DO> {
     override val graphType = PropRef
 
-    override val anyItemRefCache =
-        mutableMapOf<IsPropertyReference<*, *, *>?, IsPropertyReference<*, *, *>>()
-    override val listItemRefCache =
-        mutableMapOf<UInt, MutableMap<IsPropertyReference<*, *, *>?, IsPropertyReference<*, *, *>>>()
+    override val anyItemRefCache: AtomicReference<Array<IsPropertyReference<*, *, *>>?> =
+        AtomicReference(null)
+    override val listItemRefCache: AtomicReference<Array<IsPropertyReference<*, *, *>>?> =
+        AtomicReference(null)
 
     /** Get sub reference below an index */
     @Suppress("UNCHECKED_CAST")

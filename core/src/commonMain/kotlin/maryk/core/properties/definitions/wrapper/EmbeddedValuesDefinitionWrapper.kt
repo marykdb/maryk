@@ -33,23 +33,24 @@ data class EmbeddedValuesDefinitionWrapper<
     override val definition: IsEmbeddedValuesDefinition<DM, P, CX>,
     override val alternativeNames: Set<String>? = null,
     override val getter: (Any) -> Values<DM, P>? = { null },
-    override val capturer: ((CX, Values<DM, P>) -> Unit)? = null,
-    override val toSerializable: ((Values<DM, P>?, CX?) -> Values<DM, P>?)? = null,
-    override val fromSerializable: ((Values<DM, P>?) -> Values<DM, P>?)? = null,
-    override val shouldSerialize: ((Any) -> Boolean)? = null
+    override val capturer: (Unit.(CX, Values<DM, P>) -> Unit)? = null,
+    override val toSerializable: (Unit.(Values<DM, P>?, CX?) -> Values<DM, P>?)? = null,
+    override val fromSerializable: (Unit.(Values<DM, P>?) -> Values<DM, P>?)? = null,
+    override val shouldSerialize: (Unit.(Any) -> Boolean)? = null
 ) :
     AbstractDefinitionWrapper(index, name),
     IsEmbeddedValuesDefinition<DM, P, CX> by definition,
     IsDefinitionWrapper<Values<DM, P>, Values<DM, P>, CX, Any> {
     override val graphType = PropRef
 
-    override fun ref(parentRef: AnyPropertyReference?) =
+    override fun ref(parentRef: AnyPropertyReference?) = cacheRef(parentRef, refCache) {
         EmbeddedValuesPropertyRef(
             this,
             parentRef?.let {
                 it as CanHaveComplexChildReference<*, *, *, *>
             }
         )
+    }
 
     /** Get a top-level reference on a model with [propertyDefinitionGetter]. Used for contextual embed values property definitions. */
     fun <T : Any, W : IsDefinitionWrapper<T, *, *, *>, DM: IsDataModel<P2>, P2: PropertyDefinitions> refWithDM(

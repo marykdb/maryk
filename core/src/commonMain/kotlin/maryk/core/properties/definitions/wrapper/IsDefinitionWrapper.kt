@@ -51,10 +51,10 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
     val alternativeNames: Set<String>?
     val definition: IsSerializablePropertyDefinition<T, CX>
     val getter: (DO) -> TO?
-    val capturer: ((CX, T) -> Unit)?
-    val toSerializable: ((TO?, CX?) -> T?)?
-    val fromSerializable: ((T?) -> TO?)?
-    val shouldSerialize: ((Any) -> Boolean)?
+    val capturer: (Unit.(CX, T) -> Unit)?
+    val toSerializable: (Unit.(TO?, CX?) -> T?)?
+    val fromSerializable: (Unit.(T?) -> TO?)?
+    val shouldSerialize: (Unit.(Any) -> Boolean)?
 
     /** Create an index [value] pair for maps */
     infix fun withNotNull(value: Any): ValueItem {
@@ -64,9 +64,9 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
     /** Create an index [value] pair for maps */
     infix fun with(value: TO?) = value?.let {
         val serializedValue = try {
-            if (shouldSerialize == null || shouldSerialize!!(value)) {
+            if (shouldSerialize == null || shouldSerialize!!(Unit, value)) {
                 toSerializable?.let { serializer ->
-                    serializer(value, null) ?: value
+                    serializer(Unit, value, null) ?: value
                 } ?: value
             } else {
                 value
@@ -123,14 +123,14 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
     fun getPropertyAndSerialize(dataObject: DO, context: CX?): T? {
         @Suppress("UNCHECKED_CAST")
         this.toSerializable?.let {
-            return it.invoke(this.getter(dataObject), context)
+            return it.invoke(Unit, this.getter(dataObject), context)
         } ?: return this.getter(dataObject) as T?
     }
 
     /** Capture the [value] in the [context] if needed */
     fun capture(context: CX?, value: T) {
         if (this.capturer != null && context != null) {
-            this.capturer!!.invoke(context, value)
+            this.capturer!!.invoke(Unit, context, value)
         }
     }
 

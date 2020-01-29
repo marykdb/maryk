@@ -21,8 +21,8 @@ import maryk.lib.exceptions.ParseException
 
 /** Definition which refers to indexed enum definition based on context from [contextualResolver] */
 data class ContextualIndexedEnumDefinition<CX : IsPropertyContext, CXI : IsPropertyContext, T : IndexedEnum, D : IsMultiTypeDefinition<TypeEnum<Any>, Any, RequestContext>>(
-    val contextualResolver: (context: CX?) -> D,
-    val contextTransformer: (context: CX?) -> CXI? = {
+    val contextualResolver: Unit.(context: CX?) -> D,
+    val contextTransformer: Unit.(context: CX?) -> CXI? = {
         @Suppress("UNCHECKED_CAST")
         it as CXI?
     },
@@ -37,7 +37,7 @@ data class ContextualIndexedEnumDefinition<CX : IsPropertyContext, CXI : IsPrope
 
     @Suppress("UNCHECKED_CAST")
     override fun fromString(string: String, context: CX?) =
-        contextualResolver(context).typeEnum.resolve(string) as T?
+        contextualResolver(Unit, context).typeEnum.resolve(string) as T?
             ?: throw ParseException("Unknown Type enum $string")
 
     override fun writeJsonValue(value: T, writer: IsJsonLikeWriter, context: CX?) {
@@ -67,7 +67,7 @@ data class ContextualIndexedEnumDefinition<CX : IsPropertyContext, CXI : IsPrope
     @Suppress("UNCHECKED_CAST")
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?, earlierValue: T?): T {
         val index = initUIntByVar(reader)
-        return contextualResolver(context).typeEnum.resolve(index) as T?
+        return contextualResolver(Unit, context).typeEnum.resolve(index) as T?
             ?: throw ParseException("Unknown Type enum index $index")
     }
 }

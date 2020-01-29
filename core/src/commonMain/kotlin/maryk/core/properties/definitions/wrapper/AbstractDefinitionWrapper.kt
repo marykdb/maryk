@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions.wrapper
 
+import co.touchlab.stately.concurrency.AtomicReference
 import maryk.core.properties.references.IsPropertyReference
 
 private val regEx = Regex("[a-z]+[a-zA-Z0-9]*")
@@ -16,6 +17,6 @@ abstract class AbstractDefinitionWrapper(
     }
 
     /** Cache for all references, so they are not created over and over */
-    override val refCache =
-        mutableMapOf<IsPropertyReference<*, *, *>?, IsPropertyReference<*, *, *>>()
+    override val refCache: AtomicReference<Array<IsPropertyReference<*, *, *>>?> =
+        AtomicReference(null)
 }

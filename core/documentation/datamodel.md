@@ -36,9 +36,9 @@ object Person : RootDataModel<Person, Person.Properties>(
     properties = Properties
 ){ 
     object Properties: PropertyDefinitions() {
-        val firstName = add(1u, "firstname", StringDefinition(), Person::firstName)
-        val lastName = add(2u, "lastName", StringDefinition(), Person::lastName)
-        val dateOfBirth = add(3u, "dateOfBirth", DateDefinition(), Person::dateOfBirth)
+        val firstName by define(1u) { StringDefinition() }
+        val lastName by define(2u) { StringDefinition() }
+        val dateOfBirth by define(3u) { DateDefinition() }
     }
 
     operator fun invoke(
@@ -128,7 +128,7 @@ name: PersonRoleInPeriod
   dataModel: Role
 ? 3: startDate
 : !Date
-? 4: endDate:
+? 4: endDate
 : !Date
 ```
  
@@ -159,10 +159,10 @@ data class PersonRoleInPeriod(
     val endDate: Date
 ) : ValueDataObject(toBytes(person, role, startDate, stopDate)) {
     object Properties : ObjectProperties<PersonRoleInPeriod>() {
-        val person = add(1u, "person", ReferenceDefinition(dataModel = Person), PersonRoleInPeriod::person)
-        val role = add(2u, "role", EnumProperty(values = Role.values()), PersonRoleInPeriod::role)
-        val startDate = add(3u, "startDate", DateDefinition(), PersonRoleInPeriod::startDate)
-        val endDate = add(4u, "endDate". DateDefinition(), PersonRoleInPeriod::endDate)
+        val person by define(1u) { ReferenceDefinition(dataModel = Person) }
+        val role by define(2u) { EnumProperty(values = Role.values()) }
+        val startDate by define(3u) { DateDefinition() }
+        val endDate by define(4u) { DateDefinition() }
     }
 
     companion object: ValueDataModel<TestValueObject, Properties>(
@@ -203,19 +203,23 @@ object TimelineItem: RootDataModel<TimelineItem>(
     properties = Properties
 ) {
     object Properties: PropertyDefinitions() {
-        val dateOfPosting = add(1u, "dateOfPosting", DateTimeDefinition(
-            final = true,
-            precision = TimePrecision.SECONDS
-        ))
-        
-        val item = add(2u, "item", MultiTypeDefinition(
-            final = true,
-            typeMap = mapOf(
-                1 to EmbeddedObjectDefinition(dataModel = Post),
-                2 to EmbeddedObjectDefinition(dataModel = Event),
-                3 to EmbeddedObjectDefinition(dataModel = Advertisement)
+        val dateOfPosting by define(1u) {
+            DateTimeDefinition(
+                final = true,
+                precision = TimePrecision.SECONDS
             )
-        ))
+        }
+        
+        val item by define(2u) {
+            MultiTypeDefinition(
+                final = true,
+                typeMap = mapOf(
+                    1 to EmbeddedObjectDefinition(dataModel = Post),
+                    2 to EmbeddedObjectDefinition(dataModel = Event),
+                    3 to EmbeddedObjectDefinition(dataModel = Advertisement)
+                )
+            )
+        }
     }
 
     operator fun invoke(

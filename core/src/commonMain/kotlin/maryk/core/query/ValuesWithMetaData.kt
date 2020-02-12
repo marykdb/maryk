@@ -10,11 +10,11 @@ import maryk.core.models.IsValuesDataModel
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.definitions.BooleanDefinition
-import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
-import maryk.core.properties.definitions.NumberDefinition
-import maryk.core.properties.definitions.contextual.ContextualEmbeddedValuesDefinition
+import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
+import maryk.core.properties.definitions.contextual.embedContextual
+import maryk.core.properties.definitions.number
+import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.numeric.UInt64
 import maryk.core.values.ObjectValues
@@ -28,26 +28,28 @@ data class ValuesWithMetaData<DM : IsRootValuesDataModel<P>, P : PropertyDefinit
     val isDeleted: Boolean
 ) {
     object Properties : ObjectPropertyDefinitions<ValuesWithMetaData<*, *>>() {
-        val key = add(1u, "key", ContextualReferenceDefinition<RequestContext>(
-            contextualResolver = {
-                it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
-            }
-        ), ValuesWithMetaData<*, *>::key)
-
-        @Suppress("UNCHECKED_CAST")
-        val values = add(2u, "values",
-            ContextualEmbeddedValuesDefinition<RequestContext>(
+        val key by contextual(
+            index = 1u,
+            getter = ValuesWithMetaData<*, *>::key,
+            definition = ContextualReferenceDefinition<RequestContext>(
                 contextualResolver = {
-                    it?.dataModel as? AbstractValuesDataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, RequestContext>?
-                        ?: throw ContextNotFoundException()
+                    it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
                 }
-            ) as IsEmbeddedValuesDefinition<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions, RequestContext>,
-            ValuesWithMetaData<*, *>::values as (ValuesWithMetaData<*, *>) -> Values<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>?
+            )
         )
-        val firstVersion =
-            add(3u, "firstVersion", NumberDefinition(type = UInt64), ValuesWithMetaData<*, *>::firstVersion)
-        val lastVersion = add(4u, "lastVersion", NumberDefinition(type = UInt64), ValuesWithMetaData<*, *>::lastVersion)
-        val isDeleted = add(5u, "isDeleted", BooleanDefinition(), ValuesWithMetaData<*, *>::isDeleted)
+
+        val values by embedContextual(
+            index = 2u,
+            getter = ValuesWithMetaData<*, *>::values,
+            contextualResolver = { context: RequestContext? ->
+                @Suppress("UNCHECKED_CAST")
+                context?.dataModel as? AbstractValuesDataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, RequestContext>?
+                    ?: throw ContextNotFoundException()
+            }
+        )
+        val firstVersion by number(3u, ValuesWithMetaData<*, *>::firstVersion, UInt64)
+        val lastVersion by number(4u, ValuesWithMetaData<*, *>::lastVersion, UInt64)
+        val isDeleted by boolean(5u, ValuesWithMetaData<*, *>::isDeleted)
     }
 
     companion object : QueryDataModel<ValuesWithMetaData<*, *>, Properties>(

@@ -1,11 +1,7 @@
 package maryk.core.models
 
-import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsValueDefinition
-import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.wrapper.ListDefinitionWrapper
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.query.RequestContext
@@ -76,17 +72,4 @@ abstract class ReferencesDataModel<DO : Any, P : ReferencesObjectPropertyDefinit
 
 abstract class ReferencesObjectPropertyDefinitions<DO : Any> : ObjectPropertyDefinitions<DO>() {
     abstract val references: ListDefinitionWrapper<AnyPropertyReference, AnyPropertyReference, RequestContext, DO>
-
-    internal fun addReferenceListPropertyDefinition(getter: (DO) -> List<AnyPropertyReference>) =
-        this.add(1u, "references",
-            ListDefinition(
-                valueDefinition = ContextualPropertyReferenceDefinition<RequestContext>(
-                    contextualResolver = {
-                        it?.dataModel?.properties as? AbstractPropertyDefinitions<*>?
-                            ?: throw ContextNotFoundException()
-                    }
-                )
-            ),
-            getter
-        )
 }

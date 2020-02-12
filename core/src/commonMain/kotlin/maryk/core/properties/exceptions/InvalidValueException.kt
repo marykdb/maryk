@@ -2,6 +2,7 @@ package maryk.core.properties.exceptions
 
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.string
 import maryk.core.properties.exceptions.ValidationExceptionType.INVALID_VALUE
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.values.SimpleObjectValues
@@ -18,10 +19,8 @@ data class InvalidValueException(
 
     internal companion object : SimpleQueryDataModel<InvalidValueException>(
         properties = object : ObjectPropertyDefinitions<InvalidValueException>() {
-            init {
-                addReference(this, InvalidValueException::reference)
-                addValue(this, InvalidValueException::value)
-            }
+            val reference by addReference(InvalidValueException::reference)
+            val value by string(2u, InvalidValueException::value)
         }
     ) {
         override fun invoke(values: SimpleObjectValues<InvalidValueException>) = InvalidValueException(

@@ -6,15 +6,16 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
+import maryk.core.properties.definitions.list
+import maryk.core.properties.definitions.map
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.query.DefinedByReference
 import maryk.core.query.RequestContext
+import maryk.core.query.addReference
 import maryk.core.values.ObjectValues
 
 /**
@@ -30,19 +31,29 @@ data class ListValueChanges<T : Any> internal constructor(
 ) : DefinedByReference<List<T>> {
     @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<ListValueChanges<*>>() {
-        val reference = DefinedByReference.addReference(this, ListValueChanges<*>::reference)
+        val reference by addReference(ListValueChanges<*>::reference)
 
-        val addValuesToEnd = add(2u, "addValuesToEnd", valueListDefinition, ListValueChanges<*>::addValuesToEnd)
-
-        val addValuesAtIndex = add(
-            3u, "addValuesAtIndex", MapDefinition(
-                required = false,
-                keyDefinition = NumberDefinition(type = UInt32),
-                valueDefinition = valueDefinition
-            ), ListValueChanges<*>::addValuesAtIndex
+        val addValuesToEnd by list(
+            index = 2u,
+            getter = ListValueChanges<*>::addValuesToEnd,
+            required = false,
+            valueDefinition = valueDefinition
         )
 
-        val deleteValues = add(4u, "deleteValues", valueListDefinition, ListValueChanges<*>::deleteValues)
+        val addValuesAtIndex by map(
+            index = 3u,
+            getter = ListValueChanges<*>::addValuesAtIndex,
+            keyDefinition = NumberDefinition(type = UInt32),
+            valueDefinition = valueDefinition,
+            required = false
+        )
+
+        val deleteValues by list(
+            index = 4u,
+            getter = ListValueChanges<*>::deleteValues,
+            required = false,
+            valueDefinition = valueDefinition
+        )
     }
 
     companion object : QueryDataModel<ListValueChanges<*>, Properties>(
@@ -64,11 +75,6 @@ private val valueDefinition = ContextualValueDefinition(
         (context?.reference as ListReference<Any, IsPropertyContext>?)?.propertyDefinition?.definition?.valueDefinition
             ?: throw ContextNotFoundException()
     }
-)
-
-private val valueListDefinition = ListDefinition(
-    required = false,
-    valueDefinition = valueDefinition
 )
 
 /**

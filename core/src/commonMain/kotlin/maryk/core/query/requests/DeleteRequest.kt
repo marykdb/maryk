@@ -5,12 +5,12 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.definitions.BooleanDefinition
-import maryk.core.properties.definitions.ListDefinition
+import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
+import maryk.core.properties.definitions.list
 import maryk.core.properties.types.Key
 import maryk.core.query.RequestContext
-import maryk.core.query.requests.RequestType.*
+import maryk.core.query.requests.RequestType.Delete
 import maryk.core.query.responses.DeleteResponse
 import maryk.core.values.ObjectValues
 
@@ -37,20 +37,21 @@ data class DeleteRequest<DM : IsRootValuesDataModel<*>> internal constructor(
 
     @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<DeleteRequest<*>>() {
-        val dataModel = IsObjectRequest.addDataModel("from", this, DeleteRequest<*>::dataModel)
-
-        val objectsToDelete = add(2u, "keys", ListDefinition(
+        val from by addDataModel(DeleteRequest<*>::dataModel)
+        val keys by list(
+            index = 2u,
+            getter = DeleteRequest<*>::keys,
             valueDefinition = ContextualReferenceDefinition<RequestContext>(
                 contextualResolver = {
                     it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
                 }
             )
-        ), DeleteRequest<*>::keys)
+        )
 
-        val hardDelete = add(
-            3u, "hardDelete",
-            BooleanDefinition(default = false),
-            DeleteRequest<*>::hardDelete
+        val hardDelete by boolean(
+            index = 3u,
+            getter = DeleteRequest<*>::hardDelete,
+            default = false
         )
     }
 

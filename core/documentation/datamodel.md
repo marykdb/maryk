@@ -159,10 +159,10 @@ data class PersonRoleInPeriod(
     val endDate: Date
 ) : ValueDataObject(toBytes(person, role, startDate, stopDate)) {
     object Properties : ObjectProperties<PersonRoleInPeriod>() {
-        val person by define(1u) { ReferenceDefinition(dataModel = Person) }
-        val role by define(2u) { EnumProperty(values = Role.values()) }
-        val startDate by define(3u) { DateDefinition() }
-        val endDate by define(4u) { DateDefinition() }
+        val person by reference(1u, dataModel = { Person })
+        val role by enum(2u, enum = Role)
+        val startDate by date(3u)
+        val endDate by date(4u)
     }
 
     companion object: ValueDataModel<TestValueObject, Properties>(

@@ -5,10 +5,15 @@ import maryk.core.exceptions.RequestException
 import maryk.core.models.ContextualDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.contextual.ContextualCollectionDefinition
+import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
+import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.SetDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.numeric.UInt32
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.DefinitionsContext
 import maryk.core.values.SimpleObjectValues
@@ -24,8 +29,7 @@ data class SetDefinition<T : Any, CX : IsPropertyContext> internal constructor(
 ) : IsSetDefinition<T, CX>,
     IsUsableInMapValue<Set<T>, CX>,
     IsUsableInMultiType<Set<T>, CX>,
-    IsTransportablePropertyDefinitionType<Set<T>>,
-    IsWrappableDefinition<Set<T>, CX, SetDefinitionWrapper<T, CX, Any>> {
+    IsTransportablePropertyDefinitionType<Set<T>> {
     override val propertyDefinitionType = PropertyDefinitionType.Set
 
     init {
@@ -41,55 +45,53 @@ data class SetDefinition<T : Any, CX : IsPropertyContext> internal constructor(
         default: Set<T>? = null
     ) : this(required, final, minSize, maxSize, valueDefinition as IsValueDefinition<T, CX>, default)
 
-    override fun wrap(
-        index: UInt,
-        name: String,
-        alternativeNames: Set<String>?
-    ) =
-        SetDefinitionWrapper<T, CX, Any>(index, name, this, alternativeNames)
-
+    @Suppress("unused")
     object Model :
         ContextualDataModel<SetDefinition<*, *>, ObjectPropertyDefinitions<SetDefinition<*, *>>, ContainsDefinitionsContext, SetDefinitionContext>(
             contextTransformer = { SetDefinitionContext(it) },
             properties = object : ObjectPropertyDefinitions<SetDefinition<*, *>>() {
-                init {
-                    IsPropertyDefinition.addRequired(this, SetDefinition<*, *>::required)
-                    IsPropertyDefinition.addFinal(this, SetDefinition<*, *>::final)
-                    HasSizeDefinition.addMinSize(3u, this, SetDefinition<*, *>::minSize)
-                    HasSizeDefinition.addMaxSize(4u, this, SetDefinition<*, *>::maxSize)
-                    add(5u, "valueDefinition",
-                        ContextTransformerDefinition(
-                            contextTransformer = { it?.definitionsContext },
-                            definition = InternalMultiTypeDefinition(
-                                typeEnum = PropertyDefinitionType,
-                                definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
-                            )
-                        ),
-                        getter = SetDefinition<*, *>::valueDefinition,
-                        toSerializable = { value, _ ->
-                            val defType = value as? IsTransportablePropertyDefinitionType<*>
-                                ?: throw RequestException("$value is not transportable")
-                            TypedValue(defType.propertyDefinitionType, defType)
-                        },
-                        fromSerializable = {
-                            @Suppress("UNCHECKED_CAST")
-                            it?.value as IsValueDefinition<Any, DefinitionsContext>?
-                        },
-                        capturer = { context: SetDefinitionContext, value ->
-                            @Suppress("UNCHECKED_CAST")
-                            context.valueDefinion = value.value as IsValueDefinition<Any, ContainsDefinitionsContext>
-                        }
-                    )
-                    @Suppress("UNCHECKED_CAST")
-                    add(6u, "default", ContextualCollectionDefinition(
+                val required by boolean(1u, SetDefinition<*, *>::required, default = true)
+                val final by boolean(2u, SetDefinition<*, *>::final, default = false)
+                val minSize by number(3u, SetDefinition<*, *>::minSize, type = UInt32)
+                val maxSize by number(4u, SetDefinition<*, *>::maxSize, type = UInt32)
+                val valueDefinition by contextual(
+                    index = 5u,
+                    getter = SetDefinition<*, *>::valueDefinition,
+                    definition = ContextTransformerDefinition(
+                        contextTransformer = { it?.definitionsContext },
+                        definition = InternalMultiTypeDefinition(
+                            typeEnum = PropertyDefinitionType,
+                            definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
+                        )
+                    ),
+                    toSerializable = { value, _ ->
+                        val defType = value as? IsTransportablePropertyDefinitionType<*>
+                            ?: throw RequestException("$value is not transportable")
+                        TypedValue(defType.propertyDefinitionType, defType)
+                    },
+                    fromSerializable = {
+                        @Suppress("UNCHECKED_CAST")
+                        it?.value as IsValueDefinition<Any, DefinitionsContext>?
+                    },
+                    capturer = { context: SetDefinitionContext, value ->
+                        @Suppress("UNCHECKED_CAST")
+                        context.valueDefinion = value.value as IsValueDefinition<Any, ContainsDefinitionsContext>
+                    }
+                )
+
+                val default by contextual(
+                    index = 6u,
+                    getter = SetDefinition<*, *>::default,
+                    definition = ContextualCollectionDefinition(
                         required = false,
                         contextualResolver = { context: SetDefinitionContext? ->
                             context?.setDefinition?.let {
+                                @Suppress("UNCHECKED_CAST")
                                 it as IsSerializablePropertyDefinition<Collection<Any>, SetDefinitionContext>
                             } ?: throw ContextNotFoundException()
                         }
-                    ), SetDefinition<*, *>::default)
-                }
+                    )
+                )
             }
         ) {
         override fun invoke(values: SimpleObjectValues<SetDefinition<*, *>>) = SetDefinition(
@@ -111,4 +113,46 @@ class SetDefinitionContext(
     val setDefinition by lazy {
         SetDefinition(valueDefinition = this.valueDefinion ?: throw ContextNotFoundException())
     }
+}
+
+fun <T: Any, CX: IsPropertyContext> PropertyDefinitions.set(
+    index: UInt,
+    name: String? = null,
+    required: Boolean = true,
+    final: Boolean = false,
+    minSize: UInt? = null,
+    maxSize: UInt? = null,
+    valueDefinition: IsValueDefinition<T, CX>,
+    default: Set<T>? = null,
+    alternativeNames: Set<String>? = null
+) = DefinitionWrapperDelegateLoader(this) { propName ->
+    SetDefinitionWrapper<T, CX, Any>(
+        index,
+        name ?: propName,
+        SetDefinition(required, final, minSize, maxSize, valueDefinition, default),
+        alternativeNames
+    )
+}
+
+fun <T: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.set(
+    index: UInt,
+    getter: (DO) -> Set<T>?,
+    name: String? = null,
+    required: Boolean = true,
+    final: Boolean = false,
+    minSize: UInt? = null,
+    maxSize: UInt? = null,
+    valueDefinition: IsValueDefinition<T, CX>,
+    default: Set<T>? = null,
+    alternativeNames: Set<String>? = null,
+    capturer: (Unit.(CX, Set<T>) -> Unit)? = null
+) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
+    SetDefinitionWrapper(
+        index,
+        name ?: propName,
+        SetDefinition(required, final, minSize, maxSize, valueDefinition, default),
+        alternativeNames,
+        getter = getter,
+        capturer = capturer
+    )
 }

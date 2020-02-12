@@ -3,10 +3,14 @@ package maryk.core.properties.definitions
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
 import maryk.core.properties.exceptions.InvalidSizeException
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.types.numeric.UInt32
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.values.SimpleObjectValues
 import maryk.lib.bytes.calculateUTF8ByteLength
@@ -29,8 +33,7 @@ data class StringDefinition(
     HasSizeDefinition,
     IsSerializableFlexBytesEncodable<String, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<String>,
-    HasDefaultValueDefinition<String>,
-    IsWrappableDefinition<String, IsPropertyContext, FlexBytesDefinitionWrapper<String, String, IsPropertyContext, StringDefinition, Any>> {
+    HasDefaultValueDefinition<String> {
     override val propertyDefinitionType = PropertyDefinitionType.String
     override val wireType = LENGTH_DELIMITED
 
@@ -81,22 +84,18 @@ data class StringDefinition(
         }
     }
 
-    override fun wrap(index: UInt, name: String, alternativeNames: Set<String>?) =
-        FlexBytesDefinitionWrapper<String, String, IsPropertyContext, StringDefinition, Any>(index, name, this, alternativeNames)
-
+    @Suppress("unused")
     object Model : SimpleObjectDataModel<StringDefinition, ObjectPropertyDefinitions<StringDefinition>>(
         properties = object : ObjectPropertyDefinitions<StringDefinition>() {
-            init {
-                IsPropertyDefinition.addRequired(this, StringDefinition::required)
-                IsPropertyDefinition.addFinal(this, StringDefinition::final)
-                IsComparableDefinition.addUnique(this, StringDefinition::unique)
-                add(4u, "minValue", StringDefinition(), StringDefinition::minValue)
-                add(5u, "maxValue", StringDefinition(), StringDefinition::maxValue)
-                add(6u, "default", StringDefinition(), StringDefinition::default)
-                HasSizeDefinition.addMinSize(7u, this, StringDefinition::minSize)
-                HasSizeDefinition.addMaxSize(8u, this, StringDefinition::maxSize)
-                add(9u, "regEx", StringDefinition(), StringDefinition::regEx)
-            }
+            val required by boolean(1u, StringDefinition::required, default = true)
+            val final by boolean(2u, StringDefinition::final, default = false)
+            val unique by boolean(3u, StringDefinition::unique, default = false)
+            val minValue by string(4u, StringDefinition::minValue)
+            val maxValue by string(5u, StringDefinition::maxValue)
+            val default by string(6u, StringDefinition::default)
+            val minSize by number(7u, StringDefinition::minSize, type = UInt32)
+            val maxSize by number(8u, StringDefinition::maxSize, type = UInt32)
+            val regEx by string(9u, StringDefinition::regEx)
         }
     ) {
         override fun invoke(values: SimpleObjectValues<StringDefinition>) = StringDefinition(
@@ -111,4 +110,75 @@ data class StringDefinition(
             regEx = values(9u)
         )
     }
+}
+
+fun PropertyDefinitions.string(
+    index: UInt,
+    name: String? = null,
+    required: Boolean = true,
+    final: Boolean = false,
+    unique: Boolean = false,
+    minValue: String? = null,
+    maxValue: String? = null,
+    default: String? = null,
+    minSize: UInt? = null,
+    maxSize: UInt? = null,
+    regEx: String? = null,
+    alternativeNames: Set<String>? = null
+) = DefinitionWrapperDelegateLoader(this) { propName ->
+    FlexBytesDefinitionWrapper<String, String, IsPropertyContext, StringDefinition, Any>(
+        index,
+        name ?: propName,
+        StringDefinition(required, final, unique, minValue, maxValue, default, minSize, maxSize, regEx),
+        alternativeNames
+    )
+}
+
+fun <TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.string(
+    index: UInt,
+    getter: (DO) -> TO?,
+    name: String? = null,
+    required: Boolean = true,
+    final: Boolean = false,
+    unique: Boolean = false,
+    minValue: String? = null,
+    maxValue: String? = null,
+    default: String? = null,
+    minSize: UInt? = null,
+    maxSize: UInt? = null,
+    regEx: String? = null,
+    alternativeNames: Set<String>? = null
+): ObjectDefinitionWrapperDelegateLoader<FlexBytesDefinitionWrapper<String, TO, IsPropertyContext, StringDefinition, DO>, DO> =
+    string(index, getter, name, required, final,  unique, minValue, maxValue, default, minSize, maxSize, regEx, alternativeNames, toSerializable = null)
+
+fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.string(
+    index: UInt,
+    getter: (DO) -> TO?,
+    name: String? = null,
+    required: Boolean = true,
+    final: Boolean = false,
+    unique: Boolean = false,
+    minValue: String? = null,
+    maxValue: String? = null,
+    default: String? = null,
+    minSize: UInt? = null,
+    maxSize: UInt? = null,
+    regEx: String? = null,
+    alternativeNames: Set<String>? = null,
+    toSerializable: (Unit.(TO?, CX?) -> String?)? = null,
+    fromSerializable: (Unit.(String?) -> TO?)? = null,
+    shouldSerialize: (Unit.(Any) -> Boolean)? = null,
+    capturer: (Unit.(CX, String) -> Unit)? = null
+) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
+    FlexBytesDefinitionWrapper(
+        index,
+        name ?: propName,
+        StringDefinition(required, final, unique, minValue, maxValue, default, minSize, maxSize, regEx),
+        alternativeNames,
+        getter = getter,
+        capturer = capturer,
+        toSerializable = toSerializable,
+        fromSerializable = fromSerializable,
+        shouldSerialize = shouldSerialize
+    )
 }

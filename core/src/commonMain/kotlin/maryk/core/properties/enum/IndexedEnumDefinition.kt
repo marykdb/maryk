@@ -5,12 +5,13 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.SerializationException
 import maryk.core.models.ContextualDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.SingleOrListDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
+import maryk.core.properties.definitions.list
+import maryk.core.properties.definitions.map
+import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.ObjectValues
@@ -63,31 +64,30 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
 
 
     internal object Properties : ObjectPropertyDefinitions<IndexedEnumDefinition<IndexedEnum>>() {
-        val name = add(1u, "name",
-            ContextCaptureDefinition(
+        val name by contextual(
+            index = 1u,
+            getter = IndexedEnumDefinition<*>::name,
+            definition = ContextCaptureDefinition(
                 definition = StringDefinition(),
                 capturer = { context: EnumNameContext?, value ->
                     context?.let {
                         it.name = value
                     }
                 }
-            ),
-            IndexedEnumDefinition<*>::name
+            )
         )
 
-        @Suppress("UNCHECKED_CAST")
-        val cases = add(2u, "cases",
-            MapDefinition(
-                keyDefinition = NumberDefinition(
-                    type = UInt32,
-                    minValue = 1u
-                ),
-                valueDefinition = SingleOrListDefinition(
-                    valueDefinition = StringDefinition()
-                )
-            ) as MapDefinition<UInt, List<String>, EnumNameContext>,
-            IndexedEnumDefinition<*>::cases,
-            toSerializable = { value, context ->
+        val cases by map(
+            index = 2u,
+            getter = IndexedEnumDefinition<*>::cases,
+            keyDefinition = NumberDefinition(
+                type = UInt32,
+                minValue = 1u
+            ),
+            valueDefinition = SingleOrListDefinition(
+                valueDefinition = StringDefinition()
+            ),
+            toSerializable = { value, context: EnumNameContext? ->
                 // If Enum was defined before and is thus available in context, don't include the cases again
                 val toReturnNull = context?.let { enumNameContext ->
                     if (enumNameContext.isOriginalDefinition == true) {
@@ -118,6 +118,7 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
             },
             fromSerializable = {
                 {
+                    @Suppress("UNCHECKED_CAST")
                     it?.map { (key, value) ->
                         IndexedEnumComparable(
                             key,
@@ -129,26 +130,20 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
             }
         )
 
-        init {
-            add(
-                3u, "reservedIndices",
-                ListDefinition(
-                    valueDefinition = NumberDefinition(
-                        type = UInt32,
-                        minValue = 1u
-                    )
-                ),
-                IndexedEnumDefinition<*>::reservedIndices
+        val reservedIndices by list(
+            index = 3u,
+            getter = IndexedEnumDefinition<*>::reservedIndices,
+            valueDefinition = NumberDefinition(
+                type = UInt32,
+                minValue = 1u
             )
+        )
 
-            add(
-                4u, "reservedNames",
-                ListDefinition(
-                    valueDefinition = StringDefinition()
-                ),
-                IndexedEnumDefinition<*>::reservedNames
-            )
-        }
+        val reservedNames by list(
+            index = 4u,
+            getter = IndexedEnumDefinition<*>::reservedNames,
+            valueDefinition = StringDefinition()
+        )
     }
 
     internal object Model :

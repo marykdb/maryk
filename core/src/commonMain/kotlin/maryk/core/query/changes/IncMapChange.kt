@@ -3,7 +3,7 @@ package maryk.core.query.changes
 import maryk.core.models.ReferenceMappedDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
-import maryk.core.properties.definitions.ListDefinition
+import maryk.core.properties.definitions.list
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeWriter
@@ -17,17 +17,15 @@ data class IncMapChange internal constructor(
     @Suppress("UNCHECKED_CAST")
     constructor(vararg valueChanges: IncMapValueChanges<*, out Any>) : this(valueChanges.toList() as List<IncMapValueChanges<out Comparable<Any>, out Any>>)
 
+    @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<IncMapChange>() {
-        init {
-            add(1u, "valueChanges",
-                ListDefinition(
-                    valueDefinition = EmbeddedObjectDefinition(
-                        dataModel = { IncMapValueChanges }
-                    )
-                ),
-                IncMapChange::valueChanges
+        val valueChanges by list(
+            index = 1u,
+            getter = IncMapChange::valueChanges,
+            valueDefinition = EmbeddedObjectDefinition(
+                dataModel = { IncMapValueChanges }
             )
-        }
+        )
     }
 
     companion object : ReferenceMappedDataModel<IncMapChange, IncMapValueChanges<out Comparable<Any>, out Any>, Properties, IncMapValueChanges.Properties>(

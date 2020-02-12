@@ -3,23 +3,25 @@ package maryk.test.models
 import maryk.core.models.DataModel
 import maryk.core.models.RootDataModel
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
-import maryk.core.properties.definitions.DateTimeDefinition
-import maryk.core.properties.definitions.EmbeddedValuesDefinition
-import maryk.core.properties.definitions.EnumDefinition
-import maryk.core.properties.definitions.IncrementingMapDefinition
-import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.MapDefinition
-import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
-import maryk.core.properties.definitions.ReferenceDefinition
-import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.TimeDefinition
-import maryk.core.properties.definitions.ValueModelDefinition
+import maryk.core.properties.definitions.boolean
+import maryk.core.properties.definitions.dateTime
+import maryk.core.properties.definitions.embed
+import maryk.core.properties.definitions.enum
+import maryk.core.properties.definitions.incrementingMap
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.Reversed
+import maryk.core.properties.definitions.list
+import maryk.core.properties.definitions.map
+import maryk.core.properties.definitions.multiType
+import maryk.core.properties.definitions.number
+import maryk.core.properties.definitions.reference
+import maryk.core.properties.definitions.set
+import maryk.core.properties.definitions.string
+import maryk.core.properties.definitions.valueObject
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.Float64
@@ -58,147 +60,130 @@ object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>
     properties = Properties
 ) {
     object Properties : PropertyDefinitions() {
-        val string by define(
+        val string by string(
             index = 1u,
-            alternativeNames = setOf("str", "stringValue")
-        ) {
-            StringDefinition(
-                default = "haha",
-                regEx = "ha.*"
+            alternativeNames = setOf("str", "stringValue"),
+            default = "haha",
+            regEx = "ha.*"
+        )
+
+        val int by number(
+            index = 2u,
+            type = SInt32,
+            maxValue = 6
+        )
+
+        val uint by number(
+            index = 3u,
+            type = UInt32,
+            final = true
+        )
+
+        val double by number(
+            index = 4u,
+            type = Float64
+        )
+
+        val dateTime by dateTime(
+            index = 5u
+        )
+
+        val bool by boolean(
+            index = 6u,
+            final = true
+        )
+
+        val enum by enum(
+            index = 7u,
+            enum = Option,
+            default = Option.V1,
+            final = true
+        )
+
+        val list by list(
+            index = 8u,
+            required = false,
+            valueDefinition = NumberDefinition(
+                type = SInt32
             )
-        }
+        )
 
-        val int by define(2u) {
-            NumberDefinition(
-                type = SInt32,
-                maxValue = 6
+        val set by set(
+            index = 9u,
+            required = false,
+            maxSize = 5u,
+            valueDefinition = DateDefinition(
+                maxValue = Date(2100, 12, 31)
             )
-        }
+        )
 
-        val uint by define(3u) {
-            NumberDefinition(
-                type = UInt32,
-                final = true
+        val map by map(
+            index = 10u,
+            required = false,
+            maxSize = 5u,
+            keyDefinition = TimeDefinition(
+                maxValue = Time(23, 0, 0)
+            ),
+            valueDefinition = StringDefinition(
+                maxSize = 10u
             )
-        }
+        )
 
-        val double by define(4u) {
-            NumberDefinition(type = Float64)
-        }
+        val valueObject by valueObject(
+            index = 11u,
+            required = false,
+            dataModel = TestValueObject
+        )
 
-        val dateTime by define(5u) {
-            DateTimeDefinition()
-        }
+        val embeddedValues by embed(
+            index = 12u,
+            required = false,
+            dataModel = { EmbeddedMarykModel }
+        )
 
-        val bool by define(6u) {
-            BooleanDefinition(
-                final = true
+        val multi by multiType(
+            index = 13u,
+            required = false,
+            typeEnum = SimpleMarykTypeEnum
+        )
+
+        val reference by reference(
+            14u,
+            required = false,
+            dataModel = { TestMarykModel }
+        )
+
+        val listOfString by list(
+            index = 15u,
+            required = false,
+            minSize = 1u,
+            maxSize = 6u,
+            valueDefinition = StringDefinition(
+                maxSize = 10u
             )
-        }
+        )
 
-        val enum by define(7u) {
-            EnumDefinition(
-                enum = Option,
-                default = Option.V1,
-                final = true
-            )
-        }
+        val selfReference by reference(
+            16u,
+            required = false,
+            dataModel = { TestMarykModel }
+        )
 
-        val list by define(8u) {
-            ListDefinition(
-                required = false,
-                valueDefinition = NumberDefinition(
-                    type = SInt32
-                )
-            )
-        }
+        val setOfString by set(
+            index = 17u,
+            valueDefinition = StringDefinition(
+                maxSize = 10u
+            ),
+            maxSize = 6u,
+            required = false
+        )
 
-        val set by define(9u) {
-            SetDefinition(
-                required = false,
-                maxSize = 5u,
-                valueDefinition = DateDefinition(
-                    maxValue = Date(2100, 12, 31)
-                )
-            )
-        }
-
-        val map by define(10u) {
-            MapDefinition(
-                required = false,
-                maxSize = 5u,
-                keyDefinition = TimeDefinition(
-                    maxValue = Time(23, 0, 0)
-                ),
-                valueDefinition = StringDefinition(
-                    maxSize = 10u
-                )
-            )
-        }
-
-        val valueObject by define(11u) {
-            ValueModelDefinition(
-                required = false,
-                dataModel = TestValueObject
-            )
-        }
-
-        val embeddedValues by define(12u) {
-            EmbeddedValuesDefinition(
-                required = false,
-                dataModel = { EmbeddedMarykModel }
-            )
-        }
-
-        val multi by define(13u) {
-            MultiTypeDefinition(
-                required = false,
-                typeEnum = SimpleMarykTypeEnum
-            )
-        }
-
-        val reference by define(14u) {
-            ReferenceDefinition(
-                required = false,
-                dataModel = { TestMarykModel }
-            )
-        }
-
-        val listOfString by define(15u) {
-            ListDefinition(
-                required = false,
-                minSize = 1u,
-                maxSize = 6u,
-                valueDefinition = StringDefinition(
-                    maxSize = 10u
-                )
-            )
-        }
-
-        val selfReference by define(16u) {
-            ReferenceDefinition(
-                required = false,
-                dataModel = { TestMarykModel }
-            )
-        }
-
-        val setOfString by define(17u) {
-            SetDefinition(
-                required = false,
-                maxSize = 6u,
-                valueDefinition = StringDefinition(
-                    maxSize = 10u
-                )
-            )
-        }
-
-        val incMap by define(18u) {
-            IncrementingMapDefinition(
-                required = false,
-                keyNumberDescriptor = UInt32,
-                valueDefinition = StringDefinition()
-            )
-        }
+        val incMap by incrementingMap(
+            index = 18u,
+            keyNumberDescriptor = UInt32,
+            valueDefinition = StringDefinition(),
+            required = false
+        )
     }
 
     operator fun invoke(

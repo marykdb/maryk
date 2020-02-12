@@ -1,7 +1,6 @@
 package maryk.core.properties.definitions
 
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.types.TimePrecision
 import maryk.lib.time.IsTime
 
@@ -12,26 +11,6 @@ interface IsTimeDefinition<T : IsTime<T>> :
     val precision: TimePrecision
 
     override fun calculateStorageByteLength(value: T) = this.byteSize
-
-    companion object {
-        internal fun <DO : Any> addPrecision(
-            index: UInt,
-            definitions: ObjectPropertyDefinitions<DO>,
-            getter: (DO) -> TimePrecision,
-            capturer: (Unit.(TimePrecisionContext, TimePrecision) -> Unit)? = null
-        ) {
-            definitions.add(
-                index,
-                "precision",
-                EnumDefinition(
-                    enum = TimePrecision,
-                    default = TimePrecision.SECONDS
-                ),
-                getter,
-                capturer = capturer
-            )
-        }
-    }
 }
 
 open class TimePrecisionContext : IsPropertyContext {

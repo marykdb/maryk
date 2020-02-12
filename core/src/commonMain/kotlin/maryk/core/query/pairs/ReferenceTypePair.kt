@@ -5,6 +5,8 @@ import maryk.core.models.QueryDataModel
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.contextual.ContextualIndexedEnumDefinition
+import maryk.core.properties.definitions.wrapper.ContextualDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.references.IsPropertyReference
@@ -13,6 +15,7 @@ import maryk.core.properties.references.TypedPropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DefinedByReference
 import maryk.core.query.RequestContext
+import maryk.core.query.addReference
 import maryk.core.values.ObjectValues
 
 /** Defines a pair of a [reference] and [type] of type [E] */
@@ -23,22 +26,21 @@ data class ReferenceTypePair<E : TypeEnum<Any>> internal constructor(
 
     override fun toString() = "$reference: $type"
 
-    object Properties : ReferenceValuePairPropertyDefinitions<ReferenceTypePair<*>, IndexedEnum, IndexedEnum>() {
-        override val reference = DefinedByReference.addReference(
-            this,
+    object Properties : ReferenceValuePairPropertyDefinitions<ReferenceTypePair<*>, IndexedEnum, IndexedEnum, ContextualDefinitionWrapper<IndexedEnum, IndexedEnum, RequestContext, ContextualIndexedEnumDefinition<RequestContext, RequestContext, IndexedEnum, IsMultiTypeDefinition<TypeEnum<Any>, Any, RequestContext>>, ReferenceTypePair<*>>>() {
+        override val reference by addReference(
             ReferenceTypePair<*>::reference
         )
 
-        override val value = add(
-            index = 2u, name = "type",
+        override val value by contextual(
+            index = 2u,
+            getter = ReferenceTypePair<*>::type as (ReferenceTypePair<*>) -> IndexedEnum,
             definition = ContextualIndexedEnumDefinition<RequestContext, RequestContext, IndexedEnum, IsMultiTypeDefinition<TypeEnum<Any>, Any, RequestContext>>(
                 contextualResolver = {
                     @Suppress("UNCHECKED_CAST")
                     (it?.reference as? MultiTypePropertyReference<TypeEnum<Any>, *, *, *, *>?)?.comparablePropertyDefinition?.definition as IsMultiTypeDefinition<TypeEnum<Any>, Any, RequestContext>?
                         ?: throw ContextNotFoundException()
                 }
-            ),
-            getter = ReferenceTypePair<*>::type as (ReferenceTypePair<*>) -> IndexedEnum
+            )
         )
     }
 

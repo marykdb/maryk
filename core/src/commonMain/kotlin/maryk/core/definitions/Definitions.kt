@@ -15,9 +15,9 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.IsSubDefinition
-import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.contextual.ContextValueTransformDefinition
+import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.MultiTypeEnumDefinition
@@ -44,9 +44,9 @@ data class Definitions(
     constructor(vararg definition: MarykPrimitive) : this(definition.toList())
 
     internal object Properties : ObjectPropertyDefinitions<Definitions>() {
-        @Suppress("UNCHECKED_CAST")
-        val definitions = add(1u, "definitions",
-            ListDefinition(
+        val definitions by list(
+            index = 1u,
+            getter = Definitions::definitions,
                 valueDefinition = InternalMultiTypeDefinition(
                     typeEnum = PrimitiveType,
                     definitionMap = mapOf(
@@ -127,9 +127,7 @@ data class Definitions(
                             }
                         )
                     ) as Map<PrimitiveType, IsSubDefinition<out Any, ContainsDefinitionsContext>>
-                )
-            ),
-            Definitions::definitions,
+                ),
             fromSerializable = { it.value },
             toSerializable = { TypedValue(it.primitiveType, it) }
         )

@@ -4,11 +4,12 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.definitions.SubListDefinition
 import maryk.core.properties.definitions.contextual.ContextualSubDefinition
+import maryk.core.properties.definitions.subList
 import maryk.core.properties.references.IncMapReference
 import maryk.core.query.DefinedByReference
 import maryk.core.query.RequestContext
+import maryk.core.query.addReference
 import maryk.core.values.ObjectValues
 
 /**
@@ -20,18 +21,17 @@ data class IncMapValueChanges<K : Comparable<K>, V : Any> internal constructor(
 ) : DefinedByReference<Map<K, V>> {
     @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<IncMapValueChanges<out Comparable<Any>, out Any>>() {
-        val reference = DefinedByReference.addReference(this, IncMapValueChanges<*, *>::reference)
+        val reference by addReference(IncMapValueChanges<*, *>::reference)
 
-        val addValues = add(
-            2u, "addValues",
-            SubListDefinition(
-                valueDefinition = ContextualSubDefinition(
-                    contextualResolver = { context: RequestContext? ->
-                        @Suppress("UNCHECKED_CAST")
-                        (context?.reference as IncMapReference<Comparable<Any>, Any, IsPropertyContext>?)?.propertyDefinition?.definition?.valueDefinition
-                            ?: throw ContextNotFoundException()
-                    }
-                )
+        val addValues by subList(
+            index = 2u,
+            name = "addValues",
+            valueDefinition = ContextualSubDefinition(
+                contextualResolver = { context: RequestContext? ->
+                    @Suppress("UNCHECKED_CAST")
+                    (context?.reference as IncMapReference<Comparable<Any>, Any, IsPropertyContext>?)?.propertyDefinition?.definition?.valueDefinition
+                        ?: throw ContextNotFoundException()
+                }
             ),
             getter = IncMapValueChanges<*, *>::addValues
         )

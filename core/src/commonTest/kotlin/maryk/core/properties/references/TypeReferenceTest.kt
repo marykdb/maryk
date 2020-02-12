@@ -3,7 +3,7 @@ package maryk.core.properties.references
 import maryk.core.models.RootDataModel
 import maryk.core.models.key
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.definitions.MultiTypeDefinition
+import maryk.core.properties.definitions.multiType
 import maryk.core.properties.references.TypeReferenceTest.MarykModel.Properties.multi
 import maryk.core.properties.types.TypedValue
 import maryk.lib.extensions.toHex
@@ -23,12 +23,11 @@ internal class TypeReferenceTest {
         properties = Properties
     ) {
         object Properties : PropertyDefinitions() {
-            val multi by define(1u) {
-                MultiTypeDefinition(
-                    final = true,
-                    typeEnum = MarykTypeEnum
-                )
-            }
+            val multi by multiType(
+                index = 1u,
+                typeEnum = MarykTypeEnum,
+                final = true
+            )
         }
 
         operator fun invoke(

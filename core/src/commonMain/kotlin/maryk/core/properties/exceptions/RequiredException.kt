@@ -17,9 +17,7 @@ data class RequiredException internal constructor(
 
     internal companion object : SimpleQueryDataModel<RequiredException>(
         properties = object : ObjectPropertyDefinitions<RequiredException>() {
-            init {
-                addReference(this, RequiredException::reference)
-            }
+            val reference by addReference(RequiredException::reference)
         }
     ) {
         override fun invoke(values: SimpleObjectValues<RequiredException>) = RequiredException(

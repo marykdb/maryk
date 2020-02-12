@@ -12,6 +12,7 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.PropertyDefinitionsCollectionDefinition
 import maryk.core.properties.PropertyDefinitionsCollectionDefinitionWrapper
+import maryk.core.properties.definitions.string
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
@@ -36,7 +37,7 @@ abstract class DataModel<DM : IsValuesDataModel<P>, P : PropertyDefinitions>(
     private object Properties :
         ObjectPropertyDefinitions<DataModel<*, *>>(),
         IsDataModelPropertyDefinitions<DataModel<*, *>, PropertyDefinitionsCollectionDefinitionWrapper<DataModel<*, *>>> {
-        override val name = IsNamedDataModel.addName(this, DataModel<*, *>::name)
+        override val name by string(1u, DataModel<*, *>::name)
         override val properties = addProperties(this)
     }
 

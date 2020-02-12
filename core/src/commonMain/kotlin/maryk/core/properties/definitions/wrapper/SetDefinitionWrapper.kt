@@ -1,7 +1,6 @@
 package maryk.core.properties.definitions.wrapper
 
 import co.touchlab.stately.concurrency.AtomicReference
-import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.graph.PropRefGraphType.PropRef
@@ -54,5 +53,5 @@ data class SetDefinitionWrapper<T : Any, CX : IsPropertyContext, DO : Any> inter
     }
 
     // For delegation in definition
-    operator fun getValue(thisRef: AbstractPropertyDefinitions<DO>, property: KProperty<*>) = this
+    operator fun getValue(thisRef: Any, property: KProperty<*>) = this
 }

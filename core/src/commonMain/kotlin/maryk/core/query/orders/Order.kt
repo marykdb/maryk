@@ -4,8 +4,9 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
+import maryk.core.properties.definitions.enum
+import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IsCoreEnum
@@ -56,23 +57,21 @@ data class Order internal constructor(
     override val orderType = ORDER
 
     object Properties : ObjectPropertyDefinitions<Order>() {
-        val propertyReference = add(
-            1u, "propertyReference",
-            ContextualPropertyReferenceDefinition<RequestContext>(
+        val propertyReference by contextual(
+            index = 1u,
+            getter = Order::propertyReference,
+            definition = ContextualPropertyReferenceDefinition<RequestContext>(
                 contextualResolver = {
                     it?.dataModel?.properties as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()
                 }
-            ),
-            Order::propertyReference
+            )
         )
 
-        val direction = add(
-            2u, "direction",
-            EnumDefinition(
-                enum = Direction,
-                default = ASC
-            ),
-            Order::direction
+        val direction by enum(
+            2u,
+            Order::direction,
+            enum = Direction,
+            default = ASC
         )
     }
 

@@ -3,7 +3,7 @@ package maryk.core.query.changes
 import maryk.core.models.ReferenceMappedDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
-import maryk.core.properties.definitions.ListDefinition
+import maryk.core.properties.definitions.list
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeWriter
@@ -16,17 +16,15 @@ data class ListChange internal constructor(
 
     constructor(vararg listValueChange: ListValueChanges<*>) : this(listValueChange.toList())
 
+    @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<ListChange>() {
-        init {
-            add(1u, "referenceListValueChangesPairs",
-                ListDefinition(
-                    valueDefinition = EmbeddedObjectDefinition(
-                        dataModel = { ListValueChanges }
-                    )
-                ),
-                ListChange::listValueChanges
+        val referenceListValueChangesPairs by list(
+            index = 1u,
+            getter = ListChange::listValueChanges,
+            valueDefinition = EmbeddedObjectDefinition(
+                dataModel = { ListValueChanges }
             )
-        }
+        )
     }
 
     companion object :

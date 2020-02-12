@@ -2,8 +2,8 @@ package maryk.core.query.requests
 
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.definitions.InternalMultiTypeDefinition
-import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.definitions.internalMultiType
+import maryk.core.properties.definitions.string
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.RequestContext
 import maryk.core.query.requests.RequestType.Collect
@@ -26,16 +26,14 @@ data class CollectRequest<RQ : IsRequest<RP>, RP : IsResponse>(
     override val responseModel = request.responseModel
 
     object Properties : ObjectPropertyDefinitions<AnyCollectRequest>() {
-        val name = add(1u, "name", StringDefinition(), AnyCollectRequest::name)
+        val name by string(1u, AnyCollectRequest::name)
 
         // It transmits any instead of IsRequest so the ObjectValues can also be transmitted
-        val request = add(
-            2u, "request",
-            InternalMultiTypeDefinition(
-                typeEnum = RequestType,
-                definitionMap = mapOfRequestTypeEmbeddedObjectDefinitions
-            ),
+        val request by internalMultiType(
+            2u,
             getter = AnyCollectRequest::request,
+            typeEnum = RequestType,
+            definitionMap = mapOfRequestTypeEmbeddedObjectDefinitions,
             toSerializable = { request: Any?, _ ->
                 request?.let {
                     TypedValue((request as IsRequest<*>).requestType, request)

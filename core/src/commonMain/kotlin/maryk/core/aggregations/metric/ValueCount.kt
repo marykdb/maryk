@@ -5,7 +5,7 @@ import maryk.core.aggregations.IsAggregationRequest
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.query.DefinedByReference
+import maryk.core.query.addReference
 import maryk.core.values.SimpleObjectValues
 
 /** Counts all values defined for [reference] */
@@ -17,11 +17,10 @@ data class ValueCount<T: Comparable<T>>(
     override fun createAggregator() =
         ValueCountAggregator(this)
 
+    @Suppress("unused")
     companion object : SimpleQueryDataModel<ValueCount<*>>(
         properties = object : ObjectPropertyDefinitions<ValueCount<*>>() {
-            init {
-                DefinedByReference.addReference(this, ValueCount<*>::reference, name = "of")
-            }
+            val of by addReference(ValueCount<*>::reference)
         }
     ) {
         override fun invoke(values: SimpleObjectValues<ValueCount<*>>) = ValueCount<Comparable<Any>>(

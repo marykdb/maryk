@@ -3,7 +3,7 @@ package maryk.core.query.changes
 import maryk.core.models.ReferenceMappedDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
-import maryk.core.properties.definitions.ListDefinition
+import maryk.core.properties.definitions.list
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeWriter
@@ -17,17 +17,15 @@ data class IncMapAddition(
     @Suppress("UNCHECKED_CAST")
     constructor(vararg valueChanges: IncMapKeyAdditions<*, out Any>) : this(valueChanges.toList() as List<IncMapKeyAdditions<out Comparable<Any>, out Any>>)
 
+    @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<IncMapAddition>() {
-        init {
-            add(1u, "additions",
-                ListDefinition(
-                    valueDefinition = EmbeddedObjectDefinition(
-                        dataModel = { IncMapKeyAdditions }
-                    )
-                ),
-                IncMapAddition::additions
+        val additions by list(
+            index = 1u,
+            getter = IncMapAddition::additions,
+            valueDefinition = EmbeddedObjectDefinition(
+                dataModel = { IncMapKeyAdditions }
             )
-        }
+        )
     }
 
     companion object : ReferenceMappedDataModel<IncMapAddition, IncMapKeyAdditions<out Comparable<Any>, out Any>, Properties, IncMapKeyAdditions.Properties>(
@@ -36,7 +34,7 @@ data class IncMapAddition(
         referenceProperty = IncMapKeyAdditions.Properties.reference
     ) {
         override fun invoke(values: ObjectValues<IncMapAddition, Properties>) = IncMapAddition(
-            additions = values<List<IncMapKeyAdditions<out Comparable<Any>, out Any>>>(1u)
+            additions = values(1u)
         )
 
         override fun writeJson(obj: IncMapAddition, writer: IsJsonLikeWriter, context: RequestContext?) {

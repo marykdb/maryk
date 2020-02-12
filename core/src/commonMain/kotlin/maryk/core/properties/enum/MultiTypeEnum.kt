@@ -4,14 +4,15 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.IsUsableInMultiType
-import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitionType
-import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.definitions.internalMultiType
 import maryk.core.properties.definitions.mapOfPropertyDefEmbeddedObjectDefinitions
+import maryk.core.properties.definitions.number
+import maryk.core.properties.definitions.set
+import maryk.core.properties.definitions.string
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.query.ContainsDefinitionsContext
@@ -47,29 +48,17 @@ interface MultiTypeEnum<T: Any>: TypeEnum<T> {
 
     private object Properties :
         ObjectPropertyDefinitions<MultiTypeEnum<*>>() {
-        val index = add(
-            1u, "index",
-            NumberDefinition(type = UInt32),
-            MultiTypeEnum<*>::index
+        val index by number(1u, MultiTypeEnum<*>::index, UInt32)
+        val name by string(2u, MultiTypeEnum<*>::name)
+        val alternativeNames by set(
+            index = 3u,
+            valueDefinition = StringDefinition(),
+            getter = MultiTypeEnum<*>::alternativeNames
         )
-        val name = add(
-            2u, "name",
-            StringDefinition(),
-            MultiTypeEnum<*>::name
-        )
-        val alternativeNames = add(
-            3u, "alternativeNames",
-            SetDefinition(
-                valueDefinition = StringDefinition()
-            ),
-            MultiTypeEnum<*>::alternativeNames
-        )
-        val definition = add(
-            4u, "definition",
-            InternalMultiTypeDefinition(
-                typeEnum = PropertyDefinitionType,
-                definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
-            ),
+        val definition by internalMultiType(
+            index = 4u,
+            typeEnum = PropertyDefinitionType,
+            definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions,
             getter = {
                 val def = it.definition as IsTransportablePropertyDefinitionType<*>
                 TypedValue(def.propertyDefinitionType, def)

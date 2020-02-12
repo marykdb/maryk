@@ -4,20 +4,22 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
+import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.types.Key
 import maryk.core.query.RequestContext
 
 /** Response status */
 interface IsResponseStatus {
     val statusType: StatusType
-
-    companion object {
-        internal fun <DO : Any> addKey(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> Key<*>?) {
-            definitions.add(1u, "key", ContextualReferenceDefinition<RequestContext>(
-                contextualResolver = {
-                    it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
-                }
-            ), getter)
-        }
-    }
 }
+
+internal fun <DO : Any> ObjectPropertyDefinitions<DO>.addKey(getter: (DO) -> Key<*>?) =
+    this.contextual(
+        index = 1u,
+        getter = getter,
+        definition = ContextualReferenceDefinition<RequestContext>(
+            contextualResolver = {
+                it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
+            }
+        )
+    )

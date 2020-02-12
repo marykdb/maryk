@@ -3,7 +3,7 @@ package maryk.core.query.orders
 import maryk.core.models.SingleTypedValueDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
-import maryk.core.properties.definitions.ListDefinition
+import maryk.core.properties.definitions.list
 import maryk.core.query.RequestContext
 import maryk.core.query.orders.OrderType.ORDERS
 import maryk.core.query.orders.Orders.Properties.orders
@@ -18,14 +18,12 @@ data class Orders(
     override val orderType = ORDERS
 
     object Properties : ObjectPropertyDefinitions<Orders>() {
-        val orders = add(
-            1u, "orders",
-            ListDefinition(
-                valueDefinition = EmbeddedObjectDefinition(
-                    dataModel = { Order }
-                )
-            ),
-            Orders::orders
+        val orders by list(
+            index = 1u,
+            getter = Orders::orders,
+            valueDefinition = EmbeddedObjectDefinition(
+                dataModel = { Order }
+            )
         )
     }
 

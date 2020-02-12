@@ -7,9 +7,10 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
-import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
+import maryk.core.properties.definitions.list
+import maryk.core.properties.definitions.number
+import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt64
@@ -33,33 +34,29 @@ data class DataObjectChange<out DM : IsRootDataModel<*>> internal constructor(
     val lastVersion: ULong? = null
 ) {
     object Properties : ObjectPropertyDefinitions<DataObjectChange<*>>() {
-        val key = add(1u, "key", ContextualReferenceDefinition<RequestContext>(
-            contextualResolver = {
-                it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
-            }
-        ), DataObjectChange<*>::key)
+        val key by contextual(
+            index = 1u,
+            getter = DataObjectChange<*>::key,
+            definition = ContextualReferenceDefinition<RequestContext>(
+                contextualResolver = {
+                    it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
+                }
+            )
+        )
 
-        val changes = add(
-            2u, "changes",
-            ListDefinition(
-                default = emptyList(),
-                valueDefinition = InternalMultiTypeDefinition(
-                    typeEnum = ChangeType,
-                    definitionMap = mapOfChangeDefinitions
-                )
-            ),
+        val changes by list(
+            index = 2u,
             getter = DataObjectChange<*>::changes,
+            default = emptyList(),
+            valueDefinition = InternalMultiTypeDefinition(
+                typeEnum = ChangeType,
+                definitionMap = mapOfChangeDefinitions
+            ),
             toSerializable = { TypedValue(it.changeType, it) },
             fromSerializable = { it.value }
         )
 
-        val lastVersion = add(
-            3u, "lastVersion",
-            NumberDefinition(
-                type = UInt64
-            ),
-            DataObjectChange<*>::lastVersion
-        )
+        val lastVersion by number(3u, DataObjectChange<*>::lastVersion, type = UInt64)
     }
 
     companion object : QueryDataModel<DataObjectChange<*>, Properties>(

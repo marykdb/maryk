@@ -24,13 +24,11 @@ internal class EmbeddedObjectDefinitionTest {
         val string: String = "jur"
     ) {
         object Properties : ObjectPropertyDefinitions<MarykObject>() {
-            init {
-                add(
-                    1u, "string", StringDefinition(
-                        regEx = "jur"
-                    ), MarykObject::string
-                )
-            }
+            val string by string(
+                1u,
+                getter = MarykObject::string,
+                regEx = "jur"
+            )
         }
 
         companion object : ObjectDataModel<MarykObject, Properties>(

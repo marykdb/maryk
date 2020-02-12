@@ -2,7 +2,7 @@ package maryk.core.properties.exceptions
 
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.number
 import maryk.core.properties.exceptions.ValidationExceptionType.TOO_MANY_ITEMS
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.types.numeric.UInt32
@@ -24,11 +24,9 @@ data class TooManyItemsException internal constructor(
 
     internal companion object : SimpleQueryDataModel<TooManyItemsException>(
         properties = object : ObjectPropertyDefinitions<TooManyItemsException>() {
-            init {
-                addReference(this, TooManyItemsException::reference)
-                add(2u, "size", NumberDefinition(type = UInt32), TooManyItemsException::size)
-                add(3u, "maxSize", NumberDefinition(type = UInt32), TooManyItemsException::maxSize)
-            }
+            val reference by addReference(TooManyItemsException::reference)
+            val _size by number(2u, TooManyItemsException::size, UInt32, name = "size")
+            val maxSize by number(3u, TooManyItemsException::maxSize, UInt32)
         }
     ) {
         override fun invoke(values: SimpleObjectValues<TooManyItemsException>) = TooManyItemsException(

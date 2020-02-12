@@ -4,8 +4,11 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.AbstractValuesDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
+import maryk.core.properties.definitions.wrapper.EmbeddedValuesDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
@@ -64,4 +67,29 @@ internal data class ContextualEmbeddedValuesDefinition<CX : IsPropertyContext>(
         earlierValue: Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>?
     ) =
         contextualResolver(Unit, context).readProtoBuf(length, reader, context)
+}
+
+fun <DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.embedContextual(
+    index: UInt,
+    getter: (DO) -> Values<out IsValuesDataModel<out PropertyDefinitions>, out PropertyDefinitions>? = { null },
+    contextualResolver: Unit.(context: CX?) -> AbstractValuesDataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, CX>,
+    name: String? = null,
+    alternativeNames: Set<String>? = null,
+    toSerializable: (Unit.(Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>?, IsPropertyContext?) -> Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>?)? = null,
+    fromSerializable: (Unit.(Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>?) -> Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>?)? = null,
+    shouldSerialize: (Unit.(Any) -> Boolean)? = null,
+    capturer: (Unit.(IsPropertyContext, Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>) -> Unit)? = null
+) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
+    @Suppress("UNCHECKED_CAST")
+    EmbeddedValuesDefinitionWrapper(
+        index,
+        name ?: propName,
+        ContextualEmbeddedValuesDefinition(contextualResolver),
+        alternativeNames,
+        getter = getter as (Any) -> Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>?,
+        capturer = capturer,
+        toSerializable = toSerializable,
+        fromSerializable = fromSerializable,
+        shouldSerialize = shouldSerialize
+    )
 }

@@ -1,12 +1,21 @@
 package maryk.core.query.requests
 
 import maryk.core.aggregations.Aggregations
+import maryk.core.exceptions.ContextNotFoundException
+import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.definitions.boolean
+import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
+import maryk.core.properties.definitions.embedObject
+import maryk.core.properties.definitions.list
+import maryk.core.properties.definitions.number
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
+import maryk.core.properties.types.numeric.UInt64
+import maryk.core.query.RequestContext
 import maryk.core.query.filters.IsFilter
 import maryk.core.query.requests.RequestType.Get
 import maryk.core.query.responses.ValuesResponse
@@ -45,13 +54,21 @@ data class GetRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> in
     override val responseModel = ValuesResponse
 
     object Properties : ObjectPropertyDefinitions<GetRequest<*, *>>() {
-        val dataModel = IsObjectRequest.addDataModel("from", this, GetRequest<*, *>::dataModel)
-        val keys = IsGetRequest.addKeys(this, GetRequest<*, *>::keys)
-        val select = IsFetchRequest.addSelect(this, GetRequest<*, *>::select)
-        val where = IsFetchRequest.addFilter(this, GetRequest<*, *>::where)
-        val toVersion = IsFetchRequest.addToVersion(this, GetRequest<*, *>::toVersion)
-        val filterSoftDeleted = IsFetchRequest.addFilterSoftDeleted(this, GetRequest<*, *>::filterSoftDeleted)
-        val aggregations = IsFetchRequest.addAggregationsDefinition(this, GetRequest<*, *>::aggregations)
+        val from by addDataModel(GetRequest<*, *>::dataModel)
+        val keys by list(
+            index = 2u,
+            getter = GetRequest<*, *>::keys,
+            valueDefinition = ContextualReferenceDefinition<RequestContext>(
+                contextualResolver = {
+                    it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
+                }
+            )
+        )
+        val select by embedObject(3u, GetRequest<*, *>::select, dataModel = { RootPropRefGraph })
+        val where by addFilter(GetRequest<*, *>::where)
+        val toVersion by number(5u, GetRequest<*, *>::toVersion, UInt64, required = false)
+        val filterSoftDeleted  by boolean(6u, GetRequest<*, *>::filterSoftDeleted, default = true)
+        val aggregations by embedObject(7u, GetRequest<*, *>::aggregations, dataModel = { Aggregations }, alternativeNames = setOf("aggs"))
     }
 
     companion object : QueryDataModel<GetRequest<*, *>, Properties>(

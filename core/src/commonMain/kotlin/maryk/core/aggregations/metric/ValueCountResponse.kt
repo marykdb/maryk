@@ -4,10 +4,10 @@ import maryk.core.aggregations.AggregationResponseType.ValueCountType
 import maryk.core.aggregations.IsAggregationResponse
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.number
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.numeric.UInt64
-import maryk.core.query.DefinedByReference
+import maryk.core.query.addReference
 import maryk.core.values.SimpleObjectValues
 
 /** The response of the value count */
@@ -17,13 +17,11 @@ data class ValueCountResponse<T: Any>(
 ) : IsAggregationResponse {
     override val aggregationType = ValueCountType
 
+    @Suppress("unused")
     companion object : SimpleQueryDataModel<ValueCountResponse<*>>(
         properties = object : ObjectPropertyDefinitions<ValueCountResponse<*>>() {
-            init {
-                DefinedByReference.addReference(this, ValueCountResponse<*>::reference, name = "of")
-                add(2u, "value",
-                    NumberDefinition(type = UInt64), ValueCountResponse<*>::value)
-            }
+            val of by addReference(ValueCountResponse<*>::reference)
+            val value by number(2u, ValueCountResponse<*>::value, UInt64)
         }
     ) {
         override fun invoke(values: SimpleObjectValues<ValueCountResponse<*>>) =

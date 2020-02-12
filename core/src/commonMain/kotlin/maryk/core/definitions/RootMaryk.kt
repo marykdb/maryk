@@ -3,9 +3,9 @@ package maryk.core.definitions
 import maryk.core.models.SingleTypedValueDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
-import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
+import maryk.core.properties.definitions.list
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.DefinitionsConversionContext
@@ -19,35 +19,34 @@ data class RootMaryk(
     val operations: List<TypedValue<Operation, IsOperation>> = listOf()
 ) {
     object Properties : ObjectPropertyDefinitions<RootMaryk>() {
-        val operations = add(1u, "operations",
-            ListDefinition(
-                valueDefinition = InternalMultiTypeDefinition(
-                    typeEnum = Operation,
-                    definitionMap = mapOf(
-                        Operation.Define to ContextTransformerDefinition<Definitions, DefinitionsContext, DefinitionsConversionContext>(
-                            definition = EmbeddedObjectDefinition(
-                                dataModel = { Definitions }
-                            ),
-                            contextTransformer = {
-                                it?.let { modelContext ->
-                                    DefinitionsConversionContext(modelContext)
-                                }
-                            }
+        val operations by list(
+            index = 1u,
+            getter = RootMaryk::operations,
+            valueDefinition = InternalMultiTypeDefinition(
+                typeEnum = Operation,
+                definitionMap = mapOf(
+                    Operation.Define to ContextTransformerDefinition<Definitions, DefinitionsContext, DefinitionsConversionContext>(
+                        definition = EmbeddedObjectDefinition(
+                            dataModel = { Definitions }
                         ),
-                        Operation.Request to ContextTransformerDefinition<Requests, DefinitionsContext, RequestContext>(
-                            definition = EmbeddedObjectDefinition(
-                                dataModel = { Requests }
-                            ),
-                            contextTransformer = {
-                                it?.let { modelContext ->
-                                    RequestContext(modelContext)
-                                }
+                        contextTransformer = {
+                            it?.let { modelContext ->
+                                DefinitionsConversionContext(modelContext)
                             }
-                        )
+                        }
+                    ),
+                    Operation.Request to ContextTransformerDefinition<Requests, DefinitionsContext, RequestContext>(
+                        definition = EmbeddedObjectDefinition(
+                            dataModel = { Requests }
+                        ),
+                        contextTransformer = {
+                            it?.let { modelContext ->
+                                RequestContext(modelContext)
+                            }
+                        }
                     )
                 )
-            ),
-            RootMaryk::operations
+            )
         )
     }
 

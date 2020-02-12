@@ -20,9 +20,7 @@ data class AlreadySetException(
 
     internal companion object : SimpleQueryDataModel<AlreadySetException>(
         properties = object : ObjectPropertyDefinitions<AlreadySetException>() {
-            init {
-                addReference(this, AlreadySetException::reference)
-            }
+            val reference by addReference(AlreadySetException::reference)
         }
     ) {
         override fun invoke(values: SimpleObjectValues<AlreadySetException>) = AlreadySetException(

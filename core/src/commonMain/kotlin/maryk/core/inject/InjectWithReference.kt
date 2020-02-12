@@ -3,8 +3,9 @@ package maryk.core.inject
 import maryk.core.exceptions.RequestException
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
+import maryk.core.properties.definitions.embedObject
+import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.PropertyReferenceForValues
 import maryk.core.query.RequestContext
@@ -45,18 +46,18 @@ internal class InjectWithReference(
     }
 
     internal object Properties : ObjectPropertyDefinitions<InjectWithReference>() {
-        val inject = add(1u, "inject",
-            EmbeddedObjectDefinition(
-                dataModel = { Inject }
-            ),
-            getter = InjectWithReference::inject
+        val inject by embedObject(
+            index = 1u,
+            getter = InjectWithReference::inject,
+            dataModel = { Inject }
         )
 
-        val reference = add(2u, "reference",
-            ContextualPropertyReferenceDefinition<RequestContext>(
+        val reference by contextual(
+            index = 2u,
+            getter = InjectWithReference::reference,
+            definition = ContextualPropertyReferenceDefinition<RequestContext>(
                 contextualResolver = { Requests.Properties }
-            ),
-            getter = InjectWithReference::reference
+            )
         )
     }
 

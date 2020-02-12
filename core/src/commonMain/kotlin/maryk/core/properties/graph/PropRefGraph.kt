@@ -10,10 +10,11 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
-import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
+import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.wrapper.EmbeddedValuesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.graph.PropRefGraphType.Graph
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyPropertyReference
@@ -56,8 +57,9 @@ data class PropRefGraph<P : PropertyDefinitions, DM : IsValuesDataModel<PS>, PS 
     override fun toString() = "Graph { ${renderPropsAsString()} }"
 
     object Properties : ObjectPropertyDefinitions<PropRefGraph<*, *, *>>() {
-        val parent = add(1u, "parent",
-            ContextualPropertyReferenceDefinition(
+        val parent by contextual(
+            index = 1u,
+            definition = ContextualPropertyReferenceDefinition(
                 contextualResolver = { context: GraphContext? ->
                     context?.dataModel?.properties as? AbstractPropertyDefinitions<*>?
                         ?: throw ContextNotFoundException()
@@ -76,9 +78,38 @@ data class PropRefGraph<P : PropertyDefinitions, DM : IsValuesDataModel<PS>, PS 
             getter = PropRefGraph<*, *, *>::parent
         )
 
-        val properties = addProperties(2u, PropRefGraph<*, *, *>::properties) { context: GraphContext? ->
-            context?.subDataModel?.properties as? PropertyDefinitions? ?: throw ContextNotFoundException()
-        }
+        val properties by list(
+            index = 2u,
+            valueDefinition = InternalMultiTypeDefinition(
+                definitionMap = mapOf(
+                    Graph to EmbeddedObjectDefinition(
+                        dataModel = { PropRefGraph }
+                    ),
+                    PropRef to ContextualPropertyReferenceDefinition(
+                        contextualResolver = { context: GraphContext? ->
+                            context?.subDataModel?.properties as? PropertyDefinitions? ?: throw ContextNotFoundException()
+                        }
+                    )
+                ),
+                typeEnum = PropRefGraphType
+            ),
+            getter = PropRefGraph<*, *, *>::properties,
+            toSerializable = { value: IsPropRefGraphNode<*> ->
+                value.let {
+                    when (it) {
+                        is IsDefinitionWrapper<*, *, *, *> -> TypedValue(it.graphType, it.ref() as IsTransportablePropRefGraphNode)
+                        is PropRefGraph<*, *, *> -> TypedValue(it.graphType, it)
+                        else -> throw ParseException("Unknown PropRefGraphType ${it.graphType}")
+                    }
+                }
+            },
+            fromSerializable = { value: TypedValue<PropRefGraphType, IsTransportablePropRefGraphNode> ->
+                when (value.type) {
+                    PropRef -> (value.value as IsPropertyReferenceForValues<*, *, *, *>).propertyDefinition
+                    Graph -> value.value as IsPropRefGraphNode<*>
+                }
+            }
+        )
     }
 
     companion object :
@@ -190,46 +221,6 @@ data class PropRefGraph<P : PropertyDefinitions, DM : IsValuesDataModel<PS>, PS 
         }
     }
 }
-
-/**
- * Add properties to Property Reference PropRefGraph objects, so they are encodable
- */
-internal fun <DO : Any> ObjectPropertyDefinitions<DO>.addProperties(
-    index: UInt,
-    getter: (DO) -> List<IsPropRefGraphNode<*>>,
-    contextResolver: Unit.(GraphContext?) -> PropertyDefinitions
-) =
-    add(index, "properties",
-        ListDefinition(
-            valueDefinition = InternalMultiTypeDefinition(
-                definitionMap = mapOf(
-                    Graph to EmbeddedObjectDefinition(
-                        dataModel = { PropRefGraph }
-                    ),
-                    PropRef to ContextualPropertyReferenceDefinition(
-                        contextualResolver = contextResolver
-                    )
-                ),
-                typeEnum = PropRefGraphType
-            )
-        ),
-        getter = getter,
-        toSerializable = { value: IsPropRefGraphNode<*> ->
-            value.let {
-                when (it) {
-                    is IsDefinitionWrapper<*, *, *, *> -> TypedValue(it.graphType, it.ref() as IsTransportablePropRefGraphNode)
-                    is PropRefGraph<*, *, *> -> TypedValue(it.graphType, it)
-                    else -> throw ParseException("Unknown PropRefGraphType ${it.graphType}")
-                }
-            }
-        },
-        fromSerializable = { value: TypedValue<PropRefGraphType, IsTransportablePropRefGraphNode> ->
-            when (value.type) {
-                PropRef -> (value.value as IsPropertyReferenceForValues<*, *, *, *>).propertyDefinition
-                Graph -> value.value as IsPropRefGraphNode<*>
-            }
-        }
-    )
 
 /** Write properties to JSON with [writer] in [context] */
 internal fun writePropertiesToJson(

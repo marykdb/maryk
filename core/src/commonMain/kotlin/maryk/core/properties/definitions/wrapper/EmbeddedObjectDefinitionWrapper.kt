@@ -14,6 +14,7 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.values.AbstractValues
 import maryk.core.values.ObjectValues
 import maryk.core.values.ValueItem
+import kotlin.reflect.KProperty
 
 /**
  * Contains a Embedded Object property [definition] containing DataObjects of [EODO] and Properties described by [P]
@@ -34,7 +35,7 @@ data class EmbeddedObjectDefinitionWrapper<
     override val name: String,
     override val definition: IsEmbeddedObjectDefinition<EODO, P, DM, CXI, CX>,
     override val alternativeNames: Set<String>? = null,
-    override val getter: (DO) -> TO?,
+    override val getter: (DO) -> TO? = { null },
     override val capturer: (Unit.(CXI, EODO) -> Unit)? = null,
     override val toSerializable: (Unit.(TO?, CXI?) -> EODO?)? = null,
     override val fromSerializable: (Unit.(EODO?) -> TO?)? = null,
@@ -75,4 +76,7 @@ data class EmbeddedObjectDefinitionWrapper<
         referenceGetter: P.() -> (AnyOutPropertyReference?) -> R
     ): (AnyOutPropertyReference?) -> R =
         { this.definition.dataModel(this.ref(it), referenceGetter) }
+
+    // For delegation in definition
+    operator fun getValue(thisRef: Any, property: KProperty<*>) = this
 }

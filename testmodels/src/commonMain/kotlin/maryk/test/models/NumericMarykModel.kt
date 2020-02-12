@@ -2,7 +2,7 @@ package maryk.test.models
 
 import maryk.core.models.RootDataModel
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.number
 import maryk.core.properties.types.numeric.Float32
 import maryk.core.properties.types.numeric.Float64
 import maryk.core.properties.types.numeric.SInt16
@@ -18,66 +18,56 @@ object NumericMarykModel : RootDataModel<NumericMarykModel, NumericMarykModel.Pr
     properties = Properties
 ) {
     object Properties : PropertyDefinitions() {
-        val sInt8 by define(1u) {
-            NumberDefinition(
-                type = SInt8,
-                default = 4.toByte()
-            )
-        }
-        val sInt16 by define(2u) {
-            NumberDefinition(
-                type = SInt16,
-                default = 42.toShort()
-            )
-        }
-        val sInt32 by define(3u) {
-            NumberDefinition(
-                type = SInt32,
-                default = 42
-            )
-        }
-        val sInt64 by define(4u) {
-            NumberDefinition(
-                type = SInt64,
-                default = 4123123344572L
-            )
-        }
-        val uInt8 by define(5u) {
-            NumberDefinition(
-                type = UInt8,
-                default = 4.toUByte()
-            )
-        }
-        val uInt16 by define(6u) {
-            NumberDefinition(
-                type = UInt16,
-                default = 42.toUShort()
-            )
-        }
-        val uInt32 by define(7u) {
-            NumberDefinition(
-                type = UInt32,
-                default = 42u
-            )
-        }
-        val uInt64 by define(8u) {
-            NumberDefinition(
-                type = UInt64,
-                default = 4123123344572uL
-            )
-        }
-        val float32 by define(9u) {
-            NumberDefinition(
-                type = Float32,
-                default = 42.345F
-            )
-        }
-        val float64 by define(10u) {
-            NumberDefinition(
-                type = Float64,
-                default = 2345762.3123
-            )
-        }
+        val sInt8 by number(
+            index = 1u,
+            type = SInt8,
+            default = 4.toByte()
+        )
+        val sInt16 by number(
+            index = 2u,
+            type = SInt16,
+            default = 42.toShort()
+        )
+        val sInt32 by number(
+            index = 3u,
+            type = SInt32,
+            default = 42
+        )
+        val sInt64 by number(
+            index = 4u,
+            type = SInt64,
+            default = 4123123344572L
+        )
+        val uInt8 by number(
+            index = 5u,
+            type = UInt8,
+            default = 4.toUByte()
+        )
+        val uInt16 by number(
+            index = 6u,
+            type = UInt16,
+            default = 42.toUShort()
+        )
+        val uInt32 by number(
+            index = 7u,
+            type = UInt32,
+            default = 42u
+        )
+        val uInt64 by number(
+            index = 8u,
+            type = UInt64,
+            default = 4123123344572uL
+        )
+        val float32 by number(
+            index = 9u,
+            type = Float32,
+            default = 42.345F
+        )
+        val float64 by number(
+            index = 10u,
+            type = Float64,
+            default = 2345762.3123
+        )
     }
 
     operator fun invoke(

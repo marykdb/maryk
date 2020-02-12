@@ -13,12 +13,15 @@ import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
+import maryk.core.properties.definitions.wrapper.ContextualDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsValueDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DefinedByReference
 import maryk.core.query.RequestContext
+import maryk.core.query.addReference
 import maryk.core.values.ObjectValues
 import maryk.core.values.Values
 
@@ -30,22 +33,21 @@ data class ReferenceValuePair<T : Any> internal constructor(
 
     override fun toString() = "$reference: $value"
 
-    object Properties : ReferenceValuePairPropertyDefinitions<ReferenceValuePair<Any>, Any, Any>() {
-        override val reference = DefinedByReference.addReference(
-            this,
+    object Properties : ReferenceValuePairPropertyDefinitions<ReferenceValuePair<Any>, Any, Any, ContextualDefinitionWrapper<Any, Any, RequestContext, ContextualValueDefinition<RequestContext, IsPropertyContext, Any, IsValueDefinition<Any, IsPropertyContext>>, ReferenceValuePair<Any>>>() {
+        override val reference by addReference(
             ReferenceValuePair<*>::reference
         )
-        override val value = add(
-            2u, "value",
-            ContextualValueDefinition(
+        override val value by contextual(
+            index = 2u,
+            getter = ReferenceValuePair<*>::value,
+            definition = ContextualValueDefinition(
                 contextualResolver = { context: RequestContext? ->
                     context?.reference?.let {
                         @Suppress("UNCHECKED_CAST")
                         it.comparablePropertyDefinition as IsValueDefinition<Any, IsPropertyContext>
                     } ?: throw ContextNotFoundException()
                 }
-            ),
-            ReferenceValuePair<*>::value
+            )
         )
     }
 

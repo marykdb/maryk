@@ -7,8 +7,12 @@ import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.ContextualDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
+import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
+import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.types.TimePrecision
 import maryk.core.properties.types.byteSize
 import maryk.core.properties.types.fromByteReader
@@ -33,8 +37,7 @@ data class TimeDefinition(
     IsTimeDefinition<Time>,
     IsSerializableFixedBytesEncodable<Time, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<Time>,
-    HasDefaultValueDefinition<Time>,
-    IsWrappableDefinition<Time, IsPropertyContext, FixedBytesDefinitionWrapper<Time, Time, IsPropertyContext, TimeDefinition, Any>> {
+    HasDefaultValueDefinition<Time> {
     override val propertyDefinitionType = PropertyDefinitionType.Time
     override val wireType = VAR_INT
     override val byteSize = Time.byteSize(precision)
@@ -83,53 +86,50 @@ data class TimeDefinition(
         else -> value as? Time
     }
 
-    override fun wrap(
-        index: UInt,
-        name: String,
-        alternativeNames: Set<String>?
-    ) =
-        FixedBytesDefinitionWrapper<Time, Time, IsPropertyContext, TimeDefinition, Any>(index, name, this, alternativeNames)
-
+    @Suppress("unused")
     object Model :
         ContextualDataModel<TimeDefinition, ObjectPropertyDefinitions<TimeDefinition>, ContainsDefinitionsContext, TimeDefinitionContext>(
             contextTransformer = { TimeDefinitionContext() },
             properties = object : ObjectPropertyDefinitions<TimeDefinition>() {
-                init {
-                    IsPropertyDefinition.addRequired(this, TimeDefinition::required)
-                    IsPropertyDefinition.addFinal(this, TimeDefinition::final)
-                    IsComparableDefinition.addUnique(this, TimeDefinition::unique)
-                    IsTimeDefinition.addPrecision(4u, this,
-                        TimeDefinition::precision,
-                        capturer = { context: TimePrecisionContext, timePrecision ->
-                            context.precision = timePrecision
+                val required by boolean(1u, TimeDefinition::required, default = true)
+                val final by boolean(2u, TimeDefinition::final, default = false)
+                val unique by boolean(3u, TimeDefinition::unique, default = false)
+                val precision by enum(4u,
+                    TimeDefinition::precision,
+                    enum = TimePrecision,
+                    default = TimePrecision.SECONDS,
+                    capturer = { context: TimePrecisionContext, timePrecision ->
+                        context.precision = timePrecision
+                    }
+                )
+                val minValue by contextual(
+                    index = 5u,
+                    getter = TimeDefinition::minValue,
+                    definition = ContextualValueDefinition(
+                        contextualResolver = { context: TimeDefinitionContext? ->
+                            context?.timeDefinition ?: throw ContextNotFoundException()
                         }
                     )
-                    add(5u, "minValue",
-                        ContextualValueDefinition(
-                            contextualResolver = { context: TimeDefinitionContext? ->
-                                context?.timeDefinition ?: throw ContextNotFoundException()
-                            }
-                        ),
-                        TimeDefinition::minValue
+                )
+                val maxValue by contextual(
+                    index = 6u,
+                    getter = TimeDefinition::maxValue,
+                    definition = ContextualValueDefinition(
+                        contextualResolver = { context: TimeDefinitionContext? ->
+                            context?.timeDefinition ?: throw ContextNotFoundException()
+                        }
                     )
-                    add(6u, "maxValue",
-                        ContextualValueDefinition(
-                            contextualResolver = { context: TimeDefinitionContext? ->
-                                context?.timeDefinition ?: throw ContextNotFoundException()
-                            }
-                        ),
-                        TimeDefinition::maxValue
+                )
+                val default by contextual(
+                    index = 7u,
+                    getter = TimeDefinition::default,
+                    definition = ContextualValueDefinition(
+                        contextualResolver = { context: TimeDefinitionContext? ->
+                            context?.timeDefinition ?: throw ContextNotFoundException()
+                        }
                     )
-                    add(7u, "default",
-                        ContextualValueDefinition(
-                            contextualResolver = { context: TimeDefinitionContext? ->
-                                context?.timeDefinition ?: throw ContextNotFoundException()
-                            }
-                        ),
-                        TimeDefinition::default
-                    )
-                    IsMomentDefinition.addFillWithNow(8u, this, TimeDefinition::fillWithNow)
-                }
+                )
+                val fillWithNow by boolean(8u, TimeDefinition::fillWithNow, default = false)
             }
         ) {
         override fun invoke(values: SimpleObjectValues<TimeDefinition>) = TimeDefinition(
@@ -151,4 +151,72 @@ class TimeDefinitionContext : TimePrecisionContext() {
             precision = precision ?: throw ContextNotFoundException()
         )
     }
+}
+
+fun PropertyDefinitions.time(
+    index: UInt,
+    name: String? = null,
+    required: Boolean = true,
+    final: Boolean = false,
+    unique: Boolean = false,
+    minValue: Time? = null,
+    maxValue: Time? = null,
+    default: Time? = null,
+    fillWithNow: Boolean = false,
+    precision: TimePrecision = TimePrecision.SECONDS,
+    alternativeNames: Set<String>? = null
+) = DefinitionWrapperDelegateLoader(this) { propName ->
+    FixedBytesDefinitionWrapper<Time, Time, IsPropertyContext, TimeDefinition, Any>(
+        index,
+        name ?: propName,
+        TimeDefinition(required, final, unique, minValue, maxValue, default, fillWithNow, precision),
+        alternativeNames
+    )
+}
+
+fun <TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.time(
+    index: UInt,
+    getter: (DO) -> TO?,
+    name: String? = null,
+    required: Boolean = true,
+    final: Boolean = false,
+    unique: Boolean = false,
+    minValue: Time? = null,
+    maxValue: Time? = null,
+    default: Time? = null,
+    fillWithNow: Boolean = false,
+    precision: TimePrecision = TimePrecision.SECONDS,
+    alternativeNames: Set<String>? = null
+): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<Time, TO, IsPropertyContext, TimeDefinition, DO>, DO> =
+    time(index, getter, name, required, final,  unique, minValue, maxValue, default, fillWithNow, precision, alternativeNames, toSerializable = null)
+
+fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.time(
+    index: UInt,
+    getter: (DO) -> TO?,
+    name: String? = null,
+    required: Boolean = true,
+    final: Boolean = false,
+    unique: Boolean = false,
+    minValue: Time? = null,
+    maxValue: Time? = null,
+    default: Time? = null,
+    fillWithNow: Boolean = false,
+    precision: TimePrecision = TimePrecision.SECONDS,
+    alternativeNames: Set<String>? = null,
+    toSerializable: (Unit.(TO?, CX?) -> Time?)? = null,
+    fromSerializable: (Unit.(Time?) -> TO?)? = null,
+    shouldSerialize: (Unit.(Any) -> Boolean)? = null,
+    capturer: (Unit.(CX, Time) -> Unit)? = null
+) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
+    FixedBytesDefinitionWrapper(
+        index,
+        name ?: propName,
+        TimeDefinition(required, final, unique, minValue, maxValue, default, fillWithNow, precision),
+        alternativeNames,
+        getter = getter,
+        capturer = capturer,
+        toSerializable = toSerializable,
+        fromSerializable = fromSerializable,
+        shouldSerialize = shouldSerialize
+    )
 }

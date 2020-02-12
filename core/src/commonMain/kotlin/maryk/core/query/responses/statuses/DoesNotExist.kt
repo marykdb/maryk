@@ -16,9 +16,7 @@ data class DoesNotExist<DM : IsRootDataModel<*>>(
 
     internal companion object : SimpleQueryDataModel<DoesNotExist<*>>(
         properties = object : ObjectPropertyDefinitions<DoesNotExist<*>>() {
-            init {
-                IsResponseStatus.addKey(this, DoesNotExist<*>::key)
-            }
+            val key by addKey(DoesNotExist<*>::key)
         }
     ) {
         override fun invoke(values: SimpleObjectValues<DoesNotExist<*>>) =

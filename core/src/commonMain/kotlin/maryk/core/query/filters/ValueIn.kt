@@ -22,7 +22,7 @@ data class ValueIn internal constructor(
         pairModel = ReferenceValueSetPair as QueryDataModel<ReferenceValueSetPair<*>, *>
     )
 
-    companion object : ReferencePairDataModel<ValueIn, Properties, ReferenceValueSetPair<*>, Set<*>, Set<*>>(
+    companion object : ReferencePairDataModel<ValueIn, Properties, ReferenceValueSetPair<*>, Set<Any>, Set<Any>>(
         properties = Properties,
         pairProperties = ReferenceValueSetPair.Properties
     ) {

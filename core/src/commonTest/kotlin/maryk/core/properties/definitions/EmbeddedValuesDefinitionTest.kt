@@ -23,11 +23,10 @@ internal class EmbeddedValuesDefinitionTest {
         properties = Properties
     ) {
         object Properties : PropertyDefinitions() {
-            val string by define(1u) {
-                StringDefinition(
-                    regEx = "jur"
-                )
-            }
+            val string by string(
+                index = 1u,
+                regEx = "jur"
+            )
         }
 
         operator fun invoke(

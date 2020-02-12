@@ -5,7 +5,10 @@ import maryk.core.extensions.bytes.writeBytes
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
 import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.values.SimpleObjectValues
 import maryk.json.IsJsonLikeWriter
@@ -20,8 +23,7 @@ data class BooleanDefinition(
     IsSimpleValueDefinition<Boolean, IsPropertyContext>,
     IsSerializableFixedBytesEncodable<Boolean, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<Boolean>,
-    HasDefaultValueDefinition<Boolean>,
-    IsWrappableDefinition<Boolean, IsPropertyContext, FixedBytesDefinitionWrapper<Boolean, Boolean, IsPropertyContext, BooleanDefinition, Any>> {
+    HasDefaultValueDefinition<Boolean> {
     override val propertyDefinitionType = PropertyDefinitionType.Boolean
     override val wireType = VAR_INT
     override val byteSize = 1
@@ -46,20 +48,12 @@ data class BooleanDefinition(
         writer.writeBoolean(value)
     }
 
-    override fun wrap(
-        index: UInt,
-        name: String,
-        alternativeNames: Set<String>?
-    ) =
-        FixedBytesDefinitionWrapper<Boolean, Boolean, IsPropertyContext, BooleanDefinition, Any>(index, name, this, alternativeNames)
-
+    @Suppress("unused")
     object Model : SimpleObjectDataModel<BooleanDefinition, ObjectPropertyDefinitions<BooleanDefinition>>(
         properties = object : ObjectPropertyDefinitions<BooleanDefinition>() {
-            init {
-                IsPropertyDefinition.addRequired(this, BooleanDefinition::required)
-                IsPropertyDefinition.addFinal(this, BooleanDefinition::final)
-                add(3u, "default", BooleanDefinition(), BooleanDefinition::default)
-            }
+            val required by boolean(1u, BooleanDefinition::required, default = true)
+            val final by boolean(2u, BooleanDefinition::final, default = false)
+            val default by boolean(3u, BooleanDefinition::default)
         }
     ) {
         override fun invoke(values: SimpleObjectValues<BooleanDefinition>) = BooleanDefinition(
@@ -68,4 +62,58 @@ data class BooleanDefinition(
             default = values(3u)
         )
     }
+}
+
+
+fun PropertyDefinitions.boolean(
+    index: UInt,
+    name: String? = null,
+    required: Boolean = true,
+    final: Boolean = false,
+    default: Boolean? = null,
+    alternativeNames: Set<String>? = null
+) = DefinitionWrapperDelegateLoader(this) { propName ->
+    FixedBytesDefinitionWrapper<Boolean, Boolean, IsPropertyContext, BooleanDefinition, Any>(
+        index,
+        name ?: propName,
+        BooleanDefinition(required, final, default),
+        alternativeNames
+    )
+}
+
+fun <DO: Any> ObjectPropertyDefinitions<DO>.boolean(
+    index: UInt,
+    getter: (DO) -> Boolean?,
+    name: String? = null,
+    required: Boolean = true,
+    final: Boolean = false,
+    default: Boolean? = null,
+    alternativeNames: Set<String>? = null
+): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<Boolean, Boolean, IsPropertyContext, BooleanDefinition, DO>, DO> =
+    boolean(index, getter, name, required, final, default, alternativeNames, toSerializable = null)
+
+fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.boolean(
+    index: UInt,
+    getter: (DO) -> TO?,
+    name: String? = null,
+    required: Boolean = true,
+    final: Boolean = false,
+    default: Boolean? = null,
+    alternativeNames: Set<String>? = null,
+    toSerializable: (Unit.(TO?, CX?) -> Boolean?)? = null,
+    fromSerializable: (Unit.(Boolean?) -> TO?)? = null,
+    shouldSerialize: (Unit.(Any) -> Boolean)? = null,
+    capturer: (Unit.(CX, Boolean) -> Unit)? = null
+) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
+    FixedBytesDefinitionWrapper(
+        index,
+        name ?: propName,
+        BooleanDefinition(required, final, default),
+        alternativeNames,
+        getter = getter,
+        capturer = capturer,
+        toSerializable = toSerializable,
+        fromSerializable = fromSerializable,
+        shouldSerialize = shouldSerialize
+    )
 }

@@ -5,7 +5,7 @@ import maryk.core.aggregations.IsAggregationRequest
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.query.DefinedByReference
+import maryk.core.query.addReference
 import maryk.core.values.SimpleObjectValues
 
 /** Finds the maximum value for [reference] */
@@ -17,11 +17,10 @@ data class Max<T: Comparable<T>>(
     override fun createAggregator() =
         MaxAggregator(this)
 
+    @Suppress("unused")
     companion object : SimpleQueryDataModel<Max<*>>(
         properties = object : ObjectPropertyDefinitions<Max<*>>() {
-            init {
-                DefinedByReference.addReference(this, Max<*>::reference, name = "of")
-            }
+            val of by addReference(Max<*>::reference)
         }
     ) {
         override fun invoke(values: SimpleObjectValues<Max<*>>) = Max<Comparable<Any>>(

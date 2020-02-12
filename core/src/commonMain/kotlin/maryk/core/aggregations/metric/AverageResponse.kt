@@ -7,12 +7,13 @@ import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsValueDefinition
-import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
+import maryk.core.properties.definitions.number
+import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.numeric.UInt64
-import maryk.core.query.DefinedByReference
 import maryk.core.query.RequestContext
+import maryk.core.query.addReference
 import maryk.core.values.SimpleObjectValues
 
 /** The response of the find average value aggregation */
@@ -23,25 +24,24 @@ data class AverageResponse<T: Comparable<T>>(
 ) : IsAggregationResponse {
     override val aggregationType = AverageType
 
+    @Suppress("unused")
     companion object : SimpleQueryDataModel<AverageResponse<*>>(
         properties = object : ObjectPropertyDefinitions<AverageResponse<*>>() {
-            init {
-                DefinedByReference.addReference(this, AverageResponse<*>::reference, name = "of")
-                add(2u, "value",
-                    ContextualValueDefinition(
-                        required = false,
-                        contextualResolver = { context: RequestContext? ->
-                            context?.reference?.let {
-                                @Suppress("UNCHECKED_CAST")
-                                it.comparablePropertyDefinition as IsValueDefinition<Any, IsPropertyContext>
-                            } ?: throw ContextNotFoundException()
-                        }
-                    ),
-                    AverageResponse<*>::value
+            val of by addReference(AverageResponse<*>::reference)
+            val value by contextual(
+                index = 2u,
+                getter = AverageResponse<*>::value,
+                definition = ContextualValueDefinition(
+                    required = false,
+                    contextualResolver = { context: RequestContext? ->
+                        context?.reference?.let {
+                            @Suppress("UNCHECKED_CAST")
+                            it.comparablePropertyDefinition as IsValueDefinition<Any, IsPropertyContext>
+                        } ?: throw ContextNotFoundException()
+                    }
                 )
-
-                add(3u, "valueCount", NumberDefinition(type = UInt64), AverageResponse<*>::valueCount)
-            }
+            )
+            val valueCount by number(3u, AverageResponse<*>::valueCount, type = UInt64)
         }
     ) {
         override fun invoke(values: SimpleObjectValues<AverageResponse<*>>) =

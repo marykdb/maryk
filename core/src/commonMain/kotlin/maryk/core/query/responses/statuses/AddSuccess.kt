@@ -5,9 +5,8 @@ import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
-import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.MultiTypeDefinition
-import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.list
+import maryk.core.properties.definitions.number
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt64
@@ -25,26 +24,24 @@ data class AddSuccess<DM : IsRootDataModel<*>>(
 ) : IsAddResponseStatus<DM> {
     override val statusType = ADD_SUCCESS
 
+    @Suppress("unused")
     internal companion object : SimpleQueryDataModel<AddSuccess<*>>(
         properties = object : ObjectPropertyDefinitions<AddSuccess<*>>() {
-            init {
-                IsResponseStatus.addKey(this, AddSuccess<*>::key)
-                add(2u, "version", NumberDefinition(type = UInt64), AddSuccess<*>::version)
-                add(
-                    3u, "changes",
-                    ListDefinition(
+            val key by addKey(AddSuccess<*>::key)
+            val version by number(2u, getter = AddSuccess<*>::version, type = UInt64)
+
+            val changes by list(
+                index = 3u,
+                getter = AddSuccess<*>::changes,
                         default = emptyList(),
                         valueDefinition = InternalMultiTypeDefinition(
                             typeEnum = ChangeType,
                             definitionMap = mapOfChangeDefinitions
-                        )
                     ),
-                    getter = AddSuccess<*>::changes,
                     toSerializable = { TypedValue(it.changeType, it) },
                     fromSerializable = { it.value }
                 )
             }
-        }
     ) {
         override fun invoke(values: SimpleObjectValues<AddSuccess<*>>) =
             AddSuccess<IsRootDataModel<IsPropertyDefinitions>>(

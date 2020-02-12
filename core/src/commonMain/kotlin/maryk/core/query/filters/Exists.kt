@@ -1,8 +1,13 @@
 package maryk.core.query.filters
 
+import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ReferencesDataModel
 import maryk.core.models.ReferencesObjectPropertyDefinitions
+import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
+import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
+import maryk.core.properties.definitions.list
+import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
@@ -10,7 +15,7 @@ import maryk.json.IsJsonLikeWriter
 
 /** Checks if [references] exist on DataModel */
 data class Exists internal constructor(
-    val references: List<IsPropertyReference<*, IsSerializablePropertyDefinition<*, *>, *>>
+    val references: List<AnyPropertyReference>
 ) : IsFilter {
     override val filterType = FilterType.Exists
 
@@ -19,7 +24,16 @@ data class Exists internal constructor(
     )
 
     object Properties : ReferencesObjectPropertyDefinitions<Exists>() {
-        override val references = addReferenceListPropertyDefinition(Exists::references)
+        override val references by list(
+            index = 1u,
+            getter = Exists::references,
+            valueDefinition = ContextualPropertyReferenceDefinition<RequestContext>(
+                contextualResolver = {
+                    it?.dataModel?.properties as? AbstractPropertyDefinitions<*>?
+                        ?: throw ContextNotFoundException()
+                }
+            )
+        )
     }
 
     companion object : ReferencesDataModel<Exists, Properties>(

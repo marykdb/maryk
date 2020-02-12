@@ -5,7 +5,7 @@ import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
-import maryk.core.properties.definitions.ListDefinition
+import maryk.core.properties.definitions.list
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.ValidationExceptionType
 import maryk.core.properties.exceptions.ValidationUmbrellaException
@@ -34,23 +34,20 @@ data class ValidationFail<DM : IsRootDataModel<*>>(
         this.exceptions
     )
 
+    @Suppress("unused")
     internal companion object : SimpleQueryDataModel<ValidationFail<*>>(
         properties = object : ObjectPropertyDefinitions<ValidationFail<*>>() {
-            init {
-                add(
-                    1u, "exceptions",
-                    ListDefinition(
-                        default = emptyList(),
-                        valueDefinition = InternalMultiTypeDefinition(
-                            typeEnum = ValidationExceptionType,
-                            definitionMap = mapOfValidationExceptionDefinitions
-                        )
-                    ),
-                    getter = ValidationFail<*>::exceptions,
-                    toSerializable = { TypedValue(it.validationExceptionType, it) },
-                    fromSerializable = { it.value }
-                )
-            }
+            val exceptions by list(
+                index = 1u,
+                getter = ValidationFail<*>::exceptions,
+                default = emptyList(),
+                valueDefinition = InternalMultiTypeDefinition(
+                    typeEnum = ValidationExceptionType,
+                    definitionMap = mapOfValidationExceptionDefinitions
+                ),
+                toSerializable = { TypedValue(it.validationExceptionType, it) },
+                fromSerializable = { it.value }
+            )
         }
     ) {
         override fun invoke(values: SimpleObjectValues<ValidationFail<*>>) =

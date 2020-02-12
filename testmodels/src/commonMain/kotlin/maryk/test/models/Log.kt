@@ -2,11 +2,11 @@ package maryk.test.models
 
 import maryk.core.models.RootDataModel
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.definitions.DateTimeDefinition
-import maryk.core.properties.definitions.EnumDefinition
-import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.definitions.dateTime
+import maryk.core.properties.definitions.enum
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.Reversed
+import maryk.core.properties.definitions.string
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IndexedEnumImpl
 import maryk.core.properties.types.TimePrecision.MILLIS
@@ -40,23 +40,21 @@ object Log : RootDataModel<Log, Properties>(
     properties = Properties
 ) {
     object Properties : PropertyDefinitions() {
-        val message by define(1u) {
-            StringDefinition()
-        }
-        val severity by define(2u) {
-            EnumDefinition(
-                final = true,
-                enum = Severity,
-                default = INFO
-            )
-        }
-        val timestamp by define(3u) {
-            DateTimeDefinition(
-                final = true,
-                precision = MILLIS,
-                fillWithNow = true
-            )
-        }
+        val message by string(
+            index = 1u
+        )
+        val severity by enum(
+            index = 2u,
+            final = true,
+            enum = Severity,
+            default = INFO
+        )
+        val timestamp by dateTime(
+            index = 3u,
+            final = true,
+            precision = MILLIS,
+            fillWithNow = true
+        )
     }
 
     operator fun invoke(

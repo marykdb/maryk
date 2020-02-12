@@ -1,6 +1,5 @@
 package maryk.core.properties.definitions
 
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.exceptions.RequiredException
@@ -35,14 +34,4 @@ interface IsPropertyDefinition<T : Any> {
 
     /** To get embedded properties by [index] */
     fun getEmbeddedByIndex(index: UInt): IsDefinitionWrapper<*, *, *, *>?
-
-    companion object {
-        internal fun <DO : Any> addRequired(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> Boolean) {
-            definitions.add(1u, "required", BooleanDefinition(default = true), getter)
-        }
-
-        internal fun <DO : Any> addFinal(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> Boolean) {
-            definitions.add(2u, "final", BooleanDefinition(default = false), getter)
-        }
-    }
 }

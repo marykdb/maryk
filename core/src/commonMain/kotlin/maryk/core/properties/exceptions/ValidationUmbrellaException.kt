@@ -3,7 +3,7 @@ package maryk.core.properties.exceptions
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
-import maryk.core.properties.definitions.ListDefinition
+import maryk.core.properties.definitions.list
 import maryk.core.properties.exceptions.ValidationExceptionType.UMBRELLA
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.types.TypedValue
@@ -21,24 +21,21 @@ data class ValidationUmbrellaException internal constructor(
 ) {
     override val validationExceptionType = UMBRELLA
 
+    @Suppress("unused")
     internal companion object : SimpleQueryDataModel<ValidationUmbrellaException>(
         properties = object : ObjectPropertyDefinitions<ValidationUmbrellaException>() {
-            init {
-                addReference(this, ValidationUmbrellaException::reference)
-                add(
-                    2u, "exceptions",
-                    ListDefinition(
-                        default = emptyList(),
-                        valueDefinition = InternalMultiTypeDefinition(
-                            typeEnum = ValidationExceptionType,
-                            definitionMap = mapOfValidationExceptionDefinitions
-                        )
-                    ),
-                    getter = ValidationUmbrellaException::exceptions,
-                    toSerializable = { TypedValue(it.validationExceptionType, it) },
-                    fromSerializable = { it.value }
-                )
-            }
+            val reference by addReference(ValidationUmbrellaException::reference)
+            val exceptions by list(
+                index = 2u,
+                default = emptyList(),
+                valueDefinition = InternalMultiTypeDefinition(
+                    typeEnum = ValidationExceptionType,
+                    definitionMap = mapOfValidationExceptionDefinitions
+                ),
+                getter = ValidationUmbrellaException::exceptions,
+                toSerializable = { TypedValue(it.validationExceptionType, it) },
+                fromSerializable = { it.value }
+            )
         }
     ) {
         override fun invoke(values: SimpleObjectValues<ValidationUmbrellaException>) = ValidationUmbrellaException(

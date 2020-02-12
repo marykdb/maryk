@@ -7,7 +7,10 @@ import maryk.core.extensions.bytes.writeLittleEndianBytes
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
 import maryk.core.properties.types.GeoPoint
 import maryk.core.properties.types.toGeoPoint
 import maryk.core.protobuf.WireType.BIT_64
@@ -23,8 +26,7 @@ data class GeoPointDefinition(
     IsSimpleValueDefinition<GeoPoint, IsPropertyContext>,
     IsSerializableFixedBytesEncodable<GeoPoint, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<GeoPoint>,
-    HasDefaultValueDefinition<GeoPoint>,
-    IsWrappableDefinition<GeoPoint, IsPropertyContext, FixedBytesDefinitionWrapper<GeoPoint, GeoPoint, IsPropertyContext, GeoPointDefinition, Any>> {
+    HasDefaultValueDefinition<GeoPoint> {
     override val propertyDefinitionType = PropertyDefinitionType.GeoPoint
     override val wireType = BIT_64
     override val byteSize = 8
@@ -67,20 +69,12 @@ data class GeoPointDefinition(
         else -> null
     }
 
-    override fun wrap(
-        index: UInt,
-        name: String,
-        alternativeNames: Set<String>?
-    ) =
-        FixedBytesDefinitionWrapper<GeoPoint, GeoPoint, IsPropertyContext, GeoPointDefinition, Any>(index, name, this, alternativeNames)
-
+    @Suppress("unused")
     object Model : SimpleObjectDataModel<GeoPointDefinition, ObjectPropertyDefinitions<GeoPointDefinition>>(
         properties = object : ObjectPropertyDefinitions<GeoPointDefinition>() {
-            init {
-                IsPropertyDefinition.addRequired(this, GeoPointDefinition::required)
-                IsPropertyDefinition.addFinal(this, GeoPointDefinition::final)
-                add(3u, "default", GeoPointDefinition(), GeoPointDefinition::default)
-            }
+            val required by boolean(1u, GeoPointDefinition::required, default = true)
+            val final by boolean(2u, GeoPointDefinition::final, default = false)
+            val default by geoPoint(3u, GeoPointDefinition::default)
         }
     ) {
         override fun invoke(values: SimpleObjectValues<GeoPointDefinition>) = GeoPointDefinition(
@@ -89,4 +83,57 @@ data class GeoPointDefinition(
             default = values(3u)
         )
     }
+}
+
+fun PropertyDefinitions.geoPoint(
+    index: UInt,
+    name: String? = null,
+    required: Boolean = true,
+    final: Boolean = false,
+    default: GeoPoint? = null,
+    alternativeNames: Set<String>? = null
+) = DefinitionWrapperDelegateLoader(this) { propName ->
+    FixedBytesDefinitionWrapper<GeoPoint, GeoPoint, IsPropertyContext, GeoPointDefinition, Any>(
+        index,
+        name ?: propName,
+        GeoPointDefinition(required, final, default),
+        alternativeNames
+    )
+}
+
+fun <TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.geoPoint(
+    index: UInt,
+    getter: (DO) -> TO?,
+    name: String? = null,
+    required: Boolean = true,
+    final: Boolean = false,
+    default: GeoPoint? = null,
+    alternativeNames: Set<String>? = null
+): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<GeoPoint, TO, IsPropertyContext, GeoPointDefinition, DO>, DO> =
+    geoPoint(index, getter, name, required, final, default, alternativeNames, toSerializable = null)
+
+fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.geoPoint(
+    index: UInt,
+    getter: (DO) -> TO?,
+    name: String? = null,
+    required: Boolean = true,
+    final: Boolean = false,
+    default: GeoPoint? = null,
+    alternativeNames: Set<String>? = null,
+    toSerializable: (Unit.(TO?, CX?) -> GeoPoint?)? = null,
+    fromSerializable: (Unit.(GeoPoint?) -> TO?)? = null,
+    shouldSerialize: (Unit.(Any) -> Boolean)? = null,
+    capturer: (Unit.(CX, GeoPoint) -> Unit)? = null
+) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
+    FixedBytesDefinitionWrapper(
+        index,
+        name ?: propName,
+        GeoPointDefinition(required, final, default),
+        alternativeNames,
+        getter = getter,
+        capturer = capturer,
+        toSerializable = toSerializable,
+        fromSerializable = fromSerializable,
+        shouldSerialize = shouldSerialize
+    )
 }

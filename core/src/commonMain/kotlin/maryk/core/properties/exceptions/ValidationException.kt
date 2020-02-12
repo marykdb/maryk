@@ -5,8 +5,8 @@ import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
-import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
+import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.exceptions.ValidationExceptionType.ALREADY_EXISTS
 import maryk.core.properties.exceptions.ValidationExceptionType.ALREADY_SET
 import maryk.core.properties.exceptions.ValidationExceptionType.INVALID_SIZE
@@ -34,41 +34,26 @@ abstract class ValidationException internal constructor(
     )
 
     internal abstract val validationExceptionType: ValidationExceptionType
-
-    internal companion object {
-        internal fun <DO : ValidationException> addReference(
-            definitions: ObjectPropertyDefinitions<DO>,
-            getter: (DO) -> AnyPropertyReference?
-        ) {
-            definitions.add(
-                index = 1u, name = "reference",
-                definition = ContextualPropertyReferenceDefinition<RequestContext>(
-                    required = false,
-                    contextualResolver = {
-                        it?.dataModel?.properties as? AbstractPropertyDefinitions<*>?
-                            ?: throw ContextNotFoundException()
-                    }
-                ),
-                getter = getter,
-                capturer = { context, value ->
-                    @Suppress("UNCHECKED_CAST")
-                    context.reference = value as IsPropertyReference<*, IsSerializablePropertyDefinition<*, *>, *>
-                }
-            )
-        }
-
-        internal fun <DO : ValidationException> addValue(
-            definitions: ObjectPropertyDefinitions<DO>,
-            getter: (DO) -> String?
-        ) {
-            definitions.add(
-                2u, "value",
-                StringDefinition(),
-                getter
-            )
-        }
-    }
 }
+
+internal fun <DO : ValidationException> ObjectPropertyDefinitions<DO>.addReference(
+    getter: (DO) -> AnyPropertyReference?
+) =
+    this.contextual(
+        index = 1u,
+        getter = getter,
+        definition = ContextualPropertyReferenceDefinition<RequestContext>(
+            required = false,
+            contextualResolver = {
+                it?.dataModel?.properties as? AbstractPropertyDefinitions<*>?
+                    ?: throw ContextNotFoundException()
+            }
+        ),
+        capturer = { context, value ->
+            @Suppress("UNCHECKED_CAST")
+            context.reference = value as IsPropertyReference<*, IsSerializablePropertyDefinition<*, *>, *>
+        }
+    )
 
 internal val mapOfValidationExceptionDefinitions = mapOf(
     ALREADY_EXISTS to EmbeddedObjectDefinition(dataModel = { AlreadyExistsException }),

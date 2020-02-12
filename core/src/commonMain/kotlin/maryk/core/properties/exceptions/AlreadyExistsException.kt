@@ -5,6 +5,7 @@ import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
+import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.exceptions.ValidationExceptionType.ALREADY_EXISTS
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.types.Key
@@ -24,22 +25,21 @@ data class AlreadyExistsException(
 ) {
     override val validationExceptionType = ALREADY_EXISTS
 
+    @Suppress("unused")
     internal companion object : SimpleQueryDataModel<AlreadyExistsException>(
         properties = object : ObjectPropertyDefinitions<AlreadyExistsException>() {
-            init {
-                addReference(this, AlreadyExistsException::reference)
-                add(
-                    index = 2u, name = "key",
-                    definition = ContextualReferenceDefinition<RequestContext>(
-                        required = false,
-                        contextualResolver = {
-                            it?.dataModel as IsRootValuesDataModel<*>?
-                                ?: throw ContextNotFoundException()
-                        }
-                    ),
-                    getter = AlreadyExistsException::key
+            val reference by addReference(AlreadyExistsException::reference)
+            val key by contextual(
+                index = 2u,
+                getter = AlreadyExistsException::key,
+                definition = ContextualReferenceDefinition<RequestContext>(
+                    required = false,
+                    contextualResolver = {
+                        it?.dataModel as IsRootValuesDataModel<*>?
+                            ?: throw ContextNotFoundException()
+                    }
                 )
-            }
+            )
         }
     ) {
         override fun invoke(values: SimpleObjectValues<AlreadyExistsException>) = AlreadyExistsException(

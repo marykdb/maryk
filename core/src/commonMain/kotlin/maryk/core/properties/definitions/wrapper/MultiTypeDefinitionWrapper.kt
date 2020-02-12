@@ -2,7 +2,6 @@ package maryk.core.properties.definitions.wrapper
 
 import co.touchlab.stately.concurrency.AtomicReference
 import maryk.core.models.IsValuesDataModel
-import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
@@ -88,5 +87,5 @@ data class MultiTypeDefinitionWrapper<E : TypeEnum<T>, T: Any, TO : Any, in CX :
         }
 
     // For delegation in definition
-    operator fun getValue(thisRef: AbstractPropertyDefinitions<DO>, property: KProperty<*>) = this
+    operator fun getValue(thisRef: Any, property: KProperty<*>) = this
 }

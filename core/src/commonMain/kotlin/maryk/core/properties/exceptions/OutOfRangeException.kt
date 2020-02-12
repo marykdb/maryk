@@ -2,7 +2,7 @@ package maryk.core.properties.exceptions
 
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.definitions.string
 import maryk.core.properties.exceptions.ValidationExceptionType.OUT_OF_RANGE
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.values.SimpleObjectValues
@@ -27,12 +27,15 @@ data class OutOfRangeException internal constructor(
 
     internal companion object : SimpleQueryDataModel<OutOfRangeException>(
         properties = object : ObjectPropertyDefinitions<OutOfRangeException>() {
-            init {
-                addReference(this, OutOfRangeException::reference)
-                addValue(this, OutOfRangeException::value)
-                add(3u, "min", StringDefinition(required = false), OutOfRangeException::min)
-                add(4u, "max", StringDefinition(), OutOfRangeException::max)
-            }
+            val reference by addReference(OutOfRangeException::reference)
+            val value by string(2u, OutOfRangeException::value)
+            val min by string(
+                3u, OutOfRangeException::min,
+                required = false
+            )
+            val max by string(
+                4u, OutOfRangeException::max
+            )
         }
     ) {
         override fun invoke(values: SimpleObjectValues<OutOfRangeException>) = OutOfRangeException(

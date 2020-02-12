@@ -4,7 +4,7 @@ import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
-import maryk.core.properties.definitions.ListDefinition
+import maryk.core.properties.definitions.list
 import maryk.core.query.changes.DataObjectChange
 import maryk.core.query.requests.RequestType.Change
 import maryk.core.query.responses.ChangeResponse
@@ -26,14 +26,13 @@ data class ChangeRequest<DM : IsRootValuesDataModel<*>> internal constructor(
 
     @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<ChangeRequest<*>>() {
-        val dataModel = IsObjectRequest.addDataModel("to", this, ChangeRequest<*>::dataModel)
-        val objectChanges = add(2u, "objects",
-            ListDefinition(
-                valueDefinition = EmbeddedObjectDefinition(
-                    dataModel = { DataObjectChange }
-                )
-            ),
-            ChangeRequest<*>::objects
+        val to by addDataModel(ChangeRequest<*>::dataModel)
+        val objects by list(
+            index = 2u,
+            getter = ChangeRequest<*>::objects,
+            valueDefinition = EmbeddedObjectDefinition(
+                dataModel = { DataObjectChange }
+            )
         )
     }
 

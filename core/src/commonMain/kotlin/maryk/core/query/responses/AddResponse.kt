@@ -4,6 +4,7 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.list
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.responses.statuses.IsAddResponseStatus
@@ -14,14 +15,17 @@ data class AddResponse<DM : IsRootDataModel<*>> constructor(
     override val dataModel: DM,
     val statuses: List<IsAddResponseStatus<DM>>
 ) : IsDataModelResponse<DM> {
+    @Suppress("unused")
     companion object : SimpleQueryDataModel<AddResponse<*>>(
         properties = object : ObjectPropertyDefinitions<AddResponse<*>>() {
-            init {
-                IsDataModelResponse.addDataModel(this, AddResponse<*>::dataModel)
-                IsDataModelResponse.addStatuses(this) { response ->
+            val dataModel by addDataModel(AddResponse<*>::dataModel)
+            val statuses by list(
+                index = 2u,
+                getter = { response ->
                     response.statuses.map { TypedValue(it.statusType, it) }
-                }
-            }
+                },
+                valueDefinition = statusesMultiType
+            )
         }
     ) {
         override fun invoke(values: SimpleObjectValues<AddResponse<*>>) = AddResponse(

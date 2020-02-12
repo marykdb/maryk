@@ -5,9 +5,9 @@ import maryk.core.aggregations.IsAggregationResponse
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
-import maryk.core.properties.definitions.ListDefinition
+import maryk.core.properties.definitions.list
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.query.DefinedByReference
+import maryk.core.query.addReference
 import maryk.core.values.SimpleObjectValues
 import maryk.lib.time.IsTemporal
 
@@ -18,20 +18,18 @@ data class DateHistogramResponse<T: IsTemporal<*>>(
 ) : IsAggregationResponse {
     override val aggregationType = DateHistogramType
 
+    @Suppress("unused")
     companion object : SimpleQueryDataModel<DateHistogramResponse<*>>(
         properties = object : ObjectPropertyDefinitions<DateHistogramResponse<*>>() {
-            init {
-                DefinedByReference.addReference(this, DateHistogramResponse<*>::reference, name = "of")
-                add(2u, "buckets",
-                    ListDefinition(
-                        default = emptyList(),
-                        valueDefinition = EmbeddedObjectDefinition(
-                            dataModel = { Bucket }
-                        )
-                    ),
-                    DateHistogramResponse<*>::buckets
+            val of by addReference(DateHistogramResponse<*>::reference)
+            val buckets by list(
+                index = 2u,
+                getter = DateHistogramResponse<*>::buckets,
+                default = emptyList(),
+                valueDefinition = EmbeddedObjectDefinition(
+                    dataModel = { Bucket }
                 )
-            }
+            )
         }
     ) {
         override fun invoke(values: SimpleObjectValues<DateHistogramResponse<*>>) =

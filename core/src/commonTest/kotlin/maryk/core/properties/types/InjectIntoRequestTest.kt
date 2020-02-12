@@ -34,7 +34,7 @@ private val context = RequestContext(mapOf(
 class InjectIntoRequestTest {
     private val getRequestWithInjectable = GetRequest.values(context) {
         mapNonNulls(
-            dataModel with SimpleMarykModel,
+            from with SimpleMarykModel,
             keys injectWith Inject("keysToInject", GetRequest { keys::ref }),
             where with Exists(SimpleMarykModel { value::ref }),
             toVersion with 333uL,

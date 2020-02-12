@@ -10,6 +10,9 @@ import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.definitions.incrementingMap
+import maryk.core.properties.definitions.map
+import maryk.core.properties.definitions.multiType
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.values.Values
@@ -19,94 +22,86 @@ object ComplexModel : RootDataModel<ComplexModel, Properties>(
     properties = Properties
 ) {
     object Properties : PropertyDefinitions() {
-        val multi by define(1u) {
-            MultiTypeDefinition(
-                required = false,
-                typeEnum = MarykTypeEnum,
-                typeIsFinal = false
-            )
-        }
+        val multi by multiType(
+            index = 1u,
+            required = false,
+            typeEnum = MarykTypeEnum,
+            typeIsFinal = false
+        )
 
-        val mapStringString by define(2u) {
-            MapDefinition(
-                required = false,
+        val mapStringString by map(
+            index = 2u,
+            required = false,
+            minSize = 1u,
+            maxSize = 3u,
+            keyDefinition = StringDefinition(
                 minSize = 1u,
-                maxSize = 3u,
-                keyDefinition = StringDefinition(
-                    minSize = 1u,
-                    maxSize = 20u
-                ),
-                valueDefinition = StringDefinition(
-                    maxSize = 500u
-                )
+                maxSize = 20u
+            ),
+            valueDefinition = StringDefinition(
+                maxSize = 500u
             )
-        }
+        )
 
-        val mapIntObject by define(3u) {
-            MapDefinition(
-                required = false,
-                keyDefinition = NumberDefinition(
-                    type = UInt32
-                ),
-                valueDefinition = EmbeddedValuesDefinition(
-                    dataModel = { EmbeddedMarykModel }
-                )
+        val mapIntObject by map(
+            index = 3u,
+            required = false,
+            keyDefinition = NumberDefinition(
+                type = UInt32
+            ),
+            valueDefinition = EmbeddedValuesDefinition(
+                dataModel = { EmbeddedMarykModel }
             )
-        }
+        )
 
         @Suppress("RemoveExplicitTypeArguments")
-        val mapIntMulti by define(4u) {
-            MapDefinition(
-                required = false,
-                keyDefinition = NumberDefinition(
-                    type = UInt32
-                ),
-                valueDefinition = MultiTypeDefinition(
-                    typeEnum = MarykTypeEnum
-                )
+        val mapIntMulti by map(
+            index = 4u,
+            required = false,
+            keyDefinition = NumberDefinition(
+                type = UInt32
+            ),
+            valueDefinition = MultiTypeDefinition(
+                typeEnum = MarykTypeEnum
             )
-        }
+        )
 
-        val mapWithList by define(5u) {
-            MapDefinition(
-                required = false,
+        val mapWithList by map(
+            index = 5u,
+            required = false,
+            keyDefinition = StringDefinition(),
+            valueDefinition = ListDefinition(
+                valueDefinition = StringDefinition()
+            )
+        )
+
+        val mapWithSet by map(
+            index = 6u,
+            required = false,
+            keyDefinition = StringDefinition(),
+            valueDefinition = SetDefinition(
+                valueDefinition = StringDefinition()
+            )
+        )
+
+        val mapWithMap by map(
+            index= 7u,
+            required = false,
+            keyDefinition = StringDefinition(),
+            valueDefinition = MapDefinition(
                 keyDefinition = StringDefinition(),
-                valueDefinition = ListDefinition(
-                    valueDefinition = StringDefinition()
-                )
+                valueDefinition = StringDefinition()
             )
-        }
+        )
 
-        val mapWithSet by define(6u) {
-            MapDefinition(
-                required = false,
-                keyDefinition = StringDefinition(),
-                valueDefinition = SetDefinition(
-                    valueDefinition = StringDefinition()
-                )
+        val incMap by incrementingMap(
+            index = 8u,
+            required = false,
+            keyNumberDescriptor = UInt32,
+            valueDefinition = EmbeddedValuesDefinition(
+                dataModel = { EmbeddedMarykModel }
             )
-        }
-
-        val mapWithMap by define(7u) {
-            MapDefinition(
-                required = false,
-                keyDefinition = StringDefinition(),
-                valueDefinition = MapDefinition(
-                    keyDefinition = StringDefinition(),
-                    valueDefinition = StringDefinition()
-                )
-            )
-        }
-
-        val incMap by define(8u) {
-            IncrementingMapDefinition(
-                required = false,
-                keyNumberDescriptor = UInt32,
-                valueDefinition = EmbeddedValuesDefinition(
-                    dataModel = { EmbeddedMarykModel }
-                )
-            )
-        }
+        )
     }
 
     operator fun invoke(

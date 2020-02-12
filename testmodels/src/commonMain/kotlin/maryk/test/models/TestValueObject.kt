@@ -3,9 +3,9 @@ package maryk.test.models
 import maryk.core.models.ValueDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.definitions.BooleanDefinition
-import maryk.core.properties.definitions.DateTimeDefinition
-import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.boolean
+import maryk.core.properties.definitions.dateTime
+import maryk.core.properties.definitions.number
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.values.ObjectValues
@@ -17,16 +17,16 @@ data class TestValueObject(
     val bool: Boolean
 ) : ValueDataObject(toBytes(int, dateTime, bool)) {
     object Properties : ObjectPropertyDefinitions<TestValueObject>() {
-        val int = add(
-            1u, "int", NumberDefinition(
-                type = SInt32,
-                maxValue = 6
-            ), TestValueObject::int
+        val int by number(
+            1u,
+            TestValueObject::int,
+            type = SInt32,
+            maxValue = 6
         )
 
-        val dateTime = add(2u, "dateTime", DateTimeDefinition(), TestValueObject::dateTime)
+        val dateTime by dateTime(2u, TestValueObject::dateTime)
 
-        val bool = add(3u, "bool", BooleanDefinition(), TestValueObject::bool)
+        val bool by boolean(3u, TestValueObject::bool)
     }
 
     companion object : ValueDataModel<TestValueObject, Properties>(

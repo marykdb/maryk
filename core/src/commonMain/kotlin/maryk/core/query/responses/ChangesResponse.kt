@@ -5,7 +5,8 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
-import maryk.core.properties.definitions.ListDefinition
+import maryk.core.properties.definitions.embedObject
+import maryk.core.properties.definitions.list
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.values.SimpleObjectValues
 
@@ -15,24 +16,24 @@ data class ChangesResponse<out DM : IsRootDataModel<*>>(
     val changes: List<DataObjectVersionedChange<DM>>,
     val aggregations: AggregationsResponse? = null
 ) : IsDataModelResponse<DM> {
+    @Suppress("unused")
     companion object : SimpleQueryDataModel<ChangesResponse<*>>(
         properties = object : ObjectPropertyDefinitions<ChangesResponse<*>>() {
-            init {
-                IsDataModelResponse.addDataModel(this, ChangesResponse<*>::dataModel)
-                add(2u, "changes", ListDefinition(
-                    valueDefinition = EmbeddedObjectDefinition(
-                        dataModel = { DataObjectVersionedChange }
-                    )
-                ), ChangesResponse<*>::changes)
-
-                add(
-                    3u,
-                    "aggregations",
-                    EmbeddedObjectDefinition(dataModel = { AggregationsResponse }),
-                    ChangesResponse<*>::aggregations,
-                    alternativeNames = setOf("aggs")
+            val dataModel by addDataModel(ChangesResponse<*>::dataModel)
+            val changes by list(
+                index = 2u,
+                getter = ChangesResponse<*>::changes,
+                valueDefinition = EmbeddedObjectDefinition(
+                    dataModel = { DataObjectVersionedChange }
                 )
-            }
+            )
+
+            val aggregations by embedObject(
+                index = 3u,
+                getter = ChangesResponse<*>::aggregations,
+                dataModel = { AggregationsResponse },
+                alternativeNames = setOf("aggs")
+            )
         }
     ) {
         override fun invoke(values: SimpleObjectValues<ChangesResponse<*>>) = ChangesResponse(

@@ -5,8 +5,8 @@ import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
-import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.list
+import maryk.core.properties.definitions.number
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.changes.ChangeType
@@ -24,22 +24,18 @@ data class ChangeSuccess<DM : IsRootDataModel<*>>(
 
     internal companion object : SimpleQueryDataModel<ChangeSuccess<*>>(
         properties = object : ObjectPropertyDefinitions<ChangeSuccess<*>>() {
-            init {
-                add(1u, "version", NumberDefinition(type = UInt64), ChangeSuccess<*>::version)
-                add(
-                    2u, "changes",
-                    ListDefinition(
-                        required = false,
-                        valueDefinition = InternalMultiTypeDefinition(
-                            typeEnum = ChangeType,
-                            definitionMap = mapOfChangeDefinitions
-                        )
-                    ),
-                    getter = ChangeSuccess<*>::changes,
-                    toSerializable = { TypedValue(it.changeType, it) },
-                    fromSerializable = { it.value }
-                )
-            }
+            val version by number(1u, ChangeSuccess<*>::version, type = UInt64)
+            val changes by list(
+                index = 2u,
+                getter = ChangeSuccess<*>::changes,
+                required = false,
+                valueDefinition = InternalMultiTypeDefinition(
+                    typeEnum = ChangeType,
+                    definitionMap = mapOfChangeDefinitions
+                ),
+                toSerializable = { TypedValue(it.changeType, it) },
+                fromSerializable = { it.value }
+            )
         }
     ) {
         override fun invoke(values: SimpleObjectValues<ChangeSuccess<*>>) = ChangeSuccess<IsRootDataModel<IsPropertyDefinitions>>(

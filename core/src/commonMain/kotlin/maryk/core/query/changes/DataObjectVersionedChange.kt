@@ -5,8 +5,9 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
-import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
+import maryk.core.properties.definitions.list
+import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.types.Key
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
@@ -19,18 +20,24 @@ data class DataObjectVersionedChange<out DM : IsRootDataModel<*>>(
     val changes: List<VersionedChanges>
 ) {
     object Properties : ObjectPropertyDefinitions<DataObjectVersionedChange<*>>() {
-        val key = add(1u, "key", ContextualReferenceDefinition<RequestContext>(
-            contextualResolver = {
-                it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
-            }
-        ), DataObjectVersionedChange<*>::key)
+        val key by contextual(
+            index = 1u,
+            getter = DataObjectVersionedChange<*>::key,
+            definition = ContextualReferenceDefinition<RequestContext>(
+                contextualResolver = {
+                    it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
+                }
+            )
+        )
 
-        val changes = add(2u, "changes", ListDefinition(
+        val changes by list(
+            index = 2u,
+            getter = DataObjectVersionedChange<*>::changes,
             default = emptyList(),
             valueDefinition = EmbeddedObjectDefinition(
                 dataModel = { VersionedChanges }
             )
-        ), DataObjectVersionedChange<*>::changes)
+        )
     }
 
     companion object : QueryDataModel<DataObjectVersionedChange<*>, Properties>(

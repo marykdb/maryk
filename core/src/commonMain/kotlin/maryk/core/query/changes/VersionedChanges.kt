@@ -3,9 +3,8 @@ package maryk.core.query.changes
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
-import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.MultiTypeDefinition
-import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.list
+import maryk.core.properties.definitions.number
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt64
 import maryk.core.values.ObjectValues
@@ -18,24 +17,20 @@ data class VersionedChanges(
     override fun toString() = "VersionedChanges($version)[${changes.joinToString()}]"
 
     object Properties : ObjectPropertyDefinitions<VersionedChanges>() {
-        val version = add(
-            1u, "version",
-            NumberDefinition(
-                type = UInt64
-            ),
-            VersionedChanges::version
+        val version by number(
+            1u,
+            VersionedChanges::version,
+            UInt64
         )
 
-        val changes = add(
-            2u, "changes",
-            ListDefinition(
-                default = emptyList(),
-                valueDefinition = InternalMultiTypeDefinition(
-                    typeEnum = ChangeType,
-                    definitionMap = mapOfChangeDefinitions
-                )
-            ),
+        val changes by list(
+            index = 2u,
             getter = VersionedChanges::changes,
+            default = emptyList(),
+            valueDefinition = InternalMultiTypeDefinition(
+                typeEnum = ChangeType,
+                definitionMap = mapOfChangeDefinitions
+            ),
             toSerializable = { TypedValue(it.changeType, it) },
             fromSerializable = { it.value }
         )

@@ -4,10 +4,11 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.IsValueDefinition
+import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
@@ -41,24 +42,32 @@ data class ValueRange<T : Comparable<T>> internal constructor(
     }
 
     object Properties : ObjectPropertyDefinitions<ValueRange<*>>() {
-        val from = add(1u, "from", ContextualValueDefinition(
-            contextualResolver = { context: RequestContext? ->
-                @Suppress("UNCHECKED_CAST")
-                context?.reference?.comparablePropertyDefinition as? IsValueDefinition<Any, IsPropertyContext>?
-                    ?: throw ContextNotFoundException()
-            }
-        ), ValueRange<*>::from)
+        val from by contextual(
+            index = 1u,
+            getter = ValueRange<*>::from,
+            definition = ContextualValueDefinition(
+                contextualResolver = { context: RequestContext? ->
+                    @Suppress("UNCHECKED_CAST")
+                    context?.reference?.comparablePropertyDefinition as? IsValueDefinition<Any, IsPropertyContext>?
+                        ?: throw ContextNotFoundException()
+                }
+            )
+        )
 
-        val to = add(2u, "to", ContextualValueDefinition(
-            contextualResolver = { context: RequestContext? ->
-                @Suppress("UNCHECKED_CAST")
-                context?.reference?.comparablePropertyDefinition as? IsValueDefinition<Any, IsPropertyContext>?
-                    ?: throw ContextNotFoundException()
-            }
-        ), ValueRange<*>::to)
+        val to by contextual(
+            index = 2u,
+            getter = ValueRange<*>::to,
+            definition = ContextualValueDefinition(
+                contextualResolver = { context: RequestContext? ->
+                    @Suppress("UNCHECKED_CAST")
+                    context?.reference?.comparablePropertyDefinition as? IsValueDefinition<Any, IsPropertyContext>?
+                        ?: throw ContextNotFoundException()
+                }
+            )
+        )
 
-        val inclusiveFrom = add(3u, "inclusiveFrom", BooleanDefinition(default = true), ValueRange<*>::inclusiveFrom)
-        val inclusiveTo = add(4u, "inclusiveTo", BooleanDefinition(default = true), ValueRange<*>::inclusiveTo)
+        val inclusiveFrom by boolean(3u, default = true, getter = ValueRange<*>::inclusiveFrom)
+        val inclusiveTo by boolean(4u, default = true, getter = ValueRange<*>::inclusiveTo)
     }
 
     companion object : QueryDataModel<ValueRange<*>, Properties>(

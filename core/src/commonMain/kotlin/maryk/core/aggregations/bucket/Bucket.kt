@@ -1,14 +1,16 @@
 package maryk.core.aggregations.bucket
 
 import maryk.core.aggregations.AggregationsResponse
-import maryk.core.aggregations.IsAggregationResponse
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsValueDefinition
-import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
+import maryk.core.properties.definitions.number
+import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.RequestContext
 import maryk.core.values.SimpleObjectValues
@@ -19,23 +21,30 @@ data class Bucket<out T: Any>(
     val aggregations: AggregationsResponse,
     val count: ULong
 ) {
+    @Suppress("unused")
     companion object : SimpleQueryDataModel<Bucket<*>>(
         properties = object : ObjectPropertyDefinitions<Bucket<*>>() {
-            init {
-                add(1u, "key",
-                    ContextualValueDefinition(
-                        contextualResolver = { context: RequestContext? ->
-                            context?.reference?.let {
-                                @Suppress("UNCHECKED_CAST")
-                                it.comparablePropertyDefinition as IsValueDefinition<Any, IsPropertyContext>
-                            } ?: throw ContextNotFoundException()
-                        }
-                    ),
-                    Bucket<*>::key
+            val key by contextual(
+                index = 1u,
+                getter = Bucket<*>::key,
+                definition = ContextualValueDefinition(
+                    contextualResolver = { context: RequestContext? ->
+                        context?.reference?.let {
+                            @Suppress("UNCHECKED_CAST")
+                            it.comparablePropertyDefinition as IsValueDefinition<Any, IsPropertyContext>
+                        } ?: throw ContextNotFoundException()
+                    }
                 )
-                IsAggregationResponse.addAggregationsDefinition(this, Bucket<*>::aggregations)
-                add(3u, "count", NumberDefinition(type = UInt64), Bucket<*>::count)
-            }
+            )
+            val aggregations by contextual(
+                2u,
+                definition = ContextTransformerDefinition(
+                    EmbeddedObjectDefinition(dataModel = { AggregationsResponse })
+                ) { context: RequestContext? -> context?.let { RequestContext(context.definitionsContext, context.dataModel) } },
+                getter = Bucket<*>::aggregations,
+                alternativeNames = setOf("aggs")
+            )
+            val count by number(3u, Bucket<*>::count, type = UInt64)
         }
     ) {
         override fun invoke(values: SimpleObjectValues<Bucket<*>>) = Bucket(

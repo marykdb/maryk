@@ -4,9 +4,7 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initUIntByVar
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsUsableInMultiType
-import maryk.core.properties.definitions.IsWrappableDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.WrapperLoader
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.HasEmbeddedPropertyReference
@@ -57,13 +55,6 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
     /** Helper for definition maps for multi types. Add enum/usableInMultiType [pair] to map */
     fun <E : TypeEnum<*>> definitionMap(vararg pair: Pair<E, IsUsableInMultiType<*, IsPropertyContext>>) =
         mapOf(*pair)
-
-    /** Wrap definition from [definitionCreator] into property definitions at [index]. Optionally set [alternativeNames] */
-    fun <T : Any, D : IsWrappableDefinition<T, *, W>, W: IsDefinitionWrapper<T, T, *, DO>, DO : Any> define(
-        index: UInt,
-        alternativeNames: Set<String>? = null,
-        definitionCreator: () -> D
-    ) = WrapperLoader(index, definitionCreator(), alternativeNames)
 
     /** Add a single property definition wrapper */
     fun addSingle(propertyDefinitionWrapper: IsDefinitionWrapper<out Any, *, *, DO>) {

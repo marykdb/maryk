@@ -9,7 +9,6 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.PropertyDefinitionsCollectionDefinitionWrapper
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
-import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.index.IndexKeyPartType
@@ -19,6 +18,9 @@ import maryk.core.properties.definitions.index.UUIDKey
 import maryk.core.properties.definitions.index.calculateKeyIndices
 import maryk.core.properties.definitions.index.checkKeyDefinitionAndCountBytes
 import maryk.core.properties.definitions.index.mapOfIndexKeyPartDefinitions
+import maryk.core.properties.definitions.internalMultiType
+import maryk.core.properties.definitions.list
+import maryk.core.properties.definitions.string
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.references.IsFixedBytesPropertyReference
 import maryk.core.properties.types.Key
@@ -74,33 +76,29 @@ abstract class RootDataModel<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
         }
     }
 
+    @Suppress("unused")
     private object RootModelProperties :
         ObjectPropertyDefinitions<RootDataModel<*, *>>(),
         IsDataModelPropertyDefinitions<RootDataModel<*, *>, PropertyDefinitionsCollectionDefinitionWrapper<RootDataModel<*, *>>> {
-        override val name =
-            IsNamedDataModel.addName(this as ObjectPropertyDefinitions<RootDataModel<*, *>>, RootDataModel<*, *>::name)
+        override val name by string(1u, RootDataModel<*, *>::name)
         override val properties = addProperties(this as ObjectPropertyDefinitions<RootDataModel<*, *>>)
-        val key = add(
-            3u, "key",
-            InternalMultiTypeDefinition(
-                typeEnum = IndexKeyPartType,
-                definitionMap = mapOfIndexKeyPartDefinitions
-            ),
+        val key by internalMultiType(
+            index = 3u,
+            typeEnum = IndexKeyPartType,
+            definitionMap = mapOfIndexKeyPartDefinitions,
             getter = RootDataModel<*, *>::keyDefinition,
             toSerializable = { value: IsIndexable?, _: ContainsDefinitionsContext? ->
                 value?.let { TypedValue(value.indexKeyPartType, value) }
             },
             fromSerializable = { value: TypedValue<IndexKeyPartType<IsIndexable>, Any>? -> value?.value as IsIndexable }
         )
-        val indices = add(
-            4u, "indices",
-            ListDefinition(
-                valueDefinition = InternalMultiTypeDefinition(
-                    typeEnum = IndexKeyPartType,
-                    definitionMap = mapOfIndexKeyPartDefinitions
-                )
-            ),
+        val indices by list(
+            index = 4u,
             getter = RootDataModel<*, *>::indices,
+            valueDefinition = InternalMultiTypeDefinition(
+                typeEnum = IndexKeyPartType,
+                definitionMap = mapOfIndexKeyPartDefinitions
+            ),
             toSerializable = { value: IsIndexable ->
                 value.let { TypedValue(it.indexKeyPartType, it) }
             },
@@ -109,25 +107,19 @@ abstract class RootDataModel<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
             }
         )
 
-        init {
-            add(
-                5u, "reservedIndices",
-                ListDefinition(
-                    valueDefinition = NumberDefinition(
-                        type = UInt32,
-                        minValue = 1u
-                    )
-                ),
-                RootDataModel<*, *>::reservedIndices
+        val reservedIndices by list(
+            index = 5u,
+            getter = RootDataModel<*, *>::reservedIndices,
+            valueDefinition = NumberDefinition(
+                type = UInt32,
+                minValue = 1u
             )
-            add(
-                6u, "reservedNames",
-                ListDefinition(
-                    valueDefinition = StringDefinition()
-                ),
-                RootDataModel<*, *>::reservedNames
-            )
-        }
+        )
+        val reservedNames by list(
+            index = 6u,
+            getter = RootDataModel<*, *>::reservedNames,
+            valueDefinition = StringDefinition()
+        )
     }
 
     object Model :

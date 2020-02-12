@@ -8,11 +8,12 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
-import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
+import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
+import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
-import maryk.core.properties.types.numeric.UInt32
 import maryk.core.query.RequestContext
 import maryk.core.query.orders.IsOrder
 import maryk.core.query.orders.OrderType
@@ -33,49 +34,38 @@ interface IsScanRequest<DM : IsRootDataModel<P>, P : PropertyDefinitions, RP : I
     val startKey: Key<DM>?
     val order: IsOrder?
     val limit: UInt
-
-    companion object {
-        internal fun <DO : IsScanRequest<*, *, *>, DM : IsRootDataModel<*>> addStartKey(
-            definitions: ObjectPropertyDefinitions<DO>,
-            getter: (DO) -> Key<DM>?
-        ) =
-            definitions.add(
-                2u, "startKey",
-                ContextualReferenceDefinition<RequestContext>(
-                    required = false,
-                    contextualResolver = {
-                        it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
-                    }
-                ),
-                getter
-            )
-
-        internal fun <DM : Any> addOrder(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> IsOrder?) =
-            definitions.add(
-                8u, "order",
-                OrderTypesDefinition,
-                getter = getter,
-                toSerializable = { value, _ ->
-                    value?.let {
-                        TypedValue(value.orderType, value)
-                    }
-                },
-                fromSerializable = { value ->
-                    value?.value as IsOrder
-                }
-            )
-
-        internal fun <DO : Any> addLimit(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> UInt?) =
-            definitions.add(
-                9u, "limit",
-                NumberDefinition(
-                    default = 100u,
-                    type = UInt32
-                ),
-                getter
-            )
-    }
 }
+
+internal fun <DO : IsScanRequest<*, *, *>, DM : IsRootDataModel<*>> ObjectPropertyDefinitions<DO>.addStartKey(
+    getter: (DO) -> Key<DM>?
+) =
+    this.contextual(
+        2u,
+        getter = getter,
+        definition = ContextualReferenceDefinition<RequestContext>(
+            required = false,
+            contextualResolver = {
+                it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
+            }
+        )
+    )
+
+internal fun <DM : IsFetchRequest<*, *, *>> ObjectPropertyDefinitions<DM>.addOrder(getter: (DM) -> IsOrder?) =
+    ObjectDefinitionWrapperDelegateLoader(this) { propName ->
+        MultiTypeDefinitionWrapper(
+            8u, propName,
+            OrderTypesDefinition,
+            getter = getter,
+            toSerializable = { value, _ ->
+                value?.let {
+                    TypedValue(value.orderType, value)
+                }
+            },
+            fromSerializable = { value ->
+                value?.value as IsOrder
+            }
+        )
+    }
 
 private val multiTypeDefinition = InternalMultiTypeDefinition(
     typeEnum = OrderType,

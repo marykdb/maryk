@@ -1,8 +1,5 @@
 package maryk.core.properties.definitions
 
-import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.types.numeric.UInt32
-
 /**
  * Interface which defines definition has min and max size definitions
  */
@@ -22,32 +19,4 @@ interface HasSizeDefinition {
     fun isSizeToBig(newSize: UInt): Boolean = this.maxSize?.let {
         newSize > it
     } ?: false
-
-    companion object {
-        internal fun <DO : Any> addMinSize(
-            index: UInt,
-            definitions: ObjectPropertyDefinitions<DO>,
-            getter: (DO) -> UInt?
-        ) {
-            definitions.add(
-                index = index,
-                name = "minSize",
-                definition = NumberDefinition(type = UInt32),
-                getter = getter
-            )
-        }
-
-        internal fun <DO : Any> addMaxSize(
-            index: UInt,
-            definitions: ObjectPropertyDefinitions<DO>,
-            getter: (DO) -> UInt?
-        ) {
-            definitions.add(
-                index = index,
-                name = "maxSize",
-                definition = NumberDefinition(type = UInt32),
-                getter = getter
-            )
-        }
-    }
 }

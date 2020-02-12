@@ -5,9 +5,11 @@ import maryk.core.aggregations.Aggregations
 import maryk.core.aggregations.IsAggregationRequest
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.definitions.EnumDefinition
+import maryk.core.properties.definitions.embedObject
+import maryk.core.properties.definitions.enum
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DefinedByReference
+import maryk.core.query.addReference
 import maryk.core.values.SimpleObjectValues
 import maryk.lib.time.IsTemporal
 
@@ -22,15 +24,17 @@ data class DateHistogram<T: IsTemporal<*>>(
 
     override fun createAggregator() = DateHistogramAggregator(this)
 
+    @Suppress("unused")
     companion object : SimpleQueryDataModel<DateHistogram<*>>(
         properties = object : ObjectPropertyDefinitions<DateHistogram<*>>() {
-            init {
-                DefinedByReference.addReference(this, DateHistogram<*>::reference, name = "of")
-                add(
-                    3u, "dateUnit", EnumDefinition(enum = DateUnit), DateHistogram<*>::dateUnit
-                )
-                IsAggregationRequest.addAggregationsDefinition(this, DateHistogram<*>::aggregations)
-            }
+            val of by addReference(DateHistogram<*>::reference)
+            val dateUnit by enum(3u, DateHistogram<*>::dateUnit, enum = DateUnit)
+            val aggregations by embedObject(
+                index = 2u,
+                getter = DateHistogram<*>::aggregations,
+                dataModel = { Aggregations },
+                alternativeNames = setOf("aggs")
+            )
         }
     ) {
         override fun invoke(values: SimpleObjectValues<DateHistogram<*>>) = DateHistogram<IsTemporal<Any>>(

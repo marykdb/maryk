@@ -6,16 +6,17 @@ import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
-import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitionType
-import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.definitions.internalMultiType
 import maryk.core.properties.definitions.mapOfPropertyDefEmbeddedObjectDefinitions
 import maryk.core.properties.definitions.mapOfPropertyDefWrappers
+import maryk.core.properties.definitions.number
+import maryk.core.properties.definitions.set
+import maryk.core.properties.definitions.string
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.graph.IsPropRefGraphNode
 import maryk.core.properties.references.AnyPropertyReference
@@ -136,33 +137,21 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
 
     private object Properties :
         ObjectPropertyDefinitions<AnyOutDefinitionWrapper>() {
-        val index = add(
-            1u, "index",
-            NumberDefinition(type = UInt32),
-            IsDefinitionWrapper<*, *, *, *>::index
+        val index by number(1u, IsDefinitionWrapper<*, *, *, *>::index, UInt32)
+        val name by string(2u, IsDefinitionWrapper<*, *, *, *>::name)
+        val alternativeNames by set(
+            index = 3u,
+            getter = IsDefinitionWrapper<*, *, *, *>::alternativeNames,
+            valueDefinition = StringDefinition()
         )
-        val name = add(
-            2u, "name",
-            StringDefinition(),
-            IsDefinitionWrapper<*, *, *, *>::name
-        )
-        val alternativeNames = add(
-            3u, "alternativeNames",
-            SetDefinition(
-                valueDefinition = StringDefinition()
-            ),
-            IsDefinitionWrapper<*, *, *, *>::alternativeNames
-        )
-        val definition = add(
-            4u, "definition",
-            InternalMultiTypeDefinition(
-                typeEnum = PropertyDefinitionType,
-                definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
-            ),
+        val definition by internalMultiType(
+            index = 4u,
             getter = {
                 val def = it.definition as IsTransportablePropertyDefinitionType<*>
                 TypedValue(def.propertyDefinitionType, def)
-            }
+            },
+            typeEnum = PropertyDefinitionType,
+            definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
         )
     }
 

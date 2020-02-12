@@ -4,8 +4,8 @@ import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.models.RootDataModel
 import maryk.core.processors.datastore.matchers.QualifierExactMatcher
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.definitions.EmbeddedValuesDefinition
-import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.definitions.embed
+import maryk.core.properties.definitions.string
 import maryk.core.properties.references.Properties.embeddedObject
 import maryk.core.properties.references.Properties.test
 import maryk.core.protobuf.WriteCache
@@ -19,12 +19,11 @@ import kotlin.test.assertSame
 import kotlin.test.expect
 
 private object Properties : PropertyDefinitions() {
-    val test by define(1u) { StringDefinition() }
-    val embeddedObject by define(2u) {
-        EmbeddedValuesDefinition(
-            dataModel = { Model }
-        )
-    }
+    val test by string(1u)
+    val embeddedObject by embed(
+        index = 2u,
+        dataModel = { Model }
+    )
 }
 
 private object Model : RootDataModel<Model, Properties>(

@@ -2,16 +2,14 @@ package maryk.core.query.requests
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.IsRootValuesDataModel
-import maryk.core.models.IsValuesDataModel
 import maryk.core.models.QueryDataModel
 import maryk.core.models.ValuesDataModelImpl
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.definitions.IsValueDefinition
-import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedValuesDefinition
+import maryk.core.properties.definitions.list
 import maryk.core.query.RequestContext
-import maryk.core.query.requests.RequestType.*
+import maryk.core.query.requests.RequestType.Add
 import maryk.core.query.responses.AddResponse
 import maryk.core.values.ObjectValues
 import maryk.core.values.Values
@@ -29,16 +27,18 @@ data class AddRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> in
     override val responseModel = AddResponse
 
     object Properties : ObjectPropertyDefinitions<AddRequest<*, *>>() {
-        val dataModel = IsObjectRequest.addDataModel("to", this, AddRequest<*, *>::dataModel)
+        val to by addDataModel(AddRequest<*, *>::dataModel)
 
-        @Suppress("UNCHECKED_CAST")
-        val objects = add(2u, "objects", ListDefinition(
+        val objects by list(
+            index = 2u,
+            getter = AddRequest<*, *>::objects,
             valueDefinition = ContextualEmbeddedValuesDefinition<RequestContext>(
                 contextualResolver = {
+                    @Suppress("UNCHECKED_CAST")
                     it?.dataModel as? ValuesDataModelImpl<RequestContext>? ?: throw ContextNotFoundException()
                 }
-            ) as IsValueDefinition<Values<out IsValuesDataModel<*>, out PropertyDefinitions>, RequestContext>
-        ), AddRequest<*, *>::objects)
+            )
+        )
     }
 
     companion object : QueryDataModel<AddRequest<*, *>, Properties>(

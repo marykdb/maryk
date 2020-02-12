@@ -8,9 +8,10 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
+import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.query.DefinedByReference
 import maryk.core.query.RequestContext
+import maryk.core.query.addReference
 import maryk.core.values.SimpleObjectValues
 
 /** The response of the find minimum aggregation */
@@ -20,23 +21,24 @@ data class MinResponse<T: Comparable<T>>(
 ) : IsAggregationResponse {
     override val aggregationType = MinType
 
+    @Suppress("unused")
     companion object : SimpleQueryDataModel<MinResponse<*>>(
         properties = object : ObjectPropertyDefinitions<MinResponse<*>>() {
-            init {
-                DefinedByReference.addReference(this, MinResponse<*>::reference, name = "of")
-                add(2u, "value",
-                    ContextualValueDefinition(
-                        required = false,
-                        contextualResolver = { context: RequestContext? ->
-                            context?.reference?.let {
-                                @Suppress("UNCHECKED_CAST")
-                                it.comparablePropertyDefinition as IsValueDefinition<Any, IsPropertyContext>
-                            } ?: throw ContextNotFoundException()
-                        }
-                    ),
-                    MinResponse<*>::value
+            val of by addReference(MinResponse<*>::reference)
+
+            val value by contextual(
+                index = 2u,
+                getter = MinResponse<*>::value,
+                definition = ContextualValueDefinition(
+                    required = false,
+                    contextualResolver = { context: RequestContext? ->
+                        context?.reference?.let {
+                            @Suppress("UNCHECKED_CAST")
+                            it.comparablePropertyDefinition as IsValueDefinition<Any, IsPropertyContext>
+                        } ?: throw ContextNotFoundException()
+                    }
                 )
-            }
+            )
         }
     ) {
         override fun invoke(values: SimpleObjectValues<MinResponse<*>>) =

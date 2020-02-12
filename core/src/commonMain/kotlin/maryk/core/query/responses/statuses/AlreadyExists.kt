@@ -14,11 +14,10 @@ data class AlreadyExists<DM : IsRootDataModel<*>>(
 ) : IsAddResponseStatus<DM> {
     override val statusType = ALREADY_EXISTS
 
+    @Suppress("unused")
     internal companion object : SimpleQueryDataModel<AlreadyExists<*>>(
         properties = object : ObjectPropertyDefinitions<AlreadyExists<*>>() {
-            init {
-                IsResponseStatus.addKey(this, AlreadyExists<*>::key)
-            }
+            val key by addKey(AlreadyExists<*>::key)
         }
     ) {
         override fun invoke(values: SimpleObjectValues<AlreadyExists<*>>) =

@@ -6,6 +6,7 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
+import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 
@@ -14,26 +15,22 @@ import maryk.core.properties.references.IsPropertyReference
  */
 interface DefinedByReference<out T : Any> {
     val reference: IsPropertyReference<out T, IsPropertyDefinition<out T>, *>
-
-    companion object {
-        internal fun <DO : Any> addReference(
-            definitions: ObjectPropertyDefinitions<DO>,
-            getter: (DO) -> AnyPropertyReference?,
-            name: String = "reference"
-        ) =
-            definitions.add(
-                index = 1u, name = name,
-                definition = ContextualPropertyReferenceDefinition<RequestContext>(
-                    contextualResolver = {
-                        it?.dataModel?.properties as? AbstractPropertyDefinitions<*>?
-                            ?: throw ContextNotFoundException()
-                    }
-                ),
-                getter = getter,
-                capturer = { context, value ->
-                    @Suppress("UNCHECKED_CAST")
-                    context.reference = value as IsPropertyReference<*, IsSerializablePropertyDefinition<*, *>, *>
-                }
-            )
-    }
 }
+
+internal fun <DO : Any> ObjectPropertyDefinitions<DO>.addReference(
+    getter: (DO) -> AnyPropertyReference?
+) =
+    this.contextual(
+        index = 1u,
+        definition = ContextualPropertyReferenceDefinition<RequestContext>(
+            contextualResolver = {
+                it?.dataModel?.properties as? AbstractPropertyDefinitions<*>?
+                    ?: throw ContextNotFoundException()
+            }
+        ),
+        getter = getter,
+        capturer = { context, value ->
+            @Suppress("UNCHECKED_CAST")
+            context.reference = value as IsPropertyReference<*, IsSerializablePropertyDefinition<*, *>, *>
+        }
+    )

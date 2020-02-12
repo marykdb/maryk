@@ -8,12 +8,17 @@ import maryk.core.models.ObjectDataModel
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.definitions.contextual.IsDataModelReference
 import maryk.core.properties.definitions.contextual.ModelContext
+import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
+import maryk.core.properties.definitions.wrapper.EmbeddedObjectDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
+import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCacheReader
@@ -133,56 +138,57 @@ class EmbeddedObjectDefinition<DO : Any, P : ObjectPropertyDefinitions<DO>, DM :
         return result
     }
 
+    @Suppress("unused")
     object Model :
         ContextualDataModel<EmbeddedObjectDefinition<*, *, *, *, *>, ObjectPropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>, ContainsDefinitionsContext, ModelContext>(
             contextTransformer = { ModelContext(it) },
             properties = object : ObjectPropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>() {
-                init {
-                    IsPropertyDefinition.addRequired(this, EmbeddedObjectDefinition<*, *, *, *, *>::required)
-                    IsPropertyDefinition.addFinal(this, EmbeddedObjectDefinition<*, *, *, *, *>::final)
-                    add(3u, "dataModel",
-                        ContextualModelReferenceDefinition(
-                            contextualResolver = { context: ModelContext?, name ->
-                                context?.definitionsContext?.let {
-                                    @Suppress("UNCHECKED_CAST")
-                                    it.dataModels[name] as? Unit.() -> ObjectDataModel<*, *>
-                                        ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
-                                } ?: throw ContextNotFoundException()
-                            }
-                        ),
-                        getter = {
-                            { it.dataModel as ObjectDataModel<*, *> }
-                        },
-                        toSerializable = { value: (Unit.() -> ObjectDataModel<*, *>)?, _ ->
-                            value?.invoke(Unit)?.let { model ->
-                                DataModelReference(model.name, value)
-                            }
-                        },
-                        fromSerializable = { it?.get },
-                        capturer = { context: ModelContext, dataModel: IsDataModelReference<ObjectDataModel<*, *>> ->
-                            context.definitionsContext?.let {
-                                if (!it.dataModels.containsKey(dataModel.name)) {
-                                    it.dataModels[dataModel.name] = dataModel.get
-                                }
+                val required by boolean(1u, EmbeddedObjectDefinition<*, *, *, *, *>::required, default = true)
+                val final by boolean(2u, EmbeddedObjectDefinition<*, *, *, *, *>::final, default = false)
+                val dataModel by contextual(
+                    index = 3u,
+                    definition = ContextualModelReferenceDefinition(
+                        contextualResolver = { context: ModelContext?, name ->
+                            context?.definitionsContext?.let {
+                                @Suppress("UNCHECKED_CAST")
+                                it.dataModels[name] as? Unit.() -> ObjectDataModel<*, *>
+                                    ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
                             } ?: throw ContextNotFoundException()
+                        }
+                    ),
+                    getter = {
+                        { it.dataModel as ObjectDataModel<*, *> }
+                    },
+                    toSerializable = { value: (Unit.() -> ObjectDataModel<*, *>)?, _ ->
+                        value?.invoke(Unit)?.let { model ->
+                            DataModelReference(model.name, value)
+                        }
+                    },
+                    fromSerializable = { it?.get },
+                    capturer = { context: ModelContext, dataModel: IsDataModelReference<ObjectDataModel<*, *>> ->
+                        context.definitionsContext?.let {
+                            if (!it.dataModels.containsKey(dataModel.name)) {
+                                it.dataModels[dataModel.name] = dataModel.get
+                            }
+                        } ?: throw ContextNotFoundException()
 
+                        @Suppress("UNCHECKED_CAST")
+                        context.model =
+                            dataModel.get as Unit.() -> AbstractObjectDataModel<Any, ObjectPropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>
+                    }
+                )
+
+                val default by contextual(
+                    index = 4u,
+                    getter = EmbeddedObjectDefinition<*, *, *, *, *>::default,
+                    definition = ContextualEmbeddedObjectDefinition(
+                        contextualResolver = { context: ModelContext? ->
                             @Suppress("UNCHECKED_CAST")
-                            context.model =
-                                dataModel.get as Unit.() -> AbstractObjectDataModel<Any, ObjectPropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>
+                            context?.model?.invoke(Unit) as? SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>?
+                                ?: throw ContextNotFoundException()
                         }
                     )
-
-                    add(4u, "default",
-                        ContextualEmbeddedObjectDefinition(
-                            contextualResolver = { context: ModelContext? ->
-                                @Suppress("UNCHECKED_CAST")
-                                context?.model?.invoke(Unit) as? SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>?
-                                    ?: throw ContextNotFoundException()
-                            }
-                        ),
-                        EmbeddedObjectDefinition<*, *, *, *, *>::default
-                    )
-                }
+                )
             }
         ) {
         override fun invoke(values: ObjectValues<EmbeddedObjectDefinition<*, *, *, *, *>, ObjectPropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>>) =
@@ -193,4 +199,48 @@ class EmbeddedObjectDefinition<DO : Any, P : ObjectPropertyDefinitions<DO>, DM :
                 default = values(4u)
             )
     }
+}
+
+fun <DO : Any, P : ObjectPropertyDefinitions<DO>, DM : AbstractObjectDataModel<DO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext> PropertyDefinitions.embedObject(
+    index: UInt,
+    dataModel: Unit.() -> DM,
+    name: String? = null,
+    required: Boolean = true,
+    final: Boolean = false,
+    default: DO? = null,
+    alternativeNames: Set<String>? = null
+) = DefinitionWrapperDelegateLoader(this) { propName ->
+    EmbeddedObjectDefinitionWrapper<DO, DO, P, DM, CXI, CX, Any>(
+        index,
+        name ?: propName,
+        EmbeddedObjectDefinition(required, final, dataModel, default),
+        alternativeNames
+    )
+}
+
+fun <TO: Any, DO: Any, EDO : Any, P : ObjectPropertyDefinitions<EDO>, DM : AbstractObjectDataModel<EDO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.embedObject(
+    index: UInt,
+    getter: (DO) -> TO?,
+    dataModel: Unit.() -> DM,
+    name: String? = null,
+    required: Boolean = true,
+    final: Boolean = false,
+    default: EDO? = null,
+    alternativeNames: Set<String>? = null,
+    toSerializable: (Unit.(TO?, CXI?) -> EDO?)? = null,
+    fromSerializable: (Unit.(EDO?) -> TO?)? = null,
+    shouldSerialize: (Unit.(Any) -> Boolean)? = null,
+    capturer: (Unit.(CXI, EDO) -> Unit)? = null
+) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
+    EmbeddedObjectDefinitionWrapper<EDO, TO, P, DM, CXI, CX, DO>(
+        index,
+        name ?: propName,
+        EmbeddedObjectDefinition(required, final, dataModel, default),
+        alternativeNames,
+        getter = getter,
+        capturer = capturer,
+        toSerializable = toSerializable,
+        fromSerializable = fromSerializable,
+        shouldSerialize = shouldSerialize
+    )
 }

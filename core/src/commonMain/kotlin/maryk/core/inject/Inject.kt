@@ -4,8 +4,9 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
+import maryk.core.properties.definitions.string
+import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.exceptions.InjectException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.RequestContext
@@ -42,21 +43,21 @@ data class Inject<T : Any, D : IsPropertyDefinition<T>>(
     }
 
     internal object Properties : ObjectPropertyDefinitions<AnyInject>() {
-        val collectionName = add(1u, "collectionName",
-            definition = StringDefinition(),
+        val collectionName by string(
+            1u,
             getter = Inject<*, *>::collectionName,
             capturer = { context: InjectionContext, value ->
                 context.collectionName = value
             }
         )
-        val propertyReference = add(
-            2u, "propertyReference",
-            ContextualPropertyReferenceDefinition { context: InjectionContext? ->
+        val propertyReference by contextual(
+            index = 2u,
+            getter = Inject<*, *>::propertyReference,
+            definition = ContextualPropertyReferenceDefinition { context: InjectionContext? ->
                 context?.let {
                     context.resolvePropertyReference()
                 } ?: throw ContextNotFoundException()
-            },
-            Inject<*, *>::propertyReference
+            }
         )
     }
 

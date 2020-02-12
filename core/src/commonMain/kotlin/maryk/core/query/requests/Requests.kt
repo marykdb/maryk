@@ -9,7 +9,9 @@ import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.contextual.ContextInjectCollectionOnWriteDefinition
+import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
@@ -29,21 +31,22 @@ data class Requests internal constructor(
     constructor(requests: List<IsRequest<*>>) : this(requests, null)
 
     object Properties : ObjectPropertyDefinitions<Requests>() {
-        val requests = add(1u, "requests",
-            ListDefinition(
-                valueDefinition = InternalMultiTypeDefinition(
-                    typeEnum = RequestType,
-                    definitionMap = mapOfRequestTypeEmbeddedObjectDefinitions,
-                    keepAsValues = true
-                )
+        val requests by list(
+            index = 1u,
+            getter = Requests::requests,
+            valueDefinition = InternalMultiTypeDefinition(
+                typeEnum = RequestType,
+                definitionMap = mapOfRequestTypeEmbeddedObjectDefinitions,
+                keepAsValues = true
             ),
-            Requests::requests,
             fromSerializable = { it.value as IsRequest<*> },
             toSerializable = { TypedValue(it.requestType, it) }
         )
 
-        internal val injectables = add(2u, "injectables",
-            ContextInjectCollectionOnWriteDefinition(
+        internal val injectables by contextual(
+            index = 2u,
+            getter = Requests::injectables,
+            definition = ContextInjectCollectionOnWriteDefinition(
                 definition = ListDefinition(
                     valueDefinition = EmbeddedObjectDefinition(
                         dataModel = { InjectWithReference }
@@ -52,8 +55,7 @@ data class Requests internal constructor(
                 valueInjector = { context: RequestContext? ->
                     context?.collectedInjects as List<InjectWithReference>? ?: listOf()
                 }
-            ),
-            Requests::injectables
+            )
         )
     }
 

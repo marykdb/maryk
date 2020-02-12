@@ -1,7 +1,11 @@
 package maryk.core.query.changes
 
+import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ReferencesDataModel
 import maryk.core.models.ReferencesObjectPropertyDefinitions
+import maryk.core.properties.AbstractPropertyDefinitions
+import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
+import maryk.core.properties.definitions.list
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
@@ -18,7 +22,16 @@ data class Delete internal constructor(
     override fun toString() = "Delete[${references.joinToString()}]"
 
     object Properties : ReferencesObjectPropertyDefinitions<Delete>() {
-        override val references = addReferenceListPropertyDefinition(Delete::references)
+        override val references by list(
+            index = 1u,
+            getter = Delete::references,
+            valueDefinition = ContextualPropertyReferenceDefinition<RequestContext>(
+                contextualResolver = {
+                    it?.dataModel?.properties as? AbstractPropertyDefinitions<*>?
+                        ?: throw ContextNotFoundException()
+                }
+            )
+        )
     }
 
     companion object : ReferencesDataModel<Delete, Properties>(

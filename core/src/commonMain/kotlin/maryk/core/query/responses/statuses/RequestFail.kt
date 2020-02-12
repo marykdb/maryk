@@ -4,7 +4,7 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.definitions.string
 import maryk.core.query.responses.statuses.StatusType.REQUEST_FAIL
 import maryk.core.values.SimpleObjectValues
 
@@ -18,9 +18,7 @@ data class RequestFail<DM : IsRootDataModel<*>>(
 
     internal companion object : SimpleQueryDataModel<RequestFail<*>>(
         properties = object : ObjectPropertyDefinitions<RequestFail<*>>() {
-            init {
-                add(1u, "reason", StringDefinition(), RequestFail<*>::reason)
-            }
+            val reason by string(1u, RequestFail<*>::reason)
         }
     ) {
         override fun invoke(values: SimpleObjectValues<RequestFail<*>>) =

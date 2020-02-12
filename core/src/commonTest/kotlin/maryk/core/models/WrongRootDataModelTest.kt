@@ -1,7 +1,7 @@
 package maryk.core.models
 
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.definitions.string
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
@@ -11,8 +11,7 @@ object WrongModelIndex : RootDataModel<WrongModelIndex, WrongModelIndex.Properti
     reservedIndices = listOf(1u)
 ) {
     object Properties : PropertyDefinitions() {
-        val value by
-            define(1u) { StringDefinition() }
+        val value by string(1u)
     }
 
     operator fun invoke(value: String) = this.values {
@@ -25,7 +24,7 @@ object WrongModelName : RootDataModel<WrongModelName, WrongModelName.Properties>
     reservedNames = listOf("value")
 ) {
     object Properties : PropertyDefinitions() {
-        val value by define (1u) { StringDefinition() }
+        val value by string (1u)
     }
 
     operator fun invoke(value: String) = this.values {

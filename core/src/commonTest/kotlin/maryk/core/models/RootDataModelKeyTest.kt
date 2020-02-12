@@ -5,27 +5,22 @@ import maryk.core.models.WrongProperties.boolean
 import maryk.core.models.WrongProperties.dateTime
 import maryk.core.models.WrongProperties.string
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.definitions.BooleanDefinition
-import maryk.core.properties.definitions.DateTimeDefinition
-import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.definitions.boolean
+import maryk.core.properties.definitions.dateTime
 import maryk.core.properties.definitions.index.Multiple
+import maryk.core.properties.definitions.string
 import maryk.lib.time.DateTime
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 
 internal object WrongProperties : PropertyDefinitions() {
-    val boolean by define(1u) {
-        BooleanDefinition(
-            required = false,
-            final = true
-        )
-    }
-    val dateTime by define(2u) {
-        DateTimeDefinition()
-    }
-    val string by define(3u) {
-        StringDefinition()
-    }
+    val boolean by boolean(
+        index = 1u,
+        required = false,
+        final = true
+    )
+    val dateTime by dateTime(2u)
+    val string by string(3u)
 }
 
 class RootDataModelKeyTest {

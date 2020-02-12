@@ -5,10 +5,10 @@ import maryk.core.aggregations.IsAggregationResponse
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
-import maryk.core.properties.definitions.ListDefinition
+import maryk.core.properties.definitions.list
 import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.query.DefinedByReference
+import maryk.core.query.addReference
 import maryk.core.values.SimpleObjectValues
 
 /** The [buckets] found for all enum values at [reference] */
@@ -18,20 +18,18 @@ data class EnumValuesResponse<T: IndexedEnumComparable<T>>(
 ) : IsAggregationResponse {
     override val aggregationType = EnumValuesType
 
+    @Suppress("unused")
     companion object : SimpleQueryDataModel<EnumValuesResponse<*>>(
         properties = object : ObjectPropertyDefinitions<EnumValuesResponse<*>>() {
-            init {
-                DefinedByReference.addReference(this, EnumValuesResponse<*>::reference, name = "of")
-                add(2u, "buckets",
-                    ListDefinition(
-                        default = emptyList(),
-                        valueDefinition = EmbeddedObjectDefinition(
-                            dataModel = { Bucket }
-                        )
-                    ),
-                    EnumValuesResponse<*>::buckets
-                )
-            }
+            val of by addReference(EnumValuesResponse<*>::reference)
+            val buckets by list(
+                index = 2u,
+                getter = EnumValuesResponse<*>::buckets,
+                valueDefinition = EmbeddedObjectDefinition(
+                    dataModel = { Bucket }
+                ),
+                default = emptyList()
+            )
         }
     ) {
         override fun invoke(values: SimpleObjectValues<EnumValuesResponse<*>>) =

@@ -8,6 +8,7 @@ import maryk.core.models.SingleTypedValueDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
+import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.properties.references.IsValuePropertyReference
@@ -58,13 +59,14 @@ data class Reversed<T : Any>(
     }
 
     object Properties : ObjectPropertyDefinitions<Reversed<out Any>>() {
-        val reference = add(1u, "reference",
-            ContextualPropertyReferenceDefinition<DefinitionsConversionContext>(
+        val reference by contextual(
+            index = 1u,
+            getter = Reversed<*>::reference,
+            definition = ContextualPropertyReferenceDefinition<DefinitionsConversionContext>(
                 contextualResolver = {
                     it?.propertyDefinitions as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()
                 }
-            ),
-            getter = Reversed<*>::reference
+            )
         )
     }
 

@@ -2,7 +2,7 @@ package maryk.datastore.test
 
 import maryk.core.models.RootDataModel
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.definitions.string
 import maryk.core.properties.exceptions.AlreadyExistsException
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
@@ -24,11 +24,7 @@ object UniqueModel : RootDataModel<UniqueModel, Properties>(
     properties = Properties
 ) {
     object Properties : PropertyDefinitions() {
-        val email by define(1u){
-            StringDefinition(
-                unique = true
-            )
-        }
+        val email by string(1u, unique = true)
     }
 
     operator fun invoke(email: String) = this.values {

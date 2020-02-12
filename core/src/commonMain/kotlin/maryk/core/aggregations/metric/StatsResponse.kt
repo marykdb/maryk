@@ -9,12 +9,13 @@ import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsValueDefinition
-import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
+import maryk.core.properties.definitions.number
+import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.numeric.UInt64
-import maryk.core.query.DefinedByReference
 import maryk.core.query.RequestContext
+import maryk.core.query.addReference
 import maryk.core.values.SimpleObjectValues
 
 /** The response of the stats aggregation */
@@ -30,25 +31,39 @@ data class StatsResponse<T: Comparable<T>>(
 
     companion object : SimpleQueryDataModel<StatsResponse<*>>(
         properties = object : ObjectPropertyDefinitions<StatsResponse<*>>() {
-            init {
-                DefinedByReference.addReference(this, StatsResponse<*>::reference, name = "of")
-                add(2u, "valueCount",
-                    NumberDefinition(type = UInt64), StatsResponse<*>::valueCount)
+            val of by addReference(StatsResponse<*>::reference)
 
-                val contextualValueDefinition = ContextualValueDefinition(
-                    required = false,
-                    contextualResolver = { context: RequestContext? ->
-                        context?.reference?.let {
-                            @Suppress("UNCHECKED_CAST")
-                            it.comparablePropertyDefinition as IsValueDefinition<Any, IsPropertyContext>
-                        } ?: throw ContextNotFoundException()
-                    }
-                )
-                add(3u, "average", contextualValueDefinition, StatsResponse<*>::average)
-                add(4u, "min", contextualValueDefinition, StatsResponse<*>::min)
-                add(5u, "max", contextualValueDefinition, StatsResponse<*>::max)
-                add(6u, "sum", contextualValueDefinition, StatsResponse<*>::sum)
-            }
+            val valueCount by number(2u, StatsResponse<*>::valueCount, UInt64)
+
+            private val contextualValueDefinition = ContextualValueDefinition(
+                required = false,
+                contextualResolver = { context: RequestContext? ->
+                    context?.reference?.let {
+                        @Suppress("UNCHECKED_CAST")
+                        it.comparablePropertyDefinition as IsValueDefinition<Any, IsPropertyContext>
+                    } ?: throw ContextNotFoundException()
+                }
+            )
+            val average by contextual(
+                index = 3u,
+                getter = StatsResponse<*>::average,
+                definition = contextualValueDefinition
+            )
+            val min by contextual(
+                index = 4u,
+                getter = StatsResponse<*>::min,
+                definition = contextualValueDefinition
+            )
+            val max by contextual(
+                index = 5u,
+                getter = StatsResponse<*>::max,
+                definition = contextualValueDefinition
+            )
+            val sum by contextual(
+                index = 6u,
+                getter = StatsResponse<*>::sum,
+                definition = contextualValueDefinition
+            )
         }
     ) {
         override fun invoke(values: SimpleObjectValues<StatsResponse<*>>) =

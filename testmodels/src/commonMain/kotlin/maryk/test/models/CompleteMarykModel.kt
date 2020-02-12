@@ -2,27 +2,35 @@ package maryk.test.models
 
 import maryk.core.models.RootDataModel
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
-import maryk.core.properties.definitions.DateTimeDefinition
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.EnumDefinition
-import maryk.core.properties.definitions.FixedBytesDefinition
-import maryk.core.properties.definitions.FlexBytesDefinition
-import maryk.core.properties.definitions.GeoPointDefinition
-import maryk.core.properties.definitions.IncrementingMapDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
-import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
-import maryk.core.properties.definitions.ReferenceDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
-import maryk.core.properties.definitions.TimeDefinition
-import maryk.core.properties.definitions.ValueModelDefinition
+import maryk.core.properties.definitions.boolean
+import maryk.core.properties.definitions.date
+import maryk.core.properties.definitions.dateTime
+import maryk.core.properties.definitions.embed
+import maryk.core.properties.definitions.enum
+import maryk.core.properties.definitions.fixedBytes
+import maryk.core.properties.definitions.flexBytes
+import maryk.core.properties.definitions.geoPoint
+import maryk.core.properties.definitions.incrementingMap
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.Reversed
 import maryk.core.properties.definitions.index.UUIDKey
+import maryk.core.properties.definitions.list
+import maryk.core.properties.definitions.map
+import maryk.core.properties.definitions.multiType
+import maryk.core.properties.definitions.number
+import maryk.core.properties.definitions.reference
+import maryk.core.properties.definitions.set
+import maryk.core.properties.definitions.string
+import maryk.core.properties.definitions.time
+import maryk.core.properties.definitions.valueObject
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IndexedEnumImpl
 import maryk.core.properties.types.Bytes
@@ -82,276 +90,249 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
     properties = Properties
 ) {
     object Properties : PropertyDefinitions() {
-        val string by define(
-            1u, alternativeNames = setOf("str", "stringValue")
-        ) {
-            StringDefinition(
-                required = false,
-                final = false,
-                unique = true,
-                minValue = "a",
-                maxValue = "zzzz",
-                default = "string",
-                minSize = 1u,
-                maxSize = 10u,
+        val string by string(
+            index = 1u,
+            alternativeNames = setOf("str", "stringValue"),
+            required = false,
+            final = false,
+            unique = true,
+            minValue = "a",
+            maxValue = "zzzz",
+            default = "string",
+            minSize = 1u,
+            maxSize = 10u,
+            regEx = "ha.*"
+        )
+        val number by number(
+            index = 2u,
+            final = false,
+            unique = true,
+            type = UInt32,
+            minValue = 12u,
+            maxValue = 34u,
+            default = 33u,
+            random = true
+        )
+        val boolean by boolean(
+            3u,
+            required = false,
+            final = true,
+            default = true
+        )
+        val enum by enum(
+            index = 4u,
+            required = false,
+            final = true,
+            unique = true,
+            enum = Option,
+            minValue = Option.V1,
+            maxValue = Option.V3,
+            default = Option.V1
+        )
+        val date by date(
+            index = 5u,
+            required = false,
+            final = true,
+            unique = true,
+            minValue = Date(1981, 12, 5),
+            maxValue = Date(2200, 12, 31),
+            default = Date(2018, 5, 2),
+            fillWithNow = true
+        )
+        val dateTime by dateTime(
+            index = 6u,
+            required = false,
+            final = true,
+            unique = true,
+            precision = TimePrecision.MILLIS,
+            minValue = DateTime(1981, 12, 5, 11),
+            maxValue = DateTime(2200, 12, 31, 23, 59, 59),
+            default = DateTime(2018, 5, 2, 10, 11, 12),
+            fillWithNow = true
+        )
+        val time by time(
+            index = 7u,
+            required = false,
+            final = true,
+            unique = true,
+            precision = TimePrecision.MILLIS,
+            minValue = Time(0, 0),
+            maxValue = Time(23, 59, 59, 999),
+            default = Time(10, 11, 12),
+            fillWithNow = true
+        )
+        val fixedBytes by fixedBytes(
+            index = 8u,
+            required = false,
+            final = true,
+            unique = true,
+            minValue = Bytes("AAAAAAA"),
+            maxValue = Bytes("f39/f38"),
+            default = Bytes("AAECAwQ"),
+            random = true,
+            byteSize = 5
+        )
+        val flexBytes by flexBytes(
+            index = 9u,
+            required = false,
+            final = true,
+            unique = true,
+            minValue = Bytes("AA"),
+            maxValue = Bytes("f39/f39/fw"),
+            default = Bytes("AAECAw"),
+            minSize = 1u,
+            maxSize = 7u
+        )
+        val reference by reference(
+            10u,
+            required = false,
+            final = true,
+            unique = true,
+            minValue = Key("AA"),
+            maxValue = Key("f39/f39/fw"),
+            default = Key("AAECAQAAECAQAAECAQAAEA"),
+            dataModel = { SimpleMarykModel }
+        )
+        val subModel by embed(
+            index = 11u,
+            required = false,
+            final = true,
+            dataModel = { SimpleMarykModel },
+            default = SimpleMarykModel(
+                value = "a default"
+            )
+        )
+        val valueModel by valueObject(
+            index = 12u,
+            required = false,
+            final = true,
+            dataModel = ValueMarykObject,
+            minValue = ValueMarykObject(
+                int = 0,
+                date = Date(100, 1, 1)
+            ),
+            maxValue = ValueMarykObject(
+                int = 999,
+                date = Date(9999, 12, 31)
+            ),
+            default = ValueMarykObject(
+                int = 10,
+                date = Date(2010, 10, 10)
+            )
+        )
+        val list by list(
+            index = 13u,
+            required = false,
+            final = true,
+            minSize = 1u,
+            maxSize = 5u,
+            valueDefinition = StringDefinition(
                 regEx = "ha.*"
-            )
-        }
-        val number by define(2u) {
-            NumberDefinition(
-                final = false,
-                unique = true,
-                type = UInt32,
-                minValue = 12u,
-                maxValue = 34u,
-                default = 33u,
-                random = true
-            )
-        }
-        val boolean by define(3u) {
-            BooleanDefinition(
-                required = false,
-                final = true,
-                default = true
-            )
-        }
-        val enum by define(4u) {
-            EnumDefinition(
-                required = false,
-                final = true,
-                unique = true,
-                enum = Option,
-                minValue = Option.V1,
-                maxValue = Option.V3,
-                default = Option.V1
-            )
-        }
-        val date by define(5u) {
-            DateDefinition(
-                required = false,
-                final = true,
-                unique = true,
-                minValue = Date(1981, 12, 5),
-                maxValue = Date(2200, 12, 31),
-                default = Date(2018, 5, 2),
-                fillWithNow = true
-            )
-        }
-        val dateTime by define(6u) {
-            DateTimeDefinition(
-                required = false,
-                final = true,
-                unique = true,
-                precision = TimePrecision.MILLIS,
-                minValue = DateTime(1981, 12, 5, 11),
-                maxValue = DateTime(2200, 12, 31, 23, 59, 59),
-                default = DateTime(2018, 5, 2, 10, 11, 12),
-                fillWithNow = true
-            )
-        }
-        val time by define(7u) {
-            TimeDefinition(
-                required = false,
-                final = true,
-                unique = true,
-                precision = TimePrecision.MILLIS,
-                minValue = Time(0, 0),
-                maxValue = Time(23, 59, 59, 999),
-                default = Time(10, 11, 12),
-                fillWithNow = true
-            )
-        }
-        val fixedBytes by define(8u) {
-            FixedBytesDefinition(
-                required = false,
-                final = true,
-                unique = true,
-                minValue = Bytes("AAAAAAA"),
-                maxValue = Bytes("f39/f38"),
-                default = Bytes("AAECAwQ"),
-                random = true,
-                byteSize = 5
-            )
-        }
-        val flexBytes by define(9u) {
-            FlexBytesDefinition(
-                required = false,
-                final = true,
-                unique = true,
-                minValue = Bytes("AA"),
-                maxValue = Bytes("f39/f39/fw"),
-                default = Bytes("AAECAw"),
-                minSize = 1u,
-                maxSize = 7u
-            )
-        }
-        val reference by define(10u) {
-            ReferenceDefinition(
-                required = false,
-                final = true,
-                unique = true,
-                minValue = Key("AA"),
-                maxValue = Key("f39/f39/fw"),
-                default = Key("AAECAQAAECAQAAECAQAAEA"),
-                dataModel = { SimpleMarykModel }
-            )
-        }
-        val subModel by define(11u) {
-            EmbeddedValuesDefinition(
-                required = false,
-                final = true,
-                dataModel = { SimpleMarykModel },
-                default = SimpleMarykModel(
-                    value = "a default"
-                )
-            )
-        }
-        val valueModel by define(12u) {
-            ValueModelDefinition(
-                required = false,
-                final = true,
-                dataModel = ValueMarykObject,
-                minValue = ValueMarykObject(
-                    int = 0,
-                    date = Date(100, 1, 1)
-                ),
-                maxValue = ValueMarykObject(
-                    int = 999,
-                    date = Date(9999, 12, 31)
-                ),
-                default = ValueMarykObject(
-                    int = 10,
-                    date = Date(2010, 10, 10)
-                )
-            )
-        }
-        val list by define(13u) {
-            ListDefinition(
-                required = false,
-                final = true,
-                minSize = 1u,
-                maxSize = 5u,
-                valueDefinition = StringDefinition(
-                    regEx = "ha.*"
-                ),
-                default = listOf("ha1", "ha2", "ha3")
-            )
-        }
-        val set by define(14u) {
-            SetDefinition(
-                required = false,
-                final = true,
-                minSize = 1u,
-                maxSize = 5u,
-                valueDefinition = NumberDefinition(
-                    type = SInt32
-                ),
-                default = setOf(1, 2, 3)
-            )
-        }
-        val map by define(15u) {
-            MapDefinition(
-                required = false,
-                final = true,
-                minSize = 1u,
-                maxSize = 5u,
-                keyDefinition = DateDefinition(),
-                valueDefinition = NumberDefinition(
-                    type = SInt32
-                ),
-                default = mapOf(Date(2010, 11, 12) to 1, Date(2011, 12, 13) to 1)
-            )
-        }
-        val multi by define(16u) {
-            MultiTypeDefinition(
-                required = false,
-                final = true,
-                typeEnum = MarykTypeEnum,
-                default = TypedValue(MarykTypeEnum.T1, "a value")
-            )
-        }
-        val booleanForKey by define(17u) {
-            BooleanDefinition(
-                final = true
-            )
-        }
-        val dateForKey by define(18u) {
-            DateDefinition(
-                final = true
-            )
-        }
-        val multiForKey by define(19u) {
-            MultiTypeDefinition(
-                final = true,
-                typeEnum = SimpleMarykTypeEnum
-            )
-        }
-        val enumEmbedded by define(20u) {
-            EnumDefinition(
-                enum = MarykEnumEmbedded,
-                minValue = MarykEnumEmbedded.E1
-            )
-        }
-        val mapWithEnum by define(21u) {
-            MapDefinition(
-                required = false,
-                final = true,
-                minSize = 1u,
-                maxSize = 5u,
-                keyDefinition = EnumDefinition(
-                    enum = MarykEnumEmbedded
-                ),
-                valueDefinition = StringDefinition(),
-                default = mapOf<MarykEnumEmbedded, String>(MarykEnumEmbedded.E1 to "value")
-            )
-        }
-        val mapWithList by define(22u) {
-            MapDefinition(
-                required = false,
+            ),
+            default = listOf("ha1", "ha2", "ha3")
+        )
+        val set by set(
+            14u,
+            required = false,
+            final = true,
+            minSize = 1u,
+            maxSize = 5u,
+            valueDefinition = NumberDefinition(
+                type = SInt32
+            ),
+            default = setOf(1, 2, 3)
+        )
+        val map by map(
+            index = 15u,
+            required = false,
+            final = true,
+            minSize = 1u,
+            maxSize = 5u,
+            keyDefinition = DateDefinition(),
+            valueDefinition = NumberDefinition(
+                type = SInt32
+            ),
+            default = mapOf(Date(2010, 11, 12) to 1, Date(2011, 12, 13) to 1)
+        )
+        val multi by multiType(
+            index = 16u,
+            required = false,
+            final = true,
+            typeEnum = MarykTypeEnum,
+            default = TypedValue(MarykTypeEnum.T1, "a value")
+        )
+        val booleanForKey by boolean(
+            index = 17u,
+            final = true
+        )
+        val dateForKey by date(
+            index = 18u,
+            final = true
+        )
+        val multiForKey by multiType(
+            index = 19u,
+            final = true,
+            typeEnum = SimpleMarykTypeEnum
+        )
+        val enumEmbedded by enum(
+            index = 20u,
+            enum = MarykEnumEmbedded,
+            minValue = MarykEnumEmbedded.E1
+        )
+        val mapWithEnum by map(
+            index = 21u,
+            required = false,
+            final = true,
+            minSize = 1u,
+            maxSize = 5u,
+            keyDefinition = EnumDefinition(
+                enum = MarykEnumEmbedded
+            ),
+            valueDefinition = StringDefinition(),
+            default = mapOf<MarykEnumEmbedded, String>(MarykEnumEmbedded.E1 to "value")
+        )
+        val mapWithList by map(
+            index = 22u,
+            required = false,
+            keyDefinition = StringDefinition(),
+            valueDefinition = ListDefinition(
+                valueDefinition = StringDefinition()
+            ),
+            default = mapOf("a" to listOf("b", "c"))
+        )
+        val mapWithSet by map(
+            index = 23u,
+            required = false,
+            keyDefinition = StringDefinition(),
+            valueDefinition = SetDefinition(
+                valueDefinition = StringDefinition()
+            ),
+            default = mapOf("a" to setOf("b", "c"))
+        )
+        val mapWithMap by map(
+            index = 24u,
+            required = false,
+            keyDefinition = StringDefinition(),
+            valueDefinition = MapDefinition(
                 keyDefinition = StringDefinition(),
-                valueDefinition = ListDefinition(
-                    valueDefinition = StringDefinition()
-                ),
-                default = mapOf("a" to listOf("b", "c"))
+                valueDefinition = StringDefinition()
+            ),
+            default = mapOf("a" to mapOf("b" to "c"))
+        )
+        val incMap by incrementingMap(
+            index = 25u,
+            required = false,
+            keyNumberDescriptor = UInt32,
+            valueDefinition = EmbeddedValuesDefinition(
+                dataModel = { EmbeddedMarykModel }
             )
-        }
-        val mapWithSet by define(23u) {
-            MapDefinition(
-                required = false,
-                keyDefinition = StringDefinition(),
-                valueDefinition = SetDefinition(
-                    valueDefinition = StringDefinition()
-                ),
-                default = mapOf("a" to setOf("b", "c"))
-            )
-        }
-        val mapWithMap by define(24u) {
-            MapDefinition(
-                required = false,
-                keyDefinition = StringDefinition(),
-                valueDefinition = MapDefinition(
-                    keyDefinition = StringDefinition(),
-                    valueDefinition = StringDefinition()
-                ),
-                default = mapOf("a" to mapOf("b" to "c"))
-            )
-        }
-        val incMap by define(25u) {
-            IncrementingMapDefinition(
-                required = false,
-                keyNumberDescriptor = UInt32,
-                valueDefinition = EmbeddedValuesDefinition(
-                    dataModel = { EmbeddedMarykModel }
-                )
-            )
-        }
-        val location by define(26u) {
-            GeoPointDefinition(
-                required = false,
-                final = true,
-                default = GeoPoint(52.0906448, 5.1212607)
-            )
-        }
+        )
+        val location by geoPoint(
+            index = 26u,
+            required = false,
+            final = true,
+            default = GeoPoint(52.0906448, 5.1212607)
+        )
     }
 
     operator fun invoke(

@@ -8,11 +8,12 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsValueDefinition
-import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.contextual.ContextCollectionTransformerDefinition
 import maryk.core.properties.definitions.contextual.MultiTypeDefinitionContext
+import maryk.core.properties.definitions.list
+import maryk.core.properties.definitions.string
 import maryk.core.properties.definitions.wrapper.ContextualDefinitionWrapper
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.query.ContainsDefinitionsContext
@@ -86,8 +87,8 @@ open class MultiTypeEnumDefinition<E : MultiTypeEnum<*>> internal constructor(
     )
 
     internal object Properties : ObjectPropertyDefinitions<MultiTypeEnumDefinition<MultiTypeEnum<*>>>() {
-        val name = add(1u, "name",
-            StringDefinition(),
+        val name by string(
+            1u,
             MultiTypeEnumDefinition<*>::name
         )
 
@@ -112,26 +113,20 @@ open class MultiTypeEnumDefinition<E : MultiTypeEnum<*>> internal constructor(
             addSingle(this)
         }
 
-        init {
-            add(
-                3u, "reservedIndices",
-                ListDefinition(
-                    valueDefinition = NumberDefinition(
-                        type = UInt32,
-                        minValue = 1u
-                    )
-                ),
-                MultiTypeEnumDefinition<*>::reservedIndices
+        val reservedIndices by list(
+            index = 3u,
+            getter = MultiTypeEnumDefinition<*>::reservedIndices,
+            valueDefinition = NumberDefinition(
+                type = UInt32,
+                minValue = 1u
             )
+        )
 
-            add(
-                4u, "reservedNames",
-                ListDefinition(
-                    valueDefinition = StringDefinition()
-                ),
-                MultiTypeEnumDefinition<*>::reservedNames
-            )
-        }
+        val reservedNames by list(
+            index = 4u,
+            getter = MultiTypeEnumDefinition<*>::reservedNames,
+            valueDefinition = StringDefinition()
+        )
     }
 
     override fun equals(other: Any?): Boolean {

@@ -3,7 +3,7 @@ package maryk.core.query.filters
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
-import maryk.core.properties.definitions.ListDefinition
+import maryk.core.properties.definitions.list
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
@@ -21,15 +21,13 @@ data class Or(
     constructor(vararg filters: IsFilter) : this(filters.toList())
 
     object Properties : ObjectPropertyDefinitions<Or>() {
-        val filters = add(
-            1u, "filters",
-            ListDefinition(
-                valueDefinition = InternalMultiTypeDefinition(
-                    typeEnum = FilterType,
-                    definitionMap = mapOfFilterDefinitions
-                )
-            ),
+        val filters by list(
+            index = 1u,
             getter = Or::filters,
+            valueDefinition = InternalMultiTypeDefinition(
+                typeEnum = FilterType,
+                definitionMap = mapOfFilterDefinitions
+            ),
             toSerializable = { TypedValue(it.filterType, it) },
             fromSerializable = { it.value }
         )

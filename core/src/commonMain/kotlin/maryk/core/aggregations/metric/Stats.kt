@@ -5,7 +5,7 @@ import maryk.core.aggregations.IsAggregationRequest
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.query.DefinedByReference
+import maryk.core.query.addReference
 import maryk.core.values.SimpleObjectValues
 
 /**
@@ -22,9 +22,7 @@ data class Stats<T: Comparable<T>>(
 
     companion object : SimpleQueryDataModel<Stats<*>>(
         properties = object : ObjectPropertyDefinitions<Stats<*>>() {
-            init {
-                DefinedByReference.addReference(this, Stats<*>::reference, name = "of")
-            }
+            val of by addReference(Stats<*>::reference)
         }
     ) {
         override fun invoke(values: SimpleObjectValues<Stats<*>>) = Stats<Comparable<Any>>(

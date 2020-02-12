@@ -70,5 +70,5 @@ data class EmbeddedValuesDefinitionWrapper<
         { this.definition.dataModel(this.ref(it), referenceGetter) }
 
     // For delegation in definition
-    operator fun getValue(thisRef: AbstractPropertyDefinitions<Any>, property: KProperty<*>) = this
+    operator fun getValue(thisRef: Any, property: KProperty<*>) = this
 }

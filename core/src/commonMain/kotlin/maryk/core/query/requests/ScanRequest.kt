@@ -5,8 +5,13 @@ import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.definitions.boolean
+import maryk.core.properties.definitions.embedObject
+import maryk.core.properties.definitions.number
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
+import maryk.core.properties.types.numeric.UInt32
+import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.filters.IsFilter
 import maryk.core.query.orders.IsOrder
 import maryk.core.query.requests.RequestType.Scan
@@ -53,15 +58,15 @@ data class ScanRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> i
     override val responseModel = ValuesResponse
 
     object Properties : ObjectPropertyDefinitions<ScanRequest<*, *>>() {
-        val dataModel = IsObjectRequest.addDataModel("from", this, ScanRequest<*, *>::dataModel)
-        val startKey = IsScanRequest.addStartKey(this, ScanRequest<*, *>::startKey)
-        val select = IsFetchRequest.addSelect(this, ScanRequest<*, *>::select)
-        val where = IsFetchRequest.addFilter(this, ScanRequest<*, *>::where)
-        val toVersion = IsFetchRequest.addToVersion(this, ScanRequest<*, *>::toVersion)
-        val filterSoftDeleted = IsFetchRequest.addFilterSoftDeleted(this, ScanRequest<*, *>::filterSoftDeleted)
-        val aggregations = IsFetchRequest.addAggregationsDefinition(this, ScanRequest<*, *>::aggregations)
-        val order = IsScanRequest.addOrder(this, ScanRequest<*, *>::order)
-        val limit = IsScanRequest.addLimit(this, ScanRequest<*, *>::limit)
+        val from by addDataModel(ScanRequest<*, *>::dataModel)
+        val startKey by addStartKey(ScanRequest<*, *>::startKey)
+        val select by embedObject(3u, ScanRequest<*, *>::select, dataModel = { RootPropRefGraph })
+        val where by addFilter(ScanRequest<*, *>::where)
+        val toVersion by number(5u, ScanRequest<*, *>::toVersion, UInt64, required = false)
+        val filterSoftDeleted  by boolean(6u, ScanRequest<*, *>::filterSoftDeleted, default = true)
+        val aggregations by embedObject(7u, ScanRequest<*, *>::aggregations, dataModel = { Aggregations }, alternativeNames = setOf("aggs"))
+        val order by addOrder(ScanRequest<*, *>::order)
+        val limit by number(9u, ScanRequest<*, *>::limit, type = UInt32, default = 100u)
     }
 
     companion object : QueryDataModel<ScanRequest<*, *>, Properties>(

@@ -6,8 +6,8 @@ import maryk.checkYamlConversion
 import maryk.core.models.RootDataModel
 import maryk.core.models.key
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.definitions.BooleanDefinition
-import maryk.core.properties.definitions.DateTimeDefinition
+import maryk.core.properties.definitions.boolean
+import maryk.core.properties.definitions.dateTime
 import maryk.core.properties.definitions.index.ReversedTest.MarykModel.Properties.boolean
 import maryk.core.properties.definitions.index.ReversedTest.MarykModel.Properties.dateTime
 import maryk.core.query.DefinitionsConversionContext
@@ -26,16 +26,11 @@ internal class ReversedTest {
         properties = Properties
     ) {
         object Properties : PropertyDefinitions() {
-            val boolean by define(1u) {
-                BooleanDefinition(
-                    final = true
-                )
-            }
-            val dateTime by define(2u) {
-                DateTimeDefinition(
-                    final = true
-                )
-            }
+            val boolean by boolean(1u, final = true)
+            val dateTime by dateTime(
+                index = 2u,
+                final = true
+            )
         }
 
         operator fun invoke(

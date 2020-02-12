@@ -25,7 +25,7 @@ class GetRequestTest {
         expect(getRequest) {
             GetRequest.values(context) {
                 mapNonNulls(
-                    dataModel with SimpleMarykModel,
+                    from with SimpleMarykModel,
                     keys with listOf(getRequest.keys[0], getRequest.keys[1])
                 )
             }.toDataObject()
@@ -37,7 +37,7 @@ class GetRequestTest {
         expect(getMaxRequest) {
             GetRequest.values(context) {
                 mapNonNulls(
-                    dataModel with SimpleMarykModel,
+                    from with SimpleMarykModel,
                     keys with listOf(getMaxRequest.keys[0], getMaxRequest.keys[1]),
                     where with Exists(SimpleMarykModel { value::ref }),
                     toVersion with 333uL,

@@ -1,6 +1,9 @@
 package maryk.core.properties.definitions
 
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.types.TypedValue
@@ -81,4 +84,47 @@ data class InternalMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsProper
         result = 31 * result + typeIsFinal.hashCode()
         return result
     }
+}
+
+internal fun <E : TypeEnum<T>, T: Any, TO: Any, CX: IsPropertyContext, DO: Any> ObjectPropertyDefinitions<DO>.internalMultiType(
+    index: UInt,
+    getter: (DO) -> TO?,
+    name: String? = null,
+    required: Boolean = true,
+    final: Boolean = false,
+    typeEnum: IndexedEnumDefinition<E>,
+    typeIsFinal: Boolean = true,
+    definitionMap: Map<E, IsSubDefinition<out Any, CX>>,
+    default: TypedValue<E, T>? = null,
+    alternativeNames: Set<String>? = null
+): ObjectDefinitionWrapperDelegateLoader<MultiTypeDefinitionWrapper<E, T, TO, CX, DO>, DO> =
+    internalMultiType(index, getter, name, required, final, typeEnum, typeIsFinal, definitionMap, default, alternativeNames, toSerializable = null)
+
+internal fun <E : TypeEnum<T>, T: Any, TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.internalMultiType(
+    index: UInt,
+    getter: (DO) -> TO?,
+    name: String? = null,
+    required: Boolean = true,
+    final: Boolean = false,
+    typeEnum: IndexedEnumDefinition<E>,
+    typeIsFinal: Boolean = true,
+    definitionMap: Map<E, IsSubDefinition<out Any, CX>>,
+    default: TypedValue<E, T>? = null,
+    alternativeNames: Set<String>? = null,
+    toSerializable: (Unit.(TO?, CX?) -> TypedValue<E, T>?)? = null,
+    fromSerializable: (Unit.(TypedValue<E, T>?) -> TO?)? = null,
+    shouldSerialize: (Unit.(Any) -> Boolean)? = null,
+    capturer: (Unit.(CX, TypedValue<E, T>) -> Unit)? = null
+) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
+    MultiTypeDefinitionWrapper(
+        index,
+        name ?: propName,
+        InternalMultiTypeDefinition(required, final, typeEnum, typeIsFinal, definitionMap, default),
+        alternativeNames,
+        getter = getter,
+        capturer = capturer,
+        toSerializable = toSerializable,
+        fromSerializable = fromSerializable,
+        shouldSerialize = shouldSerialize
+    )
 }

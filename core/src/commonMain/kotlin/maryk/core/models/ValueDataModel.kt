@@ -10,6 +10,7 @@ import maryk.core.properties.MutableObjectPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitionsCollectionDefinitionWrapper
 import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
+import maryk.core.properties.definitions.string
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.properties.types.ValueDataObjectWithValues
@@ -120,7 +121,7 @@ abstract class ValueDataModel<DO : ValueDataObject, P : ObjectPropertyDefinition
     private object ValueDataModelProperties :
         ObjectPropertyDefinitions<AnyValueDataModel>(),
         IsDataModelPropertyDefinitions<AnyValueDataModel, ObjectPropertyDefinitionsCollectionDefinitionWrapper<AnyValueDataModel>> {
-        override val name = IsNamedDataModel.addName(this, ValueDataModel<*, *>::name)
+        override val name by string(1u, ValueDataModel<*, *>::name)
         override val properties = addProperties(this)
     }
 

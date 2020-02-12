@@ -2,11 +2,14 @@ package maryk.core.query.pairs
 
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsChangeableValueDefinition
+import maryk.core.properties.definitions.embedObject
+import maryk.core.properties.definitions.wrapper.EmbeddedObjectDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DefinedByReference
+import maryk.core.query.RequestContext
 import maryk.core.query.ValueRange
+import maryk.core.query.addReference
 import maryk.core.values.ObjectValues
 
 /** Defines a pair of a [reference] and [range] of type [T] */
@@ -17,17 +20,14 @@ data class ReferenceValueRangePair<T : Comparable<T>> internal constructor(
 
     override fun toString() = "$reference: $range"
 
-    object Properties : ReferenceValuePairPropertyDefinitions<ReferenceValueRangePair<*>, ValueRange<*>, ValueRange<*>>() {
-        override val reference = DefinedByReference.addReference(
-            this,
+    object Properties : ReferenceValuePairPropertyDefinitions<ReferenceValueRangePair<*>, ValueRange<*>, ValueRange<*>, EmbeddedObjectDefinitionWrapper<ValueRange<*>, ValueRange<*>, ValueRange.Properties, ValueRange.Companion, RequestContext, RequestContext, ReferenceValueRangePair<*>>>() {
+        override val reference by addReference(
             ReferenceValueRangePair<*>::reference
         )
-        override val value = add(
-            index = 2u, name = "range",
-            definition = EmbeddedObjectDefinition(
-                dataModel = { ValueRange }
-            ),
-            getter = ReferenceValueRangePair<*>::range
+        override val value by embedObject(
+            index = 2u,
+            getter = ReferenceValueRangePair<*>::range,
+            dataModel = { ValueRange }
         )
     }
 

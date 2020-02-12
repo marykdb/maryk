@@ -5,8 +5,13 @@ import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.definitions.boolean
+import maryk.core.properties.definitions.embedObject
+import maryk.core.properties.definitions.number
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
+import maryk.core.properties.types.numeric.UInt32
+import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.filters.IsFilter
 import maryk.core.query.orders.IsOrder
 import maryk.core.query.requests.RequestType.ScanChanges
@@ -69,16 +74,16 @@ data class ScanChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinit
 
     @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<ScanChangesRequest<*, *>>() {
-        val dataModel = IsObjectRequest.addDataModel("from", this, ScanChangesRequest<*, *>::dataModel)
-        val startKey = IsScanRequest.addStartKey(this, ScanChangesRequest<*, *>::startKey)
-        val select = IsFetchRequest.addSelect(this, ScanChangesRequest<*, *>::select)
-        val where = IsFetchRequest.addFilter(this, ScanChangesRequest<*, *>::where)
-        val toVersion = IsFetchRequest.addToVersion(this, ScanChangesRequest<*, *>::toVersion)
-        val filterSoftDeleted = IsFetchRequest.addFilterSoftDeleted(this, ScanChangesRequest<*, *>::filterSoftDeleted)
-        val order = IsScanRequest.addOrder(this, ScanChangesRequest<*, *>::order)
-        val limit = IsScanRequest.addLimit(this, ScanChangesRequest<*, *>::limit)
-        val fromVersion = IsChangesRequest.addFromVersion(10u, this, ScanChangesRequest<*, *>::fromVersion)
-        val maxVersions = IsChangesRequest.addMaxVersions(11u, this, ScanChangesRequest<*, *>::maxVersions)
+        val from by addDataModel(ScanChangesRequest<*, *>::dataModel)
+        val startKey by addStartKey(ScanChangesRequest<*, *>::startKey)
+        val select by embedObject(3u, ScanChangesRequest<*, *>::select, dataModel = { RootPropRefGraph })
+        val where by addFilter(ScanChangesRequest<*, *>::where)
+        val toVersion by number(5u, ScanChangesRequest<*, *>::toVersion, UInt64, required = false)
+        val filterSoftDeleted  by boolean(6u, ScanChangesRequest<*, *>::filterSoftDeleted, default = true)
+        val order by addOrder(ScanChangesRequest<*, *>::order)
+        val limit by number(9u, ScanChangesRequest<*, *>::limit, type = UInt32, default = 100u)
+        val fromVersion by number(10u, ScanChangesRequest<*, *>::fromVersion, UInt64)
+        val maxVersions by number(11u, ScanChangesRequest<*, *>::maxVersions, UInt32, maxValue = 1000u)
     }
 
     companion object : QueryDataModel<ScanChangesRequest<*, *>, Properties>(

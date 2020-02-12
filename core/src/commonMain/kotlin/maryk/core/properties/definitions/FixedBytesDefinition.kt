@@ -3,14 +3,18 @@ package maryk.core.properties.definitions
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.PropertyDefinitionType.FixedBytes
+import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
 import maryk.core.properties.types.Bytes
+import maryk.core.properties.types.numeric.UInt32
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.values.SimpleObjectValues
 import kotlin.random.Random
 
-/** Definition for a bytes array with fixed length */
+/** Definition for a byte array with fixed length */
 data class FixedBytesDefinition(
     override val required: Boolean = true,
     override val final: Boolean = false,
@@ -24,8 +28,7 @@ data class FixedBytesDefinition(
     IsNumericDefinition<Bytes>,
     IsSerializableFixedBytesEncodable<Bytes, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<Bytes>,
-    HasDefaultValueDefinition<Bytes>,
-    IsWrappableDefinition<Bytes, IsPropertyContext, FixedBytesDefinitionWrapper<Bytes, Bytes, IsPropertyContext, FixedBytesDefinition, Any>> {
+    HasDefaultValueDefinition<Bytes> {
     override val propertyDefinitionType = FixedBytes
     override val wireType = LENGTH_DELIMITED
 
@@ -48,26 +51,25 @@ data class FixedBytesDefinition(
             value as? Bytes
         }
 
-    override fun wrap(
-        index: UInt,
-        name: String,
-        alternativeNames: Set<String>?
-    ) =
-        FixedBytesDefinitionWrapper<Bytes, Bytes, IsPropertyContext, FixedBytesDefinition, Any>(index, name, this, alternativeNames)
-
-
+    @Suppress("unused")
     object Model : SimpleObjectDataModel<FixedBytesDefinition, ObjectPropertyDefinitions<FixedBytesDefinition>>(
         properties = object : ObjectPropertyDefinitions<FixedBytesDefinition>() {
-            init {
-                IsPropertyDefinition.addRequired(this, FixedBytesDefinition::required)
-                IsPropertyDefinition.addFinal(this, FixedBytesDefinition::final)
-                IsComparableDefinition.addUnique(this, FixedBytesDefinition::unique)
-                add(4u, "minValue", FlexBytesDefinition(), FixedBytesDefinition::minValue)
-                add(5u, "maxValue", FlexBytesDefinition(), FixedBytesDefinition::maxValue)
-                add(6u, "default", FlexBytesDefinition(), FixedBytesDefinition::default)
-                IsNumericDefinition.addRandom(7u, this, FixedBytesDefinition::random)
-                IsFixedStorageBytesEncodable.addByteSize(8u, this, FixedBytesDefinition::byteSize)
-            }
+            val required by boolean(1u, FixedBytesDefinition::required, default = true)
+            val final by boolean(2u, FixedBytesDefinition::final, default = false)
+            val unique by boolean(3u, FixedBytesDefinition::unique, default = false)
+            val minValue by flexBytes(4u, FixedBytesDefinition::minValue)
+            val maxValue by flexBytes(5u, FixedBytesDefinition::maxValue)
+            val default by flexBytes(6u, FixedBytesDefinition::default)
+            val random by boolean(7u, FixedBytesDefinition::random, default = false)
+            val byteSize by number(
+                8u,
+                getter = FixedBytesDefinition::byteSize,
+                type = UInt32,
+                toSerializable = { value, _: IsPropertyContext? ->
+                    value?.toUInt()
+                },
+                fromSerializable = { it?.toInt() }
+            )
         }
     ) {
         override fun invoke(values: SimpleObjectValues<FixedBytesDefinition>) = FixedBytesDefinition(
@@ -81,4 +83,72 @@ data class FixedBytesDefinition(
             byteSize = values(8u)
         )
     }
+}
+
+fun PropertyDefinitions.fixedBytes(
+    index: UInt,
+    byteSize: Int,
+    name: String? = null,
+    required: Boolean = true,
+    final: Boolean = false,
+    unique: Boolean = false,
+    minValue: Bytes? = null,
+    maxValue: Bytes? = null,
+    default: Bytes? = null,
+    random: Boolean = false,
+    alternativeNames: Set<String>? = null
+) = DefinitionWrapperDelegateLoader(this) { propName ->
+    FixedBytesDefinitionWrapper<Bytes, Bytes, IsPropertyContext, FixedBytesDefinition, Any>(
+        index,
+        name ?: propName,
+        FixedBytesDefinition(required, final, unique, minValue, maxValue, default, random, byteSize),
+        alternativeNames
+    )
+}
+
+fun <TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.fixedBytes(
+    index: UInt,
+    getter: (DO) -> TO?,
+    byteSize: Int,
+    name: String? = null,
+    required: Boolean = true,
+    final: Boolean = false,
+    unique: Boolean = false,
+    minValue: Bytes? = null,
+    maxValue: Bytes? = null,
+    default: Bytes? = null,
+    random: Boolean = false,
+    alternativeNames: Set<String>? = null
+): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<Bytes, TO, IsPropertyContext, FixedBytesDefinition, DO>, DO> =
+    fixedBytes(index, getter, byteSize, name, required, final,  unique, minValue, maxValue, default, random, alternativeNames, toSerializable = null)
+
+fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.fixedBytes(
+    index: UInt,
+    getter: (DO) -> TO?,
+    byteSize: Int,
+    name: String? = null,
+    required: Boolean = true,
+    final: Boolean = false,
+    unique: Boolean = false,
+    minValue: Bytes? = null,
+    maxValue: Bytes? = null,
+    default: Bytes? = null,
+    random: Boolean = false,
+    alternativeNames: Set<String>? = null,
+    toSerializable: (Unit.(TO?, CX?) -> Bytes?)? = null,
+    fromSerializable: (Unit.(Bytes?) -> TO?)? = null,
+    shouldSerialize: (Unit.(Any) -> Boolean)? = null,
+    capturer: (Unit.(CX, Bytes) -> Unit)? = null
+) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
+    FixedBytesDefinitionWrapper(
+        index,
+        name ?: propName,
+        FixedBytesDefinition(required, final, unique, minValue, maxValue, default, random, byteSize),
+        alternativeNames,
+        getter = getter,
+        capturer = capturer,
+        toSerializable = toSerializable,
+        fromSerializable = fromSerializable,
+        shouldSerialize = shouldSerialize
+    )
 }

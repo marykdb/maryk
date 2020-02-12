@@ -6,7 +6,7 @@ import maryk.checkYamlConversion
 import maryk.core.models.RootDataModel
 import maryk.core.models.key
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.definitions.string
 import maryk.lib.extensions.initByteArrayByHex
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
@@ -21,7 +21,7 @@ internal class UUIDKeyTest {
         properties = Properties
     ) {
         object Properties : PropertyDefinitions() {
-            val value by define(1u) { StringDefinition() }
+            val value by string(1u)
         }
 
         operator fun invoke(

@@ -4,8 +4,11 @@ import maryk.core.models.QueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.definitions.string
+import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DefinedByReference
+import maryk.core.query.addReference
 import maryk.core.values.ObjectValues
 
 /** Defines a pair of a [reference] and [regex] */
@@ -29,18 +32,16 @@ data class ReferenceValueRegexPair internal constructor(
         return result
     }
 
-    object Properties : ReferenceValuePairPropertyDefinitions<ReferenceValueRegexPair, String, Regex>() {
-        override val reference = DefinedByReference.addReference(
-            this,
+    object Properties : ReferenceValuePairPropertyDefinitions<ReferenceValueRegexPair, String, Regex, FlexBytesDefinitionWrapper<String, Regex, IsPropertyContext, StringDefinition, ReferenceValueRegexPair>>() {
+        override val reference by addReference(
             ReferenceValueRegexPair::reference
         )
-        override val value = add(
-            index = 2u, name = "regex",
-            definition = StringDefinition(),
+        override val value by string(
+            index = 2u,
             fromSerializable = { value: String? ->
                 value?.let { Regex(value) }
             },
-            toSerializable = { value: Regex?, _ ->
+            toSerializable = { value: Regex?, _: IsPropertyContext? ->
                 value?.pattern
             },
             shouldSerialize = { it is Regex },

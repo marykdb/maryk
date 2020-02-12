@@ -3,7 +3,8 @@ package maryk.core.models
 import maryk.core.exceptions.SerializationException
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
-import maryk.core.properties.definitions.ListDefinition
+import maryk.core.properties.definitions.list
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.query.DefinedByReference
 import maryk.core.query.RequestContext
 import maryk.core.query.changes.MultiTypeChange.Properties
@@ -21,7 +22,7 @@ import maryk.lib.exceptions.ParseException
 /** For data models which contains only reference pairs of type [R] */
 abstract class ReferencePairDataModel<DO : Any, P : ReferenceValuePairsObjectPropertyDefinitions<DO, R>, R : DefinedByReference<*>, T : Any, TO: Any>(
     properties: P,
-    private val pairProperties: ReferenceValuePairPropertyDefinitions<R, T, TO>
+    private val pairProperties: ReferenceValuePairPropertyDefinitions<R, T, TO, IsDefinitionWrapper<T, TO, RequestContext, R>>
 ) : QueryDataModel<DO, P>(properties) {
     override fun writeJson(
         values: ObjectValues<DO, P>,
@@ -115,15 +116,14 @@ abstract class ReferenceValuePairsObjectPropertyDefinitions<DO : Any, R : Define
     pairGetter: (DO) -> List<R>?,
     val pairModel: QueryDataModel<R, *>
 ) : ObjectPropertyDefinitions<DO>() {
-    val referenceValuePairs = add(1u, this.pairName,
-        ListDefinition(
-            valueDefinition = EmbeddedObjectDefinition(
-                dataModel = {
-                    @Suppress("UNCHECKED_CAST")
-                    pairModel as QueryDataModel<R, ObjectPropertyDefinitions<R>>
-                }
-            )
-        ),
-        getter = pairGetter
+    val referenceValuePairs by list(
+        index = 1u,
+        getter = pairGetter,
+        valueDefinition = EmbeddedObjectDefinition(
+            dataModel = {
+                @Suppress("UNCHECKED_CAST")
+                pairModel as QueryDataModel<R, ObjectPropertyDefinitions<R>>
+            }
+        )
     )
 }

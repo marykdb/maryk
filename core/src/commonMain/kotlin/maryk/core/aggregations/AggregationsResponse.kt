@@ -2,9 +2,9 @@ package maryk.core.aggregations
 
 import maryk.core.models.SingleValueDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.definitions.map
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
@@ -17,14 +17,13 @@ data class AggregationsResponse internal constructor(
         vararg aggregationPair: Pair<String, IsAggregationResponse>
     ) : this(aggregationPair.toMap())
 
-    internal object Properties : ObjectPropertyDefinitions<AggregationsResponse>() {
-        val namedAggregations = add(
-            1u, "namedAggregations",
-            MapDefinition(
-                keyDefinition = StringDefinition(),
-                valueDefinition = MultiTypeDefinition(
-                    typeEnum = AggregationResponseType
-                )
+    object Properties : ObjectPropertyDefinitions<AggregationsResponse>() {
+        val namedAggregations by map(
+            index = 1u,
+            getter = AggregationsResponse::namedAggregations,
+            keyDefinition = StringDefinition(),
+            valueDefinition = MultiTypeDefinition(
+                typeEnum = AggregationResponseType
             ),
             toSerializable = { value, _ ->
                 value?.mapValues { (_, value) ->
@@ -35,12 +34,11 @@ data class AggregationsResponse internal constructor(
                 values?.mapValues { (_, value) ->
                     value.value
                 }
-            },
-            getter = AggregationsResponse::namedAggregations
+            }
         )
     }
 
-    internal companion object : SingleValueDataModel<Map<String, TypedValue<AggregationResponseType, IsAggregationResponse>>, Map<String, IsAggregationResponse>, AggregationsResponse, Properties, RequestContext>(
+    companion object : SingleValueDataModel<Map<String, TypedValue<AggregationResponseType, IsAggregationResponse>>, Map<String, IsAggregationResponse>, AggregationsResponse, Properties, RequestContext>(
         properties = Properties,
         singlePropertyDefinition = Properties.namedAggregations
     ) {

@@ -16,11 +16,11 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.expect
 
-internal class ValueModelDefinitionTest {
-    private val def = ValueModelDefinition(
+internal class ValueObjectDefinitionTest {
+    private val def = ValueObjectDefinition(
         dataModel = TestValueObject
     )
-    private val defMaxDefined = ValueModelDefinition(
+    private val defMaxDefined = ValueObjectDefinition(
         required = false,
         final = true,
         unique = true,
@@ -109,19 +109,19 @@ internal class ValueModelDefinitionTest {
 
     @Test
     fun convertDefinitionToProtoBufAndBack() {
-        checkProtoBufConversion(this.def, ValueModelDefinition.Model, { DefinitionsContext() })
-        checkProtoBufConversion(this.defMaxDefined, ValueModelDefinition.Model, { DefinitionsContext() })
+        checkProtoBufConversion(this.def, ValueObjectDefinition.Model, { DefinitionsContext() })
+        checkProtoBufConversion(this.defMaxDefined, ValueObjectDefinition.Model, { DefinitionsContext() })
     }
 
     @Test
     fun convertDefinitionToJSONAndBack() {
-        checkJsonConversion(this.def, ValueModelDefinition.Model, { DefinitionsContext() })
-        checkJsonConversion(this.defMaxDefined, ValueModelDefinition.Model, { DefinitionsContext() })
+        checkJsonConversion(this.def, ValueObjectDefinition.Model, { DefinitionsContext() })
+        checkJsonConversion(this.defMaxDefined, ValueObjectDefinition.Model, { DefinitionsContext() })
     }
 
     @Test
     fun convertDefinitionToYAMLAndBack() {
-        checkYamlConversion(this.def, ValueModelDefinition.Model, { DefinitionsContext() })
+        checkYamlConversion(this.def, ValueObjectDefinition.Model, { DefinitionsContext() })
 
         expect(
             """
@@ -144,7 +144,7 @@ internal class ValueModelDefinitionTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.defMaxDefined, ValueModelDefinition.Model, { DefinitionsContext() })
+            checkYamlConversion(this.defMaxDefined, ValueObjectDefinition.Model, { DefinitionsContext() })
         }
     }
 }

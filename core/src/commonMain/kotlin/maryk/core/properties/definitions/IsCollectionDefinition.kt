@@ -101,7 +101,7 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
 
         val renderCompact = definition !is IsEmbeddedValuesDefinition<*, *, *>
                 && definition !is IsEmbeddedObjectDefinition<*, *, *, *, *>
-                && definition !is ValueModelDefinition<*, *, *>
+                && definition !is ValueObjectDefinition<*, *, *>
                 && definition !is ContextualEmbeddedObjectDefinition<*>
                 && definition !is ContextualEmbeddedValuesDefinition<*>
                 && definition !is IsMultiTypeDefinition<*, *, *>

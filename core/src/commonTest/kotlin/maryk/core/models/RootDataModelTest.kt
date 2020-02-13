@@ -18,7 +18,7 @@ import maryk.core.properties.definitions.ReferenceDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.TimeDefinition
-import maryk.core.properties.definitions.ValueModelDefinition
+import maryk.core.properties.definitions.ValueObjectDefinition
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.protobuf.WriteCache
@@ -738,8 +738,8 @@ internal class RootDataModelTest {
             }
             properties["value"]!!.let {
                 expect(13u) { it.index }
-                expect(ValueModelDefinition(dataModel = TestValueObject)) {
-                    it.definition as ValueModelDefinition<*, *, *>
+                expect(ValueObjectDefinition(dataModel = TestValueObject)) {
+                    it.definition as ValueObjectDefinition<*, *, *>
                 }
             }
             properties["ref"]!!.let {

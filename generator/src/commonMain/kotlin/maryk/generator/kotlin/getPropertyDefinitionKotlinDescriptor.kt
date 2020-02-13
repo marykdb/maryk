@@ -22,7 +22,7 @@ import maryk.core.properties.definitions.ReferenceDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.TimeDefinition
-import maryk.core.properties.definitions.ValueModelDefinition
+import maryk.core.properties.definitions.ValueObjectDefinition
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.types.numeric.NumberType.Float32Type
 import maryk.core.properties.types.numeric.NumberType.Float64Type
@@ -274,7 +274,7 @@ private val definitionNamesMap = mapOf(
     PropertyDefinitionType.Value to PropertyDefinitionKotlinDescriptor(
         className = "ValueModelDefinition",
         kotlinTypeName = { it.dataModel.name },
-        definitionModel = ValueModelDefinition.Model,
+        definitionModel = ValueObjectDefinition.Model,
         propertyValueOverride = mapOf(
             "default" to generateKotlinValueWithDefinition,
             "minValue" to generateKotlinValueWithDefinition,

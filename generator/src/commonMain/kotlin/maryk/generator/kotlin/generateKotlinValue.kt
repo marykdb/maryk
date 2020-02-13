@@ -11,7 +11,7 @@ import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.MultiTypeDefinition
-import maryk.core.properties.definitions.ValueModelDefinition
+import maryk.core.properties.definitions.ValueObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.wrapper.AnyDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
@@ -169,7 +169,7 @@ internal fun generateKotlinValue(
                     dataModel.generateKotlinValue(value as ValuesImpl, addImport)
                 } else throw TypeException("Only type DataModel can be used for Kotlin generation: ${definition.dataModel} cannot be converted")
             }
-            is ValueModelDefinition<*, *, *> -> definition.dataModel.let {
+            is ValueObjectDefinition<*, *, *> -> definition.dataModel.let {
                 return it.generateKotlinValue(value, addImport)
             }
             else -> "$value"

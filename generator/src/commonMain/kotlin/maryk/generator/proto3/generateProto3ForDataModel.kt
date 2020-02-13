@@ -25,7 +25,7 @@ import maryk.core.properties.definitions.ReferenceDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.TimeDefinition
-import maryk.core.properties.definitions.ValueModelDefinition
+import maryk.core.properties.definitions.ValueObjectDefinition
 import maryk.core.properties.types.numeric.Float32
 import maryk.core.properties.types.numeric.Float64
 import maryk.core.properties.types.numeric.NumberType.Float32Type
@@ -103,7 +103,7 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(
         is BooleanDefinition -> "bool"
         is FixedBytesDefinition,
         is FlexBytesDefinition,
-        is ValueModelDefinition<*, *, *>,
+        is ValueObjectDefinition<*, *, *>,
         is ReferenceDefinition<*> -> "bytes"
         is TimeDefinition -> "uint32"
         is DateDefinition -> "sint32"

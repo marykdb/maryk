@@ -28,11 +28,10 @@ import maryk.core.values.SimpleObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 
-private typealias GenericValueModelDefinition = ValueModelDefinition<*, *, *>
-//private typealias GenericValueModelDefinition2 = ValueModelDefinition<ValueDataObject, ValueDataModel<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>>
+private typealias GenericValueModelDefinition = ValueObjectDefinition<*, *, *>
 
-/** Definition for value model properties containing dataObjects of [DO] defined by [dataModel] of [DM] */
-data class ValueModelDefinition<DO : ValueDataObject, DM : ValueDataModel<DO, P>, P : ObjectPropertyDefinitions<DO>>(
+/** Definition for value object properties containing dataObjects of [DO] defined by [dataModel] of [DM] */
+data class ValueObjectDefinition<DO : ValueDataObject, DM : ValueDataModel<DO, P>, P : ObjectPropertyDefinitions<DO>>(
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val unique: Boolean = false,
@@ -99,15 +98,15 @@ data class ValueModelDefinition<DO : ValueDataObject, DM : ValueDataModel<DO, P>
 
     @Suppress("unused")
     object Model :
-        ContextualDataModel<ValueModelDefinition<*, *, *>, ObjectPropertyDefinitions<ValueModelDefinition<*, *, *>>, ContainsDefinitionsContext, ModelContext>(
+        ContextualDataModel<ValueObjectDefinition<*, *, *>, ObjectPropertyDefinitions<ValueObjectDefinition<*, *, *>>, ContainsDefinitionsContext, ModelContext>(
             contextTransformer = { ModelContext(it) },
-            properties = object : ObjectPropertyDefinitions<ValueModelDefinition<*, *, *>>() {
-                val required by boolean(1u, ValueModelDefinition<*, *, *>::required, default = true)
-                val final by boolean(2u, ValueModelDefinition<*, *, *>::final, default = false)
-                val unique by boolean(3u, ValueModelDefinition<*, *, *>::unique, default = false)
+            properties = object : ObjectPropertyDefinitions<ValueObjectDefinition<*, *, *>>() {
+                val required by boolean(1u, ValueObjectDefinition<*, *, *>::required, default = true)
+                val final by boolean(2u, ValueObjectDefinition<*, *, *>::final, default = false)
+                val unique by boolean(3u, ValueObjectDefinition<*, *, *>::unique, default = false)
                 val dataModel by contextual(
                     index = 4u,
-                    getter = ValueModelDefinition<*, *, *>::dataModel,
+                    getter = ValueObjectDefinition<*, *, *>::dataModel,
                     definition = ContextualModelReferenceDefinition<ValueDataModel<*, *>, ModelContext>(
                         contextualResolver = { context, name ->
                             context?.definitionsContext?.let {
@@ -141,7 +140,7 @@ data class ValueModelDefinition<DO : ValueDataObject, DM : ValueDataModel<DO, P>
                 )
                 val minValue by contextual(
                     index = 5u,
-                    getter = ValueModelDefinition<*, *, *>::minValue,
+                    getter = ValueObjectDefinition<*, *, *>::minValue,
                     definition = ContextualEmbeddedObjectDefinition(
                         contextualResolver = { context: ModelContext? ->
                             @Suppress("UNCHECKED_CAST")
@@ -152,7 +151,7 @@ data class ValueModelDefinition<DO : ValueDataObject, DM : ValueDataModel<DO, P>
                 )
                 val maxValue by contextual(
                     index = 6u,
-                    getter = ValueModelDefinition<*, *, *>::maxValue,
+                    getter = ValueObjectDefinition<*, *, *>::maxValue,
                     definition = ContextualEmbeddedObjectDefinition(
                         contextualResolver = { context: ModelContext? ->
                             @Suppress("UNCHECKED_CAST")
@@ -163,7 +162,7 @@ data class ValueModelDefinition<DO : ValueDataObject, DM : ValueDataModel<DO, P>
                 )
                 val default by contextual(
                     index = 7u,
-                    getter = ValueModelDefinition<*, *, *>::default,
+                    getter = ValueObjectDefinition<*, *, *>::default,
                     definition = ContextualEmbeddedObjectDefinition(
                         contextualResolver = { context: ModelContext? ->
                             @Suppress("UNCHECKED_CAST")
@@ -174,7 +173,7 @@ data class ValueModelDefinition<DO : ValueDataObject, DM : ValueDataModel<DO, P>
                 )
             }
         ) {
-        override fun invoke(values: SimpleObjectValues<ValueModelDefinition<*, *, *>>) = ValueModelDefinition(
+        override fun invoke(values: SimpleObjectValues<ValueObjectDefinition<*, *, *>>) = ValueObjectDefinition(
             required = values(1u),
             final = values(2u),
             unique = values(3u),
@@ -198,10 +197,10 @@ fun <DO : ValueDataObject, DM : ValueDataModel<DO, P>, P : ObjectPropertyDefinit
     default: DO? = null,
     alternativeNames: Set<String>? = null
 ) = DefinitionWrapperDelegateLoader(this) { propName ->
-    FixedBytesDefinitionWrapper<DO, DO, IsPropertyContext, ValueModelDefinition<DO, DM, P>, Any>(
+    FixedBytesDefinitionWrapper<DO, DO, IsPropertyContext, ValueObjectDefinition<DO, DM, P>, Any>(
         index,
         name ?: propName,
-        ValueModelDefinition(required, final, unique, dataModel, minValue, maxValue, default),
+        ValueObjectDefinition(required, final, unique, dataModel, minValue, maxValue, default),
         alternativeNames
     )
 }
@@ -218,7 +217,7 @@ fun <TO: Any, DO: Any, VDO: ValueDataObject, DM : ValueDataModel<VDO, P>, P : Ob
     maxValue: VDO? = null,
     default: VDO? = null,
     alternativeNames: Set<String>? = null
-): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<VDO, TO, IsPropertyContext, ValueModelDefinition<VDO, DM, P>, DO>, DO> =
+): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<VDO, TO, IsPropertyContext, ValueObjectDefinition<VDO, DM, P>, DO>, DO> =
     valueObject(index, getter, dataModel, name, required, final,  unique, minValue, maxValue, default, alternativeNames, toSerializable = null)
 
 fun <TO: Any, DO: Any, VDO: ValueDataObject, DM : ValueDataModel<VDO, P>, P : ObjectPropertyDefinitions<VDO>, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.valueObject(
@@ -241,7 +240,7 @@ fun <TO: Any, DO: Any, VDO: ValueDataObject, DM : ValueDataModel<VDO, P>, P : Ob
     FixedBytesDefinitionWrapper(
         index,
         name ?: propName,
-        ValueModelDefinition(required, final, unique, dataModel, minValue, maxValue, default),
+        ValueObjectDefinition(required, final, unique, dataModel, minValue, maxValue, default),
         alternativeNames,
         getter = getter,
         capturer = capturer,

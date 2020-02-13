@@ -68,7 +68,7 @@ internal val mapOfPropertyDefEmbeddedObjectDefinitions =
         PropertyDefinitionType.Set to EmbeddedObjectDefinition(dataModel = { SetDefinition.Model }),
         PropertyDefinitionType.String to EmbeddedObjectDefinition(dataModel = { StringDefinition.Model }),
         PropertyDefinitionType.Time to EmbeddedObjectDefinition(dataModel = { TimeDefinition.Model }),
-        PropertyDefinitionType.Value to EmbeddedObjectDefinition(dataModel = { ValueModelDefinition.Model })
+        PropertyDefinitionType.Value to EmbeddedObjectDefinition(dataModel = { ValueObjectDefinition.Model })
     )
 
 typealias WrapperCreator = (index: UInt, name: String, altNames: Set<String>?, definition: IsPropertyDefinition<out Any>) -> IsDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>

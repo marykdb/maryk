@@ -28,7 +28,17 @@ A property which contains values from selected DataModel. See
   final: true
 ```
 
-**Example of a Kotlin EmbeddedObject property definition**
+**Example of a Kotlin Embedded Values property definition for use within a Model its PropertyDefinitions**
+```kotlin
+val address by embed(
+    index = 1u,
+    required = false,
+    final = true,
+    dataModel = { Address }
+)
+```
+
+**Example of a Kotlin Embedded Values property definition**
 ```kotlin
 val def = EmbeddedValuesDefinition(
     required = false,

@@ -39,6 +39,22 @@ Defines a property of a flexible bytes length.
   random: true
 ```
 
+**Example of a Kotlin Flex Bytes property definition for use within a Model its PropertyDefinitions**
+```kotlin
+val value by flexBytes(
+    index = 1u,
+    required = false,
+    final = true,
+    unique = true,
+    random = true,
+    minSize = 2,
+    maxSize = 5,
+    default = Bytes.ofHex("1111"),
+    minValue = Bytes.ofHex("0000"),
+    maxValue = Bytes.ofHex("FFFFFFFFFF")
+)
+```
+
 **Example of a Kotlin Flex Bytes property definition**
 ```kotlin
 val def = FlexBytesDefinition(

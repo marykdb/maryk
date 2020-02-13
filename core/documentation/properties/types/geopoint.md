@@ -28,6 +28,16 @@ to 7 digits. This represents an accuracy of up to ~11mm or ~0.43 inch.
   default: 52.0906448,5.1212607
 ```
 
+**Example of a Kotlin GeoPoint property definition for use within a Model its PropertyDefinitions**
+```kotlin
+val location by geoPoint(
+    index = 1u,
+    required = true,
+    final = true,
+    default = GeoPoint(52.0906448, 5.1212607)
+)
+```
+
 **Example of a Kotlin Enum property definition**
 ```kotlin
 val def = GeoPointDefinition(

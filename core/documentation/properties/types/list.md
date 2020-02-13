@@ -34,6 +34,16 @@ Property definitions need to be required and values can thus not be null.
   maxSize: 10
 ```
 
+**Example of a Kotlin List property definition for use within a Model its PropertyDefinitions**
+```kotlin
+val names by list(
+    index = 1u,
+    required = false,
+    final = true,
+    valueDefinition = StringDefinition()
+)
+```
+
 **Example of a Kotlin List property definition**
 ```kotlin
 val def = ListDefinition(

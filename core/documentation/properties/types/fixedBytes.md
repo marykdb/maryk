@@ -37,6 +37,21 @@ Defines a property of a fixed bytes length.
   random: true
 ```
 
+**Example of a Kotlin Fixed Bytes property definition for use within a Model its PropertyDefinitions**
+```kotlin
+val value by fixedBytes(
+    index = 1u,
+    byteSize = 4,
+    required = false,
+    final = true,
+    unique = true,
+    default = byteArrayOf(0, 1, 1, 0),
+    minValue = byteArrayOf(0, 0, 0, 0),
+    maxValue = byteArrayOf(1, 1, 0, 0),
+    random = true
+)
+```
+
 **Example of a Kotlin Fixed Bytes property definition**
 ```kotlin
 val def = FixedBytesDefinition(

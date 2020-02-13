@@ -36,9 +36,9 @@ object Person : RootDataModel<Person, Person.Properties>(
     properties = Properties
 ){ 
     object Properties: PropertyDefinitions() {
-        val firstName by define(1u) { StringDefinition() }
-        val lastName by define(2u) { StringDefinition() }
-        val dateOfBirth by define(3u) { DateDefinition() }
+        val firstName by string(1u)
+        val lastName by string(2u)
+        val dateOfBirth by date(3u)
     }
 
     operator fun invoke(
@@ -203,23 +203,21 @@ object TimelineItem: RootDataModel<TimelineItem>(
     properties = Properties
 ) {
     object Properties: PropertyDefinitions() {
-        val dateOfPosting by define(1u) {
-            DateTimeDefinition(
-                final = true,
-                precision = TimePrecision.SECONDS
-            )
-        }
+        val dateOfPosting by dateTime(
+            index = 1u,
+            final = true,
+            precision = TimePrecision.SECONDS
+        )
         
-        val item by define(2u) {
-            MultiTypeDefinition(
-                final = true,
-                typeMap = mapOf(
-                    1 to EmbeddedObjectDefinition(dataModel = Post),
-                    2 to EmbeddedObjectDefinition(dataModel = Event),
-                    3 to EmbeddedObjectDefinition(dataModel = Advertisement)
-                )
+        val item by multiType(
+            index = 2u,
+            final = true,
+            typeMap = mapOf(
+                1 to EmbeddedObjectDefinition(dataModel = Post),
+                2 to EmbeddedObjectDefinition(dataModel = Event),
+                3 to EmbeddedObjectDefinition(dataModel = Advertisement)
             )
-        }
+        )
     }
 
     operator fun invoke(

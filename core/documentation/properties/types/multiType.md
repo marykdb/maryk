@@ -69,7 +69,7 @@ Set inside a property definition
   typeEnum: MarykTypeEnum
 ```
 
-**Example of a Kotlin Multi type property definition**
+**Example of a Kotlin Multi type enum**
 ```kotlin
 sealed class MultiType<T: Any>(
     index: UInt,
@@ -86,6 +86,27 @@ sealed class MultiType<T: Any>(
         unknownCreator = ::UnknownMultiType
     )
 }
+```
+
+**Example of a Kotlin multi type property definition for use within a Model its PropertyDefinitions**
+```kotlin
+val category by multiType(
+    index = 1u,
+    required = false,
+    final = true,
+    typeEnum = MultiType,
+    default = TypedValue(MultiType.S1, "unknown")
+)
+```
+
+**Example of a Kotlin Enum property definition**
+```kotlin
+val def = MultiTypeDefinition(
+    required = false,
+    final = true,
+    typeEnum = MultiType,
+    default = TypedValue(MultiType.S1, "a value")
+)
 ```
 
 ## Storage Byte representation

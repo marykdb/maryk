@@ -68,6 +68,21 @@ unsigned integers are available.
   maxValue: 1000000
 ```
 
+**Example of a Kotlin Number property definition for use within a Model its PropertyDefinitions**
+```kotlin
+val count by number(
+    index = 1u,
+    type = UInt64,
+    required = true,
+    final = true,
+    unique = true,
+    default = 42,
+    minValue = 32,
+    maxValue = 1000000,
+    random = true
+)
+```
+
 **Example of a Kotlin Number property definition**
 ```kotlin
 val def = NumberDefinition(

@@ -25,7 +25,7 @@ and stored.
 |[Set](types/set.md)                      |❌      |✅        |❌      |❌    |✅       |✅       |
 |[Map](types/map.md)                      |❌      |🔑        |❌      |❌    |✅       |✅       |
 |[Embed](types/embeddedValues.md)         |❌      |⤵️        |❌      |❌    |✅       |✅       |
-|[ValueModel](types/valueModel.md)        |❌      |✅        |✅      |✅    |✅       |✅       |
+|[ValueObject](types/valueObject.md)      |❌      |✅        |✅      |✅    |✅       |✅       |
 
 🔢 All numeric properties like Int8/16/32/64, UInt8/16/32/64, Float, Double 
 🆔 Only the typeID of multitypes can be used in the key

@@ -36,6 +36,20 @@ year is unsigned so it can contain negative dates
   fillWithNow: true
 ```
 
+**Example of a Kotlin Date property definition for use within a Model its PropertyDefinitions**
+```kotlin
+val birthDate by date(
+    index = 1u,
+    required = false,
+    final = true,
+    unique = true,
+    default = Date(2018, 4, 30),
+    minValue = Date(1900, 1, 1),
+    maxValue = Date(2100, 1, 1),
+    fillWithNow = true
+)
+```
+
 **Example of a Kotlin Date property definition**
 ```kotlin
 val def = DateDefinition(

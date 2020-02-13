@@ -27,6 +27,16 @@ Boolean true or false.
   default: true
 ```
 
+**Example of a Kotlin Boolean property definition for use within a Model its PropertyDefinitions**
+```kotlin
+val isActivated by boolean(
+    index = 1u,
+    required = true,
+    final = false,
+    default = true
+)
+```
+
 **Example of a Kotlin Boolean property definition**
 ```kotlin
 val def = BooleanDefinition(

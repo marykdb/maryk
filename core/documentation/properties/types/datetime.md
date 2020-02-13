@@ -38,6 +38,21 @@ A DateTime Property which can be used to represent the time in a date plus time.
   fillWithNow: true
 ```
 
+**Example of a Kotlin DateTime property definition for use within a Model its PropertyDefinitions**
+```kotlin
+val startDateTime by dateTime(
+    index = 1u,
+    required = false,
+    final = true,
+    unique = true,
+    default = DateTime(Date(2018, 10, 1),Time(9, 30)),
+    minValue = DateTime(Date(2017, 12, 1),Time(8, 30)),
+    maxValue = DateTime(Date(2022, 12, 1),Time(18, 0)),
+    precision = TimePrecision.MILLIS,
+    fillWithNow = true
+)
+```
+
 **Example of a Kotlin DateTime property definition**
 ```kotlin
 val def = DateTimeDefinition(

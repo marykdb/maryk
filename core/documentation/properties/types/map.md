@@ -39,6 +39,17 @@ be null.
   maxSize: 10
 ```
 
+**Example of a Kotlin Map property definition for use within a Model its PropertyDefinitions**
+```kotlin
+val mappedNames by map(
+    index = 1u,
+    required = false,
+    final = true,
+    keyDefinition = NumberDefinition(type = UInt32),
+    valueDefinition = StringDefinition()
+)
+```
+
 **Example of a Kotlin Map property definition**
 ```kotlin
 val def = MapDefinition(

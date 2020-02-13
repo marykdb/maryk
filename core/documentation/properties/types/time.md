@@ -39,6 +39,21 @@ in seconds and milliseconds.
   fillWithNow: true
 ```
 
+**Example of a Kotlin String property definition for use within a Model its PropertyDefinitions**
+```kotlin
+val arrivalTime by time(
+    index = 1u,
+    required = false,
+        final = true,
+        unique = true,
+        default = Time(12, 0),
+        minValue = Time(8, 30),
+        maxValue = Time(18, 0),
+        precision = TimePrecision.MILLIS,
+        fillWithNow = true
+)
+```
+
 **Example of a Kotlin String property definition**
 ```kotlin
 val def = TimeDefinition(

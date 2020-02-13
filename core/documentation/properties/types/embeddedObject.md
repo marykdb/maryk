@@ -23,6 +23,16 @@ A property which contains another DataModel as embedded object. See
 
 ## Examples
 
+**Example of a Kotlin Embedded Object property definition for use within a Model its PropertyDefinitions**
+```kotlin
+val address by embedObject(
+    index = 1u,
+    required = false,
+    final = true,
+    dataModel = { Address }
+)
+```
+
 **Example of a Kotlin EmbeddedObject property definition**
 ```kotlin
 val def = EmbeddedObjectDefinition(

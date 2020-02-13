@@ -40,7 +40,8 @@ Contains an enumeration value. The value is limited to one of the values in an e
   maxValue: User
 ```
 
-**Example of a separately defined enum **
+**Example of a separately defined enum**
+
 This example is useful if the enum is used in multiple locations.
 
 Set in a definitions list
@@ -64,7 +65,17 @@ Set inside a property definition
   maxValue: User
 ```
 
-**Example of a Kotlin Enum property definition**
+**Example of a Kotlin Embedded Values property definition for use within a Model its PropertyDefinitions**
+```kotlin
+val address by embed(
+    index = 1u,
+    required = false,
+    final = true,
+    dataModel = { Address }
+)
+```
+
+**Example of a Kotlin Enum definition**
 ```kotlin
 sealed class Role(index: Int): IndexedEnumImpl<Role>(index) {
     object Admin: Role(1)
@@ -73,7 +84,28 @@ sealed class Role(index: Int): IndexedEnumImpl<Role>(index) {
     
     companion object: IndexedEnumDefinition<Role>(Role::class, { arrayOf(Admin, Moderator, User) })
 }
+```
 
+**Example of a Kotlin Enum property definition for use within a Model its PropertyDefinitions**
+
+It refers to the earlier Kotlin enum definition
+```kotlin
+val role by enum(
+    index = 1u,
+    enum = Role,
+    required = true,
+    final = true,
+    unique = true,
+    default = Role.User,
+    minValue = Role.Admin,
+    maxValue = Role.User
+)
+```
+
+**Example of a Kotlin Enum property definition**
+
+It refers to the earlier Kotlin enum definition
+```kotlin
 val def = EnumDefinition(
     enum = Role,
     required = true,

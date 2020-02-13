@@ -31,6 +31,17 @@ Property representing a Reference to another DataObject.
   final: true
 ```
 
+**Example of a Kotlin Reference property definition for use within a Model its PropertyDefinitions**
+```kotlin
+val friend by reference(
+    index = 1u,
+    dataModel = { Person },
+    required = false,
+    final = true,
+    unique = true
+)
+```
+
 **Example of a Kotlin Reference property definition**
 ```kotlin
 val def = ReferenceDefinition(

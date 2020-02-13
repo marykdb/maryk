@@ -39,6 +39,22 @@ Basic String property to represent text.
   regEx: [abcd]{3,4}
 ```
 
+**Example of a Kotlin String property definition for use within a Model its PropertyDefinitions**
+```kotlin
+val codeName by string(
+    index = 1u,
+    required = true,
+    final = true,
+    unique = true,
+    minSize = 3,
+    maxSize = 6,
+    default = "baa",
+    minValue = "aab",
+    maxValue = "ddda",
+    regEx = "[abcd]{3,4}"
+)
+```
+
 **Example of a Kotlin String property definition**
 ```kotlin
 val def = StringDefinition(

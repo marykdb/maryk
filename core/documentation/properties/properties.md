@@ -24,6 +24,7 @@ and stored.
 |[List](types/list.md)                    |❌      |✅        |❌      |❌    |✅       |✅       |
 |[Set](types/set.md)                      |❌      |✅        |❌      |❌    |✅       |✅       |
 |[Map](types/map.md)                      |❌      |🔑        |❌      |❌    |✅       |✅       |
+|[IncMap](types/incrementingMap.md)       |❌      |🔑        |❌      |❌    |✅       |✅       |
 |[Embed](types/embeddedValues.md)         |❌      |⤵️        |❌      |❌    |✅       |✅       |
 |[ValueObject](types/valueObject.md)      |❌      |✅        |✅      |✅    |✅       |✅       |
 

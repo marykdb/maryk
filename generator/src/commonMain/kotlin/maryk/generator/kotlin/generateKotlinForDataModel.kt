@@ -23,7 +23,7 @@ fun DataModel<*, *>.generateKotlin(
         properties = Properties
     ) {
         object Properties : PropertyDefinitions() {
-            ${propertiesKotlin.generateDefinitionsForProperties().prependIndent().trimStart()}
+            ${propertiesKotlin.generateDefinitionsForProperties(addImport).prependIndent().trimStart()}
         }
 
         operator fun invoke(
@@ -39,17 +39,19 @@ fun DataModel<*, *>.generateKotlin(
     writeKotlinFile(packageName, importsToAdd, enumKotlinDefinitions, code, writer)
 }
 
-internal fun List<KotlinForProperty>.generateDefinitionsForProperties(): String {
+internal fun List<KotlinForProperty>.generateDefinitionsForProperties(addImport: (String) -> Unit): String {
     var properties = ""
     for (it in this) {
         val altNames = it.altNames?.let { altName ->
-            " alternativeNames = setOf(${altName.joinToString(", ") { """"$it"""" }}),"
+            "\n            alternativeNames = setOf(${altName.joinToString(", ") { """"$it"""" }}),"
         } ?: ""
 
+        addImport("maryk.core.properties.definitions."+it.wrapName)
+
         properties += """
-        val ${it.name} = add(
-            index = ${it.index}u, name = "${it.name}",$altNames
-            definition = ${it.definition.prependIndent().prependIndent().prependIndent().trimStart()}
+        val ${it.name} by ${it.wrapName}(
+            index = ${it.index}u,$altNames
+            ${it.definition.prependIndent().prependIndent().prependIndent().trimStart()}
         )"""
     }
     return properties

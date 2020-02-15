@@ -25,7 +25,7 @@ fun ValueDataModel<*, *>.generateKotlin(
         ${propertiesKotlin.generateObjectValuesForProperties().prependIndent().prependIndent().trimStart()}
     ) : ValueDataObject(toBytes(${propertiesKotlin.generatePropertyNamesForConstructor()})) {
         object Properties : ObjectPropertyDefinitions<$name>() {
-            ${propertiesKotlin.generateDefinitionsForObjectProperties(modelName = name).prependIndent().trimStart()}
+            ${propertiesKotlin.generateDefinitionsForObjectProperties(modelName = name, addImport = addImport).prependIndent().trimStart()}
         }
 
         companion object : ValueDataModel<$name, Properties>(
@@ -67,14 +67,18 @@ private fun List<KotlinForProperty>.generateInvokesForProperties(): String {
     return properties.prependIndent()
 }
 
-private fun List<KotlinForProperty>.generateDefinitionsForObjectProperties(modelName: String): String {
+private fun List<KotlinForProperty>.generateDefinitionsForObjectProperties(
+    modelName: String,
+    addImport: (String) -> Unit
+): String {
     var properties = ""
     for (it in this) {
+        addImport("maryk.core.properties.definitions."+it.wrapName)
         properties += """
-        val ${it.name} = add(
-            index = ${it.index}u, name = "${it.name}",
-            definition = ${it.definition.prependIndent().prependIndent().prependIndent().trimStart()},
-            getter = $modelName::${it.name}
+        val ${it.name} by ${it.wrapName}(
+            index = ${it.index}u,
+            getter = $modelName::${it.name},
+            ${it.definition.prependIndent().prependIndent().prependIndent().trimStart()}
         )"""
     }
     return properties

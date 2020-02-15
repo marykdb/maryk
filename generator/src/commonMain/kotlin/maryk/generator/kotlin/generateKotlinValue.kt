@@ -19,6 +19,7 @@ import maryk.core.properties.enum.IsIndexedEnumDefinition
 import maryk.core.properties.enum.MultiTypeEnum
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Date
+import maryk.core.properties.types.GeoPoint
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TimePrecision
 import maryk.core.properties.types.TypedValue
@@ -86,6 +87,7 @@ internal fun generateKotlinValue(
     is IsTransportablePropertyDefinitionType<*> -> {
         val kotlinDescriptor = value.getKotlinDescriptor()
 
+        addImport("maryk.core.properties.definitions.${kotlinDescriptor.className}")
         for (import in kotlinDescriptor.getImports(value)) {
             addImport(import)
         }
@@ -155,6 +157,9 @@ internal fun generateKotlinValue(
     }
     is NumberDescriptor<*> -> {
         value.type.name
+    }
+    is GeoPoint -> {
+        "GeoPoint(${value.latitude}, ${value.longitude})"
     }
     else -> {
         when (definition) {

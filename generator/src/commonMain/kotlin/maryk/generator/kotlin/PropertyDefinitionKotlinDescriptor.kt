@@ -10,6 +10,7 @@ import maryk.core.properties.definitions.contextual.ContextualMapDefinition
 /** Describes the property definitions for translation to kotlin */
 internal open class PropertyDefinitionKotlinDescriptor<in T : Any, D : IsTransportablePropertyDefinitionType<in T>, P : ObjectPropertyDefinitions<D>>(
     val className: String,
+    val wrapFunctionName: String,
     val kotlinTypeName: (D) -> String,
     val definitionModel: IsObjectDataModel<D, P>,
     val propertyValueOverride: Map<String, (IsTransportablePropertyDefinitionType<out Any>, Any, (String) -> Unit) -> String?> = mapOf(),
@@ -18,12 +19,11 @@ internal open class PropertyDefinitionKotlinDescriptor<in T : Any, D : IsTranspo
 ) {
     /** Get an array of all imports which are always needed for this property [definition] */
     fun getImports(definition: D): Array<String> {
-        val newImports = arrayOf("maryk.core.properties.definitions.$className")
         this.imports?.invoke(definition)?.let {
-            return newImports.plus(it)
+            return it
         }
 
-        return newImports
+        return Array(0) { "" }
     }
 
     /**
@@ -31,6 +31,20 @@ internal open class PropertyDefinitionKotlinDescriptor<in T : Any, D : IsTranspo
      * [addImport] is called if any imports need to be added
      */
     fun definitionToKotlin(definition: D, addImport: (String) -> Unit): String {
+        val fields = this.definitionToKotlinFields(definition, addImport)
+
+        return if (fields.isBlank()) {
+            "\n$className()"
+        } else {
+            "\n$className(\n${fields.prependIndent()}\n)"
+        }
+    }
+
+    /**
+     * Create kotlin code to define given property [definition]
+     * [addImport] is called if any imports need to be added
+     */
+    fun definitionToKotlinFields(definition: D, addImport: (String) -> Unit): String {
         val output = mutableListOf<String>()
 
         properties@ for (property in definitionModel.properties) {
@@ -57,10 +71,6 @@ internal open class PropertyDefinitionKotlinDescriptor<in T : Any, D : IsTranspo
             }
         }
 
-        return if (output.isEmpty()) {
-            "\n$className()"
-        } else {
-            "\n$className(\n${output.joinToString(",\n").prependIndent()}\n)"
-        }
+        return if (output.isEmpty()) "" else output.joinToString(",\n")
     }
 }

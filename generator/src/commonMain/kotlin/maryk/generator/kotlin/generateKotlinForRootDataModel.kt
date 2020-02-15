@@ -64,7 +64,7 @@ fun RootDataModel<*, *>.generateKotlin(
         $keyDefAsKotlin$indicesAsKotlin$reservedIndices${reservedNames}properties = Properties
     ) {
         object Properties : PropertyDefinitions() {
-            ${propertiesKotlin.generateDefinitionsForProperties().prependIndent().trimStart()}
+            ${propertiesKotlin.generateDefinitionsForProperties(addImport).prependIndent().trimStart()}
         }
 
         operator fun invoke(

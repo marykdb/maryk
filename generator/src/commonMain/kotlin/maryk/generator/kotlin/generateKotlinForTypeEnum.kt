@@ -51,6 +51,7 @@ fun MultiTypeEnumDefinition<*>.generateKotlinClass(addImport: (String) -> Unit):
             val definition = case.definition
             require(definition is IsTransportablePropertyDefinitionType<*>) { "Property definition is not supported: ${this}" }
             val definitionDescriptor = definition.getKotlinDescriptor()
+            addImport("maryk.core.properties.definitions.${definitionDescriptor.className}")
             definitionDescriptor.getImports(definition).forEach(addImport)
             val propertyDefinition = definitionDescriptor.definitionToKotlin(definition, addImport).prependIndent().trimStart(' ')
             "object ${case.name}: ${this.name}<${definitionDescriptor.kotlinTypeName(definition)}>(${case.index}u,$propertyDefinition$alternativeNames\n)\n"

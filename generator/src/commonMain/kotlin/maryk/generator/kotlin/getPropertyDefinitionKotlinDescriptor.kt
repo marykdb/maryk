@@ -68,23 +68,27 @@ private val generateKotlinValueWithDefinition: (IsTransportablePropertyDefinitio
 private val definitionNamesMap = mapOf(
     PropertyDefinitionType.Boolean to PropertyDefinitionKotlinDescriptor(
         className = "BooleanDefinition",
+        wrapFunctionName = "boolean",
         kotlinTypeName = { "Boolean" },
         definitionModel = BooleanDefinition.Model
     ),
     PropertyDefinitionType.Date to PropertyDefinitionKotlinDescriptor(
         className = "DateDefinition",
+        wrapFunctionName = "date",
         kotlinTypeName = { "Date" },
         definitionModel = DateDefinition.Model,
         imports = { dateImports }
     ),
     PropertyDefinitionType.DateTime to PropertyDefinitionKotlinDescriptor(
         className = "DateTimeDefinition",
+        wrapFunctionName = "dateTime",
         kotlinTypeName = { "DateTime" },
         definitionModel = DateTimeDefinition.Model,
         imports = { dateTimeImports }
     ),
     PropertyDefinitionType.Enum to PropertyDefinitionKotlinDescriptor(
         className = "EnumDefinition",
+        wrapFunctionName = "enum",
         kotlinTypeName = { it.enum.name },
         definitionModel = EnumDefinition.Model,
         propertyValueOverride = mapOf(
@@ -115,22 +119,26 @@ private val definitionNamesMap = mapOf(
     ),
     PropertyDefinitionType.FixedBytes to PropertyDefinitionKotlinDescriptor(
         className = "FixedBytesDefinition",
+        wrapFunctionName = "fixedBytes",
         kotlinTypeName = { "Bytes" },
         definitionModel = FixedBytesDefinition.Model
     ),
     PropertyDefinitionType.FlexBytes to PropertyDefinitionKotlinDescriptor(
         className = "FlexBytesDefinition",
+        wrapFunctionName = "flexBytes",
         kotlinTypeName = { "Bytes" },
         definitionModel = FlexBytesDefinition.Model
     ),
     PropertyDefinitionType.GeoPoint to PropertyDefinitionKotlinDescriptor(
         className = "GeoPointDefinition",
+        wrapFunctionName = "geoPoint",
         kotlinTypeName = { "GeoPoint" },
         definitionModel = GeoPointDefinition.Model,
         imports = { geoPointImports }
     ),
     PropertyDefinitionType.IncMap to PropertyDefinitionKotlinDescriptor(
         className = "IncrementingMapDefinition",
+        wrapFunctionName = "incrementingMap",
         kotlinTypeName = {
             val transportableKeyDefinition = it.keyDefinition as IsTransportablePropertyDefinitionType<*>
             val kotlinDescriptorForKeyDefinition =
@@ -151,6 +159,7 @@ private val definitionNamesMap = mapOf(
     ),
     PropertyDefinitionType.List to PropertyDefinitionKotlinDescriptor(
         className = "ListDefinition",
+        wrapFunctionName = "list",
         kotlinTypeName = {
             val transportableValueDefinition = it.valueDefinition as IsTransportablePropertyDefinitionType<*>
             val kotlinDescriptorForValueDefinition =
@@ -161,6 +170,7 @@ private val definitionNamesMap = mapOf(
     ),
     PropertyDefinitionType.Map to PropertyDefinitionKotlinDescriptor(
         className = "MapDefinition",
+        wrapFunctionName = "map",
         kotlinTypeName = {
             val transportableKeyDefinition = it.keyDefinition as IsTransportablePropertyDefinitionType<*>
             val kotlinDescriptorForKeyDefinition =
@@ -174,6 +184,7 @@ private val definitionNamesMap = mapOf(
     ),
     PropertyDefinitionType.MultiType to PropertyDefinitionKotlinDescriptor(
         className = "MultiTypeDefinition",
+        wrapFunctionName = "multiType",
         kotlinTypeName = { "TypedValue<${it.typeEnum.name}<out Any>, Any>" },
         definitionModel = MultiTypeDefinition.Model,
         imports = { multiTypeImports },
@@ -202,6 +213,7 @@ private val definitionNamesMap = mapOf(
     ),
     PropertyDefinitionType.Number to PropertyDefinitionKotlinDescriptor(
         className = "NumberDefinition",
+        wrapFunctionName = "number",
         kotlinTypeName = {
             when (it.type.type) {
                 SInt8Type -> "Byte"
@@ -234,12 +246,14 @@ private val definitionNamesMap = mapOf(
     ),
     PropertyDefinitionType.Reference to PropertyDefinitionKotlinDescriptor(
         className = "ReferenceDefinition",
+        wrapFunctionName = "reference",
         kotlinTypeName = { "Key<${it.dataModel.name}>" },
         imports = { keyImports },
         definitionModel = ReferenceDefinition.Model
     ),
     PropertyDefinitionType.Set to PropertyDefinitionKotlinDescriptor(
         className = "SetDefinition",
+        wrapFunctionName = "set",
         kotlinTypeName = {
             val transportableValueDefinition = it.valueDefinition as IsTransportablePropertyDefinitionType<*>
             val kotlinDescriptorForValueDefinition =
@@ -250,11 +264,13 @@ private val definitionNamesMap = mapOf(
     ),
     PropertyDefinitionType.String to PropertyDefinitionKotlinDescriptor(
         className = "StringDefinition",
+        wrapFunctionName = "string",
         kotlinTypeName = { "String" },
         definitionModel = StringDefinition.Model
     ),
     PropertyDefinitionType.Embed to PropertyDefinitionKotlinDescriptor(
         className = "EmbeddedValuesDefinition",
+        wrapFunctionName = "embed",
         kotlinTypeName = {
             val modelName = (it.dataModel as IsNamedDataModel<*>).name
             "Values<$modelName, $modelName.Properties>"
@@ -267,12 +283,14 @@ private val definitionNamesMap = mapOf(
     ),
     PropertyDefinitionType.Time to PropertyDefinitionKotlinDescriptor(
         className = "TimeDefinition",
+        wrapFunctionName = "time",
         kotlinTypeName = { "Time" },
         imports = { timeImports },
         definitionModel = TimeDefinition.Model
     ),
     PropertyDefinitionType.Value to PropertyDefinitionKotlinDescriptor(
-        className = "ValueModelDefinition",
+        className = "ValueObjectDefinition",
+        wrapFunctionName = "valueObject",
         kotlinTypeName = { it.dataModel.name },
         definitionModel = ValueObjectDefinition.Model,
         propertyValueOverride = mapOf(

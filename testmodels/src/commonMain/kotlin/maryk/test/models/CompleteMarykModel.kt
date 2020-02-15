@@ -114,7 +114,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
             random = true
         )
         val boolean by boolean(
-            3u,
+            index = 3u,
             required = false,
             final = true,
             default = true
@@ -184,7 +184,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
             maxSize = 7u
         )
         val reference by reference(
-            10u,
+            index = 10u,
             required = false,
             final = true,
             unique = true,
@@ -232,7 +232,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
             default = listOf("ha1", "ha2", "ha3")
         )
         val set by set(
-            14u,
+            index = 14u,
             required = false,
             final = true,
             minSize = 1u,

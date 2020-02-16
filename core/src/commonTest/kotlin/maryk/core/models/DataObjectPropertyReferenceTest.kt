@@ -53,6 +53,9 @@ internal class DataObjectPropertyReferenceTest {
         expect("mapIntObject.@2.model.value") { ComplexModel { mapIntObject.at(2u) { model { value::ref } } }.completeName }
         expect("mapIntObject.*.model.value") { ComplexModel { mapIntObject.any { model { value::ref } } }.completeName }
 
+        expect("reference.bool") { TestMarykModel { reference { bool::ref } }.completeName }
+        expect("reference.multi.*") { TestMarykModel { reference { multi.refToType() } }.completeName }
+
         expect("mapWithList.@a.@23") { ComplexModel { mapWithList.at("a") { refAt(23u) } }.completeName }
 
         expect("mapWithSet.@b.#b3") { ComplexModel { mapWithSet.at("b") { refAt("b3") } }.completeName }

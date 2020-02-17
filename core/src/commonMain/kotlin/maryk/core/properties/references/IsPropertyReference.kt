@@ -120,11 +120,8 @@ interface IsPropertyReference<T : Any, out D : IsPropertyDefinition<T>, V : Any>
             writeIndex = 0
 
             lastRef = ref
-            when {
-                ref is IsFuzzyReference && ref is IsPropertyReferenceWithParent<*, *, *, *> && ref.parentReference != null ->
-                    ref = ref.parentReference as IsPropertyReference<*, *, *>
-                ref is IsPropertyReferenceWithParent<*, *, *, *> && ref.parentReference != null ->
-                    ref = ref.parentReference as IsPropertyReference<*, *, *>
+            if (ref is IsPropertyReferenceWithParent<*, *, *, *> && ref.parentReference != null) {
+                ref = ref.parentReference as AnyPropertyReference
             }
         }
 

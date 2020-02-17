@@ -53,7 +53,7 @@ internal data class DataRecord<DM : IsRootValuesDataModel<P>, P : PropertyDefini
                 }
 
                 qualifiers@for (index in (valueIndex..values.lastIndex)) {
-                    val value = getValueAtIndex<T>(this.values, index, lastVersion)
+                    val value = getValueAtIndex<T>(this.values, index, toVersion)
                         ?: continue@qualifiers
                     return when (qualifierMatcher.isMatch(value.reference, 0)) {
                         NO_MATCH -> continue@qualifiers

@@ -2,16 +2,21 @@ package maryk.core.properties.references
 
 import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.models.RootDataModel
+import maryk.core.processors.datastore.matchers.FuzzyExactLengthMatch
 import maryk.core.processors.datastore.matchers.QualifierExactMatcher
+import maryk.core.processors.datastore.matchers.QualifierFuzzyMatcher
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.embed
 import maryk.core.properties.definitions.string
 import maryk.core.properties.references.Properties.embeddedObject
 import maryk.core.properties.references.Properties.test
+import maryk.core.properties.references.dsl.any
 import maryk.core.protobuf.WriteCache
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.assertType
+import maryk.test.models.ComplexModel
+import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotEquals
@@ -117,6 +122,48 @@ internal class PropertyReferenceTest {
 
         assertType<QualifierExactMatcher>(matcher).apply {
             expect("1609") { qualifier.toHex() }
+        }
+    }
+
+    @Test
+    fun createReferenceMatcher() {
+        val matcher = TestMarykModel { reference { string::ref } }.toQualifierMatcher()
+
+        assertType<QualifierExactMatcher>(matcher).apply {
+            expect("71") { qualifier.toHex() }
+            assertType<QualifierExactMatcher>(referencedQualifierMatcher).apply {
+                expect("09") { qualifier.toHex() }
+            }
+        }
+    }
+
+    @Test
+    fun createFuzzyReferenceMatcher() {
+        val matcher = ComplexModel { incMap.any { marykModel { reference { map.refToAny() } } } }.toQualifierMatcher()
+
+        assertType<QualifierFuzzyMatcher>(matcher).apply {
+            expect("44") { firstPossible().toHex() }
+            expect(2) { qualifierParts.size }
+            expect("1e71") { qualifierParts[1].toHex() }
+            expect(1) { fuzzyMatchers.size }
+
+            fuzzyMatchers.first().let { matcher ->
+                assertType<FuzzyExactLengthMatch>(matcher).apply {
+                    expect(4) { length }
+                }
+            }
+
+            assertType<QualifierFuzzyMatcher>(referencedQualifierMatcher).apply {
+                expect("54") { firstPossible().toHex() }
+                expect(1) { qualifierParts.size }
+                expect(1) { fuzzyMatchers.size }
+
+                fuzzyMatchers.first().let { matcher ->
+                    assertType<FuzzyExactLengthMatch>(matcher).apply {
+                        expect(3) { length }
+                    }
+                }
+            }
         }
     }
 }

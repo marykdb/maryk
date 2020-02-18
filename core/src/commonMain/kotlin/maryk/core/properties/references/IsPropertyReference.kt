@@ -96,13 +96,14 @@ interface IsPropertyReference<T : Any, out D : IsPropertyDefinition<T>, V : Any>
         return referenceToCompareTo
     }
 
-    fun toQualifierMatcher(): IsQualifierMatcher {
+    fun toQualifierMatcher(childMatcher: IsQualifierMatcher? = null): IsQualifierMatcher {
         val bytes = mutableListOf<Byte>()
         val byteArrays = mutableListOf<ByteArray>()
         val fuzzyMatchers = mutableListOf<IsFuzzyMatcher>()
 
         var ref: IsPropertyReference<*, *, *> = this
         var lastRef: IsPropertyReference<*, *, *>? = null
+        var referenceRef: ObjectReferencePropertyReference<*, *, *, *>? = null
 
         var writeIndex = 0
         while (ref !== lastRef) {
@@ -121,7 +122,13 @@ interface IsPropertyReference<T : Any, out D : IsPropertyDefinition<T>, V : Any>
 
             lastRef = ref
             if (ref is IsPropertyReferenceWithParent<*, *, *, *> && ref.parentReference != null) {
-                ref = ref.parentReference as AnyPropertyReference
+                ref.parentReference!!.let {
+                    if (it is ObjectReferencePropertyReference<*, *, *, *>) {
+                        referenceRef = it
+                    } else {
+                        ref = it
+                    }
+                }
             }
         }
 
@@ -129,15 +136,21 @@ interface IsPropertyReference<T : Any, out D : IsPropertyDefinition<T>, V : Any>
             byteArrays.add(0, bytes.toByteArray())
         }
 
-        return if (fuzzyMatchers.isEmpty()) {
+        val resultingMatcher = if (fuzzyMatchers.isEmpty()) {
             QualifierExactMatcher(
-                bytes.toByteArray()
+                qualifier = bytes.toByteArray(),
+                referencedQualifierMatcher = childMatcher
             )
         } else {
             QualifierFuzzyMatcher(
                 qualifierParts = byteArrays,
-                fuzzyMatchers = fuzzyMatchers
+                fuzzyMatchers = fuzzyMatchers,
+                referencedQualifierMatcher = childMatcher
             )
         }
+
+        // If it encounters reference, wrap. Otherwise, return resultingMatcher.
+        return referenceRef?.toQualifierMatcher(resultingMatcher)
+            ?: resultingMatcher
     }
 }

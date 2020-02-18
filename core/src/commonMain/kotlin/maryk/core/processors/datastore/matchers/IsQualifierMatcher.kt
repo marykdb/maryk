@@ -8,9 +8,13 @@ import maryk.lib.extensions.compare.compareToWithOffsetLength
 /** Defines a matcher for a qualifier. */
 sealed class IsQualifierMatcher
 
-/** Defines an exact [qualifier] matcher */
+/**
+ * Defines an exact [qualifier] matcher.
+ * Optionally set [referencedQualifierMatcher] to match values behind a reference
+ */
 class QualifierExactMatcher(
-    val qualifier: ByteArray
+    val qualifier: ByteArray,
+    val referencedQualifierMatcher: IsQualifierMatcher? = null
 ) : IsQualifierMatcher() {
     fun compareTo(qualifier: ByteArray, offset: Int): Int {
         return this.qualifier.compareToWithOffsetLength(qualifier, offset)
@@ -21,10 +25,14 @@ enum class FuzzyMatchResult {
     NO_MATCH, MATCH, OUT_OF_RANGE
 }
 
-/** Defines a fuzzy qualifier matcher with [qualifierParts] and in between [fuzzyMatchers] */
+/**
+ * Defines a fuzzy qualifier matcher with [qualifierParts] and in between [fuzzyMatchers]
+ * Optionally set [referencedQualifierMatcher] to match values behind a reference
+ */
 class QualifierFuzzyMatcher(
     val qualifierParts: List<ByteArray>,
-    val fuzzyMatchers: List<IsFuzzyMatcher>
+    val fuzzyMatchers: List<IsFuzzyMatcher>,
+    val referencedQualifierMatcher: IsQualifierMatcher? = null
 ) : IsQualifierMatcher() {
     /** Find first possible match */
     fun firstPossible() = qualifierParts.first()

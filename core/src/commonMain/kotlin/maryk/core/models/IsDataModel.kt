@@ -15,7 +15,7 @@ interface IsDataModel<P : IsPropertyDefinitions> {
      * Optionally pass an already resolved [parent]
      * For Strongly typed reference notation
      */
-    operator fun <T : Any, W : IsPropertyDefinition<T>, R : IsPropertyReference<T, W, *>> invoke(
+    operator fun <T : Any, R : IsPropertyReference<T, IsPropertyDefinition<T>, *>> invoke(
         parent: AnyOutPropertyReference? = null,
         referenceGetter: P.() -> (AnyOutPropertyReference?) -> R
     ) = referenceGetter(this.properties)(parent)

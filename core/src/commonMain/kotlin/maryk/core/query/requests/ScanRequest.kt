@@ -53,7 +53,7 @@ data class ScanRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> i
     override val toVersion: ULong? = null,
     override val filterSoftDeleted: Boolean = true,
     override val aggregations: Aggregations? = null
-) : IsScanRequest<DM, P, ValuesResponse<DM, P>> {
+) : IsScanRequest<DM, P, ValuesResponse<DM, P>>, IsTransportableRequest<ValuesResponse<DM, P>> {
     override val requestType = Scan
     override val responseModel = ValuesResponse
 

@@ -18,10 +18,10 @@ import maryk.lib.exceptions.ParseException
 
 typealias AnyCollectRequest = CollectRequest<*, *>
 
-data class CollectRequest<RQ : IsRequest<RP>, RP : IsResponse>(
+data class CollectRequest<RQ : IsTransportableRequest<RP>, RP : IsResponse>(
     val name: String,
     val request: RQ
-) : IsRequest<RP> {
+) : IsRequest<RP>, IsTransportableRequest<RP> {
     override val requestType = Collect
     override val responseModel = request.responseModel
 
@@ -36,7 +36,7 @@ data class CollectRequest<RQ : IsRequest<RP>, RP : IsResponse>(
             definitionMap = mapOfRequestTypeEmbeddedObjectDefinitions,
             toSerializable = { request: Any?, _ ->
                 request?.let {
-                    TypedValue((request as IsRequest<*>).requestType, request)
+                    TypedValue((request as IsTransportableRequest<*>).requestType, request)
                 }
             },
             fromSerializable = { request: TypedValue<RequestType, Any>? ->
@@ -49,7 +49,7 @@ data class CollectRequest<RQ : IsRequest<RP>, RP : IsResponse>(
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<AnyCollectRequest, Properties>) =
-            CollectRequest<IsRequest<IsResponse>, IsResponse>(
+            CollectRequest<IsTransportableRequest<IsResponse>, IsResponse>(
                 name = values(1u),
                 request = values(2u)
             )

@@ -20,7 +20,7 @@ fun <DM : IsRootValuesDataModel<*>> DM.change(vararg objectChanges: DataObjectCh
 data class ChangeRequest<DM : IsRootValuesDataModel<*>> internal constructor(
     override val dataModel: DM,
     val objects: List<DataObjectChange<DM>>
-) : IsStoreRequest<DM, ChangeResponse<DM>> {
+) : IsStoreRequest<DM, ChangeResponse<DM>>, IsTransportableRequest<ChangeResponse<DM>> {
     override val requestType = Change
     override val responseModel = ChangeResponse
 

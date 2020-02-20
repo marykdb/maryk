@@ -31,7 +31,7 @@ data class DeleteRequest<DM : IsRootValuesDataModel<*>> internal constructor(
     override val dataModel: DM,
     val keys: List<Key<DM>>,
     val hardDelete: Boolean
-) : IsStoreRequest<DM, DeleteResponse<DM>> {
+) : IsStoreRequest<DM, DeleteResponse<DM>>, IsTransportableRequest<DeleteResponse<DM>> {
     override val requestType = Delete
     override val responseModel = DeleteResponse
 

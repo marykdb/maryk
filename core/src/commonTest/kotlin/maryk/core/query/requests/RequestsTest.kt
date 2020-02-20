@@ -43,7 +43,7 @@ class RequestsTest {
             converted.requests.zip(original.requests).forEach { pair ->
                 expect(pair.second) {
                     @Suppress("UNCHECKED_CAST")
-                    ((pair.first as TypedValue<RequestType, *>).value as ObjectValues<IsRequest<*>, *>).toDataObject()
+                    ((pair.first as TypedValue<RequestType, *>).value as ObjectValues<IsTransportableRequest<*>, *>).toDataObject()
                 }
             }
         })

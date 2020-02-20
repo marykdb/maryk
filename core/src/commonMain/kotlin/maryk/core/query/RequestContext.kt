@@ -9,12 +9,12 @@ import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.query.requests.IsRequest
+import maryk.core.query.requests.IsTransportableRequest
 import maryk.core.query.responses.IsResponse
 import maryk.core.values.AbstractValues
 
 sealed class ModelTypeToCollect<DM : IsDataModel<*>>(val model: DM) {
-    class Request<RP : IsResponse>(val request: IsRequest<RP>) :
+    class Request<RP : IsResponse>(val request: IsTransportableRequest<RP>) :
         ModelTypeToCollect<IsObjectDataModel<in RP, *>>(request.responseModel)
 
     class Model<DM : IsDataModel<*>>(value: DM) : ModelTypeToCollect<DM>(value)
@@ -54,7 +54,7 @@ class RequestContext(
     }
 
     /** Add to collect values by [model] into [collectionName] */
-    fun addToCollect(collectionName: String, model: IsRequest<*>) {
+    fun addToCollect(collectionName: String, model: IsTransportableRequest<*>) {
         toCollect[collectionName] = ModelTypeToCollect.Request(model)
     }
 

@@ -49,7 +49,7 @@ data class GetRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> in
     override val toVersion: ULong?,
     override val filterSoftDeleted: Boolean,
     override val aggregations: Aggregations? = null
-) : IsGetRequest<DM, P, ValuesResponse<DM, P>> {
+) : IsGetRequest<DM, P, ValuesResponse<DM, P>>, IsTransportableRequest<ValuesResponse<DM, P>> {
     override val requestType = Get
     override val responseModel = ValuesResponse
 

@@ -21,14 +21,14 @@ import maryk.core.values.ObjectValues
 
 /** Object to contain multiple [requests] */
 data class Requests internal constructor(
-    val requests: List<IsRequest<*>>,
+    val requests: List<IsTransportableRequest<*>>,
     internal var injectables: List<InjectWithReference>?
 ): IsOperation {
     override val operationType = Request
 
-    constructor(vararg request: IsRequest<*>) : this(request.toList())
+    constructor(vararg request: IsTransportableRequest<*>) : this(request.toList())
 
-    constructor(requests: List<IsRequest<*>>) : this(requests, null)
+    constructor(requests: List<IsTransportableRequest<*>>) : this(requests, null)
 
     object Properties : ObjectPropertyDefinitions<Requests>() {
         val requests by list(
@@ -39,7 +39,7 @@ data class Requests internal constructor(
                 definitionMap = mapOfRequestTypeEmbeddedObjectDefinitions,
                 keepAsValues = true
             ),
-            fromSerializable = { it.value as IsRequest<*> },
+            fromSerializable = { it.value as IsTransportableRequest<*> },
             toSerializable = { TypedValue(it.requestType, it) }
         )
 

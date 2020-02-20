@@ -22,7 +22,7 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.add(vararg objec
 data class AddRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> internal constructor(
     override val dataModel: DM,
     val objects: List<Values<DM, P>>
-) : IsStoreRequest<DM, AddResponse<DM>> {
+) : IsStoreRequest<DM, AddResponse<DM>>, IsTransportableRequest<AddResponse<DM>> {
     override val requestType = Add
     override val responseModel = AddResponse
 

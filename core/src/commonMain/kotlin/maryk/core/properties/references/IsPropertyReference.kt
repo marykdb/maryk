@@ -4,6 +4,7 @@ import maryk.core.processors.datastore.matchers.IsFuzzyMatcher
 import maryk.core.processors.datastore.matchers.IsQualifierMatcher
 import maryk.core.processors.datastore.matchers.QualifierExactMatcher
 import maryk.core.processors.datastore.matchers.QualifierFuzzyMatcher
+import maryk.core.processors.datastore.matchers.ReferencedQualifierMatcher
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
@@ -96,7 +97,7 @@ interface IsPropertyReference<T : Any, out D : IsPropertyDefinition<T>, V : Any>
         return referenceToCompareTo
     }
 
-    fun toQualifierMatcher(childMatcher: IsQualifierMatcher? = null): IsQualifierMatcher {
+    fun toQualifierMatcher(childMatcher: ReferencedQualifierMatcher? = null): IsQualifierMatcher {
         val bytes = mutableListOf<Byte>()
         val byteArrays = mutableListOf<ByteArray>()
         val fuzzyMatchers = mutableListOf<IsFuzzyMatcher>()
@@ -150,7 +151,8 @@ interface IsPropertyReference<T : Any, out D : IsPropertyDefinition<T>, V : Any>
         }
 
         // If it encounters reference, wrap. Otherwise, return resultingMatcher.
-        return referenceRef?.toQualifierMatcher(resultingMatcher)
-            ?: resultingMatcher
+        return referenceRef?.toQualifierMatcher(
+            ReferencedQualifierMatcher(referenceRef!!, resultingMatcher)
+        ) ?: resultingMatcher
     }
 }

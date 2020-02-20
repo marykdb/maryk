@@ -5,6 +5,7 @@ import maryk.core.models.RootDataModel
 import maryk.core.processors.datastore.matchers.FuzzyExactLengthMatch
 import maryk.core.processors.datastore.matchers.QualifierExactMatcher
 import maryk.core.processors.datastore.matchers.QualifierFuzzyMatcher
+import maryk.core.processors.datastore.matchers.ReferencedQualifierMatcher
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.embed
 import maryk.core.properties.definitions.string
@@ -131,8 +132,11 @@ internal class PropertyReferenceTest {
 
         assertType<QualifierExactMatcher>(matcher).apply {
             expect("71") { qualifier.toHex() }
-            assertType<QualifierExactMatcher>(referencedQualifierMatcher).apply {
-                expect("09") { qualifier.toHex() }
+            assertType<ReferencedQualifierMatcher>(referencedQualifierMatcher).apply {
+                expect(TestMarykModel { reference::ref }) { reference }
+                assertType<QualifierExactMatcher>(qualifierMatcher).apply {
+                    expect("09") { qualifier.toHex() }
+                }
             }
         }
     }
@@ -153,14 +157,18 @@ internal class PropertyReferenceTest {
                 }
             }
 
-            assertType<QualifierFuzzyMatcher>(referencedQualifierMatcher).apply {
-                expect("54") { firstPossible().toHex() }
-                expect(1) { qualifierParts.size }
-                expect(1) { fuzzyMatchers.size }
+            assertType<ReferencedQualifierMatcher>(referencedQualifierMatcher).apply {
+                expect(ComplexModel { incMap.any { marykModel { reference::ref } } }) { reference }
 
-                fuzzyMatchers.first().let { matcher ->
-                    assertType<FuzzyExactLengthMatch>(matcher).apply {
-                        expect(3) { length }
+                assertType<QualifierFuzzyMatcher>(qualifierMatcher).apply {
+                    expect("54") { firstPossible().toHex() }
+                    expect(1) { qualifierParts.size }
+                    expect(1) { fuzzyMatchers.size }
+
+                    fuzzyMatchers.first().let { matcher ->
+                        assertType<FuzzyExactLengthMatch>(matcher).apply {
+                            expect(3) { length }
+                        }
                     }
                 }
             }

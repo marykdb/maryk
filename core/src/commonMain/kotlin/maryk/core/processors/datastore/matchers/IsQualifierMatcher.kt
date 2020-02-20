@@ -14,7 +14,7 @@ sealed class IsQualifierMatcher
  */
 class QualifierExactMatcher(
     val qualifier: ByteArray,
-    val referencedQualifierMatcher: IsQualifierMatcher? = null
+    val referencedQualifierMatcher: ReferencedQualifierMatcher? = null
 ) : IsQualifierMatcher() {
     fun compareTo(qualifier: ByteArray, offset: Int): Int {
         return this.qualifier.compareToWithOffsetLength(qualifier, offset)
@@ -32,7 +32,7 @@ enum class FuzzyMatchResult {
 class QualifierFuzzyMatcher(
     val qualifierParts: List<ByteArray>,
     val fuzzyMatchers: List<IsFuzzyMatcher>,
-    val referencedQualifierMatcher: IsQualifierMatcher? = null
+    val referencedQualifierMatcher: ReferencedQualifierMatcher? = null
 ) : IsQualifierMatcher() {
     /** Find first possible match */
     fun firstPossible() = qualifierParts.first()

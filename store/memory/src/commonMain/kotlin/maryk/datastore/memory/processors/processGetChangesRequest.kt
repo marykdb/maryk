@@ -6,6 +6,7 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.requests.GetChangesRequest
 import maryk.core.query.responses.ChangesResponse
+import maryk.datastore.memory.IsStoreFetcher
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkToVersion
@@ -16,10 +17,15 @@ internal typealias AnyGetChangesStoreAction = GetChangesStoreAction<IsRootValues
 /** Processes a GetChangesRequest in a [storeAction] into a [dataStore] */
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGetChangesRequest(
     storeAction: GetChangesStoreAction<DM, P>,
-    dataStore: DataStore<DM, P>
+    dataStoreFetcher: IsStoreFetcher<*, *>
 ) {
     val getRequest = storeAction.request
     val objectChanges = mutableListOf<DataObjectVersionedChange<DM>>()
+
+    @Suppress("UNCHECKED_CAST")
+    val dataStore = dataStoreFetcher(getRequest.dataModel) as DataStore<DM, P>
+
+    val recordFetcher = createStoreRecordFetcher(dataStoreFetcher)
 
     getRequest.checkToVersion(dataStore.keepAllVersions)
 
@@ -30,7 +36,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
         if (index > -1) {
             val record = dataStore.records[index]
 
-            if (getRequest.shouldBeFiltered(record, getRequest.toVersion?.let { HLC(it) })) {
+            if (getRequest.shouldBeFiltered(record, getRequest.toVersion?.let { HLC(it) }, recordFetcher)) {
                 continue
             }
 

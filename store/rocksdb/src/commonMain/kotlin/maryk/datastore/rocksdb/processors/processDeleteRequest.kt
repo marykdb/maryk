@@ -37,9 +37,10 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
 
     if (deleteRequest.keys.isNotEmpty()) {
         val version = storeAction.version
-        val columnFamilies = dataStore.getColumnFamilies(storeAction.dbIndex)
+        val dbIndex = dataStore.getDataModelId(deleteRequest.dataModel)
+        val columnFamilies = dataStore.getColumnFamilies(dbIndex)
 
-        // Delete it from history if it is a hard delete
+        // Delete it from history if it is a hard deletion
         val historicStoreIndexValuesWalker = if (deleteRequest.hardDelete && columnFamilies is HistoricTableColumnFamilies) {
             HistoricStoreIndexValuesWalker(columnFamilies, dataStore.defaultReadOptions)
         } else null
@@ -60,8 +61,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
                             val versionBytes = HLC.toStorageBytes(version)
 
                             for (reference in dataStore.getUniqueIndices(
-                                storeAction.dbIndex,
-                                columnFamilies.unique
+                                dbIndex, columnFamilies.unique
                             )) {
                                 val referenceAndKey = byteArrayOf(*key.bytes, *reference)
                                 val valueLength = transaction.get(columnFamilies.table, dataStore.defaultReadOptions, referenceAndKey, recyclableByteArray)
@@ -122,7 +122,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
                             }
 
                             if (deleteRequest.hardDelete) {
-                                dataStore.deleteCacheForKey(storeAction.dbIndex, key)
+                                dataStore.deleteCacheForKey(dbIndex, key)
 
                                 dataStore.db.delete(columnFamilies.keys, key.bytes)
                                 dataStore.db.deleteRange(

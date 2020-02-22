@@ -2,6 +2,8 @@ package maryk.datastore.test
 
 import maryk.core.clock.HLC
 import maryk.core.properties.types.Key
+import maryk.core.query.changes.Change
+import maryk.core.query.changes.change
 import maryk.core.query.filters.And
 import maryk.core.query.filters.Equals
 import maryk.core.query.filters.Exists
@@ -18,9 +20,11 @@ import maryk.core.query.filters.RegEx
 import maryk.core.query.filters.ValueIn
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
+import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.get
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.datastore.shared.IsDataStore
 import maryk.lib.time.Date
 import maryk.lib.time.DateTime
@@ -53,7 +57,8 @@ class DataStoreFilterTest(
         "doValueInFilter" to ::doValueInFilter,
         "doNotFilter" to ::doNotFilter,
         "doAndFilter" to ::doAndFilter,
-        "doOrFilter" to ::doOrFilter
+        "doOrFilter" to ::doOrFilter,
+        "doReferencedEqualsFilter" to ::doReferencedEqualsFilter
     )
 
     private val dataObject = TestMarykModel(
@@ -74,11 +79,30 @@ class DataStoreFilterTest(
         )
     )
 
+    private val dataObject2 = TestMarykModel(
+        string = "haha2",
+        int = 3,
+        uint = 5u,
+        double = 0.23,
+        dateTime = DateTime(2016, 2, 20),
+        bool = false,
+        map = mapOf(
+            Time(17, 16, 15) to "haha1"
+        ),
+        list = listOf(
+            3, 4, 6
+        ),
+        set = setOf(
+            Date(2020, 2, 20), Date(2013, 4, 19)
+        )
+    )
+
     override fun initData() {
         runSuspendingTest {
             val addResponse = dataStore.execute(
                 TestMarykModel.add(
-                    dataObject
+                    dataObject,
+                    dataObject2
                 )
             )
 
@@ -86,6 +110,18 @@ class DataStoreFilterTest(
                 val response = assertType<AddSuccess<TestMarykModel>>(status)
                 keys.add(response.key)
                 lastVersions.add(response.version)
+            }
+
+            val changeResponse = dataStore.execute(
+                TestMarykModel.change(
+                    keys[0].change(
+                        Change(TestMarykModel { reference::ref } with keys[1])
+                    )
+                )
+            )
+
+            changeResponse.statuses.forEach { status ->
+                assertType<ChangeSuccess<TestMarykModel>>(status)
             }
 
             firstKey = keys[0]
@@ -141,7 +177,7 @@ class DataStoreFilterTest(
 
         assertFalse {
             filterMatches(
-                Exists(TestMarykModel { reference::ref })
+                Exists(TestMarykModel { selfReference::ref })
             )
         }
     }
@@ -413,7 +449,7 @@ class DataStoreFilterTest(
 
         assertTrue {
             filterMatches(
-                Not(Exists(TestMarykModel { reference::ref }))
+                Not(Exists(TestMarykModel { selfReference::ref }))
             )
         }
     }
@@ -431,7 +467,7 @@ class DataStoreFilterTest(
         assertFalse {
             filterMatches(
                 And(
-                    Exists(TestMarykModel { reference::ref }),
+                    Exists(TestMarykModel { selfReference::ref }),
                     Exists(TestMarykModel { string::ref })
                 )
             )
@@ -451,7 +487,7 @@ class DataStoreFilterTest(
         assertTrue {
             filterMatches(
                 Or(
-                    Exists(TestMarykModel { reference::ref }),
+                    Exists(TestMarykModel { selfReference::ref }),
                     Exists(TestMarykModel { string::ref })
                 )
             )
@@ -460,9 +496,40 @@ class DataStoreFilterTest(
         assertFalse {
             filterMatches(
                 Or(
-                    Exists(TestMarykModel { reference::ref }),
+                    Exists(TestMarykModel { selfReference::ref }),
                     Not(Exists(TestMarykModel { string::ref }))
                 )
+            )
+        }
+    }
+
+    private fun doReferencedEqualsFilter() {
+        assertTrue {
+            filterMatches(
+                Equals(TestMarykModel { reference { string::ref } } with "haha2")
+            )
+        }
+//
+//        if (dataStore.keepAllVersions) {
+//            assertFalse {
+//                filterMatches(
+//                    Equals(TestMarykModel { string::ref } with "haha1"),
+//                    HLC(lastVersions.last() - 1u)
+//                )
+//            }
+//
+//            // With higher version it should be found
+//            assertTrue {
+//                filterMatches(
+//                    Equals(TestMarykModel { string::ref } with "haha1"),
+//                    HLC(lastVersions.first() + 1u)
+//                )
+//            }
+//        }
+
+        assertFalse {
+            filterMatches(
+                Equals(TestMarykModel { reference { string::ref } } with "wrong")
             )
         }
     }

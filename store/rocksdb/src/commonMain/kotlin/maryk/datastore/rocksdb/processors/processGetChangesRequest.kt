@@ -26,11 +26,13 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
 ) {
     val getRequest = storeAction.request
     val objectChanges = mutableListOf<DataObjectVersionedChange<DM>>()
-    val columnFamilies = dataStore.getColumnFamilies(storeAction.dbIndex)
 
     getRequest.checkToVersion(dataStore.keepAllVersions)
 
     DBAccessor(dataStore.db).use { dbAccessor ->
+        val dbIndex = dataStore.getDataModelId(getRequest.dataModel)
+        val columnFamilies = dataStore.getColumnFamilies(dbIndex)
+
         val columnToScan = if (getRequest.toVersion != null && columnFamilies is HistoricTableColumnFamilies) {
             columnFamilies.historic.table
         } else columnFamilies.table
@@ -59,7 +61,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
                     }
 
                     val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
-                        dataStore.readValueWithCache(storeAction.dbIndex, key, reference, version, valueReader)
+                        dataStore.readValueWithCache(dbIndex, key, reference, version, valueReader)
                     }
 
                     getRequest.dataModel.readTransactionIntoObjectChanges(

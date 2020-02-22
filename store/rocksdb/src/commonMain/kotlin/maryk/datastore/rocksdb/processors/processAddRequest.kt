@@ -1,9 +1,7 @@
 package maryk.datastore.rocksdb.processors
 
 import maryk.core.clock.HLC
-import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.toVarBytes
-import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.key
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
@@ -16,13 +14,10 @@ import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.processors.datastore.writeToStorage
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsComparableDefinition
-import maryk.core.properties.definitions.IsSimpleValueDefinition
-import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.exceptions.AlreadyExistsException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.types.Key
-import maryk.core.properties.types.TypedValue
 import maryk.core.query.requests.AddRequest
 import maryk.core.query.responses.AddResponse
 import maryk.core.query.responses.statuses.AddSuccess
@@ -35,6 +30,7 @@ import maryk.datastore.rocksdb.Transaction
 import maryk.datastore.rocksdb.processors.helpers.setCreatedVersion
 import maryk.datastore.rocksdb.processors.helpers.setIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setLatestVersion
+import maryk.datastore.rocksdb.processors.helpers.setTypedValue
 import maryk.datastore.rocksdb.processors.helpers.setUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setValue
 import maryk.datastore.shared.StoreAction
@@ -57,7 +53,8 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
 
     if (addRequest.objects.isNotEmpty()) {
         val version = storeAction.version
-        val columnFamilies = dataStore.getColumnFamilies(storeAction.dbIndex)
+        val dbIndex = dataStore.getDataModelId(addRequest.dataModel)
+        val columnFamilies = dataStore.getColumnFamilies(dbIndex)
 
         for (objectToAdd in addRequest.objects) {
             try {
@@ -116,9 +113,9 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
                                             }
                                         }
 
-                                        // Creates index reference on table if it not exists so delete can find
+                                        // Creates index reference on the table if it not exists so delete can find
                                         // what values to delete from the unique indices.
-                                        dataStore.createUniqueIndexIfNotExists(storeAction.dbIndex, columnFamilies.unique, reference)
+                                        dataStore.createUniqueIndexIfNotExists(dbIndex, columnFamilies.unique, reference)
                                         setUniqueIndexValue(columnFamilies, transaction, uniqueReference, versionBytes, key)
                                     }
 
@@ -127,32 +124,9 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
                                 ListSize,
                                 SetSize,
                                 MapSize -> setValue(transaction, columnFamilies, key, reference, versionBytes, (value as Int).toVarBytes())
-                                TypeValue -> {
-                                    val typedValue = value as TypedValue<TypeEnum<*>, *>
-                                    val typeDefinition = TypeValue.castDefinition(definition)
-
-                                    var index = 0
-                                    if (typedValue.value == Unit) {
-                                        val valueBytes = ByteArray(value.type.index.calculateVarIntWithExtraInfoByteSize())
-                                        typedValue.type.index.writeVarIntWithExtraInfo(COMPLEX_TYPE_INDICATOR) { valueBytes[index++] = it }
-
-                                        setValue(transaction, columnFamilies, key, reference, versionBytes, valueBytes)
-                                    } else {
-                                        val typeValueDefinition = typeDefinition.definition(typedValue.type) as IsSimpleValueDefinition<Any, *>
-                                        val valueBytes = ByteArray(
-                                            typedValue.type.index.calculateVarIntWithExtraInfoByteSize() +
-                                            typeValueDefinition.calculateStorageByteLength(typedValue.value)
-                                        )
-                                        val writer: (Byte) -> Unit = { valueBytes[index++] = it }
-
-                                        typedValue.type.index.writeVarIntWithExtraInfo(SIMPLE_TYPE_INDICATOR, writer)
-                                        typeValueDefinition.writeStorageBytes(typedValue.value, writer)
-
-                                        setValue(transaction, columnFamilies, key, reference, versionBytes, valueBytes)
-                                    }
-                                }
+                                TypeValue -> setTypedValue(value, definition, transaction, columnFamilies, key, reference, versionBytes)
                                 Embed -> {
-                                    // Indicates value exists and is an embed
+                                    // Indicates value exists and is an embedded value object
                                     // Is for the root of embed
                                     val valueBytes = byteArrayOf(EMBED_INDICATOR, TRUE)
                                     setValue(transaction, columnFamilies, key, reference, versionBytes, valueBytes)

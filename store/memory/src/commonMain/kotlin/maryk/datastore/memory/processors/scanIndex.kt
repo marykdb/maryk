@@ -2,15 +2,16 @@ package maryk.datastore.memory.processors
 
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
-import maryk.datastore.shared.ScanType.IndexScan
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.types.Key
 import maryk.core.query.orders.Direction.ASC
 import maryk.core.query.orders.Direction.DESC
 import maryk.core.query.requests.IsScanRequest
 import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataStore
+import maryk.datastore.shared.ScanType.IndexScan
 import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.compare.nextByteInSameLength
 import kotlin.math.min
@@ -18,6 +19,7 @@ import kotlin.math.min
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
     dataStore: DataStore<DM, P>,
     scanRequest: IsScanRequest<DM, P, *>,
+    recordFetcher: (IsRootValuesDataModel<*>, Key<*>) -> DataRecord<*, *>?,
     indexScan: IndexScan,
     keyScanRange: KeyScanRanges,
     processStoreValue: (DataRecord<DM, P>) -> Unit
@@ -68,7 +70,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
                         continue
                     }
 
-                    if (scanRequest.shouldBeFiltered(dataRecord, toVersion)) {
+                    if (scanRequest.shouldBeFiltered(dataRecord, toVersion, recordFetcher)) {
                         continue
                     }
 
@@ -120,7 +122,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
                         continue
                     }
 
-                    if (scanRequest.shouldBeFiltered(dataRecord, toVersion)) {
+                    if (scanRequest.shouldBeFiltered(dataRecord, toVersion, recordFetcher)) {
                         continue
                     }
 

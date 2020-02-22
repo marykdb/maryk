@@ -2,9 +2,7 @@ package maryk.datastore.rocksdb
 
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.calculateVarByteLength
-import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.RootDataModel
-import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.TableType.HistoricIndex
@@ -47,7 +45,7 @@ class RocksDBDataStore(
 
     internal val db: RocksDB
 
-    private val storeActor = this.storeActor(this, storeExecutor)
+    override val storeActor = this.storeActor(this, storeExecutor)
 
     private val defaultWriteOptions = WriteOptions()
     internal val defaultReadOptions = ReadOptions().apply {
@@ -133,9 +131,6 @@ class RocksDBDataStore(
 
     internal fun getPrefixSize(columnFamilyHandle: ColumnFamilyHandle) =
         this.prefixSizesByColumnFamilyHandlesIndex.getOrElse(columnFamilyHandle.getID()) { 0 }
-
-    override fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> getStoreActor(dataModel: DM) =
-        this.storeActor
 
     override fun close() {
         super.close()

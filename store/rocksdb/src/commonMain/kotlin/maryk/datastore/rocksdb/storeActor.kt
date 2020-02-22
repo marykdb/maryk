@@ -15,7 +15,7 @@ import maryk.datastore.shared.StoreActor
 internal fun CoroutineScope.storeActor(
     store: RocksDBDataStore,
     executor: StoreExecutor
-): StoreActor<*, *> = BroadcastChannel<StoreAction<*, *, *, *>>(
+): StoreActor = BroadcastChannel<StoreAction<*, *, *, *>>(
     Channel.BUFFERED
 ).also {
     this.launch {

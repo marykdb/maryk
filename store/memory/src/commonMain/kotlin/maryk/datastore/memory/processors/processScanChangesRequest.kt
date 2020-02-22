@@ -5,6 +5,7 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.requests.ScanChangesRequest
 import maryk.core.query.responses.ChangesResponse
+import maryk.datastore.memory.IsStoreFetcher
 import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.StoreAction
@@ -15,12 +16,17 @@ internal typealias AnyScanChangesStoreAction = ScanChangesStoreAction<IsRootValu
 /** Processes a ScanChangesRequest in a [storeAction] into a [dataStore] */
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processScanChangesRequest(
     storeAction: ScanChangesStoreAction<DM, P>,
-    dataStore: DataStore<DM, P>
+    dataStoreFetcher: IsStoreFetcher<*, *>
 ) {
     val scanRequest = storeAction.request
     val objectChanges = mutableListOf<DataObjectVersionedChange<DM>>()
 
-    processScan(scanRequest, dataStore) { record ->
+    val recordFetcher = createStoreRecordFetcher(dataStoreFetcher)
+
+    @Suppress("UNCHECKED_CAST")
+    val dataStore = dataStoreFetcher(scanRequest.dataModel) as DataStore<DM, P>
+
+    processScan(scanRequest, dataStore, recordFetcher) { record ->
         recordToObjectChanges(scanRequest, record, objectChanges)
     }
 

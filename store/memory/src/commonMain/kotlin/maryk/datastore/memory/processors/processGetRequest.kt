@@ -9,6 +9,7 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.requests.GetRequest
 import maryk.core.query.responses.ValuesResponse
+import maryk.datastore.memory.IsStoreFetcher
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkToVersion
@@ -16,14 +17,17 @@ import maryk.datastore.shared.checkToVersion
 internal typealias GetStoreAction<DM, P> = StoreAction<DM, P, GetRequest<DM, P>, ValuesResponse<DM, P>>
 internal typealias AnyGetStoreAction = GetStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
 
-/** Processes a GetRequest in a [storeAction] into a [dataStore] */
+/** Processes a GetRequest in a [storeAction] and resolve dataStore with [dataStoreFetcher] */
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGetRequest(
     storeAction: GetStoreAction<DM, P>,
-    dataStore: DataStore<DM, P>
+    dataStoreFetcher: IsStoreFetcher<*, *>
 ) {
     val getRequest = storeAction.request
     val valuesWithMeta = mutableListOf<ValuesWithMetaData<DM, P>>()
     val toVersion = getRequest.toVersion?.let { HLC(it) }
+
+    @Suppress("UNCHECKED_CAST")
+    val dataStore = dataStoreFetcher(getRequest.dataModel) as DataStore<DM, P>
 
     getRequest.checkToVersion(dataStore.keepAllVersions)
 
@@ -31,13 +35,15 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
         Aggregator(it)
     }
 
+    val recordFetcher = createStoreRecordFetcher(dataStoreFetcher)
+
     for (key in getRequest.keys) {
         val index = dataStore.records.binarySearch { it.key.compareTo(key) }
 
         // Only return if found
         if (index > -1) {
             val record = dataStore.records[index]
-            if (getRequest.shouldBeFiltered(record, toVersion)) {
+            if (getRequest.shouldBeFiltered(record, toVersion, recordFetcher)) {
                 continue
             }
 

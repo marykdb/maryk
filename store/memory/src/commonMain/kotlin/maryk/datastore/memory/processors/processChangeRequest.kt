@@ -60,6 +60,7 @@ import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.core.values.EmptyValueItems
 import maryk.core.values.Values
+import maryk.datastore.memory.IsStoreFetcher
 import maryk.datastore.memory.processors.changers.createCountUpdater
 import maryk.datastore.memory.processors.changers.deleteByReference
 import maryk.datastore.memory.processors.changers.getCurrentIncMapKey
@@ -82,10 +83,13 @@ internal typealias AnyChangeStoreAction = ChangeStoreAction<IsRootValuesDataMode
 /** Processes a ChangeRequest in a [storeAction] into a [dataStore] */
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processChangeRequest(
     storeAction: ChangeStoreAction<DM, P>,
-    dataStore: DataStore<DM, P>
+    dataStoreFetcher: IsStoreFetcher<*, *>
 ) {
     val changeRequest = storeAction.request
     val version = storeAction.version
+
+    @Suppress("UNCHECKED_CAST")
+    val dataStore = dataStoreFetcher(changeRequest.dataModel) as DataStore<DM, P>
 
     val statuses = mutableListOf<IsChangeResponseStatus<DM>>()
 

@@ -5,6 +5,7 @@ import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.matchers.FuzzyMatchResult.MATCH
 import maryk.core.processors.datastore.matchers.FuzzyMatchResult.NO_MATCH
 import maryk.core.processors.datastore.matchers.FuzzyMatchResult.OUT_OF_RANGE
+import maryk.core.processors.datastore.matchers.IsQualifierMatcher
 import maryk.core.processors.datastore.matchers.QualifierExactMatcher
 import maryk.core.processors.datastore.matchers.QualifierFuzzyMatcher
 import maryk.core.properties.PropertyDefinitions
@@ -36,11 +37,38 @@ internal data class DataRecord<DM : IsRootValuesDataModel<P>, P : PropertyDefini
     fun isDeleted(toVersion: HLC?): Boolean =
         getValue<Boolean>(this.values, objectSoftDeleteQualifier, toVersion)?.value ?: false
 
-    fun <T : Any> matchQualifier(reference: IsPropertyReference<T, *, *>, toVersion: HLC?, matcher: (T?) -> Boolean): Boolean {
-        when (val qualifierMatcher = reference.toQualifierMatcher()) {
+    fun <T : Any> matchQualifier(
+        reference: IsPropertyReference<T, *, *>,
+        toVersion: HLC?,
+        recordFetcher: (IsRootValuesDataModel<*>, Key<*>) -> DataRecord<*, *>?,
+        matcher: (T?) -> Boolean
+    ) = this.matchQualifier(reference.toQualifierMatcher(), toVersion, recordFetcher, matcher)
+
+    private fun <T : Any> matchQualifier(
+        qualifierMatcher: IsQualifierMatcher,
+        toVersion: HLC?,
+        recordFetcher: (IsRootValuesDataModel<*>, Key<*>) -> DataRecord<*, *>?,
+        matcher: (T?) -> Boolean
+    ): Boolean {
+        when (qualifierMatcher) {
             is QualifierExactMatcher -> {
                 val value = get<T>(qualifierMatcher.qualifier, toVersion)
-                return matcher(value)
+                    ?: return matcher(null)
+
+                return when (val referencedMatcher = qualifierMatcher.referencedQualifierMatcher) {
+                    null -> matcher(value)
+                    else -> {
+                        recordFetcher(
+                            referencedMatcher.reference.propertyDefinition.dataModel as IsRootValuesDataModel<*>,
+                            value as Key<*>
+                        )?.matchQualifier(
+                            referencedMatcher.qualifierMatcher,
+                            toVersion,
+                            recordFetcher,
+                            matcher
+                        ) ?: false
+                    }
+                }
             }
             is QualifierFuzzyMatcher -> {
                 val start = qualifierMatcher.firstPossible()
@@ -55,10 +83,18 @@ internal data class DataRecord<DM : IsRootValuesDataModel<P>, P : PropertyDefini
                 qualifiers@for (index in (valueIndex..values.lastIndex)) {
                     val value = getValueAtIndex<T>(this.values, index, toVersion)
                         ?: continue@qualifiers
-                    return when (qualifierMatcher.isMatch(value.reference, 0)) {
-                        NO_MATCH -> continue@qualifiers
-                        MATCH -> if (matcher(value.value)) return true else continue@qualifiers
-                        OUT_OF_RANGE -> false
+
+                    return when (val referencedMatcher = qualifierMatcher.referencedQualifierMatcher) {
+                        null -> when (qualifierMatcher.isMatch(value.reference, 0)) {
+                            NO_MATCH -> continue@qualifiers
+                            MATCH -> if (matcher(value.value)) return true else continue@qualifiers
+                            OUT_OF_RANGE -> false
+                        }
+                        else -> {
+                            recordFetcher(referencedMatcher.reference.comparablePropertyDefinition.dataModel as IsRootValuesDataModel<*>, value.value as Key<*>)?.
+                                matchQualifier(referencedMatcher.qualifierMatcher, toVersion, recordFetcher, matcher)
+                                ?: false
+                        }
                     }
                 }
                 return false

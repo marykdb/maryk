@@ -9,8 +9,9 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.requests.ScanRequest
 import maryk.core.query.responses.ValuesResponse
-import maryk.datastore.shared.StoreAction
+import maryk.datastore.memory.IsStoreFetcher
 import maryk.datastore.memory.records.DataStore
+import maryk.datastore.shared.StoreAction
 
 internal typealias ScanStoreAction<DM, P> = StoreAction<DM, P, ScanRequest<DM, P>, ValuesResponse<DM, P>>
 internal typealias AnyScanStoreAction = ScanStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
@@ -18,7 +19,7 @@ internal typealias AnyScanStoreAction = ScanStoreAction<IsRootValuesDataModel<Pr
 /** Processes a ScanRequest in a [storeAction] into a [dataStore] */
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processScanRequest(
     storeAction: ScanStoreAction<DM, P>,
-    dataStore: DataStore<DM, P>
+    dataStoreFetcher: IsStoreFetcher<*, *>
 ) {
     val scanRequest = storeAction.request
     val valuesWithMeta = mutableListOf<ValuesWithMetaData<DM, P>>()
@@ -27,7 +28,12 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
         Aggregator(it)
     }
 
-    processScan(scanRequest, dataStore) { record ->
+    val recordFetcher = createStoreRecordFetcher(dataStoreFetcher)
+
+    @Suppress("UNCHECKED_CAST")
+    val dataStore = dataStoreFetcher(scanRequest.dataModel) as DataStore<DM, P>
+
+    processScan(scanRequest, dataStore, recordFetcher) { record ->
         val toVersion = scanRequest.toVersion?.let { HLC(it) }
 
         val valuesWithMetaData = scanRequest.dataModel.recordToValueWithMeta(

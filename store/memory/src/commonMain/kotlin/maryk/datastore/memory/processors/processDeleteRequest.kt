@@ -8,6 +8,7 @@ import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.IsDeleteResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
+import maryk.datastore.memory.IsStoreFetcher
 import maryk.datastore.memory.processors.changers.setValueAtIndex
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.StoreAction
@@ -21,7 +22,7 @@ internal val objectSoftDeleteQualifier = byteArrayOf(0)
 /** Processes a DeleteRequest in a [storeAction] into a [dataStore] */
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDeleteRequest(
     storeAction: DeleteStoreAction<DM, P>,
-    dataStore: DataStore<DM, P>
+    dataStoreFetcher: IsStoreFetcher<*, *>
 ) {
     val deleteRequest = storeAction.request
     val statuses = mutableListOf<IsDeleteResponseStatus<DM>>()
@@ -29,7 +30,10 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
     if (deleteRequest.keys.isNotEmpty()) {
         val version = storeAction.version
 
-        // Delete it from history if it is a hard delete
+        @Suppress("UNCHECKED_CAST")
+        val dataStore = dataStoreFetcher(deleteRequest.dataModel) as DataStore<DM, P>
+
+        // Delete it from history if it is a hard deletion
         val historicStoreIndexValuesWalker = if (deleteRequest.hardDelete && dataStore.keepAllVersions) {
             HistoricStoreIndexValuesWalker
         } else null

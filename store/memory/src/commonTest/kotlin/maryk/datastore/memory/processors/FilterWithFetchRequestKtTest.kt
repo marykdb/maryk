@@ -5,6 +5,7 @@ import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.key
 import maryk.core.processors.datastore.writeToStorage
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.types.Key
 import maryk.core.query.filters.And
 import maryk.core.query.filters.Equals
 import maryk.core.query.filters.Exists
@@ -31,6 +32,26 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class FilterWithFetchRequestKtTest {
+    private val value2 = TestMarykModel.createDataRecord(
+        TestMarykModel(
+            string = "haha2",
+            int = 532,
+            uint = 2u,
+            double = 2828.43,
+            dateTime = DateTime(2013, 3, 2),
+            bool = true,
+            map = mapOf(
+                Time(14, 15, 14) to "haha10"
+            ),
+            list = listOf(
+                2, 6, 7
+            ),
+            set = setOf(
+                Date(2020, 3, 30), Date(2018, 9, 9)
+            )
+        )
+    )
+
     private val value1 = TestMarykModel.createDataRecord(
         TestMarykModel(
             string = "haha1",
@@ -47,7 +68,8 @@ class FilterWithFetchRequestKtTest {
             ),
             set = setOf(
                 Date(2019, 3, 30), Date(2018, 9, 9)
-            )
+            ),
+            selfReference = value2.key
         )
     )
 
@@ -66,13 +88,25 @@ class FilterWithFetchRequestKtTest {
         )
     }
 
+    private val recordFetcher = { dataModel: IsRootValuesDataModel<*>, key: Key<*> ->
+        when {
+            dataModel === TestMarykModel -> when (key) {
+                value1.key -> value1
+                value2.key -> value2
+                else -> null
+            }
+            else -> null
+        }
+    }
+
     @Test
     fun doExistsFilter() {
         assertTrue {
             filterMatches(
                 Exists(TestMarykModel { string::ref }),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
 
@@ -81,7 +115,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 Exists(TestMarykModel { string::ref }),
                 value1,
-                HLC(1233uL)
+                HLC(1233uL),
+                recordFetcher
             )
         }
 
@@ -89,7 +124,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 Exists(TestMarykModel { reference::ref }),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
     }
@@ -100,7 +136,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 Equals(TestMarykModel { string::ref } with "haha1"),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
 
@@ -108,7 +145,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 Equals(TestMarykModel { string::ref } with "haha1"),
                 value1,
-                HLC(1233uL)
+                HLC(1233uL),
+                recordFetcher
             )
         }
 
@@ -116,7 +154,38 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 Equals(TestMarykModel { string::ref } with "wrong"),
                 value1,
-                null
+                null,
+                recordFetcher
+            )
+        }
+    }
+
+    @Test
+    fun doReferencedEqualsFilter() {
+        assertTrue {
+            filterMatches(
+                Equals(TestMarykModel { selfReference { string::ref } } with "haha2"),
+                value1,
+                null,
+                recordFetcher
+            )
+        }
+
+        assertFalse {
+            filterMatches(
+                Equals(TestMarykModel { selfReference { string::ref } } with "haha2"),
+                value1,
+                HLC(1233uL),
+                recordFetcher
+            )
+        }
+
+        assertFalse {
+            filterMatches(
+                Equals(TestMarykModel { selfReference { string::ref } } with "wrong"),
+                value1,
+                null,
+                recordFetcher
             )
         }
     }
@@ -127,7 +196,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 Equals(TestMarykModel { map.refAt(Time(12, 13, 14)) } with "haha10"),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
 
@@ -135,7 +205,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 Equals(TestMarykModel { map.refToAny() } with "haha10"),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
 
@@ -143,7 +214,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 Equals(TestMarykModel { map.refToAny() } with "haha11"),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
 
@@ -151,7 +223,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 Equals(TestMarykModel { map.refAt(Time(13, 13, 14)) } with "haha10"),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
 
@@ -159,7 +232,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 Equals(TestMarykModel { list refAt 1u } with 6),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
 
@@ -167,7 +241,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 Equals(TestMarykModel { list refAt 2u } with 6),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
 
@@ -175,7 +250,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 Equals(TestMarykModel { list.refToAny() } with 6),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
 
@@ -183,7 +259,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 Equals(TestMarykModel { list.refToAny() } with 2),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
 
@@ -191,7 +268,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 Equals(TestMarykModel { list refAt 1u } with 6),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
 
@@ -199,7 +277,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 Exists(TestMarykModel { set refAt Date(2018, 9, 9) }),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
 
@@ -207,7 +286,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 Exists(TestMarykModel { set refAt Date(2017, 9, 9) }),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
     }
@@ -218,7 +298,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 Prefix(TestMarykModel { string::ref } with "ha"),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
 
@@ -226,7 +307,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 Prefix(TestMarykModel { string::ref } with "wrong"),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
     }
@@ -237,7 +319,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 LessThan(TestMarykModel { int::ref } with 6),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
 
@@ -245,7 +328,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 LessThan(TestMarykModel { int::ref } with 5),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
 
@@ -253,7 +337,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 LessThan(TestMarykModel { int::ref } with 2),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
     }
@@ -264,7 +349,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 LessThanEquals(TestMarykModel { int::ref } with 6),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
 
@@ -272,7 +358,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 LessThanEquals(TestMarykModel { int::ref } with 5),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
 
@@ -280,7 +367,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 LessThanEquals(TestMarykModel { int::ref } with 2),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
     }
@@ -291,7 +379,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 GreaterThan(TestMarykModel { int::ref } with 4),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
 
@@ -299,7 +388,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 GreaterThan(TestMarykModel { int::ref } with 5),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
 
@@ -307,7 +397,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 GreaterThan(TestMarykModel { int::ref } with 6),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
     }
@@ -318,7 +409,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 GreaterThanEquals(TestMarykModel { int::ref } with 4),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
 
@@ -326,7 +418,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 GreaterThanEquals(TestMarykModel { int::ref } with 5),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
 
@@ -334,7 +427,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 GreaterThanEquals(TestMarykModel { int::ref } with 6),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
     }
@@ -345,7 +439,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 Range(TestMarykModel { int::ref } with (2..8)),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
 
@@ -353,7 +448,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 Range(TestMarykModel { int::ref } with (2..5)),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
 
@@ -361,7 +457,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 Range(TestMarykModel { int::ref } with (2..3)),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
     }
@@ -372,7 +469,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 RegEx(TestMarykModel { string::ref } with Regex("^h.*$")),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
 
@@ -380,7 +478,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 RegEx(TestMarykModel { string::ref } with Regex("^b.*$")),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
     }
@@ -391,7 +490,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 ValueIn(TestMarykModel { string::ref } with setOf("haha1", "haha2")),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
 
@@ -399,7 +499,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 ValueIn(TestMarykModel { string::ref } with setOf("no1", "no2")),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
     }
@@ -410,7 +511,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 Not(Exists(TestMarykModel { string::ref })),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
 
@@ -418,7 +520,8 @@ class FilterWithFetchRequestKtTest {
             filterMatches(
                 Not(Exists(TestMarykModel { reference::ref })),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
     }
@@ -432,7 +535,8 @@ class FilterWithFetchRequestKtTest {
                     Exists(TestMarykModel { string::ref })
                 ),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
 
@@ -443,7 +547,8 @@ class FilterWithFetchRequestKtTest {
                     Exists(TestMarykModel { string::ref })
                 ),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
     }
@@ -457,7 +562,8 @@ class FilterWithFetchRequestKtTest {
                     Exists(TestMarykModel { string::ref })
                 ),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
 
@@ -468,7 +574,8 @@ class FilterWithFetchRequestKtTest {
                     Exists(TestMarykModel { string::ref })
                 ),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
 
@@ -479,7 +586,8 @@ class FilterWithFetchRequestKtTest {
                     Not(Exists(TestMarykModel { string::ref }))
                 ),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
     }

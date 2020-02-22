@@ -4,6 +4,7 @@ import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.types.Key
 import maryk.core.query.orders.Direction
 import maryk.core.query.orders.Direction.ASC
 import maryk.core.query.orders.Direction.DESC
@@ -16,6 +17,7 @@ import kotlin.math.min
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
     dataStore: DataStore<DM, P>,
     scanRequest: IsScanRequest<DM, P, *>,
+    recordFetcher: (IsRootValuesDataModel<*>, Key<*>) -> DataRecord<*, *>?,
     direction: Direction,
     scanRange: KeyScanRanges,
     processStoreValue: (DataRecord<DM, P>) -> Unit
@@ -48,7 +50,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
                         continue
                     }
 
-                    if (scanRequest.shouldBeFiltered(record, toVersion)) {
+                    if (scanRequest.shouldBeFiltered(record, toVersion, recordFetcher)) {
                         continue
                     }
 
@@ -84,7 +86,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
                         continue
                     }
 
-                    if (scanRequest.shouldBeFiltered(record, toVersion)) {
+                    if (scanRequest.shouldBeFiltered(record, toVersion, recordFetcher)) {
                         continue
                     }
 

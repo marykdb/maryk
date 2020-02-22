@@ -12,7 +12,7 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.responses.IsResponse
 
-typealias StoreActor<DM, P> = SendChannel<StoreAction<DM, P, *, *>>
+typealias StoreActor = SendChannel<StoreAction<*, *, *, *>>
 
 /**
  * Abstract DataStore implementation that takes care of the HLC clock
@@ -23,6 +23,9 @@ abstract class AbstractDataStore(
     private val dataStoreJob = SupervisorJob()
     override val coroutineContext = Dispatchers.Default + dataStoreJob
 
+    /** StoreActor to run actions against.*/
+    abstract val storeActor: StoreActor
+
     override val dataModelIdsByString = dataModelsById.map { (index, dataModel) ->
         Pair(dataModel.name, index)
     }.toMap()
@@ -30,28 +33,26 @@ abstract class AbstractDataStore(
     // Clock actor holds/calculates the latest HLC clock instance
     private val clockActor = this.clockActor()
 
-    /** Get a StoreActor for [dataModel] to run actions against.*/
-    abstract fun <DM: IsRootValuesDataModel<P>, P : PropertyDefinitions> getStoreActor(dataModel: DM): StoreActor<DM, P>
-
     override suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
         request: RQ
     ): RP {
-        val storeActor = this.getStoreActor(request.dataModel)
         val response = CompletableDeferred<RP>()
 
         val clock = DeferredClock().also {
             clockActor.send(it)
         }.completableDeferred.await()
 
-        val dbIndex = dataModelIdsByString[request.dataModel.name] ?:
-            throw DefNotFoundException("DataStore not found ${request.dataModel.name}")
-
         storeActor.send(
-            StoreAction(clock, dbIndex, request, response)
+            StoreAction(clock, request, response)
         )
 
         return response.await()
     }
+
+    /** Get [dataModel] id to identify it for storage */
+    fun getDataModelId(dataModel: IsRootValuesDataModel<*>) =
+        dataModelIdsByString[dataModel.name] ?:
+        throw DefNotFoundException("DataStore not found ${dataModel.name}")
 
     override fun close() {
         dataStoreJob.cancel()

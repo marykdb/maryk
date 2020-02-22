@@ -15,6 +15,7 @@ import maryk.core.query.responses.statuses.AlreadyExists
 import maryk.core.query.responses.statuses.IsAddResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.ValidationFail
+import maryk.datastore.memory.IsStoreFetcher
 import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataRecordNode
 import maryk.datastore.memory.records.DataRecordValue
@@ -29,12 +30,15 @@ internal typealias AnyAddStoreAction = AddStoreAction<IsRootValuesDataModel<Prop
 /** Processes an AddRequest in a [storeAction] into a [dataStore] */
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAddRequest(
     storeAction: StoreAction<DM, P, AddRequest<DM, P>, AddResponse<DM>>,
-    dataStore: DataStore<DM, P>
+    dataStoreFetcher: IsStoreFetcher<*, *>
 ) {
     val addRequest = storeAction.request
     val statuses = mutableListOf<IsAddResponseStatus<DM>>()
 
     val version = storeAction.version
+
+    @Suppress("UNCHECKED_CAST")
+    val dataStore = dataStoreFetcher(addRequest.dataModel) as DataStore<DM, P>
 
     if (addRequest.objects.isNotEmpty()) {
         for (objectToAdd in addRequest.objects) {

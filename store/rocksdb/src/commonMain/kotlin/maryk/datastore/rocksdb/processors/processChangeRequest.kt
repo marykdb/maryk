@@ -3,9 +3,7 @@ package maryk.datastore.rocksdb.processors
 import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
-import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.toVarBytes
-import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.values
@@ -32,10 +30,8 @@ import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
-import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.enum.MultiTypeEnum
-import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.exceptions.AlreadyExistsException
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationException
@@ -89,6 +85,7 @@ import maryk.datastore.rocksdb.processors.helpers.readValue
 import maryk.datastore.rocksdb.processors.helpers.setIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setLatestVersion
 import maryk.datastore.rocksdb.processors.helpers.setListValue
+import maryk.datastore.rocksdb.processors.helpers.setTypedValue
 import maryk.datastore.rocksdb.processors.helpers.setUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setValue
 import maryk.datastore.shared.StoreAction
@@ -106,12 +103,14 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processCha
     dataStore: RocksDBDataStore
 ) {
     val changeRequest = storeAction.request
-    val version = storeAction.version
-    val columnFamilies = dataStore.getColumnFamilies(storeAction.dbIndex)
 
     val statuses = mutableListOf<IsChangeResponseStatus<DM>>()
 
     if (changeRequest.objects.isNotEmpty()) {
+        val version = storeAction.version
+        val dbIndex = dataStore.getDataModelId(changeRequest.dataModel)
+        val columnFamilies = dataStore.getColumnFamilies(dbIndex)
+
         Transaction(dataStore).use { transaction ->
             objectChanges@ for (objectChange in changeRequest.objects) {
                 val mayExist = dataStore.db.keyMayExist(columnFamilies.keys, objectChange.key.bytes, null)
@@ -138,13 +137,12 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processCha
                         applyChanges(
                             changeRequest.dataModel,
                             dataStore,
-                            storeAction,
+                            dbIndex,
                             transaction,
                             columnFamilies,
                             objectChange.key,
                             objectChange.changes,
-                            version,
-                            dataStore.keepAllVersions
+                            version
                         )
                     } else {
                         DoesNotExist(objectChange.key)
@@ -169,19 +167,16 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processCha
 
 /**
  * Apply [changes] to a specific [transaction] and record them as [version]
- * [keepAllVersions] determines if history is kept
  */
-@Suppress("UNUSED_PARAMETER")
 private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChanges(
     dataModel: DM,
     dataStore: RocksDBDataStore,
-    storeAction: ChangeStoreAction<DM, P>,
+    dbIndex: UInt,
     transaction: Transaction,
     columnFamilies: TableColumnFamilies,
     key: Key<DM>,
     changes: List<IsChange>,
-    version: HLC,
-    keepAllVersions: Boolean
+    version: HLC
 ): IsChangeResponseStatus<DM> {
     try {
         var validationExceptions: MutableList<ValidationException>? = null
@@ -244,7 +239,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                     ) { mapReference }
 
                                     val valueWriter = createValueWriter(
-                                        dataStore, storeAction, transaction, columnFamilies, key, versionBytes
+                                        dataStore, dbIndex, transaction, columnFamilies, key, versionBytes
                                     )
 
                                     writeMapToStorage(
@@ -273,7 +268,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                     ) { reference as IsPropertyReference<List<Any>, IsPropertyDefinition<List<Any>>, *> }
 
                                     val valueWriter = createValueWriter(
-                                        dataStore, storeAction, transaction, columnFamilies, key, versionBytes
+                                        dataStore, dbIndex, transaction, columnFamilies, key, versionBytes
                                     )
 
                                     writeListToStorage(
@@ -302,7 +297,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                     ) { reference as IsPropertyReference<Set<Any>, IsPropertyDefinition<Set<Any>>, *> }
 
                                     val valueWriter = createValueWriter(
-                                        dataStore, storeAction, transaction, columnFamilies, key, versionBytes
+                                        dataStore, dbIndex, transaction, columnFamilies, key, versionBytes
                                     )
 
                                     writeSetToStorage(
@@ -337,7 +332,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                     ) { multiTypeReference }
 
                                     val valueWriter = createValueWriter(
-                                        dataStore, storeAction, transaction, columnFamilies, key, versionBytes
+                                        dataStore, dbIndex, transaction, columnFamilies, key, versionBytes
                                     )
 
                                     writeTypedValueToStorage(
@@ -371,7 +366,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                     ) { valuesReference }
 
                                     val valueWriter = createValueWriter(
-                                        dataStore, storeAction, transaction, columnFamilies, key, versionBytes
+                                        dataStore, dbIndex, transaction, columnFamilies, key, versionBytes
                                     )
 
                                     // Write complex values existence indicator
@@ -454,7 +449,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                             refGetter = { reference }
                                         )
 
-                                        val valueWriter = createValueWriter(dataStore, storeAction, transaction, columnFamilies, key, versionBytes)
+                                        val valueWriter = createValueWriter(dataStore, dbIndex, transaction, columnFamilies, key, versionBytes)
 
                                         valueWriter(Value, referenceAsBytes, reference.comparablePropertyDefinition, value)
                                         setChanged(true)
@@ -615,7 +610,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                                     incMapReference
                                 )
                                 val valueWriter = createValueWriter(
-                                    dataStore, storeAction, transaction, columnFamilies, key, versionBytes
+                                    dataStore, dbIndex, transaction, columnFamilies, key, versionBytes
                                 )
 
                                 val addedKeys = writeIncMapAdditionsToStorage(
@@ -674,8 +669,8 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
         validationExceptions?.let {
             // Undo snapshot because of validation exceptions
             transaction.rollbackToSavePoint()
-            return when {
-                it.size == 1 -> ValidationFail(it.first())
+            return when (it.size) {
+                1 -> ValidationFail(it.first())
                 else -> ValidationFail(it)
             }
         }
@@ -722,7 +717,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
  */
 private fun createValueWriter(
     dataStore: RocksDBDataStore,
-    storeAction: StoreAction<*, *, *, *>,
+    dbIndex: UInt,
     transaction: Transaction,
     columnFamilies: TableColumnFamilies,
     key: Key<*>,
@@ -754,9 +749,9 @@ private fun createValueWriter(
                     deleteUniqueIndexValue(transaction, columnFamilies, reference, b, o, l, versionBytes, false)
                 }
 
-                // Creates index reference on table if it not exists so delete can find
+                // Creates index reference on the table if it not exists so delete can find
                 // what values to delete from the unique indices.
-                dataStore.createUniqueIndexIfNotExists(storeAction.dbIndex, columnFamilies.unique, reference)
+                dataStore.createUniqueIndexIfNotExists(dbIndex, columnFamilies.unique, reference)
                 setUniqueIndexValue(columnFamilies, transaction, uniqueReference, versionBytes, key)
             }
 
@@ -765,30 +760,7 @@ private fun createValueWriter(
         ListSize,
         SetSize,
         MapSize -> setValue(transaction, columnFamilies, key, reference, versionBytes, (value as Int).toVarBytes())
-        TypeValue -> {
-            val typedValue = value as TypedValue<TypeEnum<*>, *>
-            val typeDefinition = TypeValue.castDefinition(definition)
-
-            var index = 0
-            if (typedValue.value == Unit) {
-                val valueBytes = ByteArray(value.type.index.calculateVarIntWithExtraInfoByteSize())
-                typedValue.type.index.writeVarIntWithExtraInfo(COMPLEX_TYPE_INDICATOR) { valueBytes[index++] = it }
-
-                setValue(transaction, columnFamilies, key, reference, versionBytes, valueBytes)
-            } else {
-                val typeValueDefinition = typeDefinition.definition(typedValue.type) as IsSimpleValueDefinition<Any, *>
-                val valueBytes = ByteArray(
-                    typedValue.type.index.calculateVarIntWithExtraInfoByteSize() +
-                        typeValueDefinition.calculateStorageByteLength(typedValue.value)
-                )
-                val writer: (Byte) -> Unit = { valueBytes[index++] = it }
-
-                typedValue.type.index.writeVarIntWithExtraInfo(SIMPLE_TYPE_INDICATOR, writer)
-                typeValueDefinition.writeStorageBytes(typedValue.value, writer)
-
-                setValue(transaction, columnFamilies, key, reference, versionBytes, valueBytes)
-            }
-        }
+        TypeValue -> setTypedValue(value, definition, transaction, columnFamilies, key, reference, versionBytes)
         Embed -> {
             // Indicates value exists and is an embed
             // Is for the root of embed

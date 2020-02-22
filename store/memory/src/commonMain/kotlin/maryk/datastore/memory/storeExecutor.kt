@@ -22,26 +22,25 @@ import maryk.datastore.memory.processors.processGetChangesRequest
 import maryk.datastore.memory.processors.processGetRequest
 import maryk.datastore.memory.processors.processScanChangesRequest
 import maryk.datastore.memory.processors.processScanRequest
-import maryk.datastore.memory.records.AnyDataStore
 
 /** Executor of StoreActions onto DataStore */
 @Suppress("UNCHECKED_CAST")
-internal val storeExecutor: StoreExecutor<*, *> = { storeAction, dataStore ->
+internal val storeExecutor: StoreExecutor<*, *> = { storeAction, dataStoreFetcher ->
     when (storeAction.request) {
         is AddRequest<*, *> ->
-            processAddRequest(storeAction as AnyAddStoreAction, dataStore as AnyDataStore)
+            processAddRequest(storeAction as AnyAddStoreAction, dataStoreFetcher)
         is GetRequest<*, *> ->
-            processGetRequest(storeAction as AnyGetStoreAction, dataStore as AnyDataStore)
+            processGetRequest(storeAction as AnyGetStoreAction, dataStoreFetcher)
         is GetChangesRequest<*, *> ->
-            processGetChangesRequest(storeAction as AnyGetChangesStoreAction, dataStore as AnyDataStore)
+            processGetChangesRequest(storeAction as AnyGetChangesStoreAction, dataStoreFetcher)
         is ChangeRequest<*> ->
-            processChangeRequest(storeAction as AnyChangeStoreAction, dataStore as AnyDataStore)
+            processChangeRequest(storeAction as AnyChangeStoreAction, dataStoreFetcher)
         is DeleteRequest<*> ->
-            processDeleteRequest(storeAction as AnyDeleteStoreAction, dataStore as AnyDataStore)
+            processDeleteRequest(storeAction as AnyDeleteStoreAction, dataStoreFetcher)
         is ScanRequest<*, *> ->
-            processScanRequest(storeAction as AnyScanStoreAction, dataStore as AnyDataStore)
+            processScanRequest(storeAction as AnyScanStoreAction, dataStoreFetcher)
         is ScanChangesRequest<*, *> ->
-            processScanChangesRequest(storeAction as AnyScanChangesStoreAction, dataStore as AnyDataStore)
+            processScanChangesRequest(storeAction as AnyScanChangesStoreAction, dataStoreFetcher)
         else -> throw TypeException("Unknown request type ${storeAction.request}")
     }
 }

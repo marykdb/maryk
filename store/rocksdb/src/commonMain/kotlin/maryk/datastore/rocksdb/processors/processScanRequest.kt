@@ -27,7 +27,8 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
 ) {
     val scanRequest = storeAction.request
     val valuesWithMeta = mutableListOf<ValuesWithMetaData<DM, P>>()
-    val columnFamilies = dataStore.getColumnFamilies(storeAction.dbIndex)
+    val dbIndex = dataStore.getDataModelId(scanRequest.dataModel)
+    val columnFamilies = dataStore.getColumnFamilies(dbIndex)
 
     val aggregator = scanRequest.aggregations?.let {
         Aggregator(it)
@@ -47,7 +48,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
             dataStore.defaultReadOptions
         ) { key, creationVersion ->
             val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
-                dataStore.readValueWithCache(storeAction.dbIndex, key, reference, version, valueReader)
+                dataStore.readValueWithCache(dbIndex, key, reference, version, valueReader)
             }
 
             val valuesWithMetaData = scanRequest.dataModel.readTransactionIntoValuesWithMetaData(

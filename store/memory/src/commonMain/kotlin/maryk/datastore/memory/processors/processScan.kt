@@ -5,6 +5,7 @@ import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.types.Key
 import maryk.core.query.requests.IsScanRequest
 import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataStore
@@ -18,6 +19,7 @@ import maryk.datastore.shared.orderToScanType
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processScan(
     scanRequest: IsScanRequest<DM, P, *>,
     dataStore: DataStore<DM, P>,
+    recordFetcher: (IsRootValuesDataModel<*>, Key<*>) -> DataRecord<*, *>?,
     processRecord: (DataRecord<DM, P>) -> Unit
 ) {
     val scanRange = scanRequest.dataModel.createScanRange(scanRequest.where, scanRequest.startKey?.bytes)
@@ -28,7 +30,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
         // If hard key match then quit with direct record
         scanRange.isSingleKey() ->
             dataStore.getByKey(scanRange.ranges.first().start)?.let {
-                if (shouldProcessRecord(it, scanRequest, scanRange)) {
+                if (shouldProcessRecord(it, scanRequest, scanRange, recordFetcher)) {
                     processRecord(it)
                 }
             }
@@ -48,7 +50,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
                     } ?: uniqueIndex[value]
 
                     record?.let {
-                        if (shouldProcessRecord(record, scanRequest, scanRange)) {
+                        if (shouldProcessRecord(record, scanRequest, scanRange, recordFetcher)) {
                             processRecord(record)
                         }
                     }
@@ -67,6 +69,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
                     scanStore(
                         dataStore,
                         scanRequest,
+                        recordFetcher,
                         processedScanIndex.direction,
                         scanRange,
                         processRecord
@@ -76,6 +79,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
                     scanIndex(
                         dataStore,
                         scanRequest,
+                        recordFetcher,
                         processedScanIndex,
                         scanRange,
                         processRecord
@@ -89,7 +93,8 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
 internal fun <DM: IsRootValuesDataModel<P>, P:PropertyDefinitions> shouldProcessRecord(
     record: DataRecord<DM, P>,
     scanRequest: IsScanRequest<DM, P, *>,
-    scanRange: KeyScanRanges
+    scanRange: KeyScanRanges,
+    recordFetcher: (IsRootValuesDataModel<*>, Key<*>) -> DataRecord<*, *>?
 ): Boolean {
     if (!scanRange.keyWithinRanges(record.key.bytes, 0)) {
         return false
@@ -97,5 +102,5 @@ internal fun <DM: IsRootValuesDataModel<P>, P:PropertyDefinitions> shouldProcess
         return false
     }
 
-    return !scanRequest.shouldBeFiltered(record, scanRequest.toVersion?.let { HLC(it) })
+    return !scanRequest.shouldBeFiltered(record, scanRequest.toVersion?.let { HLC(it) }, recordFetcher)
 }

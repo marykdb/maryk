@@ -31,7 +31,8 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
 ) {
     val getRequest = storeAction.request
     val valuesWithMeta = mutableListOf<ValuesWithMetaData<DM, P>>()
-    val columnFamilies = dataStore.getColumnFamilies(storeAction.dbIndex)
+    val dbIndex = dataStore.getDataModelId(getRequest.dataModel)
+    val columnFamilies = dataStore.getColumnFamilies(dbIndex)
 
     val aggregator = getRequest.aggregations?.let {
         Aggregator(it)
@@ -54,22 +55,13 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
                 if (valueLength != rocksDBNotFound) {
                     val creationVersion = recyclableByteArray.toULong()
                     if (
-                        getRequest.shouldBeFiltered(
-                            dbAccessor,
-                            columnFamilies,
-                            dataStore.defaultReadOptions,
-                            key.bytes,
-                            0,
-                            key.size,
-                            creationVersion,
-                            getRequest.toVersion
-                        )
+                        getRequest.shouldBeFiltered(dbAccessor, columnFamilies, dataStore.defaultReadOptions, key.bytes, 0, key.size, creationVersion, getRequest.toVersion)
                     ) {
                         continue@keyWalk
                     }
 
                     val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
-                        dataStore.readValueWithCache(storeAction.dbIndex, key, reference, version, valueReader)
+                        dataStore.readValueWithCache(dbIndex, key, reference, version, valueReader)
                     }
 
                     val valuesWithMetaData = getRequest.dataModel.readTransactionIntoValuesWithMetaData(

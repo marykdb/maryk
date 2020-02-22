@@ -5,6 +5,7 @@ import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.key
 import maryk.core.processors.datastore.writeToStorage
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.types.Key
 import maryk.core.query.filters.Equals
 import maryk.core.query.filters.Exists
 import maryk.core.values.Values
@@ -23,6 +24,10 @@ class FilterWithFetchRequestComplexKtTest {
             )
         )
     )
+
+    private val recordFetcher = { _: IsRootValuesDataModel<*>, _: Key<*> ->
+        null
+    }
 
     private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.createDataRecord(values: Values<DM, P>): DataRecord<DM, P> {
         val recordValues = mutableListOf<DataRecordValue<*>>()
@@ -45,7 +50,8 @@ class FilterWithFetchRequestComplexKtTest {
             filterMatches(
                 Exists(ComplexModel { mapStringString.refAt("k1") }),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
     }
@@ -56,7 +62,8 @@ class FilterWithFetchRequestComplexKtTest {
             filterMatches(
                 Equals(ComplexModel { mapStringString.refAt("k1") } with "v1"),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
 
@@ -64,7 +71,8 @@ class FilterWithFetchRequestComplexKtTest {
             filterMatches(
                 Equals(ComplexModel { mapStringString.refToAny() } with "v2"),
                 value1,
-                null
+                null,
+                recordFetcher
             )
         }
     }

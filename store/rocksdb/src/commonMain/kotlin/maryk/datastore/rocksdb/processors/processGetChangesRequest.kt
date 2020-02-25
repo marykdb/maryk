@@ -29,7 +29,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
 
     getRequest.checkToVersion(dataStore.keepAllVersions)
 
-    DBAccessor(dataStore.db).use { dbAccessor ->
+    DBAccessor(dataStore).use { dbAccessor ->
         val dbIndex = dataStore.getDataModelId(getRequest.dataModel)
         val columnFamilies = dataStore.getColumnFamilies(dbIndex)
 

@@ -34,7 +34,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
         Aggregator(it)
     }
 
-    DBAccessor(dataStore.db).use { transaction ->
+    DBAccessor(dataStore).use { transaction ->
         val columnToScan = if (scanRequest.toVersion != null && columnFamilies is HistoricTableColumnFamilies) {
             columnFamilies.historic.table
         } else columnFamilies.table

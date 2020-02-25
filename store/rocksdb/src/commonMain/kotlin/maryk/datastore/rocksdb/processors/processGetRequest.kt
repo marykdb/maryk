@@ -40,7 +40,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
 
     getRequest.checkToVersion(dataStore.keepAllVersions)
 
-    DBAccessor(dataStore.db).use { dbAccessor ->
+    DBAccessor(dataStore).use { dbAccessor ->
         val columnToScan = if (getRequest.toVersion != null && columnFamilies is HistoricTableColumnFamilies) {
             columnFamilies.historic.table
         } else columnFamilies.table

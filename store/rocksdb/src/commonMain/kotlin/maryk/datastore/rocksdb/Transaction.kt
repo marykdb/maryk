@@ -23,7 +23,7 @@ private class CheckBeforeCommit(
     val value: ByteArray?
 )
 
-class Transaction(val rocksDBDataStore: RocksDBDataStore): DBAccessor(rocksDBDataStore.db) {
+class Transaction(val rocksDBDataStore: RocksDBDataStore): DBAccessor(rocksDBDataStore) {
     private var savedChanges: Map<Int, List<ChangeAction>>? = null
     // Changes sorted on the column family ID
     internal val changes = mutableMapOf<Int, MutableList<ChangeAction>>()
@@ -48,7 +48,7 @@ class Transaction(val rocksDBDataStore: RocksDBDataStore): DBAccessor(rocksDBDat
         val index = columnChanges.binarySearch { it.key.compareTo(key) }
 
         return if (index < 0) {
-            rocksDB.get(columnFamilyHandle, readOptions, key)
+            dataStore.db.get(columnFamilyHandle, readOptions, key)
         } else when (val change = columnChanges[index]) {
             is Put -> change.value
             is Delete -> null
@@ -74,7 +74,7 @@ class Transaction(val rocksDBDataStore: RocksDBDataStore): DBAccessor(rocksDBDat
         TransactionIterator(
             this,
             columnFamilyHandle,
-            rocksDB.newIterator(columnFamilyHandle, readOptions)
+            dataStore.db.newIterator(columnFamilyHandle, readOptions)
         )
 
     fun getForUpdate(
@@ -87,7 +87,7 @@ class Transaction(val rocksDBDataStore: RocksDBDataStore): DBAccessor(rocksDBDat
 
     fun commit() {
         this.checksBeforeCommit?.forEach { check ->
-            val current = rocksDB.get(check.columnFamilyHandle, check.key)
+            val current = dataStore.db.get(check.columnFamilyHandle, check.key)
 
             if (check.value == null) {
                 if (current != null) {
@@ -101,8 +101,8 @@ class Transaction(val rocksDBDataStore: RocksDBDataStore): DBAccessor(rocksDBDat
         for (changePerFamily in changes) {
             for (change in changePerFamily.value) {
                 when (change) {
-                    is Put -> rocksDB.put(change.columnFamilyHandle, change.key, change.value)
-                    is Delete -> rocksDB.delete(change.columnFamilyHandle, change.key)
+                    is Put -> dataStore.db.put(change.columnFamilyHandle, change.key, change.value)
+                    is Delete -> dataStore.db.delete(change.columnFamilyHandle, change.key)
                 }
             }
         }

@@ -84,17 +84,21 @@ internal data class DataRecord<DM : IsRootValuesDataModel<P>, P : PropertyDefini
                     val value = getValueAtIndex<T>(this.values, index, toVersion)
                         ?: continue@qualifiers
 
-                    return when (val referencedMatcher = qualifierMatcher.referencedQualifierMatcher) {
-                        null -> when (qualifierMatcher.isMatch(value.reference, 0)) {
-                            NO_MATCH -> continue@qualifiers
-                            MATCH -> if (matcher(value.value)) return true else continue@qualifiers
-                            OUT_OF_RANGE -> false
+                    when (qualifierMatcher.isMatch(value.reference, 0)) {
+                        NO_MATCH -> continue@qualifiers
+                        MATCH -> {
+                            val matches = when (val referencedMatcher = qualifierMatcher.referencedQualifierMatcher) {
+                                null -> matcher(value.value)
+                                else -> {
+                                    recordFetcher(referencedMatcher.reference.comparablePropertyDefinition.dataModel as IsRootValuesDataModel<*>, value.value as Key<*>)?.
+                                        matchQualifier(referencedMatcher.qualifierMatcher, toVersion, recordFetcher, matcher)
+                                        ?: false
+                                }
+                            }
+
+                            return if (matches) true else continue@qualifiers
                         }
-                        else -> {
-                            recordFetcher(referencedMatcher.reference.comparablePropertyDefinition.dataModel as IsRootValuesDataModel<*>, value.value as Key<*>)?.
-                                matchQualifier(referencedMatcher.qualifierMatcher, toVersion, recordFetcher, matcher)
-                                ?: false
-                        }
+                        OUT_OF_RANGE -> return false
                     }
                 }
                 return false

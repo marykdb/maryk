@@ -2,6 +2,7 @@ package maryk.datastore.rocksdb
 
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.calculateVarByteLength
+import maryk.core.models.IsRootDataModel
 import maryk.core.models.RootDataModel
 import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.properties.types.Key
@@ -148,6 +149,10 @@ class RocksDBDataStore(
     internal fun getColumnFamilies(dbIndex: UInt) =
         columnFamilyHandlesByDataModelIndex[dbIndex]
             ?: throw DefNotFoundException("DataModel definition not found for $dbIndex")
+
+    internal fun getColumnFamilies(dataModel: IsRootDataModel<*>) =
+        columnFamilyHandlesByDataModelIndex[dataModelIdsByString[dataModel.name]]
+            ?: throw DefNotFoundException("DataModel definition not found for ${dataModel.name}")
 
     /** Get the unique indices for [dbIndex] and [uniqueHandle] */
     internal fun getUniqueIndices(dbIndex: UInt, uniqueHandle: ColumnFamilyHandle) =

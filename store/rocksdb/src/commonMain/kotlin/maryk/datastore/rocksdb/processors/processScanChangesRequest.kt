@@ -25,7 +25,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
     val dbIndex = dataStore.getDataModelId(scanRequest.dataModel)
     val columnFamilies = dataStore.getColumnFamilies(dbIndex)
 
-    DBAccessor(dataStore.db).use { dbAccessor ->
+    DBAccessor(dataStore).use { dbAccessor ->
         val columnToScan = if (scanRequest.toVersion != null && columnFamilies is HistoricTableColumnFamilies) {
             columnFamilies.historic.table
         } else columnFamilies.table

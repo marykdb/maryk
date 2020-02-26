@@ -1,5 +1,6 @@
 package maryk.datastore.rocksdb.processors
 
+import kotlinx.coroutines.channels.SendChannel
 import maryk.core.clock.HLC
 import maryk.core.extensions.bytes.toVarBytes
 import maryk.core.models.IsRootValuesDataModel
@@ -35,6 +36,8 @@ import maryk.datastore.rocksdb.processors.helpers.setUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setValue
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.UniqueException
+import maryk.datastore.shared.Update
+import maryk.datastore.shared.Update.Addition
 import maryk.lib.recyclableByteArray
 import maryk.rocksdb.rocksDBNotFound
 import maryk.rocksdb.use
@@ -44,9 +47,10 @@ internal typealias AnyAddStoreAction = AddStoreAction<IsRootValuesDataModel<Prop
 
 /** Processes an AddRequest in a [storeAction] into a [dataStore] */
 @Suppress("UNUSED_VARIABLE", "UNUSED_PARAMETER")
-internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAddRequest(
+internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAddRequest(
     storeAction: StoreAction<DM, P, AddRequest<DM, P>, AddResponse<DM>>,
-    dataStore: RocksDBDataStore
+    dataStore: RocksDBDataStore,
+    updateSendChannel: SendChannel<Update>
 ) {
     val addRequest = storeAction.request
     val statuses = mutableListOf<IsAddResponseStatus<DM>>()
@@ -140,6 +144,8 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
 
                         transaction.commit()
                     }
+
+                    updateSendChannel.send(Addition(key, version))
 
                     statuses.add(
                         AddSuccess(key, version.timestamp, listOf())

@@ -33,6 +33,8 @@ abstract class AbstractDataStore(
     // Clock actor holds/calculates the latest HLC clock instance
     private val clockActor = this.clockActor()
 
+    val updateSendChannel = this.processUpdateActor()
+
     override suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
         request: RQ
     ): RP {
@@ -57,5 +59,6 @@ abstract class AbstractDataStore(
     override fun close() {
         dataStoreJob.cancel()
         clockActor.close()
+        updateSendChannel.close()
     }
 }

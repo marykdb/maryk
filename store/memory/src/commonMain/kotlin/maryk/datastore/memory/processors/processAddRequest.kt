@@ -1,5 +1,6 @@
 package maryk.datastore.memory.processors
 
+import kotlinx.coroutines.channels.SendChannel
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.key
 import maryk.core.processors.datastore.writeToStorage
@@ -22,15 +23,18 @@ import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.UniqueException
+import maryk.datastore.shared.Update
+import maryk.datastore.shared.Update.Addition
 import maryk.lib.extensions.compare.compareTo
 
 internal typealias AddStoreAction<DM, P> = StoreAction<DM, P, AddRequest<DM, P>, AddResponse<DM>>
 internal typealias AnyAddStoreAction = AddStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
 
 /** Processes an AddRequest in a [storeAction] into a [dataStore] */
-internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAddRequest(
+internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAddRequest(
     storeAction: StoreAction<DM, P, AddRequest<DM, P>, AddResponse<DM>>,
-    dataStoreFetcher: IsStoreFetcher<*, *>
+    dataStoreFetcher: IsStoreFetcher<*, *>,
+    updateSendChannel: SendChannel<Update>
 ) {
     val addRequest = storeAction.request
     val statuses = mutableListOf<IsAddResponseStatus<DM>>()
@@ -99,6 +103,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd
                     }
 
                     dataStore.records.add((index * -1) - 1, dataRecord)
+                    updateSendChannel.send(Addition(key, version))
                     statuses.add(
                         AddSuccess(key, version.timestamp, listOf())
                     )

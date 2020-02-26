@@ -1,5 +1,6 @@
 package maryk.datastore.rocksdb.processors
 
+import kotlinx.coroutines.channels.SendChannel
 import maryk.core.clock.HLC
 import maryk.core.extensions.bytes.invert
 import maryk.core.models.IsRootValuesDataModel
@@ -17,6 +18,8 @@ import maryk.datastore.rocksdb.processors.helpers.deleteIndexValue
 import maryk.datastore.rocksdb.processors.helpers.deleteUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setLatestVersion
 import maryk.datastore.shared.StoreAction
+import maryk.datastore.shared.Update
+import maryk.datastore.shared.Update.Deletion
 import maryk.lib.extensions.compare.matchPart
 import maryk.lib.extensions.compare.nextByteInSameLength
 import maryk.lib.recyclableByteArray
@@ -28,9 +31,10 @@ internal typealias DeleteStoreAction<DM, P> = StoreAction<DM, P, DeleteRequest<D
 internal typealias AnyDeleteStoreAction = DeleteStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
 
 /** Processes a DeleteRequest in a [storeAction] into a [dataStore] */
-internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDeleteRequest(
+internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDeleteRequest(
     storeAction: DeleteStoreAction<DM, P>,
-    dataStore: RocksDBDataStore
+    dataStore: RocksDBDataStore,
+    updateSendChannel: SendChannel<Update>
 ) {
     val deleteRequest = storeAction.request
     val statuses = mutableListOf<IsDeleteResponseStatus<DM>>()
@@ -162,6 +166,9 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
                             }
                             transaction.commit()
                         }
+
+                        updateSendChannel.send(Deletion(key, version, deleteRequest.hardDelete))
+
                         DeleteSuccess(version.timestamp)
                     }
                     else -> DoesNotExist(key)

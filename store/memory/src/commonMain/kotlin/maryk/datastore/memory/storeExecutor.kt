@@ -25,18 +25,18 @@ import maryk.datastore.memory.processors.processScanRequest
 
 /** Executor of StoreActions onto DataStore */
 @Suppress("UNCHECKED_CAST")
-internal val storeExecutor: StoreExecutor<*, *> = { storeAction, dataStoreFetcher ->
+internal val storeExecutor: StoreExecutor<*, *> = { storeAction, dataStoreFetcher, updateSendChannel ->
     when (storeAction.request) {
         is AddRequest<*, *> ->
-            processAddRequest(storeAction as AnyAddStoreAction, dataStoreFetcher)
+            processAddRequest(storeAction as AnyAddStoreAction, dataStoreFetcher, updateSendChannel)
+        is ChangeRequest<*> ->
+            processChangeRequest(storeAction as AnyChangeStoreAction, dataStoreFetcher, updateSendChannel)
+        is DeleteRequest<*> ->
+            processDeleteRequest(storeAction as AnyDeleteStoreAction, dataStoreFetcher, updateSendChannel)
         is GetRequest<*, *> ->
             processGetRequest(storeAction as AnyGetStoreAction, dataStoreFetcher)
         is GetChangesRequest<*, *> ->
             processGetChangesRequest(storeAction as AnyGetChangesStoreAction, dataStoreFetcher)
-        is ChangeRequest<*> ->
-            processChangeRequest(storeAction as AnyChangeStoreAction, dataStoreFetcher)
-        is DeleteRequest<*> ->
-            processDeleteRequest(storeAction as AnyDeleteStoreAction, dataStoreFetcher)
         is ScanRequest<*, *> ->
             processScanRequest(storeAction as AnyScanStoreAction, dataStoreFetcher)
         is ScanChangesRequest<*, *> ->

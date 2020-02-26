@@ -1,12 +1,18 @@
 package maryk.datastore.memory
 
+import kotlinx.coroutines.channels.SendChannel
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.RootDataModel
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.StoreAction
+import maryk.datastore.shared.Update
 
-internal typealias StoreExecutor<DM, P> = Unit.(StoreAction<DM, P, *, *>, dataStoreFetcher: (IsRootValuesDataModel<P>) -> DataStore<DM, P>) -> Unit
+internal typealias StoreExecutor<DM, P> = suspend Unit.(
+    StoreAction<DM, P, *, *>,
+    dataStoreFetcher: (IsRootValuesDataModel<P>) -> DataStore<DM, P>,
+    updateSendChannel: SendChannel<Update>
+) -> Unit
 
 /**
  * DataProcessor that stores all data changes in local memory.

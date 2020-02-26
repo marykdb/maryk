@@ -1,5 +1,6 @@
 package maryk.datastore.memory.processors
 
+import kotlinx.coroutines.channels.SendChannel
 import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
@@ -75,15 +76,17 @@ import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.UniqueException
+import maryk.datastore.shared.Update
 import maryk.lib.extensions.compare.compareTo
 
 internal typealias ChangeStoreAction<DM, P> = StoreAction<DM, P, ChangeRequest<DM>, ChangeResponse<DM>>
 internal typealias AnyChangeStoreAction = ChangeStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
 
 /** Processes a ChangeRequest in a [storeAction] into a [dataStore] */
-internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processChangeRequest(
+internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processChangeRequest(
     storeAction: ChangeStoreAction<DM, P>,
-    dataStoreFetcher: IsStoreFetcher<*, *>
+    dataStoreFetcher: IsStoreFetcher<*, *>,
+    updateSendChannel: SendChannel<Update>
 ) {
     val changeRequest = storeAction.request
     val version = storeAction.version
@@ -121,7 +124,8 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processCha
                     objectToChange,
                     objectChange.changes,
                     version,
-                    dataStore.keepAllVersions
+                    dataStore.keepAllVersions,
+                    updateSendChannel
                 )
             } else {
                 DoesNotExist(objectChange.key)
@@ -143,13 +147,14 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processCha
  * Apply [changes] to a specific [objectToChange] and record them as [version]
  * [keepAllVersions] determines if history is kept
  */
-private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChanges(
+private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChanges(
     dataModel: DM,
     dataStore: DataStore<DM, P>,
     objectToChange: DataRecord<DM, P>,
     changes: List<IsChange>,
     version: HLC,
-    keepAllVersions: Boolean
+    keepAllVersions: Boolean,
+    updateSendChannel: SendChannel<Update>
 ): IsChangeResponseStatus<DM> {
     try {
         var validationExceptions: MutableList<ValidationException>? = null
@@ -641,6 +646,8 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
 
         // Apply the new values now all validations have been accepted
         objectToChange.values = newValueList
+
+        updateSendChannel.send(Update.Change(objectToChange.key, version))
 
         // Nothing skipped out so must be a success
         return ChangeSuccess(version.timestamp, outChanges)

@@ -1,5 +1,6 @@
 package maryk.datastore.rocksdb.processors
 
+import kotlinx.coroutines.channels.SendChannel
 import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
@@ -90,6 +91,7 @@ import maryk.datastore.rocksdb.processors.helpers.setUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setValue
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.UniqueException
+import maryk.datastore.shared.Update
 import maryk.lib.recyclableByteArray
 import maryk.rocksdb.rocksDBNotFound
 import maryk.rocksdb.use
@@ -98,9 +100,10 @@ internal typealias ChangeStoreAction<DM, P> = StoreAction<DM, P, ChangeRequest<D
 internal typealias AnyChangeStoreAction = ChangeStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
 
 /** Processes a ChangeRequest in a [storeAction] into a [dataStore] */
-internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processChangeRequest(
+internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processChangeRequest(
     storeAction: ChangeStoreAction<DM, P>,
-    dataStore: RocksDBDataStore
+    dataStore: RocksDBDataStore,
+    updateSendChannel: SendChannel<Update>
 ) {
     val changeRequest = storeAction.request
 
@@ -142,7 +145,8 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processCha
                             columnFamilies,
                             objectChange.key,
                             objectChange.changes,
-                            version
+                            version,
+                            updateSendChannel
                         )
                     } else {
                         DoesNotExist(objectChange.key)
@@ -168,7 +172,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processCha
 /**
  * Apply [changes] to a specific [transaction] and record them as [version]
  */
-private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChanges(
+private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChanges(
     dataModel: DM,
     dataStore: RocksDBDataStore,
     dbIndex: UInt,
@@ -176,7 +180,8 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
     columnFamilies: TableColumnFamilies,
     key: Key<DM>,
     changes: List<IsChange>,
-    version: HLC
+    version: HLC,
+    updateSendChannel: SendChannel<Update>
 ): IsChangeResponseStatus<DM> {
     try {
         var validationExceptions: MutableList<ValidationException>? = null
@@ -702,6 +707,8 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChange
                 }
             }
         }
+
+        updateSendChannel.send(Update.Change(key, version))
 
         // Nothing skipped out so must be a success
         return ChangeSuccess(version.timestamp, outChanges)

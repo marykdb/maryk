@@ -23,7 +23,7 @@ internal fun CoroutineScope.storeActor(
     this.launch {
         it.asFlow().collect { msg ->
             try {
-                executor(Unit, msg, store)
+                executor(Unit, msg, store, store.updateSendChannel)
             } catch (e: Throwable) {
                 msg.response.completeExceptionally(e)
             }

@@ -25,18 +25,18 @@ import maryk.datastore.rocksdb.processors.processScanRequest
 
 /** Executor of StoreActions onto DataStore */
 @Suppress("UNCHECKED_CAST")
-internal val storeExecutor: StoreExecutor = { storeAction, db ->
+internal val storeExecutor: StoreExecutor = { storeAction, db, updateSendChannel ->
     when (storeAction.request) {
         is AddRequest<*, *> ->
-            processAddRequest(storeAction as AnyAddStoreAction, db)
+            processAddRequest(storeAction as AnyAddStoreAction, db, updateSendChannel)
+        is ChangeRequest<*> ->
+            processChangeRequest(storeAction as AnyChangeStoreAction, db, updateSendChannel)
+        is DeleteRequest<*> ->
+            processDeleteRequest(storeAction as AnyDeleteStoreAction, db, updateSendChannel)
         is GetRequest<*, *> ->
             processGetRequest(storeAction as AnyGetStoreAction, db)
         is GetChangesRequest<*, *> ->
             processGetChangesRequest(storeAction as AnyGetChangesStoreAction, db)
-        is ChangeRequest<*> ->
-            processChangeRequest(storeAction as AnyChangeStoreAction, db)
-        is DeleteRequest<*> ->
-            processDeleteRequest(storeAction as AnyDeleteStoreAction, db)
         is ScanRequest<*, *> ->
             processScanRequest(storeAction as AnyScanStoreAction, db)
         is ScanChangesRequest<*, *> ->

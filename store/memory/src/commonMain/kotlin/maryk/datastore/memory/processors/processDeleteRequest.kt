@@ -1,5 +1,6 @@
 package maryk.datastore.memory.processors
 
+import kotlinx.coroutines.channels.SendChannel
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.requests.DeleteRequest
@@ -12,6 +13,8 @@ import maryk.datastore.memory.IsStoreFetcher
 import maryk.datastore.memory.processors.changers.setValueAtIndex
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.StoreAction
+import maryk.datastore.shared.Update
+import maryk.datastore.shared.Update.Deletion
 import maryk.lib.extensions.compare.compareTo
 
 internal typealias DeleteStoreAction<DM, P> = StoreAction<DM, P, DeleteRequest<DM>, DeleteResponse<DM>>
@@ -20,9 +23,10 @@ internal typealias AnyDeleteStoreAction = DeleteStoreAction<IsRootValuesDataMode
 internal val objectSoftDeleteQualifier = byteArrayOf(0)
 
 /** Processes a DeleteRequest in a [storeAction] into a [dataStore] */
-internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDeleteRequest(
+internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDeleteRequest(
     storeAction: DeleteStoreAction<DM, P>,
-    dataStoreFetcher: IsStoreFetcher<*, *>
+    dataStoreFetcher: IsStoreFetcher<*, *>,
+    updateSendChannel: SendChannel<Update>
 ) {
     val deleteRequest = storeAction.request
     val statuses = mutableListOf<IsDeleteResponseStatus<DM>>()
@@ -93,6 +97,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDel
                             )
                             dataStore.records[index] = newRecord
                         }
+                        updateSendChannel.send(Deletion(key, version, deleteRequest.hardDelete))
                         DeleteSuccess(version.timestamp)
                     }
                     else -> DoesNotExist(key)

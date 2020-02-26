@@ -37,7 +37,7 @@ internal fun CoroutineScope.storeActor(
                         }
                     }
 
-                    executor(Unit, msg, dataStoreFetcher)
+                    executor(Unit, msg, dataStoreFetcher, store.updateSendChannel)
                 } catch (e: Throwable) {
                     msg.response.completeExceptionally(e)
                 }

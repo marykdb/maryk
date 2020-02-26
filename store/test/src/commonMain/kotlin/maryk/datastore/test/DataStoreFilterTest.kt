@@ -121,7 +121,8 @@ class DataStoreFilterTest(
             )
 
             changeResponse.statuses.forEach { status ->
-                assertType<ChangeSuccess<TestMarykModel>>(status)
+                val response = assertType<ChangeSuccess<TestMarykModel>>(status)
+                lastVersions.add(response.version)
             }
 
             firstKey = keys[0]
@@ -193,7 +194,7 @@ class DataStoreFilterTest(
             assertFalse {
                 filterMatches(
                     Equals(TestMarykModel { string::ref } with "haha1"),
-                    HLC(lastVersions.last() - 1u)
+                    HLC(lastVersions.first() - 1u)
                 )
             }
 
@@ -230,7 +231,7 @@ class DataStoreFilterTest(
             assertFalse {
                 filterMatches(
                     Equals(TestMarykModel { map.refToAny() } with "haha10"),
-                    HLC(lastVersions.last() - 1u)
+                    HLC(lastVersions.first() - 1u)
                 )
             }
 
@@ -509,23 +510,23 @@ class DataStoreFilterTest(
                 Equals(TestMarykModel { reference { string::ref } } with "haha2")
             )
         }
-//
-//        if (dataStore.keepAllVersions) {
-//            assertFalse {
-//                filterMatches(
-//                    Equals(TestMarykModel { string::ref } with "haha1"),
-//                    HLC(lastVersions.last() - 1u)
-//                )
-//            }
-//
-//            // With higher version it should be found
-//            assertTrue {
-//                filterMatches(
-//                    Equals(TestMarykModel { string::ref } with "haha1"),
-//                    HLC(lastVersions.first() + 1u)
-//                )
-//            }
-//        }
+
+        if (dataStore.keepAllVersions) {
+            assertFalse {
+                filterMatches(
+                    Equals(TestMarykModel { reference { string::ref } } with "haha2"),
+                    HLC(lastVersions.first() - 1u)
+                )
+            }
+
+            // With higher version it should be found
+            assertTrue {
+                filterMatches(
+                    Equals(TestMarykModel { reference { string::ref } } with "haha2"),
+                    HLC(lastVersions.last() + 1u)
+                )
+            }
+        }
 
         assertFalse {
             filterMatches(

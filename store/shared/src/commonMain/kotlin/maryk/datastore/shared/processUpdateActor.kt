@@ -1,6 +1,5 @@
 package maryk.datastore.shared
 
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.BroadcastChannel
@@ -20,11 +19,13 @@ sealed class Update {
 
 /** Actor which processes an update */
 @UseExperimental(ExperimentalCoroutinesApi::class, FlowPreview::class)
-internal fun CoroutineScope.processUpdateActor(): SendChannel<Update> =
+internal fun UpdateProcessor.processUpdateActor(): SendChannel<Update> =
     BroadcastChannel<Update>(Channel.BUFFERED).also {
         this.launch {
             it.asFlow().collect { update ->
-                println(update)
+                updateListeners.forEach {
+                    it.send(update)
+                }
             }
         }
     }

@@ -3,12 +3,19 @@ package maryk.datastore.shared
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.BroadcastChannel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.RootDataModel
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.query.requests.IsChangesRequest
 import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.responses.IsResponse
 
@@ -23,6 +30,8 @@ abstract class AbstractDataStore(
     private val dataStoreJob = SupervisorJob()
     override val coroutineContext = Dispatchers.Default + dataStoreJob
 
+    val updateProcessor = UpdateProcessor()
+
     /** StoreActor to run actions against.*/
     abstract val storeActor: StoreActor
 
@@ -32,8 +41,6 @@ abstract class AbstractDataStore(
 
     // Clock actor holds/calculates the latest HLC clock instance
     private val clockActor = this.clockActor()
-
-    val updateSendChannel = this.processUpdateActor()
 
     override suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
         request: RQ
@@ -51,6 +58,18 @@ abstract class AbstractDataStore(
         return response.await()
     }
 
+    @FlowPreview
+    @ExperimentalCoroutinesApi
+    override fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ, RP : IsResponse> executeFlow(
+        request: RQ
+    ): Flow<Update> where RQ : IsStoreRequest<DM, RP>, RQ: IsChangesRequest<DM, P, RP> {
+        val channel = BroadcastChannel<Update>(Channel.BUFFERED)
+
+        updateProcessor.updateListeners += channel
+
+        return channel.asFlow()
+    }
+
     /** Get [dataModel] id to identify it for storage */
     fun getDataModelId(dataModel: IsRootValuesDataModel<*>) =
         dataModelIdsByString[dataModel.name] ?:
@@ -58,7 +77,8 @@ abstract class AbstractDataStore(
 
     override fun close() {
         dataStoreJob.cancel()
+        updateProcessor.close()
+
         clockActor.close()
-        updateSendChannel.close()
     }
 }

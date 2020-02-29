@@ -6,6 +6,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.BroadcastChannel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
@@ -27,10 +28,10 @@ typealias StoreActor = SendChannel<StoreAction<*, *, *, *>>
 abstract class AbstractDataStore(
     final override val dataModelsById: Map<UInt, RootDataModel<*, *>>
 ): IsDataStore, CoroutineScope {
-    private val dataStoreJob = SupervisorJob()
-    override val coroutineContext = Dispatchers.Default + dataStoreJob
+    override val coroutineContext = Dispatchers.Default + SupervisorJob()
 
-    val updateProcessor = UpdateProcessor()
+    val updateListeners = mutableListOf<SendChannel<Update>>()
+    val updateSendChannel = processUpdateActor()
 
     /** StoreActor to run actions against.*/
     abstract val storeActor: StoreActor
@@ -65,7 +66,7 @@ abstract class AbstractDataStore(
     ): Flow<Update> where RQ : IsStoreRequest<DM, RP>, RQ: IsChangesRequest<DM, P, RP> {
         val channel = BroadcastChannel<Update>(Channel.BUFFERED)
 
-        updateProcessor.updateListeners += channel
+        this.updateListeners += channel
 
         return channel.asFlow()
     }
@@ -76,9 +77,13 @@ abstract class AbstractDataStore(
         throw DefNotFoundException("DataStore not found ${dataModel.name}")
 
     override fun close() {
-        dataStoreJob.cancel()
-        updateProcessor.close()
+        this.cancel()
 
         clockActor.close()
+
+        updateSendChannel.close()
+        updateListeners.forEach {
+            it.close()
+        }
     }
 }

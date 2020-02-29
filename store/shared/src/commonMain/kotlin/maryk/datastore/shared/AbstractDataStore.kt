@@ -11,6 +11,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.onCompletion
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.RootDataModel
@@ -70,12 +71,14 @@ abstract class AbstractDataStore(
 
         val dataModelId = getDataModelId(request.dataModel)
 
-        this.updateListeners.getOrPut(dataModelId) { mutableListOf() } += UpdateListener(
-            request,
-            channel
-        )
+        val dataModelUpdateListeners = this.updateListeners.getOrPut(dataModelId) { mutableListOf() }
+        val listener = UpdateListener(request, channel)
 
-        return channel.asFlow()
+        dataModelUpdateListeners += listener
+
+        return channel.asFlow().onCompletion {
+            dataModelUpdateListeners -= listener
+        }
     }
 
     /** Get [dataModel] id to identify it for storage */

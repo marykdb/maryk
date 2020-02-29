@@ -36,8 +36,8 @@ import maryk.datastore.rocksdb.processors.helpers.setUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setValue
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.UniqueException
-import maryk.datastore.shared.Update
-import maryk.datastore.shared.Update.Addition
+import maryk.datastore.shared.updates.Update
+import maryk.datastore.shared.updates.Update.Addition
 import maryk.lib.recyclableByteArray
 import maryk.rocksdb.rocksDBNotFound
 import maryk.rocksdb.use
@@ -50,7 +50,7 @@ internal typealias AnyAddStoreAction = AddStoreAction<IsRootValuesDataModel<Prop
 internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAddRequest(
     storeAction: StoreAction<DM, P, AddRequest<DM, P>, AddResponse<DM>>,
     dataStore: RocksDBDataStore,
-    updateSendChannel: SendChannel<Update>
+    updateSendChannel: SendChannel<Update<DM>>
 ) {
     val addRequest = storeAction.request
     val statuses = mutableListOf<IsAddResponseStatus<DM>>()
@@ -145,7 +145,9 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
                         transaction.commit()
                     }
 
-                    updateSendChannel.send(Addition(key, version))
+                    updateSendChannel.send(
+                        Addition(addRequest.dataModel, key, version)
+                    )
 
                     statuses.add(
                         AddSuccess(key, version.timestamp, listOf())

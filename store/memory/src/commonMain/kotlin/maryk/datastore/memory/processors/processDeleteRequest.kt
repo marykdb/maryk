@@ -13,8 +13,8 @@ import maryk.datastore.memory.IsStoreFetcher
 import maryk.datastore.memory.processors.changers.setValueAtIndex
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.StoreAction
-import maryk.datastore.shared.Update
-import maryk.datastore.shared.Update.Deletion
+import maryk.datastore.shared.updates.Update
+import maryk.datastore.shared.updates.Update.Deletion
 import maryk.lib.extensions.compare.compareTo
 
 internal typealias DeleteStoreAction<DM, P> = StoreAction<DM, P, DeleteRequest<DM>, DeleteResponse<DM>>
@@ -22,11 +22,11 @@ internal typealias AnyDeleteStoreAction = DeleteStoreAction<IsRootValuesDataMode
 
 internal val objectSoftDeleteQualifier = byteArrayOf(0)
 
-/** Processes a DeleteRequest in a [storeAction] into a [dataStore] */
+/** Processes a DeleteRequest in a [storeAction] into a data store from [dataStoreFetcher] */
 internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDeleteRequest(
     storeAction: DeleteStoreAction<DM, P>,
     dataStoreFetcher: IsStoreFetcher<*, *>,
-    updateSendChannel: SendChannel<Update>
+    updateSendChannel: SendChannel<Update<DM>>
 ) {
     val deleteRequest = storeAction.request
     val statuses = mutableListOf<IsDeleteResponseStatus<DM>>()
@@ -97,7 +97,9 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
                             )
                             dataStore.records[index] = newRecord
                         }
-                        updateSendChannel.send(Deletion(key, version, deleteRequest.hardDelete))
+                        updateSendChannel.send(
+                            Deletion(deleteRequest.dataModel, key, version, deleteRequest.hardDelete)
+                        )
                         DeleteSuccess(version.timestamp)
                     }
                     else -> DoesNotExist(key)

@@ -91,7 +91,7 @@ import maryk.datastore.rocksdb.processors.helpers.setUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setValue
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.UniqueException
-import maryk.datastore.shared.Update
+import maryk.datastore.shared.updates.Update
 import maryk.lib.recyclableByteArray
 import maryk.rocksdb.rocksDBNotFound
 import maryk.rocksdb.use
@@ -103,7 +103,7 @@ internal typealias AnyChangeStoreAction = ChangeStoreAction<IsRootValuesDataMode
 internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processChangeRequest(
     storeAction: ChangeStoreAction<DM, P>,
     dataStore: RocksDBDataStore,
-    updateSendChannel: SendChannel<Update>
+    updateSendChannel: SendChannel<Update<DM>>
 ) {
     val changeRequest = storeAction.request
 
@@ -181,7 +181,7 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> app
     key: Key<DM>,
     changes: List<IsChange>,
     version: HLC,
-    updateSendChannel: SendChannel<Update>
+    updateSendChannel: SendChannel<Update<DM>>
 ): IsChangeResponseStatus<DM> {
     try {
         var validationExceptions: MutableList<ValidationException>? = null
@@ -708,7 +708,9 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> app
             }
         }
 
-        updateSendChannel.send(Update.Change(key, version))
+        updateSendChannel.send(
+            Update.Change(dataModel, key, version, changes)
+        )
 
         // Nothing skipped out so must be a success
         return ChangeSuccess(version.timestamp, outChanges)

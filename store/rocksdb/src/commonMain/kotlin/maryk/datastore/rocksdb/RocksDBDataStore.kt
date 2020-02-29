@@ -19,7 +19,7 @@ import maryk.datastore.rocksdb.processors.TRUE_ARRAY
 import maryk.datastore.rocksdb.processors.VersionedComparator
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.StoreAction
-import maryk.datastore.shared.Update
+import maryk.datastore.shared.updates.Update
 import maryk.rocksdb.ColumnFamilyDescriptor
 import maryk.rocksdb.ColumnFamilyHandle
 import maryk.rocksdb.ColumnFamilyOptions
@@ -31,7 +31,7 @@ import maryk.rocksdb.defaultColumnFamily
 import maryk.rocksdb.openRocksDB
 import maryk.rocksdb.use
 
-internal typealias StoreExecutor = suspend Unit.(StoreAction<*, *, *, *>, RocksDBDataStore, SendChannel<Update>) -> Unit
+internal typealias StoreExecutor = suspend Unit.(StoreAction<*, *, *, *>, RocksDBDataStore, SendChannel<Update<*>>) -> Unit
 
 class RocksDBDataStore(
     override val keepAllVersions: Boolean = true,

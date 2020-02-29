@@ -23,18 +23,18 @@ import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.UniqueException
-import maryk.datastore.shared.Update
-import maryk.datastore.shared.Update.Addition
+import maryk.datastore.shared.updates.Update
+import maryk.datastore.shared.updates.Update.Addition
 import maryk.lib.extensions.compare.compareTo
 
 internal typealias AddStoreAction<DM, P> = StoreAction<DM, P, AddRequest<DM, P>, AddResponse<DM>>
 internal typealias AnyAddStoreAction = AddStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
 
-/** Processes an AddRequest in a [storeAction] into a [dataStore] */
+/** Processes an AddRequest in a [storeAction] into a data store from [dataStoreFetcher] */
 internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAddRequest(
     storeAction: StoreAction<DM, P, AddRequest<DM, P>, AddResponse<DM>>,
     dataStoreFetcher: IsStoreFetcher<*, *>,
-    updateSendChannel: SendChannel<Update>
+    updateSendChannel: SendChannel<Update<DM>>
 ) {
     val addRequest = storeAction.request
     val statuses = mutableListOf<IsAddResponseStatus<DM>>()
@@ -103,7 +103,9 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
                     }
 
                     dataStore.records.add((index * -1) - 1, dataRecord)
-                    updateSendChannel.send(Addition(key, version))
+                    updateSendChannel.send(
+                        Addition(addRequest.dataModel, key, version)
+                    )
                     statuses.add(
                         AddSuccess(key, version.timestamp, listOf())
                     )

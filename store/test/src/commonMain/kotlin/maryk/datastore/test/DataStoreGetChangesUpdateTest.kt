@@ -14,8 +14,8 @@ import maryk.core.query.requests.delete
 import maryk.core.query.requests.getChanges
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.datastore.shared.IsDataStore
-import maryk.datastore.shared.Update
-import maryk.datastore.shared.Update.Addition
+import maryk.datastore.shared.updates.Update
+import maryk.datastore.shared.updates.Update.Addition
 import maryk.test.assertType
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.addRequest
@@ -59,7 +59,7 @@ class DataStoreGetChangesUpdateTest(
     }
 
     private fun executeGetChangesAsFlowRequest() = runSuspendingTest {
-        val responses = arrayOf<CompletableDeferred<Update>>(
+        val responses = arrayOf<CompletableDeferred<Update<*>>>(
             CompletableDeferred(),
             CompletableDeferred(),
             CompletableDeferred()

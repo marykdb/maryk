@@ -76,17 +76,17 @@ import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.UniqueException
-import maryk.datastore.shared.Update
+import maryk.datastore.shared.updates.Update
 import maryk.lib.extensions.compare.compareTo
 
 internal typealias ChangeStoreAction<DM, P> = StoreAction<DM, P, ChangeRequest<DM>, ChangeResponse<DM>>
 internal typealias AnyChangeStoreAction = ChangeStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
 
-/** Processes a ChangeRequest in a [storeAction] into a [dataStore] */
+/** Processes a ChangeRequest in a [storeAction] into a data store from [dataStoreFetcher] */
 internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processChangeRequest(
     storeAction: ChangeStoreAction<DM, P>,
     dataStoreFetcher: IsStoreFetcher<*, *>,
-    updateSendChannel: SendChannel<Update>
+    updateSendChannel: SendChannel<Update<*>>
 ) {
     val changeRequest = storeAction.request
     val version = storeAction.version
@@ -154,7 +154,7 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> app
     changes: List<IsChange>,
     version: HLC,
     keepAllVersions: Boolean,
-    updateSendChannel: SendChannel<Update>
+    updateSendChannel: SendChannel<Update<*>>
 ): IsChangeResponseStatus<DM> {
     try {
         var validationExceptions: MutableList<ValidationException>? = null
@@ -647,7 +647,9 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> app
         // Apply the new values now all validations have been accepted
         objectToChange.values = newValueList
 
-        updateSendChannel.send(Update.Change(objectToChange.key, version))
+        updateSendChannel.send(
+            Update.Change(dataModel, objectToChange.key, version, changes)
+        )
 
         // Nothing skipped out so must be a success
         return ChangeSuccess(version.timestamp, outChanges)

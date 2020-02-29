@@ -18,6 +18,9 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.requests.IsChangesRequest
 import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.responses.IsResponse
+import maryk.datastore.shared.updates.Update
+import maryk.datastore.shared.updates.UpdateListener
+import maryk.datastore.shared.updates.processUpdateActor
 
 typealias StoreActor = SendChannel<StoreAction<*, *, *, *>>
 
@@ -29,7 +32,7 @@ abstract class AbstractDataStore(
 ): IsDataStore, CoroutineScope {
     override val coroutineContext = DISPATCHER + SupervisorJob()
 
-    val updateListeners = mutableListOf<SendChannel<Update>>()
+    val updateListeners = mutableMapOf<UInt, MutableList<UpdateListener<*, *>>>()
     val updateSendChannel = processUpdateActor()
 
     /** StoreActor to run actions against.*/
@@ -62,10 +65,15 @@ abstract class AbstractDataStore(
     @ExperimentalCoroutinesApi
     override fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ, RP : IsResponse> executeFlow(
         request: RQ
-    ): Flow<Update> where RQ : IsStoreRequest<DM, RP>, RQ: IsChangesRequest<DM, P, RP> {
-        val channel = BroadcastChannel<Update>(Channel.BUFFERED)
+    ): Flow<Update<DM>> where RQ : IsStoreRequest<DM, RP>, RQ: IsChangesRequest<DM, P, RP> {
+        val channel = BroadcastChannel<Update<DM>>(Channel.BUFFERED)
 
-        this.updateListeners += channel
+        val dataModelId = getDataModelId(request.dataModel)
+
+        this.updateListeners.getOrPut(dataModelId) { mutableListOf() } += UpdateListener(
+            request,
+            channel
+        )
 
         return channel.asFlow()
     }
@@ -81,8 +89,7 @@ abstract class AbstractDataStore(
         clockActor.close()
 
         updateSendChannel.close()
-        updateListeners.forEach {
-            it.close()
-        }
+        updateListeners.values.forEach { it.forEach(UpdateListener<*, *>::close) }
+        updateListeners.clear()
     }
 }

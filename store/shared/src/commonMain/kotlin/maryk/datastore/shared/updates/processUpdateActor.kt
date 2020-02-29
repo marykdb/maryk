@@ -12,46 +12,23 @@ import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.requests.IsGetRequest
 import maryk.datastore.shared.AbstractDataStore
-import maryk.datastore.shared.updates.Update.Addition
-import maryk.datastore.shared.updates.Update.Change
-import maryk.datastore.shared.updates.Update.Deletion
 
 /** Actor which processes an update */
 @UseExperimental(ExperimentalCoroutinesApi::class, FlowPreview::class)
-internal fun AbstractDataStore.processUpdateActor(): SendChannel<Update<*>> =
-    BroadcastChannel<Update<*>>(Channel.BUFFERED).also {
+internal fun AbstractDataStore.processUpdateActor(): SendChannel<Update<*, *>> =
+    BroadcastChannel<Update<*, *>>(Channel.BUFFERED).also {
         this.launch {
             it.asFlow().collect { update ->
-                @Suppress("UNCHECKED_CAST")
-                val dataModelListeners = updateListeners[getDataModelId(update.dataModel)] as MutableList<UpdateListener<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>>?
+                val dataModelListeners = updateListeners[getDataModelId(update.dataModel)]
 
                 if (dataModelListeners != null) {
                     for (updateListener in dataModelListeners) {
-                        when (update) {
-                            is Addition<*> -> {
-                                if (updateListener.request is IsGetRequest<*, *, *>) {
-                                    updateListener.request.keys.contains(update.key)
-                                    @Suppress("UNCHECKED_CAST")
-                                    updateListener.sendChannel.send(update as Update<IsRootValuesDataModel<PropertyDefinitions>>)
-                                }
-                                println("ADD $update")
-                            }
-                            is Deletion<*> -> {
-                                if (updateListener.request is IsGetRequest<*, *, *>) {
-                                    updateListener.request.keys.contains(update.key)
-                                    @Suppress("UNCHECKED_CAST")
-                                    updateListener.sendChannel.send(update as Update<IsRootValuesDataModel<PropertyDefinitions>>)
-                                }
-                                println("DEL $update")
-                            }
-                            is Change<*> -> {
-                                if (updateListener.request is IsGetRequest<*, *, *>) {
-                                    updateListener.request.keys.contains(update.key)
-                                    @Suppress("UNCHECKED_CAST")
-                                    updateListener.sendChannel.send(update as Update<IsRootValuesDataModel<PropertyDefinitions>>)
-                                }
-                                println("CHANGE $update")
-                            }
+                        if (updateListener.request is IsGetRequest<*, *, *>) {
+                            @Suppress("UNCHECKED_CAST")
+                            (update as Update<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>).processGetRequest(
+                                request = updateListener.request,
+                                updateListener = updateListener
+                            )
                         }
                     }
                 }

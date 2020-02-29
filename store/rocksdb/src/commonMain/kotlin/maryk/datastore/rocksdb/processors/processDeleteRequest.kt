@@ -34,7 +34,7 @@ internal typealias AnyDeleteStoreAction = DeleteStoreAction<IsRootValuesDataMode
 internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDeleteRequest(
     storeAction: DeleteStoreAction<DM, P>,
     dataStore: RocksDBDataStore,
-    updateSendChannel: SendChannel<Update<DM>>
+    updateSendChannel: SendChannel<Update<DM, P>>
 ) {
     val deleteRequest = storeAction.request
     val statuses = mutableListOf<IsDeleteResponseStatus<DM>>()

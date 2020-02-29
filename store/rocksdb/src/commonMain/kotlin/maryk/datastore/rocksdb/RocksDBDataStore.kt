@@ -31,7 +31,7 @@ import maryk.rocksdb.defaultColumnFamily
 import maryk.rocksdb.openRocksDB
 import maryk.rocksdb.use
 
-internal typealias StoreExecutor = suspend Unit.(StoreAction<*, *, *, *>, RocksDBDataStore, SendChannel<Update<*>>) -> Unit
+internal typealias StoreExecutor = suspend Unit.(StoreAction<*, *, *, *>, RocksDBDataStore, SendChannel<Update<*, *>>) -> Unit
 
 class RocksDBDataStore(
     override val keepAllVersions: Boolean = true,

@@ -103,7 +103,7 @@ internal typealias AnyChangeStoreAction = ChangeStoreAction<IsRootValuesDataMode
 internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processChangeRequest(
     storeAction: ChangeStoreAction<DM, P>,
     dataStore: RocksDBDataStore,
-    updateSendChannel: SendChannel<Update<DM>>
+    updateSendChannel: SendChannel<Update<DM, P>>
 ) {
     val changeRequest = storeAction.request
 
@@ -181,7 +181,7 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> app
     key: Key<DM>,
     changes: List<IsChange>,
     version: HLC,
-    updateSendChannel: SendChannel<Update<DM>>
+    updateSendChannel: SendChannel<Update<DM, P>>
 ): IsChangeResponseStatus<DM> {
     try {
         var validationExceptions: MutableList<ValidationException>? = null

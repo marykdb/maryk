@@ -18,7 +18,7 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.requests.IsChangesRequest
 import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.responses.IsResponse
-import maryk.datastore.shared.updates.Update
+import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.datastore.shared.updates.UpdateListener
 import maryk.datastore.shared.updates.processUpdateActor
 
@@ -65,8 +65,8 @@ abstract class AbstractDataStore(
     @ExperimentalCoroutinesApi
     override fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ, RP : IsResponse> executeFlow(
         request: RQ
-    ): Flow<Update<DM>> where RQ : IsStoreRequest<DM, RP>, RQ: IsChangesRequest<DM, P, RP> {
-        val channel = BroadcastChannel<Update<DM>>(Channel.BUFFERED)
+    ): Flow<IsUpdateResponse<DM, P>> where RQ : IsStoreRequest<DM, RP>, RQ: IsChangesRequest<DM, P, RP> {
+        val channel = BroadcastChannel<IsUpdateResponse<DM, P>>(Channel.BUFFERED)
 
         val dataModelId = getDataModelId(request.dataModel)
 

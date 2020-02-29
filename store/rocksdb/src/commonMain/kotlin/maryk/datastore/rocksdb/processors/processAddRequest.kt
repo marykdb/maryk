@@ -50,7 +50,7 @@ internal typealias AnyAddStoreAction = AddStoreAction<IsRootValuesDataModel<Prop
 internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAddRequest(
     storeAction: StoreAction<DM, P, AddRequest<DM, P>, AddResponse<DM>>,
     dataStore: RocksDBDataStore,
-    updateSendChannel: SendChannel<Update<DM>>
+    updateSendChannel: SendChannel<Update<DM, P>>
 ) {
     val addRequest = storeAction.request
     val statuses = mutableListOf<IsAddResponseStatus<DM>>()
@@ -146,7 +146,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
                     }
 
                     updateSendChannel.send(
-                        Addition(addRequest.dataModel, key, version)
+                        Addition(addRequest.dataModel, key, version, objectToAdd)
                     )
 
                     statuses.add(

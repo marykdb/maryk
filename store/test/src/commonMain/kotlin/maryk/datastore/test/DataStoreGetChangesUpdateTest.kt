@@ -9,17 +9,19 @@ import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.change
 import maryk.core.query.pairs.with
+import maryk.core.query.requests.add
 import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.getChanges
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.updates.ChangeUpdate
+import maryk.core.query.responses.updates.DeletionUpdate
+import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.datastore.shared.IsDataStore
-import maryk.datastore.shared.updates.Update
-import maryk.datastore.shared.updates.Update.Addition
 import maryk.test.assertType
 import maryk.test.models.SimpleMarykModel
-import maryk.test.requests.addRequest
 import maryk.test.runSuspendingTest
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class DataStoreGetChangesUpdateTest(
@@ -32,10 +34,14 @@ class DataStoreGetChangesUpdateTest(
         "executeGetChangesAsFlowRequest" to ::executeGetChangesAsFlowRequest
     )
 
-    fun addData() {
+    override fun initData() {
         runSuspendingTest {
             val addResponse = dataStore.execute(
-                addRequest
+                SimpleMarykModel.add(
+                    SimpleMarykModel(value = "haha1"),
+                    SimpleMarykModel(value = "haha2"),
+                    SimpleMarykModel(value = "haha3")
+                )
             )
             addResponse.statuses.forEach { status ->
                 val response = assertType<AddSuccess<SimpleMarykModel>>(status)
@@ -59,7 +65,7 @@ class DataStoreGetChangesUpdateTest(
     }
 
     private fun executeGetChangesAsFlowRequest() = runSuspendingTest {
-        val responses = arrayOf<CompletableDeferred<Update<*>>>(
+        val responses = arrayOf<CompletableDeferred<IsUpdateResponse<SimpleMarykModel, SimpleMarykModel.Properties>>>(
             CompletableDeferred(),
             CompletableDeferred(),
             CompletableDeferred()
@@ -70,7 +76,7 @@ class DataStoreGetChangesUpdateTest(
 
         val listenJob = launch {
             dataStore.executeFlow(
-                SimpleMarykModel.getChanges(*keys.toTypedArray())
+                SimpleMarykModel.getChanges(keys[0], keys[1])
             ).also {
                 listenerSetupComplete.complete(true)
             }.collect {
@@ -83,19 +89,42 @@ class DataStoreGetChangesUpdateTest(
         val successfullyDone = CompletableDeferred<Boolean>()
 
         val changeJob = launch {
-            addData()
-
-            @Suppress("UNCHECKED_CAST")
-            val result1 = responses[0].await() as Addition<SimpleMarykModel>
-
+            val change1 = Change(SimpleMarykModel { value::ref } with "haha5")
             dataStore.execute(SimpleMarykModel.change(
-                result1.key.change(
-                    Change(SimpleMarykModel { value::ref } with "haha5")
-                )
+                keys[0].change(change1)
             ))
 
-            responses[1].await()
-            responses[2].await()
+            val changeUpdate1 = responses[0].await()
+            assertType<ChangeUpdate<*, *>>(changeUpdate1).apply {
+                assertEquals(SimpleMarykModel, dataModel)
+                assertEquals(keys[0], key)
+                assertEquals(changes, listOf(change1))
+            }
+
+            val change2 = Change(SimpleMarykModel { value::ref } with "haha6")
+            dataStore.execute(SimpleMarykModel.change(
+                keys[1].change(change2)
+            ))
+
+            // This change should be ignored, otherwise key is wrong after changeUpdate2 check
+            dataStore.execute(SimpleMarykModel.change(
+                keys[2].change(change2)
+            ))
+
+            val changeUpdate2 = responses[1].await()
+            assertType<ChangeUpdate<*, *>>(changeUpdate2).apply {
+                assertEquals(SimpleMarykModel, dataModel)
+                assertEquals(keys[1], key)
+                assertEquals(changes, listOf(change2))
+            }
+
+            dataStore.execute(SimpleMarykModel.delete(keys[1]))
+
+            val deleteUpdate1 = responses[2].await()
+            assertType<DeletionUpdate<*, *>>(deleteUpdate1).apply {
+                assertEquals(SimpleMarykModel, dataModel)
+                assertEquals(keys[1], key)
+            }
 
             successfullyDone.complete(true)
         }
@@ -113,6 +142,6 @@ class DataStoreGetChangesUpdateTest(
         changeJob.cancelAndJoin()
         timeoutJob.cancelAndJoin()
 
-        assertTrue(result)
+        assertTrue(result, message = "Expected tests to succeed")
     }
 }

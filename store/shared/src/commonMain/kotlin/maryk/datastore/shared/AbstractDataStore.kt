@@ -2,7 +2,6 @@ package maryk.datastore.shared
 
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.SupervisorJob
@@ -28,7 +27,7 @@ typealias StoreActor = SendChannel<StoreAction<*, *, *, *>>
 abstract class AbstractDataStore(
     final override val dataModelsById: Map<UInt, RootDataModel<*, *>>
 ): IsDataStore, CoroutineScope {
-    override val coroutineContext = Dispatchers.Default + SupervisorJob()
+    override val coroutineContext = DISPATCHER + SupervisorJob()
 
     val updateListeners = mutableListOf<SendChannel<Update>>()
     val updateSendChannel = processUpdateActor()

@@ -1,26 +1,14 @@
 package maryk.datastore.test
 
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.launch
 import maryk.core.exceptions.RequestException
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.VersionedChanges
-import maryk.core.query.changes.change
 import maryk.core.query.pairs.with
-import maryk.core.query.requests.add
-import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.getChanges
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.datastore.shared.IsDataStore
-import maryk.datastore.shared.Update
-import maryk.datastore.shared.Update.Addition
 import maryk.test.assertType
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.addRequest
@@ -38,8 +26,7 @@ class DataStoreGetChangesTest(
         "executeSimpleGetChangesRequest" to ::executeSimpleGetChangesRequest,
         "executeToVersionGetChangesRequest" to ::executeToVersionGetChangesRequest,
         "executeFromVersionGetChangesRequest" to ::executeFromVersionGetChangesRequest,
-        "executeGetChangesRequestWithSelect" to ::executeGetChangesRequestWithSelect,
-        "executeGetChangesAsFlowRequest" to ::executeGetChangesAsFlowRequest
+        "executeGetChangesRequestWithSelect" to ::executeGetChangesRequestWithSelect
     )
 
     override fun initData() {
@@ -146,45 +133,5 @@ class DataStoreGetChangesTest(
             }
             expect(keys[0]) { it.key }
         }
-    }
-
-    private fun executeGetChangesAsFlowRequest() = runSuspendingTest {
-        val responses = arrayOf<CompletableDeferred<Update>>(
-            CompletableDeferred(),
-            CompletableDeferred(),
-            CompletableDeferred()
-        )
-        var counter = 0
-
-        val scope = object : CoroutineScope {
-            override val coroutineContext = Dispatchers.Default + Job()
-        }
-        scope.launch {
-            dataStore.executeFlow(
-                SimpleMarykModel.getChanges(*keys.toTypedArray())
-            ).collect {
-                responses[counter++].complete(it)
-            }
-        }
-
-        dataStore.execute(SimpleMarykModel.add(
-            SimpleMarykModel(value = "haha4"),
-            SimpleMarykModel(value = "haha5")
-        ))
-
-        val result1 = responses[0].await()
-        val result2 = responses[1].await()
-
-        @Suppress("UNCHECKED_CAST")
-        dataStore.execute(SimpleMarykModel.change(
-            ((result1 as Addition).key as Key<SimpleMarykModel>).change(
-                Change(SimpleMarykModel { value::ref } with "haha5")
-            )
-        ))
-
-        val result3 = responses[2].await()
-
-        println("mooi "+result2 +" "+result3)
-        scope.coroutineContext.cancel()
     }
 }

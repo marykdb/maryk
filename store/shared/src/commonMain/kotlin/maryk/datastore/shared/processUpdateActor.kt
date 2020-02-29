@@ -9,12 +9,13 @@ import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import maryk.core.clock.HLC
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.types.Key
 
 sealed class Update {
-    data class Addition(val key: Key<*>, val version: HLC): Update()
-    data class Deletion(val key: Key<*>, val version: HLC, val isHardDelete: Boolean): Update()
-    data class Change(val key: Key<*>, val version: HLC): Update()
+    data class Addition<DM: IsRootDataModel<*>>(val key: Key<DM>, val version: HLC): Update()
+    data class Deletion<DM: IsRootDataModel<*>>(val key: Key<DM>, val version: HLC, val isHardDelete: Boolean): Update()
+    data class Change<DM: IsRootDataModel<*>>(val key: Key<DM>, val version: HLC): Update()
 }
 
 /** Actor which processes an update */

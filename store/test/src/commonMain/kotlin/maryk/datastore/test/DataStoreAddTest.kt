@@ -76,7 +76,7 @@ class DataStoreAddTest(
     private fun notAddSameObjectTwice() = runSuspendingTest {
         val log = Log("I am unique", timestamp = DateTime(2018, 9, 9, 14, 30, 0, 0))
         val key = Log.key(log)
-        this.keys += key // make sure data gets cleaned
+        keys += key // make sure data gets cleaned
 
         val addResponse = dataStore.execute(
             Log.add(log)

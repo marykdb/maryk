@@ -5,8 +5,11 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
+import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import kotlin.test.expect
 
 class PropRefGraphTest {
@@ -27,6 +30,17 @@ class PropRefGraphTest {
         ),
         dataModel = TestMarykModel
     )
+
+    @Test
+    fun containsReference() {
+        assertTrue(graph.contains(EmbeddedMarykModel { value::ref }))
+        assertFalse(graph.contains(EmbeddedMarykModel { marykModel::ref }))
+
+        assertTrue(graph.contains(EmbeddedMarykModel { model::ref }))
+        assertFalse(graph.contains(EmbeddedMarykModel { model { model::ref } }))
+        assertTrue(graph.contains(EmbeddedMarykModel { model { marykModel::ref } }))
+        assertTrue(graph.contains(EmbeddedMarykModel { model { marykModel { string::ref } } }))
+    }
 
     @Test
     fun convertToProtoBufAndBack() {

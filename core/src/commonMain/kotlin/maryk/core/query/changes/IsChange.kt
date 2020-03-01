@@ -1,10 +1,15 @@
 package maryk.core.query.changes
 
+import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
+import maryk.core.properties.graph.RootPropRefGraph
 
 /** Defines a change to a DataObject */
 interface IsChange {
     val changeType: ChangeType
+
+    /** Filters the changes with [select] */
+    fun filterWithSelect(select: RootPropRefGraph<out PropertyDefinitions>): IsChange?
 }
 
 internal val mapOfChangeDefinitions = mapOf(

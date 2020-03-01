@@ -2,7 +2,9 @@ package maryk.core.query.changes
 
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.boolean
+import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.values.SimpleObjectValues
 
 /** Defines a change in DataObject Soft Delete state to [isDeleted] */
@@ -10,6 +12,11 @@ data class ObjectSoftDeleteChange(
     val isDeleted: Boolean
 ) : IsChange {
     override val changeType = ChangeType.ObjectDelete
+
+    override fun filterWithSelect(select: RootPropRefGraph<out PropertyDefinitions>): ObjectSoftDeleteChange? {
+        // Not influenced by select
+        return this
+    }
 
     internal companion object : SimpleQueryDataModel<ObjectSoftDeleteChange>(
         properties = object : ObjectPropertyDefinitions<ObjectSoftDeleteChange>() {

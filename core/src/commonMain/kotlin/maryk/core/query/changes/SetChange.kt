@@ -2,8 +2,10 @@ package maryk.core.query.changes
 
 import maryk.core.models.ReferenceMappedDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.list
+import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeWriter
@@ -15,6 +17,13 @@ data class SetChange internal constructor(
     override val changeType = ChangeType.SetChange
 
     constructor(vararg setValueChange: SetValueChanges<*>) : this(setValueChange.toList())
+
+    override fun filterWithSelect(select: RootPropRefGraph<out PropertyDefinitions>): SetChange? {
+        val filtered = setValueChanges.filter {
+            select.contains(it.reference)
+        }
+        return if (filtered.isEmpty()) null else SetChange(filtered)
+    }
 
     @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<SetChange>() {

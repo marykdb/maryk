@@ -2,6 +2,9 @@ package maryk.datastore.shared.updates
 
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.graph.RootPropRefGraph
+import maryk.core.query.changes.IsChange
+import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.requests.IsGetRequest
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
@@ -25,12 +28,27 @@ internal suspend fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> Upda
                 )
             }
             is Change<DM, P> -> {
-                ChangeUpdate(
-                    dataModel = dataModel,
-                    key = key,
-                    version = version.timestamp,
-                    changes = changes
-                )
+                var shouldRemove = false
+                val filteredChanges = changes.filterWithSelect(request.select) {
+                    if (it is ObjectSoftDeleteChange && it.isDeleted) {
+                        shouldRemove = true
+                    }
+                }
+
+                if (shouldRemove) {
+                    DeletionUpdate(
+                        dataModel = dataModel,
+                        key = key,
+                        version = version.timestamp
+                    )
+                } else {
+                    ChangeUpdate(
+                        dataModel = dataModel,
+                        key = key,
+                        version = version.timestamp,
+                        changes = filteredChanges
+                    )
+                }
             }
             is Deletion<DM, P> -> {
                 if (isHardDelete || request.filterSoftDeleted) {
@@ -47,5 +65,20 @@ internal suspend fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> Upda
             @Suppress("UNCHECKED_CAST")
             (updateListener as UpdateListener<DM, P>).sendChannel.send(update)
         }
+    }
+}
+
+private fun List<IsChange>.filterWithSelect(
+    select: RootPropRefGraph<out PropertyDefinitions>?,
+    changeProcessor: ((IsChange) -> Unit)?
+): List<IsChange> {
+    if (select == null) {
+        // process all changes
+        changeProcessor?.let { this.forEach(it) }
+        return this
+    }
+    return this.mapNotNull { change: IsChange ->
+        changeProcessor?.invoke(change)
+        change.filterWithSelect(select)
     }
 }

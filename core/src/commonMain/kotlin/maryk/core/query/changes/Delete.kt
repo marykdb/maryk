@@ -4,8 +4,10 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ReferencesDataModel
 import maryk.core.models.ReferencesObjectPropertyDefinitions
 import maryk.core.properties.AbstractPropertyDefinitions
+import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.list
+import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
@@ -18,6 +20,13 @@ data class Delete internal constructor(
     override val changeType = ChangeType.Delete
 
     constructor(vararg reference: AnyPropertyReference) : this(reference.toList())
+
+    override fun filterWithSelect(select: RootPropRefGraph<out PropertyDefinitions>): Delete? {
+        val filtered = references.filter {
+            select.contains(it)
+        }
+        return if (filtered.isEmpty()) null else Delete(filtered)
+    }
 
     override fun toString() = "Delete[${references.joinToString()}]"
 

@@ -8,7 +8,7 @@ import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.requests.IsGetRequest
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
-import maryk.core.query.responses.updates.DeletionUpdate
+import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.datastore.shared.updates.Update.Addition
 import maryk.datastore.shared.updates.Update.Change
 import maryk.datastore.shared.updates.Update.Deletion
@@ -36,7 +36,7 @@ internal suspend fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> Upda
                 }
 
                 if (shouldRemove) {
-                    DeletionUpdate(
+                    RemovalUpdate(
                         dataModel = dataModel,
                         key = key,
                         version = version.timestamp
@@ -52,7 +52,7 @@ internal suspend fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> Upda
             }
             is Deletion<DM, P> -> {
                 if (isHardDelete || request.filterSoftDeleted) {
-                    DeletionUpdate(
+                    RemovalUpdate(
                         dataModel = dataModel,
                         key = key,
                         version = version.timestamp

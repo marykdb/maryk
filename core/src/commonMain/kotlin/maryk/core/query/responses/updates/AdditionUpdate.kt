@@ -5,7 +5,7 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.values.Values
 
-/** Update response describing an addition of [values] at [key] in [dataModel] */
+/** Update response describing an addition to query result of [values] at [key] in [dataModel] */
 data class AdditionUpdate<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
     override val dataModel: DM,
     override val key: Key<DM>,

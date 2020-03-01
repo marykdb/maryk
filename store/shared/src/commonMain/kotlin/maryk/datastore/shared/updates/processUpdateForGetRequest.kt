@@ -21,7 +21,7 @@ internal suspend fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> Upda
                     dataModel = dataModel,
                     key = key,
                     version = version.timestamp,
-                    values = values
+                    values = values.filterWithSelect(request.select)
                 )
             }
             is Change<DM, P> -> {

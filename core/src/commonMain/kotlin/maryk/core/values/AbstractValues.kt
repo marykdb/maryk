@@ -273,3 +273,15 @@ fun <V: AbstractValues<DO, DM, P>, DO: Any, DM: AbstractDataModel<DO, P, V, *, C
     pretty: Boolean = false
 ): String =
     this.dataModel.writeJson(this, context = context, pretty = pretty)
+
+/** Get property from values with wrapper in [getProperty] and convert it to native usage */
+inline operator fun <DO : Any, DM : IsDataModel<P>, P : AbstractPropertyDefinitions<DO>, TI : Any, reified TO : Any> AbstractValues<DO, DM, P>?.div(getProperty: P.() -> IsDefinitionWrapper<TI, TO, *, DO>): TO? {
+    if (this == null) {
+        return null
+    }
+    val index = getProperty(
+        this.dataModel.properties
+    ).index
+
+    return invoke(index)
+}

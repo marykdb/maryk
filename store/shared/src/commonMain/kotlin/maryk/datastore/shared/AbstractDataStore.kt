@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.onCompletion
 import maryk.core.exceptions.DefNotFoundException
+import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.RootDataModel
 import maryk.core.properties.PropertyDefinitions
@@ -67,6 +68,10 @@ abstract class AbstractDataStore(
     override fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ, RP : IsResponse> executeFlow(
         request: RQ
     ): Flow<IsUpdateResponse<DM, P>> where RQ : IsStoreRequest<DM, RP>, RQ: IsChangesRequest<DM, P, RP> {
+        if (request.toVersion != null) {
+            throw RequestException("Cannot use toVersion on an executeFlow request")
+        }
+
         val channel = BroadcastChannel<IsUpdateResponse<DM, P>>(Channel.BUFFERED)
 
         val dataModelId = getDataModelId(request.dataModel)

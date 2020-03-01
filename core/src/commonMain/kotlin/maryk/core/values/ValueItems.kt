@@ -2,6 +2,9 @@
 
 package maryk.core.values
 
+import maryk.core.properties.graph.IsPropRefGraph
+import maryk.core.properties.graph.PropRefGraph
+
 interface IsValueItems : Iterable<ValueItem> {
     val size: Int
 
@@ -10,6 +13,8 @@ interface IsValueItems : Iterable<ValueItem> {
     fun contains(index: UInt): Boolean
 
     fun copyAdding(toAdd: Array<ValueItem>): IsValueItems
+
+    fun copySelecting(select: IsPropRefGraph<*>): IsValueItems
 }
 
 interface IsValueItemsImpl : IsValueItems {
@@ -78,6 +83,20 @@ inline class MutableValueItems(
             items += it
         }
     }
+
+    override fun copySelecting(select: IsPropRefGraph<*>) = MutableValueItems(
+        list = this.list
+            .filter { select.contains(it.index) }
+            .map {
+                if (it.value is Values<*, *>) {
+                    (select.selectNodeOrNull(it.index) as? PropRefGraph<*, *, *>)?.let { subSelect ->
+                        ValueItem(it.index,  it.value.filterWithSelect(subSelect))
+                    } ?: it
+                } else {
+                    it
+                }
+            }.toMutableList()
+    )
 
     private fun searchItemByIndex(index: UInt): Int {
         // Index can never be at a higher spot in list than index itself

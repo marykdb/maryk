@@ -1,5 +1,6 @@
 package maryk.core.values
 
+import maryk.core.properties.graph.graph
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.lib.time.DateTime
@@ -10,6 +11,7 @@ import maryk.test.models.SimpleMarykTypeEnum.S1
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.expect
 
 class ValuesTest {
@@ -33,6 +35,43 @@ class ValuesTest {
         expect(6) { copy.size }
         expect("bye world") { copy { string } }
         expect(V2) { copy { enum } }
+    }
+
+    @Test
+    fun filterWithSelect() {
+        val original = TestMarykModel(
+            string = "hello world",
+            int = 5,
+            uint = 3u,
+            double = 2.3,
+            dateTime = DateTime(2018, 7, 18),
+            embeddedValues = EmbeddedMarykModel(
+                value = "hello universe",
+                model = EmbeddedMarykModel(
+                    value = "hello multiverse"
+                )
+            )
+        )
+
+        val filtered = original.filterWithSelect(
+            TestMarykModel.graph {
+                listOf(
+                    string,
+                    uint,
+                    graph(embeddedValues) {
+                        listOf(
+                            value
+                        )
+                    }
+                )
+            }
+        )
+
+        expect(3) { filtered.size }
+        expect("hello world") { filtered { string } }
+        assertNull(filtered { int })
+        assertEquals("hello universe", filtered { embeddedValues } / { value })
+        assertNull(filtered { embeddedValues } / { model })
     }
 
     @Test

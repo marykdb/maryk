@@ -4,6 +4,7 @@ import maryk.core.models.IsNamedDataModel
 import maryk.core.models.IsTypedValuesDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.graph.IsPropRefGraph
 import maryk.core.query.RequestContext
 
 typealias ValuesImpl = Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
@@ -23,6 +24,18 @@ data class Values<DM : IsValuesDataModel<P>, P : PropertyDefinitions> internal c
             values.copyAdding(pairCreator(this.dataModel.properties)),
             context
         )
+
+    fun filterWithSelect(select: IsPropRefGraph<*>?): Values<DM, P> {
+        if (select == null) {
+            return this
+        }
+
+        return Values(
+            dataModel = dataModel,
+            values = this.values.copySelecting(select),
+            context = context
+        )
+    }
 
     // ignore context
     override fun equals(other: Any?) = when {

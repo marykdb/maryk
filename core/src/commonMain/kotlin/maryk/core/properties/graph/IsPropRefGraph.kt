@@ -28,4 +28,7 @@ interface IsPropRefGraph<in P : IsPropertyDefinitions> {
             }
         }
     }
+
+    fun contains(index: UInt) =
+        0 <= this.properties.binarySearch { property -> property.index.compareTo(index) }
 }

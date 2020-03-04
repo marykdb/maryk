@@ -24,8 +24,10 @@ import maryk.core.properties.references.CanContainSetItemReference
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsFuzzyReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.ListReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.RequestContext
+import maryk.core.query.filters.IsFilter
 import maryk.lib.exceptions.ParseException
 
 typealias AnyAbstractValues = AbstractValues<Any, IsDataModel<AbstractPropertyDefinitions<Any>>, AbstractPropertyDefinitions<Any>>
@@ -123,6 +125,22 @@ abstract class AbstractValues<DO : Any, DM : IsDataModel<P>, P : AbstractPropert
 
         return "$name $values"
     }
+
+    /** Test if values matches given [filter] */
+    fun matches(filter: IsFilter?) =
+        maryk.core.query.filters.matchesFilter(filter) { propertyReference, valueMatcher ->
+            @Suppress("UNCHECKED_CAST")
+            val value = get(propertyReference as IsPropertyReference<Any, IsPropertyDefinition<Any>, Any>)
+
+            if (value is List<*> && propertyReference !is ListReference<*,*>) {
+                for (v in value) {
+                    if (valueMatcher(v)) return@matchesFilter true
+                }
+                return@matchesFilter false
+            } else {
+                valueMatcher(value)
+            }
+        }
 
     @Suppress("UNCHECKED_CAST")
     override operator fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(
@@ -244,7 +262,6 @@ abstract class AbstractValues<DO : Any, DM : IsDataModel<P>, P : AbstractPropert
                 )
         }
     }
-
 }
 
 

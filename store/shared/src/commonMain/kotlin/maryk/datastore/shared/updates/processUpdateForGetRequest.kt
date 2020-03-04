@@ -9,6 +9,7 @@ import maryk.core.query.requests.IsGetRequest
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.RemovalUpdate
+import maryk.core.values.matchesFilter
 import maryk.datastore.shared.updates.Update.Addition
 import maryk.datastore.shared.updates.Update.Change
 import maryk.datastore.shared.updates.Update.Deletion
@@ -20,12 +21,14 @@ internal suspend fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> Upda
     if (request.keys.contains(key)) {
         val update = when (this) {
             is Addition<DM, P> -> {
-                AdditionUpdate(
-                    dataModel = dataModel,
-                    key = key,
-                    version = version.timestamp,
-                    values = values.filterWithSelect(request.select)
-                )
+                if (values.matches(request.where)) {
+                    AdditionUpdate(
+                        dataModel = dataModel,
+                        key = key,
+                        version = version.timestamp,
+                        values = values.filterWithSelect(request.select)
+                    )
+                } else null
             }
             is Change<DM, P> -> {
                 var shouldRemove = false

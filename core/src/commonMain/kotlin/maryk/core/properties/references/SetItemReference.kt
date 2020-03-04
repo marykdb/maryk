@@ -6,7 +6,6 @@ import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsStorageBytesEncodable
-import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
@@ -66,7 +65,6 @@ class SetItemReference<T : Any, CX : IsPropertyContext> internal constructor(
         valueDefinition.writeStorageBytes(value, writer)
     }
 
-    override fun resolve(values: Set<T>): T? {
-        return value
-    }
+    override fun resolve(values: Set<T>) =
+        values.find { this.value == it }
 }

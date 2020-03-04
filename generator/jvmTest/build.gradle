@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("com.google.protobuf") version "0.8.8"
-    id("kotlin-platform-jvm")
+    id("org.jetbrains.kotlin.jvm")
     id("idea")
 }
 

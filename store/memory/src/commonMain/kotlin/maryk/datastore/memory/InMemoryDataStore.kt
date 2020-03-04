@@ -11,7 +11,7 @@ import maryk.datastore.shared.updates.Update
 internal typealias StoreExecutor<DM, P> = suspend Unit.(
     StoreAction<DM, P, *, *>,
     dataStoreFetcher: (IsRootValuesDataModel<P>) -> DataStore<DM, P>,
-    updateSendChannel: SendChannel<Update<DM>>
+    updateSendChannel: SendChannel<Update<DM, P>>
 ) -> Unit
 
 /**

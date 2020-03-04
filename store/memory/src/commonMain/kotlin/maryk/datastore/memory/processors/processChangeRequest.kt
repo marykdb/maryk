@@ -86,7 +86,7 @@ internal typealias AnyChangeStoreAction = ChangeStoreAction<IsRootValuesDataMode
 internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processChangeRequest(
     storeAction: ChangeStoreAction<DM, P>,
     dataStoreFetcher: IsStoreFetcher<*, *>,
-    updateSendChannel: SendChannel<Update<*>>
+    updateSendChannel: SendChannel<Update<*, *>>
 ) {
     val changeRequest = storeAction.request
     val version = storeAction.version
@@ -154,7 +154,7 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> app
     changes: List<IsChange>,
     version: HLC,
     keepAllVersions: Boolean,
-    updateSendChannel: SendChannel<Update<*>>
+    updateSendChannel: SendChannel<Update<*, *>>
 ): IsChangeResponseStatus<DM> {
     try {
         var validationExceptions: MutableList<ValidationException>? = null

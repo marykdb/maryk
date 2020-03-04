@@ -26,7 +26,7 @@ internal val objectSoftDeleteQualifier = byteArrayOf(0)
 internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDeleteRequest(
     storeAction: DeleteStoreAction<DM, P>,
     dataStoreFetcher: IsStoreFetcher<*, *>,
-    updateSendChannel: SendChannel<Update<DM>>
+    updateSendChannel: SendChannel<Update<DM, P>>
 ) {
     val deleteRequest = storeAction.request
     val statuses = mutableListOf<IsDeleteResponseStatus<DM>>()

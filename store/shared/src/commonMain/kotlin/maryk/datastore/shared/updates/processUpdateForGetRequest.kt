@@ -5,6 +5,7 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.ObjectSoftDeleteChange
+import maryk.core.query.requests.IsChangesRequest
 import maryk.core.query.requests.IsGetRequest
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
@@ -19,54 +20,58 @@ internal suspend fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> Upda
     updateListener: UpdateListener<*, *>
 ) {
     if (request.keys.contains(key)) {
-        val update = when (this) {
-            is Addition<DM, P> -> {
-                if (values.matches(request.where)) {
-                    AdditionUpdate(
-                        dataModel = dataModel,
-                        key = key,
-                        version = version.timestamp,
-                        values = values.filterWithSelect(request.select)
-                    )
-                } else null
-            }
-            is Change<DM, P> -> {
-                var shouldRemove = false
-                val filteredChanges = changes.filterWithSelect(request.select) {
-                    if (it is ObjectSoftDeleteChange && it.isDeleted) {
-                        shouldRemove = true
+        if (request !is IsChangesRequest<*, *, *> || request.fromVersion <= version.timestamp) {
+            val update = when (this) {
+                is Addition<DM, P> -> {
+                    if (request is IsChangesRequest<*, *, *> && request.fromVersion > version.timestamp) {
+                        null // Record is of before the fromVersion time
+                    } else if (values.matches(request.where)) {
+                        AdditionUpdate(
+                            dataModel = dataModel,
+                            key = key,
+                            version = version.timestamp,
+                            values = values.filterWithSelect(request.select)
+                        )
+                    } else null
+                }
+                is Change<DM, P> -> {
+                    var shouldRemove = false
+                    val filteredChanges = changes.filterWithSelect(request.select) {
+                        if (it is ObjectSoftDeleteChange && it.isDeleted) {
+                            shouldRemove = true
+                        }
+                    }
+
+                    if (shouldRemove) {
+                        RemovalUpdate(
+                            dataModel = dataModel,
+                            key = key,
+                            version = version.timestamp
+                        )
+                    } else {
+                        ChangeUpdate(
+                            dataModel = dataModel,
+                            key = key,
+                            version = version.timestamp,
+                            changes = filteredChanges
+                        )
                     }
                 }
-
-                if (shouldRemove) {
-                    RemovalUpdate(
-                        dataModel = dataModel,
-                        key = key,
-                        version = version.timestamp
-                    )
-                } else {
-                    ChangeUpdate(
-                        dataModel = dataModel,
-                        key = key,
-                        version = version.timestamp,
-                        changes = filteredChanges
-                    )
+                is Deletion<DM, P> -> {
+                    if (isHardDelete || request.filterSoftDeleted) {
+                        RemovalUpdate(
+                            dataModel = dataModel,
+                            key = key,
+                            version = version.timestamp
+                        )
+                    } else null
                 }
             }
-            is Deletion<DM, P> -> {
-                if (isHardDelete || request.filterSoftDeleted) {
-                    RemovalUpdate(
-                        dataModel = dataModel,
-                        key = key,
-                        version = version.timestamp
-                    )
-                } else null
-            }
-        }
 
-        if (update != null) {
-            @Suppress("UNCHECKED_CAST")
-            (updateListener as UpdateListener<DM, P>).sendChannel.send(update)
+            if (update != null) {
+                @Suppress("UNCHECKED_CAST")
+                (updateListener as UpdateListener<DM, P>).sendChannel.send(update)
+            }
         }
     }
 }

@@ -40,5 +40,3 @@ includeProjects(
 )
 
 rootProject.name = "maryk"
-
-enableFeaturePreview("GRADLE_METADATA")

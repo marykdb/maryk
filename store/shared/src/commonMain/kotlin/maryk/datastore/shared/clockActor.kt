@@ -20,7 +20,9 @@ class DeferredClock(
 }
 
 /** Actor which holds current highest time */
-@UseExperimental(ExperimentalCoroutinesApi::class, FlowPreview::class)
+@OptIn(
+    ExperimentalCoroutinesApi::class, FlowPreview::class
+)
 internal fun CoroutineScope.clockActor(): SendChannel<DeferredClock> =
     BroadcastChannel<DeferredClock>(Channel.BUFFERED).also {
         this.launch {

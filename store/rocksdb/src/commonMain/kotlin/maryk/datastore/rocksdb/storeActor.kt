@@ -11,7 +11,9 @@ import kotlinx.coroutines.launch
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.StoreActor
 
-@UseExperimental(ExperimentalCoroutinesApi::class, FlowPreview::class)
+@OptIn(
+    ExperimentalCoroutinesApi::class, FlowPreview::class
+)
 internal fun CoroutineScope.storeActor(
     store: RocksDBDataStore,
     executor: StoreExecutor

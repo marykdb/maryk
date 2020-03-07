@@ -8,9 +8,9 @@ plugins {
 }
 
 buildscript {
-    extra["kotlinVersion"] = "1.3.61"
-    extra["coroutinesVersion"] = "1.3.3"
-    extra["marykRocksDBVersion"] = "0.5.0"
+    extra["kotlinVersion"] = "1.3.70"
+    extra["coroutinesVersion"] = "1.3.4"
+    extra["marykRocksDBVersion"] = "0.5.1"
 
     repositories {
         jcenter()

@@ -15,7 +15,9 @@ import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.StoreActor
 
-@UseExperimental(ExperimentalCoroutinesApi::class, FlowPreview::class)
+@OptIn(
+    ExperimentalCoroutinesApi::class, FlowPreview::class
+)
 internal fun CoroutineScope.storeActor(
     store: InMemoryDataStore,
     executor: StoreExecutor<*, *>

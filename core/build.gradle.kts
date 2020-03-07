@@ -25,10 +25,5 @@ kotlin {
                 }
             }
         }
-        val jvmMain by getting {
-            dependencies {
-                api(kotlin("reflect"))
-            }
-        }
     }
 }

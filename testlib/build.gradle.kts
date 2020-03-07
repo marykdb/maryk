@@ -28,7 +28,6 @@ kotlin {
                 api(kotlin("stdlib-jdk8"))
                 api(kotlin("test"))
                 api(kotlin("test-junit"))
-                api(kotlin("reflect"))
 
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$coroutinesVersion")
             }

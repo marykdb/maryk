@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions.wrapper
 
-import co.touchlab.stately.concurrency.AtomicReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.lib.concurrency.AtomicReference
 
 private val regEx = Regex("[a-z]+[a-zA-Z0-9]*")
 

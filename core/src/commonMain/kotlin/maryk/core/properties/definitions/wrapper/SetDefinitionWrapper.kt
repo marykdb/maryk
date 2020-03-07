@@ -1,6 +1,5 @@
 package maryk.core.properties.definitions.wrapper
 
-import co.touchlab.stately.concurrency.AtomicReference
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.graph.PropRefGraphType.PropRef
@@ -10,6 +9,7 @@ import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
+import maryk.lib.concurrency.AtomicReference
 import kotlin.reflect.KProperty
 
 /**

@@ -1,6 +1,5 @@
 package maryk.core.properties.definitions.wrapper
 
-import co.touchlab.stately.concurrency.AtomicReference
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
@@ -10,6 +9,7 @@ import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.AnySpecificWrappedPropertyReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.lib.concurrency.AtomicReference
 
 /**
  * Contains a List property [definition] which contains values of type [ODO] and [P]

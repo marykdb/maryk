@@ -1,6 +1,5 @@
 package maryk.core.properties.definitions.wrapper
 
-import co.touchlab.stately.concurrency.AtomicReference
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.ListDefinition
@@ -11,6 +10,7 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListAnyItemReference
 import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.ListReference
+import maryk.lib.concurrency.AtomicReference
 
 /**
  * Contains a List property [definition] which contains items of type [T]

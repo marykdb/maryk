@@ -1,6 +1,5 @@
 package maryk.core.properties.definitions.wrapper
 
-import co.touchlab.stately.concurrency.AtomicReference
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
@@ -17,6 +16,7 @@ import maryk.core.properties.references.TypeReference
 import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.values.Values
+import maryk.lib.concurrency.AtomicReference
 import kotlin.reflect.KProperty
 
 /**

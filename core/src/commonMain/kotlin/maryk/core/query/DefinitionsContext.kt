@@ -1,12 +1,12 @@
 package maryk.core.query
 
-import co.touchlab.stately.ensureNeverFrozen
 import maryk.core.models.IsNamedDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.MultiTypeEnum
 import maryk.core.properties.enum.MultiTypeEnumDefinition
+import maryk.lib.ensureNeverFrozen
 
 /** Saves the context while writing and parsing Definitions */
 open class DefinitionsContext(

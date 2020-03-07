@@ -12,11 +12,6 @@ apply {
 
 kotlin {
     sourceSets {
-        commonMain {
-            dependencies {
-                api("co.touchlab:stately:0.9.4")
-            }
-        }
         commonTest {
             dependencies {
                 implementation(project(":testlib"))

@@ -1,12 +1,11 @@
 package maryk.core.properties.definitions.wrapper
 
-import co.touchlab.stately.concurrency.AtomicReference
-import co.touchlab.stately.concurrency.value
-import co.touchlab.stately.freeze
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceWithParent
+import maryk.lib.concurrency.AtomicReference
+import maryk.lib.freeze
 
 /** To save creation of new references to same fields, the references are cached. */
 interface CacheableReferenceCreator {
@@ -24,8 +23,8 @@ interface CacheableReferenceCreator {
         }
 
         return creator().also { created ->
-            val newArray = cache.value?.let { arrayOf(created, *it) } ?: arrayOf<IsPropertyReference<*, *, *>>(created)
-            cache.value = newArray.freeze()
+            val newArray = cache.get()?.let { arrayOf(created, *it) } ?: arrayOf<IsPropertyReference<*, *, *>>(created)
+            cache.set(newArray.freeze())
         }
     }
 }

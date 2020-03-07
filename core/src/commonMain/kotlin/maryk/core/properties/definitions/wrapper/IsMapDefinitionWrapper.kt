@@ -1,6 +1,5 @@
 package maryk.core.properties.definitions.wrapper
 
-import co.touchlab.stately.concurrency.AtomicReference
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.references.AnyOutPropertyReference
@@ -11,6 +10,7 @@ import maryk.core.properties.references.MapAnyValueReference
 import maryk.core.properties.references.MapKeyReference
 import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.references.PropertyReferenceForValues
+import maryk.lib.concurrency.AtomicReference
 
 interface IsMapDefinitionWrapper<K : Any, V : Any, TO : Any, CX : IsPropertyContext, in DO : Any> :
     IsDefinitionWrapper<Map<K, V>, TO, CX, DO>,

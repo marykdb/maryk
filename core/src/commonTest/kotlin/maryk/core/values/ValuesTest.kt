@@ -3,12 +3,16 @@ package maryk.core.values
 import maryk.core.properties.graph.graph
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
+import maryk.core.query.changes.Change
+import maryk.core.query.pairs.with
+import maryk.core.query.requests.change
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.Option.V2
 import maryk.test.models.SimpleMarykTypeEnum.S1
 import maryk.test.models.TestMarykModel
+import maryk.test.models.TestMarykModel.Properties
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -26,7 +30,7 @@ class ValuesTest {
         )
 
         val copy = original.copy {
-            arrayOf(
+            listOf(
                 string withNotNull "bye world",
                 enum withNotNull V2
             )
@@ -202,5 +206,57 @@ class ValuesTest {
             assertEquals(expected.first, propertyReference)
             assertEquals(expected.second, value)
         }
+    }
+
+    @Test
+    fun changeTest() {
+        val original = TestMarykModel(
+            string = "hello world",
+            int = 5,
+            uint = 3u,
+            double = 2.3,
+            dateTime = DateTime(2018, 7, 18),
+            list = listOf(3, 4, 5)
+        )
+
+        var changed = original.change(listOf())
+
+        assertEquals(original, changed)
+
+        changed = original.change(
+            Change(
+                TestMarykModel { string::ref } with "hello universe"
+            )
+        )
+
+        assertEquals("hello universe", changed { string })
+        assertEquals("hello world", original { string })
+
+        changed = original.change(
+            Change(
+                TestMarykModel { list::ref } with listOf(1, 2)
+            )
+        )
+
+        assertEquals(listOf(1, 2), changed { list })
+        assertEquals(listOf(3, 4, 5), original { list })
+
+        changed = original.change(
+            Change(
+                TestMarykModel { list.refAt(0u) } with 22
+            )
+        )
+
+        assertEquals(22, changed { list }?.getOrNull(0))
+        assertEquals(3, original { list }?.getOrNull(0))
+
+        changed = original.change(
+            Change(
+                TestMarykModel { list.refToAny() } with 42
+            )
+        )
+
+        assertEquals(listOf(42, 42, 42), changed { list })
+        assertEquals(listOf(3, 4, 5), original { list })
     }
 }

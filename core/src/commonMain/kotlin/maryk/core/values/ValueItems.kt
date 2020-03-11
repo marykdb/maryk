@@ -10,9 +10,11 @@ interface IsValueItems : Iterable<ValueItem> {
 
     operator fun get(index: UInt): Any?
 
+    fun getValueItem(index: UInt): ValueItem?
+
     fun contains(index: UInt): Boolean
 
-    fun copyAdding(toAdd: Array<ValueItem>): IsValueItems
+    fun copyAdding(toAdd: Iterable<ValueItem>): IsValueItems
 
     fun copySelecting(select: IsPropRefGraph<*>): IsValueItems
 }
@@ -26,10 +28,19 @@ interface IsValueItemsImpl : IsValueItems {
         0 <= list.binarySearch { it.index.compareTo(index) }
 
     override operator fun get(index: UInt): Any? {
-        this.searchItemByIndex(index).let {
+        this.list.searchItemByIndex(index).let {
             return when {
                 it < 0 -> null
                 else -> list[it].value
+            }
+        }
+    }
+
+    override fun getValueItem(index: UInt): ValueItem? {
+        this.list.searchItemByIndex(index).let {
+            return when {
+                it < 0 -> null
+                else -> list[it]
             }
         }
     }
@@ -40,7 +51,7 @@ interface IsValueItemsImpl : IsValueItems {
         override fun next() = list[index++]
     }
 
-    override fun copyAdding(toAdd: Array<ValueItem>) = MutableValueItems(this.list.toMutableList()).also { items ->
+    override fun copyAdding(toAdd: Iterable<ValueItem>) = MutableValueItems(this.list.toMutableList()).also { items ->
         toAdd.forEach {
             items += it
         }
@@ -59,11 +70,11 @@ interface IsValueItemsImpl : IsValueItems {
             }
         }.toMutableList()
     )
-
-    fun searchItemByIndex(index: UInt): Int =
-        // Index can never be at a higher spot in list than index itself
-        list.binarySearch(toIndex = minOf(index.toInt(), list.size)) { it.index.compareTo(index) }
 }
+
+internal fun List<ValueItem>.searchItemByIndex(index: UInt): Int =
+    // Index can never be at a higher spot in list than index itself
+    binarySearch(toIndex = minOf(index.toInt(), size)) { it.index.compareTo(index) }
 
 val EmptyValueItems: IsValueItems = MutableValueItems()
 fun ValueItems(vararg item: ValueItem): IsValueItems = MutableValueItems(*item)
@@ -78,7 +89,7 @@ inline class MutableValueItems(
     constructor(vararg item: ValueItem) : this(mutableListOf(*item))
 
     operator fun plusAssign(valueItem: ValueItem) {
-        this.searchItemByIndex(valueItem.index).let {
+        this.list.searchItemByIndex(valueItem.index).let {
             when {
                 it < 0 -> list.add((it * -1) - 1, valueItem)
                 else -> list.set(it, valueItem)
@@ -87,7 +98,7 @@ inline class MutableValueItems(
     }
 
     operator fun set(index: UInt, value: Any) {
-        this.searchItemByIndex(index).let {
+        this.list.searchItemByIndex(index).let {
             val valueItem = ValueItem(index, value)
             when {
                 it < 0 -> list.add((it * -1) - 1, valueItem)
@@ -96,7 +107,7 @@ inline class MutableValueItems(
         }
     }
 
-    fun remove(index: UInt) = this.searchItemByIndex(index).let {
+    fun remove(index: UInt) = this.list.searchItemByIndex(index).let {
         when {
             it < 0 -> null
             else -> list.removeAt(it)

@@ -9,6 +9,7 @@ import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.exceptions.AlreadyExistsException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
+import maryk.core.query.changes.IsChange
 import maryk.core.query.requests.AddRequest
 import maryk.core.query.responses.AddResponse
 import maryk.core.query.responses.statuses.AddSuccess
@@ -103,11 +104,14 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
                     }
 
                     dataStore.records.add((index * -1) - 1, dataRecord)
+
+                    val changes = listOf<IsChange>()
+
                     updateSendChannel.send(
-                        Addition(addRequest.dataModel, key, version, objectToAdd)
+                        Addition(addRequest.dataModel, key, version, objectToAdd.change(changes))
                     )
                     statuses.add(
-                        AddSuccess(key, version.timestamp, listOf())
+                        AddSuccess(key, version.timestamp, changes)
                     )
                 } else {
                     statuses.add(

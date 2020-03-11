@@ -68,12 +68,15 @@ interface IsPropertyReference<T : Any, out D : IsPropertyDefinition<T>, V : Any>
     fun resolveFromAny(value: Any): Any
 
     /** Unwraps the references into an ordered list with parent to children */
-    fun unwrap(): List<IsPropertyReference<*, *, in Any>> {
-        @Suppress("UNCHECKED_CAST")
-        val refList = mutableListOf(this as IsPropertyReference<*, *, in Any>)
-        var ref: IsPropertyReference<*, *, in Any> = this
+    @Suppress("UNCHECKED_CAST")
+    fun unwrap(
+        listToUse: MutableList<IsPropertyReference<*, *, *>>? = null
+    ): List<IsPropertyReference<*, *, in Any>> {
+        val refList =
+            (listToUse?.also { it.clear(); it.add(this) } ?: mutableListOf(this)) as MutableList<IsPropertyReference<*, *, in Any>>
+
+        var ref = this as IsPropertyReference<*, *, in Any>
         while (ref is IsPropertyReferenceWithParent<*, *, *, *> && ref.parentReference != null) {
-            @Suppress("UNCHECKED_CAST")
             ref = ref.parentReference as IsPropertyReference<*, *, in Any>
             refList.add(0, ref)
         }

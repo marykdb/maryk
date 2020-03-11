@@ -1,9 +1,9 @@
 package maryk.datastore.rocksdb.processors
 
-import maryk.datastore.rocksdb.compareTo
+import maryk.ByteBuffer
 import maryk.datastore.rocksdb.compareToWithOffsetAndLength
+import maryk.datastore.rocksdb.compareWith
 import maryk.rocksdb.ComparatorOptions
-import maryk.rocksdb.DirectSlice
 
 private const val versionSize = ULong.SIZE_BYTES
 
@@ -13,23 +13,23 @@ private const val versionSize = ULong.SIZE_BYTES
  */
 internal class VersionedComparator(
     private val keySize: Int
-) : maryk.rocksdb.DirectComparator(ComparatorOptions()) {
+) : maryk.rocksdb.AbstractComparator(ComparatorOptions()) {
     override fun name() = "maryk.VersionedComparator"
-    override fun compare(a: DirectSlice, b: DirectSlice): Int {
-        return if (a.size() > keySize && b.size() > keySize) {
+    override fun compare(a: ByteBuffer, b: ByteBuffer): Int {
+        return if (a.remaining() > keySize && b.remaining() > keySize) {
             when (val comparison =
-                a.compareToWithOffsetAndLength(0, a.size() - versionSize, b, 0, b.size() - versionSize)) {
+                a.compareToWithOffsetAndLength(0, a.remaining() - versionSize, b, 0, b.remaining() - versionSize)) {
                 0 -> a.compareToWithOffsetAndLength(
-                    a.size() - versionSize,
+                    a.remaining() - versionSize,
                     versionSize,
                     b,
-                    b.size() - versionSize,
+                    b.remaining() - versionSize,
                     versionSize
                 )
                 else -> comparison
             }
         } else {
-            a.compareTo(b)
+            a.compareWith(b)
         }
     }
 }

@@ -10,7 +10,6 @@ import maryk.core.query.requests.IsGetRequest
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.RemovalUpdate
-import maryk.core.values.matchesFilter
 import maryk.datastore.shared.updates.Update.Addition
 import maryk.datastore.shared.updates.Update.Change
 import maryk.datastore.shared.updates.Update.Deletion

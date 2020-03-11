@@ -14,7 +14,9 @@ import maryk.core.query.requests.IsGetRequest
 import maryk.datastore.shared.AbstractDataStore
 
 /** Actor which processes an update */
-@UseExperimental(ExperimentalCoroutinesApi::class, FlowPreview::class)
+@OptIn(
+    ExperimentalCoroutinesApi::class, FlowPreview::class
+)
 internal fun AbstractDataStore.processUpdateActor(): SendChannel<Update<*, *>> =
     BroadcastChannel<Update<*, *>>(Channel.BUFFERED).also {
         this.launch {

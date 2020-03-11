@@ -19,6 +19,50 @@ interface IsValueItems : Iterable<ValueItem> {
 
 interface IsValueItemsImpl : IsValueItems {
     val list: List<ValueItem>
+
+    override val size get() = list.size
+
+    override fun contains(index: UInt) =
+        0 <= list.binarySearch { it.index.compareTo(index) }
+
+    override operator fun get(index: UInt): Any? {
+        this.searchItemByIndex(index).let {
+            return when {
+                it < 0 -> null
+                else -> list[it].value
+            }
+        }
+    }
+
+    override fun iterator() = object : Iterator<ValueItem> {
+        var index = 0
+        override fun hasNext() = index < list.size
+        override fun next() = list[index++]
+    }
+
+    override fun copyAdding(toAdd: Array<ValueItem>) = MutableValueItems(this.list.toMutableList()).also { items ->
+        toAdd.forEach {
+            items += it
+        }
+    }
+
+    override fun copySelecting(select: IsPropRefGraph<*>) = MutableValueItems(
+        list = this.mapNotNull { valueItem ->
+            if (!select.contains(valueItem.index)) {
+                null
+            } else {
+                if (valueItem.value is Values<*, *>) {
+                    (select.selectNodeOrNull(valueItem.index) as? PropRefGraph<*, *, *>)?.let { subSelect ->
+                        ValueItem(valueItem.index, valueItem.value.filterWithSelect(subSelect))
+                    } ?: valueItem
+                } else valueItem
+            }
+        }.toMutableList()
+    )
+
+    fun searchItemByIndex(index: UInt): Int =
+        // Index can never be at a higher spot in list than index itself
+        list.binarySearch(toIndex = minOf(index.toInt(), list.size)) { it.index.compareTo(index) }
 }
 
 val EmptyValueItems: IsValueItems = MutableValueItems()
@@ -57,50 +101,6 @@ inline class MutableValueItems(
             it < 0 -> null
             else -> list.removeAt(it)
         }
-    }
-
-    override fun contains(index: UInt): Boolean {
-        return 0 <= list.binarySearch { it.index.compareTo(index) }
-    }
-
-    override operator fun get(index: UInt): Any? {
-        this.searchItemByIndex(index).let {
-            return when {
-                it < 0 -> null
-                else -> list[it].value
-            }
-        }
-    }
-
-    override fun iterator() = object : Iterator<ValueItem> {
-        var index = 0
-        override fun hasNext() = index < list.size
-        override fun next() = list[index++]
-    }
-
-    override fun copyAdding(toAdd: Array<ValueItem>) = MutableValueItems(this.list.toMutableList()).also { items ->
-        toAdd.forEach {
-            items += it
-        }
-    }
-
-    override fun copySelecting(select: IsPropRefGraph<*>) = MutableValueItems(
-        list = this.list
-            .filter { select.contains(it.index) }
-            .map {
-                if (it.value is Values<*, *>) {
-                    (select.selectNodeOrNull(it.index) as? PropRefGraph<*, *, *>)?.let { subSelect ->
-                        ValueItem(it.index,  it.value.filterWithSelect(subSelect))
-                    } ?: it
-                } else {
-                    it
-                }
-            }.toMutableList()
-    )
-
-    private fun searchItemByIndex(index: UInt): Int {
-        // Index can never be at a higher spot in list than index itself
-        return list.binarySearch(toIndex = minOf(index.toInt(), list.size)) { it.index.compareTo(index) }
     }
 
     override fun toString() = this.list.joinToString(separator = ", ", prefix = "{", postfix = "}")

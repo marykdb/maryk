@@ -85,10 +85,10 @@ abstract class AbstractValues<DO : Any, DM : IsDataModel<P>, P : AbstractPropert
 
     /** Mutate Values with [pairToAddCreator]. */
     fun mutate(pairToAddCreator: P.() -> Array<ValueItem>) {
-        val mutatableValues = values as MutableValueItems
+        val mutableValues = values as MutableValueItems
 
         for (toAdd in pairToAddCreator(this.dataModel.properties)) {
-            mutatableValues += toAdd
+            mutableValues += toAdd
         }
     }
 
@@ -177,7 +177,7 @@ abstract class AbstractValues<DO : Any, DM : IsDataModel<P>, P : AbstractPropert
         (this.values as MutableValueItems)[index] = value
     }
 
-    /** Remove from internal valuesvalues by [index] */
+    /** Remove from internal values by [index] */
     internal fun remove(index: UInt): Any? {
         return (this.values as MutableValueItems).remove(index)?.value
     }

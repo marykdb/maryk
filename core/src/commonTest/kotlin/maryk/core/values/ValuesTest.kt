@@ -6,6 +6,9 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Date
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
+import maryk.core.query.changes.ListChange
+import maryk.core.query.changes.SetChange
+import maryk.core.query.changes.change
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.change
 import maryk.lib.time.DateTime
@@ -324,5 +327,63 @@ class ValuesTest {
                 )
             )
         }
+    }
+
+    @Test
+    fun changeListTest() {
+        val original = TestMarykModel(
+            string = "hello world",
+            int = 5,
+            uint = 3u,
+            double = 2.3,
+            dateTime = DateTime(2018, 7, 18),
+            list = listOf(3, 4, 5)
+        )
+
+        val changed = original.change(
+            ListChange(
+                TestMarykModel { list::ref }.change(
+                    deleteValues = listOf(3),
+                    addValuesAtIndex = mapOf(
+                        1u to 999
+                    ),
+                    addValuesToEnd = listOf(8)
+                )
+            )
+        )
+
+        assertEquals(listOf(4, 999, 5, 8), changed { list })
+        assertEquals(listOf(3, 4, 5), original { list })
+    }
+
+    @Test
+    fun changeSetTest() {
+        val original = TestMarykModel(
+            string = "hello world",
+            int = 5,
+            uint = 3u,
+            double = 2.3,
+            dateTime = DateTime(2018, 7, 18),
+            set = setOf(Date(2020, 2, 20), Date(2019, 12, 11))
+        )
+
+        val changed = original.change(
+            SetChange(
+                TestMarykModel { set::ref }.change(
+                    addValues = setOf(
+                        Date(1981, 12, 5), Date(1989, 5, 15)
+                    )
+                )
+            )
+        )
+
+        assertEquals(
+            setOf(Date(2020, 2, 20), Date(2019, 12, 11), Date(1981, 12, 5), Date(1989, 5, 15)),
+            changed { set }
+        )
+        assertEquals(
+            setOf(Date(2020, 2, 20), Date(2019, 12, 11)),
+            original { set }
+        )
     }
 }

@@ -134,8 +134,71 @@ data class Values<DM : IsValuesDataModel<P>, P : PropertyDefinitions> internal c
                         }
                     }
                     is Delete -> TODO()
-                    is ListChange -> TODO()
-                    is SetChange -> TODO()
+                    is ListChange -> {
+                        for (listValueChanges in change.listValueChanges) {
+                            listValueChanges.reference.unwrap(mutableReferenceList)
+                            var referenceIndex = 0
+
+                            when (val ref = mutableReferenceList[referenceIndex++]) {
+                                is IsPropertyReferenceForValues<*, *, *, *> ->
+                                    valueItemsToChange.copyFromOriginalAndChange(this.values, ref.index) { _: Any?, newValue: Any? ->
+                                        when (val currentRef = mutableReferenceList.getOrNull(referenceIndex++)) {
+                                            null -> {
+                                                when (newValue) {
+                                                    is MutableList<*> -> {
+                                                        listValueChanges.deleteValues?.let { newValue.removeAll(it) }
+                                                        listValueChanges.addValuesAtIndex?.let {
+                                                            for ((index, value) in it) {
+                                                                @Suppress("UNCHECKED_CAST")
+                                                                (newValue as MutableList<Any>).add(index.toInt(), value)
+                                                            }
+                                                        }
+                                                        listValueChanges.addValuesToEnd?.let {
+                                                            @Suppress("UNCHECKED_CAST")
+                                                            (newValue as MutableList<Any>).addAll(it)
+                                                        }
+                                                    }
+                                                    null -> throw RequestException("Cannot set list changes on non existing value")
+                                                    else -> throw RequestException("Unsupported value type: $newValue for ref: $currentRef")
+                                                }
+                                                null
+                                            }
+                                            else -> throw RequestException("Cannot change lists which are not the last reference")
+                                        }
+                                    }
+                                else -> throw RequestException("Unsupported reference type: $ref")
+                            }
+                        }
+                    }
+                    is SetChange -> {
+                        for (setValueChanges in change.setValueChanges) {
+                            setValueChanges.reference.unwrap(mutableReferenceList)
+                            var referenceIndex = 0
+
+                            when (val ref = mutableReferenceList[referenceIndex++]) {
+                                is IsPropertyReferenceForValues<*, *, *, *> ->
+                                    valueItemsToChange.copyFromOriginalAndChange(this.values, ref.index) { _: Any?, newValue: Any? ->
+                                        when (val currentRef = mutableReferenceList.getOrNull(referenceIndex++)) {
+                                            null -> {
+                                                when (newValue) {
+                                                    is MutableSet<*> -> {
+                                                        setValueChanges.addValues?.let {
+                                                            @Suppress("UNCHECKED_CAST")
+                                                            (newValue as MutableSet<Any>).addAll(it)
+                                                        }
+                                                    }
+                                                    null -> throw RequestException("Cannot set set changes on non existing value")
+                                                    else -> throw RequestException("Unsupported value type: $newValue for ref: $currentRef")
+                                                }
+                                                null
+                                            }
+                                            else -> throw RequestException("Cannot change sets which are not the last reference")
+                                        }
+                                    }
+                                else -> throw RequestException("Unsupported reference type: $ref")
+                            }
+                        }
+                    }
                     is IncMapChange -> TODO()
                     is IncMapAddition -> TODO()
                     else -> throw Exception("Unexpected Change to process: $change")

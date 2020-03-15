@@ -56,8 +56,8 @@ interface IsValueItemsImpl : IsValueItems {
     }
 
     override fun copyAdding(toAdd: Iterable<ValueItem>) = MutableValueItems(this.list.toMutableList()).also { items ->
-        toAdd.forEach {
-            items += it
+        for (addition in toAdd) {
+            items += addition
         }
     }
 
@@ -160,6 +160,7 @@ inline class MutableValueItems(
 private fun mutableValueCreator(valueToChange: Any?): Any? = when (valueToChange) {
     null -> null
     is List<*> -> valueToChange.toMutableList()
+    is Set<*> -> valueToChange.toMutableSet()
     is Map<*, *> -> valueToChange.toMutableMap()
     is Values<*, *> ->
         @Suppress("UNCHECKED_CAST")

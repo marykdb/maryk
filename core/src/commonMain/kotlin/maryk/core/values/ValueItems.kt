@@ -2,8 +2,12 @@
 
 package maryk.core.values
 
+import maryk.core.models.IsValuesDataModel
+import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.graph.IsPropRefGraph
 import maryk.core.properties.graph.PropRefGraph
+import maryk.core.properties.types.MutableTypedValue
+import maryk.core.properties.types.TypedValue
 
 interface IsValueItems : Iterable<ValueItem> {
     val size: Int
@@ -88,11 +92,22 @@ inline class MutableValueItems(
 
     constructor(vararg item: ValueItem) : this(mutableListOf(*item))
 
+    /**
+     * Adds ValueItem to ValueItems.
+     * If ValueItem contains Values object then it is merging it with existing data.
+     */
     operator fun plusAssign(valueItem: ValueItem) {
         this.list.searchItemByIndex(valueItem.index).let {
             when {
                 it < 0 -> list.add((it * -1) - 1, valueItem)
-                else -> list.set(it, valueItem)
+                else -> {
+                    list[it] = if (valueItem.value is Values<*, *>) {
+                        val newValue = (list[it].value as Values<*, *>).copy(valueItem.value.values)
+                        ValueItem(valueItem.index, newValue)
+                    } else {
+                        valueItem
+                    }
+                }
             }
         }
     }
@@ -114,5 +129,48 @@ inline class MutableValueItems(
         }
     }
 
+    /**
+     * Changes valueItem at [referenceIndex] with [valueChanger]
+     * If [referenceIndex] is not yet contained in this valueItems then fetch it from [sourceValueItems]
+     */
+    fun copyFromOriginalAndChange(
+        sourceValueItems: IsValueItems,
+        referenceIndex: UInt,
+        valueChanger: (Any?, Any?) -> Any?
+    ) {
+        val index = list.searchItemByIndex(referenceIndex)
+
+        val originalValue = sourceValueItems.getValueItem(referenceIndex)?.value
+        when {
+            index < 0 -> {
+                val newValue = mutableValueCreator(originalValue)
+                list.add((index * -1) - 1, ValueItem(referenceIndex, valueChanger(originalValue, newValue) ?: newValue!!))
+            }
+            else -> {
+                valueChanger(originalValue, list[index].value)?.also {
+                    list[index] = ValueItem(referenceIndex, it)
+                }
+            }
+        }
+    }
+
     override fun toString() = this.list.joinToString(separator = ", ", prefix = "{", postfix = "}")
+}
+
+private fun mutableValueCreator(valueToChange: Any?): Any? = when (valueToChange) {
+    null -> null
+    is List<*> -> valueToChange.toMutableList()
+    is Map<*, *> -> valueToChange.toMutableMap()
+    is Values<*, *> ->
+        @Suppress("UNCHECKED_CAST")
+        Values(
+            valueToChange.dataModel as IsValuesDataModel<PropertyDefinitions>,
+            MutableValueItems(mutableListOf()),
+            valueToChange.context
+        )
+    is TypedValue<*, *> -> MutableTypedValue(
+        valueToChange.type,
+        mutableValueCreator(valueToChange.value) as Any
+    )
+    else -> valueToChange
 }

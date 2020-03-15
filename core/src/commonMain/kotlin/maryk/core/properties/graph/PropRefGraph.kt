@@ -232,15 +232,15 @@ internal fun writePropertiesToJson(
 
     writer.writeStartArray()
     for (graphable in transformed) {
-        when (graphable.value) {
+        when (val value = graphable.value) {
             is PropRefGraph<*, *, *> -> PropRefGraph.writeJson(
-                graphable.value, writer, context
+                value, writer, context
             )
             is IsDefinitionWrapper<*, *, *, *> -> {
-                writer.writeString(graphable.value.ref().completeName)
+                writer.writeString(value.ref().completeName)
             }
             is AnyPropertyReference -> {
-                writer.writeString(graphable.value.completeName)
+                writer.writeString(value.completeName)
             }
             else -> throw ParseException("Cannot write unknown graphType ${graphable.type}")
         }

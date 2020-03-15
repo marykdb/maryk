@@ -1,7 +1,9 @@
 package maryk.core.values
 
+import maryk.core.exceptions.RequestException
 import maryk.core.properties.graph.graph
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.types.Date
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
 import maryk.core.query.pairs.with
@@ -15,6 +17,7 @@ import maryk.test.models.TestMarykModel
 import maryk.test.models.TestMarykModel.Properties
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 import kotlin.test.expect
 
@@ -216,7 +219,16 @@ class ValuesTest {
             uint = 3u,
             double = 2.3,
             dateTime = DateTime(2018, 7, 18),
-            list = listOf(3, 4, 5)
+            multi = TypedValue(S1, "world"),
+            list = listOf(3, 4, 5),
+            set = setOf(Date(2020, 2, 20), Date(2019, 12, 11)),
+            map = mapOf(
+                Time(12, 0) to "Hi",
+                Time(1, 2) to "Hoi"
+            ),
+            embeddedValues = EmbeddedMarykModel(
+                value = "hi"
+            )
         )
 
         var changed = original.change(listOf())
@@ -231,6 +243,15 @@ class ValuesTest {
 
         assertEquals("hello universe", changed { string })
         assertEquals("hello world", original { string })
+
+        changed = original.change(
+            Change(
+                TestMarykModel { multi.refAtType(S1) } with "universe"
+            )
+        )
+
+        assertEquals("universe", changed { multi }?.value)
+        assertEquals("world", original { multi }?.value)
 
         changed = original.change(
             Change(
@@ -252,11 +273,56 @@ class ValuesTest {
 
         changed = original.change(
             Change(
+                TestMarykModel { list::ref } with listOf(6, 7, 8)
+            )
+        )
+
+        assertEquals(listOf(6, 7, 8), changed { list })
+        assertEquals(listOf(3, 4, 5), original { list })
+
+        changed = original.change(
+            Change(
                 TestMarykModel { list.refToAny() } with 42
             )
         )
 
         assertEquals(listOf(42, 42, 42), changed { list })
         assertEquals(listOf(3, 4, 5), original { list })
+
+        changed = original.change(
+            Change(
+                TestMarykModel { map.refAt(Time(12, 0)) } with "Bye"
+            )
+        )
+
+        assertEquals(mapOf(Time(12, 0) to "Bye", Time(1, 2) to "Hoi"), changed { map })
+        assertEquals(mapOf(Time(12, 0) to "Hi", Time(1, 2) to "Hoi"), original { map })
+
+        changed = original.change(
+            Change(
+                TestMarykModel { map.refToAny() } with "Hello"
+            )
+        )
+
+        assertEquals(mapOf(Time(12, 0) to "Hello", Time(1, 2) to "Hello"), changed { map })
+        assertEquals(mapOf(Time(12, 0) to "Hi", Time(1, 2) to "Hoi"), original { map })
+
+        changed = original.change(
+            Change(
+                TestMarykModel { embeddedValues { value::ref } } with "bye"
+            )
+        )
+
+        assertEquals("bye", changed { embeddedValues } / { value })
+        assertEquals("hi", original { embeddedValues } / { value })
+
+        assertFailsWith<RequestException> {
+            // Cannot change non set sub values
+            changed = original.change(
+                Change(
+                    TestMarykModel { embeddedValues { model { value::ref } } } with "new"
+                )
+            )
+        }
     }
 }

@@ -61,7 +61,7 @@ data class Values<DM : IsValuesDataModel<P>, P : PropertyDefinitions> internal c
     /** Change the Values with given [change] */
     fun change(vararg change: IsChange) = this.change(listOf(*change))
 
-    internal fun change(changes: List<IsChange>): Values<DM, P> =
+    fun change(changes: List<IsChange>): Values<DM, P> =
         if (changes.isEmpty()) {
             this
         } else {

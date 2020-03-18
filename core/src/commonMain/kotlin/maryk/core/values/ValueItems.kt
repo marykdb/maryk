@@ -2,6 +2,7 @@
 
 package maryk.core.values
 
+import maryk.core.models.IsDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.graph.IsPropRefGraph
@@ -21,6 +22,7 @@ interface IsValueItems : Iterable<ValueItem> {
     fun copyAdding(toAdd: Iterable<ValueItem>): IsValueItems
 
     fun copySelecting(select: IsPropRefGraph<*>): IsValueItems
+    fun toString(dataModel: IsDataModel<*>): String
 }
 
 interface IsValueItemsImpl : IsValueItems {
@@ -74,6 +76,11 @@ interface IsValueItemsImpl : IsValueItems {
             }
         }.toMutableList()
     )
+
+    override fun toString(dataModel: IsDataModel<*>): String =
+        this.list.joinToString(separator = ", ", prefix = "{", postfix = "}") { valueItem ->
+            "${dataModel.properties[valueItem.index]?.name ?: valueItem.index}=${valueItem.value}"
+        }
 }
 
 internal fun List<ValueItem>.searchItemByIndex(index: UInt): Int =

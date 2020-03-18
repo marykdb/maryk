@@ -226,7 +226,7 @@ data class Values<DM : IsValuesDataModel<P>, P : PropertyDefinitions> internal c
 
     override fun toString(): String {
         val modelName = (dataModel as? IsNamedDataModel<*>)?.name ?: dataModel
-        return "Values<$modelName>$values"
+        return "Values<$modelName>${values.toString(dataModel)}"
     }
 
     /**

@@ -1,11 +1,18 @@
 package maryk.core.properties
 
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 
 @PropertyReferenceMarker
 interface IsPropertyDefinitions {
+    /** Get the definition with a property [name] */
+    operator fun get(name: String): IsDefinitionWrapper<*, *, *, *>?
+
+    /** Get the definition with a property [index] */
+    operator fun get(index: UInt): IsDefinitionWrapper<*, *, *, *>?
+
     /** Get PropertyReference by [referenceName] */
     fun getPropertyReferenceByName(
         referenceName: String,

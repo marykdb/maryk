@@ -38,11 +38,9 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
 
     override fun isEmpty() = this._allProperties.isEmpty()
 
-    /** Get the definition with a property [name] */
-    operator fun get(name: String) = nameToDefinition[name]
+    override operator fun get(name: String) = nameToDefinition[name]
 
-    /** Get the definition with a property [index] */
-    operator fun get(index: UInt) = indexToDefinition[index]
+    override operator fun get(index: UInt) = indexToDefinition[index]
 
     /** Converts a list of optional [pairs] to values */
     fun mapNonNulls(vararg pairs: ValueItem?): IsValueItems =

@@ -9,6 +9,7 @@ import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceD
 import maryk.core.properties.definitions.list
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.AnyPropertyReference
+import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeWriter
@@ -26,6 +27,10 @@ data class Delete internal constructor(
             select.contains(it)
         }
         return if (filtered.isEmpty()) null else Delete(filtered)
+    }
+
+    override fun changeValues(objectChanger: (IsPropertyReferenceForValues<*, *, *, *>, (Any?, Any?) -> Any?) -> Unit) {
+        TODO("Not yet implemented")
     }
 
     override fun toString() = "Delete[${references.joinToString()}]"

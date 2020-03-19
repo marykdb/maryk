@@ -1,11 +1,14 @@
 package maryk.core.query.changes
 
+import maryk.core.exceptions.RequestException
 import maryk.core.models.ReferenceMappedDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.graph.RootPropRefGraph
+import maryk.core.properties.references.AnyPropertyReference
+import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeWriter
@@ -23,6 +26,53 @@ data class ListChange internal constructor(
             select.contains(it.reference)
         }
         return if (filtered.isEmpty()) null else ListChange(filtered)
+    }
+
+    override fun changeValues(objectChanger: (IsPropertyReferenceForValues<*, *, *, *>, (Any?, Any?) -> Any?) -> Unit) {
+        val mutableReferenceList = mutableListOf<AnyPropertyReference>()
+
+        for (listValueChanges in listValueChanges) {
+            listValueChanges.reference.unwrap(mutableReferenceList)
+            var referenceIndex = 0
+
+            fun valueChanger(originalValue: Any?, newValue: Any?): Any? {
+                val currentRef = mutableReferenceList.getOrNull(referenceIndex++)
+
+                return if (currentRef == null) {
+                    when (newValue) {
+                        is MutableList<*> -> {
+                            listValueChanges.deleteValues?.let { newValue.removeAll(it) }
+                            listValueChanges.addValuesAtIndex?.let {
+                                for ((index, value) in it) {
+                                    @Suppress("UNCHECKED_CAST")
+                                    (newValue as MutableList<Any>).add(index.toInt(), value)
+                                }
+                            }
+                            listValueChanges.addValuesToEnd?.let {
+                                @Suppress("UNCHECKED_CAST")
+                                (newValue as MutableList<Any>).addAll(it)
+                            }
+                        }
+                        null -> throw RequestException("Cannot set list changes on non existing value")
+                        else -> throw RequestException("Unsupported value type: $newValue for ref: $currentRef")
+                    }
+                    null
+                } else {
+                    deepValueChanger(
+                        originalValue,
+                        newValue,
+                        currentRef,
+                        ::valueChanger
+                    )
+                    null // Deeper change so no overwrite
+                }
+            }
+
+            when (val ref = mutableReferenceList[referenceIndex++]) {
+                is IsPropertyReferenceForValues<*, *, *, *> -> objectChanger(ref, ::valueChanger)
+                else -> throw RequestException("Unsupported reference type: $ref")
+            }
+        }
     }
 
     @Suppress("unused")

@@ -6,6 +6,8 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.graph.RootPropRefGraph
+import maryk.core.properties.references.AnyPropertyReference
+import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeWriter
@@ -24,6 +26,10 @@ data class IncMapAddition(
             select.contains(it.reference)
         }
         return if (filtered.isEmpty()) null else IncMapAddition(filtered)
+    }
+
+    override fun changeValues(objectChanger: (IsPropertyReferenceForValues<*, *, *, *>, (Any?, Any?) -> Any?) -> Unit) {
+        TODO("Not yet implemented")
     }
 
     @Suppress("unused")

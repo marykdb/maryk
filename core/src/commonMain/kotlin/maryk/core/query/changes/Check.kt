@@ -4,6 +4,8 @@ import maryk.core.models.ReferencePairDataModel
 import maryk.core.models.ReferenceValuePairsObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
+import maryk.core.properties.references.AnyPropertyReference
+import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.query.pairs.ReferenceValuePair
 import maryk.core.values.ObjectValues
 
@@ -21,6 +23,10 @@ data class Check internal constructor(
             select.contains(it.reference)
         }
         return if (filtered.isEmpty()) null else Check(filtered)
+    }
+
+    override fun changeValues(objectChanger: (IsPropertyReferenceForValues<*, *, *, *>, (Any?, Any?) -> Any?) -> Unit) {
+        // Changes nothing so do nothing
     }
 
     override fun toString() = "Check[${referenceValuePairs.joinToString()}]"

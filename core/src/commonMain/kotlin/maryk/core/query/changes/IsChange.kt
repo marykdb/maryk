@@ -3,6 +3,8 @@ package maryk.core.query.changes
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.graph.RootPropRefGraph
+import maryk.core.properties.references.AnyPropertyReference
+import maryk.core.properties.references.IsPropertyReferenceForValues
 
 /** Defines a change to a DataObject */
 interface IsChange {
@@ -10,6 +12,9 @@ interface IsChange {
 
     /** Filters the changes with [select] */
     fun filterWithSelect(select: RootPropRefGraph<out PropertyDefinitions>): IsChange?
+
+    /** Changes values with [objectChanger] */
+    fun changeValues(objectChanger: (IsPropertyReferenceForValues<*, *, *, *>, (Any?, Any?) -> Any?) -> Unit)
 }
 
 internal val mapOfChangeDefinitions = mapOf(

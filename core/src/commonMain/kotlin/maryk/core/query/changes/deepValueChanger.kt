@@ -14,6 +14,9 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.values.MutableValueItems
 import maryk.core.values.Values
 
+// Thrown when sub object was tried to be changed.
+object SubObjectChangeException: RequestException("Cannot set sub value on non existing value")
+
 /** changes deeper value for [reference] based on [originalValue] and [newValue] with [valueChanger] */
 internal fun deepValueChanger(originalValue: Any?, newValue: Any?, reference: AnyPropertyReference, valueChanger: (Any?, Any?) -> Any?) {
     when (newValue) {
@@ -30,24 +33,28 @@ internal fun deepValueChanger(originalValue: Any?, newValue: Any?, reference: An
                     newValue[reference.index.toInt()]
                 )
 
-                if (changedValue != null) {
-                    @Suppress("UNCHECKED_CAST")
-                    (newValue as MutableList<Any>)[reference.index.toInt()] = changedValue
+                @Suppress("UNCHECKED_CAST")
+                when(changedValue) {
+                    Unit -> newValue.removeAt(reference.index.toInt())
+                    null -> {} // Do nothing
+                    else -> (newValue as MutableList<Any>)[reference.index.toInt()] = changedValue
                 }
             }
-            is ListAnyItemReference<*, *> ->
+            is ListAnyItemReference<*, *> -> {
                 @Suppress("UNCHECKED_CAST")
-                (newValue as MutableList<Any>).indices.forEach { index ->
-                    @Suppress("UNCHECKED_CAST")
+                for (index in (originalValue as List<Any>).lastIndex downTo 0) {
                     val changedValue = valueChanger(
-                        (originalValue as List<Any>).getOrNull(index),
-                        newValue[index]
+                        originalValue.getOrNull(index),
+                        (newValue as MutableList<Any>)[index]
                     )
 
-                    if (changedValue != null) {
-                        (newValue)[index] = changedValue
+                    when(changedValue) {
+                        Unit -> newValue.removeAt(index)
+                        null -> {} // Do nothing
+                        else -> newValue[index] = changedValue
                     }
                 }
+            }
             else -> throw RequestException("Unsupported reference type: $reference")
         }
         is MutableMap<*, *> -> when (reference) {
@@ -60,25 +67,35 @@ internal fun deepValueChanger(originalValue: Any?, newValue: Any?, reference: An
                     (originalValue as Map<Any, Any>).getOrElse(reference.key) { null },
                     newMapValue
                 )
-                if (changedValue != null) {
-                    newMapValue[reference.key] = changedValue
+                when(changedValue) {
+                    Unit -> newMapValue.remove(reference.key)
+                    null -> {} // Do nothing
+                    else -> newMapValue[reference.key] = changedValue
                 }
             }
-            is MapAnyValueReference<*, *, *> ->
+            is MapAnyValueReference<*, *, *> -> {
+                var itemsToRemove: MutableList<Any>? = null
                 @Suppress("UNCHECKED_CAST")
-                newValue.entries.forEach { (key, value) ->
-                    @Suppress("UNCHECKED_CAST")
-                    val newMapValue = (newValue as MutableMap<Any, Any>)
+                val newMapValue = (newValue as MutableMap<Any, Any>)
 
+                for ((key, value) in newMapValue.entries) {
                     @Suppress("UNCHECKED_CAST")
                     val changedValue = valueChanger(
-                        (originalValue as Map<Any, Any>).getOrElse(key as Any) { null },
+                        (originalValue as Map<Any, Any>).getOrElse(key) { null },
                         value
                     )
-                    if (changedValue != null) {
-                        newMapValue[key] = changedValue
+                    when(changedValue) {
+                        Unit -> {
+                            itemsToRemove = itemsToRemove?.apply { add(key) } ?: mutableListOf(key)
+                        }
+                        null -> {} // Do nothing
+                        else -> newMapValue[key] = changedValue
                     }
                 }
+                itemsToRemove?.forEach {
+                    newMapValue.remove(it)
+                }
+            }
             else -> throw RequestException("Unsupported reference type: $reference")
         }
         is TypedValue<*, *> -> when (reference) {
@@ -95,7 +112,7 @@ internal fun deepValueChanger(originalValue: Any?, newValue: Any?, reference: An
             }
             else -> throw RequestException("Unsupported reference type: $reference")
         }
-        null -> throw RequestException("Cannot set sub value on non existing value")
+        null -> throw SubObjectChangeException
         else -> throw RequestException("Unsupported reference type: $reference")
     }
 }

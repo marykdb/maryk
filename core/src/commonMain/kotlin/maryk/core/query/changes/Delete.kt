@@ -1,6 +1,7 @@
 package maryk.core.query.changes
 
 import maryk.core.exceptions.ContextNotFoundException
+import maryk.core.exceptions.RequestException
 import maryk.core.models.ReferencesDataModel
 import maryk.core.models.ReferencesObjectPropertyDefinitions
 import maryk.core.properties.AbstractPropertyDefinitions
@@ -30,7 +31,33 @@ data class Delete internal constructor(
     }
 
     override fun changeValues(objectChanger: (IsPropertyReferenceForValues<*, *, *, *>, (Any?, Any?) -> Any?) -> Unit) {
-        TODO("Not yet implemented")
+        val mutableReferenceList = mutableListOf<AnyPropertyReference>()
+
+        for (reference in references) {
+            reference.unwrap(mutableReferenceList)
+            var referenceIndex = 0
+
+            fun valueDeleter(originalValue: Any?, newValue: Any?): Any? {
+                val currentRef = mutableReferenceList.getOrNull(referenceIndex++)
+
+                return if (currentRef != null) {
+                    try {
+                        deepValueChanger(
+                            originalValue,
+                            newValue,
+                            currentRef,
+                            ::valueDeleter
+                        )
+                        null // Deeper change so no overwrite
+                    } catch (e: SubObjectChangeException) {} // Ignore since there is nothing to delete
+                } else Unit // Set the deletion as Unit
+            }
+
+            when (val ref = mutableReferenceList[referenceIndex++]) {
+                is IsPropertyReferenceForValues<*, *, *, *> -> objectChanger(ref, ::valueDeleter)
+                else -> throw RequestException("Unsupported reference type: $ref")
+            }
+        }
     }
 
     override fun toString() = "Delete[${references.joinToString()}]"

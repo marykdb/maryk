@@ -1,21 +1,13 @@
 package maryk.core.values
 
-import maryk.core.exceptions.RequestException
 import maryk.core.models.IsNamedDataModel
 import maryk.core.models.IsTypedValuesDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.graph.IsPropRefGraph
-import maryk.core.properties.references.AnyPropertyReference
-import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.query.RequestContext
-import maryk.core.query.changes.Change
 import maryk.core.query.changes.Delete
-import maryk.core.query.changes.IncMapAddition
-import maryk.core.query.changes.IncMapChange
 import maryk.core.query.changes.IsChange
-import maryk.core.query.changes.ListChange
-import maryk.core.query.changes.SetChange
 
 typealias ValuesImpl = Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
 
@@ -65,7 +57,7 @@ data class Values<DM : IsValuesDataModel<P>, P : PropertyDefinitions> internal c
                 }
             }
 
-            Values(dataModel, values.copyAdding(valueItemsToChange.list), context)
+            Values(dataModel, values.copyAdding(valueItemsToChange), context)
         }
 
     // ignore context

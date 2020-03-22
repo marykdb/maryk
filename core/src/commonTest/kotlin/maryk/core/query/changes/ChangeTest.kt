@@ -130,15 +130,6 @@ class ChangeTest {
 
         changed = original.change(
             Change(
-                TestMarykModel { list::ref } with listOf(6, 7, 8)
-            )
-        )
-
-        assertEquals(listOf(6, 7, 8), changed { list })
-        assertEquals(listOf(3, 4, 5), original { list })
-
-        changed = original.change(
-            Change(
                 TestMarykModel { list.refToAny() } with 42
             )
         )

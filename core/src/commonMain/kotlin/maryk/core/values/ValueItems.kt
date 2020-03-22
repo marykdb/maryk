@@ -106,13 +106,26 @@ inline class MutableValueItems(
     operator fun plusAssign(valueItem: ValueItem) {
         this.list.searchItemByIndex(valueItem.index).let {
             when {
-                it < 0 -> list.add((it * -1) - 1, valueItem)
+                it < 0 -> if (valueItem.value != Unit) {
+                    list.add((it * -1) - 1, valueItem)
+                } else Unit // Is deleted so do nothing
                 else -> {
-                    list[it] = if (valueItem.value is Values<*, *>) {
-                        val newValue = (list[it].value as Values<*, *>).copy(valueItem.value.values)
-                        ValueItem(valueItem.index, newValue)
-                    } else {
-                        valueItem
+                    when {
+                        valueItem.value is Unit -> {
+                            list.removeAt(it)
+                        }
+                        valueItem.value is TypedValue<*, *> && valueItem.value.value is Unit -> {
+                            list.removeAt(it)
+                        }
+                        else -> {
+                            list[it] = when (valueItem.value) {
+                                is Values<*, *> -> {
+                                    val newValue = (list[it].value as Values<*, *>).copy(valueItem.value.values)
+                                    ValueItem(valueItem.index, newValue)
+                                }
+                                else -> valueItem
+                            }
+                        }
                     }
                 }
             }

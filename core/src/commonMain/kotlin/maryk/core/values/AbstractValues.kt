@@ -101,7 +101,7 @@ abstract class AbstractValues<DO : Any, DM : IsDataModel<P>, P : AbstractPropert
         return invoke(index)
     }
 
-    /** Get property from valuesvalues with wrapper in [getProperty] and convert it to native usage */
+    /** Get property from values with wrapper in [getProperty] and convert it to native usage */
     fun <T : Any> original(getProperty: P.() -> IsDefinitionWrapper<T, *, *, DO>): T? {
         val index = getProperty(
             this.dataModel.properties

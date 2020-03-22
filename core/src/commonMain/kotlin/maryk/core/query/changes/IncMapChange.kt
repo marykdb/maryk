@@ -1,5 +1,6 @@
 package maryk.core.query.changes
 
+import maryk.core.exceptions.RequestException
 import maryk.core.models.ReferenceMappedDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
@@ -8,6 +9,7 @@ import maryk.core.properties.definitions.list
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForValues
+import maryk.core.properties.types.numeric.NumberDescriptor
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeWriter
@@ -29,7 +31,51 @@ data class IncMapChange internal constructor(
     }
 
     override fun changeValues(objectChanger: (IsPropertyReferenceForValues<*, *, *, *>, (Any?, Any?) -> Any?) -> Unit) {
-        TODO("Not yet implemented")
+        val mutableReferenceList = mutableListOf<AnyPropertyReference>()
+
+        for (valueChange in this.valueChanges) {
+            valueChange.reference.unwrap(mutableReferenceList)
+            var referenceIndex = 0
+
+            fun valueChanger(originalValue: Any?, newValue: Any?): Any? {
+                val currentRef = mutableReferenceList.getOrNull(referenceIndex++)
+                @Suppress("UNCHECKED_CAST")
+                val descriptor = (valueChange.reference.propertyDefinition.definition.keyNumberDescriptor as NumberDescriptor<Comparable<Any>>)
+                val one = descriptor.ofInt(1)
+
+                return if (currentRef == null) {
+                    when (newValue) {
+                        is MutableMap<*, *> -> {
+                            valueChange.addValues?.let { addValues ->
+                                @Suppress("UNCHECKED_CAST")
+                                var latestKeyedItem = (newValue as MutableMap<Comparable<Any>, Any>).maxBy { it.key }!!.key
+
+                                for (value in addValues) {
+                                    latestKeyedItem = descriptor.sum(latestKeyedItem, one)
+                                    newValue.put(latestKeyedItem, value)
+                                }
+                            }
+                        }
+                        null -> throw RequestException("Cannot set list changes on non existing value")
+                        else -> throw RequestException("Unsupported value type: $newValue for ref: $currentRef")
+                    }
+                    null
+                } else {
+                    deepValueChanger(
+                        originalValue,
+                        newValue,
+                        currentRef,
+                        ::valueChanger
+                    )
+                    null // Deeper change so no overwrite
+                }
+            }
+
+            when (val ref = mutableReferenceList[referenceIndex++]) {
+                is IsPropertyReferenceForValues<*, *, *, *> -> objectChanger(ref, ::valueChanger)
+                else -> throw RequestException("Unsupported reference type: $ref")
+            }
+        }
     }
 
     @Suppress("unused")

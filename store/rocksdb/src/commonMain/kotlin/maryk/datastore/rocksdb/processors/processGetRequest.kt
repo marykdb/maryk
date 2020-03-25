@@ -74,7 +74,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
                         cacheReader
                     )?.also {
                         // Only add if not null
-                        valuesWithMeta += it
+                        valuesWithMeta.add(it)
                     }
 
                     aggregator?.aggregate {

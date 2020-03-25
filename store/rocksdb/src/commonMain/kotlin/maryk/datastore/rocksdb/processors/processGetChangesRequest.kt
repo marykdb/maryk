@@ -75,7 +75,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
                         cacheReader
                     )?.also {
                         // Only add if not null
-                        objectChanges += it
+                        objectChanges.add(it)
                     }
                 }
             }

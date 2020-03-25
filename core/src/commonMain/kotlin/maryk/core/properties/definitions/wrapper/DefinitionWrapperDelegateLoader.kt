@@ -13,9 +13,7 @@ class DefinitionWrapperDelegateLoader<W : IsDefinitionWrapper<*, *, *, Any>>(
         thisRef: Any?,
         prop: KProperty<*>
     ) =
-        wrapperCreator(prop.name).also {
-            propertyDefinitions.addSingle(it)
-        }
+        wrapperCreator(prop.name).also(propertyDefinitions::addSingle)
 }
 
 /** Loads delegate for wrapper from [wrapperCreator] and sets it on object [propertyDefinitions] */
@@ -27,7 +25,5 @@ class ObjectDefinitionWrapperDelegateLoader<W : IsDefinitionWrapper<*, *, *, DO>
         thisRef: Any?,
         prop: KProperty<*>
     ) =
-        wrapperCreator(prop.name).also {
-            propertyDefinitions.addSingle(it)
-        }
+        wrapperCreator(prop.name).also(propertyDefinitions::addSingle)
 }

@@ -29,9 +29,7 @@ data class ValuesResponse<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions
                 )
             ),
             getter = ValuesResponse<*, *>::values
-        ).also {
-            addSingle(it)
-        }
+        ).also(::addSingle)
 
         val aggregations by embedObject(
             index = 3u,

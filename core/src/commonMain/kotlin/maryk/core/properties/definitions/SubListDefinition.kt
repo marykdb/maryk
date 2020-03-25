@@ -35,7 +35,7 @@ fun <T: Any, TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<
     capturer: (Unit.(CX, List<T>) -> Unit)? = null
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     @Suppress("UNCHECKED_CAST")
-    (ListDefinitionWrapper(
+    ListDefinitionWrapper(
         index,
         name ?: propName,
         SubListDefinition(valueDefinition),
@@ -55,5 +55,5 @@ fun <T: Any, TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<
             fromSerializableList
         },
         shouldSerialize = shouldSerialize
-    ))
+    )
 }

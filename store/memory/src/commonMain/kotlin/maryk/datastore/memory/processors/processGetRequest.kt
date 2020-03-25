@@ -53,7 +53,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
                 record
             )?.also {
                 // Only add if not null
-                valuesWithMeta += it
+                valuesWithMeta.add(it)
             }
 
             aggregator?.aggregate {

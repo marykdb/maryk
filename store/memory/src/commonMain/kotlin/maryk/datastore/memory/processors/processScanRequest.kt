@@ -40,9 +40,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
             scanRequest.select,
             toVersion,
             record
-        )?.also {
-            valuesWithMeta += it
-        }
+        )?.also { valuesWithMeta.add(it) }
 
         // Aggregate all values. First try from valuesWithMetaData and otherwise directly from record
         aggregator?.aggregate {

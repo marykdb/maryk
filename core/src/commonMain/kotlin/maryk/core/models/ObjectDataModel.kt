@@ -33,8 +33,6 @@ abstract class ObjectDataModel<DO : Any, P : ObjectPropertyDefinitions<DO>>(
                     @Suppress("UNCHECKED_CAST")
                     it.properties as ObjectPropertyDefinitions<in Any>
                 }
-            ).also {
-                definitions.addSingle(it)
-            }
+            ).also(definitions::addSingle)
     }
 }

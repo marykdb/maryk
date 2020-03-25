@@ -60,9 +60,7 @@ internal class MapItemsReader<out P : IsYamlCharWithIndentsReader>(
                         }
                 }
             } else {
-                this.selectReaderAndRead(false, tag, extraIndent, this::jsonTokenCreator).also {
-                    this.setState(it)
-                }
+                this.selectReaderAndRead(false, tag, extraIndent, this::jsonTokenCreator).also(::setState)
             }
         }
     }

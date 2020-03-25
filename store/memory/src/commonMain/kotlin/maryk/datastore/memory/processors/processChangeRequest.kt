@@ -648,7 +648,7 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> app
         objectToChange.values = newValueList
 
         updateSendChannel.send(
-            Update.Change(dataModel, objectToChange.key, version, changes)
+            Update.Change(dataModel, objectToChange.key, version, changes + outChanges)
         )
 
         // Nothing skipped out so must be a success

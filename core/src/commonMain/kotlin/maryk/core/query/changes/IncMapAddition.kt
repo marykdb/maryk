@@ -1,5 +1,6 @@
 package maryk.core.query.changes
 
+import maryk.core.exceptions.RequestException
 import maryk.core.models.ReferenceMappedDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
@@ -8,6 +9,7 @@ import maryk.core.properties.definitions.list
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForValues
+import maryk.core.properties.types.numeric.NumberDescriptor
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeWriter
@@ -29,7 +31,50 @@ data class IncMapAddition(
     }
 
     override fun changeValues(objectChanger: (IsPropertyReferenceForValues<*, *, *, *>, (Any?, Any?) -> Any?) -> Unit) {
-        TODO("Not yet implemented")
+        val mutableReferenceList = mutableListOf<AnyPropertyReference>()
+
+        for (addition in this.additions) {
+            addition.reference.unwrap(mutableReferenceList)
+            var referenceIndex = 0
+
+            fun valueChanger(originalValue: Any?, newValue: Any?): Any? {
+                val currentRef = mutableReferenceList.getOrNull(referenceIndex++)
+
+                return if (currentRef == null) {
+                    when (newValue) {
+                        is MutableMap<*, *> -> {
+                            if (addition.addedValues == null) {
+                                throw RequestException("addedValues need to be set on IncMapAddition, maybe the RequestContext of the request was not used for the response?")
+                            }
+                            if (addition.addedValues.size != addition.addedKeys?.size) {
+                                throw RequestException("addedValues and addedKeys on IncMapAddition need to be of the same size")
+                            }
+
+                            for (index in (0..addition.addedKeys.lastIndex)) {
+                                @Suppress("UNCHECKED_CAST")
+                                (newValue as MutableMap<Any, Any>)[addition.addedKeys[index]] = addition.addedValues[index]
+                            }
+                        }
+                        null -> throw RequestException("Cannot set Incrementing map changes on non existing value")
+                        else -> throw RequestException("Unsupported value type: $newValue for ref: $currentRef")
+                    }
+                    null
+                } else {
+                    deepValueChanger(
+                        originalValue,
+                        newValue,
+                        currentRef,
+                        ::valueChanger
+                    )
+                    null // Deeper change so no overwrite
+                }
+            }
+
+            when (val ref = mutableReferenceList[referenceIndex++]) {
+                is IsPropertyReferenceForValues<*, *, *, *> -> objectChanger(ref, ::valueChanger)
+                else -> throw RequestException("Unsupported reference type: $ref")
+            }
+        }
     }
 
     @Suppress("unused")

@@ -56,7 +56,7 @@ data class IncMapChange internal constructor(
                                 }
                             }
                         }
-                        null -> throw RequestException("Cannot set list changes on non existing value")
+                        null -> throw RequestException("Cannot set incrementing map changes on non existing value")
                         else -> throw RequestException("Unsupported value type: $newValue for ref: $currentRef")
                     }
                     null

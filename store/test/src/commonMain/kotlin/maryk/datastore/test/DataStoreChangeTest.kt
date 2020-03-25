@@ -486,9 +486,7 @@ class DataStoreChangeTest(
                     ),
                     IncMapChange(
                         TestMarykModel { incMap::ref }.change(
-                            addValues = listOf(
-                                "c", "d"
-                            )
+                            addValues = listOf("c", "d")
                         )
                     )
                 )
@@ -502,7 +500,9 @@ class DataStoreChangeTest(
                     listOf(
                        IncMapAddition(
                            IncMapKeyAdditions(
-                               TestMarykModel { incMap::ref }, listOf(3u, 4u)
+                               reference = TestMarykModel { incMap::ref },
+                               addedKeys = listOf(3u, 4u),
+                               addedValues = listOf("c", "d")
                            )
                        )
                     )

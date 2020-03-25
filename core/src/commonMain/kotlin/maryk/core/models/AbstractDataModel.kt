@@ -302,7 +302,7 @@ abstract class AbstractDataModel<DO : Any, P : AbstractPropertyDefinitions<DO>, 
      * Read ProtoBuf bytes from [reader] until [length] to a Map of values
      * Optionally pass a [context] to read more complex properties which depend on other properties
      */
-    fun readProtoBuf(length: Int, reader: () -> Byte, context: CX? = null): V {
+    open fun readProtoBuf(length: Int, reader: () -> Byte, context: CX? = null): V {
         return this.values(context as? RequestContext) {
             this@AbstractDataModel.readProtoBufToMap(length, reader, context)
         }

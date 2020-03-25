@@ -7,6 +7,7 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
+import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.number
@@ -15,6 +16,7 @@ import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.RequestContext
+import maryk.core.query.changes.ChangeType.IncMapChange
 import maryk.core.values.ObjectValues
 
 /**
@@ -48,9 +50,16 @@ data class DataObjectChange<out DM : IsRootDataModel<*>> internal constructor(
             index = 2u,
             getter = DataObjectChange<*>::changes,
             default = emptyList(),
-            valueDefinition = InternalMultiTypeDefinition(
-                typeEnum = ChangeType,
-                definitionMap = mapOfChangeDefinitions
+            valueDefinition = ContextCaptureDefinition(
+                InternalMultiTypeDefinition(
+                    typeEnum = ChangeType,
+                    definitionMap = mapOfChangeDefinitions
+                ),
+                capturer = { context, value ->
+                    if (value.type == IncMapChange) {
+                        context?.collectIncMapChange(value.value as maryk.core.query.changes.IncMapChange)
+                    }
+                }
             ),
             toSerializable = { TypedValue(it.changeType, it) },
             fromSerializable = { it.value }

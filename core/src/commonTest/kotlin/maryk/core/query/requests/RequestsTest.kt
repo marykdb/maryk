@@ -67,9 +67,9 @@ class RequestsTest {
               to: SimpleMarykModel
               objects:
               - key: MYc6LBYcT38nWxoE1ahNxA
-                changes:
+                changes: []
               - key: lneV6ioyQL0vnbkLqwVw+A
-                changes:
+                changes: []
             - !Delete
               from: SimpleMarykModel
               keys: [B4CeT0fDRxYnEmSTQuLA2A, oDHjQh7GSDwyPX2kTUAniQ]

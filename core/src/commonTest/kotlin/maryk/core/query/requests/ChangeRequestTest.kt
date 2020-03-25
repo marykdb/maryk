@@ -38,9 +38,9 @@ class ChangeRequestTest {
             to: SimpleMarykModel
             objects:
             - key: MYc6LBYcT38nWxoE1ahNxA
-              changes:
+              changes: []
             - key: lneV6ioyQL0vnbkLqwVw+A
-              changes:
+              changes: []
 
             """.trimIndent()
         ) {

@@ -563,7 +563,7 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> app
                                     val addition = outChanges.find { it is IncMapAddition } as IncMapAddition?
                                         ?: IncMapAddition(additions = mutableListOf()).also { outChanges.add(it) }
                                     (addition.additions as MutableList<IncMapKeyAdditions<*, *>>).add(
-                                        IncMapKeyAdditions(incMapReference, addedKeys)
+                                        IncMapKeyAdditions(incMapReference, addedKeys, valueChange.addValues)
                                     )
                                 }
 

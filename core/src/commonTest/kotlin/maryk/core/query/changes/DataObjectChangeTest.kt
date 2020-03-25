@@ -9,6 +9,7 @@ import maryk.core.query.pairs.with
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.expect
 
 class DataObjectChangeTest {
@@ -17,6 +18,10 @@ class DataObjectChangeTest {
     )
 
     private val subModel = TestMarykModel { embeddedValues::ref }
+
+    private val incMapChange = IncMapChange(TestMarykModel { incMap::ref }.change(
+        addValues = listOf("a","b")
+    ))
 
     private val dataObjectChange = key1.change(
         Change(EmbeddedMarykModel(subModel) { value::ref } with "new"),
@@ -29,13 +34,11 @@ class DataObjectChangeTest {
             )
         ),
         SetChange(TestMarykModel { set::ref }.change()),
-        IncMapChange(TestMarykModel { incMap::ref }.change(
-            addValues = listOf("a","b")
-        )),
+        incMapChange,
         lastVersion = 12345uL
     )
 
-    private val context = RequestContext(
+    private fun createContext() = RequestContext(
         mapOf(
             TestMarykModel.name toUnitLambda { TestMarykModel }
         ),
@@ -44,16 +47,26 @@ class DataObjectChangeTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.dataObjectChange, DataObjectChange, { this.context })
+        val requestContext = this.createContext()
+
+        checkProtoBufConversion(this.dataObjectChange, DataObjectChange, { requestContext })
+
+        checkContext(requestContext)
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.dataObjectChange, DataObjectChange, { this.context })
+        val requestContext = this.createContext()
+
+        checkJsonConversion(this.dataObjectChange, DataObjectChange, { requestContext })
+
+        checkContext(requestContext)
     }
 
     @Test
     fun convertToYAMLAndBack() {
+        val requestContext = this.createContext()
+
         expect(
             """
             key: AAACKwEAAg
@@ -77,7 +90,16 @@ class DataObjectChangeTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.dataObjectChange, DataObjectChange, { this.context })
+            checkYamlConversion(this.dataObjectChange, DataObjectChange, { requestContext })
         }
+
+        checkContext(requestContext)
+    }
+
+    private fun checkContext(requestContext: RequestContext) {
+        val collectedIncMapChanges = requestContext.getCollectedIncMapChanges()
+
+        assertEquals(1, collectedIncMapChanges.count())
+        assertEquals(incMapChange, collectedIncMapChanges.first())
     }
 }

@@ -4,6 +4,7 @@ import maryk.core.models.AbstractObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.protobuf.WriteCache
+import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 import maryk.test.ByteCollector
 import kotlin.test.assertEquals

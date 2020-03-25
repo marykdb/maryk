@@ -391,7 +391,12 @@ class DataStoreChangeComplexTest(
                     listOf(
                         IncMapAddition(
                             IncMapKeyAdditions(
-                                TestMarykModel { incMap::ref }, listOf(3u, 4u)
+                                ComplexModel { incMap::ref },
+                                listOf(3u, 4u),
+                                listOf(
+                                    EmbeddedMarykModel("q"),
+                                    EmbeddedMarykModel("r")
+                                )
                             )
                         )
                     )

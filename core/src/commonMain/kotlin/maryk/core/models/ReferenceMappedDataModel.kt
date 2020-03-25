@@ -58,7 +58,7 @@ abstract class ReferenceMappedDataModel<DO : Any, CDO : DefinedByReference<*>, P
         definitionWrapper: IsDefinitionWrapper<T, T, CX, CDO>,
         context: CX?
     ) {
-        definitionWrapper.getter(dataObject)?.let {
+        definitionWrapper.getPropertyAndSerialize(dataObject, context)?.let {
             writeFieldName(definitionWrapper.name)
             definitionWrapper.writeJsonValue(it, this, context)
         }

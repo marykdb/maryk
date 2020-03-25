@@ -9,6 +9,7 @@ import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.query.changes.IncMapChange
 import maryk.core.query.requests.IsTransportableRequest
 import maryk.core.query.responses.IsResponse
 import maryk.core.values.AbstractValues
@@ -40,42 +41,53 @@ class RequestContext(
         reference
     )
 
-    private var toCollect = mutableMapOf<String, ModelTypeToCollect<*>>()
-    private var collectedResults = mutableMapOf<String, AbstractValues<*, *, *>>()
+    private var toCollect: MutableMap<String, ModelTypeToCollect<*>>? = null
+    private var collectedResults: MutableMap<String, AbstractValues<*, *, *>>? = null
 
-    internal var collectedInjects = mutableListOf<InjectWithReference>()
+    internal var collectedInjects: MutableList<InjectWithReference>? = null
 
-    private var collectedLevels = mutableListOf<Any>()
-    private var collectedReferenceCreators = mutableListOf<(AnyPropertyReference?) -> IsPropertyReference<Any, *, *>>()
+    private var collectedLevels: MutableList<Any>? = null
+    private var collectedReferenceCreators: MutableList<(AnyPropertyReference?) -> IsPropertyReference<Any, *, *>>? = null
+
+    private var collectedIncMapChanges: MutableList<IncMapChange>? = null
 
     /** Add to collect values by [model] into [collectionName] */
     fun addToCollect(collectionName: String, model: IsDataModel<*>) {
-        toCollect[collectionName] = ModelTypeToCollect.Model(model)
+        if (toCollect == null) {
+            toCollect = mutableMapOf()
+        }
+        toCollect!![collectionName] = ModelTypeToCollect.Model(model)
     }
 
     /** Add to collect values by [model] into [collectionName] */
     fun addToCollect(collectionName: String, model: IsTransportableRequest<*>) {
-        toCollect[collectionName] = ModelTypeToCollect.Request(model)
+        if (toCollect == null) {
+            toCollect = mutableMapOf()
+        }
+        toCollect!![collectionName] = ModelTypeToCollect.Request(model)
     }
 
     /** Get model of to be collected value by [collectionName] */
-    fun getToCollectModel(collectionName: String) = toCollect[collectionName]
+    fun getToCollectModel(collectionName: String) = toCollect?.get(collectionName)
 
     /** Collect result [values] by [collectionName] */
     fun collectResult(collectionName: String, values: AbstractValues<*, *, *>) {
-        val toCollect = this.toCollect[collectionName]
+        val toCollect = toCollect?.get(collectionName)
             ?: throw RequestException("$collectionName was not defined as to collect in RequestContext")
 
         if (values.dataModel !== toCollect.model) {
             throw RequestException("Collect($collectionName): Value $values is not of right dataModel $toCollect ")
         }
 
-        this.collectedResults[collectionName] = values
+        if (this.collectedResults == null) {
+            this.collectedResults = mutableMapOf()
+        }
+        this.collectedResults!![collectionName] = values
     }
 
     /** Retrieve result values by [collectionName] */
     fun retrieveResult(collectionName: String) =
-        this.collectedResults[collectionName]
+        this.collectedResults?.get(collectionName)
 
     /**
      * Collects Injects [inject] so they can be encoded in a higher Requests object
@@ -85,12 +97,19 @@ class RequestContext(
         inject: Inject<*, *>
     ) {
         var reference: IsPropertyReference<Any, *, *>? = null
-        // Create the reference by walking all parent reference creators
-        for (creator in this.collectedReferenceCreators) {
-            reference = creator(reference)
+
+        if (this.collectedReferenceCreators != null) {
+            // Create the reference by walking all parent reference creators
+            for (creator in this.collectedReferenceCreators!!) {
+                reference = creator(reference)
+            }
         }
 
-        this.collectedInjects.add(
+        if (this.collectedInjects == null) {
+            this.collectedInjects = mutableListOf()
+        }
+
+        this.collectedInjects!!.add(
             InjectWithReference(inject, reference!!)
         )
     }
@@ -100,22 +119,44 @@ class RequestContext(
         levelItem: Any,
         propertyRefCreator: (AnyPropertyReference?) -> IsPropertyReference<in Any, *, *>
     ) {
-        if (this.collectedLevels.isNotEmpty() && levelItem == this.collectedLevels.last()) {
-            this.collectedReferenceCreators.removeAt(this.collectedReferenceCreators.size - 1)
+        if (!this.collectedLevels.isNullOrEmpty() && levelItem == this.collectedLevels!!.last()) {
+            this.collectedReferenceCreators?.removeAt(this.collectedReferenceCreators!!.size - 1)
         } else {
-            this.collectedLevels.add(levelItem)
+            if (this.collectedLevels == null) {
+                this.collectedLevels = mutableListOf()
+            }
+            this.collectedLevels!!.add(levelItem)
         }
 
-        this.collectedReferenceCreators.add(propertyRefCreator)
+        if (this.collectedReferenceCreators == null) {
+            this.collectedReferenceCreators = mutableListOf()
+        }
+
+        this.collectedReferenceCreators!!.add(propertyRefCreator)
     }
 
     /** Removes the last injection [levelItem] and its reference creator */
     fun closeInjectLevel(
         levelItem: Any
     ) {
-        if (this.collectedLevels.isNotEmpty() && levelItem == this.collectedLevels.last()) {
-            this.collectedLevels.removeAt(this.collectedLevels.size - 1)
-            this.collectedReferenceCreators.dropLast(1)
+        if (!this.collectedLevels.isNullOrEmpty() && levelItem == this.collectedLevels!!.last()) {
+            this.collectedLevels!!.removeAt(this.collectedLevels!!.size - 1)
+            this.collectedReferenceCreators?.dropLast(1)
         }
     }
+
+    /** Collect [incMapChange] so IncMapAdditions can be resolved */
+    fun collectIncMapChange(incMapChange: IncMapChange) {
+        if(this.collectedIncMapChanges == null) {
+            this.collectedIncMapChanges = mutableListOf()
+        }
+
+        if (!this.collectedIncMapChanges!!.contains(incMapChange)) {
+            this.collectedIncMapChanges!!.add(incMapChange)
+        }
+    }
+
+    /** Get all collected Incrementing Map Changes */
+    fun getCollectedIncMapChanges(): List<IncMapChange> =
+        this.collectedIncMapChanges ?: emptyList()
 }

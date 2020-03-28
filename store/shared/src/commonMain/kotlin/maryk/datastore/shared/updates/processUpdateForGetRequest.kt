@@ -19,12 +19,11 @@ internal suspend fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> Upda
     updateListener: UpdateListener<*, *>
 ) {
     if (request.keys.contains(key)) {
+        // Only process object requests or change requests if the version is after or equal to from version
         if (request !is IsChangesRequest<*, *, *> || request.fromVersion <= version.timestamp) {
             val update = when (this) {
                 is Addition<DM, P> -> {
-                    if (request is IsChangesRequest<*, *, *> && request.fromVersion > version.timestamp) {
-                        null // Record is of before the fromVersion time
-                    } else if (values.matches(request.where)) {
+                    if (values.matches(request.where)) {
                         AdditionUpdate(
                             dataModel = dataModel,
                             key = key,

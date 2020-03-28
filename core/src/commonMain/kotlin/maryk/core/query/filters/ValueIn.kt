@@ -8,8 +8,8 @@ import maryk.core.values.ObjectValues
 
 /** Referenced values in [referenceValuePairs] should be within given value set */
 data class ValueIn internal constructor(
-    val referenceValuePairs: List<ReferenceValueSetPair<Any>>
-) : IsFilter {
+    override val referenceValuePairs: List<ReferenceValueSetPair<Any>>
+) : IsReferenceAnyPairsFilter<ReferenceValueSetPair<Any>> {
     override val filterType = FilterType.ValueIn
 
     @Suppress("UNCHECKED_CAST")

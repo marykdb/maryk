@@ -8,8 +8,8 @@ import maryk.core.values.ObjectValues
 
 /** Referenced values in [referenceValuePairs] should match with regular expressions */
 data class RegEx internal constructor(
-    val referenceValuePairs: List<ReferenceValueRegexPair>
-) : IsFilter {
+    override val referenceValuePairs: List<ReferenceValueRegexPair>
+) : IsReferenceAnyPairsFilter<ReferenceValueRegexPair> {
     override val filterType = FilterType.RegEx
 
     constructor(vararg referenceValuePair: ReferenceValueRegexPair) : this(referenceValuePair.toList())

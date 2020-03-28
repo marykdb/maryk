@@ -92,7 +92,7 @@ fun matchesFilter(
         }
         FilterType.Range -> {
             val rangeFilter = filter as Range
-            for ((propRef, range) in rangeFilter.referenceRangePairs) {
+            for ((propRef, range) in rangeFilter.referenceValuePairs) {
                 @Suppress("UNCHECKED_CAST")
                 if (!valueMatcher(propRef) { it != null && (it as Comparable<Any>) in range as ValueRange<Comparable<Any>> }) return false
             }

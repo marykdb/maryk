@@ -7,7 +7,10 @@ import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.core.query.pairs.with
 import maryk.test.models.SimpleMarykModel
+import maryk.test.models.TestMarykModel
 import kotlin.test.Test
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.expect
 
 class AndTest {
@@ -24,6 +27,17 @@ class AndTest {
         ),
         dataModel = SimpleMarykModel
     )
+
+    @Test
+    fun singleReference() {
+        assertNotNull(
+            and.singleReference { it == SimpleMarykModel { value::ref } }
+        )
+
+        assertNull(
+            and.singleReference { it == TestMarykModel { uint::ref } }
+        )
+    }
 
     @Test
     fun convertToProtoBufAndBack() {

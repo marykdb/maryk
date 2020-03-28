@@ -9,6 +9,7 @@ import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceD
 import maryk.core.properties.definitions.list
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.IsPropertyReferenceWithParent
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeWriter
@@ -22,6 +23,20 @@ data class Exists internal constructor(
     constructor(vararg reference: IsPropertyReference<*, IsSerializablePropertyDefinition<*, *>, *>) : this(
         reference.toList()
     )
+
+    override fun singleReference(predicate: (IsPropertyReference<*, *, *>) -> Boolean): IsPropertyReference<*, *, *>? {
+        var parentReference: AnyPropertyReference?
+        for (reference in this.references) {
+            parentReference = reference
+            do {
+                if (predicate(parentReference!!)) {
+                    return reference
+                }
+                parentReference = (parentReference as? IsPropertyReferenceWithParent<*, *, *, *>)?.parentReference
+            } while (parentReference != null)
+        }
+        return null
+    }
 
     object Properties : ReferencesObjectPropertyDefinitions<Exists>() {
         override val references by list(

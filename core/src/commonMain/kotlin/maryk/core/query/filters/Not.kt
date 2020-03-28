@@ -14,8 +14,8 @@ import maryk.lib.exceptions.ParseException
 
 /** Reverses the boolean check for given [filter] */
 data class Not(
-    val filters: List<IsFilter>
-) : IsFilter {
+    override val filters: List<IsFilter>
+) : IsFilterList {
     constructor(vararg filters: IsFilter) : this(filters.toList())
 
     override val filterType = FilterType.Not

@@ -8,11 +8,11 @@ import maryk.core.query.pairs.ReferenceValueRangePair
 import maryk.core.values.ObjectValues
 
 /**
- * Compares [referenceRangePairs] if referred values are within given ranges.
+ * Compares [referenceValuePairs] if referred values are within given ranges.
  */
 data class Range internal constructor(
-    val referenceRangePairs: List<ReferenceValueRangePair<*>>
-) : IsFilter {
+    override val referenceValuePairs: List<ReferenceValueRangePair<*>>
+) : IsReferenceAnyPairsFilter<ReferenceValueRangePair<*>> {
     override val filterType = FilterType.Range
 
     constructor(vararg range: ReferenceValueRangePair<*>) : this(range.toList())
@@ -20,7 +20,7 @@ data class Range internal constructor(
     @Suppress("UNCHECKED_CAST")
     object Properties : ReferenceValuePairsObjectPropertyDefinitions<Range, ReferenceValueRangePair<*>>(
         pairName = "referenceValuePairs",
-        pairGetter = Range::referenceRangePairs,
+        pairGetter = Range::referenceValuePairs,
         pairModel = ReferenceValueRangePair as QueryDataModel<ReferenceValueRangePair<*>, *>
     )
 
@@ -29,7 +29,7 @@ data class Range internal constructor(
         pairProperties = ReferenceValueRangePair.Properties
     ) {
         override fun invoke(values: ObjectValues<Range, Properties>) = Range(
-            referenceRangePairs = values(1u)
+            referenceValuePairs = values(1u)
         )
     }
 }

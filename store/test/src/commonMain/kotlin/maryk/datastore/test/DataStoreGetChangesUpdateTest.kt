@@ -5,9 +5,11 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import maryk.core.exceptions.RequestException
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.change
+import maryk.core.query.filters.Exists
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
 import maryk.core.query.requests.change
@@ -22,6 +24,7 @@ import maryk.test.assertType
 import maryk.test.models.SimpleMarykModel
 import maryk.test.runSuspendingTest
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class DataStoreGetChangesUpdateTest(
@@ -31,6 +34,7 @@ class DataStoreGetChangesUpdateTest(
     private var lowestVersion = ULong.MAX_VALUE
 
     override val allTests = mapOf(
+        "failWithMutableWhereClause" to ::failWithMutableWhereClause,
         "executeGetChangesAsFlowRequest" to ::executeGetChangesAsFlowRequest
     )
 
@@ -62,6 +66,14 @@ class DataStoreGetChangesUpdateTest(
         }
         keys.clear()
         lowestVersion = ULong.MAX_VALUE
+    }
+
+    private fun failWithMutableWhereClause() = runSuspendingTest {
+        assertFailsWith<RequestException> {
+            dataStore.executeFlow(
+                SimpleMarykModel.getChanges(keys[0], keys[1], where = Exists(SimpleMarykModel { value::ref }))
+            )
+        }
     }
 
     private fun executeGetChangesAsFlowRequest() = runSuspendingTest {

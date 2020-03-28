@@ -14,8 +14,8 @@ import maryk.lib.exceptions.ParseException
 
 /** Does an Or comparison against given [filters]. If one returns true the entire result will be true. */
 data class Or(
-    val filters: List<IsFilter>
-) : IsFilter {
+    override val filters: List<IsFilter>
+) : IsFilterList {
     override val filterType = FilterType.Or
 
     constructor(vararg filters: IsFilter) : this(filters.toList())

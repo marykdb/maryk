@@ -1,10 +1,14 @@
 package maryk.core.query.filters
 
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
+import maryk.core.properties.references.IsPropertyReference
 
 /** Filter */
 interface IsFilter {
     val filterType: FilterType
+
+    /** Check if filter contains a reference matching [predicate] */
+    fun singleReference(predicate: (IsPropertyReference<*, *, *>) -> Boolean): IsPropertyReference<*, *, *>?
 }
 
 internal val mapOfFilterDefinitions = mapOf(

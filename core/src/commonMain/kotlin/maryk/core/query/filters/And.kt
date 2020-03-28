@@ -14,8 +14,8 @@ import maryk.lib.exceptions.ParseException
 
 /** Does an And comparison against given [filters]. Only if all given filters return true will the entire result be true. */
 data class And(
-    val filters: List<IsFilter>
-) : IsFilter {
+    override val filters: List<IsFilter>
+) : IsFilterList {
     override val filterType = FilterType.And
 
     constructor(vararg filters: IsFilter) : this(filters.toList())

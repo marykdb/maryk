@@ -5,8 +5,11 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
+import maryk.test.models.SimpleMarykModel
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.expect
 
 class ExistsTest {
@@ -25,6 +28,23 @@ class ExistsTest {
         ),
         dataModel = TestMarykModel
     )
+
+    @Test
+    fun singleReference() {
+        assertNotNull(
+            existsMultiple.singleReference { it == TestMarykModel { int::ref } }
+        )
+
+        assertNull(
+            existsMultiple.singleReference { it == TestMarykModel { uint::ref } }
+        )
+
+        assertNotNull(
+            Exists(
+                TestMarykModel { embeddedValues { model::ref } }
+            ).singleReference { it == TestMarykModel { embeddedValues::ref } }
+        )
+    }
 
     @Test
     fun convertToProtoBufAndBack() {

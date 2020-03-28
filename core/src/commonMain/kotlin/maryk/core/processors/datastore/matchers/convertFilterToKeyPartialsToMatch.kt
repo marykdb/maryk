@@ -133,7 +133,7 @@ fun convertFilterToIndexPartsToMatch(
                 )
             )
         }
-        is Range -> for ((reference, value) in filter.referenceRangePairs) {
+        is Range -> for ((reference, value) in filter.referenceValuePairs) {
             getDefinitionOrNull(indexable, reference) { index, keyDefinition ->
                 val keyIndex = convertIndex?.invoke(index)
                 val fromBytes =

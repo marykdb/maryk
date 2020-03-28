@@ -17,6 +17,7 @@ import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.RootDataModel
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.definitions.IsReferenceDefinition
 import maryk.core.query.requests.IsChangesRequest
 import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.responses.IsResponse
@@ -70,6 +71,13 @@ abstract class AbstractDataStore(
     ): Flow<IsUpdateResponse<DM, P>> where RQ : IsStoreRequest<DM, RP>, RQ: IsChangesRequest<DM, P, RP> {
         if (request.toVersion != null) {
             throw RequestException("Cannot use toVersion on an executeFlow request")
+        }
+
+        // Don't allow filters with mutable or reference values
+        request.where?.singleReference {
+            !it.propertyDefinition.required || !it.propertyDefinition.final || it.comparablePropertyDefinition is IsReferenceDefinition<*, *, *>
+        }?.let {
+            throw RequestException("$it is mutable or a reference which are not supported on filters in update listeners.")
         }
 
         val channel = BroadcastChannel<IsUpdateResponse<DM, P>>(Channel.BUFFERED)

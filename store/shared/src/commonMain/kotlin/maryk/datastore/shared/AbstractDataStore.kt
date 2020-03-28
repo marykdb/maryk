@@ -16,13 +16,18 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.RootDataModel
+import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsReferenceDefinition
+import maryk.core.query.requests.GetChangesRequest
 import maryk.core.query.requests.IsChangesRequest
 import maryk.core.query.requests.IsStoreRequest
+import maryk.core.query.requests.ScanChangesRequest
 import maryk.core.query.responses.IsResponse
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.datastore.shared.updates.UpdateListener
+import maryk.datastore.shared.updates.UpdateListenerForGet
+import maryk.datastore.shared.updates.UpdateListenerForScan
 import maryk.datastore.shared.updates.processUpdateActor
 
 typealias StoreActor = SendChannel<StoreAction<*, *, *, *>>
@@ -36,7 +41,7 @@ abstract class AbstractDataStore(
     override val coroutineContext = DISPATCHER + SupervisorJob()
 
     val updateListeners = mutableMapOf<UInt, MutableList<UpdateListener<*, *>>>()
-    val updateSendChannel = processUpdateActor()
+    val updateSendChannel = processUpdateActor<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>()
 
     /** StoreActor to run actions against.*/
     abstract val storeActor: StoreActor
@@ -85,7 +90,7 @@ abstract class AbstractDataStore(
         val dataModelId = getDataModelId(request.dataModel)
 
         val dataModelUpdateListeners = this.updateListeners.getOrPut(dataModelId) { mutableListOf() }
-        val listener = UpdateListener(request, channel)
+        val listener = request.createUpdateListener(channel)
 
         dataModelUpdateListeners += listener
 
@@ -109,3 +114,18 @@ abstract class AbstractDataStore(
         updateListeners.clear()
     }
 }
+
+/** Creates update listener for request on [channel] */
+private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> IsChangesRequest<DM, P, *>.createUpdateListener(channel: SendChannel<IsUpdateResponse<DM, P>>) =
+    when (this) {
+        is ScanChangesRequest<DM, P> -> {
+            UpdateListenerForScan(
+                request = this,
+                scanRange = this.dataModel.createScanRange(this.where, this.startKey?.bytes),
+                sendChannel = channel
+            )
+        }
+        is GetChangesRequest<DM, P> ->
+            UpdateListenerForGet(this, channel)
+        else -> throw RequestException("Unsupported request type for update listener: $this")
+    }

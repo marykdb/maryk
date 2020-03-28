@@ -11,27 +11,23 @@ import kotlinx.coroutines.launch
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.requests.IsGetRequest
+import maryk.core.query.requests.IsScanRequest
 import maryk.datastore.shared.AbstractDataStore
 
 /** Actor which processes an update */
 @OptIn(
     ExperimentalCoroutinesApi::class, FlowPreview::class
 )
-internal fun AbstractDataStore.processUpdateActor(): SendChannel<Update<*, *>> =
-    BroadcastChannel<Update<*, *>>(Channel.BUFFERED).also {
+internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> AbstractDataStore.processUpdateActor(): SendChannel<Update<DM, P>> =
+    BroadcastChannel<Update<DM, P>>(Channel.BUFFERED).also {
         this.launch {
             it.asFlow().collect { update ->
-                val dataModelListeners = updateListeners[getDataModelId(update.dataModel)]
+                @Suppress("UNCHECKED_CAST")
+                val dataModelListeners = updateListeners[getDataModelId(update.dataModel)] as MutableList<UpdateListener<DM, P>>?
 
                 if (dataModelListeners != null) {
                     for (updateListener in dataModelListeners) {
-                        if (updateListener.request is IsGetRequest<*, *, *>) {
-                            @Suppress("UNCHECKED_CAST")
-                            (update as Update<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>).processGetRequest(
-                                request = updateListener.request,
-                                updateListener = updateListener
-                            )
-                        }
+                        updateListener.process(update)
                     }
                 }
             }

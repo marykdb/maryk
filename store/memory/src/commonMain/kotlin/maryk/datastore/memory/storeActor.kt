@@ -5,6 +5,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.BroadcastChannel
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
@@ -14,6 +15,7 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.StoreActor
+import maryk.datastore.shared.updates.Update
 
 @OptIn(
     ExperimentalCoroutinesApi::class, FlowPreview::class
@@ -37,7 +39,8 @@ internal fun CoroutineScope.storeActor(
                         }
                     }
 
-                    executor(Unit, msg, dataStoreFetcher, store.updateSendChannel)
+                    @Suppress("UNCHECKED_CAST")
+                    executor(Unit, msg, dataStoreFetcher, store.updateSendChannel as SendChannel<Update<*, *>>)
                 } catch (e: Throwable) {
                     msg.response.completeExceptionally(e)
                 }

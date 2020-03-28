@@ -9,11 +9,13 @@ import maryk.core.query.responses.updates.IsUpdateResponse
 /**
  * Describes an update listener
  */
-class UpdateListener<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
-    val request: IsChangesRequest<DM, P, *>,
+abstract class UpdateListener<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
     val sendChannel: SendChannel<IsUpdateResponse<DM, P>>
 ) {
     fun close() {
         this.sendChannel.close()
     }
+
+    /** Process [update] and sent out responses over channel */
+    abstract suspend fun process(update: Update<DM, P>)
 }

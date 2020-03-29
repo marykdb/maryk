@@ -18,7 +18,7 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
     sendChannel: SendChannel<IsUpdateResponse<DM, P>>
 ) : UpdateListener<DM, P>(sendChannel) {
     override suspend fun process(update: Update<DM, P>) {
-        if (scanRange.keyWithinRanges(update.key.bytes, 0)) {
+        if (scanRange.keyWithinRanges(update.key.bytes, 0) && scanRange.matchesPartials(update.key.bytes)) {
             // Only process object requests or change requests if the version is after or equal to from version
             update.process(request, sendChannel)
         }

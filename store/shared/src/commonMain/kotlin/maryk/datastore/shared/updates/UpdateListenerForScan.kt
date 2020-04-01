@@ -5,6 +5,7 @@ import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.ScanRange
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.types.Key
 import maryk.core.query.requests.IsChangesRequest
 import maryk.core.query.requests.IsGetRequest
 import maryk.core.query.requests.IsScanRequest
@@ -15,12 +16,13 @@ import maryk.core.query.responses.updates.IsUpdateResponse
 class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
     val request: ScanChangesRequest<DM, P>,
     val scanRange: KeyScanRanges,
+    matchingKeys: List<Key<DM>>,
     sendChannel: SendChannel<IsUpdateResponse<DM, P>>
-) : UpdateListener<DM, P>(sendChannel) {
+) : UpdateListener<DM, P>(matchingKeys.toMutableList(), sendChannel) {
     override suspend fun process(update: Update<DM, P>) {
         if (scanRange.keyWithinRanges(update.key.bytes, 0) && scanRange.matchesPartials(update.key.bytes)) {
             // Only process object requests or change requests if the version is after or equal to from version
-            update.process(request, sendChannel)
+            update.process(request, matchingKeys, sendChannel)
         }
     }
 }

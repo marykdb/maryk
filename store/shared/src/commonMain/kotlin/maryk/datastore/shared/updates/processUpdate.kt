@@ -4,6 +4,7 @@ import kotlinx.coroutines.channels.SendChannel
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
+import maryk.core.properties.types.Key
 import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.requests.IsChangesRequest
@@ -19,12 +20,15 @@ import maryk.datastore.shared.updates.Update.Deletion
 /** processes a single update */
 internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> Update<DM, P>.process(
     request: IsFetchRequest<DM, P, *>,
+    currentKeys: MutableList<Key<DM>>,
     sendChannel: SendChannel<IsUpdateResponse<DM, P>>
 ) {
     if (request !is IsChangesRequest<*, *, *> || request.fromVersion <= version.timestamp) {
         val update = when (this) {
             is Addition<DM, P> -> {
                 if (values.matches(request.where)) {
+                    currentKeys += key
+
                     AdditionUpdate(
                         key = key,
                         version = version.timestamp,
@@ -40,21 +44,27 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> Up
                     }
                 }
 
-                if (shouldRemove) {
-                    RemovalUpdate(
-                        key = key,
-                        version = version.timestamp
-                    )
-                } else {
-                    ChangeUpdate(
-                        key = key,
-                        version = version.timestamp,
-                        changes = filteredChanges
-                    )
-                }
+                if (currentKeys.contains(key)) {
+                    if (shouldRemove) {
+                        currentKeys -= key
+
+                        RemovalUpdate(
+                            key = key,
+                            version = version.timestamp
+                        )
+                    } else {
+                        ChangeUpdate(
+                            key = key,
+                            version = version.timestamp,
+                            changes = filteredChanges
+                        )
+                    }
+                } else null
             }
             is Deletion<DM, P> -> {
-                if (isHardDelete || request.filterSoftDeleted) {
+                if (currentKeys.contains(key) && (isHardDelete || request.filterSoftDeleted)) {
+                    currentKeys -= key
+
                     RemovalUpdate(
                         key = key,
                         version = version.timestamp

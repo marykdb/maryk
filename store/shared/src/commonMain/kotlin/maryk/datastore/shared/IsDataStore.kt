@@ -22,7 +22,7 @@ interface IsDataStore {
     ): RP
 
     /** Execute a single store [request] and retrieve a flow of responses */
-    fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ> executeFlow(
+    suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ> executeFlow(
         request: RQ
     ): Flow<IsUpdateResponse<DM, P>> where RQ : IsStoreRequest<DM, ChangesResponse<DM>>, RQ: IsChangesRequest<DM, P, ChangesResponse<DM>>
 

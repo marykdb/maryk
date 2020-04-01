@@ -82,7 +82,7 @@ class DataStoreScanChangesUpdateTest(
             dataStore,
             // Reverse order so keys[0], [1] and [2] are within range
             Log.scanChanges(
-                startKey =  keys[2],
+                startKey = keys[2],
                 where = ValueIn(Log { severity::ref } with setOf(DEBUG, ERROR))
             ),
             3

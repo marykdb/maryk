@@ -5,6 +5,7 @@ import maryk.core.exceptions.StorageException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.initULong
 import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.values
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.ListSize
 import maryk.core.processors.datastore.StorageTypeEnum.MapSize
@@ -19,6 +20,7 @@ import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.properties.types.Key
 import maryk.core.query.ValuesWithMetaData
+import maryk.core.values.EmptyValueItems
 import maryk.core.values.Values
 import maryk.datastore.rocksdb.DBIterator
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
@@ -44,7 +46,10 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
     var maxVersion = creationVersion
     var isDeleted = false
 
-    val values: Values<DM, P> = if (toVersion == null) {
+    val values: Values<DM, P> = if (select != null && select.properties.isEmpty()) {
+        // Don't read the values if no values are selected
+        this.values(null) { EmptyValueItems }
+    } else if (toVersion == null) {
         checkExistence(iterator, key)
 
         // Will start by going to next key so will miss the creation timestamp
@@ -187,7 +192,8 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
         )
     }
 
-    if (values.size == 0) {
+    // Return null if no values where found but values where selected
+    if (values.size == 0 && (select == null || select.properties.isNotEmpty())) {
         // Return null if no ValueItems were found
         return null
     }

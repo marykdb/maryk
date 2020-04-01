@@ -23,6 +23,8 @@ import maryk.core.query.requests.GetChangesRequest
 import maryk.core.query.requests.IsChangesRequest
 import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.requests.ScanChangesRequest
+import maryk.core.query.requests.get
+import maryk.core.query.requests.scan
 import maryk.core.query.responses.ChangesResponse
 import maryk.core.query.responses.IsResponse
 import maryk.core.query.responses.updates.IsUpdateResponse
@@ -72,7 +74,7 @@ abstract class AbstractDataStore(
 
     @FlowPreview
     @ExperimentalCoroutinesApi
-    override fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ> executeFlow(
+    override suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ> executeFlow(
         request: RQ
     ): Flow<IsUpdateResponse<DM, P>>
         where RQ : IsStoreRequest<DM, ChangesResponse<DM>>, RQ: IsChangesRequest<DM, P, ChangesResponse<DM>> {
@@ -92,7 +94,7 @@ abstract class AbstractDataStore(
         val dataModelId = getDataModelId(request.dataModel)
 
         val dataModelUpdateListeners = this.updateListeners.getOrPut(dataModelId) { mutableListOf() }
-        val listener = request.createUpdateListener(channel)
+        val listener = request.createUpdateListener(this, channel)
 
         dataModelUpdateListeners += listener
 
@@ -118,16 +120,43 @@ abstract class AbstractDataStore(
 }
 
 /** Creates update listener for request on [channel] */
-private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> IsChangesRequest<DM, P, *>.createUpdateListener(channel: SendChannel<IsUpdateResponse<DM, P>>) =
+private suspend fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> IsChangesRequest<DM, P, *>.createUpdateListener(
+    dataStore: IsDataStore,
+    channel: SendChannel<IsUpdateResponse<DM, P>>
+) =
     when (this) {
         is ScanChangesRequest<DM, P> -> {
+            val scanResponse = dataStore.execute(
+                dataModel.scan(
+                    startKey,
+                    dataModel.graph { emptyList() },
+                    where,
+                    order,
+                    limit,
+                    filterSoftDeleted = filterSoftDeleted
+                )
+            )
             UpdateListenerForScan(
                 request = this,
                 scanRange = this.dataModel.createScanRange(this.where, this.startKey?.bytes),
+                matchingKeys = scanResponse.values.map { it.key },
                 sendChannel = channel
             )
         }
-        is GetChangesRequest<DM, P> ->
-            UpdateListenerForGet(this, channel)
+        is GetChangesRequest<DM, P> -> {
+            val getResponse = dataStore.execute(
+                dataModel.get(
+                    *keys.toTypedArray(),
+                    select = dataModel.graph { emptyList() },
+                    where = where,
+                    filterSoftDeleted = filterSoftDeleted
+                )
+            )
+            UpdateListenerForGet(
+                this,
+                getResponse.values.map { it.key },
+                channel
+            )
+        }
         else -> throw RequestException("Unsupported request type for update listener: $this")
     }

@@ -6,6 +6,7 @@ import maryk.core.models.RootDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.requests.IsChangesRequest
 import maryk.core.query.requests.IsStoreRequest
+import maryk.core.query.responses.ChangesResponse
 import maryk.core.query.responses.IsResponse
 import maryk.core.query.responses.updates.IsUpdateResponse
 
@@ -21,9 +22,9 @@ interface IsDataStore {
     ): RP
 
     /** Execute a single store [request] and retrieve a flow of responses */
-    fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ, RP : IsResponse> executeFlow(
+    fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ> executeFlow(
         request: RQ
-    ): Flow<IsUpdateResponse<DM, P>> where RQ : IsStoreRequest<DM, RP>, RQ: IsChangesRequest<DM, P, RP>
+    ): Flow<IsUpdateResponse<DM, P>> where RQ : IsStoreRequest<DM, ChangesResponse<DM>>, RQ: IsChangesRequest<DM, P, ChangesResponse<DM>>
 
     /** Close the data store */
     fun close()

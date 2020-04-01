@@ -26,7 +26,6 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> Up
             is Addition<DM, P> -> {
                 if (values.matches(request.where)) {
                     AdditionUpdate(
-                        dataModel = dataModel,
                         key = key,
                         version = version.timestamp,
                         values = values.filterWithSelect(request.select)
@@ -43,13 +42,11 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> Up
 
                 if (shouldRemove) {
                     RemovalUpdate(
-                        dataModel = dataModel,
                         key = key,
                         version = version.timestamp
                     )
                 } else {
                     ChangeUpdate(
-                        dataModel = dataModel,
                         key = key,
                         version = version.timestamp,
                         changes = filteredChanges
@@ -59,7 +56,6 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> Up
             is Deletion<DM, P> -> {
                 if (isHardDelete || request.filterSoftDeleted) {
                     RemovalUpdate(
-                        dataModel = dataModel,
                         key = key,
                         version = version.timestamp
                     )

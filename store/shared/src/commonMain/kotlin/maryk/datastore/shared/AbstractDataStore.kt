@@ -23,6 +23,7 @@ import maryk.core.query.requests.GetChangesRequest
 import maryk.core.query.requests.IsChangesRequest
 import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.requests.ScanChangesRequest
+import maryk.core.query.responses.ChangesResponse
 import maryk.core.query.responses.IsResponse
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.datastore.shared.updates.UpdateListener
@@ -71,9 +72,10 @@ abstract class AbstractDataStore(
 
     @FlowPreview
     @ExperimentalCoroutinesApi
-    override fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ, RP : IsResponse> executeFlow(
+    override fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ> executeFlow(
         request: RQ
-    ): Flow<IsUpdateResponse<DM, P>> where RQ : IsStoreRequest<DM, RP>, RQ: IsChangesRequest<DM, P, RP> {
+    ): Flow<IsUpdateResponse<DM, P>>
+        where RQ : IsStoreRequest<DM, ChangesResponse<DM>>, RQ: IsChangesRequest<DM, P, ChangesResponse<DM>> {
         if (request.toVersion != null) {
             throw RequestException("Cannot use toVersion on an executeFlow request")
         }

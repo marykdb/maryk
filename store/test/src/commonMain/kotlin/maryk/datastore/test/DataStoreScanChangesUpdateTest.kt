@@ -94,7 +94,6 @@ class DataStoreScanChangesUpdateTest(
 
             val changeUpdate1 = responses[0].await()
             assertType<ChangeUpdate<*, *>>(changeUpdate1).apply {
-                assertEquals(Log, dataModel)
                 assertEquals(keys[0], key)
                 assertEquals(changes, listOf(change1))
             }
@@ -112,7 +111,6 @@ class DataStoreScanChangesUpdateTest(
 
             val changeUpdate2 = responses[1].await()
             assertType<ChangeUpdate<*, *>>(changeUpdate2).apply {
-                assertEquals(Log, dataModel)
                 assertEquals(keys[2], key)
                 assertEquals(changes, listOf(change2))
             }
@@ -124,7 +122,6 @@ class DataStoreScanChangesUpdateTest(
 
             val removalUpdate1 = responses[2].await()
             assertType<RemovalUpdate<*, *>>(removalUpdate1).apply {
-                assertEquals(Log, dataModel)
                 assertEquals(keys[2], key)
             }
         }

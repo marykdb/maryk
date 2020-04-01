@@ -9,16 +9,16 @@ import kotlinx.coroutines.launch
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.requests.IsChangesRequest
-import maryk.core.query.responses.IsResponse
+import maryk.core.query.responses.ChangesResponse
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.datastore.shared.IsDataStore
 import maryk.test.runSuspendingTest
 import kotlin.test.assertTrue
 
 /** Test helper for listening to update changes for [request] on [dataStore] */
-fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions, RP: IsResponse> updateListenerTester(
+fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> updateListenerTester(
     dataStore: IsDataStore,
-    request: IsChangesRequest<DM, P, RP>,
+    request: IsChangesRequest<DM, P, ChangesResponse<DM>>,
     responseCount: Int,
     changeBlock: suspend CoroutineScope.(Array<CompletableDeferred<IsUpdateResponse<DM, P>>>) -> Unit
 ) = runSuspendingTest {

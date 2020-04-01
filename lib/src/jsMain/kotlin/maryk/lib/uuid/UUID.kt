@@ -5,7 +5,8 @@ import kotlin.experimental.and
 import kotlin.experimental.or
 
 actual fun generateUUID(): Pair<Long, Long> {
-    // TODO: Currently only runnable in Node
+    // Although Crypto is NodeJS specific code it works for browser
+    // because Kotlin includes npm library `randombytes` as polyfill
     val buffer = Crypto.randomBytes(16)
     val iterable = buffer.values()
 

@@ -10,8 +10,6 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.query.requests.IsGetRequest
-import maryk.core.query.requests.IsScanRequest
 import maryk.datastore.shared.AbstractDataStore
 
 /** Actor which processes an update */
@@ -27,7 +25,7 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> AbstractData
 
                 if (dataModelListeners != null) {
                     for (updateListener in dataModelListeners) {
-                        updateListener.process(update)
+                        updateListener.process(update, this@processUpdateActor)
                     }
                 }
             }

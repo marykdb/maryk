@@ -6,6 +6,7 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.IsChangesRequest
 import maryk.core.query.responses.updates.IsUpdateResponse
+import maryk.datastore.shared.AbstractDataStore
 
 /**
  * Describes an update listener
@@ -19,5 +20,8 @@ abstract class UpdateListener<DM: IsRootValuesDataModel<P>, P: PropertyDefinitio
     }
 
     /** Process [update] and sent out responses over channel */
-    abstract suspend fun process(update: Update<DM, P>)
+    abstract suspend fun process(
+        update: Update<DM, P>,
+        dataStore: AbstractDataStore
+    )
 }

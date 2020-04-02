@@ -34,6 +34,7 @@ interface IsScanRequest<DM : IsRootDataModel<P>, P : PropertyDefinitions, RP : I
     val startKey: Key<DM>?
     val order: IsOrder?
     val limit: UInt
+    val includeStart: Boolean
 }
 
 internal fun <DO : IsScanRequest<*, *, *>, DM : IsRootDataModel<*>> ObjectPropertyDefinitions<DO>.addStartKey(

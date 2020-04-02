@@ -115,13 +115,14 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> IsD
             where = request.where,
             order = request.order,
             limit = 2u,
+            includeStart = false,
             toVersion = request.toVersion,
             filterSoftDeleted = request.filterSoftDeleted
         )
     )
 
-    return if (nextResults.values.size > 1) {
-        val nextValues = nextResults.values[1]
+    return if (nextResults.values.isNotEmpty()) {
+        val nextValues = nextResults.values.first()
 
         AdditionUpdate(
             key = nextValues.key,

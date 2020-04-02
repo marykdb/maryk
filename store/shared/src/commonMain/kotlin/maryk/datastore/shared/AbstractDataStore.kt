@@ -138,7 +138,7 @@ private suspend fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> IsCha
             )
             UpdateListenerForScan(
                 request = this,
-                scanRange = this.dataModel.createScanRange(this.where, this.startKey?.bytes),
+                scanRange = this.dataModel.createScanRange(this.where, this.startKey?.bytes, this.includeStart),
                 matchingKeys = scanResponse.values.map { it.key },
                 sendChannel = channel
             )

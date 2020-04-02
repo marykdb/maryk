@@ -13,9 +13,10 @@ import maryk.core.processors.datastore.matchers.UniqueToMatch
 import maryk.core.processors.datastore.matchers.convertFilterToIndexPartsToMatch
 import maryk.core.query.filters.IsFilter
 import maryk.core.query.pairs.ReferenceValuePair
+import maryk.lib.extensions.compare.nextByteInSameLength
 
 /** Create a scan range by [filter] and [startKey] */
-fun <DM : IsRootValuesDataModel<*>> DM.createScanRange(filter: IsFilter?, startKey: ByteArray?): KeyScanRanges {
+fun <DM : IsRootValuesDataModel<*>> DM.createScanRange(filter: IsFilter?, startKey: ByteArray?, includeStart: Boolean = true): KeyScanRanges {
     val listOfKeyParts = mutableListOf<IsIndexPartialToMatch>()
     val listOfUniqueFilters = mutableListOf<UniqueToMatch>()
     val listOfEqualPairs = mutableListOf<ReferenceValuePair<Any>>()
@@ -31,7 +32,9 @@ fun <DM : IsRootValuesDataModel<*>> DM.createScanRange(filter: IsFilter?, startK
 
     listOfKeyParts.sortBy { it.fromByteIndex }
 
-    return createScanRangeFromParts(startKey, listOfKeyParts, listOfEqualPairs, listOfUniqueFilters)
+    val properStartKey = if (includeStart) startKey else startKey?.nextByteInSameLength()
+
+    return createScanRangeFromParts(properStartKey, listOfKeyParts, listOfEqualPairs, listOfUniqueFilters)
 }
 
 /**

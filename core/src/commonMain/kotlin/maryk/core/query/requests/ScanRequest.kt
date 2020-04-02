@@ -30,11 +30,12 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.scan(
     where: IsFilter? = null,
     order: IsOrder? = null,
     limit: UInt = 100u,
+    includeStart: Boolean = true,
     toVersion: ULong? = null,
     filterSoftDeleted: Boolean = true,
     aggregations: Aggregations? = null
 ) =
-    ScanRequest(this, startKey, select, where, order, limit, toVersion, filterSoftDeleted, aggregations)
+    ScanRequest(this, startKey, select, where, order, limit, includeStart, toVersion, filterSoftDeleted, aggregations)
 
 /**
  * A Request to scan DataObjects by key from [startKey] until [limit]
@@ -50,6 +51,7 @@ data class ScanRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> i
     override val where: IsFilter? = null,
     override val order: IsOrder? = null,
     override val limit: UInt = 100u,
+    override val includeStart: Boolean = true,
     override val toVersion: ULong? = null,
     override val filterSoftDeleted: Boolean = true,
     override val aggregations: Aggregations? = null
@@ -67,6 +69,7 @@ data class ScanRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> i
         val aggregations by embedObject(7u, ScanRequest<*, *>::aggregations, dataModel = { Aggregations }, alternativeNames = setOf("aggs"))
         val order by addOrder(ScanRequest<*, *>::order)
         val limit by number(9u, ScanRequest<*, *>::limit, type = UInt32, default = 100u)
+        val includeStart by boolean(10u, ScanRequest<*, *>::includeStart, default = true)
     }
 
     companion object : QueryDataModel<ScanRequest<*, *>, Properties>(
@@ -81,7 +84,8 @@ data class ScanRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> i
             filterSoftDeleted = values(6u),
             aggregations = values(7u),
             order = values(8u),
-            limit = values(9u)
+            limit = values(9u),
+            includeStart = values(10u)
         )
     }
 }

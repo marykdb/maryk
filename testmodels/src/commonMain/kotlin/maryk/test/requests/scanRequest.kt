@@ -21,6 +21,7 @@ val scanMaxRequest = SimpleMarykModel.run {
         where = Exists(this { value::ref }),
         order = this { value::ref }.ascending(),
         limit = 200u,
+        includeStart = false,
         filterSoftDeleted = true,
         toVersion = 2345uL,
         select = graph { listOf(value) },

@@ -18,6 +18,7 @@ import maryk.test.models.Severity.DEBUG
 import maryk.test.models.Severity.ERROR
 import maryk.test.models.Severity.INFO
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlin.test.expect
@@ -83,6 +84,37 @@ class KeyScanRangesTest {
         assertFalse { scanRange.ranges.first().keyBeforeStart(later.bytes) }
         assertTrue { scanRange.ranges.first().keyOutOfRange(later.bytes) }
         assertTrue { scanRange.matchesPartials(later.bytes) }
+    }
+
+    @Test
+    fun convertEqualFilterAndStartKeyToScanRange() {
+        val log = Log(
+            timestamp = DateTime(2018, 12, 8, 12, 33, 23),
+            severity = ERROR,
+            message = "message 1"
+        )
+
+        val logKey = Log.key(log)
+
+        val filter = Equals(
+            Log { timestamp::ref } with DateTime(2018, 12, 8, 12, 33, 23)
+        )
+
+        val scanRange1 = Log.createScanRange(filter, logKey.bytes, true)
+
+        expect("7fffffa3f445ec7fff0003") { scanRange1.ranges.first().start.toHex() }
+        assertEquals(1, scanRange1.ranges.count())
+        assertTrue { scanRange1.ranges.first().startInclusive }
+        expect("7fffffa3f445ec7fffffff") { scanRange1.ranges.first().end?.toHex() }
+        assertTrue { scanRange1.ranges.first().endInclusive }
+
+        val scanRange2 = Log.createScanRange(filter, logKey.bytes, false)
+
+        expect("7fffffa3f445ec7fff0004") { scanRange2.ranges.first().start.toHex() }
+        assertEquals(1, scanRange2.ranges.count())
+        assertTrue { scanRange2.ranges.first().startInclusive }
+        expect("7fffffa3f445ec7fffffff") { scanRange2.ranges.first().end?.toHex() }
+        assertTrue { scanRange2.ranges.first().endInclusive }
     }
 
     @Test

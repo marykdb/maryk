@@ -29,6 +29,7 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.scanChanges(
     where: IsFilter? = null,
     order: IsOrder? = null,
     limit: UInt = 100u,
+    includeStart: Boolean = true,
     fromVersion: ULong = 0uL,
     toVersion: ULong? = null,
     maxVersions: UInt = 1u,
@@ -41,6 +42,7 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.scanChanges(
         where,
         order,
         limit,
+        includeStart,
         fromVersion,
         toVersion,
         maxVersions,
@@ -60,6 +62,7 @@ data class ScanChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinit
     override val where: IsFilter? = null,
     override val order: IsOrder? = null,
     override val limit: UInt = 100u,
+    override val includeStart: Boolean = true,
     override val fromVersion: ULong = 0uL,
     override val toVersion: ULong? = null,
     override val maxVersions: UInt = 1u,
@@ -82,8 +85,9 @@ data class ScanChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinit
         val filterSoftDeleted  by boolean(6u, ScanChangesRequest<*, *>::filterSoftDeleted, default = true)
         val order by addOrder(ScanChangesRequest<*, *>::order)
         val limit by number(9u, ScanChangesRequest<*, *>::limit, type = UInt32, default = 100u)
-        val fromVersion by number(10u, ScanChangesRequest<*, *>::fromVersion, UInt64)
-        val maxVersions by number(11u, ScanChangesRequest<*, *>::maxVersions, UInt32, maxValue = 1000u)
+        val includeStart by boolean(10u, ScanChangesRequest<*, *>::includeStart, default = true)
+        val fromVersion by number(11u, ScanChangesRequest<*, *>::fromVersion, UInt64)
+        val maxVersions by number(12u, ScanChangesRequest<*, *>::maxVersions, UInt32, maxValue = 1000u)
     }
 
     companion object : QueryDataModel<ScanChangesRequest<*, *>, Properties>(
@@ -99,8 +103,9 @@ data class ScanChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinit
                 filterSoftDeleted = values(6u),
                 order = values(8u),
                 limit = values(9u),
-                fromVersion = values(10u),
-                maxVersions = values(11u)
+                includeStart = values(10u),
+                fromVersion = values(11u),
+                maxVersions = values(12u)
             )
     }
 }

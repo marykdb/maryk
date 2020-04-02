@@ -35,6 +35,7 @@ class ScanChangesRequestTest {
             from: SimpleMarykModel
             filterSoftDeleted: true
             limit: 100
+            includeStart: true
             fromVersion: 0
             maxVersions: 1
 
@@ -54,6 +55,7 @@ class ScanChangesRequestTest {
             filterSoftDeleted: true
             order: !Desc value
             limit: 300
+            includeStart: false
             fromVersion: 1234
             maxVersions: 10
 

@@ -37,6 +37,7 @@ class ScanSelectRequestTest {
             from: SimpleMarykModel
             filterSoftDeleted: true
             limit: 100
+            includeStart: true
 
             """.trimIndent()
         ) {
@@ -57,6 +58,7 @@ class ScanSelectRequestTest {
                 of: value
             order: value
             limit: 200
+            includeStart: false
 
             """.trimIndent()
         ) {
@@ -74,6 +76,7 @@ class ScanSelectRequestTest {
             - value
             - !Desc value
             limit: 100
+            includeStart: true
 
             """.trimIndent()
         ) {

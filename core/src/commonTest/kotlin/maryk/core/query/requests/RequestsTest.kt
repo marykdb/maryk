@@ -88,10 +88,12 @@ class RequestsTest {
               from: SimpleMarykModel
               filterSoftDeleted: true
               limit: 100
+              includeStart: true
             - !ScanChanges
               from: SimpleMarykModel
               filterSoftDeleted: true
               limit: 100
+              includeStart: true
               fromVersion: 0
               maxVersions: 1
             - !Collect

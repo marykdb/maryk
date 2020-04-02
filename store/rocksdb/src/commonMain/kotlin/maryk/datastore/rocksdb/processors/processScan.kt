@@ -32,7 +32,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
     readOptions: ReadOptions,
     processRecord: (Key<DM>, ULong) -> Unit
 ) {
-    val scanRange = scanRequest.dataModel.createScanRange(scanRequest.where, scanRequest.startKey?.bytes)
+    val scanRange = scanRequest.dataModel.createScanRange(scanRequest.where, scanRequest.startKey?.bytes, scanRequest.includeStart)
 
     scanRequest.checkToVersion(dataStore.keepAllVersions)
 

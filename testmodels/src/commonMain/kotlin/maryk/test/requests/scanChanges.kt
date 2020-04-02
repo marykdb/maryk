@@ -15,6 +15,7 @@ val scanChangesMaxRequest = SimpleMarykModel.run {
         where = Exists(this { value::ref }),
         order = this { value::ref }.descending(),
         limit = 300u,
+        includeStart = false,
         toVersion = 2345uL,
         fromVersion = 1234uL,
         maxVersions = 10u,

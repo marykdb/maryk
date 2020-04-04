@@ -19,7 +19,7 @@ class UpdateListenerForGet<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>
         dataStore: AbstractDataStore
     ) {
         if (request.keys.contains(update.key)) {
-            update.process(request, matchingKeys, dataStore, sendChannel)
+            update.process(request, matchingKeys, null, dataStore, sendChannel)
         }
     }
 }

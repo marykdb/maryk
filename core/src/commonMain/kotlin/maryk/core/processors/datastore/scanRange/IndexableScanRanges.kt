@@ -14,8 +14,10 @@ class IndexableScanRanges internal constructor(
         val keyIndex = key.size - keyScanRange.keySize
 
         return when {
-            // If key or parts do not match, skip
-            !keyScanRange.keyWithinRanges(key, keyIndex) || !keyScanRange.matchesPartials(key, keyIndex) ->
+            // If key parts do not match, skip
+            // Key does not have to be in range since this is a differently
+            // ordered index scan
+            !keyScanRange.matchesPartials(key, keyIndex) ->
                 false
             else -> super.matchesPartials(key, offset, length)
         }

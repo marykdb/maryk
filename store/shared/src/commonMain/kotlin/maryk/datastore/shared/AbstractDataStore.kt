@@ -19,6 +19,9 @@ import maryk.core.models.RootDataModel
 import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsReferenceDefinition
+import maryk.core.properties.graph.IsPropRefGraphNode
+import maryk.core.query.orders.Order
+import maryk.core.query.orders.Orders
 import maryk.core.query.requests.GetChangesRequest
 import maryk.core.query.requests.IsChangesRequest
 import maryk.core.query.requests.IsStoreRequest
@@ -129,10 +132,20 @@ private suspend fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> IsCha
             val scanResponse = dataStore.execute(
                 dataModel.scan(
                     startKey,
-                    dataModel.graph { emptyList() },
+                    dataModel.graph {
+                        @Suppress("UNCHECKED_CAST")
+                        when (order) {
+                            is Order ->
+                                listOfNotNull((order as Order).propertyReference?.propertyDefinition as? IsPropRefGraphNode<P>?)
+                            is Orders ->
+                                (order as Orders).orders.mapNotNull { it.propertyReference?.propertyDefinition as? IsPropRefGraphNode<P> }
+                            else -> emptyList()
+                        }
+                    },
                     where,
                     order,
                     limit,
+                    includeStart,
                     filterSoftDeleted = filterSoftDeleted
                 )
             )
@@ -140,6 +153,7 @@ private suspend fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> IsCha
                 request = this,
                 scanRange = this.dataModel.createScanRange(this.where, this.startKey?.bytes, this.includeStart),
                 matchingKeys = scanResponse.values.map { it.key },
+                sortedValues = if (order != null) scanResponse.values.map { it.values } else null,
                 sendChannel = channel
             )
         }

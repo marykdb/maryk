@@ -15,6 +15,7 @@ import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.query.responses.updates.RemovalUpdate
+import maryk.core.values.Values
 import maryk.datastore.shared.IsDataStore
 import maryk.datastore.shared.updates.Update.Addition
 import maryk.datastore.shared.updates.Update.Change
@@ -24,6 +25,7 @@ import maryk.datastore.shared.updates.Update.Deletion
 internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> Update<DM, P>.process(
     request: IsFetchRequest<DM, P, *>,
     currentKeys: MutableList<Key<DM>>,
+    currentSortables: MutableList<Values<DM, P>>?,
     dataStore: IsDataStore,
     sendChannel: SendChannel<IsUpdateResponse<DM, P>>
 ) {
@@ -33,6 +35,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> Up
                 if (values.matches(request.where)) {
                     if (request !is IsScanRequest<*, *, *> || request.limit > currentKeys.size.toUInt()) {
                         // TODO ORDER
+                        println(currentSortables)
                         currentKeys += key
 
                         sendChannel.send(
@@ -114,7 +117,7 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> IsD
             request.select,
             where = request.where,
             order = request.order,
-            limit = 2u,
+            limit = 1u,
             includeStart = false,
             toVersion = request.toVersion,
             filterSoftDeleted = request.filterSoftDeleted

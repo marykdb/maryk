@@ -14,6 +14,7 @@ import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.ScanType.IndexScan
 import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.compare.nextByteInSameLength
+import maryk.lib.extensions.toHex
 import kotlin.math.min
 
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
@@ -27,7 +28,14 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
     val indexReference = indexScan.index.toReferenceStorageByteArray()
     val index = dataStore.getOrCreateIndex(indexReference)
 
-    val indexScanRange = indexScan.index.createScanRange(scanRequest.where, keyScanRange)
+    val startKey = scanRequest.startKey?.let { startKey ->
+        recordFetcher(scanRequest.dataModel, scanRequest.startKey as Key<*>)?.let { startRecord ->
+            val correctedStartKey = if (scanRequest.includeStart) startKey.bytes else startKey.bytes.nextByteInSameLength()
+            indexScan.index.toStorageByteArrayForIndex(startRecord, correctedStartKey)
+        }
+    }
+
+    val indexScanRange = indexScan.index.createScanRange(scanRequest.where, keyScanRange, startKey)
 
     val toVersion = scanRequest.toVersion?.let { HLC(it) }
 

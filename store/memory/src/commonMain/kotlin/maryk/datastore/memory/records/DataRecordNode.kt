@@ -1,6 +1,7 @@
 package maryk.datastore.memory.records
 
 import maryk.core.clock.HLC
+import maryk.lib.extensions.toHex
 
 /** A sealed class for defines a node in a DataRecord at [reference] */
 internal sealed class DataRecordNode {
@@ -18,16 +19,22 @@ internal class DataRecordValue<T : Any>(
     override val reference: ByteArray,
     val value: T,
     override val version: HLC
-) : DataRecordNode(), IsDataRecordValue<T>
+) : DataRecordNode(), IsDataRecordValue<T> {
+    override fun toString() = "${reference.toHex()}=$value"
+}
 
 /** Defines a deletion at [version] for [reference] */
 internal class DeletedValue<T : Any>(
     override val reference: ByteArray,
     override val version: HLC
-) : DataRecordNode(), IsDataRecordValue<T>
+) : DataRecordNode(), IsDataRecordValue<T> {
+    override fun toString() = "${reference.toHex()}->§DELETED§"
+}
 
 /** Defines a [history] for [reference] */
 internal class DataRecordHistoricValues<T : Any>(
     override val reference: ByteArray,
     val history: List<IsDataRecordValue<T>>
-) : DataRecordNode()
+) : DataRecordNode() {
+    override fun toString() = "${reference.toHex()}=${history.lastOrNull()?.toString()}"
+}

@@ -145,10 +145,11 @@ private fun <DM : IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
     }
 
     return KeyScanRanges(
-        ranges = createRanges(start, end, startInclusive, endInclusive, startKey),
+        ranges = createRanges(start, end, startInclusive, endInclusive),
         partialMatches = listOfParts,
         equalPairs = listOfEqualPairs,
         uniques = listOfUniqueFilters,
-        keySize = this.keyByteSize
+        keySize = this.keyByteSize,
+        startKey = startKey
     )
 }

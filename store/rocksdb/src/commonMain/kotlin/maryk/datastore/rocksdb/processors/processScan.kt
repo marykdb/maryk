@@ -32,22 +32,22 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
     readOptions: ReadOptions,
     processRecord: (Key<DM>, ULong) -> Unit
 ) {
-    val scanRange = scanRequest.dataModel.createScanRange(scanRequest.where, scanRequest.startKey?.bytes, scanRequest.includeStart)
+    val keyScanRange = scanRequest.dataModel.createScanRange(scanRequest.where, scanRequest.startKey?.bytes, scanRequest.includeStart)
 
     scanRequest.checkToVersion(dataStore.keepAllVersions)
 
     when {
         // If hard key match then quit with direct record
-        scanRange.isSingleKey() -> {
+        keyScanRange.isSingleKey() -> {
             @Suppress("UNCHECKED_CAST")
-            val key = scanRequest.dataModel.key(scanRange.ranges.first().start) as Key<DM>
+            val key = scanRequest.dataModel.key(keyScanRange.ranges.first().start) as Key<DM>
             val mayExist = dataStore.db.keyMayExist(columnFamilies.keys, key.bytes, null)
             if (mayExist) {
                 val valueLength = dbAccessor.get(columnFamilies.keys, readOptions, key.bytes, recyclableByteArray)
                 // Only process it if it was created
                 if (valueLength != rocksDBNotFound) {
                     val createdVersion = recyclableByteArray.toULong()
-                    if (shouldProcessRecord(dbAccessor, columnFamilies, readOptions, key, createdVersion, scanRequest, scanRange)) {
+                    if (shouldProcessRecord(dbAccessor, columnFamilies, readOptions, key, createdVersion, scanRequest, keyScanRange)) {
                         processRecord(key, createdVersion)
                     }
                 }
@@ -55,7 +55,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
         }
         else -> {
             // Process uniques as a fast path
-            scanRange.uniques?.let {
+            keyScanRange.uniques?.let {
                 if (it.isNotEmpty()) {
                     // Only process the first unique since it has to match every found unique matcher
                     // and if first is set it can go to direct key to match further
@@ -76,7 +76,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
                         @Suppress("UNCHECKED_CAST")
                         val key = scanRequest.dataModel.key(keyReader) as Key<DM>
 
-                        if (shouldProcessRecord(dbAccessor, columnFamilies, readOptions, key, setAtVersion, scanRequest, scanRange)) {
+                        if (shouldProcessRecord(dbAccessor, columnFamilies, readOptions, key, setAtVersion, scanRequest, keyScanRange)) {
                             readCreationVersion(dbAccessor, columnFamilies, readOptions, key.bytes)?.let { createdVersion ->
                                 processRecord(key, createdVersion)
                             }
@@ -86,10 +86,10 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
                 }
             }
 
-            val scanIndex = scanRequest.dataModel.orderToScanType(scanRequest.order, scanRange.equalPairs)
+            val scanIndex = scanRequest.dataModel.orderToScanType(scanRequest.order, keyScanRange.equalPairs)
 
             val processedScanIndex = if (scanIndex is TableScan) {
-                scanRequest.dataModel.optimizeTableScan(scanIndex, scanRange.equalPairs)
+                scanRequest.dataModel.optimizeTableScan(scanIndex, keyScanRange.equalPairs)
             } else scanIndex
 
             when (processedScanIndex) {
@@ -100,7 +100,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
                         columnFamilies,
                         scanRequest,
                         processedScanIndex.direction,
-                        scanRange,
+                        keyScanRange,
                         processRecord
                     )
                 }
@@ -111,7 +111,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
                         columnFamilies,
                         scanRequest,
                         processedScanIndex,
-                        scanRange,
+                        keyScanRange,
                         processRecord
                     )
                 }
@@ -132,9 +132,7 @@ internal fun <DM: IsRootValuesDataModel<P>, P:PropertyDefinitions> shouldProcess
     if (createdVersion == null) {
         // record was not created
         return false
-    } else if (!scanRange.keyWithinRanges(key.bytes, 0)) {
-        return false
-    } else if (!scanRange.matchesPartials(key.bytes)) {
+    } else if (scanRange.keyBeforeStart(key.bytes) || !scanRange.keyWithinRanges(key.bytes, 0) || !scanRange.matchesPartials(key.bytes)) {
         return false
     }
 

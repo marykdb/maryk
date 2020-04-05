@@ -22,21 +22,21 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
     recordFetcher: (IsRootValuesDataModel<*>, Key<*>) -> DataRecord<*, *>?,
     processRecord: (DataRecord<DM, P>) -> Unit
 ) {
-    val scanRange = scanRequest.dataModel.createScanRange(scanRequest.where, scanRequest.startKey?.bytes, scanRequest.includeStart)
+    val keyScanRange = scanRequest.dataModel.createScanRange(scanRequest.where, scanRequest.startKey?.bytes, scanRequest.includeStart)
 
     scanRequest.checkToVersion(dataStore.keepAllVersions)
 
     when {
         // If hard key match then quit with direct record
-        scanRange.isSingleKey() ->
-            dataStore.getByKey(scanRange.ranges.first().start)?.let {
-                if (shouldProcessRecord(it, scanRequest, scanRange, recordFetcher)) {
+        keyScanRange.isSingleKey() ->
+            dataStore.getByKey(keyScanRange.ranges.first().start)?.let {
+                if (shouldProcessRecord(it, scanRequest, keyScanRange, recordFetcher)) {
                     processRecord(it)
                 }
             }
         else -> {
             // Process uniques as a fast path
-            scanRange.uniques?.let {
+            keyScanRange.uniques?.let {
                 if (it.isNotEmpty()) {
                     // Only process the first unique
                     val firstReference = it.first()
@@ -50,7 +50,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
                     } ?: uniqueIndex[value]
 
                     record?.let {
-                        if (shouldProcessRecord(record, scanRequest, scanRange, recordFetcher)) {
+                        if (shouldProcessRecord(record, scanRequest, keyScanRange, recordFetcher)) {
                             processRecord(record)
                         }
                     }
@@ -58,10 +58,10 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
                 }
             }
 
-            val scanIndex = scanRequest.dataModel.orderToScanType(scanRequest.order, scanRange.equalPairs)
+            val scanIndex = scanRequest.dataModel.orderToScanType(scanRequest.order, keyScanRange.equalPairs)
 
             val processedScanIndex = if (scanIndex is TableScan) {
-                scanRequest.dataModel.optimizeTableScan(scanIndex, scanRange.equalPairs)
+                scanRequest.dataModel.optimizeTableScan(scanIndex, keyScanRange.equalPairs)
             } else scanIndex
 
             when (processedScanIndex) {
@@ -71,7 +71,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
                         scanRequest,
                         recordFetcher,
                         processedScanIndex.direction,
-                        scanRange,
+                        keyScanRange,
                         processRecord
                     )
                 }
@@ -81,7 +81,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
                         scanRequest,
                         recordFetcher,
                         processedScanIndex,
-                        scanRange,
+                        keyScanRange,
                         processRecord
                     )
                 }
@@ -96,9 +96,10 @@ internal fun <DM: IsRootValuesDataModel<P>, P:PropertyDefinitions> shouldProcess
     scanRange: KeyScanRanges,
     recordFetcher: (IsRootValuesDataModel<*>, Key<*>) -> DataRecord<*, *>?
 ): Boolean {
-    if (!scanRange.keyWithinRanges(record.key.bytes, 0)) {
-        return false
-    } else if (!scanRange.matchesPartials(record.key.bytes)) {
+    if (scanRange.keyBeforeStart(record.key.bytes, 0)
+        || !scanRange.keyWithinRanges(record.key.bytes, 0)
+        ||!scanRange.matchesPartials(record.key.bytes)
+    ) {
         return false
     }
 

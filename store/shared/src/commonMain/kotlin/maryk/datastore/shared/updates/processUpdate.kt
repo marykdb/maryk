@@ -29,6 +29,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> Up
     dataStore: IsDataStore,
     sendChannel: SendChannel<IsUpdateResponse<DM, P>>
 ) {
+    // Only process object requests or change requests if the version is after or equal to from version
     if (request !is IsChangesRequest<*, *, *> || request.fromVersion <= version.timestamp) {
         when (this) {
             is Addition<DM, P> -> {
@@ -49,14 +50,14 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> Up
                 }
             }
             is Change<DM, P> -> {
-                var shouldDelete = false
-                val filteredChanges = changes.filterWithSelect(request.select) {
-                    if (it is ObjectSoftDeleteChange && it.isDeleted) {
-                        shouldDelete = true
-                    }
-                }
-
                 if (currentKeys.contains(key)) {
+                    var shouldDelete = false
+                    val filteredChanges = changes.filterWithSelect(request.select) {
+                        if (it is ObjectSoftDeleteChange && it.isDeleted) {
+                            shouldDelete = true
+                        }
+                    }
+
                     if (shouldDelete) {
                         handleDeletion(dataStore, request, this, currentKeys, sendChannel)
                     } else {

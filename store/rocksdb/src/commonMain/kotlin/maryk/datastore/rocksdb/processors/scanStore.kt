@@ -12,6 +12,7 @@ import maryk.core.query.requests.IsScanRequest
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
+import maryk.lib.extensions.compare.compareTo
 
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
     dataStore: RocksDBDataStore,
@@ -27,7 +28,9 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
     when (direction) {
         ASC -> {
             for (range in scanRange.ranges) {
-                iterator.seek(range.start)
+                val startKey = if (scanRange.startKey != null && scanRange.startKey!! > range.start) scanRange.startKey!! else range.start
+
+                iterator.seek(startKey)
 
                 // Skip if value should not be included
                 if (iterator.isValid() && !range.startInclusive && range.start.contentEquals(iterator.key())) {
@@ -39,6 +42,10 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
                 while (iterator.isValid()) {
                     @Suppress("UNCHECKED_CAST")
                     val key = scanRequest.dataModel.key(iterator.key()) as Key<DM>
+
+                    if (scanRange.keyBeforeStart(key.bytes)) {
+                        break
+                    }
 
                     if (range.keyOutOfRange(key.bytes)) {
                         break
@@ -82,7 +89,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
                     @Suppress("UNCHECKED_CAST")
                     val key = scanRequest.dataModel.key(iterator.key()) as Key<DM>
 
-                    if (range.keyBeforeStart(key.bytes)) {
+                    if (scanRange.keyBeforeStart(key.bytes) || range.keyBeforeStart(key.bytes)) {
                         break
                     }
 

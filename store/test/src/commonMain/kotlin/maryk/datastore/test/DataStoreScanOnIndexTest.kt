@@ -110,23 +110,19 @@ class DataStoreScanOnIndexTest(
 
     private fun executeSimpleIndexScanWithStartKeyRequest() = runSuspendingTest {
         val scanResponse = dataStore.execute(
-            Log.scan(startKey = keys[2], order = severity.ref().ascending())
+            Log.scan(startKey = keys[1], order = severity.ref().ascending())
         )
 
-        expect(3) { scanResponse.values.size }
+        expect(2) { scanResponse.values.size }
 
         // Sorted on severity
         scanResponse.values[0].let {
-            expect(logs[2]) { it.values }
-            expect(keys[2]) { it.key }
-        }
-        scanResponse.values[1].let {
-            expect(logs[0]) { it.values }
-            expect(keys[0]) { it.key }
-        }
-        scanResponse.values[2].let {
             expect(logs[1]) { it.values }
             expect(keys[1]) { it.key }
+        }
+        scanResponse.values[1].let {
+            expect(logs[3]) { it.values }
+            expect(keys[3]) { it.key }
         }
     }
 

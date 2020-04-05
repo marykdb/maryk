@@ -39,7 +39,13 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
 ) {
     val indexReference = indexScan.index.toReferenceStorageByteArray()
 
-    val indexScanRange = indexScan.index.createScanRange(scanRequest.where, keyScanRange)
+    val startKey = scanRequest.startKey?.let { startKey ->
+        val startValuesGetter = StoreValuesGetter(scanRequest.startKey as Key<*>, dataStore.db, columnFamilies, dataStore.defaultReadOptions)
+        val correctedStartKey = if (scanRequest.includeStart) startKey.bytes else startKey.bytes.nextByteInSameLength()
+        indexScan.index.toStorageByteArrayForIndex(startValuesGetter, correctedStartKey)
+    }
+
+    val indexScanRange = indexScan.index.createScanRange(scanRequest.where, keyScanRange, startKey)
 
     val indexColumnHandle = if(scanRequest.toVersion == null) {
         columnFamilies.index

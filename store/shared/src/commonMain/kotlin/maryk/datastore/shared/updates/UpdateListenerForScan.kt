@@ -9,6 +9,7 @@ import maryk.core.query.requests.ScanChangesRequest
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.values.Values
 import maryk.datastore.shared.AbstractDataStore
+import maryk.lib.extensions.toHex
 
 /** Update listener for scans */
 class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
@@ -18,14 +19,13 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
     sortedValues: List<Values<DM, P>>?,
     sendChannel: SendChannel<IsUpdateResponse<DM, P>>
 ) : UpdateListener<DM, P>(matchingKeys.toMutableList(), sendChannel) {
-    val sortedValues = sortedValues?.toMutableList()
+    private val sortedValues = sortedValues?.toMutableList()
 
     override suspend fun process(
         update: Update<DM, P>,
         dataStore: AbstractDataStore
     ) {
-        if ((!sortedValues.isNullOrEmpty() || scanRange.keyWithinRanges(update.key.bytes, 0)) && scanRange.matchesPartials(update.key.bytes)) {
-            // Only process object requests or change requests if the version is after or equal to from version
+        if ((!sortedValues.isNullOrEmpty() || !scanRange.keyBeforeStart(update.key.bytes, 0)) && scanRange.keyWithinRanges(update.key.bytes, 0) && scanRange.matchesPartials(update.key.bytes)) {
             update.process(request, matchingKeys, sortedValues, dataStore, sendChannel)
         }
     }

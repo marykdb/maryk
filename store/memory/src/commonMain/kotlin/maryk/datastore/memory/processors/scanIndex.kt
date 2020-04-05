@@ -14,7 +14,6 @@ import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.ScanType.IndexScan
 import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.compare.nextByteInSameLength
-import maryk.lib.extensions.toHex
 import kotlin.math.min
 
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(

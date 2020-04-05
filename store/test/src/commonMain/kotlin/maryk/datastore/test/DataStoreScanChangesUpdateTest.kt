@@ -58,7 +58,7 @@ class DataStoreScanChangesUpdateTest(
                     ),
                     TestMarykModel(
                         string = "ha world 3",
-                        int = 5,
+                        int = 4,
                         uint = 1244u,
                         bool = true,
                         double = 444.0,
@@ -74,7 +74,7 @@ class DataStoreScanChangesUpdateTest(
                     ),
                     TestMarykModel(
                         string = "ha world 5",
-                        int = 6,
+                        int = 5,
                         uint = 234234u,
                         bool = true,
                         double = 232523.3,
@@ -117,7 +117,7 @@ class DataStoreScanChangesUpdateTest(
             TestMarykModel.scanChanges(
                 startKey = keys[1]
             ),
-            3
+            4
         ) { responses ->
             val change1 = Change(TestMarykModel { string::ref } with "ha new message 1")
             dataStore.execute(TestMarykModel.change(
@@ -154,6 +154,24 @@ class DataStoreScanChangesUpdateTest(
             val removalUpdate1 = responses[2].await()
             assertType<RemovalUpdate<*, *>>(removalUpdate1).apply {
                 assertEquals(keys[2], key)
+            }
+
+            val newDataObject = TestMarykModel(
+                string = "ha world 6",
+                int = 6,
+                uint = 23123214u,
+                bool = true,
+                double = 6968798.37465,
+                dateTime = DateTime(1922, 12, 23)
+            )
+
+            dataStore.execute(TestMarykModel.add(
+                newDataObject
+            ))
+
+            val additionUpdate = responses[3].await()
+            assertType<AdditionUpdate<TestMarykModel, TestMarykModel.Properties>>(additionUpdate).apply {
+                assertEquals(newDataObject, values)
             }
         }
     }
@@ -213,6 +231,21 @@ class DataStoreScanChangesUpdateTest(
             assertType<AdditionUpdate<*, *>>(addUpdate).apply {
                 assertEquals(keys[2], key)
             }
+
+            val newDataObject = TestMarykModel(
+                string = "ha world 6",
+                int = 6,
+                uint = 23123214u,
+                bool = true,
+                double = 6968798.37465,
+                dateTime = DateTime(1922, 12, 23)
+            )
+
+            dataStore.execute(TestMarykModel.add(
+                newDataObject
+            ))
+
+            // no updates otherwise crash because not enough responses
         }
     }
 }

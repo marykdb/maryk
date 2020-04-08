@@ -15,6 +15,9 @@ import maryk.core.query.requests.scanChanges
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
+import maryk.core.query.responses.updates.RemovalReason.HardDelete
+import maryk.core.query.responses.updates.RemovalReason.NotInRange
+import maryk.core.query.responses.updates.RemovalReason.SoftDelete
 import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.core.values.Values
 import maryk.datastore.shared.IsDataStore
@@ -91,8 +94,6 @@ class DataStoreScanChangesUpdateTest(
                     lowestVersion = response.version
                 }
             }
-
-            println(keys.joinToString { it.toHex() })
         }
     }
 
@@ -152,11 +153,12 @@ class DataStoreScanChangesUpdateTest(
                 assertEquals(changes, listOf(change2))
             }
 
-            dataStore.execute(TestMarykModel.delete(keys[2]))
+            dataStore.execute(TestMarykModel.delete(keys[2], hardDelete = true))
 
             val removalUpdate1 = responses[2].await()
             assertType<RemovalUpdate<*, *>>(removalUpdate1).apply {
                 assertEquals(keys[2], key)
+                assertEquals(HardDelete, reason)
             }
 
             val newDataObject = TestMarykModel(
@@ -228,6 +230,7 @@ class DataStoreScanChangesUpdateTest(
             val removalUpdate1 = responses[2].await()
             assertType<RemovalUpdate<*, *>>(removalUpdate1).apply {
                 assertEquals(keys[0], key)
+                assertEquals(SoftDelete, reason)
             }
 
             val addUpdate = responses[3].await()
@@ -259,6 +262,7 @@ class DataStoreScanChangesUpdateTest(
                 dateTime = DateTime(1901, 1, 2)
             )
 
+            // New object is added within range in already full list so we expect an add and a delete
             dataStore.execute(TestMarykModel.add(
                 newDataObject2
             ))
@@ -272,6 +276,7 @@ class DataStoreScanChangesUpdateTest(
             val removalUpdate2 = responses[5].await()
             assertType<RemovalUpdate<*, *>>(removalUpdate2).apply {
                 assertEquals(keys[2], key)
+                assertEquals(NotInRange, reason)
             }
         }
     }

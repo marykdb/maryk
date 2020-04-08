@@ -13,6 +13,10 @@ import maryk.core.query.requests.scan
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.IsUpdateResponse
+import maryk.core.query.responses.updates.RemovalReason
+import maryk.core.query.responses.updates.RemovalReason.HardDelete
+import maryk.core.query.responses.updates.RemovalReason.NotInRange
+import maryk.core.query.responses.updates.RemovalReason.SoftDelete
 import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.datastore.shared.IsDataStore
 import maryk.datastore.shared.updates.Update.Addition
@@ -51,7 +55,8 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ
                             sendChannel.send(
                                 RemovalUpdate(
                                     key = keyToRemove,
-                                    version = version.timestamp
+                                    version = version.timestamp,
+                                    reason = NotInRange
                                 )
                             )
                         }
@@ -62,28 +67,40 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ
                 if (currentKeys.contains(key)) {
                     var shouldDelete = false
                     val filteredChanges = changes.filterWithSelect(request.select) {
-                        if (it is ObjectSoftDeleteChange && it.isDeleted) {
+                        if (it is ObjectSoftDeleteChange && it.isDeleted && request.filterSoftDeleted) {
                             shouldDelete = true
                         }
                     }
 
                     if (shouldDelete) {
-                        handleDeletion(dataStore, this, updateListener, sendChannel)
+                        handleDeletion(dataStore, this, SoftDelete, updateListener, sendChannel)
                     } else {
-                        // TODO Reorder?
-                        sendChannel.send(
-                            ChangeUpdate(
-                                key = key,
-                                version = version.timestamp,
-                                changes = filteredChanges
-                            )
-                        )
+                        updateListener.changeOrder(this) { newIndex ->
+                            if (newIndex == null) {
+                                handleDeletion(dataStore, this, NotInRange, updateListener, sendChannel)
+                            } else {
+                                sendChannel.send(
+                                    ChangeUpdate(
+                                        key = key,
+                                        version = version.timestamp,
+                                        changes = filteredChanges,
+                                        index = newIndex
+                                    )
+                                )
+                            }
+                        }
                     }
                 }
             }
             is Deletion<DM, P> -> {
                 if (currentKeys.contains(key) && (isHardDelete || request.filterSoftDeleted)) {
-                    handleDeletion(dataStore, this, updateListener, sendChannel)
+                    handleDeletion(
+                        dataStore,
+                        this,
+                        if (isHardDelete) HardDelete else SoftDelete,
+                        updateListener,
+                        sendChannel
+                    )
                 }
             }
         }
@@ -94,6 +111,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ
 private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ: IsChangesRequest<DM, P, *>> handleDeletion(
     dataStore: IsDataStore,
     change: Update<DM, P>,
+    reason: RemovalReason,
     updateListener: UpdateListener<DM, P, RQ>,
     sendChannel: SendChannel<IsUpdateResponse<DM, P>>
 ) {
@@ -102,7 +120,8 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ:
     sendChannel.send(
         RemovalUpdate(
             key = change.key,
-            version = change.version.timestamp
+            version = change.version.timestamp,
+            reason = reason
         )
     )
 

@@ -91,6 +91,9 @@ import maryk.datastore.rocksdb.processors.helpers.setUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setValue
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.UniqueException
+import maryk.datastore.shared.updates.IsIndexUpdate
+import maryk.datastore.shared.updates.IsIndexUpdate.IndexChange
+import maryk.datastore.shared.updates.IsIndexUpdate.IndexDelete
 import maryk.datastore.shared.updates.Update
 import maryk.lib.recyclableByteArray
 import maryk.rocksdb.rocksDBNotFound
@@ -687,29 +690,38 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> app
             }
         }
 
+        var indexUpdates: MutableList<IsIndexUpdate>? = null
+
         // Process indices
-        dataModel.indices?.let {indices ->
+        dataModel.indices?.let { indices ->
+            if (indexUpdates == null) {
+                indexUpdates = mutableListOf()
+            }
+
             val storeGetter = StoreValuesGetter(key, dataStore.db, columnFamilies, dataStore.defaultReadOptions)
             val transactionGetter = DBAccessorValuesGetter(key, transaction, columnFamilies, dataStore.defaultReadOptions)
-            indices.forEach {
-                val oldKeyAndValue = it.toStorageByteArrayForIndex(storeGetter, key.bytes)
-                val newKeyAndValue = it.toStorageByteArrayForIndex(transactionGetter, key.bytes)
+
+            for (index in indices) {
+                val oldKeyAndValue = index.toStorageByteArrayForIndex(storeGetter, key.bytes)
+                val newKeyAndValue = index.toStorageByteArrayForIndex(transactionGetter, key.bytes)
 
                 if (newKeyAndValue == null) {
                     if (oldKeyAndValue != null) {
-                        deleteIndexValue(transaction, columnFamilies, it.toReferenceStorageByteArray(), oldKeyAndValue, versionBytes)
+                        deleteIndexValue(transaction, columnFamilies, index.toReferenceStorageByteArray(), oldKeyAndValue, versionBytes)
+                        indexUpdates!!.add(IndexDelete(index))
                     } // else ignore since did not exist
                 } else if (oldKeyAndValue == null || !newKeyAndValue.contentEquals(oldKeyAndValue)) {
                     if (oldKeyAndValue != null) {
-                        deleteIndexValue(transaction, columnFamilies, it.toReferenceStorageByteArray(), oldKeyAndValue, versionBytes)
+                        deleteIndexValue(transaction, columnFamilies, index.toReferenceStorageByteArray(), oldKeyAndValue, versionBytes)
                     }
-                    setIndexValue(transaction, columnFamilies, it.toReferenceStorageByteArray(), newKeyAndValue, versionBytes)
+                    setIndexValue(transaction, columnFamilies, index.toReferenceStorageByteArray(), newKeyAndValue, versionBytes)
+                    indexUpdates!!.add(IndexChange(index, newKeyAndValue))
                 }
             }
         }
 
         updateSendChannel.send(
-            Update.Change(dataModel, key, version, changes + outChanges)
+            Update.Change(dataModel, key, version, changes + outChanges, indexUpdates)
         )
 
         // Nothing skipped out so must be a success

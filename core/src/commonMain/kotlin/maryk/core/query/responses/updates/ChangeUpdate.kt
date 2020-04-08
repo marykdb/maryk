@@ -9,5 +9,7 @@ import maryk.core.query.changes.IsChange
 data class ChangeUpdate<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
     override val key: Key<DM>,
     override val version: ULong,
-    val changes: List<IsChange>
+    val changes: List<IsChange>,
+    // The index within the current order
+    val index: Int
 ) : IsUpdateResponse<DM, P>

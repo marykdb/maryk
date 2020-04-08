@@ -76,6 +76,9 @@ import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.UniqueException
+import maryk.datastore.shared.updates.IsIndexUpdate
+import maryk.datastore.shared.updates.IsIndexUpdate.IndexChange
+import maryk.datastore.shared.updates.IsIndexUpdate.IndexDelete
 import maryk.datastore.shared.updates.Update
 import maryk.lib.extensions.compare.compareTo
 
@@ -627,8 +630,14 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> app
 
         val oldValueList = objectToChange.values
 
+        var indexUpdates: MutableList<IsIndexUpdate>? = null
+
         // Process indices
         dataModel.indices?.forEach {
+            if (indexUpdates == null) {
+                indexUpdates = mutableListOf()
+            }
+
             val oldValue = it.toStorageByteArrayForIndex(objectToChange, objectToChange.key.bytes)
             // Use switch trick to use less object creation and still be able to get values
             objectToChange.values = newValueList
@@ -638,9 +647,11 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> app
             if (newValue == null) {
                 if (oldValue != null) {
                     dataStore.removeFromIndex(objectToChange, it.toReferenceStorageByteArray(), version, oldValue)
+                    indexUpdates!!.add(IndexDelete(it))
                 } // else ignore since did not exist
             } else if (oldValue == null || !newValue.contentEquals(oldValue)) {
                 dataStore.addToIndex(objectToChange, it.toReferenceStorageByteArray(), newValue, version, oldValue)
+                indexUpdates!!.add(IndexChange(it, newValue))
             }
         }
 
@@ -648,7 +659,7 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> app
         objectToChange.values = newValueList
 
         updateSendChannel.send(
-            Update.Change(dataModel, objectToChange.key, version, changes + outChanges)
+            Update.Change(dataModel, objectToChange.key, version, changes + outChanges, indexUpdates)
         )
 
         // Nothing skipped out so must be a success

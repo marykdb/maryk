@@ -12,6 +12,7 @@ import maryk.core.query.requests.delete
 import maryk.core.query.requests.getChanges
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.updates.ChangeUpdate
+import maryk.core.query.responses.updates.RemovalReason.SoftDelete
 import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.datastore.shared.IsDataStore
 import maryk.test.assertType
@@ -106,6 +107,7 @@ class DataStoreGetChangesUpdateTest(
         val removalUpdate1 = responses[2].await()
         assertType<RemovalUpdate<*, *>>(removalUpdate1).apply {
             assertEquals(keys[1], key)
+            assertEquals(SoftDelete, reason)
         }
     }
 }

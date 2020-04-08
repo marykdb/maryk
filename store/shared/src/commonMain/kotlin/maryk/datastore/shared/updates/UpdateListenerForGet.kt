@@ -8,6 +8,8 @@ import maryk.core.query.requests.GetChangesRequest
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.values.Values
 import maryk.datastore.shared.AbstractDataStore
+import maryk.datastore.shared.updates.Update.Change
+import maryk.lib.extensions.compare.compareTo
 
 /** Update listener for get requests */
 class UpdateListenerForGet<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
@@ -29,4 +31,12 @@ class UpdateListenerForGet<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>
             // Only insert keys which were found in the matching keys
             if (it < 0) null else it
         }
+
+    override suspend fun changeOrder(change: Change<DM, P>, changedHandler: suspend (Int?) -> Unit) {
+        val keyIndex = matchingKeys.indexOfFirst { it.compareTo(change.key) == 0 }
+
+        if (keyIndex >= 0) {
+            changedHandler(if (keyIndex >= 0) keyIndex else null)
+        }
+    }
 }

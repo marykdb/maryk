@@ -13,12 +13,13 @@ import maryk.core.query.responses.ValuesResponse
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.values.Values
 import maryk.datastore.shared.AbstractDataStore
-import maryk.datastore.shared.ScanType
 import maryk.datastore.shared.ScanType.IndexScan
 import maryk.datastore.shared.ScanType.TableScan
 import maryk.datastore.shared.orderToScanType
+import maryk.datastore.shared.updates.IsIndexUpdate.IndexChange
+import maryk.datastore.shared.updates.IsIndexUpdate.IndexDelete
+import maryk.datastore.shared.updates.Update.Change
 import maryk.lib.extensions.compare.compareTo
-import maryk.lib.extensions.toHex
 
 /** Update listener for scans */
 class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
@@ -31,9 +32,9 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
     scanResponse.values.map { it.key }.toMutableList(),
     sendChannel
 ) {
-    val scanType = request.dataModel.orderToScanType(request.order, scanRange.equalPairs)
+    private val scanType = request.dataModel.orderToScanType(request.order, scanRange.equalPairs)
 
-    internal val sortedValues = (scanType as? IndexScan)?.let {
+    private val sortedValues = (scanType as? IndexScan)?.let {
         scanResponse.values.map {
             scanType.index.toStorageByteArrayForIndex(it.values, it.key.bytes)
                 ?: throw StorageException("Unexpected null value")
@@ -64,19 +65,13 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
                 val indexKey = scanType.index.toStorageByteArrayForIndex(values, key.bytes)
                     ?: return null
 
-                sortedValues?.binarySearch {
-                    when (scanType.direction) {
-                        ASC -> it.compareTo(indexKey)
-                        DESC -> indexKey.compareTo(it)
-                    }
-                }?.let { indexPosition ->
+                findSortedKeyIndex(indexKey)?.let { indexPosition ->
                     when {
                         indexPosition < 0 -> {
-                            println("§ $indexPosition ${matchingKeys.joinToString { it.toHex() }} ${sortedValues.joinToString { it.toHex() }}")
                             val newPos = indexPosition * -1 - 1
                             // Only add when position is smaller than limit
                             if (newPos < request.limit.toInt()) {
-                                sortedValues.add(newPos, indexKey)
+                                sortedValues?.add(newPos, indexKey)
                                 matchingKeys.add(newPos, key)
                                 newPos
                             } else {
@@ -88,12 +83,7 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
                 }
             }
             is TableScan -> {
-                matchingKeys.binarySearch {
-                    when (scanType.direction) {
-                        ASC -> it.compareTo(key)
-                        DESC -> key.compareTo(it)
-                    }
-                }.let { indexPosition ->
+                findKeyIndex(key).let { indexPosition ->
                     when {
                         indexPosition < 0 -> {
                             val newPos = indexPosition * -1 - 1
@@ -104,6 +94,15 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
                         else -> indexPosition
                     }
                 }
+            }
+        }
+    }
+
+    private fun findSortedKeyIndex(indexKey: ByteArray): Int? {
+        return sortedValues?.binarySearch {
+            when (scanType.direction) {
+                ASC -> it.compareTo(indexKey)
+                DESC -> indexKey.compareTo(it)
             }
         }
     }
@@ -127,5 +126,70 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
             sortedValues?.removeAt(index)
         }
         return index
+    }
+
+    override suspend fun changeOrder(change: Change<DM, P>, changedHandler: suspend (Int?) -> Unit) {
+        when (scanType) {
+            is TableScan -> {
+                val index = findKeyIndex(change.key)
+                if (index >= 0) {
+                    changedHandler(index)
+                }
+            }
+            is IndexScan -> {
+                val existingIndex = findKeyIndex(change.key)
+
+                when(val indexUpdate = change.indexUpdates?.firstOrNull { it.index == scanType.index }) {
+                    null -> { // Nothing changed
+                        if (existingIndex >= 0) {
+                            changedHandler(existingIndex)
+                        }
+                    }
+                    is IndexDelete -> { // Was deleted from index
+                        if (existingIndex >= 0) {
+                            changedHandler(null)
+                        }
+                    }
+                    is IndexChange -> { // Was changed in order
+                        val index = findSortedKeyIndex(indexUpdate.indexKey)
+
+                        if (existingIndex != index) { // Is at new index
+                            matchingKeys.removeAt(existingIndex)
+                            sortedValues?.removeAt(existingIndex)
+
+                            if (index != null) {
+                                if (index == -1) {
+                                    val newIndex = index * 1 - 1
+                                    matchingKeys.add(newIndex, change.key)
+                                    sortedValues?.add(newIndex, indexUpdate.indexKey)
+
+                                    changedHandler(newIndex)
+                                } else {
+                                    throw StorageException("Unexpected existing index for $change.key its sorted key")
+                                }
+                            } else { // removed
+                                changedHandler(null)
+                            }
+                        } else { // Is at same position as existing index
+                            if (existingIndex >= 0) {
+                                changedHandler(existingIndex)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Find the first matching key.
+     * Mind: keys are not ordered so efficient binary search is not possible
+     */
+    private fun findKeyIndex(key: Key<DM>): Int {
+        val predicate: (Key<DM>) -> Boolean = when (scanType.direction) {
+            ASC -> {{ it.compareTo(key) == 0 }}
+            DESC -> {{ key.compareTo(it) == 0 }}
+        }
+        return matchingKeys.indexOfFirst(predicate = predicate)
     }
 }

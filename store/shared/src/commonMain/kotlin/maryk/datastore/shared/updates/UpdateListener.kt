@@ -8,6 +8,7 @@ import maryk.core.query.requests.IsChangesRequest
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.values.Values
 import maryk.datastore.shared.AbstractDataStore
+import maryk.datastore.shared.updates.Update.Change
 
 /**
  * Describes an update listener
@@ -39,4 +40,11 @@ abstract class UpdateListener<DM: IsRootValuesDataModel<P>, P: PropertyDefinitio
         }
         return index
     }
+
+    /**
+     * Change order for values if needed and return new or current index.
+     * Calls changedHandler with an index at which index the value should be or
+     * null if it was deleted
+     */
+    abstract suspend fun changeOrder(change: Change<DM, P>, changedHandler: suspend (Int?) -> Unit)
 }

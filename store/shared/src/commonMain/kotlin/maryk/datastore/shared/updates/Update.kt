@@ -31,6 +31,7 @@ sealed class Update<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
         dataModel: DM,
         key: Key<DM>,
         version: HLC,
-        val changes: List<IsChange>
+        val changes: List<IsChange>,
+        val indexUpdates: List<IsIndexUpdate>?
     ): Update<DM, P>(dataModel, key, version)
 }

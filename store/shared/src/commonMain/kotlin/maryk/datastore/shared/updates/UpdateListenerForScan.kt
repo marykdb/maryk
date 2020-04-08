@@ -20,6 +20,7 @@ import maryk.datastore.shared.updates.IsIndexUpdate.IndexChange
 import maryk.datastore.shared.updates.IsIndexUpdate.IndexDelete
 import maryk.datastore.shared.updates.Update.Change
 import maryk.lib.extensions.compare.compareTo
+import maryk.lib.extensions.toHex
 
 /** Update listener for scans */
 class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
@@ -98,14 +99,13 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
         }
     }
 
-    private fun findSortedKeyIndex(indexKey: ByteArray): Int? {
-        return sortedValues?.binarySearch {
+    private fun findSortedKeyIndex(indexKey: ByteArray) =
+        sortedValues?.binarySearch {
             when (scanType.direction) {
                 ASC -> it.compareTo(indexKey)
                 DESC -> indexKey.compareTo(it)
             }
         }
-    }
 
     /** [values] at [key] are known to be at end of sorted range so add it specifically there */
     fun addValuesAtEnd(key: Key<DM>, values: Values<DM, P>) {
@@ -137,6 +137,7 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
                 }
             }
             is IndexScan -> {
+                // Should always exist since earlier was checked if matchingKeys contains this key
                 val existingIndex = findKeyIndex(change.key)
 
                 when(val indexUpdate = change.indexUpdates?.firstOrNull { it.index == scanType.index }) {
@@ -154,18 +155,23 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
                         val index = findSortedKeyIndex(indexUpdate.indexKey)
 
                         if (existingIndex != index) { // Is at new index
+                            // Always exists thus always removes a key
                             matchingKeys.removeAt(existingIndex)
                             sortedValues?.removeAt(existingIndex)
 
                             if (index != null) {
-                                if (index == -1) {
-                                    val newIndex = index * 1 - 1
-                                    matchingKeys.add(newIndex, change.key)
-                                    sortedValues?.add(newIndex, indexUpdate.indexKey)
+                                if (index < 0) {
+                                    val newIndex = index * -1 - 1
+                                    // correction if existing value delete messed things up
+                                    val correction = if (existingIndex < newIndex) 1 else 0
+                                    val adjustedIndex = newIndex - correction
 
-                                    changedHandler(newIndex)
+                                    matchingKeys.add(adjustedIndex, change.key)
+                                    sortedValues?.add(adjustedIndex, indexUpdate.indexKey)
+
+                                    changedHandler(adjustedIndex)
                                 } else {
-                                    throw StorageException("Unexpected existing index for $change.key its sorted key")
+                                    throw StorageException("Unexpected existing index for ${change.key} its sorted key {${indexUpdate.indexKey.toHex()} for changes ${change.changes}")
                                 }
                             } else { // removed
                                 changedHandler(null)

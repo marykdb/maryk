@@ -70,7 +70,7 @@ class DataStoreScanChangesUpdateTest(
                     ),
                     TestMarykModel(
                         string = "ha world 4",
-                        int = -2,
+                        int = -5,
                         uint = 52323u,
                         bool = false,
                         double = 2333.0,
@@ -190,7 +190,7 @@ class DataStoreScanChangesUpdateTest(
                 limit = 2u,
                 includeStart = false
             ),
-            6
+            7
         ) { responses ->
             // Order of keys is now: 1, 3, 0, 2, 4
             // Item at key1 is skipped so starts at 3 now
@@ -251,7 +251,7 @@ class DataStoreScanChangesUpdateTest(
                 newDataObject
             ))
 
-            // no updates because is 1 outside the limit otherwise next one will not match
+            // no updates because is outside the limit otherwise next one will not match
 
             val newDataObject2 = TestMarykModel(
                 string = "ha new world",
@@ -277,6 +277,19 @@ class DataStoreScanChangesUpdateTest(
             assertType<RemovalUpdate<*, *>>(removalUpdate2).apply {
                 assertEquals(keys[2], key)
                 assertEquals(NotInRange, reason)
+            }
+
+            // Change value which changes order
+            val change3 = Change(TestMarykModel { int::ref } with 0)
+            dataStore.execute(TestMarykModel.change(
+                keys[3].change(change3)
+            ))
+
+            val changeUpdate3 = responses[6].await()
+            assertType<ChangeUpdate<*, *>>(changeUpdate3).apply {
+                assertEquals(keys[3], key)
+                assertEquals(changes, listOf(change3))
+                assertEquals(1, index)
             }
         }
     }

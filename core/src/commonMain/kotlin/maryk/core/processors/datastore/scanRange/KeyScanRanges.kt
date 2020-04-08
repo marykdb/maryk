@@ -17,6 +17,9 @@ class KeyScanRanges internal constructor(
     fun keyBeforeStart(key: ByteArray, offset: Int = 0) =
         startKey?.let { it.compareDefinedTo(key, offset, keySize) > 0 } ?: false
 
+    fun keyAfterStart(key: ByteArray, offset: Int = 0) =
+        startKey?.let { it.compareDefinedTo(key, offset, keySize) < 0 } ?: false
+
     fun isSingleKey(): Boolean {
         return if (ranges.size == 1) {
             val firstRange = ranges.first()

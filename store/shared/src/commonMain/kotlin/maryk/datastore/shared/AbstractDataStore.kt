@@ -46,7 +46,7 @@ abstract class AbstractDataStore(
 ): IsDataStore, CoroutineScope {
     override val coroutineContext = DISPATCHER + SupervisorJob()
 
-    val updateListeners = mutableMapOf<UInt, MutableList<UpdateListener<*, *>>>()
+    val updateListeners = mutableMapOf<UInt, MutableList<UpdateListener<*, *, *>>>()
     val updateSendChannel = processUpdateActor<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>()
 
     /** StoreActor to run actions against.*/
@@ -117,7 +117,7 @@ abstract class AbstractDataStore(
         clockActor.close()
 
         updateSendChannel.close()
-        updateListeners.values.forEach { it.forEach(UpdateListener<*, *>::close) }
+        updateListeners.values.forEach { it.forEach(UpdateListener<*, *, *>::close) }
         updateListeners.clear()
     }
 }
@@ -152,8 +152,7 @@ private suspend fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> IsCha
             UpdateListenerForScan(
                 request = this,
                 scanRange = this.dataModel.createScanRange(this.where, this.startKey?.bytes, this.includeStart),
-                matchingKeys = scanResponse.values.map { it.key },
-                sortedValues = if (order != null) scanResponse.values.map { it.values } else null,
+                scanResponse = scanResponse,
                 sendChannel = channel
             )
         }

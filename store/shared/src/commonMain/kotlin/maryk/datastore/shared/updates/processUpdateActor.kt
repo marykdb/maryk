@@ -21,7 +21,7 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> AbstractData
         this.launch {
             it.asFlow().collect { update ->
                 @Suppress("UNCHECKED_CAST")
-                val dataModelListeners = updateListeners[getDataModelId(update.dataModel)] as MutableList<UpdateListener<DM, P>>?
+                val dataModelListeners = updateListeners[getDataModelId(update.dataModel)] as MutableList<UpdateListener<DM, P, *>>?
 
                 if (dataModelListeners != null) {
                     for (updateListener in dataModelListeners) {

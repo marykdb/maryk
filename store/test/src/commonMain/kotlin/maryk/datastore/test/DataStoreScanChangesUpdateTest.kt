@@ -16,6 +16,7 @@ import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.RemovalUpdate
+import maryk.core.values.Values
 import maryk.datastore.shared.IsDataStore
 import maryk.lib.time.DateTime
 import maryk.test.assertType
@@ -42,7 +43,7 @@ class DataStoreScanChangesUpdateTest(
                 TestMarykModel.add(
                     TestMarykModel(
                         string = "ha world 1",
-                        int = 3,
+                        int = 0,
                         uint = 67u,
                         bool = true,
                         double = 2323.3,
@@ -50,7 +51,7 @@ class DataStoreScanChangesUpdateTest(
                     ),
                     TestMarykModel(
                         string = "ha world 2",
-                        int = 1,
+                        int = -10,
                         uint = 69u,
                         bool = false,
                         double = 0.1,
@@ -58,7 +59,7 @@ class DataStoreScanChangesUpdateTest(
                     ),
                     TestMarykModel(
                         string = "ha world 3",
-                        int = 4,
+                        int = 2,
                         uint = 1244u,
                         bool = true,
                         double = 444.0,
@@ -66,7 +67,7 @@ class DataStoreScanChangesUpdateTest(
                     ),
                     TestMarykModel(
                         string = "ha world 4",
-                        int = 2,
+                        int = -2,
                         uint = 52323u,
                         bool = false,
                         double = 2333.0,
@@ -74,7 +75,7 @@ class DataStoreScanChangesUpdateTest(
                     ),
                     TestMarykModel(
                         string = "ha world 5",
-                        int = 5,
+                        int = 4,
                         uint = 234234u,
                         bool = true,
                         double = 232523.3,
@@ -90,6 +91,8 @@ class DataStoreScanChangesUpdateTest(
                     lowestVersion = response.version
                 }
             }
+
+            println(keys.joinToString { it.toHex() })
         }
     }
 
@@ -185,7 +188,7 @@ class DataStoreScanChangesUpdateTest(
                 limit = 2u,
                 includeStart = false
             ),
-            4
+            6
         ) { responses ->
             // Order of keys is now: 1, 3, 0, 2, 4
             // Item at key1 is skipped so starts at 3 now
@@ -245,7 +248,31 @@ class DataStoreScanChangesUpdateTest(
                 newDataObject
             ))
 
-            // no updates otherwise crash because not enough responses
+            // no updates because is 1 outside the limit otherwise next one will not match
+
+            val newDataObject2 = TestMarykModel(
+                string = "ha new world",
+                int = -1,
+                uint = 4321u,
+                bool = false,
+                double = 1.1,
+                dateTime = DateTime(1901, 1, 2)
+            )
+
+            dataStore.execute(TestMarykModel.add(
+                newDataObject2
+            ))
+
+            val additionUpdate = responses[4].await()
+            assertType<AdditionUpdate<*, *>>(additionUpdate).apply {
+                assertEquals<Values<*, *>>(values, newDataObject2)
+                assertEquals(1, insertionIndex)
+            }
+
+            val removalUpdate2 = responses[5].await()
+            assertType<RemovalUpdate<*, *>>(removalUpdate2).apply {
+                assertEquals(keys[2], key)
+            }
         }
     }
 }

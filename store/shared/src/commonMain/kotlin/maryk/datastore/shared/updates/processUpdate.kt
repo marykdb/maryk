@@ -8,44 +8,53 @@ import maryk.core.properties.types.Key
 import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.requests.IsChangesRequest
-import maryk.core.query.requests.IsFetchRequest
 import maryk.core.query.requests.IsScanRequest
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.query.responses.updates.RemovalUpdate
-import maryk.core.values.Values
 import maryk.datastore.shared.IsDataStore
 import maryk.datastore.shared.updates.Update.Addition
 import maryk.datastore.shared.updates.Update.Change
 import maryk.datastore.shared.updates.Update.Deletion
 
 /** processes a single update */
-internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> Update<DM, P>.process(
-    request: IsFetchRequest<DM, P, *>,
-    currentKeys: MutableList<Key<DM>>,
-    currentSortables: MutableList<Values<DM, P>>?,
+internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ: IsChangesRequest<DM, P, *>> Update<DM, P>.process(
+    updateListener: UpdateListener<DM, P, RQ>,
     dataStore: IsDataStore,
     sendChannel: SendChannel<IsUpdateResponse<DM, P>>
 ) {
+    val request = updateListener.request
+    val currentKeys = updateListener.matchingKeys
     // Only process object requests or change requests if the version is after or equal to from version
-    if (request !is IsChangesRequest<*, *, *> || request.fromVersion <= version.timestamp) {
+    if (request.fromVersion <= version.timestamp) {
         when (this) {
             is Addition<DM, P> -> {
                 if (values.matches(request.where)) {
-                    if (request !is IsScanRequest<*, *, *> || request.limit > currentKeys.size.toUInt()) {
-                        // TODO ORDER
-                        println(currentSortables)
-                        currentKeys += key
-
+                    val insertIndex = updateListener.addValues(key, values)
+                    if (insertIndex != null) {
                         sendChannel.send(
                             AdditionUpdate(
                                 key = key,
                                 version = version.timestamp,
+                                insertionIndex = insertIndex,
                                 values = values.filterWithSelect(request.select)
                             )
                         )
+
+                        // Remove any values after the limit
+                        if (updateListener is UpdateListenerForScan<DM, P> && updateListener.request.limit - 1u == insertIndex.toUInt()) {
+                            val keyToRemove = updateListener.matchingKeys.last()
+                            updateListener.removeKey(keyToRemove)
+
+                            sendChannel.send(
+                                RemovalUpdate(
+                                    key = keyToRemove,
+                                    version = version.timestamp
+                                )
+                            )
+                        }
                     }
                 }
             }
@@ -59,7 +68,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> Up
                     }
 
                     if (shouldDelete) {
-                        handleDeletion(dataStore, request, this, currentKeys, sendChannel)
+                        handleDeletion(dataStore, this, updateListener, sendChannel)
                     } else {
                         // TODO Reorder?
                         sendChannel.send(
@@ -74,7 +83,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> Up
             }
             is Deletion<DM, P> -> {
                 if (currentKeys.contains(key) && (isHardDelete || request.filterSoftDeleted)) {
-                    handleDeletion(dataStore, request, this, currentKeys, sendChannel)
+                    handleDeletion(dataStore, this, updateListener, sendChannel)
                 }
             }
         }
@@ -82,14 +91,13 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> Up
 }
 
 /** Handles the deletion of Values defined in [change] and if necessary request a new value to put at end */
-private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> handleDeletion(
+private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ: IsChangesRequest<DM, P, *>> handleDeletion(
     dataStore: IsDataStore,
-    request: IsFetchRequest<DM, P, *>,
     change: Update<DM, P>,
-    currentKeys: MutableList<Key<DM>>,
+    updateListener: UpdateListener<DM, P, RQ>,
     sendChannel: SendChannel<IsUpdateResponse<DM, P>>
 ) {
-    currentKeys -= change.key
+    updateListener.removeKey(change.key)
 
     sendChannel.send(
         RemovalUpdate(
@@ -98,23 +106,23 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> han
         )
     )
 
-    if (request is IsScanRequest<DM, P, *> && request.limit - 1u == currentKeys.size.toUInt()) {
-        dataStore.requestNextValues(request, currentKeys.last())?.also {
+    if (updateListener is UpdateListenerForScan<DM, P> && updateListener.request.limit - 1u == updateListener.matchingKeys.size.toUInt()) {
+        dataStore.requestNextValues(updateListener.request, updateListener.matchingKeys)?.also {
             // Always at the end so no need to order
-            currentKeys += it.key
+            updateListener.addValuesAtEnd(it.key, it.values)
             sendChannel.send(it)
         }
     }
 }
 
-/** Requests next values object after [lastKey] */
+/** Requests next values object after last key in [currentKeys] */
 private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> IsDataStore.requestNextValues(
     request: IsScanRequest<DM, P, *>,
-    lastKey: Key<DM>
+    currentKeys: MutableList<Key<DM>>
 ): AdditionUpdate<DM, P>? {
     val nextResults = execute(
         request.dataModel.scan(
-            lastKey,
+            currentKeys.last(),
             request.select,
             where = request.where,
             order = request.order,
@@ -131,6 +139,7 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> IsD
         AdditionUpdate(
             key = nextValues.key,
             version = nextValues.lastVersion,
+            insertionIndex = currentKeys.size,
             values = nextValues.values
         )
     } else null

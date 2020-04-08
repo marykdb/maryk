@@ -9,5 +9,6 @@ import maryk.core.values.Values
 data class AdditionUpdate<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
     override val key: Key<DM>,
     override val version: ULong,
+    val insertionIndex: Int,
     val values: Values<DM, P>
 ) : IsUpdateResponse<DM, P>

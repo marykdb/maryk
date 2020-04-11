@@ -74,7 +74,9 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
         }
         DESC -> {
             for (range in scanRange.ranges.reversed()) {
-                range.end?.let { last ->
+                val lastKey = if (scanRange.startKey != null && (range.end == null || scanRange.startKey!! < range.end!!)) scanRange.startKey!! else range.end
+
+                lastKey?.let { last ->
                     iterator.seekForPrev(last)
                 } ?: iterator.seekToLast()
 
@@ -89,7 +91,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
                     @Suppress("UNCHECKED_CAST")
                     val key = scanRequest.dataModel.key(iterator.key()) as Key<DM>
 
-                    if (scanRange.keyBeforeStart(key.bytes) || range.keyBeforeStart(key.bytes)) {
+                    if (range.keyBeforeStart(key.bytes)) {
                         break
                     }
 

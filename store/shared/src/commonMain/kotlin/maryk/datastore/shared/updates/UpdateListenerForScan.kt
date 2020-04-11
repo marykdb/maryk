@@ -84,7 +84,7 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
                 }
             }
             is TableScan -> {
-                findKeyIndex(key).let { indexPosition ->
+                findKeyIndexForTableScan(key).let { indexPosition ->
                     when {
                         indexPosition < 0 -> {
                             val newPos = indexPosition * -1 - 1
@@ -131,14 +131,14 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
     override suspend fun changeOrder(change: Change<DM, P>, changedHandler: suspend (Int?) -> Unit) {
         when (scanType) {
             is TableScan -> {
-                val index = findKeyIndex(change.key)
+                val index = findKeyIndexForTableScan(change.key)
                 if (index >= 0) {
                     changedHandler(index)
                 }
             }
             is IndexScan -> {
                 // Should always exist since earlier was checked if matchingKeys contains this key
-                val existingIndex = findKeyIndex(change.key)
+                val existingIndex = findKeyIndexForIndexScan(change.key)
 
                 when(val indexUpdate = change.indexUpdates?.firstOrNull { it.index == scanType.index }) {
                     null -> { // Nothing changed
@@ -189,9 +189,20 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
 
     /**
      * Find the first matching key.
+     */
+    private fun findKeyIndexForTableScan(key: Key<DM>): Int {
+        val comparator: (Key<DM>) -> Int = when (scanType.direction) {
+            ASC -> {{ it.compareTo(key) }}
+            DESC -> {{ key.compareTo(it) }}
+        }
+        return matchingKeys.binarySearch(comparison = comparator)
+    }
+
+    /**
+     * Find the first matching key.
      * Mind: keys are not ordered so efficient binary search is not possible
      */
-    private fun findKeyIndex(key: Key<DM>): Int {
+    private fun findKeyIndexForIndexScan(key: Key<DM>): Int {
         val predicate: (Key<DM>) -> Boolean = when (scanType.direction) {
             ASC -> {{ it.compareTo(key) == 0 }}
             DESC -> {{ key.compareTo(it) == 0 }}

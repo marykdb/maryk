@@ -138,20 +138,16 @@ class DataStoreScanTest(
             Log.scan(startKey = keys[2], order = descending)
         )
 
-        expect(3) { scanResponse.values.size }
+        expect(2) { scanResponse.values.size }
 
         // Mind that Log is sorted in reverse so it goes back in time going forward
         scanResponse.values[0].let {
-            expect(logs[0]) { it.values }
-            expect(keys[0]) { it.key }
-        }
-        scanResponse.values[1].let {
-            expect(logs[1]) { it.values }
-            expect(keys[1]) { it.key }
-        }
-        scanResponse.values[2].let {
             expect(logs[2]) { it.values }
             expect(keys[2]) { it.key }
+        }
+        scanResponse.values[1].let {
+            expect(logs[3]) { it.values }
+            expect(keys[3]) { it.key }
         }
     }
 

@@ -96,7 +96,7 @@ class DataStoreScanChangesUpdateWithLogTest(
             val changeUpdate1 = responses[0].await()
             assertType<ChangeUpdate<*, *>>(changeUpdate1).apply {
                 assertEquals(keys[0], key)
-                assertEquals(changes, listOf(change1))
+                assertEquals(listOf(change1), changes)
             }
 
             val change2 = Change(Log { message::ref } with "new message 3")
@@ -113,7 +113,7 @@ class DataStoreScanChangesUpdateWithLogTest(
             val changeUpdate2 = responses[1].await()
             assertType<ChangeUpdate<*, *>>(changeUpdate2).apply {
                 assertEquals(keys[2], key)
-                assertEquals(changes, listOf(change2))
+                assertEquals(listOf(change2), changes)
             }
 
             // Is ignored since keys[1] is filtered away with where clause.

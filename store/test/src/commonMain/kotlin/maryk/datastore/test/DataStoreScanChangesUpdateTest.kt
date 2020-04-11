@@ -5,6 +5,9 @@ import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.change
 import maryk.core.query.filters.Exists
+import maryk.core.query.orders.Direction.DESC
+import maryk.core.query.orders.Order
+import maryk.core.query.orders.Order.Companion.descending
 import maryk.core.query.orders.ascending
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
@@ -37,6 +40,7 @@ class DataStoreScanChangesUpdateTest(
     override val allTests = mapOf(
         "failWithMutableWhereClause" to ::failWithMutableWhereClause,
         "executeScanChangesAsFlowRequest" to ::executeScanChangesAsFlowRequest,
+        "executeReversedScanChangesAsFlowRequest" to ::executeReversedScanChangesAsFlowRequest,
         "executeOrderedScanChangesAsFlowRequest" to ::executeOrderedScanChangesAsFlowRequest
     )
 
@@ -131,7 +135,7 @@ class DataStoreScanChangesUpdateTest(
             val changeUpdate1 = responses[0].await()
             assertType<ChangeUpdate<*, *>>(changeUpdate1).apply {
                 assertEquals(keys[1], key)
-                assertEquals(changes, listOf(change1))
+                assertEquals(listOf(change1), changes)
             }
 
             // Ignored change because scan starts at later key,
@@ -150,7 +154,8 @@ class DataStoreScanChangesUpdateTest(
             val changeUpdate2 = responses[1].await()
             assertType<ChangeUpdate<*, *>>(changeUpdate2).apply {
                 assertEquals(keys[2], key)
-                assertEquals(changes, listOf(change2))
+                assertEquals(listOf(change2), changes)
+                assertEquals(1, index)
             }
 
             dataStore.execute(TestMarykModel.delete(keys[2], hardDelete = true))
@@ -164,7 +169,7 @@ class DataStoreScanChangesUpdateTest(
             val newDataObject = TestMarykModel(
                 string = "ha world 6",
                 int = 6,
-                uint = 23123214u,
+                uint = 23445u,
                 bool = true,
                 double = 6968798.37465,
                 dateTime = DateTime(1922, 12, 23)
@@ -177,6 +182,80 @@ class DataStoreScanChangesUpdateTest(
             val additionUpdate = responses[3].await()
             assertType<AdditionUpdate<TestMarykModel, TestMarykModel.Properties>>(additionUpdate).apply {
                 assertEquals(newDataObject, values)
+                assertEquals(1, insertionIndex)
+                keys.add(key)
+            }
+        }
+    }
+
+    private fun executeReversedScanChangesAsFlowRequest() {
+        updateListenerTester(
+            dataStore,
+            TestMarykModel.scanChanges(
+                startKey = keys[3],
+                order = descending
+            ),
+            4
+        ) { responses ->
+            val change1 = Change(TestMarykModel { string::ref } with "ha new message 1")
+            dataStore.execute(TestMarykModel.change(
+                keys[3].change(change1)
+            ))
+
+            val changeUpdate1 = responses[0].await()
+            assertType<ChangeUpdate<*, *>>(changeUpdate1).apply {
+                assertEquals(keys[3], key)
+                assertEquals(listOf(change1), changes)
+                assertEquals(0, index)
+            }
+
+            // Ignored change because scan starts at earlier key,
+            // next response should be for next change
+            dataStore.execute(TestMarykModel.change(
+                keys[4].change(
+                    Change(TestMarykModel { string::ref } with "ha new message 3")
+                )
+            ))
+
+            val change2 = Change(TestMarykModel { string::ref } with "ha new message 3")
+            dataStore.execute(TestMarykModel.change(
+                keys[2].change(change2)
+            ))
+
+            val changeUpdate2 = responses[1].await()
+            assertType<ChangeUpdate<*, *>>(changeUpdate2).apply {
+                assertEquals(keys[2], key)
+                assertEquals(listOf(change2), changes)
+                assertEquals(1, index)
+            }
+
+            dataStore.execute(TestMarykModel.delete(keys[2], hardDelete = true))
+
+            val removalUpdate1 = responses[2].await()
+            assertType<RemovalUpdate<*, *>>(removalUpdate1).apply {
+                assertEquals(keys[2], key)
+                assertEquals(HardDelete, reason)
+            }
+
+            val newDataObject = TestMarykModel(
+                string = "ha world 6",
+                int = -20,
+                uint = 1u,
+                bool = true,
+                double = 6968798.37465,
+                dateTime = DateTime(1922, 12, 23)
+            )
+
+            dataStore.execute(TestMarykModel.add(
+                newDataObject
+            )).also {
+                keys.add((it.statuses[0] as AddSuccess<TestMarykModel>).key)
+            }
+
+            val additionUpdate = responses[3].await()
+            assertType<AdditionUpdate<TestMarykModel, TestMarykModel.Properties>>(additionUpdate).apply {
+                assertEquals(newDataObject, values)
+                assertEquals(3, insertionIndex)
             }
         }
     }
@@ -203,7 +282,7 @@ class DataStoreScanChangesUpdateTest(
             val changeUpdate1 = responses[0].await()
             assertType<ChangeUpdate<*, *>>(changeUpdate1).apply {
                 assertEquals(keys[3], key)
-                assertEquals(changes, listOf(change1))
+                assertEquals(listOf(change1), changes)
             }
 
             // Ignored change because key is not within startKey to limit
@@ -222,7 +301,7 @@ class DataStoreScanChangesUpdateTest(
             val changeUpdate2 = responses[1].await()
             assertType<ChangeUpdate<*, *>>(changeUpdate2).apply {
                 assertEquals(keys[0], key)
-                assertEquals(changes, listOf(change2))
+                assertEquals(listOf(change2), changes)
             }
 
             dataStore.execute(TestMarykModel.delete(keys[0]))
@@ -249,7 +328,9 @@ class DataStoreScanChangesUpdateTest(
 
             dataStore.execute(TestMarykModel.add(
                 newDataObject
-            ))
+            )).also {
+                keys.add((it.statuses[0] as AddSuccess<TestMarykModel>).key)
+            }
 
             // no updates because is outside the limit otherwise next one will not match
 
@@ -268,13 +349,14 @@ class DataStoreScanChangesUpdateTest(
             ))
 
             val additionUpdate = responses[4].await()
-            assertType<AdditionUpdate<*, *>>(additionUpdate).apply {
+            assertType<AdditionUpdate<TestMarykModel, TestMarykModel.Properties>>(additionUpdate).apply {
                 assertEquals<Values<*, *>>(values, newDataObject2)
                 assertEquals(1, insertionIndex)
+                keys.add(key)
             }
 
             val removalUpdate2 = responses[5].await()
-            assertType<RemovalUpdate<*, *>>(removalUpdate2).apply {
+            assertType<RemovalUpdate<TestMarykModel, TestMarykModel.Properties>>(removalUpdate2).apply {
                 assertEquals(keys[2], key)
                 assertEquals(NotInRange, reason)
             }
@@ -288,7 +370,7 @@ class DataStoreScanChangesUpdateTest(
             val changeUpdate3 = responses[6].await()
             assertType<ChangeUpdate<*, *>>(changeUpdate3).apply {
                 assertEquals(keys[3], key)
-                assertEquals(changes, listOf(change3))
+                assertEquals(listOf(change3), changes)
                 assertEquals(1, index)
             }
         }

@@ -83,7 +83,7 @@ class DataStoreGetChangesUpdateTest(
         val changeUpdate1 = responses[0].await()
         assertType<ChangeUpdate<*, *>>(changeUpdate1).apply {
             assertEquals(keys[0], key)
-            assertEquals(changes, listOf(change1))
+            assertEquals(listOf(change1), changes)
         }
 
         val change2 = Change(SimpleMarykModel { value::ref } with "haha6")
@@ -99,7 +99,7 @@ class DataStoreGetChangesUpdateTest(
         val changeUpdate2 = responses[1].await()
         assertType<ChangeUpdate<*, *>>(changeUpdate2).apply {
             assertEquals(keys[1], key)
-            assertEquals(changes, listOf(change2))
+            assertEquals(listOf(change2), changes)
         }
 
         dataStore.execute(SimpleMarykModel.delete(keys[1]))

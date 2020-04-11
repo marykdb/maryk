@@ -129,17 +129,14 @@ class DataStoreScanChangesTest(
             Log.scanChanges(startKey = keys[2], order = descending)
         )
 
-        expect(3) { scanResponse.changes.size }
+        expect(2) { scanResponse.changes.size }
 
         // Mind that Log is sorted in reverse so it goes back in time going forward
         scanResponse.changes[0].apply {
-            expect(keys[0]) { key }
+            expect(keys[2]) { key }
         }
         scanResponse.changes[1].apply {
-            expect(keys[1]) { key }
-        }
-        scanResponse.changes[2].apply {
-            expect(keys[2]) { key }
+            expect(keys[3]) { key }
         }
     }
 

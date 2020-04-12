@@ -102,6 +102,7 @@ abstract class AbstractDataStore(
         dataModelUpdateListeners += listener
 
         return channel.asFlow().onCompletion {
+            listener.close()
             dataModelUpdateListeners -= listener
         }
     }

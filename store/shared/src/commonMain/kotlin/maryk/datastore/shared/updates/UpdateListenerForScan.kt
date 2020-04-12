@@ -128,12 +128,12 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
         return index
     }
 
-    override suspend fun changeOrder(change: Change<DM, P>, changedHandler: suspend (Int?) -> Unit) {
+    override suspend fun changeOrder(change: Change<DM, P>, changedHandler: suspend (Int?, Boolean) -> Unit) {
         when (scanType) {
             is TableScan -> {
                 val index = findKeyIndexForTableScan(change.key)
                 if (index >= 0) {
-                    changedHandler(index)
+                    changedHandler(index, false)
                 }
             }
             is IndexScan -> {
@@ -143,12 +143,12 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
                 when(val indexUpdate = change.indexUpdates?.firstOrNull { it.index == scanType.index }) {
                     null -> { // Nothing changed
                         if (existingIndex >= 0) {
-                            changedHandler(existingIndex)
+                            changedHandler(existingIndex, false)
                         }
                     }
                     is IndexDelete -> { // Was deleted from index
                         if (existingIndex >= 0) {
-                            changedHandler(null)
+                            changedHandler(null, false)
                         }
                     }
                     is IndexChange -> { // Was changed in order
@@ -169,16 +169,16 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
                                     matchingKeys.add(adjustedIndex, change.key)
                                     sortedValues?.add(adjustedIndex, indexUpdate.indexKey)
 
-                                    changedHandler(adjustedIndex)
+                                    changedHandler(adjustedIndex, true)
                                 } else {
                                     throw StorageException("Unexpected existing index for ${change.key} its sorted key {${indexUpdate.indexKey.toHex()} for changes ${change.changes}")
                                 }
                             } else { // removed
-                                changedHandler(null)
+                                changedHandler(null, false)
                             }
                         } else { // Is at same position as existing index
                             if (existingIndex >= 0) {
-                                changedHandler(existingIndex)
+                                changedHandler(existingIndex, false)
                             }
                         }
                     }

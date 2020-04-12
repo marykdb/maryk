@@ -43,8 +43,8 @@ abstract class UpdateListener<DM: IsRootValuesDataModel<P>, P: PropertyDefinitio
 
     /**
      * Change order for values if needed and return new or current index.
-     * Calls changedHandler with an index at which index the value should be or
+     * Calls changedHandler with an index at which index the value should be and boolean if order changed or
      * null if it was deleted
      */
-    abstract suspend fun changeOrder(change: Change<DM, P>, changedHandler: suspend (Int?) -> Unit)
+    abstract suspend fun changeOrder(change: Change<DM, P>, changedHandler: suspend (Int?, Boolean) -> Unit)
 }

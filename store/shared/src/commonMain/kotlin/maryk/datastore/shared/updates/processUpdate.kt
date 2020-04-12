@@ -75,18 +75,20 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ
                     if (shouldDelete) {
                         handleDeletion(dataStore, this, SoftDelete, updateListener, sendChannel)
                     } else {
-                        updateListener.changeOrder(this) { newIndex ->
+                        updateListener.changeOrder(this) { newIndex, orderChanged ->
                             if (newIndex == null) {
                                 handleDeletion(dataStore, this, NotInRange, updateListener, sendChannel)
                             } else {
-                                sendChannel.send(
-                                    ChangeUpdate(
-                                        key = key,
-                                        version = version.timestamp,
-                                        changes = filteredChanges,
-                                        index = newIndex
+                                if (orderChanged || filteredChanges.isNotEmpty()) {
+                                    sendChannel.send(
+                                        ChangeUpdate(
+                                            key = key,
+                                            version = version.timestamp,
+                                            changes = filteredChanges,
+                                            index = newIndex
+                                        )
                                     )
-                                )
+                                }
                             }
                         }
                     }

@@ -40,6 +40,7 @@ class DataStoreScanChangesUpdateTest(
 
     override val allTests = mapOf(
         "failWithMutableWhereClause" to ::failWithMutableWhereClause,
+        "executeScanChangesAsFlowWithSelectRequest" to ::executeScanChangesAsFlowWithSelectRequest,
         "executeScanChangesAsFlowRequest" to ::executeScanChangesAsFlowRequest,
         "executeReversedScanChangesAsFlowRequest" to ::executeReversedScanChangesAsFlowRequest,
         "executeOrderedScanChangesAsFlowRequest" to ::executeOrderedScanChangesAsFlowRequest,
@@ -187,6 +188,45 @@ class DataStoreScanChangesUpdateTest(
                 assertEquals(1, insertionIndex)
                 keys.add(key)
             }
+        }
+    }
+
+    private fun executeScanChangesAsFlowWithSelectRequest() {
+        updateListenerTester(
+            dataStore,
+            TestMarykModel.scanChanges(
+                startKey = keys[1],
+                select = TestMarykModel.graph {
+                    listOf(string)
+                }
+            ),
+            1
+        ) { responses ->
+            val change1 = Change(
+                TestMarykModel { string::ref } with "ha new message 1",
+                TestMarykModel { double::ref } with 1.5
+            )
+            dataStore.execute(TestMarykModel.change(
+                keys[1].change(change1)
+            ))
+
+            val changeUpdate1 = responses[0].await()
+            assertType<ChangeUpdate<*, *>>(changeUpdate1).apply {
+                assertEquals(keys[1], key)
+                assertEquals(listOf(
+                    Change(TestMarykModel { string::ref } with "ha new message 1")
+                ), changes)
+            }
+
+            dataStore.execute(TestMarykModel.change(
+                keys[1].change(
+                    Change(
+                        TestMarykModel { double::ref } with 2.5
+                    )
+                )
+            ))
+
+            // No update should be handled, otherwise crashes since there is only 1 response slot and it has been used
         }
     }
 

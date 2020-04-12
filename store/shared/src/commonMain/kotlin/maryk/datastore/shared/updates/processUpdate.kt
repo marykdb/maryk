@@ -84,8 +84,8 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ
                                         ChangeUpdate(
                                             key = key,
                                             version = version.timestamp,
-                                            changes = filteredChanges,
-                                            index = newIndex
+                                            index = newIndex,
+                                            changes = filteredChanges
                                         )
                                     )
                                 }

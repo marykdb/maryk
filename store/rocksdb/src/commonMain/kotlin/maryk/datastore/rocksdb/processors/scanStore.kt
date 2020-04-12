@@ -12,7 +12,6 @@ import maryk.core.query.requests.IsScanRequest
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
-import maryk.lib.extensions.compare.compareTo
 
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
     dataStore: RocksDBDataStore,
@@ -28,7 +27,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
     when (direction) {
         ASC -> {
             for (range in scanRange.ranges) {
-                val startKey = if (scanRange.startKey != null && scanRange.startKey!! > range.start) scanRange.startKey!! else range.start
+                val startKey = range.getAscendingStartKey(scanRange.startKey, scanRange.includeStart)
 
                 iterator.seek(startKey)
 
@@ -42,10 +41,6 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
                 while (iterator.isValid()) {
                     @Suppress("UNCHECKED_CAST")
                     val key = scanRequest.dataModel.key(iterator.key()) as Key<DM>
-
-                    if (scanRange.keyBeforeStart(key.bytes)) {
-                        break
-                    }
 
                     if (range.keyOutOfRange(key.bytes)) {
                         break
@@ -74,7 +69,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
         }
         DESC -> {
             for (range in scanRange.ranges.reversed()) {
-                val lastKey = if (scanRange.startKey != null && (range.end == null || scanRange.startKey!! < range.end!!)) scanRange.startKey!! else range.end
+                val lastKey = range.getDescendingStartKey(scanRange.startKey, scanRange.includeStart)
 
                 lastKey?.let { last ->
                     iterator.seekForPrev(last)

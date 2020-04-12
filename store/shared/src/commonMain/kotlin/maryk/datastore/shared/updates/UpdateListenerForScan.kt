@@ -70,8 +70,8 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
                     when {
                         indexPosition < 0 -> {
                             val newPos = indexPosition * -1 - 1
-                            // Only add when position is smaller than limit
-                            if (newPos < request.limit.toInt()) {
+                            // Only add when position is smaller than limit and after first key
+                            if (newPos != 0 && newPos < request.limit.toInt()) {
                                 sortedValues?.add(newPos, indexKey)
                                 matchingKeys.add(newPos, key)
                                 newPos
@@ -208,5 +208,11 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
             DESC -> {{ key.compareTo(it) == 0 }}
         }
         return matchingKeys.indexOfFirst(predicate = predicate)
+    }
+
+    /** Get last key depending on scan direction */
+    fun getLast() = when (scanType.direction) {
+        ASC -> matchingKeys.last()
+        DESC -> matchingKeys.first()
     }
 }

@@ -40,6 +40,7 @@ class KeyScanRangesTest {
         equalPairs = listOf(),
         uniques = listOf(),
         startKey = null,
+        includeStart = true,
         keySize = 5
     )
 

@@ -27,7 +27,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
     when (direction) {
         ASC -> {
             for (range in scanRange.ranges) {
-                val startKey = if (scanRange.startKey != null && scanRange.startKey!! > range.start) scanRange.startKey!! else range.start
+                val startKey = range.getAscendingStartKey(scanRange.startKey, scanRange.includeStart)
 
                 val startIndex = dataStore.records.binarySearch {
                     it.key.bytes.compareTo(startKey)
@@ -65,13 +65,12 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
         }
         DESC -> {
             for (range in scanRange.ranges.reversed()) {
-                val lastKey = if (scanRange.startKey != null && (range.end == null || scanRange.startKey!! < range.end!!)) scanRange.startKey!! else range.end
+                val lastKey = range.getDescendingStartKey(scanRange.startKey, scanRange.includeStart)
 
                 val startIndex = lastKey?.let { endRange ->
                     dataStore.records.binarySearch { it.key.bytes.compareTo(endRange) }.let { index ->
                         when {
                             index < 0 -> index * -1 - 1 // If negative start at first entry point
-                            !range.endInclusive -> index - 1 // Skip the match if not inclusive
                             else -> index
                         }
                     }

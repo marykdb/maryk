@@ -32,9 +32,7 @@ fun <DM : IsRootValuesDataModel<*>> DM.createScanRange(filter: IsFilter?, startK
 
     listOfKeyParts.sortBy { it.fromByteIndex }
 
-    val properStartKey = if (includeStart) startKey else startKey?.nextByteInSameLength()
-
-    return createScanRangeFromParts(properStartKey, listOfKeyParts, listOfEqualPairs, listOfUniqueFilters)
+    return createScanRangeFromParts(startKey, includeStart, listOfKeyParts, listOfEqualPairs, listOfUniqueFilters)
 }
 
 /**
@@ -43,6 +41,7 @@ fun <DM : IsRootValuesDataModel<*>> DM.createScanRange(filter: IsFilter?, startK
  */
 private fun <DM : IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
     startKey: ByteArray?,
+    includeStart: Boolean,
     listOfParts: MutableList<IsIndexPartialToMatch>,
     listOfEqualPairs: List<ReferenceValuePair<Any>>,
     listOfUniqueFilters: List<UniqueToMatch>
@@ -150,6 +149,7 @@ private fun <DM : IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
         equalPairs = listOfEqualPairs,
         uniques = listOfUniqueFilters,
         keySize = this.keyByteSize,
-        startKey = startKey
+        startKey = startKey,
+        includeStart = includeStart
     )
 }

@@ -49,7 +49,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ
 
                         // Remove any values after the limit
                         if (updateListener is UpdateListenerForScan<DM, P> && updateListener.request.limit - 1u == insertIndex.toUInt()) {
-                            val keyToRemove = updateListener.matchingKeys.last()
+                            val keyToRemove = updateListener.getLast()
                             updateListener.removeKey(keyToRemove)
 
                             sendChannel.send(

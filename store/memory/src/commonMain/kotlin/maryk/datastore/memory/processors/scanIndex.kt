@@ -13,7 +13,6 @@ import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.ScanType.IndexScan
 import maryk.lib.extensions.compare.compareTo
-import maryk.lib.extensions.compare.nextByteInSameLength
 import kotlin.math.min
 
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
@@ -29,34 +28,27 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
 
     val startKey = scanRequest.startKey?.let { startKey ->
         recordFetcher(scanRequest.dataModel, scanRequest.startKey as Key<*>)?.let { startRecord ->
-            val correctedStartKey = if (scanRequest.includeStart) startKey.bytes else startKey.bytes.nextByteInSameLength()
-            indexScan.index.toStorageByteArrayForIndex(startRecord, correctedStartKey)
+            indexScan.index.toStorageByteArrayForIndex(startRecord, startKey.bytes)
         }
     }
 
-    val indexScanRange = indexScan.index.createScanRange(scanRequest.where, keyScanRange, startKey)
+    val indexScanRange = indexScan.index.createScanRange(scanRequest.where, keyScanRange)
 
     val toVersion = scanRequest.toVersion?.let { HLC(it) }
 
     when (indexScan.direction) {
         ASC -> {
             for (indexRange in indexScanRange.ranges) {
-                val startIndex = indexRange.start.let { startRange ->
-                    val startRangeToSearch = if (indexRange.startInclusive) {
-                        startRange
-                    } else {
-                        // Go past start range if not inclusive.
-                        startRange.nextByteInSameLength()
-                    }
+                val indexStartKey = indexRange.getAscendingStartKey(startKey, keyScanRange.includeStart)
 
-                    if (!indexRange.startInclusive && startRangeToSearch === startRange) {
+                val startIndex = indexStartKey.let { startRange ->
+                    if (!indexRange.startInclusive && indexRange.start === startRange) {
                         // If start range was not highered it was not possible so scan to lastIndex
                         index.records.lastIndex
                     } else {
-                        index.records.binarySearch { it.value.compareTo(startRangeToSearch) }.let { valueIndex ->
+                        index.records.binarySearch { it.value.compareTo(indexStartKey) }.let { valueIndex ->
                             when {
                                 valueIndex < 0 -> valueIndex * -1 - 1 // If negative start at first entry point
-                                !indexRange.startInclusive -> valueIndex + 1 // Skip the match if not inclusive
                                 else -> valueIndex
                             }
                         }
@@ -90,26 +82,18 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
         }
         DESC -> {
             for (indexRange in indexScanRange.ranges.reversed()) {
-                val startIndex = indexRange.end?.let { endRange ->
+                val lastKey = indexRange.getDescendingStartKey(startKey, scanRequest.includeStart)?.let {
+                    if (indexRange.endInclusive && indexRange.end === it) byteArrayOf() else it
+                }
+
+                val startIndex = lastKey?.let { endRange ->
                     if (endRange.isEmpty()) {
                         index.records.lastIndex
                     } else {
-                        val endRangeToSearch = if (indexRange.endInclusive) {
-                            endRange.nextByteInSameLength()
-                        } else {
-                            endRange
-                        }
-
-                        if (indexRange.endInclusive && endRangeToSearch === endRange) {
-                            // If was not highered it was not possible so scan to lastIndex
-                            index.records.lastIndex
-                        } else {
-                            index.records.binarySearch { it.value.compareTo(endRangeToSearch) }.let { valueIndex ->
-                                when {
-                                    valueIndex < 0 -> valueIndex * -1 - 1 // If negative start at first entry point
-                                    !indexRange.endInclusive -> valueIndex - 1 // Skip the match if not inclusive
-                                    else -> valueIndex
-                                }
+                        index.records.binarySearch { it.value.compareTo(endRange) }.let { valueIndex ->
+                            when {
+                                valueIndex < 0 -> valueIndex * -1 - 2 // If negative start at before first entry point because it should be before match
+                                else -> valueIndex
                             }
                         }
                     }

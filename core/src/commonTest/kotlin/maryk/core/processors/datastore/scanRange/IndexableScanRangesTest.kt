@@ -40,6 +40,7 @@ class IndexableScanRangesTest {
             )
         ),
         startKey = null,
+        includeStart = true,
         equalPairs = listOf(),
         keySize = 23
     )

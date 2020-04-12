@@ -24,7 +24,6 @@ import maryk.datastore.shared.ScanType.IndexScan
 import maryk.lib.extensions.compare.compareToWithOffsetLength
 import maryk.lib.extensions.compare.matchPart
 import maryk.lib.extensions.compare.nextByteInSameLength
-import maryk.lib.extensions.compare.prevByteInSameLength
 import maryk.rocksdb.ReadOptions
 import kotlin.experimental.xor
 
@@ -41,11 +40,10 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
 
     val startKey = scanRequest.startKey?.let { startKey ->
         val startValuesGetter = StoreValuesGetter(scanRequest.startKey as Key<*>, dataStore.db, columnFamilies, dataStore.defaultReadOptions)
-        val correctedStartKey = if (scanRequest.includeStart) startKey.bytes else startKey.bytes.nextByteInSameLength()
-        indexScan.index.toStorageByteArrayForIndex(startValuesGetter, correctedStartKey)
+        indexScan.index.toStorageByteArrayForIndex(startValuesGetter, startKey.bytes)
     }
 
-    val indexScanRange = indexScan.index.createScanRange(scanRequest.where, keyScanRange, startKey)
+    val indexScanRange = indexScan.index.createScanRange(scanRequest.where, keyScanRange)
 
     val indexColumnHandle = if(scanRequest.toVersion == null) {
         columnFamilies.index
@@ -63,16 +61,9 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
     when (indexScan.direction) {
         ASC -> {
             for (indexRange in indexScanRange.ranges) {
-                indexRange.start.let { startRange ->
-                    val startRangeToSearch = if (indexRange.startInclusive) {
-                        startRange
-                    } else {
-                        // Go past start range if not inclusive.
-                        startRange.nextByteInSameLength()
-                    }
+                val indexStartKey = indexRange.getAscendingStartKey(startKey, keyScanRange.includeStart)
 
-                    iterator.seek(byteArrayOf(*indexReference, *startRangeToSearch))
-                }
+                iterator.seek(byteArrayOf(*indexReference, *indexStartKey))
 
                 checkAndProcess(
                     transaction,
@@ -96,34 +87,19 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
         }
         DESC -> {
             for (indexRange in indexScanRange.ranges.reversed()) {
-                indexRange.end?.let { endRange ->
+                val indexStartKey = indexRange.getDescendingStartKey(startKey, keyScanRange.includeStart)?.let {
+                    // If was not highered it was not possible so scan to lastIndex
+                    if (indexRange.endInclusive && indexRange.end === it) byteArrayOf() else it
+                }
+
+                indexStartKey?.let { endRange ->
                     if (endRange.isEmpty()) {
                         iterator.seek(indexReference.nextByteInSameLength())
                         if (!iterator.isValid()) {
                             iterator.seekToLast()
                         }
                     } else {
-                        val endRangeToSearch = if (indexRange.endInclusive) {
-                            endRange.nextByteInSameLength()
-                        } else {
-                            endRange
-                        }
-
-                        if (indexRange.endInclusive && endRangeToSearch === endRange) {
-                            // If was not highered it was not possible so scan to lastIndex
-                            iterator.seek(indexReference.nextByteInSameLength())
-                            if (!iterator.isValid()) {
-                                iterator.seekToLast()
-                            }
-                        } else {
-                            val endRangeToSeek = if (indexRange.endInclusive) {
-                                endRangeToSearch
-                            } else {
-                                // Go past start range if not inclusive.
-                                endRangeToSearch.prevByteInSameLength()
-                            }
-                            iterator.seekForPrev(byteArrayOf(*indexReference, *endRangeToSeek))
-                        }
+                        iterator.seekForPrev(byteArrayOf(*indexReference, *endRange))
                     }
                 }
 

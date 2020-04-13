@@ -32,6 +32,7 @@ class DataStoreScanChangesUpdateWithLogTest(
 ) : IsDataStoreTest {
     private val keys = mutableListOf<Key<Log>>()
     private var lowestVersion = ULong.MAX_VALUE
+    private var highestInitVersion = ULong.MIN_VALUE
 
     override val allTests = mapOf(
         "failWithMutableWhereClause" to ::failWithMutableWhereClause,
@@ -56,6 +57,9 @@ class DataStoreScanChangesUpdateWithLogTest(
                     // Add lowest version for scan test
                     lowestVersion = response.version
                 }
+                if (response.version > highestInitVersion) {
+                    highestInitVersion = response.version
+                }
             }
         }
     }
@@ -68,6 +72,7 @@ class DataStoreScanChangesUpdateWithLogTest(
         }
         keys.clear()
         lowestVersion = ULong.MAX_VALUE
+        highestInitVersion = ULong.MIN_VALUE
     }
 
     private fun failWithMutableWhereClause() = runSuspendingTest {
@@ -84,7 +89,8 @@ class DataStoreScanChangesUpdateWithLogTest(
             // Reverse order so keys[0], [1] and [2] are within range
             Log.scanChanges(
                 startKey = keys[2],
-                where = ValueIn(Log { severity::ref } with setOf(DEBUG, ERROR))
+                where = ValueIn(Log { severity::ref } with setOf(DEBUG, ERROR)),
+                fromVersion = highestInitVersion + 1uL
             ),
             3
         ) { responses ->

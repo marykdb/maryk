@@ -27,8 +27,10 @@ import maryk.core.values.Values
 import maryk.datastore.shared.IsDataStore
 import maryk.lib.time.DateTime
 import maryk.test.assertType
+import maryk.test.models.Option.V1
 import maryk.test.models.TestMarykModel
 import maryk.test.runSuspendingTest
+import kotlin.ULong.Companion
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
@@ -37,11 +39,13 @@ class DataStoreScanChangesUpdateTest(
 ) : IsDataStoreTest {
     private val keys = mutableListOf<Key<TestMarykModel>>()
     private var lowestVersion = ULong.MAX_VALUE
+    private var highestInitVersion = ULong.MIN_VALUE
 
     override val allTests = mapOf(
         "failWithMutableWhereClause" to ::failWithMutableWhereClause,
-        "executeScanChangesAsFlowWithSelectRequest" to ::executeScanChangesAsFlowWithSelectRequest,
         "executeScanChangesAsFlowRequest" to ::executeScanChangesAsFlowRequest,
+        "executeScanChangesIncludingInitValuesAsFlowRequest" to ::executeScanChangesIncludingInitValuesAsFlowRequest,
+        "executeScanChangesAsFlowWithSelectRequest" to ::executeScanChangesAsFlowWithSelectRequest,
         "executeReversedScanChangesAsFlowRequest" to ::executeReversedScanChangesAsFlowRequest,
         "executeOrderedScanChangesAsFlowRequest" to ::executeOrderedScanChangesAsFlowRequest,
         "executeReverseOrderedScanChangesAsFlowRequest" to ::executeReverseOrderedScanChangesAsFlowRequest
@@ -100,6 +104,9 @@ class DataStoreScanChangesUpdateTest(
                     // Add lowest version for scan test
                     lowestVersion = response.version
                 }
+                if (response.version > highestInitVersion) {
+                    highestInitVersion = response.version
+                }
             }
         }
     }
@@ -112,6 +119,7 @@ class DataStoreScanChangesUpdateTest(
         }
         keys.clear()
         lowestVersion = ULong.MAX_VALUE
+        highestInitVersion = ULong.MIN_VALUE
     }
 
     private fun failWithMutableWhereClause() = runSuspendingTest {
@@ -126,7 +134,8 @@ class DataStoreScanChangesUpdateTest(
         updateListenerTester(
             dataStore,
             TestMarykModel.scanChanges(
-                startKey = keys[1]
+                startKey = keys[1],
+                fromVersion = highestInitVersion + 1uL
             ),
             4
         ) { responses ->
@@ -191,6 +200,52 @@ class DataStoreScanChangesUpdateTest(
         }
     }
 
+    private fun executeScanChangesIncludingInitValuesAsFlowRequest() {
+        updateListenerTester(
+            dataStore,
+            TestMarykModel.scanChanges(
+                startKey = keys[1]
+            ),
+            5
+        ) { responses ->
+            val prevUpdate1 = responses[0].await()
+            assertType<ChangeUpdate<*, *>>(prevUpdate1).apply {
+                assertEquals(keys[1], key)
+
+                assertEquals(listOf(
+                    Change(
+                        TestMarykModel { string::ref } with "ha world 2",
+                        TestMarykModel { int::ref } with -10,
+                        TestMarykModel { uint::ref } with 69u,
+                        TestMarykModel { double::ref } with 0.1,
+                        TestMarykModel { dateTime::ref } with DateTime(2001, 4, 2),
+                        TestMarykModel { bool::ref } with false,
+                        TestMarykModel { enum::ref } with V1
+                    )
+                ), changes)
+            }
+
+            responses[1].await()
+            responses[2].await()
+            // Expect this to be the last added value
+            responses[3].await().apply {
+                assertEquals(keys[4], key)
+                assertEquals(highestInitVersion, this.version)
+            }
+
+            val change1 = Change(TestMarykModel { string::ref } with "ha new message 1")
+            dataStore.execute(TestMarykModel.change(
+                keys[1].change(change1)
+            ))
+
+            val changeUpdate1 = responses[4].await()
+            assertType<ChangeUpdate<*, *>>(changeUpdate1).apply {
+                assertEquals(keys[1], key)
+                assertEquals(listOf(change1), changes)
+            }
+        }
+    }
+
     private fun executeScanChangesAsFlowWithSelectRequest() {
         updateListenerTester(
             dataStore,
@@ -198,7 +253,8 @@ class DataStoreScanChangesUpdateTest(
                 startKey = keys[1],
                 select = TestMarykModel.graph {
                     listOf(string)
-                }
+                },
+                fromVersion = highestInitVersion + 1uL
             ),
             1
         ) { responses ->
@@ -235,7 +291,8 @@ class DataStoreScanChangesUpdateTest(
             dataStore,
             TestMarykModel.scanChanges(
                 startKey = keys[3],
-                order = descending
+                order = descending,
+                fromVersion = highestInitVersion + 1uL
             ),
             4
         ) { responses ->
@@ -309,7 +366,8 @@ class DataStoreScanChangesUpdateTest(
                 startKey = keys[1],
                 order = TestMarykModel { int::ref }.ascending(),
                 limit = 2u,
-                includeStart = false
+                includeStart = false,
+                fromVersion = highestInitVersion + 1uL
             ),
             7
         ) { responses ->
@@ -425,7 +483,8 @@ class DataStoreScanChangesUpdateTest(
                 startKey = keys[4],
                 order = TestMarykModel { int::ref }.descending(),
                 limit = 2u,
-                includeStart = false
+                includeStart = false,
+                fromVersion = highestInitVersion + 1uL
             ),
             7
         ) { responses ->

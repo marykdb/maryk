@@ -12,6 +12,7 @@ import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onStart
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootValuesDataModel
@@ -30,6 +31,7 @@ import maryk.core.query.requests.get
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.ChangesResponse
 import maryk.core.query.responses.IsResponse
+import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.datastore.shared.updates.UpdateListener
 import maryk.datastore.shared.updates.UpdateListenerForGet
@@ -101,9 +103,29 @@ abstract class AbstractDataStore(
 
         dataModelUpdateListeners += listener
 
+        val response = execute(request)
+
         return channel.asFlow().onCompletion {
             listener.close()
             dataModelUpdateListeners -= listener
+        }.onStart {
+            // Emit first all new changes after passed firstVersion
+            if (response.changes.isNotEmpty()) {
+                response.changes.flatMap { dataObjectVersionedChange ->
+                    dataObjectVersionedChange.changes.map { versionedChange ->
+                        ChangeUpdate(
+                            dataObjectVersionedChange.key,
+                            versionedChange.version,
+                            0,
+                            versionedChange.changes.toList()
+                        )
+                    }
+                }.sortedBy {
+                    it.version
+                }.forEach {
+                    emit(it)
+                }
+            }
         }
     }
 

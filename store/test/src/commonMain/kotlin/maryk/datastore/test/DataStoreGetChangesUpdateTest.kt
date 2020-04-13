@@ -26,10 +26,12 @@ class DataStoreGetChangesUpdateTest(
 ) : IsDataStoreTest {
     private val keys = mutableListOf<Key<SimpleMarykModel>>()
     private var lowestVersion = ULong.MAX_VALUE
+    private var highestInitVersion = ULong.MIN_VALUE
 
     override val allTests = mapOf(
         "failWithMutableWhereClause" to ::failWithMutableWhereClause,
-        "executeGetChangesAsFlowRequest" to ::executeGetChangesAsFlowRequest
+        "executeGetChangesAsFlowRequest" to ::executeGetChangesAsFlowRequest,
+        "executeGetChangesWithInitChangesAsFlowRequest" to ::executeGetChangesWithInitChangesAsFlowRequest
     )
 
     override fun initData() {
@@ -48,6 +50,9 @@ class DataStoreGetChangesUpdateTest(
                     // Add lowest version for scan test
                     lowestVersion = response.version
                 }
+                if (response.version > highestInitVersion) {
+                    highestInitVersion = response.version
+                }
             }
         }
     }
@@ -60,6 +65,7 @@ class DataStoreGetChangesUpdateTest(
         }
         keys.clear()
         lowestVersion = ULong.MAX_VALUE
+        highestInitVersion = ULong.MIN_VALUE
     }
 
     private fun failWithMutableWhereClause() = runSuspendingTest {
@@ -72,7 +78,7 @@ class DataStoreGetChangesUpdateTest(
 
     private fun executeGetChangesAsFlowRequest() = updateListenerTester(
         dataStore,
-        SimpleMarykModel.getChanges(keys[0], keys[1]),
+        SimpleMarykModel.getChanges(keys[0], keys[1], fromVersion = highestInitVersion + 1uL),
         3
     ) { responses ->
         val change1 = Change(SimpleMarykModel { value::ref } with "haha5")
@@ -108,6 +114,44 @@ class DataStoreGetChangesUpdateTest(
         assertType<RemovalUpdate<*, *>>(removalUpdate1).apply {
             assertEquals(keys[1], key)
             assertEquals(SoftDelete, reason)
+        }
+    }
+
+    private fun executeGetChangesWithInitChangesAsFlowRequest() = updateListenerTester(
+        dataStore,
+        SimpleMarykModel.getChanges(keys[0], keys[2]),
+        3
+    ) { responses ->
+        assertType<ChangeUpdate<*, *>>(responses[0].await()).apply {
+            assertEquals(keys[0], key)
+            assertEquals(lowestVersion, version)
+            assertEquals(
+                listOf(
+                    Change(SimpleMarykModel { value::ref } with "haha1")
+                ),
+                changes
+            )
+        }
+        assertType<ChangeUpdate<*, *>>(responses[1].await()).apply {
+            assertEquals(keys[2], key)
+            assertEquals(highestInitVersion, version)
+            assertEquals(
+                listOf(
+                    Change(SimpleMarykModel { value::ref } with "haha3")
+                ),
+                changes
+            )
+        }
+
+        val change1 = Change(SimpleMarykModel { value::ref } with "haha5")
+        dataStore.execute(SimpleMarykModel.change(
+            keys[0].change(change1)
+        ))
+
+        val changeUpdate1 = responses[2].await()
+        assertType<ChangeUpdate<*, *>>(changeUpdate1).apply {
+            assertEquals(keys[0], key)
+            assertEquals(listOf(change1), changes)
         }
     }
 }

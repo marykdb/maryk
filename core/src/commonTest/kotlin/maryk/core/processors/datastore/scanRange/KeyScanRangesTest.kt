@@ -105,6 +105,7 @@ class KeyScanRangesTest {
         val scanRange1 = Log.createScanRange(filter, logKey.bytes, true)
 
         expect("7fffffa3f445ec7fff0003") { scanRange1.startKey!!.toHex() }
+        assertTrue(scanRange1.includeStart)
 
         expect("7fffffa3f445ec7fff0000") { scanRange1.ranges.first().start.toHex() }
         assertEquals(1, scanRange1.ranges.count())
@@ -114,7 +115,8 @@ class KeyScanRangesTest {
 
         val scanRange2 = Log.createScanRange(filter, logKey.bytes, false)
 
-        expect("7fffffa3f445ec7fff0004") { scanRange2.startKey!!.toHex() }
+        expect("7fffffa3f445ec7fff0003") { scanRange2.startKey!!.toHex() }
+        assertFalse(scanRange2.includeStart)
 
         expect("7fffffa3f445ec7fff0000") { scanRange2.ranges.first().start.toHex() }
         assertEquals(1, scanRange2.ranges.count())

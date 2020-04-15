@@ -3,6 +3,7 @@ package maryk.datastore.test
 import maryk.core.exceptions.RequestException
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
+import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.delete
@@ -65,6 +66,7 @@ class DataStoreGetChangesTest(
         expect(
             listOf(
                 VersionedChanges(version = lowestVersion, changes = listOf(
+                    ObjectCreate,
                     Change(SimpleMarykModel { value::ref} with "haha1")
                 ))
             )
@@ -75,6 +77,7 @@ class DataStoreGetChangesTest(
         expect(
             listOf(
                 VersionedChanges(version = lowestVersion, changes = listOf(
+                    ObjectCreate,
                     Change(SimpleMarykModel { value::ref } with "haha2")
                 ))
             )
@@ -125,6 +128,7 @@ class DataStoreGetChangesTest(
             expect(
                 listOf(
                     VersionedChanges(version = lowestVersion, changes = listOf(
+                        ObjectCreate,
                         Change(SimpleMarykModel { value::ref } with "haha1")
                     ))
                 )

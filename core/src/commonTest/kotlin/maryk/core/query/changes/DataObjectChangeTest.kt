@@ -28,6 +28,7 @@ class DataObjectChangeTest {
         Delete(EmbeddedMarykModel(subModel) { value::ref }),
         Check(EmbeddedMarykModel(subModel) { value::ref } with "current"),
         ObjectSoftDeleteChange(true),
+        ObjectCreate,
         ListChange(
             TestMarykModel { list::ref }.change(
                 addValuesToEnd = listOf(1, 2, 3)
@@ -78,6 +79,7 @@ class DataObjectChangeTest {
               embeddedValues.value: current
             - !ObjectDelete
               isDeleted: true
+            - !ObjectCreate
             - !ListChange
               list:
                 addValuesToEnd: [1, 2, 3]

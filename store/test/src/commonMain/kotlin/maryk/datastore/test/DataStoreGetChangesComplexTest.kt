@@ -6,6 +6,7 @@ import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.MultiTypeChange
+import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.pairs.with
 import maryk.core.query.pairs.withType
@@ -91,6 +92,7 @@ class DataStoreGetChangesComplexTest(
         expect(
             listOf(
                 VersionedChanges(version = lowestVersion, changes = listOf(
+                    ObjectCreate,
                     MultiTypeChange(
                         ComplexModel { multi::ref } withType T3,
                         ComplexModel { mapIntMulti.refAt(1u) } withType T3,

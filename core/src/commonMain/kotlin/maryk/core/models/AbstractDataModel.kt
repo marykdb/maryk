@@ -43,7 +43,7 @@ abstract class AbstractDataModel<DO : Any, P : AbstractPropertyDefinitions<DO>, 
     final override val properties: P
 ) : IsDataModelWithValues<DO, P, V> {
     /**
-     * Write [values] for this ObjectDataModel to JSON with [writer]
+     * Write [values] for this ObjectDataModel to JSON
      * Optionally pass a [context] when needed for more complex property types
      */
     fun writeJson(
@@ -125,15 +125,20 @@ abstract class AbstractDataModel<DO : Any, P : AbstractPropertyDefinitions<DO>, 
             reader.nextToken()
         }
 
-        if (reader.currentToken !is StartObject) {
-            throw IllegalJsonOperation("Expected object at start of JSON, not ${reader.currentToken}")
+        return if (properties.isNotEmpty()) {
+            if (reader.currentToken !is StartObject) {
+                throw IllegalJsonOperation("Expected object at start of JSON, not ${reader.currentToken}")
+            }
+
+            val valueMap = MutableValueItems()
+            reader.nextToken()
+            walkJsonToRead(reader, valueMap, context)
+
+            valueMap
+        } else {
+            reader.nextToken()
+            MutableValueItems()
         }
-
-        val valueMap = MutableValueItems()
-        reader.nextToken()
-        walkJsonToRead(reader, valueMap, context)
-
-        return valueMap
     }
 
     internal open fun walkJsonToRead(

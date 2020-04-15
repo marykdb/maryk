@@ -22,7 +22,8 @@ class VersionedChangesTest {
             Check(subModelValue with "current"),
             ObjectSoftDeleteChange(true),
             ListChange(TestMarykModel { list::ref }.change()),
-            SetChange(TestMarykModel { set::ref }.change())
+            SetChange(TestMarykModel { set::ref }.change()),
+            ObjectCreate
         )
     )
 
@@ -61,6 +62,7 @@ class VersionedChangesTest {
               list:
             - !SetChange
               set:
+            - !ObjectCreate
 
             """.trimIndent()
         ) {

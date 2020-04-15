@@ -4,6 +4,7 @@ import maryk.core.exceptions.RequestException
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
+import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.orders.Order.Companion.descending
 import maryk.core.query.pairs.with
@@ -80,6 +81,7 @@ class DataStoreScanChangesTest(
             expect(
                 listOf(
                     VersionedChanges(version = lowestVersion, changes = listOf(
+                        ObjectCreate,
                         Change(
                             Log { message::ref } with "Something REALLY happened",
                             Log { severity::ref } with INFO,
@@ -96,6 +98,7 @@ class DataStoreScanChangesTest(
             expect(
                 listOf(
                     VersionedChanges(version = lowestVersion, changes = listOf(
+                        ObjectCreate,
                         Change(
                             Log { message::ref } with "Something else happened",
                             Log { severity::ref } with INFO,
@@ -110,6 +113,7 @@ class DataStoreScanChangesTest(
             expect(
                 listOf(
                     VersionedChanges(version = lowestVersion, changes = listOf(
+                        ObjectCreate,
                         Change(
                             Log { message::ref } with "Something happened",
                             Log { severity::ref } with INFO,
@@ -152,6 +156,7 @@ class DataStoreScanChangesTest(
             expect(
                 listOf(
                     VersionedChanges(version = lowestVersion, changes = listOf(
+                        ObjectCreate,
                         Change(
                             Log { message::ref } with "Something REALLY happened",
                             Log { severity::ref } with INFO,
@@ -211,6 +216,7 @@ class DataStoreScanChangesTest(
             expect(
                 listOf(
                     VersionedChanges(version = lowestVersion, changes = listOf(
+                        ObjectCreate,
                         Change(
                             Log { timestamp::ref } with DateTime(2018, 11, 14, 12, 33, 22, 111)
                         )

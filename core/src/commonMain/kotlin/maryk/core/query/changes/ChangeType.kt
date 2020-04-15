@@ -13,14 +13,15 @@ enum class ChangeType(
     Check(1u),
     Change(2u),
     Delete(3u),
-    ObjectDelete(4u),
-    ListChange(5u),
-    SetChange(6u),
-    TypeChange(7u),
-    IncMapChange(8u),
-    IncMapAddition(9u);
+    ObjectCreate(4u),
+    ObjectDelete(5u),
+    ListChange(6u),
+    SetChange(7u),
+    TypeChange(8u),
+    IncMapChange(9u),
+    IncMapAddition(10u);
 
     companion object : IndexedEnumDefinition<ChangeType>(
-        "ChangeType", ChangeType::values
+        ChangeType::class, ChangeType::values
     )
 }

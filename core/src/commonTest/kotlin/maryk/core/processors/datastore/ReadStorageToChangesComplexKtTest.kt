@@ -8,6 +8,7 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Delete
 import maryk.core.query.changes.MultiTypeChange
+import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.changes.SetChange
 import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.changes.change
@@ -92,6 +93,7 @@ class ReadStorageToChangesComplexKtTest {
                 qualifier?.let { resultHandler({ qualifier[it] }, qualifier.size); true } ?: false
             },
             select = null,
+            creationVersion = 1234uL,
             processValue = { _, _, changer ->
                 complexValuesAsStorablesWithVersion[qualifierIndex].second.forEach {
                     changer(it.first, it.second)
@@ -104,6 +106,7 @@ class ReadStorageToChangesComplexKtTest {
                 VersionedChanges(
                     1234UL,
                     listOf(
+                        ObjectCreate,
                         MultiTypeChange(
                             ComplexModel { multi::ref } withType T3,
                             ComplexModel { mapIntMulti.refAt(2u) } withType T3,

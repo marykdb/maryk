@@ -3,6 +3,7 @@ package maryk.core.processors.datastore
 import maryk.core.clock.HLC
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Delete
+import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.changes.SetChange
 import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.changes.change
@@ -65,6 +66,7 @@ class ReadStorageToChangesKtTest {
                 qualifier?.let { resultHandler({ qualifier[it] }, qualifier.size); true } ?: false
             },
             select = null,
+            creationVersion = 1233uL,
             processValue = { _, _, changer ->
                 valuesAsStorablesWithVersion[qualifierIndex].second.forEach {
                     changer(it.first.timestamp, it.second)
@@ -77,6 +79,7 @@ class ReadStorageToChangesKtTest {
                 VersionedChanges(
                     1233UL,
                     listOf(
+                        ObjectCreate,
                         Delete(TestMarykModel { double::ref }),
                         Change(
                             TestMarykModel { dateTime::ref } with DateTime(2018, 7, 18),

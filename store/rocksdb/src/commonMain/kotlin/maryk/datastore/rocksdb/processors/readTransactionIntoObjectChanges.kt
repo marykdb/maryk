@@ -51,6 +51,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
         changes = this.readStorageToChanges(
             getQualifier = getQualifier,
             select = select,
+            creationVersion = if (creationVersion > fromVersion) creationVersion else null,
             processValue = { storageType, reference, valueWithVersionReader ->
                 val currentVersion: ULong
                 val value = when (storageType) {
@@ -144,6 +145,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
         changes = this.readStorageToChanges(
             getQualifier = getQualifier,
             select = select,
+            creationVersion = if (creationVersion > fromVersion) creationVersion else null,
             processValue = { storageType, reference, valueWithVersionReader ->
                 if (currentVersion >= fromVersion) {
                     val value = cachedRead(reference, currentVersion) {

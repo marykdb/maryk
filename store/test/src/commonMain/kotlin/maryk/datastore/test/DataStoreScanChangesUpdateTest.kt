@@ -3,6 +3,7 @@ package maryk.datastore.test
 import maryk.core.exceptions.RequestException
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
+import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.changes.change
 import maryk.core.query.filters.Exists
 import maryk.core.query.orders.Direction.DESC
@@ -213,6 +214,7 @@ class DataStoreScanChangesUpdateTest(
                 assertEquals(keys[1], key)
 
                 assertEquals(listOf(
+                    ObjectCreate,
                     Change(
                         TestMarykModel { string::ref } with "ha world 2",
                         TestMarykModel { int::ref } with -10,

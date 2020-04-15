@@ -3,7 +3,6 @@ package maryk.core.query.changes
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.graph.RootPropRefGraph
-import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForValues
 
 /** Defines a change to a DataObject */
@@ -21,6 +20,7 @@ internal val mapOfChangeDefinitions = mapOf(
     ChangeType.Change to EmbeddedObjectDefinition(dataModel = { Change }),
     ChangeType.Check to EmbeddedObjectDefinition(dataModel = { Check }),
     ChangeType.Delete to EmbeddedObjectDefinition(dataModel = { Delete }),
+    ChangeType.ObjectCreate to EmbeddedObjectDefinition(dataModel = { ObjectCreateModel }),
     ChangeType.ObjectDelete to EmbeddedObjectDefinition(dataModel = { ObjectSoftDeleteChange }),
     ChangeType.ListChange to EmbeddedObjectDefinition(dataModel = { ListChange }),
     ChangeType.SetChange to EmbeddedObjectDefinition(dataModel = { SetChange }),

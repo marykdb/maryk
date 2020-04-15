@@ -31,7 +31,7 @@ import maryk.core.values.AnyAbstractValues
 
 sealed class StorageTypeEnum<out T : IsPropertyDefinition<*>>(val referenceType: ReferenceType) {
     object ObjectDelete : StorageTypeEnum<IsPropertyDefinition<Boolean>>(DELETE)
-    object Value : StorageTypeEnum<IsSimpleValueDefinition<Any, IsPropertyContext>>(ReferenceType.VALUE)
+    object Value : StorageTypeEnum<IsSimpleValueDefinition<Any, IsPropertyContext>>(VALUE)
     object ListSize : StorageTypeEnum<IsListDefinition<Any, IsPropertyContext>>(LIST)
     object SetSize : StorageTypeEnum<IsSetDefinition<Any, IsPropertyContext>>(SET)
     object MapSize : StorageTypeEnum<IsMapDefinition<Any, Any, IsPropertyContext>>(MAP)

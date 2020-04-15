@@ -13,6 +13,7 @@ import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.changes.Delete
 import maryk.core.query.changes.ListChange
 import maryk.core.query.changes.MultiTypeChange
+import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.SetChange
 import maryk.core.query.changes.VersionedChanges
@@ -48,6 +49,7 @@ class ChangesResponseTest {
                     VersionedChanges(
                         319674127uL,
                         listOf(
+                            ObjectCreate,
                             Change(EmbeddedMarykModel(subModel) { value::ref } with "new"),
                             Delete(EmbeddedMarykModel(subModel) { value::ref }),
                             Check(EmbeddedMarykModel(subModel) { value::ref } with "current")
@@ -99,6 +101,7 @@ class ChangesResponseTest {
                   multi: S3
               - version: 319674127
                 changes:
+                - !ObjectCreate
                 - !Change
                   embeddedValues.value: new
                 - !Delete embeddedValues.value

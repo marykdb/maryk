@@ -10,6 +10,7 @@ import maryk.core.models.IsDataModel
 import maryk.core.models.IsDataModelWithValues
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.ChangeType.CHANGE
+import maryk.core.processors.datastore.ChangeType.OBJECT_CREATE
 import maryk.core.processors.datastore.ChangeType.OBJECT_DELETE
 import maryk.core.processors.datastore.ChangeType.SET_ADD
 import maryk.core.processors.datastore.ChangeType.TYPE
@@ -61,6 +62,7 @@ import maryk.core.query.changes.Change
 import maryk.core.query.changes.Delete
 import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.MultiTypeChange
+import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.SetChange
 import maryk.core.query.changes.SetValueChanges
@@ -73,7 +75,7 @@ typealias ValueWithVersionReader = (StorageTypeEnum<IsPropertyDefinition<out Any
 private typealias ChangeAdder = (ULong, ChangeType, Any) -> Unit
 
 private enum class ChangeType {
-    OBJECT_DELETE, CHANGE, DELETE, SET_ADD, TYPE
+    OBJECT_CREATE, OBJECT_DELETE, CHANGE, DELETE, SET_ADD, TYPE
 }
 
 /**
@@ -84,6 +86,7 @@ private enum class ChangeType {
 fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readStorageToChanges(
     getQualifier: (((Int) -> Byte, Int) -> Unit) -> Boolean,
     select: RootPropRefGraph<P>?,
+    creationVersion: ULong?,
     processValue: ValueWithVersionReader
 ): List<VersionedChanges> {
     // Used to collect all found ValueItems
@@ -103,6 +106,10 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readStorageToCha
         }
     }
 
+    if (creationVersion != null) {
+        changeAdder(creationVersion, OBJECT_CREATE, Unit)
+    }
+
     processQualifiers(getQualifier) { qualifierReader, qualifierLength, addToCache ->
         // Otherwise, try to get a new qualifier processor from DataModel
         (this as IsDataModel<P>).readQualifier(qualifierReader, qualifierLength, 0, select, null, changeAdder, processValue, addToCache)
@@ -116,6 +123,7 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readStorageToCha
 private fun MutableList<IsChange>.addChange(changeType: ChangeType, changePart: Any) {
     @Suppress("UNCHECKED_CAST")
     when (changeType) {
+        OBJECT_CREATE -> this.find { it is ObjectCreate }
         OBJECT_DELETE -> this.find { it is ObjectSoftDeleteChange }
         CHANGE -> this.find { it is Change }?.also {
             ((it as Change).referenceValuePairs as MutableList<ReferenceValuePair<*>>).add(
@@ -163,6 +171,7 @@ private fun MutableList<IsChange>.addChange(changeType: ChangeType, changePart: 
 
 @Suppress("UNCHECKED_CAST")
 private fun createChange(changeType: ChangeType, changePart: Any) = when (changeType) {
+    OBJECT_CREATE -> ObjectCreate
     OBJECT_DELETE -> ObjectSoftDeleteChange(changePart as Boolean)
     CHANGE -> Change(mutableListOf(changePart as ReferenceValuePair<Any>))
     ChangeType.DELETE -> Delete(mutableListOf(changePart as IsPropertyReference<*, IsValueDefinitionWrapper<*, *, IsPropertyContext, *>, *>))

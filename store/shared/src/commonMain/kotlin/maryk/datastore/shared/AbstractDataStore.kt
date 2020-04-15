@@ -23,6 +23,7 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsReferenceDefinition
 import maryk.core.properties.graph.IsPropRefGraphNode
 import maryk.core.query.changes.ObjectCreate
+import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.orders.Order
 import maryk.core.query.orders.Orders
 import maryk.core.query.requests.GetChangesRequest
@@ -36,6 +37,8 @@ import maryk.core.query.responses.IsResponse
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.IsUpdateResponse
+import maryk.core.query.responses.updates.RemovalReason.SoftDelete
+import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.datastore.shared.updates.UpdateListener
 import maryk.datastore.shared.updates.UpdateListenerForGet
 import maryk.datastore.shared.updates.UpdateListenerForScan
@@ -124,6 +127,12 @@ abstract class AbstractDataStore(
                                 versionedChange.version,
                                 0,
                                 request.dataModel.fromChanges(null, changes)
+                            )
+                        } else if (request.filterSoftDeleted && changes.firstOrNull { it is ObjectSoftDeleteChange } != null) {
+                            RemovalUpdate(
+                                dataObjectVersionedChange.key,
+                                versionedChange.version,
+                                SoftDelete
                             )
                         } else {
                             ChangeUpdate(

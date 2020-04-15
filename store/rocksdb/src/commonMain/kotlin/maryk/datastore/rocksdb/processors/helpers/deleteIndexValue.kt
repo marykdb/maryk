@@ -19,7 +19,7 @@ internal fun deleteIndexValue(
 
     // Only delete with non hard deletes since with hard deletes all values are deleted
     if (!hardDelete && columnFamilies is HistoricTableColumnFamilies) {
-        val historicReference = byteArrayOf(*indexReference, *version)
+        val historicReference = byteArrayOf(*indexReference, *valueAndKey, *version)
         // Invert so the time is sorted in reverse order with newest on top
         historicReference.invert(historicReference.size - version.size)
 

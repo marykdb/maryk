@@ -92,15 +92,13 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
                     if (indexRange.endInclusive && indexRange.end === it) byteArrayOf() else it
                 }
 
-                indexStartKey?.let { endRange ->
-                    if (endRange.isEmpty()) {
-                        iterator.seek(indexReference.nextByteInSameLength())
-                        if (!iterator.isValid()) {
-                            iterator.seekToLast()
-                        }
-                    } else {
-                        iterator.seekForPrev(byteArrayOf(*indexReference, *endRange))
+                if (indexStartKey == null || indexStartKey.isEmpty()) {
+                    iterator.seek(indexReference.nextByteInSameLength())
+                    if (!iterator.isValid()) {
+                        iterator.seekToLast()
                     }
+                } else {
+                    iterator.seekForPrev(byteArrayOf(*indexReference, *indexStartKey))
                 }
 
                 checkAndProcess(
@@ -251,44 +249,50 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> checkAndPro
     next: (ByteArray, Int, Int) -> Unit
 ) {
     var currentSize: UInt = 0u
+    val isHistoric = scanRequest.toVersion != null
     while (iterator.isValid()) {
         val indexRecord = iterator.key()
         val valueSize = indexRecord.size - toSubstractFromSize
         val keyOffset = valueOffset + valueSize
 
-        if (isPastRange(indexRecord, valueSize)) {
-            break
-        }
+        // If non historic, presence of value is enough, if historic, the value also has to be true
+        if (!isHistoric || iterator.value().contentEquals(TRUE_ARRAY)) {
+            if (isPastRange(indexRecord, valueSize)) {
+                break
+            }
 
-        if (indexScanRange.matchesPartials(indexRecord, valueOffset, valueSize) && checkVersion(indexRecord)) {
-            val setAtVersion = readVersion(indexRecord, indexRecord.size - ULong.SIZE_BYTES)
+            if (indexScanRange.matchesPartials(indexRecord, valueOffset, valueSize) && checkVersion(indexRecord)) {
+                val setAtVersion = readVersion(indexRecord, indexRecord.size - ULong.SIZE_BYTES)
 
-            if (
-                !scanRequest.shouldBeFiltered(
-                    dbAccessor,
-                    columnFamilies,
-                    readOptions,
-                    indexRecord,
-                    keyOffset,
-                    keySize,
-                    setAtVersion,
-                    scanRequest.toVersion
-                )
-            ) {
-                val key = createKey(scanRequest.dataModel, indexRecord, keyOffset)
-                readCreationVersion(
-                    dbAccessor,
-                    columnFamilies,
-                    readOptions,
-                    key.bytes
-                )?.let { createdVersion ->
-                    processStoreValue(key, createdVersion)
+                if (
+                    !scanRequest.shouldBeFiltered(
+                        dbAccessor,
+                        columnFamilies,
+                        readOptions,
+                        indexRecord,
+                        keyOffset,
+                        keySize,
+                        setAtVersion,
+                        scanRequest.toVersion
+                    )
+                ) {
+                    val key = createKey(scanRequest.dataModel, indexRecord, keyOffset)
+
+                    readCreationVersion(
+                        dbAccessor,
+                        columnFamilies,
+                        readOptions,
+                        key.bytes
+                    )?.let { createdVersion ->
+                        processStoreValue(key, createdVersion)
+                    }
+
+                    // Break when limit is found
+                    if (++currentSize == scanRequest.limit) break
                 }
-
-                // Break when limit is found
-                if (++currentSize == scanRequest.limit) break
             }
         }
+
         next(indexRecord, keyOffset, keySize)
     }
 }

@@ -154,13 +154,13 @@ inline class MutableValueItems(
      * If [referenceIndex] is not yet contained in this valueItems then fetch it from [sourceValueItems]
      */
     fun copyFromOriginalAndChange(
-        sourceValueItems: IsValueItems,
+        sourceValueItems: IsValueItems?,
         referenceIndex: UInt,
         valueChanger: (Any?, Any?) -> Any?
     ) {
         val index = list.searchItemByIndex(referenceIndex)
 
-        val originalValue = sourceValueItems.getValueItem(referenceIndex)?.value
+        val originalValue = sourceValueItems?.getValueItem(referenceIndex)?.value
         when {
             index < 0 -> {
                 val newValue = mutableValueCreator(originalValue)

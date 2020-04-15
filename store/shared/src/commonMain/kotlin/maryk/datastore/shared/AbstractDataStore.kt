@@ -17,10 +17,12 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.RootDataModel
+import maryk.core.models.fromChanges
 import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsReferenceDefinition
 import maryk.core.properties.graph.IsPropRefGraphNode
+import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.orders.Order
 import maryk.core.query.orders.Orders
 import maryk.core.query.requests.GetChangesRequest
@@ -31,6 +33,7 @@ import maryk.core.query.requests.get
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.ChangesResponse
 import maryk.core.query.responses.IsResponse
+import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.datastore.shared.updates.UpdateListener
@@ -113,12 +116,23 @@ abstract class AbstractDataStore(
             if (response.changes.isNotEmpty()) {
                 response.changes.flatMap { dataObjectVersionedChange ->
                     dataObjectVersionedChange.changes.map { versionedChange ->
-                        ChangeUpdate(
-                            dataObjectVersionedChange.key,
-                            versionedChange.version,
-                            0,
-                            versionedChange.changes.toList()
-                        )
+                        val changes = versionedChange.changes
+
+                        if (changes.contains(ObjectCreate)) {
+                            AdditionUpdate(
+                                dataObjectVersionedChange.key,
+                                versionedChange.version,
+                                0,
+                                request.dataModel.fromChanges(null, changes)
+                            )
+                        } else {
+                            ChangeUpdate(
+                                dataObjectVersionedChange.key,
+                                versionedChange.version,
+                                0,
+                                changes.toList()
+                            )
+                        }
                     }
                 }.sortedBy {
                     it.version

@@ -5,7 +5,10 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.RequestContext
+import maryk.core.query.changes.IsChange
 import maryk.core.values.IsValueItems
+import maryk.core.values.MutableValueItems
+import maryk.core.values.ValueItems
 import maryk.core.values.Values
 
 interface IsValuesDataModel<P : PropertyDefinitions> : IsDataModel<P>, IsNamedDataModel<P>
@@ -29,9 +32,27 @@ interface IsTypedValuesDataModel<DM : IsValuesDataModel<P>, P : PropertyDefiniti
         Values(this as DM, createValues(this.properties), context)
 }
 
-/** Create a ObjectValues with given [createMap] function */
+/** Create a Values object with given [createMap] function */
 fun <DM : IsValuesDataModel<P>, P : PropertyDefinitions> DM.values(
     context: RequestContext?,
     createMap: P.() -> IsValueItems
 ) =
     Values(this, createMap(this.properties), context)
+
+/** Create a Values object with given [changes] */
+fun <DM : IsValuesDataModel<P>, P : PropertyDefinitions> DM.fromChanges(
+    context: RequestContext?,
+    changes: List<IsChange>
+) = if (changes.isEmpty()) {
+    Values(this, ValueItems(), context)
+} else {
+    val valueItemsToChange = MutableValueItems(mutableListOf())
+
+    for (change in changes) {
+        change.changeValues { ref, valueChanger ->
+            valueItemsToChange.copyFromOriginalAndChange(null, ref.index, valueChanger)
+        }
+    }
+
+    Values(this, valueItemsToChange, context)
+}

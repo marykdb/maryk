@@ -3,7 +3,6 @@ package maryk.datastore.test
 import maryk.core.exceptions.RequestException
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
-import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.changes.change
 import maryk.core.query.filters.Exists
 import maryk.core.query.pairs.with
@@ -12,12 +11,15 @@ import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.getChanges
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.RemovalReason.SoftDelete
 import maryk.core.query.responses.updates.RemovalUpdate
+import maryk.core.values.Values
 import maryk.datastore.shared.IsDataStore
 import maryk.test.assertType
 import maryk.test.models.SimpleMarykModel
+import maryk.test.models.SimpleMarykModel.Properties
 import maryk.test.runSuspendingTest
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -123,26 +125,20 @@ class DataStoreGetChangesUpdateTest(
         SimpleMarykModel.getChanges(keys[0], keys[2]),
         3
     ) { responses ->
-        assertType<ChangeUpdate<*, *>>(responses[0].await()).apply {
+        assertType<AdditionUpdate<SimpleMarykModel, Properties>>(responses[0].await()).apply {
             assertEquals(keys[0], key)
             assertEquals(lowestVersion, version)
             assertEquals(
-                listOf(
-                    ObjectCreate,
-                    Change(SimpleMarykModel { value::ref } with "haha1")
-                ),
-                changes
+                SimpleMarykModel(value = "haha1"),
+                values
             )
         }
-        assertType<ChangeUpdate<*, *>>(responses[1].await()).apply {
+        assertType<AdditionUpdate<SimpleMarykModel, Properties>>(responses[1].await()).apply {
             assertEquals(keys[2], key)
             assertEquals(highestInitVersion, version)
             assertEquals(
-                listOf(
-                    ObjectCreate,
-                    Change(SimpleMarykModel { value::ref } with "haha3")
-                ),
-                changes
+                SimpleMarykModel(value = "haha3"),
+                values
             )
         }
 

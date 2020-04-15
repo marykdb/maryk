@@ -35,6 +35,47 @@ import kotlin.ULong.Companion
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
+val t1 = TestMarykModel(
+    string = "ha world 1",
+    int = 0,
+    uint = 67u,
+    bool = true,
+    double = 2323.3,
+    dateTime = DateTime(1989, 9, 8)
+)
+val t2 = TestMarykModel(
+    string = "ha world 2",
+    int = -10,
+    uint = 69u,
+    bool = false,
+    double = 0.1,
+    dateTime = DateTime(2001, 4, 2)
+)
+val t3 = TestMarykModel(
+    string = "ha world 3",
+    int = 2,
+    uint = 1244u,
+    bool = true,
+    double = 444.0,
+    dateTime = DateTime(2005, 11, 30)
+)
+val t4 = TestMarykModel(
+    string = "ha world 4",
+    int = -5,
+    uint = 52323u,
+    bool = false,
+    double = 2333.0,
+    dateTime = DateTime(2012, 1, 28)
+)
+val t5 = TestMarykModel(
+    string = "ha world 5",
+    int = 4,
+    uint = 234234u,
+    bool = true,
+    double = 232523.3,
+    dateTime = DateTime(2020, 3, 23)
+)
+
 class DataStoreScanChangesUpdateTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
@@ -55,48 +96,7 @@ class DataStoreScanChangesUpdateTest(
     override fun initData() {
         runSuspendingTest {
             val addResponse = dataStore.execute(
-                TestMarykModel.add(
-                    TestMarykModel(
-                        string = "ha world 1",
-                        int = 0,
-                        uint = 67u,
-                        bool = true,
-                        double = 2323.3,
-                        dateTime = DateTime(1989, 9, 8)
-                    ),
-                    TestMarykModel(
-                        string = "ha world 2",
-                        int = -10,
-                        uint = 69u,
-                        bool = false,
-                        double = 0.1,
-                        dateTime = DateTime(2001, 4, 2)
-                    ),
-                    TestMarykModel(
-                        string = "ha world 3",
-                        int = 2,
-                        uint = 1244u,
-                        bool = true,
-                        double = 444.0,
-                        dateTime = DateTime(2005, 11, 30)
-                    ),
-                    TestMarykModel(
-                        string = "ha world 4",
-                        int = -5,
-                        uint = 52323u,
-                        bool = false,
-                        double = 2333.0,
-                        dateTime = DateTime(2012, 1, 28)
-                    ),
-                    TestMarykModel(
-                        string = "ha world 5",
-                        int = 4,
-                        uint = 234234u,
-                        bool = true,
-                        double = 232523.3,
-                        dateTime = DateTime(2020, 3, 23)
-                    )
-                )
+                TestMarykModel.add(t1, t2, t3, t4, t5)
             )
             addResponse.statuses.forEach { status ->
                 val response = assertType<AddSuccess<TestMarykModel>>(status)
@@ -210,21 +210,9 @@ class DataStoreScanChangesUpdateTest(
             5
         ) { responses ->
             val prevUpdate1 = responses[0].await()
-            assertType<ChangeUpdate<*, *>>(prevUpdate1).apply {
+            assertType<AdditionUpdate<TestMarykModel, TestMarykModel.Properties>>(prevUpdate1).apply {
                 assertEquals(keys[1], key)
-
-                assertEquals(listOf(
-                    ObjectCreate,
-                    Change(
-                        TestMarykModel { string::ref } with "ha world 2",
-                        TestMarykModel { int::ref } with -10,
-                        TestMarykModel { uint::ref } with 69u,
-                        TestMarykModel { double::ref } with 0.1,
-                        TestMarykModel { dateTime::ref } with DateTime(2001, 4, 2),
-                        TestMarykModel { bool::ref } with false,
-                        TestMarykModel { enum::ref } with V1
-                    )
-                ), changes)
+                assertEquals(t2, values)
             }
 
             responses[1].await()

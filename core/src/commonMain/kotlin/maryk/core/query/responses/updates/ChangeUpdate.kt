@@ -20,7 +20,7 @@ import maryk.core.values.SimpleObjectValues
 
 /** Update response describing a change to query results with [changes] at [key] */
 data class ChangeUpdate<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
-    override val key: Key<DM>,
+    val key: Key<DM>,
     override val version: ULong,
     // The index within the current order
     val index: Int,

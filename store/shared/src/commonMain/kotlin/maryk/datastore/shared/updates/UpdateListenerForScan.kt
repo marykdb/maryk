@@ -33,6 +33,10 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
     scanResponse.values.map { it.key }.toMutableList(),
     sendChannel
 ) {
+    override val lastResponseVersion = scanResponse.values.fold(0uL) { acc, value ->
+        maxOf(acc, value.lastVersion)
+    }
+
     private val scanType = request.dataModel.orderToScanType(request.order, scanRange.equalPairs)
 
     private val sortedValues = (scanType as? IndexScan)?.let {

@@ -37,6 +37,7 @@ import maryk.core.query.responses.IsResponse
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.IsUpdateResponse
+import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.core.query.responses.updates.RemovalReason.SoftDelete
 import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.datastore.shared.updates.UpdateListener
@@ -115,6 +116,13 @@ abstract class AbstractDataStore(
             listener.close()
             dataModelUpdateListeners -= listener
         }.onStart {
+            emit(
+                OrderedKeysUpdate(
+                    version = listener.lastResponseVersion,
+                    keys = listener.matchingKeys
+                )
+            )
+
             // Emit first all new changes after passed firstVersion
             if (response.changes.isNotEmpty()) {
                 response.changes.flatMap { dataObjectVersionedChange ->
@@ -213,7 +221,7 @@ private suspend fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> IsCha
             )
             UpdateListenerForGet(
                 this,
-                getResponse.values.map { it.key },
+                getResponse,
                 channel
             )
         }

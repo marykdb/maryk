@@ -26,7 +26,7 @@ enum class RemovalReason(override val index: UInt, override val alternativeNames
 
 /** Update response describing a removal from query result at [key] for [reason] */
 data class RemovalUpdate<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
-    override val key: Key<DM>,
+    val key: Key<DM>,
     override val version: ULong,
     val reason: RemovalReason
 ) : IsUpdateResponse<DM, P> {

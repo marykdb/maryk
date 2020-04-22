@@ -18,6 +18,8 @@ abstract class UpdateListener<DM: IsRootValuesDataModel<P>, P: PropertyDefinitio
     val matchingKeys: MutableList<Key<DM>>,
     val sendChannel: SendChannel<IsUpdateResponse<DM, P>>
 ) {
+    abstract val lastResponseVersion: ULong
+
     fun close() {
         this.sendChannel.close()
     }

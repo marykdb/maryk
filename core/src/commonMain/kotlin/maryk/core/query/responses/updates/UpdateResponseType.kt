@@ -13,7 +13,8 @@ enum class UpdateResponseType(
 ) : IndexedEnumComparable<UpdateResponseType>, IsCoreEnum, TypeEnum<IsUpdateResponse<*, *>> {
     Addition(1u),
     Change(2u),
-    Removal(3u);
+    Removal(3u),
+    OrderedKeys(4u);
 
     companion object : IndexedEnumDefinition<UpdateResponseType>(
         UpdateResponseType::class, UpdateResponseType::values

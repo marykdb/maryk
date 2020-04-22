@@ -7,6 +7,5 @@ import maryk.core.properties.types.Key
 /** A response describing an update to a data object */
 interface IsUpdateResponse<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> {
     val type: UpdateResponseType
-    val key: Key<DM>
     val version: ULong
 }

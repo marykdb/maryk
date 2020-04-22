@@ -20,7 +20,7 @@ import maryk.core.values.Values
 
 /** Update response describing an addition to query result of [values] at [key] */
 data class AdditionUpdate<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
-    override val key: Key<DM>,
+    val key: Key<DM>,
     override val version: ULong,
     val insertionIndex: Int,
     val values: Values<DM, P>

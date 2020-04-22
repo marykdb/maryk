@@ -14,6 +14,7 @@ import maryk.core.query.requests.getChanges
 import maryk.core.query.requests.scanChanges
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.updates.ChangeUpdate
+import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.core.query.responses.updates.RemovalReason.SoftDelete
 import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.datastore.shared.IsDataStore
@@ -30,7 +31,7 @@ import kotlin.test.assertFailsWith
 class DataStoreScanChangesUpdateWithLogTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
-    private val keys = mutableListOf<Key<Log>>()
+    private val testKeys = mutableListOf<Key<Log>>()
     private var lowestVersion = ULong.MAX_VALUE
     private var highestInitVersion = ULong.MIN_VALUE
 
@@ -52,7 +53,7 @@ class DataStoreScanChangesUpdateWithLogTest(
             )
             addResponse.statuses.forEach { status ->
                 val response = assertType<AddSuccess<Log>>(status)
-                keys.add(response.key)
+                testKeys.add(response.key)
                 if (response.version < lowestVersion) {
                     // Add lowest version for scan test
                     lowestVersion = response.version
@@ -67,10 +68,10 @@ class DataStoreScanChangesUpdateWithLogTest(
     override fun resetData() {
         runSuspendingTest {
             dataStore.execute(
-                Log.delete(*keys.toTypedArray(), hardDelete = true)
+                Log.delete(*testKeys.toTypedArray(), hardDelete = true)
             )
         }
-        keys.clear()
+        testKeys.clear()
         lowestVersion = ULong.MAX_VALUE
         highestInitVersion = ULong.MIN_VALUE
     }
@@ -78,7 +79,7 @@ class DataStoreScanChangesUpdateWithLogTest(
     private fun failWithMutableWhereClause() = runSuspendingTest {
         assertFailsWith<RequestException> {
             dataStore.executeFlow(
-                Log.getChanges(keys[0], keys[1], where = Exists(Log { message::ref }))
+                Log.getChanges(testKeys[0], testKeys[1], where = Exists(Log { message::ref }))
             )
         }
     }
@@ -88,48 +89,53 @@ class DataStoreScanChangesUpdateWithLogTest(
             dataStore,
             // Reverse order so keys[0], [1] and [2] are within range
             Log.scanChanges(
-                startKey = keys[2],
+                startKey = testKeys[2],
                 where = ValueIn(Log { severity::ref } with setOf(DEBUG, ERROR)),
                 fromVersion = highestInitVersion + 1uL
             ),
-            3
+            4
         ) { responses ->
+            assertType<OrderedKeysUpdate<*, *>>(responses[0].await()).apply {
+                assertEquals(listOf(testKeys[2], testKeys[0]), keys)
+                assertEquals(highestInitVersion, version)
+            }
+
             val change1 = Change(Log { message::ref } with "new message 1")
             dataStore.execute(Log.change(
-                keys[0].change(change1)
+                testKeys[0].change(change1)
             ))
 
-            val changeUpdate1 = responses[0].await()
+            val changeUpdate1 = responses[1].await()
             assertType<ChangeUpdate<*, *>>(changeUpdate1).apply {
-                assertEquals(keys[0], key)
+                assertEquals(testKeys[0], key)
                 assertEquals(listOf(change1), changes)
             }
 
             val change2 = Change(Log { message::ref } with "new message 3")
             dataStore.execute(Log.change(
-                keys[2].change(change2)
+                testKeys[2].change(change2)
             ))
 
             // This change should be ignored, otherwise key is wrong after changeUpdate2 check
             // This key is ignored because it is before the key at keys[2]
             dataStore.execute(Log.change(
-                keys[3].change(change2)
+                testKeys[3].change(change2)
             ))
 
-            val changeUpdate2 = responses[1].await()
+            val changeUpdate2 = responses[2].await()
             assertType<ChangeUpdate<*, *>>(changeUpdate2).apply {
-                assertEquals(keys[2], key)
+                assertEquals(testKeys[2], key)
                 assertEquals(listOf(change2), changes)
             }
 
             // Is ignored since keys[1] is filtered away with where clause.
-            dataStore.execute(Log.delete(keys[1]))
+            dataStore.execute(Log.delete(testKeys[1]))
 
-            dataStore.execute(Log.delete(keys[2]))
+            dataStore.execute(Log.delete(testKeys[2]))
 
-            val removalUpdate1 = responses[2].await()
+            val removalUpdate1 = responses[3].await()
             assertType<RemovalUpdate<*, *>>(removalUpdate1).apply {
-                assertEquals(keys[2], key)
+                assertEquals(testKeys[2], key)
                 assertEquals(SoftDelete, reason)
             }
         }

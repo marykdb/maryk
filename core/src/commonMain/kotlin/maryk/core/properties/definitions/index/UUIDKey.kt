@@ -8,6 +8,7 @@ import maryk.core.models.DefinitionDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.references.IsFixedBytesPropertyReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.types.Bytes
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.EmptyValueItems
 import maryk.core.values.IsValuesGetter
@@ -20,6 +21,7 @@ import maryk.yaml.IsYamlReader
 object UUIDKey : IsFixedBytesPropertyReference<Pair<Long, Long>> {
     override val indexKeyPartType = IndexKeyPartType.UUID
     override val byteSize = 16
+    override val referenceStorageByteArray = Bytes(this.toReferenceStorageByteArray())
 
     override fun getValue(values: IsValuesGetter) = generateUUID()
 

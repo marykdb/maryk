@@ -23,7 +23,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
     keyScanRange: KeyScanRanges,
     processStoreValue: (DataRecord<DM, P>) -> Unit
 ) {
-    val indexReference = indexScan.index.toReferenceStorageByteArray()
+    val indexReference = indexScan.index.referenceStorageByteArray.bytes
     val index = dataStore.getOrCreateIndex(indexReference)
 
     val startKey = scanRequest.startKey?.let { startKey ->

@@ -54,7 +54,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
                         // Delete indexed values
                         deleteRequest.dataModel.indices?.forEach { indexable ->
                             val oldValue = indexable.toStorageByteArrayForIndex(objectToDelete, objectToDelete.key.bytes)
-                            val indexRef = indexable.toReferenceStorageByteArray()
+                            val indexRef = indexable.referenceStorageByteArray.bytes
                             if (oldValue != null) {
                                 dataStore.removeFromIndex(
                                     objectToDelete,

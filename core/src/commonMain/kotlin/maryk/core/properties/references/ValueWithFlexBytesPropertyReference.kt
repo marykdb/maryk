@@ -2,7 +2,9 @@ package maryk.core.properties.references
 
 import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.definitions.index.IndexKeyPartType
+import maryk.core.properties.definitions.index.toReferenceStorageByteArray
 import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
+import maryk.core.properties.types.Bytes
 
 /**
  * Reference to a value property containing values of type [T]. The property is defined by Property Definition Wrapper
@@ -21,4 +23,5 @@ open class ValueWithFlexBytesPropertyReference<
     IsValuePropertyReference<T, TO, D, P>,
     IsStorageBytesEncodable<T> by propertyDefinition {
     override val indexKeyPartType = IndexKeyPartType.Reference
+    override val referenceStorageByteArray = Bytes(this.toReferenceStorageByteArray())
 }

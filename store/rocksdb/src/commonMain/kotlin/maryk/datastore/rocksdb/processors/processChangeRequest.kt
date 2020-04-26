@@ -51,6 +51,7 @@ import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
 import maryk.core.properties.references.TypedValueReference
+import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
@@ -59,7 +60,11 @@ import maryk.core.query.changes.Delete
 import maryk.core.query.changes.IncMapAddition
 import maryk.core.query.changes.IncMapChange
 import maryk.core.query.changes.IncMapKeyAdditions
+import maryk.core.query.changes.IndexChange
+import maryk.core.query.changes.IndexDelete
+import maryk.core.query.changes.IndexUpdate
 import maryk.core.query.changes.IsChange
+import maryk.core.query.changes.IsIndexUpdate
 import maryk.core.query.changes.ListChange
 import maryk.core.query.changes.SetChange
 import maryk.core.query.requests.ChangeRequest
@@ -91,9 +96,6 @@ import maryk.datastore.rocksdb.processors.helpers.setUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setValue
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.UniqueException
-import maryk.datastore.shared.updates.IsIndexUpdate
-import maryk.datastore.shared.updates.IsIndexUpdate.IndexChange
-import maryk.datastore.shared.updates.IsIndexUpdate.IndexDelete
 import maryk.datastore.shared.updates.Update
 import maryk.lib.recyclableByteArray
 import maryk.rocksdb.rocksDBNotFound
@@ -707,21 +709,27 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> app
 
                 if (newKeyAndValue == null) {
                     if (oldKeyAndValue != null) {
-                        deleteIndexValue(transaction, columnFamilies, index.toReferenceStorageByteArray(), oldKeyAndValue, versionBytes)
-                        indexUpdates!!.add(IndexDelete(index))
+                        deleteIndexValue(transaction, columnFamilies, index.referenceStorageByteArray.bytes, oldKeyAndValue, versionBytes)
+                        indexUpdates!!.add(IndexDelete(index.referenceStorageByteArray, Bytes(oldKeyAndValue)))
                     } // else ignore since did not exist
                 } else if (oldKeyAndValue == null || !newKeyAndValue.contentEquals(oldKeyAndValue)) {
                     if (oldKeyAndValue != null) {
-                        deleteIndexValue(transaction, columnFamilies, index.toReferenceStorageByteArray(), oldKeyAndValue, versionBytes)
+                        deleteIndexValue(transaction, columnFamilies, index.referenceStorageByteArray.bytes, oldKeyAndValue, versionBytes)
                     }
-                    setIndexValue(transaction, columnFamilies, index.toReferenceStorageByteArray(), newKeyAndValue, versionBytes)
-                    indexUpdates!!.add(IndexChange(index, newKeyAndValue))
+                    setIndexValue(transaction, columnFamilies, index.referenceStorageByteArray.bytes, newKeyAndValue, versionBytes)
+                    indexUpdates!!.add(IndexUpdate(index.referenceStorageByteArray, Bytes(newKeyAndValue), oldKeyAndValue?.let { Bytes(oldKeyAndValue) }))
                 }
             }
         }
 
+        indexUpdates?.let {
+            if (it.isNotEmpty()) {
+                outChanges += IndexChange(it)
+            }
+        }
+
         updateSendChannel.send(
-            Update.Change(dataModel, key, version, changes + outChanges, indexUpdates)
+            Update.Change(dataModel, key, version, changes + outChanges)
         )
 
         // Nothing skipped out so must be a success

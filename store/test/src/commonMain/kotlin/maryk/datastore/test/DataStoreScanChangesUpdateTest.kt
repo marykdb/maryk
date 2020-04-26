@@ -1,8 +1,11 @@
 package maryk.datastore.test
 
 import maryk.core.exceptions.RequestException
+import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
+import maryk.core.query.changes.IndexChange
+import maryk.core.query.changes.IndexUpdate
 import maryk.core.query.changes.change
 import maryk.core.query.filters.Exists
 import maryk.core.query.orders.Order.Companion.descending
@@ -271,7 +274,14 @@ class DataStoreScanChangesUpdateTest(
             assertType<ChangeUpdate<*, *>>(changeUpdate1).apply {
                 assertEquals(testKeys[1], key)
                 assertEquals(listOf(
-                    Change(TestMarykModel { string::ref } with "ha new message 1")
+                    Change(TestMarykModel { string::ref } with "ha new message 1"),
+                    IndexChange(listOf(
+                        IndexUpdate(
+                            index = Bytes("CyE"),
+                            indexKey = Bytes("wAf///////4IAAAARQAAAQ"),
+                            previousIndexKey = Bytes("wEZmZmZmZmQIAAAARQAAAQ")
+                        )
+                    ))
                 ), changes)
             }
 
@@ -480,7 +490,21 @@ class DataStoreScanChangesUpdateTest(
             val changeUpdate3 = responses[7].await()
             assertType<ChangeUpdate<*, *>>(changeUpdate3).apply {
                 assertEquals(testKeys[3], key)
-                assertEquals(listOf(change3), changes)
+                assertEquals(listOf(
+                    change3,
+                    IndexChange(listOf(
+                        IndexUpdate(
+                            index = Bytes("BAILKQIKOQIKEQ"),
+                            indexKey = Bytes("f///sNzFfwABgAAAAAAAzGMAAAEAAAA"),
+                            previousIndexKey = Bytes("f///sNzFfwABf///+wAAzGMAAAEAAAA")
+                        ),
+                        IndexUpdate(
+                            index = Bytes("ChE"),
+                            indexKey = Bytes("gAAAAAQAAMxjAAAB"),
+                            previousIndexKey = Bytes("f///+wQAAMxjAAAB")
+                        )
+                    ))
+                ), changes)
                 assertEquals(1, index)
             }
         }
@@ -601,7 +625,21 @@ class DataStoreScanChangesUpdateTest(
             val changeUpdate3 = responses[7].await()
             assertType<ChangeUpdate<*, *>>(changeUpdate3).apply {
                 assertEquals(testKeys[3], key)
-                assertEquals(listOf(change3), changes)
+                assertEquals(listOf(
+                    change3,
+                    IndexChange(listOf(
+                        IndexUpdate(
+                            index = Bytes("BAILKQIKOQIKEQ"),
+                            indexKey = Bytes("f///sNzFfwABf////QAAzGMAAAEAAAA"),
+                            previousIndexKey = Bytes("f///sNzFfwABf///+wAAzGMAAAEAAAA")
+                        ),
+                        IndexUpdate(
+                            index = Bytes("ChE"),
+                            indexKey = Bytes("f////QQAAMxjAAAB"),
+                            previousIndexKey = Bytes("f///+wQAAMxjAAAB")
+                        )
+                    ))
+                ), changes)
                 assertEquals(1, index)
             }
         }

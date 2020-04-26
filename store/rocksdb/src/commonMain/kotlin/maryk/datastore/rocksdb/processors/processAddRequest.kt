@@ -86,7 +86,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
 
                         // Find new index values to write
                         addRequest.dataModel.indices?.forEach { indexDefinition ->
-                            val indexReference = indexDefinition.toReferenceStorageByteArray()
+                            val indexReference = indexDefinition.referenceStorageByteArray.bytes
                             val valueAndKeyBytes = indexDefinition.toStorageByteArrayForIndex(objectToAdd, key.bytes)
                                 ?: return@forEach // skip if no complete values to index are found
 

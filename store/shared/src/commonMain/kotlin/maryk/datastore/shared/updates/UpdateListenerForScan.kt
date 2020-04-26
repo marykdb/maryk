@@ -6,6 +6,9 @@ import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.types.Key
+import maryk.core.query.changes.IndexChange
+import maryk.core.query.changes.IndexDelete
+import maryk.core.query.changes.IndexUpdate
 import maryk.core.query.orders.Direction.ASC
 import maryk.core.query.orders.Direction.DESC
 import maryk.core.query.requests.ScanChangesRequest
@@ -16,8 +19,6 @@ import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.ScanType.IndexScan
 import maryk.datastore.shared.ScanType.TableScan
 import maryk.datastore.shared.orderToScanType
-import maryk.datastore.shared.updates.IsIndexUpdate.IndexChange
-import maryk.datastore.shared.updates.IsIndexUpdate.IndexDelete
 import maryk.datastore.shared.updates.Update.Change
 import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.toHex
@@ -144,7 +145,9 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
                 // Should always exist since earlier was checked if matchingKeys contains this key
                 val existingIndex = findKeyIndexForIndexScan(change.key)
 
-                when(val indexUpdate = change.indexUpdates?.firstOrNull { it.index == scanType.index }) {
+                val indexChange = change.changes.firstOrNull { it is IndexChange } as IndexChange?
+
+                when(val indexUpdate = indexChange?.changes?.firstOrNull { it.index == scanType.index.referenceStorageByteArray }) {
                     null -> { // Nothing changed
                         if (existingIndex >= 0) {
                             changedHandler(existingIndex, false)
@@ -155,8 +158,8 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
                             changedHandler(null, false)
                         }
                     }
-                    is IndexChange -> { // Was changed in order
-                        val index = findSortedKeyIndex(indexUpdate.indexKey)
+                    is IndexUpdate -> { // Was changed in order
+                        val index = findSortedKeyIndex(indexUpdate.indexKey.bytes)
 
                         if (existingIndex != index) { // Is at new index
                             // Always exists thus always removes a key
@@ -171,7 +174,7 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
                                     val adjustedIndex = newIndex - correction
 
                                     matchingKeys.add(adjustedIndex, change.key)
-                                    sortedValues?.add(adjustedIndex, indexUpdate.indexKey)
+                                    sortedValues?.add(adjustedIndex, indexUpdate.indexKey.bytes)
 
                                     changedHandler(adjustedIndex, true)
                                 } else {

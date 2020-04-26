@@ -7,6 +7,7 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.references.IsIndexablePropertyReference
+import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.values.IsValuesGetter
@@ -17,6 +18,7 @@ data class Multiple(
     val references: List<IsIndexablePropertyReference<*>>
 ) : IsIndexable {
     override val indexKeyPartType = IndexKeyPartType.Multiple
+    override val referenceStorageByteArray = Bytes(this.toReferenceStorageByteArray())
 
     /** Convenience method to set with each [reference] as separate argument */
     constructor(vararg reference: IsIndexablePropertyReference<*>) : this(listOf(*reference))

@@ -12,6 +12,7 @@ import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.properties.references.IsValuePropertyReference
+import maryk.core.properties.types.Bytes
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.values.IsValuesGetter
 import maryk.core.values.ObjectValues
@@ -22,6 +23,7 @@ data class Reversed<T : Any>(
     val reference: IsValuePropertyReference<T, *, *, *>
 ) : IsIndexablePropertyReference<T> {
     override val indexKeyPartType = IndexKeyPartType.Reversed
+    override val referenceStorageByteArray = Bytes(this.toReferenceStorageByteArray())
 
     override fun getValue(values: IsValuesGetter) =
         this.reference.getValue(values)

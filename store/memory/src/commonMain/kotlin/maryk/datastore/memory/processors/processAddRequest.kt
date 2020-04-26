@@ -72,7 +72,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
 
                         if (toIndex == null) toIndex = mutableMapOf()
                         toIndex?.let {
-                            it[indexDefinition.toReferenceStorageByteArray()] = valueBytes
+                            it[indexDefinition.referenceStorageByteArray.bytes] = valueBytes
                         }
                     }
 

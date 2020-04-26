@@ -5,6 +5,7 @@ import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
+import maryk.core.query.changes.IndexChange
 import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.requests.IsChangesRequest
@@ -79,7 +80,9 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ
                             if (newIndex == null) {
                                 handleDeletion(dataStore, this, NotInRange, updateListener, sendChannel)
                             } else {
-                                if (orderChanged || filteredChanges.isNotEmpty()) {
+                                // Only send ChangeUpdate if order has changed or there are changes with are not just index changes
+                                // IndexChanges are covered with orderChanged check so filteredChanges need to contain more than IndexChanges
+                                if (orderChanged || (filteredChanges.isNotEmpty() && filteredChanges.find { it !is IndexChange } != null)) {
                                     sendChannel.send(
                                         ChangeUpdate(
                                             key = key,

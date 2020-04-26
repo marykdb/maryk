@@ -42,6 +42,7 @@ import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
+import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Check
@@ -49,7 +50,11 @@ import maryk.core.query.changes.Delete
 import maryk.core.query.changes.IncMapAddition
 import maryk.core.query.changes.IncMapChange
 import maryk.core.query.changes.IncMapKeyAdditions
+import maryk.core.query.changes.IndexChange
+import maryk.core.query.changes.IndexDelete
+import maryk.core.query.changes.IndexUpdate
 import maryk.core.query.changes.IsChange
+import maryk.core.query.changes.IsIndexUpdate
 import maryk.core.query.changes.ListChange
 import maryk.core.query.changes.SetChange
 import maryk.core.query.requests.ChangeRequest
@@ -76,9 +81,6 @@ import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.UniqueException
-import maryk.datastore.shared.updates.IsIndexUpdate
-import maryk.datastore.shared.updates.IsIndexUpdate.IndexChange
-import maryk.datastore.shared.updates.IsIndexUpdate.IndexDelete
 import maryk.datastore.shared.updates.Update
 import maryk.lib.extensions.compare.compareTo
 
@@ -646,12 +648,18 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> app
 
             if (newValue == null) {
                 if (oldValue != null) {
-                    dataStore.removeFromIndex(objectToChange, it.toReferenceStorageByteArray(), version, oldValue)
-                    indexUpdates!!.add(IndexDelete(it))
+                    dataStore.removeFromIndex(objectToChange, it.referenceStorageByteArray.bytes, version, oldValue)
+                    indexUpdates!!.add(IndexDelete(it.referenceStorageByteArray, Bytes(oldValue)))
                 } // else ignore since did not exist
             } else if (oldValue == null || !newValue.contentEquals(oldValue)) {
-                dataStore.addToIndex(objectToChange, it.toReferenceStorageByteArray(), newValue, version, oldValue)
-                indexUpdates!!.add(IndexChange(it, newValue))
+                dataStore.addToIndex(objectToChange, it.referenceStorageByteArray.bytes, newValue, version, oldValue)
+                indexUpdates!!.add(IndexUpdate(it.referenceStorageByteArray, Bytes(newValue), oldValue?.let { Bytes(oldValue) }))
+            }
+        }
+
+        indexUpdates?.let {
+            if (it.isNotEmpty()) {
+                outChanges += IndexChange(it)
             }
         }
 
@@ -659,7 +667,7 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> app
         objectToChange.values = newValueList
 
         updateSendChannel.send(
-            Update.Change(dataModel, objectToChange.key, version, changes + outChanges, indexUpdates)
+            Update.Change(dataModel, objectToChange.key, version, changes + outChanges)
         )
 
         // Nothing skipped out so must be a success

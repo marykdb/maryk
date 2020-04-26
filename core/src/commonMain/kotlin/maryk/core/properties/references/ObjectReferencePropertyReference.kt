@@ -5,8 +5,10 @@ import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 import maryk.core.properties.definitions.index.IndexKeyPartType
+import maryk.core.properties.definitions.index.toReferenceStorageByteArray
 import maryk.core.properties.definitions.wrapper.ReferenceDefinitionWrapper
 import maryk.core.properties.exceptions.RequiredException
+import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.values.AbstractValues
 import maryk.core.values.IsValuesGetter
@@ -33,6 +35,7 @@ open class ObjectReferencePropertyReference<
     override val name = propertyDefinition.name
     override val byteSize = propertyDefinition.byteSize
     override val indexKeyPartType = IndexKeyPartType.Reference
+    override val referenceStorageByteArray = Bytes(this.toReferenceStorageByteArray())
 
     override fun calculateStorageByteLength(value: Key<DM>) = this.byteSize
 

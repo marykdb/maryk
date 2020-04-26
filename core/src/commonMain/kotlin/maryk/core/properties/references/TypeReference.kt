@@ -10,10 +10,12 @@ import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.index.IndexKeyPartType
 import maryk.core.properties.definitions.index.IsIndexable
+import maryk.core.properties.definitions.index.toReferenceStorageByteArray
 import maryk.core.properties.enum.IsIndexedEnumDefinition
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.exceptions.RequiredException
 import maryk.core.properties.references.ReferenceType.TYPE
+import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.VAR_INT
@@ -32,6 +34,7 @@ data class TypeReference<E : TypeEnum<T>, T: Any, in CX : IsPropertyContext> int
 {
     override val indexKeyPartType = IndexKeyPartType.Reference
     override val propertyDefinition = multiTypeDefinition.typeEnum
+    override val referenceStorageByteArray = Bytes(this.toReferenceStorageByteArray())
 
     override val completeName
         get() = this.parentReference?.let {

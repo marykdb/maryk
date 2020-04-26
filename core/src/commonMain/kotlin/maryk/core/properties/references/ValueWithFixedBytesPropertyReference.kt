@@ -4,8 +4,10 @@ import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 import maryk.core.properties.definitions.index.IndexKeyPartType
+import maryk.core.properties.definitions.index.toReferenceStorageByteArray
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.exceptions.RequiredException
+import maryk.core.properties.types.Bytes
 import maryk.core.values.IsValuesGetter
 
 /**
@@ -29,6 +31,7 @@ open class ValueWithFixedBytesPropertyReference<
     IsFixedStorageBytesEncodable<T> by propertyDefinition {
     override val byteSize = propertyDefinition.byteSize
     override val indexKeyPartType = IndexKeyPartType.Reference
+    override val referenceStorageByteArray = Bytes(this.toReferenceStorageByteArray())
 
     override fun calculateStorageByteLength(value: T) = this.byteSize
 

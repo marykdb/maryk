@@ -19,7 +19,8 @@ enum class ChangeType(
     SetChange(7u),
     TypeChange(8u),
     IncMapChange(9u),
-    IncMapAddition(10u);
+    IncMapAddition(10u),
+    IndexChange(11u);
 
     companion object : IndexedEnumDefinition<ChangeType>(
         ChangeType::class, ChangeType::values

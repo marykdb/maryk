@@ -33,7 +33,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ
     val request = updateListener.request
     val currentKeys = updateListener.matchingKeys
     // Only process object requests or change requests if the version is after or equal to from version
-    if (request.fromVersion <= version.timestamp) {
+    if (request.fromVersion <= version) {
         when (this) {
             is Addition<DM, P> -> {
                 if (values.matches(request.where)) {
@@ -42,7 +42,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ
                         sendChannel.send(
                             AdditionUpdate(
                                 key = key,
-                                version = version.timestamp,
+                                version = version,
                                 insertionIndex = insertIndex,
                                 values = values.filterWithSelect(request.select)
                             )
@@ -56,7 +56,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ
                             sendChannel.send(
                                 RemovalUpdate(
                                     key = keyToRemove,
-                                    version = version.timestamp,
+                                    version = version,
                                     reason = NotInRange
                                 )
                             )
@@ -86,7 +86,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ
                                     sendChannel.send(
                                         ChangeUpdate(
                                             key = key,
-                                            version = version.timestamp,
+                                            version = version,
                                             index = newIndex,
                                             changes = filteredChanges
                                         )
@@ -125,7 +125,7 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ:
     sendChannel.send(
         RemovalUpdate(
             key = change.key,
-            version = change.version.timestamp,
+            version = change.version,
             reason = reason
         )
     )

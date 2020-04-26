@@ -12,26 +12,26 @@ import maryk.core.values.Values
 sealed class Update<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
     val dataModel: DM,
     val key: Key<DM>,
-    val version: HLC
+    val version: ULong
 ) {
     class Addition<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
         dataModel: DM,
         key: Key<DM>,
-        version: HLC,
+        version: ULong,
         val values: Values<DM, P>
     ): Update<DM, P>(dataModel, key, version)
 
     class Deletion<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
         dataModel: DM,
         key: Key<DM>,
-        version: HLC,
+        version: ULong,
         val isHardDelete: Boolean
     ): Update<DM, P>(dataModel, key, version)
 
     class Change<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
         dataModel: DM,
         key: Key<DM>,
-        version: HLC,
+        version: ULong,
         val changes: List<IsChange>
     ): Update<DM, P>(dataModel, key, version)
 }

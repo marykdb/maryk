@@ -98,7 +98,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
                             dataStore.records[index] = newRecord
                         }
                         updateSendChannel.send(
-                            Deletion(deleteRequest.dataModel, key, version, deleteRequest.hardDelete)
+                            Deletion(deleteRequest.dataModel, key, version.timestamp, deleteRequest.hardDelete)
                         )
                         DeleteSuccess(version.timestamp)
                     }

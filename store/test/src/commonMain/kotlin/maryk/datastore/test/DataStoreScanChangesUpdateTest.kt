@@ -222,6 +222,7 @@ class DataStoreScanChangesUpdateTest(
             assertType<AdditionUpdate<TestMarykModel, TestMarykModel.Properties>>(prevUpdate1).apply {
                 assertEquals(testKeys[1], key)
                 assertEquals(t2, values)
+                assertEquals(0, insertionIndex)
             }
 
             responses[2].await()
@@ -230,6 +231,7 @@ class DataStoreScanChangesUpdateTest(
             assertType<AdditionUpdate<TestMarykModel, TestMarykModel.Properties>>(responses[4].await()).apply {
                 assertEquals(testKeys[4], key)
                 assertEquals(highestInitVersion, this.version)
+                assertEquals(3, insertionIndex)
             }
 
             val change1 = Change(TestMarykModel { string::ref } with "ha new message 1")

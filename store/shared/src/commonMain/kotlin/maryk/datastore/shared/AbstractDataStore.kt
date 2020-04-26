@@ -38,11 +38,16 @@ import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.query.responses.updates.OrderedKeysUpdate
+import maryk.core.query.responses.updates.RemovalReason.HardDelete
 import maryk.core.query.responses.updates.RemovalReason.SoftDelete
 import maryk.core.query.responses.updates.RemovalUpdate
+import maryk.datastore.shared.updates.Update.Addition
+import maryk.datastore.shared.updates.Update.Change
+import maryk.datastore.shared.updates.Update.Deletion
 import maryk.datastore.shared.updates.UpdateListener
 import maryk.datastore.shared.updates.UpdateListenerForGet
 import maryk.datastore.shared.updates.UpdateListenerForScan
+import maryk.datastore.shared.updates.process
 import maryk.datastore.shared.updates.processUpdateActor
 
 typealias StoreActor = SendChannel<StoreAction<*, *, *, *>>
@@ -130,31 +135,48 @@ abstract class AbstractDataStore(
                         val changes = versionedChange.changes
 
                         if (changes.contains(ObjectCreate)) {
-                            AdditionUpdate(
+                            val addedValues = request.dataModel.fromChanges(null, changes)
+
+                            Addition(
+                                response.dataModel,
                                 dataObjectVersionedChange.key,
                                 versionedChange.version,
-                                0,
-                                request.dataModel.fromChanges(null, changes)
+                                addedValues
                             )
                         } else if (request.filterSoftDeleted && changes.firstOrNull { it is ObjectSoftDeleteChange } != null) {
-                            RemovalUpdate(
+                            Deletion(
+                                response.dataModel,
                                 dataObjectVersionedChange.key,
                                 versionedChange.version,
-                                SoftDelete
+                                false
                             )
                         } else {
-                            ChangeUpdate(
+                            Change(
+                                response.dataModel,
                                 dataObjectVersionedChange.key,
                                 versionedChange.version,
-                                0,
                                 changes.toList()
                             )
                         }
                     }
                 }.sortedBy {
                     it.version
-                }.forEach {
-                    emit(it)
+                }.forEach { update ->
+                    if (update.version <= listener.lastResponseVersion) {
+                        // Was already in OrderedKeysUpdate so find index to send to client
+                        val index = listener.matchingKeys.indexOf(update.key)
+
+                        if (index >= 0) {
+                            when (update) {
+                                is Addition<DM, P> -> AdditionUpdate(update.key, update.version, index, update.values)
+                                is Deletion -> RemovalUpdate(update.key, update.version, if(update.isHardDelete) HardDelete else SoftDelete)
+                                is Change -> ChangeUpdate(update.key, update.version, index, update.changes)
+                            }.apply { emit(this) }
+                        }
+                    } else {
+                        @Suppress("UNCHECKED_CAST")
+                        update.process(listener as UpdateListener<DM, P, RQ>, this@AbstractDataStore, listener.sendChannel)
+                    }
                 }
             }
         }

@@ -22,6 +22,7 @@ import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsReferenceDefinition
 import maryk.core.properties.graph.IsPropRefGraphNode
+import maryk.core.properties.types.Key
 import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.orders.Order
@@ -39,6 +40,7 @@ import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.core.query.responses.updates.RemovalReason.HardDelete
+import maryk.core.query.responses.updates.RemovalReason.NotInRange
 import maryk.core.query.responses.updates.RemovalReason.SoftDelete
 import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.datastore.shared.updates.Update.Addition
@@ -92,7 +94,8 @@ abstract class AbstractDataStore(
     @FlowPreview
     @ExperimentalCoroutinesApi
     override suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ> executeFlow(
-        request: RQ
+        request: RQ,
+        orderedKeys: List<Key<DM>>?
     ): Flow<IsUpdateResponse<DM, P>>
         where RQ : IsStoreRequest<DM, ChangesResponse<DM>>, RQ: IsChangesRequest<DM, P, ChangesResponse<DM>> {
         if (request.toVersion != null) {
@@ -129,7 +132,7 @@ abstract class AbstractDataStore(
             )
 
             // Emit first all new changes after passed firstVersion
-            if (response.changes.isNotEmpty()) {
+            val sortedChanges = if (response.changes.isNotEmpty()) {
                 response.changes.flatMap { dataObjectVersionedChange ->
                     dataObjectVersionedChange.changes.map { versionedChange ->
                         val changes = versionedChange.changes
@@ -161,23 +164,91 @@ abstract class AbstractDataStore(
                     }
                 }.sortedBy {
                     it.version
-                }.forEach { update ->
-                    if (update.version <= listener.lastResponseVersion) {
-                        // Was already in OrderedKeysUpdate so find index to send to client
-                        val index = listener.matchingKeys.indexOf(update.key)
-
-                        if (index >= 0) {
-                            when (update) {
-                                is Addition<DM, P> -> AdditionUpdate(update.key, update.version, index, update.values)
-                                is Deletion -> RemovalUpdate(update.key, update.version, if(update.isHardDelete) HardDelete else SoftDelete)
-                                is Change -> ChangeUpdate(update.key, update.version, index, update.changes)
-                            }.apply { emit(this) }
-                        }
-                    } else {
-                        @Suppress("UNCHECKED_CAST")
-                        update.process(listener as UpdateListener<DM, P, RQ>, this@AbstractDataStore, listener.sendChannel)
-                    }
                 }
+            } else emptyList()
+
+            val addedKeys = if (orderedKeys != null) mutableListOf<Key<DM>>() else null
+            val removedKeys = if (orderedKeys != null) mutableListOf<Key<DM>>() else null
+
+            // First walk the updates of before the ordered keys change. Set index always at index found in ordered
+            // keys to prevent jumping around
+            var sortedLoopIndex = 0
+            while (sortedLoopIndex < sortedChanges.size) {
+                val update = sortedChanges[sortedLoopIndex++]
+                if (update.version <= listener.lastResponseVersion) {
+                    // Was already in OrderedKeysUpdate so find index to send to client
+                    val index = listener.matchingKeys.indexOf(update.key)
+
+                    if (index >= 0) {
+                        when (update) {
+                            is Addition<DM, P> -> {
+                                addedKeys?.add(update.key)
+                                AdditionUpdate(update.key, update.version, index, update.values)
+                            }
+                            is Deletion -> {
+                                removedKeys?.add(update.key)
+                                RemovalUpdate(update.key, update.version, if(update.isHardDelete) HardDelete else SoftDelete)
+                            }
+                            is Change -> {
+                                if (orderedKeys?.contains(update.key) != true && addedKeys?.contains(update.key) != true) {
+                                    execute(
+                                        request.dataModel.get(
+                                            update.key, select = request.select, where = request.where, filterSoftDeleted = request.filterSoftDeleted
+                                        )
+                                    ).values.firstOrNull()?.let {
+                                        addedKeys?.add(update.key)
+                                        AdditionUpdate(update.key, update.version, index, it.values)
+                                    }
+                                } else {
+                                    ChangeUpdate(update.key, update.version, index, update.changes)
+                                }
+                            }
+                        }.apply { this?.let { emit(this) } }
+                    }
+                } else {
+                    break
+                }
+            }
+
+            // Add and remove values which should or should not be there from passed orderedKeys
+            // This so the requester is up to date with any in between filtered values
+            orderedKeys?.let {
+                for (removedKey in orderedKeys.subtract(listener.matchingKeys).subtract(removedKeys!!)) {
+                    emit(
+                        RemovalUpdate(
+                            key = removedKey,
+                            version = listener.lastResponseVersion,
+                            reason = NotInRange
+                        )
+                    )
+                }
+                val keysToAdd = listener.matchingKeys.subtract(orderedKeys).subtract(addedKeys!!)
+                val toBeAddedResponse = execute(
+                    request.dataModel.get(
+                        *keysToAdd.toTypedArray(),
+                        select = request.select,
+                        where = request.where,
+                        filterSoftDeleted = request.filterSoftDeleted
+                    )
+                )
+
+                for (value in toBeAddedResponse.values) {
+                    emit(
+                        AdditionUpdate(
+                            value.key,
+                            version = listener.lastResponseVersion,
+                            insertionIndex = listener.matchingKeys.indexOf(value.key),
+                            values = value.values
+                        )
+                    )
+                }
+            }
+
+            // Walk items after version of OrderedKeys as if they are normal changes
+            while (sortedLoopIndex < sortedChanges.size) {
+                val update = sortedChanges[sortedLoopIndex++]
+                @Suppress("UNCHECKED_CAST")
+                update.process(listener as UpdateListener<DM, P, RQ>, this@AbstractDataStore, listener.sendChannel)
             }
         }
     }

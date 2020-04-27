@@ -137,11 +137,29 @@ class DataStoreScanChangesUpdateTest(
                 startKey = testKeys[1],
                 fromVersion = highestInitVersion + 1uL
             ),
-            5
+            7,
+            listOf(testKeys[0], testKeys[1], testKeys[2], testKeys[4])
         ) { responses ->
             assertType<OrderedKeysUpdate<*, *>>(responses[0].await()).apply {
                 assertEquals(listOf(testKeys[1], testKeys[2], testKeys[3], testKeys[4]), keys)
                 assertEquals(highestInitVersion, version)
+            }
+
+            // Based on passed ordered keys to the server
+            val removalUpdate0 = responses[1].await()
+            assertType<RemovalUpdate<*, *>>(removalUpdate0).apply {
+                assertEquals(testKeys[0], key)
+                assertEquals(NotInRange, reason)
+                assertEquals(highestInitVersion, version)
+            }
+
+            // Based on passed ordered keys to the server
+            val additionUpdate0 = responses[2].await()
+            assertType<AdditionUpdate<*, *>>(additionUpdate0).apply {
+                assertEquals(testKeys[3], key)
+                assertEquals(highestInitVersion, version)
+                assertEquals(2, insertionIndex)
+                assertEquals<Values<*, *>>(t4, values)
             }
 
             val change1 = Change(TestMarykModel { string::ref } with "ha new message 1")
@@ -149,7 +167,7 @@ class DataStoreScanChangesUpdateTest(
                 testKeys[1].change(change1)
             ))
 
-            val changeUpdate1 = responses[1].await()
+            val changeUpdate1 = responses[3].await()
             assertType<ChangeUpdate<*, *>>(changeUpdate1).apply {
                 assertEquals(testKeys[1], key)
                 assertEquals(listOf(change1), changes)
@@ -168,7 +186,7 @@ class DataStoreScanChangesUpdateTest(
                 testKeys[2].change(change2)
             ))
 
-            val changeUpdate2 = responses[2].await()
+            val changeUpdate2 = responses[4].await()
             assertType<ChangeUpdate<*, *>>(changeUpdate2).apply {
                 assertEquals(testKeys[2], key)
                 assertEquals(listOf(change2), changes)
@@ -177,7 +195,7 @@ class DataStoreScanChangesUpdateTest(
 
             dataStore.execute(TestMarykModel.delete(testKeys[2], hardDelete = true))
 
-            val removalUpdate1 = responses[3].await()
+            val removalUpdate1 = responses[5].await()
             assertType<RemovalUpdate<*, *>>(removalUpdate1).apply {
                 assertEquals(testKeys[2], key)
                 assertEquals(HardDelete, reason)
@@ -196,7 +214,7 @@ class DataStoreScanChangesUpdateTest(
                 newDataObject
             ))
 
-            val additionUpdate = responses[4].await()
+            val additionUpdate = responses[6].await()
             assertType<AdditionUpdate<TestMarykModel, TestMarykModel.Properties>>(additionUpdate).apply {
                 assertEquals(newDataObject, values)
                 assertEquals(1, insertionIndex)

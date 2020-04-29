@@ -168,7 +168,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
                         }
 
                         updateSendChannel.send(
-                            Deletion(deleteRequest.dataModel, key, version, deleteRequest.hardDelete)
+                            Deletion(deleteRequest.dataModel, key, version.timestamp, deleteRequest.hardDelete)
                         )
 
                         DeleteSuccess(version.timestamp)

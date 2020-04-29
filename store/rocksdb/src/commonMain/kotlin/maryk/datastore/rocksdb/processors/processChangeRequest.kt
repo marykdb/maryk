@@ -729,7 +729,7 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> app
         }
 
         updateSendChannel.send(
-            Update.Change(dataModel, key, version, changes + outChanges)
+            Update.Change(dataModel, key, version.timestamp, changes + outChanges)
         )
 
         // Nothing skipped out so must be a success

@@ -149,7 +149,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
                     val changes = listOf<IsChange>()
 
                     updateSendChannel.send(
-                        Addition(addRequest.dataModel, key, version, objectToAdd.change(changes))
+                        Addition(addRequest.dataModel, key, version.timestamp, objectToAdd.change(changes))
                     )
 
                     statuses.add(

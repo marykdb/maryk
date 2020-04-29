@@ -30,4 +30,7 @@ interface IsDataStore {
 
     /** Close the data store */
     fun close()
+
+    /** Close all open listeners */
+    fun closeAllListeners()
 }

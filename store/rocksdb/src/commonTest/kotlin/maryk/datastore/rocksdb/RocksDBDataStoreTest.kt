@@ -24,6 +24,8 @@ class RocksDBDataStoreTest {
         )
 
         runDataStoreTests(dataStore)
+
+        dataStore.close()
     }
 
     @Test
@@ -36,5 +38,7 @@ class RocksDBDataStoreTest {
         )
 
         runDataStoreTests(dataStore)
+
+        dataStore.close()
     }
 }

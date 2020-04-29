@@ -34,7 +34,7 @@ import maryk.test.runSuspendingTest
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
-val t1 = TestMarykModel(
+val t0 = TestMarykModel(
     string = "ha world 1",
     int = 0,
     uint = 67u,
@@ -42,7 +42,7 @@ val t1 = TestMarykModel(
     double = 2323.3,
     dateTime = DateTime(1989, 9, 8)
 )
-val t2 = TestMarykModel(
+val t1 = TestMarykModel(
     string = "ha world 2",
     int = -10,
     uint = 69u,
@@ -50,7 +50,7 @@ val t2 = TestMarykModel(
     double = 0.1,
     dateTime = DateTime(2001, 4, 2)
 )
-val t3 = TestMarykModel(
+val t2 = TestMarykModel(
     string = "ha world 3",
     int = 2,
     uint = 1244u,
@@ -58,7 +58,7 @@ val t3 = TestMarykModel(
     double = 444.0,
     dateTime = DateTime(2005, 11, 30)
 )
-val t4 = TestMarykModel(
+val t3 = TestMarykModel(
     string = "ha world 4",
     int = -5,
     uint = 52323u,
@@ -66,7 +66,7 @@ val t4 = TestMarykModel(
     double = 2333.0,
     dateTime = DateTime(2012, 1, 28)
 )
-val t5 = TestMarykModel(
+val t4 = TestMarykModel(
     string = "ha world 5",
     int = 4,
     uint = 234234u,
@@ -95,7 +95,7 @@ class DataStoreScanChangesUpdateTest(
     override fun initData() {
         runSuspendingTest {
             val addResponse = dataStore.execute(
-                TestMarykModel.add(t1, t2, t3, t4, t5)
+                TestMarykModel.add(t0, t1, t2, t3, t4)
             )
             addResponse.statuses.forEach { status ->
                 val response = assertType<AddSuccess<TestMarykModel>>(status)
@@ -159,7 +159,7 @@ class DataStoreScanChangesUpdateTest(
                 assertEquals(testKeys[3], key)
                 assertEquals(highestInitVersion, version)
                 assertEquals(2, insertionIndex)
-                assertEquals<Values<*, *>>(t4, values)
+                assertEquals<Values<*, *>>(t3, values)
             }
 
             val change1 = Change(TestMarykModel { string::ref } with "ha new message 1")
@@ -239,7 +239,7 @@ class DataStoreScanChangesUpdateTest(
             val prevUpdate1 = responses[1].await()
             assertType<AdditionUpdate<TestMarykModel, TestMarykModel.Properties>>(prevUpdate1).apply {
                 assertEquals(testKeys[1], key)
-                assertEquals(t2, values)
+                assertEquals(t1, values)
                 assertEquals(0, insertionIndex)
             }
 
@@ -405,7 +405,7 @@ class DataStoreScanChangesUpdateTest(
                 includeStart = false,
                 fromVersion = highestInitVersion + 1uL
             ),
-            8
+            12
         ) { responses ->
             // Order of keys is now: 1, 3, 0, 2, 4
             // Item at key1 is skipped so starts at 3 now
@@ -476,7 +476,7 @@ class DataStoreScanChangesUpdateTest(
 
             val newDataObject2 = TestMarykModel(
                 string = "ha new world",
-                int = -1,
+                int = -2,
                 uint = 4321u,
                 bool = false,
                 double = 1.1,
@@ -526,6 +526,44 @@ class DataStoreScanChangesUpdateTest(
                     ))
                 ), changes)
                 assertEquals(1, index)
+            }
+
+            // Move item out of range by changing value on which index is determined
+
+            val change4 = Change(TestMarykModel { int::ref } with 5)
+            dataStore.execute(TestMarykModel.change(
+                testKeys[3].change(change4)
+            ))
+
+            val removalUpdate3 = responses[8].await()
+            assertType<RemovalUpdate<*, *>>(removalUpdate3).apply {
+                assertEquals(testKeys[3], key)
+                assertEquals(NotInRange, reason)
+            }
+
+            val additionUpdate2 = responses[9].await()
+            assertType<AdditionUpdate<*, *>>(additionUpdate2).apply {
+                assertEquals(testKeys[2], key)
+                assertEquals(1, insertionIndex)
+            }
+
+            // Move item back to its old position
+
+            val change5 = Change(TestMarykModel { int::ref } with -1)
+            dataStore.execute(TestMarykModel.change(
+                testKeys[3].change(change5)
+            ))
+
+            val removalUpdate4 = responses[10].await()
+            assertType<RemovalUpdate<*, *>>(removalUpdate4).apply {
+                assertEquals(testKeys[2], key)
+                assertEquals(NotInRange, reason)
+            }
+
+            val additionUpdate3 = responses[11].await()
+            assertType<AdditionUpdate<*, *>>(additionUpdate3).apply {
+                assertEquals(testKeys[3], key)
+                assertEquals(1, insertionIndex)
             }
         }
     }

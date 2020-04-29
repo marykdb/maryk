@@ -36,5 +36,5 @@ internal class DataRecordHistoricValues<T : Any>(
     override val reference: ByteArray,
     val history: List<IsDataRecordValue<T>>
 ) : DataRecordNode() {
-    override fun toString() = "${reference.toHex()}=${history.lastOrNull()?.toString()}"
+    override fun toString() = history.lastOrNull().toString()
 }

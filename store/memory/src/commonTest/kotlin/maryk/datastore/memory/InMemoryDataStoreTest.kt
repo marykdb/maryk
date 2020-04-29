@@ -11,6 +11,8 @@ class InMemoryDataStoreTest {
         val dataStore = InMemoryDataStore(dataModelsById = dataModelsForTests)
 
         runDataStoreTests(dataStore)
+
+        dataStore.close()
     }
 
     @Test
@@ -18,5 +20,7 @@ class InMemoryDataStoreTest {
         val dataStore = InMemoryDataStore(keepAllVersions = true, dataModelsById = dataModelsForTests)
 
         runDataStoreTests(dataStore)
+
+        dataStore.close()
     }
 }

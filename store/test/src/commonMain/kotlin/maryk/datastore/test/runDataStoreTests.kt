@@ -44,11 +44,13 @@ fun runDataStoreTests(dataStore: IsDataStore, runOnlyTest: String? = null) {
     for ((testClassName, testClassConstructor) in allTestClasses) {
         val testClass = testClassConstructor(dataStore)
 
+        println(testClassName)
         try {
             for ((testName, test) in testClass.allTests) {
                 if (runOnlyTest != null && testName != runOnlyTest) {
                     continue
                 }
+                println("- $testName")
 
                 testClass.initData()
 

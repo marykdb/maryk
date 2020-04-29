@@ -61,6 +61,8 @@ fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> updateListenerTester(
 
     val result = successfullyDone.await()
 
+    dataStore.closeAllListeners()
+
     listenJob.cancelAndJoin()
     changeJob.cancelAndJoin()
     timeoutJob.cancelAndJoin()

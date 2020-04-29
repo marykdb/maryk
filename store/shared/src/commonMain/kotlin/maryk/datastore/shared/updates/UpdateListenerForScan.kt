@@ -4,6 +4,7 @@ import kotlinx.coroutines.channels.SendChannel
 import maryk.core.exceptions.StorageException
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
+import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.IndexChange
@@ -40,12 +41,14 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
 
     private val scanType = request.dataModel.orderToScanType(request.order, scanRange.equalPairs)
 
-    private val sortedValues = (scanType as? IndexScan)?.let {
+    internal val sortedValues = (scanType as? IndexScan)?.let {
         scanResponse.values.map {
             scanType.index.toStorageByteArrayForIndex(it.values, it.key.bytes)
                 ?: throw StorageException("Unexpected null value")
         }.toMutableList()
     }
+
+    internal val indexScanRange = (scanType as? IndexScan)?.index?.createScanRange(request.where, scanRange)
 
     override suspend fun process(
         update: Update<DM, P>,
@@ -147,6 +150,7 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
 
                 val indexChange = change.changes.firstOrNull { it is IndexChange } as IndexChange?
 
+                // Check if there are index changes for index needed to order this request
                 when(val indexUpdate = indexChange?.changes?.firstOrNull { it.index == scanType.index.referenceStorageByteArray }) {
                     null -> { // Nothing changed
                         if (existingIndex >= 0) {
@@ -159,34 +163,53 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
                         }
                     }
                     is IndexUpdate -> { // Was changed in order
-                        val index = findSortedKeyIndex(indexUpdate.indexKey.bytes)
+                        // check if key is valid according to filters
+                        if (
+                            indexScanRange!!.keyWithinRanges(indexUpdate.indexKey.bytes)
+                            && indexScanRange.matchesPartials(indexUpdate.indexKey.bytes)
+                        ) {
+                            val index = findSortedKeyIndex(indexUpdate.indexKey.bytes)
 
-                        if (existingIndex != index) { // Is at new index
-                            // Always exists thus always removes a key
-                            matchingKeys.removeAt(existingIndex)
-                            sortedValues?.removeAt(existingIndex)
-
-                            if (index != null) {
-                                if (index < 0) {
-                                    val newIndex = index * -1 - 1
-                                    // correction if existing value delete messed things up
-                                    val correction = if (existingIndex < newIndex) 1 else 0
-                                    val adjustedIndex = newIndex - correction
-
-                                    matchingKeys.add(adjustedIndex, change.key)
-                                    sortedValues?.add(adjustedIndex, indexUpdate.indexKey.bytes)
-
-                                    changedHandler(adjustedIndex, true)
-                                } else {
-                                    throw StorageException("Unexpected existing index for ${change.key} its sorted key {${indexUpdate.indexKey.toHex()} for changes ${change.changes}")
+                            if (existingIndex == -1 || existingIndex != index) { // Is at new index
+                                if (existingIndex >= 0) {
+                                    matchingKeys.removeAt(existingIndex)
+                                    sortedValues?.removeAt(existingIndex)
                                 }
-                            } else { // removed
-                                changedHandler(null, false)
+
+                                if (index != null) {
+                                    if (index < 0) {
+                                        val newIndex = index * -1 - 1
+
+                                        if (newIndex.toUInt() >= request.limit) {
+                                            // Don't add items which are moved to after the limit
+                                            changedHandler(null, false)
+                                        } else if (newIndex == 0 && indexScanRange.ranges.firstOrNull()?.keyBeforeStart(change.key.bytes) == true) {
+                                            // Remove items which are before the first start key/range
+                                            changedHandler(null, false)
+                                        } else {
+                                            // correction if existing value delete made index to be off by one
+                                            val correction = if (existingIndex != -1 && existingIndex < newIndex) 1 else 0
+                                            val adjustedIndex = newIndex - correction
+
+                                            matchingKeys.add(adjustedIndex, change.key)
+                                            sortedValues?.add(adjustedIndex, indexUpdate.indexKey.bytes)
+
+                                            changedHandler(adjustedIndex, true)
+                                        }
+                                    } else {
+                                        throw StorageException("Unexpected existing index for ${change.key} its sorted key {${indexUpdate.indexKey.toHex()} for changes ${change.changes}")
+                                    }
+                                } else { // removed
+                                    changedHandler(null, false)
+                                }
+                            } else { // Is at same position as existing index
+                                if (existingIndex >= 0) {
+                                    changedHandler(existingIndex, false)
+                                }
                             }
-                        } else { // Is at same position as existing index
-                            if (existingIndex >= 0) {
-                                changedHandler(existingIndex, false)
-                            }
+                        } else {
+                            // Not matching key index conditions
+                            changedHandler(null, false)
                         }
                     }
                 }

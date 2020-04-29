@@ -264,6 +264,11 @@ abstract class AbstractDataStore(
         clockActor.close()
 
         updateSendChannel.close()
+
+        closeAllListeners()
+    }
+
+    override fun closeAllListeners() {
         updateListeners.values.forEach { it.forEach(UpdateListener<*, *, *>::close) }
         updateListeners.clear()
     }

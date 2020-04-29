@@ -180,6 +180,10 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> app
 
         val outChanges = mutableListOf<IsChange>()
 
+        val oldIndexValues = dataModel.indices?.map {
+            it.toStorageByteArrayForIndex(objectToChange, objectToChange.key.bytes)
+        }
+
         for (change in changes) {
             try {
                 when (change) {
@@ -635,12 +639,12 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> app
         var indexUpdates: MutableList<IsIndexUpdate>? = null
 
         // Process indices
-        dataModel.indices?.forEach {
+        dataModel.indices?.forEachIndexed { index, it ->
             if (indexUpdates == null) {
                 indexUpdates = mutableListOf()
             }
 
-            val oldValue = it.toStorageByteArrayForIndex(objectToChange, objectToChange.key.bytes)
+            val oldValue = oldIndexValues?.get(index)
             // Use switch trick to use less object creation and still be able to get values
             objectToChange.values = newValueList
             val newValue = it.toStorageByteArrayForIndex(objectToChange, objectToChange.key.bytes)

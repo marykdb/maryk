@@ -10,6 +10,7 @@ import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.requests.IsChangesRequest
 import maryk.core.query.requests.IsScanRequest
+import maryk.core.query.requests.get
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
@@ -20,6 +21,7 @@ import maryk.core.query.responses.updates.RemovalReason.NotInRange
 import maryk.core.query.responses.updates.RemovalReason.SoftDelete
 import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.datastore.shared.IsDataStore
+import maryk.datastore.shared.ScanType.IndexScan
 import maryk.datastore.shared.updates.Update.Addition
 import maryk.datastore.shared.updates.Update.Change
 import maryk.datastore.shared.updates.Update.Deletion
@@ -65,14 +67,9 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ
                 }
             }
             is Change<DM, P> -> {
-                if (currentKeys.contains(key)) {
-                    var shouldDelete = false
-                    val filteredChanges = changes.filterWithSelect(request.select) {
-                        if (it is ObjectSoftDeleteChange && it.isDeleted && request.filterSoftDeleted) {
-                            shouldDelete = true
-                        }
-                    }
+                val shouldDelete = changes.firstOrNull { it is ObjectSoftDeleteChange }?.let { (it as ObjectSoftDeleteChange).isDeleted && request.filterSoftDeleted } ?: false
 
+                if (currentKeys.contains(key)) {
                     if (shouldDelete) {
                         handleDeletion(dataStore, this, SoftDelete, updateListener, sendChannel)
                     } else {
@@ -80,18 +77,56 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ
                             if (newIndex == null) {
                                 handleDeletion(dataStore, this, NotInRange, updateListener, sendChannel)
                             } else {
-                                // Only send ChangeUpdate if order has changed or there are changes with are not just index changes
-                                // IndexChanges are covered with orderChanged check so filteredChanges need to contain more than IndexChanges
-                                if (orderChanged || (filteredChanges.isNotEmpty() && filteredChanges.find { it !is IndexChange } != null)) {
+                                createChangeUpdate<DM, P>(request.select, orderChanged, newIndex)?.let {
+                                    sendChannel.send(it)
+                                }
+                            }
+                        }
+                    }
+                } else if (!shouldDelete && updateListener is UpdateListenerForScan<DM, P> && updateListener.indexScanRange != null) {
+                    val lastKey = updateListener.matchingKeys.last()
+                    val lastSortedKey = updateListener.sortedValues?.last()
+
+                    // Only process further if order has changed to move this value into range
+                    updateListener.changeOrder(this@process) { newIndex, _ ->
+                        if (newIndex != null) {
+                            // Check if object matches the filter
+                            val response = dataStore.execute(
+                                request.dataModel.get(
+                                    key,
+                                    select = request.select,
+                                    where = request.where,
+                                    filterSoftDeleted = request.filterSoftDeleted
+                                )
+                            )
+
+                            // Only handle change if it matches against key
+                            if (response.values.isNotEmpty()) {
+                                if (updateListener.matchingKeys.size.toUInt() >= updateListener.request.limit) {
+                                    updateListener.removeKey(lastKey)
+
                                     sendChannel.send(
-                                        ChangeUpdate(
-                                            key = key,
-                                            version = version,
-                                            index = newIndex,
-                                            changes = filteredChanges
+                                        RemovalUpdate(
+                                            key = lastKey,
+                                            version = this.version,
+                                            reason = NotInRange
                                         )
                                     )
                                 }
+
+                                val addition = response.values.first()
+                                sendChannel.send(
+                                    AdditionUpdate(
+                                        key = addition.key,
+                                        values = addition.values,
+                                        insertionIndex = newIndex,
+                                        version = this.version
+                                    )
+                                )
+                            } else {
+                                // Add back removed values since filter does not match
+                                updateListener.matchingKeys.add(lastKey)
+                                lastSortedKey?.let { updateListener.sortedValues.add(it) }
                             }
                         }
                     }
@@ -112,6 +147,28 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ
     }
 }
 
+private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> Change<DM, P>.createChangeUpdate(
+    select: RootPropRefGraph<P>?,
+    orderChanged: Boolean,
+    newIndex: Int
+): ChangeUpdate<DM, P>? {
+    // Filter now in search of possible delete
+    val filteredChanges = changes.filterWithSelect(select)
+
+    // Only send ChangeUpdate if order has changed or there are changes with are not just index changes
+    // IndexChanges are covered with orderChanged check so filteredChanges need to contain more than IndexChanges
+    if (orderChanged || (filteredChanges.isNotEmpty() && filteredChanges.find { it !is IndexChange } != null)) {
+        return ChangeUpdate(
+            key = key,
+            version = version,
+            index = newIndex,
+            changes = filteredChanges
+        )
+    }
+
+    return null
+}
+
 /** Handles the deletion of Values defined in [change] and if necessary request a new value to put at end */
 private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ: IsChangesRequest<DM, P, *>> handleDeletion(
     dataStore: IsDataStore,
@@ -120,22 +177,42 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ:
     updateListener: UpdateListener<DM, P, RQ>,
     sendChannel: SendChannel<IsUpdateResponse<DM, P>>
 ) {
-    updateListener.removeKey(change.key)
+    val originalIndex = updateListener.removeKey(change.key)
 
-    sendChannel.send(
-        RemovalUpdate(
-            key = change.key,
-            version = change.version,
-            reason = reason
+    suspend fun sendRemoval() {
+        sendChannel.send(
+            RemovalUpdate(
+                key = change.key,
+                version = change.version,
+                reason = reason
+            )
         )
-    )
+    }
 
     if (updateListener is UpdateListenerForScan<DM, P> && updateListener.request.limit - 1u == updateListener.matchingKeys.size.toUInt()) {
-        dataStore.requestNextValues(updateListener.request, updateListener.matchingKeys)?.also {
+        dataStore.requestNextValues(updateListener.request, updateListener.matchingKeys)?.also { additionUpdate ->
             // Always at the end so no need to order
-            updateListener.addValuesAtEnd(it.key, it.values)
-            sendChannel.send(it)
-        }
+            updateListener.addValuesAtEnd(additionUpdate.key, additionUpdate.values)
+
+            if (change is Change<DM, P>) {
+                if (additionUpdate.key != change.key) { // if not same key, remove old & add new
+                    sendRemoval()
+                    sendChannel.send(additionUpdate)
+                } else if (originalIndex != additionUpdate.insertionIndex) {
+                    // If same key send an order change
+                    change.createChangeUpdate(
+                        updateListener.request.select,
+                        orderChanged = true,
+                        newIndex = additionUpdate.insertionIndex
+                    )?.also { sendChannel.send(it) }
+                } // else no change because still the last
+            } else {
+                sendRemoval()
+                sendChannel.send(additionUpdate)
+            }
+        } ?: sendRemoval()
+    } else {
+        sendRemoval()
     }
 }
 
@@ -172,7 +249,7 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> IsD
 /** Filters a list of changes to only have changes to properties defined in [select] */
 private fun List<IsChange>.filterWithSelect(
     select: RootPropRefGraph<out PropertyDefinitions>?,
-    changeProcessor: ((IsChange) -> Unit)?
+    changeProcessor: ((IsChange) -> Unit)? = null
 ): List<IsChange> {
     if (select == null) {
         // process all changes

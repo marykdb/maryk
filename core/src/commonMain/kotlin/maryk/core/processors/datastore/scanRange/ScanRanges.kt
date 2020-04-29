@@ -19,7 +19,7 @@ abstract class ScanRanges internal constructor(
         return true
     }
 
-    fun keyWithinRanges(key: ByteArray, keyIndex: Int): Boolean {
+    fun keyWithinRanges(key: ByteArray, keyIndex: Int = 0): Boolean {
         for (range in ranges) {
             if (!range.keyBeforeStart(key, keyIndex) && !range.keyOutOfRange(key, keyIndex)) {
                 return true

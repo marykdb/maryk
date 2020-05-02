@@ -22,7 +22,7 @@ internal fun <T : Any> getValueAtIndex(
         is DataRecordHistoricValues<*> ->
             if (toVersion == null) {
                 // Just get latest value
-                when (val lastValue = node.history.last()) {
+                when (val lastValue = node.toAdd ?: node.history.last()) {
                     is DataRecordValue<*> -> lastValue as DataRecordValue<T>
                     else -> null // deletion
                 }

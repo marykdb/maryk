@@ -48,7 +48,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordT
                 }
                 is DataRecordHistoricValues<*> -> {
                     if (node.history.last().version < fromVersion) {
-                        // skip because last is below
+                        // skip value because last is below fromVersion
                     } else {
                         when (val latest = node.history.findLast { it.version >= fromVersion && (toVersion == null || it.version < toVersion) }) {
                             null -> {} // skip because not a value

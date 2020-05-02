@@ -9,8 +9,6 @@ import maryk.datastore.memory.records.index.UniqueIndexValues
 import maryk.datastore.shared.UniqueException
 import maryk.lib.extensions.compare.compareTo
 
-internal typealias AnyDataStore = DataStore<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
-
 /**
  * An in memory data store containing records and indices
  */

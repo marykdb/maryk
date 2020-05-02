@@ -131,7 +131,7 @@ internal fun <T : Any> deleteByReference(
         if (value.reference.matchPart(0, referenceToCompareTo)) {
             if (toShiftListCount <= 0u) {
                 // Delete if not a list or no further list items
-                isDeleted = deleteByIndex<T>(values, index, value.reference, version) != null
+                isDeleted = deleteByIndex<T>(values, index, value.reference, version, keepAllVersions) != null
             }
         } else if (refOfParent != null && value.reference.matchPart(0, refOfParent)) {
             // To handle list shifting
@@ -149,7 +149,7 @@ internal fun <T : Any> deleteByReference(
             }
 
             if (toShiftListCount <= 0u) {
-                isDeleted = deleteByIndex<T>(values, index, value.reference, version) != null
+                isDeleted = deleteByIndex<T>(values, index, value.reference, version, keepAllVersions) != null
             }
         } else {
             break

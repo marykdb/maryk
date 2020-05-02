@@ -5,6 +5,7 @@ import maryk.datastore.memory.records.DataRecordHistoricValues
 import maryk.datastore.memory.records.DataRecordNode
 import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DeletedValue
+import maryk.datastore.memory.records.IsDataRecordValue
 
 /**
  * Sets a [value] at a specific [valueIndex] and stores it below [reference] at [version] in [values]
@@ -31,16 +32,14 @@ internal fun <T : Any> setValueAtIndex(
         is DataRecordValue<*> -> {
             if (keepAllVersions && matchedValue.version != version) {
                 // Only store value if was not already value
-                @Suppress("UNCHECKED_CAST")
                 if (matchedValue.value != value) {
                     DataRecordValue(reference, value, version).also {
+                        @Suppress("UNCHECKED_CAST")
                         (values as MutableList<DataRecordNode>)[valueIndex] =
                             DataRecordHistoricValues(
                                 reference,
-                                mutableListOf(
-                                    matchedValue as DataRecordValue<T>,
-                                    it
-                                )
+                                mutableListOf(matchedValue as IsDataRecordValue<T>),
+                                it
                             )
                     }
                 } else null
@@ -48,7 +47,6 @@ internal fun <T : Any> setValueAtIndex(
                 // Only store value if was not already value
                 if (matchedValue.value != value) {
                     DataRecordValue(reference, value, version).also {
-                        @Suppress("UNCHECKED_CAST")
                         (values as MutableList<DataRecordNode>)[valueIndex] = it
                     }
                 } else null
@@ -62,21 +60,13 @@ internal fun <T : Any> setValueAtIndex(
             }
         }
         is DataRecordHistoricValues<*> -> {
-            @Suppress("UNCHECKED_CAST")
-            val mutableHistory = matchedValue.history as MutableList<DataRecordNode>
-            var lastValue = matchedValue.history.last()
-            // If already set at this version, overwrite last version
-            if (lastValue.version == version) {
-                mutableHistory.dropLast(1)
-                lastValue = matchedValue.history.last()
-            }
+            val lastValue = matchedValue.toAdd ?: matchedValue.history.last()
 
             // Only store value if was not already value
             if (lastValue !is DataRecordValue<*> || lastValue.value != value) {
                 DataRecordValue(reference, value, version).also {
-                    mutableHistory.add(
-                        DataRecordValue(reference, value, version)
-                    )
+                    @Suppress("UNCHECKED_CAST")
+                    (matchedValue as DataRecordHistoricValues<T>).add(it)
                 }
             } else null
         }

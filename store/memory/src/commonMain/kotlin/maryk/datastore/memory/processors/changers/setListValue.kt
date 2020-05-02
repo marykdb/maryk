@@ -38,7 +38,13 @@ internal fun <T : Any> setListValue(
     if (toDeleteCount > 0) {
         changed = true
         for (i in 0..toDeleteCount) {
-            deleteByIndex<T>(values, valueIndex + i, getValueAtIndex<T>(values, valueIndex + i)!!.reference, version)
+            deleteByIndex<T>(
+                values,
+                valueIndex + i,
+                getValueAtIndex<T>(values, valueIndex + i)!!.reference,
+                version,
+                keepAllVersions
+            )
         }
     }
 

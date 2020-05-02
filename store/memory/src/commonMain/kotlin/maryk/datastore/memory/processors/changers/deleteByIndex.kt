@@ -12,21 +12,31 @@ internal fun <T : Any> deleteByIndex(
     values: MutableList<DataRecordNode>,
     valueIndex: Int,
     reference: ByteArray,
-    version: HLC
+    version: HLC,
+    keepAllVersions: Boolean
 ) =
     if (valueIndex < 0) {
         null
     } else {
         when (val matchedValue = values[valueIndex]) {
             is DataRecordValue<*> -> {
-                DeletedValue<T>(reference, version).also {
-                    values[valueIndex] = it
+                DeletedValue<T>(reference, version).also { newNode ->
+                    values[valueIndex] = if (keepAllVersions) {
+                        @Suppress("UNCHECKED_CAST")
+                        DataRecordHistoricValues(
+                            reference,
+                            mutableListOf(matchedValue as IsDataRecordValue<T>),
+                            newNode
+                        )
+                    } else {
+                        newNode
+                    }
                 }
             }
             is DataRecordHistoricValues<*> -> {
                 DeletedValue<T>(reference, version).also {
                     @Suppress("UNCHECKED_CAST")
-                    (matchedValue.history as MutableList<IsDataRecordValue<*>>).add(it)
+                    (matchedValue as DataRecordHistoricValues<T>).add(it)
                 }
             }
             is DeletedValue<*> -> matchedValue

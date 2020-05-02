@@ -634,9 +634,15 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> app
             )
         }
 
-        val oldValueList = objectToChange.values
-
         var indexUpdates: MutableList<IsIndexUpdate>? = null
+
+        // Commit all changes in historic nodes
+        for (node in newValueList) {
+            node.commit()
+        }
+
+        // Apply the new values now all validations have been accepted
+        objectToChange.values = newValueList
 
         // Process indices
         dataModel.indices?.forEachIndexed { index, it ->
@@ -645,10 +651,7 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> app
             }
 
             val oldValue = oldIndexValues?.get(index)
-            // Use switch trick to use less object creation and still be able to get values
-            objectToChange.values = newValueList
             val newValue = it.toStorageByteArrayForIndex(objectToChange, objectToChange.key.bytes)
-            objectToChange.values = oldValueList
 
             if (newValue == null) {
                 if (oldValue != null) {
@@ -666,9 +669,6 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> app
                 outChanges += IndexChange(it)
             }
         }
-
-        // Apply the new values now all validations have been accepted
-        objectToChange.values = newValueList
 
         updateSendChannel.send(
             Update.Change(dataModel, objectToChange.key, version.timestamp, changes + outChanges)

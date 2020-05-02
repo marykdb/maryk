@@ -23,6 +23,7 @@ import maryk.datastore.shared.updates.Update
 import maryk.rocksdb.ColumnFamilyDescriptor
 import maryk.rocksdb.ColumnFamilyHandle
 import maryk.rocksdb.ColumnFamilyOptions
+import maryk.rocksdb.ComparatorOptions
 import maryk.rocksdb.DBOptions
 import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.RocksDB
@@ -114,7 +115,8 @@ class RocksDBDataStore(
         descriptors += Unique.getDescriptor(tableIndex, nameSize)
 
         if (keepAllVersions) {
-            val comparator = VersionedComparator(db.keyByteSize)
+            val comparatorOptions = ComparatorOptions()
+            val comparator = VersionedComparator(comparatorOptions, db.keyByteSize)
             // Prefix set to key size for more optimal search.
             val tableOptionsHistoric = ColumnFamilyOptions().apply {
                 useFixedLengthPrefixExtractor(db.keyByteSize)

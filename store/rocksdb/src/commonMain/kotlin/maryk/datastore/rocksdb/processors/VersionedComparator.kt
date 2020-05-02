@@ -12,8 +12,9 @@ private const val versionSize = ULong.SIZE_BYTES
  * Otherwise the version bytes could make values come before their root qualifiers.
  */
 internal class VersionedComparator(
+    private val comparatorOptions: ComparatorOptions,
     private val keySize: Int
-) : maryk.rocksdb.AbstractComparator(ComparatorOptions()) {
+) : maryk.rocksdb.AbstractComparator(comparatorOptions) {
     override fun name() = "maryk.VersionedComparator"
     override fun compare(a: ByteBuffer, b: ByteBuffer): Int {
         return if (a.remaining() > keySize && b.remaining() > keySize) {

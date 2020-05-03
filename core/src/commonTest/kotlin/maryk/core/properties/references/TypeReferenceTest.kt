@@ -72,6 +72,6 @@ internal class TypeReferenceTest {
 
     @Test
     fun toReferenceStorageBytes() {
-        expect("0a09") { multi.typeRef().toReferenceStorageByteArray().toHex() }
+        expect("0a09") { multi.typeRef().referenceStorageByteArray.toHex() }
     }
 }

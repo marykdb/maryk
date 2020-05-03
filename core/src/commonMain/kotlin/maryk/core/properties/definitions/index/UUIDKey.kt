@@ -21,7 +21,7 @@ import maryk.yaml.IsYamlReader
 object UUIDKey : IsFixedBytesPropertyReference<Pair<Long, Long>> {
     override val indexKeyPartType = IndexKeyPartType.UUID
     override val byteSize = 16
-    override val referenceStorageByteArray = Bytes(this.toReferenceStorageByteArray())
+    override val referenceStorageByteArray by lazy { Bytes(this.toReferenceStorageByteArray()) }
 
     override fun getValue(values: IsValuesGetter) = generateUUID()
 

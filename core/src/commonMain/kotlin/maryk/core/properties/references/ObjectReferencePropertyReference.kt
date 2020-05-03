@@ -35,7 +35,7 @@ open class ObjectReferencePropertyReference<
     override val name = propertyDefinition.name
     override val byteSize = propertyDefinition.byteSize
     override val indexKeyPartType = IndexKeyPartType.Reference
-    override val referenceStorageByteArray = Bytes(this.toReferenceStorageByteArray())
+    override val referenceStorageByteArray by lazy { Bytes(this.toReferenceStorageByteArray()) }
 
     override fun calculateStorageByteLength(value: Key<DM>) = this.byteSize
 

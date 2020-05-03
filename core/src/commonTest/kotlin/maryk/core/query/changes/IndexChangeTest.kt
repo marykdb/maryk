@@ -3,6 +3,7 @@ package maryk.core.query.changes
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
+import maryk.core.properties.types.Bytes
 import kotlin.test.Test
 import kotlin.test.expect
 
@@ -10,13 +11,13 @@ internal class IndexChangeTest {
     private val indexChange = IndexChange(
         listOf(
             IndexUpdate(
-                index = byteArrayOf(0, 1),
-                indexKey = byteArrayOf(1, 2),
-                previousIndexKey = byteArrayOf(2, 3)
+                index = Bytes(byteArrayOf(0, 1)),
+                indexKey = Bytes(byteArrayOf(1, 2)),
+                previousIndexKey = Bytes(byteArrayOf(2, 3))
             ),
             IndexDelete(
-                index = byteArrayOf(3, 4),
-                indexKey = byteArrayOf(5, 6)
+                index = Bytes(byteArrayOf(3, 4)),
+                indexKey = Bytes(byteArrayOf(5, 6))
             )
         )
     )

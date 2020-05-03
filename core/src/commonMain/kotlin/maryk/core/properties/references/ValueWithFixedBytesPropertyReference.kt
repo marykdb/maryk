@@ -31,7 +31,7 @@ open class ValueWithFixedBytesPropertyReference<
     IsFixedStorageBytesEncodable<T> by propertyDefinition {
     override val byteSize = propertyDefinition.byteSize
     override val indexKeyPartType = IndexKeyPartType.Reference
-    override val referenceStorageByteArray = Bytes(this.toReferenceStorageByteArray())
+    override val referenceStorageByteArray by lazy { Bytes(this.toReferenceStorageByteArray()) }
 
     override fun calculateStorageByteLength(value: T) = this.byteSize
 

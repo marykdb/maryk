@@ -34,7 +34,7 @@ data class TypeReference<E : TypeEnum<T>, T: Any, in CX : IsPropertyContext> int
 {
     override val indexKeyPartType = IndexKeyPartType.Reference
     override val propertyDefinition = multiTypeDefinition.typeEnum
-    override val referenceStorageByteArray = Bytes(this.toReferenceStorageByteArray())
+    override val referenceStorageByteArray by lazy { Bytes(this.toReferenceStorageByteArray()) }
 
     override val completeName
         get() = this.parentReference?.let {

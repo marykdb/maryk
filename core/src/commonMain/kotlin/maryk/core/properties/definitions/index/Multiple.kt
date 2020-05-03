@@ -18,7 +18,7 @@ data class Multiple(
     val references: List<IsIndexablePropertyReference<*>>
 ) : IsIndexable {
     override val indexKeyPartType = IndexKeyPartType.Multiple
-    override val referenceStorageByteArray = Bytes(this.toReferenceStorageByteArray())
+    override val referenceStorageByteArray by lazy { Bytes(this.toReferenceStorageByteArray()) }
 
     /** Convenience method to set with each [reference] as separate argument */
     constructor(vararg reference: IsIndexablePropertyReference<*>) : this(listOf(*reference))

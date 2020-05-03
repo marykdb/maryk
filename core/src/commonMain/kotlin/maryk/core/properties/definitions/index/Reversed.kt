@@ -23,7 +23,7 @@ data class Reversed<T : Any>(
     val reference: IsValuePropertyReference<T, *, *, *>
 ) : IsIndexablePropertyReference<T> {
     override val indexKeyPartType = IndexKeyPartType.Reversed
-    override val referenceStorageByteArray = Bytes(this.toReferenceStorageByteArray())
+    override val referenceStorageByteArray by lazy { Bytes(this.toReferenceStorageByteArray()) }
 
     override fun getValue(values: IsValuesGetter) =
         this.reference.getValue(values)

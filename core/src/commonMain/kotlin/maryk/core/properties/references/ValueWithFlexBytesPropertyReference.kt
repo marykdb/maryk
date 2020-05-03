@@ -23,5 +23,5 @@ open class ValueWithFlexBytesPropertyReference<
     IsValuePropertyReference<T, TO, D, P>,
     IsStorageBytesEncodable<T> by propertyDefinition {
     override val indexKeyPartType = IndexKeyPartType.Reference
-    override val referenceStorageByteArray = Bytes(this.toReferenceStorageByteArray())
+    override val referenceStorageByteArray by lazy { Bytes(this.toReferenceStorageByteArray()) }
 }

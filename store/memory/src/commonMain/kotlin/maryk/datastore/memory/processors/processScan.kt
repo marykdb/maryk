@@ -9,6 +9,7 @@ import maryk.core.properties.types.Key
 import maryk.core.query.requests.IsScanRequest
 import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataStore
+import maryk.datastore.shared.ScanType
 import maryk.datastore.shared.ScanType.IndexScan
 import maryk.datastore.shared.ScanType.TableScan
 import maryk.datastore.shared.checkToVersion
@@ -20,6 +21,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
     scanRequest: IsScanRequest<DM, P, *>,
     dataStore: DataStore<DM, P>,
     recordFetcher: (IsRootValuesDataModel<*>, Key<*>) -> DataRecord<*, *>?,
+    scanSetup: ((ScanType) -> Unit)? = null,
     processRecord: (DataRecord<DM, P>) -> Unit
 ) {
     val keyScanRange = scanRequest.dataModel.createScanRange(scanRequest.where, scanRequest.startKey?.bytes, scanRequest.includeStart)
@@ -63,6 +65,8 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
             val processedScanIndex = if (scanIndex is TableScan) {
                 scanRequest.dataModel.optimizeTableScan(scanIndex, keyScanRange.equalPairs)
             } else scanIndex
+
+            scanSetup?.invoke(processedScanIndex)
 
             when (processedScanIndex) {
                 is TableScan -> {

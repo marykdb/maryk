@@ -14,6 +14,7 @@ import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.getKeyByUniqueValue
 import maryk.datastore.rocksdb.processors.helpers.readCreationVersion
+import maryk.datastore.shared.ScanType
 import maryk.lib.recyclableByteArray
 import maryk.datastore.shared.ScanType.IndexScan
 import maryk.datastore.shared.ScanType.TableScan
@@ -30,6 +31,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
     dbAccessor: DBAccessor,
     columnFamilies: TableColumnFamilies,
     readOptions: ReadOptions,
+    scanSetup: ((ScanType) -> Unit)? = null,
     processRecord: (Key<DM>, ULong) -> Unit
 ) {
     val keyScanRange = scanRequest.dataModel.createScanRange(scanRequest.where, scanRequest.startKey?.bytes, scanRequest.includeStart)
@@ -91,6 +93,8 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
             val processedScanIndex = if (scanIndex is TableScan) {
                 scanRequest.dataModel.optimizeTableScan(scanIndex, keyScanRange.equalPairs)
             } else scanIndex
+
+            scanSetup?.invoke(processedScanIndex)
 
             when (processedScanIndex) {
                 is TableScan -> {

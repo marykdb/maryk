@@ -10,8 +10,8 @@ import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
 import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
-import maryk.core.query.requests.getChanges
-import maryk.core.query.requests.scanChanges
+import maryk.core.query.requests.getUpdates
+import maryk.core.query.requests.scanUpdates
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.OrderedKeysUpdate
@@ -28,7 +28,7 @@ import maryk.test.runSuspendingTest
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
-class DataStoreScanChangesUpdateWithLogTest(
+class DataStoreScanUpdatesWithLogTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
     private val testKeys = mutableListOf<Key<Log>>()
@@ -79,7 +79,7 @@ class DataStoreScanChangesUpdateWithLogTest(
     private fun failWithMutableWhereClause() = runSuspendingTest {
         assertFailsWith<RequestException> {
             dataStore.executeFlow(
-                Log.getChanges(testKeys[0], testKeys[1], where = Exists(Log { message::ref }))
+                Log.getUpdates(testKeys[0], testKeys[1], where = Exists(Log { message::ref }))
             )
         }
     }
@@ -88,7 +88,7 @@ class DataStoreScanChangesUpdateWithLogTest(
         updateListenerTester(
             dataStore,
             // Reverse order so keys[0], [1] and [2] are within range
-            Log.scanChanges(
+            Log.scanUpdates(
                 startKey = testKeys[2],
                 where = ValueIn(Log { severity::ref } with setOf(DEBUG, ERROR)),
                 fromVersion = highestInitVersion + 1uL

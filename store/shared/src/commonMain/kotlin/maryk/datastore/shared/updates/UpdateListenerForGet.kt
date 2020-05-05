@@ -4,26 +4,25 @@ import kotlinx.coroutines.channels.SendChannel
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.types.Key
-import maryk.core.query.requests.GetChangesRequest
-import maryk.core.query.responses.ValuesResponse
+import maryk.core.query.requests.GetUpdatesRequest
+import maryk.core.query.responses.UpdatesResponse
 import maryk.core.query.responses.updates.IsUpdateResponse
+import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.core.values.Values
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.updates.Update.Change
 
 /** Update listener for get requests */
 class UpdateListenerForGet<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
-    request: GetChangesRequest<DM, P>,
-    getResponse: ValuesResponse<DM, P>,
+    request: GetUpdatesRequest<DM, P>,
+    getResponse: UpdatesResponse<DM, P>,
     sendChannel: SendChannel<IsUpdateResponse<DM, P>>
-) : UpdateListener<DM, P, GetChangesRequest<DM, P>>(
+) : UpdateListener<DM, P, GetUpdatesRequest<DM, P>>(
     request,
-    getResponse.values.map { it.key }.toMutableList(),
+    (getResponse.updates.firstOrNull() as? OrderedKeysUpdate<DM, P>)?.keys?.toMutableList() ?: mutableListOf(),
     sendChannel
 ) {
-    override val lastResponseVersion = getResponse.values.fold(0uL) { acc, value ->
-        maxOf(acc, value.lastVersion)
-    }
+    override val lastResponseVersion = (getResponse.updates.firstOrNull() as? OrderedKeysUpdate<DM, P>)?.version ?: 0uL
 
     override suspend fun process(
         update: Update<DM, P>,

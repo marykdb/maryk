@@ -8,8 +8,8 @@ import maryk.core.properties.types.Key
 import maryk.core.query.changes.IndexChange
 import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.ObjectSoftDeleteChange
-import maryk.core.query.requests.IsChangesRequest
 import maryk.core.query.requests.IsScanRequest
+import maryk.core.query.requests.IsUpdatesRequest
 import maryk.core.query.requests.get
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.updates.AdditionUpdate
@@ -21,13 +21,12 @@ import maryk.core.query.responses.updates.RemovalReason.NotInRange
 import maryk.core.query.responses.updates.RemovalReason.SoftDelete
 import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.datastore.shared.IsDataStore
-import maryk.datastore.shared.ScanType.IndexScan
 import maryk.datastore.shared.updates.Update.Addition
 import maryk.datastore.shared.updates.Update.Change
 import maryk.datastore.shared.updates.Update.Deletion
 
 /** processes a single update */
-internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ: IsChangesRequest<DM, P, *>> Update<DM, P>.process(
+internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ: IsUpdatesRequest<DM, P, *>> Update<DM, P>.process(
     updateListener: UpdateListener<DM, P, RQ>,
     dataStore: IsDataStore,
     sendChannel: SendChannel<IsUpdateResponse<DM, P>>
@@ -170,7 +169,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> Change<DM, 
 }
 
 /** Handles the deletion of Values defined in [change] and if necessary request a new value to put at end */
-private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ: IsChangesRequest<DM, P, *>> handleDeletion(
+private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ: IsUpdatesRequest<DM, P, *>> handleDeletion(
     dataStore: IsDataStore,
     change: Update<DM, P>,
     reason: RemovalReason,

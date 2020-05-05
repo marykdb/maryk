@@ -21,15 +21,15 @@ import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.RequestContext
 import maryk.core.query.filters.IsFilter
 import maryk.core.query.requests.RequestType.GetChanges
-import maryk.core.query.responses.ChangesResponse
+import maryk.core.query.responses.UpdatesResponse
 import maryk.core.values.ObjectValues
 
 /**
  * Creates a request to get DataObject its versioned changes by value [keys]
- * It will only fetch the changes [fromVersion] (Inclusive) until [maxVersions] (Default=1000) is reached.
+ * It will only fetch the updates [fromVersion] (Inclusive) until [maxVersions] (Default=1) is reached.
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  */
-fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.getChanges(
+fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.getUpdates(
     vararg keys: Key<DM>,
     where: IsFilter? = null,
     fromVersion: ULong = 0uL,
@@ -38,7 +38,7 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.getChanges(
     select: RootPropRefGraph<P>? = null,
     filterSoftDeleted: Boolean = true
 ) =
-    GetChangesRequest(
+    GetUpdatesRequest(
         this,
         keys.toList(),
         where,
@@ -51,11 +51,11 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.getChanges(
 
 /**
  * A Request to get DataObject its versioned changes by value [keys] for specific [dataModel] of type [DM]
- * It will only fetch the changes [fromVersion] (Inclusive) until [maxVersions] (Default=1000) is reached.
+ * It will only fetch the changes [fromVersion] (Inclusive) until [maxVersions] (Default=1) is reached.
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  * Only selected properties can be returned with a [select] graph
  */
-data class GetChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> internal constructor(
+data class GetUpdatesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> internal constructor(
     override val dataModel: DM,
     override val keys: List<Key<DM>>,
     override val where: IsFilter? = null,
@@ -64,9 +64,9 @@ data class GetChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
     override val maxVersions: UInt = 1u,
     override val select: RootPropRefGraph<P>? = null,
     override val filterSoftDeleted: Boolean = true
-) : IsGetRequest<DM, P, ChangesResponse<DM>>, IsChangesRequest<DM, P, ChangesResponse<DM>>, IsTransportableRequest<ChangesResponse<DM>> {
+) : IsGetRequest<DM, P, UpdatesResponse<DM, P>>, IsUpdatesRequest<DM, P, UpdatesResponse<DM, P>>, IsTransportableRequest<UpdatesResponse<DM, P>> {
     override val requestType = GetChanges
-    override val responseModel = ChangesResponse
+    override val responseModel = UpdatesResponse
 
     // Aggregations are not allowed on a get changes request
     override val aggregations: Aggregations? = null
@@ -87,7 +87,7 @@ data class GetChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
         val toVersion by number(5u, GetChangesRequest<*, *>::toVersion, UInt64, required = false)
         val filterSoftDeleted by boolean(6u, GetChangesRequest<*, *>::filterSoftDeleted, default = true)
         val fromVersion by number(7u, GetChangesRequest<*, *>::fromVersion, UInt64)
-        val maxVersions by number(8u, GetChangesRequest<*, *>::maxVersions, UInt32, maxValue = 1u)
+        val maxVersions by number(8u, GetChangesRequest<*, *>::maxVersions, UInt32, maxValue = 1000u)
     }
 
     companion object : QueryDataModel<GetChangesRequest<*, *>, Properties>(

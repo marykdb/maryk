@@ -26,15 +26,8 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> IsFetchReq
     toVersion: ULong?
 ) = when {
     toVersion != null && createdVersion > toVersion -> true
-    this.filterSoftDeleted && dbAccessor.getValue(columnFamilies, readOptions, toVersion, softDeleteQualifier(key, keyOffset, keyLength)) { b, o, l -> b[l+o-1] == TRUE } ?: false -> true
+    this.filterSoftDeleted && isSoftDeleted(dbAccessor, columnFamilies, readOptions, toVersion, key, keyOffset, keyLength) -> true
     else -> !matchesFilter(where) { propertyReference, valueMatcher ->
         dbAccessor.matchQualifier(columnFamilies, readOptions, key, keyOffset, keyLength, propertyReference, toVersion, valueMatcher)
     }
-}
-
-private fun softDeleteQualifier(key: ByteArray, keyOffset: Int, keyLength: Int): ByteArray {
-    val qualifier = ByteArray(keyLength + 1)
-    key.copyInto(qualifier, 0, keyOffset, keyOffset + keyLength)
-    qualifier[keyLength] = SOFT_DELETE_INDICATOR
-    return qualifier
 }

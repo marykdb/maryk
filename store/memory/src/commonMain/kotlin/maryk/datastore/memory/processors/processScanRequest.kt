@@ -16,7 +16,7 @@ import maryk.datastore.shared.StoreAction
 internal typealias ScanStoreAction<DM, P> = StoreAction<DM, P, ScanRequest<DM, P>, ValuesResponse<DM, P>>
 internal typealias AnyScanStoreAction = ScanStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
 
-/** Processes a ScanRequest in a [storeAction] into a [dataStore] */
+/** Processes a ScanRequest in a [storeAction] into a dataStore from [dataStoreFetcher] */
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processScanRequest(
     storeAction: ScanStoreAction<DM, P>,
     dataStoreFetcher: IsStoreFetcher<*, *>

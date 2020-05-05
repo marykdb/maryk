@@ -20,7 +20,7 @@ import maryk.core.values.ObjectValues
 
 /**
  * Creates a request to scan DataObjects by key from [startKey] until [limit]
- * It will only fetch the changes [fromVersion] (Inclusive) until [maxVersions] (Default=1000) is reached.
+ * It will only fetch the changes [fromVersion] (Inclusive) until [maxVersions] (Default=1) is reached.
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
@@ -52,7 +52,7 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.scanChanges(
 
 /**
  * A Request to scan DataObjects by key from [startKey] until [limit] for specific [dataModel]
- * It will only fetch the changes [fromVersion] (Inclusive) until [maxVersions] (Default=1000) is reached.
+ * It will only fetch the changes [fromVersion] (Inclusive) until [maxVersions] (Default=1) is reached.
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order] and only selected properties can be returned with a [select] graph
  */
@@ -87,7 +87,7 @@ data class ScanChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinit
         val limit by number(9u, ScanChangesRequest<*, *>::limit, type = UInt32, default = 100u)
         val includeStart by boolean(10u, ScanChangesRequest<*, *>::includeStart, default = true)
         val fromVersion by number(11u, ScanChangesRequest<*, *>::fromVersion, UInt64)
-        val maxVersions by number(12u, ScanChangesRequest<*, *>::maxVersions, UInt32, maxValue = 1000u)
+        val maxVersions by number(12u, ScanChangesRequest<*, *>::maxVersions, UInt32, maxValue = 1u)
     }
 
     companion object : QueryDataModel<ScanChangesRequest<*, *>, Properties>(

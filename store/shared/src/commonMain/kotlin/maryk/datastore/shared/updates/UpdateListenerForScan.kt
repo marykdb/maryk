@@ -12,9 +12,10 @@ import maryk.core.query.changes.IndexDelete
 import maryk.core.query.changes.IndexUpdate
 import maryk.core.query.orders.Direction.ASC
 import maryk.core.query.orders.Direction.DESC
-import maryk.core.query.requests.ScanChangesRequest
-import maryk.core.query.responses.ValuesResponse
+import maryk.core.query.requests.ScanUpdatesRequest
+import maryk.core.query.responses.UpdatesResponse
 import maryk.core.query.responses.updates.IsUpdateResponse
+import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.core.values.Values
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.ScanType.IndexScan
@@ -22,31 +23,23 @@ import maryk.datastore.shared.ScanType.TableScan
 import maryk.datastore.shared.orderToScanType
 import maryk.datastore.shared.updates.Update.Change
 import maryk.lib.extensions.compare.compareTo
-import maryk.lib.extensions.toHex
 
 /** Update listener for scans */
 class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
-    request: ScanChangesRequest<DM, P>,
+    request: ScanUpdatesRequest<DM, P>,
     val scanRange: KeyScanRanges,
-    scanResponse: ValuesResponse<DM, P>,
+    scanResponse: UpdatesResponse<DM, P>,
     sendChannel: SendChannel<IsUpdateResponse<DM, P>>
-) : UpdateListener<DM, P, ScanChangesRequest<DM, P>>(
+) : UpdateListener<DM, P, ScanUpdatesRequest<DM, P>>(
     request,
-    scanResponse.values.map { it.key }.toMutableList(),
+    (scanResponse.updates.firstOrNull() as? OrderedKeysUpdate<DM, P>)?.keys?.toMutableList() ?: mutableListOf(),
     sendChannel
 ) {
-    override val lastResponseVersion = scanResponse.values.fold(0uL) { acc, value ->
-        maxOf(acc, value.lastVersion)
-    }
+    override val lastResponseVersion = (scanResponse.updates.firstOrNull() as? OrderedKeysUpdate<DM, P>)?.version ?: 0uL
 
     private val scanType = request.dataModel.orderToScanType(request.order, scanRange.equalPairs)
 
-    internal val sortedValues = (scanType as? IndexScan)?.let {
-        scanResponse.values.map {
-            scanType.index.toStorageByteArrayForIndex(it.values, it.key.bytes)
-                ?: throw StorageException("Unexpected null value")
-        }.toMutableList()
-    }
+    internal val sortedValues = (scanResponse.updates.firstOrNull() as? OrderedKeysUpdate<DM, P>)?.sortingKeys?.map { it.bytes }?.toMutableList()
 
     internal val indexScanRange = (scanType as? IndexScan)?.index?.createScanRange(request.where, scanRange)
 

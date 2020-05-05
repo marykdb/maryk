@@ -4,6 +4,7 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
+import maryk.core.properties.types.Bytes
 import maryk.core.query.RequestContext
 import maryk.test.models.SimpleMarykModel
 import kotlin.test.Test
@@ -16,7 +17,8 @@ internal class OrderedKeysUpdateTest {
 
     private val orderedKeysUpdate = OrderedKeysUpdate(
         keys = listOf(key1, key2, key3),
-        version = 1234uL
+        version = 1234uL,
+        sortingKeys = listOf(Bytes(byteArrayOf(0, 1)), Bytes(byteArrayOf(1, 2)), Bytes(byteArrayOf(2, 3, 4)))
     )
 
     private val context = RequestContext(
@@ -42,6 +44,7 @@ internal class OrderedKeysUpdateTest {
             """
             keys: [0ruQCs38S2QaByYof+IJgA, dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
             version: 1234
+            sortingKeys: [AAE, AQI, AgME]
             
             """.trimIndent()
         ) {

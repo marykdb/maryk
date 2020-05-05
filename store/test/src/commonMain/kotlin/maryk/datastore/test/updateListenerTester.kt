@@ -8,9 +8,8 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.types.Key
-import maryk.core.query.requests.IsChangesRequest
-import maryk.core.query.responses.ChangesResponse
+import maryk.core.query.requests.IsUpdatesRequest
+import maryk.core.query.responses.UpdatesResponse
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.datastore.shared.IsDataStore
 import maryk.test.runSuspendingTest
@@ -19,9 +18,8 @@ import kotlin.test.assertTrue
 /** Test helper for listening to update changes for [request] on [dataStore] */
 fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> updateListenerTester(
     dataStore: IsDataStore,
-    request: IsChangesRequest<DM, P, ChangesResponse<DM>>,
+    request: IsUpdatesRequest<DM, P, UpdatesResponse<DM, P>>,
     responseCount: Int,
-    orderedKeys: List<Key<DM>>? = null,
     changeBlock: suspend CoroutineScope.(Array<CompletableDeferred<IsUpdateResponse<DM, P>>>) -> Unit
 ) = runSuspendingTest {
     val responses = Array(responseCount) {
@@ -33,8 +31,7 @@ fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> updateListenerTester(
 
     val listenJob = launch {
         dataStore.executeFlow(
-            request,
-            orderedKeys
+            request
         ).also {
             listenerSetupComplete.complete(true)
         }.collect {

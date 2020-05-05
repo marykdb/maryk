@@ -9,7 +9,7 @@ import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
 import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
-import maryk.core.query.requests.getChanges
+import maryk.core.query.requests.getUpdates
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
@@ -23,8 +23,10 @@ import maryk.test.models.SimpleMarykModel.Properties
 import maryk.test.runSuspendingTest
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
+import kotlin.test.expect
 
-class DataStoreGetChangesUpdateTest(
+class DataStoreGetUpdatesTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
     private val testKeys = mutableListOf<Key<SimpleMarykModel>>()
@@ -32,6 +34,7 @@ class DataStoreGetChangesUpdateTest(
     private var highestInitVersion = ULong.MIN_VALUE
 
     override val allTests = mapOf(
+        "executeSimpleGetUpdatesRequest" to ::executeSimpleGetUpdatesRequest,
         "failWithMutableWhereClause" to ::failWithMutableWhereClause,
         "executeGetChangesAsFlowRequest" to ::executeGetChangesAsFlowRequest,
         "executeGetChangesWithInitChangesAsFlowRequest" to ::executeGetChangesWithInitChangesAsFlowRequest
@@ -71,17 +74,41 @@ class DataStoreGetChangesUpdateTest(
         highestInitVersion = ULong.MIN_VALUE
     }
 
+    private fun executeSimpleGetUpdatesRequest() = runSuspendingTest {
+        val getResponse = dataStore.execute(
+            SimpleMarykModel.getUpdates(testKeys[0], testKeys[1])
+        )
+
+        expect(3) { getResponse.updates.size }
+
+        assertType<OrderedKeysUpdate<*, *>>(getResponse.updates[0]).apply {
+            assertEquals(listOf(testKeys[0], testKeys[1]), keys)
+            assertNull(sortingKeys)
+            assertEquals(highestInitVersion, version)
+        }
+
+        assertType<AdditionUpdate<SimpleMarykModel, Properties>>(getResponse.updates[1]).apply {
+            assertEquals(testKeys[0], key)
+            assertEquals(SimpleMarykModel(value = "haha1"), values)
+        }
+
+        assertType<AdditionUpdate<SimpleMarykModel, Properties>>(getResponse.updates[2]).apply {
+            assertEquals(testKeys[1], key)
+            assertEquals(SimpleMarykModel(value = "haha2"), values)
+        }
+    }
+
     private fun failWithMutableWhereClause() = runSuspendingTest {
         assertFailsWith<RequestException> {
             dataStore.executeFlow(
-                SimpleMarykModel.getChanges(testKeys[0], testKeys[1], where = Exists(SimpleMarykModel { value::ref }))
+                SimpleMarykModel.getUpdates(testKeys[0], testKeys[1], where = Exists(SimpleMarykModel { value::ref }))
             )
         }
     }
 
     private fun executeGetChangesAsFlowRequest() = updateListenerTester(
         dataStore,
-        SimpleMarykModel.getChanges(testKeys[0], testKeys[1], fromVersion = highestInitVersion + 1uL),
+        SimpleMarykModel.getUpdates(testKeys[0], testKeys[1], fromVersion = highestInitVersion + 1uL),
         4
     ) { responses ->
         assertType<OrderedKeysUpdate<*, *>>(responses[0].await()).apply {
@@ -127,7 +154,7 @@ class DataStoreGetChangesUpdateTest(
 
     private fun executeGetChangesWithInitChangesAsFlowRequest() = updateListenerTester(
         dataStore,
-        SimpleMarykModel.getChanges(testKeys[0], testKeys[2]),
+        SimpleMarykModel.getUpdates(testKeys[0], testKeys[2]),
         4
     ) { responses ->
         assertType<OrderedKeysUpdate<*, *>>(responses[0].await()).apply {

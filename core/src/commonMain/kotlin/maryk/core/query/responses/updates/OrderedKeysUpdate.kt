@@ -6,21 +6,14 @@ import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.definitions.InternalMultiTypeDefinition
-import maryk.core.properties.definitions.ReferenceDefinition
+import maryk.core.properties.definitions.FlexBytesDefinition
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.number
+import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
-import maryk.core.properties.types.TypedValue
-import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.RequestContext
-import maryk.core.query.changes.ChangeType
-import maryk.core.query.changes.IsChange
-import maryk.core.query.changes.mapOfChangeDefinitions
-import maryk.core.query.responses.statuses.addKey
-import maryk.core.query.responses.updates.UpdateResponseType.Change
 import maryk.core.query.responses.updates.UpdateResponseType.OrderedKeys
 import maryk.core.values.SimpleObjectValues
 
@@ -33,7 +26,8 @@ import maryk.core.values.SimpleObjectValues
  */
 data class OrderedKeysUpdate<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
     val keys: List<Key<DM>>,
-    override val version: ULong
+    override val version: ULong,
+    val sortingKeys: List<Bytes>? = null
 ) : IsUpdateResponse<DM, P> {
     override val type = OrderedKeys
 
@@ -48,7 +42,15 @@ data class OrderedKeysUpdate<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
                 }
             )
         )
+
         val version by number(2u, getter = OrderedKeysUpdate<*, *>::version, type = UInt64)
+
+        val sortingKeys by list(
+            index = 3u,
+            getter = OrderedKeysUpdate<*, *>::sortingKeys,
+            required = false,
+            valueDefinition = FlexBytesDefinition()
+        )
     }
 
     internal companion object : SimpleQueryDataModel<OrderedKeysUpdate<*, *>>(
@@ -56,7 +58,8 @@ data class OrderedKeysUpdate<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
     ) {
         override fun invoke(values: SimpleObjectValues<OrderedKeysUpdate<*, *>>) = OrderedKeysUpdate<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
             keys = values(1u),
-            version = values(2u)
+            version = values(2u),
+            sortingKeys = values(3u)
         )
     }
 }

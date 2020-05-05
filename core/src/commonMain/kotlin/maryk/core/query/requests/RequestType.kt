@@ -11,8 +11,10 @@ import maryk.core.query.requests.RequestType.Collect
 import maryk.core.query.requests.RequestType.Delete
 import maryk.core.query.requests.RequestType.Get
 import maryk.core.query.requests.RequestType.GetChanges
+import maryk.core.query.requests.RequestType.GetUpdates
 import maryk.core.query.requests.RequestType.Scan
 import maryk.core.query.requests.RequestType.ScanChanges
+import maryk.core.query.requests.RequestType.ScanUpdates
 
 enum class RequestType(
     override val index: UInt,
@@ -23,9 +25,11 @@ enum class RequestType(
     Delete(3u),
     Get(4u),
     GetChanges(5u),
-    Scan(6u),
-    ScanChanges(7u),
-    Collect(8u);
+    GetUpdates(6u),
+    Scan(7u),
+    ScanChanges(8u),
+    ScanUpdates(9u),
+    Collect(10u);
 
     companion object : IndexedEnumDefinition<RequestType>(
         "RequestType", RequestType::values
@@ -38,7 +42,9 @@ val mapOfRequestTypeEmbeddedObjectDefinitions = mapOf(
     Delete to EmbeddedObjectDefinition(dataModel = { DeleteRequest }),
     Get to EmbeddedObjectDefinition(dataModel = { GetRequest }),
     GetChanges to EmbeddedObjectDefinition(dataModel = { GetChangesRequest }),
+    GetUpdates to EmbeddedObjectDefinition(dataModel = { GetUpdatesRequest }),
     Scan to EmbeddedObjectDefinition(dataModel = { ScanRequest }),
     ScanChanges to EmbeddedObjectDefinition(dataModel = { ScanChangesRequest }),
+    ScanUpdates to EmbeddedObjectDefinition(dataModel = { ScanUpdatesRequest }),
     Collect to EmbeddedObjectDefinition(dataModel = { CollectRequest })
 )

@@ -14,7 +14,7 @@ import maryk.datastore.shared.checkToVersion
 internal typealias GetChangesStoreAction<DM, P> = StoreAction<DM, P, GetChangesRequest<DM, P>, ChangesResponse<DM>>
 internal typealias AnyGetChangesStoreAction = GetChangesStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
 
-/** Processes a GetChangesRequest in a [storeAction] into a [dataStore] */
+/** Processes a GetChangesRequest in a [storeAction] into a dataStore from [dataStoreFetcher] */
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGetChangesRequest(
     storeAction: GetChangesStoreAction<DM, P>,
     dataStoreFetcher: IsStoreFetcher<*, *>

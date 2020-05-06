@@ -20,6 +20,11 @@ abstract class UpdateListener<DM: IsRootValuesDataModel<P>, P: PropertyDefinitio
 ) {
     abstract val lastResponseVersion: ULong
 
+    // True if the listener filters on mutable values
+    val filterContainsMutableValues: Boolean = request.where?.singleReference {
+        !it.propertyDefinition.required || !it.propertyDefinition.final
+    } != null
+
     fun close() {
         this.sendChannel.close()
     }

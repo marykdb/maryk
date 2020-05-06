@@ -1,20 +1,20 @@
 package maryk.datastore.test
 
-import maryk.core.exceptions.RequestException
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.change
-import maryk.core.query.filters.Exists
+import maryk.core.query.filters.Equals
+import maryk.core.query.filters.Not
 import maryk.core.query.filters.ValueIn
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
 import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
-import maryk.core.query.requests.getUpdates
 import maryk.core.query.requests.scanUpdates
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.OrderedKeysUpdate
+import maryk.core.query.responses.updates.RemovalReason.NotInRange
 import maryk.core.query.responses.updates.RemovalReason.SoftDelete
 import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.datastore.shared.IsDataStore
@@ -26,7 +26,6 @@ import maryk.test.models.Severity.ERROR
 import maryk.test.models.Severity.INFO
 import maryk.test.runSuspendingTest
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 
 class DataStoreScanUpdatesWithLogTest(
     val dataStore: IsDataStore
@@ -36,8 +35,8 @@ class DataStoreScanUpdatesWithLogTest(
     private var highestInitVersion = ULong.MIN_VALUE
 
     override val allTests = mapOf(
-        "failWithMutableWhereClause" to ::failWithMutableWhereClause,
-        "executeScanChangesAsFlowRequest" to ::executeScanChangesAsFlowRequest
+        "executeScanChangesAsFlowRequest" to ::executeScanChangesAsFlowRequest,
+        "executeScanChangesAsFlowRequestWithMutableWhere" to ::executeScanChangesAsFlowRequestWithMutableWhere
     )
 
     override fun initData() {
@@ -76,11 +75,40 @@ class DataStoreScanUpdatesWithLogTest(
         highestInitVersion = ULong.MIN_VALUE
     }
 
-    private fun failWithMutableWhereClause() = runSuspendingTest {
-        assertFailsWith<RequestException> {
-            dataStore.executeFlow(
-                Log.getUpdates(testKeys[0], testKeys[1], where = Exists(Log { message::ref }))
-            )
+    private fun executeScanChangesAsFlowRequestWithMutableWhere() {
+        updateListenerTester(
+            dataStore,
+            Log.scanUpdates(
+                testKeys[2],
+                where = Not(Equals(Log { message::ref } with "new message 0")),
+                fromVersion = highestInitVersion + 1uL
+            ),
+            3
+        ) { responses ->
+            assertType<OrderedKeysUpdate<*, *>>(responses[0].await()).apply {
+                assertEquals(listOf(testKeys[2], testKeys[1], testKeys[0]), keys)
+                assertEquals(highestInitVersion, version)
+            }
+
+            val change1 = Change(Log { message::ref } with "new message 5")
+            dataStore.execute(Log.change(
+                testKeys[0].change(change1)
+            ))
+
+            assertType<ChangeUpdate<*, *>>(responses[1].await()).apply {
+                assertEquals(testKeys[0], key)
+                assertEquals(listOf(change1), changes)
+            }
+
+            val change2 = Change(Log { message::ref } with "new message 0")
+            dataStore.execute(Log.change(
+                testKeys[2].change(change2)
+            ))
+
+            assertType<RemovalUpdate<*, *>>(responses[2].await()).apply {
+                assertEquals(testKeys[2], key)
+                assertEquals(NotInRange, reason)
+            }
         }
     }
 

@@ -76,8 +76,32 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ
                             if (newIndex == null) {
                                 handleDeletion(dataStore, this, NotInRange, updateListener, sendChannel)
                             } else {
-                                createChangeUpdate<DM, P>(request.select, orderChanged, newIndex)?.let {
-                                    sendChannel.send(it)
+                                createChangeUpdate<DM, P>(request.select, orderChanged, newIndex)?.let { changeUpdate ->
+                                    val update = if (updateListener.filterContainsMutableValues) {
+                                        // Check if the value still is valid with the current filter since it could have potentially mutated
+                                        val response = dataStore.execute(
+                                            dataModel.get(
+                                                key,
+                                                select = dataModel.graph { emptyList() },
+                                                where = request.where,
+                                                filterSoftDeleted = request.filterSoftDeleted
+                                            )
+                                        )
+
+                                        if (response.values.isNotEmpty()) {
+                                            changeUpdate
+                                        } else {
+                                            RemovalUpdate(
+                                                key = key,
+                                                version = this.version,
+                                                reason = NotInRange
+                                            )
+                                        }
+                                    } else {
+                                        changeUpdate
+                                    }
+
+                                    sendChannel.send(update)
                                 }
                             }
                         }

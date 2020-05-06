@@ -82,13 +82,6 @@ abstract class AbstractDataStore(
             throw RequestException("Cannot use toVersion on an executeFlow request")
         }
 
-        // Don't allow filters with mutable or reference values
-        request.where?.singleReference {
-            !it.propertyDefinition.required || !it.propertyDefinition.final || it.comparablePropertyDefinition is IsReferenceDefinition<*, *, *>
-        }?.let {
-            throw RequestException("$it is mutable or a reference which are not supported on filters in update listeners.")
-        }
-
         val channel = BroadcastChannel<IsUpdateResponse<DM, P>>(Channel.BUFFERED)
 
         val dataModelId = getDataModelId(request.dataModel)
@@ -106,8 +99,8 @@ abstract class AbstractDataStore(
                 emit(update)
             }
         }.onCompletion {
-            listener.close()
             dataModelUpdateListeners -= listener
+            listener.close()
         }
     }
 

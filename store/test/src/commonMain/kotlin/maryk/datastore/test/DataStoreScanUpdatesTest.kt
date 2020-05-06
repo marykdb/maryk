@@ -7,7 +7,9 @@ import maryk.core.query.changes.Change
 import maryk.core.query.changes.IndexChange
 import maryk.core.query.changes.IndexUpdate
 import maryk.core.query.changes.change
+import maryk.core.query.filters.Equals
 import maryk.core.query.filters.Exists
+import maryk.core.query.filters.Not
 import maryk.core.query.orders.Order.Companion.descending
 import maryk.core.query.orders.ascending
 import maryk.core.query.orders.descending
@@ -88,8 +90,8 @@ class DataStoreScanUpdatesTest(
     override val allTests = mapOf(
         "executeSimpleScanUpdatesRequest" to ::executeSimpleScanUpdatesRequest,
         "executeOrderedScanUpdatesRequest" to ::executeOrderedScanUpdatesRequest,
-        "failWithMutableWhereClause" to ::failWithMutableWhereClause,
         "executeScanChangesAsFlowRequest" to ::executeScanChangesAsFlowRequest,
+        "executeScanChangesAsFlowWithMutableWhereRequest" to ::executeScanChangesAsFlowWithMutableWhereRequest,
         "executeScanChangesIncludingInitValuesAsFlowRequest" to ::executeScanChangesIncludingInitValuesAsFlowRequest,
         "executeScanChangesAsFlowWithSelectRequest" to ::executeScanChangesAsFlowWithSelectRequest,
         "executeReversedScanChangesAsFlowRequest" to ::executeReversedScanChangesAsFlowRequest,
@@ -176,14 +178,6 @@ class DataStoreScanUpdatesTest(
         assertType<AdditionUpdate<TestMarykModel, Properties>>(scanResponse.updates[2]).apply {
             assertEquals(testKeys[0], key)
             assertEquals(t0, values)
-        }
-    }
-
-    private fun failWithMutableWhereClause() = runSuspendingTest {
-        assertFailsWith<RequestException> {
-            dataStore.executeFlow(
-                TestMarykModel.getUpdates(testKeys[0], testKeys[1], where = Exists(TestMarykModel { string::ref }))
-            )
         }
     }
 
@@ -276,6 +270,34 @@ class DataStoreScanUpdatesTest(
                 assertEquals(newDataObject, values)
                 assertEquals(1, insertionIndex)
                 testKeys.add(key)
+            }
+        }
+    }
+
+    private fun executeScanChangesAsFlowWithMutableWhereRequest() {
+        updateListenerTester(
+            dataStore,
+            TestMarykModel.scanUpdates(
+                startKey = testKeys[1],
+                where = Not(Equals(TestMarykModel { string::ref } with "ha filtered message")),
+                fromVersion = highestInitVersion + 1uL
+            ),
+            2
+        ) { responses ->
+            assertType<OrderedKeysUpdate<*, *>>(responses[0].await()).apply {
+                assertEquals(listOf(testKeys[1], testKeys[2], testKeys[3], testKeys[4]), keys)
+                assertEquals(highestInitVersion, version)
+            }
+
+            val change1 = Change(TestMarykModel { string::ref } with "ha filtered message")
+            dataStore.execute(TestMarykModel.change(
+                testKeys[1].change(change1)
+            ))
+
+            val changeUpdate1 = responses[1].await()
+            assertType<RemovalUpdate<*, *>>(changeUpdate1).apply {
+                assertEquals(testKeys[1], key)
+                assertEquals(NotInRange, reason)
             }
         }
     }

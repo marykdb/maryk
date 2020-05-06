@@ -8,6 +8,14 @@ query action can be serialized and send to a store on another server to be perfo
 Maryk provides some basic query actions which are basically based on the CRUD model: you can add, change, get,
 scan or delete objects. 
 
+The Get and Scan request types are available in 3 flavors:
+- `GetRequest`/`ScanRequest` - Returns `Values` to represent the object as it is on requested time.
+- `GetUpdatesRequest`/`ScanUpdatesRequest` - Returns `Updates` like `Addition`/`Change`/`Removal` to show
+ the changing of data and its view defined by filters and limit/offset over time. Is possible to use in `executeFlow`
+ to get live updates as new data is processed.
+- `GetChangesRequest`/`ScanChangesRequest` - Returns any data as versioned changes as it is stored in the datastore 
+ ordered per data object.
+
 ### Add
 
 With [`AddRequest`](../src/commonMain/kotlin/maryk/core/query/requests/AddRequest.kt) objects can be 
@@ -163,7 +171,7 @@ val getRequest = Person.get(
 )
 ```
 
-With all options
+With all parameters
 Maryk YAML:
 ```yaml
 !Get
@@ -174,7 +182,7 @@ Maryk YAML:
   select:
   - firstName
   - lastName
-  filter: !And
+  where: !And
   - !Equals
     firstName: Clark
   - !Exists lastName
@@ -191,7 +199,7 @@ val getRequest = Person.run{
   get(
       person1Key,
       person2Key,
-      filter = And(
+      where = And(
           Equals(ref { firstName } with "Clark"),
           Exists(ref { lastName })
       ),
@@ -231,7 +239,7 @@ val scanRequest = Logs.scan(
 )
 ```
 
-With all options
+With all parameters
 Maryk YAML:
 ```yaml
 !Scan
@@ -241,7 +249,7 @@ Maryk YAML:
     - timeStamp
     - severity
     - message
-  filter: !GreaterThanEquals
+  where: !GreaterThanEquals
     severity: ERROR
   order: !Desc timeStamp
   filterSoftDeleted: false
@@ -255,7 +263,7 @@ val timedKey // Key which start at certain time
 val scanRequest = Logs.run {
     scan(
         startKey = timedKey,
-        filter = GreaterThanEquals(
+        where = GreaterThanEquals(
             ref { severity } with Severity.ERROR
         ),
         order = ref { timeStamp }.descending(),
@@ -266,19 +274,126 @@ val scanRequest = Logs.run {
 }
 ```
 
+### Scan/Get Updates
+You can request updates on Objects ordered by version with 
+[`GetUpdatesRequest`](../src/commonMain/kotlin/maryk/core/query/requests/GetUpdatesRequest.kt).
+or [`ScanUpdatesRequest`](../src/commonMain/kotlin/maryk/core/query/requests/ScanUpdatesRequest.kt).
+`maxVersions` (default=1) can be used to control how many versions are returned
+at maximum. To return more than 1 version the DataStore needs to have `keepAllVersions` set to `true`.
+
+When applied it will deliver an [`UpdatesResponse`](../src/commonMain/kotlin/maryk/core/query/responses/UpdatesResponse.kt)
+with a list with [`IsUpdatesResponse`](../src/commonMain/kotlin/maryk/core/query/responses/updates/IsUpdateResponse.kt)
+which are either `AdditionUpdate`, `ChangeUpdate`, `RemovalUpdate` and always starts with `OrderedKeysUpdate` with the initial
+ordering of keys.
+
+This request type can also be used inside `executeFlow` to listen to updates as they happen in the data store.
+
+Optionally it is possible to pass an `orderedKeys` parameter to a `ScanUpdatesRequest`. It will then pass any changes to 
+that list as well. This way you are certain you receive hard deleted values, or added values which had their values changed, 
+so they are within range of the passed order/limit.
+
+Get changes with all parameters
+Maryk YAML:
+```yaml
+!GetUpdates
+  dataModel: Person
+  keys: 
+  - WWurg6ysTsozoMei/SurOw
+  - awfbjYrVQ+cdXblfQKV10A
+  where: !And
+  - !Equals
+    firstName: Clark
+  - !Exists lastName
+  order: !Desc lastName
+  toVersion: 2000
+  filterSoftDeleted: false
+  fromVersion: 1000
+  maxVersions: 100
+```
+Kotlin:
+```kotlin
+val person1Key // Containing the key of person 1 to change
+val person2Key // Containing the key of person 2 to change
+
+val getRequest = Person.run {
+    getUpdates(
+        person1Key,
+        person2Key,
+        select = graph {
+            listOf(
+                firstName,
+                lastName
+            )
+        },
+        where = And(
+            Equals(ref { firstName } with "Clark"),
+            Exists(ref { lastName })
+        ),
+        order = ref { lastName }.ascending(),
+        toVersion = 2000L,
+        filterSoftDeleted = false,    
+        fromVersion = 1000L,
+        maxVersions = 100
+    )
+}
+```
+
+Scan updates with all parameters
+Maryk YAML:
+```yaml
+!ScanChanges
+  dataModel: Logs
+  startKey: Zk6m4QpZQegUg5s13JVYlQ
+  where: !GreaterThanEquals
+    severity: ERROR
+  order: !Desc timeStamp
+  filterSoftDeleted: false
+  limit: 50
+  fromVersion: 1000
+  toVersion: 2000
+  maxVersions: 100
+  orderedKeys:
+  - WWurg6ysTsozoMei/SurOw
+  - awfbjYrVQ+cdXblfQKV10A
+```
+Kotlin:
+```kotlin
+val timedKey // Key which start at certain time
+
+val scanRequest = Logs.scanUpdates(
+    startKey = timedKey,
+    select = graph {
+        listOf(
+            timeStamp,
+            severity,
+            message
+        )
+    },
+    where = GreaterThanEquals(
+        Logs { severity::ref } with Severity.ERROR
+    ),
+    order = ref { timeStamp }.descending(),
+    filterSoftDeleted = false,    
+    limit = 50,
+    fromVersion = 1000L,
+    toVersion = 2000L,
+    maxVersions = 100,
+    orderedKeys = listOf(log1Key, log2Key, log3Key)
+)
+```
+
 ### Scan/Get Changes
-In stores which support it, it is possible to request all the changes ordered by version with 
+You can request all the changes on Objects ordered by version with 
 [`GetChangesRequest`](../src/commonMain/kotlin/maryk/core/query/requests/GetChangesRequest.kt).
 or [`ScanChangesRequest`](../src/commonMain/kotlin/maryk/core/query/requests/ScanChangesRequest.kt).
 `maxVersions` (default=1) can be used to control how many versions are returned
-at maximum.  
-For the rest this call is the same as [`GetChangesRequest`/`ScanChangesRequest`](#Scan/Get Changes)
+at maximum. To return more than 1 version the DataStore needs to have `keepAllVersions` set to `true`.
 
 When applied it will deliver an [`ChangesResponse`](../src/commonMain/kotlin/maryk/core/query/responses/ChangesResponse.kt)
 with a list with [`DataObjectVersionedChange`](../src/commonMain/kotlin/maryk/core/query/changes/DataObjectVersionedChange.kt)
 containing the `key` and `changes` with a list of objects containing the version and changes.
 
-Get versioned changes with all options
+Get changes with all parameters
 Maryk YAML:
 ```yaml
 !GetChanges
@@ -286,7 +401,7 @@ Maryk YAML:
   keys: 
   - WWurg6ysTsozoMei/SurOw
   - awfbjYrVQ+cdXblfQKV10A
-  filter: !And
+  where: !And
   - !Equals
     firstName: Clark
   - !Exists lastName
@@ -311,7 +426,7 @@ val getRequest = Person.run {
                 lastName
             )
         },
-        filter = And(
+        where = And(
             Equals(ref { firstName } with "Clark"),
             Exists(ref { lastName })
         ),
@@ -324,13 +439,13 @@ val getRequest = Person.run {
 }
 ```
 
-Scan versioned changes with all options
+Scan changes with all parameters
 Maryk YAML:
 ```yaml
 !ScanChanges
   dataModel: Logs
   startKey: Zk6m4QpZQegUg5s13JVYlQ
-  filter: !GreaterThanEquals
+  where: !GreaterThanEquals
     severity: ERROR
   order: !Desc timeStamp
   filterSoftDeleted: false
@@ -352,7 +467,7 @@ val scanRequest = Logs.scanChanges(
             message
         )
     },
-    filter = GreaterThanEquals(
+    where = GreaterThanEquals(
         Logs { severity::ref } with Severity.ERROR
     ),
     order = ref { timeStamp }.descending(),

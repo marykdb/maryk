@@ -244,7 +244,7 @@ internal class DataModelTest {
             }
             """.trimIndent(),
             output
-        );
+        )
     }
 
     @Test

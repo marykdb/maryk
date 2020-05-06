@@ -6,29 +6,25 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.channels.BroadcastChannel
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.flow.onStart
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.RootDataModel
 import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.definitions.IsReferenceDefinition
 import maryk.core.query.requests.GetUpdatesRequest
-import maryk.core.query.requests.IsChangesRequest
 import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.requests.IsUpdatesRequest
 import maryk.core.query.requests.ScanUpdatesRequest
 import maryk.core.query.responses.IsResponse
 import maryk.core.query.responses.UpdatesResponse
 import maryk.core.query.responses.updates.IsUpdateResponse
-import maryk.datastore.shared.updates.UpdateListener
+import maryk.datastore.shared.updates.AddUpdateListenerAction
+import maryk.datastore.shared.updates.RemoveAllUpdateListenersAction
+import maryk.datastore.shared.updates.RemoveUpdateListenerAction
 import maryk.datastore.shared.updates.UpdateListenerForGet
 import maryk.datastore.shared.updates.UpdateListenerForScan
 import maryk.datastore.shared.updates.processUpdateActor
@@ -43,7 +39,6 @@ abstract class AbstractDataStore(
 ): IsDataStore, CoroutineScope {
     override val coroutineContext = DISPATCHER + SupervisorJob()
 
-    val updateListeners = mutableMapOf<UInt, MutableList<UpdateListener<*, *, *>>>()
     val updateSendChannel = processUpdateActor<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>()
 
     /** StoreActor to run actions against.*/
@@ -82,25 +77,16 @@ abstract class AbstractDataStore(
             throw RequestException("Cannot use toVersion on an executeFlow request")
         }
 
-        val channel = BroadcastChannel<IsUpdateResponse<DM, P>>(Channel.BUFFERED)
-
         val dataModelId = getDataModelId(request.dataModel)
-
-        val dataModelUpdateListeners = this.updateListeners.getOrPut(dataModelId) { mutableListOf() }
 
         val response = execute(request)
 
-        val listener = request.createUpdateListener(response, channel)
+        val listener = request.createUpdateListener(response)
 
-        dataModelUpdateListeners += listener
+        updateSendChannel.send(AddUpdateListenerAction(dataModelId, listener))
 
-        return channel.asFlow().onStart {
-            for (update in response.updates) {
-                emit(update)
-            }
-        }.onCompletion {
-            dataModelUpdateListeners -= listener
-            listener.close()
+        return listener.getFlow().onCompletion {
+            updateSendChannel.send(RemoveUpdateListenerAction(dataModelId, listener))
         }
     }
 
@@ -115,35 +101,29 @@ abstract class AbstractDataStore(
         clockActor.close()
 
         updateSendChannel.close()
-
-        closeAllListeners()
     }
 
-    override fun closeAllListeners() {
-        updateListeners.values.forEach { it.forEach(UpdateListener<*, *, *>::close) }
-        updateListeners.clear()
+    override suspend fun closeAllListeners() {
+        updateSendChannel.send(RemoveAllUpdateListenersAction)
     }
 }
 
-/** Creates update listener for request on [channel] */
-private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> IsChangesRequest<DM, P, *>.createUpdateListener(
-    updatesResponse: UpdatesResponse<DM, P>,
-    channel: SendChannel<IsUpdateResponse<DM, P>>
+/** Creates update listener for request with [updatesResponse] */
+private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> IsUpdatesRequest<DM, P, UpdatesResponse<DM, P>>.createUpdateListener(
+    updatesResponse: UpdatesResponse<DM, P>
 ) =
     when (this) {
         is ScanUpdatesRequest<DM, P> -> {
             UpdateListenerForScan(
                 request = this,
                 scanRange = this.dataModel.createScanRange(this.where, this.startKey?.bytes, this.includeStart),
-                scanResponse = updatesResponse,
-                sendChannel = channel
+                updatesResponse = updatesResponse
             )
         }
         is GetUpdatesRequest<DM, P> -> {
             UpdateListenerForGet(
                 this,
-                updatesResponse,
-                channel
+                updatesResponse
             )
         }
         else -> throw RequestException("Unsupported request type for update listener: $this")

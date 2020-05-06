@@ -4,12 +4,8 @@ import kotlinx.coroutines.flow.Flow
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.RootDataModel
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.types.Key
-import maryk.core.query.requests.GetUpdatesRequest
-import maryk.core.query.requests.IsChangesRequest
 import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.requests.IsUpdatesRequest
-import maryk.core.query.responses.ChangesResponse
 import maryk.core.query.responses.IsResponse
 import maryk.core.query.responses.UpdatesResponse
 import maryk.core.query.responses.updates.IsUpdateResponse
@@ -34,5 +30,5 @@ interface IsDataStore {
     fun close()
 
     /** Close all open listeners */
-    fun closeAllListeners()
+    suspend fun closeAllListeners()
 }

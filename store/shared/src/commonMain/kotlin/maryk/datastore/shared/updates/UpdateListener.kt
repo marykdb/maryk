@@ -1,33 +1,37 @@
 package maryk.datastore.shared.updates
 
-import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.channels.BroadcastChannel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.onStart
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.IsUpdatesRequest
+import maryk.core.query.responses.UpdatesResponse
 import maryk.core.query.responses.updates.IsUpdateResponse
+import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.core.values.Values
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.updates.Update.Change
 
-/**
- * Describes an update listener
- */
+/** Listener for updates on a data store */
+@OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 abstract class UpdateListener<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions, RQ: IsUpdatesRequest<DM, P, *>>(
     val request: RQ,
-    val matchingKeys: MutableList<Key<DM>>,
-    val sendChannel: SendChannel<IsUpdateResponse<DM, P>>
+    val updatesResponse: UpdatesResponse<DM, P>
 ) {
-    abstract val lastResponseVersion: ULong
+    protected val sendChannel = BroadcastChannel<IsUpdateResponse<DM, P>>(Channel.BUFFERED)
+
+    val matchingKeys = (updatesResponse.updates.firstOrNull() as? OrderedKeysUpdate<DM, P>)?.keys?.toMutableList() ?: mutableListOf()
+    val lastResponseVersion = (updatesResponse.updates.firstOrNull() as? OrderedKeysUpdate<DM, P>)?.version ?: 0uL
 
     // True if the listener filters on mutable values
     val filterContainsMutableValues: Boolean = request.where?.singleReference {
         !it.propertyDefinition.required || !it.propertyDefinition.final
     } != null
-
-    fun close() {
-        this.sendChannel.close()
-    }
 
     /** Process [update] and sent out responses over channel */
     abstract suspend fun process(
@@ -54,4 +58,15 @@ abstract class UpdateListener<DM: IsRootValuesDataModel<P>, P: PropertyDefinitio
      * null if it was deleted
      */
     abstract suspend fun changeOrder(change: Change<DM, P>, changedHandler: suspend (Int?, Boolean) -> Unit)
+
+    /** Get flow with update responses */
+    fun getFlow() = sendChannel.asFlow().onStart {
+        for (update in updatesResponse.updates) {
+            emit(update)
+        }
+    }
+
+    fun close() {
+        this.sendChannel.close()
+    }
 }

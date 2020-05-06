@@ -15,15 +15,11 @@ import maryk.datastore.shared.updates.Update.Change
 /** Update listener for get requests */
 class UpdateListenerForGet<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
     request: GetUpdatesRequest<DM, P>,
-    getResponse: UpdatesResponse<DM, P>,
-    sendChannel: SendChannel<IsUpdateResponse<DM, P>>
+    updatesResponse: UpdatesResponse<DM, P>
 ) : UpdateListener<DM, P, GetUpdatesRequest<DM, P>>(
     request,
-    (getResponse.updates.firstOrNull() as? OrderedKeysUpdate<DM, P>)?.keys?.toMutableList() ?: mutableListOf(),
-    sendChannel
+    updatesResponse
 ) {
-    override val lastResponseVersion = (getResponse.updates.firstOrNull() as? OrderedKeysUpdate<DM, P>)?.version ?: 0uL
-
     override suspend fun process(
         update: Update<DM, P>,
         dataStore: AbstractDataStore

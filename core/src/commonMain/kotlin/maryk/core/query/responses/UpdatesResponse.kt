@@ -5,12 +5,8 @@ import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
-import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.types.TypedValue
-import maryk.core.query.changes.ChangeType
-import maryk.core.query.changes.VersionedChanges
-import maryk.core.query.changes.mapOfChangeDefinitions
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.query.responses.updates.UpdateResponseType
 import maryk.core.query.responses.updates.mapOfUpdateResponses

@@ -1,6 +1,5 @@
 package maryk.datastore.shared.updates
 
-import kotlinx.coroutines.channels.SendChannel
 import maryk.core.exceptions.StorageException
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
@@ -14,7 +13,6 @@ import maryk.core.query.orders.Direction.ASC
 import maryk.core.query.orders.Direction.DESC
 import maryk.core.query.requests.ScanUpdatesRequest
 import maryk.core.query.responses.UpdatesResponse
-import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.core.values.Values
 import maryk.datastore.shared.AbstractDataStore
@@ -28,18 +26,14 @@ import maryk.lib.extensions.compare.compareTo
 class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
     request: ScanUpdatesRequest<DM, P>,
     val scanRange: KeyScanRanges,
-    scanResponse: UpdatesResponse<DM, P>,
-    sendChannel: SendChannel<IsUpdateResponse<DM, P>>
+    updatesResponse: UpdatesResponse<DM, P>
 ) : UpdateListener<DM, P, ScanUpdatesRequest<DM, P>>(
     request,
-    (scanResponse.updates.firstOrNull() as? OrderedKeysUpdate<DM, P>)?.keys?.toMutableList() ?: mutableListOf(),
-    sendChannel
+    updatesResponse
 ) {
-    override val lastResponseVersion = (scanResponse.updates.firstOrNull() as? OrderedKeysUpdate<DM, P>)?.version ?: 0uL
-
     private val scanType = request.dataModel.orderToScanType(request.order, scanRange.equalPairs)
 
-    internal val sortedValues = (scanResponse.updates.firstOrNull() as? OrderedKeysUpdate<DM, P>)?.sortingKeys?.map { it.bytes }?.toMutableList()
+    internal val sortedValues = (updatesResponse.updates.firstOrNull() as? OrderedKeysUpdate<DM, P>)?.sortingKeys?.map { it.bytes }?.toMutableList()
 
     internal val indexScanRange = (scanType as? IndexScan)?.index?.createScanRange(request.where, scanRange)
 

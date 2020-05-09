@@ -82,6 +82,7 @@ class DefinitionsTest {
                 required: true
                 final: false
             SimpleMarykModel: !RootModel
+              version: 1.0
               key: !UUID
               ? 1: value
               : !String
@@ -188,6 +189,7 @@ class DefinitionsTest {
               reservedIndices: [99]
               reservedNames: [O99]
             TestMarykModel: !RootModel
+              version: 1.0
               key: !Multiple
               - !Ref uint
               - !Ref bool

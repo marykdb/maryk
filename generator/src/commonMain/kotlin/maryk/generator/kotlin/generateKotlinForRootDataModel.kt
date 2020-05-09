@@ -12,6 +12,7 @@ import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.properties.references.TypeReference
 import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
 import maryk.core.properties.references.ValueWithFlexBytesPropertyReference
+import maryk.core.properties.types.Version
 
 fun RootDataModel<*, *>.generateKotlin(
     packageName: String,
@@ -23,6 +24,18 @@ fun RootDataModel<*, *>.generateKotlin(
         "maryk.core.properties.PropertyDefinitions"
     )
     val addImport: (String) -> Unit = { importsToAdd.add(it) }
+
+
+    // Add key definitions if they are not the default UUID key
+    val versionAsKotlin = if (this.version != Version(1)) {
+        val (major, minor, patch) = this.version
+        val patchValue = if (patch == UShort.MIN_VALUE) "" else ", $patch"
+
+        addImport("maryk.core.properties.types.Version")
+
+        """version = Version($major, $minor$patchValue),
+        """.trimStart()
+    } else ""
 
     // Add key definitions if they are not the default UUID key
     val keyDefAsKotlin = if (this.keyDefinition != UUIDKey) {
@@ -61,7 +74,7 @@ fun RootDataModel<*, *>.generateKotlin(
 
     val code = """
     object $name : RootDataModel<$name, $name.Properties>(
-        $keyDefAsKotlin$indicesAsKotlin$reservedIndices${reservedNames}properties = Properties
+        $versionAsKotlin$keyDefAsKotlin$indicesAsKotlin$reservedIndices${reservedNames}properties = Properties
     ) {
         object Properties : PropertyDefinitions() {
             ${propertiesKotlin.generateDefinitionsForProperties(addImport).prependIndent().trimStart()}

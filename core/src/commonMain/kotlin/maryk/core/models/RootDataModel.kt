@@ -21,10 +21,12 @@ import maryk.core.properties.definitions.index.mapOfIndexKeyPartDefinitions
 import maryk.core.properties.definitions.internalMultiType
 import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.string
+import maryk.core.properties.definitions.valueObject
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.references.IsFixedBytesPropertyReference
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.Version
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.DefinitionsConversionContext
@@ -48,6 +50,7 @@ typealias RootDataModelImpl = RootDataModel<IsRootValuesDataModel<PropertyDefini
  */
 abstract class RootDataModel<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions>(
     final override val keyDefinition: IsIndexable = UUIDKey,
+    final override val version: Version = Version(1),
     final override val indices: List<IsIndexable>? = null,
     final override val reservedIndices: List<UInt>? = null,
     final override val reservedNames: List<String>? = null,
@@ -82,8 +85,14 @@ abstract class RootDataModel<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
         IsDataModelPropertyDefinitions<RootDataModel<*, *>, PropertyDefinitionsCollectionDefinitionWrapper<RootDataModel<*, *>>> {
         override val name by string(1u, RootDataModel<*, *>::name)
         override val properties = addProperties(this as ObjectPropertyDefinitions<RootDataModel<*, *>>)
-        val key by internalMultiType(
+        val version by valueObject(
             index = 3u,
+            dataModel = Version,
+            default = Version(1),
+            getter = RootDataModel<*, *>::version
+        )
+        val key by internalMultiType(
+            index = 4u,
             typeEnum = IndexKeyPartType,
             definitionMap = mapOfIndexKeyPartDefinitions,
             getter = RootDataModel<*, *>::keyDefinition,
@@ -93,7 +102,7 @@ abstract class RootDataModel<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
             fromSerializable = { value: TypedValue<IndexKeyPartType<IsIndexable>, Any>? -> value?.value as IsIndexable }
         )
         val indices by list(
-            index = 4u,
+            index = 5u,
             getter = RootDataModel<*, *>::indices,
             valueDefinition = InternalMultiTypeDefinition(
                 typeEnum = IndexKeyPartType,
@@ -106,9 +115,8 @@ abstract class RootDataModel<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
                 value.let { it.value as IsIndexable }
             }
         )
-
         val reservedIndices by list(
-            index = 5u,
+            index = 6u,
             getter = RootDataModel<*, *>::reservedIndices,
             valueDefinition = NumberDefinition(
                 type = UInt32,
@@ -116,7 +124,7 @@ abstract class RootDataModel<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
             )
         )
         val reservedNames by list(
-            index = 6u,
+            index = 7u,
             getter = RootDataModel<*, *>::reservedNames,
             valueDefinition = StringDefinition()
         )
@@ -129,10 +137,11 @@ abstract class RootDataModel<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
         override fun invoke(values: ObjectValues<RootDataModel<*, *>, ObjectPropertyDefinitions<RootDataModel<*, *>>>) =
             object : RootDataModelImpl(
                 properties = values(2u),
-                keyDefinition = values(3u) ?: UUIDKey,
-                indices = values(4u),
-                reservedIndices = values(5u),
-                reservedNames = values(6u)
+                version = values(3u),
+                keyDefinition = values(4u) ?: UUIDKey,
+                indices = values(5u),
+                reservedIndices = values(6u),
+                reservedNames = values(7u)
             ) {
                 override val name: String = values(1u)
             }

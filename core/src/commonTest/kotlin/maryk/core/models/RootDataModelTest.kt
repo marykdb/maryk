@@ -102,6 +102,7 @@ internal class RootDataModelTest {
             """
             {
               "name": "TestMarykModel",
+              "version": "1.0",
               "key": ["Multiple", [["Ref", "uint"], ["Ref", "bool"], ["Ref", "enum"]]],
               "indices": [["Multiple", [["Reversed", "dateTime"], ["Ref", "enum"], ["Ref", "int"]]], ["Ref", "int"], ["Reversed", "double"], ["Ref", "multi.*"]],
               "reservedIndices": [99],
@@ -363,6 +364,7 @@ internal class RootDataModelTest {
         expect(
             """
             name: TestMarykModel
+            version: 1.0
             key: !Multiple
             - !Ref uint
             - !Ref bool

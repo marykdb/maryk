@@ -57,6 +57,7 @@ class RootMarykTest {
                 reservedIndices: [4]
                 reservedNames: [V4]
               SimpleMarykModel: !RootModel
+                version: 1.0
                 key: !UUID
                 ? 1: value
                 : !String

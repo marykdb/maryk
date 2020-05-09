@@ -6,6 +6,7 @@ import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.graph.IsPropRefGraphNode
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
+import maryk.core.properties.types.Version
 
 interface IsRootValuesDataModel<P : PropertyDefinitions> : IsRootDataModel<P>, IsValuesDataModel<P>
 
@@ -14,6 +15,8 @@ interface IsRootDataModel<P : IsPropertyDefinitions> : IsNamedDataModel<P> {
     val indices: List<IsIndexable>?
     val reservedIndices: List<UInt>?
     val reservedNames: List<String>?
+
+    val version: Version
 
     val keyByteSize: Int
     val keyIndices: IntArray

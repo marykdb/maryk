@@ -38,6 +38,7 @@ import maryk.core.properties.types.GeoPoint
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TimePrecision
 import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.Version
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.values.Values
@@ -70,6 +71,7 @@ sealed class MarykEnumEmbedded(
 }
 
 object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel.Properties>(
+    version = Version(2, 1),
     keyDefinition = Multiple(
         UUIDKey,
         multiForKey.typeRef(),

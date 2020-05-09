@@ -17,7 +17,6 @@ in seconds and milliseconds.
 - `unique` - default false
 - `minValue` - default false. Minimum value
 - `maxValue` - default false. Maximum value
-- `fillWithNow` - default false. If true it will set the time with the current UTC time
 
 ## Other options
 - `default` - the default value to be used if value was not set.
@@ -36,7 +35,6 @@ in seconds and milliseconds.
   default: 12:00:00
   minValue: 08:00:00
   maxValue: 17:59:59
-  fillWithNow: true
 ```
 
 **Example of a Kotlin String property definition for use within a Model its PropertyDefinitions**
@@ -49,8 +47,7 @@ val arrivalTime by time(
         default = Time(12, 0),
         minValue = Time(8, 30),
         maxValue = Time(18, 0),
-        precision = TimePrecision.MILLIS,
-        fillWithNow = true
+        precision = TimePrecision.MILLIS
 )
 ```
 
@@ -63,8 +60,7 @@ val def = TimeDefinition(
     default = Time(12, 0),
     minValue = Time(8, 30),
     maxValue = Time(18, 0),
-    precision = TimePrecision.MILLIS,
-    fillWithNow = true
+    precision = TimePrecision.MILLIS
 )
 ```
 

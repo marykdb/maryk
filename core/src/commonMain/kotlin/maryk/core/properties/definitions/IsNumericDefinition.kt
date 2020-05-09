@@ -8,8 +8,6 @@ import maryk.core.properties.IsPropertyContext
  * Implements methods useful for numeric definitions
  */
 interface IsNumericDefinition<T : Comparable<T>> : IsComparableDefinition<T, IsPropertyContext> {
-    val random: Boolean
-
     /** Create a random value */
     fun createRandom(): T
 }

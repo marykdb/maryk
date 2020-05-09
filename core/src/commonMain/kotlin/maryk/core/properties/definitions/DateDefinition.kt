@@ -28,8 +28,7 @@ data class DateDefinition(
     override val unique: Boolean = false,
     override val minValue: Date? = null,
     override val maxValue: Date? = null,
-    override val default: Date? = null,
-    override val fillWithNow: Boolean = false
+    override val default: Date? = null
 ) :
     IsMomentDefinition<Date>,
     IsSerializableFixedBytesEncodable<Date, IsPropertyContext>,
@@ -84,7 +83,6 @@ data class DateDefinition(
             val minValue by date(4u, DateDefinition::minValue)
             val maxValue by date(5u, DateDefinition::maxValue)
             val default by date(6u, DateDefinition::default)
-            val fillWithNow by boolean(7u, DateDefinition::fillWithNow, default = false)
         }
     ) {
         override fun invoke(values: SimpleObjectValues<DateDefinition>) = DateDefinition(
@@ -93,8 +91,7 @@ data class DateDefinition(
             unique = values(3u),
             minValue = values(4u),
             maxValue = values(5u),
-            default = values(6u),
-            fillWithNow = values(7u)
+            default = values(6u)
         )
     }
 }
@@ -109,13 +106,12 @@ fun PropertyDefinitions.date(
     minValue: Date? = null,
     maxValue: Date? = null,
     default: Date? = null,
-    fillWithNow: Boolean = false,
     alternativeNames: Set<String>? = null
 ) = DefinitionWrapperDelegateLoader(this) { propName ->
     FixedBytesDefinitionWrapper<Date, Date, IsPropertyContext, DateDefinition, Any>(
         index,
         name ?: propName,
-        DateDefinition(required, final, unique, minValue, maxValue, default, fillWithNow),
+        DateDefinition(required, final, unique, minValue, maxValue, default),
         alternativeNames
     )
 }
@@ -130,10 +126,9 @@ fun <TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.date(
     minValue: Date? = null,
     maxValue: Date? = null,
     default: Date? = null,
-    fillWithNow: Boolean = false,
     alternativeNames: Set<String>? = null
 ): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<Date, TO, IsPropertyContext, DateDefinition, DO>, DO> =
-    date(index, getter, name, required, final,  unique, minValue, maxValue, default, fillWithNow, alternativeNames, toSerializable = null)
+    date(index, getter, name, required, final,  unique, minValue, maxValue, default, alternativeNames, toSerializable = null)
 
 fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.date(
     index: UInt,
@@ -145,7 +140,6 @@ fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.date
     minValue: Date? = null,
     maxValue: Date? = null,
     default: Date? = null,
-    fillWithNow: Boolean = false,
     alternativeNames: Set<String>? = null,
     toSerializable: (Unit.(TO?, CX?) -> Date?)? = null,
     fromSerializable: (Unit.(Date?) -> TO?)? = null,
@@ -155,7 +149,7 @@ fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.date
     FixedBytesDefinitionWrapper(
         index,
         name ?: propName,
-        DateDefinition(required, final, unique, minValue, maxValue, default, fillWithNow),
+        DateDefinition(required, final, unique, minValue, maxValue, default),
         alternativeNames,
         getter = getter,
         capturer = capturer,

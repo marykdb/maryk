@@ -27,7 +27,6 @@ internal class FixedBytesDefinitionTest {
         unique = true,
         minValue = Bytes.ofHex("0000000000"),
         maxValue = Bytes.ofHex("AAAAAAAAAA"),
-        random = true,
         byteSize = 5,
         default = Bytes.ofHex("0000000001")
     )
@@ -97,7 +96,6 @@ internal class FixedBytesDefinitionTest {
             minValue: AAAAAAA
             maxValue: qqqqqqo
             default: AAAAAAE
-            random: true
             byteSize: 5
 
             """.trimIndent()

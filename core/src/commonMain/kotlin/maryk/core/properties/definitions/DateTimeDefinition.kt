@@ -33,8 +33,7 @@ data class DateTimeDefinition(
     override val precision: TimePrecision = TimePrecision.SECONDS,
     override val minValue: DateTime? = null,
     override val maxValue: DateTime? = null,
-    override val default: DateTime? = null,
-    override val fillWithNow: Boolean = false
+    override val default: DateTime? = null
 ) :
     IsTimeDefinition<DateTime>,
     IsSerializableFixedBytesEncodable<DateTime, IsPropertyContext>,
@@ -83,6 +82,7 @@ data class DateTimeDefinition(
 
     override fun fromNativeType(value: Any) = value as? DateTime
 
+    @Suppress("unused")
     object Model :
         ContextualDataModel<DateTimeDefinition, ObjectPropertyDefinitions<DateTimeDefinition>, ContainsDefinitionsContext, DateTimeDefinitionContext>(
             contextTransformer = { DateTimeDefinitionContext() },
@@ -125,7 +125,6 @@ data class DateTimeDefinition(
                         }
                     )
                 )
-                val fillWithNow by boolean(8u, DateTimeDefinition::fillWithNow, default = false)
             }
         ) {
         override fun invoke(values: SimpleObjectValues<DateTimeDefinition>) = DateTimeDefinition(
@@ -135,8 +134,7 @@ data class DateTimeDefinition(
             precision = values(4u),
             minValue = values(5u),
             maxValue = values(6u),
-            default = values(7u),
-            fillWithNow = values(8u)
+            default = values(7u)
         )
     }
 }
@@ -159,13 +157,12 @@ fun PropertyDefinitions.dateTime(
     minValue: DateTime? = null,
     maxValue: DateTime? = null,
     default: DateTime? = null,
-    fillWithNow: Boolean = false,
     alternativeNames: Set<String>? = null
 ) = DefinitionWrapperDelegateLoader(this) { propName ->
     FixedBytesDefinitionWrapper<DateTime, DateTime, IsPropertyContext, DateTimeDefinition, Any>(
         index,
         name ?: propName,
-        DateTimeDefinition(required, final, unique, precision, minValue, maxValue, default, fillWithNow),
+        DateTimeDefinition(required, final, unique, precision, minValue, maxValue, default),
         alternativeNames
     )
 }
@@ -181,10 +178,9 @@ fun <TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.dateTime(
     minValue: DateTime? = null,
     maxValue: DateTime? = null,
     default: DateTime? = null,
-    fillWithNow: Boolean = false,
     alternativeNames: Set<String>? = null
 ): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<DateTime, TO, IsPropertyContext, DateTimeDefinition, DO>, DO> =
-    dateTime(index, getter, name, required, final,  unique, precision, minValue, maxValue, default, fillWithNow, alternativeNames, toSerializable = null)
+    dateTime(index, getter, name, required, final,  unique, precision, minValue, maxValue, default, alternativeNames, toSerializable = null)
 
 fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.dateTime(
     index: UInt,
@@ -197,7 +193,6 @@ fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.date
     minValue: DateTime? = null,
     maxValue: DateTime? = null,
     default: DateTime? = null,
-    fillWithNow: Boolean = false,
     alternativeNames: Set<String>? = null,
     toSerializable: (Unit.(TO?, CX?) -> DateTime?)? = null,
     fromSerializable: (Unit.(DateTime?) -> TO?)? = null,
@@ -207,7 +202,7 @@ fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.date
     FixedBytesDefinitionWrapper(
         index,
         name ?: propName,
-        DateTimeDefinition(required, final, unique, precision, minValue, maxValue, default, fillWithNow),
+        DateTimeDefinition(required, final, unique, precision, minValue, maxValue, default),
         alternativeNames,
         getter = getter,
         capturer = capturer,

@@ -17,7 +17,6 @@ year is unsigned so it can contain negative dates
 - `unique` - default false
 - `minValue` - default unset. Minimum value
 - `maxValue` - default unset. Maximum value
-- `fillWithNow` - default false. If true it will set the date with the current UTC date
 
 ## Other options
 - `default` - the default value to be used if value was not set.
@@ -33,7 +32,6 @@ year is unsigned so it can contain negative dates
   default: 2018-04-30
   minValue: 1900-01-01
   maxValue: 2100-01-01
-  fillWithNow: true
 ```
 
 **Example of a Kotlin Date property definition for use within a Model its PropertyDefinitions**
@@ -45,8 +43,7 @@ val birthDate by date(
     unique = true,
     default = Date(2018, 4, 30),
     minValue = Date(1900, 1, 1),
-    maxValue = Date(2100, 1, 1),
-    fillWithNow = true
+    maxValue = Date(2100, 1, 1)
 )
 ```
 
@@ -58,8 +55,7 @@ val def = DateDefinition(
     unique = true,
     default = Date(2018, 4, 30),
     minValue = Date(1900, 1, 1),
-    maxValue = Date(2100, 1, 1),
-    fillWithNow = true
+    maxValue = Date(2100, 1, 1)
 )
 ```
 

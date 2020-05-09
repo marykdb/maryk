@@ -34,7 +34,6 @@ internal class NumberDefinitionTest {
         unique = true,
         minValue = 3254765,
         maxValue = 92763478,
-        random = true,
         default = 4444444,
         reversedStorage = false
     )
@@ -192,7 +191,6 @@ internal class NumberDefinitionTest {
             minValue: 3254765
             maxValue: 92763478
             default: 4444444
-            random: true
             reversedStorage: false
 
             """.trimIndent()

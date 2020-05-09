@@ -202,7 +202,6 @@ internal class MapDefinitionTest {
               unique: false
               type: SInt32
               maxValue: 1000
-              random: false
             valueDefinition: !String
               required: true
               final: false

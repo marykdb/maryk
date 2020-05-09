@@ -47,7 +47,6 @@ unsigned integers are available.
 - `unique` - default false
 - `minValue` - default false. Minimum value
 - `maxValue` - default false. Maximum value
-- `random` - default false. Random value
 
 ## Other options
 - `default` - the default value to be used if value was not set.
@@ -62,7 +61,6 @@ unsigned integers are available.
   required: false
   unique: false
   final: true
-  random: true
   default: 42
   minValue: 32
   maxValue: 1000000
@@ -78,8 +76,7 @@ val count by number(
     unique = true,
     default = 42,
     minValue = 32,
-    maxValue = 1000000,
-    random = true
+    maxValue = 1000000
 )
 ```
 
@@ -92,8 +89,7 @@ val def = NumberDefinition(
     unique = true,
     default = 42,
     minValue = 32,
-    maxValue = 1000000,
-    random = true
+    maxValue = 1000000
 )
 ```
 

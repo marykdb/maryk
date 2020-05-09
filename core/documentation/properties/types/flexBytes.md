@@ -36,7 +36,6 @@ Defines a property of a flexible bytes length.
   default: BB # Base64 value
   minValue: AA # Base64 value
   maxValue: //////////8 # Base64 value
-  random: true
 ```
 
 **Example of a Kotlin Flex Bytes property definition for use within a Model its PropertyDefinitions**
@@ -46,7 +45,6 @@ val value by flexBytes(
     required = false,
     final = true,
     unique = true,
-    random = true,
     minSize = 2,
     maxSize = 5,
     default = Bytes.ofHex("1111"),
@@ -61,7 +59,6 @@ val def = FlexBytesDefinition(
     required = false,
     final = true,
     unique = true,
-    random = true,
     minSize = 2,
     maxSize = 5,
     default = Bytes.ofHex("1111"),

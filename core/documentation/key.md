@@ -52,5 +52,4 @@ the key you need to include it after the time so all data is still ordered
 on that time.
 
 - If date with millisecond precision by itself is not enough, it is possible
-to add a random number to the field. Set random to true on the property 
-definition.
+to add a random number to the field.

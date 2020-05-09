@@ -24,7 +24,6 @@ internal class DateDefinitionTest {
         required = false,
         final = true,
         unique = true,
-        fillWithNow = true,
         maxValue = Date.MAX,
         minValue = Date.MIN,
         default = Date(1970, 12, 1)
@@ -103,7 +102,6 @@ internal class DateDefinitionTest {
             minValue: -999999-01-01
             maxValue: 999999-12-31
             default: 1970-12-01
-            fillWithNow: true
 
             """.trimIndent()
         ) {

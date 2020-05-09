@@ -16,7 +16,6 @@ A DateTime Property which can be used to represent the time in a date plus time.
 - `unique` - default false
 - `minValue` - default false. Minimum value
 - `maxValue` - default false. Maximum value
-- `fillWithNow` - default false. If true it will set the dateTime with the current UTC time
 
 ## Other options
 - `default` - the default value to be used if value was not set.
@@ -35,7 +34,6 @@ A DateTime Property which can be used to represent the time in a date plus time.
   default: 2018-04-30T22:22:22
   minValue: 1900-01-01T00:00:00
   maxValue: 2099-12-31T23:59:59
-  fillWithNow: true
 ```
 
 **Example of a Kotlin DateTime property definition for use within a Model its PropertyDefinitions**
@@ -48,8 +46,7 @@ val startDateTime by dateTime(
     default = DateTime(Date(2018, 10, 1),Time(9, 30)),
     minValue = DateTime(Date(2017, 12, 1),Time(8, 30)),
     maxValue = DateTime(Date(2022, 12, 1),Time(18, 0)),
-    precision = TimePrecision.MILLIS,
-    fillWithNow = true
+    precision = TimePrecision.MILLIS
 )
 ```
 
@@ -62,8 +59,7 @@ val def = DateTimeDefinition(
     default = DateTime(Date(2018, 10, 1),Time(9, 30)),
     minValue = DateTime(Date(2017, 12, 1),Time(8, 30)),
     maxValue = DateTime(Date(2022, 12, 1),Time(18, 0)),
-    precision = TimePrecision.MILLIS,
-    fillWithNow = true
+    precision = TimePrecision.MILLIS
 )
 ```
 

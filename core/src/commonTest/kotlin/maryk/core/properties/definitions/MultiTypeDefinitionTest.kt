@@ -195,7 +195,6 @@ internal class MultiTypeDefinitionTest {
                   unique: false
                   type: SInt32
                   maxValue: 2000
-                  random: false
                 ? 3: T3
                 : !Embed
                   required: true
@@ -228,7 +227,6 @@ internal class MultiTypeDefinitionTest {
                     final: false
                     unique: false
                     type: UInt32
-                    random: false
                   valueDefinition: !String
                     required: true
                     final: false
@@ -253,7 +251,6 @@ internal class MultiTypeDefinitionTest {
                         final: false
                         unique: false
                         type: SInt16
-                        random: false
                       ? 3: S3
                       : !Embed
                         required: true

@@ -125,8 +125,7 @@ internal class RootDataModelTest {
                   "final": false,
                   "unique": false,
                   "type": "SInt32",
-                  "maxValue": 6,
-                  "random": false
+                  "maxValue": 6
                 }]
               }, {
                 "index": 3,
@@ -135,8 +134,7 @@ internal class RootDataModelTest {
                   "required": true,
                   "final": true,
                   "unique": false,
-                  "type": "UInt32",
-                  "random": false
+                  "type": "UInt32"
                 }]
               }, {
                 "index": 4,
@@ -145,8 +143,7 @@ internal class RootDataModelTest {
                   "required": true,
                   "final": false,
                   "unique": false,
-                  "type": "Float64",
-                  "random": false
+                  "type": "Float64"
                 }]
               }, {
                 "index": 5,
@@ -155,8 +152,7 @@ internal class RootDataModelTest {
                   "required": true,
                   "final": false,
                   "unique": false,
-                  "precision": "SECONDS",
-                  "fillWithNow": false
+                  "precision": "SECONDS"
                 }]
               }, {
                 "index": 6,
@@ -194,8 +190,7 @@ internal class RootDataModelTest {
                     "required": true,
                     "final": false,
                     "unique": false,
-                    "type": "SInt32",
-                    "random": false
+                    "type": "SInt32"
                   }]
                 }]
               }, {
@@ -209,8 +204,7 @@ internal class RootDataModelTest {
                     "required": true,
                     "final": false,
                     "unique": false,
-                    "maxValue": "2100-12-31",
-                    "fillWithNow": false
+                    "maxValue": "2100-12-31"
                   }]
                 }]
               }, {
@@ -225,8 +219,7 @@ internal class RootDataModelTest {
                     "final": false,
                     "unique": false,
                     "precision": "SECONDS",
-                    "maxValue": "23:00",
-                    "fillWithNow": false
+                    "maxValue": "23:00"
                   }],
                   "valueDefinition": ["String", {
                     "required": true,
@@ -277,8 +270,7 @@ internal class RootDataModelTest {
                         "required": true,
                         "final": false,
                         "unique": false,
-                        "type": "SInt16",
-                        "random": false
+                        "type": "SInt16"
                       }]
                     }, {
                       "index": 3,
@@ -399,28 +391,24 @@ internal class RootDataModelTest {
               unique: false
               type: SInt32
               maxValue: 6
-              random: false
             ? 3: uint
             : !Number
               required: true
               final: true
               unique: false
               type: UInt32
-              random: false
             ? 4: double
             : !Number
               required: true
               final: false
               unique: false
               type: Float64
-              random: false
             ? 5: dateTime
             : !DateTime
               required: true
               final: false
               unique: false
               precision: SECONDS
-              fillWithNow: false
             ? 6: bool
             : !Boolean
               required: true
@@ -448,7 +436,6 @@ internal class RootDataModelTest {
                 final: false
                 unique: false
                 type: SInt32
-                random: false
             ? 9: set
             : !Set
               required: false
@@ -459,7 +446,6 @@ internal class RootDataModelTest {
                 final: false
                 unique: false
                 maxValue: 2100-12-31
-                fillWithNow: false
             ? 10: map
             : !Map
               required: false
@@ -471,7 +457,6 @@ internal class RootDataModelTest {
                 unique: false
                 precision: SECONDS
                 maxValue: '23:00'
-                fillWithNow: false
               valueDefinition: !String
                 required: true
                 final: false
@@ -507,7 +492,6 @@ internal class RootDataModelTest {
                     final: false
                     unique: false
                     type: SInt16
-                    random: false
                   ? 3: S3
                   : !Embed
                     required: true
@@ -634,7 +618,6 @@ internal class RootDataModelTest {
                 final: false
                 unique: false
                 type: SInt16
-                random: false
               ? 3: S3
               : !Embed
                 required: true

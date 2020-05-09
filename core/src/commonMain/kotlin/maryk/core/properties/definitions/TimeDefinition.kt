@@ -31,7 +31,6 @@ data class TimeDefinition(
     override val minValue: Time? = null,
     override val maxValue: Time? = null,
     override val default: Time? = null,
-    override val fillWithNow: Boolean = false,
     override val precision: TimePrecision = TimePrecision.SECONDS
 ) :
     IsTimeDefinition<Time>,
@@ -129,7 +128,6 @@ data class TimeDefinition(
                         }
                     )
                 )
-                val fillWithNow by boolean(8u, TimeDefinition::fillWithNow, default = false)
             }
         ) {
         override fun invoke(values: SimpleObjectValues<TimeDefinition>) = TimeDefinition(
@@ -139,8 +137,7 @@ data class TimeDefinition(
             precision = values(4u),
             minValue = values(5u),
             maxValue = values(6u),
-            default = values(7u),
-            fillWithNow = values(8u)
+            default = values(7u)
         )
     }
 }
@@ -162,14 +159,13 @@ fun PropertyDefinitions.time(
     minValue: Time? = null,
     maxValue: Time? = null,
     default: Time? = null,
-    fillWithNow: Boolean = false,
     precision: TimePrecision = TimePrecision.SECONDS,
     alternativeNames: Set<String>? = null
 ) = DefinitionWrapperDelegateLoader(this) { propName ->
     FixedBytesDefinitionWrapper<Time, Time, IsPropertyContext, TimeDefinition, Any>(
         index,
         name ?: propName,
-        TimeDefinition(required, final, unique, minValue, maxValue, default, fillWithNow, precision),
+        TimeDefinition(required, final, unique, minValue, maxValue, default, precision),
         alternativeNames
     )
 }
@@ -184,11 +180,10 @@ fun <TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.time(
     minValue: Time? = null,
     maxValue: Time? = null,
     default: Time? = null,
-    fillWithNow: Boolean = false,
     precision: TimePrecision = TimePrecision.SECONDS,
     alternativeNames: Set<String>? = null
 ): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<Time, TO, IsPropertyContext, TimeDefinition, DO>, DO> =
-    time(index, getter, name, required, final,  unique, minValue, maxValue, default, fillWithNow, precision, alternativeNames, toSerializable = null)
+    time(index, getter, name, required, final,  unique, minValue, maxValue, default, precision, alternativeNames, toSerializable = null)
 
 fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.time(
     index: UInt,
@@ -200,7 +195,6 @@ fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.time
     minValue: Time? = null,
     maxValue: Time? = null,
     default: Time? = null,
-    fillWithNow: Boolean = false,
     precision: TimePrecision = TimePrecision.SECONDS,
     alternativeNames: Set<String>? = null,
     toSerializable: (Unit.(TO?, CX?) -> Time?)? = null,
@@ -211,7 +205,7 @@ fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.time
     FixedBytesDefinitionWrapper(
         index,
         name ?: propName,
-        TimeDefinition(required, final, unique, minValue, maxValue, default, fillWithNow, precision),
+        TimeDefinition(required, final, unique, minValue, maxValue, default, precision),
         alternativeNames,
         getter = getter,
         capturer = capturer,

@@ -162,7 +162,6 @@ internal class MapDefinitionWithMapTest {
               unique: false
               type: SInt32
               maxValue: 1000
-              random: false
             valueDefinition: !Map
               required: true
               final: false
@@ -172,7 +171,6 @@ internal class MapDefinitionWithMapTest {
                 unique: false
                 type: SInt32
                 maxValue: 1000
-                random: false
               valueDefinition: !String
                 required: true
                 final: false

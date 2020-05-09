@@ -77,14 +77,12 @@ internal class ValueDataModelTest {
               unique: false
               type: SInt32
               maxValue: 6
-              random: false
             ? 2: dateTime
             : !DateTime
               required: true
               final: false
               unique: false
               precision: SECONDS
-              fillWithNow: false
             ? 3: bool
             : !Boolean
               required: true

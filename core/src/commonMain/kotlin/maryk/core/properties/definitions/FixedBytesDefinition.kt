@@ -22,7 +22,6 @@ data class FixedBytesDefinition(
     override val minValue: Bytes? = null,
     override val maxValue: Bytes? = null,
     override val default: Bytes? = null,
-    override val random: Boolean = false,
     override val byteSize: Int
 ) :
     IsNumericDefinition<Bytes>,
@@ -60,9 +59,8 @@ data class FixedBytesDefinition(
             val minValue by flexBytes(4u, FixedBytesDefinition::minValue)
             val maxValue by flexBytes(5u, FixedBytesDefinition::maxValue)
             val default by flexBytes(6u, FixedBytesDefinition::default)
-            val random by boolean(7u, FixedBytesDefinition::random, default = false)
             val byteSize by number(
-                8u,
+                7u,
                 getter = FixedBytesDefinition::byteSize,
                 type = UInt32,
                 toSerializable = { value, _: IsPropertyContext? ->
@@ -79,8 +77,7 @@ data class FixedBytesDefinition(
             minValue = values(4u),
             maxValue = values(5u),
             default = values(6u),
-            random = values(7u),
-            byteSize = values(8u)
+            byteSize = values(7u)
         )
     }
 }
@@ -95,13 +92,12 @@ fun PropertyDefinitions.fixedBytes(
     minValue: Bytes? = null,
     maxValue: Bytes? = null,
     default: Bytes? = null,
-    random: Boolean = false,
     alternativeNames: Set<String>? = null
 ) = DefinitionWrapperDelegateLoader(this) { propName ->
     FixedBytesDefinitionWrapper<Bytes, Bytes, IsPropertyContext, FixedBytesDefinition, Any>(
         index,
         name ?: propName,
-        FixedBytesDefinition(required, final, unique, minValue, maxValue, default, random, byteSize),
+        FixedBytesDefinition(required, final, unique, minValue, maxValue, default, byteSize),
         alternativeNames
     )
 }
@@ -117,10 +113,9 @@ fun <TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.fixedBytes(
     minValue: Bytes? = null,
     maxValue: Bytes? = null,
     default: Bytes? = null,
-    random: Boolean = false,
     alternativeNames: Set<String>? = null
 ): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<Bytes, TO, IsPropertyContext, FixedBytesDefinition, DO>, DO> =
-    fixedBytes(index, getter, byteSize, name, required, final,  unique, minValue, maxValue, default, random, alternativeNames, toSerializable = null)
+    fixedBytes(index, getter, byteSize, name, required, final,  unique, minValue, maxValue, default, alternativeNames, toSerializable = null)
 
 fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.fixedBytes(
     index: UInt,
@@ -133,7 +128,6 @@ fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.fixe
     minValue: Bytes? = null,
     maxValue: Bytes? = null,
     default: Bytes? = null,
-    random: Boolean = false,
     alternativeNames: Set<String>? = null,
     toSerializable: (Unit.(TO?, CX?) -> Bytes?)? = null,
     fromSerializable: (Unit.(Bytes?) -> TO?)? = null,
@@ -143,7 +137,7 @@ fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.fixe
     FixedBytesDefinitionWrapper(
         index,
         name ?: propName,
-        FixedBytesDefinition(required, final, unique, minValue, maxValue, default, random, byteSize),
+        FixedBytesDefinition(required, final, unique, minValue, maxValue, default, byteSize),
         alternativeNames,
         getter = getter,
         capturer = capturer,

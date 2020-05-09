@@ -37,7 +37,6 @@ internal class TimeDefinitionTest {
         unique = true,
         minValue = Time.MIN,
         maxValue = Time.MAX_IN_MILLIS,
-        fillWithNow = true,
         precision = TimePrecision.MILLIS,
         default = Time(12, 13, 14)
     )
@@ -144,7 +143,6 @@ internal class TimeDefinitionTest {
             minValue: '00:00'
             maxValue: '23:59:59.999'
             default: '12:13:14'
-            fillWithNow: true
 
             """.trimIndent()
         ) {

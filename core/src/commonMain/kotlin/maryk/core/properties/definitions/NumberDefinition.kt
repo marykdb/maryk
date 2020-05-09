@@ -31,7 +31,6 @@ data class NumberDefinition<T : Comparable<T>>(
     override val minValue: T? = null,
     override val maxValue: T? = null,
     override val default: T? = null,
-    override val random: Boolean = false,
     val reversedStorage: Boolean? = null,
     val type: NumberDescriptor<T>
 ) :
@@ -154,8 +153,7 @@ data class NumberDefinition<T : Comparable<T>>(
                         it?.numberType ?: throw ContextNotFoundException()
                     }
                 )
-                val random by boolean(8u, NumberDefinition<*>::random, default = false)
-                val reversedStorage by boolean(9u, NumberDefinition<*>::reversedStorage, required = false)
+                val reversedStorage by boolean(8u, NumberDefinition<*>::reversedStorage, required = false)
             }
         ) {
         override fun invoke(values: SimpleObjectValues<NumberDefinition<*>>) = NumberDefinition<Comparable<Any>>(
@@ -166,8 +164,7 @@ data class NumberDefinition<T : Comparable<T>>(
             minValue = values(5u),
             maxValue = values(6u),
             default = values(7u),
-            random = values(8u),
-            reversedStorage = values(9u)
+            reversedStorage = values(8u)
         )
     }
 }
@@ -192,7 +189,6 @@ fun <T : Comparable<T>> fromNativeType(type: NumberDescriptor<T>, value: Any) =
         else -> null
     }
 
-
 fun <T : Comparable<T>> PropertyDefinitions.number(
     index: UInt,
     type: NumberDescriptor<T>,
@@ -203,14 +199,13 @@ fun <T : Comparable<T>> PropertyDefinitions.number(
     minValue: T? = null,
     maxValue: T? = null,
     default: T? = null,
-    random: Boolean = false,
     reversedStorage: Boolean? = null,
     alternativeNames: Set<String>? = null
 ) = DefinitionWrapperDelegateLoader(this) { propName ->
     FixedBytesDefinitionWrapper<T, T, IsPropertyContext, NumberDefinition<T>, Any>(
         index,
         name ?: propName,
-        NumberDefinition(required, final, unique, minValue, maxValue, default, random, reversedStorage, type),
+        NumberDefinition(required, final, unique, minValue, maxValue, default, reversedStorage, type),
         alternativeNames
     )
 }
@@ -226,11 +221,10 @@ fun <T : Comparable<T>, TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.number(
     minValue: T? = null,
     maxValue: T? = null,
     default: T? = null,
-    random: Boolean = false,
     reversedStorage: Boolean? = null,
     alternativeNames: Set<String>? = null
 ): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<T, TO, IsPropertyContext, NumberDefinition<T>, DO>, DO> =
-    number(index, getter, type, name, required, final,  unique, minValue, maxValue, default, random, reversedStorage, alternativeNames, toSerializable = null)
+    number(index, getter, type, name, required, final,  unique, minValue, maxValue, default, reversedStorage, alternativeNames, toSerializable = null)
 
 fun <T : Comparable<T>, TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.number(
     index: UInt,
@@ -243,7 +237,6 @@ fun <T : Comparable<T>, TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyD
     minValue: T? = null,
     maxValue: T? = null,
     default: T? = null,
-    random: Boolean = false,
     reversedStorage: Boolean? = null,
     alternativeNames: Set<String>? = null,
     toSerializable: (Unit.(TO?, CX?) -> T?)? = null,
@@ -254,7 +247,7 @@ fun <T : Comparable<T>, TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyD
     FixedBytesDefinitionWrapper(
         index,
         name ?: propName,
-        NumberDefinition(required, final, unique, minValue, maxValue, default, random, reversedStorage, type),
+        NumberDefinition(required, final, unique, minValue, maxValue, default, reversedStorage, type),
         alternativeNames,
         getter = getter,
         capturer = capturer,

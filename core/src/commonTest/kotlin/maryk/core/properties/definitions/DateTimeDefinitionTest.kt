@@ -32,7 +32,6 @@ internal class DateTimeDefinitionTest {
         required = false,
         final = true,
         unique = true,
-        fillWithNow = true,
         precision = TimePrecision.MILLIS,
         minValue = DateTime.MIN,
         maxValue = DateTime.MAX_IN_MILLIS,
@@ -147,7 +146,6 @@ internal class DateTimeDefinitionTest {
             minValue: '-999999-01-01T00:00'
             maxValue: '999999-12-31T23:59:59.999'
             default: '1971-01-12T13:34:22'
-            fillWithNow: true
 
             """.trimIndent()
         ) {

@@ -16,7 +16,6 @@ Defines a property of a fixed bytes length.
 - `unique` - default false
 - `minValue` - default false. Minimum value
 - `maxValue` - default false. Maximum value
-- `random` - default false. True to auto create a random value
 
 ## Other options
 - `default` - the default value to be used if value was not set.
@@ -34,7 +33,6 @@ Defines a property of a fixed bytes length.
   default: BBBBBBB # Base64 value
   minValue: AAAAAAA # Base64 value
   maxValue: //////8 # Base64 value
-  random: true
 ```
 
 **Example of a Kotlin Fixed Bytes property definition for use within a Model its PropertyDefinitions**
@@ -47,8 +45,7 @@ val value by fixedBytes(
     unique = true,
     default = byteArrayOf(0, 1, 1, 0),
     minValue = byteArrayOf(0, 0, 0, 0),
-    maxValue = byteArrayOf(1, 1, 0, 0),
-    random = true
+    maxValue = byteArrayOf(1, 1, 0, 0)
 )
 ```
 
@@ -61,8 +58,7 @@ val def = FixedBytesDefinition(
     byteSize = 4,
     default = byteArrayOf(0, 1, 1, 0),
     minValue = byteArrayOf(0, 0, 0, 0),
-    maxValue = byteArrayOf(1, 1, 0, 0),
-    random = true
+    maxValue = byteArrayOf(1, 1, 0, 0)
 )
 ```
 

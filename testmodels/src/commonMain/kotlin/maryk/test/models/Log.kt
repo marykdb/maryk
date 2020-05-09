@@ -52,8 +52,7 @@ object Log : RootDataModel<Log, Properties>(
         val timestamp by dateTime(
             index = 3u,
             final = true,
-            precision = MILLIS,
-            fillWithNow = true
+            precision = MILLIS
         )
     }
 

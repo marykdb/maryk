@@ -147,8 +147,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
             type = UInt32,
             minValue = 12u,
             maxValue = 34u,
-            default = 33u,
-            random = true
+            default = 33u
         )
         val boolean by boolean(
             index = 3u,
@@ -173,8 +172,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
             unique = true,
             minValue = Date(1981, 12, 5),
             maxValue = Date(2200, 12, 31),
-            default = Date(2018, 5, 2),
-            fillWithNow = true
+            default = Date(2018, 5, 2)
         )
         val dateTime by dateTime(
             index = 6u,
@@ -184,8 +182,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
             precision = TimePrecision.MILLIS,
             minValue = DateTime(1981, 12, 5, 11),
             maxValue = DateTime(2200, 12, 31, 23, 59, 59),
-            default = DateTime(2018, 5, 2, 10, 11, 12),
-            fillWithNow = true
+            default = DateTime(2018, 5, 2, 10, 11, 12)
         )
         val time by time(
             index = 7u,
@@ -195,8 +192,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
             precision = TimePrecision.MILLIS,
             minValue = Time(0, 0),
             maxValue = Time(23, 59, 59, 999),
-            default = Time(10, 11, 12),
-            fillWithNow = true
+            default = Time(10, 11, 12)
         )
         val fixedBytes by fixedBytes(
             index = 8u,
@@ -206,7 +202,6 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
             minValue = Bytes("AAAAAAA"),
             maxValue = Bytes("f39/f38"),
             default = Bytes("AAECAwQ"),
-            random = true,
             byteSize = 5
         )
         val flexBytes by flexBytes(

@@ -15,10 +15,19 @@ import maryk.datastore.rocksdb.TableType.Keys
 import maryk.datastore.rocksdb.TableType.Model
 import maryk.datastore.rocksdb.TableType.Table
 import maryk.datastore.rocksdb.TableType.Unique
+import maryk.datastore.rocksdb.model.checkModelIfMigrationIsNeeded
+import maryk.datastore.rocksdb.model.storeModelDefinition
 import maryk.datastore.rocksdb.processors.TRUE_ARRAY
 import maryk.datastore.rocksdb.processors.VersionedComparator
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.StoreAction
+import maryk.datastore.shared.migration.MigrationException
+import maryk.datastore.shared.migration.MigrationHandler
+import maryk.datastore.shared.migration.MigrationStatus.NeedsMigration
+import maryk.datastore.shared.migration.MigrationStatus.NewIndicesOnExistingProperties
+import maryk.datastore.shared.migration.MigrationStatus.NewModel
+import maryk.datastore.shared.migration.MigrationStatus.OnlySafeAdds
+import maryk.datastore.shared.migration.MigrationStatus.UpToDate
 import maryk.datastore.shared.updates.Update
 import maryk.rocksdb.ColumnFamilyDescriptor
 import maryk.rocksdb.ColumnFamilyHandle
@@ -38,7 +47,9 @@ class RocksDBDataStore(
     override val keepAllVersions: Boolean = true,
     relativePath: String,
     dataModelsById: Map<UInt, RootDataModel<*, *>>,
-    rocksDBOptions: DBOptions? = null
+    rocksDBOptions: DBOptions? = null,
+    private val onlyCheckModelVersion: Boolean = false,
+    val migrationHandler: MigrationHandler<RocksDBDataStore>? = null
 ) : AbstractDataStore(dataModelsById) {
     private val columnFamilyHandlesByDataModelIndex = mutableMapOf<UInt, TableColumnFamilies>()
     private val prefixSizesByColumnFamilyHandlesIndex = mutableMapOf<Int, Int>()
@@ -68,35 +79,67 @@ class RocksDBDataStore(
         val handles = mutableListOf<ColumnFamilyHandle>()
         this.db = openRocksDB(rocksDBOptions ?: ownRocksDBOptions!!, relativePath, descriptors, handles)
 
-        var handleIndex = 1
-        if (keepAllVersions) {
-            for ((index, db) in dataModelsById) {
-                prefixSizesByColumnFamilyHandlesIndex[handles[handleIndex+2].getID()] = db.keyByteSize
-                prefixSizesByColumnFamilyHandlesIndex[handles[handleIndex+5].getID()] = db.keyByteSize
-                columnFamilyHandlesByDataModelIndex[index] = HistoricTableColumnFamilies(
-                    model = handles[handleIndex++],
-                    keys = handles[handleIndex++],
-                    table = handles[handleIndex++],
-                    index = handles[handleIndex++],
-                    unique = handles[handleIndex++],
-                    historic = BasicTableColumnFamilies(
+        try {
+            var handleIndex = 1
+            if (keepAllVersions) {
+                for ((index, db) in dataModelsById) {
+                    prefixSizesByColumnFamilyHandlesIndex[handles[handleIndex+2].getID()] = db.keyByteSize
+                    prefixSizesByColumnFamilyHandlesIndex[handles[handleIndex+5].getID()] = db.keyByteSize
+                    columnFamilyHandlesByDataModelIndex[index] = HistoricTableColumnFamilies(
+                        model = handles[handleIndex++],
+                        keys = handles[handleIndex++],
+                        table = handles[handleIndex++],
+                        index = handles[handleIndex++],
+                        unique = handles[handleIndex++],
+                        historic = BasicTableColumnFamilies(
+                            table = handles[handleIndex++],
+                            index = handles[handleIndex++],
+                            unique = handles[handleIndex++]
+                        )
+                    )
+                }
+            } else {
+                for ((index, db) in dataModelsById) {
+                    prefixSizesByColumnFamilyHandlesIndex[handles[handleIndex+2].getID()] = db.keyByteSize
+                    columnFamilyHandlesByDataModelIndex[index] = TableColumnFamilies(
+                        model = handles[handleIndex++],
+                        keys = handles[handleIndex++],
                         table = handles[handleIndex++],
                         index = handles[handleIndex++],
                         unique = handles[handleIndex++]
                     )
-                )
+                }
             }
-        } else {
-            for ((index, db) in dataModelsById) {
-                prefixSizesByColumnFamilyHandlesIndex[handles[handleIndex+2].getID()] = db.keyByteSize
-                columnFamilyHandlesByDataModelIndex[index] = TableColumnFamilies(
-                    model = handles[handleIndex++],
-                    keys = handles[handleIndex++],
-                    table = handles[handleIndex++],
-                    index = handles[handleIndex++],
-                    unique = handles[handleIndex++]
-                )
+
+            for ((index, dataModel) in dataModelsById) {
+                columnFamilyHandlesByDataModelIndex[index]?.model?.let { modelColumnFamily ->
+                    when (val migrationStatus = checkModelIfMigrationIsNeeded(this.db, modelColumnFamily, dataModel, this.onlyCheckModelVersion)) {
+                        UpToDate -> Unit // Do nothing since no work is needed
+                        NewModel, OnlySafeAdds -> {
+                            // Model updated so can be stored
+                            storeModelDefinition(this.db, modelColumnFamily, dataModel)
+                        }
+                        is NewIndicesOnExistingProperties -> {
+                            TODO("Create new indices")
+                            //storeModelDefinition(this.db, modelColumnFamily, dataModel)
+                        }
+                        is NeedsMigration -> {
+                            migrationHandler?.invoke(this, migrationStatus.storedDataModel, dataModel)
+                                ?: throw MigrationException("Migration needed: No migration handler present")
+
+                            migrationStatus.indicesToIndex?.let {
+                                TODO("Create new indices")
+                            }
+
+                            // Successful so store new model definition
+                            storeModelDefinition(this.db, modelColumnFamily, dataModel)
+                        }
+                    }
+                }
             }
+        } catch (e: Throwable) {
+            this.close()
+            throw e
         }
     }
 

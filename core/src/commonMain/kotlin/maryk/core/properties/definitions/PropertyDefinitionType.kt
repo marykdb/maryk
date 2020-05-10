@@ -59,6 +59,7 @@ internal val mapOfPropertyDefEmbeddedObjectDefinitions =
         PropertyDefinitionType.Enum to EmbeddedObjectDefinition(dataModel = { EnumDefinition.Model }),
         PropertyDefinitionType.FixedBytes to EmbeddedObjectDefinition(dataModel = { FixedBytesDefinition.Model }),
         PropertyDefinitionType.FlexBytes to EmbeddedObjectDefinition(dataModel = { FlexBytesDefinition.Model }),
+        PropertyDefinitionType.GeoPoint to EmbeddedObjectDefinition(dataModel = { GeoPointDefinition.Model }),
         PropertyDefinitionType.IncMap to EmbeddedObjectDefinition(dataModel = { IncrementingMapDefinition.Model }),
         PropertyDefinitionType.List to EmbeddedObjectDefinition(dataModel = { ListDefinition.Model }),
         PropertyDefinitionType.Map to EmbeddedObjectDefinition(dataModel = { MapDefinition.Model }),

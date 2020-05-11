@@ -15,6 +15,9 @@ sealed class MigrationStatus {
     /** The model is incompatible with the stored version and needs a migration */
     class NeedsMigration(
         val storedDataModel: IsRootValuesDataModel<*>,
+        val migrationReasons: List<String>,
         val indicesToIndex: List<IsIndexable>?
-    ): MigrationStatus()
+    ): MigrationStatus() {
+        override fun toString() = "NeedsMigration:\n\t${migrationReasons.joinToString("\n\t")}"
+    }
 }

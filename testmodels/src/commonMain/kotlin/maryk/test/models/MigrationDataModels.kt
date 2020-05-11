@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package maryk.test.models
 
 import maryk.core.models.RootDataModel
@@ -16,6 +18,23 @@ object ModelV1 : RootDataModel<ModelV1, Properties>(
 
     object Properties : PropertyDefinitions() {
         val value by string(index = 1u, default = "haha", regEx = "ha.*")
+    }
+
+    operator fun invoke(value: String = "haha") = values {
+        mapNonNulls(Properties.value with value)
+    }
+}
+
+object ModelV1_1WrongKey : RootDataModel<ModelV1_1WrongKey, ModelV1_1WrongKey.Properties>(
+    version = Version(1),
+    keyDefinition = Properties.newNumber.ref(),
+    properties = Properties
+) {
+    override val name = "Model"
+
+    object Properties : PropertyDefinitions() {
+        val value by string(index = 1u, default = "haha", regEx = "ha.*")
+        val newNumber by number(index = 2u, type = SInt32, required = true, final = true)
     }
 
     operator fun invoke(value: String = "haha") = values {
@@ -61,7 +80,7 @@ object ModelV2 : RootDataModel<ModelV2, ModelV2.Properties>(
     }
 }
 
-object ModelWrong : RootDataModel<ModelWrong, ModelWrong.Properties>(
+object ModelWrongValueType : RootDataModel<ModelWrongValueType, ModelWrongValueType.Properties>(
     version = Version(2),
     properties = Properties
 ) {
@@ -78,7 +97,8 @@ object ModelWrong : RootDataModel<ModelWrong, ModelWrong.Properties>(
     }
 }
 
-object ModelMissing : RootDataModel<ModelMissing, ModelMissing.Properties>(
+
+object ModelMissingProperty : RootDataModel<ModelMissingProperty, ModelMissingProperty.Properties>(
     version = Version(1, 2),
     properties = Properties
 ) {
@@ -86,6 +106,25 @@ object ModelMissing : RootDataModel<ModelMissing, ModelMissing.Properties>(
 
     object Properties : PropertyDefinitions() {
         val newNumber by number(index = 2u, type = SInt32, required = true)
+    }
+
+    operator fun invoke(
+        newNumber: Int?
+    ) = values {
+        mapNonNulls(Properties.newNumber with newNumber)
+    }
+}
+
+object ModelV2ReservedNamesAndIndices : RootDataModel<ModelV2ReservedNamesAndIndices, ModelV2ReservedNamesAndIndices.Properties>(
+    version = Version(1, 2),
+    reservedNames = listOf("value"),
+    reservedIndices = listOf(1u),
+    properties = Properties
+) {
+    override val name = "Model"
+
+    object Properties : PropertyDefinitions() {
+        val newNumber by number(index = 2u, type = SInt32, required = false)
     }
 
     operator fun invoke(

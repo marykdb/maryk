@@ -37,7 +37,7 @@ interface MultiTypeEnum<T: Any>: TypeEnum<T> {
             }
             override val name = name
             @Suppress("UNCHECKED_CAST")
-            override val definition: IsUsableInMultiType<Any, IsPropertyContext>? = definition as IsUsableInMultiType<Any, IsPropertyContext>
+            override val definition = definition as IsUsableInMultiType<Any, IsPropertyContext>
 
             override fun equals(other: Any?) = other is MultiTypeEnum<*> && other.index == this.index && other.definition == this.definition
             override fun hashCode() = index.hashCode()

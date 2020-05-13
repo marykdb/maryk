@@ -50,6 +50,22 @@ data class FixedBytesDefinition(
             value as? Bytes
         }
 
+    override fun compatibleWith(
+        definition: IsPropertyDefinition<*>,
+        addIncompatibilityReason: ((String) -> Unit)?
+    ): Boolean {
+        var compatible = super<IsNumericDefinition>.compatibleWith(definition, addIncompatibilityReason)
+
+        (definition as? FixedBytesDefinition)?.let {
+            if (definition.byteSize != this.byteSize) {
+                addIncompatibilityReason?.invoke("Byte size for fixed bytes properties should be equal. $byteSize != ${definition.byteSize}")
+                compatible = false
+            }
+        }
+
+        return compatible
+    }
+
     @Suppress("unused")
     object Model : SimpleObjectDataModel<FixedBytesDefinition, ObjectPropertyDefinitions<FixedBytesDefinition>>(
         properties = object : ObjectPropertyDefinitions<FixedBytesDefinition>() {

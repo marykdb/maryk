@@ -9,6 +9,7 @@ import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.core.properties.exceptions.TooManyItemsException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.types.numeric.SInt32
+import maryk.core.properties.types.numeric.UInt32
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCache
@@ -20,6 +21,8 @@ import maryk.test.assertType
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import kotlin.test.expect
 
 internal class MapDefinitionTest {
@@ -214,6 +217,59 @@ internal class MapDefinitionTest {
             """.trimIndent()
         ) {
             checkYamlConversion(this.defMaxDefined, MapDefinition.Model)
+        }
+    }
+
+    @Test
+    fun isCompatible() {
+        assertTrue {
+            MapDefinition(
+                keyDefinition = StringDefinition(),
+                valueDefinition = StringDefinition()
+            ).compatibleWith(
+                MapDefinition(
+                    keyDefinition = StringDefinition(),
+                    valueDefinition = StringDefinition(regEx = "[av]*")
+                )
+            )
+        }
+
+        assertFalse {
+            MapDefinition(
+                keyDefinition = NumberDefinition(type = UInt32),
+                valueDefinition = StringDefinition()
+            ).compatibleWith(
+                MapDefinition(
+                    keyDefinition = StringDefinition(),
+                    valueDefinition = StringDefinition(regEx = "[av]*")
+                )
+            )
+        }
+
+        assertFalse {
+            MapDefinition(
+                keyDefinition = StringDefinition(),
+                valueDefinition = NumberDefinition(type = UInt32)
+            ).compatibleWith(
+                MapDefinition(
+                    keyDefinition = StringDefinition(),
+                    valueDefinition = StringDefinition(regEx = "[av]*")
+                )
+            )
+        }
+
+        assertFalse {
+            MapDefinition(
+                keyDefinition = StringDefinition(),
+                valueDefinition = StringDefinition(),
+                maxSize = 4u
+            ).compatibleWith(
+                MapDefinition(
+                    keyDefinition = StringDefinition(),
+                    valueDefinition = StringDefinition(),
+                    maxSize = 5u
+                )
+            )
         }
     }
 }

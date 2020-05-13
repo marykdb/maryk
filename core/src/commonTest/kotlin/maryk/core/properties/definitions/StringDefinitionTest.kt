@@ -13,6 +13,7 @@ import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlin.test.expect
 
@@ -152,6 +153,60 @@ internal class StringDefinitionTest {
             """.trimIndent()
         ) {
             checkYamlConversion(this.defMaxDefined, StringDefinition.Model)
+        }
+    }
+
+    @Test
+    fun isCompatible() {
+        // maxSize
+        assertTrue {
+            StringDefinition().compatibleWith(StringDefinition(maxSize = 4u))
+        }
+
+        assertTrue {
+            StringDefinition(maxSize = 5u).compatibleWith(StringDefinition(maxSize = 4u))
+        }
+
+        assertFalse {
+            StringDefinition(maxSize = 5u).compatibleWith(StringDefinition())
+        }
+
+        assertFalse {
+            StringDefinition(maxSize = 5u).compatibleWith(StringDefinition(maxSize = 6u))
+        }
+
+        // minSize
+        assertTrue {
+            StringDefinition().compatibleWith(StringDefinition(minSize = 4u))
+        }
+
+        assertTrue {
+            StringDefinition(minSize = 5u).compatibleWith(StringDefinition(minSize = 6u))
+        }
+
+        assertFalse {
+            StringDefinition(minSize = 5u).compatibleWith(StringDefinition())
+        }
+
+        assertFalse {
+            StringDefinition(minSize = 7u).compatibleWith(StringDefinition(minSize = 6u))
+        }
+
+        // regEx
+        assertTrue {
+            StringDefinition().compatibleWith(StringDefinition(regEx = "[abc]{1,3}"))
+        }
+
+        assertTrue {
+            StringDefinition(regEx = "[abc]{1,3}").compatibleWith(StringDefinition(regEx = "[abc]{1,3}"))
+        }
+
+        assertFalse {
+            StringDefinition(regEx = "[def]{1,3}").compatibleWith(StringDefinition(regEx = "[abc]{1,3}"))
+        }
+
+        assertFalse {
+            StringDefinition(regEx = "[abc]{1,3}").compatibleWith(StringDefinition())
         }
     }
 }

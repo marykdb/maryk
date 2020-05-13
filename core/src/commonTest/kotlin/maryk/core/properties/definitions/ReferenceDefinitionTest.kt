@@ -9,9 +9,14 @@ import maryk.core.properties.types.Key
 import maryk.core.query.DefinitionsContext
 import maryk.lib.exceptions.ParseException
 import maryk.test.ByteCollector
+import maryk.test.models.ModelV1
+import maryk.test.models.ModelV1_1
+import maryk.test.models.ModelV1_1WrongKey
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import kotlin.test.expect
 
 internal class ReferenceDefinitionTest {
@@ -104,6 +109,27 @@ internal class ReferenceDefinitionTest {
             """.trimIndent()
         ) {
             checkYamlConversion(this.defMaxDefined, ReferenceDefinition.Model, { DefinitionsContext() })
+        }
+    }
+
+    @Test
+    fun isCompatible() {
+        assertTrue {
+            ReferenceDefinition(dataModel = { ModelV1 }).compatibleWith(
+                ReferenceDefinition(dataModel = { ModelV1_1 })
+            )
+        }
+
+        assertFalse {
+            ReferenceDefinition(dataModel = { ModelV1 }).compatibleWith(
+                ReferenceDefinition(dataModel = { ModelV1_1WrongKey })
+            )
+        }
+
+        assertFalse {
+            ReferenceDefinition(dataModel = { ModelV1 }).compatibleWith(
+                ReferenceDefinition(dataModel = { TestMarykModel })
+            )
         }
     }
 }

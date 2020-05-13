@@ -13,4 +13,20 @@ interface IsEmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P : PropertyDefi
     IsUsableInMultiType<Values<DM, P>, CX>,
     IsUsableInMapValue<Values<DM, P>, CX> {
     override val dataModel: DM
+
+    override fun compatibleWith(
+        definition: IsPropertyDefinition<*>,
+        addIncompatibilityReason: ((String) -> Unit)?
+    ): Boolean {
+        var compatible = super<IsValueDefinition>.compatibleWith(definition, addIncompatibilityReason)
+
+        (definition as? IsEmbeddedValuesDefinition<*, *, *>)?.let {
+            if (definition.dataModel != this.dataModel) {
+                addIncompatibilityReason?.invoke("Data models should be the same comparing embedded values properties")
+                compatible = false
+            }
+        }
+
+        return compatible
+    }
 }

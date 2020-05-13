@@ -15,8 +15,11 @@ import maryk.json.JsonReader
 import maryk.json.JsonWriter
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
+import maryk.test.models.TestMarykObject
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import kotlin.test.expect
 
 internal class EmbeddedObjectDefinitionTest {
@@ -141,6 +144,21 @@ internal class EmbeddedObjectDefinitionTest {
                 EmbeddedObjectDefinition.Model,
                 { DefinitionsConversionContext() }
             )
+        }
+    }
+
+    @Test
+    fun isCompatible() {
+        assertTrue {
+            EmbeddedObjectDefinition(
+                dataModel = { MarykObject }
+            ).compatibleWith(def)
+        }
+
+        assertFalse {
+            EmbeddedObjectDefinition(
+                dataModel = { TestMarykObject }
+            ).compatibleWith(def)
         }
     }
 }

@@ -11,6 +11,22 @@ interface IsTimeDefinition<T : IsTime<T>> :
     val precision: TimePrecision
 
     override fun calculateStorageByteLength(value: T) = this.byteSize
+
+    override fun compatibleWith(
+        definition: IsPropertyDefinition<*>,
+        addIncompatibilityReason: ((String) -> Unit)?
+    ): Boolean {
+        var compatible = super<IsMomentDefinition>.compatibleWith(definition, addIncompatibilityReason)
+
+        (definition as? IsTimeDefinition<*>)?.let {
+            if (definition.precision != this.precision) {
+                addIncompatibilityReason?.invoke("The precision cannot be different: ${this.precision} vs ${definition.precision}")
+                compatible = false
+            }
+        }
+
+        return compatible
+    }
 }
 
 open class TimePrecisionContext : IsPropertyContext {

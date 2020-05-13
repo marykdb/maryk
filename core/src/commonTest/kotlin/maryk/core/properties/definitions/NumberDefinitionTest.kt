@@ -15,6 +15,8 @@ import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import kotlin.test.expect
 
 internal class NumberDefinitionTest {
@@ -214,6 +216,21 @@ internal class NumberDefinitionTest {
 
         assertFailsWith<ParseException> {
             def.fromNativeType(Double.MAX_VALUE)
+        }
+    }
+
+    @Test
+    fun isCompatible() {
+        assertTrue {
+            NumberDefinition(type = UInt32, maxValue = 1u).compatibleWith(NumberDefinition(type = UInt32, maxValue = 0u))
+        }
+
+        assertFalse {
+            NumberDefinition(type = UInt32, reversedStorage = false).compatibleWith(NumberDefinition(type = UInt32, reversedStorage = true))
+        }
+
+        assertFalse {
+            NumberDefinition(type = UInt32, maxValue = 1u).compatibleWith(NumberDefinition(type = Float32, maxValue = 1.5f))
         }
     }
 }

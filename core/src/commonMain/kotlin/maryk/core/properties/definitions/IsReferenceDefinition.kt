@@ -15,4 +15,20 @@ interface IsReferenceDefinition<DM : IsRootDataModel<*>, P: PropertyDefinitions,
 
     override fun calculateStorageByteLength(value: Key<DM>)=
         super.calculateStorageByteLength(value)
+
+    override fun compatibleWith(
+        definition: IsPropertyDefinition<*>,
+        addIncompatibilityReason: ((String) -> Unit)?
+    ): Boolean {
+        var compatible = super<IsComparableDefinition>.compatibleWith(definition, addIncompatibilityReason)
+
+        (definition as? IsReferenceDefinition<*, *, *>)?.let {
+            if (definition.dataModel.name != this.dataModel.name || definition.dataModel.keyDefinition != this.dataModel.keyDefinition) {
+                addIncompatibilityReason?.invoke("Data models are not the same comparing reference properties: $dataModel != ${definition.dataModel}")
+                compatible = false
+            }
+        }
+
+        return compatible
+    }
 }

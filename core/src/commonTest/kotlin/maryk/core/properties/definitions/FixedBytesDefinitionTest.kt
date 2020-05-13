@@ -8,6 +8,8 @@ import maryk.lib.exceptions.ParseException
 import maryk.test.ByteCollector
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import kotlin.test.expect
 
 internal class FixedBytesDefinitionTest {
@@ -101,6 +103,17 @@ internal class FixedBytesDefinitionTest {
             """.trimIndent()
         ) {
             checkYamlConversion(this.defMaxDefined, FixedBytesDefinition.Model)
+        }
+    }
+
+    @Test
+    fun isCompatible() {
+        assertTrue {
+            FixedBytesDefinition(byteSize = 3).compatibleWith(FixedBytesDefinition(byteSize = 3))
+        }
+
+        assertFalse {
+            FixedBytesDefinition(byteSize = 3).compatibleWith(FixedBytesDefinition(byteSize = 9))
         }
     }
 }

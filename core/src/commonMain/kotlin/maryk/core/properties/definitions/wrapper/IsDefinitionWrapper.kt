@@ -135,6 +135,41 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
         }
     }
 
+    /**
+     * Checks if this property definition wrapper is compatible with passed definition wrapper.
+     * It checks the index, names and alternative names and the definition itself.
+     * It is compatible if any property validated by the passed definition
+     * is accepted by this definition.
+     *
+     * Validation rules which are less strict are accepted but more strict or incompatible rules are not.
+     */
+    fun compatibleWith(wrapper: IsDefinitionWrapper<*, *, *, *>, addIncompatibilityReason: ((String) -> Unit)? = null): Boolean {
+        var compatible = true
+
+        if (index != wrapper.index) {
+            addIncompatibilityReason?.invoke("$index: Property index ${wrapper.index} of passed property was not the same as on this definition")
+            compatible = false
+        }
+
+        if (name != wrapper.name && alternativeNames?.contains(wrapper.name) != true) {
+            addIncompatibilityReason?.invoke("$index: Property name ${wrapper.name} not found on this definition ($name) or in alternative names")
+            compatible = false
+        }
+
+        wrapper.alternativeNames?.forEach { altName ->
+            if (alternativeNames?.contains(altName) != true && name != altName) {
+                addIncompatibilityReason?.invoke("$index: Alternative property name ${wrapper.name} not found on this definition name ($name) or in alternative names")
+                compatible = false
+            }
+        }
+
+        if (!this.definition.compatibleWith(wrapper.definition) { addIncompatibilityReason?.invoke("$index: $it") }) {
+            compatible = false
+        }
+
+        return compatible
+    }
+
     private object Properties :
         ObjectPropertyDefinitions<AnyOutDefinitionWrapper>() {
         val index by number(1u, IsDefinitionWrapper<*, *, *, *>::index, UInt32)

@@ -8,6 +8,7 @@ import maryk.core.properties.exceptions.NotEnoughItemsException
 import maryk.core.properties.exceptions.RequiredException
 import maryk.core.properties.exceptions.TooManyItemsException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
+import maryk.core.properties.types.numeric.UInt32
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCache
@@ -18,6 +19,7 @@ import maryk.test.ByteCollector
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlin.test.expect
 
@@ -161,6 +163,27 @@ internal class SetDefinitionTest {
             """.trimIndent()
         ) {
             checkYamlConversion(this.defMaxDefined, SetDefinition.Model)
+        }
+    }
+
+    @Test
+    fun isCompatible() {
+        assertTrue {
+            SetDefinition(valueDefinition = StringDefinition()).compatibleWith(
+                SetDefinition(valueDefinition = StringDefinition(regEx = "[av]*"))
+            )
+        }
+
+        assertFalse {
+            SetDefinition(valueDefinition = NumberDefinition(type = UInt32)).compatibleWith(
+                SetDefinition(valueDefinition = StringDefinition())
+            )
+        }
+
+        assertFalse {
+            SetDefinition(valueDefinition = StringDefinition(), maxSize = 4u).compatibleWith(
+                SetDefinition(valueDefinition = StringDefinition(maxSize = 5u))
+            )
         }
     }
 }

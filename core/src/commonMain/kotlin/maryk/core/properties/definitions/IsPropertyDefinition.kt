@@ -34,4 +34,29 @@ interface IsPropertyDefinition<T : Any> {
 
     /** To get embedded properties by [index] */
     fun getEmbeddedByIndex(index: UInt): IsDefinitionWrapper<*, *, *, *>?
+
+    /**
+     * Checks if this property definition is compatible with passed definition
+     * It is compatible if any property validated by the passed definition
+     * is accepted by this definition.
+     *
+     * Validation rules which are less strict are accepted but more strict or incompatible rules are not.
+     */
+    fun compatibleWith(
+        definition: IsPropertyDefinition<*>,
+        addIncompatibilityReason: ((String) -> Unit)? = null
+    ): Boolean {
+        var compatible = true
+        if (this::class != definition::class) {
+            addIncompatibilityReason?.invoke("Definitions are not of same types: ${this::class.simpleName} vs ${definition::class.simpleName}")
+            compatible = false
+        }
+
+        if (this.required && !definition.required) {
+            addIncompatibilityReason?.invoke("Not required property was made required")
+            compatible = false
+        }
+
+        return compatible
+    }
 }

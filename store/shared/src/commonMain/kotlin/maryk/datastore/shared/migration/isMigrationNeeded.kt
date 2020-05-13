@@ -49,6 +49,10 @@ private fun <P : PropertyDefinitions> IsRootValuesDataModel<P>.checkProperties(
     var newProperty: AnyDefinitionWrapper? = newIterator.next()
     var storedProperty: AnyDefinitionWrapper? = storedIterator.next()
 
+    /**
+     * Process new property not present on stored model. Trigger a migration if the new property
+     * is required. Then there should be done something with the old objects.
+     */
     fun processNew(newProp: AnyDefinitionWrapper) {
         hasNewProperties = true
 
@@ -59,6 +63,10 @@ private fun <P : PropertyDefinitions> IsRootValuesDataModel<P>.checkProperties(
         newProperty = if (newIterator.hasNext()) newIterator.next() else null
     }
 
+    /**
+     * Stored value was not present in new data model so it should have been added to reserved
+     * indices and names. Otherwise should be handled by a migration.
+     */
     fun processStored(storedProp: AnyDefinitionWrapper) {
         if (this.reservedIndices?.contains(storedProp.index) != true) {
             handleMigrationReason("Property with index ${storedProp.index} is not present in new model. Please add it to `reservedIndices` or add back the property to avoid this exception.")
@@ -70,11 +78,18 @@ private fun <P : PropertyDefinitions> IsRootValuesDataModel<P>.checkProperties(
         storedProperty = if (storedIterator.hasNext()) storedIterator.next() else null
     }
 
-    fun compareNewWithStored() {
+    /**
+     * Compare stored with new properties. If incompatible changes are encountered a migration should be done
+     */
+    fun compareNewWithStored(storedProp: AnyDefinitionWrapper, newProp: AnyDefinitionWrapper) {
+        newProp.compatibleWith(storedProp, handleMigrationReason)
+
         storedProperty = if (storedIterator.hasNext()) storedIterator.next() else null
         newProperty = if (newIterator.hasNext()) newIterator.next() else null
     }
 
+    // Walk all stored and new properties of both data models and process them
+    // depending on if they are present only in stored, new or both.
     while (newProperty != null || storedProperty != null) {
         val newProp = newProperty
         val storedProp = storedProperty
@@ -84,7 +99,7 @@ private fun <P : PropertyDefinitions> IsRootValuesDataModel<P>.checkProperties(
             storedProp == null ->
                 processNew(newProp)
             newProp.index == storedProp.index ->
-                compareNewWithStored()
+                compareNewWithStored(storedProp, newProp)
             newProp.index < storedProp.index ->
                 if (newIterator.hasNext()) processNew(newProp) else processStored(storedProp)
             newProp.index > storedProp.index ->

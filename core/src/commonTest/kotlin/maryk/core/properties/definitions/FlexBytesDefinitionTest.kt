@@ -9,6 +9,8 @@ import maryk.lib.exceptions.ParseException
 import maryk.test.ByteCollector
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import kotlin.test.expect
 
 internal class FlexBytesDefinitionTest {
@@ -115,6 +117,43 @@ internal class FlexBytesDefinitionTest {
             """.trimIndent()
         ) {
             checkYamlConversion(this.defMaxDefined, FlexBytesDefinition.Model)
+        }
+    }
+
+    @Test
+    fun isCompatible() {
+        // maxSize
+        assertTrue {
+            FlexBytesDefinition().compatibleWith(FlexBytesDefinition(maxSize = 4u))
+        }
+
+        assertTrue {
+            FlexBytesDefinition(maxSize = 5u).compatibleWith(FlexBytesDefinition(maxSize = 4u))
+        }
+
+        assertFalse {
+            FlexBytesDefinition(maxSize = 5u).compatibleWith(FlexBytesDefinition())
+        }
+
+        assertFalse {
+            FlexBytesDefinition(maxSize = 5u).compatibleWith(FlexBytesDefinition(maxSize = 6u))
+        }
+
+        // minSize
+        assertTrue {
+            FlexBytesDefinition().compatibleWith(FlexBytesDefinition(minSize = 4u))
+        }
+
+        assertTrue {
+            FlexBytesDefinition(minSize = 5u).compatibleWith(FlexBytesDefinition(minSize = 6u))
+        }
+
+        assertFalse {
+            FlexBytesDefinition(minSize = 5u).compatibleWith(FlexBytesDefinition())
+        }
+
+        assertFalse {
+            FlexBytesDefinition(minSize = 7u).compatibleWith(FlexBytesDefinition(minSize = 6u))
         }
     }
 }

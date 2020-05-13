@@ -96,6 +96,22 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : ValueDataModel<DO, P
             null
         }
 
+    override fun compatibleWith(
+        definition: IsPropertyDefinition<*>,
+        addIncompatibilityReason: ((String) -> Unit)?
+    ): Boolean {
+        var compatible = super<IsComparableDefinition>.compatibleWith(definition, addIncompatibilityReason)
+
+        (definition as? ValueObjectDefinition<*, *, *>)?.let {
+            if (definition.dataModel.name != this.dataModel.name || definition.dataModel.byteSize != this.dataModel.byteSize) {
+                addIncompatibilityReason?.invoke("Data models are not the same comparing value object properties: $dataModel != ${definition.dataModel}")
+                compatible = false
+            }
+        }
+
+        return compatible
+    }
+
     @Suppress("unused")
     object Model :
         ContextualDataModel<ValueObjectDefinition<*, *, *>, ObjectPropertyDefinitions<ValueObjectDefinition<*, *, *>>, ContainsDefinitionsContext, ModelContext>(

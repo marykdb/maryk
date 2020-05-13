@@ -3,9 +3,13 @@ package maryk.core.properties.definitions
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
+import maryk.core.aggregations.AggregationRequestType.AverageType
+import maryk.core.aggregations.AggregationRequestType.SumType
+import maryk.core.aggregations.AggregationRequestType.ValueCountType
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.toUnitLambda
 import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
+import maryk.core.properties.enum.MultiTypeEnumDefinition
 import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.OutOfRangeException
@@ -28,6 +32,8 @@ import maryk.test.models.MarykTypeEnum.T7
 import maryk.test.models.SimpleMarykTypeEnum.S1
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import kotlin.test.expect
 
 internal class MultiTypeDefinitionTest {
@@ -267,6 +273,25 @@ internal class MultiTypeDefinitionTest {
             """.trimIndent()
         ) {
             checkYamlConversion(this.defMaxDefined, MultiTypeDefinition.Model, { context })
+        }
+    }
+
+    @Test
+    fun isCompatible() {
+        val enum1 = MultiTypeEnumDefinition("Test", { arrayOf(ValueCountType, SumType) })
+        val enum2 = MultiTypeEnumDefinition("Test", { arrayOf(ValueCountType, SumType, AverageType) })
+        val enumWrong = MultiTypeEnumDefinition("Test", { arrayOf(T1, T2)})
+
+        assertTrue {
+            MultiTypeDefinition(typeEnum = enum2).compatibleWith(
+                MultiTypeDefinition(typeEnum = enum1)
+            )
+        }
+
+        assertFalse {
+            MultiTypeDefinition(typeEnum = enumWrong).compatibleWith(
+                MultiTypeDefinition(typeEnum = enum1)
+            )
         }
     }
 }

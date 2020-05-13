@@ -14,8 +14,11 @@ import maryk.json.JsonReader
 import maryk.json.JsonWriter
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
+import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import kotlin.test.expect
 
 internal class EmbeddedValuesDefinitionTest {
@@ -134,6 +137,21 @@ internal class EmbeddedValuesDefinitionTest {
             """.trimIndent()
         ) {
             checkYamlConversion(this.defMaxDefined, EmbeddedValuesDefinition.Model, { DefinitionsContext() })
+        }
+    }
+
+    @Test
+    fun isCompatible() {
+        assertTrue {
+            EmbeddedValuesDefinition(
+                dataModel = { MarykModel }
+            ).compatibleWith(def)
+        }
+
+        assertFalse {
+            EmbeddedValuesDefinition(
+                dataModel = { TestMarykModel }
+            ).compatibleWith(def)
         }
     }
 }

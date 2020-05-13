@@ -153,6 +153,10 @@ open class MultiTypeEnumDefinition<E : MultiTypeEnum<*>> internal constructor(
         return result
     }
 
+    override fun enumTypeIsCompatible(storedEnum: E, newEnum: E, addIncompatibilityReason: ((String) -> Unit)?): Boolean {
+        return newEnum.definition!!.compatibleWith(storedEnum.definition!!, addIncompatibilityReason)
+    }
+
     internal object Model :
         ContextualDataModel<MultiTypeEnumDefinition<MultiTypeEnum<*>>, Properties, ContainsDefinitionsContext, MultiTypeDefinitionContext>(
             properties = Properties,

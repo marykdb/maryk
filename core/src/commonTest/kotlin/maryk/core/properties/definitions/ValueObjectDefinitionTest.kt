@@ -11,9 +11,12 @@ import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.ByteCollector
 import maryk.test.models.TestValueObject
+import maryk.test.models.TestValueObject2
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import kotlin.test.expect
 
 internal class ValueObjectDefinitionTest {
@@ -145,6 +148,22 @@ internal class ValueObjectDefinitionTest {
             """.trimIndent()
         ) {
             checkYamlConversion(this.defMaxDefined, ValueObjectDefinition.Model, { DefinitionsContext() })
+        }
+    }
+
+
+    @Test
+    fun isCompatible() {
+        assertTrue {
+            ValueObjectDefinition(dataModel = TestValueObject).compatibleWith(
+                ValueObjectDefinition(dataModel = TestValueObject)
+            )
+        }
+
+        assertFalse {
+            ValueObjectDefinition(dataModel = TestValueObject).compatibleWith(
+                ValueObjectDefinition(dataModel = TestValueObject2)
+            )
         }
     }
 }

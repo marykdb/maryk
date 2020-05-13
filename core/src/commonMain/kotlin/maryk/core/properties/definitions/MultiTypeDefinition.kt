@@ -47,6 +47,19 @@ data class MultiTypeDefinition<E : MultiTypeEnum<out T>, T: Any>(
 
     override fun keepAsValues() = false
 
+    override fun compatibleWith(
+        definition: IsPropertyDefinition<*>,
+        addIncompatibilityReason: ((String) -> Unit)?
+    ): Boolean {
+        var compatible = super<IsMultiTypeDefinition>.compatibleWith(definition, addIncompatibilityReason)
+
+        if (definition is MultiTypeDefinition<*, *>) {
+            compatible = compatible && typeEnum.compatibleWith(definition.typeEnum, addIncompatibilityReason)
+        }
+
+        return compatible
+    }
+
     @Suppress("unused")
     object Model :
         ContextualDataModel<MultiTypeDefinition<*, *>, ObjectPropertyDefinitions<MultiTypeDefinition<*, *>>, ContainsDefinitionsContext, MultiTypeDefinitionContext>(

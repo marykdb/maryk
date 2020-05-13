@@ -28,4 +28,20 @@ interface IsEmbeddedObjectDefinition<DO : Any, P : ObjectPropertyDefinitions<DO>
     /** Read ProtoBuf into ObjectValues */
     fun readTransportBytesToValues(length: Int, reader: () -> Byte, context: CXI?) =
         this.dataModel.readProtoBuf(length, reader, this.dataModel.transformContext(context))
+
+    override fun compatibleWith(
+        definition: IsPropertyDefinition<*>,
+        addIncompatibilityReason: ((String) -> Unit)?
+    ): Boolean {
+        var compatible = super<IsValueDefinition>.compatibleWith(definition, addIncompatibilityReason)
+
+        (definition as? IsEmbeddedObjectDefinition<*, *, *, *, *>)?.let {
+            if (definition.dataModel != this.dataModel) {
+                addIncompatibilityReason?.invoke("Data models should be the same comparing embedded object properties")
+                compatible = false
+            }
+        }
+
+        return compatible
+    }
 }

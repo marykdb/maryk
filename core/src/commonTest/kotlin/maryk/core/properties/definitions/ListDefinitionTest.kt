@@ -21,6 +21,8 @@ import maryk.test.ByteCollector
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import kotlin.test.expect
 
 internal class ListDefinitionTest {
@@ -249,6 +251,27 @@ internal class ListDefinitionTest {
             """.trimIndent()
         ) {
             checkYamlConversion(this.defMaxDefined, ListDefinition.Model)
+        }
+    }
+
+    @Test
+    fun isCompatible() {
+        assertTrue {
+            ListDefinition(valueDefinition = StringDefinition()).compatibleWith(
+                ListDefinition(valueDefinition = StringDefinition(regEx = "[av]*"))
+            )
+        }
+
+        assertFalse {
+            ListDefinition(valueDefinition = NumberDefinition(type = UInt32)).compatibleWith(
+                ListDefinition(valueDefinition = StringDefinition())
+            )
+        }
+
+        assertFalse {
+            ListDefinition(valueDefinition = StringDefinition(), maxSize = 4u).compatibleWith(
+                ListDefinition(valueDefinition = StringDefinition(maxSize = 5u))
+            )
         }
     }
 }

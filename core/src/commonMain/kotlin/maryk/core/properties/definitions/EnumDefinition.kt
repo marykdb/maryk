@@ -114,6 +114,19 @@ data class EnumDefinition<E : IndexedEnumComparable<E>>(
         return result
     }
 
+    override fun compatibleWith(
+        definition: IsPropertyDefinition<*>,
+        addIncompatibilityReason: ((String) -> Unit)?
+    ): Boolean {
+        var compatible = super<IsSerializableFixedBytesEncodable>.compatibleWith(definition, addIncompatibilityReason)
+
+        if (definition is EnumDefinition) {
+            compatible = compatible && enum.compatibleWith(definition.enum, addIncompatibilityReason)
+        }
+
+        return compatible
+    }
+
     @Suppress("unused")
     object Model :
         ContextualDataModel<EnumDefinition<*>, ObjectPropertyDefinitions<EnumDefinition<*>>, ContainsDefinitionsContext, EnumDefinitionContext>(

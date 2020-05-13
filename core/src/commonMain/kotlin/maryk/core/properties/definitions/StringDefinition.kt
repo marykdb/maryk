@@ -84,6 +84,22 @@ data class StringDefinition(
         }
     }
 
+    override fun compatibleWith(
+        definition: IsPropertyDefinition<*>,
+        addIncompatibilityReason: ((String) -> Unit)?
+    ): Boolean {
+        var compatible = super<IsComparableDefinition>.compatibleWith(definition, addIncompatibilityReason)
+        if (definition is StringDefinition) {
+            if (regEx != null && regEx != definition.regEx) {
+                addIncompatibilityReason?.invoke("Regular expression ($$regEx) cannot be added or changed.")
+                compatible = false
+            }
+
+            compatible = compatible && this.isCompatible(definition, addIncompatibilityReason)
+        }
+        return compatible
+    }
+
     @Suppress("unused")
     object Model : SimpleObjectDataModel<StringDefinition, ObjectPropertyDefinitions<StringDefinition>>(
         properties = object : ObjectPropertyDefinitions<StringDefinition>() {

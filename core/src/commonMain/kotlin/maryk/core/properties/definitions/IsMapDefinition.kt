@@ -200,4 +200,20 @@ interface IsMapDefinition<K : Any, V : Any, CX : IsPropertyContext> :
 
         return map
     }
+
+    override fun compatibleWith(
+        definition: IsPropertyDefinition<*>,
+        addIncompatibilityReason: ((String) -> Unit)?
+    ): Boolean {
+        var compatible = super.compatibleWith(definition, addIncompatibilityReason)
+
+        if (definition is IsMapDefinition<*, *, *>) {
+            compatible = compatible && isCompatible(definition, addIncompatibilityReason)
+
+            compatible = compatible && keyDefinition.compatibleWith(definition.keyDefinition) { addIncompatibilityReason?.invoke("Key: $it") }
+            compatible = compatible && valueDefinition.compatibleWith(definition.valueDefinition) { addIncompatibilityReason?.invoke("Value: $it") }
+        }
+
+        return compatible
+    }
 }

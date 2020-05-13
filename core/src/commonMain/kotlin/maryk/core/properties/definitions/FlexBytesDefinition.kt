@@ -65,6 +65,17 @@ data class FlexBytesDefinition(
         }
     }
 
+    override fun compatibleWith(
+        definition: IsPropertyDefinition<*>,
+        addIncompatibilityReason: ((String) -> Unit)?
+    ): Boolean {
+        var compatible = super<IsSerializableFlexBytesEncodable>.compatibleWith(definition, addIncompatibilityReason)
+        if (definition is FlexBytesDefinition) {
+            compatible = compatible && this.isCompatible(definition, addIncompatibilityReason)
+        }
+        return compatible
+    }
+
     @Suppress("unused")
     object Model : SimpleObjectDataModel<FlexBytesDefinition, ObjectPropertyDefinitions<FlexBytesDefinition>>(
         properties = object : ObjectPropertyDefinitions<FlexBytesDefinition>() {

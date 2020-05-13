@@ -43,4 +43,32 @@ interface IsComparableDefinition<T : Comparable<T>, in CX : IsPropertyContext> :
             }
         }
     }
+
+    override fun compatibleWith(
+        definition: IsPropertyDefinition<*>,
+        addIncompatibilityReason: ((String) -> Unit)?
+    ): Boolean {
+        var compatible = super.compatibleWith(definition, addIncompatibilityReason)
+
+        (definition as? IsComparableDefinition<*, *>)?.let {
+            if (definition.unique != this.unique) {
+                addIncompatibilityReason?.invoke("Unique cannot be made non unique and other way around")
+                compatible = false
+            }
+
+            @Suppress("UNCHECKED_CAST")
+            if (this.maxValue != null && (definition.maxValue == null || (this.maxValue!!::class == definition.maxValue!!::class && this.maxValue!! < definition.maxValue as T))) {
+                addIncompatibilityReason?.invoke("Maximum value cannot be lower than original")
+                compatible = false
+            }
+
+            @Suppress("UNCHECKED_CAST")
+            if (this.minValue != null && (definition.minValue == null || (this.minValue!!::class == definition.minValue!!::class && this.minValue!! > definition.minValue as T))) {
+                addIncompatibilityReason?.invoke("Minimum value cannot be higher than original")
+                compatible = false
+            }
+        }
+
+        return compatible
+    }
 }

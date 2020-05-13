@@ -97,6 +97,27 @@ data class NumberDefinition<T : Comparable<T>>(
         else -> super.writeJsonValue(value, writer, context)
     }
 
+    override fun compatibleWith(
+        definition: IsPropertyDefinition<*>,
+        addIncompatibilityReason: ((String) -> Unit)?
+    ): Boolean {
+        var compatible = super<IsNumericDefinition>.compatibleWith(definition, addIncompatibilityReason)
+
+        (definition as? NumberDefinition<*>)?.let {
+            if (definition.type != this.type) {
+                addIncompatibilityReason?.invoke("Number definition has to be of the same type. Now $type instead of ${definition.type}")
+                compatible = false
+            }
+
+            if (definition.reversedStorage != this.reversedStorage) {
+                addIncompatibilityReason?.invoke("Reversed storage for number has to be the same on both definitions")
+                compatible = false
+            }
+        }
+
+        return compatible
+    }
+
     @Suppress("unused")
     object Model :
         ContextualDataModel<NumberDefinition<*>, ObjectPropertyDefinitions<NumberDefinition<*>>, IsPropertyContext, NumericContext>(

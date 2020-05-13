@@ -7,6 +7,8 @@ import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.NotEnoughItemsException
 import maryk.core.properties.exceptions.TooManyItemsException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
+import maryk.core.properties.types.numeric.Float32
+import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.UInt64
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
@@ -19,6 +21,8 @@ import maryk.test.assertType
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import kotlin.test.expect
 
 internal class IncrementingMapDefinitionTest {
@@ -186,6 +190,59 @@ internal class IncrementingMapDefinitionTest {
             """.trimIndent()
         ) {
             checkYamlConversion(this.defMaxDefined, IncrementingMapDefinition.Model)
+        }
+    }
+
+    @Test
+    fun isCompatible() {
+        assertTrue {
+            IncrementingMapDefinition(
+                keyNumberDescriptor = UInt32,
+                valueDefinition = StringDefinition()
+            ).compatibleWith(
+                IncrementingMapDefinition(
+                    keyNumberDescriptor = UInt32,
+                    valueDefinition = StringDefinition(regEx = "[av]*")
+                )
+            )
+        }
+
+        assertFalse {
+            IncrementingMapDefinition(
+                keyNumberDescriptor = Float32,
+                valueDefinition = StringDefinition()
+            ).compatibleWith(
+                IncrementingMapDefinition(
+                    keyNumberDescriptor = UInt32,
+                    valueDefinition = StringDefinition(regEx = "[av]*")
+                )
+            )
+        }
+
+        assertFalse {
+            IncrementingMapDefinition(
+                keyNumberDescriptor = UInt32,
+                valueDefinition = NumberDefinition(type = UInt32)
+            ).compatibleWith(
+                IncrementingMapDefinition(
+                    keyNumberDescriptor = UInt32,
+                    valueDefinition = StringDefinition(regEx = "[av]*")
+                )
+            )
+        }
+
+        assertFalse {
+            IncrementingMapDefinition(
+                keyNumberDescriptor = UInt32,
+                valueDefinition = StringDefinition(),
+                maxSize = 4u
+            ).compatibleWith(
+                IncrementingMapDefinition(
+                    keyNumberDescriptor = UInt32,
+                    valueDefinition = StringDefinition(),
+                    maxSize = 5u
+                )
+            )
         }
     }
 }

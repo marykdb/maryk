@@ -20,3 +20,21 @@ interface HasSizeDefinition {
         newSize > it
     } ?: false
 }
+
+/**
+ * Checks if HasSizeDefinition is compatible. It is not if this definition
+ * has more limiting sizes than the passed [definition].
+ */
+internal fun HasSizeDefinition.isCompatible(definition: HasSizeDefinition, addIncompatibilityReason: ((String) -> Unit)? = null): Boolean {
+    var compatible = true
+    if (minSize != null && (definition.minSize == null || minSize!! > definition.minSize!!)) {
+        addIncompatibilityReason?.invoke("Minimum size is bigger than or newly set: ${definition.minSize} < $minSize")
+        compatible = false
+    }
+
+    if (maxSize != null && (definition.maxSize == null || maxSize!! < definition.maxSize!!)) {
+        addIncompatibilityReason?.invoke("Maximum size is smaller than or newly set: ${definition.maxSize} > $maxSize")
+        compatible = false
+    }
+    return compatible
+}

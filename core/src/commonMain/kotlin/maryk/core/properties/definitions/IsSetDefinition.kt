@@ -37,4 +37,19 @@ interface IsSetDefinition<T : Any, CX : IsPropertyContext> :
             }
         }
     }
+
+    override fun compatibleWith(
+        definition: IsPropertyDefinition<*>,
+        addIncompatibilityReason: ((String) -> Unit)?
+    ): Boolean {
+        var compatible = super.compatibleWith(definition, addIncompatibilityReason)
+
+        if (definition is IsSetDefinition<*, *>) {
+            compatible = compatible && isCompatible(definition, addIncompatibilityReason)
+
+            compatible = compatible && valueDefinition.compatibleWith(definition.valueDefinition) { addIncompatibilityReason?.invoke("Value: $it") }
+        }
+
+        return compatible
+    }
 }

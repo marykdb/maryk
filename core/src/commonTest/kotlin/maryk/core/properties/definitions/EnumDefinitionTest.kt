@@ -12,6 +12,8 @@ import maryk.core.query.DefinitionsContext
 import maryk.core.yaml.MarykYamlReaders
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
+import maryk.test.models.MarykEnumEmbedded.E1
+import maryk.test.models.MarykEnumEmbedded.E2
 import maryk.test.models.Option
 import maryk.test.models.Option.UnknownOption
 import maryk.test.models.Option.V1
@@ -19,6 +21,8 @@ import maryk.test.models.Option.V2
 import maryk.test.models.Option.V3
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import kotlin.test.expect
 
 internal class EnumDefinitionTest {
@@ -180,6 +184,25 @@ internal class EnumDefinitionTest {
             )
         ) {
             EnumDefinition.Model.readJson(reader, context).toDataObject()
+        }
+    }
+
+    @Test
+    fun isCompatible() {
+        val enum1 = IndexedEnumDefinition("Test", { arrayOf(V1, V2)})
+        val enum2 = IndexedEnumDefinition("Test", { arrayOf(V1, V2, V3)})
+        val enumWrong = IndexedEnumDefinition("Test", { arrayOf(E1, E2)})
+
+        assertTrue {
+            EnumDefinition(enum = enum2).compatibleWith(
+                EnumDefinition(enum = enum1)
+            )
+        }
+
+        assertFalse {
+            EnumDefinition(enum = enumWrong).compatibleWith(
+                EnumDefinition(enum = enum1)
+            )
         }
     }
 }

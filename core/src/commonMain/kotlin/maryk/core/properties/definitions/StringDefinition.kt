@@ -95,7 +95,7 @@ data class StringDefinition(
                 compatible = false
             }
 
-            compatible = compatible && this.isCompatible(definition, addIncompatibilityReason)
+            compatible = this.isCompatible(definition, addIncompatibilityReason) && compatible
         }
         return compatible
     }

@@ -71,7 +71,7 @@ data class FlexBytesDefinition(
     ): Boolean {
         var compatible = super<IsSerializableFlexBytesEncodable>.compatibleWith(definition, addIncompatibilityReason)
         if (definition is FlexBytesDefinition) {
-            compatible = compatible && this.isCompatible(definition, addIncompatibilityReason)
+            compatible = this.isCompatible(definition, addIncompatibilityReason) && compatible
         }
         return compatible
     }

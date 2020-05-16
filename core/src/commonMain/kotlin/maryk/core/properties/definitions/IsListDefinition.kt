@@ -48,9 +48,9 @@ interface IsListDefinition<T : Any, CX : IsPropertyContext> :
         var compatible = super.compatibleWith(definition, addIncompatibilityReason)
 
         if (definition is IsListDefinition<*, *>) {
-            compatible = compatible && isCompatible(definition, addIncompatibilityReason)
+            compatible = isCompatible(definition, addIncompatibilityReason) && compatible
 
-            compatible = compatible && valueDefinition.compatibleWith(definition.valueDefinition) { addIncompatibilityReason?.invoke("Value: $it") }
+            compatible = valueDefinition.compatibleWith(definition.valueDefinition) { addIncompatibilityReason?.invoke("Value: $it") } && compatible
         }
 
         return compatible

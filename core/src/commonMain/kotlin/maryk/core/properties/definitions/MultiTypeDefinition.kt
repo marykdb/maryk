@@ -54,7 +54,7 @@ data class MultiTypeDefinition<E : MultiTypeEnum<out T>, T: Any>(
         var compatible = super<IsMultiTypeDefinition>.compatibleWith(definition, addIncompatibilityReason)
 
         if (definition is MultiTypeDefinition<*, *>) {
-            compatible = compatible && typeEnum.compatibleWith(definition.typeEnum, addIncompatibilityReason)
+            compatible = typeEnum.compatibleWith(definition.typeEnum, addIncompatibilityReason) && compatible
         }
 
         return compatible

@@ -121,7 +121,7 @@ data class EnumDefinition<E : IndexedEnumComparable<E>>(
         var compatible = super<IsSerializableFixedBytesEncodable>.compatibleWith(definition, addIncompatibilityReason)
 
         if (definition is EnumDefinition) {
-            compatible = compatible && enum.compatibleWith(definition.enum, addIncompatibilityReason)
+            compatible = enum.compatibleWith(definition.enum, addIncompatibilityReason) && compatible
         }
 
         return compatible

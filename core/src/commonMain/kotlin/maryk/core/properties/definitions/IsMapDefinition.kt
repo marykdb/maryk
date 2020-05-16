@@ -208,10 +208,10 @@ interface IsMapDefinition<K : Any, V : Any, CX : IsPropertyContext> :
         var compatible = super.compatibleWith(definition, addIncompatibilityReason)
 
         if (definition is IsMapDefinition<*, *, *>) {
-            compatible = compatible && isCompatible(definition, addIncompatibilityReason)
+            compatible = isCompatible(definition, addIncompatibilityReason) && compatible
 
-            compatible = compatible && keyDefinition.compatibleWith(definition.keyDefinition) { addIncompatibilityReason?.invoke("Key: $it") }
-            compatible = compatible && valueDefinition.compatibleWith(definition.valueDefinition) { addIncompatibilityReason?.invoke("Value: $it") }
+            compatible = keyDefinition.compatibleWith(definition.keyDefinition) { addIncompatibilityReason?.invoke("Key: $it") } && compatible
+            compatible = valueDefinition.compatibleWith(definition.valueDefinition) { addIncompatibilityReason?.invoke("Value: $it") } && compatible
         }
 
         return compatible

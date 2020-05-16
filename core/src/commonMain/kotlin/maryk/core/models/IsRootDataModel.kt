@@ -1,5 +1,6 @@
 package maryk.core.models
 
+import maryk.core.models.migration.MigrationStatus
 import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.index.IsIndexable
@@ -37,5 +38,24 @@ interface IsRootDataModel<P : IsPropertyDefinitions> : IsNamedDataModel<P> {
     fun graph(
         runner: P.() -> List<IsPropRefGraphNode<P>>
     ) = RootPropRefGraph(runner(this.properties).sortedBy { it.index })
+
+    override fun isMigrationNeeded(
+        storedDataModel: IsDataModel<*>,
+        migrationReasons: MutableList<String>
+    ): MigrationStatus {
+        if (storedDataModel is IsRootDataModel<*>) {
+            if (storedDataModel.version.major != this.version.major) {
+                migrationReasons += "Major version was increased: ${storedDataModel.version} -> ${this.version}"
+            }
+
+            if (storedDataModel.keyDefinition !== this.keyDefinition) {
+                migrationReasons += "Key definition was not the same"
+            }
+        } else {
+            migrationReasons += "Stored model is not a root data model and compared is"
+        }
+
+        return super.isMigrationNeeded(storedDataModel, migrationReasons)
+    }
 }
 

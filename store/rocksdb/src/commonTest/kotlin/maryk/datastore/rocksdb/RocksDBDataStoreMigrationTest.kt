@@ -1,6 +1,6 @@
 package maryk.datastore.rocksdb
 
-import maryk.datastore.shared.migration.MigrationException
+import maryk.core.models.migration.MigrationException
 import maryk.rocksdb.DBOptions
 import maryk.test.models.ModelV1
 import maryk.test.models.ModelV1_1

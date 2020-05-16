@@ -1,4 +1,4 @@
-package maryk.datastore.shared.migration
+package maryk.core.models.migration
 
 import maryk.core.models.IsRootValuesDataModel
 

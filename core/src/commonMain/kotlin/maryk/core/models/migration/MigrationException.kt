@@ -1,4 +1,4 @@
-package maryk.datastore.shared.migration
+package maryk.core.models.migration
 
 /**
  * Exception thrown when migration could not be processed

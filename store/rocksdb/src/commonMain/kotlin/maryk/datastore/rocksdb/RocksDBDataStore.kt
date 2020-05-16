@@ -5,6 +5,14 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.RootDataModel
+import maryk.core.models.migration.MigrationException
+import maryk.core.models.migration.MigrationHandler
+import maryk.core.models.migration.MigrationStatus.NeedsMigration
+import maryk.core.models.migration.MigrationStatus.NewIndicesOnExistingProperties
+import maryk.core.models.migration.MigrationStatus.NewModel
+import maryk.core.models.migration.MigrationStatus.OnlySafeAdds
+import maryk.core.models.migration.MigrationStatus.UpToDate
+import maryk.core.models.migration.StoredRootDataModel
 import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.TableType.HistoricIndex
@@ -21,13 +29,6 @@ import maryk.datastore.rocksdb.processors.TRUE_ARRAY
 import maryk.datastore.rocksdb.processors.VersionedComparator
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.StoreAction
-import maryk.datastore.shared.migration.MigrationException
-import maryk.datastore.shared.migration.MigrationHandler
-import maryk.datastore.shared.migration.MigrationStatus.NeedsMigration
-import maryk.datastore.shared.migration.MigrationStatus.NewIndicesOnExistingProperties
-import maryk.datastore.shared.migration.MigrationStatus.NewModel
-import maryk.datastore.shared.migration.MigrationStatus.OnlySafeAdds
-import maryk.datastore.shared.migration.MigrationStatus.UpToDate
 import maryk.datastore.shared.updates.Update
 import maryk.rocksdb.ColumnFamilyDescriptor
 import maryk.rocksdb.ColumnFamilyHandle
@@ -124,7 +125,7 @@ class RocksDBDataStore(
                             //storeModelDefinition(this.db, modelColumnFamily, dataModel)
                         }
                         is NeedsMigration -> {
-                            migrationHandler?.invoke(this, migrationStatus.storedDataModel, dataModel)
+                            migrationHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModel, dataModel)
                                 ?: throw MigrationException("Migration needed: No migration handler present")
 
                             migrationStatus.indicesToIndex?.let {

@@ -1,8 +1,8 @@
-package maryk.datastore.shared.migration
+package maryk.core.models.migration
 
-import maryk.datastore.shared.migration.MigrationStatus.NeedsMigration
-import maryk.datastore.shared.migration.MigrationStatus.OnlySafeAdds
-import maryk.datastore.shared.migration.MigrationStatus.UpToDate
+import maryk.core.models.migration.MigrationStatus.NeedsMigration
+import maryk.core.models.migration.MigrationStatus.OnlySafeAdds
+import maryk.core.models.migration.MigrationStatus.UpToDate
 import maryk.test.assertType
 import maryk.test.models.ModelMissingProperty
 import maryk.test.models.ModelV1

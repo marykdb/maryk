@@ -36,10 +36,7 @@ interface IsEmbeddedObjectDefinition<DO : Any, P : ObjectPropertyDefinitions<DO>
         var compatible = super<IsValueDefinition>.compatibleWith(definition, addIncompatibilityReason)
 
         (definition as? IsEmbeddedObjectDefinition<*, *, *, *, *>)?.let {
-            if (definition.dataModel != this.dataModel) {
-                addIncompatibilityReason?.invoke("Data models should be the same comparing embedded object properties")
-                compatible = false
-            }
+            compatible = this.compatibleWithDefinitionWithDataModel(definition, addIncompatibilityReason) && compatible
         }
 
         return compatible

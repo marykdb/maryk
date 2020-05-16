@@ -35,11 +35,12 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : ValueDataModel<DO, P
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val unique: Boolean = false,
-    val dataModel: DM,
+    override val dataModel: DM,
     override val minValue: DO? = null,
     override val maxValue: DO? = null,
     override val default: DO? = null
 ) :
+    IsDefinitionWithDataModel<DM, P>,
     IsComparableDefinition<DO, IsPropertyContext>,
     IsSerializableFixedBytesEncodable<DO, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<DO>,
@@ -103,10 +104,7 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : ValueDataModel<DO, P
         var compatible = super<IsComparableDefinition>.compatibleWith(definition, addIncompatibilityReason)
 
         (definition as? ValueObjectDefinition<*, *, *>)?.let {
-            if (definition.dataModel.name != this.dataModel.name || definition.dataModel.byteSize != this.dataModel.byteSize) {
-                addIncompatibilityReason?.invoke("Data models are not the same comparing value object properties: $dataModel != ${definition.dataModel}")
-                compatible = false
-            }
+            compatible = this.compatibleWithDefinitionWithDataModel(definition, addIncompatibilityReason) && compatible
         }
 
         return compatible

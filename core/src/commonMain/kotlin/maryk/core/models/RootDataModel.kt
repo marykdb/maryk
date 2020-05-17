@@ -61,6 +61,8 @@ abstract class RootDataModel<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
     override val keyByteSize = checkKeyDefinitionAndCountBytes(keyDefinition)
     override val keyIndices = calculateKeyIndices(keyDefinition)
 
+    override val orderedIndices: List<IsIndexable>? = indices?.sortedBy { it.referenceStorageByteArray }
+
     /** Check the property values */
     fun check() {
         this.reservedIndices?.let {

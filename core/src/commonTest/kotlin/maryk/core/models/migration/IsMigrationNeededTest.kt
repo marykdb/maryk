@@ -1,6 +1,7 @@
 package maryk.core.models.migration
 
 import maryk.core.models.migration.MigrationStatus.NeedsMigration
+import maryk.core.models.migration.MigrationStatus.NewIndicesOnExistingProperties
 import maryk.core.models.migration.MigrationStatus.OnlySafeAdds
 import maryk.core.models.migration.MigrationStatus.UpToDate
 import maryk.test.assertType
@@ -9,6 +10,7 @@ import maryk.test.models.ModelV1
 import maryk.test.models.ModelV1_1
 import maryk.test.models.ModelV1_1WrongKey
 import maryk.test.models.ModelV2
+import maryk.test.models.ModelV2ExtraIndex
 import maryk.test.models.ModelV2ReservedNamesAndIndices
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -45,5 +47,12 @@ class IsMigrationNeededTest {
     @Test
     fun onlySafeAdditions() {
         assertType<OnlySafeAdds>(ModelV1_1.isMigrationNeeded(ModelV1))
+    }
+
+    @Test
+    fun newIndexAdded() {
+        assertType<NewIndicesOnExistingProperties>(ModelV2ExtraIndex.isMigrationNeeded(ModelV2)).apply {
+            indicesToIndex.containsAll(listOf(ModelV2ExtraIndex { newNumber::ref }))
+        }
     }
 }

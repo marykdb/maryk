@@ -65,7 +65,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
                             } // else ignore since did not exist
 
                             // Delete all historic values if historicStoreIndexValuesWalker was set
-                            historicStoreIndexValuesWalker?.walkIndexHistory(objectToDelete, indexable) { value, _ ->
+                            historicStoreIndexValuesWalker?.walkHistoricalValuesForIndexKeys(objectToDelete, indexable) { value, _ ->
                                 dataStore.deleteHardFromIndex(
                                     indexRef,
                                     value,

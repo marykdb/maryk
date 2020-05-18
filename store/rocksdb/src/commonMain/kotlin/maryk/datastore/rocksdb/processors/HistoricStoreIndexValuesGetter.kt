@@ -18,12 +18,20 @@ import maryk.rocksdb.AutoCloseable
 import maryk.rocksdb.ReadOptions
 import kotlin.experimental.xor
 
-/** Reads historical index values from the RocksDB store. */
+/**
+ * Historical index values walker for a RocksDB store.
+ * It allows you to get all versioned index values for a given data object by key.
+ */
 internal class HistoricStoreIndexValuesWalker(
     val columnFamilies: HistoricTableColumnFamilies,
     private val readOptions: ReadOptions
 ) {
-    fun walkIndexHistory(
+    /**
+     * Walk historical values of [key] for [indexable]
+     * Allows you to find all historical index keys for data object at [key]
+     * Result is passed to [handleIndexReference] with the index reference and the version
+     */
+    fun walkHistoricalValuesForIndexKeys(
         key: Key<*>,
         dbAccessor: DBAccessor,
         indexable: IsIndexable,
@@ -63,6 +71,11 @@ internal class HistoricStoreIndexValuesWalker(
     }
 }
 
+/**
+ * A historical values getter which finds the first valid value until [latestOverallVersion]
+ * It stores iterators internally for each property so it can advance to the next version if all possible combinations
+ * have been captured.
+ */
 private class HistoricStoreIndexValuesGetter(
     val columnFamilies: HistoricTableColumnFamilies,
     var dbAccessor: DBAccessor,

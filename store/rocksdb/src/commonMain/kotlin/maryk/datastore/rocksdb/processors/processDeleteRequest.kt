@@ -116,7 +116,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
                                     deleteIndexValue(transaction, columnFamilies, indexReference, valueAndKeyBytes, versionBytes, deleteRequest.hardDelete)
 
                                     // Delete all historic values if historicStoreIndexValuesWalker was set
-                                    historicStoreIndexValuesWalker?.walkIndexHistory(key, transaction, indexable, indexReference) { historicReference ->
+                                    historicStoreIndexValuesWalker?.walkHistoricalValuesForIndexKeys(key, transaction, indexable, indexReference) { historicReference ->
                                         transaction.delete(
                                             historicStoreIndexValuesWalker.columnFamilies.historic.index,
                                             historicReference

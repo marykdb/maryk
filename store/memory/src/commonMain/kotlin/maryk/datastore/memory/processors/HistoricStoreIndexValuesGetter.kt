@@ -11,9 +11,17 @@ import maryk.datastore.memory.records.DataRecordNode
 import maryk.datastore.memory.records.DataRecordValue
 import maryk.lib.extensions.compare.compareTo
 
-/** Walks all historical index values from the Memory store for a record. */
+/**
+ * Historical index values walker for a Memory store.
+ * It allows you to get all versioned index values for a given data object by key.
+ */
 internal object HistoricStoreIndexValuesWalker {
-    fun walkIndexHistory(
+    /**
+     * Walk historical values of [record] for [indexable]
+     * Allows you to find all historical index keys for data object at [key]
+     * Result is passed to [handleIndexReference] with the index reference and the version
+     */
+    fun walkHistoricalValuesForIndexKeys(
         record: DataRecord<*, *>,
         indexable: IsIndexable,
         handleIndexReference: (ByteArray, ULong) -> Unit
@@ -39,6 +47,11 @@ internal object HistoricStoreIndexValuesWalker {
     }
 }
 
+/**
+ * A historical values getter which finds the first valid value until [latestOverallVersion]
+ * It stores iterators internally for each property so it can advance to the next version if all possible combinations
+ * have been captured.
+ */
 private class HistoricStoreIndexValuesGetter(
     val dataRecord: DataRecord<*, *>
 ) : IsValuesGetter {

@@ -89,7 +89,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
 
             matchingKeys.add(key)
 
-            val storeGetter = StoreValuesGetter(key, dataStore.db, columnFamilies, dataStore.defaultReadOptions)
+            val storeGetter = StoreValuesGetter(key.bytes, dataStore.db, columnFamilies, dataStore.defaultReadOptions)
 
             // Add sorting index
             sortingIndex?.toStorageByteArrayForIndex(storeGetter, key.bytes)?.let {

@@ -700,7 +700,7 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> app
                 indexUpdates = mutableListOf()
             }
 
-            val storeGetter = StoreValuesGetter(key, dataStore.db, columnFamilies, dataStore.defaultReadOptions)
+            val storeGetter = StoreValuesGetter(key.bytes, dataStore.db, columnFamilies, dataStore.defaultReadOptions)
             val transactionGetter = DBAccessorValuesGetter(key, transaction, columnFamilies, dataStore.defaultReadOptions)
 
             for (index in indices) {

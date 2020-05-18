@@ -13,6 +13,7 @@ import maryk.core.models.migration.MigrationStatus.NewModel
 import maryk.core.models.migration.MigrationStatus.OnlySafeAdds
 import maryk.core.models.migration.MigrationStatus.UpToDate
 import maryk.core.models.migration.StoredRootDataModel
+import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.TableType.HistoricIndex
@@ -27,6 +28,7 @@ import maryk.datastore.rocksdb.model.checkModelIfMigrationIsNeeded
 import maryk.datastore.rocksdb.model.storeModelDefinition
 import maryk.datastore.rocksdb.processors.TRUE_ARRAY
 import maryk.datastore.rocksdb.processors.VersionedComparator
+import maryk.datastore.rocksdb.processors.deleteCompleteIndexContents
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.updates.Update
@@ -113,27 +115,29 @@ class RocksDBDataStore(
             }
 
             for ((index, dataModel) in dataModelsById) {
-                columnFamilyHandlesByDataModelIndex[index]?.model?.let { modelColumnFamily ->
-                    when (val migrationStatus = checkModelIfMigrationIsNeeded(this.db, modelColumnFamily, dataModel, this.onlyCheckModelVersion)) {
-                        UpToDate -> Unit // Do nothing since no work is needed
-                        NewModel, OnlySafeAdds -> {
-                            // Model updated so can be stored
-                            storeModelDefinition(this.db, modelColumnFamily, dataModel)
-                        }
-                        is NewIndicesOnExistingProperties -> {
-                            TODO("Create new indices")
-                            //storeModelDefinition(this.db, modelColumnFamily, dataModel)
-                        }
-                        is NeedsMigration -> {
-                            migrationHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModel, dataModel)
-                                ?: throw MigrationException("Migration needed: No migration handler present")
-
-                            migrationStatus.indicesToIndex?.let {
-                                TODO("Create new indices")
+                columnFamilyHandlesByDataModelIndex[index]?.let { tableColumnFamilies ->
+                    tableColumnFamilies.model.let { modelColumnFamily ->
+                        when (val migrationStatus = checkModelIfMigrationIsNeeded(this.db, modelColumnFamily, dataModel, this.onlyCheckModelVersion)) {
+                            UpToDate -> Unit // Do nothing since no work is needed
+                            NewModel, OnlySafeAdds -> {
+                                // Model updated so can be stored
+                                storeModelDefinition(this.db, modelColumnFamily, dataModel)
                             }
+                            is NewIndicesOnExistingProperties -> {
+                                fillIndex(migrationStatus.indicesToIndex, tableColumnFamilies)
+                                storeModelDefinition(this.db, modelColumnFamily, dataModel)
+                            }
+                            is NeedsMigration -> {
+                                migrationHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModel, dataModel)
+                                    ?: throw MigrationException("Migration needed: No migration handler present")
 
-                            // Successful so store new model definition
-                            storeModelDefinition(this.db, modelColumnFamily, dataModel)
+                                migrationStatus.indicesToIndex?.let {
+                                    fillIndex(it, tableColumnFamilies)
+                                }
+
+                                // Successful so store new model definition
+                                storeModelDefinition(this.db, modelColumnFamily, dataModel)
+                            }
                         }
                     }
                 }
@@ -141,6 +145,15 @@ class RocksDBDataStore(
         } catch (e: Throwable) {
             this.close()
             throw e
+        }
+    }
+
+    private fun fillIndex(
+        indicesToIndex: List<IsIndexable>,
+        tableColumnFamilies: TableColumnFamilies
+    ) {
+        for (indexable in indicesToIndex) {
+            deleteCompleteIndexContents(this.db, tableColumnFamilies, indexable)
         }
     }
 

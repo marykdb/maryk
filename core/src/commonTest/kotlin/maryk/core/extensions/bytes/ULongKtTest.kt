@@ -46,6 +46,13 @@ internal class ULongKtTest {
     }
 
     @Test
+    fun testByteArrayConversion() {
+        longsToTest.forEach { uLong ->
+            expect(uLong) { uLong.toByteArray().toULong() }
+        }
+    }
+
+    @Test
     fun testOutOfRangeConversion() {
         assertFailsWith<IllegalArgumentException> {
             4uL.writeBytes({}, 9)

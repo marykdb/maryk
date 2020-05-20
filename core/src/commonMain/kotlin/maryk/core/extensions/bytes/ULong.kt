@@ -76,3 +76,13 @@ internal fun ULong.calculateVarByteLength(): Int = when {
     this and (ULong.MAX_VALUE shl 63) == 0uL -> 9
     else -> 10
 }
+
+/**
+ * Convert ULong to byte array
+ */
+fun ULong.toByteArray(): ByteArray {
+    val output = ByteArray(8)
+    var index = 0
+    this.writeBytes({ output[index++] = it })
+    return output
+}

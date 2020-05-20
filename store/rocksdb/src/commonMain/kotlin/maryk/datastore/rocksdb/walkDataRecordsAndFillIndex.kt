@@ -1,11 +1,10 @@
 package maryk.datastore.rocksdb
 
-import maryk.core.clock.HLC
+import maryk.core.extensions.bytes.toByteArray
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.datastore.rocksdb.processors.HistoricStoreIndexValuesWalker
 import maryk.datastore.rocksdb.processors.StoreValuesGetter
 import maryk.datastore.rocksdb.processors.TRUE_ARRAY
-import maryk.datastore.rocksdb.processors.helpers.setIndexValue
 import maryk.rocksdb.use
 
 /**
@@ -19,7 +18,7 @@ internal fun walkDataRecordsAndFillIndex(
 ) {
     Transaction(dataStore).use { transaction ->
         transaction.getIterator(dataStore.defaultReadOptions, columnFamilies.keys).use { iterator ->
-            val storeGetter = StoreValuesGetter(null, dataStore.db, columnFamilies, dataStore.defaultReadOptions)
+            val storeGetter = StoreValuesGetter(null, dataStore.db, columnFamilies, dataStore.defaultReadOptions, captureVersion = true)
             val historicStoreIndexValuesWalker = if (columnFamilies is HistoricTableColumnFamilies) {
                 HistoricStoreIndexValuesWalker(
                     columnFamilies,
@@ -27,8 +26,10 @@ internal fun walkDataRecordsAndFillIndex(
                 )
             } else null
 
+            // Go to the start of the column family
+            iterator.seek(byteArrayOf())
+
             while (iterator.isValid()) {
-                iterator.next()
                 val key = iterator.key()
 
                 storeGetter.moveToKey(key)
@@ -37,13 +38,7 @@ internal fun walkDataRecordsAndFillIndex(
                     storeGetter.lastVersion = null
                     // Store non historic value
                     index.toStorageByteArrayForIndex(storeGetter, key)?.let { indexValue ->
-                        setIndexValue(
-                            transaction,
-                            columnFamilies,
-                            index.referenceStorageByteArray.bytes,
-                            indexValue,
-                            HLC.toStorageBytes(HLC(storeGetter.lastVersion!!))
-                        )
+                        transaction.put(columnFamilies.index, byteArrayOf(*index.referenceStorageByteArray.bytes, *indexValue), storeGetter.lastVersion!!.toByteArray())
                     }
 
                     // Process historical values for historical index
@@ -61,7 +56,9 @@ internal fun walkDataRecordsAndFillIndex(
                         }
                     }
                 }
+                iterator.next()
             }
+            transaction.commit()
         }
     }
 }

@@ -148,6 +148,7 @@ class RocksDBDataStore(
         }
     }
 
+    /** Walk all current values in [tableColumnFamilies] and fill [indicesToIndex] */
     private fun fillIndex(
         indicesToIndex: List<IsIndexable>,
         tableColumnFamilies: TableColumnFamilies
@@ -155,6 +156,8 @@ class RocksDBDataStore(
         for (indexable in indicesToIndex) {
             deleteCompleteIndexContents(this.db, tableColumnFamilies, indexable)
         }
+
+        walkDataRecordsAndFillIndex(this, tableColumnFamilies, indicesToIndex)
     }
 
     private fun createColumnFamilyHandles(descriptors: MutableList<ColumnFamilyDescriptor>, tableIndex: UInt, db: RootDataModel<*, *>) {

@@ -7,7 +7,6 @@ import maryk.core.extensions.bytes.writeBytes
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.types.Key
 import maryk.core.values.IsValuesGetter
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.DBIterator
@@ -26,24 +25,24 @@ internal class HistoricStoreIndexValuesWalker(
     val columnFamilies: HistoricTableColumnFamilies,
     private val readOptions: ReadOptions
 ) {
+    private val getter = HistoricStoreIndexValuesGetter(columnFamilies, readOptions)
+
     /**
      * Walk historical values of [key] for [indexable]
      * Allows you to find all historical index keys for data object at [key]
      * Result is passed to [handleIndexReference] with the index reference and the version
      */
     fun walkHistoricalValuesForIndexKeys(
-        key: Key<*>,
+        key: ByteArray,
         dbAccessor: DBAccessor,
         indexable: IsIndexable,
-        indexableBytes: ByteArray,
         handleIndexReference: (ByteArray) -> Unit
     ) {
-        val getter = HistoricStoreIndexValuesGetter(
-            columnFamilies, dbAccessor, readOptions, key
-        )
+        getter.moveToKey(key, dbAccessor)
+        val indexableBytes = indexable.referenceStorageByteArray.bytes
 
         var lastVersion: ULong?
-        val keyAndVersionSize = key.bytes.size + ULong.SIZE_BYTES
+        val keyAndVersionSize = key.size + ULong.SIZE_BYTES
         do {
             var index = 0
             try {
@@ -54,7 +53,7 @@ internal class HistoricStoreIndexValuesWalker(
                 ).also { bytes ->
                     val writer = { it: Byte -> bytes[index++] = it }
                     indexableBytes.forEach(writer)
-                    indexable.writeStorageBytesForIndex(getter, key.bytes, writer)
+                    indexable.writeStorageBytesForIndex(getter, key, writer)
                     val versionIndex = index
                     getter.latestOverallVersion?.writeBytes(writer)
                         ?: throw StorageException("Latest overall version not set")
@@ -78,13 +77,24 @@ internal class HistoricStoreIndexValuesWalker(
  */
 private class HistoricStoreIndexValuesGetter(
     val columnFamilies: HistoricTableColumnFamilies,
-    var dbAccessor: DBAccessor,
-    val readOptions: ReadOptions,
-    var key: Key<*>
+    val readOptions: ReadOptions
 ) : IsValuesGetter, AutoCloseable {
     val iterableReferenceMap = mutableMapOf<IsPropertyReference<*, *, *>, IterableReference>()
     var latestOverallVersion: ULong? = null
     var versionToSkip: ULong? = null
+
+    lateinit var dbAccessor: DBAccessor
+    lateinit var key: ByteArray
+
+    /** Set the getter to get the values for [key] */
+    fun moveToKey(key: ByteArray, dbAccessor: DBAccessor) {
+        this.key = key
+        this.dbAccessor = dbAccessor
+
+        iterableReferenceMap.clear()
+        latestOverallVersion = null
+        versionToSkip = null
+    }
 
     override fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(propertyReference: IsPropertyReference<T, D, C>): T? {
         val iterableReference = iterableReferenceMap.getOrPut(
@@ -97,7 +107,7 @@ private class HistoricStoreIndexValuesGetter(
         }
         val iterator = iterableReference.iterator
         val reference = iterableReference.referenceAsBytes
-        val keyAndReference = byteArrayOf(*key.bytes, *iterableReference.referenceAsBytes)
+        val keyAndReference = byteArrayOf(*key, *iterableReference.referenceAsBytes)
 
         if (latestOverallVersion == iterableReference.lastVersion) {
             // Only seek the first time
@@ -113,13 +123,13 @@ private class HistoricStoreIndexValuesGetter(
                 if (qualifier.matchPart(0, keyAndReference)) {
                     val valueBytes = iterator.value()
                     val historicReference =
-                        ByteArray(reference.size + valueBytes.size + key.bytes.size + ULong.SIZE_BYTES)
+                        ByteArray(reference.size + valueBytes.size + key.size + ULong.SIZE_BYTES)
                     reference.copyInto(historicReference)
                     valueBytes.copyInto(historicReference, reference.size)
-                    key.bytes.copyInto(historicReference, valueBytes.size + reference.size)
+                    key.copyInto(historicReference, valueBytes.size + reference.size)
                     qualifier.copyInto(
                         historicReference,
-                        valueBytes.size + reference.size + key.bytes.size,
+                        valueBytes.size + reference.size + key.size,
                         qualifier.size - ULong.SIZE_BYTES
                     )
 

@@ -54,7 +54,9 @@ interface IsRootDataModel<P : IsPropertyDefinitions> : IsNamedDataModel<P> {
             // If they are present on stored but not on new, accept it.
             orderedIndices?.let { indices ->
                 if (storedDataModel.orderedIndices == null) {
-                    indicesToIndex.addAll(indices)
+                    // Only index the values which have stored properties on the stored model
+                    val toIndex = indices.filter { it.isCompatibleWithModel(storedDataModel) }
+                    indicesToIndex.addAll(toIndex)
                 } else {
                     synchronizedIteration(
                         indices.iterator(),
@@ -62,7 +64,12 @@ interface IsRootDataModel<P : IsPropertyDefinitions> : IsNamedDataModel<P> {
                         Comparator { newValue, storedValue ->
                             newValue.referenceStorageByteArray.compareTo(storedValue.referenceStorageByteArray)
                         },
-                        processOnlyOnIterator1 = { newValue -> indicesToIndex.add(newValue) }
+                        processOnlyOnIterator1 = { newIndex ->
+                            // Only index the values which have stored properties on the stored model
+                            if (newIndex.isCompatibleWithModel(storedDataModel)) {
+                                indicesToIndex.add(newIndex)
+                            }
+                        }
                     )
                 }
             }

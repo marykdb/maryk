@@ -14,6 +14,7 @@ import maryk.test.models.ModelV2ExtraIndex
 import maryk.test.models.ModelV2ReservedNamesAndIndices
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class IsMigrationNeededTest {
     @Test
@@ -50,9 +51,16 @@ class IsMigrationNeededTest {
     }
 
     @Test
-    fun newIndexAdded() {
+    fun newIndexAddedOnExistingProperties() {
         assertType<NewIndicesOnExistingProperties>(ModelV2ExtraIndex.isMigrationNeeded(ModelV2)).apply {
             indicesToIndex.containsAll(listOf(ModelV2ExtraIndex { newNumber::ref }))
+        }
+    }
+
+    @Test
+    fun noNewIndexAddedOnExistingProperties() {
+        assertType<NeedsMigration>(ModelV2ExtraIndex.isMigrationNeeded(ModelV1)).apply {
+            assertNull(indicesToIndex)
         }
     }
 }

@@ -4,6 +4,7 @@ import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 import maryk.core.properties.definitions.IsMultiTypeDefinition
@@ -70,6 +71,9 @@ data class TypeReference<E : TypeEnum<T>, T: Any, in CX : IsPropertyContext> int
         )
         this.parentReference?.writeStorageBytes(writer)
     }
+
+    override fun isCompatibleWithModel(dataModel: IsRootDataModel<*>) =
+        dataModel.compatibleWithReference(this)
 
     override fun calculateTransportByteLength(cacher: WriteCacheWriter): Int {
         val parentLength = parentReference?.calculateTransportByteLength(cacher) ?: 0

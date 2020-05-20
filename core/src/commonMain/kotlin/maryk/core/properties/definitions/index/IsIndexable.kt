@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions.index
 
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.exceptions.RequiredException
 import maryk.core.properties.types.Bytes
 import maryk.core.values.IsValuesGetter
@@ -42,6 +43,9 @@ interface IsIndexable {
      * Throws RequiredException if values are missing
      */
     fun writeStorageBytes(values: IsValuesGetter, writer: (byte: Byte) -> Unit)
+
+    /** Checks if [dataModel] is compatible with this indexable */
+    fun isCompatibleWithModel(dataModel: IsRootDataModel<*>): Boolean
 }
 
 /** Convert indexable to a ByteArray so it can be referenced */

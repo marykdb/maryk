@@ -2,6 +2,7 @@ package maryk.core.properties.references
 
 import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 import maryk.core.properties.definitions.index.IndexKeyPartType
 import maryk.core.properties.definitions.index.toReferenceStorageByteArray
@@ -54,4 +55,7 @@ open class ValueWithFixedBytesPropertyReference<
 
     override fun isForPropertyReference(propertyReference: IsPropertyReference<*, *, *>) =
         propertyReference == this
+
+    override fun isCompatibleWithModel(dataModel: IsRootDataModel<*>) =
+        dataModel.compatibleWithReference(this)
 }

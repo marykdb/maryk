@@ -53,6 +53,9 @@ open class ObjectReferencePropertyReference<
         this.writeStorageBytes(writer)
     }
 
+    override fun isCompatibleWithModel(dataModel: IsRootDataModel<*>): Boolean =
+        dataModel.compatibleWithReference(this)
+
     override fun getValue(values: IsValuesGetter) =
         values[this] ?: throw RequiredException(this)
 

@@ -6,9 +6,12 @@ import maryk.core.processors.datastore.matchers.FuzzyExactLengthMatch
 import maryk.core.processors.datastore.matchers.QualifierExactMatcher
 import maryk.core.processors.datastore.matchers.QualifierFuzzyMatcher
 import maryk.core.processors.datastore.matchers.ReferencedQualifierMatcher
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.embed
 import maryk.core.properties.definitions.string
+import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
 import maryk.core.properties.references.Properties.embeddedObject
 import maryk.core.properties.references.Properties.test
 import maryk.core.properties.references.dsl.any
@@ -20,8 +23,10 @@ import maryk.test.models.ComplexModel
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertSame
+import kotlin.test.assertTrue
 import kotlin.test.expect
 
 private object Properties : PropertyDefinitions() {
@@ -115,6 +120,34 @@ internal class PropertyReferenceTest {
         expect("1609") { bc.bytes!!.toHex() }
 
         expect(subRef) { Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) }
+    }
+
+    @Test
+    fun compatibleWithModel() {
+        assertTrue {
+            ref.isCompatibleWithModel(Model)
+        }
+
+        assertTrue {
+            subRef.isCompatibleWithModel(Model)
+        }
+
+        // Property definition wrapper which does not exist on Model
+        val invalid = FlexBytesDefinitionWrapper<String, String, IsPropertyContext, StringDefinition, Any>(
+            3u,
+            "invalid",
+            StringDefinition()
+        )
+
+        val invalidRef = invalid.ref()
+        assertFalse {
+            invalidRef.isCompatibleWithModel(Model)
+        }
+
+        val invalidSubRef = invalid.ref(embeddedObject.ref())
+        assertFalse {
+            invalidSubRef.isCompatibleWithModel(Model)
+        }
     }
 
     @Test

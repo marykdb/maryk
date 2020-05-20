@@ -2,6 +2,7 @@ package maryk.core.properties.definitions.index
 
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
+import maryk.core.models.IsRootDataModel
 import maryk.core.models.SingleValueDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
@@ -60,6 +61,15 @@ data class Multiple(
             @Suppress("UNCHECKED_CAST")
             (reference as IsIndexablePropertyReference<Any>).writeStorageBytes(value, writer)
         }
+    }
+
+    override fun isCompatibleWithModel(dataModel: IsRootDataModel<*>): Boolean {
+        for (reference in this.references) {
+            if (!reference.isCompatibleWithModel(dataModel)) {
+                return false
+            }
+        }
+        return true
     }
 
     /**

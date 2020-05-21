@@ -100,7 +100,7 @@ data class ScanChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinit
                     )
                 )
             ) {
-                    throw RequestException("$order can only be done on the main index")
+                throw RequestException("$order can only be done on the main index or on required and final properties")
             }
         }
     }

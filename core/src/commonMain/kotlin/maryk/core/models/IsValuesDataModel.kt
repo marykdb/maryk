@@ -11,7 +11,28 @@ import maryk.core.values.MutableValueItems
 import maryk.core.values.ValueItems
 import maryk.core.values.Values
 
-interface IsValuesDataModel<P : PropertyDefinitions> : IsDataModel<P>, IsNamedDataModel<P>
+interface IsValuesDataModel<P : PropertyDefinitions> : IsDataModel<P>, IsNamedDataModel<P> {
+    val reservedIndices: List<UInt>?
+    val reservedNames: List<String>?
+
+    /** Check the property values */
+    fun check() {
+        this.reservedIndices?.let { reservedIndices ->
+            this.properties.forEach { property ->
+                require(!reservedIndices.contains(property.index)) {
+                    "Model $name has ${property.index} defined in option ${property.name} while it is reserved"
+                }
+            }
+        }
+        this.reservedNames?.let { reservedNames ->
+            this.properties.forEach { case ->
+                require(!reservedNames.contains(case.name)) {
+                    "Model $name has a reserved name defined ${case.name}"
+                }
+            }
+        }
+    }
+}
 
 /** A DataModel which holds properties and can be validated */
 interface IsTypedValuesDataModel<DM : IsValuesDataModel<P>, P : PropertyDefinitions> :

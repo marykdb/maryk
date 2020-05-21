@@ -2,7 +2,7 @@ package maryk.generator.proto3
 
 import maryk.core.exceptions.TypeException
 import maryk.core.models.IsNamedDataModel
-import maryk.core.models.IsRootDataModel
+import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
@@ -54,7 +54,7 @@ fun <P : AbstractPropertyDefinitions<*>> IsNamedDataModel<P>.generateProto3Schem
 
     var reservations = ""
 
-    if (this is IsRootDataModel<P>) {
+    if (this is IsValuesDataModel<*>) {
         this.reservedIndices?.let { indices ->
             reservations += "reserved ${indices.joinToString(", ")};\n      "
         }

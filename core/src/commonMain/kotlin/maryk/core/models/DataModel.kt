@@ -12,7 +12,11 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.PropertyDefinitionsCollectionDefinition
 import maryk.core.properties.PropertyDefinitionsCollectionDefinitionWrapper
+import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.string
+import maryk.core.properties.types.numeric.UInt32
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
@@ -26,19 +30,37 @@ import maryk.json.IsJsonLikeWriter
  * reference to the propertyDefinitions of type [P] which can be used for the references to the properties.
  */
 abstract class DataModel<DM : IsValuesDataModel<P>, P : PropertyDefinitions>(
+    reservedIndices: List<UInt>? = null,
+    reservedNames: List<String>? = null,
     properties: P
 ) : SimpleDataModel<DM, P>(
+    reservedIndices,
+    reservedNames,
     properties
 ), MarykPrimitive {
     override val primitiveType = PrimitiveType.Model
 
     override val name: String get() = this::class.simpleName ?: throw DefNotFoundException("Class $this has no name")
 
+    @Suppress("unused")
     private object Properties :
         ObjectPropertyDefinitions<DataModel<*, *>>(),
         IsDataModelPropertyDefinitions<DataModel<*, *>, PropertyDefinitionsCollectionDefinitionWrapper<DataModel<*, *>>> {
         override val name by string(1u, DataModel<*, *>::name)
         override val properties = addProperties(this)
+        val reservedIndices by list(
+            index = 3u,
+            getter = DataModel<*, *>::reservedIndices,
+            valueDefinition = NumberDefinition(
+                type = UInt32,
+                minValue = 1u
+            )
+        )
+        val reservedNames by list(
+            index = 4u,
+            getter = DataModel<*, *>::reservedNames,
+            valueDefinition = StringDefinition()
+        )
     }
 
     internal object Model : DefinitionDataModel<DataModel<*, *>>(
@@ -46,7 +68,9 @@ abstract class DataModel<DM : IsValuesDataModel<P>, P : PropertyDefinitions>(
     ) {
         override fun invoke(values: SimpleObjectValues<DataModel<*, *>>) =
             object : DataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
-                properties = values(2u)
+                properties = values(2u),
+                reservedIndices = values(3u),
+                reservedNames = values(4u)
             ) {
                 override val name: String = values(1u)
             }

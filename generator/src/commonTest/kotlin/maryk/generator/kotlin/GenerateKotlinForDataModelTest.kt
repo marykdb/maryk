@@ -1,3 +1,10 @@
+package maryk.generator.kotlin
+
+import maryk.test.models.EmbeddedMarykModel
+import kotlin.test.Test
+import kotlin.test.assertEquals
+
+val generatedKotlinForDataModel = """
 package maryk.test.models
 
 import maryk.core.models.DataModel
@@ -5,9 +12,8 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.embed
 import maryk.core.properties.definitions.string
 import maryk.core.values.Values
-import maryk.test.models.EmbeddedMarykModel.Properties
 
-object EmbeddedMarykModel : DataModel<EmbeddedMarykModel, Properties>(
+object EmbeddedMarykModel : DataModel<EmbeddedMarykModel, EmbeddedMarykModel.Properties>(
     reservedIndices = listOf(999u),
     reservedNames = listOf("reserved"),
     properties = Properties
@@ -30,7 +36,7 @@ object EmbeddedMarykModel : DataModel<EmbeddedMarykModel, Properties>(
 
     operator fun invoke(
         value: String,
-        model: Values<EmbeddedMarykModel, Properties>? = null,
+        model: Values<EmbeddedMarykModel, EmbeddedMarykModel.Properties>? = null,
         marykModel: Values<TestMarykModel, TestMarykModel.Properties>? = null
     ) = values {
         mapNonNulls(
@@ -39,9 +45,18 @@ object EmbeddedMarykModel : DataModel<EmbeddedMarykModel, Properties>(
             this.marykModel with marykModel
         )
     }
+}
+""".trimIndent()
 
-    override fun equals(other: Any?) =
-        other is DataModel<*, *> &&
-            this.name == other.name &&
-            this.properties.size == other.properties.size
+class GenerateKotlinForDataModelTest {
+    @Test
+    fun generateKotlinForDataModel() {
+        val output = buildString {
+            EmbeddedMarykModel.generateKotlin("maryk.test.models") {
+                append(it)
+            }
+        }
+
+        assertEquals(generatedKotlinForDataModel, output)
+    }
 }

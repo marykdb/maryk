@@ -52,34 +52,16 @@ abstract class RootDataModel<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
     final override val keyDefinition: IsIndexable = UUIDKey,
     final override val version: Version = Version(1),
     final override val indices: List<IsIndexable>? = null,
-    final override val reservedIndices: List<UInt>? = null,
-    final override val reservedNames: List<String>? = null,
+    reservedIndices: List<UInt>? = null,
+    reservedNames: List<String>? = null,
     properties: P
-) : DataModel<DM, P>(properties), IsTypedRootDataModel<DM, P>, IsRootValuesDataModel<P> {
+) : DataModel<DM, P>(reservedIndices, reservedNames, properties), IsTypedRootDataModel<DM, P>, IsRootValuesDataModel<P> {
     override val primitiveType = RootModel
 
     override val keyByteSize = checkKeyDefinitionAndCountBytes(keyDefinition)
     override val keyIndices = calculateKeyIndices(keyDefinition)
 
     override val orderedIndices: List<IsIndexable>? = indices?.sortedBy { it.referenceStorageByteArray }
-
-    /** Check the property values */
-    fun check() {
-        this.reservedIndices?.let {
-            this.properties.forEach { property ->
-                require(!reservedIndices.contains(property.index)) {
-                    "Enum $name has ${property.index} defined in option ${property.name} while it is reserved"
-                }
-            }
-        }
-        this.reservedNames?.let {
-            this.properties.forEach { case ->
-                require(!reservedNames.contains(case.name)) {
-                    "Enum $name has a reserved name defined ${case.name}"
-                }
-            }
-        }
-    }
 
     @Suppress("unused")
     private object RootModelProperties :

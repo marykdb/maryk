@@ -18,9 +18,22 @@ fun DataModel<*, *>.generateKotlin(
         enumKotlinDefinitions.add(it)
     }
 
+    val reservedIndices = this.reservedIndices.let { indices ->
+        when {
+            indices.isNullOrEmpty() -> ""
+            else -> "reservedIndices = listOf(${indices.joinToString(", ", postfix = "u")}),\n        "
+        }
+    }
+    val reservedNames = this.reservedNames.let { names ->
+        when {
+            names.isNullOrEmpty() -> ""
+            else -> "reservedNames = listOf(${names.joinToString(", ", "\"", "\"")}),\n        "
+        }
+    }
+
     val code = """
     object $name : DataModel<$name, $name.Properties>(
-        properties = Properties
+        $reservedIndices${reservedNames}properties = Properties
     ) {
         object Properties : PropertyDefinitions() {
             ${propertiesKotlin.generateDefinitionsForProperties(addImport).prependIndent().trimStart()}
@@ -42,16 +55,17 @@ fun DataModel<*, *>.generateKotlin(
 internal fun List<KotlinForProperty>.generateDefinitionsForProperties(addImport: (String) -> Unit): String {
     var properties = ""
     for (it in this) {
+        addImport("maryk.core.properties.definitions."+it.wrapName)
+
         val altNames = it.altNames?.let { altName ->
             "\n            alternativeNames = setOf(${altName.joinToString(", ") { """"$it"""" }}),"
         } ?: ""
-
-        addImport("maryk.core.properties.definitions."+it.wrapName)
+        val definitionProperties = "\n            " +it.definition.prependIndent().prependIndent().prependIndent().trimStart()
+        val propertiesToBeAdded = if (definitionProperties.isBlank() && altNames.isEmpty()) "" else ",$altNames$definitionProperties"
 
         properties += """
         val ${it.name} by ${it.wrapName}(
-            index = ${it.index}u,$altNames
-            ${it.definition.prependIndent().prependIndent().prependIndent().trimStart()}
+            index = ${it.index}u$propertiesToBeAdded
         )"""
     }
     return properties

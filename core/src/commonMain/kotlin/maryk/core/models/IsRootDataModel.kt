@@ -17,8 +17,6 @@ interface IsRootValuesDataModel<P : PropertyDefinitions> : IsRootDataModel<P>, I
 interface IsRootDataModel<P : IsPropertyDefinitions> : IsNamedDataModel<P> {
     val keyDefinition: IsIndexable
     val indices: List<IsIndexable>?
-    val reservedIndices: List<UInt>?
-    val reservedNames: List<String>?
 
     val version: Version
 

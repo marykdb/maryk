@@ -18,6 +18,8 @@ message SimpleMarykModel {
 
 val generatedProto3ForEmbeddedMarykModel = """
 message EmbeddedMarykModel {
+  reserved 999;
+  reserved "reserved";
   string value = 1;
   EmbeddedMarykModel model = 2;
   TestMarykModel marykModel = 3;

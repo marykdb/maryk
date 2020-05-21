@@ -1,7 +1,7 @@
 package maryk.core.models.migration
 
 import maryk.core.models.IsDataModel
-import maryk.core.models.IsRootDataModel
+import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyDefinitions
 import maryk.lib.synchronizedIteration
@@ -38,7 +38,7 @@ internal fun <P : IsPropertyDefinitions> IsDataModel<P>.checkProperties(
             }
         },
         { storedProp ->
-            if (this is IsRootDataModel<P>) {
+            if (this is IsValuesDataModel<*>) {
                 if (this.reservedIndices?.contains(storedProp.index) != true) {
                     handleMigrationReason("Property with index ${storedProp.index} is not present in new model. Please add it to `reservedIndices` or add back the property to avoid this exception.")
                 }

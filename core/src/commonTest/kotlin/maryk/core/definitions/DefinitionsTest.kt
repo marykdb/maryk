@@ -92,6 +92,8 @@ class DefinitionsTest {
                 default: haha
                 regEx: ha.*
             EmbeddedMarykModel: !Model
+              reservedIndices: [999]
+              reservedNames: [reserved]
               ? 1: value
               : !String
                 required: true

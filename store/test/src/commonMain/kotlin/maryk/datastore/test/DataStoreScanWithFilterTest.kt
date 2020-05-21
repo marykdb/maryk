@@ -24,7 +24,7 @@ import maryk.test.models.SimpleMarykTypeEnum.S1
 import maryk.test.runSuspendingTest
 import kotlin.test.expect
 
-class DataStoreScanIndexTest(
+class DataStoreScanWithFilterTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
     private val keys = mutableListOf<Key<CompleteMarykModel>>()

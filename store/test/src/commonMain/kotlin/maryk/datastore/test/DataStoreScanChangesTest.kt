@@ -7,6 +7,8 @@ import maryk.core.query.changes.Change
 import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.orders.Order.Companion.descending
+import maryk.core.query.orders.ascending
+import maryk.core.query.orders.descending
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
 import maryk.core.query.requests.delete
@@ -30,6 +32,8 @@ class DataStoreScanChangesTest(
     override val allTests = mapOf(
         "executeSimpleScanChangesRequest" to ::executeSimpleScanChangesRequest,
         "executeSimpleScanReversedChangesRequest" to ::executeSimpleScanReversedChangesRequest,
+        "executeScanChangesOnAscendingIndexRequest" to ::executeScanChangesOnAscendingIndexRequest,
+        "executeScanChangesOnDescendingIndexRequest" to ::executeScanChangesOnDescendingIndexRequest,
         "executeScanChangesRequestWithLimit" to ::executeScanChangesRequestWithLimit,
         "executeScanChangesRequestWithToVersion" to ::executeScanChangesRequestWithToVersion,
         "executeScanChangesRequestWithFromVersion" to ::executeScanChangesRequestWithFromVersion,
@@ -141,6 +145,38 @@ class DataStoreScanChangesTest(
         }
         scanResponse.changes[1].apply {
             expect(keys[3]) { key }
+        }
+    }
+
+    private fun executeScanChangesOnAscendingIndexRequest() = runSuspendingTest {
+        val scanResponse = dataStore.execute(
+            Log.scanChanges(startKey = keys[0], order = Log { severity::ref }.ascending())
+        )
+
+        expect(2) { scanResponse.changes.size }
+
+        // Mind that Log is sorted in reverse so it goes back in time going forward
+        scanResponse.changes[0].apply {
+            expect(keys[0]) { key }
+        }
+        scanResponse.changes[1].apply {
+            expect(keys[3]) { key }
+        }
+    }
+
+    private fun executeScanChangesOnDescendingIndexRequest() = runSuspendingTest {
+        val scanResponse = dataStore.execute(
+            Log.scanChanges(startKey = keys[3], order = Log { severity::ref }.descending(), limit = 3u)
+        )
+
+        expect(3) { scanResponse.changes.size }
+
+        // Mind that Log is sorted in reverse so it goes back in time going forward
+        scanResponse.changes[0].apply {
+            expect(keys[3]) { key }
+        }
+        scanResponse.changes[1].apply {
+            expect(keys[0]) { key }
         }
     }
 

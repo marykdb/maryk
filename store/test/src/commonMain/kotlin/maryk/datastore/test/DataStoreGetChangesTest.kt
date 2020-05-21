@@ -5,10 +5,13 @@ import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.changes.VersionedChanges
+import maryk.core.query.changes.change
 import maryk.core.query.pairs.with
+import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.getChanges
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.datastore.shared.IsDataStore
 import maryk.test.assertType
 import maryk.test.models.SimpleMarykModel
@@ -57,6 +60,19 @@ class DataStoreGetChangesTest(
     }
 
     private fun executeSimpleGetChangesRequest() = runSuspendingTest {
+        val changeResult = dataStore.execute(
+            SimpleMarykModel.change(
+                keys[1].change(Change(SimpleMarykModel { value::ref } with "haha3"))
+            )
+        )
+
+        var versionAfterChange = 0uL
+        for (status in changeResult.statuses) {
+            assertType<ChangeSuccess<SimpleMarykModel>>(status).apply {
+                versionAfterChange = this.version
+            }
+        }
+
         val getResponse = dataStore.execute(
             SimpleMarykModel.getChanges(*keys.toTypedArray())
         )
@@ -67,7 +83,7 @@ class DataStoreGetChangesTest(
             listOf(
                 VersionedChanges(version = lowestVersion, changes = listOf(
                     ObjectCreate,
-                    Change(SimpleMarykModel { value::ref} with "haha1")
+                    Change(SimpleMarykModel { value::ref } with "haha1")
                 ))
             )
         ) {
@@ -76,9 +92,9 @@ class DataStoreGetChangesTest(
 
         expect(
             listOf(
-                VersionedChanges(version = lowestVersion, changes = listOf(
-                    ObjectCreate,
-                    Change(SimpleMarykModel { value::ref } with "haha2")
+                VersionedChanges(version = lowestVersion, changes = listOf(ObjectCreate)),
+                VersionedChanges(version = versionAfterChange, changes = listOf(
+                    Change(SimpleMarykModel { value::ref } with "haha3")
                 ))
             )
         ) {

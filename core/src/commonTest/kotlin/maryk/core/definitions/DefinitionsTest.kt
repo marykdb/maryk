@@ -204,6 +204,7 @@ class DefinitionsTest {
               - !Ref int
               - !Reversed double
               - !Ref multi.*
+              - !Ref uint
               reservedIndices: [99]
               reservedNames: [reserved]
               ? 1: [string, str, stringValue]

@@ -3,18 +3,77 @@ package maryk.core.query.requests
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
+import maryk.core.exceptions.RequestException
 import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
+import maryk.core.query.filters.Equals
+import maryk.core.query.orders.Order.Companion.ascending
+import maryk.core.query.orders.Orders
+import maryk.core.query.orders.ascending
+import maryk.core.query.orders.descending
+import maryk.core.query.pairs.with
 import maryk.test.models.SimpleMarykModel
+import maryk.test.models.TestMarykModel
 import maryk.test.requests.scanChangesMaxRequest
 import maryk.test.requests.scanChangesRequest
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 import kotlin.test.expect
 
 class ScanChangesRequestTest {
     private val context = RequestContext(mapOf(
-        SimpleMarykModel.name toUnitLambda { SimpleMarykModel }
+        SimpleMarykModel.name toUnitLambda { SimpleMarykModel },
+        TestMarykModel.name toUnitLambda { TestMarykModel }
     ))
+
+    @Test
+    fun checkOrders() {
+        // Does not fail
+        TestMarykModel.scanChanges(
+            order = ascending
+        )
+
+        // Does not fail
+        TestMarykModel.scanChanges(
+            order = TestMarykModel { uint::ref }.ascending()
+        )
+
+        assertFailsWith<RequestException> {
+            TestMarykModel.scanChanges(
+                order = TestMarykModel { int::ref }.ascending()
+            )
+        }
+
+        assertFailsWith<RequestException> {
+            TestMarykModel.scanChanges(
+                order = Orders(
+                    TestMarykModel { dateTime::ref }.descending(),
+                    TestMarykModel { enum::ref }.ascending()
+                )
+            )
+        }
+    }
+
+    @Test
+    fun checkWhere() {
+        // Does not fail
+        TestMarykModel.scanChanges()
+
+        // Does not fail
+        TestMarykModel.scanChanges(
+            where = Equals(
+                TestMarykModel { uint::ref } with 8u
+            )
+        )
+
+        assertFailsWith<RequestException> {
+            TestMarykModel.scanChanges(
+                where = Equals(
+                    TestMarykModel { int::ref } with 8
+                )
+            )
+        }
+    }
 
     @Test
     fun convertToProtoBufAndBack() {
@@ -46,14 +105,14 @@ class ScanChangesRequestTest {
 
         expect(
             """
-            from: SimpleMarykModel
-            startKey: Zk6m4QpZQegUg5s13JVYlQ
+            from: TestMarykModel
+            startKey: AAACKwEAAg
             select:
-            - value
-            where: !Exists value
+            - uint
+            where: !Exists uint
             toVersion: 2345
             filterSoftDeleted: true
-            order: !Desc value
+            order: !Desc uint
             limit: 300
             includeStart: false
             fromVersion: 1234

@@ -104,7 +104,7 @@ internal class RootDataModelTest {
               "name": "TestMarykModel",
               "version": "1.0",
               "key": ["Multiple", [["Ref", "uint"], ["Ref", "bool"], ["Ref", "enum"]]],
-              "indices": [["Multiple", [["Reversed", "dateTime"], ["Ref", "enum"], ["Ref", "int"]]], ["Ref", "int"], ["Reversed", "double"], ["Ref", "multi.*"]],
+              "indices": [["Multiple", [["Reversed", "dateTime"], ["Ref", "enum"], ["Ref", "int"]]], ["Ref", "int"], ["Reversed", "double"], ["Ref", "multi.*"], ["Ref", "uint"]],
               "reservedIndices": [99],
               "reservedNames": ["reserved"],
               "properties": [{
@@ -377,6 +377,7 @@ internal class RootDataModelTest {
             - !Ref int
             - !Reversed double
             - !Ref multi.*
+            - !Ref uint
             reservedIndices: [99]
             reservedNames: [reserved]
             ? 1: [string, str, stringValue]

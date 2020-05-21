@@ -393,6 +393,10 @@ When applied it will deliver an [`ChangesResponse`](../src/commonMain/kotlin/mar
 with a list with [`DataObjectVersionedChange`](../src/commonMain/kotlin/maryk/core/query/changes/DataObjectVersionedChange.kt)
 containing the `key` and `changes` with a list of objects containing the version and changes.
 
+NOTE: This type cannot have a filter or order on mutable properties since then the changes could lead to unreliable results.
+For example if a value is modified it could lead to a different position in the ordering or can lead to a where filter to
+filter the result away. Use Get/Scan Updates to see changes in these cases. 
+
 Get changes with all parameters
 Maryk YAML:
 ```yaml

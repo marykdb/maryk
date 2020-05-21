@@ -53,7 +53,8 @@ object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>
         ),
         int.ref(),
         Reversed(double.ref()),
-        multi.typeRef()
+        multi.typeRef(),
+        uint.ref()
     ),
     reservedIndices = listOf(99u),
     reservedNames = listOf("reserved"),

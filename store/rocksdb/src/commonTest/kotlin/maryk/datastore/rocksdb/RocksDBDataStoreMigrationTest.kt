@@ -1,7 +1,9 @@
 package maryk.datastore.rocksdb
 
 import maryk.core.models.migration.MigrationException
+import maryk.core.properties.types.Key
 import maryk.core.query.orders.ascending
+import maryk.core.query.orders.descending
 import maryk.core.query.requests.add
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
@@ -54,7 +56,7 @@ class RocksDBDataStoreMigrationTest {
         assertFailsWith<MigrationException> {
             // Missing migration handler so will throw exception
             dataStore = RocksDBDataStore(
-                keepAllVersions = false,
+                keepAllVersions = true,
                 relativePath = path,
                 dataModelsById = mapOf(
                     1u to ModelV2
@@ -66,7 +68,7 @@ class RocksDBDataStoreMigrationTest {
 
         assertFailsWith<CustomException> {
             dataStore = RocksDBDataStore(
-                keepAllVersions = false,
+                keepAllVersions = true,
                 relativePath = path,
                 dataModelsById = mapOf(
                     1u to ModelV2
@@ -88,7 +90,7 @@ class RocksDBDataStoreMigrationTest {
     fun testMigrationWithIndex() = runSuspendingTest {
         val path = "$basePath/migration2"
         var dataStore = RocksDBDataStore(
-            keepAllVersions = false,
+            keepAllVersions = true,
             relativePath = path,
             dataModelsById = mapOf(
                 1u to ModelV2
@@ -96,7 +98,7 @@ class RocksDBDataStoreMigrationTest {
             rocksDBOptions = rocksDBOptions
         )
 
-        val result = dataStore.execute(
+        val addResult = dataStore.execute(
             ModelV2.add(
                 ModelV2("ha1", 100),
                 ModelV2("ha2", 50),
@@ -105,16 +107,34 @@ class RocksDBDataStoreMigrationTest {
             )
         )
 
-        assertEquals(4, result.statuses.size)
+        assertEquals(4, addResult.statuses.size)
 
-        for (status in result.statuses) {
-            assertType<AddSuccess<*>>(status)
+        val keys = mutableListOf<Key<ModelV2>>()
+
+        for (status in addResult.statuses) {
+            assertType<AddSuccess<ModelV2>>(status).apply {
+                keys.add(key)
+            }
         }
+
+// Issue with historical index scanning. Delaying to later
+//        val changeResult = dataStore.execute(
+//            ModelV2.change(
+//                keys[0].change(Change(ModelV2 { newNumber:: ref} with 40)),
+//                keys[1].change(Change(ModelV2 { newNumber:: ref} with 2000)),
+//                keys[2].change(Change(ModelV2 { newNumber:: ref} with 500)),
+//                keys[3].change(Change(ModelV2 { newNumber:: ref} with 990))
+//            )
+//        )
+//
+//        for (status in changeResult.statuses) {
+//            assertType<ChangeSuccess<ModelV2>>(status)
+//        }
 
         dataStore.close()
 
         dataStore = RocksDBDataStore(
-            keepAllVersions = false,
+            keepAllVersions = true,
             relativePath = path,
             dataModelsById = mapOf(
                 1u to ModelV2ExtraIndex
@@ -134,6 +154,20 @@ class RocksDBDataStoreMigrationTest {
         assertEquals(50, scanResponse.values[1].values { newNumber })
         assertEquals(100, scanResponse.values[2].values { newNumber })
         assertEquals(3500, scanResponse.values[3].values { newNumber })
+
+        val historicScanResponse = dataStore.execute(
+            ModelV2ExtraIndex.scan(
+                order = ModelV2ExtraIndex { newNumber::ref }.descending(),
+                toVersion = ULong.MAX_VALUE
+            )
+        )
+
+        assertEquals(4, historicScanResponse.values.size)
+
+        assertEquals(3500, historicScanResponse.values[0].values { newNumber })
+        assertEquals(100, historicScanResponse.values[1].values { newNumber })
+        assertEquals(50, historicScanResponse.values[2].values { newNumber })
+        assertEquals(1, historicScanResponse.values[3].values { newNumber })
 
         dataStore.close()
     }

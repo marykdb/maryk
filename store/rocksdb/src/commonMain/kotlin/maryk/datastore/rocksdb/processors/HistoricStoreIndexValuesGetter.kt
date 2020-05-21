@@ -117,7 +117,7 @@ private class HistoricStoreIndexValuesGetter(
             }
 
             // Go to next version if it is the version to read past or not yet set
-            if (!iterableReference.isPastBeginning && (iterableReference.lastVersion == null || versionToSkip == iterableReference.lastVersion)) {
+            if (!iterableReference.isPastBeginning && (iterableReference.lastVersion == null || versionToSkip == iterableReference.lastVersion) && iterator.isValid()) {
                 val qualifier = iterator.key()
 
                 if (qualifier.matchPart(0, keyAndReference)) {

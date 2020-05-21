@@ -77,6 +77,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
                     valueOffset,
                     processStoreValue,
                     { indexRecord, valueSize ->
+                        !indexRecord.matchPart(0, indexReference) ||
                         indexRange.keyOutOfRange(indexRecord, valueOffset, valueSize)
                     },
                     createVersionChecker(scanRequest.toVersion, iterator, indexScan.direction),
@@ -113,6 +114,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
                     valueOffset,
                     processStoreValue,
                     { indexRecord, valueSize ->
+                        !indexRecord.matchPart(0, indexReference) ||
                         indexRange.keyBeforeStart(indexRecord, valueOffset, valueSize)
                     },
                     createVersionChecker(scanRequest.toVersion, iterator, indexScan.direction),

@@ -113,9 +113,11 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
                                     val indexReference = indexable.referenceStorageByteArray.bytes
                                     val valueAndKeyBytes = indexable.toStorageByteArrayForIndex(valuesGetter, key.bytes)
                                         ?: return@forEach // skip if no complete values to index are found
+
                                     deleteIndexValue(transaction, columnFamilies, indexReference, valueAndKeyBytes, versionBytes, deleteRequest.hardDelete)
 
                                     // Delete all historic values if historicStoreIndexValuesWalker was set
+                                    // This is only the case with hard deletes
                                     historicStoreIndexValuesWalker?.walkHistoricalValuesForIndexKeys(key.bytes, transaction, indexable) { historicReference ->
                                         transaction.delete(
                                             historicStoreIndexValuesWalker.columnFamilies.historic.index,

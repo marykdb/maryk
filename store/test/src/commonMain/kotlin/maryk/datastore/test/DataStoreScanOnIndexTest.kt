@@ -34,7 +34,7 @@ class DataStoreScanOnIndexTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
     private val keys = mutableListOf<Key<Log>>()
-    private var lowestVersion = ULong.MAX_VALUE
+    private var highestCreationVersion = ULong.MIN_VALUE
 
     override val allTests = mapOf(
         "executeSimpleIndexScanRequest" to ::executeSimpleIndexScanRequest,
@@ -64,9 +64,9 @@ class DataStoreScanOnIndexTest(
             addResponse.statuses.forEach { status ->
                 val response = assertType<AddSuccess<Log>>(status)
                 keys.add(response.key)
-                if (response.version < lowestVersion) {
+                if (response.version > highestCreationVersion) {
                     // Add lowest version for scan test
-                    lowestVersion = response.version
+                    highestCreationVersion = response.version
                 }
             }
         }
@@ -79,7 +79,7 @@ class DataStoreScanOnIndexTest(
             )
         }
         keys.clear()
-        lowestVersion = ULong.MAX_VALUE
+        highestCreationVersion = ULong.MIN_VALUE
     }
 
     private fun executeSimpleIndexScanRequest() = runSuspendingTest {
@@ -176,7 +176,7 @@ class DataStoreScanOnIndexTest(
             )
         )
 
-        val scan = Log.scan(toVersion = lowestVersion, order = severity.ref().ascending())
+        val scan = Log.scan(toVersion = highestCreationVersion, order = severity.ref().ascending())
 
         if (dataStore.keepAllVersions) {
             val scanResponse = dataStore.execute(scan)
@@ -209,7 +209,7 @@ class DataStoreScanOnIndexTest(
             )
         )
 
-        val scan = Log.scan(toVersion = lowestVersion, order = severity.ref().descending())
+        val scan = Log.scan(toVersion = highestCreationVersion, order = severity.ref().descending())
 
         if (dataStore.keepAllVersions) {
             val scanResponse = dataStore.execute(scan)

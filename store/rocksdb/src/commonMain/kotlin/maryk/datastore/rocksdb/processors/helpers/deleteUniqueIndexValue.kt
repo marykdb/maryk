@@ -3,8 +3,8 @@ package maryk.datastore.rocksdb.processors.helpers
 import maryk.core.extensions.bytes.invert
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
-import maryk.datastore.rocksdb.processors.FALSE_ARRAY
 import maryk.datastore.rocksdb.Transaction
+import maryk.datastore.rocksdb.processors.FALSE_ARRAY
 
 /** Delete a [value] from the unique index at [indexReference] and stores it as [version] */
 internal fun deleteUniqueIndexValue(

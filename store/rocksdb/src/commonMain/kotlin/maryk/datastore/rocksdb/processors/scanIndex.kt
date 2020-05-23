@@ -1,8 +1,6 @@
 package maryk.datastore.rocksdb.processors
 
 import maryk.core.exceptions.StorageException
-import maryk.core.extensions.bytes.initULong
-import maryk.core.extensions.bytes.toULong
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.scanRange.IndexableScanRanges
@@ -81,7 +79,6 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
                         indexRange.keyOutOfRange(indexRecord, valueOffset, valueSize)
                     },
                     createVersionChecker(scanRequest.toVersion, iterator, indexScan.direction),
-                    createVersionReader(scanRequest.toVersion, iterator),
                     createGotoNext(scanRequest, iterator, iterator::next)
                 )
             }
@@ -118,7 +115,6 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
                         indexRange.keyBeforeStart(indexRecord, valueOffset, valueSize)
                     },
                     createVersionChecker(scanRequest.toVersion, iterator, indexScan.direction),
-                    createVersionReader(scanRequest.toVersion, iterator),
                     createGotoNext(scanRequest, iterator, iterator::prev)
                 )
             }
@@ -141,73 +137,53 @@ fun createVersionChecker(toVersion: ULong?, iterator: DBIterator, direction: Dir
         when (direction) {
             ASC -> {
                 { indexKey ->
-                    var sameKey = true
+                    var validResult = false
                     // Skip all
                     while (iterator.isValid()) {
                         val newKey = iterator.key()
+
                         if (newKey.let { !it.matchPart(0, indexKey, it.size, 0, indexKey.size - ULong.SIZE_BYTES) }) {
-                            sameKey = false // Key does not match anymore so break out
-                            break
+                            break // Key does not match anymore so break out
                         }
 
-                        if (versionBytesToMatch.compareToWithOffsetLength(newKey, newKey.size - ULong.SIZE_BYTES) > 0
-                            // Check if is deleted and skip if so
-                            || iterator.value().contentEquals(FALSE_ARRAY)
-                        ) {
+                        if (versionBytesToMatch.compareToWithOffsetLength(newKey, newKey.size - ULong.SIZE_BYTES) > 0) {
+                            // Continue to older version since key was too new for request
                             iterator.next()
                         } else {
+                            // Check if is deleted and skip if so
+                            validResult = iterator.value().contentEquals(TRUE_ARRAY)
                             break
                         }
                     }
-
-                    sameKey
+                    // Return if a valid non deleted result was found
+                    validResult
                 }
             }
             DESC -> {
                 { indexKey ->
-                    var hadAKeyMatch = false
-                    // This iterator starts at the first version so has to walk past all, will correct back if a key match was found
+                    var validResult = false
+
+                    // This iterator starts at the first version so has to walk past all valid versions
                     while (iterator.isValid()) {
                         val newKey = iterator.key()
+                        // Check if new key matches expected key and otherwise skips out
                         if (newKey.let { !it.matchPart(0, indexKey, it.size - ULong.SIZE_BYTES, 0, indexKey.size - ULong.SIZE_BYTES) }) {
+                            iterator.next() // Move back iterator so next call will start at right key
                             break
                         }
 
+                        // Continue to newer versions until key is not of a valid version
                         if (versionBytesToMatch.compareToWithOffsetLength(newKey, newKey.size - ULong.SIZE_BYTES) <= 0) {
-                            // Only was a match if it was not deleted
-                            if (!iterator.value().contentEquals(FALSE_ARRAY)) {
-                                hadAKeyMatch = true
-                            }
+                            validResult = iterator.value().contentEquals(TRUE_ARRAY)
                             iterator.prev()
+                        } else {
+                            break
                         }
                     }
-                    // If it found a matching key go back to last found one.
-                    if (hadAKeyMatch) {
-                        iterator.next()
-                        // Skip all deleted indices since it matched on a non deleted one
-                        while(iterator.isValid() && iterator.value().contentEquals(FALSE_ARRAY)) {
-                            iterator.next()
-                        }
-                    }
-
-                    hadAKeyMatch
+                    // Return if a valid non deleted result was found
+                    validResult
                 }
             }
-        }
-    }
-
-/** Create a version reader based on if it reads the historic table or the normal one. */
-fun createVersionReader(
-    toVersion: ULong?,
-    iterator: DBIterator
-): (ByteArray, Int) -> ULong =
-    if (toVersion == null) {
-        { _, _ -> iterator.value().toULong() }
-    } else {
-        { key, offset ->
-            var index = offset
-            // Invert version
-            initULong(reader = { key[index++] xor -1 })
         }
     }
 
@@ -225,7 +201,9 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> createGotoN
         { _, _, _ -> next() }
     } else {
         { key, keyOffset, keyLength ->
-            next() // First skip is for free since last processed key/value matches for sure
+            if (iterator.isValid()) {
+                next()
+            }
             // Skip all of same index/value/key since they are different versions of the same
             while (iterator.isValid() && iterator.key().let { it.matchPart(0, key, it.size, 0, keyOffset + keyLength) }) {
                 next()
@@ -247,51 +225,44 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> checkAndPro
     processStoreValue: (Key<DM>, ULong) -> Unit,
     isPastRange: (ByteArray, Int) -> Boolean,
     checkVersion: (ByteArray) -> Boolean,
-    readVersion: (ByteArray, Int) -> ULong,
     next: (ByteArray, Int, Int) -> Unit
 ) {
     var currentSize: UInt = 0u
-    val isHistoric = scanRequest.toVersion != null
     while (iterator.isValid()) {
         val indexRecord = iterator.key()
         val valueSize = indexRecord.size - toSubstractFromSize
         val keyOffset = valueOffset + valueSize
 
-        // If non historic, presence of value is enough, if historic, the value also has to be true
-        if (!isHistoric || iterator.value().contentEquals(TRUE_ARRAY)) {
-            if (isPastRange(indexRecord, valueSize)) {
-                break
-            }
+        if (isPastRange(indexRecord, valueSize)) {
+            break
+        }
 
-            if (indexScanRange.matchesPartials(indexRecord, valueOffset, valueSize) && checkVersion(indexRecord)) {
-                val setAtVersion = readVersion(indexRecord, indexRecord.size - ULong.SIZE_BYTES)
+        if (indexScanRange.matchesPartials(indexRecord, valueOffset, valueSize) && checkVersion(indexRecord)) {
+            if (
+                !scanRequest.shouldBeFiltered(
+                    dbAccessor,
+                    columnFamilies,
+                    readOptions,
+                    indexRecord,
+                    keyOffset,
+                    keySize,
+                    null, // Since version is checked in checkVersion, created version does not need to be checked
+                    null
+                )
+            ) {
+                val key = createKey(scanRequest.dataModel, indexRecord, keyOffset)
 
-                if (
-                    !scanRequest.shouldBeFiltered(
-                        dbAccessor,
-                        columnFamilies,
-                        readOptions,
-                        indexRecord,
-                        keyOffset,
-                        keySize,
-                        setAtVersion,
-                        scanRequest.toVersion
-                    )
-                ) {
-                    val key = createKey(scanRequest.dataModel, indexRecord, keyOffset)
-
-                    readCreationVersion(
-                        dbAccessor,
-                        columnFamilies,
-                        readOptions,
-                        key.bytes
-                    )?.let { createdVersion ->
-                        processStoreValue(key, createdVersion)
-                    }
-
-                    // Break when limit is found
-                    if (++currentSize == scanRequest.limit) break
+                readCreationVersion(
+                    dbAccessor,
+                    columnFamilies,
+                    readOptions,
+                    key.bytes
+                )?.let { createdVersion ->
+                    processStoreValue(key, createdVersion)
                 }
+
+                // Break when limit is found
+                if (++currentSize == scanRequest.limit) break
             }
         }
 

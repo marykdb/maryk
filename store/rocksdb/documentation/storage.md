@@ -77,6 +77,7 @@ An index to search values at or before older versions.
   by index so the record can be found by value.  Contains key so multiple 
   references to same value can exist. Stores the version so a unique value can be 
   searched at or before a version. BOOLEAN indicates if the index is set or unset.
+  An old index value is always unset at same version when a new value is set.
 
 # Historic Unique
 Stores unique values by version 

@@ -2,11 +2,16 @@ package maryk.datastore.rocksdb
 
 import maryk.core.models.migration.MigrationException
 import maryk.core.properties.types.Key
+import maryk.core.query.changes.Change
+import maryk.core.query.changes.change
 import maryk.core.query.orders.ascending
 import maryk.core.query.orders.descending
+import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
+import maryk.core.query.requests.change
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.rocksdb.DBOptions
 import maryk.test.assertType
 import maryk.test.models.ModelV1
@@ -117,19 +122,18 @@ class RocksDBDataStoreMigrationTest {
             }
         }
 
-// Issue with historical index scanning. Delaying to later
-//        val changeResult = dataStore.execute(
-//            ModelV2.change(
-//                keys[0].change(Change(ModelV2 { newNumber:: ref} with 40)),
-//                keys[1].change(Change(ModelV2 { newNumber:: ref} with 2000)),
-//                keys[2].change(Change(ModelV2 { newNumber:: ref} with 500)),
-//                keys[3].change(Change(ModelV2 { newNumber:: ref} with 990))
-//            )
-//        )
-//
-//        for (status in changeResult.statuses) {
-//            assertType<ChangeSuccess<ModelV2>>(status)
-//        }
+        val changeResult = dataStore.execute(
+            ModelV2.change(
+                keys[0].change(Change(ModelV2 { newNumber:: ref} with 40)),
+                keys[1].change(Change(ModelV2 { newNumber:: ref} with 2000)),
+                keys[2].change(Change(ModelV2 { newNumber:: ref} with 500)),
+                keys[3].change(Change(ModelV2 { newNumber:: ref} with 990))
+            )
+        )
+
+        for (status in changeResult.statuses) {
+            assertType<ChangeSuccess<ModelV2>>(status)
+        }
 
         dataStore.close()
 
@@ -150,10 +154,10 @@ class RocksDBDataStoreMigrationTest {
 
         assertEquals(4, scanResponse.values.size)
 
-        assertEquals(1, scanResponse.values[0].values { newNumber })
-        assertEquals(50, scanResponse.values[1].values { newNumber })
-        assertEquals(100, scanResponse.values[2].values { newNumber })
-        assertEquals(3500, scanResponse.values[3].values { newNumber })
+        assertEquals(40, scanResponse.values[0].values { newNumber })
+        assertEquals(500, scanResponse.values[1].values { newNumber })
+        assertEquals(990, scanResponse.values[2].values { newNumber })
+        assertEquals(2000, scanResponse.values[3].values { newNumber })
 
         val historicScanResponse = dataStore.execute(
             ModelV2ExtraIndex.scan(
@@ -164,10 +168,10 @@ class RocksDBDataStoreMigrationTest {
 
         assertEquals(4, historicScanResponse.values.size)
 
-        assertEquals(3500, historicScanResponse.values[0].values { newNumber })
-        assertEquals(100, historicScanResponse.values[1].values { newNumber })
-        assertEquals(50, historicScanResponse.values[2].values { newNumber })
-        assertEquals(1, historicScanResponse.values[3].values { newNumber })
+        assertEquals(2000, historicScanResponse.values[0].values { newNumber })
+        assertEquals(990, historicScanResponse.values[1].values { newNumber })
+        assertEquals(500, historicScanResponse.values[2].values { newNumber })
+        assertEquals(40, historicScanResponse.values[3].values { newNumber })
 
         dataStore.close()
     }

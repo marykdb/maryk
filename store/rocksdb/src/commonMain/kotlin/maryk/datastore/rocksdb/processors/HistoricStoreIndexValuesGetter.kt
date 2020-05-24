@@ -23,14 +23,15 @@ import kotlin.experimental.xor
  */
 internal class HistoricStoreIndexValuesWalker(
     val columnFamilies: HistoricTableColumnFamilies,
-    private val readOptions: ReadOptions
+    readOptions: ReadOptions
 ) {
     private val getter = HistoricStoreIndexValuesGetter(columnFamilies, readOptions)
 
     /**
-     * Walk historical values of [key] for [indexable]
+     * Walk historical values of [key] for [indexable] from [dbAccessor]
      * Allows you to find all historical index keys for data object at [key]
      * Result is passed to [handleIndexReference] with the index reference and the version
+     * It will walk all index values from new to old.
      */
     fun walkHistoricalValuesForIndexKeys(
         key: ByteArray,
@@ -41,7 +42,6 @@ internal class HistoricStoreIndexValuesWalker(
         getter.moveToKey(key, dbAccessor)
         val indexableBytes = indexable.referenceStorageByteArray.bytes
 
-        var lastVersion: ULong?
         val keyAndVersionSize = key.size + ULong.SIZE_BYTES
         do {
             var index = 0
@@ -55,33 +55,35 @@ internal class HistoricStoreIndexValuesWalker(
                     indexableBytes.forEach(writer)
                     indexable.writeStorageBytesForIndex(getter, key, writer)
                     val versionIndex = index
-                    getter.latestOverallVersion?.writeBytes(writer)
-                        ?: throw StorageException("Latest overall version not set")
+                    getter.latestVersion?.writeBytes(writer)
+                        ?: throw StorageException("Latest overall version was not set")
                     bytes.invert(versionIndex)
                 }
                 handleIndexReference(historicIndexReference)
             } catch (e: Throwable) {
                 // skip failing index reference generation
             }
-
-            lastVersion = getter.versionToSkip
-            getter.versionToSkip = getter.latestOverallVersion
-        } while (getter.versionToSkip != lastVersion)
+        } while (getter.gotoNextVersion())
     }
 }
 
 /**
- * A historical values getter which finds the first valid value until [latestOverallVersion]
+ * A historical values getter which finds the first valid value until [latestVersion]
  * It stores iterators internally for each property so it can advance to the next version if all possible combinations
- * have been captured.
+ * with that version have been captured.
+ * It will internally check latestVersion and versionToSkip and if no progression could be made it will return false for
+ * gotoNextVersion.
  */
 private class HistoricStoreIndexValuesGetter(
     val columnFamilies: HistoricTableColumnFamilies,
     val readOptions: ReadOptions
 ) : IsValuesGetter, AutoCloseable {
-    val iterableReferenceMap = mutableMapOf<IsPropertyReference<*, *, *>, IterableReference>()
-    var latestOverallVersion: ULong? = null
-    var versionToSkip: ULong? = null
+    private val iterableReferenceMap = mutableMapOf<IsPropertyReference<*, *, *>, IterableReference>()
+
+    // Latest version found in current walk
+    internal var latestVersion: ULong? = null
+    // Version to skip during this walk
+    private var versionToSkip: ULong? = null
 
     lateinit var dbAccessor: DBAccessor
     lateinit var key: ByteArray
@@ -91,11 +93,37 @@ private class HistoricStoreIndexValuesGetter(
         this.key = key
         this.dbAccessor = dbAccessor
 
+        reset()
+    }
+
+    /**
+     *  Go to next version in the walker by setting current version to skip.
+     *  Don't go to next version if there was no version progression and return false
+     *  so looping can stop
+     */
+    fun gotoNextVersion() = when (this.versionToSkip) {
+        this.latestVersion -> { // Reached the end if both versions match
+            reset()
+            false
+        }
+        else -> {
+            this.versionToSkip = this.latestVersion
+            this.latestVersion = null
+            true
+        }
+    }
+
+    /** Reset versions and close iterators for a clean state for a next walk */
+    private fun reset() {
+        for ((_, value) in iterableReferenceMap) {
+            value.iterator.close()
+        }
         iterableReferenceMap.clear()
-        latestOverallVersion = null
+        latestVersion = null
         versionToSkip = null
     }
 
+    /** Get latest property for [propertyReference] before versionToSkip */
     override fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(propertyReference: IsPropertyReference<T, D, C>): T? {
         val iterableReference = iterableReferenceMap.getOrPut(
             propertyReference
@@ -109,15 +137,15 @@ private class HistoricStoreIndexValuesGetter(
         val reference = iterableReference.referenceAsBytes
         val keyAndReference = byteArrayOf(*key, *iterableReference.referenceAsBytes)
 
-        if (latestOverallVersion == iterableReference.lastVersion) {
-            // Only seek the first time
-            if (iterableReference.lastVersion == null) {
-                // Add empty version so iterator works correctly
-                iterator.seek(keyAndReference.copyOf(keyAndReference.size + 8))
-            }
+        // Only seek the first time
+        if (iterableReference.lastVersion == null) {
+            // Add empty version so iterator works correctly
+            iterator.seek(keyAndReference.copyOf(keyAndReference.size + 8))
+        }
 
-            // Go to next version if it is the version to read past or not yet set
-            if (!iterableReference.isPastBeginning && (iterableReference.lastVersion == null || versionToSkip == iterableReference.lastVersion) && iterator.isValid()) {
+        // Go to next version if it is the version to read past or not yet set
+        if (!iterableReference.isPastBeginning && (iterableReference.lastVersion == null || versionToSkip == iterableReference.lastVersion)) {
+            if (iterator.isValid()) {
                 val qualifier = iterator.key()
 
                 if (qualifier.matchPart(0, keyAndReference)) {
@@ -140,7 +168,7 @@ private class HistoricStoreIndexValuesGetter(
                         qualifier[readIndex++] xor -1
                     })
                     iterableReference.lastVersion = lastVersion
-                    latestOverallVersion = latestOverallVersion?.let {
+                    latestVersion = latestVersion?.let {
                         maxOf(lastVersion, it)
                     } ?: lastVersion
 
@@ -150,7 +178,16 @@ private class HistoricStoreIndexValuesGetter(
                     // Past beginning of the value history
                     iterableReference.isPastBeginning = true
                 }
+            } else {
+                iterableReference.isPastBeginning = true
             }
+        } else {
+            // Update latest overall version to reflect cached change
+            latestVersion = latestVersion?.let { latest ->
+                iterableReference.lastVersion?.let { last ->
+                    maxOf(last, latest)
+                } ?: latest
+            } ?: iterableReference.lastVersion
         }
 
         if (iterableReference.isPastBeginning) {
@@ -163,9 +200,7 @@ private class HistoricStoreIndexValuesGetter(
     }
 
     override fun close() {
-        for ((_, value) in iterableReferenceMap) {
-            value.iterator.close()
-        }
+        reset()
     }
 }
 

@@ -2,6 +2,7 @@ package maryk.datastore.rocksdb
 
 import maryk.core.extensions.bytes.toByteArray
 import maryk.core.properties.definitions.index.IsIndexable
+import maryk.datastore.rocksdb.processors.FALSE_ARRAY
 import maryk.datastore.rocksdb.processors.HistoricStoreIndexValuesWalker
 import maryk.datastore.rocksdb.processors.StoreValuesGetter
 import maryk.datastore.rocksdb.processors.TRUE_ARRAY
@@ -43,16 +44,31 @@ internal fun walkDataRecordsAndFillIndex(
 
                     // Process historical values for historical index
                     if (columnFamilies is HistoricTableColumnFamilies) {
+                        var futureHistoricReference: ByteArray? = null
+
                         historicStoreIndexValuesWalker?.walkHistoricalValuesForIndexKeys(
                             key,
                             transaction,
                             index
                         ) { historicReference ->
+                            futureHistoricReference?.let {
+                                val newHistoricReference = historicReference.copyOf()
+                                it.copyInto(
+                                    destination = newHistoricReference,
+                                    destinationOffset = newHistoricReference.size - ULong.SIZE_BYTES,
+                                    startIndex = historicReference.size - ULong.SIZE_BYTES
+                                )
+
+                                transaction.put(columnFamilies.historic.index, newHistoricReference, FALSE_ARRAY)
+                            }
+
                             transaction.put(
                                 columnFamilies.historic.index,
                                 historicReference,
                                 TRUE_ARRAY
                             )
+
+                            futureHistoricReference = historicReference
                         }
                     }
                 }

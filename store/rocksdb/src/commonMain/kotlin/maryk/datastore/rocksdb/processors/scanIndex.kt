@@ -27,7 +27,7 @@ import kotlin.experimental.xor
 
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
     dataStore: RocksDBDataStore,
-    transaction: DBAccessor,
+    dbAccessor: DBAccessor,
     columnFamilies: TableColumnFamilies,
     scanRequest: IsScanRequest<DM, P, *>,
     indexScan: IndexScan,
@@ -37,7 +37,8 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
     val indexReference = indexScan.index.referenceStorageByteArray.bytes
 
     val startKey = scanRequest.startKey?.let { startKey ->
-        val startValuesGetter = StoreValuesGetter(startKey.bytes, dataStore.db, columnFamilies, dataStore.defaultReadOptions)
+        val startValuesGetter = HistoricStoreValuesGetter(columnFamilies, dataStore.defaultReadOptions)
+        startValuesGetter.moveToKey(startKey.bytes, dbAccessor, scanRequest.toVersion)
         indexScan.index.toStorageByteArrayForIndex(startValuesGetter, startKey.bytes)
     }
 
@@ -50,7 +51,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
             ?: throw StorageException("No historic table stored so toVersion in query cannot be processed")
     }
 
-    val iterator = transaction.getIterator(dataStore.defaultReadOptions, indexColumnHandle)
+    val iterator = dbAccessor.getIterator(dataStore.defaultReadOptions, indexColumnHandle)
 
     val keySize = scanRequest.dataModel.keyByteSize
     val valueOffset = indexReference.size
@@ -64,7 +65,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
                 iterator.seek(byteArrayOf(*indexReference, *indexStartKey))
 
                 checkAndProcess(
-                    transaction,
+                    dbAccessor,
                     columnFamilies,
                     dataStore.defaultReadOptions,
                     iterator,
@@ -100,7 +101,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
                 }
 
                 checkAndProcess(
-                    transaction,
+                    dbAccessor,
                     columnFamilies,
                     dataStore.defaultReadOptions,
                     iterator,

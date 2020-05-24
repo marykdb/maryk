@@ -91,7 +91,8 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
 
             // Add sorting index
             sortingIndex?.let {
-                val storeGetter = StoreValuesGetter(key.bytes, dataStore.db, columnFamilies, dataStore.defaultReadOptions)
+                val storeGetter = HistoricStoreValuesGetter(columnFamilies, dataStore.defaultReadOptions)
+                storeGetter.moveToKey(key.bytes, dbAccessor, scanRequest.toVersion)
 
                 it.toStorageByteArrayForIndex(storeGetter, key.bytes)?.let { indexableBytes ->
                     sortingKeys?.add(indexableBytes)

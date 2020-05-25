@@ -15,7 +15,7 @@ internal fun setValue(
     valueOffset: Int = 0,
     valueLength: Int = value.size - valueOffset
 ) {
-    val valueWithVersion = ByteArray(ULong.SIZE_BYTES + valueLength)
+    val valueWithVersion = ByteArray(version.size + valueLength)
     version.copyInto(valueWithVersion)
     value.copyInto(valueWithVersion, 8, valueOffset, valueOffset + valueLength)
 

@@ -29,9 +29,9 @@ fun initULong(reader: () -> Byte, length: Int = 8): ULong {
 }
 
 /** Create ULong from byte array */
-fun ByteArray.toULong(offset: Int = 0): ULong {
+fun ByteArray.toULong(offset: Int = 0, length: Int = 8): ULong {
     var index = offset
-    return initULong(reader = { this[index++] })
+    return initULong(reader = { this[index++] }, length = length)
 }
 
 /** Write the bytes of this Long as a variable int to a [writer] */

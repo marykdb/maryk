@@ -3,7 +3,6 @@ package maryk.datastore.rocksdb.processors
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
 import maryk.core.extensions.bytes.initIntByVar
-import maryk.core.extensions.bytes.initULong
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.ListSize
@@ -27,6 +26,8 @@ import maryk.datastore.rocksdb.processors.helpers.checkExistence
 import maryk.datastore.rocksdb.processors.helpers.historicQualifierRetriever
 import maryk.datastore.rocksdb.processors.helpers.nonHistoricQualifierRetriever
 import maryk.datastore.rocksdb.processors.helpers.readValue
+import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
+import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
 
 /** Process values for [key] from transaction to a DataObjectWithChanges object */
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTransactionIntoObjectChanges(
@@ -57,8 +58,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
                 val value = when (storageType) {
                     ObjectDelete -> {
                         val valueBytes = iterator.value()
-                        index = 0
-                        currentVersion = initULong({ valueBytes[index++] })
+                        currentVersion = valueBytes.readVersionBytes()
 
                         cachedRead(reference, currentVersion) {
                             if (currentVersion >= fromVersion && iterator.key()[key.size] == 0.toByte()) {
@@ -68,15 +68,18 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
                     }
                     Value -> {
                         val valueBytes = iterator.value()
-                        index = 0
-                        val reader = { valueBytes[index++] }
+                        currentVersion = valueBytes.readVersionBytes()
 
-                        currentVersion = initULong(reader)
+
 
                         if (currentVersion >= fromVersion) {
                             cachedRead(reference, currentVersion) {
                                 val definition = (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
                                     ?: reference.propertyDefinition
+
+                                index = VERSION_BYTE_SIZE
+                                val reader = { valueBytes[index++] }
+
                                 readValue(definition, reader) {
                                     valueBytes.size - index
                                 }
@@ -85,39 +88,39 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
                     }
                     ListSize -> {
                         val valueBytes = iterator.value()
-                        index = 0
-                        currentVersion = initULong({ valueBytes[index++] })
+                        currentVersion = valueBytes.readVersionBytes()
+
                         if (currentVersion >= fromVersion) {
                             cachedRead(reference, currentVersion) {
+                                index = VERSION_BYTE_SIZE
                                 initIntByVar { valueBytes[index++] }
                             }
                         } else null
                     }
                     SetSize -> {
                         val valueBytes = iterator.value()
-                        index = 0
-                        currentVersion = initULong({ valueBytes[index++] })
+                        currentVersion = valueBytes.readVersionBytes()
+
                         if (currentVersion >= fromVersion) {
                             cachedRead(reference, currentVersion) {
+                                index = VERSION_BYTE_SIZE
                                 initIntByVar { valueBytes[index++] }
                             }
                         } else null
                     }
                     MapSize -> {
                         val valueBytes = iterator.value()
-                        index = 0
-                        currentVersion = initULong({ valueBytes[index++] })
+                        currentVersion = valueBytes.readVersionBytes()
+
                         if (currentVersion >= fromVersion) {
                             cachedRead(reference, currentVersion) {
+                                index = VERSION_BYTE_SIZE
                                 initIntByVar { valueBytes[index++] }
                             }
                         } else null
                     }
                     Embed -> {
-                        val valueBytes = iterator.value()
-                        index = 0
-                        val reader = { valueBytes[index++] }
-                        currentVersion = initULong(reader)
+                        currentVersion = iterator.value().readVersionBytes()
                         null
                     }
                     TypeValue -> throw StorageException("Not used in direct encoding")

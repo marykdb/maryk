@@ -3,7 +3,6 @@ package maryk.datastore.rocksdb.processors
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
 import maryk.core.extensions.bytes.initIntByVar
-import maryk.core.extensions.bytes.initULong
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.values
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
@@ -29,6 +28,8 @@ import maryk.datastore.rocksdb.processors.helpers.checkExistence
 import maryk.datastore.rocksdb.processors.helpers.historicQualifierRetriever
 import maryk.datastore.rocksdb.processors.helpers.nonHistoricQualifierRetriever
 import maryk.datastore.rocksdb.processors.helpers.readValue
+import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
+import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
 
 /**
  * Read values for [key] from an [iterator] to a ValuesWithMeta object.
@@ -65,8 +66,8 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
                     ObjectDelete -> {
                         if (iterator.key().last() == 0.toByte()) {
                             val value = iterator.value()
-                            index = 0
-                            currentVersion = maxOf(initULong({ value[index++] }), maxVersion)
+                            currentVersion = maxOf(value.readVersionBytes(), maxVersion)
+                            index = VERSION_BYTE_SIZE
                             isDeleted = value[index] == TRUE
                         } else {
                             currentVersion = 0uL
@@ -75,9 +76,10 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
                     }
                     Value -> {
                         val valueBytes = iterator.value()
-                        index = 0
+                        currentVersion = valueBytes.readVersionBytes()
+
+                        index = VERSION_BYTE_SIZE
                         val reader = { valueBytes[index++] }
-                        currentVersion = initULong(reader)
 
                         cachedRead(reference, currentVersion) {
                             val definition = (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
@@ -90,8 +92,9 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
                     }
                     ListSize -> {
                         val valueBytes = iterator.value()
-                        index = 0
-                        currentVersion = initULong({ valueBytes[index++] })
+
+                        currentVersion = valueBytes.readVersionBytes()
+                        index = VERSION_BYTE_SIZE
 
                         cachedRead(reference, currentVersion) {
                             initIntByVar { valueBytes[index++] }
@@ -99,8 +102,9 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
                     }
                     SetSize -> {
                         val valueBytes = iterator.value()
-                        index = 0
-                        currentVersion = initULong({ valueBytes[index++] })
+
+                        currentVersion = valueBytes.readVersionBytes()
+                        index = VERSION_BYTE_SIZE
 
                         cachedRead(reference, currentVersion) {
                             initIntByVar { valueBytes[index++] }
@@ -108,17 +112,16 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
                     }
                     MapSize -> {
                         val valueBytes = iterator.value()
-                        index = 0
-                        currentVersion = initULong({ valueBytes[index++] })
+                        currentVersion = valueBytes.readVersionBytes()
 
+                        index = VERSION_BYTE_SIZE
                         cachedRead(reference, currentVersion) {
                             initIntByVar { valueBytes[index++] }
                         }
                     }
                     Embed -> {
                         val valueBytes = iterator.value()
-                        index = 0
-                        currentVersion = initULong({ valueBytes[index++] })
+                        currentVersion = valueBytes.readVersionBytes()
                         Unit
                     }
                     TypeValue -> throw StorageException("Not used in direct encoding")

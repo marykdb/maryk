@@ -1,6 +1,5 @@
 package maryk.datastore.rocksdb.processors
 
-import maryk.core.extensions.bytes.toULong
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
@@ -14,13 +13,14 @@ import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.getKeyByUniqueValue
 import maryk.datastore.rocksdb.processors.helpers.readCreationVersion
+import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
 import maryk.datastore.shared.ScanType
-import maryk.lib.recyclableByteArray
 import maryk.datastore.shared.ScanType.IndexScan
 import maryk.datastore.shared.ScanType.TableScan
 import maryk.datastore.shared.checkToVersion
 import maryk.datastore.shared.optimizeTableScan
 import maryk.datastore.shared.orderToScanType
+import maryk.lib.recyclableByteArray
 import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.rocksDBNotFound
 
@@ -48,7 +48,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
                 val valueLength = dbAccessor.get(columnFamilies.keys, readOptions, key.bytes, recyclableByteArray)
                 // Only process it if it was created
                 if (valueLength != rocksDBNotFound) {
-                    val createdVersion = recyclableByteArray.toULong()
+                    val createdVersion = recyclableByteArray.readVersionBytes()
                     if (shouldProcessRecord(dbAccessor, columnFamilies, readOptions, key, createdVersion, scanRequest, keyScanRange)) {
                         processRecord(key, createdVersion)
                     }

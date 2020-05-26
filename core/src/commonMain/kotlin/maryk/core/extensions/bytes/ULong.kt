@@ -80,9 +80,9 @@ internal fun ULong.calculateVarByteLength(): Int = when {
 /**
  * Convert ULong to byte array
  */
-fun ULong.toByteArray(): ByteArray {
-    val output = ByteArray(8)
+fun ULong.toByteArray(length: Int = 8): ByteArray {
+    val output = ByteArray(length)
     var index = 0
-    this.writeBytes({ output[index++] = it })
+    this.writeBytes({ output[index++] = it }, length)
     return output
 }

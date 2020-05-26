@@ -14,6 +14,7 @@ import maryk.core.query.responses.statuses.ServerFail
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.Transaction
+import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.rocksdb.processors.helpers.deleteIndexValue
 import maryk.datastore.rocksdb.processors.helpers.deleteUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setLatestVersion
@@ -81,8 +82,8 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
                                         columnFamilies,
                                         reference,
                                         value,
-                                        ULong.SIZE_BYTES,
-                                        valueLength - ULong.SIZE_BYTES,
+                                        VERSION_BYTE_SIZE,
+                                        valueLength - VERSION_BYTE_SIZE,
                                         versionBytes,
                                         deleteRequest.hardDelete
                                     )
@@ -203,17 +204,17 @@ private fun hardDeleteHistoricalUniqueValues(
 ) {
     transaction.getIterator(readOptions, columnFamilies.historic.table).use { iterator ->
         // Add empty version so iterator works correctly
-        iterator.seek(referenceAndKey.copyOf(referenceAndKey.size + 8))
+        iterator.seek(referenceAndKey.copyOf(referenceAndKey.size + VERSION_BYTE_SIZE))
 
         while (iterator.isValid()) {
             val qualifier = iterator.key()
 
             if (qualifier.matchPart(0, referenceAndKey)) {
                 val valueBytes = iterator.value()
-                val historicReference = ByteArray(reference.size + valueBytes.size + ULong.SIZE_BYTES)
+                val historicReference = ByteArray(reference.size + valueBytes.size + VERSION_BYTE_SIZE)
                 reference.copyInto(historicReference)
                 valueBytes.copyInto(historicReference, reference.size)
-                qualifier.copyInto(historicReference, valueBytes.size + reference.size, qualifier.size - ULong.SIZE_BYTES)
+                qualifier.copyInto(historicReference, valueBytes.size + reference.size, qualifier.size - VERSION_BYTE_SIZE)
 
                 transaction.delete(columnFamilies.historic.unique, historicReference)
                 iterator.next()

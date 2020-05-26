@@ -29,7 +29,8 @@ internal fun <R: Any> DBAccessor.iterateValues(
                 val value = iterator.value()
                 handleValue(
                     referenceBytes, keyLength, referenceBytes.size - keyLength,
-                    value, ULong.SIZE_BYTES, value.size - ULong.SIZE_BYTES
+                    value,
+                    VERSION_BYTE_SIZE, value.size - VERSION_BYTE_SIZE
                 )?.let { return it }
                 iterator.next()
             }
@@ -40,7 +41,7 @@ internal fun <R: Any> DBAccessor.iterateValues(
             throw RequestException("Cannot use toVersion on a non historic table")
         }
         this.getIterator(readOptions, columnFamilies.historic.table).use { iterator ->
-            val toVersionBytes = toVersion.createReversedVersionBytes()
+            val toVersionBytes = toVersion.toReversedVersionBytes()
             val toSeek = byteArrayOf(*reference, *toVersionBytes)
             iterator.seek(toSeek)
             while (iterator.isValid()) {

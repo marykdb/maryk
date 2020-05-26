@@ -1,14 +1,12 @@
 package maryk.datastore.rocksdb.processors.helpers
 
 import maryk.core.exceptions.RequestException
-import maryk.core.extensions.bytes.invert
-import maryk.core.extensions.bytes.writeBytes
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
-import maryk.lib.recyclableByteArray
 import maryk.lib.extensions.compare.compareToWithOffsetLength
 import maryk.lib.extensions.compare.matchPart
+import maryk.lib.recyclableByteArray
 import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.rocksDBNotFound
 import maryk.rocksdb.use
@@ -30,22 +28,23 @@ internal fun <T: Any> DBAccessor.getValue(
         when {
             valueLength == rocksDBNotFound -> null
             valueLength > recyclableByteArray.size -> {
-                handleResult(this.get(columnFamilies.table, readOptions, keyAndReference)!!, ULong.SIZE_BYTES, valueLength - ULong.SIZE_BYTES)
+                handleResult(this.get(columnFamilies.table, readOptions, keyAndReference)!!,
+                    VERSION_BYTE_SIZE, valueLength - VERSION_BYTE_SIZE
+                )
             }
-            else -> handleResult(recyclableByteArray, ULong.SIZE_BYTES, valueLength - ULong.SIZE_BYTES)
+            else -> handleResult(recyclableByteArray,
+                VERSION_BYTE_SIZE, valueLength - VERSION_BYTE_SIZE
+            )
         }
     } else {
-        val versionBytes = toVersion.createReversedVersionBytes()
+        val versionBytes = toVersion.toReversedVersionBytes()
 
         if (columnFamilies !is HistoricTableColumnFamilies) {
             throw RequestException("Cannot use toVersion on a non historic table")
         }
 
         this.getIterator(readOptions, columnFamilies.historic.table).use { iterator ->
-            val toSeek = keyAndReference.copyOf(keyAndReference.size + ULong.SIZE_BYTES)
-            var writeIndex = keyAndReference.size
-            toVersion.writeBytes({ toSeek[writeIndex++] = it })
-            toSeek.invert(keyAndReference.size)
+            val toSeek = byteArrayOf(*keyAndReference, *versionBytes)
             iterator.seek(toSeek)
             while (iterator.isValid()) {
                 val key = iterator.key()

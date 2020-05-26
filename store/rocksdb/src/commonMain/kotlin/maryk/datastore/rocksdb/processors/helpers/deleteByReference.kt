@@ -180,7 +180,7 @@ internal fun <T : Any> deleteByReference(
             // To handle list shifting
             if (toShiftListCount > 0u) {
                 val value = iterator.value()
-                setValue(transaction, columnFamilies, ref.prevByteInSameLength(), version, value, ULong.SIZE_BYTES, value.size - ULong.SIZE_BYTES)
+                setValue(transaction, columnFamilies, ref.prevByteInSameLength(), version, value, VERSION_BYTE_SIZE, value.size - VERSION_BYTE_SIZE)
                 toShiftListCount--
             }
 

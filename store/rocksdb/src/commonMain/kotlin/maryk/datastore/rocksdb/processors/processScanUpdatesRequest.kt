@@ -1,6 +1,5 @@
 package maryk.datastore.rocksdb.processors
 
-import maryk.core.extensions.bytes.toULong
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.fromChanges
 import maryk.core.properties.PropertyDefinitions
@@ -24,6 +23,7 @@ import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.processors.helpers.getLastVersion
+import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
 import maryk.datastore.shared.ScanType.IndexScan
 import maryk.datastore.shared.StoreAction
 import maryk.lib.recyclableByteArray
@@ -193,7 +193,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
                     val valueLength = dbAccessor.get(columnFamilies.keys, dataStore.defaultReadOptions, addedKey.bytes, recyclableByteArray)
                     // Only process it if it was created
                     if (valueLength != rocksDBNotFound) {
-                        val createdVersion = recyclableByteArray.toULong()
+                        val createdVersion = recyclableByteArray.readVersionBytes()
 
                         val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
                             dataStore.readValueWithCache(dbIndex, addedKey, reference, version, valueReader)

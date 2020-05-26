@@ -1,6 +1,5 @@
 package maryk.datastore.rocksdb.processors.helpers
 
-import maryk.core.extensions.bytes.toULong
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.lib.recyclableByteArray
@@ -15,6 +14,6 @@ internal fun readCreationVersion(
 ): ULong? {
     return when (dbAccessor.get(columnFamilies.table, readOptions, key, recyclableByteArray)) {
         rocksDBNotFound -> null
-        else -> recyclableByteArray.toULong()
+        else -> recyclableByteArray.readVersionBytes()
     }
 }

@@ -1,7 +1,6 @@
 package maryk.datastore.rocksdb.processors
 
 import maryk.core.exceptions.StorageException
-import maryk.core.extensions.bytes.writeBytes
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.scanRange.IndexableScanRanges
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
@@ -18,12 +17,13 @@ import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.readCreationVersion
+import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
+import maryk.datastore.rocksdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.shared.ScanType.IndexScan
 import maryk.lib.extensions.compare.compareToWithOffsetLength
 import maryk.lib.extensions.compare.matchPart
 import maryk.lib.extensions.compare.nextByteInSameLength
 import maryk.rocksdb.ReadOptions
-import kotlin.experimental.xor
 
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
     dataStore: RocksDBDataStore,
@@ -55,7 +55,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
 
     val keySize = scanRequest.dataModel.keyByteSize
     val valueOffset = indexReference.size
-    val toSubstractFromSize = keySize + indexReference.size + if(scanRequest.toVersion != null) ULong.SIZE_BYTES else 0
+    val toSubstractFromSize = keySize + indexReference.size + if(scanRequest.toVersion != null) VERSION_BYTE_SIZE else 0
 
     when (indexScan.direction) {
         ASC -> {
@@ -130,10 +130,8 @@ fun createVersionChecker(toVersion: ULong?, iterator: DBIterator, direction: Dir
     if (toVersion == null) {
         { true } // Version is always latest and thus valid, because is scanning on normal table
     } else {
-        val versionBytesToMatch = ByteArray(ULong.SIZE_BYTES)
-        var writeIndex = 0
         // Since index stores versions in reverse order, reverse the version here too
-        toVersion.writeBytes({ versionBytesToMatch[writeIndex++] = it xor -1 })
+        val versionBytesToMatch = toVersion.toReversedVersionBytes()
 
         when (direction) {
             ASC -> {
@@ -143,11 +141,11 @@ fun createVersionChecker(toVersion: ULong?, iterator: DBIterator, direction: Dir
                     while (iterator.isValid()) {
                         val newKey = iterator.key()
 
-                        if (newKey.let { !it.matchPart(0, indexKey, it.size, 0, indexKey.size - ULong.SIZE_BYTES) }) {
+                        if (newKey.let { !it.matchPart(0, indexKey, it.size, 0, indexKey.size - VERSION_BYTE_SIZE) }) {
                             break // Key does not match anymore so break out
                         }
 
-                        if (versionBytesToMatch.compareToWithOffsetLength(newKey, newKey.size - ULong.SIZE_BYTES) > 0) {
+                        if (versionBytesToMatch.compareToWithOffsetLength(newKey, newKey.size - VERSION_BYTE_SIZE) > 0) {
                             // Continue to older version since key was too new for request
                             iterator.next()
                         } else {
@@ -168,13 +166,13 @@ fun createVersionChecker(toVersion: ULong?, iterator: DBIterator, direction: Dir
                     while (iterator.isValid()) {
                         val newKey = iterator.key()
                         // Check if new key matches expected key and otherwise skips out
-                        if (newKey.let { !it.matchPart(0, indexKey, it.size - ULong.SIZE_BYTES, 0, indexKey.size - ULong.SIZE_BYTES) }) {
+                        if (newKey.let { !it.matchPart(0, indexKey, it.size - VERSION_BYTE_SIZE, 0, indexKey.size - VERSION_BYTE_SIZE) }) {
                             iterator.next() // Move back iterator so next call will start at right key
                             break
                         }
 
                         // Continue to newer versions until key is not of a valid version
-                        if (versionBytesToMatch.compareToWithOffsetLength(newKey, newKey.size - ULong.SIZE_BYTES) <= 0) {
+                        if (versionBytesToMatch.compareToWithOffsetLength(newKey, newKey.size - VERSION_BYTE_SIZE) <= 0) {
                             validResult = iterator.value().contentEquals(TRUE_ARRAY)
                             iterator.prev()
                         } else {

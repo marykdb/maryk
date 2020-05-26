@@ -1,9 +1,6 @@
 package maryk.datastore.rocksdb.processors.helpers
 
 import maryk.core.exceptions.RequestException
-import maryk.core.extensions.bytes.initULong
-import maryk.core.extensions.bytes.invert
-import maryk.core.extensions.bytes.writeBytes
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
@@ -13,7 +10,6 @@ import maryk.lib.recyclableByteArray
 import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.rocksDBNotFound
 import maryk.rocksdb.use
-import kotlin.experimental.xor
 
 /**
  * Get a unique record key by value
@@ -29,23 +25,19 @@ internal fun getKeyByUniqueValue(
     if (toVersion == null) {
         val valueLength = dbAccessor.get(columnFamilies.unique, readOptions, reference, recyclableByteArray)
         if (valueLength != rocksDBNotFound) {
-            var readIndex = 0
-            val versionAndKeyReader = { recyclableByteArray[readIndex++] }
-            val setAtVersion = initULong(versionAndKeyReader)
-            processKey(versionAndKeyReader, setAtVersion)
+            val setAtVersion = recyclableByteArray.readVersionBytes()
+            var readIndex = VERSION_BYTE_SIZE
+            processKey({ recyclableByteArray[readIndex++] }, setAtVersion)
         }
     } else {
         if (columnFamilies !is HistoricTableColumnFamilies) {
             throw RequestException("Cannot use toVersion on a non historic table")
         }
 
-        val versionBytes = toVersion.createReversedVersionBytes()
+        val versionBytes = toVersion.toReversedVersionBytes()
 
         dbAccessor.getIterator(readOptions, columnFamilies.historic.unique).use { iterator ->
-            val toSeek = reference.copyOf(reference.size + ULong.SIZE_BYTES)
-            var writeIndex = reference.size
-            toVersion.writeBytes({ toSeek[writeIndex++] = it })
-            toSeek.invert(reference.size)
+            val toSeek = byteArrayOf(*reference, *versionBytes)
             iterator.seek(toSeek)
             while (iterator.isValid()) {
                 val key = iterator.key()
@@ -58,8 +50,7 @@ internal fun getKeyByUniqueValue(
                         val result = iterator.value()
                         var readIndex = 0
                         val resultReader = { result[readIndex++] }
-                        var versionReadIndex = versionOffset
-                        val version = initULong({ key[versionReadIndex++] xor -1 })
+                        val version = key.readReversedVersionBytes(versionOffset)
                         processKey(resultReader, version)
                     }
                 } else break

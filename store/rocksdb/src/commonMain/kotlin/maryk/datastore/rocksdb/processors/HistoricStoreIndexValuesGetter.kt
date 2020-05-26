@@ -1,7 +1,6 @@
 package maryk.datastore.rocksdb.processors
 
 import maryk.core.exceptions.StorageException
-import maryk.core.extensions.bytes.initULong
 import maryk.core.extensions.bytes.invert
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -12,10 +11,11 @@ import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.DBIterator
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.convertToValue
+import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
+import maryk.datastore.rocksdb.processors.helpers.readReversedVersionBytes
 import maryk.lib.extensions.compare.matchPart
 import maryk.rocksdb.AutoCloseable
 import maryk.rocksdb.ReadOptions
-import kotlin.experimental.xor
 
 /**
  * Historical index values walker for a RocksDB store.
@@ -42,7 +42,7 @@ internal class HistoricStoreIndexValuesWalker(
         getter.moveToKey(key, dbAccessor)
         val indexableBytes = indexable.referenceStorageByteArray.bytes
 
-        val keyAndVersionSize = key.size + ULong.SIZE_BYTES
+        val keyAndVersionSize = key.size + VERSION_BYTE_SIZE
         do {
             var index = 0
             try {
@@ -140,7 +140,7 @@ private class HistoricStoreIndexValuesGetter(
         // Only seek the first time
         if (iterableReference.lastVersion == null) {
             // Add empty version so iterator works correctly
-            iterator.seek(keyAndReference.copyOf(keyAndReference.size + 8))
+            iterator.seek(keyAndReference.copyOf(keyAndReference.size + VERSION_BYTE_SIZE))
         }
 
         // Go to next version if it is the version to read past or not yet set
@@ -151,22 +151,22 @@ private class HistoricStoreIndexValuesGetter(
                 if (qualifier.matchPart(0, keyAndReference)) {
                     val valueBytes = iterator.value()
                     val historicReference =
-                        ByteArray(reference.size + valueBytes.size + key.size + ULong.SIZE_BYTES)
+                        ByteArray(reference.size + valueBytes.size + key.size + VERSION_BYTE_SIZE)
                     reference.copyInto(historicReference)
                     valueBytes.copyInto(historicReference, reference.size)
                     key.copyInto(historicReference, valueBytes.size + reference.size)
                     qualifier.copyInto(
                         historicReference,
                         valueBytes.size + reference.size + key.size,
-                        qualifier.size - ULong.SIZE_BYTES
+                        qualifier.size - VERSION_BYTE_SIZE
                     )
 
                     iterableReference.lastValue = valueBytes
-                    var readIndex = qualifier.size - ULong.SIZE_BYTES // start at version
-                    val lastVersion = initULong({
-                        // invert value before reading because is stored inverted
-                        qualifier[readIndex++] xor -1
-                    })
+
+                    val lastVersion = qualifier.readReversedVersionBytes(
+                        offset = qualifier.size - VERSION_BYTE_SIZE // start at version
+                    )
+
                     iterableReference.lastVersion = lastVersion
                     latestVersion = latestVersion?.let {
                         maxOf(lastVersion, it)

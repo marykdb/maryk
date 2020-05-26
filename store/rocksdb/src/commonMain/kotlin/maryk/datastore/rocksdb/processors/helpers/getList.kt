@@ -29,7 +29,7 @@ internal fun <T : Any> getList(
         val count = if (!iterator.isValid() || !ref.matchPart(0, keyAndReference)) {
             return mutableListOf()
         } else {
-            var readIndex = ULong.SIZE_BYTES
+            var readIndex = VERSION_BYTE_SIZE
             val countBytes = iterator.value()
             initIntByVar { countBytes[readIndex++] }
         }
@@ -42,7 +42,7 @@ internal fun <T : Any> getList(
 
             if (ref.matchPart(0, keyAndReference)) {
                 val valueAsBytes = iterator.value()
-                var readIndex = ULong.SIZE_BYTES // Skip version because reading from main table
+                var readIndex = VERSION_BYTE_SIZE // Skip version because reading from main table
                 val reader = { valueAsBytes[readIndex++] }
                 readValue(reference.comparablePropertyDefinition.valueDefinition, reader) {
                     valueAsBytes.size - readIndex

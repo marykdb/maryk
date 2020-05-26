@@ -1,11 +1,9 @@
 package maryk.datastore.rocksdb.processors.helpers
 
-import maryk.core.extensions.bytes.initULong
 import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.DBIterator
 import maryk.lib.extensions.compare.compareToWithOffsetLength
 import maryk.lib.extensions.compare.match
-import kotlin.experimental.xor
 
 /** Find historic qualifiers on [iterator] for [key] */
 internal fun DBIterator.historicQualifierRetriever(
@@ -18,7 +16,7 @@ internal fun DBIterator.historicQualifierRetriever(
     return { resultHandler ->
         val offset = key.size
 
-        val toVersionBytes = toVersion.createReversedVersionBytes()
+        val toVersionBytes = toVersion.toReversedVersionBytes()
 
         var isValid = false
         qualifierFinder@while (isValid()) {
@@ -28,7 +26,7 @@ internal fun DBIterator.historicQualifierRetriever(
             } else {
                 // key range check is ensured with setPrefixSameAsStart
                 val qualifier: ByteArray = key()
-                var versionOffset = qualifier.size - toVersionBytes.size
+                val versionOffset = qualifier.size - toVersionBytes.size
                 val currentLastQualifier = lastQualifier
                 if (currentLastQualifier != null && qualifier.match(offset, currentLastQualifier, versionOffset - offset, offset, lastQualifierLength)) {
                     continue@qualifierFinder // Already returned this qualifier so skip
@@ -42,7 +40,7 @@ internal fun DBIterator.historicQualifierRetriever(
 
                     // Return version. Invert it so it is in normal order
                     handleVersion(
-                        initULong({ qualifier[versionOffset++] xor -1 })
+                        qualifier.readReversedVersionBytes(versionOffset)
                     )
 
                     resultHandler({ qualifier[offset+it] }, lastQualifierLength)

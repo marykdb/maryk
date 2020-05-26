@@ -688,7 +688,7 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> app
         if (isChanged) {
             val lastVersion = getLastVersion(transaction, columnFamilies, dataStore.defaultReadOptions, key)
             if (version.timestamp > lastVersion) {
-                setLatestVersion(transaction, columnFamilies, key, HLC.toStorageBytes(version))
+                setLatestVersion(transaction, columnFamilies, key, versionBytes)
             }
         }
 

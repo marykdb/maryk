@@ -1,7 +1,6 @@
 package maryk.datastore.rocksdb.processors.helpers
 
 import maryk.core.exceptions.StorageException
-import maryk.core.extensions.bytes.toULong
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.DBAccessor
@@ -25,5 +24,5 @@ internal fun <DM: IsRootDataModel<*>> getLastVersion(dbAccessor: DBAccessor, col
         throw StorageException("Can only retrieve last versions of existing objects")
     }
 
-    return recyclableByteArray2.toULong()
+    return recyclableByteArray2.readVersionBytes()
 }

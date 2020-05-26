@@ -17,7 +17,7 @@ internal fun setValue(
 ) {
     val valueWithVersion = ByteArray(version.size + valueLength)
     version.copyInto(valueWithVersion)
-    value.copyInto(valueWithVersion, 8, valueOffset, valueOffset + valueLength)
+    value.copyInto(valueWithVersion, VERSION_BYTE_SIZE, valueOffset, valueOffset + valueLength)
 
     transaction.put(
         columnFamilies.table,

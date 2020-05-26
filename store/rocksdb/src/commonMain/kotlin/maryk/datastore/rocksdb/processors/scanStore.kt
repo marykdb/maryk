@@ -1,6 +1,5 @@
 package maryk.datastore.rocksdb.processors
 
-import maryk.core.extensions.bytes.toULong
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.properties.PropertyDefinitions
@@ -12,6 +11,7 @@ import maryk.core.query.requests.IsScanRequest
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
+import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
 
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
     dataStore: RocksDBDataStore,
@@ -51,7 +51,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
                         continue
                     }
 
-                    val creationVersion = iterator.value().toULong()
+                    val creationVersion = iterator.value().readVersionBytes()
 
                     if (scanRequest.shouldBeFiltered(dbAccessor, columnFamilies, dataStore.defaultReadOptions, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion)) {
                         iterator.next()
@@ -95,7 +95,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
                         continue
                     }
 
-                    val creationVersion = iterator.value().toULong()
+                    val creationVersion = iterator.value().readVersionBytes()
 
                     if (scanRequest.shouldBeFiltered(dbAccessor, columnFamilies, dataStore.defaultReadOptions, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion)) {
                         iterator.prev()

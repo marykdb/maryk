@@ -1,11 +1,12 @@
 package maryk.datastore.rocksdb.processors
 
-import maryk.core.extensions.bytes.toULong
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.values.IsValuesGetter
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.convertToValue
+import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
+import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
 import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.RocksDB
 import kotlin.math.max
@@ -38,9 +39,11 @@ internal class StoreValuesGetter(
                 db.get(columnFamilies.table, readOptions, reference)
             }
 
-            return valueAsBytes?.convertToValue(propertyReference, ULong.SIZE_BYTES, valueAsBytes.size - ULong.SIZE_BYTES)?.also {
+            return valueAsBytes?.convertToValue(propertyReference,
+                VERSION_BYTE_SIZE, valueAsBytes.size - VERSION_BYTE_SIZE
+            )?.also {
                 if (captureVersion) {
-                    val version = valueAsBytes.toULong()
+                    val version = valueAsBytes.readVersionBytes()
                     this.lastVersion = this.lastVersion?.let {
                         max(it, version)
                     } ?: version

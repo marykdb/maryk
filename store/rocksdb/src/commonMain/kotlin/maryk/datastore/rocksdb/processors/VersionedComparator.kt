@@ -3,9 +3,8 @@ package maryk.datastore.rocksdb.processors
 import maryk.ByteBuffer
 import maryk.datastore.rocksdb.compareToWithOffsetAndLength
 import maryk.datastore.rocksdb.compareWith
+import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.rocksdb.ComparatorOptions
-
-private const val versionSize = ULong.SIZE_BYTES
 
 /**
  * Takes care that qualifiers are first sorted on their reference/value and then on version
@@ -19,13 +18,13 @@ internal class VersionedComparator(
     override fun compare(a: ByteBuffer, b: ByteBuffer): Int {
         return if (a.remaining() > keySize && b.remaining() > keySize) {
             when (val comparison =
-                a.compareToWithOffsetAndLength(0, a.remaining() - versionSize, b, 0, b.remaining() - versionSize)) {
+                a.compareToWithOffsetAndLength(0, a.remaining() - VERSION_BYTE_SIZE, b, 0, b.remaining() - VERSION_BYTE_SIZE)) {
                 0 -> a.compareToWithOffsetAndLength(
-                    a.remaining() - versionSize,
-                    versionSize,
+                    a.remaining() - VERSION_BYTE_SIZE,
+                    VERSION_BYTE_SIZE,
                     b,
-                    b.remaining() - versionSize,
-                    versionSize
+                    b.remaining() - VERSION_BYTE_SIZE,
+                    VERSION_BYTE_SIZE
                 )
                 else -> comparison
             }

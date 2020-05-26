@@ -1,6 +1,5 @@
 package maryk.datastore.rocksdb.processors
 
-import maryk.core.extensions.bytes.toULong
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.fromChanges
 import maryk.core.properties.PropertyDefinitions
@@ -17,6 +16,7 @@ import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.processors.helpers.getLastVersion
+import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkToVersion
 import maryk.lib.recyclableByteArray
@@ -56,7 +56,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
                     dbAccessor.get(columnFamilies.keys, dataStore.defaultReadOptions, key.bytes, recyclableByteArray)
 
                 if (valueLength != rocksDBNotFound) {
-                    val creationVersion = recyclableByteArray.toULong()
+                    val creationVersion = recyclableByteArray.readVersionBytes()
                     if (getRequest.shouldBeFiltered(
                             dbAccessor,
                             columnFamilies,

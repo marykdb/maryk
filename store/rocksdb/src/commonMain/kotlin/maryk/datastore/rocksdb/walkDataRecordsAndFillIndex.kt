@@ -6,6 +6,7 @@ import maryk.datastore.rocksdb.processors.FALSE_ARRAY
 import maryk.datastore.rocksdb.processors.HistoricStoreIndexValuesWalker
 import maryk.datastore.rocksdb.processors.StoreValuesGetter
 import maryk.datastore.rocksdb.processors.TRUE_ARRAY
+import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.rocksdb.use
 
 /**
@@ -55,8 +56,8 @@ internal fun walkDataRecordsAndFillIndex(
                                 val newHistoricReference = historicReference.copyOf()
                                 it.copyInto(
                                     destination = newHistoricReference,
-                                    destinationOffset = newHistoricReference.size - ULong.SIZE_BYTES,
-                                    startIndex = historicReference.size - ULong.SIZE_BYTES
+                                    destinationOffset = newHistoricReference.size - VERSION_BYTE_SIZE,
+                                    startIndex = historicReference.size - VERSION_BYTE_SIZE
                                 )
 
                                 transaction.put(columnFamilies.historic.index, newHistoricReference, FALSE_ARRAY)

@@ -9,4 +9,4 @@ typealias NewRootDataModel = IsRootValuesDataModel<*>
  * Handles the migration for the to be migrated DataModels.
  * Throws MigrationException if version cannot be handled
  */
-typealias MigrationHandler<DS> = (DS, StoredRootDataModel, NewRootDataModel) -> Unit
+typealias MigrationHandler<DS> = (DS, StoredRootDataModel, NewRootDataModel) -> Boolean

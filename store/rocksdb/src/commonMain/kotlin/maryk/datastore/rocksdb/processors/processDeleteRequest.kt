@@ -103,12 +103,8 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
 
                             // Delete indexed values
                             deleteRequest.dataModel.indices?.let { indices ->
-                                val valuesGetter = DBAccessorValuesGetter(
-                                    key,
-                                    transaction,
-                                    columnFamilies,
-                                    dataStore.defaultReadOptions
-                                )
+                                val valuesGetter = DBAccessorStoreValuesGetter(columnFamilies, dataStore.defaultReadOptions)
+                                valuesGetter.moveToKey(key.bytes, transaction)
 
                                 indices.forEach { indexable ->
                                     val indexReference = indexable.referenceStorageByteArray.bytes

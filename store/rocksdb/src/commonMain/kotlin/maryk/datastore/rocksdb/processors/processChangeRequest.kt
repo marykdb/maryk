@@ -701,7 +701,8 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> app
             }
 
             val storeGetter = StoreValuesGetter(key.bytes, dataStore.db, columnFamilies, dataStore.defaultReadOptions)
-            val transactionGetter = DBAccessorValuesGetter(key, transaction, columnFamilies, dataStore.defaultReadOptions)
+            val transactionGetter = DBAccessorStoreValuesGetter(columnFamilies, dataStore.defaultReadOptions)
+            transactionGetter.moveToKey(key.bytes, transaction)
 
             for (index in indices) {
                 val oldKeyAndValue = index.toStorageByteArrayForIndex(storeGetter, key.bytes)

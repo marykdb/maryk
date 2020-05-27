@@ -37,7 +37,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
     val indexReference = indexScan.index.referenceStorageByteArray.bytes
 
     val startKey = scanRequest.startKey?.let { startKey ->
-        val startValuesGetter = HistoricStoreValuesGetter(columnFamilies, dataStore.defaultReadOptions)
+        val startValuesGetter = DBAccessorStoreValuesGetter(columnFamilies, dataStore.defaultReadOptions)
         startValuesGetter.moveToKey(startKey.bytes, dbAccessor, scanRequest.toVersion)
         indexScan.index.toStorageByteArrayForIndex(startValuesGetter, startKey.bytes)
     }

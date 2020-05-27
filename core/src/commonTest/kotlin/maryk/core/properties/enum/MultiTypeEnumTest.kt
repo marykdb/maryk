@@ -6,7 +6,7 @@ import maryk.checkYamlConversion
 import maryk.core.models.AbstractObjectDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.query.DefinitionsContext
-import maryk.core.yaml.createMarykYamlModelReader
+import maryk.core.yaml.MarykYamlModelReader
 import maryk.test.models.MarykTypeEnum
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -153,7 +153,7 @@ class MultiTypeEnumTest {
 
     @Test
     fun readEnumFromYamlWithoutValues() {
-        val reader = createMarykYamlModelReader(
+        val reader = MarykYamlModelReader(
             """
             name: MarykTypeEnum
             """.trimIndent()

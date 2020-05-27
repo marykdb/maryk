@@ -14,34 +14,16 @@ import maryk.test.assertType
 import kotlin.test.Test
 import kotlin.test.expect
 
-fun createMarykYamlModelReader(yaml: String): IsJsonLikeReader {
-    var index = 0
-
-    var alreadyRead = ""
-
-    return MarykYamlModelReader {
-        val b = yaml[index].also {
-            // JS platform returns a 0 control char when nothing can be read
-            if (it == '\u0000') {
-                throw Throwable("0 char encountered")
-            }
-        }
-        alreadyRead += b
-        index++
-        b
-    }
-}
-
 class MarykYamlTest {
     @Test
     fun readMarykTags() {
-        createMarykYamlModelReader(
-            """
-        |    - !Boolean { k1: v1 }
-        |    - !String { k2: v2 }
-        |    - !UUID
-        |    - !Ref test
-        """.trimMargin()
+        MarykYamlModelReader(
+        """
+         - !Boolean { k1: v1 }
+         - !String { k2: v2 }
+         - !UUID
+         - !Ref test
+        """.trimIndent()
         ).apply {
             assertType<StartArray>(nextToken())
 

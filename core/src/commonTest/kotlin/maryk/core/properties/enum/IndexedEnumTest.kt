@@ -6,7 +6,7 @@ import maryk.checkYamlConversion
 import maryk.core.models.AbstractObjectDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.query.DefinitionsContext
-import maryk.core.yaml.createMarykYamlModelReader
+import maryk.core.yaml.MarykYamlModelReader
 import maryk.test.models.Option
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -76,7 +76,7 @@ class IndexedEnumTest {
 
     @Test
     fun readEnumFromYamlWithoutValues() {
-        val reader = createMarykYamlModelReader(
+        val reader = MarykYamlModelReader(
             """
             name: Option
             """.trimIndent()

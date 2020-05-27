@@ -8,7 +8,7 @@ import maryk.core.aggregations.metric.ValueCount
 import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.core.query.filters.Exists
-import maryk.core.yaml.MarykYamlReaders
+import maryk.core.yaml.MarykYamlReader
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.getMaxRequest
 import maryk.test.requests.getRequest
@@ -112,14 +112,13 @@ class GetRequestTest {
 
         var index = 0
 
-        val reader = MarykYamlReaders {
+        val reader = MarykYamlReader {
             simpleYaml[index++].also {
                 if (it == '\u0000') {
                     throw Throwable("0 char encountered")
                 }
             }
         }
-
 
         GetRequest.readJson(reader, this.context)
             .toDataObject()

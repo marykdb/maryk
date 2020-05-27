@@ -4,7 +4,7 @@ import maryk.core.models.AbstractObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.values.ObjectValues
-import maryk.core.yaml.MarykYamlReaders
+import maryk.core.yaml.MarykYamlReader
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
 import maryk.yaml.YamlWriter
@@ -62,7 +62,7 @@ fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : Is
     }
 
     val chars = output.iterator()
-    val reader = MarykYamlReaders {
+    val reader = MarykYamlReader {
         chars.nextChar().also {
             if (it == '\u0000') {
                 throw Throwable("0 char encountered")
@@ -98,7 +98,7 @@ fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : Is
     }
 
     val chars = output.iterator()
-    val reader = MarykYamlReaders {
+    val reader = MarykYamlReader {
         chars.nextChar().also {
             if (it == '\u0000') {
                 throw Throwable("0 char encountered")

@@ -9,7 +9,7 @@ import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.query.DefinitionsContext
-import maryk.core.yaml.MarykYamlReaders
+import maryk.core.yaml.MarykYamlReader
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.MarykEnumEmbedded.E1
@@ -159,7 +159,7 @@ internal class EnumDefinitionTest {
         default: V2(2)
         """.iterator()
 
-        val reader = MarykYamlReaders {
+        val reader = MarykYamlReader {
             chars.nextChar().also {
                 if (it == '\u0000') {
                     throw Throwable("0 char encountered")

@@ -23,7 +23,7 @@ import maryk.core.properties.types.Key
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DefinitionsConversionContext
-import maryk.core.yaml.MarykYamlReaders
+import maryk.core.yaml.MarykYamlReader
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.ByteCollector
@@ -633,15 +633,7 @@ internal class RootDataModelTest {
 
         """.trimIndent()
 
-        var index = 0
-
-        val reader = MarykYamlReaders {
-            simpleYaml[index++].also {
-                if (it == '\u0000') {
-                    throw Throwable("0 char encountered")
-                }
-            }
-        }
+        val reader = MarykYamlReader(simpleYaml)
 
         val newContext = DefinitionsConversionContext()
         newContext.dataModels["TestMarykModel"] = { TestMarykModel }

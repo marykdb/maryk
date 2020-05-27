@@ -9,6 +9,21 @@ import maryk.yaml.YamlReader
 const val maryk2018 = "tag:maryk.io,2018:"
 
 /** Creates a Yaml reader preset to read Maryk Models */
+fun MarykYamlModelReader(
+    yaml: String
+): IsJsonLikeReader {
+    var index = 0
+    return MarykYamlModelReader {
+        yaml[index++].also {
+            if (it == '\u0000') {
+                // So JS correctly exits at end of string
+                throw Throwable("0 char encountered")
+            }
+        }
+    }
+}
+
+/** Creates a Yaml reader preset to read Maryk Models */
 @Suppress("FunctionName")
 fun MarykYamlModelReader(
     reader: () -> Char
@@ -23,8 +38,23 @@ fun MarykYamlModelReader(
     )
 
 /** Creates a Yaml reader preset to read Maryk */
+fun MarykYamlReader(
+    yaml: String
+): IsJsonLikeReader {
+    var index = 0
+    return MarykYamlReader {
+        yaml[index++].also {
+            if (it == '\u0000') {
+                // So JS correctly exits at end of string
+                throw Throwable("0 char encountered")
+            }
+        }
+    }
+}
+
+/** Creates a Yaml reader preset to read Maryk */
 @Suppress("FunctionName")
-fun MarykYamlReaders(
+fun MarykYamlReader(
     reader: () -> Char
 ): IsJsonLikeReader =
     YamlReader(

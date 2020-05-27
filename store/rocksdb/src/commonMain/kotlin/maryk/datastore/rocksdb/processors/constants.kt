@@ -9,6 +9,8 @@ internal val FALSE_ARRAY = byteArrayOf(FALSE)
 internal const val TRUE: Byte = 1
 internal val TRUE_ARRAY = byteArrayOf(TRUE)
 
+internal val EMPTY_ARRAY = byteArrayOf()
+
 internal const val DELETED_INDICATOR: Byte = 0
 internal const val NO_TYPE_INDICATOR: Byte = 1
 internal const val SIMPLE_TYPE_INDICATOR: Byte = 2

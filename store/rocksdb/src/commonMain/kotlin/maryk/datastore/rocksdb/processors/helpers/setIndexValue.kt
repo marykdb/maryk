@@ -3,8 +3,8 @@ package maryk.datastore.rocksdb.processors.helpers
 import maryk.core.extensions.bytes.invert
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
-import maryk.datastore.rocksdb.processors.TRUE_ARRAY
 import maryk.datastore.rocksdb.Transaction
+import maryk.datastore.rocksdb.processors.EMPTY_ARRAY
 
 /** Set the [indexReference] and [valueAndKey] for [version] */
 internal fun setIndexValue(
@@ -23,7 +23,7 @@ internal fun setIndexValue(
         transaction.put(
             columnFamilies.historic.index,
             historicReference,
-            TRUE_ARRAY
+            EMPTY_ARRAY
         )
     }
 }

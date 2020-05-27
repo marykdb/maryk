@@ -73,13 +73,14 @@ This table stores all versions of values by appending the version to the referen
 # Historic Index
 An index to search values at or before older versions.
 
-- INDEX_REFERENCE:VALUE:KEY:VERSION = BOOLEAN. An indexed value and key is prefixed 
+- INDEX_REFERENCE:VALUE:KEY:VERSION = EMPTY/FALSE. An indexed value and key is prefixed 
   by index so the record can be found by value.  Contains key so multiple 
   references to same value can exist. Stores the version so a unique value can be 
-  searched at or before a version. BOOLEAN indicates if the index is set or unset.
+  searched at or before a version. EMPTY/FALSE indicates if the index is set or unset. Empty means set and false (0) 
+  means unset 
   An old index value is always unset at same version when a new value is set.
 
 # Historic Unique
 Stores unique values by version 
 
-- INDEX_REFERENCE:VALUE:VERSION = KEY. A versioned value to key pair for an index.
+- INDEX_REFERENCE:VALUE:VERSION = KEY/EMPTY. A versioned value to key pair for a unique value. Empty means it was unset 

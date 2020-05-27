@@ -158,7 +158,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
                                     transaction.put(
                                         columnFamilies.historic.table,
                                         historicReference,
-                                        TRUE_ARRAY
+                                        EMPTY_ARRAY
                                     )
                                 }
 

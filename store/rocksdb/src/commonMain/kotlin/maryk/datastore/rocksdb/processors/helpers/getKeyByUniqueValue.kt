@@ -48,10 +48,16 @@ internal fun getKeyByUniqueValue(
                     // Only match if version is valid, else read next version
                     if (versionBytes.compareToWithOffsetLength(key, versionOffset) <= 0) {
                         val result = iterator.value()
-                        var readIndex = 0
-                        val resultReader = { result[readIndex++] }
-                        val version = key.readReversedVersionBytes(versionOffset)
-                        processKey(resultReader, version)
+
+                        // Only process key if value was not unset at this version
+                        // It was invalid if version was added after the key
+                        if (result.isNotEmpty()) {
+                            var readIndex = 0
+                            val resultReader = { result[readIndex++] }
+                            val version = key.readReversedVersionBytes(versionOffset)
+                            processKey(resultReader, version)
+                        }
+                        break
                     }
                 } else break
 

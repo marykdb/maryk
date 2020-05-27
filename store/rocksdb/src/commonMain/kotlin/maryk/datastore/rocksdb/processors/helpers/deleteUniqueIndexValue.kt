@@ -4,7 +4,7 @@ import maryk.core.extensions.bytes.invert
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.Transaction
-import maryk.datastore.rocksdb.processors.FALSE_ARRAY
+import maryk.datastore.rocksdb.processors.EMPTY_ARRAY
 
 /** Delete a [value] from the unique index at [indexReference] and stores it as [version] */
 internal fun deleteUniqueIndexValue(
@@ -28,6 +28,6 @@ internal fun deleteUniqueIndexValue(
         // Invert so the time is sorted in reverse order with newest on top
         historicReference.invert(reference.size)
 
-        transaction.put(columnFamilies.unique, historicReference, FALSE_ARRAY)
+        transaction.put(columnFamilies.unique, historicReference, EMPTY_ARRAY)
     }
 }

@@ -2,10 +2,10 @@ package maryk.datastore.rocksdb
 
 import maryk.core.extensions.bytes.toByteArray
 import maryk.core.properties.definitions.index.IsIndexable
+import maryk.datastore.rocksdb.processors.EMPTY_ARRAY
 import maryk.datastore.rocksdb.processors.FALSE_ARRAY
 import maryk.datastore.rocksdb.processors.HistoricStoreIndexValuesWalker
 import maryk.datastore.rocksdb.processors.StoreValuesGetter
-import maryk.datastore.rocksdb.processors.TRUE_ARRAY
 import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.rocksdb.use
 
@@ -66,7 +66,7 @@ internal fun walkDataRecordsAndFillIndex(
                             transaction.put(
                                 columnFamilies.historic.index,
                                 historicReference,
-                                TRUE_ARRAY
+                                EMPTY_ARRAY
                             )
 
                             futureHistoricReference = historicReference

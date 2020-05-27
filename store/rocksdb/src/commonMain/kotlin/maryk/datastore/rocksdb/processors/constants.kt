@@ -7,7 +7,6 @@ internal const val SOFT_DELETE_INDICATOR: Byte = 0
 internal const val FALSE: Byte = 0
 internal val FALSE_ARRAY = byteArrayOf(FALSE)
 internal const val TRUE: Byte = 1
-internal val TRUE_ARRAY = byteArrayOf(TRUE)
 
 internal val EMPTY_ARRAY = byteArrayOf()
 

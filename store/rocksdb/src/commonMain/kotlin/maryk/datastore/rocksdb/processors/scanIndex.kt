@@ -16,8 +16,8 @@ import maryk.datastore.rocksdb.DBIterator
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
-import maryk.datastore.rocksdb.processors.helpers.readCreationVersion
 import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
+import maryk.datastore.rocksdb.processors.helpers.readCreationVersion
 import maryk.datastore.rocksdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.shared.ScanType.IndexScan
 import maryk.lib.extensions.compare.compareToWithOffsetLength
@@ -151,7 +151,7 @@ fun createVersionChecker(toVersion: ULong?, iterator: DBIterator, direction: Dir
                             iterator.next()
                         } else {
                             // Check if is deleted and skip if so
-                            validResult = iterator.value().contentEquals(TRUE_ARRAY)
+                            validResult = iterator.value().contentEquals(EMPTY_ARRAY)
                             break
                         }
                     }
@@ -174,7 +174,7 @@ fun createVersionChecker(toVersion: ULong?, iterator: DBIterator, direction: Dir
 
                         // Continue to newer versions until key is not of a valid version
                         if (versionBytesToMatch.compareToWithOffsetLength(newKey, newKey.size - VERSION_BYTE_SIZE) <= 0) {
-                            validResult = iterator.value().contentEquals(TRUE_ARRAY)
+                            validResult = iterator.value().contentEquals(EMPTY_ARRAY)
                             iterator.prev()
                         } else {
                             break

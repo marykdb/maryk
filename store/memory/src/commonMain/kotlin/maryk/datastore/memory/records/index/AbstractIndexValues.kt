@@ -12,7 +12,7 @@ internal abstract class AbstractIndexValues<DM : IsRootValuesDataModel<P>, P : P
     val indexReference: ByteArray
 ) {
     abstract val compareTo: T.(T) -> Int
-    val records = mutableListOf<IsIndexItem<DM, P, T>>()
+    val indexValues = mutableListOf<IsIndexItem<DM, P, T>>()
 
     /**
      * Add a [record] [value] reference at [version] to index.
@@ -23,29 +23,29 @@ internal abstract class AbstractIndexValues<DM : IsRootValuesDataModel<P>, P : P
         value: T,
         version: HLC
     ): Boolean {
-        val i = records.binarySearch { it.value.compareTo(value) }
+        val i = indexValues.binarySearch { it.value.compareTo(value) }
         return when {
             i < 0 -> {
-                records.add(
+                indexValues.add(
                     i * -1 - 1,
                     IndexValue(value, record, version)
                 )
                 true
             }
-            records[i] is HistoricalIndexValue<*, *, *> -> {
-                val lastRecord = records[i] as HistoricalIndexValue<DM, P, T>
-                if (lastRecord.records.last().record == null) {
-                    lastRecord.records.add(
+            indexValues[i] is HistoricalIndexValue<*, *, *> -> {
+                val lastIndexValue = indexValues[i] as HistoricalIndexValue<DM, P, T>
+                if (lastIndexValue.records.last().record == null) {
+                    lastIndexValue.records.add(
                         IndexValue(value, record, version)
                     )
                 } else false
             }
-            records[i].record == null -> {
-                records[i] = IndexValue(value, record, version)
+            indexValues[i].record == null -> {
+                indexValues[i] = IndexValue(value, record, version)
                 true
             }
             // Only return if current stored record is the record.
-            records[i].record == record -> true
+            indexValues[i].record == record -> true
             else -> false
         }
     }
@@ -60,21 +60,21 @@ internal abstract class AbstractIndexValues<DM : IsRootValuesDataModel<P>, P : P
         version: HLC,
         keepAllVersions: Boolean
     ): Boolean {
-        val i = records.binarySearch { it.value.compareTo(value) }
-        return if (i >= 0 && records[i].record == record) {
-            val oldValue = records[i]
+        val i = indexValues.binarySearch { it.value.compareTo(value) }
+        return if (i >= 0 && indexValues[i].record == record) {
+            val oldValue = indexValues[i]
             if (keepAllVersions) {
                 val newValue = RecordAtVersion<DM, P>(null, version)
                 if (oldValue is HistoricalIndexValue<DM, P, T>) {
                     oldValue.records += newValue
                 } else {
-                    records[i] = HistoricalIndexValue(
+                    indexValues[i] = HistoricalIndexValue(
                         value,
                         mutableListOf(oldValue, newValue)
                     )
                 }
             } else {
-                records[i] = IndexValue(value, null, version)
+                indexValues[i] = IndexValue(value, null, version)
             }
             true
         } else false
@@ -82,13 +82,13 @@ internal abstract class AbstractIndexValues<DM : IsRootValuesDataModel<P>, P : P
 
     /** Delete any index of [value] to [record] and return true if an index value was deleted */
     fun deleteHardFromIndex(record: DataRecord<DM, P>, value: T): Boolean {
-        val i = records.binarySearch { it.value.compareTo(value) }
+        val i = indexValues.binarySearch { it.value.compareTo(value) }
         return if (i >= 0) {
-            val oldValue = records[i]
+            val oldValue = indexValues[i]
             if (oldValue is HistoricalIndexValue<DM, P, T>) {
                 oldValue.records.removeAll { it.record == record }
             } else {
-                records.removeAt(i)
+                indexValues.removeAt(i)
             }
             true
         } else false
@@ -96,9 +96,9 @@ internal abstract class AbstractIndexValues<DM : IsRootValuesDataModel<P>, P : P
 
     /** Get DataRecord for [value] if exists or null */
     operator fun get(value: T) =
-        this.records.binarySearch { it.value.compareTo(value) }.let { index ->
+        this.indexValues.binarySearch { it.value.compareTo(value) }.let { index ->
             if (index >= 0) {
-                this.records[index].record
+                this.indexValues[index].record
             } else {
                 null
             }
@@ -106,9 +106,9 @@ internal abstract class AbstractIndexValues<DM : IsRootValuesDataModel<P>, P : P
 
     /** Get DataRecord for [value] if exists or null */
     operator fun get(value: T, version: HLC) =
-        this.records.binarySearch { it.value.compareTo(value) }.let { index ->
+        this.indexValues.binarySearch { it.value.compareTo(value) }.let { index ->
             if (index >= 0) {
-                this.records[index].recordAtVersion(version)
+                this.indexValues[index].recordAtVersion(version)
             } else {
                 null
             }

@@ -44,9 +44,9 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
                 val startIndex = indexStartKey.let { startRange ->
                     if (!indexRange.startInclusive && indexRange.start === startRange) {
                         // If start range was not highered it was not possible so scan to lastIndex
-                        index.records.lastIndex
+                        index.indexValues.lastIndex
                     } else {
-                        index.records.binarySearch { it.value.compareTo(indexStartKey) }.let { valueIndex ->
+                        index.indexValues.binarySearch { it.value.compareTo(indexStartKey) }.let { valueIndex ->
                             when {
                                 valueIndex < 0 -> valueIndex * -1 - 1 // If negative start at first entry point
                                 else -> valueIndex
@@ -57,8 +57,8 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
 
                 var currentSize: UInt = 0u
 
-                for (i in startIndex until index.records.size) {
-                    val indexRecord = index.records[i]
+                for (i in startIndex until index.indexValues.size) {
+                    val indexRecord = index.indexValues[i]
                     val dataRecord = indexRecord.record ?: continue
 
                     if (indexRange.keyOutOfRange(indexRecord.value)) {
@@ -88,21 +88,21 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
 
                 val startIndex = lastKey?.let { endRange ->
                     if (endRange.isEmpty()) {
-                        index.records.lastIndex
+                        index.indexValues.lastIndex
                     } else {
-                        index.records.binarySearch { it.value.compareTo(endRange) }.let { valueIndex ->
+                        index.indexValues.binarySearch { it.value.compareTo(endRange) }.let { valueIndex ->
                             when {
                                 valueIndex < 0 -> valueIndex * -1 - 2 // If negative start at before first entry point because it should be before match
                                 else -> valueIndex
                             }
                         }
                     }
-                } ?: index.records.lastIndex
+                } ?: index.indexValues.lastIndex
 
                 var currentSize: UInt = 0u
 
-                for (i in min(startIndex, index.records.lastIndex) downTo 0) {
-                    val indexRecord = index.records[i]
+                for (i in min(startIndex, index.indexValues.lastIndex) downTo 0) {
+                    val indexRecord = index.indexValues[i]
                     val dataRecord = indexRecord.record ?: continue
 
                     if (indexRange.keyBeforeStart(indexRecord.value)) {

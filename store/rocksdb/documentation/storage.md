@@ -50,9 +50,9 @@ A record is stored with the following structure within the Table column family.
 # Index
 Index makes it easy to search records by values 
 
-- INDEX_REFERENCE:VALUE:KEY = BOOLEAN. An indexed value and key which is prefixed by 
+- INDEX_REFERENCE:VALUE:KEY = VERSION. An indexed value and key which is prefixed by 
   index and stores the key so the record can be found by value. Contains key so multiple 
-  references to same value can exist. BOOLEAN indicates if the index is set or unset.
+  references to same value can exist.
   
 # Unique
 Unique stores a value which uniquely refers to a data record key. 

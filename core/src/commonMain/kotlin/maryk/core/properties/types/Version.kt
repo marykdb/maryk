@@ -34,6 +34,11 @@ data class Version(
         val patch by number(3u, Version::patch, type = UInt16)
     }
 
+    override fun toString(): String {
+        val patch = if(patch != UShort.MIN_VALUE) {".${patch}" } else ""
+        return "${major}.${minor}$patch"
+    }
+
     companion object : ValueDataModel<Version, Properties>(
         name = "TestValueObject",
         properties = Properties
@@ -45,8 +50,7 @@ data class Version(
         )
 
         override fun writeJson(obj: Version, writer: IsJsonLikeWriter, context: IsPropertyContext?) {
-            val patch = if(obj.patch != UShort.MIN_VALUE) {".${obj.patch}" } else ""
-            writer.writeString("${obj.major}.${obj.minor}$patch")
+            writer.writeString(obj.toString())
         }
 
         override fun readJsonToMap(reader: IsJsonLikeReader, context: IsPropertyContext?): MutableValueItems {

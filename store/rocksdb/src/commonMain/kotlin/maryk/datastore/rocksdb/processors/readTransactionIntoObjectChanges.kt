@@ -22,11 +22,11 @@ import maryk.core.query.changes.VersionedChanges
 import maryk.datastore.rocksdb.DBIterator
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
+import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.rocksdb.processors.helpers.checkExistence
 import maryk.datastore.rocksdb.processors.helpers.historicQualifierRetriever
 import maryk.datastore.rocksdb.processors.helpers.nonHistoricQualifierRetriever
 import maryk.datastore.rocksdb.processors.helpers.readValue
-import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
 
 /** Process values for [key] from transaction to a DataObjectWithChanges object */
@@ -38,11 +38,12 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
     select: RootPropRefGraph<P>?,
     fromVersion: ULong,
     toVersion: ULong?,
+    maxVersions: UInt,
     cachedRead: (IsPropertyReferenceForCache<*, *>, ULong, () -> Any?) -> Any?
 ): DataObjectVersionedChange<DM>? {
     val changes: List<VersionedChanges>
 
-    if (toVersion == null) {
+    if (toVersion == null && maxVersions == 1u) {
         checkExistence(iterator, key)
 
         // Will start by going to next key so will miss the creation timestamp
@@ -69,8 +70,6 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
                     Value -> {
                         val valueBytes = iterator.value()
                         currentVersion = valueBytes.readVersionBytes()
-
-
 
                         if (currentVersion >= fromVersion) {
                             cachedRead(reference, currentVersion) {
@@ -140,7 +139,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
         var currentVersion: ULong = creationVersion
 
         // Will start by going to next key so will miss the creation timestamp
-        val getQualifier = iterator.historicQualifierRetriever(key, toVersion) { version ->
+        val getQualifier = iterator.historicQualifierRetriever(key, toVersion ?: ULong.MAX_VALUE, maxVersions) { version ->
             currentVersion = version
         }
 

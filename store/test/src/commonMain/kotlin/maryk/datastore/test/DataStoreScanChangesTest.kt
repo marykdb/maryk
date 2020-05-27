@@ -6,14 +6,17 @@ import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.changes.VersionedChanges
+import maryk.core.query.changes.change
 import maryk.core.query.orders.Order.Companion.descending
 import maryk.core.query.orders.ascending
 import maryk.core.query.orders.descending
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
+import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.scanChanges
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.datastore.shared.IsDataStore
 import maryk.test.assertType
 import maryk.test.models.Log
@@ -37,7 +40,8 @@ class DataStoreScanChangesTest(
         "executeScanChangesRequestWithLimit" to ::executeScanChangesRequestWithLimit,
         "executeScanChangesRequestWithToVersion" to ::executeScanChangesRequestWithToVersion,
         "executeScanChangesRequestWithFromVersion" to ::executeScanChangesRequestWithFromVersion,
-        "executeScanChangesRequestWithSelect" to ::executeScanChangesRequestWithSelect
+        "executeScanChangesRequestWithSelect" to ::executeScanChangesRequestWithSelect,
+        "executeScanChangesRequestWithMaxVersions" to ::executeScanChangesRequestWithMaxVersions
     )
 
     private val logs = arrayOf(
@@ -260,6 +264,81 @@ class DataStoreScanChangesTest(
                 )
             ) { it.changes }
             expect(keys[2]) { it.key }
+        }
+    }
+
+    private fun executeScanChangesRequestWithMaxVersions() = runSuspendingTest {
+        if (dataStore.keepAllVersions) {
+            val collectedVersions = mutableListOf<ULong>()
+
+            val change1 = Change(Log { message::ref } with "A change 1")
+            dataStore.execute(
+                Log.change(
+                    keys[2].change(change1)
+                )
+            ).also {
+                assertType<ChangeSuccess<Log>>(it.statuses.first()).apply {
+                    collectedVersions.add(version)
+                }
+            }
+
+            val change2 = Change(Log { message::ref } with "A change 2")
+            dataStore.execute(
+                Log.change(
+                    keys[2].change(change2)
+                )
+            ).also {
+                assertType<ChangeSuccess<Log>>(it.statuses.first()).apply {
+                    collectedVersions.add(version)
+                }
+            }
+
+            val change3 = Change(Log { message::ref } with "A change 3")
+            dataStore.execute(
+                Log.change(
+                    keys[2].change(change3)
+                )
+            ).also {
+                assertType<ChangeSuccess<Log>>(it.statuses.first()).apply {
+                    collectedVersions.add(version)
+                }
+            }
+
+            val scanResponse = dataStore.execute(
+                Log.scanChanges(
+                    startKey = keys[2],
+                    maxVersions = 2u
+                )
+            )
+
+            expect(3) { scanResponse.changes.size }
+
+            // Mind that Log is sorted in reverse so it goes back in time going forward
+            scanResponse.changes[0].let {
+                expect(
+                    listOf(
+                        VersionedChanges(version = lowestVersion, changes = listOf(
+                            ObjectCreate,
+                            Change(
+                                Log { severity::ref } with INFO,
+                                Log { timestamp::ref } with DateTime(2018, 11, 14, 12, 33, 22, 111)
+                            )
+                        )),
+                        VersionedChanges(version = collectedVersions[1], changes = listOf(change2)),
+                        VersionedChanges(version = collectedVersions[2], changes = listOf(change3))
+                    )
+                ) { it.changes }
+                expect(keys[2]) { it.key }
+            }
+        } else {
+            assertFailsWith<RequestException> {
+                dataStore.execute(
+                    Log.scanChanges(
+                        startKey = keys[2],
+                        maxVersions = 2u
+                    )
+                )
+            }
         }
     }
 }

@@ -10,6 +10,7 @@ import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.shared.StoreAction
+import maryk.datastore.shared.checkMaxVersions
 import maryk.rocksdb.use
 
 internal typealias ScanChangesStoreAction<DM, P> = StoreAction<DM, P, ScanChangesRequest<DM, P>, ChangesResponse<DM>>
@@ -26,10 +27,12 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
     val columnFamilies = dataStore.getColumnFamilies(dbIndex)
 
     DBAccessor(dataStore).use { dbAccessor ->
-        val columnToScan = if (scanRequest.toVersion != null && columnFamilies is HistoricTableColumnFamilies) {
+        val columnToScan = if ((scanRequest.toVersion != null || scanRequest.maxVersions > 1u) && columnFamilies is HistoricTableColumnFamilies) {
             columnFamilies.historic.table
         } else columnFamilies.table
         val iterator = dbAccessor.getIterator(dataStore.defaultReadOptions, columnToScan)
+
+        scanRequest.checkMaxVersions(dataStore.keepAllVersions)
 
         processScan(
             scanRequest,
@@ -50,6 +53,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
                 scanRequest.select,
                 scanRequest.fromVersion,
                 scanRequest.toVersion,
+                scanRequest.maxVersions,
                 cacheReader
             )?.let {
                 // Only add if not null

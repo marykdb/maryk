@@ -9,10 +9,13 @@ import maryk.lib.extensions.compare.match
 internal fun DBIterator.historicQualifierRetriever(
     key: Key<*>,
     toVersion: ULong,
+    maxVersions: UInt,
     handleVersion: (ULong) -> Unit
 ): (((Int) -> Byte, Int) -> Unit) -> Boolean {
     var lastQualifier: ByteArray? = null
     var lastQualifierLength = 0
+    var counter = 0u
+
     return { resultHandler ->
         val offset = key.size
 
@@ -29,7 +32,11 @@ internal fun DBIterator.historicQualifierRetriever(
                 val versionOffset = qualifier.size - toVersionBytes.size
                 val currentLastQualifier = lastQualifier
                 if (currentLastQualifier != null && qualifier.match(offset, currentLastQualifier, versionOffset - offset, offset, lastQualifierLength)) {
-                    continue@qualifierFinder // Already returned this qualifier so skip
+                    if (counter >= maxVersions) {
+                        continue@qualifierFinder // Already returned this qualifier so skip
+                    }
+                } else {
+                    counter = 0u
                 }
 
                 if (toVersionBytes.compareToWithOffsetLength(qualifier, versionOffset) <= 0) {
@@ -44,6 +51,9 @@ internal fun DBIterator.historicQualifierRetriever(
                     )
 
                     resultHandler({ qualifier[offset+it] }, lastQualifierLength)
+
+                    counter++
+
                     break
                 } else continue
             }

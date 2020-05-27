@@ -30,7 +30,8 @@ class DataStoreGetChangesTest(
         "executeSimpleGetChangesRequest" to ::executeSimpleGetChangesRequest,
         "executeToVersionGetChangesRequest" to ::executeToVersionGetChangesRequest,
         "executeFromVersionGetChangesRequest" to ::executeFromVersionGetChangesRequest,
-        "executeGetChangesRequestWithSelect" to ::executeGetChangesRequestWithSelect
+        "executeGetChangesRequestWithSelect" to ::executeGetChangesRequestWithSelect,
+        "executeGetChangesRequestWithMaxVersions" to ::executeGetChangesRequestWithMaxVersions
     )
 
     override fun initData() {
@@ -152,6 +153,75 @@ class DataStoreGetChangesTest(
                 it.changes
             }
             expect(keys[0]) { it.key }
+        }
+    }
+
+    private fun executeGetChangesRequestWithMaxVersions() = runSuspendingTest {
+        if (dataStore.keepAllVersions) {
+            val collectedVersions = mutableListOf<ULong>()
+
+            val change1 = Change(SimpleMarykModel { value::ref } with "ha change 1")
+            dataStore.execute(
+                SimpleMarykModel.change(
+                    keys[1].change(change1)
+                )
+            ).also {
+                assertType<ChangeSuccess<SimpleMarykModel>>(it.statuses.first()).apply {
+                    collectedVersions.add(version)
+                }
+            }
+
+            val change2 = Change(SimpleMarykModel { value::ref } with "ha change 2")
+            dataStore.execute(
+                SimpleMarykModel.change(
+                    keys[1].change(change2)
+                )
+            ).also {
+                assertType<ChangeSuccess<SimpleMarykModel>>(it.statuses.first()).apply {
+                    collectedVersions.add(version)
+                }
+            }
+
+            val change3 = Change(SimpleMarykModel { value::ref } with "ha change 3")
+            dataStore.execute(
+                SimpleMarykModel.change(
+                    keys[1].change(change3)
+                )
+            ).also {
+                assertType<ChangeSuccess<SimpleMarykModel>>(it.statuses.first()).apply {
+                    collectedVersions.add(version)
+                }
+            }
+
+            val getResponse = dataStore.execute(
+                SimpleMarykModel.getChanges(
+                    keys[1],
+                    maxVersions = 2u
+                )
+            )
+
+            expect(1) { getResponse.changes.size }
+
+            // Mind that Log is sorted in reverse so it goes back in time going forward
+            getResponse.changes[0].let {
+                expect(
+                    listOf(
+                        VersionedChanges(version = lowestVersion, changes = listOf(ObjectCreate)),
+                        VersionedChanges(version = collectedVersions[1], changes = listOf(change2)),
+                        VersionedChanges(version = collectedVersions[2], changes = listOf(change3))
+                    )
+                ) { it.changes }
+                expect(keys[1]) { it.key }
+            }
+        } else {
+            assertFailsWith<RequestException> {
+                dataStore.execute(
+                    SimpleMarykModel.getChanges(
+                        keys[1],
+                        maxVersions = 2u
+                    )
+                )
+            }
         }
     }
 }

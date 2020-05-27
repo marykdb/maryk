@@ -26,6 +26,7 @@ import maryk.datastore.rocksdb.processors.helpers.getLastVersion
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
 import maryk.datastore.shared.ScanType.IndexScan
 import maryk.datastore.shared.StoreAction
+import maryk.datastore.shared.checkMaxVersions
 import maryk.lib.recyclableByteArray
 import maryk.rocksdb.rocksDBNotFound
 import maryk.rocksdb.use
@@ -53,10 +54,12 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
     var insertionIndex = -1
 
     DBAccessor(dataStore).use { dbAccessor ->
-        val columnToScan = if (scanRequest.toVersion != null && columnFamilies is HistoricTableColumnFamilies) {
+        val columnToScan = if ((scanRequest.toVersion != null || scanRequest.maxVersions > 1u) && columnFamilies is HistoricTableColumnFamilies) {
             columnFamilies.historic.table
         } else columnFamilies.table
         val iterator = dbAccessor.getIterator(dataStore.defaultReadOptions, columnToScan)
+
+        scanRequest.checkMaxVersions(dataStore.keepAllVersions)
 
         fun getSingleValues(key: Key<DM>, creationVersion: ULong, cacheReader: (IsPropertyReferenceForCache<*, *>, ULong, () -> Any?) -> Any?): ValuesWithMetaData<DM, P>? {
             dbAccessor.getIterator(dataStore.defaultReadOptions, columnToScan).use { deepIterator ->
@@ -114,6 +117,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
                 scanRequest.select,
                 scanRequest.fromVersion,
                 scanRequest.toVersion,
+                scanRequest.maxVersions,
                 cacheReader
             )?.let { objectChange ->
                 updates += objectChange.changes.mapNotNull { versionedChange ->

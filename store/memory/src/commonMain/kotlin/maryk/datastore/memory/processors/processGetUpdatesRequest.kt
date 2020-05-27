@@ -15,6 +15,7 @@ import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.datastore.memory.IsStoreFetcher
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.StoreAction
+import maryk.datastore.shared.checkMaxVersions
 import maryk.datastore.shared.checkToVersion
 
 internal typealias GetUpdatesStoreAction<DM, P> = StoreAction<DM, P, GetUpdatesRequest<DM, P>, UpdatesResponse<DM, P>>
@@ -33,6 +34,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
     val recordFetcher = createStoreRecordFetcher(dataStoreFetcher)
 
     getRequest.checkToVersion(dataStore.keepAllVersions)
+    getRequest.checkMaxVersions(dataStore.keepAllVersions)
 
     val matchingKeys = mutableListOf<Key<DM>>()
     val updates = mutableListOf<IsUpdateResponse<DM, P>>()
@@ -59,6 +61,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
                 getRequest.select,
                 getRequest.fromVersion,
                 getRequest.toVersion,
+                getRequest.maxVersions,
                 record
             )?.let { objectChange ->
                 updates += objectChange.changes.map { versionedChange ->

@@ -23,6 +23,7 @@ import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.ScanType.IndexScan
 import maryk.datastore.shared.StoreAction
+import maryk.datastore.shared.checkMaxVersions
 
 internal typealias ScanUpdatesStoreAction<DM, P> = StoreAction<DM, P, ScanUpdatesRequest<DM, P>, UpdatesResponse<DM, P>>
 internal typealias AnyScanUpdatesStoreAction = ScanUpdatesStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
@@ -71,10 +72,13 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
 
         lastResponseVersion = maxOf(lastResponseVersion, record.lastVersion.timestamp)
 
+        scanRequest.checkMaxVersions(dataStore.keepAllVersions)
+
         scanRequest.dataModel.recordToObjectChanges(
             scanRequest.select,
             scanRequest.fromVersion,
             scanRequest.toVersion,
+            scanRequest.maxVersions,
             record
         )?.let { objectChange ->
             updates += objectChange.changes.mapNotNull { versionedChange ->

@@ -17,6 +17,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordT
     select: RootPropRefGraph<P>?,
     fromVersion: ULong,
     toVersion: ULong?,
+    maxVersions: UInt,
     record: DataRecord<DM, P>
 ): DataObjectVersionedChange<DM>? {
     var valueIndex = -1
@@ -50,15 +51,29 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordT
                     if (node.history.last().version < fromVersion) {
                         // skip value because last is below fromVersion
                     } else {
-                        when (val latest = node.history.findLast { it.version >= fromVersion && (toVersion == null || it.version < toVersion) }) {
-                            null -> {} // skip because not a value
-                            is DataRecordValue<*> -> {
-                                valueWithVersionReader(latest.version.timestamp, latest.value)
+                        val lastIndex = if (toVersion == null) {
+                            node.history.lastIndex
+                        } else {
+                            node.history.indexOfLast { it.version < toVersion }
+                        }
+
+                        if(lastIndex != -1) {
+                            for (count in 0 until maxVersions.toInt()) {
+                                val currentValue = node.history.getOrNull(lastIndex - count)
+                                    ?: break // No values left so break the loop
+
+                                if (currentValue.version < fromVersion) {
+                                    break // Before from version so break
+                                }
+
+                                when (currentValue) {
+                                    is DataRecordValue<*> ->
+                                        valueWithVersionReader(currentValue.version.timestamp, currentValue.value)
+                                    is DeletedValue<*> ->
+                                        valueWithVersionReader(currentValue.version.timestamp, null)
+                                    else -> throw TypeException("Unknown value type")
+                                }
                             }
-                            is DeletedValue<*> -> {
-                                valueWithVersionReader(latest.version.timestamp, null)
-                            }
-                            else -> throw TypeException("Unknown value type")
                         }
                     }
                 }

@@ -9,6 +9,7 @@ import maryk.core.query.responses.ChangesResponse
 import maryk.datastore.memory.IsStoreFetcher
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.StoreAction
+import maryk.datastore.shared.checkMaxVersions
 import maryk.datastore.shared.checkToVersion
 
 internal typealias GetChangesStoreAction<DM, P> = StoreAction<DM, P, GetChangesRequest<DM, P>, ChangesResponse<DM>>
@@ -28,6 +29,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
     val recordFetcher = createStoreRecordFetcher(dataStoreFetcher)
 
     getRequest.checkToVersion(dataStore.keepAllVersions)
+    getRequest.checkMaxVersions(dataStore.keepAllVersions)
 
     for (key in getRequest.keys) {
         val index = dataStore.records.binarySearch { it.key.compareTo(key) }
@@ -44,6 +46,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
                 getRequest.select,
                 getRequest.fromVersion,
                 getRequest.toVersion,
+                getRequest.maxVersions,
                 record
             )?.let {
                 // Only add if not null

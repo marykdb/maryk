@@ -24,11 +24,11 @@ import maryk.core.values.Values
 import maryk.datastore.rocksdb.DBIterator
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
+import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.rocksdb.processors.helpers.checkExistence
 import maryk.datastore.rocksdb.processors.helpers.historicQualifierRetriever
 import maryk.datastore.rocksdb.processors.helpers.nonHistoricQualifierRetriever
 import maryk.datastore.rocksdb.processors.helpers.readValue
-import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
 
 /**
@@ -139,7 +139,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
 
         var currentVersion: ULong = 0uL
         // Will start by going to next key so will miss the creation timestamp
-        val getQualifier = iterator.historicQualifierRetriever(key, toVersion) { version ->
+        val getQualifier = iterator.historicQualifierRetriever(key, toVersion, 1u) { version ->
             currentVersion = version
             maxVersion = maxOf(currentVersion, maxVersion)
         }

@@ -1,18 +1,7 @@
 # Maryk
 
-Maryk is a way of defining rich data structures which enable you to create
-data driven APIs for complex organizations. 
-
-**Advantages of structuring data models in Maryk**
-
-- Data models define validations so it is easy to validate data on all 
-platforms.
-- Data models provide an easy way to define a 
-[key structure](core/documentation/key.md) which is ideal for NoSQL scans and 
-fetches.
-- All data are byte encodable into a storage and scan friendly format. 
-
-This list is expanded as more functionality is ported and lands
+Maryk is a way of defining data structures which enable you to validate, serialize or store them
+in a data store. In the data store all values are stored with version so it is easy to query any updates.
 
 ## Projects
 All core projects are multi-platform kotlin projects and support JS and JVM
@@ -23,3 +12,13 @@ All core projects are multi-platform kotlin projects and support JS and JVM
   projects like Base64, String, Date, UUID and more
 - [json](json/README.md) - A streaming JSON parser and writer
 - [yaml](yaml/README.md) - A streaming YAML parser and writer
+- [generator](generator/README.md) - Generator for Kotlin code and protobuf schemas from Models.
+- [test library](testlib/README.md) - Library which contains methods to help with writing tests
+- [test models](testmodels/README.md) - Maryk Models which can be useful in testing library code
+- Stores
+    - [Shared](store/shared/README.md) - Shared code useful to build Maryk stores
+    - [Memory](store/memory/README.md) - In memory store implementation. Does not persist to disk. 
+      Useful for testing.
+    - [RocksDB](store/rocksdb/README.md) - RocksDB store implementation
+    - [test](store/test/README.md) - Contains common tests to test if a store implementation is 
+      working correctly

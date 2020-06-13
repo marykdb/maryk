@@ -26,7 +26,7 @@ class InMemoryDataStore(
         Pair(dataModel.name, index)
     }.toMap()
 
-    override val storeActor = this.storeActor(this, storeExecutor)
+    override val storeActor = this.storeActor(this, storeActorHasStarted, storeExecutor)
 
     override fun close() {
         super.close()

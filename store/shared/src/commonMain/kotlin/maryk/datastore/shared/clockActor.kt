@@ -9,6 +9,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import maryk.core.clock.HLC
 
@@ -23,11 +24,11 @@ class DeferredClock(
 @OptIn(
     ExperimentalCoroutinesApi::class, FlowPreview::class
 )
-internal fun CoroutineScope.clockActor(): SendChannel<DeferredClock> =
+internal fun CoroutineScope.clockActor(hasStarted: CompletableDeferred<Unit>): SendChannel<DeferredClock> =
     BroadcastChannel<DeferredClock>(Channel.BUFFERED).also {
         this.launch {
             var currentHighestTime = HLC()
-            it.asFlow().collect { action ->
+            it.asFlow().onStart { hasStarted.complete(Unit) }.collect { action ->
                 try {
                     currentHighestTime = currentHighestTime.calculateMaxTimeStamp(action.toCompare)
                     action.completableDeferred.complete(currentHighestTime)

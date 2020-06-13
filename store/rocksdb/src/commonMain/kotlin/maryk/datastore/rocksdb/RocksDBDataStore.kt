@@ -63,7 +63,7 @@ class RocksDBDataStore(
 
     internal val db: RocksDB
 
-    override val storeActor = this.storeActor(this, storeExecutor)
+    override val storeActor = this.storeActor(this, storeActorHasStarted, storeExecutor)
 
     private val defaultWriteOptions = WriteOptions()
     internal val defaultReadOptions = ReadOptions().apply {

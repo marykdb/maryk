@@ -1,5 +1,6 @@
 package maryk.datastore.memory
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -8,6 +9,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.IsRootValuesDataModel
@@ -22,6 +24,7 @@ import maryk.datastore.shared.updates.Update
 )
 internal fun CoroutineScope.storeActor(
     store: InMemoryDataStore,
+    hasStarted: CompletableDeferred<Unit>,
     executor: StoreExecutor<*, *>
 ): StoreActor =
     BroadcastChannel<StoreAction<*, *, *, *>>(
@@ -30,7 +33,7 @@ internal fun CoroutineScope.storeActor(
         this.launch {
             val dataStores = mutableMapOf<UInt, DataStore<*, *>>()
 
-            it.asFlow().collect { msg ->
+            it.asFlow().onStart { hasStarted.complete(Unit) }.collect { msg ->
                 try {
                     val dataStoreFetcher = { model: IsRootValuesDataModel<*> ->
                         val index = store.dataModelIdsByString[model.name] ?: throw DefNotFoundException(model.name)

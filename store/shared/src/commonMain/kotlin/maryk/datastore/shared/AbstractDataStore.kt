@@ -28,6 +28,7 @@ import maryk.datastore.shared.updates.RemoveUpdateListenerAction
 import maryk.datastore.shared.updates.UpdateListenerForGet
 import maryk.datastore.shared.updates.UpdateListenerForScan
 import maryk.datastore.shared.updates.processUpdateActor
+import maryk.lib.concurrency.AtomicReference
 
 typealias StoreActor = SendChannel<StoreAction<*, *, *, *>>
 
@@ -39,21 +40,37 @@ abstract class AbstractDataStore(
 ): IsDataStore, CoroutineScope {
     override val coroutineContext = DISPATCHER + SupervisorJob()
 
-    val updateSendChannel = processUpdateActor<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>()
+    private val initIsDone: AtomicReference<Boolean> = AtomicReference(false)
 
+    private val updateSendChannelHasStarted = CompletableDeferred<Unit>()
+    val updateSendChannel = processUpdateActor<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(updateSendChannelHasStarted)
+
+    protected val storeActorHasStarted = CompletableDeferred<Unit>()
     /** StoreActor to run actions against.*/
     abstract val storeActor: StoreActor
+
+    private val clockActorHasStarted = CompletableDeferred<Unit>()
+    // Clock actor holds/calculates the latest HLC clock instance
+    private val clockActor = this.clockActor(clockActorHasStarted)
 
     override val dataModelIdsByString = dataModelsById.map { (index, dataModel) ->
         Pair(dataModel.name, index)
     }.toMap()
 
-    // Clock actor holds/calculates the latest HLC clock instance
-    private val clockActor = this.clockActor()
+    suspend fun waitForInit() {
+        if (!initIsDone.get()) {
+            clockActorHasStarted.await()
+            storeActorHasStarted.await()
+            updateSendChannelHasStarted.await()
+            initIsDone.set(true)
+        }
+    }
 
     override suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
         request: RQ
     ): RP {
+        waitForInit()
+
         val response = CompletableDeferred<RP>()
 
         val clock = DeferredClock().also {
@@ -76,6 +93,8 @@ abstract class AbstractDataStore(
         if (request.toVersion != null) {
             throw RequestException("Cannot use toVersion on an executeFlow request")
         }
+
+        waitForInit()
 
         val dataModelId = getDataModelId(request.dataModel)
 

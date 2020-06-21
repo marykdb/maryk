@@ -59,7 +59,10 @@ class RocksDBDataStore(
     private val uniqueIndicesByDataModelIndex = mutableMapOf<UInt, List<ByteArray>>()
 
     // Only create Options if no Options were passed. Will take ownership and close it if this object is closed
-    private val ownRocksDBOptions: DBOptions? = if (rocksDBOptions == null) DBOptions() else null
+    private val ownRocksDBOptions: DBOptions? =
+        if (rocksDBOptions == null) {
+            DBOptions().setCreateIfMissing(true).setCreateMissingColumnFamilies(true)
+        } else null
 
     internal val db: RocksDB
 

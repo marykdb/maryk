@@ -12,7 +12,6 @@ import maryk.core.query.requests.change
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
-import maryk.rocksdb.DBOptions
 import maryk.test.assertType
 import maryk.test.models.ModelV1
 import maryk.test.models.ModelV1_1
@@ -24,11 +23,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class RocksDBDataStoreMigrationTest {
-    private val rocksDBOptions = DBOptions().apply {
-        setCreateIfMissing(true)
-        setCreateMissingColumnFamilies(true)
-    }
-
     private val basePath = "./build/test-database"
 
     class CustomException : Throwable()
@@ -41,8 +35,7 @@ class RocksDBDataStoreMigrationTest {
             relativePath = path,
             dataModelsById = mapOf(
                 1u to ModelV1
-            ),
-            rocksDBOptions = rocksDBOptions
+            )
         )
 
         dataStore.close()
@@ -52,8 +45,7 @@ class RocksDBDataStoreMigrationTest {
             relativePath = path,
             dataModelsById = mapOf(
                 1u to ModelV1_1
-            ),
-            rocksDBOptions = rocksDBOptions
+            )
         )
 
         dataStore.close()
@@ -66,7 +58,6 @@ class RocksDBDataStoreMigrationTest {
                 dataModelsById = mapOf(
                     1u to ModelV2
                 ),
-                rocksDBOptions = rocksDBOptions,
                 migrationHandler = null
             )
         }
@@ -78,7 +69,6 @@ class RocksDBDataStoreMigrationTest {
                 dataModelsById = mapOf(
                     1u to ModelV2
                 ),
-                rocksDBOptions = rocksDBOptions,
                 migrationHandler = { _, storedDataModel, newDataModel ->
                     assertEquals(ModelV2, newDataModel)
                     assertEquals(ModelV1_1.version, storedDataModel.version)
@@ -99,8 +89,7 @@ class RocksDBDataStoreMigrationTest {
             relativePath = path,
             dataModelsById = mapOf(
                 1u to ModelV2
-            ),
-            rocksDBOptions = rocksDBOptions
+            )
         )
 
         val addResult = dataStore.execute(
@@ -142,8 +131,7 @@ class RocksDBDataStoreMigrationTest {
             relativePath = path,
             dataModelsById = mapOf(
                 1u to ModelV2ExtraIndex
-            ),
-            rocksDBOptions = rocksDBOptions
+            )
         )
 
         val scanResponse = dataStore.execute(

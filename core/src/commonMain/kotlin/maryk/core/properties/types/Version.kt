@@ -14,7 +14,7 @@ import maryk.json.JsonToken.StartDocument
 import maryk.json.JsonToken.Value
 import maryk.lib.exceptions.ParseException
 
-private val versionRegEx = Regex("^([0-9]+)[.]([0-9]+)([.]([0-9]+))?$")
+private val versionRegEx = Regex("^([0-9]+)([.]([0-9]+))?([.]([0-9]+))?$")
 
 /**
  * A Version according to semantic versioning.
@@ -62,17 +62,18 @@ data class Version(
                 is Value<*> -> {
                     val value = token.value.toString()
 
-                    val (major, minor, _, patch) = versionRegEx.matchEntire(value)?.destructured
-                        ?: throw ParseException("Invalid version: ${value}")
+                    val (major, _, minor, _, patch) = versionRegEx.matchEntire(value)?.destructured
+                        ?: throw ParseException("Invalid version: $value")
 
                     MutableValueItems().also { items ->
                         try {
                             items += ValueItem(Properties.major.index, major.toUShort())
-                            items += ValueItem(Properties.minor.index, minor.toUShort())
+                            val realMinor = if (minor.isNotBlank()) minor.toUShort() else 0.toUShort()
+                            items += ValueItem(Properties.minor.index, realMinor)
                             val realPatch = if (patch.isNotBlank()) patch.toUShort() else 0.toUShort()
                             items += ValueItem(Properties.patch.index, realPatch)
                         } catch (e: Throwable) {
-                            throw ParseException("Invalid version: ${value}", e)
+                            throw ParseException("Invalid version: $value", e)
                         }
                     }
                 }

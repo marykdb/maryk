@@ -30,7 +30,7 @@ abstract class AbstractValuesDataModel<DM : IsValuesDataModel<P>, P : PropertyDe
         createValidationUmbrellaException(refGetter) { addException ->
             for ((index, orgValue) in values.values) {
                 val definition = properties[index] ?: continue
-                val value = values.process<Any?>(definition, orgValue) ?: continue // skip empty values
+                val value = values.process<Any?>(definition, orgValue, true) { true } ?: continue // skip empty values
                 try {
                     definition.validate(
                         newValue = value,

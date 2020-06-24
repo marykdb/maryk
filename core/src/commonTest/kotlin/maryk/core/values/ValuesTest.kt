@@ -1,26 +1,16 @@
 package maryk.core.values
 
-import maryk.core.exceptions.RequestException
 import maryk.core.properties.graph.graph
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.types.Date
 import maryk.core.properties.types.TypedValue
-import maryk.core.query.changes.Change
-import maryk.core.query.changes.ListChange
-import maryk.core.query.changes.SetChange
-import maryk.core.query.changes.change
-import maryk.core.query.pairs.with
-import maryk.core.query.requests.change
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.Option.V2
 import maryk.test.models.SimpleMarykTypeEnum.S1
 import maryk.test.models.TestMarykModel
-import maryk.test.models.TestMarykModel.Properties
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 import kotlin.test.expect
 
@@ -115,6 +105,39 @@ class ValuesTest {
         expect("twelve") { values[TestMarykModel { map refAt Time(12, 23, 34) }] }
         expect("test") { values[TestMarykModel { embeddedValues { value::ref } }] }
         expect("another test") { values[TestMarykModel { embeddedValues { model { value::ref } } }] }
+    }
+
+    @Test
+    fun testGetValueNotReified() {
+        val values = TestMarykModel(
+            string = "hello world",
+            int = 5,
+            uint = 3u,
+            double = 2.3,
+            dateTime = DateTime(2018, 7, 18),
+            listOfString = listOf(
+                "v1", "v2", "v3"
+            ),
+            map = mapOf(
+                Time(11, 22, 33) to "eleven",
+                Time(12, 23, 34) to "twelve"
+            ),
+            embeddedValues = EmbeddedMarykModel(
+                value = "test",
+                model = EmbeddedMarykModel(
+                    value = "another test"
+                )
+            )
+        )
+
+        expect("hello world") { values.get { string } }
+        expect(2.3) { values.get { double } }
+        expect(DateTime(2018, 7, 18)) { values.get { dateTime } }
+        expect("v3") { values.get { listOfString }?.get(2) }
+        expect(listOf("v1", "v2", "v3")) { values.get { listOfString } }
+        expect("twelve") { values.get { map }?.get(Time(12, 23, 34)) }
+        expect("test") { values.get { embeddedValues }?.get { value } }
+        expect("another test") { values.get { embeddedValues }?.get { model }?.get { value } }
     }
 
     @Test

@@ -54,12 +54,16 @@ abstract class AbstractValues<DO : Any, DM : IsDataModel<P>, P : AbstractPropert
         val valueDef = this.dataModel.properties[index]
             ?: throw DefNotFoundException("Value definition of index $index is missing")
 
-        return process(valueDef, value)
+        return process(valueDef, value, null is T) {
+            it is T
+        }
     }
 
-    inline fun <reified T> process(
+    fun <T: Any?> process(
         valueDef: IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>,
-        value: Any?
+        value: Any?,
+        nullAllowed: Boolean,
+        isType: (Any?) -> Boolean
     ): T {
         // Resolve Injects
         val resolvedValue = if (value is AnyInject) {
@@ -68,9 +72,11 @@ abstract class AbstractValues<DO : Any, DM : IsDataModel<P>, P : AbstractPropert
 
         val transformedValue = valueDef.convertToCurrentValue(resolvedValue)
 
+        @Suppress("UNCHECKED_CAST")
         return when {
-            transformedValue is T -> transformedValue
-            value is T -> value
+            isType(transformedValue) -> transformedValue as T
+            isType(value) -> value as T
+            value == null && nullAllowed -> null as T
             value == Unit -> {
                 if (valueDef.required) {
                     throw ParseException("Property '${valueDef.name}' with value '$value' should be non null because is required")
@@ -93,12 +99,25 @@ abstract class AbstractValues<DO : Any, DM : IsDataModel<P>, P : AbstractPropert
     }
 
     /** Get property from values with wrapper in [getProperty] and convert it to native usage */
+    fun <TI : Any, TO : Any> get(getProperty: P.() -> IsDefinitionWrapper<TI, TO, *, DO>): TO? {
+        @Suppress("UNCHECKED_CAST")
+        return this.invoke(getProperty as P.() -> IsDefinitionWrapper<TI, Any, *, DO>) as TO
+    }
+
+    /** Get property from values with wrapper in [getProperty] and convert it to native usage */
     inline operator fun <TI : Any, reified TO : Any> invoke(getProperty: P.() -> IsDefinitionWrapper<TI, TO, *, DO>): TO? {
         val index = getProperty(
             this.dataModel.properties
         ).index
 
-        return invoke(index)
+        val value = this.original(index)
+
+        val valueDef = this.dataModel.properties[index]
+            ?: throw DefNotFoundException("Value definition of index $index is missing")
+
+        return process(valueDef, value, true) {
+            it is TO?
+        }
     }
 
     /** Get property from values with wrapper in [getProperty] and convert it to native usage */
@@ -296,9 +315,5 @@ inline operator fun <DO : Any, DM : IsDataModel<P>, P : AbstractPropertyDefiniti
     if (this == null) {
         return null
     }
-    val index = getProperty(
-        this.dataModel.properties
-    ).index
-
-    return invoke(index)
+    return invoke(getProperty)
 }

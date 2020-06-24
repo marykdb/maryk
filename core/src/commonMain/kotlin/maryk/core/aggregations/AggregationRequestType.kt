@@ -48,7 +48,7 @@ sealed class AggregationRequestType(
     object DateHistogramType : AggregationRequestType(52u, "DateHistogram", DateHistogram)
 
     companion object : MultiTypeEnumDefinition<AggregationRequestType>(
-        "AggregationRequestType",
+        AggregationRequestType::class,
         {
             arrayOf(
                 ValueCountType,

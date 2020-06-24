@@ -35,5 +35,5 @@ object UInt8 : UnsignedNumberDescriptor<UByte>(
     override fun ofInt(int: Int) = int.toUByte()
     override fun ofLong(long: Long) = long.toUByte()
     override fun createRandom() = Random.nextUInt(UByte.MAX_VALUE.toUInt()).toUByte()
-    override fun isOfType(value: Any) = value == UByte
+    override fun isOfType(value: Any) = value is UByte
 }

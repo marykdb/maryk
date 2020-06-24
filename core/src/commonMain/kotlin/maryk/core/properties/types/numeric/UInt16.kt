@@ -36,5 +36,5 @@ object UInt16 : UnsignedNumberDescriptor<UShort>(
     override fun ofInt(int: Int) = int.toUShort()
     override fun ofLong(long: Long) = long.toUShort()
     override fun createRandom() = Random.nextInt(UShort.MAX_VALUE.toInt()).toUShort()
-    override fun isOfType(value: Any) = value == UShort
+    override fun isOfType(value: Any) = value is UShort
 }

@@ -33,5 +33,5 @@ object UInt32 : UnsignedNumberDescriptor<UInt>(
     override fun ofInt(int: Int) = int.toUInt()
     override fun ofLong(long: Long) = long.toUInt()
     override fun createRandom() = Random.nextUInt()
-    override fun isOfType(value: Any) = value == UInt
+    override fun isOfType(value: Any) = value is UInt
 }

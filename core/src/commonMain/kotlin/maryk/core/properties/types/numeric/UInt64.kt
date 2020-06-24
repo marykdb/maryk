@@ -33,5 +33,5 @@ object UInt64 : UnsignedNumberDescriptor<ULong>(
     override fun ofInt(int: Int) = int.toULong()
     override fun ofLong(long: Long) = long.toULong()
     override fun createRandom() = Random.nextULong()
-    override fun isOfType(value: Any) = value == UInt64
+    override fun isOfType(value: Any) = value is UInt64
 }

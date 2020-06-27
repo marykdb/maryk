@@ -1,6 +1,5 @@
 package maryk.datastore.test
 
-import maryk.core.exceptions.RequestException
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
@@ -8,7 +7,6 @@ import maryk.core.query.changes.IndexChange
 import maryk.core.query.changes.IndexUpdate
 import maryk.core.query.changes.change
 import maryk.core.query.filters.Equals
-import maryk.core.query.filters.Exists
 import maryk.core.query.filters.Not
 import maryk.core.query.orders.Order.Companion.descending
 import maryk.core.query.orders.ascending
@@ -17,7 +15,6 @@ import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
 import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
-import maryk.core.query.requests.getUpdates
 import maryk.core.query.requests.scanUpdates
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.updates.AdditionUpdate
@@ -35,7 +32,6 @@ import maryk.test.models.TestMarykModel
 import maryk.test.models.TestMarykModel.Properties
 import maryk.test.runSuspendingTest
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 import kotlin.test.expect
 
@@ -594,8 +590,8 @@ class DataStoreScanUpdatesTest(
                     IndexChange(listOf(
                         IndexUpdate(
                             index = Bytes("BAILKQIKOQIKEQ"),
-                            indexKey = Bytes("f///sNzFfwABgAAAAAAAzGMAAAEAAAA"),
-                            previousIndexKey = Bytes("f///sNzFfwABf///+wAAzGMAAAEAAAA")
+                            indexKey = Bytes("f///sNzFfwABgAAAAAQCBwAAzGMAAAE"),
+                            previousIndexKey = Bytes("f///sNzFfwABf///+wQCBwAAzGMAAAE")
                         ),
                         IndexUpdate(
                             index = Bytes("ChE"),
@@ -767,8 +763,8 @@ class DataStoreScanUpdatesTest(
                     IndexChange(listOf(
                         IndexUpdate(
                             index = Bytes("BAILKQIKOQIKEQ"),
-                            indexKey = Bytes("f///sNzFfwABf////QAAzGMAAAEAAAA"),
-                            previousIndexKey = Bytes("f///sNzFfwABf///+wAAzGMAAAEAAAA")
+                            indexKey = Bytes("f///sNzFfwABf////QQCBwAAzGMAAAE"),
+                            previousIndexKey = Bytes("f///sNzFfwABf///+wQCBwAAzGMAAAE")
                         ),
                         IndexUpdate(
                             index = Bytes("ChE"),

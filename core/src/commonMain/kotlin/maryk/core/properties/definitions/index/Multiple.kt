@@ -47,7 +47,7 @@ data class Multiple(
         }
 
         // Write the sizes in backwards order
-        for (sizeIndex in sizes.lastIndex..0) {
+        for (sizeIndex in sizes.lastIndex downTo 0) {
             sizes[sizeIndex].writeVarBytes(writer)
         }
 

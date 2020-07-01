@@ -5,10 +5,7 @@ import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IsCoreEnum
 import maryk.core.properties.enum.TypeEnum
-import maryk.core.query.changes.ChangeType
-import maryk.core.query.changes.Check
-import maryk.core.query.changes.Delete
-import maryk.core.query.changes.ObjectCreateModel
+import kotlin.native.concurrent.SharedImmutable
 
 /** Indexed type of update responses */
 enum class UpdateResponseType(
@@ -25,6 +22,7 @@ enum class UpdateResponseType(
     )
 }
 
+@SharedImmutable
 internal val mapOfUpdateResponses = mapOf(
     UpdateResponseType.Addition to EmbeddedObjectDefinition(dataModel = { AdditionUpdate }),
     UpdateResponseType.Change to EmbeddedObjectDefinition(dataModel = { ChangeUpdate }),

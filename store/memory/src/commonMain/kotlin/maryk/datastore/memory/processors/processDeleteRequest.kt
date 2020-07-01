@@ -16,10 +16,12 @@ import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.updates.Update
 import maryk.datastore.shared.updates.Update.Deletion
 import maryk.lib.extensions.compare.compareTo
+import kotlin.native.concurrent.SharedImmutable
 
 internal typealias DeleteStoreAction<DM, P> = StoreAction<DM, P, DeleteRequest<DM>, DeleteResponse<DM>>
 internal typealias AnyDeleteStoreAction = DeleteStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
 
+@SharedImmutable
 internal val objectSoftDeleteQualifier = byteArrayOf(0)
 
 /** Processes a DeleteRequest in a [storeAction] into a data store from [dataStoreFetcher] */

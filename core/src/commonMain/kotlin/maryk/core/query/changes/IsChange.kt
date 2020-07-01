@@ -4,6 +4,7 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.IsPropertyReferenceForValues
+import kotlin.native.concurrent.SharedImmutable
 
 /** Defines a change to a DataObject */
 interface IsChange {
@@ -16,6 +17,7 @@ interface IsChange {
     fun changeValues(objectChanger: (IsPropertyReferenceForValues<*, *, *, *>, (Any?, Any?) -> Any?) -> Unit)
 }
 
+@SharedImmutable
 internal val mapOfChangeDefinitions = mapOf(
     ChangeType.Change to EmbeddedObjectDefinition(dataModel = { Change }),
     ChangeType.Check to EmbeddedObjectDefinition(dataModel = { Check }),

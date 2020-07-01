@@ -15,6 +15,7 @@ import maryk.core.query.requests.RequestType.GetUpdates
 import maryk.core.query.requests.RequestType.Scan
 import maryk.core.query.requests.RequestType.ScanChanges
 import maryk.core.query.requests.RequestType.ScanUpdates
+import kotlin.native.concurrent.SharedImmutable
 
 enum class RequestType(
     override val index: UInt,
@@ -36,6 +37,7 @@ enum class RequestType(
     )
 }
 
+@SharedImmutable
 val mapOfRequestTypeEmbeddedObjectDefinitions = mapOf(
     Add to EmbeddedObjectDefinition(dataModel = { AddRequest }),
     Change to EmbeddedObjectDefinition(dataModel = { ChangeRequest }),

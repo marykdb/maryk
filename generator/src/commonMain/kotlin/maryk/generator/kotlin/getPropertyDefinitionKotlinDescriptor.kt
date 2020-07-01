@@ -34,6 +34,7 @@ import maryk.core.properties.types.numeric.NumberType.UInt16Type
 import maryk.core.properties.types.numeric.NumberType.UInt32Type
 import maryk.core.properties.types.numeric.NumberType.UInt64Type
 import maryk.core.properties.types.numeric.NumberType.UInt8Type
+import kotlin.native.concurrent.SharedImmutable
 
 /** Get the PropertyDefinitionKotlinDescriptor of the given property */
 internal fun <T : Any, D : IsTransportablePropertyDefinitionType<in T>, P : ObjectPropertyDefinitions<D>> D.getKotlinDescriptor(): PropertyDefinitionKotlinDescriptor<T, D, P> {
@@ -42,29 +43,48 @@ internal fun <T : Any, D : IsTransportablePropertyDefinitionType<in T>, P : Obje
         ?: throw TypeException("Unknown propertyDefinitionType ${this.propertyDefinitionType}")
 }
 
+@SharedImmutable
 private val dateImports = arrayOf("maryk.lib.time.Date")
+@SharedImmutable
 private val dateTimeImports = arrayOf("maryk.lib.time.DateTime")
+@SharedImmutable
 private val geoPointImports = arrayOf("maryk.core.properties.types.GeoPoint")
+@SharedImmutable
 private val timeImports = arrayOf("maryk.lib.time.Time")
+@SharedImmutable
 private val multiTypeImports = arrayOf("maryk.core.properties.types.TypedValue")
+@SharedImmutable
 private val keyImports = arrayOf("maryk.core.properties.types.Key")
+@SharedImmutable
 private val uInt8Imports = arrayOf("maryk.core.properties.types.numeric.UInt8")
+@SharedImmutable
 private val uInt16Imports = arrayOf("maryk.core.properties.types.numeric.UInt16")
+@SharedImmutable
 private val uInt32Imports = arrayOf("maryk.core.properties.types.numeric.UInt32")
+@SharedImmutable
 private val uInt64Imports = arrayOf("maryk.core.properties.types.numeric.UInt64")
+@SharedImmutable
 private val sInt8Imports = arrayOf("maryk.core.properties.types.numeric.SInt8")
+@SharedImmutable
 private val sInt16Imports = arrayOf("maryk.core.properties.types.numeric.SInt16")
+@SharedImmutable
 private val sInt32Imports = arrayOf("maryk.core.properties.types.numeric.SInt32")
+@SharedImmutable
 private val sInt64Imports = arrayOf("maryk.core.properties.types.numeric.SInt64")
+@SharedImmutable
 private val float32Imports = arrayOf("maryk.core.properties.types.numeric.Float32")
+@SharedImmutable
 private val float64Imports = arrayOf("maryk.core.properties.types.numeric.Float64")
+@SharedImmutable
 private val valuesImports = arrayOf("maryk.core.values.Values")
 
+@SharedImmutable
 private val generateKotlinValueWithDefinition: (IsTransportablePropertyDefinitionType<*>, Any, (String) -> Unit) -> String =
     { definition, value, addImport ->
         generateKotlinValue(definition, value, addImport)
     }
 
+@SharedImmutable
 private val definitionNamesMap = mapOf(
     PropertyDefinitionType.Boolean to PropertyDefinitionKotlinDescriptor(
         className = "BooleanDefinition",

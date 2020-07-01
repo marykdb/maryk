@@ -28,9 +28,11 @@ import maryk.datastore.memory.processors.processGetUpdatesRequest
 import maryk.datastore.memory.processors.processScanChangesRequest
 import maryk.datastore.memory.processors.processScanRequest
 import maryk.datastore.memory.processors.processScanUpdatesRequest
+import kotlin.native.concurrent.SharedImmutable
 
 /** Executor of StoreActions onto DataStore */
 @Suppress("UNCHECKED_CAST")
+@SharedImmutable
 internal val storeExecutor: StoreExecutor<*, *> = { storeAction, dataStoreFetcher, updateSendChannel ->
     when (storeAction.request) {
         is AddRequest<*, *> ->

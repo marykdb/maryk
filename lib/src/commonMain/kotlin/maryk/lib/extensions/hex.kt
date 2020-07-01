@@ -1,8 +1,10 @@
 package maryk.lib.extensions
 
 import maryk.lib.exceptions.ParseException
+import kotlin.native.concurrent.SharedImmutable
 
 const val ZERO_BYTE: Byte = 0b0
+@SharedImmutable
 val HEX_CHARS = charArrayOf('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f')
 
 /** Converts ByteArray into a String Hex value */

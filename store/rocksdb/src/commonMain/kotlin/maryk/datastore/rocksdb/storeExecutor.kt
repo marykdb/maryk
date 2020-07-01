@@ -28,9 +28,11 @@ import maryk.datastore.rocksdb.processors.processGetUpdatesRequest
 import maryk.datastore.rocksdb.processors.processScanChangesRequest
 import maryk.datastore.rocksdb.processors.processScanRequest
 import maryk.datastore.rocksdb.processors.processScanUpdatesRequest
+import kotlin.native.concurrent.SharedImmutable
 
 /** Executor of StoreActions onto DataStore */
 @Suppress("UNCHECKED_CAST")
+@SharedImmutable
 internal val storeExecutor: StoreExecutor = { storeAction, db, updateSendChannel ->
     when (storeAction.request) {
         is AddRequest<*, *> ->

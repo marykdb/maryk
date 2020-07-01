@@ -17,6 +17,7 @@ import maryk.core.properties.enum.IsCoreEnum
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.json.MapType
+import kotlin.native.concurrent.SharedImmutable
 
 /** Indexed type of property definitions */
 enum class PropertyDefinitionType(
@@ -50,6 +51,7 @@ enum class PropertyDefinitionType(
         IndexedEnumDefinition<PropertyDefinitionType>("PropertyDefinitionType", PropertyDefinitionType::values)
 }
 
+@SharedImmutable
 internal val mapOfPropertyDefEmbeddedObjectDefinitions =
     mapOf<PropertyDefinitionType, IsUsableInMultiType<out Any, ContainsDefinitionsContext>>(
         PropertyDefinitionType.Boolean to EmbeddedObjectDefinition(dataModel = { BooleanDefinition.Model }),
@@ -94,6 +96,7 @@ val createFlexBytesWrapper: WrapperCreator = { index, name, altNames, definition
     )
 }
 
+@SharedImmutable
 internal val mapOfPropertyDefWrappers = mapOf(
     PropertyDefinitionType.Boolean to createFixedBytesWrapper,
     PropertyDefinitionType.Date to createFixedBytesWrapper,

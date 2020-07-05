@@ -1,6 +1,12 @@
 package maryk.datastore.rocksdb
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.launch
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.models.IsRootDataModel
@@ -65,8 +71,6 @@ class RocksDBDataStore(
         } else null
 
     internal val db: RocksDB
-
-    override val storeActor = this.storeActor(this, storeActorHasStarted, storeExecutor)
 
     private val defaultWriteOptions = WriteOptions()
     internal val defaultReadOptions = ReadOptions().apply {
@@ -155,6 +159,21 @@ class RocksDBDataStore(
         }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
+    override fun startFlows() {
+        super.startFlows()
+
+        this.launch {
+            storeChannel.asFlow().onStart { storeActorHasStarted.complete(Unit) }.collect { msg ->
+                try {
+                    storeExecutor(Unit, msg, this@RocksDBDataStore, updateSendChannel)
+                } catch (e: Throwable) {
+                    msg.response.completeExceptionally(e)
+                }
+            }
+        }
+    }
+
     /** Walk all current values in [tableColumnFamilies] and fill [indicesToIndex] */
     private fun fillIndex(
         indicesToIndex: List<IsIndexable>,
@@ -206,7 +225,6 @@ class RocksDBDataStore(
 
     override fun close() {
         super.close()
-        storeActor.close()
         db.close()
         ownRocksDBOptions?.close()
         defaultWriteOptions.close()

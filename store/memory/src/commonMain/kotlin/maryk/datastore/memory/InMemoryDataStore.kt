@@ -1,8 +1,16 @@
 package maryk.datastore.memory
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.launch
+import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.RootDataModel
+import maryk.core.properties.PropertyDefinitions
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.StoreAction
@@ -18,18 +26,34 @@ internal typealias StoreExecutor<DM, P> = suspend Unit.(
  * DataProcessor that stores all data changes in local memory.
  * Very useful for tests.
  */
+@OptIn(FlowPreview::class)
 class InMemoryDataStore(
     override val keepAllVersions: Boolean = false,
     dataModelsById: Map<UInt, RootDataModel<*, *>>
 ) : AbstractDataStore(dataModelsById) {
-    override val dataModelIdsByString = dataModelsById.map { (index, dataModel) ->
-        Pair(dataModel.name, index)
-    }.toMap()
+    @ExperimentalCoroutinesApi
+    override fun startFlows() {
+        super.startFlows()
 
-    override val storeActor = this.storeActor(this, storeActorHasStarted, storeExecutor)
+        this.launch {
+            val dataStores = mutableMapOf<UInt, DataStore<*, *>>()
 
-    override fun close() {
-        super.close()
-        storeActor.close()
+            storeChannel.asFlow()
+                .onStart { storeActorHasStarted.complete(Unit) }
+                .collect { msg ->
+                    try {
+                        val dataStoreFetcher = { model: IsRootValuesDataModel<*> ->
+                            val index = dataModelIdsByString[model.name] ?: throw DefNotFoundException(model.name)
+                            dataStores.getOrPut(index) {
+                                DataStore<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(keepAllVersions)
+                            }
+                        }
+
+                        storeExecutor(Unit, msg, dataStoreFetcher, updateSendChannel)
+                    } catch (e: Throwable) {
+                        msg.response.completeExceptionally(e)
+                    }
+                }
+        }
     }
 }

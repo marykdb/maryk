@@ -14,8 +14,9 @@ import maryk.core.query.responses.UpdatesResponse
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.core.values.Values
-import maryk.datastore.shared.AbstractDataStore
+import maryk.datastore.shared.IsDataStore
 import maryk.datastore.shared.updates.Update.Change
+import maryk.lib.concurrency.AtomicReference
 
 /** Listener for updates on a data store */
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
@@ -25,7 +26,7 @@ abstract class UpdateListener<DM: IsRootValuesDataModel<P>, P: PropertyDefinitio
 ) {
     protected val sendChannel = BroadcastChannel<IsUpdateResponse<DM, P>>(Channel.BUFFERED)
 
-    val matchingKeys = (updatesResponse.updates.firstOrNull() as? OrderedKeysUpdate<DM, P>)?.keys?.toMutableList() ?: mutableListOf()
+    val matchingKeys = AtomicReference((updatesResponse.updates.firstOrNull() as? OrderedKeysUpdate<DM, P>)?.keys ?: listOf())
     val lastResponseVersion = (updatesResponse.updates.firstOrNull() as? OrderedKeysUpdate<DM, P>)?.version ?: 0uL
 
     // True if the listener filters on mutable values
@@ -36,7 +37,7 @@ abstract class UpdateListener<DM: IsRootValuesDataModel<P>, P: PropertyDefinitio
     /** Process [update] and sent out responses over channel */
     abstract suspend fun process(
         update: Update<DM, P>,
-        dataStore: AbstractDataStore
+        dataStore: IsDataStore
     )
 
     /** Add [values] at [key] and return sort index or null if it should not be added */
@@ -44,10 +45,10 @@ abstract class UpdateListener<DM: IsRootValuesDataModel<P>, P: PropertyDefinitio
 
     /** Remove [key] from local index */
     open fun removeKey(key: Key<DM>): Int {
-        val index = matchingKeys.indexOf(key)
+        val index = matchingKeys.get().indexOf(key)
 
         if (index >= 0) {
-            matchingKeys.removeAt(index)
+            matchingKeys.set(matchingKeys.get().filterIndexed { i, _ -> i != index })
         }
         return index
     }

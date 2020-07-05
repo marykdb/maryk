@@ -32,7 +32,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ
     sendChannel: SendChannel<IsUpdateResponse<DM, P>>
 ) {
     val request = updateListener.request
-    val currentKeys = updateListener.matchingKeys
+    val currentKeys = updateListener.matchingKeys.get()
     // Only process object requests or change requests if the version is after or equal to from version
     if (request.fromVersion <= version) {
         when (this) {
@@ -107,8 +107,8 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ
                         }
                     }
                 } else if (!shouldDelete && updateListener is UpdateListenerForScan<DM, P> && updateListener.indexScanRange != null) {
-                    val lastKey = updateListener.matchingKeys.last()
-                    val lastSortedKey = updateListener.sortedValues?.last()
+                    val lastKey = currentKeys.last()
+                    val lastSortedKey = updateListener.sortedValues?.get()?.last()
 
                     // Only process further if order has changed to move this value into range
                     updateListener.changeOrder(this@process) { newIndex, _ ->
@@ -125,7 +125,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ
 
                             // Only handle change if it matches against key
                             if (response.values.isNotEmpty()) {
-                                if (updateListener.matchingKeys.size.toUInt() >= updateListener.request.limit) {
+                                if (currentKeys.size.toUInt() >= updateListener.request.limit) {
                                     updateListener.removeKey(lastKey)
 
                                     sendChannel.send(
@@ -148,8 +148,8 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ
                                 )
                             } else {
                                 // Add back removed values since filter does not match
-                                updateListener.matchingKeys.add(lastKey)
-                                lastSortedKey?.let { updateListener.sortedValues.add(it) }
+                                updateListener.matchingKeys.set(currentKeys + lastKey)
+                                lastSortedKey?.let { updateListener.sortedValues.set(updateListener.sortedValues.get() + it) }
                             }
                         }
                     }
@@ -212,8 +212,8 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ:
         )
     }
 
-    if (updateListener is UpdateListenerForScan<DM, P> && updateListener.request.limit - 1u == updateListener.matchingKeys.size.toUInt()) {
-        dataStore.requestNextValues(updateListener.request, updateListener.matchingKeys)?.also { additionUpdate ->
+    if (updateListener is UpdateListenerForScan<DM, P> && updateListener.request.limit - 1u == updateListener.matchingKeys.get().size.toUInt()) {
+        dataStore.requestNextValues(updateListener.request, updateListener.matchingKeys.get())?.also { additionUpdate ->
             // Always at the end so no need to order
             updateListener.addValuesAtEnd(additionUpdate.key, additionUpdate.values)
 
@@ -242,7 +242,7 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ:
 /** Requests next values object after last key in [currentKeys] */
 private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> IsDataStore.requestNextValues(
     request: IsScanRequest<DM, P, *>,
-    currentKeys: MutableList<Key<DM>>
+    currentKeys: List<Key<DM>>
 ): AdditionUpdate<DM, P>? {
     val nextResults = execute(
         request.dataModel.scan(

@@ -15,13 +15,15 @@ import maryk.core.query.requests.ScanUpdatesRequest
 import maryk.core.query.responses.UpdatesResponse
 import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.core.values.Values
-import maryk.datastore.shared.AbstractDataStore
+import maryk.datastore.shared.IsDataStore
 import maryk.datastore.shared.ScanType.IndexScan
 import maryk.datastore.shared.ScanType.TableScan
 import maryk.datastore.shared.orderToScanType
 import maryk.datastore.shared.updates.Update.Change
+import maryk.lib.concurrency.AtomicReference
 import maryk.lib.extensions.compare.compareTo
 
+@OptIn(ExperimentalStdlibApi::class)
 /** Update listener for scans */
 class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
     request: ScanUpdatesRequest<DM, P>,
@@ -33,13 +35,15 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
 ) {
     private val scanType = request.dataModel.orderToScanType(request.order, scanRange.equalPairs)
 
-    internal val sortedValues = (updatesResponse.updates.firstOrNull() as? OrderedKeysUpdate<DM, P>)?.sortingKeys?.map { it.bytes }?.toMutableList()
+    internal val sortedValues = (updatesResponse.updates.firstOrNull() as? OrderedKeysUpdate<DM, P>)?.sortingKeys?.let { sortingKeys ->
+        AtomicReference(sortingKeys.map { it.bytes }.toList())
+    }
 
     internal val indexScanRange = (scanType as? IndexScan)?.index?.createScanRange(request.where, scanRange)
 
     override suspend fun process(
         update: Update<DM, P>,
-        dataStore: AbstractDataStore
+        dataStore: IsDataStore
     ) {
         val shouldProcess: Boolean = when (scanType) {
             is TableScan -> when (scanType.direction) {
@@ -67,8 +71,19 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
                             val newPos = indexPosition * -1 - 1
                             // Only add when position is smaller than limit and after first key
                             if (newPos != 0 && newPos < request.limit.toInt()) {
-                                sortedValues?.add(newPos, indexKey)
-                                matchingKeys.add(newPos, key)
+                                sortedValues?.set(
+                                    buildList {
+                                        addAll(sortedValues.get())
+                                        add(newPos, indexKey)
+                                    }
+                                )
+
+                                matchingKeys.set(
+                                    buildList {
+                                        addAll(matchingKeys.get())
+                                        add(newPos, key)
+                                    }
+                                )
                                 newPos
                             } else {
                                 null
@@ -83,7 +98,12 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
                     when {
                         indexPosition < 0 -> {
                             val newPos = indexPosition * -1 - 1
-                            matchingKeys.add(newPos, key)
+                            matchingKeys.set(
+                                buildList {
+                                    addAll(matchingKeys.get())
+                                    add(newPos, key)
+                                }
+                            )
                             newPos
                         }
                         // else already in list
@@ -95,7 +115,7 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
     }
 
     private fun findSortedKeyIndex(indexKey: ByteArray) =
-        sortedValues?.binarySearch {
+        sortedValues?.get()?.binarySearch {
             when (scanType.direction) {
                 ASC -> it.compareTo(indexKey)
                 DESC -> indexKey.compareTo(it)
@@ -104,12 +124,12 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
 
     /** [values] at [key] are known to be at end of sorted range so add it specifically there */
     fun addValuesAtEnd(key: Key<DM>, values: Values<DM, P>) {
-        matchingKeys += key
+        matchingKeys.set(matchingKeys.get() + key)
 
         // Add sort key also to the end
         if (scanType is IndexScan && sortedValues != null) {
             scanType.index.toStorageByteArrayForIndex(values, key.bytes)?.also {
-                sortedValues.add(it)
+                sortedValues.set(sortedValues.get() + it)
             } ?: throw StorageException("Unexpected null at indexed value")
         }
     }
@@ -118,7 +138,7 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
         val index = super.removeKey(key)
 
         if (index >= 0) {
-            sortedValues?.removeAt(index)
+            sortedValues?.set(sortedValues.get().filterIndexed { i, _ -> i != index })
         }
         return index
     }
@@ -159,8 +179,8 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
 
                             if (existingIndex == -1 || existingIndex != index) { // Is at new index
                                 if (existingIndex >= 0) {
-                                    matchingKeys.removeAt(existingIndex)
-                                    sortedValues?.removeAt(existingIndex)
+                                    matchingKeys.set(matchingKeys.get().filterIndexed { i, _ -> i != existingIndex })
+                                    sortedValues?.set(sortedValues.get().filterIndexed { i, _ -> i != existingIndex })
                                 }
 
                                 if (index != null) {
@@ -178,8 +198,18 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
                                             val correction = if (existingIndex != -1 && existingIndex < newIndex) 1 else 0
                                             val adjustedIndex = newIndex - correction
 
-                                            matchingKeys.add(adjustedIndex, change.key)
-                                            sortedValues?.add(adjustedIndex, indexUpdate.indexKey.bytes)
+                                            matchingKeys.set(
+                                                buildList {
+                                                    addAll(matchingKeys.get())
+                                                    add(adjustedIndex, change.key)
+                                                }
+                                            )
+                                            sortedValues?.set(
+                                                buildList {
+                                                    addAll(sortedValues.get())
+                                                    add(adjustedIndex, indexUpdate.indexKey.bytes)
+                                                }
+                                            )
 
                                             changedHandler(adjustedIndex, true)
                                         }
@@ -212,7 +242,7 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
             ASC -> {{ it.compareTo(key) }}
             DESC -> {{ key.compareTo(it) }}
         }
-        return matchingKeys.binarySearch(comparison = comparator)
+        return matchingKeys.get().binarySearch(comparison = comparator)
     }
 
     /**
@@ -224,12 +254,12 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
             ASC -> {{ it.compareTo(key) == 0 }}
             DESC -> {{ key.compareTo(it) == 0 }}
         }
-        return matchingKeys.indexOfFirst(predicate = predicate)
+        return matchingKeys.get().indexOfFirst(predicate = predicate)
     }
 
     /** Get last key depending on scan direction */
     fun getLast() = when (scanType.direction) {
-        ASC -> matchingKeys.last()
-        DESC -> matchingKeys.first()
+        ASC -> matchingKeys.get().last()
+        DESC -> matchingKeys.get().first()
     }
 }

@@ -6,9 +6,12 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.BroadcastChannel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.launch
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootValuesDataModel
@@ -23,11 +26,12 @@ import maryk.core.query.responses.IsResponse
 import maryk.core.query.responses.UpdatesResponse
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.datastore.shared.updates.AddUpdateListenerAction
+import maryk.datastore.shared.updates.IsUpdateAction
 import maryk.datastore.shared.updates.RemoveAllUpdateListenersAction
 import maryk.datastore.shared.updates.RemoveUpdateListenerAction
 import maryk.datastore.shared.updates.UpdateListenerForGet
 import maryk.datastore.shared.updates.UpdateListenerForScan
-import maryk.datastore.shared.updates.processUpdateActor
+import maryk.datastore.shared.updates.startProcessUpdateFlow
 import maryk.lib.concurrency.AtomicReference
 
 typealias StoreActor = SendChannel<StoreAction<*, *, *, *>>
@@ -35,30 +39,39 @@ typealias StoreActor = SendChannel<StoreAction<*, *, *, *>>
 /**
  * Abstract DataStore implementation that takes care of the HLC clock
  */
+@Suppress("EXPERIMENTAL_API_USAGE")
+@OptIn(ExperimentalCoroutinesApi::class)
 abstract class AbstractDataStore(
     final override val dataModelsById: Map<UInt, RootDataModel<*, *>>
 ): IsDataStore, CoroutineScope {
     override val coroutineContext = DISPATCHER + SupervisorJob()
 
-    private val initIsDone: AtomicReference<Boolean> = AtomicReference(false)
-
-    private val updateSendChannelHasStarted = CompletableDeferred<Unit>()
-    val updateSendChannel = processUpdateActor<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(updateSendChannelHasStarted)
-
-    protected val storeActorHasStarted = CompletableDeferred<Unit>()
-    /** StoreActor to run actions against.*/
-    abstract val storeActor: StoreActor
-
-    private val clockActorHasStarted = CompletableDeferred<Unit>()
-    // Clock actor holds/calculates the latest HLC clock instance
-    private val clockActor = this.clockActor(clockActorHasStarted)
-
-    override val dataModelIdsByString = dataModelsById.map { (index, dataModel) ->
+    final override val dataModelIdsByString: Map<String, UInt> = dataModelsById.map { (index, dataModel) ->
         Pair(dataModel.name, index)
     }.toMap()
 
-    suspend fun waitForInit() {
+    private val initIsDone: AtomicReference<Boolean> = AtomicReference(false)
+
+    protected val storeActorHasStarted = CompletableDeferred<Unit>()
+    /** StoreActor to send actions to.*/
+    protected val storeChannel = BroadcastChannel<StoreAction<*, *, *, *>>(Channel.BUFFERED)
+
+    private val clockActorHasStarted = CompletableDeferred<Unit>()
+    // Clock actor holds/calculates the latest HLC clock instance
+    val clockActor = this.clockActor(clockActorHasStarted)
+
+    private val updateSendChannelHasStarted = CompletableDeferred<Unit>()
+    val updateSendChannel: SendChannel<IsUpdateAction> = BroadcastChannel(Channel.BUFFERED)
+
+    open fun startFlows() {
+        this.launch {
+            startProcessUpdateFlow(updateSendChannel, updateSendChannelHasStarted)
+        }
+    }
+
+    private suspend fun waitForInit() {
         if (!initIsDone.get()) {
+            startFlows()
             clockActorHasStarted.await()
             storeActorHasStarted.await()
             updateSendChannelHasStarted.await()
@@ -77,7 +90,7 @@ abstract class AbstractDataStore(
             clockActor.send(it)
         }.completableDeferred.await()
 
-        storeActor.send(
+        storeChannel.send(
             StoreAction(clock, request, response)
         )
 
@@ -118,7 +131,7 @@ abstract class AbstractDataStore(
         this.cancel()
 
         clockActor.close()
-
+        storeChannel.close()
         updateSendChannel.close()
     }
 

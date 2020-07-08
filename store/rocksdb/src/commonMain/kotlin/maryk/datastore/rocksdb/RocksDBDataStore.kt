@@ -7,7 +7,9 @@ import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
+import maryk.core.clock.HLC
 import maryk.core.exceptions.DefNotFoundException
+import maryk.core.exceptions.TypeException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.RootDataModel
@@ -20,6 +22,15 @@ import maryk.core.models.migration.MigrationStatus.OnlySafeAdds
 import maryk.core.models.migration.MigrationStatus.UpToDate
 import maryk.core.models.migration.StoredRootDataModel
 import maryk.core.properties.definitions.index.IsIndexable
+import maryk.core.query.requests.AddRequest
+import maryk.core.query.requests.ChangeRequest
+import maryk.core.query.requests.DeleteRequest
+import maryk.core.query.requests.GetChangesRequest
+import maryk.core.query.requests.GetRequest
+import maryk.core.query.requests.GetUpdatesRequest
+import maryk.core.query.requests.ScanChangesRequest
+import maryk.core.query.requests.ScanRequest
+import maryk.core.query.requests.ScanUpdatesRequest
 import maryk.datastore.rocksdb.TableType.HistoricIndex
 import maryk.datastore.rocksdb.TableType.HistoricTable
 import maryk.datastore.rocksdb.TableType.HistoricUnique
@@ -30,9 +41,27 @@ import maryk.datastore.rocksdb.TableType.Table
 import maryk.datastore.rocksdb.TableType.Unique
 import maryk.datastore.rocksdb.model.checkModelIfMigrationIsNeeded
 import maryk.datastore.rocksdb.model.storeModelDefinition
+import maryk.datastore.rocksdb.processors.AnyAddStoreAction
+import maryk.datastore.rocksdb.processors.AnyChangeStoreAction
+import maryk.datastore.rocksdb.processors.AnyDeleteStoreAction
+import maryk.datastore.rocksdb.processors.AnyGetChangesStoreAction
+import maryk.datastore.rocksdb.processors.AnyGetStoreAction
+import maryk.datastore.rocksdb.processors.AnyGetUpdatesStoreAction
+import maryk.datastore.rocksdb.processors.AnyScanChangesStoreAction
+import maryk.datastore.rocksdb.processors.AnyScanStoreAction
+import maryk.datastore.rocksdb.processors.AnyScanUpdatesStoreAction
 import maryk.datastore.rocksdb.processors.EMPTY_ARRAY
 import maryk.datastore.rocksdb.processors.VersionedComparator
 import maryk.datastore.rocksdb.processors.deleteCompleteIndexContents
+import maryk.datastore.rocksdb.processors.processAddRequest
+import maryk.datastore.rocksdb.processors.processChangeRequest
+import maryk.datastore.rocksdb.processors.processDeleteRequest
+import maryk.datastore.rocksdb.processors.processGetChangesRequest
+import maryk.datastore.rocksdb.processors.processGetRequest
+import maryk.datastore.rocksdb.processors.processGetUpdatesRequest
+import maryk.datastore.rocksdb.processors.processScanChangesRequest
+import maryk.datastore.rocksdb.processors.processScanRequest
+import maryk.datastore.rocksdb.processors.processScanUpdatesRequest
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.StoreAction
@@ -51,7 +80,7 @@ import maryk.rocksdb.defaultColumnFamily
 import maryk.rocksdb.openRocksDB
 import maryk.rocksdb.use
 
-internal typealias StoreExecutor = suspend Unit.(StoreAction<*, *, *, *>, RocksDBDataStore, Cache, SendChannel<Update<*, *>>) -> Unit
+internal typealias StoreExecutor = suspend Unit.(ULong, StoreAction<*, *, *, *>, RocksDBDataStore, Cache, SendChannel<Update<*, *>>) -> Unit
 
 class RocksDBDataStore(
     override val keepAllVersions: Boolean = true,
@@ -158,6 +187,10 @@ class RocksDBDataStore(
         }
     }
 
+    init {
+        startFlows()
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
     override fun startFlows() {
         super.startFlows()
@@ -166,11 +199,35 @@ class RocksDBDataStore(
             val cache = Cache()
             cache.ensureNeverFrozen()
 
-            storeChannel.asFlow().onStart { storeActorHasStarted.complete(Unit) }.collect { msg ->
+            var clock = HLC()
+            storeChannel.asFlow().onStart { storeActorHasStarted.complete(Unit) }.collect { storeAction ->
                 try {
-                    storeExecutor(Unit, msg, this@RocksDBDataStore, cache, updateSendChannel)
+                    clock = clock.calculateMaxTimeStamp()
+
+                    @Suppress("UNCHECKED_CAST")
+                    when (storeAction.request) {
+                        is AddRequest<*, *> ->
+                            processAddRequest(clock, storeAction as AnyAddStoreAction, this@RocksDBDataStore, updateSendChannel)
+                        is ChangeRequest<*> ->
+                            processChangeRequest(clock, storeAction as AnyChangeStoreAction, this@RocksDBDataStore, updateSendChannel)
+                        is DeleteRequest<*> ->
+                            processDeleteRequest(clock, storeAction as AnyDeleteStoreAction, this@RocksDBDataStore, cache, updateSendChannel)
+                        is GetRequest<*, *> ->
+                            processGetRequest(storeAction as AnyGetStoreAction, this@RocksDBDataStore, cache)
+                        is GetChangesRequest<*, *> ->
+                            processGetChangesRequest(storeAction as AnyGetChangesStoreAction, this@RocksDBDataStore, cache)
+                        is GetUpdatesRequest<*, *> ->
+                            processGetUpdatesRequest(storeAction as AnyGetUpdatesStoreAction, this@RocksDBDataStore, cache)
+                        is ScanRequest<*, *> ->
+                            processScanRequest(storeAction as AnyScanStoreAction, this@RocksDBDataStore, cache)
+                        is ScanChangesRequest<*, *> ->
+                            processScanChangesRequest(storeAction as AnyScanChangesStoreAction, this@RocksDBDataStore, cache)
+                        is ScanUpdatesRequest<*, *> ->
+                            processScanUpdatesRequest(storeAction as AnyScanUpdatesStoreAction, this@RocksDBDataStore, cache)
+                        else -> throw TypeException("Unknown request type ${storeAction.request}")
+                    }
                 } catch (e: Throwable) {
-                    msg.response.completeExceptionally(e)
+                    storeAction.response.completeExceptionally(e)
                 }
             }
         }

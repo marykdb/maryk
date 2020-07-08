@@ -56,10 +56,6 @@ abstract class AbstractDataStore(
     /** StoreActor to send actions to.*/
     protected val storeChannel = BroadcastChannel<StoreAction<*, *, *, *>>(Channel.BUFFERED)
 
-    private val clockActorHasStarted = CompletableDeferred<Unit>()
-    // Clock actor holds/calculates the latest HLC clock instance
-    val clockActor = this.clockActor(clockActorHasStarted)
-
     private val updateSendChannelHasStarted = CompletableDeferred<Unit>()
     val updateSendChannel: SendChannel<IsUpdateAction> = BroadcastChannel(Channel.BUFFERED)
 
@@ -71,8 +67,6 @@ abstract class AbstractDataStore(
 
     private suspend fun waitForInit() {
         if (!initIsDone.get()) {
-            startFlows()
-            clockActorHasStarted.await()
             storeActorHasStarted.await()
             updateSendChannelHasStarted.await()
             initIsDone.set(true)
@@ -86,12 +80,8 @@ abstract class AbstractDataStore(
 
         val response = CompletableDeferred<RP>()
 
-        val clock = DeferredClock().also {
-            clockActor.send(it)
-        }.completableDeferred.await()
-
         storeChannel.send(
-            StoreAction(clock, request, response)
+            StoreAction(request, response)
         )
 
         return response.await()
@@ -130,7 +120,6 @@ abstract class AbstractDataStore(
     override fun close() {
         this.cancel()
 
-        clockActor.close()
         storeChannel.close()
         updateSendChannel.close()
     }

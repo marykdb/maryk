@@ -49,6 +49,7 @@ internal typealias AnyAddStoreAction = AddStoreAction<IsRootValuesDataModel<Prop
 /** Processes an AddRequest in a [storeAction] into a [dataStore] */
 @Suppress("UNUSED_VARIABLE", "UNUSED_PARAMETER")
 internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAddRequest(
+    version: HLC,
     storeAction: StoreAction<DM, P, AddRequest<DM, P>, AddResponse<DM>>,
     dataStore: RocksDBDataStore,
     updateSendChannel: SendChannel<Update<DM, P>>
@@ -57,7 +58,6 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
     val statuses = mutableListOf<IsAddResponseStatus<DM>>()
 
     if (addRequest.objects.isNotEmpty()) {
-        val version = storeAction.version
         val dbIndex = dataStore.getDataModelId(addRequest.dataModel)
         val columnFamilies = dataStore.getColumnFamilies(dbIndex)
 

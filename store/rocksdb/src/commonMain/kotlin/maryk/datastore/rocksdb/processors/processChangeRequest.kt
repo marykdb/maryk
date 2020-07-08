@@ -106,6 +106,7 @@ internal typealias AnyChangeStoreAction = ChangeStoreAction<IsRootValuesDataMode
 
 /** Processes a ChangeRequest in a [storeAction] into a [dataStore] */
 internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processChangeRequest(
+    version: HLC,
     storeAction: ChangeStoreAction<DM, P>,
     dataStore: RocksDBDataStore,
     updateSendChannel: SendChannel<Update<DM, P>>
@@ -115,7 +116,6 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
     val statuses = mutableListOf<IsChangeResponseStatus<DM>>()
 
     if (changeRequest.objects.isNotEmpty()) {
-        val version = storeAction.version
         val dbIndex = dataStore.getDataModelId(changeRequest.dataModel)
         val columnFamilies = dataStore.getColumnFamilies(dbIndex)
 

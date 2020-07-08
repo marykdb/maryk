@@ -89,12 +89,12 @@ internal typealias AnyChangeStoreAction = ChangeStoreAction<IsRootValuesDataMode
 
 /** Processes a ChangeRequest in a [storeAction] into a data store from [dataStoreFetcher] */
 internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processChangeRequest(
+    version: HLC,
     storeAction: ChangeStoreAction<DM, P>,
     dataStoreFetcher: IsStoreFetcher<*, *>,
     updateSendChannel: SendChannel<Update<*, *>>
 ) {
     val changeRequest = storeAction.request
-    val version = storeAction.version
 
     @Suppress("UNCHECKED_CAST")
     val dataStore = dataStoreFetcher(changeRequest.dataModel) as DataStore<DM, P>

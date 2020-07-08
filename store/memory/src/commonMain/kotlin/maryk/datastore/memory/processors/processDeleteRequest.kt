@@ -1,6 +1,7 @@
 package maryk.datastore.memory.processors
 
 import kotlinx.coroutines.channels.SendChannel
+import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.requests.DeleteRequest
@@ -26,6 +27,7 @@ internal val objectSoftDeleteQualifier = byteArrayOf(0)
 
 /** Processes a DeleteRequest in a [storeAction] into a data store from [dataStoreFetcher] */
 internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDeleteRequest(
+    version: HLC,
     storeAction: DeleteStoreAction<DM, P>,
     dataStoreFetcher: IsStoreFetcher<*, *>,
     updateSendChannel: SendChannel<Update<DM, P>>
@@ -34,8 +36,6 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
     val statuses = mutableListOf<IsDeleteResponseStatus<DM>>()
 
     if (deleteRequest.keys.isNotEmpty()) {
-        val version = storeAction.version
-
         @Suppress("UNCHECKED_CAST")
         val dataStore = dataStoreFetcher(deleteRequest.dataModel) as DataStore<DM, P>
 

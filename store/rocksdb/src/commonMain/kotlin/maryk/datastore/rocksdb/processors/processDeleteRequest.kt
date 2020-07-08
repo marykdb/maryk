@@ -34,6 +34,7 @@ internal typealias AnyDeleteStoreAction = DeleteStoreAction<IsRootValuesDataMode
 
 /** Processes a DeleteRequest in a [storeAction] into a [dataStore] */
 internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDeleteRequest(
+    version: HLC,
     storeAction: DeleteStoreAction<DM, P>,
     dataStore: RocksDBDataStore,
     cache: Cache,
@@ -43,7 +44,6 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
     val statuses = mutableListOf<IsDeleteResponseStatus<DM>>()
 
     if (deleteRequest.keys.isNotEmpty()) {
-        val version = storeAction.version
         val dbIndex = dataStore.getDataModelId(deleteRequest.dataModel)
         val columnFamilies = dataStore.getColumnFamilies(dbIndex)
 

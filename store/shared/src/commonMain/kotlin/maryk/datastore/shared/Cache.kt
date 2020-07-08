@@ -7,7 +7,7 @@ import maryk.core.properties.types.Key
  * Cache to store previously retrieved values so they take less time to decode and take less memory
  * because previous instance is reused.
  */
-inline class Cache(
+class Cache(
     val cache: MutableMap<UInt, MutableMap<Key<*>, MutableMap<IsPropertyReferenceForCache<*, *>, CachedValue>>> = mutableMapOf()
 ) {
     /**

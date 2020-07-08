@@ -1,6 +1,11 @@
 // Gradle script to setup a Native multi-platform project
 kotlin {
     macosX64('macos') {
+        compilations.all {
+            kotlinOptions {
+                freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
+            }
+        }
         binaries {
             test("integration")
         }
@@ -9,6 +14,11 @@ kotlin {
         }
     }
     ios {
+        compilations.all {
+            kotlinOptions {
+                freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
+            }
+        }
         compilations["main"].defaultSourceSet {
             kotlin {
                 srcDirs("src/macosMain/kotlin")

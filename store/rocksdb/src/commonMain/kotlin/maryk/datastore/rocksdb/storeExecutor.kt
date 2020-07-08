@@ -33,26 +33,26 @@ import kotlin.native.concurrent.SharedImmutable
 /** Executor of StoreActions onto DataStore */
 @Suppress("UNCHECKED_CAST")
 @SharedImmutable
-internal val storeExecutor: StoreExecutor = { storeAction, db, updateSendChannel ->
+internal val storeExecutor: StoreExecutor = { storeAction, db, cache, updateSendChannel ->
     when (storeAction.request) {
         is AddRequest<*, *> ->
             processAddRequest(storeAction as AnyAddStoreAction, db, updateSendChannel)
         is ChangeRequest<*> ->
             processChangeRequest(storeAction as AnyChangeStoreAction, db, updateSendChannel)
         is DeleteRequest<*> ->
-            processDeleteRequest(storeAction as AnyDeleteStoreAction, db, updateSendChannel)
+            processDeleteRequest(storeAction as AnyDeleteStoreAction, db, cache, updateSendChannel)
         is GetRequest<*, *> ->
-            processGetRequest(storeAction as AnyGetStoreAction, db)
+            processGetRequest(storeAction as AnyGetStoreAction, db, cache)
         is GetChangesRequest<*, *> ->
-            processGetChangesRequest(storeAction as AnyGetChangesStoreAction, db)
+            processGetChangesRequest(storeAction as AnyGetChangesStoreAction, db, cache)
         is GetUpdatesRequest<*, *> ->
-            processGetUpdatesRequest(storeAction as AnyGetUpdatesStoreAction, db)
+            processGetUpdatesRequest(storeAction as AnyGetUpdatesStoreAction, db, cache)
         is ScanRequest<*, *> ->
-            processScanRequest(storeAction as AnyScanStoreAction, db)
+            processScanRequest(storeAction as AnyScanStoreAction, db, cache)
         is ScanChangesRequest<*, *> ->
-            processScanChangesRequest(storeAction as AnyScanChangesStoreAction, db)
+            processScanChangesRequest(storeAction as AnyScanChangesStoreAction, db, cache)
         is ScanUpdatesRequest<*, *> ->
-            processScanUpdatesRequest(storeAction as AnyScanUpdatesStoreAction, db)
+            processScanUpdatesRequest(storeAction as AnyScanUpdatesStoreAction, db, cache)
         else -> throw TypeException("Unknown request type ${storeAction.request}")
     }
 }

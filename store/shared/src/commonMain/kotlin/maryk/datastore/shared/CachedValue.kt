@@ -1,4 +1,4 @@
-package maryk.datastore.rocksdb
+package maryk.datastore.shared
 
 /** [value] for cache at [version] */
 class CachedValue(

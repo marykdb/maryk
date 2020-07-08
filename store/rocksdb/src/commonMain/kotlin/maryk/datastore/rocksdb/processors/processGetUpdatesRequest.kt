@@ -17,6 +17,7 @@ import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.processors.helpers.getLastVersion
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
+import maryk.datastore.shared.Cache
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkMaxVersions
 import maryk.datastore.shared.checkToVersion
@@ -30,7 +31,8 @@ internal typealias AnyGetUpdatesStoreAction = GetUpdatesStoreAction<IsRootValues
 /** Processes a GetUpdatesRequest in a [storeAction] into a [dataStore] */
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGetUpdatesRequest(
     storeAction: GetUpdatesStoreAction<DM, P>,
-    dataStore: RocksDBDataStore
+    dataStore: RocksDBDataStore,
+    cache: Cache
 ) {
     val getRequest = storeAction.request
 
@@ -81,7 +83,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
                     lastResponseVersion = maxOf(lastResponseVersion, lastVersion)
 
                     val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
-                        dataStore.readValueWithCache(dbIndex, key, reference, version, valueReader)
+                        cache.readValue(dbIndex, key, reference, version, valueReader)
                     }
 
                     getRequest.dataModel.readTransactionIntoObjectChanges(

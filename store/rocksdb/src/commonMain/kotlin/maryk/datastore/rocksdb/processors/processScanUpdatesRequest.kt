@@ -24,6 +24,7 @@ import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.processors.helpers.getLastVersion
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
+import maryk.datastore.shared.Cache
 import maryk.datastore.shared.ScanType.IndexScan
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkMaxVersions
@@ -37,7 +38,8 @@ internal typealias AnyScanUpdatesStoreAction = ScanUpdatesStoreAction<IsRootValu
 /** Processes a ScanUpdatesRequest in a [storeAction] into a [dataStore] */
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processScanUpdatesRequest(
     storeAction: ScanUpdatesStoreAction<DM, P>,
-    dataStore: RocksDBDataStore
+    dataStore: RocksDBDataStore,
+    cache: Cache
 ) {
     val scanRequest = storeAction.request
     val dbIndex = dataStore.getDataModelId(scanRequest.dataModel)
@@ -106,7 +108,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
             lastResponseVersion = maxOf(lastResponseVersion, lastVersion)
 
             val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
-                dataStore.readValueWithCache(dbIndex, key, reference, version, valueReader)
+                cache.readValue(dbIndex, key, reference, version, valueReader)
             }
 
             scanRequest.dataModel.readTransactionIntoObjectChanges(
@@ -200,7 +202,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
                         val createdVersion = recyclableByteArray.readVersionBytes()
 
                         val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
-                            dataStore.readValueWithCache(dbIndex, addedKey, reference, version, valueReader)
+                            cache.readValue(dbIndex, addedKey, reference, version, valueReader)
                         }
 
                         getSingleValues(addedKey, createdVersion, cacheReader)?.let { valuesWithMeta ->

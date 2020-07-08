@@ -20,8 +20,6 @@ import maryk.core.models.migration.MigrationStatus.OnlySafeAdds
 import maryk.core.models.migration.MigrationStatus.UpToDate
 import maryk.core.models.migration.StoredRootDataModel
 import maryk.core.properties.definitions.index.IsIndexable
-import maryk.core.properties.references.IsPropertyReferenceForCache
-import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.TableType.HistoricIndex
 import maryk.datastore.rocksdb.TableType.HistoricTable
 import maryk.datastore.rocksdb.TableType.HistoricUnique
@@ -36,8 +34,11 @@ import maryk.datastore.rocksdb.processors.EMPTY_ARRAY
 import maryk.datastore.rocksdb.processors.VersionedComparator
 import maryk.datastore.rocksdb.processors.deleteCompleteIndexContents
 import maryk.datastore.shared.AbstractDataStore
+import maryk.datastore.shared.Cache
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.updates.Update
+import maryk.lib.concurrency.AtomicReference
+import maryk.lib.ensureNeverFrozen
 import maryk.rocksdb.ColumnFamilyDescriptor
 import maryk.rocksdb.ColumnFamilyHandle
 import maryk.rocksdb.ColumnFamilyOptions
@@ -50,7 +51,7 @@ import maryk.rocksdb.defaultColumnFamily
 import maryk.rocksdb.openRocksDB
 import maryk.rocksdb.use
 
-internal typealias StoreExecutor = suspend Unit.(StoreAction<*, *, *, *>, RocksDBDataStore, SendChannel<Update<*, *>>) -> Unit
+internal typealias StoreExecutor = suspend Unit.(StoreAction<*, *, *, *>, RocksDBDataStore, Cache, SendChannel<Update<*, *>>) -> Unit
 
 class RocksDBDataStore(
     override val keepAllVersions: Boolean = true,
@@ -62,7 +63,7 @@ class RocksDBDataStore(
 ) : AbstractDataStore(dataModelsById) {
     private val columnFamilyHandlesByDataModelIndex = mutableMapOf<UInt, TableColumnFamilies>()
     private val prefixSizesByColumnFamilyHandlesIndex = mutableMapOf<Int, Int>()
-    private val uniqueIndicesByDataModelIndex = mutableMapOf<UInt, List<ByteArray>>()
+    private val uniqueIndicesByDataModelIndex = AtomicReference(mapOf<UInt, List<ByteArray>>())
 
     // Only create Options if no Options were passed. Will take ownership and close it if this object is closed
     private val ownRocksDBOptions: DBOptions? =
@@ -76,8 +77,6 @@ class RocksDBDataStore(
     internal val defaultReadOptions = ReadOptions().apply {
         setPrefixSameAsStart(true)
     }
-
-    private val cache: MutableMap<UInt, MutableMap<Key<*>, MutableMap<IsPropertyReferenceForCache<*, *>, CachedValue>>> = mutableMapOf()
 
     init {
         val descriptors: MutableList<ColumnFamilyDescriptor> = mutableListOf()
@@ -164,9 +163,12 @@ class RocksDBDataStore(
         super.startFlows()
 
         this.launch {
+            val cache = Cache()
+            cache.ensureNeverFrozen()
+
             storeChannel.asFlow().onStart { storeActorHasStarted.complete(Unit) }.collect { msg ->
                 try {
-                    storeExecutor(Unit, msg, this@RocksDBDataStore, updateSendChannel)
+                    storeExecutor(Unit, msg, this@RocksDBDataStore, cache, updateSendChannel)
                 } catch (e: Throwable) {
                     msg.response.completeExceptionally(e)
                 }
@@ -245,66 +247,42 @@ class RocksDBDataStore(
 
     /** Get the unique indices for [dbIndex] and [uniqueHandle] */
     internal fun getUniqueIndices(dbIndex: UInt, uniqueHandle: ColumnFamilyHandle) =
-        uniqueIndicesByDataModelIndex[dbIndex] ?: searchExistingUniqueIndices(uniqueHandle)
+        uniqueIndicesByDataModelIndex.get()[dbIndex] ?: searchExistingUniqueIndices(uniqueHandle)
 
     /**
      * Checks if unique index exists and creates it if not otherwise.
      * This is needed so delete knows which indices to scan for values to delete.
      */
     internal fun createUniqueIndexIfNotExists(dbIndex: UInt, uniqueHandle: ColumnFamilyHandle, uniqueName: ByteArray) {
-        val existingDbUniques = uniqueIndicesByDataModelIndex[dbIndex] as MutableList<ByteArray>?
-            ?: searchExistingUniqueIndices(uniqueHandle).also { uniqueIndicesByDataModelIndex[dbIndex] = it }
+        val existingDbUniques = uniqueIndicesByDataModelIndex.get()[dbIndex]
+            ?: searchExistingUniqueIndices(uniqueHandle)
         val existingValue = existingDbUniques.find { it.contentEquals(uniqueName) }
 
         if (existingValue == null) {
             val uniqueReference = byteArrayOf(0, *uniqueName)
             db.put(uniqueHandle, uniqueReference, EMPTY_ARRAY)
-            existingDbUniques.add(uniqueName)
+
+            uniqueIndicesByDataModelIndex.set(
+                uniqueIndicesByDataModelIndex.get().plus(
+                    dbIndex to existingDbUniques.plus(uniqueName)
+                )
+            )
         }
     }
 
     /** Search for existing unique indices in data store by [uniqueHandle] */
+    @OptIn(ExperimentalStdlibApi::class)
     private fun searchExistingUniqueIndices(
         uniqueHandle: ColumnFamilyHandle
-    ) = mutableListOf<ByteArray>().also { list ->
-        this.db.newIterator(uniqueHandle).use { iterator ->
+    ) = buildList<ByteArray> {
+        this@RocksDBDataStore.db.newIterator(uniqueHandle).use { iterator ->
             while (iterator.isValid()) {
                 val key = iterator.key()
                 if (key[0] != 0.toByte()) {
                     break // break because it is not describing an index
                 }
-                list += key.copyOfRange(1, key.size)
+                this += key.copyOfRange(1, key.size)
             }
         }
-    }
-
-    /**
-     * Read value from the cache if it exists and is of same version, or read it from store and cache it if
-     * it is not of same version or does not exist in cache
-     */
-    internal fun readValueWithCache(
-        dbIndex: UInt,
-        key: Key<*>,
-        reference: IsPropertyReferenceForCache<*, *>,
-        version: ULong,
-        valueReader: () -> Any?
-    ): Any? {
-        val refMap = cache.getOrPut(dbIndex) { mutableMapOf() }.getOrPut(key) { mutableMapOf() }
-        val value = refMap[reference]
-
-        return if (value != null && version == value.version) {
-            value.value
-        } else {
-            valueReader().also { readValue ->
-                if (value == null || value.version < version) {
-                    refMap[reference] = CachedValue(version, readValue)
-                }
-            }
-        }
-    }
-
-    /** Delete [key] from the table with [dbIndex] */
-    fun deleteCacheForKey(dbIndex: UInt, key: Key<*>) {
-        cache[dbIndex]?.remove(key)
     }
 }

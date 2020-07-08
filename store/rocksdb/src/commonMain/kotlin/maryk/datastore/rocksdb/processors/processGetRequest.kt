@@ -15,6 +15,7 @@ import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.processors.helpers.getValue
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
+import maryk.datastore.shared.Cache
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkToVersion
 import maryk.lib.recyclableByteArray
@@ -27,7 +28,8 @@ internal typealias AnyGetStoreAction = GetStoreAction<IsRootValuesDataModel<Prop
 /** Processes a GetRequest in a [storeAction] into a [dataStore] */
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGetRequest(
     storeAction: GetStoreAction<DM, P>,
-    dataStore: RocksDBDataStore
+    dataStore: RocksDBDataStore,
+    cache: Cache
 ) {
     val getRequest = storeAction.request
     val valuesWithMeta = mutableListOf<ValuesWithMetaData<DM, P>>()
@@ -61,7 +63,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
                     }
 
                     val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
-                        dataStore.readValueWithCache(dbIndex, key, reference, version, valueReader)
+                        cache.readValue(dbIndex, key, reference, version, valueReader)
                     }
 
                     val valuesWithMetaData = getRequest.dataModel.readTransactionIntoValuesWithMetaData(

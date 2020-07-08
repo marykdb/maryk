@@ -18,6 +18,7 @@ import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.rocksdb.processors.helpers.deleteIndexValue
 import maryk.datastore.rocksdb.processors.helpers.deleteUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setLatestVersion
+import maryk.datastore.shared.Cache
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.updates.Update
 import maryk.datastore.shared.updates.Update.Deletion
@@ -35,6 +36,7 @@ internal typealias AnyDeleteStoreAction = DeleteStoreAction<IsRootValuesDataMode
 internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDeleteRequest(
     storeAction: DeleteStoreAction<DM, P>,
     dataStore: RocksDBDataStore,
+    cache: Cache,
     updateSendChannel: SendChannel<Update<DM, P>>
 ) {
     val deleteRequest = storeAction.request
@@ -125,7 +127,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
                             }
 
                             if (deleteRequest.hardDelete) {
-                                dataStore.deleteCacheForKey(dbIndex, key)
+                                cache.delete(dbIndex, key)
 
                                 dataStore.db.delete(columnFamilies.keys, key.bytes)
                                 dataStore.db.deleteRange(

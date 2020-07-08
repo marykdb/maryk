@@ -14,6 +14,7 @@ import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.processors.helpers.getValue
+import maryk.datastore.shared.Cache
 import maryk.datastore.shared.StoreAction
 import maryk.rocksdb.use
 
@@ -23,7 +24,8 @@ internal typealias AnyScanStoreAction = ScanStoreAction<IsRootValuesDataModel<Pr
 /** Processes a ScanRequest in a [storeAction] into a [dataStore] */
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processScanRequest(
     storeAction: ScanStoreAction<DM, P>,
-    dataStore: RocksDBDataStore
+    dataStore: RocksDBDataStore,
+    cache: Cache
 ) {
     val scanRequest = storeAction.request
     val valuesWithMeta = mutableListOf<ValuesWithMetaData<DM, P>>()
@@ -48,7 +50,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
             dataStore.defaultReadOptions
         ) { key, creationVersion ->
             val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
-                dataStore.readValueWithCache(dbIndex, key, reference, version, valueReader)
+                cache.readValue(dbIndex, key, reference, version, valueReader)
             }
 
             val valuesWithMetaData = scanRequest.dataModel.readTransactionIntoValuesWithMetaData(

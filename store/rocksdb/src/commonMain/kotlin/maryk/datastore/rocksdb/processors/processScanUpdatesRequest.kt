@@ -129,26 +129,30 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
                         val addedValues = scanRequest.dataModel.fromChanges(null, changes)
 
                         AdditionUpdate(
-                            objectChange.key,
-                            versionedChange.version,
-                            insertionIndex,
-                            addedValues
+                            key = objectChange.key,
+                            version = versionedChange.version,
+                            firstVersion = versionedChange.version,
+                            insertionIndex = insertionIndex,
+                            isDeleted = false,
+                            values = addedValues
                         )
                     } else {
                         if (scanRequest.orderedKeys?.contains(objectChange.key) != false) {
                             ChangeUpdate(
-                                objectChange.key,
-                                versionedChange.version,
-                                insertionIndex,
-                                changes
+                                key = objectChange.key,
+                                version = versionedChange.version,
+                                index = insertionIndex,
+                                changes = changes
                             )
                         } else {
                             getSingleValues(key, creationVersion, cacheReader)?.let { valuesWithMeta ->
                                 AdditionUpdate(
-                                    objectChange.key,
-                                    versionedChange.version,
-                                    insertionIndex,
-                                    valuesWithMeta.values
+                                    key = objectChange.key,
+                                    version = versionedChange.version,
+                                    firstVersion = valuesWithMeta.firstVersion,
+                                    insertionIndex = insertionIndex,
+                                    isDeleted = valuesWithMeta.isDeleted,
+                                    values = valuesWithMeta.values
                                 )
                             }
                         }
@@ -207,10 +211,12 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
 
                         getSingleValues(addedKey, createdVersion, cacheReader)?.let { valuesWithMeta ->
                             updates += AdditionUpdate(
-                                addedKey,
-                                lastResponseVersion,
-                                matchingKeys.indexOf(addedKey),
-                                valuesWithMeta.values
+                                key = addedKey,
+                                version = lastResponseVersion,
+                                firstVersion = valuesWithMeta.firstVersion,
+                                insertionIndex = matchingKeys.indexOf(addedKey),
+                                isDeleted = valuesWithMeta.isDeleted,
+                                values = valuesWithMeta.values
                             )
                         }
                     }

@@ -19,8 +19,10 @@ internal class AdditionUpdateTest {
     private val additionUpdate = AdditionUpdate(
         key = key,
         version = 1uL,
+        firstVersion = 0uL,
         insertionIndex = 5,
-        values = values
+        values = values,
+        isDeleted = false
     )
 
     private val context = RequestContext(
@@ -46,7 +48,9 @@ internal class AdditionUpdateTest {
             """
             key: 0ruQCs38S2QaByYof+IJgA
             version: 1
+            firstVersion: 0
             insertionIndex: 5
+            isDeleted: false
             values:
               value: nice value
 

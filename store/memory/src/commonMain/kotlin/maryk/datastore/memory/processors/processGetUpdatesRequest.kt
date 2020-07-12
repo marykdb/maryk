@@ -71,17 +71,19 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
                         val addedValues = getRequest.dataModel.fromChanges(null, changes)
 
                         AdditionUpdate(
-                            objectChange.key,
-                            versionedChange.version,
-                            insertionIndex,
-                            addedValues
+                            key = objectChange.key,
+                            version = versionedChange.version,
+                            firstVersion = versionedChange.version,
+                            insertionIndex = insertionIndex,
+                            isDeleted = false,
+                            values = addedValues
                         )
                     } else {
                         ChangeUpdate(
-                            objectChange.key,
-                            versionedChange.version,
-                            insertionIndex,
-                            changes
+                            key = objectChange.key,
+                            version = versionedChange.version,
+                            index = insertionIndex,
+                            changes = changes
                         )
                     }
                 }

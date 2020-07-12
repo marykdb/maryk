@@ -44,8 +44,10 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ
                             AdditionUpdate(
                                 key = key,
                                 version = version,
+                                firstVersion = version,
                                 insertionIndex = insertIndex,
-                                values = values.filterWithSelect(request.select)
+                                values = values.filterWithSelect(request.select),
+                                isDeleted = false
                             )
                         )
 
@@ -143,7 +145,9 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ
                                         key = addition.key,
                                         values = addition.values,
                                         insertionIndex = newIndex,
-                                        version = this.version
+                                        version = this.version,
+                                        firstVersion = addition.firstVersion,
+                                        isDeleted = addition.isDeleted
                                     )
                                 )
                             } else {
@@ -263,8 +267,10 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> IsD
         AdditionUpdate(
             key = nextValues.key,
             version = nextValues.lastVersion,
+            firstVersion = nextValues.firstVersion,
             insertionIndex = currentKeys.size,
-            values = nextValues.values
+            values = nextValues.values,
+            isDeleted = nextValues.isDeleted
         )
     } else null
 }

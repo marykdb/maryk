@@ -7,6 +7,7 @@ import maryk.core.models.IsValuesDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.contextual.embedContextual
 import maryk.core.properties.definitions.number
 import maryk.core.properties.types.Key
@@ -22,7 +23,9 @@ import maryk.core.values.Values
 data class AdditionUpdate<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
     val key: Key<DM>,
     override val version: ULong,
+    val firstVersion: ULong,
     val insertionIndex: Int,
+    val isDeleted: Boolean,
     val values: Values<DM, P>
 ) : IsUpdateResponse<DM, P> {
     override val type = Addition
@@ -31,9 +34,11 @@ data class AdditionUpdate<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
     object Properties : ObjectPropertyDefinitions<AdditionUpdate<*, *>>() {
         val key by addKey(AdditionUpdate<*, *>::key)
         val version by number(2u, getter = AdditionUpdate<*, *>::version, type = UInt64)
-        val insertionIndex by number(3u, getter = AdditionUpdate<*, *>::insertionIndex, type = SInt32)
+        val firstVersion by number(3u, getter = AdditionUpdate<*, *>::firstVersion, type = UInt64)
+        val insertionIndex by number(4u, getter = AdditionUpdate<*, *>::insertionIndex, type = SInt32)
+        val isDeleted by boolean(index = 5u, getter = AdditionUpdate<*, *>::isDeleted)
         val values by embedContextual(
-            index = 4u,
+            index = 6u,
             getter = AdditionUpdate<*, *>::values,
             contextualResolver = { context: RequestContext? ->
                 @Suppress("UNCHECKED_CAST")
@@ -49,8 +54,10 @@ data class AdditionUpdate<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
         override fun invoke(values: SimpleObjectValues<AdditionUpdate<*, *>>) = AdditionUpdate<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
             key = values(1u),
             version = values(2u),
-            insertionIndex = values(3u),
-            values = values(4u)
+            firstVersion = values(3u),
+            insertionIndex = values(4u),
+            isDeleted = values(5u),
+            values = values(6u)
         )
     }
 }

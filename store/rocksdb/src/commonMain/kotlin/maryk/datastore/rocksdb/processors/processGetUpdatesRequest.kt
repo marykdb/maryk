@@ -106,7 +106,9 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
                                 AdditionUpdate(
                                     objectChange.key,
                                     versionedChange.version,
+                                    versionedChange.version,
                                     insertionIndex,
+                                    false,
                                     addedValues
                                 )
                             } else {

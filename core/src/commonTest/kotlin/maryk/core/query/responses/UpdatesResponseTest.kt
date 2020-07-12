@@ -24,7 +24,7 @@ class UpdatesResponseTest {
         TestMarykModel,
         listOf(
             OrderedKeysUpdate(listOf(key), 1234uL),
-            AdditionUpdate(key, 1234uL, 0, testMarykModelObject),
+            AdditionUpdate(key, 1234uL, 1233uL, 0, false, testMarykModelObject),
             ChangeUpdate(key, 1235uL, 4, listOf(
                 Change(
                     TestMarykModel { string::ref } with "ha 2"
@@ -63,7 +63,9 @@ class UpdatesResponseTest {
             - !Addition
               key: AAACKwEAAg
               version: 1234
+              firstVersion: 1233
               insertionIndex: 0
+              isDeleted: false
               values:
                 string: haas
                 int: 4

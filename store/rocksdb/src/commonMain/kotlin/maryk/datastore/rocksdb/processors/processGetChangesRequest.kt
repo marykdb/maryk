@@ -18,7 +18,7 @@ import maryk.lib.recyclableByteArray
 import maryk.rocksdb.rocksDBNotFound
 import maryk.rocksdb.use
 
-internal typealias GetChangesStoreAction<DM, P> = StoreAction<DM, P, GetChangesRequest<DM, P>, ChangesResponse<DM>>
+internal typealias GetChangesStoreAction<DM, P> = StoreAction<DM, P, GetChangesRequest<DM, P>, ChangesResponse<DM, P>>
 internal typealias AnyGetChangesStoreAction = GetChangesStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
 
 /** Processes a GetChangesRequest in a [storeAction] into a [dataStore] */
@@ -77,6 +77,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
                         getRequest.fromVersion,
                         getRequest.toVersion,
                         getRequest.maxVersions,
+                        null,
                         cacheReader
                     )?.also {
                         // Only add if not null

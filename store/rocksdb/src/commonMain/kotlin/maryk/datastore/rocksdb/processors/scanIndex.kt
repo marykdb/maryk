@@ -32,7 +32,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
     scanRequest: IsScanRequest<DM, P, *>,
     indexScan: IndexScan,
     keyScanRange: KeyScanRanges,
-    processStoreValue: (Key<DM>, ULong) -> Unit
+    processStoreValue: (Key<DM>, ULong, ByteArray?) -> Unit
 ) {
     val indexReference = indexScan.index.referenceStorageByteArray.bytes
 
@@ -55,7 +55,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
 
     val keySize = scanRequest.dataModel.keyByteSize
     val valueOffset = indexReference.size
-    val toSubstractFromSize = keySize + indexReference.size + if(scanRequest.toVersion != null) VERSION_BYTE_SIZE else 0
+    val versionSize = if(scanRequest.toVersion != null) VERSION_BYTE_SIZE else 0
 
     when (indexScan.direction) {
         ASC -> {
@@ -72,7 +72,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
                     keySize,
                     scanRequest,
                     indexScanRange,
-                    toSubstractFromSize,
+                    versionSize,
                     valueOffset,
                     processStoreValue,
                     { indexRecord, valueSize ->
@@ -108,7 +108,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
                     keySize,
                     scanRequest,
                     indexScanRange,
-                    toSubstractFromSize,
+                    versionSize,
                     valueOffset,
                     processStoreValue,
                     { indexRecord, valueSize ->
@@ -220,9 +220,9 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> checkAndPro
     keySize: Int,
     scanRequest: IsScanRequest<DM, P, *>,
     indexScanRange: IndexableScanRanges,
-    toSubstractFromSize: Int,
+    versionSize: Int,
     valueOffset: Int,
-    processStoreValue: (Key<DM>, ULong) -> Unit,
+    processStoreValue: (Key<DM>, ULong, ByteArray?) -> Unit,
     isPastRange: (ByteArray, Int) -> Boolean,
     checkVersion: (ByteArray) -> Boolean,
     next: (ByteArray, Int, Int) -> Unit
@@ -230,7 +230,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> checkAndPro
     var currentSize: UInt = 0u
     while (iterator.isValid()) {
         val indexRecord = iterator.key()
-        val valueSize = indexRecord.size - toSubstractFromSize
+        val valueSize = indexRecord.size - valueOffset - keySize - versionSize
         val keyOffset = valueOffset + valueSize
 
         if (isPastRange(indexRecord, valueSize)) {
@@ -258,7 +258,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> checkAndPro
                     readOptions,
                     key.bytes
                 )?.let { createdVersion ->
-                    processStoreValue(key, createdVersion)
+                    processStoreValue(key, createdVersion, indexRecord.copyOfRange(valueOffset, indexRecord.size - versionSize))
                 }
 
                 // Break when limit is found

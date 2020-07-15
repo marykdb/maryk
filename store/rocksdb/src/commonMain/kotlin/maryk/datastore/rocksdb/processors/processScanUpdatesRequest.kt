@@ -89,7 +89,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
                     sortingIndex = indexScan.index
                 }
             }
-        ) { key, creationVersion ->
+        ) { key, creationVersion, sortingKey ->
             insertionIndex++
 
             matchingKeys.add(key)
@@ -120,6 +120,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
                 scanRequest.fromVersion,
                 scanRequest.toVersion,
                 scanRequest.maxVersions,
+                sortingKey,
                 cacheReader
             )?.let { objectChange ->
                 updates += objectChange.changes.mapNotNull { versionedChange ->

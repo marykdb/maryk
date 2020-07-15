@@ -4,7 +4,6 @@ import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.fromChanges
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.ObjectCreate
@@ -46,7 +45,6 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
     var lastResponseVersion = 0uL
 
     var sortingKeys: MutableList<ByteArray>? = null
-    var sortingIndex: IsIndexable? = null
 
     var insertionIndex = -1
 
@@ -55,18 +53,17 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
         dataStore = dataStore,
         recordFetcher = recordFetcher,
         scanSetup = {
-            (it as? IndexScan)?.let { indexScan ->
+            (it as? IndexScan)?.let { _ ->
                 sortingKeys = mutableListOf()
-                sortingIndex = indexScan.index
             }
         }
-    ) { record ->
+    ) { record, sortingKey ->
         insertionIndex++
 
         matchingKeys.add(record.key)
 
         // Add sorting index
-        sortingIndex?.toStorageByteArrayForIndex(record, record.key.bytes)?.let {
+        sortingKey?.let {
             sortingKeys?.add(it)
         }
 
@@ -79,6 +76,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
             scanRequest.fromVersion,
             scanRequest.toVersion,
             scanRequest.maxVersions,
+            sortingKey,
             record
         )?.let { objectChange ->
             updates += objectChange.changes.mapNotNull { versionedChange ->

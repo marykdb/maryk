@@ -32,7 +32,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
     columnFamilies: TableColumnFamilies,
     readOptions: ReadOptions,
     scanSetup: ((ScanType) -> Unit)? = null,
-    processRecord: (Key<DM>, ULong) -> Unit
+    processRecord: (Key<DM>, ULong, ByteArray?) -> Unit
 ) {
     val keyScanRange = scanRequest.dataModel.createScanRange(scanRequest.where, scanRequest.startKey?.bytes, scanRequest.includeStart)
 
@@ -50,7 +50,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
                 if (valueLength != rocksDBNotFound) {
                     val createdVersion = recyclableByteArray.readVersionBytes()
                     if (shouldProcessRecord(dbAccessor, columnFamilies, readOptions, key, createdVersion, scanRequest, keyScanRange)) {
-                        processRecord(key, createdVersion)
+                        processRecord(key, createdVersion, null)
                     }
                 }
             }
@@ -80,7 +80,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
 
                         if (shouldProcessRecord(dbAccessor, columnFamilies, readOptions, key, setAtVersion, scanRequest, keyScanRange)) {
                             readCreationVersion(dbAccessor, columnFamilies, readOptions, key.bytes)?.let { createdVersion ->
-                                processRecord(key, createdVersion)
+                                processRecord(key, createdVersion, null)
                             }
                         }
                     }

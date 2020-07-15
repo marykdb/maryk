@@ -9,8 +9,13 @@ import kotlinx.coroutines.flow.onStart
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.types.Key
-import maryk.core.query.requests.IsUpdatesRequest
+import maryk.core.query.requests.IsFetchRequest
+import maryk.core.query.responses.ChangesResponse
+import maryk.core.query.responses.IsDataResponse
 import maryk.core.query.responses.UpdatesResponse
+import maryk.core.query.responses.ValuesResponse
+import maryk.core.query.responses.updates.InitialChangesUpdate
+import maryk.core.query.responses.updates.InitialValuesUpdate
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.core.values.Values
@@ -20,14 +25,35 @@ import maryk.lib.concurrency.AtomicReference
 
 /** Listener for updates on a data store */
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
-abstract class UpdateListener<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions, RQ: IsUpdatesRequest<DM, P, *>>(
+abstract class UpdateListener<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions, RQ: IsFetchRequest<DM, P, *>>(
     val request: RQ,
-    val updatesResponse: UpdatesResponse<DM, P>
+    val response: IsDataResponse<DM, P>
 ) {
     protected val sendChannel = BroadcastChannel<IsUpdateResponse<DM, P>>(Channel.BUFFERED)
 
-    val matchingKeys = AtomicReference((updatesResponse.updates.firstOrNull() as? OrderedKeysUpdate<DM, P>)?.keys ?: listOf())
-    val lastResponseVersion = (updatesResponse.updates.firstOrNull() as? OrderedKeysUpdate<DM, P>)?.version ?: 0uL
+    val matchingKeys: AtomicReference<List<Key<DM>>>
+    val lastResponseVersion: ULong
+
+    init {
+        @Suppress("UNCHECKED_CAST")
+        when (response) {
+            is UpdatesResponse<DM, P> -> {
+                matchingKeys = AtomicReference((response.updates.firstOrNull() as? OrderedKeysUpdate<DM, P>)?.keys ?: listOf())
+                lastResponseVersion = (response.updates.firstOrNull() as? OrderedKeysUpdate<DM, P>)?.version ?: 0uL
+            }
+            is ValuesResponse<DM, P> -> {
+                matchingKeys = AtomicReference(response.values.map { it.key })
+                lastResponseVersion = response.values.maxBy { it.lastVersion }?.lastVersion ?: 0uL
+            }
+            is ChangesResponse<DM, P> -> {
+                matchingKeys = AtomicReference(response.changes.map { it.key })
+                lastResponseVersion = response.changes.fold(0uL) { acc, value ->
+                    maxOf(acc, value.changes.maxBy { it.version }?.version ?: 0uL)
+                }
+            }
+            else -> throw Exception("Unknown response type $response. Cannot process its values")
+        }
+    }
 
     // True if the listener filters on mutable values
     val filterContainsMutableValues: Boolean = request.where?.singleReference {
@@ -62,8 +88,25 @@ abstract class UpdateListener<DM: IsRootValuesDataModel<P>, P: PropertyDefinitio
 
     /** Get flow with update responses */
     fun getFlow() = sendChannel.asFlow().onStart {
-        for (update in updatesResponse.updates) {
-            emit(update)
+        when (response) {
+            is UpdatesResponse<DM, P> -> {
+                for (update in response.updates) {
+                    emit(update)
+                }
+            }
+            is ValuesResponse<DM, P> -> emit(
+                InitialValuesUpdate(
+                    version = lastResponseVersion,
+                    values = response.values
+                )
+            )
+            is ChangesResponse<DM, P> -> emit(
+                InitialChangesUpdate(
+                    version = lastResponseVersion,
+                    changes = response.changes
+                )
+            )
+            else -> throw Exception("Unknown response type $response. Cannot process its values")
         }
     }
 

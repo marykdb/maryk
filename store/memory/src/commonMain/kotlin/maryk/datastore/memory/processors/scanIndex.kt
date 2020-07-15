@@ -21,7 +21,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
     recordFetcher: (IsRootValuesDataModel<*>, Key<*>) -> DataRecord<*, *>?,
     indexScan: IndexScan,
     keyScanRange: KeyScanRanges,
-    processStoreValue: (DataRecord<DM, P>) -> Unit
+    processStoreValue: (DataRecord<DM, P>, ByteArray?) -> Unit
 ) {
     val indexReference = indexScan.index.referenceStorageByteArray.bytes
     val index = dataStore.getOrCreateIndex(indexReference)
@@ -73,7 +73,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
                         continue
                     }
 
-                    processStoreValue(dataRecord)
+                    processStoreValue(dataRecord, indexRecord.value)
 
                     // Break when limit is found
                     if (++currentSize == scanRequest.limit) break
@@ -117,7 +117,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
                         continue
                     }
 
-                    processStoreValue(dataRecord)
+                    processStoreValue(dataRecord, indexRecord.value)
 
                     // Break when limit is found
                     if (++currentSize == scanRequest.limit) break

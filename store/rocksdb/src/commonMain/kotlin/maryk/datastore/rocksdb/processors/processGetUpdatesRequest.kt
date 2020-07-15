@@ -95,6 +95,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
                         getRequest.fromVersion,
                         getRequest.toVersion,
                         getRequest.maxVersions,
+                        null,
                         cacheReader
                     )?.also { objectChange ->
                         updates += objectChange.changes.map { versionedChange ->

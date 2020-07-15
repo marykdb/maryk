@@ -20,7 +20,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
     recordFetcher: (IsRootValuesDataModel<*>, Key<*>) -> DataRecord<*, *>?,
     direction: Direction,
     scanRange: KeyScanRanges,
-    processStoreValue: (DataRecord<DM, P>) -> Unit
+    processStoreValue: (DataRecord<DM, P>, ByteArray?) -> Unit
 ) {
     val toVersion = scanRequest.toVersion?.let { HLC(it) }
 
@@ -56,7 +56,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
                         continue
                     }
 
-                    processStoreValue(record)
+                    processStoreValue(record, null)
 
                     // Break when limit is found
                     if (++currentSize == scanRequest.limit) break
@@ -93,7 +93,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
                         continue
                     }
 
-                    processStoreValue(record)
+                    processStoreValue(record, null)
 
                     // Break when limit is found
                     if (++currentSize == scanRequest.limit) break

@@ -1,6 +1,7 @@
 package maryk.datastore.test
 
 import maryk.core.exceptions.RequestException
+import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
@@ -23,7 +24,9 @@ import maryk.test.models.Log
 import maryk.test.models.Severity.ERROR
 import maryk.test.models.Severity.INFO
 import maryk.test.runSuspendingTest
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 import kotlin.test.expect
 
 class DataStoreScanChangesTest(
@@ -82,7 +85,7 @@ class DataStoreScanChangesTest(
             Log.scanChanges(startKey = keys[2])
         )
 
-        expect(3) { scanResponse.changes.size }
+        assertEquals(3, scanResponse.changes.size)
 
         // Mind that Log is sorted in reverse so it goes back in time going forward
         scanResponse.changes[0].let {
@@ -100,7 +103,8 @@ class DataStoreScanChangesTest(
             ) {
                 it.changes
             }
-            expect(keys[2]) { it.key }
+            assertEquals(keys[2], it.key)
+            assertNull(it.sortingKey)
         }
         scanResponse.changes[1].let {
             expect(
@@ -115,7 +119,8 @@ class DataStoreScanChangesTest(
                     ))
                 )
             ) { it.changes }
-            expect(keys[1]) { it.key }
+            assertEquals(keys[1], it.key)
+            assertNull(it.sortingKey)
         }
         scanResponse.changes[2].let {
             expect(
@@ -132,7 +137,8 @@ class DataStoreScanChangesTest(
             ) {
                 it.changes
             }
-            expect(keys[0]) { it.key }
+            assertEquals(keys[0], it.key)
+            assertNull(it.sortingKey)
         }
     }
 
@@ -145,10 +151,12 @@ class DataStoreScanChangesTest(
 
         // Mind that Log is sorted in reverse so it goes back in time going forward
         scanResponse.changes[0].apply {
-            expect(keys[2]) { key }
+            assertEquals(keys[2], key)
+            assertNull(sortingKey)
         }
         scanResponse.changes[1].apply {
-            expect(keys[3]) { key }
+            assertEquals(keys[3], key)
+            assertNull(sortingKey)
         }
     }
 
@@ -161,10 +169,12 @@ class DataStoreScanChangesTest(
 
         // Mind that Log is sorted in reverse so it goes back in time going forward
         scanResponse.changes[0].apply {
-            expect(keys[0]) { key }
+            assertEquals(keys[0], key)
+            assertEquals(Bytes("AAECf///pBP6hn/XAAE"), sortingKey)
         }
         scanResponse.changes[1].apply {
-            expect(keys[3]) { key }
+            assertEquals(keys[3], key)
+            assertEquals(Bytes("AAMCf///pBPjrX//AAM"), sortingKey)
         }
     }
 
@@ -177,10 +187,12 @@ class DataStoreScanChangesTest(
 
         // Mind that Log is sorted in reverse so it goes back in time going forward
         scanResponse.changes[0].apply {
-            expect(keys[3]) { key }
+            assertEquals(keys[3], key)
+            assertEquals(Bytes("AAMCf///pBPjrX//AAM"), sortingKey)
         }
         scanResponse.changes[1].apply {
-            expect(keys[0]) { key }
+            assertEquals(keys[0], key)
+            assertEquals(Bytes("AAECf///pBP6hn/XAAE"), sortingKey)
         }
     }
 

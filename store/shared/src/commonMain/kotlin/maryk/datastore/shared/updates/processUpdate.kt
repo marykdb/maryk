@@ -8,8 +8,9 @@ import maryk.core.properties.types.Key
 import maryk.core.query.changes.IndexChange
 import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.ObjectSoftDeleteChange
+import maryk.core.query.requests.IsChangesRequest
+import maryk.core.query.requests.IsFetchRequest
 import maryk.core.query.requests.IsScanRequest
-import maryk.core.query.requests.IsUpdatesRequest
 import maryk.core.query.requests.get
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.updates.AdditionUpdate
@@ -26,7 +27,7 @@ import maryk.datastore.shared.updates.Update.Change
 import maryk.datastore.shared.updates.Update.Deletion
 
 /** processes a single update */
-internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ: IsUpdatesRequest<DM, P, *>> Update<DM, P>.process(
+internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ: IsFetchRequest<DM, P, *>> Update<DM, P>.process(
     updateListener: UpdateListener<DM, P, RQ>,
     dataStore: IsDataStore,
     sendChannel: SendChannel<IsUpdateResponse<DM, P>>
@@ -34,7 +35,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ
     val request = updateListener.request
     val currentKeys = updateListener.matchingKeys.get()
     // Only process object requests or change requests if the version is after or equal to from version
-    if (request.fromVersion <= version) {
+    if (request !is IsChangesRequest<*, *, *> || request.fromVersion <= version) {
         when (this) {
             is Addition<DM, P> -> {
                 if (values.matches(request.where)) {
@@ -52,7 +53,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ
                         )
 
                         // Remove any values after the limit
-                        if (updateListener is UpdateListenerForScan<DM, P> && updateListener.request.limit - 1u == insertIndex.toUInt()) {
+                        if (updateListener is UpdateListenerForScan<DM, P, *> && updateListener.request.limit - 1u == insertIndex.toUInt()) {
                             val keyToRemove = updateListener.getLast()
                             updateListener.removeKey(keyToRemove)
 
@@ -108,7 +109,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ
                             }
                         }
                     }
-                } else if (!shouldDelete && updateListener is UpdateListenerForScan<DM, P> && updateListener.indexScanRange != null) {
+                } else if (!shouldDelete && updateListener is UpdateListenerForScan<DM, P, *> && updateListener.indexScanRange != null) {
                     val lastKey = currentKeys.last()
                     val lastSortedKey = updateListener.sortedValues?.get()?.last()
 
@@ -197,7 +198,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> Change<DM, 
 }
 
 /** Handles the deletion of Values defined in [change] and if necessary request a new value to put at end */
-private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ: IsUpdatesRequest<DM, P, *>> handleDeletion(
+private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ: IsFetchRequest<DM, P, *>> handleDeletion(
     dataStore: IsDataStore,
     change: Update<DM, P>,
     reason: RemovalReason,
@@ -216,7 +217,7 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ:
         )
     }
 
-    if (updateListener is UpdateListenerForScan<DM, P> && updateListener.request.limit - 1u == updateListener.matchingKeys.get().size.toUInt()) {
+    if (updateListener is UpdateListenerForScan<DM, P, *> && updateListener.request.limit - 1u == updateListener.matchingKeys.get().size.toUInt()) {
         dataStore.requestNextValues(updateListener.request, updateListener.matchingKeys.get())?.also { additionUpdate ->
             // Always at the end so no need to order
             updateListener.addValuesAtEnd(additionUpdate.key, additionUpdate.values)

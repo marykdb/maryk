@@ -33,7 +33,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
     @Suppress("UNCHECKED_CAST")
     val dataStore = dataStoreFetcher(scanRequest.dataModel) as DataStore<DM, P>
 
-    processScan(scanRequest, dataStore, recordFetcher) { record ->
+    processScan(scanRequest, dataStore, recordFetcher) { record, _ ->
         val toVersion = scanRequest.toVersion?.let { HLC(it) }
 
         val valuesWithMetaData = scanRequest.dataModel.recordToValueWithMeta(

@@ -2,12 +2,14 @@ package maryk.core.query.responses.updates
 
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.changes.Change
+import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.pairs.with
 import maryk.core.query.responses.updates.RemovalReason.HardDelete
 import maryk.test.models.SimpleMarykModel
 import maryk.test.models.SimpleMarykModel.Properties
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 internal class processUpdateResponseTest {
     val key1 = SimpleMarykModel.key("dR9gVdRcSPw2molM1AiOng")
@@ -29,6 +31,49 @@ internal class processUpdateResponseTest {
             isDeleted = false
         )
     )
+
+    @Test
+    fun testInitialValues() {
+        val initialValuesUpdate = InitialValuesUpdate(
+            version = 123456uL,
+            values = listOf(
+                ValuesWithMetaData(
+                    key = key1,
+                    firstVersion = 123456uL,
+                    lastVersion = 1234568uL,
+                    isDeleted = false,
+                    values = SimpleMarykModel(
+                        value = "test value 1"
+                    )
+                )
+            )
+        )
+
+        val newItems = processUpdateResponse(initialValuesUpdate, initialItems)
+
+        assertEquals(1, newItems.size)
+
+        newItems[0].apply {
+            assertEquals(initialValuesUpdate.values[0], this)
+        }
+    }
+
+    @Test
+    fun testInitialChanges() {
+        val initialChangesUpdate = InitialChangesUpdate(
+            version = 123456uL,
+            changes = listOf(
+                DataObjectVersionedChange(
+                    key = key1,
+                    changes = listOf()
+                )
+            )
+        )
+
+        assertFailsWith<Exception> {
+            processUpdateResponse(initialChangesUpdate, initialItems)
+        }
+    }
 
     @Test
     fun testAddition() {

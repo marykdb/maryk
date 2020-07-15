@@ -5,6 +5,7 @@ import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.readStorageToChanges
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
+import maryk.core.properties.types.Bytes
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataRecordHistoricValues
@@ -18,6 +19,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordT
     fromVersion: ULong,
     toVersion: ULong?,
     maxVersions: UInt,
+    sortingKey: ByteArray?,
     record: DataRecord<DM, P>
 ): DataObjectVersionedChange<DM>? {
     var valueIndex = -1
@@ -92,6 +94,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordT
     }
     return DataObjectVersionedChange(
         key = record.key,
+        sortingKey = sortingKey?.let(::Bytes),
         changes = changes
     )
 }

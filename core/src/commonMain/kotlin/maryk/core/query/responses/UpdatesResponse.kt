@@ -16,7 +16,7 @@ import maryk.core.values.SimpleObjectValues
 data class UpdatesResponse<DM : IsRootValuesDataModel<P>, P: PropertyDefinitions>(
     override val dataModel: DM,
     val updates: List<IsUpdateResponse<DM, P>>
-) : IsDataModelResponse<DM> {
+) : IsDataResponse<DM, P> {
     @Suppress("unused")
     companion object : SimpleQueryDataModel<UpdatesResponse<*, *>>(
         properties = object : ObjectPropertyDefinitions<UpdatesResponse<*, *>>() {

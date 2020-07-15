@@ -20,7 +20,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
     scanRequest: IsScanRequest<DM, P, *>,
     direction: Direction,
     scanRange: KeyScanRanges,
-    processStoreValue: (Key<DM>, ULong) -> Unit
+    processStoreValue: (Key<DM>, ULong, ByteArray?) -> Unit
 ) {
     val iterator = dbAccessor.getIterator(dataStore.defaultReadOptions, columnFamilies.keys)
 
@@ -58,7 +58,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
                         continue
                     }
 
-                    processStoreValue(key, creationVersion)
+                    processStoreValue(key, creationVersion, null)
 
                     // Break when limit is found
                     if (++currentSize == scanRequest.limit) break
@@ -102,7 +102,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
                         continue
                     }
 
-                    processStoreValue(key, creationVersion)
+                    processStoreValue(key, creationVersion, null)
 
                     // Break when limit is found
                     if (++currentSize == scanRequest.limit) break

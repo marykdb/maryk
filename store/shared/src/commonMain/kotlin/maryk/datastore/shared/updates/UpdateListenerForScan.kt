@@ -11,8 +11,11 @@ import maryk.core.query.changes.IndexDelete
 import maryk.core.query.changes.IndexUpdate
 import maryk.core.query.orders.Direction.ASC
 import maryk.core.query.orders.Direction.DESC
-import maryk.core.query.requests.ScanUpdatesRequest
+import maryk.core.query.requests.IsScanRequest
+import maryk.core.query.responses.ChangesResponse
+import maryk.core.query.responses.IsDataResponse
 import maryk.core.query.responses.UpdatesResponse
+import maryk.core.query.responses.ValuesResponse
 import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.core.values.Values
 import maryk.datastore.shared.IsDataStore
@@ -25,21 +28,43 @@ import maryk.lib.extensions.compare.compareTo
 
 @OptIn(ExperimentalStdlibApi::class)
 /** Update listener for scans */
-class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
-    request: ScanUpdatesRequest<DM, P>,
+class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions, RP: IsDataResponse<DM, P>>(
+    request: IsScanRequest<DM, P, RP>,
     val scanRange: KeyScanRanges,
-    updatesResponse: UpdatesResponse<DM, P>
-) : UpdateListener<DM, P, ScanUpdatesRequest<DM, P>>(
+    response: IsDataResponse<DM, P>
+) : UpdateListener<DM, P, IsScanRequest<DM, P, RP>>(
     request,
-    updatesResponse
+    response
 ) {
     private val scanType = request.dataModel.orderToScanType(request.order, scanRange.equalPairs)
 
-    internal val sortedValues = (updatesResponse.updates.firstOrNull() as? OrderedKeysUpdate<DM, P>)?.sortingKeys?.let { sortingKeys ->
-        AtomicReference(sortingKeys.map { it.bytes }.toList())
-    }
-
     internal val indexScanRange = (scanType as? IndexScan)?.index?.createScanRange(request.where, scanRange)
+
+    internal val sortedValues: AtomicReference<List<ByteArray>>?
+
+    init {
+        this.sortedValues = when(response) {
+            is UpdatesResponse<DM, P> -> {
+                @Suppress("UNCHECKED_CAST")
+                (response.updates.firstOrNull() as? OrderedKeysUpdate<DM, P>)?.sortingKeys?.let { sortingKeys ->
+                    AtomicReference(sortingKeys.map { it.bytes }.toList())
+                }
+            }
+            is ValuesResponse<DM, P> -> {
+                if (scanType is IndexScan) {
+                    response.values.mapNotNull { valuesWithMeta ->
+                        scanType.index.toStorageByteArrayForIndex(valuesWithMeta.values, valuesWithMeta.key.bytes)
+                    }.let { AtomicReference(it) }
+                } else null
+            }
+            is ChangesResponse<DM, P> -> {
+                if (scanType is IndexScan) {
+                    response.changes.mapNotNull { it.sortingKey?.bytes }.let { AtomicReference(it) }
+                } else null
+            }
+            else -> throw Exception("Unknown response type $response. Cannot process")
+        }
+    }
 
     override suspend fun process(
         update: Update<DM, P>,

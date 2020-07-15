@@ -8,6 +8,8 @@ import maryk.core.query.changes.ObjectSoftDeleteChange
 @OptIn(ExperimentalStdlibApi::class)
 fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processUpdateResponse(response: IsUpdateResponse<DM, P>, previousResults: List<ValuesWithMetaData<DM, P>>) =
     when (response) {
+        is InitialValuesUpdate<DM, P> -> response.values
+        is InitialChangesUpdate<DM, P> -> throw Exception("processUpdateResponse cannot work with Change requests/responses")
         is AdditionUpdate<DM, P> -> buildList(previousResults.size + 1) {
             addAll(previousResults)
             add(response.insertionIndex,

@@ -10,7 +10,7 @@ import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkMaxVersions
 
-internal typealias ScanChangesStoreAction<DM, P> = StoreAction<DM, P, ScanChangesRequest<DM, P>, ChangesResponse<DM>>
+internal typealias ScanChangesStoreAction<DM, P> = StoreAction<DM, P, ScanChangesRequest<DM, P>, ChangesResponse<DM, P>>
 internal typealias AnyScanChangesStoreAction = ScanChangesStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
 
 /** Processes a ScanChangesRequest in a [storeAction] into a dataStore from [dataStoreFetcher] */
@@ -28,12 +28,13 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
 
     scanRequest.checkMaxVersions(dataStore.keepAllVersions)
 
-    processScan(scanRequest, dataStore, recordFetcher) { record ->
+    processScan(scanRequest, dataStore, recordFetcher) { record, sortingKey ->
         scanRequest.dataModel.recordToObjectChanges(
             scanRequest.select,
             scanRequest.fromVersion,
             scanRequest.toVersion,
             scanRequest.maxVersions,
+            sortingKey,
             record
         )?.let {
             // Only add if not null

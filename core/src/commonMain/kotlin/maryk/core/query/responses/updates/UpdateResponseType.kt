@@ -15,7 +15,9 @@ enum class UpdateResponseType(
     Addition(1u),
     Change(2u),
     Removal(3u),
-    OrderedKeys(4u);
+    OrderedKeys(4u),
+    InitialValues(5u),
+    InitialChanges(6u);
 
     companion object : IndexedEnumDefinition<UpdateResponseType>(
         UpdateResponseType::class, UpdateResponseType::values
@@ -27,5 +29,7 @@ internal val mapOfUpdateResponses = mapOf(
     UpdateResponseType.Addition to EmbeddedObjectDefinition(dataModel = { AdditionUpdate }),
     UpdateResponseType.Change to EmbeddedObjectDefinition(dataModel = { ChangeUpdate }),
     UpdateResponseType.Removal to EmbeddedObjectDefinition(dataModel = { RemovalUpdate }),
-    UpdateResponseType.OrderedKeys to EmbeddedObjectDefinition(dataModel = { OrderedKeysUpdate })
+    UpdateResponseType.OrderedKeys to EmbeddedObjectDefinition(dataModel = { OrderedKeysUpdate }),
+    UpdateResponseType.InitialValues to EmbeddedObjectDefinition(dataModel = { InitialValuesUpdate }),
+    UpdateResponseType.InitialChanges to EmbeddedObjectDefinition(dataModel = { InitialChangesUpdate })
 )

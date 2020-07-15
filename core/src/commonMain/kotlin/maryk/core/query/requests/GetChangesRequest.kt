@@ -64,7 +64,7 @@ data class GetChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
     override val maxVersions: UInt = 1u,
     override val select: RootPropRefGraph<P>? = null,
     override val filterSoftDeleted: Boolean = true
-) : IsGetRequest<DM, P, ChangesResponse<DM>>, IsChangesRequest<DM, P, ChangesResponse<DM>>, IsTransportableRequest<ChangesResponse<DM>> {
+) : IsGetRequest<DM, P, ChangesResponse<DM, P>>, IsChangesRequest<DM, P, ChangesResponse<DM, P>>, IsTransportableRequest<ChangesResponse<DM, P>> {
     override val requestType = GetChanges
     override val responseModel = ChangesResponse
 

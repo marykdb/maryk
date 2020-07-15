@@ -71,7 +71,7 @@ data class ScanChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinit
     override val maxVersions: UInt = 1u,
     override val select: RootPropRefGraph<P>? = null,
     override val filterSoftDeleted: Boolean = true
-) : IsScanRequest<DM, P, ChangesResponse<DM>>, IsChangesRequest<DM, P, ChangesResponse<DM>>, IsTransportableRequest<ChangesResponse<DM>> {
+) : IsScanRequest<DM, P, ChangesResponse<DM, P>>, IsChangesRequest<DM, P, ChangesResponse<DM, P>>, IsTransportableRequest<ChangesResponse<DM, P>> {
     override val requestType = ScanChanges
     override val responseModel = ChangesResponse
 

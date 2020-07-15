@@ -17,7 +17,7 @@ data class ValuesResponse<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions
     override val dataModel: DM,
     val values: List<ValuesWithMetaData<DM, P>>,
     val aggregations: AggregationsResponse? = null
-) : IsDataModelResponse<DM> {
+) : IsDataResponse<DM, P> {
     object Properties : ObjectPropertyDefinitions<ValuesResponse<*, *>>() {
         val dataModel by addDataModel(ValuesResponse<*, *>::dataModel)
         val values = ObjectListDefinitionWrapper(

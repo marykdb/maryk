@@ -16,6 +16,7 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.IsPropertyReferenceForCache
+import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.changes.VersionedChanges
@@ -39,6 +40,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
     fromVersion: ULong,
     toVersion: ULong?,
     maxVersions: UInt,
+    sortingKey: ByteArray?,
     cachedRead: (IsPropertyReferenceForCache<*, *>, ULong, () -> Any?) -> Any?
 ): DataObjectVersionedChange<DM>? {
     val changes: List<VersionedChanges>
@@ -202,6 +204,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
     }
     return DataObjectVersionedChange(
         key = key,
+        sortingKey = sortingKey?.let(::Bytes),
         changes = changes
     )
 }

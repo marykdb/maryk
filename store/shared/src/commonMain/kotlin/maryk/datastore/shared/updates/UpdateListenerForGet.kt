@@ -3,19 +3,19 @@ package maryk.datastore.shared.updates
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.types.Key
-import maryk.core.query.requests.GetUpdatesRequest
-import maryk.core.query.responses.UpdatesResponse
+import maryk.core.query.requests.IsGetRequest
+import maryk.core.query.responses.IsDataResponse
 import maryk.core.values.Values
 import maryk.datastore.shared.IsDataStore
 import maryk.datastore.shared.updates.Update.Change
 
 /** Update listener for get requests */
-class UpdateListenerForGet<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
-    request: GetUpdatesRequest<DM, P>,
-    updatesResponse: UpdatesResponse<DM, P>
-) : UpdateListener<DM, P, GetUpdatesRequest<DM, P>>(
+class UpdateListenerForGet<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions, RP: IsDataResponse<DM, P>>(
+    request: IsGetRequest<DM, P, RP>,
+    response: RP
+) : UpdateListener<DM, P, IsGetRequest<DM, P, RP>>(
     request,
-    updatesResponse
+    response
 ) {
     override suspend fun process(
         update: Update<DM, P>,

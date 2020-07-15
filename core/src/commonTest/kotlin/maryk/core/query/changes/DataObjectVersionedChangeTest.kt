@@ -4,6 +4,7 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
+import maryk.core.properties.types.Bytes
 import maryk.core.query.RequestContext
 import maryk.core.query.pairs.with
 import maryk.test.models.EmbeddedMarykModel
@@ -20,6 +21,7 @@ class DataObjectVersionedChangeTest {
 
     private val dataObjectVersionedChanges = DataObjectVersionedChange(
         key = key1,
+        sortingKey = Bytes(byteArrayOf(4, 2, 43, 1, 127, -2)),
         changes = listOf(
             VersionedChanges(
                 219674127uL,
@@ -64,6 +66,7 @@ class DataObjectVersionedChangeTest {
         expect(
             """
             key: AAACKwEAAg
+            sortingKey: BAIrAX/+
             changes:
             - version: 219674127
               changes:

@@ -14,7 +14,7 @@ import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkMaxVersions
 import maryk.rocksdb.use
 
-internal typealias ScanChangesStoreAction<DM, P> = StoreAction<DM, P, ScanChangesRequest<DM, P>, ChangesResponse<DM>>
+internal typealias ScanChangesStoreAction<DM, P> = StoreAction<DM, P, ScanChangesRequest<DM, P>, ChangesResponse<DM, P>>
 internal typealias AnyScanChangesStoreAction = ScanChangesStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
 
 /** Processes a ScanChangesRequest in a [storeAction] into a [dataStore] */
@@ -42,7 +42,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
             dbAccessor,
             columnFamilies,
             dataStore.defaultReadOptions
-        ) { key, creationVersion ->
+        ) { key, creationVersion, sortingKey ->
             val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
                 cache.readValue(dbIndex, key, reference, version, valueReader)
             }
@@ -56,6 +56,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
                 scanRequest.fromVersion,
                 scanRequest.toVersion,
                 scanRequest.maxVersions,
+                sortingKey,
                 cacheReader
             )?.let {
                 // Only add if not null

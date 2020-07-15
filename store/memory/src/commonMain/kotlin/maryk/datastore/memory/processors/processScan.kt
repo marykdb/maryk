@@ -22,7 +22,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
     dataStore: DataStore<DM, P>,
     recordFetcher: (IsRootValuesDataModel<*>, Key<*>) -> DataRecord<*, *>?,
     scanSetup: ((ScanType) -> Unit)? = null,
-    processRecord: (DataRecord<DM, P>) -> Unit
+    processRecord: (DataRecord<DM, P>, ByteArray?) -> Unit
 ) {
     val keyScanRange = scanRequest.dataModel.createScanRange(scanRequest.where, scanRequest.startKey?.bytes, scanRequest.includeStart)
 
@@ -33,7 +33,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
         keyScanRange.isSingleKey() ->
             dataStore.getByKey(keyScanRange.ranges.first().start)?.let {
                 if (shouldProcessRecord(it, scanRequest, keyScanRange, recordFetcher)) {
-                    processRecord(it)
+                    processRecord(it, null)
                 }
             }
         else -> {
@@ -53,7 +53,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
 
                     record?.let {
                         if (shouldProcessRecord(record, scanRequest, keyScanRange, recordFetcher)) {
-                            processRecord(record)
+                            processRecord(record, null)
                         }
                     }
                     return

@@ -6,8 +6,10 @@ import maryk.core.models.QueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
+import maryk.core.properties.definitions.flexBytes
 import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.wrapper.contextual
+import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
@@ -17,6 +19,7 @@ import maryk.core.values.ObjectValues
  */
 data class DataObjectVersionedChange<out DM : IsRootDataModel<*>>(
     val key: Key<DM>,
+    val sortingKey: Bytes? = null,
     val changes: List<VersionedChanges>
 ) {
     object Properties : ObjectPropertyDefinitions<DataObjectVersionedChange<*>>() {
@@ -30,8 +33,15 @@ data class DataObjectVersionedChange<out DM : IsRootDataModel<*>>(
             )
         )
 
-        val changes by list(
+        val sortingKey by flexBytes(
             index = 2u,
+            getter = DataObjectVersionedChange<*>::sortingKey,
+            default = null,
+            required = false
+        )
+
+        val changes by list(
+            index = 3u,
             getter = DataObjectVersionedChange<*>::changes,
             default = emptyList(),
             valueDefinition = EmbeddedObjectDefinition(
@@ -45,7 +55,8 @@ data class DataObjectVersionedChange<out DM : IsRootDataModel<*>>(
     ) {
         override fun invoke(values: ObjectValues<DataObjectVersionedChange<*>, Properties>) = DataObjectVersionedChange(
             key = values(1u),
-            changes = values(2u)
+            sortingKey = values(2u),
+            changes = values(3u)
         )
     }
 }

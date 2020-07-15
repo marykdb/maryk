@@ -62,6 +62,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
                 getRequest.fromVersion,
                 getRequest.toVersion,
                 getRequest.maxVersions,
+                null,
                 record
             )?.let { objectChange ->
                 updates += objectChange.changes.map { versionedChange ->

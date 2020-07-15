@@ -48,7 +48,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
             transaction,
             columnFamilies,
             dataStore.defaultReadOptions
-        ) { key, creationVersion ->
+        ) { key, creationVersion, _ ->
             val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
                 cache.readValue(dbIndex, key, reference, version, valueReader)
             }

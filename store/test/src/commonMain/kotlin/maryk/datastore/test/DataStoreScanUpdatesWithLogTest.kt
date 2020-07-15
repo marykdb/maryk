@@ -35,8 +35,8 @@ class DataStoreScanUpdatesWithLogTest(
     private var highestInitVersion = ULong.MIN_VALUE
 
     override val allTests = mapOf(
-        "executeScanChangesAsFlowRequest" to ::executeScanChangesAsFlowRequest,
-        "executeScanChangesAsFlowRequestWithMutableWhere" to ::executeScanChangesAsFlowRequestWithMutableWhere
+        "executeScanUpdatesAsFlowRequest" to ::executeScanUpdatesAsFlowRequest,
+        "executeScanUpdatesAsFlowRequestWithMutableWhere" to ::executeScanUpdatesAsFlowRequestWithMutableWhere
     )
 
     override fun initData() {
@@ -75,7 +75,7 @@ class DataStoreScanUpdatesWithLogTest(
         highestInitVersion = ULong.MIN_VALUE
     }
 
-    private fun executeScanChangesAsFlowRequestWithMutableWhere() {
+    private fun executeScanUpdatesAsFlowRequestWithMutableWhere() {
         updateListenerTester(
             dataStore,
             Log.scanUpdates(
@@ -112,7 +112,7 @@ class DataStoreScanUpdatesWithLogTest(
         }
     }
 
-    private fun executeScanChangesAsFlowRequest() {
+    private fun executeScanUpdatesAsFlowRequest() {
         updateListenerTester(
             dataStore,
             // Reverse order so keys[0], [1] and [2] are within range

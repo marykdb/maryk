@@ -15,10 +15,14 @@ import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
 import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
+import maryk.core.query.requests.scan
+import maryk.core.query.requests.scanChanges
 import maryk.core.query.requests.scanUpdates
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
+import maryk.core.query.responses.updates.InitialChangesUpdate
+import maryk.core.query.responses.updates.InitialValuesUpdate
 import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.core.query.responses.updates.RemovalReason.HardDelete
 import maryk.core.query.responses.updates.RemovalReason.NotInRange
@@ -76,7 +80,7 @@ val t4 = TestMarykModel(
     dateTime = DateTime(2020, 3, 23)
 )
 
-class DataStoreScanUpdatesTest(
+class DataStoreScanUpdatesAndFlowTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
     private val testKeys = mutableListOf<Key<TestMarykModel>>()
@@ -86,13 +90,15 @@ class DataStoreScanUpdatesTest(
     override val allTests = mapOf(
         "executeSimpleScanUpdatesRequest" to ::executeSimpleScanUpdatesRequest,
         "executeOrderedScanUpdatesRequest" to ::executeOrderedScanUpdatesRequest,
+        "executeScanValuesAsFlowRequest" to ::executeScanValuesAsFlowRequest,
         "executeScanChangesAsFlowRequest" to ::executeScanChangesAsFlowRequest,
-        "executeScanChangesAsFlowWithMutableWhereRequest" to ::executeScanChangesAsFlowWithMutableWhereRequest,
-        "executeScanChangesIncludingInitValuesAsFlowRequest" to ::executeScanChangesIncludingInitValuesAsFlowRequest,
-        "executeScanChangesAsFlowWithSelectRequest" to ::executeScanChangesAsFlowWithSelectRequest,
-        "executeReversedScanChangesAsFlowRequest" to ::executeReversedScanChangesAsFlowRequest,
-        "executeOrderedScanChangesAsFlowRequest" to ::executeOrderedScanChangesAsFlowRequest,
-        "executeReverseOrderedScanChangesAsFlowRequest" to ::executeReverseOrderedScanChangesAsFlowRequest
+        "executeScanUpdatesAsFlowRequest" to ::executeScanUpdatesAsFlowRequest,
+        "executeScanUpdatesAsFlowWithMutableWhereRequest" to ::executeScanUpdatesAsFlowWithMutableWhereRequest,
+        "executeScanUpdatesIncludingInitValuesAsFlowRequest" to ::executeScanUpdatesIncludingInitValuesAsFlowRequest,
+        "executeScanUpdatesAsFlowWithSelectRequest" to ::executeScanUpdatesAsFlowWithSelectRequest,
+        "executeReversedScanUpdatesAsFlowRequest" to ::executeReversedScanUpdatesAsFlowRequest,
+        "executeOrderedScanUpdatesAsFlowRequest" to ::executeOrderedScanUpdatesAsFlowRequest,
+        "executeReverseOrderedScanUpdatesAsFlowRequest" to ::executeReverseOrderedScanUpdatesAsFlowRequest
     )
 
     override fun initData() {
@@ -177,7 +183,59 @@ class DataStoreScanUpdatesTest(
         }
     }
 
+    private fun executeScanValuesAsFlowRequest() {
+        updateListenerTester(
+            dataStore,
+            TestMarykModel.scan(
+                startKey = testKeys[1]
+            ),
+            2
+        ) { responses ->
+            assertType<InitialValuesUpdate<*, *>>(responses[0].await()).apply {
+                assertEquals(listOf(testKeys[1], testKeys[2], testKeys[3], testKeys[4]), values.map { it.key })
+                assertEquals(highestInitVersion, version)
+            }
+
+            val change = Change(TestMarykModel { string::ref } with "ha new message for values")
+            dataStore.execute(TestMarykModel.change(
+                testKeys[1].change(change)
+            ))
+
+            val changeUpdate = responses[1].await()
+            assertType<ChangeUpdate<*, *>>(changeUpdate).apply {
+                assertEquals(testKeys[1], key)
+                assertEquals(listOf(change), changes)
+            }
+        }
+    }
+
     private fun executeScanChangesAsFlowRequest() {
+        updateListenerTester(
+            dataStore,
+            TestMarykModel.scanChanges(
+                startKey = testKeys[1]
+            ),
+            2
+        ) { responses ->
+            assertType<InitialChangesUpdate<*, *>>(responses[0].await()).apply {
+                assertEquals(listOf(testKeys[1], testKeys[2], testKeys[3], testKeys[4]), changes.map { it.key })
+                assertEquals(highestInitVersion, version)
+            }
+
+            val change1 = Change(TestMarykModel { string::ref } with "ha new message for change")
+            dataStore.execute(TestMarykModel.change(
+                testKeys[1].change(change1)
+            ))
+
+            val changeUpdate1 = responses[1].await()
+            assertType<ChangeUpdate<*, *>>(changeUpdate1).apply {
+                assertEquals(testKeys[1], key)
+                assertEquals(listOf(change1), changes)
+            }
+        }
+    }
+
+    private fun executeScanUpdatesAsFlowRequest() {
         updateListenerTester(
             dataStore,
             TestMarykModel.scanUpdates(
@@ -270,7 +328,7 @@ class DataStoreScanUpdatesTest(
         }
     }
 
-    private fun executeScanChangesAsFlowWithMutableWhereRequest() {
+    private fun executeScanUpdatesAsFlowWithMutableWhereRequest() {
         updateListenerTester(
             dataStore,
             TestMarykModel.scanUpdates(
@@ -298,7 +356,7 @@ class DataStoreScanUpdatesTest(
         }
     }
 
-    private fun executeScanChangesIncludingInitValuesAsFlowRequest() {
+    private fun executeScanUpdatesIncludingInitValuesAsFlowRequest() {
         updateListenerTester(
             dataStore,
             TestMarykModel.scanUpdates(
@@ -340,7 +398,7 @@ class DataStoreScanUpdatesTest(
         }
     }
 
-    private fun executeScanChangesAsFlowWithSelectRequest() {
+    private fun executeScanUpdatesAsFlowWithSelectRequest() {
         updateListenerTester(
             dataStore,
             TestMarykModel.scanUpdates(
@@ -392,7 +450,7 @@ class DataStoreScanUpdatesTest(
         }
     }
 
-    private fun executeReversedScanChangesAsFlowRequest() {
+    private fun executeReversedScanUpdatesAsFlowRequest() {
         updateListenerTester(
             dataStore,
             TestMarykModel.scanUpdates(
@@ -470,7 +528,7 @@ class DataStoreScanUpdatesTest(
         }
     }
 
-    private fun executeOrderedScanChangesAsFlowRequest() {
+    private fun executeOrderedScanUpdatesAsFlowRequest() {
         updateListenerTester(
             dataStore,
             TestMarykModel.scanUpdates(
@@ -643,7 +701,7 @@ class DataStoreScanUpdatesTest(
         }
     }
 
-    private fun executeReverseOrderedScanChangesAsFlowRequest() {
+    private fun executeReverseOrderedScanUpdatesAsFlowRequest() {
         updateListenerTester(
             dataStore,
             TestMarykModel.scanUpdates(

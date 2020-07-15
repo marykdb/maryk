@@ -9,10 +9,14 @@ import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
 import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
+import maryk.core.query.requests.get
+import maryk.core.query.requests.getChanges
 import maryk.core.query.requests.getUpdates
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
+import maryk.core.query.responses.updates.InitialChangesUpdate
+import maryk.core.query.responses.updates.InitialValuesUpdate
 import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.core.query.responses.updates.RemovalReason.NotInRange
 import maryk.core.query.responses.updates.RemovalReason.SoftDelete
@@ -26,7 +30,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.expect
 
-class DataStoreGetUpdatesTest(
+class DataStoreGetUpdatesAndFlowTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
     private val testKeys = mutableListOf<Key<SimpleMarykModel>>()
@@ -35,9 +39,11 @@ class DataStoreGetUpdatesTest(
 
     override val allTests = mapOf(
         "executeSimpleGetUpdatesRequest" to ::executeSimpleGetUpdatesRequest,
+        "executeGetValuesAsFlowRequest" to ::executeGetValuesAsFlowRequest,
         "executeGetChangesAsFlowRequest" to ::executeGetChangesAsFlowRequest,
-        "executeGetChangesAsFlowWithMutableWhereRequest" to ::executeGetChangesAsFlowWithMutableWhereRequest,
-        "executeGetChangesWithInitChangesAsFlowRequest" to ::executeGetChangesWithInitChangesAsFlowRequest
+        "executeGetUpdatesAsFlowRequest" to ::executeGetUpdatesAsFlowRequest,
+        "executeGetUpdatesAsFlowWithMutableWhereRequest" to ::executeGetUpdatesAsFlowWithMutableWhereRequest,
+        "executeGetUpdatesWithInitChangesAsFlowRequest" to ::executeGetUpdatesWithInitChangesAsFlowRequest
     )
 
     override fun initData() {
@@ -98,7 +104,51 @@ class DataStoreGetUpdatesTest(
         }
     }
 
+    private fun executeGetValuesAsFlowRequest() = updateListenerTester(
+        dataStore,
+        SimpleMarykModel.get(testKeys[0], testKeys[1]),
+        2
+    ) { responses ->
+        assertType<InitialValuesUpdate<*, *>>(responses[0].await()).apply {
+            assertEquals(listOf(testKeys[0], testKeys[1]), values.map { it.key })
+            assertEquals(highestInitVersion, version)
+        }
+
+        val change1 = Change(SimpleMarykModel { value::ref } with "haha 55")
+        dataStore.execute(SimpleMarykModel.change(
+            testKeys[0].change(change1)
+        ))
+
+        val changeUpdate1 = responses[1].await()
+        assertType<ChangeUpdate<*, *>>(changeUpdate1).apply {
+            assertEquals(testKeys[0], key)
+            assertEquals(listOf(change1), changes)
+        }
+    }
+
     private fun executeGetChangesAsFlowRequest() = updateListenerTester(
+        dataStore,
+        SimpleMarykModel.getChanges(testKeys[0], testKeys[1]),
+        2
+    ) { responses ->
+        assertType<InitialChangesUpdate<*, *>>(responses[0].await()).apply {
+            assertEquals(listOf(testKeys[0], testKeys[1]), changes.map { it.key })
+            assertEquals(highestInitVersion, version)
+        }
+
+        val change1 = Change(SimpleMarykModel { value::ref } with "haha 66")
+        dataStore.execute(SimpleMarykModel.change(
+            testKeys[0].change(change1)
+        ))
+
+        val changeUpdate1 = responses[1].await()
+        assertType<ChangeUpdate<*, *>>(changeUpdate1).apply {
+            assertEquals(testKeys[0], key)
+            assertEquals(listOf(change1), changes)
+        }
+    }
+
+    private fun executeGetUpdatesAsFlowRequest() = updateListenerTester(
         dataStore,
         SimpleMarykModel.getUpdates(testKeys[0], testKeys[1], fromVersion = highestInitVersion + 1uL),
         4
@@ -144,7 +194,7 @@ class DataStoreGetUpdatesTest(
         }
     }
 
-    private fun executeGetChangesAsFlowWithMutableWhereRequest() = updateListenerTester(
+    private fun executeGetUpdatesAsFlowWithMutableWhereRequest() = updateListenerTester(
         dataStore,
         SimpleMarykModel.getUpdates(
             testKeys[0],
@@ -182,7 +232,7 @@ class DataStoreGetUpdatesTest(
         }
     }
 
-    private fun executeGetChangesWithInitChangesAsFlowRequest() = updateListenerTester(
+    private fun executeGetUpdatesWithInitChangesAsFlowRequest() = updateListenerTester(
         dataStore,
         SimpleMarykModel.getUpdates(testKeys[0], testKeys[2]),
         4

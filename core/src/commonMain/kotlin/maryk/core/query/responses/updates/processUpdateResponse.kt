@@ -37,7 +37,7 @@ fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processUpdateResponse
                     }
                 }
             } else {
-                buildList {
+                buildList(previousResults.size) {
                     addAll(previousResults)
                     val oldIndex = indexOfFirst { it.key == response.key }
 

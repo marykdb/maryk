@@ -16,7 +16,7 @@ class MultiTypePropertyDefinitionWrapperTest {
         definition = MultiTypeDefinition(
             typeEnum = MarykTypeEnum
         ),
-        getter = { _: Any -> null as Any? }
+        getter = { _: Any -> null }
     ) as IsDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>
 
     @Test

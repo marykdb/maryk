@@ -1,7 +1,6 @@
 package maryk.core.properties.definitions.contextual
 
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WriteCache
@@ -20,10 +19,9 @@ class ContextualSubDefinitionTest {
         "test2"
     )
 
-    @Suppress("UNCHECKED_CAST")
     private val def = ContextualSubDefinition(
         contextualResolver = { context: SubContext? ->
-            context!!.valueDefinition as IsSubDefinition<String, IsPropertyContext>
+            context!!.valueDefinition
         }
     )
 

@@ -4,14 +4,15 @@ import maryk.core.aggregations.AggregationRequestType.MaxType
 import maryk.core.aggregations.IsAggregationRequest
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.addReference
 import maryk.core.values.SimpleObjectValues
 
 /** Finds the maximum value for [reference] */
 data class Max<T: Comparable<T>>(
-    override val reference: IsPropertyReference<out T, *, *>
-) : IsAggregationRequest<T, IsPropertyReference<out Comparable<*>, *, *>, MaxResponse<T>> {
+    override val reference: IsPropertyReference<out T, IsPropertyDefinition<T>, *>
+) : IsAggregationRequest<T, IsPropertyReference<out T, IsPropertyDefinition<T>, *>, MaxResponse<T>> {
     override val aggregationType = MaxType
 
     override fun createAggregator() =

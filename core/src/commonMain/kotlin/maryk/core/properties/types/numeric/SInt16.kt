@@ -29,7 +29,7 @@ object SInt16 : NumberDescriptor<Short>(
     }
 
     override fun ofString(value: String) = value.toShort()
-    override fun ofDouble(double: Double) = double.toShort()
+    override fun ofDouble(double: Double) = double.toInt().toShort()
     override fun toDouble(value: Short) = value.toDouble()
     override fun ofInt(int: Int) = int.toShort()
     override fun ofLong(long: Long) = long.toShort()

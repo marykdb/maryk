@@ -20,7 +20,7 @@ kotlin {
                 api(kotlin("test-common"))
                 api(kotlin("test-annotations-common"))
 
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$coroutinesVersion")
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
             }
         }
         val jvmMain by getting {
@@ -28,8 +28,6 @@ kotlin {
                 api(kotlin("stdlib-jdk8"))
                 api(kotlin("test"))
                 api(kotlin("test-junit"))
-
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$coroutinesVersion")
             }
         }
         val jsMain by getting {
@@ -45,14 +43,9 @@ kotlin {
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-core-native:$coroutinesVersion")
             }
         }
-        val iosArm64Main by getting  {
+        val iosMain by getting {
             dependencies {
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core-iosarm64:$coroutinesVersion")
-            }
-        }
-        val iosX64Main by getting  {
-            dependencies {
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core-iosx64:$coroutinesVersion")
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core-native:$coroutinesVersion")
             }
         }
     }

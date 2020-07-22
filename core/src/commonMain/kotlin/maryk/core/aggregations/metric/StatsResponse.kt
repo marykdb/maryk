@@ -8,6 +8,7 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.number
@@ -20,7 +21,7 @@ import maryk.core.values.SimpleObjectValues
 
 /** The response of the stats aggregation */
 data class StatsResponse<T: Comparable<T>>(
-    val reference: IsPropertyReference<out T, *, *>,
+    val reference: IsPropertyReference<out T, IsPropertyDefinition<T>, *>,
     val valueCount: ULong,
     val average: T?,
     val min: T?,

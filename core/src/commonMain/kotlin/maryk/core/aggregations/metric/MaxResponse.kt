@@ -6,6 +6,7 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.wrapper.contextual
@@ -16,7 +17,7 @@ import maryk.core.values.SimpleObjectValues
 
 /** The response of the find maximum aggregation */
 data class MaxResponse<T: Comparable<T>>(
-    val reference: IsPropertyReference<out T, *, *>,
+    val reference: IsPropertyReference<out T, IsPropertyDefinition<T>, *>,
     val value: T?
 ) : IsAggregationResponse {
     override val aggregationType = MaxType

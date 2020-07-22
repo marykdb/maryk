@@ -4,6 +4,7 @@ import maryk.core.aggregations.AggregationResponseType.ValueCountType
 import maryk.core.aggregations.IsAggregationResponse
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.number
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.numeric.UInt64
@@ -12,7 +13,7 @@ import maryk.core.values.SimpleObjectValues
 
 /** The response of the value count */
 data class ValueCountResponse<T: Any>(
-    val reference: IsPropertyReference<out T, *, *>,
+    val reference: IsPropertyReference<out T, IsPropertyDefinition<T>, *>,
     val value: ULong
 ) : IsAggregationResponse {
     override val aggregationType = ValueCountType

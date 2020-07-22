@@ -29,7 +29,7 @@ object SInt8 : NumberDescriptor<Byte>(
     }
 
     override fun ofString(value: String) = value.toByte()
-    override fun ofDouble(double: Double) = double.toByte()
+    override fun ofDouble(double: Double) = double.toInt().toByte()
     override fun toDouble(value: Byte) = value.toDouble()
     override fun ofInt(int: Int) = int.toByte()
     override fun ofLong(long: Long) = long.toByte()

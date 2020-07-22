@@ -16,8 +16,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                api ("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$coroutinesVersion")
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
 
                 api(project(":core"))
             }

@@ -5,6 +5,7 @@ import maryk.core.aggregations.Aggregations
 import maryk.core.aggregations.IsAggregationRequest
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.embedObject
 import maryk.core.properties.definitions.enum
 import maryk.core.properties.references.IsPropertyReference
@@ -15,10 +16,10 @@ import maryk.lib.time.IsTemporal
 
 /** Bucket all together that are on same date/time for [reference] */
 data class DateHistogram<T: IsTemporal<*>>(
-    override val reference: IsPropertyReference<out T, *, *>,
+    override val reference: IsPropertyReference<out T, IsPropertyDefinition<T>, *>,
     val dateUnit: DateUnit,
     val aggregations: Aggregations? = null
-) : IsAggregationRequest<T, IsPropertyReference<out T, *, *>, DateHistogramResponse<T>>,
+) : IsAggregationRequest<T, IsPropertyReference<out T, IsPropertyDefinition<T>, *>, DateHistogramResponse<T>>,
     DefinedByReference<IsTemporal<*>> {
     override val aggregationType = DateHistogramType
 

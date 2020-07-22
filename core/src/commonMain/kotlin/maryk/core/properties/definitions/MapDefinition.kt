@@ -120,13 +120,13 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
                 )
             }
         ) {
-        override fun invoke(values: SimpleObjectValues<MapDefinition<*, *, *>>) = MapDefinition(
+        override fun invoke(values: SimpleObjectValues<MapDefinition<*, *, *>>) = MapDefinition<Any, Any, IsPropertyContext>(
             required = values(1u),
             final = values(2u),
             minSize = values(3u),
             maxSize = values(4u),
-            keyDefinition = values<IsSimpleValueDefinition<*, *>>(5u),
-            valueDefinition = values<IsSubDefinition<*, *>>(6u),
+            keyDefinition = values(5u),
+            valueDefinition = values(6u),
             default = values(7u)
         )
     }

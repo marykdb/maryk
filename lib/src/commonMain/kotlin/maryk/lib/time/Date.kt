@@ -52,8 +52,8 @@ data class Date(
     override fun toString() = "$year-${month.zeroFill(2)}-${day.zeroFill(2)}"
 
     companion object : IsTemporalObject<Date>() {
-        var MIN = Date(-999_999, 1, 1)
-        var MAX = Date(999_999, 12, 31)
+        val MIN = Date(-999_999, 1, 1)
+        val MAX = Date(999_999, 12, 31)
 
         /** The amount of days in 400 year cycle. */
         private const val DAYS_PER_CYCLE = 146097

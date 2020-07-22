@@ -53,9 +53,9 @@ data class DateTime(
     fun toEpochSecond() = date.epochDay.toLong() * SECONDS_PER_DAY + time.toSecondsOfDay()
 
     companion object : IsTimeObject<DateTime>() {
-        var MIN = DateTime(Date.MIN, Time.MIN)
-        var MAX_IN_SECONDS = DateTime(Date.MAX, Time.MAX_IN_SECONDS)
-        var MAX_IN_MILLIS = DateTime(Date.MAX, Time.MAX_IN_MILLIS)
+        val MIN = DateTime(Date.MIN, Time.MIN)
+        val MAX_IN_SECONDS = DateTime(Date.MAX, Time.MAX_IN_SECONDS)
+        val MAX_IN_MILLIS = DateTime(Date.MAX, Time.MAX_IN_MILLIS)
 
         /** Get a new DateTime with the date and time at UTC timezone */
         override fun nowUTC() = ofEpochMilli(

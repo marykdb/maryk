@@ -17,6 +17,7 @@ kotlin {
         commonMain {
             dependencies {
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$coroutinesVersion")
 
                 api(project(":core"))
             }
@@ -39,17 +40,12 @@ kotlin {
         }
         val macosMain by getting  {
             dependencies {
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core-macosx64:$coroutinesVersion")
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core-native:$coroutinesVersion")
             }
         }
-        val iosArm64Main by getting  {
+        val iosMain by getting  {
             dependencies {
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core-iosarm64:$coroutinesVersion")
-            }
-        }
-        val iosX64Main by getting  {
-            dependencies {
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core-iosx64:$coroutinesVersion")
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core-native:$coroutinesVersion")
             }
         }
     }

@@ -21,6 +21,7 @@ kotlin {
                 api(kotlin("test-annotations-common"))
 
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$coroutinesVersion")
             }
         }
         val jvmMain by getting {

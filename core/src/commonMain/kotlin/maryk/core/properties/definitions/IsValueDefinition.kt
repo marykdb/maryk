@@ -3,6 +3,7 @@ package maryk.core.properties.definitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WriteCache
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.protobuf.calculateKeyAndContentLength
@@ -58,4 +59,16 @@ interface IsValueDefinition<T : Any, in CX : IsPropertyContext> : IsSubDefinitio
 
     /** Writes value to bytes with [writer] and [context] for transportation */
     fun writeTransportBytes(value: T, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null)
+
+    /** Writes [value] directly to transportable byte array */
+    fun toTransportByteArray(value: T, context: CX? = null): ByteArray {
+        val cache = WriteCache()
+        val size = this.calculateTransportByteLength(value, cache, context)
+        val output = ByteArray(size)
+        var i = 0
+
+        this.writeTransportBytes(value, cache, { output[i++] = it }, context)
+
+        return output
+    }
 }

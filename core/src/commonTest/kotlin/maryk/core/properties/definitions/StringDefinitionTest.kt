@@ -12,6 +12,7 @@ import maryk.lib.bytes.calculateUTF8ByteLength
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -153,6 +154,13 @@ internal class StringDefinitionTest {
             """.trimIndent()
         ) {
             checkYamlConversion(this.defMaxDefined, StringDefinition.Model)
+        }
+    }
+
+    @Test
+    fun convertToTransportByteArray() {
+        for ((string, hex) in stringsToTest) {
+            assertEquals(hex, def.toTransportByteArray(string).toHex())
         }
     }
 

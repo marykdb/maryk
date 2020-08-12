@@ -37,10 +37,11 @@ interface IsDataModelResponse<out DM : IsRootDataModel<*>> : IsResponse {
 }
 
 internal fun <DM : IsDataModelResponse<*>> ObjectPropertyDefinitions<DM>.addDataModel(
-    getter: (DM) -> IsRootDataModel<*>?
+    getter: (DM) -> IsRootDataModel<*>?,
+    index: UInt = 1u
 ) =
     this.contextual(
-        index = 1u,
+        index = index,
         definition = ContextualModelReferenceDefinition<IsRootDataModel<*>, RequestContext>(
             contextualResolver = { context, name ->
                 context?.let {

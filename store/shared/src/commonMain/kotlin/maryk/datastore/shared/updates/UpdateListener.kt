@@ -43,12 +43,12 @@ abstract class UpdateListener<DM: IsRootValuesDataModel<P>, P: PropertyDefinitio
             }
             is ValuesResponse<DM, P> -> {
                 matchingKeys = AtomicReference(response.values.map { it.key })
-                lastResponseVersion = response.values.maxBy { it.lastVersion }?.lastVersion ?: 0uL
+                lastResponseVersion = response.values.maxByOrNull { it.lastVersion }?.lastVersion ?: 0uL
             }
             is ChangesResponse<DM, P> -> {
                 matchingKeys = AtomicReference(response.changes.map { it.key })
                 lastResponseVersion = response.changes.fold(0uL) { acc, value ->
-                    maxOf(acc, value.changes.maxBy { it.version }?.version ?: 0uL)
+                    maxOf(acc, value.changes.maxByOrNull { it.version }?.version ?: 0uL)
                 }
             }
             else -> throw Exception("Unknown response type $response. Cannot process its values")

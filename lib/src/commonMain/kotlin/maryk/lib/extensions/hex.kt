@@ -30,7 +30,7 @@ fun ByteArray.toHex(skipLeadingZeroBytes: Boolean = false): String {
         charArray[i - startPos + 1] = HEX_CHARS[d and 0x0F]
     }
 
-    return String(charArray)
+    return charArray.concatToString()
 }
 
 /** Converts [hex] String into a ByteArray */

@@ -117,7 +117,7 @@ class InjectIntoRequestTest {
             is ObjectValues<*, *> ->
                 assertEquals<Any?>(originalKeys.toDataObject(), original.original { keys })
             else ->
-                expect(original.original { keys }) { originalKeys }
+                expect<Any?>(original.original { keys }) { originalKeys }
         }
         assertEquals(original { where }, converted { where })
     }

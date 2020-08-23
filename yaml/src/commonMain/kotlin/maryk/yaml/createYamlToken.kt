@@ -94,7 +94,7 @@ internal fun createYamlValueToken(
                     throw InvalidYamlContent("Expected float value and not $value")
                 }
             }
-            is ValueType.Int -> findInt(value!!)?.let { return it }
+            is ValueType.Int -> findInt(value!!)?.let<Value<Long>, Value<Long>> { return it }
                 ?: throw InvalidYamlContent("Not an integer: $value")
             is Binary -> {
                 Value(Base64.decode(value!!), tokenType)

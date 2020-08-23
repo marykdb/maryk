@@ -112,7 +112,7 @@ class InjectTest {
 
         val values = TestMarykModel.values(context) {
             mapNonNulls(
-                string injectWith Inject("testCollection2", EmbeddedMarykModel { model { value::ref } })
+                string injectWith Inject("testCollection2", EmbeddedMarykModel { this.model { value::ref } })
             )
         }
 
@@ -144,7 +144,7 @@ class InjectTest {
 
         val getRequest = GetRequest.values(context) {
             mapNonNulls(
-                where injectWith Inject("where", EmbeddedMarykModel { model { value::ref } })
+                where injectWith Inject("where", EmbeddedMarykModel { this.model { value::ref } })
             )
         }
 

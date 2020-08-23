@@ -8,10 +8,5 @@ kotlin {
                 freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
             }
         }
-        compilations.main.defaultSourceSet {
-            dependencies {
-                implementation(kotlin("stdlib-jdk8"))
-            }
-        }
     }
 }

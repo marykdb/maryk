@@ -22,7 +22,6 @@ clean {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion")
     api(project(":generator"))
 
     testImplementation(project(":testmodels"))

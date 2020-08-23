@@ -1,6 +1,5 @@
 package maryk.core.properties.definitions.wrapper
 
-import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.graph.PropRefGraphType.PropRef
@@ -36,5 +35,5 @@ data class ListDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext, DO :
         AtomicReference(null)
 
     // For delegation in definition
-    operator fun getValue(thisRef: AbstractPropertyDefinitions<DO>, property: KProperty<*>) = this
+    operator fun getValue(thisRef: Any, property: KProperty<*>) = this
 }

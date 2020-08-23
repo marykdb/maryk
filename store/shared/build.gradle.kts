@@ -17,7 +17,6 @@ kotlin {
         commonMain {
             dependencies {
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$coroutinesVersion")
 
                 api(project(":core"))
             }
@@ -26,26 +25,6 @@ kotlin {
             dependencies {
                 api(project(":testmodels"))
                 api(project(":store-test"))
-            }
-        }
-        val jvmMain by getting {
-            dependencies {
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$coroutinesVersion")
-            }
-        }
-        val jsMain by getting {
-            dependencies {
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core-js:$coroutinesVersion")
-            }
-        }
-        val macosMain by getting  {
-            dependencies {
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core-native:$coroutinesVersion")
-            }
-        }
-        val iosMain by getting  {
-            dependencies {
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core-native:$coroutinesVersion")
             }
         }
     }

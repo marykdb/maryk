@@ -177,7 +177,7 @@ internal class EnumDefinitionTest {
 
         expect(
             EnumDefinition(
-                enum = Option,
+                enum = Option as IndexedEnumDefinition<Option>,
                 minValue = V1,
                 maxValue = V3,
                 default = V2

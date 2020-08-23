@@ -3,6 +3,7 @@ package maryk.generator.kotlin
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.IsUsableInMultiType
+import maryk.core.properties.enum.MultiTypeEnum
 import maryk.core.properties.enum.MultiTypeEnumDefinition
 
 /**
@@ -44,7 +45,7 @@ fun MultiTypeEnumDefinition<*>.generateKotlinClass(addImport: (String) -> Unit):
         override val definition: IsUsableInMultiType<T, *>?,
         alternativeNames: Set<String>? = null
     ) : IndexedEnumImpl<${this.name}<Any>>(index, alternativeNames), MultiTypeEnum<T> {
-        ${this.cases().joinToString("") { case ->
+        ${@Suppress("UNCHECKED_CAST") (this.cases() as Array<MultiTypeEnum<Any>>).joinToString("") { case ->
             val alternativeNames = case.alternativeNames?.let { altNames ->
                 ",\n    setOf(${altNames.joinToString(", ") { """"$it""""} })"
             } ?: ""
@@ -65,10 +66,4 @@ fun MultiTypeEnumDefinition<*>.generateKotlinClass(addImport: (String) -> Unit):
         )
     }
     """.trimIndent()
-}
-
-private fun <T: Any, CX: IsPropertyContext> IsUsableInMultiType<T, CX>?.generateKotlin(addImport: (String) -> Unit): String {
-    require(this is IsTransportablePropertyDefinitionType<*>) { "Property definition is not supported: ${this}" }
-
-    return this.getKotlinDescriptor().definitionToKotlin(this, addImport).prependIndent().trimStart(' ')
 }

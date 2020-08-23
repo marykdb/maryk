@@ -76,9 +76,7 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
             value
         }
 
-        if (serializedValue != null) {
-            ValueItem(this.index, serializedValue)
-        } else null
+        ValueItem(this.index, serializedValue)
     }
 
     /** Create an index [value] pair for maps */

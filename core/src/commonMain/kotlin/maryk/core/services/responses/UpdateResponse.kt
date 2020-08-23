@@ -6,7 +6,6 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.number
 import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.requests.IsStoreRequest
@@ -31,10 +30,10 @@ data class UpdateResponse<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
     object Properties : ObjectPropertyDefinitions<UpdateResponse<*, *>>() {
         val id by number(1u, UpdateResponse<*, *>::id, type = UInt64)
         val dataModel by addDataModel(UpdateResponse<*, *>::dataModel, 2u)
-        val update by ObjectDefinitionWrapperDelegateLoader(this) { propName ->
+        val update =
             MultiTypeDefinitionWrapper(
                 3u,
-                propName,
+                "update",
                 InternalMultiTypeDefinition(
                     typeEnum = UpdateResponseType,
                     definitionMap = mapOfUpdateResponses
@@ -44,8 +43,7 @@ data class UpdateResponse<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
                     value?.let { TypedValue(value.type, value) }
                 },
                 fromSerializable = { it?.value }
-            )
-        }
+            ).also(::addSingle)
     }
 
     companion object : ServiceDataModel<UpdateResponse<*, *>, Properties>(

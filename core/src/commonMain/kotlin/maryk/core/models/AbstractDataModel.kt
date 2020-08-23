@@ -393,7 +393,7 @@ abstract class AbstractDataModel<DO : Any, P : AbstractPropertyDefinitions<DO>, 
                     throw ParseException("Property '${valueDef.name}' with value '$value' cannot be null")
                 }
                 else -> value
-            }
+            } as T
         }
 
         return transform(value as TI)

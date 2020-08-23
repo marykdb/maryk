@@ -48,7 +48,7 @@ data class IncMapChange internal constructor(
                         is MutableMap<*, *> -> {
                             valueChange.addValues?.let { addValues ->
                                 @Suppress("UNCHECKED_CAST")
-                                var latestKeyedItem = (newValue as MutableMap<Comparable<Any>, Any>).maxBy { it.key }!!.key
+                                var latestKeyedItem = (newValue as MutableMap<Comparable<Any>, Any>).maxByOrNull { it.key }!!.key
 
                                 for (value in addValues) {
                                     latestKeyedItem = descriptor.sum(latestKeyedItem, one)

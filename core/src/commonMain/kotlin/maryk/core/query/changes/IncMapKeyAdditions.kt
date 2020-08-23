@@ -8,7 +8,6 @@ import maryk.core.properties.definitions.SubListDefinition
 import maryk.core.properties.definitions.contextual.ContextualSubDefinition
 import maryk.core.properties.definitions.subList
 import maryk.core.properties.definitions.wrapper.ListDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
 import maryk.core.properties.references.IncMapReference
 import maryk.core.query.DefinedByReference
 import maryk.core.query.RequestContext
@@ -39,10 +38,10 @@ data class IncMapKeyAdditions<K : Comparable<K>, V : Any>(
             getter = IncMapKeyAdditions<*, *>::addedKeys
         )
 
-        val addedValues by ObjectDefinitionWrapperDelegateLoader(this) { propName ->
+        val addedValues =
             ListDefinitionWrapper(
                 3u,
-                propName,
+                "addedValues",
                 SubListDefinition(
                     ContextualSubDefinition(
                         contextualResolver = { context: RequestContext? ->
@@ -56,8 +55,7 @@ data class IncMapKeyAdditions<K : Comparable<K>, V : Any>(
                 toSerializable = { _, _ ->
                     null // Reset value to null, so it does not get serialized/send.
                 }
-            )
-        }
+            ).also(::addSingle)
     }
 
     companion object : QueryDataModel<IncMapKeyAdditions<out Comparable<Any>, out Any>, Properties>(

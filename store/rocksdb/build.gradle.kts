@@ -10,7 +10,6 @@ apply {
     from("../../gradle/publish.gradle")
 }
 
-val coroutinesVersion = rootProject.extra["coroutinesVersion"]
 val marykRocksDBVersion = rootProject.extra["marykRocksDBVersion"]
 
 repositories {

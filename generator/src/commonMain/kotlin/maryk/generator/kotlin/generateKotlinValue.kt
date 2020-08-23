@@ -150,7 +150,7 @@ internal fun generateKotlinValue(
         addImport("maryk.core.properties.types.TypedValue")
 
         val multiTypeDefinition = definition as MultiTypeDefinition<MultiTypeEnum<*>, *>
-        val valueDefinition = (value.type as MultiTypeEnum<*>).definition
+        val valueDefinition = (value.type as MultiTypeEnum<Any>).definition
 
         val valueAsString = generateKotlinValue(valueDefinition as IsPropertyDefinition<Any>, value.value, addImport)
         "TypedValue(${multiTypeDefinition.typeEnum.name}.${value.type.name}, $valueAsString)"
@@ -198,7 +198,6 @@ private fun ObjectDataModel<*, *>.generateKotlinValue(value: Any, addImport: (St
     } else {
         "${this.name}(\n${values.joinToString(",\n").prependIndent()}\n)"
     }
-
 }
 
 private fun DataModel<*, *>.generateKotlinValue(value: ValuesImpl, addImport: (String) -> Unit): String {
@@ -215,5 +214,4 @@ private fun DataModel<*, *>.generateKotlinValue(value: ValuesImpl, addImport: (S
     } else {
         "${this.name}(\n${values.joinToString(",\n").prependIndent()}\n)"
     }
-
 }

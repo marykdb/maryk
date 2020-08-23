@@ -1,17 +1,17 @@
 // Gradle script to setup a JS multi-platform project
 kotlin {
     js {
+        compilations.all {
+            kotlinOptions {
+                freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
+            }
+        }
         browser {}
         nodejs {
             testTask {
                 testLogging {
                     events = ["FAILED", "SKIPPED"]
                 }
-            }
-        }
-        compilations.main.defaultSourceSet {
-            dependencies {
-                implementation(kotlin("stdlib-js"))
             }
         }
     }

@@ -9,8 +9,6 @@ apply {
     from("../../gradle/publish.gradle")
 }
 
-val coroutinesVersion = rootProject.extra["coroutinesVersion"]
-
 kotlin {
     sourceSets {
         commonMain {

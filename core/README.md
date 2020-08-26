@@ -11,5 +11,6 @@ See the documentation for more details
 - [Properties](documentation/properties/properties.md)
 - [Versioning](documentation/versioning.md)
 - [Queries](documentation/query.md)
+- [Filters](documentation/filters.md)
 - [Serialization](documentation/serialization.md) - Maryk supports YAML, JSON
    and ProtoBuf as formats to serialize DataModel, Data Objects and Queries

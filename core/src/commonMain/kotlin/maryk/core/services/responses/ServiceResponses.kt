@@ -16,10 +16,10 @@ class ServiceResponses(
 ) : MultiTypeEnumDefinition<ServiceResponseType<out IsServiceResponse>>(
     ServiceResponseType::class,
     values = {
-        responsesMap.map { (index, model) ->
-            ServiceResponseType(index, EmbeddedObjectDefinition(dataModel = {
+        responsesMap.map { entry ->
+            ServiceResponseType(entry.key, EmbeddedObjectDefinition(dataModel = {
                 @Suppress("UNCHECKED_CAST")
-                model as ServiceDataModel<IsServiceResponse, ObjectPropertyDefinitions<IsServiceResponse>>
+                entry.value as ServiceDataModel<IsServiceResponse, ObjectPropertyDefinitions<IsServiceResponse>>
             }))
         }.toTypedArray()
     },

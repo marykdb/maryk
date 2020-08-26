@@ -16,10 +16,10 @@ class ServiceRequests(
 ) : MultiTypeEnumDefinition<ServiceRequestType<out IsServiceRequest>>(
     ServiceRequestType::class,
     values = {
-        requestsMap.map { (index, model) ->
-            ServiceRequestType(index, EmbeddedObjectDefinition(dataModel = {
+        requestsMap.map { entry ->
+            ServiceRequestType(entry.key, EmbeddedObjectDefinition(dataModel = {
                 @Suppress("UNCHECKED_CAST")
-                model as ServiceDataModel<IsServiceRequest, ObjectPropertyDefinitions<IsServiceRequest>>
+                entry.value as ServiceDataModel<IsServiceRequest, ObjectPropertyDefinitions<IsServiceRequest>>
             }))
         }.toTypedArray()
     },

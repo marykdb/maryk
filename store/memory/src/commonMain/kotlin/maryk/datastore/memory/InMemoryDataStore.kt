@@ -22,17 +22,23 @@ import maryk.core.query.requests.GetUpdatesRequest
 import maryk.core.query.requests.ScanChangesRequest
 import maryk.core.query.requests.ScanRequest
 import maryk.core.query.requests.ScanUpdatesRequest
+import maryk.core.query.responses.updates.AdditionUpdate
+import maryk.core.query.responses.updates.ChangeUpdate
+import maryk.core.services.responses.UpdateResponse
 import maryk.datastore.memory.processors.AnyAddStoreAction
 import maryk.datastore.memory.processors.AnyChangeStoreAction
 import maryk.datastore.memory.processors.AnyDeleteStoreAction
 import maryk.datastore.memory.processors.AnyGetChangesStoreAction
 import maryk.datastore.memory.processors.AnyGetStoreAction
 import maryk.datastore.memory.processors.AnyGetUpdatesStoreAction
+import maryk.datastore.memory.processors.AnyProcessUpdateResponseStoreAction
 import maryk.datastore.memory.processors.AnyScanChangesStoreAction
 import maryk.datastore.memory.processors.AnyScanStoreAction
 import maryk.datastore.memory.processors.AnyScanUpdatesStoreAction
 import maryk.datastore.memory.processors.processAddRequest
+import maryk.datastore.memory.processors.processAdditionUpdate
 import maryk.datastore.memory.processors.processChangeRequest
+import maryk.datastore.memory.processors.processChangeUpdate
 import maryk.datastore.memory.processors.processDeleteRequest
 import maryk.datastore.memory.processors.processGetChangesRequest
 import maryk.datastore.memory.processors.processGetRequest
@@ -105,6 +111,11 @@ class InMemoryDataStore(
                                 processScanChangesRequest(storeAction as AnyScanChangesStoreAction, dataStoreFetcher)
                             is ScanUpdatesRequest<*, *> ->
                                 processScanUpdatesRequest(storeAction as AnyScanUpdatesStoreAction, dataStoreFetcher)
+                            is UpdateResponse<*, *> -> when(val update = (storeAction.request as UpdateResponse<*, *>).update) {
+                                is AdditionUpdate<*, *> -> processAdditionUpdate(storeAction as AnyProcessUpdateResponseStoreAction, dataStoreFetcher, updateSendChannel)
+                                is ChangeUpdate<*, *> -> processChangeUpdate(storeAction as AnyProcessUpdateResponseStoreAction, dataStoreFetcher, updateSendChannel)
+                                else -> throw TypeException("Unknown update type ${update} for datastore processing")
+                            }
                             else -> throw TypeException("Unknown request type ${storeAction.request}")
                         }
                     } catch (e: Throwable) {

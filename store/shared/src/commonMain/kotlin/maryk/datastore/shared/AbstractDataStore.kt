@@ -25,6 +25,8 @@ import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.responses.IsDataResponse
 import maryk.core.query.responses.IsResponse
 import maryk.core.query.responses.updates.IsUpdateResponse
+import maryk.core.query.responses.updates.ProcessResponse
+import maryk.core.services.responses.UpdateResponse
 import maryk.datastore.shared.updates.AddUpdateListenerAction
 import maryk.datastore.shared.updates.IsUpdateAction
 import maryk.datastore.shared.updates.RemoveAllUpdateListenersAction
@@ -80,6 +82,20 @@ abstract class AbstractDataStore(
 
         storeChannel.send(
             StoreAction(request, response)
+        )
+
+        return response.await()
+    }
+
+    override suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, UR : IsUpdateResponse<DM, P>> processUpdate(
+        updateResponse: UpdateResponse<DM, P>
+    ): ProcessResponse {
+        waitForInit()
+
+        val response = CompletableDeferred<ProcessResponse>()
+
+        storeChannel.send(
+            StoreAction(updateResponse, response)
         )
 
         return response.await()

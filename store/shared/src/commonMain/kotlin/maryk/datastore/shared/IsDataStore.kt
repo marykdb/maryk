@@ -9,6 +9,8 @@ import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.responses.IsDataResponse
 import maryk.core.query.responses.IsResponse
 import maryk.core.query.responses.updates.IsUpdateResponse
+import maryk.core.query.responses.updates.ProcessResponse
+import maryk.core.services.responses.UpdateResponse
 
 /** Processes actions on data stores. */
 interface IsDataStore {
@@ -25,6 +27,11 @@ interface IsDataStore {
     suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ: IsFetchRequest<DM, P, RP>, RP: IsDataResponse<DM, P>> executeFlow(
         request: RQ
     ): Flow<IsUpdateResponse<DM, P>>
+
+    /** Processes an update response to sync its results in this data store */
+    suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, UR : IsUpdateResponse<DM, P>> processUpdate(
+        updateResponse: UpdateResponse<DM, P>
+    ): ProcessResponse
 
     /** Close the data store */
     fun close()

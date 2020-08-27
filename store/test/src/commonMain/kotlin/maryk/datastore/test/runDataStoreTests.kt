@@ -21,6 +21,7 @@ private val allTestClasses = arrayOf(
     "DataStoreGetChangesTest" to ::DataStoreGetChangesTest,
     "DataStoreGetUpdatesAndFlowTest" to ::DataStoreGetUpdatesAndFlowTest,
     "DataStoreGetTest" to ::DataStoreGetTest,
+    "DataStoreProcessUpdateTest" to ::DataStoreProcessUpdateTest,
     "DataStoreScanChangesTest" to ::DataStoreScanChangesTest,
     "DataStoreScanUpdatesAndFlowTest" to ::DataStoreScanUpdatesAndFlowTest,
     "DataStoreScanUpdatesWithLogTest" to ::DataStoreScanUpdatesWithLogTest,
@@ -74,9 +75,13 @@ fun runDataStoreTests(dataStore: IsDataStore, runOnlyTest: String? = null) {
     }
     if (exceptionList.isNotEmpty()) {
         var messages = "DataStore Tests failed: (${exceptionList.size})[\n"
+        var firstThrowable: Throwable? = null
         for ((name, exception) in exceptionList) {
+            if (firstThrowable == null) {
+                firstThrowable = exception
+            }
             messages += "\t$name: $exception\n"
         }
-        throw AssertionError("$messages]")
+        throw RuntimeException("$messages]", firstThrowable)
     }
 }

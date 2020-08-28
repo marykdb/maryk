@@ -1,12 +1,18 @@
 package maryk.datastore.test
 
+import maryk.core.exceptions.RequestException
 import maryk.core.models.key
 import maryk.core.query.changes.Change
+import maryk.core.query.changes.DataObjectVersionedChange
+import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.get
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
+import maryk.core.query.responses.updates.InitialChangesUpdate
+import maryk.core.query.responses.updates.InitialValuesUpdate
+import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.core.query.responses.updates.RemovalReason.HardDelete
 import maryk.core.query.responses.updates.RemovalReason.SoftDelete
 import maryk.core.query.responses.updates.RemovalUpdate
@@ -16,6 +22,7 @@ import maryk.lib.time.DateTime
 import maryk.test.models.Log
 import maryk.test.models.Severity.ERROR
 import maryk.test.runSuspendingTest
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import kotlin.test.expect
 
@@ -25,7 +32,10 @@ class DataStoreProcessUpdateTest(
     override val allTests = mapOf(
         "executeProcessAddRequest" to ::executeProcessAddRequest,
         "executeProcessChangeRequest" to ::executeProcessChangeRequest,
-        "executeProcessRemovalRequest" to ::executeProcessRemovalRequest
+        "executeProcessRemovalRequest" to ::executeProcessRemovalRequest,
+        "executeProcessInitialChangesRequest" to ::executeProcessInitialChangesRequest,
+        "failOnInitialValuesRequest" to ::failOnInitialValuesUpdateRequest,
+        "failOnOrderedKeysUpdateRequest" to ::failOnOrderedKeysUpdateRequest
     )
 
     private val logs = arrayOf(
@@ -197,5 +207,85 @@ class DataStoreProcessUpdateTest(
 
         expect(1) { getResponse2.values.size }
         assertTrue(getResponse2.values[0].isDeleted)
+    }
+
+    private fun executeProcessInitialChangesRequest() = runSuspendingTest {
+        dataStore.processUpdate(
+            UpdateResponse(
+                id = 1234uL,
+                dataModel = Log,
+                update = AdditionUpdate(
+                    key = keys[0],
+                    version = 1234uL,
+                    firstVersion = 1234uL,
+                    insertionIndex = 1,
+                    isDeleted = false,
+                    values = logs[0]
+                )
+            )
+        )
+
+        val editedMessage = "Initially edited message"
+        val changeResponse = dataStore.processUpdate(
+            UpdateResponse(
+                id = 1234uL,
+                dataModel = Log,
+                update = InitialChangesUpdate(
+                    version = 1234uL,
+                    changes = listOf(
+                        DataObjectVersionedChange(
+                            key = keys[0],
+                            changes = listOf(VersionedChanges(
+                                version = 1234uL,
+                                changes = listOf(
+                                    Change(Log { message::ref } with editedMessage)
+                                )
+                            ))
+                        )
+                    )
+                )
+            )
+        )
+
+        println(changeResponse)
+
+        // TODO check response
+
+        val getResponse = dataStore.execute(
+            Log.get(keys[0])
+        )
+
+        expect(1) { getResponse.values.size }
+        expect(editedMessage) { getResponse.values.first().values { message } }
+    }
+
+    private fun failOnInitialValuesUpdateRequest() = runSuspendingTest {
+        assertFailsWith<RequestException> {
+            dataStore.processUpdate(
+                UpdateResponse(
+                    id = 1234uL,
+                    dataModel = Log,
+                    update = InitialValuesUpdate(
+                        version = 12345uL,
+                        values = listOf()
+                    )
+                )
+            )
+        }
+    }
+
+    private fun failOnOrderedKeysUpdateRequest() = runSuspendingTest {
+        assertFailsWith<RequestException> {
+            dataStore.processUpdate(
+                UpdateResponse(
+                    id = 1234uL,
+                    dataModel = Log,
+                    update = OrderedKeysUpdate(
+                        keys = keys,
+                        version = 12345uL
+                    )
+                )
+            )
+        }
     }
 }

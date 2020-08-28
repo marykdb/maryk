@@ -2,6 +2,7 @@ package maryk.datastore.memory.processors
 
 import kotlinx.coroutines.channels.SendChannel
 import maryk.core.clock.HLC
+import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.responses.updates.AdditionUpdate
@@ -32,6 +33,10 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
     update.values.validate()
 
     val index = dataStore.records.binarySearch { it.key.compareTo(update.key) }
+
+    if (update.firstVersion != update.version) {
+        throw RequestException("Cannot process an AdditionUpdate with a version different than the first version. Use a query for changes to properly process changes into a data store")
+    }
 
     if (index < 0) {
         processAdd(

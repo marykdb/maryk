@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import maryk.core.clock.HLC
 import maryk.core.exceptions.DefNotFoundException
+import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.RootDataModel
@@ -24,6 +25,9 @@ import maryk.core.query.requests.ScanRequest
 import maryk.core.query.requests.ScanUpdatesRequest
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
+import maryk.core.query.responses.updates.InitialChangesUpdate
+import maryk.core.query.responses.updates.InitialValuesUpdate
+import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.core.services.responses.UpdateResponse
 import maryk.datastore.memory.processors.AnyAddStoreAction
@@ -45,6 +49,7 @@ import maryk.datastore.memory.processors.processDeleteUpdate
 import maryk.datastore.memory.processors.processGetChangesRequest
 import maryk.datastore.memory.processors.processGetRequest
 import maryk.datastore.memory.processors.processGetUpdatesRequest
+import maryk.datastore.memory.processors.processInitialChangesUpdate
 import maryk.datastore.memory.processors.processScanChangesRequest
 import maryk.datastore.memory.processors.processScanRequest
 import maryk.datastore.memory.processors.processScanUpdatesRequest
@@ -117,6 +122,9 @@ class InMemoryDataStore(
                                 is AdditionUpdate<*, *> -> processAdditionUpdate(storeAction as AnyProcessUpdateResponseStoreAction, dataStoreFetcher, updateSendChannel)
                                 is ChangeUpdate<*, *> -> processChangeUpdate(storeAction as AnyProcessUpdateResponseStoreAction, dataStoreFetcher, updateSendChannel)
                                 is RemovalUpdate<*, *> -> processDeleteUpdate(storeAction as AnyProcessUpdateResponseStoreAction, dataStoreFetcher, updateSendChannel)
+                                is InitialChangesUpdate<*, *> -> processInitialChangesUpdate(storeAction as AnyProcessUpdateResponseStoreAction, dataStoreFetcher, updateSendChannel)
+                                is InitialValuesUpdate<*, *> -> throw RequestException("Cannot process Values requests into data store since they do not contain all version information, do a changes request")
+                                is OrderedKeysUpdate<*, *> -> throw RequestException("Cannot process Update requests into data store since they do not contain all change information, do a changes request")
                                 else -> throw TypeException("Unknown update type ${update} for datastore processing")
                             }
                             else -> throw TypeException("Unknown request type ${storeAction.request}")

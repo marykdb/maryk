@@ -7,12 +7,16 @@ import maryk.core.query.requests.delete
 import maryk.core.query.requests.get
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
+import maryk.core.query.responses.updates.RemovalReason.HardDelete
+import maryk.core.query.responses.updates.RemovalReason.SoftDelete
+import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.core.services.responses.UpdateResponse
 import maryk.datastore.shared.IsDataStore
 import maryk.lib.time.DateTime
 import maryk.test.models.Log
 import maryk.test.models.Severity.ERROR
 import maryk.test.runSuspendingTest
+import kotlin.test.assertTrue
 import kotlin.test.expect
 
 class DataStoreProcessUpdateTest(
@@ -20,7 +24,8 @@ class DataStoreProcessUpdateTest(
 ) : IsDataStoreTest {
     override val allTests = mapOf(
         "executeProcessAddRequest" to ::executeProcessAddRequest,
-        "executeProcessChangeRequest" to ::executeProcessChangeRequest
+        "executeProcessChangeRequest" to ::executeProcessChangeRequest,
+        "executeProcessRemovalRequest" to ::executeProcessRemovalRequest
     )
 
     private val logs = arrayOf(
@@ -115,5 +120,82 @@ class DataStoreProcessUpdateTest(
 
         expect(1) { getResponse.values.size }
         expect(editedMessage) { getResponse.values.first().values { message } }
+    }
+
+    private fun executeProcessRemovalRequest() = runSuspendingTest {
+        dataStore.processUpdate(
+            UpdateResponse(
+                id = 1234uL,
+                dataModel = Log,
+                update = AdditionUpdate(
+                    key = keys[0],
+                    version = 1234uL,
+                    firstVersion = 1234uL,
+                    insertionIndex = 1,
+                    isDeleted = false,
+                    values = logs[0]
+                )
+            )
+        )
+
+        dataStore.processUpdate(
+            UpdateResponse(
+                id = 1234uL,
+                dataModel = Log,
+                update = AdditionUpdate(
+                    key = keys[1],
+                    version = 1234uL,
+                    firstVersion = 1234uL,
+                    insertionIndex = 1,
+                    isDeleted = false,
+                    values = logs[1]
+                )
+            )
+        )
+
+        val hardRemovalUpdate = dataStore.processUpdate(
+            UpdateResponse(
+                id = 1235uL,
+                dataModel = Log,
+                update = RemovalUpdate(
+                    key = keys[0],
+                    version = 1235uL,
+                    reason = HardDelete
+                )
+            )
+        )
+
+        println(hardRemovalUpdate)
+
+        // TODO check response
+
+        val getResponse1 = dataStore.execute(
+            Log.get(keys[0])
+        )
+
+        expect(0) { getResponse1.values.size }
+
+        val softRemovalUpdate = dataStore.processUpdate(
+            UpdateResponse(
+                id = 1235uL,
+                dataModel = Log,
+                update = RemovalUpdate(
+                    key = keys[1],
+                    version = 1235uL,
+                    reason = SoftDelete
+                )
+            )
+        )
+
+        println(softRemovalUpdate)
+
+        // TODO check response
+
+        val getResponse2 = dataStore.execute(
+            Log.get(keys[1], filterSoftDeleted = false)
+        )
+
+        expect(1) { getResponse2.values.size }
+        assertTrue(getResponse2.values[0].isDeleted)
     }
 }

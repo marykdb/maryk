@@ -24,6 +24,7 @@ import maryk.core.query.requests.ScanRequest
 import maryk.core.query.requests.ScanUpdatesRequest
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
+import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.core.services.responses.UpdateResponse
 import maryk.datastore.memory.processors.AnyAddStoreAction
 import maryk.datastore.memory.processors.AnyChangeStoreAction
@@ -40,6 +41,7 @@ import maryk.datastore.memory.processors.processAdditionUpdate
 import maryk.datastore.memory.processors.processChangeRequest
 import maryk.datastore.memory.processors.processChangeUpdate
 import maryk.datastore.memory.processors.processDeleteRequest
+import maryk.datastore.memory.processors.processDeleteUpdate
 import maryk.datastore.memory.processors.processGetChangesRequest
 import maryk.datastore.memory.processors.processGetRequest
 import maryk.datastore.memory.processors.processGetUpdatesRequest
@@ -114,6 +116,7 @@ class InMemoryDataStore(
                             is UpdateResponse<*, *> -> when(val update = (storeAction.request as UpdateResponse<*, *>).update) {
                                 is AdditionUpdate<*, *> -> processAdditionUpdate(storeAction as AnyProcessUpdateResponseStoreAction, dataStoreFetcher, updateSendChannel)
                                 is ChangeUpdate<*, *> -> processChangeUpdate(storeAction as AnyProcessUpdateResponseStoreAction, dataStoreFetcher, updateSendChannel)
+                                is RemovalUpdate<*, *> -> processDeleteUpdate(storeAction as AnyProcessUpdateResponseStoreAction, dataStoreFetcher, updateSendChannel)
                                 else -> throw TypeException("Unknown update type ${update} for datastore processing")
                             }
                             else -> throw TypeException("Unknown request type ${storeAction.request}")

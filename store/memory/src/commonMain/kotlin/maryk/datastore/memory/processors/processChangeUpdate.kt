@@ -11,7 +11,9 @@ import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.updates.IsUpdateAction
 
-@Suppress("UNUSED_PARAMETER")
+/**
+ * Processes the changes to values into the data store
+ */
 internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processChangeUpdate(
     storeAction: StoreAction<DM, P, UpdateResponse<DM, P>, ProcessResponse>,
     dataStoreFetcher: (IsRootValuesDataModel<*>) -> DataStore<*, *>,

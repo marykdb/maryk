@@ -14,7 +14,10 @@ import maryk.datastore.shared.updates.IsUpdateAction
 internal typealias ProcessUpdateResponseStoreAction<DM, P> = StoreAction<DM, P, UpdateResponse<DM, P>, ProcessResponse>
 internal typealias AnyProcessUpdateResponseStoreAction = ProcessUpdateResponseStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
 
-@Suppress("UNUSED_PARAMETER")
+/**
+ * Processes addition update within a store action.
+ * The addition is stored in the data store if it does not exist yet.
+ */
 internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdditionUpdate(
     storeAction: StoreAction<DM, P, UpdateResponse<DM, P>, ProcessResponse>,
     dataStoreFetcher: (IsRootValuesDataModel<*>) -> DataStore<*, *>,

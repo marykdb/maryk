@@ -102,7 +102,7 @@ internal fun <DM: IsRootValuesDataModel<P>, P:PropertyDefinitions> shouldProcess
 ): Boolean {
     if (scanRange.keyBeforeStart(record.key.bytes, 0)
         || !scanRange.keyWithinRanges(record.key.bytes, 0)
-        ||!scanRange.matchesPartials(record.key.bytes)
+        || !scanRange.matchesPartials(record.key.bytes)
     ) {
         return false
     }

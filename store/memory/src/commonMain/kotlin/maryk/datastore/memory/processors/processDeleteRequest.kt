@@ -6,8 +6,6 @@ import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.requests.DeleteRequest
 import maryk.core.query.responses.DeleteResponse
-import maryk.core.query.responses.statuses.DeleteSuccess
-import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.IsDeleteResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.datastore.memory.IsStoreFetcher
@@ -43,26 +41,17 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
 
         for (key in deleteRequest.keys) {
             try {
-                val index = dataStore.records.binarySearch { it.key.compareTo(key) }
-
-                val status: IsDeleteResponseStatus<DM> = when {
-                    index > -1 -> {
-                        processDelete(
-                            dataStore,
-                            deleteRequest.dataModel,
-                            key,
-                            index,
-                            version,
-                            deleteRequest.hardDelete,
-                            historicStoreIndexValuesWalker,
-                            updateSendChannel
-                        )
-                        DeleteSuccess(version.timestamp)
-                    }
-                    else -> DoesNotExist(key)
-                }
-
-                statuses.add(status)
+                statuses.add(
+                    processDelete(
+                        dataStore,
+                        deleteRequest.dataModel,
+                        key,
+                        version,
+                        deleteRequest.hardDelete,
+                        historicStoreIndexValuesWalker,
+                        updateSendChannel
+                    )
+                )
             } catch (e: Throwable) {
                 statuses.add(ServerFail(e.toString(), e))
             }

@@ -43,6 +43,7 @@ import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
 import maryk.core.properties.types.Bytes
+import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Check
@@ -58,6 +59,7 @@ import maryk.core.query.changes.IsIndexUpdate
 import maryk.core.query.changes.ListChange
 import maryk.core.query.changes.SetChange
 import maryk.core.query.responses.statuses.ChangeSuccess
+import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.IsChangeResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.ValidationFail
@@ -80,10 +82,49 @@ import maryk.datastore.shared.updates.Update
 import maryk.lib.extensions.compare.compareTo
 
 /**
- * Apply [changes] to a specific [objectToChange] and record them as [version]
- * [keepAllVersions] determines if history is kept
+ * Apply [changes] to a specific object at [key] and record them as [version]
  */
 internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processChange(
+    dataStore: DataStore<DM, P>,
+    dataModel: DM,
+    key: Key<DM>,
+    lastVersion: ULong?,
+    changes: List<IsChange>,
+    version: HLC,
+    updateSendChannel: SendChannel<Update<*, *>>
+): IsChangeResponseStatus<DM> {
+    val index = dataStore.records.binarySearch { it.key.compareTo(key) }
+
+    return if (index < 0) {
+        DoesNotExist(key)
+    } else {
+        val objectToChange = dataStore.records[index]
+
+        // Check if version is within range
+        if (lastVersion != null && objectToChange.lastVersion.compareTo(lastVersion) != 0) {
+            ValidationFail(
+                listOf(
+                    InvalidValueException(
+                        null,
+                        "Version of object was different than given: $lastVersion < ${objectToChange.lastVersion}"
+                    )
+                )
+            )
+        } else {
+            processChangeIntoStore(
+                dataModel,
+                dataStore,
+                objectToChange,
+                changes,
+                version,
+                dataStore.keepAllVersions,
+                updateSendChannel
+            )
+        }
+    }
+}
+
+private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processChangeIntoStore(
     dataModel: DM,
     dataStore: DataStore<DM, P>,
     objectToChange: DataRecord<DM, P>,

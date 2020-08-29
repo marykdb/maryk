@@ -89,10 +89,10 @@ abstract class AbstractDataStore(
 
     override suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, UR : IsUpdateResponse<DM, P>> processUpdate(
         updateResponse: UpdateResponse<DM, P>
-    ): ProcessResponse {
+    ): ProcessResponse<DM> {
         waitForInit()
 
-        val response = CompletableDeferred<ProcessResponse>()
+        val response = CompletableDeferred<ProcessResponse<DM>>()
 
         storeChannel.send(
             StoreAction(updateResponse, response)

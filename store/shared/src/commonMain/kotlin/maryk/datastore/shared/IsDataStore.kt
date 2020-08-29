@@ -31,7 +31,7 @@ interface IsDataStore {
     /** Processes an update response to sync its results in this data store */
     suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, UR : IsUpdateResponse<DM, P>> processUpdate(
         updateResponse: UpdateResponse<DM, P>
-    ): ProcessResponse
+    ): ProcessResponse<DM>
 
     /** Close the data store */
     fun close()

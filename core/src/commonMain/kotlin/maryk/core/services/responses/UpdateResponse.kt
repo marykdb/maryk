@@ -27,7 +27,7 @@ data class UpdateResponse<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
     override val id: ULong,
     override val dataModel: DM,
     val update: IsUpdateResponse<DM, P>
-): IsServiceResponse, IsDataModelResponse<DM>, IsStoreRequest<DM, ProcessResponse> {
+): IsServiceResponse, IsDataModelResponse<DM>, IsStoreRequest<DM, ProcessResponse<DM>> {
     object Properties : ObjectPropertyDefinitions<UpdateResponse<*, *>>() {
         val id by number(1u, UpdateResponse<*, *>::id, type = UInt64)
         val dataModel by addDataModel(UpdateResponse<*, *>::dataModel, 2u)

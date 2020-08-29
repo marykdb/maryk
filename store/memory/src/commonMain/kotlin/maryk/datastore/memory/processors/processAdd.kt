@@ -6,80 +6,116 @@ import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.writeToStorage
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsComparableDefinition
+import maryk.core.properties.exceptions.AlreadyExistsException
+import maryk.core.properties.exceptions.ValidationException
+import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.IsChange
+import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.AlreadyExists
+import maryk.core.query.responses.statuses.IsAddResponseStatus
+import maryk.core.query.responses.statuses.ServerFail
+import maryk.core.query.responses.statuses.ValidationFail
 import maryk.core.values.Values
 import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataRecordNode
 import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DataStore
+import maryk.datastore.shared.UniqueException
 import maryk.datastore.shared.updates.Update
 import maryk.datastore.shared.updates.Update.Addition
 import maryk.lib.extensions.compare.compareTo
 
+
 internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd(
+    objectToAdd: Values<DM, P>,
+    dataModel: DM,
+    dataStore: DataStore<DM, P>,
     key: Key<DM>,
     version: HLC,
-    dataModel: DM,
-    objectToAdd: Values<DM, P>,
-    dataStore: DataStore<DM, P>,
-    index: Int,
     updateSendChannel: SendChannel<Update<DM, P>>
-): List<IsChange> {
-    val recordValues = ArrayList<DataRecordNode>()
-    var uniquesToIndex: MutableList<DataRecordValue<Comparable<Any>>>? = null
-    var toIndex: MutableMap<ByteArray, ByteArray>? = null
-    val dataRecord = DataRecord(
-        key = key,
-        values = recordValues,
-        firstVersion = version,
-        lastVersion = version
-    )
+): IsAddResponseStatus<DM> = try {
+    objectToAdd.validate()
 
-    // Find new index values to write
-    dataModel.indices?.forEach { indexDefinition ->
-        val valueBytes = indexDefinition.toStorageByteArrayForIndex(objectToAdd, key.bytes)
-            ?: return@forEach // skip if no complete values to index are found
+    val index = dataStore.records.binarySearch { it.key.compareTo(key) }
 
-        if (toIndex == null) toIndex = mutableMapOf()
-        toIndex?.let {
-            it[indexDefinition.referenceStorageByteArray.bytes] = valueBytes
-        }
-    }
+    if (index < 0) {
+        val recordValues = ArrayList<DataRecordNode>()
+        var uniquesToIndex: MutableList<DataRecordValue<Comparable<Any>>>? = null
+        var toIndex: MutableMap<ByteArray, ByteArray>? = null
+        val dataRecord = DataRecord(
+            key = key,
+            values = recordValues,
+            firstVersion = version,
+            lastVersion = version
+        )
 
-    objectToAdd.writeToStorage { _, reference, definition, value ->
-        val dataRecordValue = DataRecordValue(reference, value, version)
-        if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
-            @Suppress("UNCHECKED_CAST")
-            val comparableValue = dataRecordValue as DataRecordValue<Comparable<Any>>
-            dataStore.validateUniqueNotExists(comparableValue, dataRecord)
-            when (uniquesToIndex) {
-                null -> uniquesToIndex = mutableListOf(comparableValue)
-                else -> uniquesToIndex!!.add(comparableValue)
+        // Find new index values to write
+        dataModel.indices?.forEach { indexDefinition ->
+            val valueBytes = indexDefinition.toStorageByteArrayForIndex(objectToAdd, key.bytes)
+                ?: return@forEach // skip if no complete values to index are found
+
+            if (toIndex == null) toIndex = mutableMapOf()
+            toIndex?.let {
+                it[indexDefinition.referenceStorageByteArray.bytes] = valueBytes
             }
         }
-        recordValues += dataRecordValue
+
+        objectToAdd.writeToStorage { _, reference, definition, value ->
+            val dataRecordValue = DataRecordValue(reference, value, version)
+            if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
+                @Suppress("UNCHECKED_CAST")
+                val comparableValue = dataRecordValue as DataRecordValue<Comparable<Any>>
+                dataStore.validateUniqueNotExists(comparableValue, dataRecord)
+                when (uniquesToIndex) {
+                    null -> uniquesToIndex = mutableListOf(comparableValue)
+                    else -> uniquesToIndex!!.add(comparableValue)
+                }
+            }
+            recordValues += dataRecordValue
+        }
+
+        // Sort all nodes since some operations like map key values can be unsorted
+        recordValues.sortWith(Comparator { a: DataRecordNode, b: DataRecordNode ->
+            a.reference.compareTo(b.reference)
+        })
+
+        uniquesToIndex?.forEach { value ->
+            dataStore.addToUniqueIndex(dataRecord, value.reference, value.value, version)
+        }
+
+        toIndex?.forEach { (indexName, value) ->
+            dataStore.addToIndex(dataRecord, indexName, value, version)
+        }
+
+        dataStore.records.add((index * -1) - 1, dataRecord)
+
+        val changes = listOf<IsChange>()
+
+        updateSendChannel.send(
+            Addition(dataModel, key, version.timestamp, objectToAdd.change(changes))
+        )
+
+        AddSuccess(key, version.timestamp, changes)
+    } else {
+        AlreadyExists(key)
     }
-
-    // Sort all nodes since some operations like map key values can be unsorted
-    recordValues.sortWith(Comparator { a: DataRecordNode, b: DataRecordNode ->
-        a.reference.compareTo(b.reference)
-    })
-
-    uniquesToIndex?.forEach { value ->
-        dataStore.addToUniqueIndex(dataRecord, value.reference, value.value, version)
-    }
-
-    toIndex?.forEach { (indexName, value) ->
-        dataStore.addToIndex(dataRecord, indexName, value, version)
-    }
-
-    dataStore.records.add((index * -1) - 1, dataRecord)
-
-    val changes = listOf<IsChange>()
-
-    updateSendChannel.send(
-        Addition(dataModel, key, version.timestamp, objectToAdd.change(changes))
+} catch (ve: ValidationUmbrellaException) {
+    ValidationFail(ve)
+} catch (ve: ValidationException) {
+    ValidationFail(listOf(ve))
+} catch (ue: UniqueException) {
+    var index = 0
+    val ref = dataModel.getPropertyReferenceByStorageBytes(
+        ue.reference.size,
+        { ue.reference[index++] }
     )
-    return changes
+
+    ValidationFail(
+        listOf(
+            AlreadyExistsException(ref, ue.key)
+        )
+    )
+} catch (e: Throwable) {
+    ServerFail(e.toString(), e)
 }

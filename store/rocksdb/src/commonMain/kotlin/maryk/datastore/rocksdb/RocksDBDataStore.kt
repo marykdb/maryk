@@ -2,13 +2,13 @@ package maryk.datastore.rocksdb
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import maryk.core.clock.HLC
 import maryk.core.exceptions.DefNotFoundException
+import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.models.IsRootDataModel
@@ -31,6 +31,13 @@ import maryk.core.query.requests.GetUpdatesRequest
 import maryk.core.query.requests.ScanChangesRequest
 import maryk.core.query.requests.ScanRequest
 import maryk.core.query.requests.ScanUpdatesRequest
+import maryk.core.query.responses.updates.AdditionUpdate
+import maryk.core.query.responses.updates.ChangeUpdate
+import maryk.core.query.responses.updates.InitialChangesUpdate
+import maryk.core.query.responses.updates.InitialValuesUpdate
+import maryk.core.query.responses.updates.OrderedKeysUpdate
+import maryk.core.query.responses.updates.RemovalUpdate
+import maryk.core.services.responses.UpdateResponse
 import maryk.datastore.rocksdb.TableType.HistoricIndex
 import maryk.datastore.rocksdb.TableType.HistoricTable
 import maryk.datastore.rocksdb.TableType.HistoricUnique
@@ -47,6 +54,7 @@ import maryk.datastore.rocksdb.processors.AnyDeleteStoreAction
 import maryk.datastore.rocksdb.processors.AnyGetChangesStoreAction
 import maryk.datastore.rocksdb.processors.AnyGetStoreAction
 import maryk.datastore.rocksdb.processors.AnyGetUpdatesStoreAction
+import maryk.datastore.rocksdb.processors.AnyProcessUpdateResponseStoreAction
 import maryk.datastore.rocksdb.processors.AnyScanChangesStoreAction
 import maryk.datastore.rocksdb.processors.AnyScanStoreAction
 import maryk.datastore.rocksdb.processors.AnyScanUpdatesStoreAction
@@ -54,18 +62,20 @@ import maryk.datastore.rocksdb.processors.EMPTY_ARRAY
 import maryk.datastore.rocksdb.processors.VersionedComparator
 import maryk.datastore.rocksdb.processors.deleteCompleteIndexContents
 import maryk.datastore.rocksdb.processors.processAddRequest
+import maryk.datastore.rocksdb.processors.processAdditionUpdate
 import maryk.datastore.rocksdb.processors.processChangeRequest
+import maryk.datastore.rocksdb.processors.processChangeUpdate
 import maryk.datastore.rocksdb.processors.processDeleteRequest
+import maryk.datastore.rocksdb.processors.processDeleteUpdate
 import maryk.datastore.rocksdb.processors.processGetChangesRequest
 import maryk.datastore.rocksdb.processors.processGetRequest
 import maryk.datastore.rocksdb.processors.processGetUpdatesRequest
+import maryk.datastore.rocksdb.processors.processInitialChangesUpdate
 import maryk.datastore.rocksdb.processors.processScanChangesRequest
 import maryk.datastore.rocksdb.processors.processScanRequest
 import maryk.datastore.rocksdb.processors.processScanUpdatesRequest
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.Cache
-import maryk.datastore.shared.StoreAction
-import maryk.datastore.shared.updates.Update
 import maryk.lib.concurrency.AtomicReference
 import maryk.lib.ensureNeverFrozen
 import maryk.rocksdb.ColumnFamilyDescriptor
@@ -79,8 +89,6 @@ import maryk.rocksdb.WriteOptions
 import maryk.rocksdb.defaultColumnFamily
 import maryk.rocksdb.openRocksDB
 import maryk.rocksdb.use
-
-internal typealias StoreExecutor = suspend Unit.(ULong, StoreAction<*, *, *, *>, RocksDBDataStore, Cache, SendChannel<Update<*, *>>) -> Unit
 
 class RocksDBDataStore(
     override val keepAllVersions: Boolean = true,
@@ -224,6 +232,15 @@ class RocksDBDataStore(
                             processScanChangesRequest(storeAction as AnyScanChangesStoreAction, this@RocksDBDataStore, cache)
                         is ScanUpdatesRequest<*, *> ->
                             processScanUpdatesRequest(storeAction as AnyScanUpdatesStoreAction, this@RocksDBDataStore, cache)
+                        is UpdateResponse<*, *> -> when(val update = (storeAction.request as UpdateResponse<*, *>).update) {
+                            is AdditionUpdate<*, *> -> processAdditionUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@RocksDBDataStore, updateSendChannel)
+                            is ChangeUpdate<*, *> -> processChangeUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@RocksDBDataStore, updateSendChannel)
+                            is RemovalUpdate<*, *> -> processDeleteUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@RocksDBDataStore, cache, updateSendChannel)
+                            is InitialChangesUpdate<*, *> -> processInitialChangesUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@RocksDBDataStore, updateSendChannel)
+                            is InitialValuesUpdate<*, *> -> throw RequestException("Cannot process Values requests into data store since they do not contain all version information, do a changes request")
+                            is OrderedKeysUpdate<*, *> -> throw RequestException("Cannot process Update requests into data store since they do not contain all change information, do a changes request")
+                            else -> throw TypeException("Unknown update type $update for datastore processing")
+                        }
                         else -> throw TypeException("Unknown request type ${storeAction.request}")
                     }
                 } catch (e: Throwable) {

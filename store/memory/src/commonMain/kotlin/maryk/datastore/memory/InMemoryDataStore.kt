@@ -125,7 +125,7 @@ class InMemoryDataStore(
                                 is InitialChangesUpdate<*, *> -> processInitialChangesUpdate(storeAction as AnyProcessUpdateResponseStoreAction, dataStoreFetcher, updateSendChannel)
                                 is InitialValuesUpdate<*, *> -> throw RequestException("Cannot process Values requests into data store since they do not contain all version information, do a changes request")
                                 is OrderedKeysUpdate<*, *> -> throw RequestException("Cannot process Update requests into data store since they do not contain all change information, do a changes request")
-                                else -> throw TypeException("Unknown update type ${update} for datastore processing")
+                                else -> throw TypeException("Unknown update type $update for datastore processing")
                             }
                             else -> throw TypeException("Unknown request type ${storeAction.request}")
                         }

@@ -9,7 +9,7 @@ import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.number
 import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.changes.DataObjectVersionedChange
-import maryk.core.query.responses.updates.UpdateResponseType.InitialValues
+import maryk.core.query.responses.updates.UpdateResponseType.InitialChanges
 import maryk.core.values.SimpleObjectValues
 
 /** Update containing the initial changes for listeners which listen to a scan changes. */
@@ -17,7 +17,7 @@ data class InitialChangesUpdate<DM: IsRootValuesDataModel<P>, P: PropertyDefinit
     override val version: ULong,
     val changes: List<DataObjectVersionedChange<DM>>
 ): IsUpdateResponse<DM, P> {
-    override val type = InitialValues
+    override val type = InitialChanges
 
     @Suppress("unused")
     internal object Properties : ObjectPropertyDefinitions<InitialChangesUpdate<*, *>>() {

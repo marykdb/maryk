@@ -87,7 +87,7 @@ abstract class AbstractDataStore(
         return response.await()
     }
 
-    override suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, UR : IsUpdateResponse<DM, P>> processUpdate(
+    override suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processUpdate(
         updateResponse: UpdateResponse<DM, P>
     ): ProcessResponse<DM> {
         waitForInit()

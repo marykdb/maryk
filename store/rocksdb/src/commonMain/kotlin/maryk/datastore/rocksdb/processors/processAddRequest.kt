@@ -9,8 +9,10 @@ import maryk.core.query.requests.AddRequest
 import maryk.core.query.responses.AddResponse
 import maryk.core.query.responses.statuses.IsAddResponseStatus
 import maryk.datastore.rocksdb.RocksDBDataStore
+import maryk.datastore.rocksdb.Transaction
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.updates.Update
+import maryk.rocksdb.use
 
 internal typealias AddStoreAction<DM, P> = StoreAction<DM, P, AddRequest<DM, P>, AddResponse<DM>>
 internal typealias AnyAddStoreAction = AddStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
@@ -29,17 +31,20 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
         val dbIndex = dataStore.getDataModelId(addRequest.dataModel)
         val columnFamilies = dataStore.getColumnFamilies(dbIndex)
 
-        for (objectToAdd in addRequest.objects) {
-            statuses += processAdd(
-                addRequest.dataModel,
-                dataStore,
-                columnFamilies,
-                dbIndex,
-                addRequest.dataModel.key(objectToAdd),
-                version,
-                objectToAdd,
-                updateSendChannel
-            )
+        Transaction(dataStore).use { transaction ->
+            for (objectToAdd in addRequest.objects) {
+                statuses += processAdd(
+                    dataStore,
+                    addRequest.dataModel,
+                    transaction,
+                    columnFamilies,
+                    dbIndex,
+                    addRequest.dataModel.key(objectToAdd),
+                    version,
+                    objectToAdd,
+                    updateSendChannel
+                )
+            }
         }
     }
 

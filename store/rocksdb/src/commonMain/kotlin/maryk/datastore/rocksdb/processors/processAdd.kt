@@ -39,11 +39,11 @@ import maryk.datastore.shared.updates.Update
 import maryk.datastore.shared.updates.Update.Addition
 import maryk.lib.recyclableByteArray
 import maryk.rocksdb.rocksDBNotFound
-import maryk.rocksdb.use
 
 internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd(
-    dataModel: DM,
     dataStore: RocksDBDataStore,
+    dataModel: DM,
+    transaction: Transaction,
     columnFamilies: TableColumnFamilies,
     dbIndex: UInt,
     key: Key<DM>,
@@ -67,92 +67,90 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
             // Create version bytes and last version ref
             val versionBytes = HLC.toStorageBytes(version)
 
-            Transaction(dataStore).use { transaction ->
-                // Store first and last version
-                setCreatedVersion(transaction, columnFamilies, key, versionBytes)
-                setLatestVersion(transaction, columnFamilies, key, versionBytes)
+            // Store first and last version
+            setCreatedVersion(transaction, columnFamilies, key, versionBytes)
+            setLatestVersion(transaction, columnFamilies, key, versionBytes)
 
-                // Find new index values to write
-                dataModel.indices?.forEach { indexDefinition ->
-                    val indexReference = indexDefinition.referenceStorageByteArray.bytes
-                    val valueAndKeyBytes = indexDefinition.toStorageByteArrayForIndex(objectToAdd, key.bytes)
-                        ?: return@forEach // skip if no complete values to index are found
+            // Find new index values to write
+            dataModel.indices?.forEach { indexDefinition ->
+                val indexReference = indexDefinition.referenceStorageByteArray.bytes
+                val valueAndKeyBytes = indexDefinition.toStorageByteArrayForIndex(objectToAdd, key.bytes)
+                    ?: return@forEach // skip if no complete values to index are found
 
-                    setIndexValue(transaction, columnFamilies, indexReference, valueAndKeyBytes, versionBytes)
-                }
+                setIndexValue(transaction, columnFamilies, indexReference, valueAndKeyBytes, versionBytes)
+            }
 
-                objectToAdd.writeToStorage { type, reference, definition, value ->
-                    when (type) {
-                        ObjectDelete -> {
-                        } // Cannot happen on new add
-                        Value -> {
-                            val storableDefinition = Value.castDefinition(definition)
-                            val valueBytes = storableDefinition.toStorageBytes(value, NO_TYPE_INDICATOR)
+            objectToAdd.writeToStorage { type, reference, definition, value ->
+                when (type) {
+                    ObjectDelete -> {
+                    } // Cannot happen on new add
+                    Value -> {
+                        val storableDefinition = Value.castDefinition(definition)
+                        val valueBytes = storableDefinition.toStorageBytes(value, NO_TYPE_INDICATOR)
 
-                            // If a unique index, check if exists, and then write
-                            if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
-                                val uniqueReference = byteArrayOf(*reference, *valueBytes)
+                        // If a unique index, check if exists, and then write
+                        if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
+                            val uniqueReference = byteArrayOf(*reference, *valueBytes)
 
-                                checksBeforeWrite.add {
-                                    // Since it is an addition we only need to check the current uniques
-                                    val uniqueCount =
-                                        dataStore.db.get(columnFamilies.unique, uniqueReference, recyclableByteArray)
-                                    if (uniqueCount != rocksDBNotFound) {
-                                        throw UniqueException(
-                                            reference,
-                                            Key<DM>(
-                                                // Get the key at the end of the stored unique index value
-                                                recyclableByteArray.copyOfRange(
-                                                    fromIndex = uniqueCount - key.size,
-                                                    toIndex = uniqueCount
-                                                )
+                            checksBeforeWrite.add {
+                                // Since it is an addition we only need to check the current uniques
+                                val uniqueCount =
+                                    dataStore.db.get(columnFamilies.unique, uniqueReference, recyclableByteArray)
+                                if (uniqueCount != rocksDBNotFound) {
+                                    throw UniqueException(
+                                        reference,
+                                        Key<DM>(
+                                            // Get the key at the end of the stored unique index value
+                                            recyclableByteArray.copyOfRange(
+                                                fromIndex = uniqueCount - key.size,
+                                                toIndex = uniqueCount
                                             )
                                         )
-                                    }
+                                    )
                                 }
-
-                                // Creates index reference on the table if it not exists so delete can find
-                                // what values to delete from the unique indices.
-                                dataStore.createUniqueIndexIfNotExists(dbIndex, columnFamilies.unique, reference)
-                                setUniqueIndexValue(columnFamilies, transaction, uniqueReference, versionBytes, key)
                             }
 
-                            setValue(transaction, columnFamilies, key, reference, versionBytes, valueBytes)
+                            // Creates index reference on the table if it not exists so delete can find
+                            // what values to delete from the unique indices.
+                            dataStore.createUniqueIndexIfNotExists(dbIndex, columnFamilies.unique, reference)
+                            setUniqueIndexValue(columnFamilies, transaction, uniqueReference, versionBytes, key)
                         }
-                        ListSize,
-                        SetSize,
-                        MapSize -> setValue(
-                            transaction,
-                            columnFamilies,
-                            key,
-                            reference,
-                            versionBytes,
-                            (value as Int).toVarBytes()
-                        )
-                        TypeValue -> setTypedValue(
-                            value,
-                            definition,
-                            transaction,
-                            columnFamilies,
-                            key,
-                            reference,
-                            versionBytes
-                        )
-                        Embed -> {
-                            // Indicates value exists and is an embedded value object
-                            // Is for the root of embed
-                            val valueBytes = byteArrayOf(EMBED_INDICATOR, TRUE)
-                            setValue(transaction, columnFamilies, key, reference, versionBytes, valueBytes)
-                        }
+
+                        setValue(transaction, columnFamilies, key, reference, versionBytes, valueBytes)
+                    }
+                    ListSize,
+                    SetSize,
+                    MapSize -> setValue(
+                        transaction,
+                        columnFamilies,
+                        key,
+                        reference,
+                        versionBytes,
+                        (value as Int).toVarBytes()
+                    )
+                    TypeValue -> setTypedValue(
+                        value,
+                        definition,
+                        transaction,
+                        columnFamilies,
+                        key,
+                        reference,
+                        versionBytes
+                    )
+                    Embed -> {
+                        // Indicates value exists and is an embedded value object
+                        // Is for the root of embed
+                        val valueBytes = byteArrayOf(EMBED_INDICATOR, TRUE)
+                        setValue(transaction, columnFamilies, key, reference, versionBytes, valueBytes)
                     }
                 }
-
-                for (check in checksBeforeWrite) {
-                    check()
-                }
-
-                transaction.commit()
             }
+
+            for (check in checksBeforeWrite) {
+                check()
+            }
+
+            transaction.commit()
 
             val changes = listOf<IsChange>()
 

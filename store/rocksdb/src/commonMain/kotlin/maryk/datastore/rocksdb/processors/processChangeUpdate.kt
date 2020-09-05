@@ -36,16 +36,19 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
     if (update.changes.contains(ObjectCreate)) {
         val addedValues = dataModel.fromChanges(null, update.changes)
 
-        val status = processAdd(
-            dataModel = dataModel,
-            dataStore = dataStore,
-            columnFamilies = columnFamilies,
-            dbIndex = dbIndex,
-            key = update.key,
-            version = HLC(update.version),
-            objectToAdd = addedValues,
-            updateSendChannel = updateSendChannel
-        )
+        val status = Transaction(dataStore).use { transaction ->
+            processAdd(
+                dataStore = dataStore,
+                dataModel = dataModel,
+                transaction = transaction,
+                columnFamilies = columnFamilies,
+                dbIndex = dbIndex,
+                key = update.key,
+                version = HLC(update.version),
+                objectToAdd = addedValues,
+                updateSendChannel = updateSendChannel
+            )
+        }
 
         storeAction.response.complete(
             ProcessResponse(update.version, AddResponse(dataModel, listOf(status)))

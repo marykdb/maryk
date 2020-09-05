@@ -3,9 +3,11 @@ package maryk.datastore.memory.processors
 import kotlinx.coroutines.channels.SendChannel
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.fromChanges
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.query.responses.ChangeResponse
-import maryk.core.query.responses.statuses.IsChangeResponseStatus
+import maryk.core.query.changes.ObjectCreate
+import maryk.core.query.responses.AddOrChangeResponse
+import maryk.core.query.responses.statuses.IsAddOrChangeResponseStatus
 import maryk.core.query.responses.updates.InitialChangesUpdate
 import maryk.core.query.responses.updates.ProcessResponse
 import maryk.core.services.responses.UpdateResponse
@@ -27,25 +29,38 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
 
     val update = storeAction.request.update as InitialChangesUpdate<DM, P>
 
-    val changeStatuses = mutableListOf<IsChangeResponseStatus<DM>>()
+    val changeStatuses = mutableListOf<IsAddOrChangeResponseStatus<DM>>()
     for (change in update.changes) {
         for (versionedChange in change.changes) {
-            changeStatuses += processChange(
-                dataStore,
-                dataModel,
-                change.key,
-                null,
-                versionedChange.changes,
-                HLC(versionedChange.version),
-                updateSendChannel
-            )
+            if (versionedChange.changes.contains(ObjectCreate)) {
+                val addedValues = dataModel.fromChanges(null, versionedChange.changes)
+
+                changeStatuses += processAdd(
+                    dataStore,
+                    dataModel = dataModel,
+                    key = change.key,
+                    version = HLC(versionedChange.version),
+                    objectToAdd = addedValues,
+                    updateSendChannel = updateSendChannel
+                )
+            } else {
+                changeStatuses += processChange(
+                    dataStore,
+                    dataModel,
+                    change.key,
+                    null,
+                    versionedChange.changes,
+                    HLC(versionedChange.version),
+                    updateSendChannel
+                )
+            }
         }
     }
 
     storeAction.response.complete(
         ProcessResponse(
             update.version,
-            ChangeResponse(
+            AddOrChangeResponse(
                 dataModel,
                 changeStatuses
             )

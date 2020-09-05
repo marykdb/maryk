@@ -3,9 +3,11 @@ package maryk.datastore.rocksdb.processors
 import kotlinx.coroutines.channels.SendChannel
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.fromChanges
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.query.responses.ChangeResponse
-import maryk.core.query.responses.statuses.IsChangeResponseStatus
+import maryk.core.query.changes.ObjectCreate
+import maryk.core.query.responses.AddOrChangeResponse
+import maryk.core.query.responses.statuses.IsAddOrChangeResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.updates.InitialChangesUpdate
 import maryk.core.query.responses.updates.ProcessResponse
@@ -31,29 +33,52 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
     val dbIndex = dataStore.getDataModelId(changeRequest.dataModel)
     val columnFamilies = dataStore.getColumnFamilies(dbIndex)
 
-    val changeStatuses = mutableListOf<IsChangeResponseStatus<DM>>()
+    val changeStatuses = mutableListOf<IsAddOrChangeResponseStatus<DM>>()
 
     Transaction(dataStore).use { transaction ->
         for (change in update.changes) {
             for (versionedChange in change.changes) {
-                changeStatuses += try {
-                    val response = processChange(
-                        dataStore,
-                        dataModel,
-                        columnFamilies,
-                        change.key,
-                        null,
-                        versionedChange.changes,
-                        transaction,
-                        dbIndex,
-                        HLC(versionedChange.version),
-                        updateSendChannel
-                    )
-                    transaction.commit()
+                if (versionedChange.changes.contains(ObjectCreate)) {
+                    val addedValues = dataModel.fromChanges(null, versionedChange.changes)
 
-                    response
-                } catch (e: Throwable) {
-                    ServerFail<DM>(e.message ?: e.toString(), e)
+                    changeStatuses += try {
+                        val response = processAdd(
+                            dataStore = dataStore,
+                            dataModel = dataModel,
+                            transaction = transaction,
+                            columnFamilies = columnFamilies,
+                            dbIndex = dbIndex,
+                            key = change.key,
+                            version = HLC(versionedChange.version),
+                            objectToAdd = addedValues,
+                            updateSendChannel = updateSendChannel
+                        )
+                        transaction.commit()
+
+                        response
+                    } catch (e: Throwable) {
+                        ServerFail<DM>(e.message ?: e.toString(), e)
+                    }
+                } else {
+                    changeStatuses += try {
+                        val response = processChange(
+                            dataStore,
+                            dataModel,
+                            columnFamilies,
+                            change.key,
+                            null,
+                            versionedChange.changes,
+                            transaction,
+                            dbIndex,
+                            HLC(versionedChange.version),
+                            updateSendChannel
+                        )
+                        transaction.commit()
+
+                        response
+                    } catch (e: Throwable) {
+                        ServerFail<DM>(e.message ?: e.toString(), e)
+                    }
                 }
             }
         }
@@ -62,7 +87,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
     storeAction.response.complete(
         ProcessResponse(
             update.version,
-            ChangeResponse(
+            AddOrChangeResponse(
                 dataModel,
                 changeStatuses
             )

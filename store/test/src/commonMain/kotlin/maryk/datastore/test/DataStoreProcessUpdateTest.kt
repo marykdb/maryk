@@ -9,6 +9,7 @@ import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.get
+import maryk.core.query.responses.AddOrChangeResponse
 import maryk.core.query.responses.AddResponse
 import maryk.core.query.responses.ChangeResponse
 import maryk.core.query.responses.DeleteResponse
@@ -272,6 +273,7 @@ class DataStoreProcessUpdateTest(
             )
         )
 
+        val newMessage = "New message"
         val editedMessage = "Initially edited message"
         val changeResponse = dataStore.processUpdate(
             UpdateResponse(
@@ -288,23 +290,37 @@ class DataStoreProcessUpdateTest(
                                     Change(Log { message::ref } with editedMessage)
                                 )
                             ))
+                        ),
+                        DataObjectVersionedChange(
+                            key = keys[1],
+                            changes = listOf(VersionedChanges(
+                                version = 1234uL,
+                                changes = listOf(
+                                    ObjectCreate,
+                                    Change(Log { message::ref } with newMessage),
+                                    Change(Log { severity::ref } with ERROR),
+                                    Change(Log { timestamp::ref } with DateTime(2020, 9, 5, 12))
+                                )
+                            ))
                         )
                     )
                 )
             )
         )
 
-        assertType<ChangeResponse<*>>(changeResponse.result).apply {
-            assertEquals(1, statuses.size)
-            assertType<ChangeSuccess<*>>(statuses.first())
+        assertType<AddOrChangeResponse<*>>(changeResponse.result).apply {
+            assertEquals(2, statuses.size)
+            assertType<ChangeSuccess<*>>(statuses[0])
+            assertType<AddSuccess<*>>(statuses[1])
         }
 
         val getResponse = dataStore.execute(
-            Log.get(keys[0])
+            Log.get(keys[0], keys[1])
         )
 
-        expect(1) { getResponse.values.size }
-        expect(editedMessage) { getResponse.values.first().values { message } }
+        expect(2) { getResponse.values.size }
+        expect(editedMessage) { getResponse.values[0].values { message } }
+        expect(newMessage) { getResponse.values[1].values { message } }
     }
 
     private fun failOnInitialValuesUpdateRequest() = runSuspendingTest {

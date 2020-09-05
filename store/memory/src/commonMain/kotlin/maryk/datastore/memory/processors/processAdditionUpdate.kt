@@ -36,11 +36,11 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
     }
 
     val result = processAdd(
-        objectToAdd = update.values,
-        dataModel = dataModel,
         dataStore = dataStore,
+        dataModel = dataModel,
         key = update.key,
         version = HLC(update.version),
+        objectToAdd = update.values,
         updateSendChannel = updateSendChannel
     )
 

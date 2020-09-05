@@ -34,11 +34,11 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
             val key = addRequest.dataModel.key(objectToAdd)
 
             val status = processAdd(
-                objectToAdd,
-                addRequest.dataModel,
                 dataStore,
+                addRequest.dataModel,
                 key,
                 version,
+                objectToAdd,
                 updateSendChannel
             )
             statuses += status

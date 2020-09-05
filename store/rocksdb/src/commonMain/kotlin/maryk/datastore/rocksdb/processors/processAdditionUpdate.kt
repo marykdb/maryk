@@ -4,6 +4,7 @@ import kotlinx.coroutines.channels.SendChannel
 import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.key
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.responses.AddResponse
 import maryk.core.query.responses.updates.AdditionUpdate
@@ -34,12 +35,13 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
     val columnFamilies = dataStore.getColumnFamilies(dbIndex)
 
     val result = processAdd(
-        update.values,
         dataModel,
         dataStore,
         columnFamilies,
-        HLC(update.version),
         dbIndex,
+        dataModel.key(update.values),
+        HLC(update.version),
+        update.values,
         updateSendChannel
     )
 

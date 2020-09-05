@@ -3,7 +3,10 @@ package maryk.datastore.rocksdb.processors
 import kotlinx.coroutines.channels.SendChannel
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.fromChanges
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.query.changes.ObjectCreate
+import maryk.core.query.responses.AddResponse
 import maryk.core.query.responses.ChangeResponse
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.updates.ChangeUpdate
@@ -30,29 +33,48 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
     val dbIndex = dataStore.getDataModelId(changeRequest.dataModel)
     val columnFamilies = dataStore.getColumnFamilies(dbIndex)
 
-    val status = try {
-        Transaction(dataStore).use { transaction ->
-            val response = processChange(
-                dataStore,
-                dataModel,
-                columnFamilies,
-                update.key,
-                null,
-                update.changes,
-                transaction,
-                dbIndex,
-                HLC(update.version),
-                updateSendChannel
-            )
-            transaction.commit()
+    if (update.changes.contains(ObjectCreate)) {
+        val addedValues = dataModel.fromChanges(null, update.changes)
 
-            response
+        val status = processAdd(
+            dataModel = dataModel,
+            dataStore = dataStore,
+            columnFamilies = columnFamilies,
+            dbIndex = dbIndex,
+            key = update.key,
+            version = HLC(update.version),
+            objectToAdd = addedValues,
+            updateSendChannel = updateSendChannel
+        )
+
+        storeAction.response.complete(
+            ProcessResponse(update.version, AddResponse(dataModel, listOf(status)))
+        )
+    } else {
+        val status = try {
+            Transaction(dataStore).use { transaction ->
+                val response = processChange(
+                    dataStore,
+                    dataModel,
+                    columnFamilies,
+                    update.key,
+                    null,
+                    update.changes,
+                    transaction,
+                    dbIndex,
+                    HLC(update.version),
+                    updateSendChannel
+                )
+                transaction.commit()
+
+                response
+            }
+        } catch (e: Throwable) {
+            ServerFail<DM>(e.message ?: e.toString(), e)
         }
-    } catch (e: Throwable) {
-        ServerFail<DM>(e.message ?: e.toString(), e)
-    }
 
-    storeAction.response.complete(
-        ProcessResponse(update.version, ChangeResponse(dataModel, listOf(status)))
-    )
+        storeAction.response.complete(
+            ProcessResponse(update.version, ChangeResponse(dataModel, listOf(status)))
+        )
+    }
 }

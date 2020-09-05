@@ -28,11 +28,11 @@ import maryk.lib.extensions.compare.compareTo
 
 
 internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd(
-    objectToAdd: Values<DM, P>,
-    dataModel: DM,
     dataStore: DataStore<DM, P>,
+    dataModel: DM,
     key: Key<DM>,
     version: HLC,
+    objectToAdd: Values<DM, P>,
     updateSendChannel: SendChannel<Update<DM, P>>
 ): IsAddResponseStatus<DM> = try {
     objectToAdd.validate()

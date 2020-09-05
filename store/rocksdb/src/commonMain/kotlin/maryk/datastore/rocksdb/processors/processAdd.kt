@@ -4,7 +4,6 @@ import kotlinx.coroutines.channels.SendChannel
 import maryk.core.clock.HLC
 import maryk.core.extensions.bytes.toVarBytes
 import maryk.core.models.IsRootValuesDataModel
-import maryk.core.models.key
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.ListSize
 import maryk.core.processors.datastore.StorageTypeEnum.MapSize
@@ -43,18 +42,18 @@ import maryk.rocksdb.rocksDBNotFound
 import maryk.rocksdb.use
 
 internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd(
-    objectToAdd: Values<DM, P>,
     dataModel: DM,
     dataStore: RocksDBDataStore,
     columnFamilies: TableColumnFamilies,
-    version: HLC,
     dbIndex: UInt,
+    key: Key<DM>,
+    version: HLC,
+    objectToAdd: Values<DM, P>,
     updateSendChannel: SendChannel<Update<DM, P>>
 ): IsAddResponseStatus<DM> {
     return try {
         objectToAdd.validate()
 
-        val key = dataModel.key(objectToAdd)
         val mayExist = dataStore.db.keyMayExist(columnFamilies.keys, key.bytes, null)
 
         val exists = if (mayExist) {

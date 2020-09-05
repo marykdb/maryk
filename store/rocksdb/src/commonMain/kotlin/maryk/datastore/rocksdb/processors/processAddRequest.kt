@@ -3,6 +3,7 @@ package maryk.datastore.rocksdb.processors
 import kotlinx.coroutines.channels.SendChannel
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.key
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.requests.AddRequest
 import maryk.core.query.responses.AddResponse
@@ -30,12 +31,13 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
 
         for (objectToAdd in addRequest.objects) {
             statuses += processAdd(
-                objectToAdd,
                 addRequest.dataModel,
                 dataStore,
                 columnFamilies,
-                version,
                 dbIndex,
+                addRequest.dataModel.key(objectToAdd),
+                version,
+                objectToAdd,
                 updateSendChannel
             )
         }

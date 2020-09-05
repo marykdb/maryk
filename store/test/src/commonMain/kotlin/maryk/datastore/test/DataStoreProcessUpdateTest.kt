@@ -4,6 +4,7 @@ import maryk.core.exceptions.RequestException
 import maryk.core.models.key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.DataObjectVersionedChange
+import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.delete
@@ -40,6 +41,7 @@ class DataStoreProcessUpdateTest(
     override val allTests = mapOf(
         "executeProcessAddRequest" to ::executeProcessAddRequest,
         "executeProcessChangeRequest" to ::executeProcessChangeRequest,
+        "executeProcessAddInChangeRequest" to ::executeProcessAddInChangeRequest,
         "executeProcessRemovalRequest" to ::executeProcessRemovalRequest,
         "executeProcessInitialChangesRequest" to ::executeProcessInitialChangesRequest,
         "failOnInitialValuesRequest" to ::failOnInitialValuesUpdateRequest,
@@ -140,6 +142,39 @@ class DataStoreProcessUpdateTest(
 
         expect(1) { getResponse.values.size }
         expect(editedMessage) { getResponse.values.first().values { message } }
+    }
+
+    private fun executeProcessAddInChangeRequest() = runSuspendingTest {
+        val newMessage = "New message"
+        val changeResponse = dataStore.processUpdate(
+            UpdateResponse(
+                id = 1234uL,
+                dataModel = Log,
+                update = ChangeUpdate(
+                    key = keys[0],
+                    version = 1234uL,
+                    index = 1,
+                    changes = listOf(
+                        ObjectCreate,
+                        Change(Log { message::ref } with newMessage),
+                        Change(Log { severity::ref } with ERROR),
+                        Change(Log { timestamp::ref } with DateTime(2020, 9, 5, 12))
+                    )
+                )
+            )
+        )
+
+        assertType<AddResponse<*>>(changeResponse.result).apply {
+            assertEquals(1, statuses.size)
+            assertType<AddSuccess<*>>(statuses.first())
+        }
+
+        val getResponse = dataStore.execute(
+            Log.get(keys[0])
+        )
+
+        expect(1) { getResponse.values.size }
+        expect(newMessage) { getResponse.values.first().values { message } }
     }
 
     private fun executeProcessRemovalRequest() = runSuspendingTest {

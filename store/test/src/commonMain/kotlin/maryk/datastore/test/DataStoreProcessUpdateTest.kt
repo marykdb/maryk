@@ -8,6 +8,12 @@ import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.get
+import maryk.core.query.responses.AddResponse
+import maryk.core.query.responses.ChangeResponse
+import maryk.core.query.responses.DeleteResponse
+import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.ChangeSuccess
+import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.InitialChangesUpdate
@@ -19,9 +25,11 @@ import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.core.services.responses.UpdateResponse
 import maryk.datastore.shared.IsDataStore
 import maryk.lib.time.DateTime
+import maryk.test.assertType
 import maryk.test.models.Log
 import maryk.test.models.Severity.ERROR
 import maryk.test.runSuspendingTest
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import kotlin.test.expect
@@ -76,9 +84,10 @@ class DataStoreProcessUpdateTest(
             )
         )
 
-        println(addResponse)
-
-        // TODO check response
+        assertType<AddResponse<*>>(addResponse.result).apply {
+            assertEquals(1, statuses.size)
+            assertType<AddSuccess<*>>(statuses.first())
+        }
 
         val getResponse = dataStore.execute(
             Log.get(keys[0])
@@ -120,9 +129,10 @@ class DataStoreProcessUpdateTest(
             )
         )
 
-        println(changeResponse)
-
-        // TODO check response
+        assertType<ChangeResponse<*>>(changeResponse.result).apply {
+            assertEquals(1, statuses.size)
+            assertType<ChangeSuccess<*>>(statuses.first())
+        }
 
         val getResponse = dataStore.execute(
             Log.get(keys[0])
@@ -175,9 +185,10 @@ class DataStoreProcessUpdateTest(
             )
         )
 
-        println(hardRemovalUpdate)
-
-        // TODO check response
+        assertType<DeleteResponse<*>>(hardRemovalUpdate.result).apply {
+            assertEquals(1, statuses.size)
+            assertType<DeleteSuccess<*>>(statuses.first())
+        }
 
         val getResponse1 = dataStore.execute(
             Log.get(keys[0])
@@ -197,9 +208,10 @@ class DataStoreProcessUpdateTest(
             )
         )
 
-        println(softRemovalUpdate)
-
-        // TODO check response
+        assertType<DeleteResponse<*>>(softRemovalUpdate.result).apply {
+            assertEquals(1, statuses.size)
+            assertType<DeleteSuccess<*>>(statuses.first())
+        }
 
         val getResponse2 = dataStore.execute(
             Log.get(keys[1], filterSoftDeleted = false)
@@ -247,9 +259,10 @@ class DataStoreProcessUpdateTest(
             )
         )
 
-        println(changeResponse)
-
-        // TODO check response
+        assertType<ChangeResponse<*>>(changeResponse.result).apply {
+            assertEquals(1, statuses.size)
+            assertType<ChangeSuccess<*>>(statuses.first())
+        }
 
         val getResponse = dataStore.execute(
             Log.get(keys[0])

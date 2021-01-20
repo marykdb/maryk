@@ -231,7 +231,7 @@ fun <TO: Any, DO: Any, VDO: ValueDataObject, DM : ValueDataModel<VDO, P>, P : Ob
     maxValue: VDO? = null,
     default: VDO? = null,
     alternativeNames: Set<String>? = null
-): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<VDO, TO, IsPropertyContext, ValueObjectDefinition<VDO, DM, P>, DO>, DO> =
+): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<VDO, TO, IsPropertyContext, ValueObjectDefinition<VDO, DM, P>, DO>, DO, IsPropertyContext> =
     valueObject(index, getter, dataModel, name, required, final,  unique, minValue, maxValue, default, alternativeNames, toSerializable = null)
 
 fun <TO: Any, DO: Any, VDO: ValueDataObject, DM : ValueDataModel<VDO, P>, P : ObjectPropertyDefinitions<VDO>, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.valueObject(

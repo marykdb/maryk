@@ -8,12 +8,13 @@ plugins {
 }
 
 buildscript {
-    extra["kotlinVersion"] = "1.4.21"
+    extra["kotlinVersion"] = "1.4.30-RC"
     extra["coroutinesVersion"] = "1.4.2"
     extra["marykRocksDBVersion"] = "0.7"
 
     repositories {
         jcenter()
+        maven( url= "https://dl.bintray.com/kotlin/kotlin-eap" )
     }
     dependencies {
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${project.extra["kotlinVersion"]}")
@@ -22,6 +23,7 @@ buildscript {
 
 allprojects {
     repositories {
+        maven( url= "https://dl.bintray.com/kotlin/kotlin-eap" )
         mavenLocal()
         jcenter()
         google()

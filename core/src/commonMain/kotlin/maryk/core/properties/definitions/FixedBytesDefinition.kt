@@ -130,7 +130,7 @@ fun <TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.fixedBytes(
     maxValue: Bytes? = null,
     default: Bytes? = null,
     alternativeNames: Set<String>? = null
-): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<Bytes, TO, IsPropertyContext, FixedBytesDefinition, DO>, DO> =
+): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<Bytes, TO, IsPropertyContext, FixedBytesDefinition, DO>, DO, IsPropertyContext> =
     fixedBytes(index, getter, byteSize, name, required, final,  unique, minValue, maxValue, default, alternativeNames, toSerializable = null)
 
 fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.fixedBytes(

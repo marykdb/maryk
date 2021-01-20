@@ -53,7 +53,7 @@ data class DataObjectVersionedChange<out DM : IsRootDataModel<*>>(
     companion object : QueryDataModel<DataObjectVersionedChange<*>, Properties>(
         properties = Properties
     ) {
-        override fun invoke(values: ObjectValues<DataObjectVersionedChange<*>, Properties>) = DataObjectVersionedChange(
+        override fun invoke(values: ObjectValues<DataObjectVersionedChange<*>, Properties>) = DataObjectVersionedChange<IsRootDataModel<*>>(
             key = values(1u),
             sortingKey = values(2u),
             changes = values(3u)

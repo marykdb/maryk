@@ -136,7 +136,7 @@ fun <TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.flexBytes(
     minSize: UInt? = null,
     maxSize: UInt? = null,
     alternativeNames: Set<String>? = null
-): ObjectDefinitionWrapperDelegateLoader<FlexBytesDefinitionWrapper<Bytes, TO, IsPropertyContext, FlexBytesDefinition, DO>, DO> =
+): ObjectDefinitionWrapperDelegateLoader<FlexBytesDefinitionWrapper<Bytes, TO, IsPropertyContext, FlexBytesDefinition, DO>, DO, IsPropertyContext> =
     flexBytes(index, getter, name, required, final,  unique, minValue, maxValue, default, minSize, maxSize, alternativeNames, toSerializable = null)
 
 fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.flexBytes(

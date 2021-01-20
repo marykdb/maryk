@@ -179,7 +179,7 @@ fun <TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.dateTime(
     maxValue: DateTime? = null,
     default: DateTime? = null,
     alternativeNames: Set<String>? = null
-): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<DateTime, TO, IsPropertyContext, DateTimeDefinition, DO>, DO> =
+): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<DateTime, TO, IsPropertyContext, DateTimeDefinition, DO>, DO, IsPropertyContext> =
     dateTime(index, getter, name, required, final,  unique, precision, minValue, maxValue, default, alternativeNames, toSerializable = null)
 
 fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.dateTime(

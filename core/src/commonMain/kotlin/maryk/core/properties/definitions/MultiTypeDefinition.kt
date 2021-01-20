@@ -115,7 +115,7 @@ data class MultiTypeDefinition<E : MultiTypeEnum<out T>, T: Any>(
             }
         ) {
         override fun invoke(values: SimpleObjectValues<MultiTypeDefinition<*, *>>) =
-            MultiTypeDefinition(
+            MultiTypeDefinition<MultiTypeEnum<Any>, Any>(
                 required = values(1u),
                 final = values(2u),
                 typeEnum = values(3u),
@@ -153,7 +153,7 @@ fun <E : MultiTypeEnum<out T>, T: Any, TO: Any, DO: Any> ObjectPropertyDefinitio
     typeIsFinal: Boolean = true,
     default: TypedValue<E, T>? = null,
     alternativeNames: Set<String>? = null
-): ObjectDefinitionWrapperDelegateLoader<MultiTypeDefinitionWrapper<E, T, TO, ContainsDefinitionsContext, DO>, DO> =
+): ObjectDefinitionWrapperDelegateLoader<MultiTypeDefinitionWrapper<E, T, TO, ContainsDefinitionsContext, DO>, DO, ContainsDefinitionsContext> =
     multiType(index, getter, name, required, final, typeEnum, typeIsFinal, default, alternativeNames, toSerializable = null)
 
 fun <E : MultiTypeEnum<out T>, T: Any, TO: Any, DO: Any, CX: ContainsDefinitionsContext> ObjectPropertyDefinitions<DO>.multiType(
@@ -171,7 +171,7 @@ fun <E : MultiTypeEnum<out T>, T: Any, TO: Any, DO: Any, CX: ContainsDefinitions
     shouldSerialize: (Unit.(Any) -> Boolean)? = null,
     capturer: (Unit.(CX, TypedValue<E, T>) -> Unit)? = null
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
-    MultiTypeDefinitionWrapper(
+    MultiTypeDefinitionWrapper<E, T, TO, CX, DO>(
         index,
         name ?: propName,
         MultiTypeDefinition(required, final, typeEnum, typeIsFinal, default),

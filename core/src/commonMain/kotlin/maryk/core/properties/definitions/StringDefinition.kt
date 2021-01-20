@@ -164,7 +164,7 @@ fun <TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.string(
     maxSize: UInt? = null,
     regEx: String? = null,
     alternativeNames: Set<String>? = null
-): ObjectDefinitionWrapperDelegateLoader<FlexBytesDefinitionWrapper<String, TO, IsPropertyContext, StringDefinition, DO>, DO> =
+): ObjectDefinitionWrapperDelegateLoader<FlexBytesDefinitionWrapper<String, TO, IsPropertyContext, StringDefinition, DO>, DO, IsPropertyContext> =
     string(index, getter, name, required, final,  unique, minValue, maxValue, default, minSize, maxSize, regEx, alternativeNames, toSerializable = null)
 
 fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.string(

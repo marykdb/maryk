@@ -182,7 +182,7 @@ fun <TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.time(
     default: Time? = null,
     precision: TimePrecision = TimePrecision.SECONDS,
     alternativeNames: Set<String>? = null
-): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<Time, TO, IsPropertyContext, TimeDefinition, DO>, DO> =
+): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<Time, TO, IsPropertyContext, TimeDefinition, DO>, DO, IsPropertyContext> =
     time(index, getter, name, required, final,  unique, minValue, maxValue, default, precision, alternativeNames, toSerializable = null)
 
 fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.time(

@@ -269,7 +269,7 @@ fun <E : IndexedEnumComparable<E>, TO: Any, DO: Any> ObjectPropertyDefinitions<D
     maxValue: E? = null,
     default: E? = null,
     alternativeNames: Set<String>? = null
-): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<E, TO, IsPropertyContext, EnumDefinition<E>, DO>, DO> =
+): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<E, TO, IsPropertyContext, EnumDefinition<E>, DO>, DO, IsPropertyContext> =
     enum(index, getter, enum, name, required, final,  unique, minValue, maxValue, default, alternativeNames, toSerializable = null)
 
 fun <E : IndexedEnumComparable<E>, TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.enum(

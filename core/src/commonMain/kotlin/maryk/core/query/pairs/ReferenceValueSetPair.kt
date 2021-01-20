@@ -42,7 +42,7 @@ data class ReferenceValueSetPair<T : Any> internal constructor(
     companion object : SimpleObjectDataModel<ReferenceValueSetPair<*>, Properties>(
         properties = Properties
     ) {
-        override fun invoke(values: ObjectValues<ReferenceValueSetPair<*>, Properties>) = ReferenceValueSetPair(
+        override fun invoke(values: ObjectValues<ReferenceValueSetPair<*>, Properties>) = ReferenceValueSetPair<Any>(
             reference = values(1u),
             values = values(2u)
         )

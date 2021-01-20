@@ -167,7 +167,7 @@ fun <DM: IsRootDataModel<*>, TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.ref
     default: Key<DM>? = null,
     dataModel: Unit.() -> DM,
     alternativeNames: Set<String>? = null
-): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<Key<DM>, TO, IsPropertyContext, ReferenceDefinition<DM>, DO>, DO> =
+): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<Key<DM>, TO, IsPropertyContext, ReferenceDefinition<DM>, DO>, DO, IsPropertyContext> =
     reference(index, getter, name, required, final,  unique, minValue, maxValue, default, dataModel, alternativeNames, toSerializable = null)
 
 fun <DM: IsRootDataModel<P>, P: PropertyDefinitions> PropertyDefinitions.reference(

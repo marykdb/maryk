@@ -109,7 +109,7 @@ fun <TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.geoPoint(
     final: Boolean = false,
     default: GeoPoint? = null,
     alternativeNames: Set<String>? = null
-): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<GeoPoint, TO, IsPropertyContext, GeoPointDefinition, DO>, DO> =
+): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<GeoPoint, TO, IsPropertyContext, GeoPointDefinition, DO>, DO, IsPropertyContext> =
     geoPoint(index, getter, name, required, final, default, alternativeNames, toSerializable = null)
 
 fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.geoPoint(

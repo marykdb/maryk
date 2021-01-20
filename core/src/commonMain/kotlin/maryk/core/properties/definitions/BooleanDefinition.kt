@@ -89,7 +89,7 @@ fun <DO: Any> ObjectPropertyDefinitions<DO>.boolean(
     final: Boolean = false,
     default: Boolean? = null,
     alternativeNames: Set<String>? = null
-): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<Boolean, Boolean, IsPropertyContext, BooleanDefinition, DO>, DO> =
+): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<Boolean, Boolean, IsPropertyContext, BooleanDefinition, DO>, DO, IsPropertyContext> =
     boolean(index, getter, name, required, final, default, alternativeNames, toSerializable = null)
 
 fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.boolean(

@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions.wrapper
 
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import kotlin.reflect.KProperty
@@ -17,7 +18,7 @@ class DefinitionWrapperDelegateLoader<W : IsDefinitionWrapper<*, *, *, Any>>(
 }
 
 /** Loads delegate for wrapper from [wrapperCreator] and sets it on object [propertyDefinitions] */
-class ObjectDefinitionWrapperDelegateLoader<W : IsDefinitionWrapper<*, *, *, DO>, DO: Any>(
+class ObjectDefinitionWrapperDelegateLoader<W : IsDefinitionWrapper<*, *, CX, DO>, DO: Any, CX: IsPropertyContext>(
     private val propertyDefinitions: ObjectPropertyDefinitions<DO>,
     private val wrapperCreator: (String) -> W
 ) {

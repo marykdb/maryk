@@ -244,7 +244,7 @@ fun <T : Comparable<T>, TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.number(
     default: T? = null,
     reversedStorage: Boolean? = null,
     alternativeNames: Set<String>? = null
-): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<T, TO, IsPropertyContext, NumberDefinition<T>, DO>, DO> =
+): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<T, TO, IsPropertyContext, NumberDefinition<T>, DO>, DO, IsPropertyContext> =
     number(index, getter, type, name, required, final,  unique, minValue, maxValue, default, reversedStorage, alternativeNames, toSerializable = null)
 
 fun <T : Comparable<T>, TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.number(

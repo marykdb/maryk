@@ -191,7 +191,7 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(
         is EmbeddedValuesDefinition<*, *> -> this.dataModel.name
         is EmbeddedObjectDefinition<*, *, *, *, *> -> (this.dataModel as IsNamedDataModel<*>).name
         is MultiTypeDefinition<*, *> -> {
-            val multiTypeName = "${name.capitalize()}Type"
+            val multiTypeName = "${name.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }}Type"
 
             val multiTypes = mutableListOf<String>()
             val canBeAOneOf = this.typeEnum.cases().firstOrNull {
@@ -200,7 +200,7 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(
 
             for (typeCase in this.typeEnum.cases()) {
                 val type = typeCase.definition!!.toProtoBufType(typeCase.name, generationContext, messageAdder)
-                multiTypes += "$type ${typeCase.name.decapitalize()} = ${typeCase.index};"
+                multiTypes += "$type ${typeCase.name.replaceFirstChar { it.lowercase() }} = ${typeCase.index};"
             }
 
             val properties = multiTypes.joinToString(separator = "\n    ").prependIndent().prependIndent().prependIndent()
@@ -241,7 +241,7 @@ private fun createEmbeddedMapModel(
 ): String {
     val keyType = keyDefinition.toProtoBufType(name, generationContext, messageAdder)
     val valueType = valueDefinition.toProtoBufType(name, generationContext, messageAdder)
-    val entryObjectName = "${name.capitalize()}Entry"
+    val entryObjectName = "${name.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }}Entry"
     messageAdder("""
     message $entryObjectName {
       $keyType key = 1;

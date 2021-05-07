@@ -60,7 +60,7 @@ internal fun IsYamlCharReader.doubleQuoteString(
                     '\n', '\r' -> None
                     else -> addCharAndResetSkipChar("\\$lastChar")
                 }
-                is UtfChar -> when (lastChar.toLowerCase()) {
+                is UtfChar -> when (lastChar.lowercaseChar()) {
                     in HEX_CHARS -> {
                         if (skipChar.addCharAndHasReachedEnd(lastChar)) {
                             addCharAndResetSkipChar(skipChar.toCharString())

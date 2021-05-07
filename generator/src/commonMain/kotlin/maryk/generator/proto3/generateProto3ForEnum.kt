@@ -11,7 +11,7 @@ fun IsIndexedEnumDefinition<*>.generateProto3Schema(writer: (String) -> Unit) {
 
     val schema = """
     enum ${this.name} {
-      UNKNOWN_${this.name.toUpperCase()} = 0;
+      UNKNOWN_${this.name.uppercase()} = 0;
       ${values.joinToString("\n").prependIndent().prependIndent("  ").trimStart()}
     }
     """.trimIndent()

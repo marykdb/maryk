@@ -9,6 +9,7 @@ import maryk.core.properties.graph.IsPropRefGraph
 import maryk.core.properties.graph.PropRefGraph
 import maryk.core.properties.types.MutableTypedValue
 import maryk.core.properties.types.TypedValue
+import kotlin.jvm.JvmInline
 import kotlin.native.concurrent.SharedImmutable
 
 interface IsValueItems : Iterable<ValueItem> {
@@ -92,7 +93,8 @@ internal fun List<ValueItem>.searchItemByIndex(index: UInt): Int =
 val EmptyValueItems: IsValueItems = MutableValueItems()
 fun ValueItems(vararg item: ValueItem): IsValueItems = MutableValueItems(*item)
 
-inline class MutableValueItems(
+@JvmInline
+value class MutableValueItems(
     override val list: MutableList<ValueItem>
 ) : IsValueItemsImpl {
     override val size get() = list.size

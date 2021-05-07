@@ -4,6 +4,7 @@ import maryk.core.extensions.bytes.initULong
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.lib.time.Instant
+import kotlin.jvm.JvmInline
 
 private const val LOGICAL_BYTE_SIZE = 20
 
@@ -19,8 +20,8 @@ private const val LOGICAL_MASK = 0xFFFFFuL
  * See original proposal for more details:
  * https://cse.buffalo.edu/tech-reports/2014-04.pdf
  */
-@Suppress("EXPERIMENTAL_FEATURE_WARNING")
-inline class HLC constructor(
+@JvmInline
+value class HLC constructor(
     val timestamp: ULong
 ) {
     /** Create HLC by setting [physical] and [logical] time specifically */
@@ -28,7 +29,7 @@ inline class HLC constructor(
         physical: ULong,
         logical: UInt
     ) : this(
-        physical.toULong().shl(LOGICAL_BYTE_SIZE) + logical
+        physical.shl(LOGICAL_BYTE_SIZE) + logical
     )
 
     /** Create HLC for the current time */

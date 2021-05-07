@@ -31,6 +31,7 @@ kotlin {
         val jsMain by getting {
             dependencies {
                 api(kotlin("test-js"))
+                api(npm("crypto-browserify", "3.12.0"))
             }
         }
     }

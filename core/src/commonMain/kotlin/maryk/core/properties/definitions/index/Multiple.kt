@@ -76,7 +76,7 @@ data class Multiple(
      * Add all lengths of sub references + their lengths
      */
     override fun calculateReferenceStorageByteLength() =
-        this.indexKeyPartType.index.calculateVarByteLength() + references.sumBy {
+        this.indexKeyPartType.index.calculateVarByteLength() + references.sumOf {
             it.calculateReferenceStorageByteLength().let { length ->
                 length + length.calculateVarByteLength()
             }

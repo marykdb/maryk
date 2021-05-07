@@ -381,7 +381,7 @@ class JsonReader(
                     'u' -> SkipCharType.UtfChar('u', 4)
                     else -> addCharAndResetSkipChar("\\$lastChar")
                 }
-                is SkipCharType.UtfChar -> when (lastChar.toLowerCase()) {
+                is SkipCharType.UtfChar -> when (lastChar.lowercaseChar()) {
                     in HEX_CHARS -> {
                         if (skipChar.addCharAndHasReachedEnd(lastChar)) {
                             addCharAndResetSkipChar(skipChar.toCharString())

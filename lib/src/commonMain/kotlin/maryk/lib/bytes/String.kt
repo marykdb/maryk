@@ -19,16 +19,16 @@ fun String.calculateUTF8ByteLength(): Int {
     var i = 0
 
     // Count ASCII chars.
-    while (i < utf16Length && this[i].toInt() < 0x80) {
+    while (i < utf16Length && this[i].code < 0x80) {
         i++
     }
 
     // Count other chars
     while (i < utf16Length) {
         val c = this[i]
-        if (c.toInt() < 0x800) {
+        if (c.code < 0x800) {
             // Count any chars anything below 0x800.
-            utf8Length += (0x7f - c.toInt()) ushr 31
+            utf8Length += (0x7f - c.code) ushr 31
         } else {
             // Count remaining chars
             utf8Length += calculateGenericUTF8Length(this, i)
@@ -54,8 +54,8 @@ private fun calculateGenericUTF8Length(string: String, startPosition: Int): Int 
     var i = startPosition
     while (i < utf16Length) {
         val char = string[i]
-        if (char.toInt() < 0x800) {
-            utf8Length += (0x7f - char.toInt()) ushr 31
+        if (char.code < 0x800) {
+            utf8Length += (0x7f - char.code) ushr 31
         } else {
             utf8Length += 2
             // Check if char is a correct surrogate pair
@@ -81,11 +81,11 @@ private fun String.toUTF8Bytes(writer: (byte: Byte) -> Unit) {
     var i = 0
     while (i < utf16Length) {
         val char = this[i]
-        val charInt = char.toInt()
+        val charInt = char.code
         when {
-            charInt < 0x80 -> writer(char.toByte()) // ASCII
+            charInt < 0x80 -> writer(char.code.toByte()) // ASCII
 
-            char.toInt() < 0x800 -> { // 11 bits, two UTF-8 bytes
+            char.code < 0x800 -> { // 11 bits, two UTF-8 bytes
                 writer((0xF shl 6 or (charInt ushr 6)).toByte())
                 writer((0x80 or (0x3F and charInt)).toByte())
             }
@@ -112,20 +112,20 @@ private fun String.toUTF8Bytes(writer: (byte: Byte) -> Unit) {
 }
 
 private fun toCodePoint(high: Char, low: Char) =
-    (high.toInt() shl 10) + low.toInt() + (
+    (high.code shl 10) + low.code + (
             MIN_SUPPLEMENTARY_CODE_POINT
-                    - (Char.MIN_HIGH_SURROGATE.toInt() shl 10)
-                    - Char.MIN_LOW_SURROGATE.toInt()
+                    - (Char.MIN_HIGH_SURROGATE.code shl 10)
+                    - Char.MIN_LOW_SURROGATE.code
             )
 
 private fun isSurrogatePair(high: Char, low: Char) =
     isHighSurrogate(high) && isLowSurrogate(low)
 
 private fun isHighSurrogate(ch: Char) =
-    ch >= Char.MIN_HIGH_SURROGATE && ch.toInt() < Char.MAX_HIGH_SURROGATE.toInt() + 1
+    ch >= Char.MIN_HIGH_SURROGATE && ch.code < Char.MAX_HIGH_SURROGATE.code + 1
 
 private fun isLowSurrogate(ch: Char) =
-    ch >= Char.MIN_LOW_SURROGATE && ch.toInt() < Char.MAX_LOW_SURROGATE.toInt() + 1
+    ch >= Char.MIN_LOW_SURROGATE && ch.code < Char.MAX_LOW_SURROGATE.code + 1
 
 private fun isSurrogate(ch: Char) =
-    ch >= Char.MIN_SURROGATE && ch.toInt() < Char.MAX_SURROGATE.toInt() + 1
+    ch >= Char.MIN_SURROGATE && ch.code < Char.MAX_SURROGATE.code + 1

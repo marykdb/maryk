@@ -1,6 +1,6 @@
 package maryk.datastore.memory.processors
 
-import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.fromChanges
@@ -21,7 +21,7 @@ import maryk.datastore.shared.updates.IsUpdateAction
 internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processChangeUpdate(
     storeAction: StoreAction<DM, P, UpdateResponse<DM, P>, ProcessResponse<DM>>,
     dataStoreFetcher: (IsRootValuesDataModel<*>) -> DataStore<*, *>,
-    updateSendChannel: SendChannel<IsUpdateAction>
+    updateSharedFlow: MutableSharedFlow<IsUpdateAction>
 ) {
     val dataModel = storeAction.request.dataModel
     @Suppress("UNCHECKED_CAST")
@@ -38,7 +38,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
             key = update.key,
             version = HLC(update.version),
             objectToAdd = addedValues,
-            updateSendChannel = updateSendChannel
+            updateSharedFlow = updateSharedFlow
         )
 
         storeAction.response.complete(
@@ -52,7 +52,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
             null,
             update.changes,
             HLC(update.version),
-            updateSendChannel
+            updateSharedFlow
         )
 
         storeAction.response.complete(

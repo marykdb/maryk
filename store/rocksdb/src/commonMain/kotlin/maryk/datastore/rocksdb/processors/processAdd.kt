@@ -1,6 +1,6 @@
 package maryk.datastore.rocksdb.processors
 
-import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
 import maryk.core.extensions.bytes.toVarBytes
 import maryk.core.models.IsRootValuesDataModel
@@ -35,7 +35,7 @@ import maryk.datastore.rocksdb.processors.helpers.setTypedValue
 import maryk.datastore.rocksdb.processors.helpers.setUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setValue
 import maryk.datastore.shared.UniqueException
-import maryk.datastore.shared.updates.Update
+import maryk.datastore.shared.updates.IsUpdateAction
 import maryk.datastore.shared.updates.Update.Addition
 import maryk.lib.recyclableByteArray
 import maryk.rocksdb.rocksDBNotFound
@@ -49,7 +49,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
     key: Key<DM>,
     version: HLC,
     objectToAdd: Values<DM, P>,
-    updateSendChannel: SendChannel<Update<DM, P>>
+    updateSharedFlow: MutableSharedFlow<IsUpdateAction>
 ): IsAddResponseStatus<DM> {
     return try {
         objectToAdd.validate()
@@ -154,7 +154,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
 
             val changes = listOf<IsChange>()
 
-            updateSendChannel.send(
+            updateSharedFlow.emit(
                 Addition(dataModel, key, version.timestamp, objectToAdd.change(changes))
             )
 

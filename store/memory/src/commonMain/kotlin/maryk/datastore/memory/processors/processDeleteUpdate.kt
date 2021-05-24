@@ -1,6 +1,6 @@
 package maryk.datastore.memory.processors
 
-import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootValuesDataModel
@@ -21,7 +21,7 @@ import maryk.datastore.shared.updates.IsUpdateAction
 internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDeleteUpdate(
     storeAction: StoreAction<DM, P, UpdateResponse<DM, P>, ProcessResponse<DM>>,
     dataStoreFetcher: (IsRootValuesDataModel<*>) -> DataStore<*, *>,
-    updateSendChannel: SendChannel<IsUpdateAction>
+    updateSharedFlow: MutableSharedFlow<IsUpdateAction>
 ) {
     val dataModel = storeAction.request.dataModel
     @Suppress("UNCHECKED_CAST")
@@ -43,7 +43,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
             HLC(update.version),
             update.reason == HardDelete,
             historicStoreIndexValuesWalker,
-            updateSendChannel
+            updateSharedFlow
         )
     } else {
         throw RequestException("NotInRange deletes are not allowed, don't do limits or filters on requests which need to be processed")

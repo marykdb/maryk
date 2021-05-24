@@ -1,6 +1,6 @@
 package maryk.datastore.rocksdb.processors
 
-import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.fromChanges
@@ -15,14 +15,14 @@ import maryk.core.services.responses.UpdateResponse
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.Transaction
 import maryk.datastore.shared.StoreAction
-import maryk.datastore.shared.updates.Update
+import maryk.datastore.shared.updates.IsUpdateAction
 import maryk.rocksdb.use
 
 /** Processes a UpdateResponse with Change in a [storeAction] into a [dataStore] */
 internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processInitialChangesUpdate(
     storeAction: StoreAction<DM, P, UpdateResponse<DM, P>, ProcessResponse<DM>>,
     dataStore: RocksDBDataStore,
-    updateSendChannel: SendChannel<Update<DM, P>>
+    updateSharedFlow: MutableSharedFlow<IsUpdateAction>
 ) {
     val dataModel = storeAction.request.dataModel
 
@@ -51,13 +51,13 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
                             key = change.key,
                             version = HLC(versionedChange.version),
                             objectToAdd = addedValues,
-                            updateSendChannel = updateSendChannel
+                            updateSharedFlow = updateSharedFlow
                         )
                         transaction.commit()
 
                         response
                     } catch (e: Throwable) {
-                        ServerFail<DM>(e.message ?: e.toString(), e)
+                        ServerFail(e.message ?: e.toString(), e)
                     }
                 } else {
                     changeStatuses += try {
@@ -71,13 +71,13 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
                             transaction,
                             dbIndex,
                             HLC(versionedChange.version),
-                            updateSendChannel
+                            updateSharedFlow
                         )
                         transaction.commit()
 
                         response
                     } catch (e: Throwable) {
-                        ServerFail<DM>(e.message ?: e.toString(), e)
+                        ServerFail(e.message ?: e.toString(), e)
                     }
                 }
             }

@@ -1,6 +1,6 @@
 package maryk.datastore.shared.updates
 
-import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
@@ -30,7 +30,7 @@ import maryk.datastore.shared.updates.Update.Deletion
 internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ: IsFetchRequest<DM, P, *>> Update<DM, P>.process(
     updateListener: UpdateListener<DM, P, RQ>,
     dataStore: IsDataStore,
-    sendChannel: SendChannel<IsUpdateResponse<DM, P>>
+    sharedFlow: MutableSharedFlow<IsUpdateResponse<DM, P>>
 ) {
     val request = updateListener.request
     val currentKeys = updateListener.matchingKeys.get()
@@ -41,7 +41,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ
                 if (values.matches(request.where)) {
                     val insertIndex = updateListener.addValues(key, values)
                     if (insertIndex != null) {
-                        sendChannel.send(
+                        sharedFlow.emit(
                             AdditionUpdate(
                                 key = key,
                                 version = version,
@@ -57,7 +57,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ
                             val keyToRemove = updateListener.getLast()
                             updateListener.removeKey(keyToRemove)
 
-                            sendChannel.send(
+                            sharedFlow.emit(
                                 RemovalUpdate(
                                     key = keyToRemove,
                                     version = version,
@@ -73,11 +73,11 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ
 
                 if (currentKeys.contains(key)) {
                     if (shouldDelete) {
-                        handleDeletion(dataStore, this, SoftDelete, updateListener, sendChannel)
+                        handleDeletion(dataStore, this, SoftDelete, updateListener, sharedFlow)
                     } else {
                         updateListener.changeOrder(this) { newIndex, orderChanged ->
                             if (newIndex == null) {
-                                handleDeletion(dataStore, this, NotInRange, updateListener, sendChannel)
+                                handleDeletion(dataStore, this, NotInRange, updateListener, sharedFlow)
                             } else {
                                 createChangeUpdate<DM, P>(request.select, orderChanged, newIndex)?.let { changeUpdate ->
                                     val update = if (updateListener.filterContainsMutableValues) {
@@ -104,7 +104,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ
                                         changeUpdate
                                     }
 
-                                    sendChannel.send(update)
+                                    sharedFlow.emit(update)
                                 }
                             }
                         }
@@ -131,7 +131,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ
                                 if (currentKeys.size.toUInt() >= updateListener.request.limit) {
                                     updateListener.removeKey(lastKey)
 
-                                    sendChannel.send(
+                                    sharedFlow.emit(
                                         RemovalUpdate(
                                             key = lastKey,
                                             version = this.version,
@@ -141,7 +141,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ
                                 }
 
                                 val addition = response.values.first()
-                                sendChannel.send(
+                                sharedFlow.emit(
                                     AdditionUpdate(
                                         key = addition.key,
                                         values = addition.values,
@@ -167,7 +167,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ
                         this,
                         if (isHardDelete) HardDelete else SoftDelete,
                         updateListener,
-                        sendChannel
+                        sharedFlow
                     )
                 }
             }
@@ -203,12 +203,12 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ:
     change: Update<DM, P>,
     reason: RemovalReason,
     updateListener: UpdateListener<DM, P, RQ>,
-    sendChannel: SendChannel<IsUpdateResponse<DM, P>>
+    sharedFlow: MutableSharedFlow<IsUpdateResponse<DM, P>>
 ) {
     val originalIndex = updateListener.removeKey(change.key)
 
     suspend fun sendRemoval() {
-        sendChannel.send(
+        sharedFlow.emit(
             RemovalUpdate(
                 key = change.key,
                 version = change.version,
@@ -225,18 +225,18 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ:
             if (change is Change<DM, P>) {
                 if (additionUpdate.key != change.key) { // if not same key, remove old & add new
                     sendRemoval()
-                    sendChannel.send(additionUpdate)
+                    sharedFlow.emit(additionUpdate)
                 } else if (originalIndex != additionUpdate.insertionIndex) {
                     // If same key send an order change
                     change.createChangeUpdate(
                         updateListener.request.select,
                         orderChanged = true,
                         newIndex = additionUpdate.insertionIndex
-                    )?.also { sendChannel.send(it) }
+                    )?.also { sharedFlow.emit(it) }
                 } // else no change because still the last
             } else {
                 sendRemoval()
-                sendChannel.send(additionUpdate)
+                sharedFlow.emit(additionUpdate)
             }
         } ?: sendRemoval()
     } else {
@@ -291,4 +291,3 @@ private fun List<IsChange>.filterWithSelect(
         change.filterWithSelect(select)
     }
 }
-

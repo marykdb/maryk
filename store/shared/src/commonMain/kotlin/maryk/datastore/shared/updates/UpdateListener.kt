@@ -1,10 +1,6 @@
 package maryk.datastore.shared.updates
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.channels.BroadcastChannel
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.onStart
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
@@ -24,15 +20,14 @@ import maryk.datastore.shared.updates.Update.Change
 import maryk.lib.concurrency.AtomicReference
 
 /** Listener for updates on a data store */
-@OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 abstract class UpdateListener<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions, RQ: IsFetchRequest<DM, P, *>>(
     val request: RQ,
     val response: IsDataResponse<DM, P>
 ) {
-    protected val sendChannel = BroadcastChannel<IsUpdateResponse<DM, P>>(Channel.BUFFERED)
+    protected val sendFlow = MutableSharedFlow<IsUpdateResponse<DM, P>>(extraBufferCapacity = 64)
 
     val matchingKeys: AtomicReference<List<Key<DM>>>
-    val lastResponseVersion: ULong
+    private val lastResponseVersion: ULong
 
     init {
         @Suppress("UNCHECKED_CAST")
@@ -87,7 +82,7 @@ abstract class UpdateListener<DM: IsRootValuesDataModel<P>, P: PropertyDefinitio
     abstract suspend fun changeOrder(change: Change<DM, P>, changedHandler: suspend (Int?, Boolean) -> Unit)
 
     /** Get flow with update responses */
-    fun getFlow() = sendChannel.asFlow().onStart {
+    fun getFlow() = sendFlow.onStart {
         when (response) {
             is UpdatesResponse<DM, P> -> {
                 for (update in response.updates) {
@@ -111,6 +106,5 @@ abstract class UpdateListener<DM: IsRootValuesDataModel<P>, P: PropertyDefinitio
     }
 
     fun close() {
-        this.sendChannel.close()
     }
 }

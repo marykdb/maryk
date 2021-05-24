@@ -1,6 +1,6 @@
 package maryk.datastore.memory.processors
 
-import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
@@ -10,12 +10,12 @@ import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.IsDeleteResponseStatus
 import maryk.datastore.memory.processors.changers.setValueAtIndex
 import maryk.datastore.memory.records.DataStore
-import maryk.datastore.shared.updates.Update
+import maryk.datastore.shared.updates.IsUpdateAction
 import maryk.datastore.shared.updates.Update.Deletion
 import maryk.lib.extensions.compare.compareTo
 
 /**
- * Processed the deletion of the value at [key]/[index] from the in memory data store
+ * Processed the deletion of the value at [key]/[version] from the in memory data store
  */
 internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDelete(
     dataStore: DataStore<DM, P>,
@@ -24,7 +24,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
     version: HLC,
     hardDelete: Boolean,
     historicStoreIndexValuesWalker: HistoricStoreIndexValuesWalker?,
-    updateSendChannel: SendChannel<Update<DM, P>>
+    updateSharedFlow: MutableSharedFlow<IsUpdateAction>
 ) : IsDeleteResponseStatus<DM> {
     val index = dataStore.records.binarySearch { it.key.compareTo(key) }
 
@@ -80,7 +80,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
                 dataStore.records[index] = newRecord
             }
 
-            updateSendChannel.send(
+            updateSharedFlow.emit(
                 Deletion(dataModel, key, version.timestamp, hardDelete)
             )
             DeleteSuccess(version.timestamp)

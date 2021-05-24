@@ -1,6 +1,6 @@
 package maryk.datastore.memory.processors
 
-import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.key
@@ -11,7 +11,7 @@ import maryk.core.query.responses.statuses.IsAddResponseStatus
 import maryk.datastore.memory.IsStoreFetcher
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.StoreAction
-import maryk.datastore.shared.updates.Update
+import maryk.datastore.shared.updates.IsUpdateAction
 
 internal typealias AddStoreAction<DM, P> = StoreAction<DM, P, AddRequest<DM, P>, AddResponse<DM>>
 internal typealias AnyAddStoreAction = AddStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
@@ -21,7 +21,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
     version: HLC,
     storeAction: StoreAction<DM, P, AddRequest<DM, P>, AddResponse<DM>>,
     dataStoreFetcher: IsStoreFetcher<*, *>,
-    updateSendChannel: SendChannel<Update<DM, P>>
+    updateFlow: MutableSharedFlow<IsUpdateAction>
 ) {
     val addRequest = storeAction.request
     val statuses = mutableListOf<IsAddResponseStatus<DM>>()
@@ -39,7 +39,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
                 key,
                 version,
                 objectToAdd,
-                updateSendChannel
+                updateFlow
             )
             statuses += status
         }

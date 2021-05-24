@@ -1,8 +1,5 @@
 package maryk.datastore.rocksdb
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
@@ -199,7 +196,6 @@ class RocksDBDataStore(
         startFlows()
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
     override fun startFlows() {
         super.startFlows()
 
@@ -208,18 +204,18 @@ class RocksDBDataStore(
             cache.ensureNeverFrozen()
 
             var clock = HLC()
-            storeChannel.asFlow().onStart { storeActorHasStarted.complete(Unit) }.collect { storeAction ->
+            storeFlow.onStart { storeActorHasStarted.complete(Unit) }.collect { storeAction ->
                 try {
                     clock = clock.calculateMaxTimeStamp()
 
                     @Suppress("UNCHECKED_CAST")
                     when (storeAction.request) {
                         is AddRequest<*, *> ->
-                            processAddRequest(clock, storeAction as AnyAddStoreAction, this@RocksDBDataStore, updateSendChannel)
+                            processAddRequest(clock, storeAction as AnyAddStoreAction, this@RocksDBDataStore, updateSharedFlow)
                         is ChangeRequest<*> ->
-                            processChangeRequest(clock, storeAction as AnyChangeStoreAction, this@RocksDBDataStore, updateSendChannel)
+                            processChangeRequest(clock, storeAction as AnyChangeStoreAction, this@RocksDBDataStore, updateSharedFlow)
                         is DeleteRequest<*> ->
-                            processDeleteRequest(clock, storeAction as AnyDeleteStoreAction, this@RocksDBDataStore, cache, updateSendChannel)
+                            processDeleteRequest(clock, storeAction as AnyDeleteStoreAction, this@RocksDBDataStore, cache, updateSharedFlow)
                         is GetRequest<*, *> ->
                             processGetRequest(storeAction as AnyGetStoreAction, this@RocksDBDataStore, cache)
                         is GetChangesRequest<*, *> ->
@@ -233,10 +229,10 @@ class RocksDBDataStore(
                         is ScanUpdatesRequest<*, *> ->
                             processScanUpdatesRequest(storeAction as AnyScanUpdatesStoreAction, this@RocksDBDataStore, cache)
                         is UpdateResponse<*, *> -> when(val update = (storeAction.request as UpdateResponse<*, *>).update) {
-                            is AdditionUpdate<*, *> -> processAdditionUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@RocksDBDataStore, updateSendChannel)
-                            is ChangeUpdate<*, *> -> processChangeUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@RocksDBDataStore, updateSendChannel)
-                            is RemovalUpdate<*, *> -> processDeleteUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@RocksDBDataStore, cache, updateSendChannel)
-                            is InitialChangesUpdate<*, *> -> processInitialChangesUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@RocksDBDataStore, updateSendChannel)
+                            is AdditionUpdate<*, *> -> processAdditionUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@RocksDBDataStore, updateSharedFlow)
+                            is ChangeUpdate<*, *> -> processChangeUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@RocksDBDataStore, updateSharedFlow)
+                            is RemovalUpdate<*, *> -> processDeleteUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@RocksDBDataStore, cache, updateSharedFlow)
+                            is InitialChangesUpdate<*, *> -> processInitialChangesUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@RocksDBDataStore, updateSharedFlow)
                             is InitialValuesUpdate<*, *> -> throw RequestException("Cannot process Values requests into data store since they do not contain all version information, do a changes request")
                             is OrderedKeysUpdate<*, *> -> throw RequestException("Cannot process Update requests into data store since they do not contain all change information, do a changes request")
                             else -> throw TypeException("Unknown update type $update for datastore processing")

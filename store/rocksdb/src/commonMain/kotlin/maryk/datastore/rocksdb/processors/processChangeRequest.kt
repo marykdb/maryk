@@ -1,6 +1,6 @@
 package maryk.datastore.rocksdb.processors
 
-import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
@@ -10,7 +10,7 @@ import maryk.core.query.responses.statuses.IsChangeResponseStatus
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.Transaction
 import maryk.datastore.shared.StoreAction
-import maryk.datastore.shared.updates.Update
+import maryk.datastore.shared.updates.IsUpdateAction
 import maryk.rocksdb.use
 
 internal typealias ChangeStoreAction<DM, P> = StoreAction<DM, P, ChangeRequest<DM>, ChangeResponse<DM>>
@@ -21,7 +21,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
     version: HLC,
     storeAction: ChangeStoreAction<DM, P>,
     dataStore: RocksDBDataStore,
-    updateSendChannel: SendChannel<Update<DM, P>>
+    updateSharedFlow: MutableSharedFlow<IsUpdateAction>
 ) {
     val changeRequest = storeAction.request
 
@@ -43,7 +43,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
                     transaction,
                     dbIndex,
                     version,
-                    updateSendChannel
+                    updateSharedFlow
                 )
             }
             transaction.commit()

@@ -22,7 +22,7 @@ class UpdateListenerForGet<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions,
         dataStore: IsDataStore
     ) {
         if (request.keys.contains(update.key)) {
-            update.process(this, dataStore, sendChannel)
+            update.process(this, dataStore, sendFlow)
         }
     }
 

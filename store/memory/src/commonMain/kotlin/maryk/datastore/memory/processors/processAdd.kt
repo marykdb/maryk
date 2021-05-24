@@ -1,6 +1,6 @@
 package maryk.datastore.memory.processors
 
-import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.writeToStorage
@@ -22,10 +22,9 @@ import maryk.datastore.memory.records.DataRecordNode
 import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.UniqueException
-import maryk.datastore.shared.updates.Update
+import maryk.datastore.shared.updates.IsUpdateAction
 import maryk.datastore.shared.updates.Update.Addition
 import maryk.lib.extensions.compare.compareTo
-
 
 internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAdd(
     dataStore: DataStore<DM, P>,
@@ -33,7 +32,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
     key: Key<DM>,
     version: HLC,
     objectToAdd: Values<DM, P>,
-    updateSendChannel: SendChannel<Update<DM, P>>
+    updateSharedFlow: MutableSharedFlow<IsUpdateAction>
 ): IsAddResponseStatus<DM> = try {
     objectToAdd.validate()
 
@@ -76,9 +75,9 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
         }
 
         // Sort all nodes since some operations like map key values can be unsorted
-        recordValues.sortWith(Comparator { a: DataRecordNode, b: DataRecordNode ->
+        recordValues.sortWith { a: DataRecordNode, b: DataRecordNode ->
             a.reference.compareTo(b.reference)
-        })
+        }
 
         uniquesToIndex?.forEach { value ->
             dataStore.addToUniqueIndex(dataRecord, value.reference, value.value, version)
@@ -92,7 +91,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
 
         val changes = listOf<IsChange>()
 
-        updateSendChannel.send(
+        updateSharedFlow.emit(
             Addition(dataModel, key, version.timestamp, objectToAdd.change(changes))
         )
 

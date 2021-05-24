@@ -2,14 +2,10 @@ package maryk.datastore.shared
 
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.channels.BroadcastChannel
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
 import maryk.core.exceptions.DefNotFoundException
@@ -39,8 +35,6 @@ import maryk.lib.concurrency.AtomicReference
 /**
  * Abstract DataStore implementation that takes care of the HLC clock
  */
-@Suppress("EXPERIMENTAL_API_USAGE")
-@OptIn(ExperimentalCoroutinesApi::class)
 abstract class AbstractDataStore(
     final override val dataModelsById: Map<UInt, RootDataModel<*, *>>
 ): IsDataStore, CoroutineScope {
@@ -54,21 +48,21 @@ abstract class AbstractDataStore(
 
     protected val storeActorHasStarted = CompletableDeferred<Unit>()
     /** StoreActor to send actions to.*/
-    protected val storeChannel = BroadcastChannel<StoreAction<*, *, *, *>>(Channel.BUFFERED)
+    protected val storeFlow = MutableSharedFlow<StoreAction<*, *, *, *>>(extraBufferCapacity = 64)
 
-    private val updateSendChannelHasStarted = CompletableDeferred<Unit>()
-    val updateSendChannel: SendChannel<IsUpdateAction> = BroadcastChannel(Channel.BUFFERED)
+    private val updateSharedFlowHasStarted = CompletableDeferred<Unit>()
+    val updateSharedFlow: MutableSharedFlow<IsUpdateAction> = MutableSharedFlow(extraBufferCapacity = 64)
 
     open fun startFlows() {
         this.launch {
-            startProcessUpdateFlow(updateSendChannel, updateSendChannelHasStarted)
+            startProcessUpdateFlow(updateSharedFlow, updateSharedFlowHasStarted)
         }
     }
 
     private suspend fun waitForInit() {
         if (!initIsDone.get()) {
             storeActorHasStarted.await()
-            updateSendChannelHasStarted.await()
+            updateSharedFlowHasStarted.await()
             initIsDone.set(true)
         }
     }
@@ -80,7 +74,7 @@ abstract class AbstractDataStore(
 
         val response = CompletableDeferred<RP>()
 
-        storeChannel.send(
+        storeFlow.emit(
             StoreAction(request, response)
         )
 
@@ -94,15 +88,13 @@ abstract class AbstractDataStore(
 
         val response = CompletableDeferred<ProcessResponse<DM>>()
 
-        storeChannel.send(
+        storeFlow.emit(
             StoreAction(updateResponse, response)
         )
 
         return response.await()
     }
 
-    @FlowPreview
-    @ExperimentalCoroutinesApi
     override suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ: IsFetchRequest<DM, P, RP>, RP: IsDataResponse<DM, P>> executeFlow(
         request: RQ
     ): Flow<IsUpdateResponse<DM, P>> {
@@ -118,10 +110,10 @@ abstract class AbstractDataStore(
 
         val listener = request.createUpdateListener(response)
 
-        updateSendChannel.send(AddUpdateListenerAction(dataModelId, listener))
+        updateSharedFlow.emit(AddUpdateListenerAction(dataModelId, listener))
 
         return listener.getFlow().onCompletion {
-            updateSendChannel.send(RemoveUpdateListenerAction(dataModelId, listener))
+            updateSharedFlow.emit(RemoveUpdateListenerAction(dataModelId, listener))
         }
     }
 
@@ -132,13 +124,10 @@ abstract class AbstractDataStore(
 
     override fun close() {
         this.cancel()
-
-        storeChannel.close()
-        updateSendChannel.close()
     }
 
     override suspend fun closeAllListeners() {
-        updateSendChannel.send(RemoveAllUpdateListenersAction)
+        updateSharedFlow.emit(RemoveAllUpdateListenersAction)
     }
 }
 

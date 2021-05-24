@@ -79,7 +79,7 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
         }
 
         if (shouldProcess && scanRange.keyWithinRanges(update.key.bytes, 0) && scanRange.matchesPartials(update.key.bytes)) {
-            update.process(this, dataStore, sendChannel)
+            update.process(this, dataStore, sendFlow)
         }
     }
 

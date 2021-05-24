@@ -1,9 +1,5 @@
 package maryk.datastore.memory
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
@@ -55,20 +51,11 @@ import maryk.datastore.memory.processors.processScanRequest
 import maryk.datastore.memory.processors.processScanUpdatesRequest
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.AbstractDataStore
-import maryk.datastore.shared.StoreAction
-import maryk.datastore.shared.updates.Update
-
-internal typealias StoreExecutor<DM, P> = suspend Unit.(
-    StoreAction<DM, P, *, *>,
-    dataStoreFetcher: (IsRootValuesDataModel<P>) -> DataStore<DM, P>,
-    updateSendChannel: SendChannel<Update<DM, P>>
-) -> Unit
 
 /**
  * DataProcessor that stores all data changes in local memory.
  * Very useful for tests.
  */
-@OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 class InMemoryDataStore(
     override val keepAllVersions: Boolean = false,
     dataModelsById: Map<UInt, RootDataModel<*, *>>
@@ -85,7 +72,7 @@ class InMemoryDataStore(
 
             var clock = HLC()
 
-            storeChannel.asFlow()
+            storeFlow
                 .onStart { storeActorHasStarted.complete(Unit) }
                 .collect { storeAction ->
                     try {
@@ -101,11 +88,11 @@ class InMemoryDataStore(
                         @Suppress("UNCHECKED_CAST")
                         when (storeAction.request) {
                             is AddRequest<*, *> ->
-                                processAddRequest(clock, storeAction as AnyAddStoreAction, dataStoreFetcher, updateSendChannel)
+                                processAddRequest(clock, storeAction as AnyAddStoreAction, dataStoreFetcher, updateSharedFlow)
                             is ChangeRequest<*> ->
-                                processChangeRequest(clock, storeAction as AnyChangeStoreAction, dataStoreFetcher, updateSendChannel)
+                                processChangeRequest(clock, storeAction as AnyChangeStoreAction, dataStoreFetcher, updateSharedFlow)
                             is DeleteRequest<*> ->
-                                processDeleteRequest(clock, storeAction as AnyDeleteStoreAction, dataStoreFetcher, updateSendChannel)
+                                processDeleteRequest(clock, storeAction as AnyDeleteStoreAction, dataStoreFetcher, updateSharedFlow)
                             is GetRequest<*, *> ->
                                 processGetRequest(storeAction as AnyGetStoreAction, dataStoreFetcher)
                             is GetChangesRequest<*, *> ->
@@ -119,10 +106,10 @@ class InMemoryDataStore(
                             is ScanUpdatesRequest<*, *> ->
                                 processScanUpdatesRequest(storeAction as AnyScanUpdatesStoreAction, dataStoreFetcher)
                             is UpdateResponse<*, *> -> when(val update = (storeAction.request as UpdateResponse<*, *>).update) {
-                                is AdditionUpdate<*, *> -> processAdditionUpdate(storeAction as AnyProcessUpdateResponseStoreAction, dataStoreFetcher, updateSendChannel)
-                                is ChangeUpdate<*, *> -> processChangeUpdate(storeAction as AnyProcessUpdateResponseStoreAction, dataStoreFetcher, updateSendChannel)
-                                is RemovalUpdate<*, *> -> processDeleteUpdate(storeAction as AnyProcessUpdateResponseStoreAction, dataStoreFetcher, updateSendChannel)
-                                is InitialChangesUpdate<*, *> -> processInitialChangesUpdate(storeAction as AnyProcessUpdateResponseStoreAction, dataStoreFetcher, updateSendChannel)
+                                is AdditionUpdate<*, *> -> processAdditionUpdate(storeAction as AnyProcessUpdateResponseStoreAction, dataStoreFetcher, updateSharedFlow)
+                                is ChangeUpdate<*, *> -> processChangeUpdate(storeAction as AnyProcessUpdateResponseStoreAction, dataStoreFetcher, updateSharedFlow)
+                                is RemovalUpdate<*, *> -> processDeleteUpdate(storeAction as AnyProcessUpdateResponseStoreAction, dataStoreFetcher, updateSharedFlow)
+                                is InitialChangesUpdate<*, *> -> processInitialChangesUpdate(storeAction as AnyProcessUpdateResponseStoreAction, dataStoreFetcher, updateSharedFlow)
                                 is InitialValuesUpdate<*, *> -> throw RequestException("Cannot process Values requests into data store since they do not contain all version information, do a changes request")
                                 is OrderedKeysUpdate<*, *> -> throw RequestException("Cannot process Update requests into data store since they do not contain all change information, do a changes request")
                                 else -> throw TypeException("Unknown update type $update for datastore processing")

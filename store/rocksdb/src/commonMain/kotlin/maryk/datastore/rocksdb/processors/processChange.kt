@@ -1,6 +1,6 @@
 package maryk.datastore.rocksdb.processors
 
-import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
@@ -93,6 +93,7 @@ import maryk.datastore.rocksdb.processors.helpers.setTypedValue
 import maryk.datastore.rocksdb.processors.helpers.setUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setValue
 import maryk.datastore.shared.UniqueException
+import maryk.datastore.shared.updates.IsUpdateAction
 import maryk.datastore.shared.updates.Update
 import maryk.lib.recyclableByteArray
 import maryk.rocksdb.rocksDBNotFound
@@ -107,7 +108,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
     transaction: Transaction,
     dbIndex: UInt,
     version: HLC,
-    updateSendChannel: SendChannel<Update<DM, P>>
+    updateSharedFlow: MutableSharedFlow<IsUpdateAction>
 ): IsChangeResponseStatus<DM> {
     val mayExist = dataStore.db.keyMayExist(columnFamilies.keys, key.bytes, null)
     return if (mayExist) {
@@ -141,7 +142,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
                 key,
                 changes,
                 version,
-                updateSendChannel
+                updateSharedFlow
             )
         } else {
             DoesNotExist(key)
@@ -164,7 +165,7 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> app
     key: Key<DM>,
     changes: List<IsChange>,
     version: HLC,
-    updateSendChannel: SendChannel<Update<DM, P>>
+    updateSharedFlow: MutableSharedFlow<IsUpdateAction>
 ): IsChangeResponseStatus<DM> {
     try {
         var validationExceptions: MutableList<ValidationException>? = null
@@ -707,7 +708,7 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> app
             }
         }
 
-        updateSendChannel.send(
+        updateSharedFlow.emit(
             Update.Change(dataModel, key, version.timestamp, changes + outChanges)
         )
 

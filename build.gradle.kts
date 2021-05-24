@@ -4,7 +4,7 @@ repositories {
 }
 
 plugins {
-    id("com.android.library") version "4.0.1" apply false
+    id("com.android.library") version "4.1.0" apply false
 }
 
 buildscript {

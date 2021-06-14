@@ -16,7 +16,7 @@ repositories {
     maven {
         setUrl("https://dl.bintray.com/maryk/maven")
     }
-    jcenter()
+    mavenCentral()
 }
 
 kotlin {

@@ -29,6 +29,7 @@ internal class UIntKtTest {
         }
     }
 
+    @OptIn(ExperimentalUnsignedTypes::class)
     @Test
     fun testStreaming3Conversion() {
         val bc = ByteCollector()

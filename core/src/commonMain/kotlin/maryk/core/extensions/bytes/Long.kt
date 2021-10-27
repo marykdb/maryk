@@ -44,7 +44,7 @@ internal fun initLong(reader: () -> Byte, length: Int = 8): Long {
 internal fun Long.writeVarBytes(writer: (byte: Byte) -> Unit) {
     var value = this
     while (true) {
-        if (value and 0x7F.inv() == 0L) {
+        if (value and 0x7F.inv().toLong() == 0L) {
             writer(value.toByte())
             return
         } else {
@@ -111,4 +111,3 @@ internal fun initLongLittleEndian(reader: () -> Byte) =
     ((reader().toLong() and 0xff) shl 40) or
     ((reader().toLong() and 0xff) shl 48) or
     ((reader().toLong() and 0xff) shl 56)
-

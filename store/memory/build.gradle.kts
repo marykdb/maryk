@@ -24,9 +24,3 @@ kotlin {
         }
     }
 }
-
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().all {
-    kotlinOptions {
-        freeCompilerArgs = freeCompilerArgs + "-Xuse-experimental=kotlin.Experimental"
-    }
-}

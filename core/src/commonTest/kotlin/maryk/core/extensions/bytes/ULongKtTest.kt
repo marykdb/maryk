@@ -6,6 +6,7 @@ import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlin.test.expect
 
+@OptIn(ExperimentalUnsignedTypes::class)
 internal class ULongKtTest {
     private val longsToTest = ulongArrayOf(
         0uL,

@@ -12,6 +12,11 @@ apply {
 
 kotlin {
     sourceSets {
+        commonMain {
+            dependencies {
+                api("org.jetbrains.kotlinx:kotlinx-datetime:0.3.1")
+            }
+        }
         commonTest {
             dependencies {
                 implementation(project(":testlib"))

@@ -144,7 +144,7 @@ internal class DateTimeDefinitionTest {
             unique: true
             precision: MILLIS
             minValue: '-999999-01-01T00:00'
-            maxValue: '999999-12-31T23:59:59.999'
+            maxValue: '+999999-12-31T23:59:59.999'
             default: '1971-01-12T13:34:22'
 
             """.trimIndent()

@@ -1,9 +1,9 @@
 package maryk.core.properties.references
 
+import kotlinx.datetime.LocalDate
 import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.protobuf.WriteCache
 import maryk.lib.extensions.toHex
-import maryk.lib.time.Date
 import maryk.test.ByteCollector
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
@@ -14,8 +14,8 @@ import kotlin.test.expect
 
 class SetReferenceTest {
     private val setReference = TestMarykModel { embeddedValues { marykModel { set::ref } } }
-    private val reference = TestMarykModel { set refAt Date(2001, 4, 2) }
-    private val subReference = TestMarykModel { embeddedValues { marykModel { set refAt Date(2001, 4, 2) } } }
+    private val reference = TestMarykModel { set refAt LocalDate(2001, 4, 2) }
+    private val subReference = TestMarykModel { embeddedValues { marykModel { set refAt LocalDate(2001, 4, 2) } } }
 
     @Test
     fun cacheReferenceTest() {
@@ -25,12 +25,12 @@ class SetReferenceTest {
     @Test
     fun getValueFromSet() {
         val list = setOf(
-            Date(2001, 4, 2),
-            Date(2005, 5, 22),
-            Date(2013, 10, 1)
+            LocalDate(2001, 4, 2),
+            LocalDate(2005, 5, 22),
+            LocalDate(2013, 10, 1)
         )
 
-        expect(Date(2001, 4, 2)) { this.reference.resolveFromAny(list) }
+        expect(LocalDate(2001, 4, 2)) { this.reference.resolveFromAny(list) }
 
         assertFailsWith<UnexpectedValueException> {
             this.reference.resolveFromAny("wrongInput")

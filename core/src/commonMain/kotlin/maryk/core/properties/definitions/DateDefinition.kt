@@ -1,5 +1,7 @@
 package maryk.core.properties.definitions
 
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.decodeZigZag
 import maryk.core.extensions.bytes.encodeZigZag
@@ -12,52 +14,56 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
-import maryk.core.properties.types.Date
-import maryk.core.properties.types.DateTime
-import maryk.core.properties.types.fromByteReader
+import maryk.core.properties.types.localDateFromByteReader
 import maryk.core.properties.types.writeBytes
 import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCacheReader
+import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.values.SimpleObjectValues
-import maryk.lib.time.Time
+import maryk.lib.exceptions.ParseException
+import maryk.lib.time.Date.ofEpochDay
+import maryk.lib.time.DateTime
+import maryk.lib.time.epochDay
 
 /** Definition for Date properties */
 data class DateDefinition(
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val unique: Boolean = false,
-    override val minValue: Date? = null,
-    override val maxValue: Date? = null,
-    override val default: Date? = null
+    override val minValue: LocalDate? = null,
+    override val maxValue: LocalDate? = null,
+    override val default: LocalDate? = null
 ) :
-    IsMomentDefinition<Date>,
-    IsSerializableFixedBytesEncodable<Date, IsPropertyContext>,
-    IsTransportablePropertyDefinitionType<Date>,
-    HasDefaultValueDefinition<Date> {
+    IsComparableDefinition<LocalDate, IsPropertyContext>,
+    IsSerializableFixedBytesEncodable<LocalDate, IsPropertyContext>,
+    IsTransportablePropertyDefinitionType<LocalDate>,
+    HasDefaultValueDefinition<LocalDate> {
     override val propertyDefinitionType = PropertyDefinitionType.Date
     override val wireType = VAR_INT
     override val byteSize = 4
 
-    override fun createNow() = Date.nowUTC()
+    override fun readStorageBytes(length: Int, reader: () -> Byte): LocalDate = localDateFromByteReader(reader)
 
-    override fun readStorageBytes(length: Int, reader: () -> Byte) = Date.fromByteReader(reader)
+    override fun calculateStorageByteLength(value: LocalDate) = this.byteSize
 
-    override fun calculateStorageByteLength(value: Date) = this.byteSize
-
-    override fun writeStorageBytes(value: Date, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
+    override fun writeStorageBytes(value: LocalDate, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
 
     override fun readTransportBytes(
         length: Int,
         reader: () -> Byte,
         context: IsPropertyContext?,
-        earlierValue: Date?
-    ) =
-        Date.ofEpochDay(initIntByVar(reader).decodeZigZag())
+        earlierValue: LocalDate?
+    ): LocalDate =
+        ofEpochDay(initIntByVar(reader).decodeZigZag())
 
-    override fun calculateTransportByteLength(value: Date) = value.epochDay.encodeZigZag().calculateVarByteLength()
+    override fun calculateTransportByteLengthWithKey(index: UInt, value: LocalDate, cacher: WriteCacheWriter): Int {
+        return super<IsSerializableFixedBytesEncodable>.calculateTransportByteLengthWithKey(index, value, cacher)
+    }
+
+    override fun calculateTransportByteLength(value: LocalDate) = value.epochDay.encodeZigZag().calculateVarByteLength()
 
     override fun writeTransportBytes(
-        value: Date,
+        value: LocalDate,
         cacheGetter: WriteCacheReader,
         writer: (byte: Byte) -> Unit,
         context: IsPropertyContext?
@@ -66,12 +72,23 @@ data class DateDefinition(
         epochDay.encodeZigZag().writeVarBytes(writer)
     }
 
-    override fun fromString(string: String) = Date.parse(string)
+    override fun asString(value: LocalDate): String {
+        return super.asString(value)
+    }
 
-    override fun fromNativeType(value: Any) = when {
-        value is Date -> value
-        value is DateTime && value.time == Time.MIN -> value.date
-        else -> null
+    override fun fromString(string: String) = try {
+        LocalDate.parse(string)
+    } catch (e: IllegalArgumentException) {
+        throw ParseException(string, e)
+    }
+
+    override fun fromNativeType(value: Any): LocalDate? {
+        return when {
+            value is LocalDate -> value
+            value is DateTime -> value.date
+            value is LocalDateTime && value.hour == 0 && value.minute == 0 && value.second == 0 && value.nanosecond == 0 -> value.date
+            else -> null
+        }
     }
 
     @Suppress("unused")
@@ -103,12 +120,12 @@ fun PropertyDefinitions.date(
     required: Boolean = true,
     final: Boolean = false,
     unique: Boolean = false,
-    minValue: Date? = null,
-    maxValue: Date? = null,
-    default: Date? = null,
+    minValue: LocalDate? = null,
+    maxValue: LocalDate? = null,
+    default: LocalDate? = null,
     alternativeNames: Set<String>? = null
 ) = DefinitionWrapperDelegateLoader(this) { propName ->
-    FixedBytesDefinitionWrapper<Date, Date, IsPropertyContext, DateDefinition, Any>(
+    FixedBytesDefinitionWrapper<LocalDate, LocalDate, IsPropertyContext, DateDefinition, Any>(
         index,
         name ?: propName,
         DateDefinition(required, final, unique, minValue, maxValue, default),
@@ -123,11 +140,11 @@ fun <TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.date(
     required: Boolean = true,
     final: Boolean = false,
     unique: Boolean = false,
-    minValue: Date? = null,
-    maxValue: Date? = null,
-    default: Date? = null,
+    minValue: LocalDate? = null,
+    maxValue: LocalDate? = null,
+    default: LocalDate? = null,
     alternativeNames: Set<String>? = null
-): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<Date, TO, IsPropertyContext, DateDefinition, DO>, DO, IsPropertyContext> =
+): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<LocalDate, TO, IsPropertyContext, DateDefinition, DO>, DO, IsPropertyContext> =
     date(index, getter, name, required, final,  unique, minValue, maxValue, default, alternativeNames, toSerializable = null)
 
 fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.date(
@@ -137,14 +154,14 @@ fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.date
     required: Boolean = true,
     final: Boolean = false,
     unique: Boolean = false,
-    minValue: Date? = null,
-    maxValue: Date? = null,
-    default: Date? = null,
+    minValue: LocalDate? = null,
+    maxValue: LocalDate? = null,
+    default: LocalDate? = null,
     alternativeNames: Set<String>? = null,
-    toSerializable: (Unit.(TO?, CX?) -> Date?)? = null,
-    fromSerializable: (Unit.(Date?) -> TO?)? = null,
+    toSerializable: (Unit.(TO?, CX?) -> LocalDate?)? = null,
+    fromSerializable: (Unit.(LocalDate?) -> TO?)? = null,
     shouldSerialize: (Unit.(Any) -> Boolean)? = null,
-    capturer: (Unit.(CX, Date) -> Unit)? = null
+    capturer: (Unit.(CX, LocalDate) -> Unit)? = null
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     FixedBytesDefinitionWrapper(
         index,

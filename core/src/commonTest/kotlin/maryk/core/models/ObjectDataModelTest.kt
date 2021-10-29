@@ -1,5 +1,6 @@
 package maryk.core.models
 
+import kotlinx.datetime.LocalDate
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
 import maryk.core.properties.exceptions.ValidationUmbrellaException
@@ -9,7 +10,6 @@ import maryk.json.JsonReader
 import maryk.json.JsonWriter
 import maryk.lib.extensions.initByteArrayByHex
 import maryk.lib.extensions.toHex
-import maryk.lib.time.Date
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.ByteCollector
@@ -41,9 +41,9 @@ private val testExtendedObject = TestMarykObject(
     bool = true,
     list = listOf(34, 2352, 3423, 766),
     set = setOf(
-        Date(2017, 12, 5),
-        Date(2016, 3, 2),
-        Date(1981, 12, 5)
+        LocalDate(2017, 12, 5),
+        LocalDate(2016, 3, 2),
+        LocalDate(1981, 12, 5)
     ),
     map = mapOf(
         Time(12, 55) to "yes",

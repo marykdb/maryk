@@ -1,15 +1,15 @@
 package maryk.lib.time
 
+import kotlinx.datetime.LocalDate
 import maryk.lib.exceptions.ParseException
 import kotlin.math.floor
 
 /** Date and Time object. */
 data class DateTime(
-    val date: Date,
+    val date: LocalDate,
     val time: Time
 ) :
     TimeInterface by time,
-    DateInterface by date,
     IsTime<DateTime>()
 {
     constructor(
@@ -21,7 +21,7 @@ data class DateTime(
         second: Byte = 0,
         milli: Short = 0
     ) : this(
-        Date(year, month, day), Time(hour, minute, second, milli)
+        LocalDate(year, month.toInt(), day.toInt()), Time(hour, minute, second, milli)
     )
 
     constructor(
@@ -29,7 +29,7 @@ data class DateTime(
         month: Byte = 1,
         day: Byte = 1
     ) : this(
-        Date(year, month, day), Time.MIDNIGHT
+        LocalDate(year, month.toInt(), day.toInt()), Time.MIDNIGHT
     )
 
     override fun compareTo(other: DateTime): Int {

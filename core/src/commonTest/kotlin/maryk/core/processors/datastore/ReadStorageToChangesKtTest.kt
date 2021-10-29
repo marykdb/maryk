@@ -1,5 +1,6 @@
 package maryk.core.processors.datastore
 
+import kotlinx.datetime.LocalDate
 import maryk.core.clock.HLC
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Delete
@@ -9,7 +10,6 @@ import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.changes.change
 import maryk.core.query.pairs.with
 import maryk.lib.extensions.initByteArrayByHex
-import maryk.lib.time.Date
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.models.Option.V1
@@ -26,9 +26,9 @@ private val valuesAsStorablesWithVersion = arrayOf(
     "29" to arrayOf(HLC(1233uL) to DateTime(2018, 7, 18), HLC(1235uL) to null),
     "39" to arrayOf(HLC(1234uL) to V2, HLC(1235uL) to V1),
     "4b" to arrayOf(HLC(1233uL) to 1, HLC(1235uL) to 2, HLC(1236uL) to 2),
-    "4b0480004577" to arrayOf(HLC(1233uL) to Date(2018, 9, 9)),
-    "4b0480001104" to arrayOf(HLC(1235uL) to Date(1981, 12, 5)),
-    "4b0480001105" to arrayOf(HLC(1235uL) to Date(1981, 12, 6), HLC(1236uL) to null),
+    "4b0480004577" to arrayOf(HLC(1233uL) to LocalDate(2018, 9, 9)),
+    "4b0480001104" to arrayOf(HLC(1235uL) to LocalDate(1981, 12, 5)),
+    "4b0480001105" to arrayOf(HLC(1235uL) to LocalDate(1981, 12, 6), HLC(1236uL) to null),
     "4b0480001ba2" to arrayOf(HLC(1235uL) to null),
     "4b0480001ba3" to arrayOf(HLC(1235uL) to null),
     "54" to arrayOf(HLC(1234uL) to 3, HLC(1236uL) to null),
@@ -88,7 +88,7 @@ class ReadStorageToChangesKtTest {
                         ),
                         SetChange(
                             TestMarykModel { set::ref }.change(
-                                addValues = setOf(Date(2018, 9, 9))
+                                addValues = setOf(LocalDate(2018, 9, 9))
                             ),
                             TestMarykModel { setOfString::ref }.change(
                                 addValues = setOf("abc", "def")
@@ -129,8 +129,8 @@ class ReadStorageToChangesKtTest {
                         ),
                         Delete(
                             TestMarykModel { dateTime::ref },
-                            TestMarykModel { set refAt Date(1989, 5, 15) },
-                            TestMarykModel { set refAt Date(1989, 5, 16) },
+                            TestMarykModel { set refAt LocalDate(1989, 5, 15) },
+                            TestMarykModel { set refAt LocalDate(1989, 5, 16) },
                             TestMarykModel { map refAt Time(10, 14, 1) },
                             TestMarykModel { embeddedValues { model { value::ref } } },
                             TestMarykModel { listOfString.refAt(2u) },
@@ -139,7 +139,7 @@ class ReadStorageToChangesKtTest {
                         ),
                         SetChange(
                             TestMarykModel { set::ref }.change(
-                                addValues = setOf(Date(1981, 12, 5), Date(1981, 12, 6))
+                                addValues = setOf(LocalDate(1981, 12, 5), LocalDate(1981, 12, 6))
                             ),
                             TestMarykModel { setOfString::ref }.change(
                                 addValues = setOf("ghi")
@@ -151,7 +151,7 @@ class ReadStorageToChangesKtTest {
                     1236UL,
                     listOf(
                         Delete(
-                            TestMarykModel { set refAt Date(1981, 12, 6) },
+                            TestMarykModel { set refAt LocalDate(1981, 12, 6) },
                             TestMarykModel { map::ref },
                             TestMarykModel { embeddedValues::ref }
                         )

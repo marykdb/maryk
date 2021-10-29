@@ -1,12 +1,12 @@
 package maryk.core.properties.definitions
 
+import kotlinx.datetime.LocalDate
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.properties.WriteCacheFailer
 import maryk.lib.exceptions.ParseException
 import maryk.lib.time.Date
-import maryk.lib.time.Instant
 import maryk.test.ByteCollector
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
@@ -26,14 +26,8 @@ internal class DateDefinitionTest {
         unique = true,
         maxValue = Date.MAX,
         minValue = Date.MIN,
-        default = Date(1970, 12, 1)
+        default = LocalDate(1970, 12, 1)
     )
-
-    @Test
-    fun createNowDate() {
-        val currentEpochDay = Instant.getCurrentEpochTimeInMillis() / (24 * 60 * 60 * 1000)
-        expect(currentEpochDay.toInt()) { def.createNow().epochDay }
-    }
 
     @Test
     fun convertValuesToStorageBytesAndBack() {
@@ -100,7 +94,7 @@ internal class DateDefinitionTest {
             final: true
             unique: true
             minValue: -999999-01-01
-            maxValue: 999999-12-31
+            maxValue: +999999-12-31
             default: 1970-12-01
 
             """.trimIndent()

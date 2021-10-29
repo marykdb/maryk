@@ -1,7 +1,7 @@
 package maryk.core.processors.datastore
 
+import kotlinx.datetime.LocalDate
 import maryk.core.properties.types.TypedValue
-import maryk.lib.time.Date
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.models.EmbeddedMarykModel
@@ -19,9 +19,9 @@ val testMaryk = TestMarykModel(
         "v1", "v2", "v3"
     ),
     set = setOf(
-        Date(2018, 9, 9),
-        Date(1981, 12, 5),
-        Date(1989, 5, 15)
+        LocalDate(2018, 9, 9),
+        LocalDate(1981, 12, 5),
+        LocalDate(1989, 5, 15)
     ),
     map = mapOf(
         Time(11, 22, 33) to "eleven",
@@ -47,9 +47,9 @@ val valuesAsStorables = arrayOf(
     "29" to DateTime(2018, 7, 18),
     "39" to V1,
     "4b" to 3,
-    "4b0480001104" to Date(1981, 12, 5),
-    "4b0480001ba2" to Date(1989, 5, 15),
-    "4b0480004577" to Date(2018, 9, 9),
+    "4b0480001104" to LocalDate(1981, 12, 5),
+    "4b0480001ba2" to LocalDate(1989, 5, 15),
+    "4b0480004577" to LocalDate(2018, 9, 9),
     "54" to 2,
     "5403009ff9" to "eleven",
     "540300ae46" to "twelve",
@@ -71,7 +71,7 @@ val valuesAsStorables = arrayOf(
 val valuesAsStorablesWithNulls = arrayOf(
     "4b" to 1,
     "4b0480004577" to null,
-    "4b0480001104" to Date(1981, 12, 5),
+    "4b0480001104" to LocalDate(1981, 12, 5),
     "4b0480001ba2" to null,
     "54" to 1,
     "5403009ff9" to null,

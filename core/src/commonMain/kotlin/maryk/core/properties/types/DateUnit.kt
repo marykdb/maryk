@@ -1,5 +1,7 @@
 package maryk.core.aggregations.bucket
 
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.Month
 import maryk.core.aggregations.bucket.DateUnit.Centuries
 import maryk.core.aggregations.bucket.DateUnit.Decades
 import maryk.core.aggregations.bucket.DateUnit.Hours
@@ -16,9 +18,7 @@ import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IsCoreEnum
 import maryk.json.MapType
 import maryk.lib.exceptions.ParseException
-import maryk.lib.time.Date
 import maryk.lib.time.DateTime
-import maryk.lib.time.IsTemporal
 import maryk.lib.time.Time
 
 enum class DateUnit(
@@ -48,8 +48,8 @@ enum class DateUnit(
 
 /** Round Temporal to the [dateUnit] */
 @Suppress("UNCHECKED_CAST")
-fun <T:IsTemporal<*>> T.roundToDateUnit(dateUnit: DateUnit): T = when (this) {
-    is Date -> this.roundToDateUnit(dateUnit) as T
+fun <T:Comparable<*>> T.roundToDateUnit(dateUnit: DateUnit): T = when (this) {
+    is LocalDate -> this.roundToDateUnit(dateUnit) as T
     is Time -> this.roundToDateUnit(dateUnit) as T
     is DateTime -> this.roundToDateUnit(dateUnit) as T
     else -> throw TypeException("Unknown type for IsTemporal")
@@ -65,23 +65,23 @@ fun Time.roundToDateUnit(dateUnit: DateUnit) = when (dateUnit) {
 }
 
 /** Round DateTime to the [dateUnit] */
-fun Date.roundToDateUnit(dateUnit: DateUnit) = when (dateUnit) {
+fun LocalDate.roundToDateUnit(dateUnit: DateUnit) = when (dateUnit) {
     // Weeks -> Wait for a calendar system
-    Months -> Date(year, month, 1)
+    Months -> LocalDate(year, month, 1)
     Quarters -> {
-        val newMonth: Byte = when (month) {
-            1.toByte(), 2.toByte(), 3.toByte() -> 1.toByte()
-            4.toByte(), 5.toByte(), 6.toByte() -> 4.toByte()
-            7.toByte(), 8.toByte(), 9.toByte() -> 7.toByte()
-            10.toByte(), 11.toByte(), 12.toByte() -> 10.toByte()
+        val newMonth: Int = when (month) {
+            Month.JANUARY, Month.FEBRUARY, Month.MARCH -> 1
+            Month.APRIL, Month.MAY, Month.JUNE -> 4
+            Month.JULY, Month.AUGUST, Month.SEPTEMBER -> 7
+            Month.OCTOBER, Month.NOVEMBER, Month.DECEMBER -> 10
             else -> throw ParseException("Unknown month")
         }
-        Date(year, newMonth, 1)
+        LocalDate(year, newMonth, 1)
     }
-    Years -> Date(year, 1, 1)
-    Decades -> Date(year - (year % 10), 1, 1)
-    Centuries -> Date(year - (year % 100), 1, 1)
-    Millennia -> Date(year - (year % 1000), 1, 1)
+    Years -> LocalDate(year, 1, 1)
+    Decades -> LocalDate(year - (year % 10), 1, 1)
+    Centuries -> LocalDate(year - (year % 100), 1, 1)
+    Millennia -> LocalDate(year - (year % 1000), 1, 1)
     else -> this // Else unit is lower and does not need rounding
 }
 

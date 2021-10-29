@@ -1,5 +1,6 @@
 package maryk.core.values
 
+import kotlinx.datetime.LocalDate
 import maryk.core.models.key
 import maryk.core.query.filters.And
 import maryk.core.query.filters.Equals
@@ -15,7 +16,6 @@ import maryk.core.query.filters.Range
 import maryk.core.query.filters.RegEx
 import maryk.core.query.filters.ValueIn
 import maryk.core.query.pairs.with
-import maryk.lib.time.Date
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.models.TestMarykModel
@@ -38,7 +38,7 @@ class FilterValuesTest {
             2, 6, 7
         ),
         set = setOf(
-            Date(2020, 3, 30), Date(2018, 9, 9)
+            LocalDate(2020, 3, 30), LocalDate(2018, 9, 9)
         )
     )
 
@@ -59,7 +59,7 @@ class FilterValuesTest {
                 4, 6, 7
             ),
             set = setOf(
-                Date(2019, 3, 30), Date(2018, 9, 9)
+                LocalDate(2019, 3, 30), LocalDate(2018, 9, 9)
             ),
             selfReference = value2Key
         )
@@ -152,13 +152,13 @@ class FilterValuesTest {
 
         assertTrue {
             value1.matches(
-                Exists(TestMarykModel { set refAt Date(2018, 9, 9) })
+                Exists(TestMarykModel { set refAt LocalDate(2018, 9, 9) })
             )
         }
 
         assertFalse {
             value1.matches(
-                Exists(TestMarykModel { set refAt Date(2017, 9, 9) })
+                Exists(TestMarykModel { set refAt LocalDate(2017, 9, 9) })
             )
         }
     }

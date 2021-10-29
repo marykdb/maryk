@@ -1,5 +1,6 @@
 package maryk.core.query.changes
 
+import kotlinx.datetime.LocalDate
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -10,7 +11,6 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.query.RequestContext
 import maryk.core.query.pairs.with
 import maryk.core.values.div
-import maryk.lib.time.Date
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.models.EmbeddedMarykModel
@@ -75,7 +75,7 @@ class ChangeTest {
             dateTime = DateTime(2018, 7, 18),
             multi = TypedValue(S1, "world"),
             list = listOf(3, 4, 5),
-            set = setOf(Date(2020, 2, 20), Date(2019, 12, 11)),
+            set = setOf(LocalDate(2020, 2, 20), LocalDate(2019, 12, 11)),
             map = mapOf(
                 Time(12, 0) to "Hi",
                 Time(1, 2) to "Hoi"

@@ -1,5 +1,6 @@
 package maryk.core.properties.types
 
+import kotlinx.datetime.LocalDate
 import maryk.core.aggregations.bucket.DateUnit.Centuries
 import maryk.core.aggregations.bucket.DateUnit.Days
 import maryk.core.aggregations.bucket.DateUnit.Decades
@@ -68,50 +69,50 @@ class DateUnitTest {
 
     @Test
     fun roundDate() {
-        val date = Date(2019, 6, 8)
+        val date = LocalDate(2019, 6, 8)
 
         expect(date) {
             date.roundToDateUnit(Millis)
         }
 
-        expect(Date(2019, 6, 8)) {
+        expect(LocalDate(2019, 6, 8)) {
             date.roundToDateUnit(Seconds)
         }
 
-        expect(Date(2019, 6, 8)) {
+        expect(LocalDate(2019, 6, 8)) {
             date.roundToDateUnit(Minutes)
         }
 
-        expect(Date(2019, 6, 8)) {
+        expect(LocalDate(2019, 6, 8)) {
             date.roundToDateUnit(Hours)
         }
 
-        expect(Date(2019, 6, 8)) {
+        expect(LocalDate(2019, 6, 8)) {
             date.roundToDateUnit(Days)
         }
 
-        expect(Date(2019, 6)) {
+        expect(LocalDate(2019, 6, 1)) {
             date.roundToDateUnit(Months)
         }
 
-        expect(Date(2019, 4)) {
+        expect(LocalDate(2019, 4, 1)) {
             date.roundToDateUnit(Quarters)
         }
 
-        expect(Date(2019)) {
+        expect(LocalDate(2019, 1, 1)) {
             date.roundToDateUnit(Years)
         }
 
-        expect(Date(2010)) {
+        expect(LocalDate(2010, 1, 1)) {
             date.roundToDateUnit(Decades)
         }
 
-        expect(Date(1900)) {
-            Date(1912).roundToDateUnit(Centuries)
+        expect(LocalDate(1900, 1, 1)) {
+            LocalDate(1912, 1, 1).roundToDateUnit(Centuries)
         }
 
-        expect(Date(1000)) {
-            Date(1912).roundToDateUnit(Millennia)
+        expect(LocalDate(1000, 1, 1)) {
+            LocalDate(1912, 1, 1).roundToDateUnit(Millennia)
         }
     }
 

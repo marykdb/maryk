@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions
 
-import maryk.lib.time.Date
+import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -23,7 +23,7 @@ internal class IsPropertyDefinitionTest {
         }
 
         assertFalse {
-            StringDefinition(maxValue = "a").compatibleWith(DateDefinition(maxValue = Date(2010)))
+            StringDefinition(maxValue = "a").compatibleWith(DateDefinition(maxValue = LocalDate(2010, 1, 1)))
         }
     }
 }

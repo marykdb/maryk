@@ -1,6 +1,10 @@
 package maryk.core.properties.types
 
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import maryk.lib.exceptions.ParseException
+import maryk.lib.time.Date
 import maryk.test.ByteCollector
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
@@ -8,7 +12,7 @@ import kotlin.test.expect
 
 internal class DateTest {
     private val datesToTest = arrayOf(
-        Date.nowUTC(),
+        Clock.System.now().toLocalDateTime(TimeZone.UTC).date,
         Date.MAX,
         Date.MIN
     )
@@ -26,7 +30,7 @@ internal class DateTest {
         for (date in datesToTest) {
             bc.reserve(4)
             date.writeBytes(bc::write)
-            expect(date) { Date.fromByteReader(bc::read) }
+            expect(date) { localDateFromByteReader(bc::read) }
             bc.reset()
         }
     }

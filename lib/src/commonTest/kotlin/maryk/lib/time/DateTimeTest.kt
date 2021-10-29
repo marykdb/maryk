@@ -1,10 +1,11 @@
 package maryk.lib.time
 
+import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.expect
 
 internal class DateTimeTest {
-    private fun cleanToSeconds(it: DateTime) = DateTime(it.date, Time(it.hour, it.minute, it.day))
+    private fun cleanToSeconds(it: DateTime) = DateTime(it.date, Time(it.hour, it.minute, it.second))
 
     private val dateTime = DateTime(
         year = 2017,
@@ -38,7 +39,7 @@ internal class DateTimeTest {
 
     @Test
     fun testGet() {
-        expect(Date(2017, 8, 16)) { this.dateTime.date }
+        expect(LocalDate(2017, 8, 16)) { this.dateTime.date }
         expect(Time(11, 28, 22, 2344)) { this.dateTime.time }
     }
 

@@ -1,5 +1,6 @@
 package maryk.test.models
 
+import kotlinx.datetime.LocalDate
 import maryk.core.models.DataModel
 import maryk.core.models.RootDataModel
 import maryk.core.properties.PropertyDefinitions
@@ -114,7 +115,7 @@ object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>
             required = false,
             maxSize = 5u,
             valueDefinition = DateDefinition(
-                maxValue = Date(2100, 12, 31)
+                maxValue = LocalDate(2100, 12, 31)
             )
         )
 
@@ -196,7 +197,7 @@ object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>
         bool: Boolean? = null,
         enum: Option = Option.V1,
         list: List<Int>? = null,
-        set: Set<Date>? = null,
+        set: Set<LocalDate>? = null,
         map: Map<Time, String>? = null,
         valueObject: TestValueObject? = null,
         embeddedValues: Values<EmbeddedMarykModel, EmbeddedMarykModel.Properties>? = null,

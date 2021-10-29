@@ -7,7 +7,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.expect
 
 internal class DateTimeTest {
-    private fun cleanToSeconds(it: maryk.lib.time.DateTime) = DateTime(it.date, Time(it.hour, it.minute, it.day))
+    private fun cleanToSeconds(it: maryk.lib.time.DateTime) = DateTime(it.date, Time(it.hour, it.minute, it.second))
 
     private val dateTime = DateTime(
         year = 2017,

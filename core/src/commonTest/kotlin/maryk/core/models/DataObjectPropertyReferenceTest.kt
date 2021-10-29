@@ -1,12 +1,12 @@
 package maryk.core.models
 
+import kotlinx.datetime.LocalDate
 import maryk.core.properties.references.dsl.any
 import maryk.core.properties.references.dsl.at
 import maryk.core.properties.references.dsl.atType
 import maryk.core.properties.references.dsl.refAt
 import maryk.core.properties.references.dsl.refAtType
 import maryk.lib.extensions.toHex
-import maryk.lib.time.Date
 import maryk.lib.time.Time
 import maryk.test.models.ComplexModel
 import maryk.test.models.MarykTypeEnum.T3
@@ -35,7 +35,7 @@ internal class DataObjectPropertyReferenceTest {
 
         expect("setOfString") { TestMarykModel { setOfString::ref }.completeName }
         expect("setOfString.#v1") { TestMarykModel { setOfString refAt "v1" }.completeName }
-        expect("embeddedValues.marykModel.set.#2017-12-05") { TestMarykModel { embeddedValues { marykModel { set refAt Date(2017, 12, 5) } } }.completeName }
+        expect("embeddedValues.marykModel.set.#2017-12-05") { TestMarykModel { embeddedValues { marykModel { set refAt LocalDate(2017, 12, 5) } } }.completeName }
 
         expect("""embeddedValues.marykModel.map.#12:23""") { TestMarykModel { embeddedValues { marykModel { map refToKey Time(12, 23) } } }.completeName }
         expect("embeddedValues.marykModel.map.@12:23") { TestMarykModel { embeddedValues { marykModel { map refAt Time(12, 23) } } }.completeName }
@@ -83,7 +83,7 @@ internal class DataObjectPropertyReferenceTest {
 
         expect("661e4200000005") { TestMarykModel { embeddedValues { marykModel { list refAt 5u } } }.toStorageByteArray().toHex() }
 
-        expect("661e4b0480004461") { TestMarykModel { embeddedValues { marykModel { set refAt Date(2017, 12, 5) } } }.toStorageByteArray().toHex() }
+        expect("661e4b0480004461") { TestMarykModel { embeddedValues { marykModel { set refAt LocalDate(2017, 12, 5) } } }.toStorageByteArray().toHex() }
         expect("8b01") { TestMarykModel { setOfString::ref }.toStorageByteArray().toHex() }
         expect("8b01027631") { TestMarykModel { setOfString refAt "v1" }.toStorageByteArray().toHex() }
 

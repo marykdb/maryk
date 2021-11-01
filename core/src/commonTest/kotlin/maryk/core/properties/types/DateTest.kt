@@ -5,7 +5,6 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import maryk.lib.time.Date
-import maryk.lib.time.nowUTC
 import maryk.test.ByteCollector
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
@@ -17,13 +16,6 @@ internal class DateTest {
         Date.MAX,
         Date.MIN
     )
-
-    @Test
-    fun compare() {
-        expect(-1999998) { Date.MIN.compareTo(Date.MAX) }
-        expect(1999998) { Date.MAX.compareTo(Date.MIN) }
-        expect(0) { LocalDate.nowUTC().compareTo(LocalDate.nowUTC()) }
-    }
 
     @Test
     fun testStreamingConversion() {

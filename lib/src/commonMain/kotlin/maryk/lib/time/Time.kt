@@ -65,7 +65,7 @@ data class Time(
         val NOON = Time(12, 0, 0, 0)
         val MIDNIGHT = Time(0, 0, 0, 0)
 
-        private val timeRegex = Regex("^((?:[01]\\d|2[0-3])):([0-5]\\d)(:([0-5]\\d)(.(\\d{3,9}))?)?$")
+        private val timeRegex = Regex("^([01]\\d|2[0-3]):([0-5]\\d)(:([0-5]\\d)(.(\\d{3,9}))?)?$")
 
         /** Get Time with seconds since midnight */
         fun ofSecondOfDay(secondOfDay: Int): Time {

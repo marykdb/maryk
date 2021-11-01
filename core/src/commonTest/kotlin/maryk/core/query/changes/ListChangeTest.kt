@@ -1,12 +1,12 @@
 package maryk.core.query.changes
 
+import kotlinx.datetime.LocalDateTime
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.core.values.div
-import maryk.lib.time.DateTime
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
@@ -63,7 +63,7 @@ class ListChangeTest {
             int = 5,
             uint = 3u,
             double = 2.3,
-            dateTime = DateTime(2018, 7, 18),
+            dateTime = LocalDateTime(2018, 7, 18, 0, 0),
             list = listOf(3, 4, 5),
             embeddedValues = EmbeddedMarykModel(
                 value = "test",
@@ -72,7 +72,7 @@ class ListChangeTest {
                     int = 3,
                     uint = 67u,
                     double = 232523.3,
-                    dateTime = DateTime(2020, 10, 18),
+                    dateTime = LocalDateTime(2020, 10, 18, 0, 0),
                     list = listOf(33, 44, 55)
                 )
             )

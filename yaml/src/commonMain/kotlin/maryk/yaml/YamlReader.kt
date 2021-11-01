@@ -1,5 +1,6 @@
 package maryk.yaml
 
+import kotlinx.datetime.LocalDateTime
 import maryk.json.ArrayType
 import maryk.json.ExceptionWhileReadingJson
 import maryk.json.IsJsonLikeReader
@@ -18,7 +19,6 @@ import maryk.json.MapType
 import maryk.json.TokenType
 import maryk.json.ValueType
 import maryk.lib.extensions.isLineBreak
-import maryk.lib.time.DateTime
 import kotlin.native.concurrent.SharedImmutable
 
 /** Unknown tag name to reader, pass allowUnknownTags true in YamlReader to get them */
@@ -53,7 +53,7 @@ internal interface IsInternalYamlReader {
 internal interface YamlValueType<out T : Any> : ValueType<T> {
     object Binary : YamlValueType<ByteArray>
     object Merge : YamlValueType<Nothing>
-    object TimeStamp : YamlValueType<DateTime>
+    object TimeStamp : YamlValueType<LocalDateTime>
     object Value : YamlValueType<Nothing> //Default value
     object Yaml : YamlValueType<Nothing>
 }

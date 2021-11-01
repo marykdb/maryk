@@ -1,6 +1,7 @@
 package maryk.core.processors.datastore
 
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import maryk.core.clock.HLC
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Delete
@@ -10,7 +11,6 @@ import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.changes.change
 import maryk.core.query.pairs.with
 import maryk.lib.extensions.initByteArrayByHex
-import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.models.Option.V1
 import maryk.test.models.Option.V2
@@ -23,7 +23,7 @@ private val valuesAsStorablesWithVersion = arrayOf(
     "11" to arrayOf(HLC(1234uL) to 5, HLC(1235uL) to 7),
     "19" to arrayOf(HLC(1235uL) to 3u),
     "21" to arrayOf(HLC(1233uL) to null),
-    "29" to arrayOf(HLC(1233uL) to DateTime(2018, 7, 18), HLC(1235uL) to null),
+    "29" to arrayOf(HLC(1233uL) to LocalDateTime(2018, 7, 18, 0, 0), HLC(1235uL) to null),
     "39" to arrayOf(HLC(1234uL) to V2, HLC(1235uL) to V1),
     "4b" to arrayOf(HLC(1233uL) to 1, HLC(1235uL) to 2, HLC(1236uL) to 2),
     "4b0480004577" to arrayOf(HLC(1233uL) to LocalDate(2018, 9, 9)),
@@ -82,7 +82,7 @@ class ReadStorageToChangesKtTest {
                         ObjectCreate,
                         Delete(TestMarykModel { double::ref }),
                         Change(
-                            TestMarykModel { dateTime::ref } with DateTime(2018, 7, 18),
+                            TestMarykModel { dateTime::ref } with LocalDateTime(2018, 7, 18, 0, 0),
                             TestMarykModel { map refAt Time(10, 14, 1) } with "ten",
                             TestMarykModel { listOfString refAt 0u } with "v1"
                         ),

@@ -1,5 +1,7 @@
 package maryk.datastore.test
 
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import maryk.core.clock.HLC
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
@@ -26,8 +28,6 @@ import maryk.core.query.requests.get
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.datastore.shared.IsDataStore
-import maryk.lib.time.Date
-import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.assertType
 import maryk.test.models.TestMarykModel
@@ -66,7 +66,7 @@ class DataStoreFilterTest(
         int = 5,
         uint = 6u,
         double = 0.43,
-        dateTime = DateTime(2018, 3, 2),
+        dateTime = LocalDateTime(2018, 3, 2, 0, 0),
         bool = true,
         map = mapOf(
             Time(12, 13, 14) to "haha10"
@@ -75,7 +75,7 @@ class DataStoreFilterTest(
             4, 6, 7
         ),
         set = setOf(
-            Date(2019, 3, 30), Date(2018, 9, 9)
+            LocalDate(2019, 3, 30), LocalDate(2018, 9, 9)
         )
     )
 
@@ -84,7 +84,7 @@ class DataStoreFilterTest(
         int = 3,
         uint = 5u,
         double = 0.23,
-        dateTime = DateTime(2016, 2, 20),
+        dateTime = LocalDateTime(2016, 2, 20, 0, 0),
         bool = false,
         map = mapOf(
             Time(17, 16, 15) to "haha1"
@@ -93,7 +93,7 @@ class DataStoreFilterTest(
             3, 4, 6
         ),
         set = setOf(
-            Date(2020, 2, 20), Date(2013, 4, 19)
+            LocalDate(2020, 2, 20), LocalDate(2013, 4, 19)
         )
     )
 
@@ -288,13 +288,13 @@ class DataStoreFilterTest(
 
         assertTrue {
             filterMatches(
-                Exists(TestMarykModel { set refAt Date(2018, 9, 9) })
+                Exists(TestMarykModel { set refAt LocalDate(2018, 9, 9) })
             )
         }
 
         assertFalse {
             filterMatches(
-                Exists(TestMarykModel { set refAt Date(2017, 9, 9) })
+                Exists(TestMarykModel { set refAt LocalDate(2017, 9, 9) })
             )
         }
     }

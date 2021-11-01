@@ -1,14 +1,15 @@
 package maryk.core.properties.definitions
 
+import kotlinx.datetime.LocalDateTime
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
+import maryk.core.aggregations.bucket.DateUnit
+import maryk.core.aggregations.bucket.roundToDateUnit
 import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.query.DefinitionsContext
-import maryk.lib.time.Date
-import maryk.lib.time.DateTime
-import maryk.lib.time.Time
+import maryk.lib.time.nowUTC
 import maryk.test.ByteCollector
 import maryk.test.models.TestValueObject
 import maryk.test.models.TestValueObject2
@@ -29,18 +30,18 @@ internal class ValueObjectDefinitionTest {
         unique = true,
         minValue = TestValueObject(
             int = 0,
-            dateTime = DateTime(2007, 12, 5),
+            dateTime = LocalDateTime(2007, 12, 5, 0, 0, 0),
             bool = false
         ),
         maxValue = TestValueObject(
             int = 999,
-            dateTime = DateTime(2017, 12, 5),
+            dateTime = LocalDateTime(2017, 12, 5, 0, 0, 0),
             bool = true
         ),
         dataModel = TestValueObject,
         default = TestValueObject(
             int = 10,
-            dateTime = DateTime(2010, 10, 10),
+            dateTime = LocalDateTime(2010, 10, 10, 0, 0, 0),
             bool = true
         )
     )
@@ -52,7 +53,7 @@ internal class ValueObjectDefinitionTest {
 
     val value = TestValueObject(
         int = 4,
-        dateTime = DateTime(date = Date.nowUTC(), time = Time.nowUTC().copy(milli = 0)),
+        dateTime = LocalDateTime.nowUTC().roundToDateUnit(DateUnit.Seconds),
         bool = true
     )
 
@@ -89,7 +90,7 @@ internal class ValueObjectDefinitionTest {
         def.validateWithRef(
             newValue = TestValueObject(
                 int = 4,
-                dateTime = DateTime.nowUTC(),
+                dateTime = LocalDateTime.nowUTC(),
                 bool = true
             )
         )
@@ -97,7 +98,7 @@ internal class ValueObjectDefinitionTest {
             def.validateWithRef(
                 newValue = TestValueObject(
                     int = 1000,
-                    dateTime = DateTime.nowUTC(),
+                    dateTime = LocalDateTime.nowUTC(),
                     bool = true
                 )
             )

@@ -1,5 +1,6 @@
 package maryk.core.aggregations.bucket
 
+import kotlinx.datetime.LocalDateTime
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -7,7 +8,6 @@ import maryk.core.aggregations.AggregationsResponse
 import maryk.core.aggregations.metric.SumResponse
 import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
-import maryk.lib.time.DateTime
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.expect
@@ -17,7 +17,7 @@ class DateHistogramResponseTest {
         reference = TestMarykModel { dateTime::ref },
         buckets = listOf(
             Bucket(
-                DateTime(2010),
+                LocalDateTime(2010, 1, 1, 0, 0),
                 AggregationsResponse(
                     "total" to SumResponse(
                         TestMarykModel { int::ref },
@@ -27,7 +27,7 @@ class DateHistogramResponseTest {
                 15uL
             ),
             Bucket(
-                DateTime(2011),
+                LocalDateTime(2011, 1, 1, 0, 0),
                 AggregationsResponse(
                     "total" to SumResponse(
                         TestMarykModel { int::ref },

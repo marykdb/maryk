@@ -2,10 +2,9 @@ package maryk.core.aggregations.bucket
 
 import maryk.core.aggregations.IsAggregator
 import maryk.core.aggregations.ValueByPropertyReference
-import maryk.lib.time.IsTemporal
 
 /** The aggregator to bucket dates */
-data class DateHistogramAggregator<T: IsTemporal<*>>(
+data class DateHistogramAggregator<T: Comparable<*>>(
     override val request: DateHistogram<T>
 ) : IsAggregator<T, DateHistogram<T>, DateHistogramResponse<T>> {
     private var bucketAggregates = mutableListOf<BucketAggregator<T>>()

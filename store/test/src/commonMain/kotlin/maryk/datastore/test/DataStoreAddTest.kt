@@ -1,5 +1,6 @@
 package maryk.datastore.test
 
+import kotlinx.datetime.LocalDateTime
 import maryk.core.models.key
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.add
@@ -10,7 +11,6 @@ import maryk.core.query.responses.statuses.AlreadyExists
 import maryk.core.values.Values
 import maryk.datastore.memory.assertRecent
 import maryk.datastore.shared.IsDataStore
-import maryk.lib.time.DateTime
 import maryk.test.assertType
 import maryk.test.models.Log
 import maryk.test.models.Severity.ERROR
@@ -29,10 +29,10 @@ class DataStoreAddTest(
     private val keys = mutableListOf<Key<Log>>()
 
     private val logs = arrayOf(
-        Log("Something happened", timestamp = DateTime(2018, 11, 14, 11, 22, 33, 40)),
-        Log("Something else happened", timestamp = DateTime(2018, 11, 14, 12, 0, 0, 0)),
-        Log("Something REALLY happened", timestamp = DateTime(2018, 11, 14, 12, 33, 22, 111)),
-        Log("WRONG", ERROR, DateTime(2018, 11, 14, 13, 0, 2, 0))
+        Log("Something happened", timestamp = LocalDateTime(2018, 11, 14, 11, 22, 33, 40000000)),
+        Log("Something else happened", timestamp = LocalDateTime(2018, 11, 14, 12, 0, 0, 0)),
+        Log("Something REALLY happened", timestamp = LocalDateTime(2018, 11, 14, 12, 33, 22, 111000000)),
+        Log("WRONG", ERROR, LocalDateTime(2018, 11, 14, 13, 0, 2, 0))
     )
 
     override fun resetData() {
@@ -74,7 +74,7 @@ class DataStoreAddTest(
     }
 
     private fun notAddSameObjectTwice() = runSuspendingTest {
-        val log = Log("I am unique", timestamp = DateTime(2018, 9, 9, 14, 30, 0, 0))
+        val log = Log("I am unique", timestamp = LocalDateTime(2018, 9, 9, 14, 30, 0, 0))
         val key = Log.key(log)
         keys += key // make sure data gets cleaned
 

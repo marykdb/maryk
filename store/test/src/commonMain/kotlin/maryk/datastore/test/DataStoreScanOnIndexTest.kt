@@ -1,7 +1,7 @@
 package maryk.datastore.test
 
+import kotlinx.datetime.LocalDateTime
 import maryk.core.exceptions.RequestException
-import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.change
@@ -50,10 +50,10 @@ class DataStoreScanOnIndexTest(
     )
 
     private val logs = arrayOf(
-        Log("Something happened", INFO, DateTime(2018, 11, 14, 11, 22, 33, 40)),
-        Log("Something else happened", DEBUG, DateTime(2018, 11, 14, 12, 0, 0, 0)),
-        Log("Something REALLY happened", INFO, DateTime(2018, 11, 14, 12, 33, 22, 111)),
-        Log("WRONG", ERROR, DateTime(2018, 11, 14, 13, 0, 2, 0))
+        Log("Something happened", INFO, LocalDateTime(2018, 11, 14, 11, 22, 33, 40000000)),
+        Log("Something else happened", DEBUG, LocalDateTime(2018, 11, 14, 12, 0, 0, 0)),
+        Log("Something REALLY happened", INFO, LocalDateTime(2018, 11, 14, 12, 33, 22, 111000000)),
+        Log("WRONG", ERROR, LocalDateTime(2018, 11, 14, 13, 0, 2, 0))
     )
 
     override fun initData() {
@@ -252,7 +252,7 @@ class DataStoreScanOnIndexTest(
                 Log.values {
                     mapNonNulls(
                         this.severity with INFO,
-                        this.timestamp with DateTime(2018, 11, 14, 12, 33, 22, 111)
+                        this.timestamp with LocalDateTime(2018, 11, 14, 12, 33, 22, 111000000)
                     )
                 }
             ) { it.values }

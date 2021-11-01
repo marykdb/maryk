@@ -22,7 +22,6 @@ import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.values.SimpleObjectValues
 import maryk.lib.exceptions.ParseException
 import maryk.lib.time.Date.ofEpochDay
-import maryk.lib.time.DateTime
 import maryk.lib.time.epochDay
 
 /** Definition for Date properties */
@@ -85,7 +84,6 @@ data class DateDefinition(
     override fun fromNativeType(value: Any): LocalDate? {
         return when {
             value is LocalDate -> value
-            value is DateTime -> value.date
             value is LocalDateTime && value.hour == 0 && value.minute == 0 && value.second == 0 && value.nanosecond == 0 -> value.date
             else -> null
         }

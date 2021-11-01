@@ -1,5 +1,6 @@
 package maryk.datastore.test
 
+import kotlinx.datetime.LocalDateTime
 import maryk.core.aggregations.Aggregations
 import maryk.core.aggregations.AggregationsResponse
 import maryk.core.aggregations.metric.Max
@@ -7,7 +8,6 @@ import maryk.core.aggregations.metric.MaxResponse
 import maryk.core.aggregations.metric.Min
 import maryk.core.aggregations.metric.MinResponse
 import maryk.core.exceptions.RequestException
-import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.Key
 import maryk.core.query.filters.Equals
 import maryk.core.query.orders.Order.Companion.descending
@@ -48,10 +48,10 @@ class DataStoreScanTest(
     )
 
     private val logs = arrayOf(
-        Log("Something happened", timestamp = DateTime(2018, 11, 14, 11, 22, 33, 40)),
-        Log("Something else happened", DEBUG, DateTime(2018, 11, 14, 12, 0, 0, 0)),
-        Log("Something REALLY happened", timestamp = DateTime(2018, 11, 14, 12, 33, 22, 111)),
-        Log("WRONG", ERROR, DateTime(2018, 11, 14, 13, 0, 2, 0))
+        Log("Something happened", timestamp = LocalDateTime(2018, 11, 14, 11, 22, 33, 40000000)),
+        Log("Something else happened", DEBUG, LocalDateTime(2018, 11, 14, 12, 0, 0, 0)),
+        Log("Something REALLY happened", timestamp = LocalDateTime(2018, 11, 14, 12, 33, 22, 111000000)),
+        Log("WRONG", ERROR, LocalDateTime(2018, 11, 14, 13, 0, 2, 0))
     )
 
     override fun initData() {
@@ -122,10 +122,10 @@ class DataStoreScanTest(
         expect(
             AggregationsResponse(
                 "last" to MaxResponse(
-                    Log { timestamp::ref }, DateTime(2018, 11, 14, 12, 33, 22, 111)
+                    Log { timestamp::ref }, LocalDateTime(2018, 11, 14, 12, 33, 22, 111000000)
                 ),
                 "first" to MinResponse(
-                    Log { timestamp::ref }, DateTime(2018, 11, 14, 11, 22, 33, 40)
+                    Log { timestamp::ref }, LocalDateTime(2018, 11, 14, 11, 22, 33, 40000000)
                 )
             )
         ) {
@@ -204,7 +204,7 @@ class DataStoreScanTest(
                 Log.values {
                     mapNonNulls(
                         this.severity with INFO,
-                        this.timestamp with DateTime(2018, 11, 14, 12, 33, 22, 111)
+                        this.timestamp with LocalDateTime(2018, 11, 14, 12, 33, 22, 111000000)
                     )
                 }
             ) { it.values }
@@ -234,7 +234,7 @@ class DataStoreScanTest(
             Log.scan(
                 where = Equals(
                     severity.ref() with INFO,
-                    timestamp.ref() with DateTime(2018, 11, 14, 11, 22, 33, 40),
+                    timestamp.ref() with LocalDateTime(2018, 11, 14, 11, 22, 33, 40000000),
                     message.ref() with "Something happened"
                 )
             )
@@ -253,7 +253,7 @@ class DataStoreScanTest(
             Log.scan(
                 where = Equals(
                     severity.ref() with INFO,
-                    timestamp.ref() with DateTime(2018, 11, 14, 11, 22, 33, 40),
+                    timestamp.ref() with LocalDateTime(2018, 11, 14, 11, 22, 33, 40000000),
                     message.ref() with "WRONG happened"
                 )
             )

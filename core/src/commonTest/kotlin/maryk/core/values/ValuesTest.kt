@@ -1,9 +1,9 @@
 package maryk.core.values
 
+import kotlinx.datetime.LocalDateTime
 import maryk.core.properties.graph.graph
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
-import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.Option.V2
@@ -22,7 +22,7 @@ class ValuesTest {
             int = 5,
             uint = 3u,
             double = 2.3,
-            dateTime = DateTime(2018, 7, 18)
+            dateTime = LocalDateTime(2018, 7, 18, 0, 0)
         )
 
         val copy = original.copy {
@@ -44,7 +44,7 @@ class ValuesTest {
             int = 5,
             uint = 3u,
             double = 2.3,
-            dateTime = DateTime(2018, 7, 18),
+            dateTime = LocalDateTime(2018, 7, 18, 0, 0),
             embeddedValues = EmbeddedMarykModel(
                 value = "hello universe",
                 model = EmbeddedMarykModel(
@@ -81,7 +81,7 @@ class ValuesTest {
             int = 5,
             uint = 3u,
             double = 2.3,
-            dateTime = DateTime(2018, 7, 18),
+            dateTime = LocalDateTime(2018, 7, 18, 0, 0),
             listOfString = listOf(
                 "v1", "v2", "v3"
             ),
@@ -99,7 +99,7 @@ class ValuesTest {
 
         expect("hello world") { values[TestMarykModel { string::ref }] }
         expect(2.3) { values[TestMarykModel { double::ref }] }
-        expect(DateTime(2018, 7, 18)) { values[TestMarykModel { dateTime::ref }] }
+        expect(LocalDateTime(2018, 7, 18, 0, 0)) { values[TestMarykModel { dateTime::ref }] }
         expect("v3") { values[TestMarykModel { listOfString refAt 2u }] }
         expect(listOf("v1", "v2", "v3")) { values[TestMarykModel { listOfString.refToAny() }] }
         expect("twelve") { values[TestMarykModel { map refAt Time(12, 23, 34) }] }
@@ -114,7 +114,7 @@ class ValuesTest {
             int = 5,
             uint = 3u,
             double = 2.3,
-            dateTime = DateTime(2018, 7, 18),
+            dateTime = LocalDateTime(2018, 7, 18, 0, 0),
             listOfString = listOf(
                 "v1", "v2", "v3"
             ),
@@ -132,7 +132,7 @@ class ValuesTest {
 
         expect("hello world") { values.get { string } }
         expect(2.3) { values.get { double } }
-        expect(DateTime(2018, 7, 18)) { values.get { dateTime } }
+        expect(LocalDateTime(2018, 7, 18, 0, 0)) { values.get { dateTime } }
         expect("v3") { values.get { listOfString }?.get(2) }
         expect(listOf("v1", "v2", "v3")) { values.get { listOfString } }
         expect("twelve") { values.get { map }?.get(Time(12, 23, 34)) }
@@ -147,7 +147,7 @@ class ValuesTest {
             int = 5,
             uint = 3u,
             double = 2.3,
-            dateTime = DateTime(2018, 7, 18),
+            dateTime = LocalDateTime(2018, 7, 18, 0, 0),
             listOfString = listOf(
                 "v1", "v2", "v3"
             ),
@@ -195,7 +195,7 @@ class ValuesTest {
             int = 5,
             uint = 3u,
             double = 2.3,
-            dateTime = DateTime(2018, 7, 18),
+            dateTime = LocalDateTime(2018, 7, 18, 0, 0),
             map = mapOf(
                 Time(11, 22, 33) to "eleven",
                 Time(12, 23, 34) to "twelve"

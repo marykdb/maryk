@@ -1,6 +1,7 @@
 package maryk.core.models
 
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
 import maryk.core.properties.exceptions.ValidationUmbrellaException
@@ -10,7 +11,6 @@ import maryk.json.JsonReader
 import maryk.json.JsonWriter
 import maryk.lib.extensions.initByteArrayByHex
 import maryk.lib.extensions.toHex
-import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.ByteCollector
 import maryk.test.models.EmbeddedMarykObject
@@ -29,14 +29,14 @@ private val testObject = TestMarykObject(
     uint = 53u,
     double = 3.5555,
     bool = true,
-    dateTime = DateTime(year = 2017, month = 12, day = 5, hour = 12, minute = 40)
+    dateTime = LocalDateTime(2017, 12, 5, 12, 40)
 )
 
 private val testExtendedObject = TestMarykObject(
     string = "hay",
     int = 4,
     double = 3.555,
-    dateTime = DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13),
+    dateTime = LocalDateTime(2017, 12, 4, 12, 13),
     uint = 32u,
     bool = true,
     list = listOf(34, 2352, 3423, 766),
@@ -49,7 +49,7 @@ private val testExtendedObject = TestMarykObject(
         Time(12, 55) to "yes",
         Time(10, 3) to "ahum"
     ),
-    valueObject = TestValueObject(6, DateTime(2017, 4, 1, 12, 55), true),
+    valueObject = TestValueObject(6, LocalDateTime(2017, 4, 1, 12, 55), true),
     embeddedObject = EmbeddedMarykObject("test"),
     multi = TypedValue(S3, EmbeddedMarykObject("subInMulti!")),
     listOfString = listOf("test1", "another test", "🤗")
@@ -164,7 +164,7 @@ internal class ObjectDataModelTest {
         expect(4) {
             TestMarykObject.properties.getPropertyGetter("int")!!.invoke(testExtendedObject)
         }
-        expect(DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13)) {
+        expect(LocalDateTime(2017, 12, 4, 12, 13)) {
             TestMarykObject.properties.getPropertyGetter("dateTime")!!.invoke(testExtendedObject)
         }
         expect(true) {
@@ -186,7 +186,7 @@ internal class ObjectDataModelTest {
         expect(3.555) {
             TestMarykObject.properties.getPropertyGetter(4u)!!.invoke(testExtendedObject)
         }
-        expect(DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13)) {
+        expect(LocalDateTime(2017, 12, 4, 12, 13)) {
             TestMarykObject.properties.getPropertyGetter(5u)!!.invoke(testExtendedObject)
         }
         expect(true) {

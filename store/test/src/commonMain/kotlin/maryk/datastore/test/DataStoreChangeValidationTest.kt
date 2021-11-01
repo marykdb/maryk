@@ -1,12 +1,13 @@
 package maryk.datastore.test
 
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.exceptions.InvalidSizeException
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.NotEnoughItemsException
 import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.core.properties.exceptions.TooManyItemsException
-import maryk.core.properties.types.Date
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Delete
@@ -21,7 +22,6 @@ import maryk.core.query.requests.get
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.datastore.shared.IsDataStore
-import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.assertType
 import maryk.test.models.TestMarykModel
@@ -55,29 +55,29 @@ class DataStoreChangeValidationTest(
                         5,
                         6u,
                         0.43,
-                        DateTime(2018, 3, 2),
+                        LocalDateTime(2018, 3, 2, 0, 0),
                         true,
                         listOfString = listOf("a", "b", "c"),
                         map = mapOf(Time(2, 3, 5) to "test"),
-                        set = setOf(Date(2018, 3, 4))
+                        set = setOf(LocalDate(2018, 3, 4))
                     ),
                     TestMarykModel(
                         "haha2",
                         3,
                         8u,
                         1.244,
-                        DateTime(2018, 1, 2),
+                        LocalDateTime(2018, 1, 2, 0, 0),
                         false,
                         listOfString = listOf("c", "d", "e"),
                         map = mapOf(Time(12, 33, 45) to "another", Time(13, 44, 55) to "another2"),
-                        set = setOf(Date(2018, 11, 25), Date(1981, 12, 5))
+                        set = setOf(LocalDate(2018, 11, 25), LocalDate(1981, 12, 5))
                     ),
                     TestMarykModel(
                         "haha3",
                         6,
                         12u,
                         1333.3,
-                        DateTime(2018, 12, 9),
+                        LocalDateTime(2018, 12, 9, 0, 0),
                         false,
                         listOfString = listOf("c"),
                         reference = TestMarykModel.key("AAACKwEAAw")
@@ -233,10 +233,10 @@ class DataStoreChangeValidationTest(
                     SetChange(
                         TestMarykModel { set::ref }.change(
                             addValues = setOf(
-                                Date(2018, 11, 26),
-                                Date(2019, 11, 26),
-                                Date(2020, 11, 26),
-                                Date(2021, 11, 26)
+                                LocalDate(2018, 11, 26),
+                                LocalDate(2019, 11, 26),
+                                LocalDate(2020, 11, 26),
+                                LocalDate(2021, 11, 26)
                             )
                         )
                     )
@@ -260,7 +260,7 @@ class DataStoreChangeValidationTest(
             TestMarykModel.get(keys[1])
         )
         expect(1) { getResponse.values.size }
-        expect(setOf(Date(2018, 11, 25), Date(1981, 12, 5))) { getResponse.values.first().values { set } }
+        expect(setOf(LocalDate(2018, 11, 25), LocalDate(1981, 12, 5))) { getResponse.values.first().values { set } }
     }
 
     private fun executeChangeSetWithValueValidationExceptionRequest() = runSuspendingTest {
@@ -270,7 +270,7 @@ class DataStoreChangeValidationTest(
                     SetChange(
                         TestMarykModel { set::ref }.change(
                             addValues = setOf(
-                                Date(2101, 12, 33)
+                                LocalDate(2101, 12, 31)
                             )
                         )
                     )
@@ -284,7 +284,7 @@ class DataStoreChangeValidationTest(
             validationFail.exceptions.apply {
                 expect(1) { size }
                 assertType<OutOfRangeException>(first()).apply {
-                    expect(Date(2101, 12, 33).toString()) { value }
+                    expect(LocalDate(2101, 12, 31).toString()) { value }
                 }
             }
         }
@@ -294,7 +294,7 @@ class DataStoreChangeValidationTest(
             TestMarykModel.get(keys[1])
         )
         expect(1) { getResponse.values.size }
-        expect(setOf(Date(2018, 11, 25), Date(1981, 12, 5))) { getResponse.values.first().values { set } }
+        expect(setOf(LocalDate(2018, 11, 25), LocalDate(1981, 12, 5))) { getResponse.values.first().values { set } }
     }
 
     private fun executeChangeMapWithSizeValidationExceptionRequest() = runSuspendingTest {

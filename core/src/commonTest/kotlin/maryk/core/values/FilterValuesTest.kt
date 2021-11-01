@@ -1,6 +1,7 @@
 package maryk.core.values
 
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import maryk.core.models.key
 import maryk.core.query.filters.And
 import maryk.core.query.filters.Equals
@@ -16,7 +17,6 @@ import maryk.core.query.filters.Range
 import maryk.core.query.filters.RegEx
 import maryk.core.query.filters.ValueIn
 import maryk.core.query.pairs.with
-import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
@@ -29,7 +29,7 @@ class FilterValuesTest {
         int = 532,
         uint = 2u,
         double = 2828.43,
-        dateTime = DateTime(2013, 3, 2),
+        dateTime = LocalDateTime(2013, 3, 2, 0, 0),
         bool = true,
         map = mapOf(
             Time(14, 15, 14) to "haha10"
@@ -50,7 +50,7 @@ class FilterValuesTest {
             int = 5,
             uint = 6u,
             double = 0.43,
-            dateTime = DateTime(2018, 3, 2),
+            dateTime = LocalDateTime(2018, 3, 2, 0, 0),
             bool = true,
             map = mapOf(
                 Time(12, 13, 14) to "haha10"

@@ -1,5 +1,11 @@
 package maryk.yaml
 
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.toLocalDateTime
 import maryk.json.JsonToken
 import maryk.json.JsonToken.FieldName
 import maryk.json.JsonToken.MergeFieldName
@@ -10,7 +16,6 @@ import maryk.json.ValueType
 import maryk.json.ValueType.Bool
 import maryk.json.ValueType.IsNullValueType
 import maryk.lib.bytes.Base64
-import maryk.lib.time.DateTime
 import maryk.yaml.YamlValueType.Binary
 import maryk.yaml.YamlValueType.TimeStamp
 import kotlin.math.pow
@@ -199,47 +204,37 @@ private fun findFloat(value: String): Value<Double>? {
 }
 
 /** Tries to find timestamp in [value] and returns a DateTime if found */
-private fun findTimestamp(value: String): Value<DateTime>? {
+private fun findTimestamp(value: String): Value<LocalDateTime>? =
     timestampRegex.find(value)?.let {
-        return if (it.groups[4] == null) {
-            Value(
-                DateTime(
-                    it.groups[1]!!.value.toInt(),
-                    it.groups[2]!!.value.toByte(),
-                    it.groups[3]!!.value.toByte()
-                ),
-                TimeStamp
-            )
+        val dateTime = if (it.groups[4] == null) {
+            LocalDate.parse(value).atStartOfDayIn(TimeZone.UTC).toLocalDateTime(TimeZone.UTC)
         } else {
-            val dateTime =
-                if (it.groups[11] == null || it.groups[11]!!.value == "Z" || it.groups[11]!!.value.isEmpty()) {
-                    DateTime(
-                        it.groups[1]!!.value.toInt(),
-                        it.groups[2]!!.value.toByte(),
-                        it.groups[3]!!.value.toByte(),
-                        it.groups[6]!!.value.toByte(),
-                        it.groups[7]!!.value.toByte(),
-                        it.groups[8]!!.value.toByte(),
-                        it.groups[10]?.value?.let { value ->
-                            when {
-                                value.length < 3 -> {
-                                    var longer = value
-                                    for (i in 1..3 - value.length) {
-                                        longer += "0"
-                                    }
-                                    longer
+            if (it.groups[11] == null || it.groups[11]!!.value == "Z" || it.groups[11]!!.value.isEmpty()) {
+                LocalDateTime(
+                    year = it.groups[1]!!.value.toInt(),
+                    monthNumber = it.groups[2]!!.value.toInt(),
+                    it.groups[3]!!.value.toInt(),
+                    it.groups[6]!!.value.toInt(),
+                    it.groups[7]!!.value.toInt(),
+                    it.groups[8]!!.value.toInt(),
+                    it.groups[10]?.value?.let { value ->
+                        when {
+                            value.length < 3 -> {
+                                var longer = value
+                                for (i in 1..3 - value.length) {
+                                    longer += "0"
                                 }
-                                value.length == 3 -> value
-                                else -> value.substring(0, 3)
+                                longer
                             }
-                        }?.toShort() ?: 0
-                    )
-                } else {
-                    DateTime.parse(value)
-                }
-
-            Value(dateTime, TimeStamp)
+                            value.length == 3 -> value
+                            else -> value.substring(0, 3)
+                        }.toInt() * 1000000
+                    } ?: 0
+                )
+            } else {
+                Instant.parse(value).toLocalDateTime(TimeZone.UTC)
+            }
         }
+
+        Value(dateTime, TimeStamp)
     }
-    return null
-}

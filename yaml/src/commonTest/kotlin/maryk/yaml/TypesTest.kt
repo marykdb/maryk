@@ -1,9 +1,9 @@
 package maryk.yaml
 
+import kotlinx.datetime.LocalDateTime
 import maryk.json.IsJsonLikeReader
 import maryk.json.ValueType
 import maryk.lib.extensions.initByteArrayByHex
-import maryk.lib.time.DateTime
 import maryk.yaml.YamlValueType.Binary
 import maryk.yaml.YamlValueType.TimeStamp
 import kotlin.test.Test
@@ -140,11 +140,11 @@ class TypesTest {
         assertValue(-2.2323e-44, ValueType.Float)
         assertEndArray()
         assertStartArray()
-        assertValue(DateTime(2018, 3, 13), TimeStamp)
-        assertValue(DateTime(2017, 12, 1, 12, 45, 13), TimeStamp)
-        assertValue(DateTime(2016, 9, 5, 1, 12, 5, 123), TimeStamp)
-        assertValue(DateTime(2015, 5, 24, 7, 3, 55), TimeStamp)
-        assertValue(DateTime(2014, 2, 28, 9, 34, 43, 220), TimeStamp)
+        assertValue(LocalDateTime(2018, 3, 13, 0, 0), TimeStamp)
+        assertValue(LocalDateTime(2017, 12, 1, 12, 45, 13), TimeStamp)
+        assertValue(LocalDateTime(2016, 9, 5, 1, 12, 5, 123000000), TimeStamp)
+        assertValue(LocalDateTime(2015, 5, 24, 7, 3, 55), TimeStamp)
+        assertValue(LocalDateTime(2014, 2, 28, 9, 34, 43, 220000000), TimeStamp)
         assertEndArray()
     }
 }

@@ -41,7 +41,7 @@ data class TimeDefinition(
     override val wireType = VAR_INT
     override val byteSize = Time.byteSize(precision)
 
-    override fun createNow() = Time.nowUTC()
+    fun createNow() = Time.nowUTC()
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) =
         Time.fromByteReader(length, reader)

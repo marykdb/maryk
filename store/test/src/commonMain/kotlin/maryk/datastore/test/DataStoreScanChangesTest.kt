@@ -1,8 +1,8 @@
 package maryk.datastore.test
 
+import kotlinx.datetime.LocalDateTime
 import maryk.core.exceptions.RequestException
 import maryk.core.properties.types.Bytes
-import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.ObjectCreate
@@ -48,10 +48,10 @@ class DataStoreScanChangesTest(
     )
 
     private val logs = arrayOf(
-        Log("Something happened", timestamp = DateTime(2018, 11, 14, 11, 22, 33, 40)),
-        Log("Something else happened", timestamp = DateTime(2018, 11, 14, 12, 0, 0, 0)),
-        Log("Something REALLY happened", timestamp = DateTime(2018, 11, 14, 12, 33, 22, 111)),
-        Log("WRONG", ERROR, DateTime(2018, 11, 14, 13, 0, 2, 0))
+        Log("Something happened", timestamp = LocalDateTime(2018, 11, 14, 11, 22, 33, 40000000)),
+        Log("Something else happened", timestamp = LocalDateTime(2018, 11, 14, 12, 0, 0, 0)),
+        Log("Something REALLY happened", timestamp = LocalDateTime(2018, 11, 14, 12, 33, 22, 111000000)),
+        Log("WRONG", ERROR, LocalDateTime(2018, 11, 14, 13, 0, 2, 0))
     )
 
     override fun initData() {
@@ -96,7 +96,7 @@ class DataStoreScanChangesTest(
                         Change(
                             Log { message::ref } with "Something REALLY happened",
                             Log { severity::ref } with INFO,
-                            Log { timestamp::ref } with DateTime(2018, 11, 14, 12, 33, 22, 111)
+                            Log { timestamp::ref } with LocalDateTime(2018, 11, 14, 12, 33, 22, 111000000)
                         )
                     ))
                 )
@@ -114,7 +114,7 @@ class DataStoreScanChangesTest(
                         Change(
                             Log { message::ref } with "Something else happened",
                             Log { severity::ref } with INFO,
-                            Log { timestamp::ref } with DateTime(2018, 11, 14, 12, 0)
+                            Log { timestamp::ref } with LocalDateTime(2018, 11, 14, 12, 0)
                         )
                     ))
                 )
@@ -130,7 +130,7 @@ class DataStoreScanChangesTest(
                         Change(
                             Log { message::ref } with "Something happened",
                             Log { severity::ref } with INFO,
-                            Log { timestamp::ref } with DateTime(2018, 11, 14, 11, 22, 33, 40)
+                            Log { timestamp::ref } with LocalDateTime(2018, 11, 14, 11, 22, 33, 40000000)
                         )
                     ))
                 )
@@ -212,7 +212,7 @@ class DataStoreScanChangesTest(
                         Change(
                             Log { message::ref } with "Something REALLY happened",
                             Log { severity::ref } with INFO,
-                            Log { timestamp::ref } with DateTime(2018, 11, 14, 12, 33, 22, 111)
+                            Log { timestamp::ref } with LocalDateTime(2018, 11, 14, 12, 33, 22, 111000000)
                         )
                     ))
                 )
@@ -270,7 +270,7 @@ class DataStoreScanChangesTest(
                     VersionedChanges(version = lowestVersion, changes = listOf(
                         ObjectCreate,
                         Change(
-                            Log { timestamp::ref } with DateTime(2018, 11, 14, 12, 33, 22, 111)
+                            Log { timestamp::ref } with LocalDateTime(2018, 11, 14, 12, 33, 22, 111000000)
                         )
                     ))
                 )
@@ -333,7 +333,7 @@ class DataStoreScanChangesTest(
                             ObjectCreate,
                             Change(
                                 Log { severity::ref } with INFO,
-                                Log { timestamp::ref } with DateTime(2018, 11, 14, 12, 33, 22, 111)
+                                Log { timestamp::ref } with LocalDateTime(2018, 11, 14, 12, 33, 22, 111000000)
                             )
                         )),
                         VersionedChanges(version = collectedVersions[1], changes = listOf(change2)),

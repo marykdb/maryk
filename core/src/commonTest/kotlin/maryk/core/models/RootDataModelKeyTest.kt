@@ -1,5 +1,6 @@
 package maryk.core.models
 
+import kotlinx.datetime.LocalDateTime
 import maryk.core.exceptions.InvalidDefinitionException
 import maryk.core.models.WrongProperties.boolean
 import maryk.core.models.WrongProperties.dateTime
@@ -9,7 +10,6 @@ import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.dateTime
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.string
-import maryk.lib.time.DateTime
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 
@@ -47,7 +47,7 @@ class RootDataModelKeyTest {
                 ),
                 properties = WrongProperties
             ) {
-                operator fun invoke(dateTime: DateTime) = this.values {
+                operator fun invoke(dateTime: LocalDateTime) = this.values {
                     mapNonNulls(this.dateTime with dateTime)
                 }
             }

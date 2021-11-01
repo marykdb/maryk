@@ -1,8 +1,8 @@
 package maryk.core.processors.datastore
 
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import maryk.core.properties.types.TypedValue
-import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.Option.V1
@@ -14,7 +14,7 @@ val testMaryk = TestMarykModel(
     int = 5,
     uint = 3u,
     double = 2.3,
-    dateTime = DateTime(2018, 7, 18),
+    dateTime = LocalDateTime(2018, 7, 18, 0, 0),
     listOfString = listOf(
         "v1", "v2", "v3"
     ),
@@ -44,7 +44,7 @@ val valuesAsStorables = arrayOf(
     "11" to 5,
     "19" to 3u,
     "21" to 2.3,
-    "29" to DateTime(2018, 7, 18),
+    "29" to LocalDateTime(2018, 7, 18, 0, 0),
     "39" to V1,
     "4b" to 3,
     "4b0480001104" to LocalDate(1981, 12, 5),

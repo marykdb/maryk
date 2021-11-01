@@ -39,6 +39,8 @@ object SimpleMarykModel : RootDataModel<SimpleMarykModel, SimpleMarykModel.Prope
 val generatedKotlinForCompleteDataModel = """
 package maryk.test.models
 
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import maryk.core.models.RootDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.DateDefinition
@@ -81,8 +83,6 @@ import maryk.core.properties.types.Version
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.values.Values
-import maryk.lib.time.Date
-import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.models.CompleteMarykModel.Properties.booleanForKey
 import maryk.test.models.CompleteMarykModel.Properties.dateForKey
@@ -172,9 +172,9 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
             required = false,
             final = true,
             unique = true,
-            minValue = Date(1981, 12, 5),
-            maxValue = Date(2200, 12, 31),
-            default = Date(2018, 5, 2)
+            minValue = LocalDate(1981, 12, 5),
+            maxValue = LocalDate(2200, 12, 31),
+            default = LocalDate(2018, 5, 2)
         )
         val dateTime by dateTime(
             index = 6u,
@@ -243,15 +243,15 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
             dataModel = ValueMarykObject,
             minValue = ValueMarykObject(
                 int = 0,
-                date = Date(100, 1, 1)
+                date = LocalDate(100, 1, 1)
             ),
             maxValue = ValueMarykObject(
                 int = 999,
-                date = Date(9999, 12, 31)
+                date = LocalDate(9999, 12, 31)
             ),
             default = ValueMarykObject(
                 int = 10,
-                date = Date(2010, 10, 10)
+                date = LocalDate(2010, 10, 10)
             )
         )
         val list by list(
@@ -286,7 +286,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
             valueDefinition = NumberDefinition(
                 type = SInt32
             ),
-            default = mapOf(Date(2010, 11, 12) to 1, Date(2011, 12, 13) to 1)
+            default = mapOf(LocalDate(2010, 11, 12) to 1, LocalDate(2011, 12, 13) to 1)
         )
         val multi by multiType(
             index = 16u,
@@ -374,7 +374,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
         number: UInt = 33u,
         boolean: Boolean = true,
         enum: Option = Option.V1,
-        date: Date = Date(2018, 5, 2),
+        date: Date = LocalDate(2018, 5, 2),
         dateTime: DateTime = DateTime(2018, 5, 2, 10, 11, 12),
         time: Time = Time(10, 11, 12),
         fixedBytes: Bytes = Bytes("AAECAwQ"),
@@ -385,11 +385,11 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
         ),
         valueModel: ValueMarykObject = ValueMarykObject(
             int = 10,
-            date = Date(2010, 10, 10)
+            date = LocalDate(2010, 10, 10)
         ),
         list: List<String> = listOf("ha1", "ha2", "ha3"),
         set: Set<Int> = setOf(1, 2, 3),
-        map: Map<Date, Int> = mapOf(Date(2010, 11, 12) to 1, Date(2011, 12, 13) to 1),
+        map: Map<Date, Int> = mapOf(LocalDate(2010, 11, 12) to 1, LocalDate(2011, 12, 13) to 1),
         multi: TypedValue<MarykTypeEnum<out Any>, Any> = TypedValue(MarykTypeEnum.T1, "a value"),
         booleanForKey: Boolean,
         dateForKey: Date,

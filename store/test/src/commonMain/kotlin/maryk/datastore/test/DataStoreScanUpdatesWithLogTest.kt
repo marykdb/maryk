@@ -1,5 +1,6 @@
 package maryk.datastore.test
 
+import kotlinx.datetime.LocalDateTime
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.change
@@ -18,7 +19,6 @@ import maryk.core.query.responses.updates.RemovalReason.NotInRange
 import maryk.core.query.responses.updates.RemovalReason.SoftDelete
 import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.datastore.shared.IsDataStore
-import maryk.lib.time.DateTime
 import maryk.test.assertType
 import maryk.test.models.Log
 import maryk.test.models.Severity.DEBUG
@@ -44,10 +44,10 @@ class DataStoreScanUpdatesWithLogTest(
             val addResponse = dataStore.execute(
                 Log.add(
                     // Mind that Log stores in reverse chronological order
-                    Log(message = "message 0", severity = ERROR, timestamp = DateTime(2020, 3, 28, 10, 9, 8)),
-                    Log(message = "message 1", severity = INFO, timestamp = DateTime(2020, 3, 29, 12, 11, 10)),
-                    Log(message = "message 2", severity = DEBUG, timestamp = DateTime(2020, 3, 30, 13, 44, 29)),
-                    Log(message = "message 3", severity = DEBUG, timestamp = DateTime(2020, 3, 31, 14, 3, 48))
+                    Log(message = "message 0", severity = ERROR, timestamp = LocalDateTime(2020, 3, 28, 10, 9, 8)),
+                    Log(message = "message 1", severity = INFO, timestamp = LocalDateTime(2020, 3, 29, 12, 11, 10)),
+                    Log(message = "message 2", severity = DEBUG, timestamp = LocalDateTime(2020, 3, 30, 13, 44, 29)),
+                    Log(message = "message 3", severity = DEBUG, timestamp = LocalDateTime(2020, 3, 31, 14, 3, 48))
                 )
             )
             addResponse.statuses.forEach { status ->

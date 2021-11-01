@@ -18,7 +18,3 @@ internal const val MILLIS_PER_MINUTE = MILLIS_PER_SECOND * SECONDS_PER_MINUTE
 internal const val MILLIS_PER_HOUR = MILLIS_PER_MINUTE * MINUTES_PER_HOUR
 /** Millis per hour. */
 internal const val MILLIS_PER_DAY = MILLIS_PER_HOUR * HOURS_PER_DAY
-
-abstract class IsTime<T> : IsTemporal<T>()
-
-abstract class IsTimeObject<T> : IsTemporalObject<T>()

@@ -10,8 +10,7 @@ data class Time(
     override val minute: Byte,
     override val second: Byte = 0,
     override val milli: Short = 0
-) : IsTime<Time>(),
-    TimeInterface,
+) : TimeInterface,
     Comparable<Time>
 {
 
@@ -59,7 +58,7 @@ data class Time(
         }
     }
 
-    companion object : IsTimeObject<Time>() {
+    companion object {
         val MIN = Time(0, 0, 0)
         val MAX_IN_SECONDS = Time(23, 59, 59)
         val MAX_IN_MILLIS = Time(23, 59, 59, 999)
@@ -103,7 +102,7 @@ data class Time(
             )
         }
 
-        override fun parse(value: String): Time {
+        fun parse(value: String): Time {
             val result = timeRegex.matchEntire(value)
                 ?: throw ParseException("Invalid Time string: $value")
             val (hour, minute, _, second, _, milli) = result.destructured
@@ -118,7 +117,7 @@ data class Time(
             }
         }
 
-        override fun nowUTC(): Time {
+        fun nowUTC(): Time {
             val nowInMillis = Instant.getCurrentEpochTimeInMillis()
             val millisOfDay = floor(nowInMillis.toDouble() % MILLIS_PER_DAY).toInt()
             return ofMilliOfDay(millisOfDay)

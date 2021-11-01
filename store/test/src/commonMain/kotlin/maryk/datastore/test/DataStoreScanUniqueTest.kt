@@ -1,5 +1,6 @@
 package maryk.datastore.test
 
+import kotlinx.datetime.LocalDate
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
@@ -13,7 +14,6 @@ import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.datastore.shared.IsDataStore
-import maryk.lib.time.Date
 import maryk.test.assertType
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.CompleteMarykModel.Properties.string
@@ -44,7 +44,7 @@ class DataStoreScanUniqueTest(
             ),
             multi=TypedValue(T2, 22),
             booleanForKey= true,
-            dateForKey= Date(2018, 3, 29),
+            dateForKey= LocalDate(2018, 3, 29),
             multiForKey= TypedValue(S1, "hii"),
             enumEmbedded= E1
         )

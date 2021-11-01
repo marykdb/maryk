@@ -1,32 +1,34 @@
 package maryk.core.properties.types
 
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import maryk.core.extensions.bytes.initLong
 import maryk.core.extensions.bytes.initShort
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.properties.types.TimePrecision.MILLIS
 import maryk.core.properties.types.TimePrecision.SECONDS
-import maryk.lib.time.DateTime as LibDateTime
+import maryk.lib.time.DateTime.ofEpochSecond
 
-typealias DateTime = LibDateTime
-
-fun LibDateTime.writeBytes(precision: TimePrecision, writer: (byte: Byte) -> Unit) {
+fun LocalDateTime.writeBytes(precision: TimePrecision, writer: (byte: Byte) -> Unit) {
+    val epochInstant = this.toInstant(TimeZone.UTC)
     when (precision) {
         MILLIS -> {
-            this.toEpochSecond().writeBytes(writer, 7)
-            this.milli.writeBytes(writer)
+            epochInstant.epochSeconds.writeBytes(writer, 7)
+            (epochInstant.nanosecondsOfSecond / 1000000).toShort().writeBytes(writer)
         }
         SECONDS -> {
-            this.toEpochSecond().writeBytes(writer, 7)
+            epochInstant.epochSeconds.writeBytes(writer, 7)
         }
     }
 }
 
-fun LibDateTime.Companion.byteSize(precision: TimePrecision) = when (precision) {
+fun LocalDateTime.Companion.byteSize(precision: TimePrecision) = when (precision) {
     MILLIS -> 9
     SECONDS -> 7
 }
 
-fun LibDateTime.Companion.fromByteReader(length: Int, reader: () -> Byte) = when (length) {
+fun LocalDateTime.Companion.fromByteReader(length: Int, reader: () -> Byte) = when (length) {
     7 -> ofEpochSecond(
         initLong(reader, 7)
     )

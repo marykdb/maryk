@@ -1,6 +1,7 @@
 package maryk.core.models
 
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
 import maryk.core.properties.exceptions.InvalidValueException
@@ -12,7 +13,6 @@ import maryk.json.JsonReader
 import maryk.json.JsonWriter
 import maryk.lib.extensions.initByteArrayByHex
 import maryk.lib.extensions.toHex
-import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.ByteCollector
 import maryk.test.assertType
@@ -33,14 +33,14 @@ val testMarykModelObject = TestMarykModel(
     uint = 53u,
     double = 3.5555,
     bool = true,
-    dateTime = DateTime(year = 2017, month = 12, day = 5, hour = 12, minute = 40)
+    dateTime = LocalDateTime(2017, 12, 5, 12, 40)
 )
 
 val testExtendedMarykModelObject = TestMarykModel(
     string = "hay",
     int = 4,
     double = 3.555,
-    dateTime = DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13),
+    dateTime = LocalDateTime(2017, 12, 4, 12, 13),
     uint = 32u,
     bool = true,
     list = listOf(34, 2352, 3423, 766),
@@ -53,7 +53,7 @@ val testExtendedMarykModelObject = TestMarykModel(
         Time(12, 55) to "yes",
         Time(10, 3) to "ahum"
     ),
-    valueObject = TestValueObject(6, DateTime(2017, 4, 1, 12, 55), true),
+    valueObject = TestValueObject(6, LocalDateTime(2017, 4, 1, 12, 55), true),
     embeddedValues = EmbeddedMarykModel("test"),
     multi = TypedValue(S3, EmbeddedMarykModel("subInMulti!")),
     listOfString = listOf("test1", "another test", "🤗")
@@ -128,7 +128,7 @@ internal class DataModelTest {
                     uint = 53u,
                     double = 3.5555,
                     bool = true,
-                    dateTime = DateTime(year = 2017, month = 12, day = 5, hour = 12, minute = 40)
+                    dateTime = LocalDateTime(2017, 12, 5, 12, 40)
                 )
             )
         }
@@ -298,7 +298,7 @@ internal class DataModelTest {
                 int with 4,
                 uint with 32u,
                 double with 3.555,
-                dateTime with DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13),
+                dateTime with LocalDateTime(2017, 12, 4, 12, 13),
                 bool with true,
                 enum with Option.V3,
                 reference with TestMarykModel.key(byteArrayOf(1, 5, 1, 5, 1, 5, 1))

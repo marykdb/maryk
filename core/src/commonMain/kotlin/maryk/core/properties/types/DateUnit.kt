@@ -1,7 +1,9 @@
 package maryk.core.aggregations.bucket
 
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.Month
+import kotlinx.datetime.atTime
 import maryk.core.aggregations.bucket.DateUnit.Centuries
 import maryk.core.aggregations.bucket.DateUnit.Decades
 import maryk.core.aggregations.bucket.DateUnit.Hours
@@ -18,7 +20,6 @@ import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IsCoreEnum
 import maryk.json.MapType
 import maryk.lib.exceptions.ParseException
-import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 
 enum class DateUnit(
@@ -51,7 +52,7 @@ enum class DateUnit(
 fun <T:Comparable<*>> T.roundToDateUnit(dateUnit: DateUnit): T = when (this) {
     is LocalDate -> this.roundToDateUnit(dateUnit) as T
     is Time -> this.roundToDateUnit(dateUnit) as T
-    is DateTime -> this.roundToDateUnit(dateUnit) as T
+    is LocalDateTime -> this.roundToDateUnit(dateUnit) as T
     else -> throw TypeException("Unknown type for IsTemporal")
 }
 
@@ -86,10 +87,12 @@ fun LocalDate.roundToDateUnit(dateUnit: DateUnit) = when (dateUnit) {
 }
 
 /** Round DateTime to the [dateUnit] */
-fun DateTime.roundToDateUnit(dateUnit: DateUnit) = when (dateUnit) {
-        Millis -> this
-        else -> DateTime(
-            date.roundToDateUnit(dateUnit),
-            time.roundToDateUnit(dateUnit)
-        )
+fun LocalDateTime.roundToDateUnit(dateUnit: DateUnit) = date.roundToDateUnit(dateUnit).let {
+        when (dateUnit) {
+            Millis -> it.atTime(hour, minute, second, nanosecond / 1000000 * 1000000)
+            Seconds -> it.atTime(hour, minute, second)
+            Minutes -> it.atTime(hour, minute)
+            Hours -> it.atTime(hour, 0)
+            else -> it.atTime(0, 0)
+        }
     }

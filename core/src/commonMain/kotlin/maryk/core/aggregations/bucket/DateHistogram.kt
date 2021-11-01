@@ -12,15 +12,14 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DefinedByReference
 import maryk.core.query.addReference
 import maryk.core.values.SimpleObjectValues
-import maryk.lib.time.IsTemporal
 
 /** Bucket all together that are on same date/time for [reference] */
-data class DateHistogram<T: IsTemporal<*>>(
+data class DateHistogram<T: Comparable<*>>(
     override val reference: IsPropertyReference<out T, IsPropertyDefinition<T>, *>,
     val dateUnit: DateUnit,
     val aggregations: Aggregations? = null
 ) : IsAggregationRequest<T, IsPropertyReference<out T, IsPropertyDefinition<T>, *>, DateHistogramResponse<T>>,
-    DefinedByReference<IsTemporal<*>> {
+    DefinedByReference<Comparable<*>> {
     override val aggregationType = DateHistogramType
 
     override fun createAggregator() = DateHistogramAggregator(this)
@@ -38,7 +37,7 @@ data class DateHistogram<T: IsTemporal<*>>(
             )
         }
     ) {
-        override fun invoke(values: SimpleObjectValues<DateHistogram<*>>) = DateHistogram<IsTemporal<Any>>(
+        override fun invoke(values: SimpleObjectValues<DateHistogram<*>>) = DateHistogram<Comparable<Any>>(
             reference = values(1u),
             aggregations = values(2u),
             dateUnit = values(3u)

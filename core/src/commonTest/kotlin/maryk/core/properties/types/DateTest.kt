@@ -1,10 +1,11 @@
 package maryk.core.properties.types
 
 import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import maryk.lib.exceptions.ParseException
 import maryk.lib.time.Date
+import maryk.lib.time.nowUTC
 import maryk.test.ByteCollector
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
@@ -21,7 +22,7 @@ internal class DateTest {
     fun compare() {
         expect(-1999998) { Date.MIN.compareTo(Date.MAX) }
         expect(1999998) { Date.MAX.compareTo(Date.MIN) }
-        expect(0) { Date.nowUTC().compareTo(Date.nowUTC()) }
+        expect(0) { LocalDate.nowUTC().compareTo(LocalDate.nowUTC()) }
     }
 
     @Test
@@ -39,7 +40,7 @@ internal class DateTest {
     fun testStringConversion() {
         for (date in datesToTest) {
             expect(date) {
-                Date.parse(date.toString())
+                LocalDate.parse(date.toString())
             }
         }
     }
@@ -54,8 +55,8 @@ internal class DateTest {
             "2017-08-40",
             "2017-13-99"
         )) {
-            assertFailsWith<ParseException> {
-                Date.parse(it)
+            assertFailsWith<IllegalArgumentException> {
+                LocalDate.parse(it)
             }
         }
     }

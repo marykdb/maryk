@@ -1,7 +1,8 @@
 package maryk.datastore.test
 
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import maryk.core.properties.exceptions.InvalidValueException
-import maryk.core.properties.types.Date
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
@@ -24,7 +25,6 @@ import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.datastore.memory.assertRecent
 import maryk.datastore.shared.IsDataStore
-import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.assertType
 import maryk.test.models.EmbeddedMarykModel
@@ -66,24 +66,24 @@ class DataStoreChangeTest(
                         5,
                         6u,
                         0.43,
-                        DateTime(2018, 3, 2),
+                        LocalDateTime(2018, 3, 2, 0, 0),
                         true,
                         listOfString = listOf("a", "b", "c"),
                         map = mapOf(Time(2, 3, 5) to "test"),
-                        set = setOf(Date(2018, 3, 4))
+                        set = setOf(LocalDate(2018, 3, 4))
                     ),
                     TestMarykModel(
                         "haha2",
                         3,
                         8u,
                         1.244,
-                        DateTime(2018, 1, 2),
+                        LocalDateTime(2018, 1, 2, 0, 0),
                         false,
                         embeddedValues = EmbeddedMarykModel("value"),
                         list = listOf(1, 4, 6),
                         listOfString = listOf("c", "d", "e"),
                         map = mapOf(Time(12, 33, 45) to "another", Time(13, 44, 55) to "another2"),
-                        set = setOf(Date(2018, 11, 25), Date(1981, 12, 5)),
+                        set = setOf(LocalDate(2018, 11, 25), LocalDate(1981, 12, 5)),
                         incMap = mapOf(1u to "a", 2u to "b")
                     ),
                     TestMarykModel(
@@ -91,7 +91,7 @@ class DataStoreChangeTest(
                         6,
                         12u,
                         1333.3,
-                        DateTime(2018, 12, 9),
+                        LocalDateTime(2018, 12, 9, 0, 0),
                         false,
                         reference = TestMarykModel.key("AAACKwEAAw")
                     ),
@@ -100,26 +100,26 @@ class DataStoreChangeTest(
                         4,
                         14u,
                         1.644,
-                        DateTime(2019, 1, 2),
+                        LocalDateTime(2019, 1, 2, 0, 0),
                         false,
                         multi = TypedValue(S1, "string"),
                         listOfString = listOf("f", "g", "h"),
                         map = mapOf(Time(1, 33, 45) to "an other", Time(13, 44, 55) to "an other2"),
-                        set = setOf(Date(2015, 11, 25), Date(2001, 12, 5))
+                        set = setOf(LocalDate(2015, 11, 25), LocalDate(2001, 12, 5))
                     ),
                     TestMarykModel(
                         "haha5",
                         5,
                         13u,
                         3.44,
-                        DateTime(1, 1, 2),
+                        LocalDateTime(1, 1, 2, 0, 0),
                         true,
                         multi = TypedValue(S1, "v1"),
                         listOfString = listOf("f", "g", "h"),
                         map = mapOf(Time(3, 3, 3) to "three", Time(4, 4, 4) to "4"),
-                        set = setOf(Date(2001, 1, 1), Date(2002, 2, 2))
+                        set = setOf(LocalDate(2001, 1, 1), LocalDate(2002, 2, 2))
                     ),
-                    TestMarykModel("haha6", 1, 13u, 3.44, DateTime(1, 1, 2), false)
+                    TestMarykModel("haha6", 1, 13u, 3.44, LocalDateTime(1, 1, 2, 0, 0), false)
                 )
             )
 
@@ -186,7 +186,7 @@ class DataStoreChangeTest(
 
     private fun executeChangeChangeRequest() = runSuspendingTest {
         val newIntList = listOf(1, 2, 3)
-        val newDateSet = setOf(Date(2019, 1, 19), Date(2019, 1, 18))
+        val newDateSet = setOf(LocalDate(2019, 1, 19), LocalDate(2019, 1, 18))
         val newValues = EmbeddedMarykModel("Different")
 
         val changeResponse = dataStore.execute(
@@ -328,7 +328,7 @@ class DataStoreChangeTest(
                 keys[4].change(
                     Delete(TestMarykModel { map refAt Time(3, 3, 3) }),
                     Delete(TestMarykModel { listOfString refAt 1u }),
-                    Delete(TestMarykModel { set refAt Date(2001, 1, 1) })
+                    Delete(TestMarykModel { set refAt LocalDate(2001, 1, 1) })
                 )
             )
         )
@@ -414,11 +414,11 @@ class DataStoreChangeTest(
             TestMarykModel.change(
                 keys[1].change(
                     Delete(
-                        TestMarykModel { set.refAt(Date(2018, 11, 25)) }
+                        TestMarykModel { set.refAt(LocalDate(2018, 11, 25)) }
                     ),
                     SetChange(
                         TestMarykModel { set::ref }.change(
-                            addValues = setOf(Date(2018, 11, 26))
+                            addValues = setOf(LocalDate(2018, 11, 26))
                         )
                     )
                 )
@@ -436,7 +436,7 @@ class DataStoreChangeTest(
         )
 
         expect(1) { getResponse.values.size }
-        expect(setOf(Date(2018, 11, 26), Date(1981, 12, 5))) { getResponse.values.first().values { set } }
+        expect(setOf(LocalDate(2018, 11, 26), LocalDate(1981, 12, 5))) { getResponse.values.first().values { set } }
     }
 
     private fun executeChangeMapRequest() = runSuspendingTest {

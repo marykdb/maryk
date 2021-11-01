@@ -44,9 +44,9 @@ internal fun <T : Any, D : IsTransportablePropertyDefinitionType<in T>, P : Obje
 }
 
 @SharedImmutable
-private val dateImports = arrayOf("maryk.lib.time.Date")
+private val dateImports = arrayOf("kotlinx.datetime.LocalDate")
 @SharedImmutable
-private val dateTimeImports = arrayOf("maryk.lib.time.DateTime")
+private val dateTimeImports = arrayOf("kotlinx.datetime.LocalDateTime")
 @SharedImmutable
 private val geoPointImports = arrayOf("maryk.core.properties.types.GeoPoint")
 @SharedImmutable

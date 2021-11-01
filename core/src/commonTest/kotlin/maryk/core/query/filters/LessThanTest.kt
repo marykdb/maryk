@@ -1,12 +1,12 @@
 package maryk.core.query.filters
 
+import kotlinx.datetime.LocalDateTime
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.core.query.pairs.with
-import maryk.lib.time.DateTime
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.expect
@@ -14,7 +14,7 @@ import kotlin.test.expect
 class LessThanTest {
     private val lessThan = LessThan(
         TestMarykModel { int::ref } with 2,
-        TestMarykModel { dateTime::ref } with DateTime(2018, 1, 1, 13, 22, 34)
+        TestMarykModel { dateTime::ref } with LocalDateTime(2018, 1, 1, 13, 22, 34)
     )
 
     private val context = RequestContext(

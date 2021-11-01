@@ -1,16 +1,15 @@
 package maryk.core.query.changes
 
+import kotlinx.datetime.LocalDateTime
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.core.values.div
-import maryk.lib.time.DateTime
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.TestMarykModel
-import maryk.test.models.TestMarykModel.Properties
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.expect
@@ -64,7 +63,7 @@ class IncMapChangeTest {
             int = 5,
             uint = 3u,
             double = 2.3,
-            dateTime = DateTime(2018, 7, 18),
+            dateTime = LocalDateTime(2018, 7, 18, 0, 0),
             incMap = mapOf(
                 1u to "one",
                 2u to "two",
@@ -77,7 +76,7 @@ class IncMapChangeTest {
                     int = 3,
                     uint = 67u,
                     double = 232523.3,
-                    dateTime = DateTime(2020, 10, 18),
+                    dateTime = LocalDateTime(2020, 10, 18, 0, 0),
                     incMap = mapOf(
                         11u to "eleven",
                         12u to "twelve",
@@ -114,7 +113,7 @@ class IncMapChangeTest {
 
         val deepChanged = original.change(
             IncMapChange(
-                TestMarykModel { Properties.embeddedValues { marykModel { incMap::ref } } }.change(
+                TestMarykModel { embeddedValues { marykModel { incMap::ref } } }.change(
                     addValues = listOf(
                         "fourteen",
                         "fifteen"

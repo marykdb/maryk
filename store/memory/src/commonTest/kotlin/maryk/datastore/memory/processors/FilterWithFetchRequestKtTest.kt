@@ -1,5 +1,7 @@
 package maryk.datastore.memory.processors
 
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.key
@@ -23,8 +25,6 @@ import maryk.core.query.pairs.with
 import maryk.core.values.Values
 import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataRecordValue
-import maryk.lib.time.Date
-import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
@@ -38,7 +38,7 @@ class FilterWithFetchRequestKtTest {
             int = 532,
             uint = 2u,
             double = 2828.43,
-            dateTime = DateTime(2013, 3, 2),
+            dateTime = LocalDateTime(2013, 3, 2, 0, 0),
             bool = true,
             map = mapOf(
                 Time(14, 15, 14) to "haha10"
@@ -47,7 +47,7 @@ class FilterWithFetchRequestKtTest {
                 2, 6, 7
             ),
             set = setOf(
-                Date(2020, 3, 30), Date(2018, 9, 9)
+                LocalDate(2020, 3, 30), LocalDate(2018, 9, 9)
             )
         )
     )
@@ -58,7 +58,7 @@ class FilterWithFetchRequestKtTest {
             int = 5,
             uint = 6u,
             double = 0.43,
-            dateTime = DateTime(2018, 3, 2),
+            dateTime = LocalDateTime(2018, 3, 2, 0, 0),
             bool = true,
             map = mapOf(
                 Time(12, 13, 14) to "haha10"
@@ -67,7 +67,7 @@ class FilterWithFetchRequestKtTest {
                 4, 6, 7
             ),
             set = setOf(
-                Date(2019, 3, 30), Date(2018, 9, 9)
+                LocalDate(2019, 3, 30), LocalDate(2018, 9, 9)
             ),
             selfReference = value2.key
         )
@@ -275,7 +275,7 @@ class FilterWithFetchRequestKtTest {
 
         assertTrue {
             filterMatches(
-                Exists(TestMarykModel { set refAt Date(2018, 9, 9) }),
+                Exists(TestMarykModel { set refAt LocalDate(2018, 9, 9) }),
                 value1,
                 null,
                 recordFetcher
@@ -284,7 +284,7 @@ class FilterWithFetchRequestKtTest {
 
         assertFalse {
             filterMatches(
-                Exists(TestMarykModel { set refAt Date(2017, 9, 9) }),
+                Exists(TestMarykModel { set refAt LocalDate(2017, 9, 9) }),
                 value1,
                 null,
                 recordFetcher

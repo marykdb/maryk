@@ -1,6 +1,7 @@
 package maryk.core.properties.types
 
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import maryk.core.aggregations.bucket.DateUnit.Centuries
 import maryk.core.aggregations.bucket.DateUnit.Days
 import maryk.core.aggregations.bucket.DateUnit.Decades
@@ -20,50 +21,50 @@ import kotlin.test.expect
 class DateUnitTest {
     @Test
     fun roundDateTime() {
-        val dateTime = DateTime(2019, 6, 8, 13, 45, 23, 999)
+        val dateTime = LocalDateTime(2019, 6, 8, 13, 45, 23, 999000000)
 
         expect(dateTime) {
             dateTime.roundToDateUnit(Millis)
         }
 
-        expect(DateTime(2019, 6, 8, 13, 45, 23)) {
+        expect(LocalDateTime(2019, 6, 8, 13, 45, 23)) {
             dateTime.roundToDateUnit(Seconds)
         }
 
-        expect(DateTime(2019, 6, 8, 13, 45)) {
+        expect(LocalDateTime(2019, 6, 8, 13, 45)) {
             dateTime.roundToDateUnit(Minutes)
         }
 
-        expect(DateTime(2019, 6, 8, 13)) {
+        expect(LocalDateTime(2019, 6, 8, 13, 0)) {
             dateTime.roundToDateUnit(Hours)
         }
 
-        expect(DateTime(2019, 6, 8)) {
+        expect(LocalDateTime(2019, 6, 8, 0, 0)) {
             dateTime.roundToDateUnit(Days)
         }
 
-        expect(DateTime(2019, 6)) {
+        expect(LocalDateTime(2019, 6, 1, 0, 0)) {
             dateTime.roundToDateUnit(Months)
         }
 
-        expect(DateTime(2019, 4)) {
+        expect(LocalDateTime(2019, 4, 1, 0, 0)) {
             dateTime.roundToDateUnit(Quarters)
         }
 
-        expect(DateTime(2019)) {
+        expect(LocalDateTime(2019, 1, 1, 0, 0)) {
             dateTime.roundToDateUnit(Years)
         }
 
-        expect(DateTime(2010)) {
+        expect(LocalDateTime(2010, 1, 1, 0, 0)) {
             dateTime.roundToDateUnit(Decades)
         }
 
-        expect(DateTime(1900)) {
-            DateTime(1912).roundToDateUnit(Centuries)
+        expect(LocalDateTime(1900, 1, 1, 0, 0)) {
+            LocalDateTime(1912, 1, 1, 0, 0).roundToDateUnit(Centuries)
         }
 
-        expect(DateTime(1000)) {
-            DateTime(1912).roundToDateUnit(Millennia)
+        expect(LocalDateTime(1000, 1, 1, 0, 0)) {
+            LocalDateTime(1912, 1, 1, 0, 0).roundToDateUnit(Millennia)
         }
     }
 

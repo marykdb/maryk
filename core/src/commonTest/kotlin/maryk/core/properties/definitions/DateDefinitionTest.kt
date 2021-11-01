@@ -7,6 +7,7 @@ import maryk.checkYamlConversion
 import maryk.core.properties.WriteCacheFailer
 import maryk.lib.exceptions.ParseException
 import maryk.lib.time.Date
+import maryk.lib.time.nowUTC
 import maryk.test.ByteCollector
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
@@ -14,7 +15,7 @@ import kotlin.test.expect
 
 internal class DateDefinitionTest {
     private val datesToTest = arrayOf(
-        Date.nowUTC(),
+        LocalDate.nowUTC(),
         Date.MAX,
         Date.MIN
     )

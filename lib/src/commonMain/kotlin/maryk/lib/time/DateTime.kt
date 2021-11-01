@@ -1,104 +1,21 @@
 package maryk.lib.time
 
-import kotlinx.datetime.LocalDate
-import maryk.lib.exceptions.ParseException
-import kotlin.math.floor
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone.Companion.UTC
+import kotlinx.datetime.atTime
+import kotlinx.datetime.toLocalDateTime
 
-/** Date and Time object. */
-data class DateTime(
-    val date: LocalDate,
-    val time: Time
-) :
-    TimeInterface by time,
-    IsTime<DateTime>()
-{
-    constructor(
-        year: Int,
-        month: Byte,
-        day: Byte,
-        hour: Byte,
-        minute: Byte = 0,
-        second: Byte = 0,
-        milli: Short = 0
-    ) : this(
-        LocalDate(year, month.toInt(), day.toInt()), Time(hour, minute, second, milli)
-    )
+object DateTime {
+    val MIN = Date.MIN.atTime(0, 0)
+    val MAX_IN_SECONDS = Date.MAX.atTime(23, 59, 59)
+    val MAX_IN_MILLIS = Date.MAX.atTime(23, 59, 59, 999000000)
 
-    constructor(
-        year: Int,
-        month: Byte = 1,
-        day: Byte = 1
-    ) : this(
-        LocalDate(year, month.toInt(), day.toInt()), Time.MIDNIGHT
-    )
-
-    override fun compareTo(other: DateTime): Int {
-        var cmp = date.compareTo(other.date)
-        if (cmp == 0) {
-            cmp = time.compareTo(other.time)
-        }
-        return cmp
-    }
-
-    /**
-     * Get value as ISO8601 string
-     * (Overwrites data class toString)
-     */
-    override fun toString() = "${date}T$time"
-
-    /** Get the date time as the amount of milliseconds since 01-01-1970 */
-    fun toEpochMilli() = toEpochSecond() * MILLIS_PER_SECOND + time.milli
-
-    /** Get the date time as the amount of seconds since 01-01-1970 */
-    fun toEpochSecond() = date.epochDay.toLong() * SECONDS_PER_DAY + time.toSecondsOfDay()
-
-    companion object : IsTimeObject<DateTime>() {
-        val MIN = DateTime(Date.MIN, Time.MIN)
-        val MAX_IN_SECONDS = DateTime(Date.MAX, Time.MAX_IN_SECONDS)
-        val MAX_IN_MILLIS = DateTime(Date.MAX, Time.MAX_IN_MILLIS)
-
-        /** Get a new DateTime with the date and time at UTC timezone */
-        override fun nowUTC() = ofEpochMilli(
-            Instant.getCurrentEpochTimeInMillis()
-        )
-
-        /** Create a DateTime by the amount of milliseconds since 01-01-1970 */
-        fun ofEpochMilli(epochInMillis: Long): DateTime {
-            val epochDay = floor((epochInMillis / MILLIS_PER_DAY).toDouble()).toInt()
-            val millisOfDay = floor((epochInMillis % MILLIS_PER_DAY).toDouble()).toInt()
-            return DateTime(
-                Date.ofEpochDay(epochDay),
-                Time.ofMilliOfDay(millisOfDay)
-            )
-        }
-
-        /** Create a DateTime by the amount of seconds since 01-01-1970 */
-        fun ofEpochSecond(epochInSeconds: Long, milli: Short = 0): DateTime {
-            val epochDay = floor(epochInSeconds.toDouble() / SECONDS_PER_DAY).toInt()
-            val secondOfDay = floor(epochInSeconds.toDouble() % SECONDS_PER_DAY).toInt()
-            return DateTime(
-                Date.ofEpochDay(epochDay),
-                Time.ofMilliOfDay(
-                    secondOfDay * 1000 + milli
-                )
-            )
-        }
-
-        override fun parse(value: String): DateTime {
-            try {
-                var (date, time) = value.split('T', limit = 2)
-                if (time.contains("+") || time.contains("-")) {
-                    return ISO8601.toDate(value)
-                } else if (time.endsWith("Z")) {
-                    time = time.removeSuffix("Z")
-                }
-                return DateTime(
-                    Date.parse(date),
-                    Time.parse(time)
-                )
-            } catch (e: Throwable) {
-                throw ParseException(value, e)
-            }
-        }
-    }
+    /** Create a DateTime by the amount of seconds since 01-01-1970 */
+    fun ofEpochSecond(epochInSeconds: Long, milli: Short = 0) =
+        Instant.fromEpochSeconds(epochInSeconds, milli * 1000000).toLocalDateTime(UTC)
 }
+
+/** Get a new DateTime with the date and time at UTC timezone */
+fun LocalDateTime.Companion.nowUTC() = Clock.System.now().toLocalDateTime(UTC)

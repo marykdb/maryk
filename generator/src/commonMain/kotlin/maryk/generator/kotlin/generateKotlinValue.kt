@@ -1,5 +1,7 @@
 package maryk.generator.kotlin
 
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import maryk.core.exceptions.TypeException
 import maryk.core.models.DataModel
 import maryk.core.models.IsNamedDataModel
@@ -18,7 +20,6 @@ import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IsIndexedEnumDefinition
 import maryk.core.properties.enum.MultiTypeEnum
 import maryk.core.properties.types.Bytes
-import maryk.core.properties.types.Date
 import maryk.core.properties.types.GeoPoint
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TimePrecision
@@ -26,7 +27,6 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.NumberDescriptor
 import maryk.core.properties.types.numeric.NumberType
 import maryk.core.values.ValuesImpl
-import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 
 @Suppress("UNCHECKED_CAST")
@@ -67,16 +67,16 @@ internal fun generateKotlinValue(
             else -> "Time(${value.hour}, ${value.minute})"
         }
     }
-    is DateTime -> {
+    is LocalDateTime -> {
         when {
-            value.milli != 0.toShort() -> "DateTime(${value.year}, ${value.month}, ${value.day}, ${value.hour}, ${value.minute}, ${value.second}, ${value.milli})"
-            value.second != 0.toByte() -> "DateTime(${value.year}, ${value.month}, ${value.day}, ${value.hour}, ${value.minute}, ${value.second})"
-            value.minute != 0.toByte() -> "DateTime(${value.year}, ${value.month}, ${value.day}, ${value.hour}, ${value.minute})"
-            value.hour != 0.toByte() -> "DateTime(${value.year}, ${value.month}, ${value.day}, ${value.hour})"
-            else -> "DateTime(${value.year}, ${value.month}, ${value.day})"
+            value.nanosecond != 0 -> "LocalDate(${value.year}, ${value.monthNumber}, ${value.dayOfMonth}, ${value.hour}, ${value.minute}, ${value.second}, ${value.nanosecond})"
+            value.second != 0 -> "DateTime(${value.year}, ${value.monthNumber}, ${value.dayOfMonth}, ${value.hour}, ${value.minute}, ${value.second})"
+            value.minute != 0 -> "DateTime(${value.year}, ${value.monthNumber}, ${value.dayOfMonth}, ${value.hour}, ${value.minute})"
+            value.hour != 0 -> "DateTime(${value.year}, ${value.monthNumber}, ${value.dayOfMonth}, ${value.hour})"
+            else -> "DateTime(${value.year}, ${value.monthNumber}, ${value.dayOfMonth})"
         }
     }
-    is Date -> "Date(${value.year}, ${value.month}, ${value.day})"
+    is LocalDate -> "LocalDate(${value.year}, ${value.monthNumber}, ${value.dayOfMonth})"
     is IsIndexedEnumDefinition<*> -> value.name
     is ValueDataModel<*, *> -> value.name
     is Key<*> -> """Key("$value")"""

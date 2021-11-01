@@ -1,5 +1,6 @@
 package maryk.datastore.test
 
+import kotlinx.datetime.LocalDateTime
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
@@ -30,7 +31,6 @@ import maryk.core.query.responses.updates.RemovalReason.SoftDelete
 import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.core.values.Values
 import maryk.datastore.shared.IsDataStore
-import maryk.lib.time.DateTime
 import maryk.test.assertType
 import maryk.test.models.TestMarykModel
 import maryk.test.models.TestMarykModel.Properties
@@ -45,7 +45,7 @@ val t0 = TestMarykModel(
     uint = 67u,
     bool = true,
     double = 2323.3,
-    dateTime = DateTime(1989, 9, 8)
+    dateTime = LocalDateTime(1989, 9, 8, 0, 0)
 )
 val t1 = TestMarykModel(
     string = "ha world 2",
@@ -53,7 +53,7 @@ val t1 = TestMarykModel(
     uint = 69u,
     bool = false,
     double = 0.1,
-    dateTime = DateTime(2001, 4, 2)
+    dateTime = LocalDateTime(2001, 4, 2, 0, 0)
 )
 val t2 = TestMarykModel(
     string = "ha world 3",
@@ -61,7 +61,7 @@ val t2 = TestMarykModel(
     uint = 1244u,
     bool = true,
     double = 444.0,
-    dateTime = DateTime(2005, 11, 30)
+    dateTime = LocalDateTime(2005, 11, 30, 0, 0)
 )
 val t3 = TestMarykModel(
     string = "ha world 4",
@@ -69,7 +69,7 @@ val t3 = TestMarykModel(
     uint = 52323u,
     bool = false,
     double = 2333.0,
-    dateTime = DateTime(2012, 1, 28)
+    dateTime = LocalDateTime(2012, 1, 28, 0, 0)
 )
 val t4 = TestMarykModel(
     string = "ha world 5",
@@ -77,7 +77,7 @@ val t4 = TestMarykModel(
     uint = 234234u,
     bool = true,
     double = 232523.3,
-    dateTime = DateTime(2020, 3, 23)
+    dateTime = LocalDateTime(2020, 3, 23, 0, 0)
 )
 
 class DataStoreScanUpdatesAndFlowTest(
@@ -312,7 +312,7 @@ class DataStoreScanUpdatesAndFlowTest(
                 uint = 23425u,
                 bool = true,
                 double = 6968798.37465,
-                dateTime = DateTime(1922, 12, 23)
+                dateTime = LocalDateTime(1922, 12, 23, 0, 0)
             )
 
             dataStore.execute(TestMarykModel.add(
@@ -511,7 +511,7 @@ class DataStoreScanUpdatesAndFlowTest(
                 uint = 1u,
                 bool = true,
                 double = 6968798.37465,
-                dateTime = DateTime(1922, 12, 23)
+                dateTime = LocalDateTime(1922, 12, 23, 0, 0)
             )
 
             dataStore.execute(TestMarykModel.add(
@@ -596,7 +596,7 @@ class DataStoreScanUpdatesAndFlowTest(
                 uint = 23133214u,
                 bool = true,
                 double = 6968798.37465,
-                dateTime = DateTime(1922, 12, 23)
+                dateTime = LocalDateTime(1922, 12, 23, 0, 0)
             )
 
             dataStore.execute(TestMarykModel.add(
@@ -613,7 +613,7 @@ class DataStoreScanUpdatesAndFlowTest(
                 uint = 4321u,
                 bool = false,
                 double = 1.1,
-                dateTime = DateTime(1901, 1, 2)
+                dateTime = LocalDateTime(1901, 1, 2, 0, 0)
             )
 
             // New object is added within range in already full list so we expect an add and a delete
@@ -769,7 +769,7 @@ class DataStoreScanUpdatesAndFlowTest(
                 uint = 23123214u,
                 bool = true,
                 double = 6968798.37465,
-                dateTime = DateTime(1922, 12, 23)
+                dateTime = LocalDateTime(1922, 12, 23, 0, 0)
             )
 
             dataStore.execute(TestMarykModel.add(
@@ -786,7 +786,7 @@ class DataStoreScanUpdatesAndFlowTest(
                 uint = 4321u,
                 bool = false,
                 double = 1.1,
-                dateTime = DateTime(1901, 1, 2)
+                dateTime = LocalDateTime(1901, 1, 2, 0, 0)
             )
 
             // New object is added within range in already full list so we expect an add and a delete

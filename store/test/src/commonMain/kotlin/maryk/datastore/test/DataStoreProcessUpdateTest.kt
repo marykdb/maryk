@@ -1,5 +1,6 @@
 package maryk.datastore.test
 
+import kotlinx.datetime.LocalDateTime
 import maryk.core.exceptions.RequestException
 import maryk.core.models.key
 import maryk.core.query.changes.Change
@@ -26,7 +27,6 @@ import maryk.core.query.responses.updates.RemovalReason.SoftDelete
 import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.core.services.responses.UpdateResponse
 import maryk.datastore.shared.IsDataStore
-import maryk.lib.time.DateTime
 import maryk.test.assertType
 import maryk.test.models.Log
 import maryk.test.models.Severity.ERROR
@@ -50,10 +50,10 @@ class DataStoreProcessUpdateTest(
     )
 
     private val logs = arrayOf(
-        Log("Something happened", timestamp = DateTime(2018, 11, 14, 11, 22, 33, 40)),
-        Log("Something else happened", timestamp = DateTime(2018, 11, 14, 12, 0, 0, 0)),
-        Log("Something REALLY happened", timestamp = DateTime(2018, 11, 14, 12, 33, 22, 111)),
-        Log("WRONG", ERROR, DateTime(2018, 11, 14, 13, 0, 2, 0))
+        Log("Something happened", timestamp = LocalDateTime(2018, 11, 14, 11, 22, 33, 40000000)),
+        Log("Something else happened", timestamp = LocalDateTime(2018, 11, 14, 12, 0, 0, 0)),
+        Log("Something REALLY happened", timestamp = LocalDateTime(2018, 11, 14, 12, 33, 22, 111000000)),
+        Log("WRONG", ERROR, LocalDateTime(2018, 11, 14, 13, 0, 2, 0))
     )
 
     private val keys = listOf(
@@ -159,7 +159,7 @@ class DataStoreProcessUpdateTest(
                         ObjectCreate,
                         Change(Log { message::ref } with newMessage),
                         Change(Log { severity::ref } with ERROR),
-                        Change(Log { timestamp::ref } with DateTime(2020, 9, 5, 12))
+                        Change(Log { timestamp::ref } with LocalDateTime(2020, 9, 5, 12, 0))
                     )
                 )
             )
@@ -299,7 +299,7 @@ class DataStoreProcessUpdateTest(
                                     ObjectCreate,
                                     Change(Log { message::ref } with newMessage),
                                     Change(Log { severity::ref } with ERROR),
-                                    Change(Log { timestamp::ref } with DateTime(2020, 9, 5, 12))
+                                    Change(Log { timestamp::ref } with LocalDateTime(2020, 9, 5, 12, 0))
                                 )
                             ))
                         )

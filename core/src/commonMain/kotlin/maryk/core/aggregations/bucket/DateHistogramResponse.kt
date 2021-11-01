@@ -10,10 +10,9 @@ import maryk.core.properties.definitions.list
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.addReference
 import maryk.core.values.SimpleObjectValues
-import maryk.lib.time.IsTemporal
 
 /** The [buckets] found for all dates separated by unit at [reference] */
-data class DateHistogramResponse<T: IsTemporal<*>>(
+data class DateHistogramResponse<T: Comparable<*>>(
     val reference: IsPropertyReference<out T, IsPropertyDefinition<T>, *>,
     val buckets: List<Bucket<T>> = emptyList()
 ) : IsAggregationResponse {
@@ -34,7 +33,7 @@ data class DateHistogramResponse<T: IsTemporal<*>>(
         }
     ) {
         override fun invoke(values: SimpleObjectValues<DateHistogramResponse<*>>) =
-            DateHistogramResponse<IsTemporal<Any>>(
+            DateHistogramResponse<Comparable<Any>>(
                 reference = values(1u),
                 buckets = values(2u)
             )

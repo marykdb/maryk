@@ -1,5 +1,6 @@
 package maryk.test.models
 
+import kotlinx.datetime.LocalDateTime
 import maryk.core.models.ValueDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -9,11 +10,10 @@ import maryk.core.properties.definitions.number
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.values.ObjectValues
-import maryk.lib.time.DateTime
 
 data class TestValueObject(
     val int: Int,
-    val dateTime: DateTime,
+    val dateTime: LocalDateTime,
     val bool: Boolean
 ) : ValueDataObject(toBytes(int, dateTime, bool)) {
     object Properties : ObjectPropertyDefinitions<TestValueObject>() {
@@ -45,5 +45,3 @@ data class TestValueObject(
                 this.properties.size == (other.properties as AbstractPropertyDefinitions<*>).size
     }
 }
-
-

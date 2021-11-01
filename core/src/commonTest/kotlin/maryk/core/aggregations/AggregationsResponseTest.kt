@@ -1,5 +1,6 @@
 package maryk.core.aggregations
 
+import kotlinx.datetime.LocalDateTime
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -13,7 +14,6 @@ import maryk.core.aggregations.metric.SumResponse
 import maryk.core.aggregations.metric.ValueCountResponse
 import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
-import maryk.lib.time.DateTime
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.expect
@@ -31,7 +31,7 @@ class AggregationsResponseTest {
         ),
         "the least" to MinResponse(
             TestMarykModel { dateTime::ref },
-            DateTime(2019, 12, 1, 12, 3, 45)
+            LocalDateTime(2019, 12, 1, 12, 3, 45)
         ),
         "the most" to MaxResponse(
             TestMarykModel { double::ref },

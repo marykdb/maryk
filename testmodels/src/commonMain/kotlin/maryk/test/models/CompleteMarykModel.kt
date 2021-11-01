@@ -1,6 +1,7 @@
 package maryk.test.models
 
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import maryk.core.models.RootDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.DateDefinition
@@ -43,7 +44,6 @@ import maryk.core.properties.types.Version
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.values.Values
-import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.models.CompleteMarykModel.Properties.booleanForKey
 import maryk.test.models.CompleteMarykModel.Properties.dateForKey
@@ -145,9 +145,9 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
             final = true,
             unique = true,
             precision = TimePrecision.MILLIS,
-            minValue = DateTime(1981, 12, 5, 11),
-            maxValue = DateTime(2200, 12, 31, 23, 59, 59),
-            default = DateTime(2018, 5, 2, 10, 11, 12)
+            minValue = LocalDateTime(1981, 12, 5, 11, 0),
+            maxValue = LocalDateTime(2200, 12, 31, 23, 59, 59),
+            default = LocalDateTime(2018, 5, 2, 10, 11, 12)
         )
         val time by time(
             index = 7u,
@@ -338,7 +338,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
         boolean: Boolean = true,
         enum: Option = Option.V1,
         date: LocalDate = LocalDate(2018, 5, 2),
-        dateTime: DateTime = DateTime(2018, 5, 2, 10, 11, 12),
+        dateTime: LocalDateTime = LocalDateTime(2018, 5, 2, 10, 11, 12),
         time: Time = Time(10, 11, 12),
         fixedBytes: Bytes = Bytes("AAECAwQ"),
         flexBytes: Bytes = Bytes("AAECAw"),

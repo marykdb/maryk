@@ -1,33 +1,37 @@
 package maryk.core.properties.types
 
-import maryk.lib.time.Time
+import kotlinx.datetime.LocalDateTime
+import maryk.core.aggregations.bucket.DateUnit
+import maryk.core.aggregations.bucket.roundToDateUnit
+import maryk.lib.time.DateTime
+import maryk.lib.time.nowUTC
 import maryk.test.ByteCollector
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlin.test.expect
 
 internal class DateTimeTest {
-    private fun cleanToSeconds(it: maryk.lib.time.DateTime) = DateTime(it.date, Time(it.hour, it.minute, it.second))
+    private fun cleanToSeconds(it: LocalDateTime) = it.roundToDateUnit(DateUnit.Seconds)
 
-    private val dateTime = DateTime(
-        year = 2017,
-        month = 8,
-        day = 16,
-        hour = 11,
-        minute = 28,
-        second = 22,
-        milli = 2344
+    private val dateTime = LocalDateTime(
+         2017,
+        8,
+        16,
+        11,
+        28,
+        22,
+        2344000
     )
 
     private val dateTimesWithSecondsToTest = arrayOf(
-        cleanToSeconds(DateTime.nowUTC()),
+        cleanToSeconds(LocalDateTime.nowUTC()),
         cleanToSeconds(DateTime.MAX_IN_SECONDS),
         cleanToSeconds(dateTime),
         DateTime.MIN
     )
 
     private val dateTimesWithMillisToTest = arrayOf(
-        DateTime.nowUTC(),
+        LocalDateTime.nowUTC().roundToDateUnit(DateUnit.Millis),
         DateTime.MAX_IN_MILLIS,
         DateTime.MIN
     )
@@ -38,7 +42,7 @@ internal class DateTimeTest {
         for (dateTime in dateTimesWithSecondsToTest) {
             bc.reserve(7)
             dateTime.writeBytes(TimePrecision.SECONDS, bc::write)
-            expect(dateTime) { DateTime.fromByteReader(bc.size, bc::read) }
+            expect(dateTime) { LocalDateTime.fromByteReader(bc.size, bc::read) }
             bc.reset()
         }
     }
@@ -49,7 +53,7 @@ internal class DateTimeTest {
         for (dateTime in dateTimesWithMillisToTest) {
             bc.reserve(9)
             dateTime.writeBytes(TimePrecision.MILLIS, bc::write)
-            expect(dateTime) { DateTime.fromByteReader(bc.size, bc::read) }
+            expect(dateTime) { LocalDateTime.fromByteReader(bc.size, bc::read) }
             bc.reset()
         }
     }
@@ -57,7 +61,7 @@ internal class DateTimeTest {
     @Test
     fun testWrongByteSizeError() {
         assertFailsWith<IllegalArgumentException> {
-            DateTime.fromByteReader(22) {
+            LocalDateTime.fromByteReader(22) {
                 1
             }
         }

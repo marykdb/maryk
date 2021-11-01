@@ -1,11 +1,11 @@
 package maryk.core.query
 
+import kotlinx.datetime.LocalDateTime
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.models.key
-import maryk.lib.time.DateTime
 import maryk.test.models.Option.V3
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
@@ -19,7 +19,7 @@ class ValuesWithMetaDataTest {
         double = 6.33,
         bool = true,
         enum = V3,
-        dateTime = DateTime(2017, 12, 5, 1, 33, 55)
+        dateTime = LocalDateTime(2017, 12, 5, 1, 33, 55)
     )
 
     private val key1 = TestMarykModel.key(this.value)
@@ -70,6 +70,5 @@ class ValuesWithMetaDataTest {
         ) {
             checkYamlConversion(this.valuesMetaData, ValuesWithMetaData, { this.context })
         }
-
     }
 }

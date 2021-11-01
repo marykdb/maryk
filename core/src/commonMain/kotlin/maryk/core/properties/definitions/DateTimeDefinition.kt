@@ -1,5 +1,11 @@
 package maryk.core.properties.definitions
 
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone.Companion.UTC
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initLongByVar
@@ -13,7 +19,6 @@ import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.contextual
-import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.TimePrecision
 import maryk.core.properties.types.byteSize
 import maryk.core.properties.types.fromByteReader
@@ -22,6 +27,7 @@ import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.SimpleObjectValues
+import maryk.lib.exceptions.ParseException
 
 /**
  * Definition for DateTime properties
@@ -31,56 +37,60 @@ data class DateTimeDefinition(
     override val final: Boolean = false,
     override val unique: Boolean = false,
     override val precision: TimePrecision = TimePrecision.SECONDS,
-    override val minValue: DateTime? = null,
-    override val maxValue: DateTime? = null,
-    override val default: DateTime? = null
+    override val minValue: LocalDateTime? = null,
+    override val maxValue: LocalDateTime? = null,
+    override val default: LocalDateTime? = null
 ) :
-    IsTimeDefinition<DateTime>,
-    IsSerializableFixedBytesEncodable<DateTime, IsPropertyContext>,
-    IsTransportablePropertyDefinitionType<DateTime>,
-    HasDefaultValueDefinition<DateTime> {
+    IsTimeDefinition<LocalDateTime>,
+    IsSerializableFixedBytesEncodable<LocalDateTime, IsPropertyContext>,
+    IsTransportablePropertyDefinitionType<LocalDateTime>,
+    HasDefaultValueDefinition<LocalDateTime> {
     override val propertyDefinitionType = PropertyDefinitionType.DateTime
     override val wireType = VAR_INT
-    override val byteSize = DateTime.byteSize(precision)
+    override val byteSize = LocalDateTime.byteSize(precision)
 
-    override fun createNow() = DateTime.nowUTC()
+    fun createNow() = Clock.System.now().toLocalDateTime(UTC)
 
-    override fun readStorageBytes(length: Int, reader: () -> Byte) = DateTime.fromByteReader(length, reader)
+    override fun readStorageBytes(length: Int, reader: () -> Byte) = LocalDateTime.fromByteReader(length, reader)
 
-    override fun writeStorageBytes(value: DateTime, writer: (byte: Byte) -> Unit) = value.writeBytes(precision, writer)
+    override fun writeStorageBytes(value: LocalDateTime, writer: (byte: Byte) -> Unit) = value.writeBytes(precision, writer)
 
     override fun readTransportBytes(
         length: Int,
         reader: () -> Byte,
         context: IsPropertyContext?,
-        earlierValue: DateTime?
+        earlierValue: LocalDateTime?
     ) =
         when (this.precision) {
-            TimePrecision.SECONDS -> DateTime.ofEpochSecond(initLongByVar(reader))
-            TimePrecision.MILLIS -> DateTime.ofEpochMilli(initLongByVar(reader))
+            TimePrecision.SECONDS -> Instant.fromEpochSeconds(initLongByVar(reader)).toLocalDateTime(UTC)
+            TimePrecision.MILLIS ->Instant.fromEpochMilliseconds(initLongByVar(reader)).toLocalDateTime(UTC)
         }
 
-    override fun calculateTransportByteLength(value: DateTime) = when (this.precision) {
-        TimePrecision.SECONDS -> value.toEpochSecond().calculateVarByteLength()
-        TimePrecision.MILLIS -> value.toEpochMilli().calculateVarByteLength()
+    override fun calculateTransportByteLength(value: LocalDateTime) = when (this.precision) {
+        TimePrecision.SECONDS -> value.toInstant(UTC).epochSeconds.calculateVarByteLength()
+        TimePrecision.MILLIS -> value.toInstant(UTC).toEpochMilliseconds().calculateVarByteLength()
     }
 
     override fun writeTransportBytes(
-        value: DateTime,
+        value: LocalDateTime,
         cacheGetter: WriteCacheReader,
         writer: (byte: Byte) -> Unit,
         context: IsPropertyContext?
     ) {
         val epochUnit = when (this.precision) {
-            TimePrecision.SECONDS -> value.toEpochSecond()
-            TimePrecision.MILLIS -> value.toEpochMilli()
+            TimePrecision.SECONDS -> value.toInstant(UTC).epochSeconds
+            TimePrecision.MILLIS -> value.toInstant(UTC).toEpochMilliseconds()
         }
         epochUnit.writeVarBytes(writer)
     }
 
-    override fun fromString(string: String) = DateTime.parse(string)
+    override fun fromString(string: String) = try {
+        LocalDateTime.parse(string)
+    } catch (e: IllegalArgumentException) {
+        throw ParseException(string, e)
+    }
 
-    override fun fromNativeType(value: Any) = value as? DateTime
+    override fun fromNativeType(value: Any) = value as? LocalDateTime
 
     @Suppress("unused")
     object Model :
@@ -154,12 +164,12 @@ fun PropertyDefinitions.dateTime(
     final: Boolean = false,
     unique: Boolean = false,
     precision: TimePrecision = TimePrecision.SECONDS,
-    minValue: DateTime? = null,
-    maxValue: DateTime? = null,
-    default: DateTime? = null,
+    minValue: LocalDateTime? = null,
+    maxValue: LocalDateTime? = null,
+    default: LocalDateTime? = null,
     alternativeNames: Set<String>? = null
 ) = DefinitionWrapperDelegateLoader(this) { propName ->
-    FixedBytesDefinitionWrapper<DateTime, DateTime, IsPropertyContext, DateTimeDefinition, Any>(
+    FixedBytesDefinitionWrapper<LocalDateTime, LocalDateTime, IsPropertyContext, DateTimeDefinition, Any>(
         index,
         name ?: propName,
         DateTimeDefinition(required, final, unique, precision, minValue, maxValue, default),
@@ -175,11 +185,11 @@ fun <TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.dateTime(
     final: Boolean = false,
     unique: Boolean = false,
     precision: TimePrecision = TimePrecision.SECONDS,
-    minValue: DateTime? = null,
-    maxValue: DateTime? = null,
-    default: DateTime? = null,
+    minValue: LocalDateTime? = null,
+    maxValue: LocalDateTime? = null,
+    default: LocalDateTime? = null,
     alternativeNames: Set<String>? = null
-): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<DateTime, TO, IsPropertyContext, DateTimeDefinition, DO>, DO, IsPropertyContext> =
+): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<LocalDateTime, TO, IsPropertyContext, DateTimeDefinition, DO>, DO, IsPropertyContext> =
     dateTime(index, getter, name, required, final,  unique, precision, minValue, maxValue, default, alternativeNames, toSerializable = null)
 
 fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.dateTime(
@@ -190,14 +200,14 @@ fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.date
     final: Boolean = false,
     unique: Boolean = false,
     precision: TimePrecision = TimePrecision.SECONDS,
-    minValue: DateTime? = null,
-    maxValue: DateTime? = null,
-    default: DateTime? = null,
+    minValue: LocalDateTime? = null,
+    maxValue: LocalDateTime? = null,
+    default: LocalDateTime? = null,
     alternativeNames: Set<String>? = null,
-    toSerializable: (Unit.(TO?, CX?) -> DateTime?)? = null,
-    fromSerializable: (Unit.(DateTime?) -> TO?)? = null,
+    toSerializable: (Unit.(TO?, CX?) -> LocalDateTime?)? = null,
+    fromSerializable: (Unit.(LocalDateTime?) -> TO?)? = null,
     shouldSerialize: (Unit.(Any) -> Boolean)? = null,
-    capturer: (Unit.(CX, DateTime) -> Unit)? = null
+    capturer: (Unit.(CX, LocalDateTime) -> Unit)? = null
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     FixedBytesDefinitionWrapper(
         index,

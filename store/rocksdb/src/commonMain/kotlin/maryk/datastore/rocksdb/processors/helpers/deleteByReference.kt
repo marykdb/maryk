@@ -1,6 +1,7 @@
 package maryk.datastore.rocksdb.processors.helpers
 
 import maryk.core.exceptions.StorageException
+import maryk.core.extensions.bytes.initUIntByVarWithExtraInfo
 import maryk.core.models.IsDataModelWithValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
@@ -112,8 +113,8 @@ internal fun <T : Any> deleteByReference(
                         version,
                         -1
                     ) { newCount ->
-                        toShiftListCount = newCount - reference.index.toUInt()
-                        listDefinition.validateSize(newCount.toUInt()) { listReference }
+                        toShiftListCount = newCount - reference.index
+                        listDefinition.validateSize(newCount) { listReference }
                     }
                     referenceOfParent = listReference.toStorageByteArray(key.bytes)
                     // Map values can be set to null to be deleted.
@@ -122,6 +123,12 @@ internal fun <T : Any> deleteByReference(
                 }
                 is SetItemReference<*, *> -> {
                     val setReference = reference.parentReference as SetReference<Any, IsPropertyContext>
+
+                    var newO = o
+                    // Missing read by var int for size of element
+                    initUIntByVarWithExtraInfo({
+                        b[newO++]
+                    }) { _, _ -> 1 }
                     createCountUpdater(
                         transaction,
                         columnFamilies,
@@ -135,7 +142,7 @@ internal fun <T : Any> deleteByReference(
                     }
                     // Map values can be set to null to be deleted.
                     shouldHandlePrevValue = false
-                    (setReference.propertyDefinition.valueDefinition as IsStorageBytesEncodable<T>).fromStorageBytes(b, o, l)
+                    (setReference.propertyDefinition.valueDefinition as IsStorageBytesEncodable<T>).fromStorageBytes(b, newO, l)
                 }
                 is MultiTypePropertyReference<*, *, *, *, *> -> {
                     var readIndex = o

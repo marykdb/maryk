@@ -2,13 +2,16 @@
 package maryk.test.proto
 
 import com.google.protobuf.ByteString
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import maryk.MarykTestProtos
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.WriteCache
 import maryk.lib.extensions.toHex
-import maryk.lib.time.Date
+import maryk.lib.time.epochDay
 import maryk.test.ByteCollector
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.MarykEnumEmbedded.E1
@@ -82,7 +85,7 @@ class Proto3ConversionTest {
         // SimpleObject to convert
         val completeObject = CompleteMarykModel(
             booleanForKey = true,
-            dateForKey = Date(2018, 7, 25),
+            dateForKey = LocalDate(2018, 7, 25),
             multiForKey = TypedValue(S1, "string"),
             enumEmbedded = E1,
             mapWithEnum = mapOf(
@@ -96,7 +99,7 @@ class Proto3ConversionTest {
             .setBoolean(completeObject { boolean }!!)
             .setEnum(MarykTestProtos.Option.V1)
             .setDate(completeObject { date }!!.epochDay)
-            .setDateTime(completeObject { dateTime }!!.toEpochMilli())
+            .setDateTime(completeObject { dateTime }!!.toInstant(TimeZone.UTC).toEpochMilliseconds())
             .setTime(completeObject { time }!!.toMillisOfDay())
             .setFixedBytes(ByteString.copyFrom(Bytes("AAECAwQ").bytes))
             .setFlexBytes(ByteString.copyFrom(Bytes("AAECAw").bytes))
@@ -105,8 +108,8 @@ class Proto3ConversionTest {
             .setValueModel(ByteString.copyFrom(completeObject { valueModel }!!.toByteArray()))
             .addAllList(mutableListOf("ha1", "ha2", "ha3"))
             .addAllSet(mutableListOf(1, 2, 3))
-            .putMap(Date(2010, 11, 12).epochDay, 1)
-            .putMap(Date(2011, 12, 13).epochDay, 1)/**/
+            .putMap(LocalDate(2010, 11, 12).epochDay, 1)
+            .putMap(LocalDate(2011, 12, 13).epochDay, 1)/**/
             .setMulti(MarykTestProtos.CompleteMarykModel.MultiType.newBuilder().setT1("a value"))
             .setBooleanForKey(completeObject { booleanForKey }!!)
             .setDateForKey(completeObject { dateForKey }!!.epochDay)
@@ -136,9 +139,7 @@ class Proto3ConversionTest {
                     "a"
                 ).putAllValue(mapOf("b" to "c"))
             )
-            .setLocation(completeObject { location }!!.let { loc ->
-                loc.asLong()
-            })
+            .setLocation(completeObject { location }!!.asLong())
             .build()
 
         // Write protobuf

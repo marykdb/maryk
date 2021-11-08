@@ -7,7 +7,7 @@ plugins {
 }
 
 ext {
-    protobufVersion = '3.19.0'
+    protobufVersion = '3.19.1'
 }
 
 protobuf {

@@ -1,6 +1,6 @@
 // Gradle script to setup a Native multi-platform project
 kotlin {
-    macosX64('macos') {
+    macosArm64('macos') {
         compilations.all {
             kotlinOptions {
                 freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
@@ -32,4 +32,3 @@ kotlin {
         }
     }
 }
-

@@ -13,9 +13,6 @@ apply {
 val marykRocksDBVersion = rootProject.extra["marykRocksDBVersion"]
 
 repositories {
-    maven {
-        setUrl("https://dl.bintray.com/maryk/maven")
-    }
     mavenCentral()
 }
 

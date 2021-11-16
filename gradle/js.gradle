@@ -7,12 +7,10 @@ kotlin {
             }
         }
         browser {}
-        nodejs {
-            testTask {
-                testLogging {
-                    events = ["FAILED", "SKIPPED"]
-                }
-            }
-        }
+        nodejs {}
     }
+}
+
+kotlinNodeJs {
+    nodeVersion = '16.13.0'
 }

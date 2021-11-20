@@ -25,7 +25,7 @@ internal fun <P : IsPropertyDefinitions> IsDataModel<P>.checkProperties(
     synchronizedIteration(
         (this.properties as AbstractPropertyDefinitions<Any>).iterator(),
         (storedDataModel.properties as AbstractPropertyDefinitions<Any>).iterator(),
-        Comparator { newValue, storedValue ->
+        { newValue, storedValue ->
             newValue.index.compareTo(storedValue.index)
         },
         { newProp, storedProp ->

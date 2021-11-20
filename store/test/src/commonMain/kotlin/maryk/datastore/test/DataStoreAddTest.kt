@@ -9,7 +9,6 @@ import maryk.core.query.requests.get
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.AlreadyExists
 import maryk.core.values.Values
-import maryk.datastore.memory.assertRecent
 import maryk.datastore.shared.IsDataStore
 import maryk.test.assertType
 import maryk.test.models.Log

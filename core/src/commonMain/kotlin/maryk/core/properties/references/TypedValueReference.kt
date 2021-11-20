@@ -97,5 +97,5 @@ class TypedValueReference<E : TypeEnum<T>, T: Any, in CX : IsPropertyContext> in
         )
     }
 
-    override fun resolve(values: TypedValue<E, T>): T? = values.value
+    override fun resolve(values: TypedValue<E, T>): T = values.value
 }

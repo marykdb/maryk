@@ -246,7 +246,7 @@ class DataStoreScanOnIndexTest(
 
         expect(4) { scanResponse.values.size }
 
-        // Mind that Log is sorted in reverse so it goes back in time going forward
+        // Mind that Log is sorted in reverse, so it goes back in time going forward
         scanResponse.values[0].let {
             expect(
                 Log.values {

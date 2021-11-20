@@ -53,7 +53,7 @@ data class ContextualIndexedEnumDefinition<CX : IsPropertyContext, CXI : IsPrope
         }
 
     override fun calculateTransportByteLength(value: T, cacher: WriteCacheWriter, context: CX?) =
-        value.index.toUInt().calculateVarByteLength()
+        value.index.calculateVarByteLength()
 
     override fun writeTransportBytes(
         value: T,
@@ -61,7 +61,7 @@ data class ContextualIndexedEnumDefinition<CX : IsPropertyContext, CXI : IsPrope
         writer: (byte: Byte) -> Unit,
         context: CX?
     ) {
-        value.index.toUInt().writeVarBytes(writer)
+        value.index.writeVarBytes(writer)
     }
 
     @Suppress("UNCHECKED_CAST")

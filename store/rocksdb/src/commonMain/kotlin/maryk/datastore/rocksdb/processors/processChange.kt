@@ -359,7 +359,7 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> app
                                     )
 
                                     // Write complex values existence indicator
-                                    // Write parent value with Unit so it knows this one is not deleted. So possible lingering old types are not read.
+                                    // Write parent value with Unit, so it knows this one is not deleted. So possible lingering old types are not read.
                                     valueWriter(
                                         Embed,
                                         reference.toStorageByteArray(),

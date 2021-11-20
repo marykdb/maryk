@@ -44,7 +44,7 @@ class Transaction(val rocksDBDataStore: RocksDBDataStore): DBAccessor(rocksDBDat
     }
 
     override fun get(columnFamilyHandle: ColumnFamilyHandle, readOptions: ReadOptions, key: ByteArray): ByteArray? {
-        val columnChanges = this.changes.getOrPut(columnFamilyHandle.getID(), { mutableListOf() })
+        val columnChanges = this.changes.getOrPut(columnFamilyHandle.getID()) { mutableListOf() }
         val index = columnChanges.binarySearch { it.key.compareTo(key) }
 
         return if (index < 0) {
@@ -56,7 +56,7 @@ class Transaction(val rocksDBDataStore: RocksDBDataStore): DBAccessor(rocksDBDat
     }
 
     override fun get(columnFamilyHandle: ColumnFamilyHandle, readOptions: ReadOptions, key: ByteArray, offset: Int, len: Int, value: ByteArray, vOffset: Int, vLen: Int): Int {
-        val columnChanges = this.changes.getOrPut(columnFamilyHandle.getID(), { mutableListOf() })
+        val columnChanges = this.changes.getOrPut(columnFamilyHandle.getID()) { mutableListOf() }
         val index = columnChanges.binarySearch { it.key.compareTo(key) }
 
         return if (index < 0) {
@@ -126,7 +126,7 @@ class Transaction(val rocksDBDataStore: RocksDBDataStore): DBAccessor(rocksDBDat
     }
 
     private fun setChange(key: ByteArray, action: ChangeAction) {
-        val columnChanges = this.changes.getOrPut(action.columnFamilyHandle.getID(), { mutableListOf() })
+        val columnChanges = this.changes.getOrPut(action.columnFamilyHandle.getID()) { mutableListOf() }
         val index = columnChanges.binarySearch { it.key.compareTo(key) }
         if (index >= 0) {
             columnChanges[index] = action

@@ -344,7 +344,7 @@ class RocksDBDataStore(
     @OptIn(ExperimentalStdlibApi::class)
     private fun searchExistingUniqueIndices(
         uniqueHandle: ColumnFamilyHandle
-    ) = buildList<ByteArray> {
+    ) = buildList {
         this@RocksDBDataStore.db.newIterator(uniqueHandle).use { iterator ->
             while (iterator.isValid()) {
                 val key = iterator.key()

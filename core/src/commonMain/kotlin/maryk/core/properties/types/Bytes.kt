@@ -22,7 +22,7 @@ open class Bytes(val bytes: ByteArray) : Comparable<Bytes> {
         }
     )
 
-    private val hashCode by lazy { bytes.contentHashCode() }
+    private val hashCode by lazy(bytes::contentHashCode)
 
     operator fun get(index: Int) = bytes[index]
 

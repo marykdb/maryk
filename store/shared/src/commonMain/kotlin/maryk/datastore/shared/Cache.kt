@@ -4,7 +4,7 @@ import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.properties.types.Key
 
 /**
- * Cache to store previously retrieved values so they take less time to decode and take less memory
+ * Cache to store previously retrieved values, so they take less time to decode and take less memory
  * because previous instance is reused.
  */
 class Cache(

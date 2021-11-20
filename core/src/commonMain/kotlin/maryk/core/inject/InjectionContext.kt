@@ -20,7 +20,7 @@ internal class InjectionContext(
     ContainsDefinitionsContext by requestContext {
     var collectionName: String? = null
 
-    override val dataModel: IsDataModel<*>?
+    override val dataModel: IsDataModel<*>
         get() = collectionName?.let { collectionName ->
             return when (val collectType = requestContext.getToCollectModel(collectionName)) {
                 null -> throw RequestException("Inject collection name $collectionName not found")
@@ -37,7 +37,7 @@ internal class InjectionContext(
             }
         } ?: throw ContextNotFoundException()
 
-    fun resolvePropertyReference(): IsPropertyDefinitions? =
+    fun resolvePropertyReference(): IsPropertyDefinitions =
         collectionName?.let { collectionName ->
             when (val collectType = requestContext.getToCollectModel(collectionName)) {
                 null -> throw RequestException("Inject collection name $collectionName not found")

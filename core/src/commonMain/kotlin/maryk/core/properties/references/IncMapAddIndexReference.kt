@@ -11,7 +11,7 @@ import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
-/** Reference to a list index for add to Incremental map with [key] of [K] and value [V] contained in map referred by [parentReference] */
+/** Reference to a list index for add to Incremental map with key of [K] and value [V] contained in map referred by [parentReference] */
 class IncMapAddIndexReference<K : Any, V : Any, CX : IsPropertyContext> internal constructor(
     val index: Int,
     mapDefinition: IsMapDefinition<K, V, CX>,

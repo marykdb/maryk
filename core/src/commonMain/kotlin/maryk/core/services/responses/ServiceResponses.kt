@@ -27,9 +27,9 @@ class ServiceResponses(
 ) {
     val definition: MultiTypeDefinition<ServiceResponseType<*>, IsServiceResponse> = MultiTypeDefinition(typeEnum = this)
 
-    private val valuesByClass = this.cases().map {
-        Pair(it.definition!!.dataModel.serviceClass, it)
-    }.toMap()
+    private val valuesByClass = this.cases().associateBy {
+        it.definition!!.dataModel.serviceClass
+    }
 
     fun <ISR: IsServiceResponse> getTypedResponse(response: ISR): TypedValue<ServiceResponseType<ISR>, ISR> {
         @Suppress("UNCHECKED_CAST")

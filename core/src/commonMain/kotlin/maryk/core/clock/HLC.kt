@@ -51,15 +51,14 @@ value class HLC constructor(
         maxOf(
             other?.let {
                 maxOf(this.timestamp, other.timestamp) + 1u
-            } ?: this.timestamp + 1u,
+            } ?: (this.timestamp + 1u),
             newTimeCreator().timestamp
         )
     )
 
     /** Get the physical time of this HLC */
-    fun toPhysicalUnixTime(): ULong {
-        return timestamp.shr(LOGICAL_BYTE_SIZE)
-    }
+    fun toPhysicalUnixTime() =
+        timestamp.shr(LOGICAL_BYTE_SIZE)
 
     /** Get the logical time of this HLC */
     fun toLogicalTime() =

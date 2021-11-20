@@ -3,7 +3,6 @@ package maryk.test.models
 import maryk.core.models.RootDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
-import maryk.core.properties.definitions.IncrementingMapDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition

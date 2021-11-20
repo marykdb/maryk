@@ -13,7 +13,7 @@ fun ByteBuffer.compareToWithOffsetAndLength(aOffset: Int, aLength: Int, b: ByteB
         val aByte = this[it + aOffset].toUByte() and MAX_BYTE
         val bByte = b[it + bOffset].toUByte() and MAX_BYTE
         if (aByte != bByte) {
-            return aByte.toUByte().toInt() - bByte.toUByte().toInt()
+            return aByte.toInt() - bByte.toInt()
         }
     }
     return aLength - bLength

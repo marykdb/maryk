@@ -19,7 +19,7 @@ object UInt64 : UnsignedNumberDescriptor<ULong>(
 ) {
     override fun sum(value1: ULong, value2: ULong) = value1 + value2
     override fun divide(value1: ULong, value2: ULong) = value1 / value2
-    override fun fromStorageByteReader(length: Int, reader: () -> Byte) = initULong(reader).toULong()
+    override fun fromStorageByteReader(length: Int, reader: () -> Byte) = initULong(reader)
     override fun writeStorageBytes(value: ULong, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
     override fun readTransportBytes(reader: () -> Byte) = initULongByVar(reader)
     override fun calculateTransportByteLength(value: ULong) = value.calculateVarByteLength()

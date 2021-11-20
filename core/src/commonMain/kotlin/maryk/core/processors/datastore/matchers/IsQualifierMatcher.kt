@@ -46,7 +46,7 @@ class QualifierFuzzyMatcher(
             for (byte in qPart) {
                 if (lastIndexPlusOne <= index) { return NO_MATCH }
                 if (byte != qualifier[index++]) {
-                    // If first part does not match it is out of range. Otherwise possible matches so no match
+                    // If first part does not match it is out of range. Otherwise, possible matches so no match
                     return if (qIndex == 0) OUT_OF_RANGE else NO_MATCH
                 }
             }

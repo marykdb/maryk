@@ -106,13 +106,14 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
                 if (toReturnNull) {
                     null
                 } else {
-                    value?.invoke()?.map { v: IndexedEnum ->
+                    // Combine name and alternative names into a list
+                    value?.invoke()?.associate { v: IndexedEnum ->
                         // Combine name and alternative names into a list
                         val names: List<String> = v.alternativeNames?.toMutableList()?.also {
                             it.add(0, v.name)
                         } ?: listOf(v.name)
                         Pair(v.index, names)
-                    }?.toMap() as Map<UInt, List<String>>
+                    }
                 }
             },
             fromSerializable = {

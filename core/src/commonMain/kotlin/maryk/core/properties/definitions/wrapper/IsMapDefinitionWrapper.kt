@@ -52,5 +52,5 @@ interface IsMapDefinitionWrapper<K : Any, V : Any, TO : Any, CX : IsPropertyCont
 
     /** For quick notation to get a map value reference at any key */
     fun refToAny(): (AnyOutPropertyReference?) -> MapAnyValueReference<K, V, *> =
-        { this.anyValueRef(it) }
+        this::anyValueRef
 }

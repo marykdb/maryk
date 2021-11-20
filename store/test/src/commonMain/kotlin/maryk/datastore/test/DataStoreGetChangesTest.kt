@@ -202,7 +202,7 @@ class DataStoreGetChangesTest(
 
             expect(1) { getResponse.changes.size }
 
-            // Mind that Log is sorted in reverse so it goes back in time going forward
+            // Mind that Log is sorted in reverse, so it goes back in time going forward
             getResponse.changes[0].let {
                 expect(
                     listOf(

@@ -1,3 +1,5 @@
+@file:Suppress("FunctionName")
+
 package maryk.core.yaml
 
 import maryk.core.properties.definitions.PropertyDefinitionType

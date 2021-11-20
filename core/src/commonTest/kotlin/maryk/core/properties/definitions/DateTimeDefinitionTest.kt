@@ -6,8 +6,8 @@ import kotlinx.datetime.toInstant
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.aggregations.bucket.DateUnit
-import maryk.core.aggregations.bucket.roundToDateUnit
+import maryk.core.properties.types.DateUnit
+import maryk.core.properties.types.roundToDateUnit
 import maryk.core.properties.WriteCacheFailer
 import maryk.core.properties.types.TimePrecision
 import maryk.lib.exceptions.ParseException

@@ -4,7 +4,6 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.aggregations.bucket.DateHistogram
-import maryk.core.aggregations.bucket.DateUnit.Days
 import maryk.core.aggregations.bucket.EnumValues
 import maryk.core.aggregations.bucket.Types
 import maryk.core.aggregations.metric.Average
@@ -13,6 +12,7 @@ import maryk.core.aggregations.metric.Min
 import maryk.core.aggregations.metric.Sum
 import maryk.core.aggregations.metric.ValueCount
 import maryk.core.extensions.toUnitLambda
+import maryk.core.properties.types.DateUnit
 import maryk.core.query.RequestContext
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
@@ -37,7 +37,7 @@ class AggregationsTest {
         ),
         "by day" to DateHistogram(
             TestMarykModel { dateTime::ref },
-            Days
+            DateUnit.Days
         ),
         "each enum" to EnumValues(
             TestMarykModel { enum::ref }

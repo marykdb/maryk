@@ -191,7 +191,7 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : ValueDataModel<DO, P
             required = values(1u),
             final = values(2u),
             unique = values(3u),
-            dataModel = values<ValueDataModel<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>>(4u),
+            dataModel = values(4u),
             minValue = values(5u),
             maxValue = values(6u),
             default = values(7u)

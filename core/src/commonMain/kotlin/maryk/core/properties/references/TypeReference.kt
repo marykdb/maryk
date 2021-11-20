@@ -96,7 +96,5 @@ data class TypeReference<E : TypeEnum<T>, T: Any, in CX : IsPropertyContext> int
         )
     }
 
-    override fun resolve(values: TypedValue<E, T>): E? {
-        return values.type
-    }
+    override fun resolve(values: TypedValue<E, T>): E = values.type
 }

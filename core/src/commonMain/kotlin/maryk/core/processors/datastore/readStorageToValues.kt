@@ -381,7 +381,7 @@ private fun readQualifierOfType(
                 ?: throw TypeException("Definition($index) $definition should be a TypedDefinition")
 
             typedDefinition.readComplexTypedValue(
-                index.toUInt(),
+                index,
                 qualifierReader,
                 qualifierLength,
                 offset,

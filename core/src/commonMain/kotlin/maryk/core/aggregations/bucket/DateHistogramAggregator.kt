@@ -2,6 +2,7 @@ package maryk.core.aggregations.bucket
 
 import maryk.core.aggregations.IsAggregator
 import maryk.core.aggregations.ValueByPropertyReference
+import maryk.core.properties.types.roundToDateUnit
 
 /** The aggregator to bucket dates */
 data class DateHistogramAggregator<T: Comparable<*>>(

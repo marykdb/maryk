@@ -1,8 +1,6 @@
 package maryk.generator.kotlin
 
-import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
-import maryk.core.properties.definitions.IsUsableInMultiType
 import maryk.core.properties.enum.MultiTypeEnum
 import maryk.core.properties.enum.MultiTypeEnumDefinition
 

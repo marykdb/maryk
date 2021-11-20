@@ -4,7 +4,6 @@ import maryk.core.models.ReferencePairDataModel
 import maryk.core.models.ReferenceValuePairsObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
-import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.query.pairs.ReferenceValuePair
 import maryk.core.values.ObjectValues

@@ -87,7 +87,7 @@ class DataStoreScanTest(
 
         expect(3) { scanResponse.values.size }
 
-        // Mind that Log is sorted in reverse so it goes back in time going forward
+        // Mind that Log is sorted in reverse, so it goes back in time going forward
         scanResponse.values[0].let {
             expect(logs[2]) { it.values }
             expect(keys[2]) { it.key }
@@ -140,7 +140,7 @@ class DataStoreScanTest(
 
         expect(2) { scanResponse.values.size }
 
-        // Mind that Log is sorted in reverse so it goes back in time going forward
+        // Mind that Log is sorted in reverse, so it goes back in time going forward
         scanResponse.values[0].let {
             expect(logs[2]) { it.values }
             expect(keys[2]) { it.key }
@@ -158,7 +158,7 @@ class DataStoreScanTest(
 
         expect(1) { scanResponse.values.size }
 
-        // Mind that Log is sorted in reverse so it goes back in time going forward
+        // Mind that Log is sorted in reverse, so it goes back in time going forward
         scanResponse.values[0].let {
             expect(logs[2]) { it.values }
             expect(keys[2]) { it.key }
@@ -198,7 +198,7 @@ class DataStoreScanTest(
 
         expect(3) { scanResponse.values.size }
 
-        // Mind that Log is sorted in reverse so it goes back in time going forward
+        // Mind that Log is sorted in reverse, so it goes back in time going forward
         scanResponse.values[0].let {
             expect(
                 Log.values {

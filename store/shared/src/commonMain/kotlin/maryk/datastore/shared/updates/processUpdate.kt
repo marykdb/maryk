@@ -79,7 +79,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ
                             if (newIndex == null) {
                                 handleDeletion(dataStore, this, NotInRange, updateListener, sharedFlow)
                             } else {
-                                createChangeUpdate<DM, P>(request.select, orderChanged, newIndex)?.let { changeUpdate ->
+                                createChangeUpdate(request.select, orderChanged, newIndex)?.let { changeUpdate ->
                                     val update = if (updateListener.filterContainsMutableValues) {
                                         // Check if the value still is valid with the current filter since it could have potentially mutated
                                         val response = dataStore.execute(

@@ -1,6 +1,5 @@
 package maryk.core.query.changes
 
-import maryk.core.models.SimpleObjectDataModel
 import maryk.core.models.SingleTypedValueDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
@@ -11,7 +10,6 @@ import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.ContainsDefinitionsContext
-import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 
 /**

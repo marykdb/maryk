@@ -13,7 +13,7 @@ import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeWriter
 
-/** Defines changes to lists by [listValueChanges] */
+/** Defines changes to a list by [listValueChanges] */
 data class ListChange internal constructor(
     val listValueChanges: List<ListValueChanges<*>>
 ) : IsChange {

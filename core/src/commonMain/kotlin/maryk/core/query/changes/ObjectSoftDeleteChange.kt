@@ -14,7 +14,7 @@ data class ObjectSoftDeleteChange(
 ) : IsChange {
     override val changeType = ChangeType.ObjectDelete
 
-    override fun filterWithSelect(select: RootPropRefGraph<out PropertyDefinitions>): ObjectSoftDeleteChange? {
+    override fun filterWithSelect(select: RootPropRefGraph<out PropertyDefinitions>): ObjectSoftDeleteChange {
         // Not influenced by select
         return this
     }

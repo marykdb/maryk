@@ -6,7 +6,7 @@ import maryk.core.properties.definitions.index.IsIndexable
 sealed class MigrationStatus {
     /** There is no existing model so the model is to be added as new. */
     object NewModel: MigrationStatus()
-    /** The model is up to date and needs no migration */
+    /** The model is up-to-date and needs no migration */
     object UpToDate: MigrationStatus()
     /** The model only has additions which do not need a migration */
     object OnlySafeAdds: MigrationStatus()

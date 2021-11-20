@@ -170,13 +170,13 @@ abstract class RootDataModel<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
                 when (definition) {
                     RootModelProperties.key -> {
                         keyDefinitionToReadLater = mutableListOf<JsonToken>().apply {
-                            reader.skipUntilNextField { add(it) }
+                            reader.skipUntilNextField(::add)
                         }
                         true
                     }
                     RootModelProperties.indices -> {
                         indicesToReadLater = mutableListOf<JsonToken>().apply {
-                            reader.skipUntilNextField { add(it) }
+                            reader.skipUntilNextField(::add)
                         }
                         true
                     }

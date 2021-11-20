@@ -9,6 +9,7 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.embedObject
 import maryk.core.properties.definitions.enum
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.types.DateUnit
 import maryk.core.query.DefinedByReference
 import maryk.core.query.addReference
 import maryk.core.values.SimpleObjectValues

@@ -13,7 +13,7 @@ import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeWriter
 
-/** Defines change to sets by [setValueChanges] */
+/** Defines change to a set by [setValueChanges] */
 data class SetChange internal constructor(
     val setValueChanges: List<SetValueChanges<*>>
 ) : IsChange {

@@ -3,7 +3,7 @@ package maryk.core.aggregations.bucket
 import kotlinx.datetime.LocalDateTime
 import maryk.core.aggregations.Aggregations
 import maryk.core.aggregations.AggregationsResponse
-import maryk.core.aggregations.bucket.DateUnit.Hours
+import maryk.core.properties.types.DateUnit.Hours
 import maryk.core.aggregations.metric.Sum
 import maryk.core.aggregations.metric.SumResponse
 import maryk.test.models.TestMarykModel

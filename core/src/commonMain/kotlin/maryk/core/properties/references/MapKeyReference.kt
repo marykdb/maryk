@@ -52,7 +52,5 @@ class MapKeyReference<K : Any, V : Any, CX : IsPropertyContext> internal constru
         throw NotImplementedError("Map Key reference is not supported to convert to storage bytes.")
     }
 
-    override fun resolve(values: Map<K, V>): K? {
-        return key
-    }
+    override fun resolve(values: Map<K, V>): K = key
 }

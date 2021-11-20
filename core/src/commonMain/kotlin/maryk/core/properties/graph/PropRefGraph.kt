@@ -189,7 +189,7 @@ data class PropRefGraph<P : PropertyDefinitions, DM : IsValuesDataModel<PS>, PS 
                         propertiesValue.add(
                             TypedValue(
                                 Graph,
-                                PropRefGraph.readJson(reader, newContext).toDataObject()
+                                readJson(reader, newContext).toDataObject()
                             )
                         )
                     }

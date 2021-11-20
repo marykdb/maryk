@@ -186,9 +186,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTra
                                 index = 0
                                 initIntByVar { valueBytes[index++] }
                             }
-                            Embed -> {
-                                Unit
-                            }
+                            Embed -> {}
                             TypeValue -> throw StorageException("Not used in direct encoding")
                         }
                     }

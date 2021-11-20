@@ -142,7 +142,7 @@ fun createVersionChecker(toVersion: ULong?, iterator: DBIterator, direction: Dir
                         val newKey = iterator.key()
 
                         if (!newKey.matchPart(0, indexKey, newKey.size, 0, indexKey.size - VERSION_BYTE_SIZE)) {
-                            iterator.prev() // Go back to last key so it can be processed next
+                            iterator.prev() // Go back to last key, so it can be processed next
                             break // Key does not match anymore so break out
                         }
 
@@ -204,7 +204,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> createGotoN
             if (iterator.isValid()) {
                 next()
             }
-            // Skip all of same index/value/key since they are different versions of the same
+            // Skip all same index/value/key since they are different versions of the same
             while (iterator.isValid() && iterator.key().let { it.matchPart(0, key, it.size, 0, keyOffset + keyLength) }) {
                 next()
             }

@@ -11,7 +11,7 @@ import maryk.core.values.SimpleObjectValues
 object ObjectCreate : IsChange {
     override val changeType = ChangeType.ObjectCreate
 
-    override fun filterWithSelect(select: RootPropRefGraph<out PropertyDefinitions>): ObjectCreate? {
+    override fun filterWithSelect(select: RootPropRefGraph<out PropertyDefinitions>): ObjectCreate {
         // Not influenced by select
         return this
     }

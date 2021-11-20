@@ -116,7 +116,7 @@ internal fun <E : TypeEnum<T>, T: Any, TO: Any, DO: Any, CX: IsPropertyContext> 
     shouldSerialize: (Unit.(Any) -> Boolean)? = null,
     capturer: (Unit.(CX, TypedValue<E, T>) -> Unit)? = null
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
-    MultiTypeDefinitionWrapper<E, T, TO, CX, DO>(
+    MultiTypeDefinitionWrapper(
         index,
         name ?: propName,
         InternalMultiTypeDefinition(required, final, typeEnum, typeIsFinal, definitionMap, default),

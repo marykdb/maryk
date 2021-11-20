@@ -149,7 +149,7 @@ data class ValueRange<T : Comparable<T>> internal constructor(
                     reader.nextToken().let {
                         (it as? TokenWithType)?.type?.let { tokenType ->
                             if (tokenType is UnknownYamlTag && tokenType.name == "Exclude") {
-                                valueMap[Properties.inclusiveFrom.index] = false
+                                valueMap[inclusiveFrom.index] = false
                             }
                         }
                     }
@@ -159,7 +159,7 @@ data class ValueRange<T : Comparable<T>> internal constructor(
                     reader.nextToken().let {
                         (it as? TokenWithType)?.type?.let { tokenType ->
                             if (tokenType is UnknownYamlTag && tokenType.name == "Exclude") {
-                                valueMap[Properties.inclusiveTo.index] = false
+                                valueMap[inclusiveTo.index] = false
                             }
                         }
                     }

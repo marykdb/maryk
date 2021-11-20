@@ -4,7 +4,6 @@ import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceWithParent
 import maryk.core.query.DefinedByReference
-import maryk.core.query.pairs.ReferenceValuePair
 
 /** Filter to DefinedByReference pairs */
 interface IsReferenceAnyPairsFilter<D: DefinedByReference<*>> : IsFilter {

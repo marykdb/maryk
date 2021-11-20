@@ -23,7 +23,6 @@ import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.ValidationFail
-import maryk.datastore.memory.assertRecent
 import maryk.datastore.shared.IsDataStore
 import maryk.lib.time.Time
 import maryk.test.assertType

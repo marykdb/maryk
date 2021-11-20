@@ -446,7 +446,7 @@ class DataStoreScanUpdatesAndFlowTest(
                 )
             ))
 
-            // No update should be handled, otherwise crashes since there is only 1 response slot and it has been used
+            // No update should be handled, otherwise crashes since there is only 1 response slot, and it has been used
         }
     }
 
@@ -616,7 +616,7 @@ class DataStoreScanUpdatesAndFlowTest(
                 dateTime = LocalDateTime(1901, 1, 2, 0, 0)
             )
 
-            // New object is added within range in already full list so we expect an add and a delete
+            // New object is added within range in already full list, so we expect an add and a delete
             dataStore.execute(TestMarykModel.add(
                 newDataObject2
             ))
@@ -789,7 +789,7 @@ class DataStoreScanUpdatesAndFlowTest(
                 dateTime = LocalDateTime(1901, 1, 2, 0, 0)
             )
 
-            // New object is added within range in already full list so we expect an add and a delete
+            // New object is added within range in already full list, so we expect an add and a delete
             dataStore.execute(TestMarykModel.add(
                 newDataObject2
             ))

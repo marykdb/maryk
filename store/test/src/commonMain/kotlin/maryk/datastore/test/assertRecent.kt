@@ -1,4 +1,4 @@
-package maryk.datastore.memory
+package maryk.datastore.test
 
 import maryk.core.clock.HLC
 import maryk.lib.time.Instant

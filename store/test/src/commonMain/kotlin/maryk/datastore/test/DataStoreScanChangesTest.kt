@@ -87,7 +87,7 @@ class DataStoreScanChangesTest(
 
         assertEquals(3, scanResponse.changes.size)
 
-        // Mind that Log is sorted in reverse so it goes back in time going forward
+        // Mind that Log is sorted in reverse, so it goes back in time going forward
         scanResponse.changes[0].let {
             expect(
                 listOf(
@@ -149,7 +149,7 @@ class DataStoreScanChangesTest(
 
         expect(2) { scanResponse.changes.size }
 
-        // Mind that Log is sorted in reverse so it goes back in time going forward
+        // Mind that Log is sorted in reverse, so it goes back in time going forward
         scanResponse.changes[0].apply {
             assertEquals(keys[2], key)
             assertNull(sortingKey)
@@ -167,7 +167,7 @@ class DataStoreScanChangesTest(
 
         expect(2) { scanResponse.changes.size }
 
-        // Mind that Log is sorted in reverse so it goes back in time going forward
+        // Mind that Log is sorted in reverse, so it goes back in time going forward
         scanResponse.changes[0].apply {
             assertEquals(keys[0], key)
             assertEquals(Bytes("AAECf///pBP6hn/XAAE"), sortingKey)
@@ -185,7 +185,7 @@ class DataStoreScanChangesTest(
 
         expect(3) { scanResponse.changes.size }
 
-        // Mind that Log is sorted in reverse so it goes back in time going forward
+        // Mind that Log is sorted in reverse, so it goes back in time going forward
         scanResponse.changes[0].apply {
             assertEquals(keys[3], key)
             assertEquals(Bytes("AAMCf///pBPjrX//AAM"), sortingKey)
@@ -203,7 +203,7 @@ class DataStoreScanChangesTest(
 
         expect(1) { scanResponse.changes.size }
 
-        // Mind that Log is sorted in reverse so it goes back in time going forward
+        // Mind that Log is sorted in reverse, so it goes back in time going forward
         scanResponse.changes[0].let {
             expect(
                 listOf(
@@ -263,7 +263,7 @@ class DataStoreScanChangesTest(
 
         expect(3) { scanResponse.changes.size }
 
-        // Mind that Log is sorted in reverse so it goes back in time going forward
+        // Mind that Log is sorted in reverse, so it goes back in time going forward
         scanResponse.changes[0].let {
             expect(
                 listOf(
@@ -325,7 +325,7 @@ class DataStoreScanChangesTest(
 
             expect(3) { scanResponse.changes.size }
 
-            // Mind that Log is sorted in reverse so it goes back in time going forward
+            // Mind that Log is sorted in reverse, so it goes back in time going forward
             scanResponse.changes[0].let {
                 expect(
                     listOf(

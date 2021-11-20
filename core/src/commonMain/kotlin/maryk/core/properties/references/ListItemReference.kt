@@ -92,10 +92,10 @@ class ListItemReference<T : Any, CX : IsPropertyContext> internal constructor(
 
     override fun writeSelfStorageBytes(writer: (byte: Byte) -> Unit) {
         // Write index bytes
-        index.toUInt().writeBytes(writer)
+        index.writeBytes(writer)
     }
 
-    override fun resolve(values: List<T>): T? = values[index.toInt()]
+    override fun resolve(values: List<T>): T? = values.getOrNull(index.toInt())
 
     override fun resolveFromAny(value: Any) = (value as? List<*>)?.get(this.index.toInt())
         ?: throw UnexpectedValueException("Expected List to get value by reference")

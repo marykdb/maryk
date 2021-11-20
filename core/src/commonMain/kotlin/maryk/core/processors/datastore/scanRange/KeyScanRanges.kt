@@ -4,7 +4,6 @@ import maryk.core.processors.datastore.matchers.IsIndexPartialToMatch
 import maryk.core.processors.datastore.matchers.UniqueToMatch
 import maryk.core.query.pairs.ReferenceValuePair
 import maryk.lib.extensions.compare.compareDefinedTo
-import maryk.lib.extensions.compare.compareTo
 
 /** Defines ranges to scan for key. Also contains partial matches to check. */
 class KeyScanRanges internal constructor(

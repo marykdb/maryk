@@ -126,7 +126,7 @@ fun <T: Any, CX: IsPropertyContext> PropertyDefinitions.set(
     default: Set<T>? = null,
     alternativeNames: Set<String>? = null
 ) = DefinitionWrapperDelegateLoader(this) { propName ->
-    SetDefinitionWrapper<T, CX, Any>(
+    SetDefinitionWrapper(
         index,
         name ?: propName,
         SetDefinition(required, final, minSize, maxSize, valueDefinition, default),

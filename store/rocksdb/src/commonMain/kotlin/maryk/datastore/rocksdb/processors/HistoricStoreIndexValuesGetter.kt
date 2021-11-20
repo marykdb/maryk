@@ -69,8 +69,8 @@ internal class HistoricStoreIndexValuesWalker(
 
 /**
  * A historical values getter which finds the first valid value until [latestVersion]
- * It stores iterators internally for each property so it can advance to the next version if all possible combinations
- * with that version have been captured.
+ * It stores iterators internally for each property, so it can advance to the next version if all possible combinations
+ * with that version has been captured.
  * It will internally check latestVersion and versionToSkip and if no progression could be made it will return false for
  * gotoNextVersion.
  */
@@ -81,7 +81,7 @@ private class HistoricStoreIndexValuesGetter(
     private val iterableReferenceMap = mutableMapOf<IsPropertyReference<*, *, *>, IterableReference>()
 
     // Latest version found in current walk
-    internal var latestVersion: ULong? = null
+    var latestVersion: ULong? = null
     // Version to skip during this walk
     private var versionToSkip: ULong? = null
 

@@ -46,7 +46,7 @@ interface IsListDefinitionWrapper<T : Any, TO : Any, LD : IsListDefinition<T, CX
 
     /** For quick notation to get any list item reference */
     fun refToAny(): (AnyOutPropertyReference?) -> ListAnyItemReference<T, CX> =
-        { this.getAnyItemRef(it) }
+        this::getAnyItemRef
 
     /** For quick notation to get a list item reference by [index] */
     infix fun refAt(index: UInt): (AnyOutPropertyReference?) -> ListItemReference<T, CX> =

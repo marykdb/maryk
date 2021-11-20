@@ -180,7 +180,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
         scanRequest.orderedKeys?.let { orderedKeys ->
             // Remove values which should or should not be there from passed orderedKeys
             // This so the requester is up to date with any in between filtered values
-            orderedKeys.subtract(matchingKeys).let { removedKeys ->
+            orderedKeys.subtract(matchingKeys.toSet()).let { removedKeys ->
                 for (removedKey in removedKeys) {
                     @Suppress("UNCHECKED_CAST")
                     val createdVersionLength = dbAccessor.get(columnFamilies.keys, dataStore.defaultReadOptions, removedKey.bytes, recyclableByteArray)
@@ -199,7 +199,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
                 }
             }
 
-            matchingKeys.subtract(orderedKeys).let { addedKeys ->
+            matchingKeys.subtract(orderedKeys.toSet()).let { addedKeys ->
                 for (addedKey in addedKeys) {
                     val valueLength = dbAccessor.get(columnFamilies.keys, dataStore.defaultReadOptions, addedKey.bytes, recyclableByteArray)
                     // Only process it if it was created

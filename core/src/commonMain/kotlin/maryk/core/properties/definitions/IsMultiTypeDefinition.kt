@@ -279,7 +279,7 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
             // Read the proto buf where the key tag is the type
             val key = ProtoBuf.readKey(wrappedReader)
 
-            val newType = this.typeEnum.resolve(key.tag.toUInt()) ?: throw ParseException("Unknown multi type index ${key.tag}")
+            val newType = this.typeEnum.resolve(key.tag) ?: throw ParseException("Unknown multi type index ${key.tag}")
 
             type = when(type) {
                 null -> newType

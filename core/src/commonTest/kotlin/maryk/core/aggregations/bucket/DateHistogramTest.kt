@@ -4,7 +4,7 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.aggregations.Aggregations
-import maryk.core.aggregations.bucket.DateUnit.Months
+import maryk.core.properties.types.DateUnit.Months
 import maryk.core.aggregations.metric.Sum
 import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext

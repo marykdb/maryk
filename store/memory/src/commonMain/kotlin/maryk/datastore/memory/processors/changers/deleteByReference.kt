@@ -88,8 +88,8 @@ internal fun <T : Any> deleteByReference(
                         -1,
                         keepAllVersions
                     ) { newCount ->
-                        toShiftListCount = newCount - reference.index.toUInt()
-                        listDefinition.validateSize(newCount.toUInt()) { listReference }
+                        toShiftListCount = newCount - reference.index
+                        listDefinition.validateSize(newCount) { listReference }
                     }
                     referenceOfParent = listReference.toStorageByteArray()
                     // Map values can be set to null to be deleted.

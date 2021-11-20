@@ -99,7 +99,7 @@ class TransactionIterator(
                 changesIndex = changes.size
             }
         } else {
-            // Skip all changes that were added in the mean time
+            // Skip all changes that were added in the meantime
             if (changes.isNotEmpty()) {
                 while (changesIndex < changes.size && rocksIterator.key() >= changes[changesIndex].key) {
                     changesIndex++
@@ -140,7 +140,7 @@ class TransactionIterator(
                 changesIndex = -1
             }
         } else {
-            // Skip all changes that were added in the mean time
+            // Skip all changes that were added in the meantime
             if (changes.isNotEmpty()) {
                 while (changesIndex > -1 && rocksIterator.key() <= changes[changesIndex].key) {
                     changesIndex--

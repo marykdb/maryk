@@ -18,7 +18,7 @@ import maryk.lib.extensions.compare.compareTo
 internal object HistoricStoreIndexValuesWalker {
     /**
      * Walk historical values of [record] for [indexable]
-     * Allows you to find all historical index keys for data object at [key]
+     * Allows you to find all historical index keys for data object
      * Result is passed to [handleIndexReference] with the index reference and the version
      */
     fun walkHistoricalValuesForIndexKeys(

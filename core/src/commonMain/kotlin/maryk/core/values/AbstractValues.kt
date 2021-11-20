@@ -101,7 +101,7 @@ abstract class AbstractValues<DO : Any, DM : IsDataModel<P>, P : AbstractPropert
     /** Get property from values with wrapper in [getProperty] and convert it to native usage */
     fun <TI : Any, TO : Any> get(getProperty: P.() -> IsDefinitionWrapper<TI, TO, *, DO>): TO? {
         @Suppress("UNCHECKED_CAST")
-        return this.invoke(getProperty as P.() -> IsDefinitionWrapper<TI, Any, *, DO>) as TO
+        return this.invoke(getProperty as P.() -> IsDefinitionWrapper<TI, Any, *, DO>) as TO?
     }
 
     /** Get property from values with wrapper in [getProperty] and convert it to native usage */

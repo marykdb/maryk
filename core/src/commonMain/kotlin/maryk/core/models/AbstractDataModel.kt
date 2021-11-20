@@ -51,7 +51,7 @@ abstract class AbstractDataModel<DO : Any, P : AbstractPropertyDefinitions<DO>, 
         context: CX? = null,
         pretty: Boolean = false
     ) = buildString {
-        val writer = JsonWriter(pretty = pretty) { append(it) }
+        val writer = JsonWriter(pretty = pretty, ::append)
         writeJson(values, writer, context)
     }
 
@@ -248,7 +248,7 @@ abstract class AbstractDataModel<DO : Any, P : AbstractPropertyDefinitions<DO>, 
         // Except if it is the InjectWithReference object in which it is encoded
         if (value is Inject<*, *> && this !is InjectWithReference.Companion) {
             if (context is RequestContext) {
-                context.collectInjectLevel(this) { definition.ref(it) }
+                context.collectInjectLevel(this, definition::ref)
                 context.collectInject(value)
             }
 
@@ -260,7 +260,7 @@ abstract class AbstractDataModel<DO : Any, P : AbstractPropertyDefinitions<DO>, 
                     || definition is IsMapDefinition<*, *, *>)
         ) {
             // Collect inject level if value can contain sub values
-            context.collectInjectLevel(this) { definition.ref(it) }
+            context.collectInjectLevel(this, definition::ref)
         }
 
         definition.capture(context, value)

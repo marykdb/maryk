@@ -109,12 +109,12 @@ abstract class AbstractIndexedEnumDefinition<E: IndexedEnum>(
             }
 
             if (definition.reservedNames != null && reservedNames?.containsAll(definition.reservedNames) != true) {
-                addIncompatibilityReason?.invoke("Enum does not contain all previous reserved names: ${reservedNames}")
+                addIncompatibilityReason?.invoke("Enum does not contain all previous reserved names: $reservedNames")
                 compatible = false
             }
 
             if (definition.reservedIndices != null && reservedIndices?.containsAll(definition.reservedIndices) != true) {
-                addIncompatibilityReason?.invoke("Enum does not contain all previous reserved names: ${reservedIndices}")
+                addIncompatibilityReason?.invoke("Enum does not contain all previous reserved names: $reservedIndices")
                 compatible = false
             }
 
@@ -183,6 +183,6 @@ abstract class AbstractIndexedEnumDefinition<E: IndexedEnum>(
             }
         }
 
-        return compatible;
+        return compatible
     }
 }

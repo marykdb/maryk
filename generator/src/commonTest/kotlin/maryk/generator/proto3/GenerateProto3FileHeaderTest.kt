@@ -36,7 +36,7 @@ class GenerateProto3FileHeaderTest {
 
     @Test
     fun testFileHeaderWithImportsConversion() {
-        var output = buildString {
+        val output = buildString {
             generateProto3FileHeader(
                 "maryk",
                 protosToImport = listOf("SimpleMarykModel", "MarykEnumEmbedded")

@@ -171,7 +171,7 @@ fun <E : MultiTypeEnum<out T>, T: Any, TO: Any, DO: Any, CX: ContainsDefinitions
     shouldSerialize: (Unit.(Any) -> Boolean)? = null,
     capturer: (Unit.(CX, TypedValue<E, T>) -> Unit)? = null
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
-    MultiTypeDefinitionWrapper<E, T, TO, CX, DO>(
+    MultiTypeDefinitionWrapper(
         index,
         name ?: propName,
         MultiTypeDefinition(required, final, typeEnum, typeIsFinal, default),

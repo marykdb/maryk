@@ -477,7 +477,7 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
                 qualifierLength,
                 offset,
                 readValueFromStorage,
-                index.toUInt(),
+                index,
                 reference,
                 select,
                 addToCache,

@@ -39,15 +39,11 @@ fun initByteArrayByHex(hex: String): ByteArray {
         throw ParseException("length is not a multiple of 2")
     }
     val b = ByteArray(hex.length / 2)
-    for (i in 0 until hex.length step 2) {
+    for (i in hex.indices step 2) {
         b[i / 2] = (hexCharToInt(hex[i]) shl 4 or hexCharToInt(hex[i + 1])).toByte()
     }
     return b
 }
 
-private fun hexCharToInt(ch: Char) = when (ch) {
-    in '0'..'9' -> ch - '0'
-    in 'a'..'f' -> ch - 'a' + 10
-    in 'A'..'F' -> ch - 'A' + 10
-    else -> throw ParseException("Invalid hex char: $ch")
-}
+private fun hexCharToInt(ch: Char) = ch.digitToIntOrNull(16)
+    ?: throw ParseException("Invalid hex char: $ch")

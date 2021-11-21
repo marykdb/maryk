@@ -21,7 +21,6 @@ import maryk.json.JsonToken.Stopped
 import maryk.json.JsonToken.Suspended
 import maryk.json.JsonToken.Value
 import maryk.lib.extensions.HEX_CHARS
-import maryk.lib.extensions.isDigit
 import maryk.lib.extensions.isLineBreak
 import kotlin.native.concurrent.SharedImmutable
 

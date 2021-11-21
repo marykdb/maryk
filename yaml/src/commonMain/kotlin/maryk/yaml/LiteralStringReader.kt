@@ -3,7 +3,6 @@ package maryk.yaml
 import maryk.json.JsonToken
 import maryk.json.TokenType
 import maryk.lib.extensions.isLineBreak
-import maryk.lib.extensions.isNonZeroDigit
 import maryk.lib.extensions.isSpacing
 import maryk.yaml.ChompStyle.CLIP
 import maryk.yaml.ChompStyle.KEEP
@@ -73,7 +72,7 @@ internal open class LiteralStringReader<P: IsYamlCharWithIndentsReader>(
     protected fun readStartForOptionsAndReturnIndent(description: String) {
         options@ while (true) {
             when {
-                this.lastChar.isNonZeroDigit() -> {
+                this.lastChar.isDigit() && this.lastChar != '0' -> {
                     if (this.indentCount != null) {
                         throw InvalidYamlContent("Cannot define indentation twice")
                     }

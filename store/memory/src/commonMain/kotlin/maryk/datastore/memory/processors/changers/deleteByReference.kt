@@ -43,7 +43,7 @@ internal fun <T : Any> deleteByReference(
     var referenceOfParent: ByteArray? = null
     var toShiftListCount = 0u
     val valueIndex = values.binarySearch {
-        it.reference.compareTo(referenceToCompareTo)
+        it.reference compareTo referenceToCompareTo
     }
 
     var shouldHandlePrevValue = true

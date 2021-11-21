@@ -73,7 +73,7 @@ internal data class DataRecord<DM : IsRootValuesDataModel<P>, P : PropertyDefini
             is QualifierFuzzyMatcher -> {
                 val start = qualifierMatcher.firstPossible()
                 val valueIndex = values.binarySearch {
-                    it.reference.compareTo(start)
+                    it.reference compareTo start
                 }.let {
                     if (it < 0) {
                         it * -1 - 1

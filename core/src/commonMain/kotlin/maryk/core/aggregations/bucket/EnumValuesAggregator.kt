@@ -15,7 +15,7 @@ data class EnumValuesAggregator<T: IndexedEnumComparable<T>>(
         val value = valueFetcher(request.reference) as T?
 
         if (value != null) {
-            val index = bucketAggregates.binarySearch { it.key.compareTo(value) }
+            val index = bucketAggregates.binarySearch { it.key compareTo value }
             val bucket = if (index < 0) {
                 BucketAggregator(value, request.aggregations).also {
                     bucketAggregates.add(index * -1 - 1, it)

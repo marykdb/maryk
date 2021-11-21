@@ -14,7 +14,7 @@ internal fun getCurrentIncMapKey(
     val referenceToCompareTo = reference.toStorageByteArray()
 
     val valueIndex = values.binarySearch {
-        it.reference.compareTo(referenceToCompareTo)
+        it.reference compareTo referenceToCompareTo
     }
 
     val nextValueReference = values.getOrNull(valueIndex + 1)?.reference

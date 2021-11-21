@@ -45,7 +45,7 @@ class Transaction(val rocksDBDataStore: RocksDBDataStore): DBAccessor(rocksDBDat
 
     override fun get(columnFamilyHandle: ColumnFamilyHandle, readOptions: ReadOptions, key: ByteArray): ByteArray? {
         val columnChanges = this.changes.getOrPut(columnFamilyHandle.getID()) { mutableListOf() }
-        val index = columnChanges.binarySearch { it.key.compareTo(key) }
+        val index = columnChanges.binarySearch { it.key compareTo key }
 
         return if (index < 0) {
             dataStore.db.get(columnFamilyHandle, readOptions, key)
@@ -57,7 +57,7 @@ class Transaction(val rocksDBDataStore: RocksDBDataStore): DBAccessor(rocksDBDat
 
     override fun get(columnFamilyHandle: ColumnFamilyHandle, readOptions: ReadOptions, key: ByteArray, offset: Int, len: Int, value: ByteArray, vOffset: Int, vLen: Int): Int {
         val columnChanges = this.changes.getOrPut(columnFamilyHandle.getID()) { mutableListOf() }
-        val index = columnChanges.binarySearch { it.key.compareTo(key) }
+        val index = columnChanges.binarySearch { it.key compareTo key }
 
         return if (index < 0) {
             super.get(columnFamilyHandle, readOptions, key, offset, len, value, vOffset, vLen)
@@ -93,7 +93,7 @@ class Transaction(val rocksDBDataStore: RocksDBDataStore): DBAccessor(rocksDBDat
                 if (current != null) {
                     throw RocksDBException("Merge error, key ${check.key.toHex()} changed before commit")
                 }
-            } else if (current == null || check.value.compareTo(current) != 0) {
+            } else if (current == null || check.value compareTo current != 0) {
                 throw RocksDBException("Merge error, key ${check.key.toHex()} changed before commit")
             }
         }
@@ -127,7 +127,7 @@ class Transaction(val rocksDBDataStore: RocksDBDataStore): DBAccessor(rocksDBDat
 
     private fun setChange(key: ByteArray, action: ChangeAction) {
         val columnChanges = this.changes.getOrPut(action.columnFamilyHandle.getID()) { mutableListOf() }
-        val index = columnChanges.binarySearch { it.key.compareTo(key) }
+        val index = columnChanges.binarySearch { it.key compareTo key }
         if (index >= 0) {
             columnChanges[index] = action
         } else {
@@ -141,7 +141,7 @@ class Transaction(val rocksDBDataStore: RocksDBDataStore): DBAccessor(rocksDBDat
                 this.checksBeforeCommit = it
             }
 
-        val index = checksBeforeCommit.binarySearch { it.key.compareTo(key) }
+        val index = checksBeforeCommit.binarySearch { it.key compareTo key }
         val check = CheckBeforeCommit(columnFamilyHandle, key, value)
         if (index >= 0) {
             checksBeforeCommit[index] = check

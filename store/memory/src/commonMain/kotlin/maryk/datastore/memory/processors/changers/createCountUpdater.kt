@@ -20,7 +20,7 @@ internal fun <T : Any> createCountUpdater(
     val referenceToCompareTo = reference.toStorageByteArray()
 
     val valueIndex = values.binarySearch {
-        it.reference.compareTo(referenceToCompareTo)
+        it.reference compareTo referenceToCompareTo
     }
 
     val previousCount = getValueAtIndex<Int>(values, valueIndex)?.value ?: 0

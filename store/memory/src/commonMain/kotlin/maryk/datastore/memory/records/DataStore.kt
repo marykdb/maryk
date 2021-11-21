@@ -81,7 +81,7 @@ internal class DataStore<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions>
         if (hardDelete) {
             for (indexValues in uniqueIndices) {
                 val valueIndex = dataRecord.values.binarySearch {
-                    it.reference.compareTo(indexValues.indexReference)
+                    it.reference compareTo indexValues.indexReference
                 }
                 if (valueIndex >= 0) {
                     when(val dataNode = dataRecord.values[valueIndex]) {
@@ -126,7 +126,7 @@ internal class DataStore<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions>
 
     /** Get unique index for [indexReference] or create it if it does not exist. */
     internal fun getOrCreateIndex(indexReference: ByteArray): IndexValues<DM, P> {
-        val i = indices.binarySearch { it.indexReference.compareTo(indexReference) }
+        val i = indices.binarySearch { it.indexReference compareTo indexReference }
         return if (i < 0) {
             IndexValues<DM, P>(indexReference).also {
                 indices.add(
@@ -141,7 +141,7 @@ internal class DataStore<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions>
 
     /** Get unique index for [indexReference] or create it if it does not exist. */
     internal fun getOrCreateUniqueIndex(indexReference: ByteArray): UniqueIndexValues<DM, P, Comparable<Any>> {
-        val i = uniqueIndices.binarySearch { it.indexReference.compareTo(indexReference) }
+        val i = uniqueIndices.binarySearch { it.indexReference compareTo indexReference }
         return if (i < 0) {
             UniqueIndexValues<DM, P, Comparable<Any>>(indexReference).also {
                 uniqueIndices.add(
@@ -156,7 +156,7 @@ internal class DataStore<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions>
 
     /** Get DataRecord by [key] */
     internal fun getByKey(key: ByteArray): DataRecord<DM, P>? {
-        val index = this.records.binarySearch { it.key.bytes.compareTo(key) }
+        val index = this.records.binarySearch { it.key.bytes compareTo key }
 
         return if (index >= 0) this.records[index] else null
     }

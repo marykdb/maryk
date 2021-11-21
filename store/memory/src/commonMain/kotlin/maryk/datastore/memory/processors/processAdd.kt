@@ -36,7 +36,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
 ): IsAddResponseStatus<DM> = try {
     objectToAdd.validate()
 
-    val index = dataStore.records.binarySearch { it.key.compareTo(key) }
+    val index = dataStore.records.binarySearch { it.key compareTo key }
 
     if (index < 0) {
         val recordValues = ArrayList<DataRecordNode>()
@@ -76,7 +76,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
 
         // Sort all nodes since some operations like map key values can be unsorted
         recordValues.sortWith { a: DataRecordNode, b: DataRecordNode ->
-            a.reference.compareTo(b.reference)
+            a.reference compareTo b.reference
         }
 
         uniquesToIndex?.forEach { value ->

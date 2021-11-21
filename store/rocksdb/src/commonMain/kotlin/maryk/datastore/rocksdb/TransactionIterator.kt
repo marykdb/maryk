@@ -29,7 +29,7 @@ class TransactionIterator(
         val changes = transactionChanges()
 
         val index = changes.binarySearch {
-            it.key.compareTo(target)
+            it.key compareTo target
         }
 
         changesIndex = if (index >= 0) index else -index - 1
@@ -53,7 +53,7 @@ class TransactionIterator(
         val changes = transactionChanges()
 
         val index = changes.binarySearch {
-            it.key.compareTo(target)
+            it.key compareTo target
         }
 
         changesIndex = if (index >= 0) index else -index - 2

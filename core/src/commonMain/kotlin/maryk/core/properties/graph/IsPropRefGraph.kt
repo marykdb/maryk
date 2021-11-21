@@ -14,7 +14,7 @@ interface IsPropRefGraph<in P : IsPropertyDefinitions> {
 
     /** Select a node by [index] or return null if not exists */
     fun selectNodeOrNull(index: UInt): IsPropRefGraphNode<P>? {
-        val propertyIndex = this.properties.binarySearch { property -> property.index.compareTo(index) }
+        val propertyIndex = this.properties.binarySearch { property -> property.index compareTo index }
         if (propertyIndex < 0) {
             // Not in select so skip!
             return null
@@ -35,7 +35,7 @@ interface IsPropRefGraph<in P : IsPropertyDefinitions> {
 
     /** Check if select can match [index] */
     fun contains(index: UInt) =
-        0 <= this.properties.binarySearch { property -> property.index.compareTo(index) }
+        0 <= this.properties.binarySearch { property -> property.index compareTo index }
 
     /** Check if select can match [reference] */
     fun contains(reference: IsPropertyReference<*, *, *>): Boolean {

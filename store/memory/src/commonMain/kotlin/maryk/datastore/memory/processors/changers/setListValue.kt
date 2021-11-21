@@ -26,7 +26,7 @@ internal fun <T : Any> setListValue(
     val referenceToCompareTo = listReference.toStorageByteArray()
 
     var valueIndex = values.binarySearch {
-        it.reference.compareTo(referenceToCompareTo)
+        it.reference compareTo referenceToCompareTo
     }
 
     // Set the count

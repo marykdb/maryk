@@ -23,7 +23,7 @@ internal class ByteArrayKtTest {
             bc.reserve(it.size)
             it.writeBytes(bc::write)
 
-            expect(0) { initByteArray(it.size, bc::read).compareTo(it) }
+            expect(0) { initByteArray(it.size, bc::read) compareTo it }
             bc.reset()
         }
     }

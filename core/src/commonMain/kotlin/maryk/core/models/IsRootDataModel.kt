@@ -59,8 +59,8 @@ interface IsRootDataModel<P : IsPropertyDefinitions> : IsNamedDataModel<P> {
                     synchronizedIteration(
                         indices.iterator(),
                         storedDataModel.orderedIndices!!.iterator(),
-                        Comparator { newValue, storedValue ->
-                            newValue.referenceStorageByteArray.compareTo(storedValue.referenceStorageByteArray)
+                        { newValue, storedValue ->
+                            newValue.referenceStorageByteArray compareTo storedValue.referenceStorageByteArray
                         },
                         processOnlyOnIterator1 = { newIndex ->
                             // Only index the values which have stored properties on the stored model
@@ -93,4 +93,3 @@ interface IsRootDataModel<P : IsPropertyDefinitions> : IsNamedDataModel<P> {
         }
     }
 }
-

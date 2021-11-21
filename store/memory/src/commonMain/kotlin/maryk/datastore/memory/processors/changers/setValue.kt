@@ -43,7 +43,7 @@ internal fun <T : Any> setValue(
     validate: ((DataRecordValue<T>, T?) -> Unit)? = null
 ): Boolean {
     val valueIndex = values.binarySearch {
-        it.reference.compareTo(reference)
+        it.reference compareTo reference
     }
 
     val prevValue = getValueAtIndex<T>(values, valueIndex)?.value

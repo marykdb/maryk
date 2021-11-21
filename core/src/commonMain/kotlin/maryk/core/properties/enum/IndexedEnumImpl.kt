@@ -12,7 +12,7 @@ abstract class IndexedEnumImpl<E: IndexedEnum>(
     // The get() is for native and JS
     override val name get() = this::class.simpleName ?: throw DefNotFoundException("Missing enum option name")
 
-    override fun compareTo(other: E) = this.index.compareTo(other.index)
+    override fun compareTo(other: E) = this.index compareTo other.index
 
     override fun equals(other: Any?) = other is IndexedEnum && index == other.index && name == other.name
 

@@ -33,7 +33,7 @@ interface IsValueItemsImpl : IsValueItems {
     override val size get() = list.size
 
     override fun contains(index: UInt) =
-        0 <= list.binarySearch { it.index.compareTo(index) }
+        0 <= list.binarySearch { it.index compareTo index }
 
     override operator fun get(index: UInt): Any? {
         this.list.searchItemByIndex(index).let {
@@ -87,7 +87,7 @@ interface IsValueItemsImpl : IsValueItems {
 
 internal fun List<ValueItem>.searchItemByIndex(index: UInt): Int =
     // Index can never be at a higher spot in list than index itself
-    binarySearch(toIndex = minOf(index.toInt(), size)) { it.index.compareTo(index) }
+    binarySearch(toIndex = minOf(index.toInt(), size)) { it.index compareTo index }
 
 @SharedImmutable
 val EmptyValueItems: IsValueItems = MutableValueItems()

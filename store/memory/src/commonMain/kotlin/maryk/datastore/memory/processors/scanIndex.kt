@@ -46,7 +46,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
                         // If start range was not highered it was not possible so scan to lastIndex
                         index.indexValues.lastIndex
                     } else {
-                        index.indexValues.binarySearch { it.value.compareTo(indexStartKey) }.let { valueIndex ->
+                        index.indexValues.binarySearch { it.value compareTo indexStartKey }.let { valueIndex ->
                             when {
                                 valueIndex < 0 -> valueIndex * -1 - 1 // If negative start at first entry point
                                 else -> valueIndex
@@ -90,7 +90,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
                     if (endRange.isEmpty()) {
                         index.indexValues.lastIndex
                     } else {
-                        index.indexValues.binarySearch { it.value.compareTo(endRange) }.let { valueIndex ->
+                        index.indexValues.binarySearch { it.value compareTo endRange }.let { valueIndex ->
                             when {
                                 valueIndex < 0 -> valueIndex * -1 - 2 // If negative start at before first entry point because it should be before match
                                 else -> valueIndex

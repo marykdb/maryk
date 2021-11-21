@@ -14,7 +14,7 @@ internal fun <T : Any> getList(
     val referenceToCompareTo = reference.toStorageByteArray()
 
     var valueIndex = values.binarySearch {
-        it.reference.compareTo(referenceToCompareTo)
+        it.reference compareTo referenceToCompareTo
     }
 
     if (valueIndex < 0) return null

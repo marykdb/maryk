@@ -16,15 +16,11 @@ internal class BytesTest {
     @Test
     fun testCompare() {
         expect(0) {
-            Bytes("//").compareTo(
-                Bytes("//")
-            )
+            Bytes("//") compareTo Bytes("//")
         }
 
         expect(-4) {
-            Bytes("AAAA").compareTo(
-                Bytes("BBBBBB")
-            )
+            Bytes("AAAA") compareTo Bytes("BBBBBB")
         }
     }
 

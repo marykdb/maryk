@@ -16,7 +16,7 @@ data class TypesAggregator<T: TypeEnum<*>>(
 
         if (value != null) {
             @Suppress("UNCHECKED_CAST")
-            val index = bucketAggregates.binarySearch { (it.key as Comparable<Any>).compareTo(value) }
+            val index = bucketAggregates.binarySearch { it.key as Comparable<Any> compareTo value }
             val bucket = if (index < 0) {
                 BucketAggregator(value, request.aggregations).also {
                     bucketAggregates.add(index * -1 - 1, it)

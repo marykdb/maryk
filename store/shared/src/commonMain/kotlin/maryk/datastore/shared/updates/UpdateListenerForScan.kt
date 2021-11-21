@@ -142,8 +142,8 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
     private fun findSortedKeyIndex(indexKey: ByteArray) =
         sortedValues?.get()?.binarySearch {
             when (scanType.direction) {
-                ASC -> it.compareTo(indexKey)
-                DESC -> indexKey.compareTo(it)
+                ASC -> it compareTo indexKey
+                DESC -> indexKey compareTo it
             }
         }
 
@@ -264,8 +264,8 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
      */
     private fun findKeyIndexForTableScan(key: Key<DM>): Int {
         val comparator: (Key<DM>) -> Int = when (scanType.direction) {
-            ASC -> {{ it.compareTo(key) }}
-            DESC -> {{ key.compareTo(it) }}
+            ASC -> {{ it compareTo key }}
+            DESC -> {{ key compareTo it }}
         }
         return matchingKeys.get().binarySearch(comparison = comparator)
     }
@@ -276,8 +276,8 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
      */
     private fun findKeyIndexForIndexScan(key: Key<DM>): Int {
         val predicate: (Key<DM>) -> Boolean = when (scanType.direction) {
-            ASC -> {{ it.compareTo(key) == 0 }}
-            DESC -> {{ key.compareTo(it) == 0 }}
+            ASC -> {{ it compareTo key == 0 }}
+            DESC -> {{ key compareTo it == 0 }}
         }
         return matchingKeys.get().indexOfFirst(predicate = predicate)
     }

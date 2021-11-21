@@ -33,13 +33,13 @@ data class Time(
     }
 
     override fun compareTo(other: Time): Int {
-        var cmp = hour.compareTo(other.hour)
+        var cmp = hour compareTo other.hour
         if (cmp == 0) {
-            cmp = minute.compareTo(other.minute)
+            cmp = minute compareTo other.minute
             if (cmp == 0) {
-                cmp = second.compareTo(other.second)
+                cmp = second compareTo other.second
                 if (cmp == 0) {
-                    cmp = milli.compareTo(other.milli)
+                    cmp = milli compareTo other.milli
                 }
             }
         }

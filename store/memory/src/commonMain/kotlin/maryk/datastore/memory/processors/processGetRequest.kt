@@ -38,7 +38,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
     val recordFetcher = createStoreRecordFetcher(dataStoreFetcher)
 
     for (key in getRequest.keys) {
-        val index = dataStore.records.binarySearch { it.key.compareTo(key) }
+        val index = dataStore.records.binarySearch { it.key compareTo key }
 
         // Only return if found
         if (index > -1) {

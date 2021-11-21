@@ -172,7 +172,7 @@ fun convertFilterToIndexPartsToMatch(
                     )
                 }
                 list.sortWith(object : Comparator<ByteArray> {
-                    override fun compare(a: ByteArray, b: ByteArray) = a.compareTo(b)
+                    override fun compare(a: ByteArray, b: ByteArray) = a compareTo b
                 })
                 listOfIndexParts.add(
                     IndexPartialToBeOneOf(index, keyIndex, keySize, list)

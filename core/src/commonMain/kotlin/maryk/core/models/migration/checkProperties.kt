@@ -26,7 +26,7 @@ internal fun <P : IsPropertyDefinitions> IsDataModel<P>.checkProperties(
         (this.properties as AbstractPropertyDefinitions<Any>).iterator(),
         (storedDataModel.properties as AbstractPropertyDefinitions<Any>).iterator(),
         { newValue, storedValue ->
-            newValue.index.compareTo(storedValue.index)
+            newValue.index compareTo storedValue.index
         },
         { newProp, storedProp ->
             newProp.compatibleWith(storedProp, handleMigrationReason)

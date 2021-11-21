@@ -67,7 +67,7 @@ private class HistoricStoreIndexValuesGetter(
             val referenceAsBytes = propertyReference.toStorageByteArray()
 
             val valueIndex = dataRecord.values.binarySearch {
-                it.reference.compareTo(referenceAsBytes)
+                it.reference compareTo referenceAsBytes
             }
 
             if (valueIndex < 0) {

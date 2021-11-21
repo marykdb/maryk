@@ -94,7 +94,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
     version: HLC,
     updateSharedFlow: MutableSharedFlow<IsUpdateAction>
 ): IsChangeResponseStatus<DM> {
-    val index = dataStore.records.binarySearch { it.key.compareTo(key) }
+    val index = dataStore.records.binarySearch { it.key compareTo key }
 
     return if (index < 0) {
         DoesNotExist(key)
@@ -664,7 +664,7 @@ private fun createValueWriter(
     keepAllVersions: Boolean
 ): ValueWriter<IsPropertyDefinition<*>> = { _, qualifier, _, mapValue ->
     val valueIndex = newValueList.binarySearch {
-        it.reference.compareTo(qualifier)
+        it.reference compareTo qualifier
     }
     setValueAtIndex(
         newValueList, valueIndex, qualifier, mapValue, version, keepAllVersions

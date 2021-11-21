@@ -66,11 +66,11 @@ value class HLC constructor(
 
     /** Compare against [other] HLC and return difference */
     operator fun compareTo(other: HLC) =
-        this.timestamp.compareTo(other.timestamp)
+        this.timestamp compareTo other.timestamp
 
     /** Compare against [other] timestamps and return difference */
     operator fun compareTo(other: ULong) =
-        this.timestamp.compareTo(other)
+        this.timestamp compareTo other
 
     companion object: IsStorageBytesEncodable<HLC> {
         override fun readStorageBytes(length: Int, reader: () -> Byte) =

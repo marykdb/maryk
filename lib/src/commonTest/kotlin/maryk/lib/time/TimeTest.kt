@@ -14,9 +14,9 @@ internal class TimeTest {
 
     @Test
     fun compare() {
-        expect(-1) { Time.MIN.compareTo(Time.NOON) }
-        expect(1) { Time.NOON.compareTo(Time.MIN) }
-        expect(0) { Time.MIDNIGHT.compareTo(Time.MIDNIGHT) }
+        expect(-1) { Time.MIN compareTo Time.NOON }
+        expect(1) { Time.NOON compareTo Time.MIN }
+        expect(0) { Time.MIDNIGHT compareTo Time.MIDNIGHT }
     }
 
     @Test

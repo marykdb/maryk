@@ -26,7 +26,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
     historicStoreIndexValuesWalker: HistoricStoreIndexValuesWalker?,
     updateSharedFlow: MutableSharedFlow<IsUpdateAction>
 ) : IsDeleteResponseStatus<DM> {
-    val index = dataStore.records.binarySearch { it.key.compareTo(key) }
+    val index = dataStore.records.binarySearch { it.key compareTo key }
 
     return when {
         index > -1 -> {
@@ -63,7 +63,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
                 val newValues = oldRecord.values.toMutableList()
 
                 val valueIndex = oldRecord.values.binarySearch {
-                    it.reference.compareTo(objectSoftDeleteQualifier)
+                    it.reference compareTo objectSoftDeleteQualifier
                 }
                 setValueAtIndex(
                     newValues,

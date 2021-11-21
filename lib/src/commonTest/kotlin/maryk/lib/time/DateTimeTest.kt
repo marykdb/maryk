@@ -17,8 +17,8 @@ internal class DateTimeTest {
 
     @Test
     fun compare() {
-        expect(-1999998) { DateTime.MIN.compareTo(DateTime.MAX_IN_SECONDS) }
-        expect(1999998) { DateTime.MAX_IN_MILLIS.compareTo(DateTime.MIN) }
-        expect(0) { dateTime.compareTo(dateTime) }
+        expect(-1999998) { DateTime.MIN compareTo DateTime.MAX_IN_SECONDS }
+        expect(1999998) { DateTime.MAX_IN_MILLIS compareTo DateTime.MIN }
+        expect(0) { dateTime compareTo dateTime }
     }
 }

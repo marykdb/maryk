@@ -94,7 +94,7 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readStorageToCha
 
     // Add changes to versionedChangesCollection
     val changeAdder: ChangeAdder = { version: ULong, changeType: ChangeType, changePart: Any ->
-        val index = mutableVersionedChanges.binarySearch { it.version.compareTo(version) }
+        val index = mutableVersionedChanges.binarySearch { it.version compareTo version }
 
         if (index < 0) {
             mutableVersionedChanges.add(

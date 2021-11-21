@@ -32,7 +32,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGet
     getRequest.checkMaxVersions(dataStore.keepAllVersions)
 
     for (key in getRequest.keys) {
-        val index = dataStore.records.binarySearch { it.key.compareTo(key) }
+        val index = dataStore.records.binarySearch { it.key compareTo key }
 
         // Only return if found
         if (index > -1) {

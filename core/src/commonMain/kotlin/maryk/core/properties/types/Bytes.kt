@@ -28,7 +28,7 @@ open class Bytes(val bytes: ByteArray) : Comparable<Bytes> {
 
     override fun toString() = Base64.encode(bytes)
 
-    override fun compareTo(other: Bytes) = bytes.compareTo(other.bytes)
+    override infix fun compareTo(other: Bytes) = bytes compareTo other.bytes
 
     override fun hashCode() = hashCode
 

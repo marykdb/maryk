@@ -21,9 +21,9 @@ internal class ValueDataObjectTest {
 
     @Test
     fun testCompareToBytes() {
-        expect(0) { value.compareTo(value) }
-        expect(-1) { value.compareTo(value2) }
-        expect(1) { value2.compareTo(value) }
+        expect(0) { value compareTo value }
+        expect(-1) { value compareTo value2 }
+        expect(1) { value2 compareTo value }
     }
 
     @Test
@@ -31,7 +31,7 @@ internal class ValueDataObjectTest {
         val bytes = value.toByteArray()
         val new = TestValueObject.readFromBytes(bytes.iterator()::nextByte)
 
-        expect(0) { new.compareTo(value) }
+        expect(0) { new compareTo value }
     }
 
     @Test
@@ -39,6 +39,6 @@ internal class ValueDataObjectTest {
         val string = value.toBase64()
         val new = TestValueObject.fromBase64(string)
 
-        expect(0) { new.compareTo(value) }
+        expect(0) { new compareTo value }
     }
 }

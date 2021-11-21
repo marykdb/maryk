@@ -12,7 +12,7 @@ internal fun <T : Any> getValue(
     toVersion: HLC? = null
 ): DataRecordValue<T>? {
     val valueIndex = values.binarySearch {
-        it.reference.compareTo(reference)
+        it.reference compareTo reference
     }
     return getValueAtIndex(values, valueIndex, toVersion)
 }

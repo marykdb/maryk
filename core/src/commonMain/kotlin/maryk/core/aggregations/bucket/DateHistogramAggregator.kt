@@ -18,7 +18,7 @@ data class DateHistogramAggregator<T: Comparable<*>>(
             val roundedValue = value.roundToDateUnit(request.dateUnit)
 
             @Suppress("UNCHECKED_CAST")
-            val index = bucketAggregates.binarySearch { (it.key as Comparable<Any>).compareTo(roundedValue) }
+            val index = bucketAggregates.binarySearch { it.key as Comparable<Any> compareTo roundedValue }
             val bucket = if (index < 0) {
                 BucketAggregator(roundedValue, request.aggregations).also {
                     bucketAggregates.add(index * -1 - 1, it)

@@ -19,10 +19,7 @@ kotlin {
         }
         commonTest {
             dependencies {
-                implementation(project(":testmodels")) {
-                    // Workaround for: https://youtrack.jetbrains.com/issue/KT-33712
-                    exclude(module = "core")
-                }
+                implementation(project(":testmodels"))
             }
         }
     }

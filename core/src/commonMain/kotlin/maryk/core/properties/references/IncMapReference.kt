@@ -52,36 +52,35 @@ open class IncMapReference<K : Comparable<K>, V : Any, CX : IsPropertyContext> i
     ): IsPropertyReference<*, IsPropertyDefinition<*>, *> {
         val protoKey = ProtoBuf.readKey(reader)
         val index = protoKey.tag
-        // Because of an issue in JS not working with unsigned it needs to be an if
-        // https://youtrack.jetbrains.com/issue/KT-31145
-        @Suppress("CascadeIf")
-        return if (index == 0u) {
-            MapValueReference(
-                this.propertyDefinition.keyDefinition.readTransportBytes(
-                    ProtoBuf.getLength(protoKey.wireType, reader),
-                    reader
-                ),
-                this.propertyDefinition.definition,
-                this
-            )
+        return when (index) {
+            0u -> {
+                MapValueReference(
+                    this.propertyDefinition.keyDefinition.readTransportBytes(
+                        ProtoBuf.getLength(protoKey.wireType, reader),
+                        reader
+                    ),
+                    this.propertyDefinition.definition,
+                    this
+                )
+            }
+            1u -> {
+                MapKeyReference(
+                    this.propertyDefinition.keyDefinition.readTransportBytes(
+                        ProtoBuf.getLength(protoKey.wireType, reader),
+                        reader
+                    ),
+                    this.propertyDefinition.definition,
+                    this
+                )
+            }
+            2u -> {
+                MapAnyValueReference(
+                    this.propertyDefinition.definition,
+                    this
+                )
+            }
+            else -> throw ParseException("Unknown Key reference type ${protoKey.tag}")
         }
-        else if (index == 1u) {
-            MapKeyReference(
-                this.propertyDefinition.keyDefinition.readTransportBytes(
-                    ProtoBuf.getLength(protoKey.wireType, reader),
-                    reader
-                ),
-                this.propertyDefinition.definition,
-                this
-            )
-        }
-        else if (index == 2u) {
-            MapAnyValueReference(
-                this.propertyDefinition.definition,
-                this
-            )
-        }
-        else throw ParseException("Unknown Key reference type ${protoKey.tag}")
     }
 
     override fun getEmbeddedStorageRef(

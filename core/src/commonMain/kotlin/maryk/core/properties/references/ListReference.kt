@@ -33,15 +33,13 @@ open class ListReference<T : Any, CX : IsPropertyContext> internal constructor(
     ): IsPropertyReference<*, IsPropertyDefinition<*>, *> {
         val protoKey = ProtoBuf.readKey(reader)
         val index = protoKey.tag
-        // Because of an issue in JS not working with unsigned it needs to be an if
-        // https://youtrack.jetbrains.com/issue/KT-31145
-        @Suppress("CascadeIf")
-        return if (index == 0u){
-            ListItemReference(initUIntByVar(reader), propertyDefinition.definition, this)
-        } else if (index == 1u) {
-            ListAnyItemReference(propertyDefinition.definition, this)
-        } else {
-            throw ParseException("Unknown List reference type $index")
+        return when (index) {
+            0u ->
+                ListItemReference(initUIntByVar(reader), propertyDefinition.definition, this)
+            1u ->
+                ListAnyItemReference(propertyDefinition.definition, this)
+            else ->
+                throw ParseException("Unknown List reference type $index")
         }
     }
 

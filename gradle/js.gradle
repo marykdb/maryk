@@ -1,6 +1,6 @@
 // Gradle script to setup a JS multi-platform project
 kotlin {
-    js {
+    js(IR) {
         compilations.all {
             kotlinOptions {
                 freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"

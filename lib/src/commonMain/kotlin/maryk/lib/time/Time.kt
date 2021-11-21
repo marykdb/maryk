@@ -1,5 +1,6 @@
 package maryk.lib.time
 
+import kotlinx.datetime.Clock
 import maryk.lib.exceptions.ParseException
 import maryk.lib.extensions.zeroFill
 import kotlin.math.floor
@@ -118,7 +119,7 @@ data class Time(
         }
 
         fun nowUTC(): Time {
-            val nowInMillis = Instant.getCurrentEpochTimeInMillis()
+            val nowInMillis = Clock.System.now().toEpochMilliseconds()
             val millisOfDay = floor(nowInMillis.toDouble() % MILLIS_PER_DAY).toInt()
             return ofMilliOfDay(millisOfDay)
         }

@@ -1,12 +1,12 @@
 package maryk.core.properties.definitions
 
+import kotlinx.datetime.Clock
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.properties.WriteCacheFailer
 import maryk.core.properties.types.TimePrecision
 import maryk.lib.exceptions.ParseException
-import maryk.lib.time.Instant
 import maryk.lib.time.Time
 import maryk.test.ByteCollector
 import kotlin.test.Test
@@ -43,7 +43,7 @@ internal class TimeDefinitionTest {
 
     @Test
     fun createNowTime() {
-        val expected = Instant.getCurrentEpochTimeInMillis() % (24 * 60 * 60 * 1000) / 1000
+        val expected = Clock.System.now().toEpochMilliseconds() % (24 * 60 * 60 * 1000) / 1000
         val now = def.createNow().toSecondsOfDay()
 
         assertTrue("$now is diverging too much from $expected time") {

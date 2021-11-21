@@ -1,18 +1,18 @@
 package maryk.core.properties.definitions
 
+import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone.Companion.UTC
 import kotlinx.datetime.toInstant
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.properties.types.DateUnit
-import maryk.core.properties.types.roundToDateUnit
 import maryk.core.properties.WriteCacheFailer
+import maryk.core.properties.types.DateUnit
 import maryk.core.properties.types.TimePrecision
+import maryk.core.properties.types.roundToDateUnit
 import maryk.lib.exceptions.ParseException
 import maryk.lib.time.DateTime
-import maryk.lib.time.Instant
 import maryk.lib.time.nowUTC
 import maryk.test.ByteCollector
 import kotlin.test.Test
@@ -47,7 +47,7 @@ internal class DateTimeDefinitionTest {
     @Test
     fun createNowDateTime() {
         val now = def.createNow().toInstant(UTC).toEpochMilliseconds()
-        val expected = Instant.getCurrentEpochTimeInMillis()
+        val expected = Clock.System.now().toEpochMilliseconds()
 
         assertTrue("$now is diverging too much from $expected time") {
             expected - now in -100..100

@@ -19,13 +19,9 @@ any of the functionalities exposed in this library, those functionalities will b
 -  [Extensions to base types](src/commonMain/kotlin/maryk/lib/exceptions/ParseException.kt)
 -  Date/Time functionality
    * [Date](src/commonMain/kotlin/maryk/lib/time/Date.kt) - 
-     Data class to represents a `Date` with year / month / date
+     Object to help with some basic date operations based on KotlinX LocalDate
    * [DateTime](src/commonMain/kotlin/maryk/lib/time/DateTime.kt) -
-     Data class to represents a `DateTime` with year / month / date 
-   * [Instant.getCurrentEpochTimeInMillis()](src/commonMain/kotlin/maryk/lib/time/Instant.kt) -
-     Method to get the current time in milliseconds since epoch start 
-   * [ISO8601.toDate()](src/commonMain/kotlin/maryk/lib/time/ISO8601.kt) -
-     Method to parse ISO 8601 string to `Date`
+     Object to help with some basic date time operations based on KotlinX LocalDateTime
    * [Time](src/commonMain/kotlin/maryk/lib/time/Time.kt) - 
      Object to represent `Time`
 - [UUID.generateUUID()](src/commonMain/kotlin/maryk/lib/uuid/UUID.kt) - 

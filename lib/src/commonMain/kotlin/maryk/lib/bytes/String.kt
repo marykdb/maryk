@@ -1,11 +1,24 @@
 package maryk.lib.bytes
 
+import maryk.lib.recyclableByteArray
+
 private const val MIN_SUPPLEMENTARY_CODE_POINT = 0x010000
 
 expect fun fromCodePoint(value: Int): String
 expect fun initString(bytes: ByteArray, offset: Int, length: Int): String
-expect fun initString(length: Int, reader: () -> Byte): String
 expect fun codePointAt(string: String, index: Int): Int
+
+fun initString(length: Int, reader: () -> Byte): String =
+    if (length > recyclableByteArray.size) {
+        ByteArray(length) {
+            reader()
+        }.decodeToString()
+    } else {
+        for (index in 0 until length) {
+            recyclableByteArray[index] = reader()
+        }
+        recyclableByteArray.decodeToString(0, length)
+    }
 
 fun String.writeUTF8Bytes(writer: (byte: Byte) -> Unit) = this.toUTF8Bytes(writer)
 
@@ -59,7 +72,7 @@ private fun calculateGenericUTF8Length(string: String, startPosition: Int): Int 
         } else {
             utf8Length += 2
             // Check if char is a correct surrogate pair
-            if (isSurrogate(char)) {
+            if (char.isSurrogate()) {
                 val cp = codePointAt(string, i)
                 if (cp < MIN_SUPPLEMENTARY_CODE_POINT) {
                     throw IllegalArgumentException("Unpaired surrogate at index $i")
@@ -119,13 +132,4 @@ private fun toCodePoint(high: Char, low: Char) =
             )
 
 private fun isSurrogatePair(high: Char, low: Char) =
-    isHighSurrogate(high) && isLowSurrogate(low)
-
-private fun isHighSurrogate(ch: Char) =
-    ch >= Char.MIN_HIGH_SURROGATE && ch.code < Char.MAX_HIGH_SURROGATE.code + 1
-
-private fun isLowSurrogate(ch: Char) =
-    ch >= Char.MIN_LOW_SURROGATE && ch.code < Char.MAX_LOW_SURROGATE.code + 1
-
-private fun isSurrogate(ch: Char) =
-    ch >= Char.MIN_SURROGATE && ch.code < Char.MAX_SURROGATE.code + 1
+    high.isHighSurrogate() && low.isLowSurrogate()

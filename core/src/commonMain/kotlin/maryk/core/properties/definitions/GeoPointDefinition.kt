@@ -64,8 +64,8 @@ data class GeoPointDefinition(
 
     override fun fromString(string: String) = string.toGeoPoint()
 
-    override fun fromNativeType(value: Any) = when {
-        value is GeoPoint -> value
+    override fun fromNativeType(value: Any) = when (value) {
+        is GeoPoint -> value
         else -> null
     }
 

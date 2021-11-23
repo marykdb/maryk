@@ -22,8 +22,6 @@ fun initString(length: Int, reader: () -> Byte): String =
         recyclableByteArray.decodeToString(0, length)
     }
 
-fun String.writeUTF8Bytes(writer: (byte: Byte) -> Unit) = this.toUTF8Bytes(writer)
-
 /**
  * Calculates the length of a String in UTF8 bytes in an optimized way
  * @throws IllegalArgumentException when string contains invalid UTF-16: unpaired surrogates
@@ -91,7 +89,7 @@ private fun calculateGenericUTF8Length(string: String, startPosition: Int): Int 
  * Writes the UTF8 bytes of String to a [writer].
  * @throws IllegalArgumentException when string contains invalid UTF-16 unpaired surrogates
  */
-private fun String.toUTF8Bytes(writer: (byte: Byte) -> Unit) {
+fun String.writeUTF8Bytes(writer: (byte: Byte) -> Unit) {
     val utf16Length = this.length
     var i = 0
     while (i < utf16Length) {

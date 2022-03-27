@@ -4,13 +4,13 @@ repositories {
 }
 
 plugins {
-    id("com.android.library") version "4.2.2" apply false
+    id("com.android.library") version "7.0.4" apply false
 }
 
 buildscript {
     extra["kotlinVersion"] = "1.6.10"
     extra["coroutinesVersion"] = "1.6.0"
-    extra["marykRocksDBVersion"] = "6.25.3"
+    extra["marykRocksDBVersion"] = "7.0.3"
 
     repositories {
         mavenCentral()

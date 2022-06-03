@@ -5,7 +5,7 @@ kotlin {
             kotlinOptions {
                 allWarningsAsErrors = true
                 jvmTarget = '15'
-                freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
+                freeCompilerArgs += "-opt-in=kotlin.RequiresOptIn"
             }
         }
     }

@@ -3,7 +3,7 @@ kotlin {
     js(IR) {
         compilations.all {
             kotlinOptions {
-                freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
+                freeCompilerArgs += "-opt-in=kotlin.RequiresOptIn"
             }
         }
         browser {}

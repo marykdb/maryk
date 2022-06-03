@@ -8,8 +8,8 @@ plugins {
 }
 
 buildscript {
-    extra["kotlinVersion"] = "1.6.10"
-    extra["coroutinesVersion"] = "1.6.0"
+    extra["kotlinVersion"] = "1.7.0-RC2"
+    extra["coroutinesVersion"] = "1.5.2"
     extra["marykRocksDBVersion"] = "7.0.3"
 
     repositories {

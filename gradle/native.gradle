@@ -3,7 +3,7 @@ kotlin {
     macosArm64('macos') {
         compilations.all {
             kotlinOptions {
-                freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
+                freeCompilerArgs += "-opt-in=kotlin.RequiresOptIn"
             }
         }
         binaries {
@@ -16,7 +16,7 @@ kotlin {
     ios {
         compilations.all {
             kotlinOptions {
-                freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
+                freeCompilerArgs += "-opt-in=kotlin.RequiresOptIn"
             }
         }
         compilations["main"].defaultSourceSet {

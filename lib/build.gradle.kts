@@ -3,23 +3,25 @@ plugins {
 }
 
 apply {
-    from("../gradle/common.gradle")
-    from("../gradle/js.gradle")
-    from("../gradle/jvm.gradle")
-    from("../gradle/native.gradle")
     from("../gradle/publish.gradle")
 }
 
 kotlin {
+    jvm()
+
+    js(IR) {
+        browser {}
+        nodejs {}
+    }
+
     sourceSets {
-        commonMain {
+        val commonMain by getting {
             dependencies {
-                api("org.jetbrains.kotlinx:kotlinx-datetime:0.3.1")
+                api("org.jetbrains.kotlinx:kotlinx-datetime:0.3.3")
             }
         }
-        commonTest {
+        val commonTest by getting {
             dependencies {
-                api("org.jetbrains.kotlinx:kotlinx-datetime:0.3.1")
                 implementation(project(":testlib"))
             }
         }
@@ -31,5 +33,39 @@ kotlin {
                 api(npm("safe-buffer", "5.2.1"))
             }
         }
+        val darwinMain by creating {
+            dependsOn(commonMain)
+        }
+        val darwinTest by creating {
+            dependsOn(commonTest)
+        }
+    }
+
+    fun org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget.setupAppleTarget() {
+        compilations["main"].apply {
+            defaultSourceSet {
+                val darwinMain by sourceSets.getting {}
+                dependsOn(darwinMain)
+            }
+        }
+
+        compilations["test"].apply {
+            defaultSourceSet {
+                val darwinTest by sourceSets.getting {}
+                dependsOn(darwinTest)
+            }
+        }
+    }
+
+    ios {
+        setupAppleTarget()
+    }
+
+    macosX64 {
+        setupAppleTarget()
+    }
+
+    macosArm64 {
+        setupAppleTarget()
     }
 }

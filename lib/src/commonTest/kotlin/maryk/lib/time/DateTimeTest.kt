@@ -2,6 +2,7 @@ package maryk.lib.time
 
 import kotlinx.datetime.LocalDateTime
 import kotlin.test.Test
+import kotlin.test.assertTrue
 import kotlin.test.expect
 
 internal class DateTimeTest {
@@ -17,8 +18,8 @@ internal class DateTimeTest {
 
     @Test
     fun compare() {
-        expect(-1999998) { DateTime.MIN compareTo DateTime.MAX_IN_SECONDS }
-        expect(1999998) { DateTime.MAX_IN_MILLIS compareTo DateTime.MIN }
+        assertTrue { DateTime.MIN compareTo DateTime.MAX_IN_SECONDS < 0 }
+        assertTrue { DateTime.MAX_IN_MILLIS compareTo DateTime.MIN > 0 }
         expect(0) { dateTime compareTo dateTime }
     }
 }

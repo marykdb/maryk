@@ -3,13 +3,20 @@ plugins {
 }
 
 apply {
-    from("../../gradle/common.gradle")
-    from("../../gradle/jvm.gradle")
-    from("../../gradle/js.gradle")
-    from("../../gradle/native.gradle")
 }
 
 kotlin {
+    jvm()
+
+    js(IR) {
+        browser {}
+        nodejs {}
+    }
+
+    ios()
+    macosX64()
+    macosArm64()
+
     sourceSets {
         commonMain {
             dependencies {
@@ -19,4 +26,3 @@ kotlin {
         }
     }
 }
-

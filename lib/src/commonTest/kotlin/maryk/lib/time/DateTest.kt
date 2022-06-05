@@ -2,13 +2,14 @@ package maryk.lib.time
 
 import kotlinx.datetime.LocalDate
 import kotlin.test.Test
+import kotlin.test.assertTrue
 import kotlin.test.expect
 
 internal class DateTest {
     @Test
     fun compare() {
-        expect(-1999998) { Date.MIN compareTo Date.MAX }
-        expect(1999998) { Date.MAX compareTo Date.MIN }
+        assertTrue { Date.MIN compareTo Date.MAX < 0 }
+        assertTrue { Date.MAX compareTo Date.MIN > 0 }
         expect(0) { LocalDate.nowUTC() compareTo LocalDate.nowUTC() }
     }
 }

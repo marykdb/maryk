@@ -19,12 +19,6 @@ android {
 // Gradle script to setup an Android multi-platform project
 kotlin {
     android {
-        compilations.all {
-            kotlinOptions {
-                allWarningsAsErrors = true
-                jvmTarget = "1.8"
-            }
-        }
         publishAllLibraryVariants()
         publishLibraryVariantsGroupedByFlavor = true
     }

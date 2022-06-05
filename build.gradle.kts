@@ -4,7 +4,7 @@ repositories {
 }
 
 plugins {
-    id("com.android.library") version "7.0.4" apply false
+    id("com.android.library") version "7.2.1" apply false
 }
 
 buildscript {
@@ -19,8 +19,16 @@ buildscript {
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${project.extra["kotlinVersion"]}")
     }
 }
-
 allprojects {
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().all {
+        kotlinOptions {
+            languageVersion = "1.7"
+            apiVersion = "1.7"
+            freeCompilerArgs += "-progressive"
+            allWarningsAsErrors = true
+            jvmTarget = "1.8"
+        }
+    }
     repositories {
         mavenCentral()
         google()

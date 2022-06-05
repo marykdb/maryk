@@ -4,9 +4,6 @@ plugins {
 
 apply {
     from("../../gradle/android.gradle")
-    from("../../gradle/common.gradle")
-    from("../../gradle/jvm.gradle")
-    from("../../gradle/native.gradle")
     from("../../gradle/publish.gradle")
 }
 
@@ -17,6 +14,12 @@ repositories {
 }
 
 kotlin {
+    jvm()
+
+    ios()
+    macosX64()
+    macosArm64()
+
     sourceSets {
         commonMain {
             dependencies {

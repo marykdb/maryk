@@ -3,18 +3,21 @@ plugins {
 }
 
 apply {
-    from("../gradle/common.gradle")
-    from("../gradle/js.gradle")
-    from("../gradle/jvm.gradle")
-    from("../gradle/native.gradle")
     from("../gradle/publish.gradle")
 }
 
 val coroutinesVersion = rootProject.extra["coroutinesVersion"]
 
 kotlin {
+    jvm()
+
+    js(IR) {
+        browser {}
+        nodejs {}
+    }
+
     sourceSets {
-        commonMain {
+        val commonMain by getting {
             dependencies {
                 api(kotlin("test-common"))
                 api(kotlin("test-annotations-common"))
@@ -22,6 +25,7 @@ kotlin {
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
             }
         }
+        val commonTest by getting
         val jvmMain by getting {
             dependencies {
                 api(kotlin("test"))
@@ -34,5 +38,39 @@ kotlin {
                 api(npm("crypto-browserify", "3.12.0"))
             }
         }
+        val darwinMain by creating {
+            dependsOn(commonMain)
+        }
+        val darwinTest by creating {
+            dependsOn(commonTest)
+        }
+    }
+
+    fun org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget.setupAppleTarget() {
+        compilations["main"].apply {
+            defaultSourceSet {
+                val darwinMain by sourceSets.getting {}
+                dependsOn(darwinMain)
+            }
+        }
+
+        compilations["test"].apply {
+            defaultSourceSet {
+                val darwinTest by sourceSets.getting {}
+                dependsOn(darwinTest)
+            }
+        }
+    }
+
+    ios {
+        setupAppleTarget()
+    }
+
+    macosX64 {
+        setupAppleTarget()
+    }
+
+    macosArm64 {
+        setupAppleTarget()
     }
 }

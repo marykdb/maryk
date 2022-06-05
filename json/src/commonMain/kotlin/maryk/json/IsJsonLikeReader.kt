@@ -91,5 +91,5 @@ open class InvalidJsonContent(
     var lineNumber: Int? = null
     var columnNumber: Int? = null
 
-    override val message get() = "[l: $lineNumber, c: $columnNumber] ${super.message}"
+    override fun toString() = "[l: $lineNumber, c: $columnNumber] $message"
 }

@@ -25,7 +25,6 @@ import maryk.datastore.shared.IsDataStore
 import maryk.lib.time.Time
 import maryk.test.assertType
 import maryk.test.models.TestMarykModel
-import maryk.test.runSuspendingTest
 import kotlin.test.expect
 
 class DataStoreChangeValidationTest(
@@ -46,64 +45,60 @@ class DataStoreChangeValidationTest(
         "executeChangeListSizeValidationExceptionRequest" to ::executeChangeListSizeValidationExceptionRequest
     )
 
-    override fun initData() {
-        runSuspendingTest {
-            val addResponse = dataStore.execute(
-                TestMarykModel.add(
-                    TestMarykModel(
-                        "haha1",
-                        5,
-                        6u,
-                        0.43,
-                        LocalDateTime(2018, 3, 2, 0, 0),
-                        true,
-                        listOfString = listOf("a", "b", "c"),
-                        map = mapOf(Time(2, 3, 5) to "test"),
-                        set = setOf(LocalDate(2018, 3, 4))
-                    ),
-                    TestMarykModel(
-                        "haha2",
-                        3,
-                        8u,
-                        1.244,
-                        LocalDateTime(2018, 1, 2, 0, 0),
-                        false,
-                        listOfString = listOf("c", "d", "e"),
-                        map = mapOf(Time(12, 33, 45) to "another", Time(13, 44, 55) to "another2"),
-                        set = setOf(LocalDate(2018, 11, 25), LocalDate(1981, 12, 5))
-                    ),
-                    TestMarykModel(
-                        "haha3",
-                        6,
-                        12u,
-                        1333.3,
-                        LocalDateTime(2018, 12, 9, 0, 0),
-                        false,
-                        listOfString = listOf("c"),
-                        reference = TestMarykModel.key("AAACKwEAAw")
-                    )
+    override suspend fun initData() {
+        val addResponse = dataStore.execute(
+            TestMarykModel.add(
+                TestMarykModel(
+                    "haha1",
+                    5,
+                    6u,
+                    0.43,
+                    LocalDateTime(2018, 3, 2, 0, 0),
+                    true,
+                    listOfString = listOf("a", "b", "c"),
+                    map = mapOf(Time(2, 3, 5) to "test"),
+                    set = setOf(LocalDate(2018, 3, 4))
+                ),
+                TestMarykModel(
+                    "haha2",
+                    3,
+                    8u,
+                    1.244,
+                    LocalDateTime(2018, 1, 2, 0, 0),
+                    false,
+                    listOfString = listOf("c", "d", "e"),
+                    map = mapOf(Time(12, 33, 45) to "another", Time(13, 44, 55) to "another2"),
+                    set = setOf(LocalDate(2018, 11, 25), LocalDate(1981, 12, 5))
+                ),
+                TestMarykModel(
+                    "haha3",
+                    6,
+                    12u,
+                    1333.3,
+                    LocalDateTime(2018, 12, 9, 0, 0),
+                    false,
+                    listOfString = listOf("c"),
+                    reference = TestMarykModel.key("AAACKwEAAw")
                 )
             )
+        )
 
-            addResponse.statuses.forEach { status ->
-                val response = assertType<AddSuccess<TestMarykModel>>(status)
-                keys.add(response.key)
-                lastVersions.add(response.version)
-            }
+        addResponse.statuses.forEach { status ->
+            val response = assertType<AddSuccess<TestMarykModel>>(status)
+            keys.add(response.key)
+            lastVersions.add(response.version)
         }
     }
 
-    override fun resetData() {
-        runSuspendingTest {
-            dataStore.execute(
-                TestMarykModel.delete(*keys.toTypedArray(), hardDelete = true)
-            )
-        }
+    override suspend fun resetData() {
+        dataStore.execute(
+            TestMarykModel.delete(*keys.toTypedArray(), hardDelete = true)
+        )
         keys.clear()
         lastVersions.clear()
     }
 
-    private fun executeChangeChangeWithValidationExceptionRequest() = runSuspendingTest {
+    private suspend fun executeChangeChangeWithValidationExceptionRequest() {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[1].change(
@@ -132,7 +127,7 @@ class DataStoreChangeValidationTest(
         expect("haha2") { getResponse.values.first().values { string } }
     }
 
-    private fun executeChangeDeleteWithValidationExceptionRequest() = runSuspendingTest {
+    private suspend fun executeChangeDeleteWithValidationExceptionRequest() {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[2].change(
@@ -159,7 +154,7 @@ class DataStoreChangeValidationTest(
         expect(12u) { getResponse.values.first().values { uint } }
     }
 
-    private fun executeChangeListWithTooManyItemsValidationExceptionRequest() = runSuspendingTest {
+    private suspend fun executeChangeListWithTooManyItemsValidationExceptionRequest() {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[0].change(
@@ -191,7 +186,7 @@ class DataStoreChangeValidationTest(
         expect(listOf("a", "b", "c")) { getResponse.values.first().values { listOfString } }
     }
 
-    private fun executeChangeListWithContentValidationExceptionRequest() = runSuspendingTest {
+    private suspend fun executeChangeListWithContentValidationExceptionRequest() {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[0].change(
@@ -226,7 +221,7 @@ class DataStoreChangeValidationTest(
         expect(listOf("a", "b", "c")) { getResponse.values.first().values { listOfString } }
     }
 
-    private fun executeChangeSetWithMaxSizeValidationExceptionRequest() = runSuspendingTest {
+    private suspend fun executeChangeSetWithMaxSizeValidationExceptionRequest() {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[1].change(
@@ -263,7 +258,7 @@ class DataStoreChangeValidationTest(
         expect(setOf(LocalDate(2018, 11, 25), LocalDate(1981, 12, 5))) { getResponse.values.first().values { set } }
     }
 
-    private fun executeChangeSetWithValueValidationExceptionRequest() = runSuspendingTest {
+    private suspend fun executeChangeSetWithValueValidationExceptionRequest() {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[1].change(
@@ -297,7 +292,7 @@ class DataStoreChangeValidationTest(
         expect(setOf(LocalDate(2018, 11, 25), LocalDate(1981, 12, 5))) { getResponse.values.first().values { set } }
     }
 
-    private fun executeChangeMapWithSizeValidationExceptionRequest() = runSuspendingTest {
+    private suspend fun executeChangeMapWithSizeValidationExceptionRequest() {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[1].change(
@@ -338,7 +333,7 @@ class DataStoreChangeValidationTest(
         }
     }
 
-    private fun executeChangeMapContentValidationExceptionRequest() = runSuspendingTest {
+    private suspend fun executeChangeMapContentValidationExceptionRequest() {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[1].change(
@@ -379,7 +374,7 @@ class DataStoreChangeValidationTest(
         }
     }
 
-    private fun executeChangeListSizeValidationExceptionRequest() = runSuspendingTest {
+    private suspend fun executeChangeListSizeValidationExceptionRequest() {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[2].change(

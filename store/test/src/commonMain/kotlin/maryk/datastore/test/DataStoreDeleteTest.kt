@@ -12,7 +12,6 @@ import maryk.datastore.shared.IsDataStore
 import maryk.test.assertType
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.addRequest
-import maryk.test.runSuspendingTest
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -28,28 +27,24 @@ class DataStoreDeleteTest(
         "processHardDeleteRequest" to ::processHardDeleteRequest
     )
 
-    override fun initData() {
-        runSuspendingTest {
-            val addResponse = dataStore.execute(
-                addRequest
-            )
-            addResponse.statuses.forEach { status ->
-                val response = assertType<AddSuccess<SimpleMarykModel>>(status)
-                keys.add(response.key)
-            }
+    override suspend fun initData() {
+        val addResponse = dataStore.execute(
+            addRequest
+        )
+        addResponse.statuses.forEach { status ->
+            val response = assertType<AddSuccess<SimpleMarykModel>>(status)
+            keys.add(response.key)
         }
     }
 
-    override fun resetData() {
-        runSuspendingTest {
-            dataStore.execute(
-                SimpleMarykModel.delete(*keys.toTypedArray(), hardDelete = true)
-            )
-        }
+    override suspend fun resetData() {
+        dataStore.execute(
+            SimpleMarykModel.delete(*keys.toTypedArray(), hardDelete = true)
+        )
         keys.clear()
     }
 
-    private fun executeDeleteRequest() = runSuspendingTest {
+    private suspend fun executeDeleteRequest() {
         val deleteResponse = dataStore.execute(
             SimpleMarykModel.delete(
                 keys[0]
@@ -95,7 +90,7 @@ class DataStoreDeleteTest(
         }
     }
 
-    private fun processHardDeleteRequest() = runSuspendingTest {
+    private suspend fun processHardDeleteRequest() {
         val deleteResponse = dataStore.execute(
             SimpleMarykModel.delete(
                 keys[1],

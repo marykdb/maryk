@@ -10,7 +10,6 @@ import maryk.core.query.responses.statuses.AddSuccess
 import maryk.datastore.shared.IsDataStore
 import maryk.test.assertType
 import maryk.test.models.Person
-import maryk.test.runSuspendingTest
 import kotlin.test.expect
 
 class DataStoreScanOnIndexWithPersonTest(
@@ -30,33 +29,29 @@ class DataStoreScanOnIndexWithPersonTest(
         Person("Muffin", "Espinosa")
     )
 
-    override fun initData() {
-        runSuspendingTest {
-            val addResponse = dataStore.execute(
-                Person.add(*persons)
-            )
-            addResponse.statuses.forEach { status ->
-                val response = assertType<AddSuccess<Person>>(status)
-                keys.add(response.key)
-                if (response.version > highestCreationVersion) {
-                    // Add lowest version for scan test
-                    highestCreationVersion = response.version
-                }
+    override suspend fun initData() {
+        val addResponse = dataStore.execute(
+            Person.add(*persons)
+        )
+        addResponse.statuses.forEach { status ->
+            val response = assertType<AddSuccess<Person>>(status)
+            keys.add(response.key)
+            if (response.version > highestCreationVersion) {
+                // Add lowest version for scan test
+                highestCreationVersion = response.version
             }
         }
     }
 
-    override fun resetData() {
-        runSuspendingTest {
-            dataStore.execute(
-                Person.delete(*keys.toTypedArray(), hardDelete = true)
-            )
-        }
+    override suspend fun resetData() {
+        dataStore.execute(
+            Person.delete(*keys.toTypedArray(), hardDelete = true)
+        )
         keys.clear()
         highestCreationVersion = ULong.MIN_VALUE
     }
 
-    private fun executeIndexScanRequestWithPerson() = runSuspendingTest {
+    private suspend fun executeIndexScanRequestWithPerson() {
         val scanResponse = dataStore.execute(
             Person.scan(
                 order = Orders(Person { firstName::ref }.ascending(), Person { surname::ref }.ascending())

@@ -45,7 +45,7 @@ val dataModelsForTests = mapOf(
     8u to Person
 )
 
-fun runDataStoreTests(dataStore: IsDataStore, runOnlyTest: String? = null) {
+suspend fun runDataStoreTests(dataStore: IsDataStore, runOnlyTest: String? = null) {
     val exceptionList = mutableMapOf<String, Throwable>()
 
     for ((testClassName, testClassConstructor) in allTestClasses) {

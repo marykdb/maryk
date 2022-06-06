@@ -16,8 +16,6 @@ import maryk.core.query.responses.statuses.ValidationFail
 import maryk.datastore.shared.IsDataStore
 import maryk.datastore.test.UniqueModel.Properties
 import maryk.test.assertType
-import maryk.test.runSuspendingTest
-import kotlin.test.Test
 import kotlin.test.expect
 
 object UniqueModel : RootDataModel<UniqueModel, Properties>(
@@ -42,28 +40,24 @@ class UniqueTest(
         "checkUniqueChange" to ::checkUniqueChange
     )
 
-    override fun initData() {
+    override suspend fun initData() {
         val addItems = UniqueModel.add(
             UniqueModel(email = "test@test.com"),
             UniqueModel(email = "bla@bla.com")
         )
 
-        runSuspendingTest {
-            dataStore.execute(addItems).also {
-                it.statuses.forEach { status ->
-                    val response = assertType<AddSuccess<UniqueModel>>(status)
-                    keys.add(response.key)
-                }
+        dataStore.execute(addItems).also {
+            it.statuses.forEach { status ->
+                val response = assertType<AddSuccess<UniqueModel>>(status)
+                keys.add(response.key)
             }
         }
     }
 
-    override fun resetData() {
-        runSuspendingTest {
+    override suspend fun resetData() {
             dataStore.execute(
                 UniqueModel.delete(*keys.toTypedArray(), hardDelete = true)
             )
-        }
         this.keys.clear()
     }
 
@@ -71,8 +65,7 @@ class UniqueTest(
         UniqueModel(email = "test@test.com")
     )
 
-    @Test
-    fun checkUnique() = runSuspendingTest {
+    suspend fun checkUnique() {
         val addResponse = dataStore.execute(addUniqueItem)
         addResponse.statuses.forEach { status ->
             val fail = assertType<ValidationFail<UniqueModel>>(status)
@@ -90,8 +83,7 @@ class UniqueTest(
         }
     }
 
-    @Test
-    fun checkUniqueChange() = runSuspendingTest {
+    suspend fun checkUniqueChange() {
         val changeResponse = dataStore.execute(
             UniqueModel.change(
                 keys[1].change(

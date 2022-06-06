@@ -12,7 +12,6 @@ import maryk.core.query.responses.statuses.AddSuccess
 import maryk.datastore.shared.IsDataStore
 import maryk.test.assertType
 import maryk.test.models.ComplexModel
-import maryk.test.runSuspendingTest
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -35,47 +34,42 @@ class DataStoreFilterComplexTest(
         )
     )
 
-    override fun initData() {
-        runSuspendingTest {
-            val addResponse = dataStore.execute(
-                ComplexModel.add(
-                    dataObject
-                )
+    override suspend fun initData() {
+        val addResponse = dataStore.execute(
+            ComplexModel.add(
+                dataObject
             )
+        )
 
-            addResponse.statuses.forEach { status ->
-                val response = assertType<AddSuccess<ComplexModel>>(status)
-                keys.add(response.key)
-                lastVersions.add(response.version)
-            }
-
-            firstKey = keys[0]
+        addResponse.statuses.forEach { status ->
+            val response = assertType<AddSuccess<ComplexModel>>(status)
+            keys.add(response.key)
+            lastVersions.add(response.version)
         }
+
+        firstKey = keys[0]
     }
 
-    override fun resetData() {
-        runSuspendingTest {
-            dataStore.execute(
-                ComplexModel.delete(*keys.toTypedArray(), hardDelete = true)
-            )
-        }
+    override suspend fun resetData() {
+        dataStore.execute(
+            ComplexModel.delete(*keys.toTypedArray(), hardDelete = true)
+        )
         keys.clear()
         lastVersions.clear()
     }
 
-    private fun filterMatches(filter: IsFilter, hlc: HLC? = null) =
-        runSuspendingTest {
-            val response = dataStore.execute(
-                ComplexModel.get(
-                    firstKey,
-                    where = filter,
-                    toVersion = hlc?.timestamp
-                )
+    private suspend fun filterMatches(filter: IsFilter, hlc: HLC? = null): Boolean {
+        val response = dataStore.execute(
+            ComplexModel.get(
+                firstKey,
+                where = filter,
+                toVersion = hlc?.timestamp
             )
-            response.values.isNotEmpty()
-        }
+        )
+        return response.values.isNotEmpty()
+    }
 
-    private fun doExistsFilter() = runSuspendingTest {
+    private suspend fun doExistsFilter() {
         assertTrue {
             filterMatches(
                 Exists(ComplexModel { mapStringString.refAt("k1") })
@@ -101,7 +95,7 @@ class DataStoreFilterComplexTest(
         }
     }
 
-    private fun doEqualsFilter() {
+    private suspend fun doEqualsFilter() {
         assertTrue {
             filterMatches(
                 Equals(ComplexModel { mapStringString.refAt("k1") } with "v1")

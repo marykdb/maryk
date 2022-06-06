@@ -23,7 +23,6 @@ import maryk.test.assertType
 import maryk.test.models.Log
 import maryk.test.models.Severity.ERROR
 import maryk.test.models.Severity.INFO
-import maryk.test.runSuspendingTest
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
@@ -54,33 +53,29 @@ class DataStoreScanChangesTest(
         Log("WRONG", ERROR, LocalDateTime(2018, 11, 14, 13, 0, 2, 0))
     )
 
-    override fun initData() {
-        runSuspendingTest {
-            val addResponse = dataStore.execute(
-                Log.add(*logs)
-            )
-            addResponse.statuses.forEach { status ->
-                val response = assertType<AddSuccess<Log>>(status)
-                keys.add(response.key)
-                if (response.version < lowestVersion) {
-                    // Add lowest version for scan test
-                    lowestVersion = response.version
-                }
+    override suspend fun initData() {
+        val addResponse = dataStore.execute(
+            Log.add(*logs)
+        )
+        addResponse.statuses.forEach { status ->
+            val response = assertType<AddSuccess<Log>>(status)
+            keys.add(response.key)
+            if (response.version < lowestVersion) {
+                // Add lowest version for scan test
+                lowestVersion = response.version
             }
         }
     }
 
-    override fun resetData() {
-        runSuspendingTest {
-            dataStore.execute(
-                Log.delete(*keys.toTypedArray(), hardDelete = true)
-            )
-        }
+    override suspend fun resetData() {
+        dataStore.execute(
+            Log.delete(*keys.toTypedArray(), hardDelete = true)
+        )
         keys.clear()
         lowestVersion = ULong.MAX_VALUE
     }
 
-    private fun executeSimpleScanChangesRequest() = runSuspendingTest {
+    private suspend fun executeSimpleScanChangesRequest() {
         val scanResponse = dataStore.execute(
             Log.scanChanges(startKey = keys[2])
         )
@@ -142,7 +137,7 @@ class DataStoreScanChangesTest(
         }
     }
 
-    private fun executeSimpleScanReversedChangesRequest() = runSuspendingTest {
+    private suspend fun executeSimpleScanReversedChangesRequest() {
         val scanResponse = dataStore.execute(
             Log.scanChanges(startKey = keys[2], order = descending)
         )
@@ -160,7 +155,7 @@ class DataStoreScanChangesTest(
         }
     }
 
-    private fun executeScanChangesOnAscendingIndexRequest() = runSuspendingTest {
+    private suspend fun executeScanChangesOnAscendingIndexRequest() {
         val scanResponse = dataStore.execute(
             Log.scanChanges(startKey = keys[0], order = Log { severity::ref }.ascending())
         )
@@ -178,7 +173,7 @@ class DataStoreScanChangesTest(
         }
     }
 
-    private fun executeScanChangesOnDescendingIndexRequest() = runSuspendingTest {
+    private suspend fun executeScanChangesOnDescendingIndexRequest() {
         val scanResponse = dataStore.execute(
             Log.scanChanges(startKey = keys[3], order = Log { severity::ref }.descending(), limit = 3u)
         )
@@ -196,7 +191,7 @@ class DataStoreScanChangesTest(
         }
     }
 
-    private fun executeScanChangesRequestWithLimit() = runSuspendingTest {
+    private suspend fun executeScanChangesRequestWithLimit() {
         val scanResponse = dataStore.execute(
             Log.scanChanges(startKey = keys[2], limit = 1u)
         )
@@ -223,7 +218,7 @@ class DataStoreScanChangesTest(
         }
     }
 
-    private fun executeScanChangesRequestWithToVersion() = runSuspendingTest {
+    private suspend fun executeScanChangesRequestWithToVersion() {
         if (dataStore.keepAllVersions) {
             val scanResponse = dataStore.execute(
                 Log.scanChanges(startKey = keys[2], toVersion = lowestVersion - 1uL)
@@ -232,16 +227,14 @@ class DataStoreScanChangesTest(
             expect(0) { scanResponse.changes.size }
         } else {
             assertFailsWith<RequestException> {
-                runSuspendingTest {
-                    dataStore.execute(
-                        Log.scanChanges(startKey = keys[2], toVersion = lowestVersion - 1uL)
-                    )
-                }
+                dataStore.execute(
+                    Log.scanChanges(startKey = keys[2], toVersion = lowestVersion - 1uL)
+                )
             }
         }
     }
 
-    private fun executeScanChangesRequestWithFromVersion() = runSuspendingTest {
+    private suspend fun executeScanChangesRequestWithFromVersion() {
         val scanResponse = dataStore.execute(
             Log.scanChanges(startKey = keys[2], fromVersion = lowestVersion + 1uL)
         )
@@ -249,7 +242,7 @@ class DataStoreScanChangesTest(
         expect(0) { scanResponse.changes.size }
     }
 
-    private fun executeScanChangesRequestWithSelect() = runSuspendingTest {
+    private suspend fun executeScanChangesRequestWithSelect() {
         val scanResponse = dataStore.execute(
             Log.scanChanges(
                 startKey = keys[2],
@@ -279,7 +272,7 @@ class DataStoreScanChangesTest(
         }
     }
 
-    private fun executeScanChangesRequestWithMaxVersions() = runSuspendingTest {
+    private suspend fun executeScanChangesRequestWithMaxVersions() {
         if (dataStore.keepAllVersions) {
             val collectedVersions = mutableListOf<ULong>()
 

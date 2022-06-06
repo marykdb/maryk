@@ -34,7 +34,6 @@ import maryk.datastore.shared.IsDataStore
 import maryk.test.assertType
 import maryk.test.models.TestMarykModel
 import maryk.test.models.TestMarykModel.Properties
-import maryk.test.runSuspendingTest
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.expect
@@ -101,37 +100,33 @@ class DataStoreScanUpdatesAndFlowTest(
         "executeReverseOrderedScanUpdatesAsFlowRequest" to ::executeReverseOrderedScanUpdatesAsFlowRequest
     )
 
-    override fun initData() {
-        runSuspendingTest {
-            val addResponse = dataStore.execute(
-                TestMarykModel.add(t0, t1, t2, t3, t4)
-            )
-            addResponse.statuses.forEach { status ->
-                val response = assertType<AddSuccess<TestMarykModel>>(status)
-                testKeys.add(response.key)
-                if (response.version < lowestVersion) {
-                    // Add lowest version for scan test
-                    lowestVersion = response.version
-                }
-                if (response.version > highestInitVersion) {
-                    highestInitVersion = response.version
-                }
+    override suspend fun initData() {
+        val addResponse = dataStore.execute(
+            TestMarykModel.add(t0, t1, t2, t3, t4)
+        )
+        addResponse.statuses.forEach { status ->
+            val response = assertType<AddSuccess<TestMarykModel>>(status)
+            testKeys.add(response.key)
+            if (response.version < lowestVersion) {
+                // Add lowest version for scan test
+                lowestVersion = response.version
+            }
+            if (response.version > highestInitVersion) {
+                highestInitVersion = response.version
             }
         }
     }
 
-    override fun resetData() {
-        runSuspendingTest {
-            dataStore.execute(
-                TestMarykModel.delete(*testKeys.toTypedArray(), hardDelete = true)
-            )
-        }
+    override suspend fun resetData() {
+        dataStore.execute(
+            TestMarykModel.delete(*testKeys.toTypedArray(), hardDelete = true)
+        )
         testKeys.clear()
         lowestVersion = ULong.MAX_VALUE
         highestInitVersion = ULong.MIN_VALUE
     }
 
-    private fun executeSimpleScanUpdatesRequest() = runSuspendingTest {
+    private suspend fun executeSimpleScanUpdatesRequest() {
         val scanResponse = dataStore.execute(
             TestMarykModel.scanUpdates(startKey = testKeys[1])
         )
@@ -155,7 +150,7 @@ class DataStoreScanUpdatesAndFlowTest(
         }
     }
 
-    private fun executeOrderedScanUpdatesRequest() = runSuspendingTest {
+    private suspend fun executeOrderedScanUpdatesRequest() {
         val scanResponse = dataStore.execute(
             TestMarykModel.scanUpdates(
                 startKey = testKeys[1],
@@ -183,7 +178,7 @@ class DataStoreScanUpdatesAndFlowTest(
         }
     }
 
-    private fun executeScanValuesAsFlowRequest() {
+    private suspend fun executeScanValuesAsFlowRequest() {
         updateListenerTester(
             dataStore,
             TestMarykModel.scan(
@@ -209,7 +204,7 @@ class DataStoreScanUpdatesAndFlowTest(
         }
     }
 
-    private fun executeScanChangesAsFlowRequest() {
+    private suspend fun executeScanChangesAsFlowRequest() {
         updateListenerTester(
             dataStore,
             TestMarykModel.scanChanges(
@@ -235,7 +230,7 @@ class DataStoreScanUpdatesAndFlowTest(
         }
     }
 
-    private fun executeScanUpdatesAsFlowRequest() {
+    private suspend fun executeScanUpdatesAsFlowRequest() {
         updateListenerTester(
             dataStore,
             TestMarykModel.scanUpdates(
@@ -328,7 +323,7 @@ class DataStoreScanUpdatesAndFlowTest(
         }
     }
 
-    private fun executeScanUpdatesAsFlowWithMutableWhereRequest() {
+    private suspend fun executeScanUpdatesAsFlowWithMutableWhereRequest() {
         updateListenerTester(
             dataStore,
             TestMarykModel.scanUpdates(
@@ -356,7 +351,7 @@ class DataStoreScanUpdatesAndFlowTest(
         }
     }
 
-    private fun executeScanUpdatesIncludingInitValuesAsFlowRequest() {
+    private suspend fun executeScanUpdatesIncludingInitValuesAsFlowRequest() {
         updateListenerTester(
             dataStore,
             TestMarykModel.scanUpdates(
@@ -398,7 +393,7 @@ class DataStoreScanUpdatesAndFlowTest(
         }
     }
 
-    private fun executeScanUpdatesAsFlowWithSelectRequest() {
+    private suspend fun executeScanUpdatesAsFlowWithSelectRequest() {
         updateListenerTester(
             dataStore,
             TestMarykModel.scanUpdates(
@@ -450,7 +445,7 @@ class DataStoreScanUpdatesAndFlowTest(
         }
     }
 
-    private fun executeReversedScanUpdatesAsFlowRequest() {
+    private suspend fun executeReversedScanUpdatesAsFlowRequest() {
         updateListenerTester(
             dataStore,
             TestMarykModel.scanUpdates(
@@ -528,7 +523,7 @@ class DataStoreScanUpdatesAndFlowTest(
         }
     }
 
-    private fun executeOrderedScanUpdatesAsFlowRequest() {
+    private suspend fun executeOrderedScanUpdatesAsFlowRequest() {
         updateListenerTester(
             dataStore,
             TestMarykModel.scanUpdates(
@@ -701,7 +696,7 @@ class DataStoreScanUpdatesAndFlowTest(
         }
     }
 
-    private fun executeReverseOrderedScanUpdatesAsFlowRequest() {
+    private suspend fun executeReverseOrderedScanUpdatesAsFlowRequest() {
         updateListenerTester(
             dataStore,
             TestMarykModel.scanUpdates(

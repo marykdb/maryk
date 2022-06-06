@@ -25,7 +25,6 @@ import maryk.test.models.Log.Properties.timestamp
 import maryk.test.models.Severity.DEBUG
 import maryk.test.models.Severity.ERROR
 import maryk.test.models.Severity.INFO
-import maryk.test.runSuspendingTest
 import kotlin.test.assertFailsWith
 import kotlin.test.expect
 
@@ -54,33 +53,29 @@ class DataStoreScanTest(
         Log("WRONG", ERROR, LocalDateTime(2018, 11, 14, 13, 0, 2, 0))
     )
 
-    override fun initData() {
-        runSuspendingTest {
-            val addResponse = dataStore.execute(
-                Log.add(*logs)
-            )
-            addResponse.statuses.forEach { status ->
-                val response = assertType<AddSuccess<Log>>(status)
-                keys.add(response.key)
-                if (response.version < lowestVersion) {
-                    // Add lowest version for scan test
-                    lowestVersion = response.version
-                }
+    override suspend fun initData() {
+        val addResponse = dataStore.execute(
+            Log.add(*logs)
+        )
+        addResponse.statuses.forEach { status ->
+            val response = assertType<AddSuccess<Log>>(status)
+            keys.add(response.key)
+            if (response.version < lowestVersion) {
+                // Add lowest version for scan test
+                lowestVersion = response.version
             }
         }
     }
 
-    override fun resetData() {
-        runSuspendingTest {
-            dataStore.execute(
-                Log.delete(*keys.toTypedArray(), hardDelete = true)
-            )
-        }
+    override suspend fun resetData() {
+        dataStore.execute(
+            Log.delete(*keys.toTypedArray(), hardDelete = true)
+        )
         keys.clear()
         lowestVersion = ULong.MAX_VALUE
     }
 
-    private fun executeSimpleScanRequest() = runSuspendingTest {
+    private suspend fun executeSimpleScanRequest() {
         val scanResponse = dataStore.execute(
             Log.scan(startKey = keys[2])
         )
@@ -102,7 +97,7 @@ class DataStoreScanTest(
         }
     }
 
-    private fun executeSimpleScanWithAggregationRequest() = runSuspendingTest {
+    private suspend fun executeSimpleScanWithAggregationRequest() {
         val scanResponse = dataStore.execute(
             Log.scan(
                 startKey = keys[2],
@@ -133,7 +128,7 @@ class DataStoreScanTest(
         }
     }
 
-    private fun executeSimpleScanRequestReverseOrder() = runSuspendingTest {
+    private suspend fun executeSimpleScanRequestReverseOrder() {
         val scanResponse = dataStore.execute(
             Log.scan(startKey = keys[2], order = descending)
         )
@@ -151,7 +146,7 @@ class DataStoreScanTest(
         }
     }
 
-    private fun executeScanRequestWithLimit() = runSuspendingTest {
+    private suspend fun executeScanRequestWithLimit() {
         val scanResponse = dataStore.execute(
             Log.scan(startKey = keys[2], limit = 1u)
         )
@@ -165,7 +160,7 @@ class DataStoreScanTest(
         }
     }
 
-    private fun executeScanRequestWithToVersion() = runSuspendingTest {
+    private suspend fun executeScanRequestWithToVersion() {
         if (dataStore.keepAllVersions) {
             val scanResponse = dataStore.execute(
                 Log.scan(startKey = keys[2], toVersion = lowestVersion - 1uL)
@@ -174,16 +169,14 @@ class DataStoreScanTest(
             expect(0) { scanResponse.values.size }
         } else {
             assertFailsWith<RequestException> {
-                runSuspendingTest {
-                    dataStore.execute(
-                        Log.scan(startKey = keys[2], toVersion = lowestVersion - 1uL)
-                    )
-                }
+                dataStore.execute(
+                    Log.scan(startKey = keys[2], toVersion = lowestVersion - 1uL)
+                )
             }
         }
     }
 
-    private fun executeScanRequestWithSelect() = runSuspendingTest {
+    private suspend fun executeScanRequestWithSelect() {
         val scanResponse = dataStore.execute(
             Log.scan(
                 startKey = keys[2],
@@ -212,7 +205,7 @@ class DataStoreScanTest(
         }
     }
 
-    private fun executeSimpleScanFilterRequest() = runSuspendingTest {
+    private suspend fun executeSimpleScanFilterRequest() {
         val scanResponse = dataStore.execute(
             Log.scan(
                 where = Equals(
@@ -229,7 +222,7 @@ class DataStoreScanTest(
         }
     }
 
-    private fun executeSimpleScanFilterExactMatchRequest() = runSuspendingTest {
+    private suspend fun executeSimpleScanFilterExactMatchRequest() {
         val scanResponse = dataStore.execute(
             Log.scan(
                 where = Equals(
@@ -248,7 +241,7 @@ class DataStoreScanTest(
         }
     }
 
-    private fun executeSimpleScanFilterExactWrongMatchRequest() = runSuspendingTest {
+    private suspend fun executeSimpleScanFilterExactWrongMatchRequest() {
         val scanResponse = dataStore.execute(
             Log.scan(
                 where = Equals(

@@ -13,7 +13,6 @@ import maryk.datastore.shared.IsDataStore
 import maryk.test.assertType
 import maryk.test.models.Log
 import maryk.test.models.Severity.ERROR
-import maryk.test.runSuspendingTest
 import kotlin.test.assertTrue
 import kotlin.test.expect
 
@@ -34,16 +33,14 @@ class DataStoreAddTest(
         Log("WRONG", ERROR, LocalDateTime(2018, 11, 14, 13, 0, 2, 0))
     )
 
-    override fun resetData() {
-        runSuspendingTest {
-            dataStore.execute(
-                Log.delete(*keys.toTypedArray(), hardDelete = true)
-            )
-        }
+    override suspend fun resetData() {
+        dataStore.execute(
+            Log.delete(*keys.toTypedArray(), hardDelete = true)
+        )
         keys.clear()
     }
 
-    private fun executeAddAndSimpleGetRequest() = runSuspendingTest {
+    private suspend fun executeAddAndSimpleGetRequest() {
         val addResponse = dataStore.execute(
             Log.add(*logs)
         )
@@ -72,7 +69,7 @@ class DataStoreAddTest(
         }
     }
 
-    private fun notAddSameObjectTwice() = runSuspendingTest {
+    private suspend fun notAddSameObjectTwice() {
         val log = Log("I am unique", timestamp = LocalDateTime(2018, 9, 9, 14, 30, 0, 0))
         val key = Log.key(log)
         keys += key // make sure data gets cleaned

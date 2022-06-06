@@ -13,7 +13,6 @@ import maryk.datastore.shared.IsDataStore
 import maryk.test.assertType
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.addRequest
-import maryk.test.runSuspendingTest
 import kotlin.test.assertFailsWith
 import kotlin.test.expect
 
@@ -30,33 +29,29 @@ class DataStoreGetTest(
         "executeGetRequestWithSelect" to ::executeGetRequestWithSelect
     )
 
-    override fun initData() {
-        runSuspendingTest {
-            val addResponse = dataStore.execute(
-                addRequest
-            )
-            addResponse.statuses.forEach { status ->
-                val response = assertType<AddSuccess<SimpleMarykModel>>(status)
-                keys.add(response.key)
-                if (response.version < lowestVersion) {
-                    // Add lowest version for scan test
-                    lowestVersion = response.version
-                }
+    override suspend fun initData() {
+        val addResponse = dataStore.execute(
+            addRequest
+        )
+        addResponse.statuses.forEach { status ->
+            val response = assertType<AddSuccess<SimpleMarykModel>>(status)
+            keys.add(response.key)
+            if (response.version < lowestVersion) {
+                // Add lowest version for scan test
+                lowestVersion = response.version
             }
         }
     }
 
-    override fun resetData() {
-        runSuspendingTest {
-            dataStore.execute(
-                SimpleMarykModel.delete(*keys.toTypedArray(), hardDelete = true)
-            )
-        }
+    override suspend fun resetData() {
+        dataStore.execute(
+            SimpleMarykModel.delete(*keys.toTypedArray(), hardDelete = true)
+        )
         keys.clear()
         lowestVersion = ULong.MAX_VALUE
     }
 
-    private fun executeSimpleGetRequest() = runSuspendingTest {
+    private suspend fun executeSimpleGetRequest() {
         val getResponse = dataStore.execute(
             SimpleMarykModel.get(*keys.toTypedArray())
         )
@@ -68,7 +63,7 @@ class DataStoreGetTest(
         }
     }
 
-    private fun executeSimpleGetWithAggregationRequest() = runSuspendingTest {
+    private suspend fun executeSimpleGetWithAggregationRequest() {
         val getResponse = dataStore.execute(
             SimpleMarykModel.get(
                 *keys.toTypedArray(),
@@ -93,7 +88,7 @@ class DataStoreGetTest(
         }
     }
 
-    private fun executeToVersionGetRequest() = runSuspendingTest {
+    private suspend fun executeToVersionGetRequest() {
         if (dataStore.keepAllVersions) {
             val getResponse = dataStore.execute(
                 SimpleMarykModel.get(*keys.toTypedArray(), toVersion = lowestVersion - 1uL)
@@ -102,16 +97,14 @@ class DataStoreGetTest(
             expect(0) { getResponse.values.size }
         } else {
             assertFailsWith<RequestException> {
-                runSuspendingTest {
-                    dataStore.execute(
-                        SimpleMarykModel.get(*keys.toTypedArray(), toVersion = lowestVersion - 1uL)
-                    )
-                }
+                dataStore.execute(
+                    SimpleMarykModel.get(*keys.toTypedArray(), toVersion = lowestVersion - 1uL)
+                )
             }
         }
     }
 
-    private fun executeGetRequestWithSelect() = runSuspendingTest {
+    private suspend fun executeGetRequestWithSelect() {
         val scanResponse = dataStore.execute(
             SimpleMarykModel.get(
                 *keys.toTypedArray(),

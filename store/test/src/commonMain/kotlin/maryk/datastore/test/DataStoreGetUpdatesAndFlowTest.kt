@@ -25,7 +25,6 @@ import maryk.datastore.shared.IsDataStore
 import maryk.test.assertType
 import maryk.test.models.SimpleMarykModel
 import maryk.test.models.SimpleMarykModel.Properties
-import maryk.test.runSuspendingTest
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.expect
@@ -46,41 +45,37 @@ class DataStoreGetUpdatesAndFlowTest(
         "executeGetUpdatesWithInitChangesAsFlowRequest" to ::executeGetUpdatesWithInitChangesAsFlowRequest
     )
 
-    override fun initData() {
-        runSuspendingTest {
-            val addResponse = dataStore.execute(
-                SimpleMarykModel.add(
-                    SimpleMarykModel(value = "haha1"),
-                    SimpleMarykModel(value = "haha2"),
-                    SimpleMarykModel(value = "haha3")
-                )
+    override suspend fun initData() {
+        val addResponse = dataStore.execute(
+            SimpleMarykModel.add(
+                SimpleMarykModel(value = "haha1"),
+                SimpleMarykModel(value = "haha2"),
+                SimpleMarykModel(value = "haha3")
             )
-            addResponse.statuses.forEach { status ->
-                val response = assertType<AddSuccess<SimpleMarykModel>>(status)
-                testKeys.add(response.key)
-                if (response.version < lowestVersion) {
-                    // Add lowest version for scan test
-                    lowestVersion = response.version
-                }
-                if (response.version > highestInitVersion) {
-                    highestInitVersion = response.version
-                }
+        )
+        addResponse.statuses.forEach { status ->
+            val response = assertType<AddSuccess<SimpleMarykModel>>(status)
+            testKeys.add(response.key)
+            if (response.version < lowestVersion) {
+                // Add lowest version for scan test
+                lowestVersion = response.version
+            }
+            if (response.version > highestInitVersion) {
+                highestInitVersion = response.version
             }
         }
     }
 
-    override fun resetData() {
-        runSuspendingTest {
-            dataStore.execute(
-                SimpleMarykModel.delete(*testKeys.toTypedArray(), hardDelete = true)
-            )
-        }
+    override suspend fun resetData() {
+        dataStore.execute(
+            SimpleMarykModel.delete(*testKeys.toTypedArray(), hardDelete = true)
+        )
         testKeys.clear()
         lowestVersion = ULong.MAX_VALUE
         highestInitVersion = ULong.MIN_VALUE
     }
 
-    private fun executeSimpleGetUpdatesRequest() = runSuspendingTest {
+    private suspend fun executeSimpleGetUpdatesRequest() {
         val getResponse = dataStore.execute(
             SimpleMarykModel.getUpdates(testKeys[0], testKeys[1])
         )
@@ -104,7 +99,7 @@ class DataStoreGetUpdatesAndFlowTest(
         }
     }
 
-    private fun executeGetValuesAsFlowRequest() = updateListenerTester(
+    private suspend fun executeGetValuesAsFlowRequest() = updateListenerTester(
         dataStore,
         SimpleMarykModel.get(testKeys[0], testKeys[1]),
         2
@@ -126,7 +121,7 @@ class DataStoreGetUpdatesAndFlowTest(
         }
     }
 
-    private fun executeGetChangesAsFlowRequest() = updateListenerTester(
+    private suspend fun executeGetChangesAsFlowRequest() = updateListenerTester(
         dataStore,
         SimpleMarykModel.getChanges(testKeys[0], testKeys[1]),
         2
@@ -148,7 +143,7 @@ class DataStoreGetUpdatesAndFlowTest(
         }
     }
 
-    private fun executeGetUpdatesAsFlowRequest() = updateListenerTester(
+    private suspend fun executeGetUpdatesAsFlowRequest() = updateListenerTester(
         dataStore,
         SimpleMarykModel.getUpdates(testKeys[0], testKeys[1], fromVersion = highestInitVersion + 1uL),
         4
@@ -194,7 +189,7 @@ class DataStoreGetUpdatesAndFlowTest(
         }
     }
 
-    private fun executeGetUpdatesAsFlowWithMutableWhereRequest() = updateListenerTester(
+    private suspend fun executeGetUpdatesAsFlowWithMutableWhereRequest() = updateListenerTester(
         dataStore,
         SimpleMarykModel.getUpdates(
             testKeys[0],
@@ -232,7 +227,7 @@ class DataStoreGetUpdatesAndFlowTest(
         }
     }
 
-    private fun executeGetUpdatesWithInitChangesAsFlowRequest() = updateListenerTester(
+    private suspend fun executeGetUpdatesWithInitChangesAsFlowRequest() = updateListenerTester(
         dataStore,
         SimpleMarykModel.getUpdates(testKeys[0], testKeys[2]),
         4

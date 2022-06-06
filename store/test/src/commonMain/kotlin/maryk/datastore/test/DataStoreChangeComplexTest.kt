@@ -24,7 +24,6 @@ import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.MarykTypeEnum
 import maryk.test.models.MarykTypeEnum.T1
 import maryk.test.models.MarykTypeEnum.T3
-import maryk.test.runSuspendingTest
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.expect
@@ -46,91 +45,87 @@ class DataStoreChangeComplexTest(
         "executeChangeIncMapRequest" to ::executeChangeIncMapRequest
     )
 
-    override fun initData() {
-        runSuspendingTest {
-            val addResponse = dataStore.execute(
-                ComplexModel.add(
-                    ComplexModel(
-                        multi = TypedValue(T3, EmbeddedMarykModel("u3", EmbeddedMarykModel("ue3"))),
-                        mapStringString = mapOf("a" to "b", "c" to "d"),
-                        incMap = mapOf(
-                            1u to EmbeddedMarykModel("o"),
-                            2u to EmbeddedMarykModel("p")
+    override suspend fun initData() {
+        val addResponse = dataStore.execute(
+            ComplexModel.add(
+                ComplexModel(
+                    multi = TypedValue(T3, EmbeddedMarykModel("u3", EmbeddedMarykModel("ue3"))),
+                    mapStringString = mapOf("a" to "b", "c" to "d"),
+                    incMap = mapOf(
+                        1u to EmbeddedMarykModel("o"),
+                        2u to EmbeddedMarykModel("p")
+                    )
+                ),
+                ComplexModel(
+                    multi = TypedValue(T1, "value"),
+                    mapStringString = mapOf("a" to "b", "c" to "d")
+                ),
+                ComplexModel(
+                    mapStringString = mapOf("a" to "b", "c" to "d"),
+                    mapIntObject = mapOf(1u to EmbeddedMarykModel("v1"), 2u to EmbeddedMarykModel("v2"))
+                ),
+                ComplexModel(
+                    mapStringString = mapOf("a" to "b", "c" to "d"),
+                    mapIntObject = mapOf(
+                        1u to EmbeddedMarykModel("v1", EmbeddedMarykModel("sub")),
+                        2u to EmbeddedMarykModel("v2")
+                    )
+                ),
+                ComplexModel(
+                    mapStringString = mapOf("a" to "b", "c" to "d"),
+                    mapIntMulti = mapOf(
+                        1u to TypedValue(
+                            T3,
+                            EmbeddedMarykModel("v1", EmbeddedMarykModel("sub1", EmbeddedMarykModel("sub2")))
+                        ),
+                        2u to TypedValue(T1, "string"),
+                        3u to TypedValue(
+                            T3,
+                            EmbeddedMarykModel("v2", EmbeddedMarykModel("2sub1", EmbeddedMarykModel("2sub2")))
                         )
-                    ),
-                    ComplexModel(
-                        multi = TypedValue(T1, "value"),
-                        mapStringString = mapOf("a" to "b", "c" to "d")
-                    ),
-                    ComplexModel(
-                        mapStringString = mapOf("a" to "b", "c" to "d"),
-                        mapIntObject = mapOf(1u to EmbeddedMarykModel("v1"), 2u to EmbeddedMarykModel("v2"))
-                    ),
-                    ComplexModel(
-                        mapStringString = mapOf("a" to "b", "c" to "d"),
-                        mapIntObject = mapOf(
-                            1u to EmbeddedMarykModel("v1", EmbeddedMarykModel("sub")),
-                            2u to EmbeddedMarykModel("v2")
+                    )
+                ),
+                ComplexModel(
+                    multi = TypedValue(T3, EmbeddedMarykModel("u3", EmbeddedMarykModel("ue3"))),
+                    mapStringString = mapOf("a" to "b", "c" to "d"),
+                    mapIntObject = mapOf(1u to EmbeddedMarykModel("v1"), 2u to EmbeddedMarykModel("v2")),
+                    mapIntMulti = mapOf(
+                        1u to TypedValue(
+                            T3,
+                            EmbeddedMarykModel("v1", EmbeddedMarykModel("sub1", EmbeddedMarykModel("sub2")))
+                        ),
+                        2u to TypedValue(T1, "string"),
+                        3u to TypedValue(
+                            T3,
+                            EmbeddedMarykModel("v2", EmbeddedMarykModel("2sub1", EmbeddedMarykModel("2sub2")))
                         )
-                    ),
-                    ComplexModel(
-                        mapStringString = mapOf("a" to "b", "c" to "d"),
-                        mapIntMulti = mapOf(
-                            1u to TypedValue(
-                                T3,
-                                EmbeddedMarykModel("v1", EmbeddedMarykModel("sub1", EmbeddedMarykModel("sub2")))
-                            ),
-                            2u to TypedValue(T1, "string"),
-                            3u to TypedValue(
-                                T3,
-                                EmbeddedMarykModel("v2", EmbeddedMarykModel("2sub1", EmbeddedMarykModel("2sub2")))
-                            )
-                        )
-                    ),
-                    ComplexModel(
-                        multi = TypedValue(T3, EmbeddedMarykModel("u3", EmbeddedMarykModel("ue3"))),
-                        mapStringString = mapOf("a" to "b", "c" to "d"),
-                        mapIntObject = mapOf(1u to EmbeddedMarykModel("v1"), 2u to EmbeddedMarykModel("v2")),
-                        mapIntMulti = mapOf(
-                            1u to TypedValue(
-                                T3,
-                                EmbeddedMarykModel("v1", EmbeddedMarykModel("sub1", EmbeddedMarykModel("sub2")))
-                            ),
-                            2u to TypedValue(T1, "string"),
-                            3u to TypedValue(
-                                T3,
-                                EmbeddedMarykModel("v2", EmbeddedMarykModel("2sub1", EmbeddedMarykModel("2sub2")))
-                            )
-                        )
-                    ),
-                    ComplexModel(
-                        mapIntObject = mapOf(
-                            1u to EmbeddedMarykModel("v1"),
-                            2u to EmbeddedMarykModel("v2")
-                        )
+                    )
+                ),
+                ComplexModel(
+                    mapIntObject = mapOf(
+                        1u to EmbeddedMarykModel("v1"),
+                        2u to EmbeddedMarykModel("v2")
                     )
                 )
             )
+        )
 
-            addResponse.statuses.forEach { status ->
-                val response = assertType<AddSuccess<ComplexModel>>(status)
-                keys.add(response.key)
-                lastVersions.add(response.version)
-            }
+        addResponse.statuses.forEach { status ->
+            val response = assertType<AddSuccess<ComplexModel>>(status)
+            keys.add(response.key)
+            lastVersions.add(response.version)
         }
     }
 
-    override fun resetData() {
-        runSuspendingTest {
-            dataStore.execute(
-                ComplexModel.delete(*keys.toTypedArray(), hardDelete = true)
-            )
-        }
+    override suspend fun resetData() {
+        dataStore.execute(
+            ComplexModel.delete(*keys.toTypedArray(), hardDelete = true)
+        )
         keys.clear()
         lastVersions.clear()
     }
 
-    private fun executeChangeDeleteMultiRequest() = runSuspendingTest {
+    private suspend fun executeChangeDeleteMultiRequest() {
         val changeResponse = dataStore.execute(
             ComplexModel.change(
                 keys[0].change(
@@ -154,7 +149,7 @@ class DataStoreChangeComplexTest(
         assertNull(getResponse.values.first().values { multi })
     }
 
-    private fun executeChangeDeleteMapRequest() = runSuspendingTest {
+    private suspend fun executeChangeDeleteMapRequest() {
         val changeResponse = dataStore.execute(
             ComplexModel.change(
                 keys[2].change(
@@ -177,7 +172,7 @@ class DataStoreChangeComplexTest(
         assertNull(getResponse.values.first().values { mapIntObject })
     }
 
-    private fun executeChangeDeleteMapValueRequest() = runSuspendingTest {
+    private suspend fun executeChangeDeleteMapValueRequest() {
         val changeResponse = dataStore.execute(
             ComplexModel.change(
                 keys[6].change(
@@ -204,7 +199,7 @@ class DataStoreChangeComplexTest(
         }
     }
 
-    private fun executeChangeDeleteMapSubValueRequest() = runSuspendingTest {
+    private suspend fun executeChangeDeleteMapSubValueRequest() {
         val changeResponse = dataStore.execute(
             ComplexModel.change(
                 keys[3].change(
@@ -231,7 +226,7 @@ class DataStoreChangeComplexTest(
         }
     }
 
-    private fun executeChangeDeleteMapTypedSubValueRequest() = runSuspendingTest {
+    private suspend fun executeChangeDeleteMapTypedSubValueRequest() {
         val changeResponse = dataStore.execute(
             ComplexModel.change(
                 keys[4].change(
@@ -268,7 +263,7 @@ class DataStoreChangeComplexTest(
         }
     }
 
-    private fun executeChangeChangeValueRequest() = runSuspendingTest {
+    private suspend fun executeChangeChangeValueRequest() {
         val changeResponse = dataStore.execute(
             ComplexModel.change(
                 keys[5].change(
@@ -315,7 +310,7 @@ class DataStoreChangeComplexTest(
         }
     }
 
-    private fun executeChangeChangeReplaceComplexValueRequest() = runSuspendingTest {
+    private suspend fun executeChangeChangeReplaceComplexValueRequest() {
         val newMultiValue = TypedValue(T3, EmbeddedMarykModel("a5", EmbeddedMarykModel("ae5")))
         val newMapStringString = mapOf("e" to "f", "g" to "h")
         val newMapIntObject = mapOf(4u to EmbeddedMarykModel("v100"), 8u to EmbeddedMarykModel("v200"))
@@ -360,7 +355,7 @@ class DataStoreChangeComplexTest(
         }
     }
 
-    private fun executeChangeIncMapRequest() = runSuspendingTest {
+    private suspend fun executeChangeIncMapRequest() {
         val changeResponse = dataStore.execute(
             ComplexModel.change(
                 keys[0].change(

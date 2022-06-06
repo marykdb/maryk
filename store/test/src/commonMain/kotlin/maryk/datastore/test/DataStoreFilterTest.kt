@@ -31,7 +31,6 @@ import maryk.datastore.shared.IsDataStore
 import maryk.lib.time.Time
 import maryk.test.assertType
 import maryk.test.models.TestMarykModel
-import maryk.test.runSuspendingTest
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -97,61 +96,56 @@ class DataStoreFilterTest(
         )
     )
 
-    override fun initData() {
-        runSuspendingTest {
-            val addResponse = dataStore.execute(
-                TestMarykModel.add(
-                    dataObject,
-                    dataObject2
-                )
+    override suspend fun initData() {
+        val addResponse = dataStore.execute(
+            TestMarykModel.add(
+                dataObject,
+                dataObject2
             )
+        )
 
-            addResponse.statuses.forEach { status ->
-                val response = assertType<AddSuccess<TestMarykModel>>(status)
-                keys.add(response.key)
-                lastVersions.add(response.version)
-            }
-
-            val changeResponse = dataStore.execute(
-                TestMarykModel.change(
-                    keys[0].change(
-                        Change(TestMarykModel { reference::ref } with keys[1])
-                    )
-                )
-            )
-
-            changeResponse.statuses.forEach { status ->
-                val response = assertType<ChangeSuccess<TestMarykModel>>(status)
-                lastVersions.add(response.version)
-            }
-
-            firstKey = keys[0]
+        addResponse.statuses.forEach { status ->
+            val response = assertType<AddSuccess<TestMarykModel>>(status)
+            keys.add(response.key)
+            lastVersions.add(response.version)
         }
+
+        val changeResponse = dataStore.execute(
+            TestMarykModel.change(
+                keys[0].change(
+                    Change(TestMarykModel { reference::ref } with keys[1])
+                )
+            )
+        )
+
+        changeResponse.statuses.forEach { status ->
+            val response = assertType<ChangeSuccess<TestMarykModel>>(status)
+            lastVersions.add(response.version)
+        }
+
+        firstKey = keys[0]
     }
 
-    override fun resetData() {
-        runSuspendingTest {
-            dataStore.execute(
-                TestMarykModel.delete(*keys.toTypedArray(), hardDelete = true)
-            )
-        }
+    override suspend fun resetData() {
+        dataStore.execute(
+            TestMarykModel.delete(*keys.toTypedArray(), hardDelete = true)
+        )
         keys.clear()
         lastVersions.clear()
     }
 
-    private fun filterMatches(filter: IsFilter, hlc: HLC? = null) =
-        runSuspendingTest {
-            val response = dataStore.execute(
-                TestMarykModel.get(
-                    firstKey,
-                    where = filter,
-                    toVersion = hlc?.timestamp
-                )
+    private suspend fun filterMatches(filter: IsFilter, hlc: HLC? = null): Boolean {
+        val response = dataStore.execute(
+            TestMarykModel.get(
+                firstKey,
+                where = filter,
+                toVersion = hlc?.timestamp
             )
-            response.values.isNotEmpty()
-        }
+        )
+        return response.values.isNotEmpty()
+    }
 
-    private fun doExistsFilter() = runSuspendingTest {
+    private suspend fun doExistsFilter() {
         assertTrue {
             filterMatches(
                 Exists(TestMarykModel { string::ref })
@@ -183,7 +177,7 @@ class DataStoreFilterTest(
         }
     }
 
-    private fun doEqualsFilter() {
+    private suspend fun doEqualsFilter() {
         assertTrue {
             filterMatches(
                 Equals(TestMarykModel { string::ref } with "haha1")
@@ -214,7 +208,7 @@ class DataStoreFilterTest(
         }
     }
 
-    private fun doComplexMapListSetFilter() {
+    private suspend fun doComplexMapListSetFilter() {
         assertTrue {
             filterMatches(
                 Equals(TestMarykModel { map.refAt(Time(12, 13, 14)) } with "haha10")
@@ -299,7 +293,7 @@ class DataStoreFilterTest(
         }
     }
 
-    private fun doPrefixFilter() {
+    private suspend fun doPrefixFilter() {
         assertTrue {
             filterMatches(
                 Prefix(TestMarykModel { string::ref } with "ha")
@@ -313,7 +307,7 @@ class DataStoreFilterTest(
         }
     }
 
-    private fun doLessThanFilter() {
+    private suspend fun doLessThanFilter() {
         assertTrue {
             filterMatches(
                 LessThan(TestMarykModel { int::ref } with 6)
@@ -333,7 +327,7 @@ class DataStoreFilterTest(
         }
     }
 
-    private fun doLessThanEqualsFilter() {
+    private suspend fun doLessThanEqualsFilter() {
         assertTrue {
             filterMatches(
                 LessThanEquals(TestMarykModel { int::ref } with 6)
@@ -353,7 +347,7 @@ class DataStoreFilterTest(
         }
     }
 
-    private fun doGreaterThanFilter() {
+    private suspend fun doGreaterThanFilter() {
         assertTrue {
             filterMatches(
                 GreaterThan(TestMarykModel { int::ref } with 4)
@@ -373,7 +367,7 @@ class DataStoreFilterTest(
         }
     }
 
-    private fun doGreaterThanEqualsFilter() {
+    private suspend fun doGreaterThanEqualsFilter() {
         assertTrue {
             filterMatches(
                 GreaterThanEquals(TestMarykModel { int::ref } with 4)
@@ -393,7 +387,7 @@ class DataStoreFilterTest(
         }
     }
 
-    private fun doRangeFilter() {
+    private suspend fun doRangeFilter() {
         assertTrue {
             filterMatches(
                 Range(TestMarykModel { int::ref } with (2..8))
@@ -413,7 +407,7 @@ class DataStoreFilterTest(
         }
     }
 
-    private fun doRegExFilter() {
+    private suspend fun doRegExFilter() {
         assertTrue {
             filterMatches(
                 RegEx(TestMarykModel { string::ref } with Regex("^h.*$"))
@@ -427,7 +421,7 @@ class DataStoreFilterTest(
         }
     }
 
-    private fun doValueInFilter() {
+    private suspend fun doValueInFilter() {
         assertTrue {
             filterMatches(
                 ValueIn(TestMarykModel { string::ref } with setOf("haha1", "haha2"))
@@ -441,7 +435,7 @@ class DataStoreFilterTest(
         }
     }
 
-    private fun doNotFilter() {
+    private suspend fun doNotFilter() {
         assertFalse {
             filterMatches(
                 Not(Exists(TestMarykModel { string::ref }))
@@ -455,7 +449,7 @@ class DataStoreFilterTest(
         }
     }
 
-    private fun doAndFilter() {
+    private suspend fun doAndFilter() {
         assertTrue {
             filterMatches(
                 And(
@@ -475,7 +469,7 @@ class DataStoreFilterTest(
         }
     }
 
-    private fun doOrFilter() {
+    private suspend fun doOrFilter() {
         assertTrue {
             filterMatches(
                 Or(
@@ -504,7 +498,7 @@ class DataStoreFilterTest(
         }
     }
 
-    private fun doReferencedEqualsFilter() {
+    private suspend fun doReferencedEqualsFilter() {
         assertTrue {
             filterMatches(
                 Equals(TestMarykModel { reference { string::ref } } with "haha2")

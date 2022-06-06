@@ -24,7 +24,6 @@ import maryk.test.models.Log
 import maryk.test.models.Severity.DEBUG
 import maryk.test.models.Severity.ERROR
 import maryk.test.models.Severity.INFO
-import maryk.test.runSuspendingTest
 import kotlin.test.assertEquals
 
 class DataStoreScanUpdatesWithLogTest(
@@ -39,43 +38,39 @@ class DataStoreScanUpdatesWithLogTest(
         "executeScanUpdatesAsFlowRequestWithMutableWhere" to ::executeScanUpdatesAsFlowRequestWithMutableWhere
     )
 
-    override fun initData() {
-        runSuspendingTest {
-            val addResponse = dataStore.execute(
-                Log.add(
-                    // Mind that Log stores in reverse chronological order
-                    Log(message = "message 0", severity = ERROR, timestamp = LocalDateTime(2020, 3, 28, 10, 9, 8)),
-                    Log(message = "message 1", severity = INFO, timestamp = LocalDateTime(2020, 3, 29, 12, 11, 10)),
-                    Log(message = "message 2", severity = DEBUG, timestamp = LocalDateTime(2020, 3, 30, 13, 44, 29)),
-                    Log(message = "message 3", severity = DEBUG, timestamp = LocalDateTime(2020, 3, 31, 14, 3, 48))
-                )
+    override suspend fun initData() {
+        val addResponse = dataStore.execute(
+            Log.add(
+                // Mind that Log stores in reverse chronological order
+                Log(message = "message 0", severity = ERROR, timestamp = LocalDateTime(2020, 3, 28, 10, 9, 8)),
+                Log(message = "message 1", severity = INFO, timestamp = LocalDateTime(2020, 3, 29, 12, 11, 10)),
+                Log(message = "message 2", severity = DEBUG, timestamp = LocalDateTime(2020, 3, 30, 13, 44, 29)),
+                Log(message = "message 3", severity = DEBUG, timestamp = LocalDateTime(2020, 3, 31, 14, 3, 48))
             )
-            addResponse.statuses.forEach { status ->
-                val response = assertType<AddSuccess<Log>>(status)
-                testKeys.add(response.key)
-                if (response.version < lowestVersion) {
-                    // Add lowest version for scan test
-                    lowestVersion = response.version
-                }
-                if (response.version > highestInitVersion) {
-                    highestInitVersion = response.version
-                }
+        )
+        addResponse.statuses.forEach { status ->
+            val response = assertType<AddSuccess<Log>>(status)
+            testKeys.add(response.key)
+            if (response.version < lowestVersion) {
+                // Add lowest version for scan test
+                lowestVersion = response.version
+            }
+            if (response.version > highestInitVersion) {
+                highestInitVersion = response.version
             }
         }
     }
 
-    override fun resetData() {
-        runSuspendingTest {
-            dataStore.execute(
-                Log.delete(*testKeys.toTypedArray(), hardDelete = true)
-            )
-        }
+    override suspend fun resetData() {
+        dataStore.execute(
+            Log.delete(*testKeys.toTypedArray(), hardDelete = true)
+        )
         testKeys.clear()
         lowestVersion = ULong.MAX_VALUE
         highestInitVersion = ULong.MIN_VALUE
     }
 
-    private fun executeScanUpdatesAsFlowRequestWithMutableWhere() {
+    private suspend fun executeScanUpdatesAsFlowRequestWithMutableWhere() {
         updateListenerTester(
             dataStore,
             Log.scanUpdates(
@@ -112,7 +107,7 @@ class DataStoreScanUpdatesWithLogTest(
         }
     }
 
-    private fun executeScanUpdatesAsFlowRequest() {
+    private suspend fun executeScanUpdatesAsFlowRequest() {
         updateListenerTester(
             dataStore,
             // Reverse order so keys[0], [1] and [2] are within range

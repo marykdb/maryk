@@ -24,7 +24,6 @@ import maryk.test.models.Log.Properties.severity
 import maryk.test.models.Severity.DEBUG
 import maryk.test.models.Severity.ERROR
 import maryk.test.models.Severity.INFO
-import maryk.test.runSuspendingTest
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertSame
@@ -56,33 +55,29 @@ class DataStoreScanOnIndexTest(
         Log("WRONG", ERROR, LocalDateTime(2018, 11, 14, 13, 0, 2, 0))
     )
 
-    override fun initData() {
-        runSuspendingTest {
-            val addResponse = dataStore.execute(
-                Log.add(*logs)
-            )
-            addResponse.statuses.forEach { status ->
-                val response = assertType<AddSuccess<Log>>(status)
-                keys.add(response.key)
-                if (response.version > highestCreationVersion) {
-                    // Add lowest version for scan test
-                    highestCreationVersion = response.version
-                }
+    override suspend fun initData() {
+        val addResponse = dataStore.execute(
+            Log.add(*logs)
+        )
+        addResponse.statuses.forEach { status ->
+            val response = assertType<AddSuccess<Log>>(status)
+            keys.add(response.key)
+            if (response.version > highestCreationVersion) {
+                // Add lowest version for scan test
+                highestCreationVersion = response.version
             }
         }
     }
 
-    override fun resetData() {
-        runSuspendingTest {
-            dataStore.execute(
-                Log.delete(*keys.toTypedArray(), hardDelete = true)
-            )
-        }
+    override suspend fun resetData() {
+        dataStore.execute(
+            Log.delete(*keys.toTypedArray(), hardDelete = true)
+        )
         keys.clear()
         highestCreationVersion = ULong.MIN_VALUE
     }
 
-    private fun executeSimpleIndexScanRequest() = runSuspendingTest {
+    private suspend fun executeSimpleIndexScanRequest() {
         val scanResponse = dataStore.execute(
             Log.scan(order = severity.ref().ascending())
         )
@@ -108,7 +103,7 @@ class DataStoreScanOnIndexTest(
         }
     }
 
-    private fun executeSimpleIndexScanWithStartKeyRequest() = runSuspendingTest {
+    private suspend fun executeSimpleIndexScanWithStartKeyRequest() {
         val scanResponse = dataStore.execute(
             Log.scan(startKey = keys[1], order = severity.ref().ascending())
         )
@@ -126,7 +121,7 @@ class DataStoreScanOnIndexTest(
         }
     }
 
-    private fun executeSimpleIndexScanRequestReverseOrder() = runSuspendingTest {
+    private suspend fun executeSimpleIndexScanRequestReverseOrder() {
         val scanResponse = dataStore.execute(
             Log.scan(order = severity.ref().descending())
         )
@@ -152,7 +147,7 @@ class DataStoreScanOnIndexTest(
         }
     }
 
-    private fun executeIndexScanRequestWithLimit() = runSuspendingTest {
+    private suspend fun executeIndexScanRequestWithLimit() {
         val scanResponse = dataStore.execute(
             Log.scan(limit = 1u, order = severity.ref().ascending())
         )
@@ -165,7 +160,7 @@ class DataStoreScanOnIndexTest(
         }
     }
 
-    private fun executeIndexScanRequestWithToVersionAscending() = runSuspendingTest {
+    private suspend fun executeIndexScanRequestWithToVersionAscending() {
         dataStore.execute(
             Log.change(
                 keys[0].change(
@@ -191,14 +186,12 @@ class DataStoreScanOnIndexTest(
             assertEquals("Something happened", value!!.values[message.ref()])
         } else {
             assertFailsWith<RequestException> {
-                runSuspendingTest {
-                    dataStore.execute(scan)
-                }
+                dataStore.execute(scan)
             }
         }
     }
 
-    private fun executeIndexScanRequestWithToVersionDescending() = runSuspendingTest {
+    private suspend fun executeIndexScanRequestWithToVersionDescending() {
         dataStore.execute(
             Log.change(
                 keys[0].change(
@@ -224,14 +217,12 @@ class DataStoreScanOnIndexTest(
             assertEquals("Something happened", value!!.values[message.ref()])
         } else {
             assertFailsWith<RequestException> {
-                runSuspendingTest {
-                    dataStore.execute(scan)
-                }
+                dataStore.execute(scan)
             }
         }
     }
 
-    private fun executeIndexScanRequestWithSelect() = runSuspendingTest {
+    private suspend fun executeIndexScanRequestWithSelect() {
         val scanResponse = dataStore.execute(
             Log.scan(
                 select = Log.graph {
@@ -260,7 +251,7 @@ class DataStoreScanOnIndexTest(
         }
     }
 
-    private fun executeSimpleIndexFilterScanRequest() = runSuspendingTest {
+    private suspend fun executeSimpleIndexFilterScanRequest() {
         val scanResponse = dataStore.execute(
             Log.scan(
                 where = Equals(
@@ -278,7 +269,7 @@ class DataStoreScanOnIndexTest(
         }
     }
 
-    private fun executeSimpleIndexFilterGreaterScanRequest() = runSuspendingTest {
+    private suspend fun executeSimpleIndexFilterGreaterScanRequest() {
         val scanResponse = dataStore.execute(
             Log.scan(
                 where = GreaterThanEquals(
@@ -300,7 +291,7 @@ class DataStoreScanOnIndexTest(
         }
     }
 
-    private fun executeSimpleIndexFilterLessScanRequest() = runSuspendingTest {
+    private suspend fun executeSimpleIndexFilterLessScanRequest() {
         val scanResponse = dataStore.execute(
             Log.scan(
                 where = LessThanEquals(

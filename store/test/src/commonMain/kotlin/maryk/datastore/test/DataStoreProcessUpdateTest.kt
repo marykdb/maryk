@@ -30,7 +30,6 @@ import maryk.datastore.shared.IsDataStore
 import maryk.test.assertType
 import maryk.test.models.Log
 import maryk.test.models.Severity.ERROR
-import maryk.test.runSuspendingTest
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
@@ -63,15 +62,13 @@ class DataStoreProcessUpdateTest(
         Log.key(logs[3])
     )
 
-    override fun resetData() {
-        runSuspendingTest {
-            dataStore.execute(
-                Log.delete(*keys.toTypedArray(), hardDelete = true)
-            )
-        }
+    override suspend fun resetData() {
+        dataStore.execute(
+            Log.delete(*keys.toTypedArray(), hardDelete = true)
+        )
     }
 
-    private fun executeProcessAddRequest() = runSuspendingTest {
+    private suspend fun executeProcessAddRequest() {
         val addResponse = dataStore.processUpdate(
             UpdateResponse(
                 id = 1234uL,
@@ -100,7 +97,7 @@ class DataStoreProcessUpdateTest(
         expect(logs[0]) { getResponse.values.first().values }
     }
 
-    private fun executeProcessChangeRequest() = runSuspendingTest {
+    private suspend fun executeProcessChangeRequest() {
         dataStore.processUpdate(
             UpdateResponse(
                 id = 1234uL,
@@ -145,7 +142,7 @@ class DataStoreProcessUpdateTest(
         expect(editedMessage) { getResponse.values.first().values { message } }
     }
 
-    private fun executeProcessAddInChangeRequest() = runSuspendingTest {
+    private suspend fun executeProcessAddInChangeRequest() {
         val newMessage = "New message"
         val changeResponse = dataStore.processUpdate(
             UpdateResponse(
@@ -178,7 +175,7 @@ class DataStoreProcessUpdateTest(
         expect(newMessage) { getResponse.values.first().values { message } }
     }
 
-    private fun executeProcessRemovalRequest() = runSuspendingTest {
+    private suspend fun executeProcessRemovalRequest() {
         dataStore.processUpdate(
             UpdateResponse(
                 id = 1234uL,
@@ -257,7 +254,7 @@ class DataStoreProcessUpdateTest(
         assertTrue(getResponse2.values[0].isDeleted)
     }
 
-    private fun executeProcessInitialChangesRequest() = runSuspendingTest {
+    private suspend fun executeProcessInitialChangesRequest() {
         dataStore.processUpdate(
             UpdateResponse(
                 id = 1234uL,
@@ -323,7 +320,7 @@ class DataStoreProcessUpdateTest(
         expect(newMessage) { getResponse.values[1].values { message } }
     }
 
-    private fun failOnInitialValuesUpdateRequest() = runSuspendingTest {
+    private suspend fun failOnInitialValuesUpdateRequest() {
         assertFailsWith<RequestException> {
             dataStore.processUpdate(
                 UpdateResponse(
@@ -338,7 +335,7 @@ class DataStoreProcessUpdateTest(
         }
     }
 
-    private fun failOnOrderedKeysUpdateRequest() = runSuspendingTest {
+    private suspend fun failOnOrderedKeysUpdateRequest() {
         assertFailsWith<RequestException> {
             dataStore.processUpdate(
                 UpdateResponse(

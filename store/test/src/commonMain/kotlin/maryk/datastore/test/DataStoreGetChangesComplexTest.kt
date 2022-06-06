@@ -20,7 +20,6 @@ import maryk.test.models.ComplexModel
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.MarykTypeEnum.T1
 import maryk.test.models.MarykTypeEnum.T3
-import maryk.test.runSuspendingTest
 import kotlin.test.expect
 
 class DataStoreGetChangesComplexTest(
@@ -33,56 +32,52 @@ class DataStoreGetChangesComplexTest(
         "executeSimpleGetChangesRequest" to ::executeSimpleGetChangesRequest
     )
 
-    override fun initData() {
-        runSuspendingTest {
-            val addResponse = dataStore.execute(
-                ComplexModel.add(
-                    ComplexModel(
-                        multi = TypedValue(T3, EmbeddedMarykModel("u3", EmbeddedMarykModel("ue3"))),
-                        mapStringString = mapOf("a" to "b", "c" to "d"),
-                        mapIntObject = mapOf(1u to EmbeddedMarykModel("v1"), 2u to EmbeddedMarykModel("v2")),
-                        mapIntMulti = mapOf(
-                            1u to TypedValue(T3,
-                                EmbeddedMarykModel("v1",
-                                    EmbeddedMarykModel("sub1",
-                                        EmbeddedMarykModel("sub2")
-                                    )
+    override suspend fun initData() {
+        val addResponse = dataStore.execute(
+            ComplexModel.add(
+                ComplexModel(
+                    multi = TypedValue(T3, EmbeddedMarykModel("u3", EmbeddedMarykModel("ue3"))),
+                    mapStringString = mapOf("a" to "b", "c" to "d"),
+                    mapIntObject = mapOf(1u to EmbeddedMarykModel("v1"), 2u to EmbeddedMarykModel("v2")),
+                    mapIntMulti = mapOf(
+                        1u to TypedValue(T3,
+                            EmbeddedMarykModel("v1",
+                                EmbeddedMarykModel("sub1",
+                                    EmbeddedMarykModel("sub2")
                                 )
-                            ),
-                            2u to TypedValue(T1, "string"),
-                            3u to TypedValue(T3,
-                                EmbeddedMarykModel("v2",
-                                    EmbeddedMarykModel("2sub1",
-                                        EmbeddedMarykModel("2sub2")
-                                    )
+                            )
+                        ),
+                        2u to TypedValue(T1, "string"),
+                        3u to TypedValue(T3,
+                            EmbeddedMarykModel("v2",
+                                EmbeddedMarykModel("2sub1",
+                                    EmbeddedMarykModel("2sub2")
                                 )
                             )
                         )
                     )
                 )
             )
-            addResponse.statuses.forEach { status ->
-                val response = assertType<AddSuccess<ComplexModel>>(status)
-                keys.add(response.key)
-                if (response.version < lowestVersion) {
-                    // Add lowest version for scan test
-                    lowestVersion = response.version
-                }
+        )
+        addResponse.statuses.forEach { status ->
+            val response = assertType<AddSuccess<ComplexModel>>(status)
+            keys.add(response.key)
+            if (response.version < lowestVersion) {
+                // Add lowest version for scan test
+                lowestVersion = response.version
             }
         }
     }
 
-    override fun resetData() {
-        runSuspendingTest {
-            dataStore.execute(
-                ComplexModel.delete(*keys.toTypedArray(), hardDelete = true)
-            )
-        }
+    override suspend fun resetData() {
+        dataStore.execute(
+            ComplexModel.delete(*keys.toTypedArray(), hardDelete = true)
+        )
         keys.clear()
         lowestVersion = ULong.MAX_VALUE
     }
 
-    private fun executeSimpleGetChangesRequest() = runSuspendingTest {
+    private suspend fun executeSimpleGetChangesRequest() {
         val getResponse = dataStore.execute(
             ComplexModel.getChanges(*keys.toTypedArray())
         )

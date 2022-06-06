@@ -16,7 +16,6 @@ import maryk.datastore.shared.IsDataStore
 import maryk.test.assertType
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.addRequest
-import maryk.test.runSuspendingTest
 import kotlin.test.assertFailsWith
 import kotlin.test.expect
 
@@ -34,33 +33,29 @@ class DataStoreGetChangesTest(
         "executeGetChangesRequestWithMaxVersions" to ::executeGetChangesRequestWithMaxVersions
     )
 
-    override fun initData() {
-        runSuspendingTest {
-            val addResponse = dataStore.execute(
-                addRequest
-            )
-            addResponse.statuses.forEach { status ->
-                val response = assertType<AddSuccess<SimpleMarykModel>>(status)
-                keys.add(response.key)
-                if (response.version < lowestVersion) {
-                    // Add lowest version for scan test
-                    lowestVersion = response.version
-                }
+    override suspend fun initData() {
+        val addResponse = dataStore.execute(
+            addRequest
+        )
+        addResponse.statuses.forEach { status ->
+            val response = assertType<AddSuccess<SimpleMarykModel>>(status)
+            keys.add(response.key)
+            if (response.version < lowestVersion) {
+                // Add lowest version for scan test
+                lowestVersion = response.version
             }
         }
     }
 
-    override fun resetData() {
-        runSuspendingTest {
-            dataStore.execute(
-                SimpleMarykModel.delete(*keys.toTypedArray(), hardDelete = true)
-            )
-        }
+    override suspend fun resetData() {
+        dataStore.execute(
+            SimpleMarykModel.delete(*keys.toTypedArray(), hardDelete = true)
+        )
         keys.clear()
         lowestVersion = ULong.MAX_VALUE
     }
 
-    private fun executeSimpleGetChangesRequest() = runSuspendingTest {
+    private suspend fun executeSimpleGetChangesRequest() {
         val changeResult = dataStore.execute(
             SimpleMarykModel.change(
                 keys[1].change(Change(SimpleMarykModel { value::ref } with "haha3"))
@@ -103,7 +98,7 @@ class DataStoreGetChangesTest(
         }
     }
 
-    private fun executeToVersionGetChangesRequest() = runSuspendingTest {
+    private suspend fun executeToVersionGetChangesRequest() {
         if (dataStore.keepAllVersions) {
             val getResponse = dataStore.execute(
                 SimpleMarykModel.getChanges(*keys.toTypedArray(), toVersion = lowestVersion - 1uL)
@@ -112,16 +107,14 @@ class DataStoreGetChangesTest(
             expect(0) { getResponse.changes.size }
         } else {
             assertFailsWith<RequestException> {
-                runSuspendingTest {
-                    dataStore.execute(
-                        SimpleMarykModel.getChanges(*keys.toTypedArray(), toVersion = lowestVersion - 1uL)
-                    )
-                }
+                dataStore.execute(
+                    SimpleMarykModel.getChanges(*keys.toTypedArray(), toVersion = lowestVersion - 1uL)
+                )
             }
         }
     }
 
-    private fun executeFromVersionGetChangesRequest() = runSuspendingTest {
+    private suspend fun executeFromVersionGetChangesRequest() {
         val getResponse = dataStore.execute(
             SimpleMarykModel.getChanges(*keys.toTypedArray(), fromVersion = lowestVersion + 1uL)
         )
@@ -129,7 +122,7 @@ class DataStoreGetChangesTest(
         expect(0) { getResponse.changes.size }
     }
 
-    private fun executeGetChangesRequestWithSelect() = runSuspendingTest {
+    private suspend fun executeGetChangesRequestWithSelect() {
         val scanResponse = dataStore.execute(
             SimpleMarykModel.getChanges(
                 *keys.toTypedArray(),
@@ -156,7 +149,7 @@ class DataStoreGetChangesTest(
         }
     }
 
-    private fun executeGetChangesRequestWithMaxVersions() = runSuspendingTest {
+    private suspend fun executeGetChangesRequestWithMaxVersions() {
         if (dataStore.keepAllVersions) {
             val collectedVersions = mutableListOf<ULong>()
 

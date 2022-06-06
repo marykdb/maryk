@@ -21,7 +21,6 @@ import maryk.test.models.MarykEnumEmbedded.E1
 import maryk.test.models.MarykTypeEnum.T2
 import maryk.test.models.SimpleMarykModel
 import maryk.test.models.SimpleMarykTypeEnum.S1
-import maryk.test.runSuspendingTest
 import kotlin.test.expect
 
 class DataStoreScanUniqueTest(
@@ -50,33 +49,29 @@ class DataStoreScanUniqueTest(
         )
     )
 
-    override fun initData() {
-        runSuspendingTest {
-            val addResponse = dataStore.execute(
-                CompleteMarykModel.add(*objects)
-            )
-            addResponse.statuses.forEach { status ->
-                val response = assertType<AddSuccess<CompleteMarykModel>>(status)
-                keys.add(response.key)
-                if (response.version < lowestVersion) {
-                    // Add lowest version for scan test
-                    lowestVersion = response.version
-                }
+    override suspend fun initData() {
+        val addResponse = dataStore.execute(
+            CompleteMarykModel.add(*objects)
+        )
+        addResponse.statuses.forEach { status ->
+            val response = assertType<AddSuccess<CompleteMarykModel>>(status)
+            keys.add(response.key)
+            if (response.version < lowestVersion) {
+                // Add lowest version for scan test
+                lowestVersion = response.version
             }
         }
     }
 
-    override fun resetData() {
-        runSuspendingTest {
-            dataStore.execute(
-                CompleteMarykModel.delete(*keys.toTypedArray(), hardDelete = true)
-            )
-        }
+    override suspend fun resetData() {
+        dataStore.execute(
+            CompleteMarykModel.delete(*keys.toTypedArray(), hardDelete = true)
+        )
         keys.clear()
         lowestVersion = ULong.MAX_VALUE
     }
 
-    private fun executeSimpleScanFilterRequest() = runSuspendingTest {
+    private suspend fun executeSimpleScanFilterRequest() {
         val scanResponse = dataStore.execute(
             CompleteMarykModel.scan(
                 where = Equals(
@@ -93,7 +88,7 @@ class DataStoreScanUniqueTest(
         }
     }
 
-    private fun executeSimpleScanFilterWithToVersionRequest() = runSuspendingTest {
+    private suspend fun executeSimpleScanFilterWithToVersionRequest() {
         val changeResponse = dataStore.execute(
             CompleteMarykModel.change(
                 keys[0].change(

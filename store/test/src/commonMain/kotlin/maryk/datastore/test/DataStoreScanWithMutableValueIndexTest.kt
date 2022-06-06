@@ -16,7 +16,6 @@ import maryk.datastore.shared.IsDataStore
 import maryk.test.assertType
 import maryk.test.models.ModelV2ExtraIndex
 import maryk.test.models.SimpleMarykModel
-import maryk.test.runSuspendingTest
 import kotlin.test.expect
 
 class DataStoreScanWithMutableValueIndexTest(
@@ -37,33 +36,29 @@ class DataStoreScanWithMutableValueIndexTest(
         ModelV2ExtraIndex("ha4", 1)
     )
 
-    override fun initData() {
-        runSuspendingTest {
-            val addResponse = dataStore.execute(
-                ModelV2ExtraIndex.add(*objects)
-            )
-            addResponse.statuses.forEach { status ->
-                val response = assertType<AddSuccess<ModelV2ExtraIndex>>(status)
-                keys.add(response.key)
-                if (response.version < lowestVersion) {
-                    // Add lowest version for scan test
-                    lowestVersion = response.version
-                }
+    override suspend fun initData() {
+        val addResponse = dataStore.execute(
+            ModelV2ExtraIndex.add(*objects)
+        )
+        addResponse.statuses.forEach { status ->
+            val response = assertType<AddSuccess<ModelV2ExtraIndex>>(status)
+            keys.add(response.key)
+            if (response.version < lowestVersion) {
+                // Add lowest version for scan test
+                lowestVersion = response.version
             }
         }
     }
 
-    override fun resetData() {
-        runSuspendingTest {
-            dataStore.execute(
-                ModelV2ExtraIndex.delete(*keys.toTypedArray(), hardDelete = true)
-            )
-        }
+    override suspend fun resetData() {
+        dataStore.execute(
+            ModelV2ExtraIndex.delete(*keys.toTypedArray(), hardDelete = true)
+        )
         keys.clear()
         lowestVersion = ULong.MAX_VALUE
     }
 
-    private fun executeScanOnAscendingIndexRequest() = runSuspendingTest {
+    private suspend fun executeScanOnAscendingIndexRequest() {
         val changeResult = dataStore.execute(
             ModelV2ExtraIndex.change(
                 keys[2].change(Change(ModelV2ExtraIndex { newNumber::ref } with 99))
@@ -116,7 +111,7 @@ class DataStoreScanWithMutableValueIndexTest(
         }
     }
 
-    private fun executeScanOnDescendingIndexRequest() = runSuspendingTest {
+    private suspend fun executeScanOnDescendingIndexRequest() {
         val scanResponse = dataStore.execute(
             ModelV2ExtraIndex.scan(startKey = keys[1], order = ModelV2ExtraIndex { newNumber::ref }.descending())
         )

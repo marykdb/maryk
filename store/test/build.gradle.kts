@@ -2,9 +2,6 @@ plugins {
     kotlin("multiplatform")
 }
 
-apply {
-}
-
 kotlin {
     jvm()
 

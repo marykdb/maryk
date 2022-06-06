@@ -24,7 +24,7 @@ import kotlin.native.concurrent.SharedImmutable
 /** Validation Exception with newMessage for properties */
 abstract class ValidationException internal constructor(
     newMessage: String
-) : Throwable(
+) : Error(
     newMessage
 ) {
     internal constructor(

@@ -25,7 +25,7 @@ import kotlin.test.assertFailsWith
 class RocksDBDataStoreMigrationTest {
     private val basePath = "./build/test-database"
 
-    class CustomException : Throwable()
+    class CustomException : Error()
 
     @Test
     fun testMigration() = runSuspendingTest {

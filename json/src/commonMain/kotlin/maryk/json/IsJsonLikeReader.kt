@@ -82,12 +82,12 @@ interface IsJsonLikeReader {
 }
 
 /** Exception during reading of JSON */
-class ExceptionWhileReadingJson : Throwable()
+class ExceptionWhileReadingJson : Error()
 
 /** Exception for invalid JSON */
 open class InvalidJsonContent(
     description: String
-) : Throwable(description) {
+) : Error(description) {
     var lineNumber: Int? = null
     var columnNumber: Int? = null
 

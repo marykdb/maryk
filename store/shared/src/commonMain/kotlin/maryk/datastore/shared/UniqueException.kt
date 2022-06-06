@@ -9,4 +9,4 @@ import maryk.core.properties.types.Key
 class UniqueException(
     val reference: ByteArray,
     val key: Key<*>
-) : Throwable()
+) : Error()

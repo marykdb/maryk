@@ -2,10 +2,10 @@ apply plugin: 'com.android.library'
 
 android {
     buildToolsVersion = "32.0.0"
-    compileSdk = 31
+    compileSdk = 32
     defaultConfig {
         minSdkVersion(21)
-        targetSdk = 31
+        targetSdk = 32
         multiDexEnabled = true
         versionCode = 1
         testInstrumentationRunner = "android.support.test.runner.AndroidJUnitRunner"

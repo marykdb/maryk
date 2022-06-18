@@ -10,7 +10,7 @@ plugins {
 buildscript {
     extra["kotlinVersion"] = "1.7.0"
     extra["coroutinesVersion"] = "1.5.2"
-    extra["marykRocksDBVersion"] = "7.0.3"
+    extra["marykRocksDBVersion"] = "7.3.1"
 
     repositories {
         mavenCentral()

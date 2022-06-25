@@ -21,8 +21,6 @@ import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.values.SimpleObjectValues
 import maryk.lib.exceptions.ParseException
-import maryk.lib.time.Date.ofEpochDay
-import maryk.lib.time.epochDay
 
 /** Definition for Date properties */
 data class DateDefinition(
@@ -53,13 +51,13 @@ data class DateDefinition(
         context: IsPropertyContext?,
         earlierValue: LocalDate?
     ): LocalDate =
-        ofEpochDay(initIntByVar(reader).decodeZigZag())
+        LocalDate.fromEpochDays(initIntByVar(reader).decodeZigZag())
 
     override fun calculateTransportByteLengthWithKey(index: UInt, value: LocalDate, cacher: WriteCacheWriter): Int {
         return super<IsSerializableFixedBytesEncodable>.calculateTransportByteLengthWithKey(index, value, cacher)
     }
 
-    override fun calculateTransportByteLength(value: LocalDate) = value.epochDay.encodeZigZag().calculateVarByteLength()
+    override fun calculateTransportByteLength(value: LocalDate) = value.toEpochDays().encodeZigZag().calculateVarByteLength()
 
     override fun writeTransportBytes(
         value: LocalDate,
@@ -67,7 +65,7 @@ data class DateDefinition(
         writer: (byte: Byte) -> Unit,
         context: IsPropertyContext?
     ) {
-        val epochDay = value.epochDay
+        val epochDay = value.toEpochDays()
         epochDay.encodeZigZag().writeVarBytes(writer)
     }
 

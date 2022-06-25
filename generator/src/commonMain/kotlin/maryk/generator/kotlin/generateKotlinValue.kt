@@ -2,6 +2,7 @@ package maryk.generator.kotlin
 
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
 import maryk.core.exceptions.TypeException
 import maryk.core.models.DataModel
 import maryk.core.models.IsNamedDataModel
@@ -27,7 +28,6 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.NumberDescriptor
 import maryk.core.properties.types.numeric.NumberType
 import maryk.core.values.ValuesImpl
-import maryk.lib.time.Time
 
 @Suppress("UNCHECKED_CAST")
 internal fun generateKotlinValue(
@@ -60,10 +60,10 @@ internal fun generateKotlinValue(
     is ULong -> {
         "${value.toLong()}uL"
     }
-    is Time -> {
+    is LocalTime -> {
         when {
-            value.milli != 0.toShort() -> "Time(${value.hour}, ${value.minute}, ${value.second}, ${value.milli})"
-            value.second != 0.toByte() -> "Time(${value.hour}, ${value.minute}, ${value.second})"
+            value.nanosecond != 0 -> "Time(${value.hour}, ${value.minute}, ${value.second}, ${value.nanosecond})"
+            value.second != 0 -> "Time(${value.hour}, ${value.minute}, ${value.second})"
             else -> "Time(${value.hour}, ${value.minute})"
         }
     }

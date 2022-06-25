@@ -2,6 +2,7 @@ package maryk.core.properties.types
 
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
 import maryk.core.properties.types.DateUnit.Centuries
 import maryk.core.properties.types.DateUnit.Days
 import maryk.core.properties.types.DateUnit.Decades
@@ -118,21 +119,21 @@ class DateUnitTest {
 
     @Test
     fun roundTime() {
-        val time = Time(13, 45, 23, 999)
+        val time = LocalTime(13, 45, 23, 999)
 
         expect(time) {
             time.roundToDateUnit(Millis)
         }
 
-        expect(Time(13, 45, 23)) {
+        expect(LocalTime(13, 45, 23)) {
             time.roundToDateUnit(Seconds)
         }
 
-        expect(Time(13, 45)) {
+        expect(LocalTime(13, 45)) {
             time.roundToDateUnit(Minutes)
         }
 
-        expect(Time(13, 0)) {
+        expect(LocalTime(13, 0)) {
             time.roundToDateUnit(Hours)
         }
 

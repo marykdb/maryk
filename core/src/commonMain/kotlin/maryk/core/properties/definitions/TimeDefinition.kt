@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions
 
+import kotlinx.datetime.LocalTime
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initIntByVar
@@ -21,68 +22,73 @@ import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.SimpleObjectValues
+import maryk.lib.exceptions.ParseException
 import maryk.lib.time.Time
+import maryk.lib.time.nowUTC
 
 /** Definition for Time properties */
 data class TimeDefinition(
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val unique: Boolean = false,
-    override val minValue: Time? = null,
-    override val maxValue: Time? = null,
-    override val default: Time? = null,
+    override val minValue: LocalTime? = null,
+    override val maxValue: LocalTime? = null,
+    override val default: LocalTime? = null,
     override val precision: TimePrecision = TimePrecision.SECONDS
 ) :
-    IsTimeDefinition<Time>,
-    IsSerializableFixedBytesEncodable<Time, IsPropertyContext>,
-    IsTransportablePropertyDefinitionType<Time>,
-    HasDefaultValueDefinition<Time> {
+    IsTimeDefinition<LocalTime>,
+    IsTransportablePropertyDefinitionType<LocalTime>,
+    HasDefaultValueDefinition<LocalTime> {
     override val propertyDefinitionType = PropertyDefinitionType.Time
     override val wireType = VAR_INT
     override val byteSize = Time.byteSize(precision)
 
-    fun createNow() = Time.nowUTC()
+    fun createNow() = LocalTime.nowUTC()
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) =
         Time.fromByteReader(length, reader)
 
-    override fun writeStorageBytes(value: Time, writer: (byte: Byte) -> Unit) = value.writeBytes(precision, writer)
+    override fun writeStorageBytes(value: LocalTime, writer: (byte: Byte) -> Unit) = value.writeBytes(precision, writer)
 
     override fun readTransportBytes(
         length: Int,
         reader: () -> Byte,
         context: IsPropertyContext?,
-        earlierValue: Time?
+        earlierValue: LocalTime?
     ) =
         when (this.precision) {
-            TimePrecision.SECONDS -> Time.ofSecondOfDay(initIntByVar(reader))
-            TimePrecision.MILLIS -> Time.ofMilliOfDay(initIntByVar(reader))
+            TimePrecision.SECONDS -> LocalTime.fromSecondOfDay(initIntByVar(reader))
+            TimePrecision.MILLIS -> LocalTime.fromMillisecondOfDay(initIntByVar(reader))
         }
 
-    override fun calculateTransportByteLength(value: Time) = when (this.precision) {
-        TimePrecision.SECONDS -> value.toSecondsOfDay().calculateVarByteLength()
-        TimePrecision.MILLIS -> value.toMillisOfDay().calculateVarByteLength()
+    override fun calculateTransportByteLength(value: LocalTime) = when (this.precision) {
+        TimePrecision.SECONDS -> value.toSecondOfDay().calculateVarByteLength()
+        TimePrecision.MILLIS -> value.toMillisecondOfDay().calculateVarByteLength()
     }
 
     override fun writeTransportBytes(
-        value: Time,
+        value: LocalTime,
         cacheGetter: WriteCacheReader,
         writer: (byte: Byte) -> Unit,
         context: IsPropertyContext?
     ) {
         val toEncode = when (this.precision) {
-            TimePrecision.SECONDS -> value.toSecondsOfDay()
-            TimePrecision.MILLIS -> value.toMillisOfDay()
+            TimePrecision.SECONDS -> value.toSecondOfDay()
+            TimePrecision.MILLIS -> value.toMillisecondOfDay()
         }
         toEncode.writeVarBytes(writer)
     }
 
-    override fun fromString(string: String) = Time.parse(string)
+    override fun fromString(string: String) = try {
+        LocalTime.parse(string)
+    } catch (e: Exception) {
+        throw ParseException(e.message ?: "Issue with parsing time: $string")
+    }
 
     override fun fromNativeType(value: Any) = when (value) {
-        is Long -> Time.ofSecondOfDay(value.toInt())
-        is Int -> Time.ofSecondOfDay(value)
-        else -> value as? Time
+        is Long -> LocalTime.fromSecondOfDay(value.toInt())
+        is Int -> LocalTime.fromSecondOfDay(value)
+        else -> value as? LocalTime
     }
 
     @Suppress("unused")
@@ -156,13 +162,13 @@ fun PropertyDefinitions.time(
     required: Boolean = true,
     final: Boolean = false,
     unique: Boolean = false,
-    minValue: Time? = null,
-    maxValue: Time? = null,
-    default: Time? = null,
+    minValue: LocalTime? = null,
+    maxValue: LocalTime? = null,
+    default: LocalTime? = null,
     precision: TimePrecision = TimePrecision.SECONDS,
     alternativeNames: Set<String>? = null
 ) = DefinitionWrapperDelegateLoader(this) { propName ->
-    FixedBytesDefinitionWrapper<Time, Time, IsPropertyContext, TimeDefinition, Any>(
+    FixedBytesDefinitionWrapper<LocalTime, LocalTime, IsPropertyContext, TimeDefinition, Any>(
         index,
         name ?: propName,
         TimeDefinition(required, final, unique, minValue, maxValue, default, precision),
@@ -177,12 +183,12 @@ fun <TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.time(
     required: Boolean = true,
     final: Boolean = false,
     unique: Boolean = false,
-    minValue: Time? = null,
-    maxValue: Time? = null,
-    default: Time? = null,
+    minValue: LocalTime? = null,
+    maxValue: LocalTime? = null,
+    default: LocalTime? = null,
     precision: TimePrecision = TimePrecision.SECONDS,
     alternativeNames: Set<String>? = null
-): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<Time, TO, IsPropertyContext, TimeDefinition, DO>, DO, IsPropertyContext> =
+): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<LocalTime, TO, IsPropertyContext, TimeDefinition, DO>, DO, IsPropertyContext> =
     time(index, getter, name, required, final,  unique, minValue, maxValue, default, precision, alternativeNames, toSerializable = null)
 
 fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.time(
@@ -192,15 +198,15 @@ fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.time
     required: Boolean = true,
     final: Boolean = false,
     unique: Boolean = false,
-    minValue: Time? = null,
-    maxValue: Time? = null,
-    default: Time? = null,
+    minValue: LocalTime? = null,
+    maxValue: LocalTime? = null,
+    default: LocalTime? = null,
     precision: TimePrecision = TimePrecision.SECONDS,
     alternativeNames: Set<String>? = null,
-    toSerializable: (Unit.(TO?, CX?) -> Time?)? = null,
-    fromSerializable: (Unit.(Time?) -> TO?)? = null,
+    toSerializable: (Unit.(TO?, CX?) -> LocalTime?)? = null,
+    fromSerializable: (Unit.(LocalTime?) -> TO?)? = null,
     shouldSerialize: (Unit.(Any) -> Boolean)? = null,
-    capturer: (Unit.(CX, Time) -> Unit)? = null
+    capturer: (Unit.(CX, LocalTime) -> Unit)? = null
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     FixedBytesDefinitionWrapper(
         index,

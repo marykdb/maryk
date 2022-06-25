@@ -2,6 +2,7 @@ package maryk.test.models
 
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
 import maryk.core.models.ObjectDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.DateDefinition
@@ -26,7 +27,6 @@ import maryk.core.properties.types.numeric.Float64
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.values.ObjectValues
-import maryk.lib.time.Time
 
 data class TestMarykObject(
     val string: String = "haha",
@@ -38,7 +38,7 @@ data class TestMarykObject(
     val enum: Option = Option.V1,
     val list: List<Int>? = null,
     val set: Set<LocalDate>? = null,
-    val map: Map<Time, String>? = null,
+    val map: Map<LocalTime, String>? = null,
     val valueObject: TestValueObject? = null,
     val embeddedObject: EmbeddedMarykObject? = null,
     val multi: TypedValue<SimpleMarykTypeEnumWithObject<*>, *>? = null,

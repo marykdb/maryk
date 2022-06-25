@@ -1,10 +1,10 @@
 package maryk.core.properties.references
 
+import kotlinx.datetime.LocalTime
 import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.processors.datastore.matchers.QualifierExactMatcher
 import maryk.core.protobuf.WriteCache
 import maryk.lib.extensions.toHex
-import maryk.lib.time.Time
 import maryk.test.ByteCollector
 import maryk.test.assertType
 import maryk.test.models.TestMarykModel
@@ -14,22 +14,22 @@ import kotlin.test.assertSame
 import kotlin.test.expect
 
 class MapValueReferenceTest {
-    private val valReference = TestMarykModel { map refAt Time(15, 22, 55) }
-    private val subReference = TestMarykModel { embeddedValues { marykModel { map refAt Time(15, 22, 55) } } }
+    private val valReference = TestMarykModel { map refAt LocalTime(15, 22, 55) }
+    private val subReference = TestMarykModel { embeddedValues { marykModel { map refAt LocalTime(15, 22, 55) } } }
 
     @Test
     fun cacheReferenceTest() {
-        assertSame(valReference, TestMarykModel { map refAt Time(15, 22, 55) })
-        assertSame(subReference, TestMarykModel { embeddedValues { marykModel { map refAt Time(15, 22, 55) } } })
+        assertSame(valReference, TestMarykModel { map refAt LocalTime(15, 22, 55) })
+        assertSame(subReference, TestMarykModel { embeddedValues { marykModel { map refAt LocalTime(15, 22, 55) } } })
     }
 
     @Test
     fun getValueFromMap() {
         val map = mapOf(
-            Time(12, 0, 1) to "right",
-            Time(15, 22, 55) to "right2",
-            Time(0, 0, 1) to "wrong",
-            Time(2, 14, 52) to "wrong again"
+            LocalTime(12, 0, 1) to "right",
+            LocalTime(15, 22, 55) to "right2",
+            LocalTime(0, 0, 1) to "wrong",
+            LocalTime(2, 14, 52) to "wrong again"
         )
 
         expect("right2") { this.valReference.resolveFromAny(map) }

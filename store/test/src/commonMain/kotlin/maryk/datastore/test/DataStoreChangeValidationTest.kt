@@ -2,6 +2,7 @@ package maryk.datastore.test
 
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
 import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.exceptions.InvalidSizeException
 import maryk.core.properties.exceptions.InvalidValueException
@@ -22,7 +23,6 @@ import maryk.core.query.requests.get
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.datastore.shared.IsDataStore
-import maryk.lib.time.Time
 import maryk.test.assertType
 import maryk.test.models.TestMarykModel
 import kotlin.test.expect
@@ -56,7 +56,7 @@ class DataStoreChangeValidationTest(
                     LocalDateTime(2018, 3, 2, 0, 0),
                     true,
                     listOfString = listOf("a", "b", "c"),
-                    map = mapOf(Time(2, 3, 5) to "test"),
+                    map = mapOf(LocalTime(2, 3, 5) to "test"),
                     set = setOf(LocalDate(2018, 3, 4))
                 ),
                 TestMarykModel(
@@ -67,7 +67,7 @@ class DataStoreChangeValidationTest(
                     LocalDateTime(2018, 1, 2, 0, 0),
                     false,
                     listOfString = listOf("c", "d", "e"),
-                    map = mapOf(Time(12, 33, 45) to "another", Time(13, 44, 55) to "another2"),
+                    map = mapOf(LocalTime(12, 33, 45) to "another", LocalTime(13, 44, 55) to "another2"),
                     set = setOf(LocalDate(2018, 11, 25), LocalDate(1981, 12, 5))
                 ),
                 TestMarykModel(
@@ -297,10 +297,10 @@ class DataStoreChangeValidationTest(
             TestMarykModel.change(
                 keys[1].change(
                     Change(
-                        TestMarykModel { map.refAt(Time(1, 2, 3)) } with "test1",
-                        TestMarykModel { map.refAt(Time(2, 3, 4)) } with "test2",
-                        TestMarykModel { map.refAt(Time(3, 4, 5)) } with "test3",
-                        TestMarykModel { map.refAt(Time(4, 5, 6)) } with "test4"
+                        TestMarykModel { map.refAt(LocalTime(1, 2, 3)) } with "test1",
+                        TestMarykModel { map.refAt(LocalTime(2, 3, 4)) } with "test2",
+                        TestMarykModel { map.refAt(LocalTime(3, 4, 5)) } with "test3",
+                        TestMarykModel { map.refAt(LocalTime(4, 5, 6)) } with "test4"
                     )
                 )
             )
@@ -325,8 +325,8 @@ class DataStoreChangeValidationTest(
 
         expect(
             mapOf(
-                Time(12, 33, 45) to "another",
-                Time(13, 44, 55) to "another2"
+                LocalTime(12, 33, 45) to "another",
+                LocalTime(13, 44, 55) to "another2"
             )
         ) {
             getResponse.values.first().values { map }
@@ -338,8 +338,8 @@ class DataStoreChangeValidationTest(
             TestMarykModel.change(
                 keys[1].change(
                     Change(
-                        TestMarykModel { map.refAt(Time(23, 52, 53)) } with "test1",
-                        TestMarykModel { map.refAt(Time(1, 52, 53)) } with "verylongwrongsize"
+                        TestMarykModel { map.refAt(LocalTime(23, 52, 53)) } with "test1",
+                        TestMarykModel { map.refAt(LocalTime(1, 52, 53)) } with "verylongwrongsize"
                     )
                 )
             )
@@ -351,10 +351,10 @@ class DataStoreChangeValidationTest(
             validationFail.exceptions.apply {
                 expect(2) { size }
                 assertType<OutOfRangeException>(first()).apply {
-                    expect(TestMarykModel { map refToKey Time(23, 52, 53) }) { reference }
+                    expect(TestMarykModel { map refToKey LocalTime(23, 52, 53) }) { reference }
                 }
                 assertType<InvalidSizeException>(this[1]).apply {
-                    expect(TestMarykModel { map refAt Time(1, 52, 53) }) { reference }
+                    expect(TestMarykModel { map refAt LocalTime(1, 52, 53) }) { reference }
                 }
             }
         }
@@ -366,8 +366,8 @@ class DataStoreChangeValidationTest(
         expect(1) { getResponse.values.size }
         expect(
             mapOf(
-                Time(12, 33, 45) to "another",
-                Time(13, 44, 55) to "another2"
+                LocalTime(12, 33, 45) to "another",
+                LocalTime(13, 44, 55) to "another2"
             )
         ) {
             getResponse.values.first().values { map }

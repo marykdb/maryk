@@ -2,6 +2,7 @@ package maryk.test.models
 
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
 import maryk.core.models.DataModel
 import maryk.core.models.RootDataModel
 import maryk.core.properties.PropertyDefinitions
@@ -30,7 +31,6 @@ import maryk.core.properties.types.numeric.Float64
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.values.Values
-import maryk.lib.time.Time
 import maryk.test.models.TestMarykModel.Properties.bool
 import maryk.test.models.TestMarykModel.Properties.dateTime
 import maryk.test.models.TestMarykModel.Properties.double
@@ -123,7 +123,7 @@ object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>
             required = false,
             maxSize = 5u,
             keyDefinition = TimeDefinition(
-                maxValue = Time(23, 0, 0)
+                maxValue = LocalTime(23, 0, 0)
             ),
             valueDefinition = StringDefinition(
                 maxSize = 10u
@@ -197,7 +197,7 @@ object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>
         enum: Option = Option.V1,
         list: List<Int>? = null,
         set: Set<LocalDate>? = null,
-        map: Map<Time, String>? = null,
+        map: Map<LocalTime, String>? = null,
         valueObject: TestValueObject? = null,
         embeddedValues: Values<EmbeddedMarykModel, EmbeddedMarykModel.Properties>? = null,
         multi: TypedValue<SimpleMarykTypeEnum<*>, *>? = null,

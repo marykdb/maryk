@@ -2,6 +2,7 @@ package maryk.core.models
 
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
 import maryk.core.properties.exceptions.InvalidValueException
@@ -13,7 +14,6 @@ import maryk.json.JsonReader
 import maryk.json.JsonWriter
 import maryk.lib.extensions.initByteArrayByHex
 import maryk.lib.extensions.toHex
-import maryk.lib.time.Time
 import maryk.test.ByteCollector
 import maryk.test.assertType
 import maryk.test.models.EmbeddedMarykModel
@@ -50,8 +50,8 @@ val testExtendedMarykModelObject = TestMarykModel(
         LocalDate(1981, 12, 5)
     ),
     map = mapOf(
-        Time(12, 55) to "yes",
-        Time(10, 3) to "ahum"
+        LocalTime(12, 55) to "yes",
+        LocalTime(10, 3) to "ahum"
     ),
     valueObject = TestValueObject(6, LocalDateTime(2017, 4, 1, 12, 55), true),
     embeddedValues = EmbeddedMarykModel("test"),

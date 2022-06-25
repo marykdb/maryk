@@ -2,6 +2,7 @@ package maryk.datastore.test
 
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
 import maryk.core.clock.HLC
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
@@ -28,7 +29,6 @@ import maryk.core.query.requests.get
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.datastore.shared.IsDataStore
-import maryk.lib.time.Time
 import maryk.test.assertType
 import maryk.test.models.TestMarykModel
 import kotlin.test.assertFalse
@@ -68,7 +68,7 @@ class DataStoreFilterTest(
         dateTime = LocalDateTime(2018, 3, 2, 0, 0),
         bool = true,
         map = mapOf(
-            Time(12, 13, 14) to "haha10"
+            LocalTime(12, 13, 14) to "haha10"
         ),
         list = listOf(
             4, 6, 7
@@ -86,7 +86,7 @@ class DataStoreFilterTest(
         dateTime = LocalDateTime(2016, 2, 20, 0, 0),
         bool = false,
         map = mapOf(
-            Time(17, 16, 15) to "haha1"
+            LocalTime(17, 16, 15) to "haha1"
         ),
         list = listOf(
             3, 4, 6
@@ -211,7 +211,7 @@ class DataStoreFilterTest(
     private suspend fun doComplexMapListSetFilter() {
         assertTrue {
             filterMatches(
-                Equals(TestMarykModel { map.refAt(Time(12, 13, 14)) } with "haha10")
+                Equals(TestMarykModel { map.refAt(LocalTime(12, 13, 14)) } with "haha10")
             )
         }
 
@@ -246,7 +246,7 @@ class DataStoreFilterTest(
 
         assertFalse {
             filterMatches(
-                Equals(TestMarykModel { map.refAt(Time(13, 13, 14)) } with "haha10")
+                Equals(TestMarykModel { map.refAt(LocalTime(13, 13, 14)) } with "haha10")
             )
         }
 

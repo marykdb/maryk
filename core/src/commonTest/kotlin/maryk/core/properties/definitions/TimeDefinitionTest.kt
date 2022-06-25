@@ -1,6 +1,7 @@
 package maryk.core.properties.definitions
 
 import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalTime
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -8,6 +9,7 @@ import maryk.core.properties.WriteCacheFailer
 import maryk.core.properties.types.TimePrecision
 import maryk.lib.exceptions.ParseException
 import maryk.lib.time.Time
+import maryk.lib.time.nowUTC
 import maryk.test.ByteCollector
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
@@ -16,14 +18,14 @@ import kotlin.test.expect
 
 internal class TimeDefinitionTest {
     private val timesToTestMillis = arrayOf(
-        Time(12, 3, 5, 50),
-        Time.nowUTC(),
+        LocalTime(12, 3, 5, 50_000_000),
+        LocalTime.fromMillisecondOfDay(LocalTime.nowUTC().toMillisecondOfDay()),
         Time.MAX_IN_SECONDS,
         Time.MAX_IN_MILLIS,
         Time.MIN
     )
 
-    private val timesToTestSeconds = arrayOf(Time.MAX_IN_SECONDS, Time.MIN, Time(13, 55, 44))
+    private val timesToTestSeconds = arrayOf(Time.MAX_IN_SECONDS, Time.MIN, LocalTime(13, 55, 44))
 
     private val def = TimeDefinition()
 
@@ -38,13 +40,13 @@ internal class TimeDefinitionTest {
         minValue = Time.MIN,
         maxValue = Time.MAX_IN_MILLIS,
         precision = TimePrecision.MILLIS,
-        default = Time(12, 13, 14)
+        default = LocalTime(12, 13, 14)
     )
 
     @Test
     fun createNowTime() {
         val expected = Clock.System.now().toEpochMilliseconds() % (24 * 60 * 60 * 1000) / 1000
-        val now = def.createNow().toSecondsOfDay()
+        val now = def.createNow().toSecondOfDay()
 
         assertTrue("$now is diverging too much from $expected time") {
             expected - now in -1..1
@@ -152,7 +154,7 @@ internal class TimeDefinitionTest {
 
     @Test
     fun readNativeTimesToTime() {
-        expect(Time(3, 25, 45)) { this.def.fromNativeType(12345L) }
-        expect(Time(3, 25, 46)) { this.def.fromNativeType(12346) }
+        expect(LocalTime(3, 25, 45)) { this.def.fromNativeType(12345L) }
+        expect(LocalTime(3, 25, 46)) { this.def.fromNativeType(12346) }
     }
 }

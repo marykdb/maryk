@@ -2,6 +2,7 @@ package maryk.datastore.memory.processors
 
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.key
@@ -25,7 +26,6 @@ import maryk.core.query.pairs.with
 import maryk.core.values.Values
 import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataRecordValue
-import maryk.lib.time.Time
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertFalse
@@ -41,7 +41,7 @@ class FilterWithFetchRequestKtTest {
             dateTime = LocalDateTime(2013, 3, 2, 0, 0),
             bool = true,
             map = mapOf(
-                Time(14, 15, 14) to "haha10"
+                LocalTime(14, 15, 14) to "haha10"
             ),
             list = listOf(
                 2, 6, 7
@@ -61,7 +61,7 @@ class FilterWithFetchRequestKtTest {
             dateTime = LocalDateTime(2018, 3, 2, 0, 0),
             bool = true,
             map = mapOf(
-                Time(12, 13, 14) to "haha10"
+                LocalTime(12, 13, 14) to "haha10"
             ),
             list = listOf(
                 4, 6, 7
@@ -194,7 +194,7 @@ class FilterWithFetchRequestKtTest {
     fun doComplexMapListSetFilter() {
         assertTrue {
             filterMatches(
-                Equals(TestMarykModel { map.refAt(Time(12, 13, 14)) } with "haha10"),
+                Equals(TestMarykModel { map.refAt(LocalTime(12, 13, 14)) } with "haha10"),
                 value1,
                 null,
                 recordFetcher
@@ -221,7 +221,7 @@ class FilterWithFetchRequestKtTest {
 
         assertFalse {
             filterMatches(
-                Equals(TestMarykModel { map.refAt(Time(13, 13, 14)) } with "haha10"),
+                Equals(TestMarykModel { map.refAt(LocalTime(13, 13, 14)) } with "haha10"),
                 value1,
                 null,
                 recordFetcher

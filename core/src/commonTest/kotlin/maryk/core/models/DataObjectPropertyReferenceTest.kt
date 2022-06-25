@@ -1,13 +1,13 @@
 package maryk.core.models
 
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import maryk.core.properties.references.dsl.any
 import maryk.core.properties.references.dsl.at
 import maryk.core.properties.references.dsl.atType
 import maryk.core.properties.references.dsl.refAt
 import maryk.core.properties.references.dsl.refAtType
 import maryk.lib.extensions.toHex
-import maryk.lib.time.Time
 import maryk.test.models.ComplexModel
 import maryk.test.models.MarykTypeEnum.T3
 import maryk.test.models.MarykTypeEnum.T4
@@ -37,8 +37,8 @@ internal class DataObjectPropertyReferenceTest {
         expect("setOfString.#v1") { TestMarykModel { setOfString refAt "v1" }.completeName }
         expect("embeddedValues.marykModel.set.#2017-12-05") { TestMarykModel { embeddedValues { marykModel { set refAt LocalDate(2017, 12, 5) } } }.completeName }
 
-        expect("""embeddedValues.marykModel.map.#12:23""") { TestMarykModel { embeddedValues { marykModel { map refToKey Time(12, 23) } } }.completeName }
-        expect("embeddedValues.marykModel.map.@12:23") { TestMarykModel { embeddedValues { marykModel { map refAt Time(12, 23) } } }.completeName }
+        expect("""embeddedValues.marykModel.map.#12:23""") { TestMarykModel { embeddedValues { marykModel { map refToKey LocalTime(12, 23) } } }.completeName }
+        expect("embeddedValues.marykModel.map.@12:23") { TestMarykModel { embeddedValues { marykModel { map refAt LocalTime(12, 23) } } }.completeName }
 
         expect("multi.*S1") { TestMarykModel { multi refAtType S1 }.completeName }
         expect("multi.*") { TestMarykModel { multi.refToType() }.completeName }
@@ -87,7 +87,7 @@ internal class DataObjectPropertyReferenceTest {
         expect("8b01") { TestMarykModel { setOfString::ref }.toStorageByteArray().toHex() }
         expect("8b01027631") { TestMarykModel { setOfString refAt "v1" }.toStorageByteArray().toHex() }
 
-        expect("661e540300ae24") { TestMarykModel { embeddedValues { marykModel { map refAt Time(12, 23) } } }.toStorageByteArray().toHex() }
+        expect("661e540300ae24") { TestMarykModel { embeddedValues { marykModel { map refAt LocalTime(12, 23) } } }.toStorageByteArray().toHex() }
 
         expect("690d") { TestMarykModel { multi refAtType S1 }.toStorageByteArray().toHex() }
         expect("6905") { TestMarykModel { multi.refToType() }.toStorageByteArray().toHex() }

@@ -1,6 +1,7 @@
 package maryk.core.processors.datastore.scanRange
 
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.models.key
 import maryk.core.properties.definitions.index.Multiple
@@ -17,7 +18,6 @@ import maryk.core.query.filters.RegEx
 import maryk.core.query.filters.ValueIn
 import maryk.core.query.pairs.with
 import maryk.lib.extensions.toHex
-import maryk.lib.time.Time
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.CompleteMarykModel.Properties.number
 import maryk.test.models.CompleteMarykModel.Properties.string
@@ -53,7 +53,7 @@ class IndexableScanRangesTest {
     private val earlierDO = CompleteMarykModel(
         string = "Arend",
         number = 2u,
-        time = Time(12, 11, 10),
+        time = LocalTime(12, 11, 10),
         booleanForKey = true,
         dateForKey = LocalDate(2019, 3, 20),
         multiForKey = TypedValue(S1, "test"),
@@ -67,7 +67,7 @@ class IndexableScanRangesTest {
     private val matchDO = CompleteMarykModel(
         string = "Jannes",
         number = 5u,
-        time = Time(11, 10, 9),
+        time = LocalTime(11, 10, 9),
         booleanForKey = true,
         dateForKey = LocalDate(2019, 3, 3),
         multiForKey = TypedValue(S1, "test"),
@@ -81,7 +81,7 @@ class IndexableScanRangesTest {
     private val laterDO = CompleteMarykModel(
         string = "Karel",
         number = 9u,
-        time = Time(9, 8, 7),
+        time = LocalTime(9, 8, 7),
         booleanForKey = true,
         dateForKey = LocalDate(2019, 3, 1),
         multiForKey = TypedValue(S1, "test"),
@@ -301,7 +301,7 @@ class IndexableScanRangesTest {
                 CompleteMarykModel { number::ref } with 5u
             ),
             LessThan(
-                CompleteMarykModel { time::ref } with Time(12, 11, 10)
+                CompleteMarykModel { time::ref } with LocalTime(12, 11, 10)
             )
         )
 

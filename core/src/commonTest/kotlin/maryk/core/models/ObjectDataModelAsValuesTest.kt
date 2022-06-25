@@ -2,12 +2,12 @@ package maryk.core.models
 
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
 import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.WriteCache
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
 import maryk.lib.extensions.toHex
-import maryk.lib.time.Time
 import maryk.test.ByteCollector
 import maryk.test.models.EmbeddedMarykObject
 import maryk.test.models.Option.V1
@@ -35,8 +35,8 @@ private val testExtendedObject = TestMarykObject.values {
             LocalDate(1981, 12, 5)
         ),
         map with mapOf(
-            Time(12, 55) to "yes",
-            Time(10, 3) to "ahum"
+            LocalTime(12, 55) to "yes",
+            LocalTime(10, 3) to "ahum"
         ),
         valueObject with TestValueObject(6, LocalDateTime(2017, 4, 1, 12, 55), true),
         embeddedObject with EmbeddedMarykObject.values {

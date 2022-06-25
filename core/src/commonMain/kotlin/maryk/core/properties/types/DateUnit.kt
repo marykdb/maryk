@@ -2,8 +2,13 @@ package maryk.core.properties.types
 
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
 import kotlinx.datetime.Month
 import kotlinx.datetime.atTime
+import maryk.core.exceptions.TypeException
+import maryk.core.properties.enum.IndexedEnumComparable
+import maryk.core.properties.enum.IndexedEnumDefinition
+import maryk.core.properties.enum.IsCoreEnum
 import maryk.core.properties.types.DateUnit.Centuries
 import maryk.core.properties.types.DateUnit.Decades
 import maryk.core.properties.types.DateUnit.Hours
@@ -14,10 +19,6 @@ import maryk.core.properties.types.DateUnit.Months
 import maryk.core.properties.types.DateUnit.Quarters
 import maryk.core.properties.types.DateUnit.Seconds
 import maryk.core.properties.types.DateUnit.Years
-import maryk.core.exceptions.TypeException
-import maryk.core.properties.enum.IndexedEnumComparable
-import maryk.core.properties.enum.IndexedEnumDefinition
-import maryk.core.properties.enum.IsCoreEnum
 import maryk.json.MapType
 import maryk.lib.exceptions.ParseException
 import maryk.lib.time.Time
@@ -51,17 +52,17 @@ enum class DateUnit(
 @Suppress("UNCHECKED_CAST")
 fun <T:Comparable<*>> T.roundToDateUnit(dateUnit: DateUnit): T = when (this) {
     is LocalDate -> this.roundToDateUnit(dateUnit) as T
-    is Time -> this.roundToDateUnit(dateUnit) as T
+    is LocalTime -> this.roundToDateUnit(dateUnit) as T
     is LocalDateTime -> this.roundToDateUnit(dateUnit) as T
     else -> throw TypeException("Unknown type for IsTemporal")
 }
 
 /** Round Time to the [dateUnit] */
-fun Time.roundToDateUnit(dateUnit: DateUnit) = when (dateUnit) {
+fun LocalTime.roundToDateUnit(dateUnit: DateUnit) = when (dateUnit) {
     Millis -> this
-    Seconds -> Time(hour, minute, second)
-    Minutes -> Time(hour, minute)
-    Hours -> Time(hour, 0)
+    Seconds -> LocalTime(hour, minute, second)
+    Minutes -> LocalTime(hour, minute)
+    Hours -> LocalTime(hour, 0)
     else -> Time.MIDNIGHT
 }
 

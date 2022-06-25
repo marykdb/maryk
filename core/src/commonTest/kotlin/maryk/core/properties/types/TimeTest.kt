@@ -1,22 +1,25 @@
 package maryk.core.properties.types
 
+import kotlinx.datetime.LocalTime
 import maryk.lib.time.Time
+import maryk.lib.time.nowUTC
 import maryk.test.ByteCollector
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlin.test.expect
 
 internal class TimeTest {
-    private fun cleanToSeconds(time: Time) = Time(time.hour, time.minute, time.second)
+    private fun cleanToSeconds(time: LocalTime) = LocalTime(time.hour, time.minute, time.second)
+    private fun cleanToMilliSeconds(time: LocalTime) = LocalTime(time.hour, time.minute, time.second, time.nanosecond - (time.nanosecond % 1_000_000))
 
     private val timesWithSecondsToTest = arrayOf(
-        cleanToSeconds(Time.nowUTC()),
+        cleanToSeconds(LocalTime.nowUTC()),
         Time.MAX_IN_SECONDS,
         Time.MIN
     )
 
     private val timesWithMillisToTest = arrayOf(
-        Time.nowUTC(),
+        cleanToMilliSeconds(LocalTime.nowUTC()),
         Time.MAX_IN_MILLIS,
         Time.MIN
     )

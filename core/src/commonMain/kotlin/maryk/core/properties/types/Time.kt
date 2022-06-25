@@ -1,5 +1,8 @@
+@file:Suppress("UnusedReceiverParameter")
+
 package maryk.core.properties.types
 
+import kotlinx.datetime.LocalTime
 import maryk.core.extensions.bytes.initUInt
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.properties.enum.IndexedEnumComparable
@@ -18,20 +21,20 @@ enum class TimePrecision(
     )
 }
 
-internal fun Time.writeBytes(precision: TimePrecision, writer: (byte: Byte) -> Unit) {
+internal fun LocalTime.writeBytes(precision: TimePrecision, writer: (byte: Byte) -> Unit) {
     when (precision) {
-        TimePrecision.MILLIS -> (this.toSecondsOfDay() * 1000 + this.milli).toUInt().writeBytes(writer)
-        TimePrecision.SECONDS -> this.toSecondsOfDay().toUInt().writeBytes(writer, 3)
+        TimePrecision.MILLIS -> this.toMillisecondOfDay().toUInt().writeBytes(writer)
+        TimePrecision.SECONDS -> this.toSecondOfDay().toUInt().writeBytes(writer, 3)
     }
 }
 
-internal fun Time.Companion.byteSize(precision: TimePrecision) = when (precision) {
+internal fun Time.byteSize(precision: TimePrecision) = when (precision) {
     TimePrecision.MILLIS -> 4
     TimePrecision.SECONDS -> 3
 }
 
-internal fun Time.Companion.fromByteReader(length: Int, reader: () -> Byte): Time = when (length) {
-    4 -> ofMilliOfDay(initUInt(reader).toInt())
-    3 -> ofSecondOfDay(initUInt(reader, length).toInt())
+internal fun Time.fromByteReader(length: Int, reader: () -> Byte): LocalTime = when (length) {
+    4 -> LocalTime.fromMillisecondOfDay(initUInt(reader).toInt())
+    3 -> LocalTime.fromSecondOfDay(initUInt(reader, length).toInt())
     else -> throw IllegalArgumentException("Invalid length for bytes for Time conversion: $length")
 }

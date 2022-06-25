@@ -2,6 +2,7 @@ package maryk.core.query.changes
 
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -12,7 +13,6 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.query.RequestContext
 import maryk.core.query.pairs.with
 import maryk.core.values.div
-import maryk.lib.time.Time
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.SimpleMarykTypeEnum.S1
 import maryk.test.models.TestMarykModel
@@ -77,8 +77,8 @@ class ChangeTest {
             list = listOf(3, 4, 5),
             set = setOf(LocalDate(2020, 2, 20), LocalDate(2019, 12, 11)),
             map = mapOf(
-                Time(12, 0) to "Hi",
-                Time(1, 2) to "Hoi"
+                LocalTime(12, 0) to "Hi",
+                LocalTime(1, 2) to "Hoi"
             ),
             embeddedValues = EmbeddedMarykModel(
                 value = "hi",
@@ -139,12 +139,12 @@ class ChangeTest {
 
         changed = original.change(
             Change(
-                TestMarykModel { map.refAt(Time(12, 0)) } with "Bye"
+                TestMarykModel { map.refAt(LocalTime(12, 0)) } with "Bye"
             )
         )
 
-        assertEquals(mapOf(Time(12, 0) to "Bye", Time(1, 2) to "Hoi"), changed { map })
-        assertEquals(mapOf(Time(12, 0) to "Hi", Time(1, 2) to "Hoi"), original { map })
+        assertEquals(mapOf(LocalTime(12, 0) to "Bye", LocalTime(1, 2) to "Hoi"), changed { map })
+        assertEquals(mapOf(LocalTime(12, 0) to "Hi", LocalTime(1, 2) to "Hoi"), original { map })
 
         changed = original.change(
             Change(
@@ -152,8 +152,8 @@ class ChangeTest {
             )
         )
 
-        assertEquals(mapOf(Time(12, 0) to "Hello", Time(1, 2) to "Hello"), changed { map })
-        assertEquals(mapOf(Time(12, 0) to "Hi", Time(1, 2) to "Hoi"), original { map })
+        assertEquals(mapOf(LocalTime(12, 0) to "Hello", LocalTime(1, 2) to "Hello"), changed { map })
+        assertEquals(mapOf(LocalTime(12, 0) to "Hi", LocalTime(1, 2) to "Hoi"), original { map })
 
         changed = original.change(
             Change(

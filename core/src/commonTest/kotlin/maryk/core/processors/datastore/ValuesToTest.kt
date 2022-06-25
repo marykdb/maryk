@@ -2,8 +2,8 @@ package maryk.core.processors.datastore
 
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
 import maryk.core.properties.types.TypedValue
-import maryk.lib.time.Time
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.Option.V1
 import maryk.test.models.SimpleMarykTypeEnum.S1
@@ -24,8 +24,8 @@ val testMaryk = TestMarykModel(
         LocalDate(1989, 5, 15)
     ),
     map = mapOf(
-        Time(11, 22, 33) to "eleven",
-        Time(12, 23, 34) to "twelve"
+        LocalTime(11, 22, 33) to "eleven",
+        LocalTime(12, 23, 34) to "twelve"
     ),
     embeddedValues = EmbeddedMarykModel(
         value = "test",

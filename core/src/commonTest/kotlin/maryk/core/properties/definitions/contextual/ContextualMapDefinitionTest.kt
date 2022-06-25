@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions.contextual
 
+import kotlinx.datetime.LocalTime
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.IsValueDefinition
@@ -9,7 +10,6 @@ import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCache
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
-import maryk.lib.time.Time
 import maryk.test.ByteCollector
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
@@ -18,8 +18,8 @@ import kotlin.test.expect
 class ContextualMapDefinitionTest {
     @Suppress("UNCHECKED_CAST")
     private val mapToTest = mapOf(
-        Time(1, 55, 33) to "hello",
-        Time(14, 22, 23) to "goodBye"
+        LocalTime(1, 55, 33) to "hello",
+        LocalTime(14, 22, 23) to "goodBye"
     ) as Map<Any, Any>
 
     private val def = ContextualMapDefinition<Any, Any, KeyValueDefinitionContext>(

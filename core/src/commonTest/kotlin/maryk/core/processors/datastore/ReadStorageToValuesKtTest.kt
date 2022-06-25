@@ -1,10 +1,10 @@
 package maryk.core.processors.datastore
 
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import maryk.core.properties.types.TypedValue
 import maryk.core.values.EmptyValueItems
 import maryk.lib.extensions.initByteArrayByHex
-import maryk.lib.time.Time
 import maryk.test.models.ComplexModel
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.SimpleMarykTypeEnum.S1
@@ -68,7 +68,7 @@ class ReadStorageToValuesKtTest {
                         LocalDate(1981, 12, 5)
                     ),
                     map with mapOf(
-                        Time(12, 23, 34) to "twelve"
+                        LocalTime(12, 23, 34) to "twelve"
                     ),
                     embeddedValues with EmbeddedMarykModel.values {
                         mapNonNulls(

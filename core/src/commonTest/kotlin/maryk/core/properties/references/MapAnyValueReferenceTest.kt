@@ -1,10 +1,10 @@
 package maryk.core.properties.references
 
+import kotlinx.datetime.LocalTime
 import maryk.core.processors.datastore.matchers.FuzzyExactLengthMatch
 import maryk.core.processors.datastore.matchers.QualifierFuzzyMatcher
 import maryk.core.protobuf.WriteCache
 import maryk.lib.extensions.toHex
-import maryk.lib.time.Time
 import maryk.test.ByteCollector
 import maryk.test.assertType
 import maryk.test.models.TestMarykModel
@@ -28,8 +28,8 @@ class MapAnyValueReferenceTest {
         expect(listOf("c", "d")) {
             anyReference.resolve(
                 mapOf(
-                    Time(0, 0, 0) to "c",
-                    Time(12, 12, 12) to "d"
+                    LocalTime(0, 0, 0) to "c",
+                    LocalTime(12, 12, 12) to "d"
                 )
             )
         }

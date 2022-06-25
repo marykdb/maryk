@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    id("com.google.protobuf")
+    id("com.google.protobuf") version "0.8.18"
     id("org.jetbrains.kotlin.jvm")
     id("idea")
 }
@@ -12,7 +12,7 @@ ext {
 
 protobuf {
     protoc {
-        artifact = "com.google.protobuf:protoc:_"
+        artifact = "com.google.protobuf:protoc:$protobufVersion"
     }
     generatedFilesBaseDir = "$projectDir/gen"
 }
@@ -25,7 +25,7 @@ dependencies {
     api(project(":generator"))
 
     testImplementation(project(":testmodels"))
-    testImplementation("com.google.protobuf:protobuf-java:_")
+    testImplementation("com.google.protobuf:protobuf-java:$protobufVersion")
 }
 
 tasks.withType(KotlinCompile) {

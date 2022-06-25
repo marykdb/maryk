@@ -11,7 +11,6 @@ import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.WriteCache
 import maryk.lib.extensions.toHex
-import maryk.lib.time.epochDay
 import maryk.test.ByteCollector
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.MarykEnumEmbedded.E1
@@ -98,9 +97,9 @@ class Proto3ConversionTest {
             .setNumber(completeObject { number }!!.toLong())
             .setBoolean(completeObject { boolean }!!)
             .setEnum(MarykTestProtos.Option.V1)
-            .setDate(completeObject { date }!!.epochDay)
+            .setDate(completeObject { date }!!.toEpochDays())
             .setDateTime(completeObject { dateTime }!!.toInstant(TimeZone.UTC).toEpochMilliseconds())
-            .setTime(completeObject { time }!!.toMillisOfDay())
+            .setTime(completeObject { time }!!.toMillisecondOfDay())
             .setFixedBytes(ByteString.copyFrom(Bytes("AAECAwQ").bytes))
             .setFlexBytes(ByteString.copyFrom(Bytes("AAECAw").bytes))
             .setReference(ByteString.copyFrom(Key<SimpleMarykModel>("AAECAQAAECAQAAECAQAAEC").bytes))
@@ -108,11 +107,11 @@ class Proto3ConversionTest {
             .setValueModel(ByteString.copyFrom(completeObject { valueModel }!!.toByteArray()))
             .addAllList(mutableListOf("ha1", "ha2", "ha3"))
             .addAllSet(mutableListOf(1, 2, 3))
-            .putMap(LocalDate(2010, 11, 12).epochDay, 1)
-            .putMap(LocalDate(2011, 12, 13).epochDay, 1)/**/
+            .putMap(LocalDate(2010, 11, 12).toEpochDays(), 1)
+            .putMap(LocalDate(2011, 12, 13).toEpochDays(), 1)/**/
             .setMulti(MarykTestProtos.CompleteMarykModel.MultiType.newBuilder().setT1("a value"))
             .setBooleanForKey(completeObject { booleanForKey }!!)
-            .setDateForKey(completeObject { dateForKey }!!.epochDay)
+            .setDateForKey(completeObject { dateForKey }!!.toEpochDays())
             .setMultiForKey(
                 MarykTestProtos.CompleteMarykModel.MultiForKeyType.newBuilder().setS1("string")
             )

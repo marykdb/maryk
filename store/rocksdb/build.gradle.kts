@@ -7,8 +7,6 @@ apply {
     from("../../gradle/publish.gradle")
 }
 
-val marykRocksDBVersion = rootProject.extra["marykRocksDBVersion"]
-
 repositories {
     mavenCentral()
 }
@@ -23,7 +21,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                api("io.maryk.rocksdb:rocksdb-multiplatform:$marykRocksDBVersion")
+                api("io.maryk.rocksdb:rocksdb-multiplatform:_")
 
                 api(project(":store-shared"))
             }

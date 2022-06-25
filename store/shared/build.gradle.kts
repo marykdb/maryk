@@ -6,8 +6,6 @@ apply {
     from("../../gradle/publish.gradle")
 }
 
-val coroutinesVersion = rootProject.extra["coroutinesVersion"]
-
 kotlin {
     jvm()
 
@@ -19,7 +17,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
+                api(KotlinX.coroutines.core)
 
                 api(project(":core"))
             }

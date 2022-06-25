@@ -17,6 +17,18 @@ pluginManagement {
     }
 }
 
+plugins {
+    id("de.fayard.refreshVersions") version "0.40.2"
+}
+
+@Suppress("UnstableApiUsage")
+refreshVersions {
+    rejectVersionIf {
+        candidate.stabilityLevel != de.fayard.refreshVersions.core.StabilityLevel.Stable
+    }
+}
+
+
 fun includeProjects(vararg names: String) {
     for (name in names) {
         include(":$name")

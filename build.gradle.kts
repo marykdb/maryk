@@ -4,19 +4,15 @@ repositories {
 }
 
 plugins {
-    id("com.android.library") version "7.2.1" apply false
+    id("com.android.library") apply false
 }
 
 buildscript {
-    extra["kotlinVersion"] = "1.7.0"
-    extra["coroutinesVersion"] = "1.5.2"
-    extra["marykRocksDBVersion"] = "7.3.1"
-
     repositories {
         mavenCentral()
     }
     dependencies {
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${project.extra["kotlinVersion"]}")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:_")
     }
 }
 allprojects {

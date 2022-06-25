@@ -6,8 +6,6 @@ apply {
     from("../gradle/publish.gradle")
 }
 
-val coroutinesVersion = rootProject.extra["coroutinesVersion"]
-
 kotlin {
     jvm()
 
@@ -22,7 +20,7 @@ kotlin {
                 api(kotlin("test-common"))
                 api(kotlin("test-annotations-common"))
 
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
+                api(KotlinX.coroutines.core)
             }
         }
         val commonTest by getting

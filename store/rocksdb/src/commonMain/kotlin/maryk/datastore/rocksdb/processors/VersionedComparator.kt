@@ -4,22 +4,17 @@ import maryk.ByteBuffer
 import maryk.datastore.rocksdb.compareToWithOffsetAndLength
 import maryk.datastore.rocksdb.compareWith
 import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
-import maryk.lib.freeze
 import maryk.rocksdb.ComparatorOptions
 
 /**
  * Takes care that qualifiers are first sorted on their reference/value and then on version
  * Otherwise the version bytes could make values come before their root qualifiers.
  */
+@Suppress("CanBeParameter")
 internal class VersionedComparator(
     private val comparatorOptions: ComparatorOptions,
     private val keySize: Int
 ) : maryk.rocksdb.AbstractComparator(comparatorOptions) {
-    init {
-        // Make it safe to share this object over threads in Kotlin Native
-        this.freeze()
-    }
-
     override fun name() = "maryk.VersionedComparator"
     override fun compare(a: ByteBuffer, b: ByteBuffer): Int {
         return if (a.remaining() > keySize && b.remaining() > keySize) {

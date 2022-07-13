@@ -74,7 +74,6 @@ import maryk.datastore.rocksdb.processors.processScanRequest
 import maryk.datastore.rocksdb.processors.processScanUpdatesRequest
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.Cache
-import maryk.lib.ensureNeverFrozen
 import maryk.rocksdb.ColumnFamilyDescriptor
 import maryk.rocksdb.ColumnFamilyHandle
 import maryk.rocksdb.ColumnFamilyOptions
@@ -201,7 +200,6 @@ class RocksDBDataStore(
 
         this.launch {
             val cache = Cache()
-            cache.ensureNeverFrozen()
 
             var clock = HLC()
             storeFlow.onStart { storeActorHasStarted.complete(Unit) }.collect { storeAction ->

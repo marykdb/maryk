@@ -1,5 +1,7 @@
 package maryk.core.properties.definitions.wrapper
 
+import kotlinx.atomicfu.AtomicRef
+import kotlinx.atomicfu.atomic
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.graph.PropRefGraphType.PropRef
@@ -9,7 +11,6 @@ import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
-import maryk.lib.concurrency.AtomicReference
 import kotlin.reflect.KProperty
 
 /**
@@ -33,8 +34,8 @@ data class SetDefinitionWrapper<T : Any, CX : IsPropertyContext, DO : Any> inter
     IsDefinitionWrapper<Set<T>, Set<T>, CX, DO> {
     override val graphType = PropRef
 
-    private val setItemRefCache : AtomicReference<Array<IsPropertyReference<*, *, *>>?> =
-        AtomicReference(null)
+    private val setItemRefCache : AtomicRef<Array<IsPropertyReference<*, *, *>>?> =
+        atomic(null)
 
     override fun ref(parentRef: AnyPropertyReference?) = cacheRef(parentRef) {
         SetReference(this, parentRef as CanHaveComplexChildReference<*, *, *, *>?)

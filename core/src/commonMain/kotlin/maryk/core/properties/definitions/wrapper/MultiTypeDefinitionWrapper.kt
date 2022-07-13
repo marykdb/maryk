@@ -1,5 +1,7 @@
 package maryk.core.properties.definitions.wrapper
 
+import kotlinx.atomicfu.AtomicRef
+import kotlinx.atomicfu.atomic
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
@@ -16,7 +18,6 @@ import maryk.core.properties.references.TypeReference
 import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.values.Values
-import maryk.lib.concurrency.AtomicReference
 import kotlin.reflect.KProperty
 
 /**
@@ -40,10 +41,10 @@ data class MultiTypeDefinitionWrapper<E : TypeEnum<T>, T: Any, TO : Any, in CX :
     IsDefinitionWrapper<TypedValue<E, T>, TO, CX, DO> {
     override val graphType = PropRef
 
-    val typeRefCache: AtomicReference<Array<IsPropertyReference<*, *, *>>?> =
-        AtomicReference(null)
-    val typeValueRefCache: AtomicReference<Array<IsPropertyReference<*, *, *>>?> =
-        AtomicReference(null)
+    val typeRefCache: AtomicRef<Array<IsPropertyReference<*, *, *>>?> =
+        atomic(null)
+    val typeValueRefCache: AtomicRef<Array<IsPropertyReference<*, *, *>>?> =
+        atomic(null)
 
     override fun ref(parentRef: AnyPropertyReference?) = cacheRef(parentRef) {
         MultiTypePropertyReference(this, parentRef)

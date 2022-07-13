@@ -1,5 +1,6 @@
 package maryk.datastore.rocksdb
 
+import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
@@ -73,7 +74,6 @@ import maryk.datastore.rocksdb.processors.processScanRequest
 import maryk.datastore.rocksdb.processors.processScanUpdatesRequest
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.Cache
-import maryk.lib.concurrency.AtomicReference
 import maryk.lib.ensureNeverFrozen
 import maryk.rocksdb.ColumnFamilyDescriptor
 import maryk.rocksdb.ColumnFamilyHandle
@@ -97,7 +97,7 @@ class RocksDBDataStore(
 ) : AbstractDataStore(dataModelsById) {
     private val columnFamilyHandlesByDataModelIndex = mutableMapOf<UInt, TableColumnFamilies>()
     private val prefixSizesByColumnFamilyHandlesIndex = mutableMapOf<Int, Int>()
-    private val uniqueIndicesByDataModelIndex = AtomicReference(mapOf<UInt, List<ByteArray>>())
+    private val uniqueIndicesByDataModelIndex = atomic(mapOf<UInt, List<ByteArray>>())
 
     // Only create Options if no Options were passed. Will take ownership and close it if this object is closed
     private val ownRocksDBOptions: DBOptions? =
@@ -317,14 +317,14 @@ class RocksDBDataStore(
 
     /** Get the unique indices for [dbIndex] and [uniqueHandle] */
     internal fun getUniqueIndices(dbIndex: UInt, uniqueHandle: ColumnFamilyHandle) =
-        uniqueIndicesByDataModelIndex.get()[dbIndex] ?: searchExistingUniqueIndices(uniqueHandle)
+        uniqueIndicesByDataModelIndex.value[dbIndex] ?: searchExistingUniqueIndices(uniqueHandle)
 
     /**
      * Checks if unique index exists and creates it if not otherwise.
      * This is needed so delete knows which indices to scan for values to delete.
      */
     internal fun createUniqueIndexIfNotExists(dbIndex: UInt, uniqueHandle: ColumnFamilyHandle, uniqueName: ByteArray) {
-        val existingDbUniques = uniqueIndicesByDataModelIndex.get()[dbIndex]
+        val existingDbUniques = uniqueIndicesByDataModelIndex.value[dbIndex]
             ?: searchExistingUniqueIndices(uniqueHandle)
         val existingValue = existingDbUniques.find { it.contentEquals(uniqueName) }
 
@@ -332,11 +332,10 @@ class RocksDBDataStore(
             val uniqueReference = byteArrayOf(0, *uniqueName)
             db.put(uniqueHandle, uniqueReference, EMPTY_ARRAY)
 
-            uniqueIndicesByDataModelIndex.set(
-                uniqueIndicesByDataModelIndex.get().plus(
+            uniqueIndicesByDataModelIndex.value =
+                uniqueIndicesByDataModelIndex.value.plus(
                     dbIndex to existingDbUniques.plus(uniqueName)
                 )
-            )
         }
     }
 

@@ -27,13 +27,13 @@ class UpdateListenerForGet<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions,
     }
 
     override fun addValues(key: Key<DM>, values: Values<DM, P>) =
-        matchingKeys.get().binarySearch { it compareTo key }.let {
+        matchingKeys.value.binarySearch { it compareTo key }.let {
             // Only insert keys which were found in the matching keys
             if (it < 0) null else it
         }
 
     override suspend fun changeOrder(change: Change<DM, P>, changedHandler: suspend (Int?, Boolean) -> Unit) {
-        val keyIndex = matchingKeys.get().indexOfFirst { it compareTo change.key == 0 }
+        val keyIndex = matchingKeys.value.indexOfFirst { it compareTo change.key == 0 }
 
         if (keyIndex >= 0) {
             changedHandler(if (keyIndex >= 0) keyIndex else null, false)

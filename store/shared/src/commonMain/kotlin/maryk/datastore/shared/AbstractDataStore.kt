@@ -1,5 +1,7 @@
 package maryk.datastore.shared
 
+import kotlinx.atomicfu.AtomicBoolean
+import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -30,7 +32,6 @@ import maryk.datastore.shared.updates.RemoveUpdateListenerAction
 import maryk.datastore.shared.updates.UpdateListenerForGet
 import maryk.datastore.shared.updates.UpdateListenerForScan
 import maryk.datastore.shared.updates.startProcessUpdateFlow
-import maryk.lib.concurrency.AtomicReference
 
 /**
  * Abstract DataStore implementation that takes care of the HLC clock
@@ -44,7 +45,7 @@ abstract class AbstractDataStore(
         Pair(dataModel.name, index)
     }.toMap()
 
-    private val initIsDone: AtomicReference<Boolean> = AtomicReference(false)
+    private val initIsDone: AtomicBoolean = atomic(false)
 
     protected val storeActorHasStarted = CompletableDeferred<Unit>()
     /** StoreActor to send actions to.*/
@@ -60,10 +61,10 @@ abstract class AbstractDataStore(
     }
 
     private suspend fun waitForInit() {
-        if (!initIsDone.get()) {
+        if (!initIsDone.value) {
             storeActorHasStarted.await()
             updateSharedFlowHasStarted.await()
-            initIsDone.set(true)
+            initIsDone.value = true
         }
     }
 

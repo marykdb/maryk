@@ -1,5 +1,7 @@
 package maryk.datastore.shared.updates
 
+import kotlinx.atomicfu.AtomicRef
+import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.onStart
 import maryk.core.models.IsRootValuesDataModel
@@ -17,7 +19,6 @@ import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.core.values.Values
 import maryk.datastore.shared.IsDataStore
 import maryk.datastore.shared.updates.Update.Change
-import maryk.lib.concurrency.AtomicReference
 
 /** Listener for updates on a data store */
 abstract class UpdateListener<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions, RQ: IsFetchRequest<DM, P, *>>(
@@ -26,22 +27,21 @@ abstract class UpdateListener<DM: IsRootValuesDataModel<P>, P: PropertyDefinitio
 ) {
     protected val sendFlow = MutableSharedFlow<IsUpdateResponse<DM, P>>(extraBufferCapacity = 64)
 
-    val matchingKeys: AtomicReference<List<Key<DM>>>
+    val matchingKeys: AtomicRef<List<Key<DM>>>
     private val lastResponseVersion: ULong
 
     init {
-        @Suppress("UNCHECKED_CAST")
         when (response) {
             is UpdatesResponse<DM, P> -> {
-                matchingKeys = AtomicReference((response.updates.firstOrNull() as? OrderedKeysUpdate<DM, P>)?.keys ?: listOf())
+                matchingKeys = atomic((response.updates.firstOrNull() as? OrderedKeysUpdate<DM, P>)?.keys ?: listOf())
                 lastResponseVersion = (response.updates.firstOrNull() as? OrderedKeysUpdate<DM, P>)?.version ?: 0uL
             }
             is ValuesResponse<DM, P> -> {
-                matchingKeys = AtomicReference(response.values.map { it.key })
+                matchingKeys = atomic(response.values.map { it.key })
                 lastResponseVersion = response.values.maxByOrNull { it.lastVersion }?.lastVersion ?: 0uL
             }
             is ChangesResponse<DM, P> -> {
-                matchingKeys = AtomicReference(response.changes.map { it.key })
+                matchingKeys = atomic(response.changes.map { it.key })
                 lastResponseVersion = response.changes.fold(0uL) { acc, value ->
                     maxOf(acc, value.changes.maxByOrNull { it.version }?.version ?: 0uL)
                 }
@@ -66,10 +66,10 @@ abstract class UpdateListener<DM: IsRootValuesDataModel<P>, P: PropertyDefinitio
 
     /** Remove [key] from local index */
     open fun removeKey(key: Key<DM>): Int {
-        val index = matchingKeys.get().indexOf(key)
+        val index = matchingKeys.value.indexOf(key)
 
         if (index >= 0) {
-            matchingKeys.set(matchingKeys.get().filterIndexed { i, _ -> i != index })
+            matchingKeys.value = matchingKeys.value.filterIndexed { i, _ -> i != index }
         }
         return index
     }

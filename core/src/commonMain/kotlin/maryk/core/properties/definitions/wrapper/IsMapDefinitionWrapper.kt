@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions.wrapper
 
+import kotlinx.atomicfu.AtomicRef
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.references.AnyOutPropertyReference
@@ -10,16 +11,15 @@ import maryk.core.properties.references.MapAnyValueReference
 import maryk.core.properties.references.MapKeyReference
 import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.references.PropertyReferenceForValues
-import maryk.lib.concurrency.AtomicReference
 
 interface IsMapDefinitionWrapper<K : Any, V : Any, TO : Any, CX : IsPropertyContext, in DO : Any> :
     IsDefinitionWrapper<Map<K, V>, TO, CX, DO>,
     CacheableReferenceCreator {
     override val definition: IsMapDefinition<K, V, CX>
 
-    val anyItemRefCache: AtomicReference<Array<IsPropertyReference<*, *, *>>?>
-    val keyRefCache: AtomicReference<Array<IsPropertyReference<*, *, *>>?>
-    val valueRefCache: AtomicReference<Array<IsPropertyReference<*, *, *>>?>
+    val anyItemRefCache: AtomicRef<Array<IsPropertyReference<*, *, *>>?>
+    val keyRefCache: AtomicRef<Array<IsPropertyReference<*, *, *>>?>
+    val valueRefCache: AtomicRef<Array<IsPropertyReference<*, *, *>>?>
 
     /** Get a reference to a specific map [key] with optional [parentRef] */
     private fun keyRef(key: K, parentRef: AnyPropertyReference? = null) = this.ref(parentRef).let { ref ->

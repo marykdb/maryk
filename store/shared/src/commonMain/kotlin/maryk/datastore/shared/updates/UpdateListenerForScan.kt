@@ -1,5 +1,7 @@
 package maryk.datastore.shared.updates
 
+import kotlinx.atomicfu.AtomicRef
+import kotlinx.atomicfu.atomic
 import maryk.core.exceptions.StorageException
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
@@ -23,7 +25,6 @@ import maryk.datastore.shared.ScanType.IndexScan
 import maryk.datastore.shared.ScanType.TableScan
 import maryk.datastore.shared.orderToScanType
 import maryk.datastore.shared.updates.Update.Change
-import maryk.lib.concurrency.AtomicReference
 import maryk.lib.extensions.compare.compareTo
 
 @OptIn(ExperimentalStdlibApi::class)
@@ -40,26 +41,25 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
 
     internal val indexScanRange = (scanType as? IndexScan)?.index?.createScanRange(request.where, scanRange)
 
-    internal val sortedValues: AtomicReference<List<ByteArray>>?
+    internal val sortedValues: AtomicRef<List<ByteArray>>?
 
     init {
         this.sortedValues = when(response) {
             is UpdatesResponse<DM, P> -> {
-                @Suppress("UNCHECKED_CAST")
                 (response.updates.firstOrNull() as? OrderedKeysUpdate<DM, P>)?.sortingKeys?.let { sortingKeys ->
-                    AtomicReference(sortingKeys.map { it.bytes }.toList())
+                    atomic(sortingKeys.map { it.bytes }.toList())
                 }
             }
             is ValuesResponse<DM, P> -> {
                 if (scanType is IndexScan) {
                     response.values.mapNotNull { valuesWithMeta ->
                         scanType.index.toStorageByteArrayForIndex(valuesWithMeta.values, valuesWithMeta.key.bytes)
-                    }.let { AtomicReference(it) }
+                    }.let(::atomic)
                 } else null
             }
             is ChangesResponse<DM, P> -> {
                 if (scanType is IndexScan) {
-                    response.changes.mapNotNull { it.sortingKey?.bytes }.let { AtomicReference(it) }
+                    response.changes.mapNotNull { it.sortingKey?.bytes }.let(::atomic)
                 } else null
             }
             else -> throw Exception("Unknown response type $response. Cannot process")
@@ -96,19 +96,15 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
                             val newPos = indexPosition * -1 - 1
                             // Only add when position is smaller than limit and after first key
                             if (newPos != 0 && newPos < request.limit.toInt()) {
-                                sortedValues?.set(
-                                    buildList {
-                                        addAll(sortedValues.get())
-                                        add(newPos, indexKey)
-                                    }
-                                )
+                                sortedValues?.value = buildList {
+                                    addAll(sortedValues!!.value)
+                                    add(newPos, indexKey)
+                                }
 
-                                matchingKeys.set(
-                                    buildList {
-                                        addAll(matchingKeys.get())
-                                        add(newPos, key)
-                                    }
-                                )
+                                matchingKeys.value = buildList {
+                                    addAll(matchingKeys.value)
+                                    add(newPos, key)
+                                }
                                 newPos
                             } else {
                                 null
@@ -123,12 +119,10 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
                     when {
                         indexPosition < 0 -> {
                             val newPos = indexPosition * -1 - 1
-                            matchingKeys.set(
-                                buildList {
-                                    addAll(matchingKeys.get())
-                                    add(newPos, key)
-                                }
-                            )
+                            matchingKeys.value = buildList {
+                                addAll(matchingKeys.value)
+                                add(newPos, key)
+                            }
                             newPos
                         }
                         // else already in list
@@ -140,7 +134,7 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
     }
 
     private fun findSortedKeyIndex(indexKey: ByteArray) =
-        sortedValues?.get()?.binarySearch {
+        sortedValues?.value?.binarySearch {
             when (scanType.direction) {
                 ASC -> it compareTo indexKey
                 DESC -> indexKey compareTo it
@@ -149,12 +143,12 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
 
     /** [values] at [key] are known to be at end of sorted range so add it specifically there */
     fun addValuesAtEnd(key: Key<DM>, values: Values<DM, P>) {
-        matchingKeys.set(matchingKeys.get() + key)
+        matchingKeys.value = matchingKeys.value + key
 
         // Add sort key also to the end
         if (scanType is IndexScan && sortedValues != null) {
             scanType.index.toStorageByteArrayForIndex(values, key.bytes)?.also {
-                sortedValues.set(sortedValues.get() + it)
+                sortedValues.value = sortedValues.value + it
             } ?: throw StorageException("Unexpected null at indexed value")
         }
     }
@@ -163,7 +157,7 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
         val index = super.removeKey(key)
 
         if (index >= 0) {
-            sortedValues?.set(sortedValues.get().filterIndexed { i, _ -> i != index })
+            sortedValues?.value = sortedValues!!.value.filterIndexed { i, _ -> i != index }
         }
         return index
     }
@@ -204,8 +198,8 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
 
                             if (existingIndex == -1 || existingIndex != index) { // Is at new index
                                 if (existingIndex >= 0) {
-                                    matchingKeys.set(matchingKeys.get().filterIndexed { i, _ -> i != existingIndex })
-                                    sortedValues?.set(sortedValues.get().filterIndexed { i, _ -> i != existingIndex })
+                                    matchingKeys.value = matchingKeys.value.filterIndexed { i, _ -> i != existingIndex }
+                                    sortedValues?.value = sortedValues!!.value.filterIndexed { i, _ -> i != existingIndex }
                                 }
 
                                 if (index != null) {
@@ -223,18 +217,14 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
                                             val correction = if (existingIndex != -1 && existingIndex < newIndex) 1 else 0
                                             val adjustedIndex = newIndex - correction
 
-                                            matchingKeys.set(
-                                                buildList {
-                                                    addAll(matchingKeys.get())
-                                                    add(adjustedIndex, change.key)
-                                                }
-                                            )
-                                            sortedValues?.set(
-                                                buildList {
-                                                    addAll(sortedValues.get())
-                                                    add(adjustedIndex, indexUpdate.indexKey.bytes)
-                                                }
-                                            )
+                                            matchingKeys.value = buildList {
+                                                addAll(matchingKeys.value)
+                                                add(adjustedIndex, change.key)
+                                            }
+                                            sortedValues?.value = buildList {
+                                                addAll(sortedValues!!.value)
+                                                add(adjustedIndex, indexUpdate.indexKey.bytes)
+                                            }
 
                                             changedHandler(adjustedIndex, true)
                                         }
@@ -267,7 +257,7 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
             ASC -> {{ it compareTo key }}
             DESC -> {{ key compareTo it }}
         }
-        return matchingKeys.get().binarySearch(comparison = comparator)
+        return matchingKeys.value.binarySearch(comparison = comparator)
     }
 
     /**
@@ -279,12 +269,12 @@ class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions
             ASC -> {{ it compareTo key == 0 }}
             DESC -> {{ key compareTo it == 0 }}
         }
-        return matchingKeys.get().indexOfFirst(predicate = predicate)
+        return matchingKeys.value.indexOfFirst(predicate = predicate)
     }
 
     /** Get last key depending on scan direction */
     fun getLast() = when (scanType.direction) {
-        ASC -> matchingKeys.get().last()
-        DESC -> matchingKeys.get().first()
+        ASC -> matchingKeys.value.last()
+        DESC -> matchingKeys.value.first()
     }
 }

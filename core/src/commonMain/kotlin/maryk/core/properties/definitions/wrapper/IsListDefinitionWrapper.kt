@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions.wrapper
 
+import kotlinx.atomicfu.AtomicRef
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.ListDefinition
@@ -10,7 +11,6 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListAnyItemReference
 import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.ListReference
-import maryk.lib.concurrency.AtomicReference
 
 /**
  * Contains a List property [definition] which contains items of type [T]
@@ -23,8 +23,8 @@ interface IsListDefinitionWrapper<T : Any, TO : Any, LD : IsListDefinition<T, CX
     CacheableReferenceCreator {
     override val definition: LD
 
-    val anyItemRefCache: AtomicReference<Array<IsPropertyReference<*, *, *>>?>
-    val listItemRefCache: AtomicReference<Array<IsPropertyReference<*, *, *>>?>
+    val anyItemRefCache: AtomicRef<Array<IsPropertyReference<*, *, *>>?>
+    val listItemRefCache: AtomicRef<Array<IsPropertyReference<*, *, *>>?>
 
     @Suppress("UNCHECKED_CAST")
     override fun ref(parentRef: AnyPropertyReference?) = cacheRef(parentRef) {

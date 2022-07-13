@@ -1,7 +1,8 @@
 package maryk.core.properties.definitions.wrapper
 
+import kotlinx.atomicfu.AtomicRef
+import kotlinx.atomicfu.atomic
 import maryk.core.properties.references.IsPropertyReference
-import maryk.lib.concurrency.AtomicReference
 import kotlin.native.concurrent.SharedImmutable
 
 @SharedImmutable
@@ -19,6 +20,6 @@ abstract class AbstractDefinitionWrapper(
     }
 
     /** Cache for all references, so they are not created over and over */
-    override val refCache: AtomicReference<Array<IsPropertyReference<*, *, *>>?> =
-        AtomicReference(null)
+    override val refCache: AtomicRef<Array<IsPropertyReference<*, *, *>>?> =
+        atomic(null)
 }

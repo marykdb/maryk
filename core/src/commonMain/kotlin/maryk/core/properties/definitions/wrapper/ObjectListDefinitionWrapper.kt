@@ -1,5 +1,7 @@
 package maryk.core.properties.definitions.wrapper
 
+import kotlinx.atomicfu.AtomicRef
+import kotlinx.atomicfu.atomic
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
@@ -9,7 +11,6 @@ import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.AnySpecificWrappedPropertyReference
 import maryk.core.properties.references.IsPropertyReference
-import maryk.lib.concurrency.AtomicReference
 
 /**
  * Contains a List property [definition] which contains values of type [ODO] and [P]
@@ -39,10 +40,10 @@ data class ObjectListDefinitionWrapper<
     IsListDefinitionWrapper<ODO, TO, ListDefinition<ODO, CX>, CX, DO> {
     override val graphType = PropRef
 
-    override val anyItemRefCache: AtomicReference<Array<IsPropertyReference<*, *, *>>?> =
-        AtomicReference(null)
-    override val listItemRefCache: AtomicReference<Array<IsPropertyReference<*, *, *>>?> =
-        AtomicReference(null)
+    override val anyItemRefCache: AtomicRef<Array<IsPropertyReference<*, *, *>>?> =
+        atomic(null)
+    override val listItemRefCache: AtomicRef<Array<IsPropertyReference<*, *, *>>?> =
+        atomic(null)
 
     /** Get sub reference below an index */
     @Suppress("UNCHECKED_CAST")

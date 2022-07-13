@@ -1,5 +1,7 @@
 package maryk.core.properties.definitions.wrapper
 
+import kotlinx.atomicfu.AtomicRef
+import kotlinx.atomicfu.atomic
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IncrementingMapDefinition
@@ -11,7 +13,6 @@ import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IncMapAddIndexReference
 import maryk.core.properties.references.IncMapReference
 import maryk.core.properties.references.IsPropertyReference
-import maryk.lib.concurrency.AtomicReference
 import kotlin.reflect.KProperty
 
 /**
@@ -35,12 +36,12 @@ data class IncMapDefinitionWrapper<K : Comparable<K>, V : Any, TO : Any, CX : Is
     IsMapDefinitionWrapper<K, V, TO, CX, DO> {
     override val graphType = PropRef
 
-    override val anyItemRefCache: AtomicReference<Array<IsPropertyReference<*, *, *>>?> =
-        AtomicReference(null)
-    override val keyRefCache: AtomicReference<Array<IsPropertyReference<*, *, *>>?> =
-        AtomicReference(null)
-    override val valueRefCache: AtomicReference<Array<IsPropertyReference<*, *, *>>?> =
-        AtomicReference(null)
+    override val anyItemRefCache: AtomicRef<Array<IsPropertyReference<*, *, *>>?> =
+        atomic(null)
+    override val keyRefCache: AtomicRef<Array<IsPropertyReference<*, *, *>>?> =
+        atomic(null)
+    override val valueRefCache: AtomicRef<Array<IsPropertyReference<*, *, *>>?> =
+        atomic(null)
 
     @Suppress("UNCHECKED_CAST")
     override fun ref(parentRef: AnyPropertyReference?): IncMapReference<K, V, CX> = cacheRef(parentRef) {

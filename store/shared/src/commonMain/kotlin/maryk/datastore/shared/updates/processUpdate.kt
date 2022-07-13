@@ -33,7 +33,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ
     sharedFlow: MutableSharedFlow<IsUpdateResponse<DM, P>>
 ) {
     val request = updateListener.request
-    val currentKeys = updateListener.matchingKeys.get()
+    val currentKeys = updateListener.matchingKeys.value
     // Only process object requests or change requests if the version is after or equal to from version
     if (request !is IsChangesRequest<*, *, *> || request.fromVersion <= version) {
         when (this) {
@@ -111,7 +111,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ
                     }
                 } else if (!shouldDelete && updateListener is UpdateListenerForScan<DM, P, *> && updateListener.indexScanRange != null) {
                     val lastKey = currentKeys.last()
-                    val lastSortedKey = updateListener.sortedValues?.get()?.last()
+                    val lastSortedKey = updateListener.sortedValues?.value?.last()
 
                     // Only process further if order has changed to move this value into range
                     updateListener.changeOrder(this@process) { newIndex, _ ->
@@ -153,8 +153,8 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ
                                 )
                             } else {
                                 // Add back removed values since filter does not match
-                                updateListener.matchingKeys.set(currentKeys + lastKey)
-                                lastSortedKey?.let { updateListener.sortedValues.set(updateListener.sortedValues.get() + it) }
+                                updateListener.matchingKeys.value = currentKeys + lastKey
+                                lastSortedKey?.let { updateListener.sortedValues.value = updateListener.sortedValues.value + it }
                             }
                         }
                     }
@@ -217,8 +217,8 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ:
         )
     }
 
-    if (updateListener is UpdateListenerForScan<DM, P, *> && updateListener.request.limit - 1u == updateListener.matchingKeys.get().size.toUInt()) {
-        dataStore.requestNextValues(updateListener.request, updateListener.matchingKeys.get())?.also { additionUpdate ->
+    if (updateListener is UpdateListenerForScan<DM, P, *> && updateListener.request.limit - 1u == updateListener.matchingKeys.value.size.toUInt()) {
+        dataStore.requestNextValues(updateListener.request, updateListener.matchingKeys.value)?.also { additionUpdate ->
             // Always at the end so no need to order
             updateListener.addValuesAtEnd(additionUpdate.key, additionUpdate.values)
 

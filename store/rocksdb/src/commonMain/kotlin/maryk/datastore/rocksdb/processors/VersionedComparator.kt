@@ -10,9 +10,8 @@ import maryk.rocksdb.ComparatorOptions
  * Takes care that qualifiers are first sorted on their reference/value and then on version
  * Otherwise the version bytes could make values come before their root qualifiers.
  */
-@Suppress("CanBeParameter")
 internal class VersionedComparator(
-    private val comparatorOptions: ComparatorOptions,
+    comparatorOptions: ComparatorOptions,
     private val keySize: Int
 ) : maryk.rocksdb.AbstractComparator(comparatorOptions) {
     override fun name() = "maryk.VersionedComparator"

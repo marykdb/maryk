@@ -19,6 +19,7 @@ kotlin {
             dependencies {
                 api(project(":store-shared"))
                 api(project(":testmodels"))
+                api(KotlinX.coroutines.test)
             }
         }
     }

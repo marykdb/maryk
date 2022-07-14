@@ -1,5 +1,9 @@
+@file:OptIn(ExperimentalCoroutinesApi::class)
+
 package maryk.datastore.rocksdb
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runTest
 import maryk.core.models.migration.MigrationException
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
@@ -17,7 +21,6 @@ import maryk.test.models.ModelV1_1
 import maryk.test.models.ModelV2
 import maryk.test.models.ModelV2ExtraIndex
 import maryk.test.models.ModelWithDependents
-import maryk.test.runSuspendingTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -29,7 +32,7 @@ class RocksDBDataStoreMigrationTest {
     class CustomException : Error()
 
     @Test
-    fun testMigration() = runSuspendingTest {
+    fun testMigration() = runTest {
         val path = "$basePath/migration"
         var dataStore = RocksDBDataStore(
             keepAllVersions = true,
@@ -83,7 +86,7 @@ class RocksDBDataStoreMigrationTest {
     }
 
     @Test
-    fun testMigrationWithDependents() = runSuspendingTest {
+    fun testMigrationWithDependents() = runTest {
         val path = "$basePath/migrationWithDeps"
         var dataStore = RocksDBDataStore(
             keepAllVersions = true,
@@ -107,7 +110,7 @@ class RocksDBDataStoreMigrationTest {
     }
 
     @Test
-    fun testMigrationWithIndex() = runSuspendingTest {
+    fun testMigrationWithIndex() = runTest {
         val path = "$basePath/migration2"
         var dataStore = RocksDBDataStore(
             keepAllVersions = true,

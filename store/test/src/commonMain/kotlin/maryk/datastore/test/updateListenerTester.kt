@@ -1,26 +1,28 @@
+@file:OptIn(DelicateCoroutinesApi::class)
+
 package maryk.datastore.test
 
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import maryk.core.models.IsRootDataModel
 import maryk.core.query.requests.IsFetchRequest
 import maryk.core.query.responses.IsDataResponse
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.datastore.shared.IsDataStore
-import maryk.test.runSuspendingTest
 import kotlin.test.assertTrue
 
 /** Test helper for listening to update changes for [request] on [dataStore] */
-fun <DM: IsRootDataModel, RP: IsDataResponse<DM>> updateListenerTester(
+suspend fun <DM: IsRootDataModel, RP: IsDataResponse<DM>> updateListenerTester(
     dataStore: IsDataStore,
     request: IsFetchRequest<DM, RP>,
     responseCount: Int,
     changeBlock: suspend CoroutineScope.(Array<CompletableDeferred<IsUpdateResponse<DM>>>) -> Unit
-) = runSuspendingTest {
+) {
     val responses = Array(responseCount) {
         CompletableDeferred<IsUpdateResponse<DM>>()
     }
@@ -28,7 +30,7 @@ fun <DM: IsRootDataModel, RP: IsDataResponse<DM>> updateListenerTester(
 
     val listenerSetupComplete = CompletableDeferred<Boolean>()
 
-    val listenJob = launch {
+    val listenJob = GlobalScope.launch {
         dataStore.executeFlow(
             request
         ).also {
@@ -42,13 +44,13 @@ fun <DM: IsRootDataModel, RP: IsDataResponse<DM>> updateListenerTester(
 
     val successfullyDone = CompletableDeferred<Boolean>()
 
-    val changeJob = launch {
+    val changeJob = GlobalScope.launch {
         changeBlock(responses)
 
         successfullyDone.complete(true)
     }
 
-    val timeoutJob = launch {
+    val timeoutJob = GlobalScope.launch {
         // Timeout
         delay(1000)
 

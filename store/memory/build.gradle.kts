@@ -9,6 +9,11 @@ apply {
 kotlin {
     jvm()
 
+    js(IR) {
+        browser {}
+        nodejs {}
+    }
+
     ios()
     macosX64()
     macosArm64()

@@ -7,7 +7,7 @@ plugins {
 }
 
 ext {
-    protobufVersion = '3.19.4'
+    protobufVersion = '3.21.2'
 }
 
 protobuf {
@@ -25,7 +25,7 @@ dependencies {
     api(project(":generator"))
 
     testImplementation(project(":testmodels"))
-    testImplementation("com.google.protobuf:protobuf-java:$protobufVersion")
+    testImplementation("com.google.protobuf:protobuf-kotlin:$protobufVersion")
 }
 
 tasks.withType(KotlinCompile) {

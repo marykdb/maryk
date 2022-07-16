@@ -2,7 +2,6 @@ package maryk.core.yaml
 
 import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.properties.definitions.index.IndexKeyPartType
-import maryk.json.IsJsonLikeReader
 import maryk.json.JsonToken.EndArray
 import maryk.json.JsonToken.EndDocument
 import maryk.json.JsonToken.EndObject
@@ -10,8 +9,8 @@ import maryk.json.JsonToken.FieldName
 import maryk.json.JsonToken.StartArray
 import maryk.json.JsonToken.StartObject
 import maryk.json.JsonToken.Value
-import maryk.test.assertType
 import kotlin.test.Test
+import kotlin.test.assertIs
 import kotlin.test.expect
 
 class MarykYamlTest {
@@ -25,48 +24,48 @@ class MarykYamlTest {
          - !Ref test
         """.trimIndent()
         ).apply {
-            assertType<StartArray>(nextToken())
+            assertIs<StartArray>(nextToken())
 
             expect(PropertyDefinitionType.Boolean) {
-                assertType<StartObject>(nextToken()).type
+                assertIs<StartObject>(nextToken()).type
             }
 
             expect("k1") {
-                assertType<FieldName>(nextToken()).value
+                assertIs<FieldName>(nextToken()).value
             }
 
             expect("v1") {
-                assertType<Value<*>>(nextToken()).value
+                assertIs<Value<*>>(nextToken()).value
             }
 
-            assertType<EndObject>(nextToken())
+            assertIs<EndObject>(nextToken())
 
             expect(PropertyDefinitionType.String) {
-                assertType<StartObject>(nextToken()).type
+                assertIs<StartObject>(nextToken()).type
             }
 
             expect("k2") {
-                assertType<FieldName>(nextToken()).value
+                assertIs<FieldName>(nextToken()).value
             }
 
             expect("v2") {
-                assertType<Value<*>>(nextToken()).value
+                assertIs<Value<*>>(nextToken()).value
             }
 
-            assertType<EndObject>(nextToken())
+            assertIs<EndObject>(nextToken())
 
-            assertType<Value<*>>(nextToken()).also {
+            assertIs<Value<*>>(nextToken()).also {
                 expect(IndexKeyPartType.UUID) { it.type }
                 expect(null) { it.value }
             }
 
-            assertType<Value<*>>(nextToken()).also {
+            assertIs<Value<*>>(nextToken()).also {
                 expect(IndexKeyPartType.Reference) { it.type }
                 expect("test") { it.value }
             }
 
-            assertType<EndArray>(nextToken())
-            assertType<EndDocument>(nextToken())
+            assertIs<EndArray>(nextToken())
+            assertIs<EndDocument>(nextToken())
         }
     }
 }

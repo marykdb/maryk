@@ -12,7 +12,6 @@ import maryk.core.query.requests.change
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
-import maryk.test.assertType
 import maryk.test.models.ModelV1
 import maryk.test.models.ModelV1_1
 import maryk.test.models.ModelV2
@@ -21,6 +20,7 @@ import maryk.test.runSuspendingTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertIs
 
 class RocksDBDataStoreMigrationTest {
     private val basePath = "./build/test-database"
@@ -106,7 +106,7 @@ class RocksDBDataStoreMigrationTest {
         val keys = mutableListOf<Key<ModelV2>>()
 
         for (status in addResult.statuses) {
-            assertType<AddSuccess<ModelV2>>(status).apply {
+            assertIs<AddSuccess<ModelV2>>(status).apply {
                 keys.add(key)
             }
         }
@@ -121,7 +121,7 @@ class RocksDBDataStoreMigrationTest {
         )
 
         for (status in changeResult.statuses) {
-            assertType<ChangeSuccess<ModelV2>>(status)
+            assertIs<ChangeSuccess<ModelV2>>(status)
         }
 
         dataStore.close()

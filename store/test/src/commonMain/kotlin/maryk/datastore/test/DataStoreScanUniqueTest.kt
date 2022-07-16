@@ -14,13 +14,13 @@ import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.datastore.shared.IsDataStore
-import maryk.test.assertType
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.CompleteMarykModel.Properties.string
 import maryk.test.models.MarykEnumEmbedded.E1
 import maryk.test.models.MarykTypeEnum.T2
 import maryk.test.models.SimpleMarykModel
 import maryk.test.models.SimpleMarykTypeEnum.S1
+import kotlin.test.assertIs
 import kotlin.test.expect
 
 class DataStoreScanUniqueTest(
@@ -54,7 +54,7 @@ class DataStoreScanUniqueTest(
             CompleteMarykModel.add(*objects)
         )
         addResponse.statuses.forEach { status ->
-            val response = assertType<AddSuccess<CompleteMarykModel>>(status)
+            val response = assertIs<AddSuccess<CompleteMarykModel>>(status)
             keys.add(response.key)
             if (response.version < lowestVersion) {
                 // Add lowest version for scan test
@@ -97,7 +97,7 @@ class DataStoreScanUniqueTest(
             )
         )
 
-        assertType<ChangeSuccess<*>>(changeResponse.statuses[0])
+        assertIs<ChangeSuccess<*>>(changeResponse.statuses[0])
 
         val scanResponseForLatest = dataStore.execute(
             CompleteMarykModel.scan(

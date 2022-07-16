@@ -6,10 +6,10 @@ import maryk.core.processors.datastore.matchers.QualifierExactMatcher
 import maryk.core.protobuf.WriteCache
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
-import maryk.test.assertType
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
+import kotlin.test.assertIs
 import kotlin.test.assertSame
 import kotlin.test.expect
 
@@ -92,6 +92,6 @@ class MapValueReferenceTest {
     fun createValueRefQualifierMatcher() {
         val matcher = subReference.toQualifierMatcher()
 
-        expect("661e540300d84f") { assertType<QualifierExactMatcher>(matcher).qualifier.toHex() }
+        expect("661e540300d84f") { assertIs<QualifierExactMatcher>(matcher).qualifier.toHex() }
     }
 }

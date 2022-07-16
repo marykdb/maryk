@@ -4,9 +4,9 @@ import maryk.core.processors.datastore.matchers.QualifierExactMatcher
 import maryk.core.protobuf.WriteCache
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
-import maryk.test.assertType
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
+import kotlin.test.assertIs
 import kotlin.test.assertSame
 import kotlin.test.expect
 
@@ -68,7 +68,7 @@ class ListReferenceTest {
         val matcher = listReference.toQualifierMatcher()
 
         expect("661e7a") {
-            assertType<QualifierExactMatcher>(matcher).qualifier.toHex()
+            assertIs<QualifierExactMatcher>(matcher).qualifier.toHex()
         }
     }
 }

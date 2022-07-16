@@ -10,9 +10,9 @@ import maryk.core.query.requests.delete
 import maryk.core.query.requests.get
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.datastore.shared.IsDataStore
-import maryk.test.assertType
 import maryk.test.models.ComplexModel
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 class DataStoreFilterComplexTest(
@@ -42,7 +42,7 @@ class DataStoreFilterComplexTest(
         )
 
         addResponse.statuses.forEach { status ->
-            val response = assertType<AddSuccess<ComplexModel>>(status)
+            val response = assertIs<AddSuccess<ComplexModel>>(status)
             keys.add(response.key)
             lastVersions.add(response.version)
         }

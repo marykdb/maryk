@@ -15,8 +15,8 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.lib.extensions.toHex
-import maryk.test.assertType
 import kotlin.test.Test
+import kotlin.test.assertIs
 import kotlin.test.expect
 
 class WriteValuesToStorageKtTest {
@@ -30,22 +30,22 @@ class WriteValuesToStorageKtTest {
             }
             when (type) {
                 Value -> {
-                    assertType<IsSimpleValueDefinition<*, *>>(type.castDefinition(definition))
+                    assertIs<IsSimpleValueDefinition<*, *>>(type.castDefinition(definition))
                 }
                 ListSize -> {
-                    assertType<IsListDefinition<*, *>>(type.castDefinition(definition))
+                    assertIs<IsListDefinition<*, *>>(type.castDefinition(definition))
                 }
                 SetSize -> {
-                    assertType<IsSetDefinition<*, *>>(type.castDefinition(definition))
+                    assertIs<IsSetDefinition<*, *>>(type.castDefinition(definition))
                 }
                 MapSize -> {
-                    assertType<IsMapDefinition<*, *, *>>(type.castDefinition(definition))
+                    assertIs<IsMapDefinition<*, *, *>>(type.castDefinition(definition))
                 }
                 TypeValue -> {
-                    assertType<IsMultiTypeDefinition<*, *, *>>(type.castDefinition(definition))
+                    assertIs<IsMultiTypeDefinition<*, *, *>>(type.castDefinition(definition))
                 }
                 Embed -> {
-                    assertType<EmbeddedValuesDefinition<*, *>>(type.castDefinition(definition))
+                    assertIs<EmbeddedValuesDefinition<*, *>>(type.castDefinition(definition))
                 }
                 ObjectDelete -> {
                     // Not in this write

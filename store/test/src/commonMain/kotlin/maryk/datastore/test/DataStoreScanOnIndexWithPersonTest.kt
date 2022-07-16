@@ -8,8 +8,8 @@ import maryk.core.query.requests.delete
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.datastore.shared.IsDataStore
-import maryk.test.assertType
 import maryk.test.models.Person
+import kotlin.test.assertIs
 import kotlin.test.expect
 
 class DataStoreScanOnIndexWithPersonTest(
@@ -34,7 +34,7 @@ class DataStoreScanOnIndexWithPersonTest(
             Person.add(*persons)
         )
         addResponse.statuses.forEach { status ->
-            val response = assertType<AddSuccess<Person>>(status)
+            val response = assertIs<AddSuccess<Person>>(status)
             keys.add(response.key)
             if (response.version > highestCreationVersion) {
                 // Add lowest version for scan test

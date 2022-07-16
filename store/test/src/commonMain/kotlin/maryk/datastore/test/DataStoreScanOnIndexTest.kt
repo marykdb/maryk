@@ -17,7 +17,6 @@ import maryk.core.query.requests.delete
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.datastore.shared.IsDataStore
-import maryk.test.assertType
 import maryk.test.models.Log
 import maryk.test.models.Log.Properties.message
 import maryk.test.models.Log.Properties.severity
@@ -26,6 +25,7 @@ import maryk.test.models.Severity.ERROR
 import maryk.test.models.Severity.INFO
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertIs
 import kotlin.test.assertSame
 import kotlin.test.expect
 
@@ -60,7 +60,7 @@ class DataStoreScanOnIndexTest(
             Log.add(*logs)
         )
         addResponse.statuses.forEach { status ->
-            val response = assertType<AddSuccess<Log>>(status)
+            val response = assertIs<AddSuccess<Log>>(status)
             keys.add(response.key)
             if (response.version > highestCreationVersion) {
                 // Add lowest version for scan test

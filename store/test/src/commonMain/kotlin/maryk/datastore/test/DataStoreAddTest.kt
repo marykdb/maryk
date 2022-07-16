@@ -10,9 +10,9 @@ import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.AlreadyExists
 import maryk.core.values.Values
 import maryk.datastore.shared.IsDataStore
-import maryk.test.assertType
 import maryk.test.models.Log
 import maryk.test.models.Severity.ERROR
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import kotlin.test.expect
 
@@ -50,10 +50,10 @@ class DataStoreAddTest(
 
         val keysToOriginal = mutableMapOf<Key<*>, Values<Log, *>>()
         addResponse.statuses.forEachIndexed { index, it ->
-            val response = assertType<AddSuccess<Log>>(it)
+            val response = assertIs<AddSuccess<Log>>(it)
             assertRecent(response.version, 1000uL)
             assertTrue { response.changes.isEmpty() }
-            expect(11) { assertType<Key<Log>>(response.key).size }
+            expect(11) { assertIs<Key<Log>>(response.key).size }
             keys.add(response.key)
             keysToOriginal[response.key] = logs[index]
         }

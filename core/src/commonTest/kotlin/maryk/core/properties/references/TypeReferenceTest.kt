@@ -11,13 +11,13 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
-import maryk.test.assertType
 import maryk.test.models.MarykTypeEnum
 import maryk.test.models.MarykTypeEnum.T1
 import maryk.test.models.MarykTypeEnum.T2
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import kotlin.test.expect
@@ -64,7 +64,7 @@ internal class TypeReferenceTest {
 
         val keyDef = MarykModel.keyDefinition
 
-        val specificDef = assertType<TypeReference<MarykTypeEnum<*>, *, *>>(keyDef)
+        val specificDef = assertIs<TypeReference<MarykTypeEnum<*>, *, *>>(keyDef)
         expect(multi.typeRef()) { specificDef }
 
         expect(T2) { specificDef.getValue(obj) }

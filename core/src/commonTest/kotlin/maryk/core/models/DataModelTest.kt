@@ -15,7 +15,6 @@ import maryk.json.JsonWriter
 import maryk.lib.extensions.initByteArrayByHex
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
-import maryk.test.assertType
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.Option
 import maryk.test.models.SimpleMarykTypeEnum.S3
@@ -25,6 +24,7 @@ import maryk.yaml.YamlWriter
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertIs
 import kotlin.test.expect
 
 val testMarykModelObject = TestMarykModel(
@@ -149,8 +149,8 @@ internal class DataModelTest {
 
         expect(2) { e.exceptions.size }
 
-        assertType<InvalidValueException>(e.exceptions[0])
-        assertType<OutOfRangeException>(e.exceptions[1])
+        assertIs<InvalidValueException>(e.exceptions[0])
+        assertIs<OutOfRangeException>(e.exceptions[1])
     }
 
     @Test

@@ -9,11 +9,11 @@ import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.statuses.StatusType.DELETE_SUCCESS
 import maryk.datastore.shared.IsDataStore
-import maryk.test.assertType
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.addRequest
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import kotlin.test.expect
 
@@ -32,7 +32,7 @@ class DataStoreDeleteTest(
             addRequest
         )
         addResponse.statuses.forEach { status ->
-            val response = assertType<AddSuccess<SimpleMarykModel>>(status)
+            val response = assertIs<AddSuccess<SimpleMarykModel>>(status)
             keys.add(response.key)
         }
     }
@@ -55,7 +55,7 @@ class DataStoreDeleteTest(
         expect(DELETE_SUCCESS) { deleteResponse.statuses[0].statusType }
         with(deleteResponse.statuses[0]) {
             expect(DELETE_SUCCESS) { statusType }
-            assertType<DeleteSuccess<SimpleMarykModel>>(this)
+            assertIs<DeleteSuccess<SimpleMarykModel>>(this)
         }
 
         val getResponse = dataStore.execute(
@@ -101,7 +101,7 @@ class DataStoreDeleteTest(
         expect(1) { deleteResponse.statuses.size }
         expect(DELETE_SUCCESS) { deleteResponse.statuses[0].statusType }
         with(deleteResponse.statuses[0]) {
-            assertType<DeleteSuccess<SimpleMarykModel>>(this)
+            assertIs<DeleteSuccess<SimpleMarykModel>>(this)
         }
 
         val getResponse = dataStore.execute(

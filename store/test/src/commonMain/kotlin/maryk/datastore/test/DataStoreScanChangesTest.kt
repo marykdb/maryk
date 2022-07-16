@@ -19,12 +19,12 @@ import maryk.core.query.requests.scanChanges
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.datastore.shared.IsDataStore
-import maryk.test.assertType
 import maryk.test.models.Log
 import maryk.test.models.Severity.ERROR
 import maryk.test.models.Severity.INFO
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.expect
 
@@ -58,7 +58,7 @@ class DataStoreScanChangesTest(
             Log.add(*logs)
         )
         addResponse.statuses.forEach { status ->
-            val response = assertType<AddSuccess<Log>>(status)
+            val response = assertIs<AddSuccess<Log>>(status)
             keys.add(response.key)
             if (response.version < lowestVersion) {
                 // Add lowest version for scan test
@@ -282,7 +282,7 @@ class DataStoreScanChangesTest(
                     keys[2].change(change1)
                 )
             ).also {
-                assertType<ChangeSuccess<Log>>(it.statuses.first()).apply {
+                assertIs<ChangeSuccess<Log>>(it.statuses.first()).apply {
                     collectedVersions.add(version)
                 }
             }
@@ -293,7 +293,7 @@ class DataStoreScanChangesTest(
                     keys[2].change(change2)
                 )
             ).also {
-                assertType<ChangeSuccess<Log>>(it.statuses.first()).apply {
+                assertIs<ChangeSuccess<Log>>(it.statuses.first()).apply {
                     collectedVersions.add(version)
                 }
             }
@@ -304,7 +304,7 @@ class DataStoreScanChangesTest(
                     keys[2].change(change3)
                 )
             ).also {
-                assertType<ChangeSuccess<Log>>(it.statuses.first()).apply {
+                assertIs<ChangeSuccess<Log>>(it.statuses.first()).apply {
                     collectedVersions.add(version)
                 }
             }

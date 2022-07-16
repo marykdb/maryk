@@ -13,9 +13,9 @@ import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.datastore.shared.IsDataStore
-import maryk.test.assertType
 import maryk.test.models.ModelV2ExtraIndex
 import maryk.test.models.SimpleMarykModel
+import kotlin.test.assertIs
 import kotlin.test.expect
 
 class DataStoreScanWithMutableValueIndexTest(
@@ -41,7 +41,7 @@ class DataStoreScanWithMutableValueIndexTest(
             ModelV2ExtraIndex.add(*objects)
         )
         addResponse.statuses.forEach { status ->
-            val response = assertType<AddSuccess<ModelV2ExtraIndex>>(status)
+            val response = assertIs<AddSuccess<ModelV2ExtraIndex>>(status)
             keys.add(response.key)
             if (response.version < lowestVersion) {
                 // Add lowest version for scan test
@@ -67,7 +67,7 @@ class DataStoreScanWithMutableValueIndexTest(
 
         var versionAfterChange = 0uL
         for (status in changeResult.statuses) {
-            assertType<ChangeSuccess<SimpleMarykModel>>(status).apply {
+            assertIs<ChangeSuccess<SimpleMarykModel>>(status).apply {
                 versionAfterChange = this.version
             }
         }

@@ -19,12 +19,12 @@ import maryk.core.query.responses.updates.RemovalReason.NotInRange
 import maryk.core.query.responses.updates.RemovalReason.SoftDelete
 import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.datastore.shared.IsDataStore
-import maryk.test.assertType
 import maryk.test.models.Log
 import maryk.test.models.Severity.DEBUG
 import maryk.test.models.Severity.ERROR
 import maryk.test.models.Severity.INFO
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 
 class DataStoreScanUpdatesWithLogTest(
     val dataStore: IsDataStore
@@ -49,7 +49,7 @@ class DataStoreScanUpdatesWithLogTest(
             )
         )
         addResponse.statuses.forEach { status ->
-            val response = assertType<AddSuccess<Log>>(status)
+            val response = assertIs<AddSuccess<Log>>(status)
             testKeys.add(response.key)
             if (response.version < lowestVersion) {
                 // Add lowest version for scan test
@@ -80,7 +80,7 @@ class DataStoreScanUpdatesWithLogTest(
             ),
             3
         ) { responses ->
-            assertType<OrderedKeysUpdate<*, *>>(responses[0].await()).apply {
+            assertIs<OrderedKeysUpdate<*, *>>(responses[0].await()).apply {
                 assertEquals(listOf(testKeys[2], testKeys[1], testKeys[0]), keys)
                 assertEquals(highestInitVersion, version)
             }
@@ -90,7 +90,7 @@ class DataStoreScanUpdatesWithLogTest(
                 testKeys[0].change(change1)
             ))
 
-            assertType<ChangeUpdate<*, *>>(responses[1].await()).apply {
+            assertIs<ChangeUpdate<*, *>>(responses[1].await()).apply {
                 assertEquals(testKeys[0], key)
                 assertEquals(listOf(change1), changes)
             }
@@ -100,7 +100,7 @@ class DataStoreScanUpdatesWithLogTest(
                 testKeys[2].change(change2)
             ))
 
-            assertType<RemovalUpdate<*, *>>(responses[2].await()).apply {
+            assertIs<RemovalUpdate<*, *>>(responses[2].await()).apply {
                 assertEquals(testKeys[2], key)
                 assertEquals(NotInRange, reason)
             }
@@ -118,7 +118,7 @@ class DataStoreScanUpdatesWithLogTest(
             ),
             4
         ) { responses ->
-            assertType<OrderedKeysUpdate<*, *>>(responses[0].await()).apply {
+            assertIs<OrderedKeysUpdate<*, *>>(responses[0].await()).apply {
                 assertEquals(listOf(testKeys[2], testKeys[0]), keys)
                 assertEquals(highestInitVersion, version)
             }
@@ -129,7 +129,7 @@ class DataStoreScanUpdatesWithLogTest(
             ))
 
             val changeUpdate1 = responses[1].await()
-            assertType<ChangeUpdate<*, *>>(changeUpdate1).apply {
+            assertIs<ChangeUpdate<*, *>>(changeUpdate1).apply {
                 assertEquals(testKeys[0], key)
                 assertEquals(listOf(change1), changes)
             }
@@ -146,7 +146,7 @@ class DataStoreScanUpdatesWithLogTest(
             ))
 
             val changeUpdate2 = responses[2].await()
-            assertType<ChangeUpdate<*, *>>(changeUpdate2).apply {
+            assertIs<ChangeUpdate<*, *>>(changeUpdate2).apply {
                 assertEquals(testKeys[2], key)
                 assertEquals(listOf(change2), changes)
             }
@@ -157,7 +157,7 @@ class DataStoreScanUpdatesWithLogTest(
             dataStore.execute(Log.delete(testKeys[2]))
 
             val removalUpdate1 = responses[3].await()
-            assertType<RemovalUpdate<*, *>>(removalUpdate1).apply {
+            assertIs<RemovalUpdate<*, *>>(removalUpdate1).apply {
                 assertEquals(testKeys[2], key)
                 assertEquals(SoftDelete, reason)
             }

@@ -15,7 +15,7 @@ import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.datastore.shared.IsDataStore
 import maryk.datastore.test.UniqueModel.Properties
-import maryk.test.assertType
+import kotlin.test.assertIs
 import kotlin.test.expect
 
 object UniqueModel : RootDataModel<UniqueModel, Properties>(
@@ -48,7 +48,7 @@ class UniqueTest(
 
         dataStore.execute(addItems).also {
             it.statuses.forEach { status ->
-                val response = assertType<AddSuccess<UniqueModel>>(status)
+                val response = assertIs<AddSuccess<UniqueModel>>(status)
                 keys.add(response.key)
             }
         }
@@ -68,8 +68,8 @@ class UniqueTest(
     suspend fun checkUnique() {
         val addResponse = dataStore.execute(addUniqueItem)
         addResponse.statuses.forEach { status ->
-            val fail = assertType<ValidationFail<UniqueModel>>(status)
-            val alreadyExists = assertType<AlreadyExistsException>(fail.exceptions.first())
+            val fail = assertIs<ValidationFail<UniqueModel>>(status)
+            val alreadyExists = assertIs<AlreadyExistsException>(fail.exceptions.first())
             expect(UniqueModel { email::ref }) { alreadyExists.reference }
             expect(keys[0]) { alreadyExists.key }
         }
@@ -77,7 +77,7 @@ class UniqueTest(
         dataStore.execute(UniqueModel.delete(keys[0]))
 
         dataStore.execute(addUniqueItem).statuses.forEach { status ->
-            assertType<AddSuccess<UniqueModel>>(status).also {
+            assertIs<AddSuccess<UniqueModel>>(status).also {
                 keys.add(it.key)
             }
         }
@@ -94,8 +94,8 @@ class UniqueTest(
             )
         )
         changeResponse.statuses.forEach { status ->
-            val fail = assertType<ValidationFail<UniqueModel>>(status)
-            val alreadyExists = assertType<AlreadyExistsException>(fail.exceptions.first())
+            val fail = assertIs<ValidationFail<UniqueModel>>(status)
+            val alreadyExists = assertIs<AlreadyExistsException>(fail.exceptions.first())
             expect(UniqueModel { email::ref }) { alreadyExists.reference }
             expect(keys[0]) { alreadyExists.key }
         }
@@ -103,7 +103,7 @@ class UniqueTest(
         dataStore.execute(UniqueModel.delete(keys[0]))
 
         dataStore.execute(addUniqueItem).statuses.forEach { status ->
-            assertType<AddSuccess<UniqueModel>>(status).also {
+            assertIs<AddSuccess<UniqueModel>>(status).also {
                 keys.add(it.key)
             }
         }

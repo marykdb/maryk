@@ -23,8 +23,8 @@ import maryk.core.query.requests.get
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.datastore.shared.IsDataStore
-import maryk.test.assertType
 import maryk.test.models.TestMarykModel
+import kotlin.test.assertIs
 import kotlin.test.expect
 
 class DataStoreChangeValidationTest(
@@ -84,7 +84,7 @@ class DataStoreChangeValidationTest(
         )
 
         addResponse.statuses.forEach { status ->
-            val response = assertType<AddSuccess<TestMarykModel>>(status)
+            val response = assertIs<AddSuccess<TestMarykModel>>(status)
             keys.add(response.key)
             lastVersions.add(response.version)
         }
@@ -111,10 +111,10 @@ class DataStoreChangeValidationTest(
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val validationFail = assertType<ValidationFail<*>>(status)
+            val validationFail = assertIs<ValidationFail<*>>(status)
             validationFail.exceptions.apply {
                 expect(1) { size }
-                assertType<InvalidValueException>(first())
+                assertIs<InvalidValueException>(first())
             }
         }
 
@@ -138,10 +138,10 @@ class DataStoreChangeValidationTest(
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val validationFail = assertType<ValidationFail<*>>(status)
+            val validationFail = assertIs<ValidationFail<*>>(status)
             validationFail.exceptions.apply {
                 expect(1) { size }
-                assertType<AlreadySetException>(first())
+                assertIs<AlreadySetException>(first())
             }
         }
 
@@ -169,10 +169,10 @@ class DataStoreChangeValidationTest(
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val validationFail = assertType<ValidationFail<*>>(status)
+            val validationFail = assertIs<ValidationFail<*>>(status)
             validationFail.exceptions.apply {
                 expect(1) { size }
-                assertType<TooManyItemsException>(first()).apply {
+                assertIs<TooManyItemsException>(first()).apply {
                     expect(9u) { size }
                 }
             }
@@ -203,10 +203,10 @@ class DataStoreChangeValidationTest(
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val validationFail = assertType<ValidationFail<*>>(status)
+            val validationFail = assertIs<ValidationFail<*>>(status)
             validationFail.exceptions.apply {
                 expect(1) { size }
-                assertType<InvalidSizeException>(first()).apply {
+                assertIs<InvalidSizeException>(first()).apply {
                     expect(TestMarykModel { listOfString refAt 0u }) { reference }
                     expect("verylongwrongvalue") { value }
                 }
@@ -241,10 +241,10 @@ class DataStoreChangeValidationTest(
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val validationFail = assertType<ValidationFail<*>>(status)
+            val validationFail = assertIs<ValidationFail<*>>(status)
             validationFail.exceptions.apply {
                 expect(1) { size }
-                assertType<TooManyItemsException>(first()).apply {
+                assertIs<TooManyItemsException>(first()).apply {
                     expect(6u) { size }
                 }
             }
@@ -275,10 +275,10 @@ class DataStoreChangeValidationTest(
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val validationFail = assertType<ValidationFail<*>>(status)
+            val validationFail = assertIs<ValidationFail<*>>(status)
             validationFail.exceptions.apply {
                 expect(1) { size }
-                assertType<OutOfRangeException>(first()).apply {
+                assertIs<OutOfRangeException>(first()).apply {
                     expect(LocalDate(2101, 12, 31).toString()) { value }
                 }
             }
@@ -308,10 +308,10 @@ class DataStoreChangeValidationTest(
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val validationFail = assertType<ValidationFail<*>>(status)
+            val validationFail = assertIs<ValidationFail<*>>(status)
             validationFail.exceptions.apply {
                 expect(1) { size }
-                assertType<TooManyItemsException>(first()).apply {
+                assertIs<TooManyItemsException>(first()).apply {
                     expect(6u) { size }
                 }
             }
@@ -347,13 +347,13 @@ class DataStoreChangeValidationTest(
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val validationFail = assertType<ValidationFail<*>>(status)
+            val validationFail = assertIs<ValidationFail<*>>(status)
             validationFail.exceptions.apply {
                 expect(2) { size }
-                assertType<OutOfRangeException>(first()).apply {
+                assertIs<OutOfRangeException>(first()).apply {
                     expect(TestMarykModel { map refToKey LocalTime(23, 52, 53) }) { reference }
                 }
-                assertType<InvalidSizeException>(this[1]).apply {
+                assertIs<InvalidSizeException>(this[1]).apply {
                     expect(TestMarykModel { map refAt LocalTime(1, 52, 53) }) { reference }
                 }
             }
@@ -387,10 +387,10 @@ class DataStoreChangeValidationTest(
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val validationFail = assertType<ValidationFail<*>>(status)
+            val validationFail = assertIs<ValidationFail<*>>(status)
             validationFail.exceptions.apply {
                 expect(1) { size }
-                assertType<NotEnoughItemsException>(first()).apply {
+                assertIs<NotEnoughItemsException>(first()).apply {
                     expect(0u) { size }
                 }
             }

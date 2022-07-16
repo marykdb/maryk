@@ -14,10 +14,10 @@ import maryk.json.JsonReader
 import maryk.json.JsonWriter
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
-import maryk.test.assertType
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertIs
 import kotlin.test.expect
 
 internal class MapDefinitionWithMapTest {
@@ -67,21 +67,21 @@ internal class MapDefinitionWithMapTest {
         }
         expect(2) { e.exceptions.size }
 
-        assertType<ValidationUmbrellaException>(e.exceptions[0]).let { se ->
+        assertIs<ValidationUmbrellaException>(e.exceptions[0]).let { se ->
             expect("@12.@40") {
-                assertType<InvalidValueException>(se.exceptions[0]).reference!!.completeName
+                assertIs<InvalidValueException>(se.exceptions[0]).reference!!.completeName
             }
             expect("@12.#1323") {
-                assertType<OutOfRangeException>(se.exceptions[1]).reference!!.completeName
+                assertIs<OutOfRangeException>(se.exceptions[1]).reference!!.completeName
             }
             expect("@12.#2938") {
-                assertType<OutOfRangeException>(se.exceptions[2]).reference!!.completeName
+                assertIs<OutOfRangeException>(se.exceptions[2]).reference!!.completeName
             }
         }
 
-        assertType<ValidationUmbrellaException>(e.exceptions[1]).apply {
+        assertIs<ValidationUmbrellaException>(e.exceptions[1]).apply {
             expect("@13.@41") {
-                assertType<InvalidValueException>(exceptions[0]).reference!!.completeName
+                assertIs<InvalidValueException>(exceptions[0]).reference!!.completeName
             }
         }
     }

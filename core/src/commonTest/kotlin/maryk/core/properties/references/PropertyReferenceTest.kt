@@ -18,12 +18,12 @@ import maryk.core.properties.references.dsl.any
 import maryk.core.protobuf.WriteCache
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
-import maryk.test.assertType
 import maryk.test.models.ComplexModel
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
@@ -154,7 +154,7 @@ internal class PropertyReferenceTest {
     fun createMatcher() {
         val matcher = subRef.toQualifierMatcher()
 
-        assertType<QualifierExactMatcher>(matcher).apply {
+        assertIs<QualifierExactMatcher>(matcher).apply {
             expect("1609") { qualifier.toHex() }
         }
     }
@@ -163,11 +163,11 @@ internal class PropertyReferenceTest {
     fun createReferenceMatcher() {
         val matcher = TestMarykModel { reference { string::ref } }.toQualifierMatcher()
 
-        assertType<QualifierExactMatcher>(matcher).apply {
+        assertIs<QualifierExactMatcher>(matcher).apply {
             expect("71") { qualifier.toHex() }
-            assertType<ReferencedQualifierMatcher>(referencedQualifierMatcher).apply {
+            assertIs<ReferencedQualifierMatcher>(referencedQualifierMatcher).apply {
                 expect(TestMarykModel { reference::ref }) { reference }
-                assertType<QualifierExactMatcher>(qualifierMatcher).apply {
+                assertIs<QualifierExactMatcher>(qualifierMatcher).apply {
                     expect("09") { qualifier.toHex() }
                 }
             }
@@ -178,28 +178,28 @@ internal class PropertyReferenceTest {
     fun createFuzzyReferenceMatcher() {
         val matcher = ComplexModel { incMap.any { marykModel { reference { map.refToAny() } } } }.toQualifierMatcher()
 
-        assertType<QualifierFuzzyMatcher>(matcher).apply {
+        assertIs<QualifierFuzzyMatcher>(matcher).apply {
             expect("44") { firstPossible().toHex() }
             expect(2) { qualifierParts.size }
             expect("1e71") { qualifierParts[1].toHex() }
             expect(1) { fuzzyMatchers.size }
 
             fuzzyMatchers.first().let { matcher ->
-                assertType<FuzzyExactLengthMatch>(matcher).apply {
+                assertIs<FuzzyExactLengthMatch>(matcher).apply {
                     expect(4) { length }
                 }
             }
 
-            assertType<ReferencedQualifierMatcher>(referencedQualifierMatcher).apply {
+            assertIs<ReferencedQualifierMatcher>(referencedQualifierMatcher).apply {
                 expect(ComplexModel { incMap.any { marykModel { reference::ref } } }) { reference }
 
-                assertType<QualifierFuzzyMatcher>(qualifierMatcher).apply {
+                assertIs<QualifierFuzzyMatcher>(qualifierMatcher).apply {
                     expect("54") { firstPossible().toHex() }
                     expect(1) { qualifierParts.size }
                     expect(1) { fuzzyMatchers.size }
 
                     fuzzyMatchers.first().let { matcher ->
-                        assertType<FuzzyExactLengthMatch>(matcher).apply {
+                        assertIs<FuzzyExactLengthMatch>(matcher).apply {
                             expect(3) { length }
                         }
                     }

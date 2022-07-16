@@ -18,12 +18,12 @@ import maryk.core.query.requests.get
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.datastore.shared.IsDataStore
-import maryk.test.assertType
 import maryk.test.models.ComplexModel
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.MarykTypeEnum
 import maryk.test.models.MarykTypeEnum.T1
 import maryk.test.models.MarykTypeEnum.T3
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.expect
@@ -111,7 +111,7 @@ class DataStoreChangeComplexTest(
         )
 
         addResponse.statuses.forEach { status ->
-            val response = assertType<AddSuccess<ComplexModel>>(status)
+            val response = assertIs<AddSuccess<ComplexModel>>(status)
             keys.add(response.key)
             lastVersions.add(response.version)
         }
@@ -136,7 +136,7 @@ class DataStoreChangeComplexTest(
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = assertType<ChangeSuccess<*>>(status)
+            val success = assertIs<ChangeSuccess<*>>(status)
             assertRecent(success.version, 1000uL)
         }
 
@@ -160,7 +160,7 @@ class DataStoreChangeComplexTest(
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = assertType<ChangeSuccess<*>>(status)
+            val success = assertIs<ChangeSuccess<*>>(status)
             assertRecent(success.version, 1000uL)
         }
 
@@ -183,7 +183,7 @@ class DataStoreChangeComplexTest(
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = assertType<ChangeSuccess<*>>(status)
+            val success = assertIs<ChangeSuccess<*>>(status)
             assertRecent(success.version, 1000uL)
         }
 
@@ -210,7 +210,7 @@ class DataStoreChangeComplexTest(
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = assertType<ChangeSuccess<*>>(status)
+            val success = assertIs<ChangeSuccess<*>>(status)
             assertRecent(success.version, 1000uL)
         }
 
@@ -242,7 +242,7 @@ class DataStoreChangeComplexTest(
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = assertType<ChangeSuccess<*>>(status)
+            val success = assertIs<ChangeSuccess<*>>(status)
             assertRecent(success.version, 1000uL)
         }
 
@@ -280,7 +280,7 @@ class DataStoreChangeComplexTest(
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = assertType<ChangeSuccess<*>>(status)
+            val success = assertIs<ChangeSuccess<*>>(status)
             assertRecent(success.version, 1000uL)
         }
 
@@ -338,7 +338,7 @@ class DataStoreChangeComplexTest(
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = assertType<ChangeSuccess<*>>(status)
+            val success = assertIs<ChangeSuccess<*>>(status)
             assertRecent(success.version, 1000uL)
         }
 
@@ -379,7 +379,7 @@ class DataStoreChangeComplexTest(
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            assertType<ChangeSuccess<*>>(status).apply {
+            assertIs<ChangeSuccess<*>>(status).apply {
                 expect(
                     listOf(
                         IncMapAddition(

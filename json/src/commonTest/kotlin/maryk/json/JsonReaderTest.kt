@@ -6,9 +6,9 @@ import maryk.json.JsonToken.Stopped
 import maryk.json.JsonToken.Suspended
 import maryk.json.ValueType.Bool
 import maryk.json.ValueType.Null
-import maryk.test.assertType
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import kotlin.test.expect
 
@@ -98,19 +98,19 @@ internal class JsonReaderTest {
             assertFieldName("1")
             skipUntilNextField()
 
-            expect("2") { assertType<FieldName>(currentToken).value }
+            expect("2") { assertIs<FieldName>(currentToken).value }
             skipUntilNextField()
 
-            expect("3") { assertType<FieldName>(currentToken).value }
+            expect("3") { assertIs<FieldName>(currentToken).value }
             skipUntilNextField()
 
-            expect("4") { assertType<FieldName>(currentToken).value }
+            expect("4") { assertIs<FieldName>(currentToken).value }
 
             assertValue(true, Bool)
 
             nextToken()
 
-            expect("5") { assertType<FieldName>(currentToken).value }
+            expect("5") { assertIs<FieldName>(currentToken).value }
             skipUntilNextField()
 
             expect(EndObject) { this.currentToken }

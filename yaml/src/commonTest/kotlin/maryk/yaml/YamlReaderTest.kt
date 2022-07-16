@@ -4,9 +4,9 @@ import maryk.json.IsJsonLikeReader
 import maryk.json.JsonToken.EndObject
 import maryk.json.JsonToken.FieldName
 import maryk.json.ValueType
-import maryk.test.assertType
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
+import kotlin.test.assertIs
 import kotlin.test.expect
 
 class YamlReaderTest {
@@ -68,7 +68,7 @@ class YamlReaderTest {
 
     private fun IsJsonLikeReader.assertCurrentFieldName(value: String) {
         this.currentToken.apply {
-            expect(value) { assertType<FieldName>(this).value }
+            expect(value) { assertIs<FieldName>(this).value }
         }
     }
 

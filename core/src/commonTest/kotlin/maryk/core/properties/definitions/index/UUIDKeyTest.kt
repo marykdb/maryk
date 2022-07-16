@@ -10,8 +10,8 @@ import maryk.core.properties.definitions.string
 import maryk.lib.extensions.initByteArrayByHex
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
-import maryk.test.assertType
 import kotlin.test.Test
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import kotlin.test.expect
 
@@ -60,7 +60,7 @@ internal class UUIDKeyTest {
 
         val keyDef = MarykModel.keyDefinition
 
-        assertType<UUIDKey>(keyDef).apply {
+        assertIs<UUIDKey>(keyDef).apply {
             var index = 0
             val uuid = readStorageBytes(key.size) {
                 key.bytes[index++]

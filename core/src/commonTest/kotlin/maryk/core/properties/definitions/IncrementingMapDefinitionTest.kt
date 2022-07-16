@@ -17,11 +17,11 @@ import maryk.json.JsonReader
 import maryk.json.JsonWriter
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
-import maryk.test.assertType
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import kotlin.test.expect
 
@@ -103,7 +103,7 @@ internal class IncrementingMapDefinitionTest {
         }
         expect(1) { e.exceptions.size }
 
-        assertType<InvalidValueException>(e.exceptions[0]).apply {
+        assertIs<InvalidValueException>(e.exceptions[0]).apply {
             expect("@30") { this.reference!!.completeName }
         }
     }

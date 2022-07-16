@@ -25,10 +25,10 @@ import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.datastore.shared.IsDataStore
-import maryk.test.assertType
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.SimpleMarykTypeEnum.S1
 import maryk.test.models.TestMarykModel
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.expect
@@ -121,7 +121,7 @@ class DataStoreChangeTest(
         )
 
         addResponse.statuses.forEach { status ->
-            val response = assertType<AddSuccess<TestMarykModel>>(status)
+            val response = assertIs<AddSuccess<TestMarykModel>>(status)
             keys.add(response.key)
             lastVersions.add(response.version)
         }
@@ -161,20 +161,20 @@ class DataStoreChangeTest(
 
         expect(3) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = assertType<ChangeSuccess<*>>(status)
+            val success = assertIs<ChangeSuccess<*>>(status)
             assertRecent(success.version, 1000uL)
         }
 
         changeResponse.statuses[1].let { status ->
-            val validationFail = assertType<ValidationFail<*>>(status)
+            val validationFail = assertIs<ValidationFail<*>>(status)
             expect(1) { validationFail.exceptions.size }
-            assertType<InvalidValueException>(validationFail.exceptions[0])
+            assertIs<InvalidValueException>(validationFail.exceptions[0])
         }
 
         changeResponse.statuses[2].let { status ->
-            val validationFail = assertType<ValidationFail<*>>(status)
+            val validationFail = assertIs<ValidationFail<*>>(status)
             expect(1) { validationFail.exceptions.size }
-            assertType<InvalidValueException>(validationFail.exceptions[0])
+            assertIs<InvalidValueException>(validationFail.exceptions[0])
         }
     }
 
@@ -200,7 +200,7 @@ class DataStoreChangeTest(
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = assertType<ChangeSuccess<*>>(status)
+            val success = assertIs<ChangeSuccess<*>>(status)
             assertRecent(success.version, 1000uL)
         }
 
@@ -231,7 +231,7 @@ class DataStoreChangeTest(
         )
 
         expect(1) { changeResponse.statuses.size }
-        assertType<ServerFail<*>>(changeResponse.statuses[0])
+        assertIs<ServerFail<*>>(changeResponse.statuses[0])
     }
 
     private suspend fun executeChangeChangeMapDoesNotExistRequest() {
@@ -246,7 +246,7 @@ class DataStoreChangeTest(
         )
 
         expect(1) { changeResponse.statuses.size }
-        assertType<ServerFail<*>>(changeResponse.statuses[0])
+        assertIs<ServerFail<*>>(changeResponse.statuses[0])
     }
 
     private suspend fun executeChangeChangeEmbedDoesNotExistRequest() {
@@ -261,7 +261,7 @@ class DataStoreChangeTest(
         )
 
         expect(1) { changeResponse.statuses.size }
-        assertType<ServerFail<*>>(changeResponse.statuses[0])
+        assertIs<ServerFail<*>>(changeResponse.statuses[0])
     }
 
     private suspend fun executeChangeDeleteRequest() {
@@ -275,7 +275,7 @@ class DataStoreChangeTest(
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = assertType<ChangeSuccess<*>>(status)
+            val success = assertIs<ChangeSuccess<*>>(status)
             assertRecent(success.version, 1000uL)
         }
 
@@ -301,7 +301,7 @@ class DataStoreChangeTest(
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = assertType<ChangeSuccess<*>>(status)
+            val success = assertIs<ChangeSuccess<*>>(status)
             assertRecent(success.version, 1000uL)
         }
 
@@ -329,7 +329,7 @@ class DataStoreChangeTest(
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = assertType<ChangeSuccess<*>>(status)
+            val success = assertIs<ChangeSuccess<*>>(status)
             assertRecent(success.version, 1000uL)
         }
 
@@ -366,7 +366,7 @@ class DataStoreChangeTest(
         )
 
         expect(1) { changeResponse.statuses.size }
-        assertType<ServerFail<*>>(changeResponse.statuses[0])
+        assertIs<ServerFail<*>>(changeResponse.statuses[0])
     }
 
     private suspend fun executeChangeListRequest() {
@@ -391,7 +391,7 @@ class DataStoreChangeTest(
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = assertType<ChangeSuccess<*>>(status)
+            val success = assertIs<ChangeSuccess<*>>(status)
             assertRecent(success.version, 1000uL)
         }
 
@@ -421,7 +421,7 @@ class DataStoreChangeTest(
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = assertType<ChangeSuccess<*>>(status)
+            val success = assertIs<ChangeSuccess<*>>(status)
             assertRecent(success.version, 1000uL)
         }
 
@@ -450,7 +450,7 @@ class DataStoreChangeTest(
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = assertType<ChangeSuccess<*>>(status)
+            val success = assertIs<ChangeSuccess<*>>(status)
             assertRecent(success.version, 1000uL)
         }
 
@@ -489,7 +489,7 @@ class DataStoreChangeTest(
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            assertType<ChangeSuccess<*>>(status).apply {
+            assertIs<ChangeSuccess<*>>(status).apply {
                 expect(
                     listOf(
                        IncMapAddition(

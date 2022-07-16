@@ -23,6 +23,6 @@ any of the functionalities exposed in this library, those functionalities will b
    * [DateTime](src/commonMain/kotlin/maryk/lib/time/DateTime.kt) -
      Object to help with some basic date time operations based on KotlinX LocalDateTime
    * [Time](src/commonMain/kotlin/maryk/lib/time/Time.kt) - 
-     Object to represent `Time`
+     Object to help with some basic time operations based on KotlinX LocalTime
 - [UUID.generateUUID()](src/commonMain/kotlin/maryk/lib/uuid/UUID.kt) - 
   Creates a `Pair` of `long` together representing a type 4 (Random) UUID 

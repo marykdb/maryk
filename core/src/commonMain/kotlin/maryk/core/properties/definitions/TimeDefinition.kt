@@ -1,6 +1,9 @@
 package maryk.core.properties.definitions
 
+import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initIntByVar
@@ -23,8 +26,6 @@ import maryk.core.protobuf.WriteCacheReader
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.SimpleObjectValues
 import maryk.lib.exceptions.ParseException
-import maryk.lib.time.Time
-import maryk.lib.time.nowUTC
 
 /** Definition for Time properties */
 data class TimeDefinition(
@@ -41,12 +42,10 @@ data class TimeDefinition(
     HasDefaultValueDefinition<LocalTime> {
     override val propertyDefinitionType = PropertyDefinitionType.Time
     override val wireType = VAR_INT
-    override val byteSize = Time.byteSize(precision)
-
-    fun createNow() = LocalTime.nowUTC()
+    override val byteSize = TimeDefinition.byteSize(precision)
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) =
-        Time.fromByteReader(length, reader)
+        LocalTime.fromByteReader(length, reader)
 
     override fun writeStorageBytes(value: LocalTime, writer: (byte: Byte) -> Unit) = value.writeBytes(precision, writer)
 
@@ -145,6 +144,14 @@ data class TimeDefinition(
             maxValue = values(6u),
             default = values(7u)
         )
+    }
+
+    companion object {
+        val MIN = LocalTime(0, 0)
+        val MAX_IN_SECONDS = LocalTime(23, 59, 59)
+        val MAX_IN_MILLIS = LocalTime(23, 59, 59, 999_000_000)
+
+        fun nowUTC() = Clock.System.now().toLocalDateTime(TimeZone.UTC).time
     }
 }
 

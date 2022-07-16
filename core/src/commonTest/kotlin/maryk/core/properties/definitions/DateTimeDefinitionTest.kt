@@ -12,8 +12,6 @@ import maryk.core.properties.types.DateUnit
 import maryk.core.properties.types.TimePrecision
 import maryk.core.properties.types.roundToDateUnit
 import maryk.lib.exceptions.ParseException
-import maryk.lib.time.DateTime
-import maryk.lib.time.nowUTC
 import maryk.test.ByteCollector
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
@@ -22,10 +20,10 @@ import kotlin.test.expect
 
 internal class DateTimeDefinitionTest {
     private val dateTimesToTest = arrayOf(
-        LocalDateTime.nowUTC().roundToDateUnit(DateUnit.Millis),
-        DateTime.MAX_IN_SECONDS,
-        DateTime.MAX_IN_MILLIS,
-        DateTime.MIN
+        DateTimeDefinition.nowUTC().roundToDateUnit(DateUnit.Millis),
+        DateTimeDefinition.MAX_IN_SECONDS,
+        DateTimeDefinition.MAX_IN_MILLIS,
+        DateTimeDefinition.MIN
     )
 
     private val def = DateTimeDefinition()
@@ -39,14 +37,14 @@ internal class DateTimeDefinitionTest {
         final = true,
         unique = true,
         precision = TimePrecision.MILLIS,
-        minValue = DateTime.MIN,
-        maxValue = DateTime.MAX_IN_MILLIS,
+        minValue = DateTimeDefinition.MIN,
+        maxValue = DateTimeDefinition.MAX_IN_MILLIS,
         default = LocalDateTime(1971, 1, 12, 13, 34, 22)
     )
 
     @Test
     fun createNowDateTime() {
-        val now = def.createNow().toInstant(UTC).toEpochMilliseconds()
+        val now = DateTimeDefinition.nowUTC().toInstant(UTC).toEpochMilliseconds()
         val expected = Clock.System.now().toEpochMilliseconds()
 
         assertTrue("$now is diverging too much from $expected time") {
@@ -57,7 +55,7 @@ internal class DateTimeDefinitionTest {
     @Test
     fun convertValuesWithMillisecondsPrecisionToStorageBytesAndBack() {
         val bc = ByteCollector()
-        for (dateTime in arrayOf(LocalDateTime.nowUTC().roundToDateUnit(DateUnit.Millis), DateTime.MAX_IN_MILLIS)) {
+        for (dateTime in arrayOf(DateTimeDefinition.nowUTC().roundToDateUnit(DateUnit.Millis), DateTimeDefinition.MAX_IN_MILLIS)) {
             bc.reserve(
                 defMilli.calculateStorageByteLength(dateTime)
             )
@@ -72,7 +70,7 @@ internal class DateTimeDefinitionTest {
     @Test
     fun convertValuesWithSecondsPrecisionToStorageBytesAndBack() {
         val bc = ByteCollector()
-        for (dateTime in arrayOf(DateTime.MAX_IN_SECONDS, DateTime.MIN)) {
+        for (dateTime in arrayOf(DateTimeDefinition.MAX_IN_SECONDS, DateTimeDefinition.MIN)) {
             bc.reserve(
                 def.calculateStorageByteLength(dateTime)
             )
@@ -89,7 +87,7 @@ internal class DateTimeDefinitionTest {
         val bc = ByteCollector()
         val cacheFailer = WriteCacheFailer()
 
-        for (dateTime in arrayOf(DateTime.MIN, LocalDateTime.nowUTC().roundToDateUnit(DateUnit.Millis), DateTime.MAX_IN_MILLIS)) {
+        for (dateTime in arrayOf(DateTimeDefinition.MIN, DateTimeDefinition.nowUTC().roundToDateUnit(DateUnit.Millis), DateTimeDefinition.MAX_IN_MILLIS)) {
             bc.reserve(defMilli.calculateTransportByteLength(dateTime, cacheFailer))
             defMilli.writeTransportBytes(dateTime, cacheFailer, bc::write)
             expect(dateTime) {
@@ -104,7 +102,7 @@ internal class DateTimeDefinitionTest {
         val bc = ByteCollector()
         val cacheFailer = WriteCacheFailer()
 
-        for (dateTime in arrayOf(DateTime.MAX_IN_SECONDS, DateTime.MIN)) {
+        for (dateTime in arrayOf(DateTimeDefinition.MAX_IN_SECONDS, DateTimeDefinition.MIN)) {
             bc.reserve(def.calculateTransportByteLength(dateTime, cacheFailer))
             def.writeTransportBytes(dateTime, cacheFailer, bc::write)
             expect(dateTime) { def.readTransportBytes(bc.size, bc::read) }

@@ -1,6 +1,5 @@
 package maryk.core.models
 
-import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
@@ -26,7 +25,6 @@ import maryk.core.properties.types.numeric.SInt32
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.yaml.MarykYamlReader
-import maryk.lib.time.nowUTC
 import maryk.test.ByteCollector
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.Option
@@ -54,7 +52,7 @@ internal class RootDataModelTest {
                     double = 6.33,
                     bool = true,
                     enum = V3,
-                    dateTime = LocalDateTime.nowUTC()
+                    dateTime = DateTimeDefinition.nowUTC()
                 )
             )
         }

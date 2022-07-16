@@ -1,8 +1,7 @@
 package maryk.core.properties.types
 
 import kotlinx.datetime.LocalTime
-import maryk.lib.time.Time
-import maryk.lib.time.nowUTC
+import maryk.core.properties.definitions.TimeDefinition
 import maryk.test.ByteCollector
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
@@ -13,15 +12,15 @@ internal class TimeTest {
     private fun cleanToMilliSeconds(time: LocalTime) = LocalTime(time.hour, time.minute, time.second, time.nanosecond - (time.nanosecond % 1_000_000))
 
     private val timesWithSecondsToTest = arrayOf(
-        cleanToSeconds(LocalTime.nowUTC()),
-        Time.MAX_IN_SECONDS,
-        Time.MIN
+        cleanToSeconds(TimeDefinition.nowUTC()),
+        TimeDefinition.MAX_IN_SECONDS,
+        TimeDefinition.MIN
     )
 
     private val timesWithMillisToTest = arrayOf(
-        cleanToMilliSeconds(LocalTime.nowUTC()),
-        Time.MAX_IN_MILLIS,
-        Time.MIN
+        cleanToMilliSeconds(TimeDefinition.nowUTC()),
+        TimeDefinition.MAX_IN_MILLIS,
+        TimeDefinition.MIN
     )
 
     @Test
@@ -30,7 +29,7 @@ internal class TimeTest {
         for (time in timesWithSecondsToTest) {
             bc.reserve(3)
             time.writeBytes(TimePrecision.SECONDS, bc::write)
-            expect(time) { Time.fromByteReader(bc.size, bc::read) }
+            expect(time) { LocalTime.fromByteReader(bc.size, bc::read) }
             bc.reset()
         }
     }
@@ -41,7 +40,7 @@ internal class TimeTest {
         for (time in timesWithMillisToTest) {
             bc.reserve(4)
             time.writeBytes(TimePrecision.MILLIS, bc::write)
-            expect(time) { Time.fromByteReader(bc.size, bc::read) }
+            expect(time) { LocalTime.fromByteReader(bc.size, bc::read) }
             bc.reset()
         }
     }
@@ -49,7 +48,7 @@ internal class TimeTest {
     @Test
     fun testWrongByteSizeError() {
         assertFailsWith<IllegalArgumentException> {
-            Time.fromByteReader(22) { 1 }
+            LocalTime.fromByteReader(22) { 1 }
         }
     }
 }

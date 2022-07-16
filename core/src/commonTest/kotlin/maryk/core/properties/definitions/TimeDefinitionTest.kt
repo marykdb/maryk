@@ -8,8 +8,6 @@ import maryk.checkYamlConversion
 import maryk.core.properties.WriteCacheFailer
 import maryk.core.properties.types.TimePrecision
 import maryk.lib.exceptions.ParseException
-import maryk.lib.time.Time
-import maryk.lib.time.nowUTC
 import maryk.test.ByteCollector
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
@@ -19,13 +17,13 @@ import kotlin.test.expect
 internal class TimeDefinitionTest {
     private val timesToTestMillis = arrayOf(
         LocalTime(12, 3, 5, 50_000_000),
-        LocalTime.fromMillisecondOfDay(LocalTime.nowUTC().toMillisecondOfDay()),
-        Time.MAX_IN_SECONDS,
-        Time.MAX_IN_MILLIS,
-        Time.MIN
+        LocalTime.fromMillisecondOfDay(TimeDefinition.nowUTC().toMillisecondOfDay()),
+        TimeDefinition.MAX_IN_SECONDS,
+        TimeDefinition.MAX_IN_MILLIS,
+        TimeDefinition.MIN
     )
 
-    private val timesToTestSeconds = arrayOf(Time.MAX_IN_SECONDS, Time.MIN, LocalTime(13, 55, 44))
+    private val timesToTestSeconds = arrayOf(TimeDefinition.MAX_IN_SECONDS, TimeDefinition.MIN, LocalTime(13, 55, 44))
 
     private val def = TimeDefinition()
 
@@ -37,8 +35,8 @@ internal class TimeDefinitionTest {
         required = false,
         final = true,
         unique = true,
-        minValue = Time.MIN,
-        maxValue = Time.MAX_IN_MILLIS,
+        minValue = TimeDefinition.MIN,
+        maxValue = TimeDefinition.MAX_IN_MILLIS,
         precision = TimePrecision.MILLIS,
         default = LocalTime(12, 13, 14)
     )
@@ -46,7 +44,7 @@ internal class TimeDefinitionTest {
     @Test
     fun createNowTime() {
         val expected = Clock.System.now().toEpochMilliseconds() % (24 * 60 * 60 * 1000) / 1000
-        val now = def.createNow().toSecondOfDay()
+        val now = TimeDefinition.nowUTC().toSecondOfDay()
 
         assertTrue("$now is diverging too much from $expected time") {
             expected - now in -1..1
@@ -56,7 +54,7 @@ internal class TimeDefinitionTest {
     @Test
     fun convertMillisecondPrecisionValuesToStorageBytesAndBack() {
         val bc = ByteCollector()
-        for (time in arrayOf(Time.MAX_IN_MILLIS, Time.MIN)) {
+        for (time in arrayOf(TimeDefinition.MAX_IN_MILLIS, TimeDefinition.MIN)) {
             bc.reserve(
                 defMilli.calculateStorageByteLength(time)
             )

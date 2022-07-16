@@ -6,6 +6,7 @@ import kotlinx.datetime.LocalTime
 import kotlinx.datetime.Month
 import kotlinx.datetime.atTime
 import maryk.core.exceptions.TypeException
+import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IsCoreEnum
@@ -21,7 +22,6 @@ import maryk.core.properties.types.DateUnit.Seconds
 import maryk.core.properties.types.DateUnit.Years
 import maryk.json.MapType
 import maryk.lib.exceptions.ParseException
-import maryk.lib.time.Time
 
 enum class DateUnit(
     override val index: UInt,
@@ -63,7 +63,7 @@ fun LocalTime.roundToDateUnit(dateUnit: DateUnit) = when (dateUnit) {
     Seconds -> LocalTime(hour, minute, second)
     Minutes -> LocalTime(hour, minute)
     Hours -> LocalTime(hour, 0)
-    else -> Time.MIDNIGHT
+    else -> TimeDefinition.MIN
 }
 
 /** Round DateTime to the [dateUnit] */

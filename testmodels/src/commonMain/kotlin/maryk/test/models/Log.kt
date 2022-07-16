@@ -3,6 +3,7 @@ package maryk.test.models
 import kotlinx.datetime.LocalDateTime
 import maryk.core.models.RootDataModel
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.definitions.DateTimeDefinition
 import maryk.core.properties.definitions.dateTime
 import maryk.core.properties.definitions.enum
 import maryk.core.properties.definitions.index.Multiple
@@ -11,7 +12,6 @@ import maryk.core.properties.definitions.string
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IndexedEnumImpl
 import maryk.core.properties.types.TimePrecision.MILLIS
-import maryk.lib.time.nowUTC
 import maryk.test.models.Log.Properties
 import maryk.test.models.Log.Properties.severity
 import maryk.test.models.Log.Properties.timestamp
@@ -60,7 +60,7 @@ object Log : RootDataModel<Log, Properties>(
     operator fun invoke(
         message: String,
         severity: Severity = INFO,
-        timestamp: LocalDateTime = LocalDateTime.nowUTC()
+        timestamp: LocalDateTime = DateTimeDefinition.nowUTC()
     ) = this.values {
         mapNonNulls(
             this.timestamp with timestamp,

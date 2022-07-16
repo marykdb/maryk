@@ -4,7 +4,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import maryk.lib.time.Date
+import maryk.core.properties.definitions.DateDefinition
 import maryk.test.ByteCollector
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
@@ -13,8 +13,8 @@ import kotlin.test.expect
 internal class DateTest {
     private val datesToTest = arrayOf(
         Clock.System.now().toLocalDateTime(TimeZone.UTC).date,
-        Date.MAX,
-        Date.MIN
+        DateDefinition.MAX,
+        DateDefinition.MIN
     )
 
     @Test

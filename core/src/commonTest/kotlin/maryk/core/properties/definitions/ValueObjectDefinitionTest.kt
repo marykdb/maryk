@@ -9,7 +9,6 @@ import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.types.DateUnit
 import maryk.core.properties.types.roundToDateUnit
 import maryk.core.query.DefinitionsContext
-import maryk.lib.time.nowUTC
 import maryk.test.ByteCollector
 import maryk.test.models.TestValueObject
 import maryk.test.models.TestValueObject2
@@ -53,7 +52,7 @@ internal class ValueObjectDefinitionTest {
 
     val value = TestValueObject(
         int = 4,
-        dateTime = LocalDateTime.nowUTC().roundToDateUnit(DateUnit.Seconds),
+        dateTime = DateTimeDefinition.nowUTC().roundToDateUnit(DateUnit.Seconds),
         bool = true
     )
 
@@ -90,7 +89,7 @@ internal class ValueObjectDefinitionTest {
         def.validateWithRef(
             newValue = TestValueObject(
                 int = 4,
-                dateTime = LocalDateTime.nowUTC(),
+                dateTime = DateTimeDefinition.nowUTC(),
                 bool = true
             )
         )
@@ -98,7 +97,7 @@ internal class ValueObjectDefinitionTest {
             def.validateWithRef(
                 newValue = TestValueObject(
                     int = 1000,
-                    dateTime = LocalDateTime.nowUTC(),
+                    dateTime = DateTimeDefinition.nowUTC(),
                     bool = true
                 )
             )

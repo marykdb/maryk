@@ -4,6 +4,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone.Companion.UTC
+import kotlinx.datetime.atTime
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import maryk.core.exceptions.ContextNotFoundException
@@ -42,14 +43,11 @@ data class DateTimeDefinition(
     override val default: LocalDateTime? = null
 ) :
     IsTimeDefinition<LocalDateTime>,
-    IsSerializableFixedBytesEncodable<LocalDateTime, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<LocalDateTime>,
     HasDefaultValueDefinition<LocalDateTime> {
     override val propertyDefinitionType = PropertyDefinitionType.DateTime
     override val wireType = VAR_INT
-    override val byteSize = LocalDateTime.byteSize(precision)
-
-    fun createNow() = Clock.System.now().toLocalDateTime(UTC)
+    override val byteSize = DateTimeDefinition.byteSize(precision)
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) = LocalDateTime.fromByteReader(length, reader)
 
@@ -146,6 +144,14 @@ data class DateTimeDefinition(
             maxValue = values(6u),
             default = values(7u)
         )
+    }
+
+    companion object {
+        val MIN = DateDefinition.MIN.atTime(0, 0)
+        val MAX_IN_SECONDS = DateDefinition.MAX.atTime(23, 59, 59)
+        val MAX_IN_MILLIS = DateDefinition.MAX.atTime(23, 59, 59, 999000000)
+
+        fun nowUTC() = Clock.System.now().toLocalDateTime(UTC)
     }
 }
 

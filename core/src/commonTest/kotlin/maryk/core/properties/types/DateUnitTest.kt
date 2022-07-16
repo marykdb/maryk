@@ -3,6 +3,7 @@ package maryk.core.properties.types
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
+import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.types.DateUnit.Centuries
 import maryk.core.properties.types.DateUnit.Days
 import maryk.core.properties.types.DateUnit.Decades
@@ -14,7 +15,6 @@ import maryk.core.properties.types.DateUnit.Months
 import maryk.core.properties.types.DateUnit.Quarters
 import maryk.core.properties.types.DateUnit.Seconds
 import maryk.core.properties.types.DateUnit.Years
-import maryk.lib.time.Time
 import kotlin.test.Test
 import kotlin.test.expect
 
@@ -137,31 +137,31 @@ class DateUnitTest {
             time.roundToDateUnit(Hours)
         }
 
-        expect(Time.MIDNIGHT) {
+        expect(TimeDefinition.MIN) {
             time.roundToDateUnit(Days)
         }
 
-        expect(Time.MIDNIGHT) {
+        expect(TimeDefinition.MIN) {
             time.roundToDateUnit(Months)
         }
 
-        expect(Time.MIDNIGHT) {
+        expect(TimeDefinition.MIN) {
             time.roundToDateUnit(Quarters)
         }
 
-        expect(Time.MIDNIGHT) {
+        expect(TimeDefinition.MIN) {
             time.roundToDateUnit(Years)
         }
 
-        expect(Time.MIDNIGHT) {
+        expect(TimeDefinition.MIN) {
             time.roundToDateUnit(Decades)
         }
 
-        expect(Time.MIDNIGHT) {
+        expect(TimeDefinition.MIN) {
             time.roundToDateUnit(Centuries)
         }
 
-        expect(Time.MIDNIGHT) {
+        expect(TimeDefinition.MIN) {
             time.roundToDateUnit(Millennia)
         }
     }

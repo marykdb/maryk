@@ -1,8 +1,7 @@
 package maryk.core.properties.types
 
 import kotlinx.datetime.LocalDateTime
-import maryk.lib.time.DateTime
-import maryk.lib.time.nowUTC
+import maryk.core.properties.definitions.DateTimeDefinition
 import maryk.test.ByteCollector
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
@@ -22,16 +21,16 @@ internal class DateTimeTest {
     )
 
     private val dateTimesWithSecondsToTest = arrayOf(
-        cleanToSeconds(LocalDateTime.nowUTC()),
-        cleanToSeconds(DateTime.MAX_IN_SECONDS),
+        cleanToSeconds(DateTimeDefinition.nowUTC()),
+        cleanToSeconds(DateTimeDefinition.MAX_IN_SECONDS),
         cleanToSeconds(dateTime),
-        DateTime.MIN
+        DateTimeDefinition.MIN
     )
 
     private val dateTimesWithMillisToTest = arrayOf(
-        LocalDateTime.nowUTC().roundToDateUnit(DateUnit.Millis),
-        DateTime.MAX_IN_MILLIS,
-        DateTime.MIN
+        DateTimeDefinition.nowUTC().roundToDateUnit(DateUnit.Millis),
+        DateTimeDefinition.MAX_IN_MILLIS,
+        DateTimeDefinition.MIN
     )
 
     @Test

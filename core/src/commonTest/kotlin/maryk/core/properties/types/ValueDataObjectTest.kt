@@ -1,7 +1,6 @@
 package maryk.core.properties.types
 
-import kotlinx.datetime.LocalDateTime
-import maryk.lib.time.nowUTC
+import maryk.core.properties.definitions.DateTimeDefinition
 import maryk.test.models.TestValueObject
 import kotlin.test.Test
 import kotlin.test.expect
@@ -9,13 +8,13 @@ import kotlin.test.expect
 internal class ValueDataObjectTest {
     private val value = TestValueObject(
         int = 4,
-        dateTime = LocalDateTime.nowUTC().roundToDateUnit(DateUnit.Seconds),
+        dateTime = DateTimeDefinition.nowUTC().roundToDateUnit(DateUnit.Seconds),
         bool = true
     )
 
     private val value2 = TestValueObject(
         int = 5,
-        dateTime = LocalDateTime.nowUTC().roundToDateUnit(DateUnit.Seconds),
+        dateTime = DateTimeDefinition.nowUTC().roundToDateUnit(DateUnit.Seconds),
         bool = false
     )
 

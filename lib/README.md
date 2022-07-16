@@ -17,12 +17,5 @@ any of the functionalities exposed in this library, those functionalities will b
 -  [Streaming String readers and writers](src/commonMain/kotlin/maryk/lib/bytes/String.kt)
 -  [ParseException](src/commonMain/kotlin/maryk/lib/exceptions/ParseException.kt)
 -  [Extensions to base types](src/commonMain/kotlin/maryk/lib/extensions)
--  Date/Time functionality
-   * [Date](src/commonMain/kotlin/maryk/lib/time/Date.kt) - 
-     Object to help with some basic date operations based on KotlinX LocalDate
-   * [DateTime](src/commonMain/kotlin/maryk/lib/time/DateTime.kt) -
-     Object to help with some basic date time operations based on KotlinX LocalDateTime
-   * [Time](src/commonMain/kotlin/maryk/lib/time/Time.kt) - 
-     Object to help with some basic time operations based on KotlinX LocalTime
-- [UUID.generateUUID()](src/commonMain/kotlin/maryk/lib/uuid/UUID.kt) - 
-  Creates a `Pair` of `long` together representing a type 4 (Random) UUID 
+-  [UUID.generateUUID()](src/commonMain/kotlin/maryk/lib/uuid/UUID.kt) - 
+   Creates a `Pair` of `long` together representing a type 4 (Random) UUID 

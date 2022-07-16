@@ -5,10 +5,10 @@ package maryk.core.properties.types
 import kotlinx.datetime.LocalTime
 import maryk.core.extensions.bytes.initUInt
 import maryk.core.extensions.bytes.writeBytes
+import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IsCoreEnum
-import maryk.lib.time.Time
 
 enum class TimePrecision(
     override val index: UInt,
@@ -28,13 +28,13 @@ internal fun LocalTime.writeBytes(precision: TimePrecision, writer: (byte: Byte)
     }
 }
 
-internal fun Time.byteSize(precision: TimePrecision) = when (precision) {
+internal fun TimeDefinition.Companion.byteSize(precision: TimePrecision) = when (precision) {
     TimePrecision.MILLIS -> 4
     TimePrecision.SECONDS -> 3
 }
 
-internal fun Time.fromByteReader(length: Int, reader: () -> Byte): LocalTime = when (length) {
-    4 -> LocalTime.fromMillisecondOfDay(initUInt(reader).toInt())
-    3 -> LocalTime.fromSecondOfDay(initUInt(reader, length).toInt())
+internal fun LocalTime.Companion.fromByteReader(length: Int, reader: () -> Byte): LocalTime = when (length) {
+    4 -> fromMillisecondOfDay(initUInt(reader).toInt())
+    3 -> fromSecondOfDay(initUInt(reader, length).toInt())
     else -> throw IllegalArgumentException("Invalid length for bytes for Time conversion: $length")
 }

@@ -1,7 +1,10 @@
 package maryk.core.properties.definitions
 
+import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.decodeZigZag
 import maryk.core.extensions.bytes.encodeZigZag
@@ -106,6 +109,13 @@ data class DateDefinition(
             maxValue = values(5u),
             default = values(6u)
         )
+    }
+
+    companion object {
+        val MIN = LocalDate(-999_999, 1, 1)
+        val MAX = LocalDate(999_999, 12, 31)
+
+        fun nowUTC() = Clock.System.now().toLocalDateTime(TimeZone.UTC).date
     }
 }
 

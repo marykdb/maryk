@@ -15,6 +15,15 @@ import kotlin.test.assertTrue
 import kotlin.test.expect
 
 internal class TimeDefinitionTest {
+    private val timesToTestNanos = arrayOf(
+        LocalTime(12, 3, 5, 50_500_505),
+        TimeDefinition.nowUTC(),
+        TimeDefinition.MAX_IN_SECONDS,
+        TimeDefinition.MAX_IN_MILLIS,
+        TimeDefinition.MAX_IN_NANOS,
+        TimeDefinition.MIN,
+    )
+
     private val timesToTestMillis = arrayOf(
         LocalTime(12, 3, 5, 50_000_000),
         LocalTime.fromMillisecondOfDay(TimeDefinition.nowUTC().toMillisecondOfDay()),
@@ -26,6 +35,10 @@ internal class TimeDefinitionTest {
     private val timesToTestSeconds = arrayOf(TimeDefinition.MAX_IN_SECONDS, TimeDefinition.MIN, LocalTime(13, 55, 44))
 
     private val def = TimeDefinition()
+
+    private val defNano = TimeDefinition(
+        precision = TimePrecision.NANOS
+    )
 
     private val defMilli = TimeDefinition(
         precision = TimePrecision.MILLIS
@@ -48,6 +61,19 @@ internal class TimeDefinitionTest {
 
         assertTrue("$now is diverging too much from $expected time") {
             expected - now in -1..1
+        }
+    }
+
+    @Test
+    fun convertNanosecondPrecisionValuesToStorageBytesAndBack() {
+        val bc = ByteCollector()
+        for (time in timesToTestNanos) {
+            bc.reserve(
+                defNano.calculateStorageByteLength(time)
+            )
+            defNano.writeStorageBytes(time, bc::write)
+            expect(time) { defNano.readStorageBytes(bc.size, bc::read) }
+            bc.reset()
         }
     }
 
@@ -92,6 +118,19 @@ internal class TimeDefinitionTest {
 
     @Test
     fun convertMillisPrecisionValuesToTransportBytesAndBack() {
+        val bc = ByteCollector()
+        val cacheFailer = WriteCacheFailer()
+
+        for (time in timesToTestMillis) {
+            bc.reserve(defMilli.calculateTransportByteLength(time, cacheFailer))
+            defMilli.writeTransportBytes(time, cacheFailer, bc::write)
+            expect(time) { defMilli.readTransportBytes(bc.size, bc::read) }
+            bc.reset()
+        }
+    }
+
+    @Test
+    fun convertNanosPrecisionValuesToTransportBytesAndBack() {
         val bc = ByteCollector()
         val cacheFailer = WriteCacheFailer()
 

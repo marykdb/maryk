@@ -2,6 +2,7 @@ package maryk.core.properties.definitions
 
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.types.TimePrecision
+import maryk.core.protobuf.WriteCacheWriter
 
 /** Time Property Definition to define time properties of [T] with precision. */
 interface IsTimeDefinition<T : Comparable<T>> :
@@ -10,6 +11,13 @@ interface IsTimeDefinition<T : Comparable<T>> :
     val precision: TimePrecision
 
     override fun calculateStorageByteLength(value: T) = this.byteSize
+
+    override fun calculateTransportByteLengthWithKey(
+        index: UInt,
+        value: T,
+        cacher: WriteCacheWriter,
+        context: IsPropertyContext?,
+    ): Int = super<IsComparableDefinition>.calculateTransportByteLengthWithKey(index, value, cacher, context)
 
     override fun compatibleWith(
         definition: IsPropertyDefinition<*>,

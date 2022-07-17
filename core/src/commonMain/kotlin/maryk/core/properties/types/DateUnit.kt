@@ -13,10 +13,12 @@ import maryk.core.properties.enum.IsCoreEnum
 import maryk.core.properties.types.DateUnit.Centuries
 import maryk.core.properties.types.DateUnit.Decades
 import maryk.core.properties.types.DateUnit.Hours
+import maryk.core.properties.types.DateUnit.Micros
 import maryk.core.properties.types.DateUnit.Millennia
 import maryk.core.properties.types.DateUnit.Millis
 import maryk.core.properties.types.DateUnit.Minutes
 import maryk.core.properties.types.DateUnit.Months
+import maryk.core.properties.types.DateUnit.Nanos
 import maryk.core.properties.types.DateUnit.Quarters
 import maryk.core.properties.types.DateUnit.Seconds
 import maryk.core.properties.types.DateUnit.Years
@@ -30,18 +32,20 @@ enum class DateUnit(
     IndexedEnumComparable<DateUnit>,
     MapType,
     IsCoreEnum {
-    Millis(1u),
-    Seconds(2u),
-    Minutes(3u),
-    Hours(4u),
-    Days(5u),
-//    Weeks(6u), Not yet possible without a calendar system
-    Months(7u),
-    Quarters(8u),
-    Years(9u),
-    Decades(10u),
-    Centuries(11u),
-    Millennia(12u);
+    Nanos(1u),
+    Micros(2u),
+    Millis(3u),
+    Seconds(4u),
+    Minutes(5u),
+    Hours(6u),
+    Days(7u),
+//    Weeks(8u), Not yet possible without a calendar system
+    Months(9u),
+    Quarters(10u),
+    Years(11u),
+    Decades(12u),
+    Centuries(13u),
+    Millennia(14u);
 
     companion object : IndexedEnumDefinition<DateUnit>(
         DateUnit::class, DateUnit::values
@@ -59,7 +63,9 @@ fun <T:Comparable<*>> T.roundToDateUnit(dateUnit: DateUnit): T = when (this) {
 
 /** Round Time to the [dateUnit] */
 fun LocalTime.roundToDateUnit(dateUnit: DateUnit) = when (dateUnit) {
-    Millis -> this
+    Nanos -> this
+    Micros -> LocalTime(hour, minute, second, nanosecond / 1000 * 1000)
+    Millis -> LocalTime(hour, minute, second, nanosecond / 1000000 * 1000000)
     Seconds -> LocalTime(hour, minute, second)
     Minutes -> LocalTime(hour, minute)
     Hours -> LocalTime(hour, 0)
@@ -90,6 +96,8 @@ fun LocalDate.roundToDateUnit(dateUnit: DateUnit) = when (dateUnit) {
 /** Round DateTime to the [dateUnit] */
 fun LocalDateTime.roundToDateUnit(dateUnit: DateUnit) = date.roundToDateUnit(dateUnit).let {
         when (dateUnit) {
+            Nanos -> it.atTime(hour, minute, second, nanosecond)
+            Micros -> it.atTime(hour, minute, second, nanosecond / 1000 * 1000)
             Millis -> it.atTime(hour, minute, second, nanosecond / 1000000 * 1000000)
             Seconds -> it.atTime(hour, minute, second)
             Minutes -> it.atTime(hour, minute)

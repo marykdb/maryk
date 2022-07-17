@@ -20,7 +20,7 @@ A DateTime Property which can be used to represent the time in a date plus time.
 ## Other options
 - `default` - the default value to be used if value was not set.
 - `precision` - The precision to which the time is stored and transported. 
-  `SECONDS` (default) or `MILLIS`. This value cannot be changed after storing first data.
+  `SECONDS` (default), `MILLIS` or `NANOS`.
 
 ## Examples
 
@@ -67,7 +67,8 @@ val def = DateTimeDefinition(
 It depends on the precision of the Time how it will be stored
 
 - `SECONDS` - 7 byte integer counting the seconds from midnight January 1st 1970
-- `MILLIS` - 9 byte integer with 7 bits counting the seconds from midnight January 1st 1970 
+- `MILLIS` - 9 byte combined integer with 7 bits counting the seconds from midnight January 1st 1970 and 2 bytes for the milliseconds 
+- `NANOS` - 11 byte integer with 7 bits counting the seconds from midnight January 1st 1970 and 4 bytes for the nanoseconds
 and 2 bits for the added milliseconds
 
 ## Transport Byte representation
@@ -75,6 +76,7 @@ The bytes are transported in a different way depending on the precision of time.
 
 - `SECONDS` - VarInt integer counting the seconds from midnight January 1st 1970
 - `MILLIS` - VarInt integer counting the milliseconds from midnight January 1st 1970 
+- `NANOS` - VarInt integer counting the nanoseconds from midnight January 1st 1970
 
 ## String representation
-ISO8601 String YYYY-MM-DDTHH:MM:SS.SSS
+ISO8601 String YYYY-MM-DDTHH:MM:SS.SSSSSSSSS

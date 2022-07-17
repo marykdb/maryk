@@ -9,6 +9,7 @@ import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.extensions.bytes.calculateVarByteLength
+import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.initLongByVar
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.ContextualDataModel
@@ -58,15 +59,20 @@ data class DateTimeDefinition(
         reader: () -> Byte,
         context: IsPropertyContext?,
         earlierValue: LocalDateTime?
-    ) =
+    ): LocalDateTime =
         when (this.precision) {
-            TimePrecision.SECONDS -> Instant.fromEpochSeconds(initLongByVar(reader)).toLocalDateTime(UTC)
-            TimePrecision.MILLIS ->Instant.fromEpochMilliseconds(initLongByVar(reader)).toLocalDateTime(UTC)
-        }
+            TimePrecision.SECONDS -> Instant.fromEpochSeconds(initLongByVar(reader))
+            TimePrecision.MILLIS -> Instant.fromEpochMilliseconds(initLongByVar(reader))
+            TimePrecision.NANOS -> Instant.fromEpochSeconds(initLongByVar(reader), initIntByVar(reader))
+        }.toLocalDateTime(UTC)
 
-    override fun calculateTransportByteLength(value: LocalDateTime) = when (this.precision) {
-        TimePrecision.SECONDS -> value.toInstant(UTC).epochSeconds.calculateVarByteLength()
-        TimePrecision.MILLIS -> value.toInstant(UTC).toEpochMilliseconds().calculateVarByteLength()
+    override fun calculateTransportByteLength(value: LocalDateTime): Int {
+        val utcValue = value.toInstant(UTC)
+        return when (this.precision) {
+            TimePrecision.SECONDS -> utcValue.epochSeconds.calculateVarByteLength()
+            TimePrecision.MILLIS -> utcValue.toEpochMilliseconds().calculateVarByteLength()
+            TimePrecision.NANOS -> utcValue.epochSeconds.calculateVarByteLength() + utcValue.nanosecondsOfSecond.calculateVarByteLength()
+        }
     }
 
     override fun writeTransportBytes(
@@ -75,11 +81,15 @@ data class DateTimeDefinition(
         writer: (byte: Byte) -> Unit,
         context: IsPropertyContext?
     ) {
-        val epochUnit = when (this.precision) {
-            TimePrecision.SECONDS -> value.toInstant(UTC).epochSeconds
-            TimePrecision.MILLIS -> value.toInstant(UTC).toEpochMilliseconds()
+        val utcValue = value.toInstant(UTC)
+        when (this.precision) {
+            TimePrecision.SECONDS -> utcValue.epochSeconds.writeVarBytes(writer)
+            TimePrecision.MILLIS -> utcValue.toEpochMilliseconds().writeVarBytes(writer)
+            TimePrecision.NANOS -> {
+                utcValue.epochSeconds.writeVarBytes(writer)
+                utcValue.nanosecondsOfSecond.writeVarBytes(writer)
+            }
         }
-        epochUnit.writeVarBytes(writer)
     }
 
     override fun fromString(string: String) = try {
@@ -150,6 +160,7 @@ data class DateTimeDefinition(
         val MIN = DateDefinition.MIN.atTime(0, 0)
         val MAX_IN_SECONDS = DateDefinition.MAX.atTime(23, 59, 59)
         val MAX_IN_MILLIS = DateDefinition.MAX.atTime(23, 59, 59, 999000000)
+        val MAX_IN_NANOS = DateDefinition.MAX.atTime(23, 59, 59, 999_999_999)
 
         fun nowUTC() = Clock.System.now().toLocalDateTime(UTC)
     }

@@ -19,10 +19,24 @@ import kotlin.test.assertTrue
 import kotlin.test.expect
 
 internal class DateTimeDefinitionTest {
-    private val dateTimesToTest = arrayOf(
+    private val dateTimesMillisToTest = arrayOf(
         DateTimeDefinition.nowUTC().roundToDateUnit(DateUnit.Millis),
         DateTimeDefinition.MAX_IN_SECONDS,
         DateTimeDefinition.MAX_IN_MILLIS,
+        DateTimeDefinition.MIN
+    )
+
+    private val dateTimesNanosToTest = arrayOf(
+        DateTimeDefinition.nowUTC(),
+        DateTimeDefinition.MAX_IN_NANOS,
+        DateTimeDefinition.MAX_IN_MILLIS,
+        DateTimeDefinition.MAX_IN_SECONDS,
+        DateTimeDefinition.MIN
+    )
+
+    private val dateTimesSecondsToTest = arrayOf(
+        DateTimeDefinition.nowUTC().roundToDateUnit(DateUnit.Seconds),
+        DateTimeDefinition.MAX_IN_SECONDS,
         DateTimeDefinition.MIN
     )
 
@@ -30,6 +44,10 @@ internal class DateTimeDefinitionTest {
 
     private val defMilli = DateTimeDefinition(
         precision = TimePrecision.MILLIS
+    )
+
+    private val defNano = DateTimeDefinition(
+        precision = TimePrecision.NANOS
     )
 
     private val defMaxDefined = DateTimeDefinition(
@@ -55,7 +73,7 @@ internal class DateTimeDefinitionTest {
     @Test
     fun convertValuesWithMillisecondsPrecisionToStorageBytesAndBack() {
         val bc = ByteCollector()
-        for (dateTime in arrayOf(DateTimeDefinition.nowUTC().roundToDateUnit(DateUnit.Millis), DateTimeDefinition.MAX_IN_MILLIS)) {
+        for (dateTime in dateTimesMillisToTest) {
             bc.reserve(
                 defMilli.calculateStorageByteLength(dateTime)
             )
@@ -70,7 +88,7 @@ internal class DateTimeDefinitionTest {
     @Test
     fun convertValuesWithSecondsPrecisionToStorageBytesAndBack() {
         val bc = ByteCollector()
-        for (dateTime in arrayOf(DateTimeDefinition.MAX_IN_SECONDS, DateTimeDefinition.MIN)) {
+        for (dateTime in dateTimesSecondsToTest) {
             bc.reserve(
                 def.calculateStorageByteLength(dateTime)
             )
@@ -83,11 +101,26 @@ internal class DateTimeDefinitionTest {
     }
 
     @Test
-    fun convertValuesWithSecondsPrecisionToTransportBytesAndBack() {
+    fun convertValuesWithNanosPrecisionToStorageBytesAndBack() {
+        val bc = ByteCollector()
+        for (dateTime in dateTimesNanosToTest) {
+            bc.reserve(
+                defNano.calculateStorageByteLength(dateTime)
+            )
+            defNano.writeStorageBytes(dateTime, bc::write)
+            expect(dateTime) {
+                defNano.readStorageBytes(bc.size, bc::read)
+            }
+            bc.reset()
+        }
+    }
+
+    @Test
+    fun convertValuesWithMillisPrecisionToTransportBytesAndBack() {
         val bc = ByteCollector()
         val cacheFailer = WriteCacheFailer()
 
-        for (dateTime in arrayOf(DateTimeDefinition.MIN, DateTimeDefinition.nowUTC().roundToDateUnit(DateUnit.Millis), DateTimeDefinition.MAX_IN_MILLIS)) {
+        for (dateTime in dateTimesSecondsToTest) {
             bc.reserve(defMilli.calculateTransportByteLength(dateTime, cacheFailer))
             defMilli.writeTransportBytes(dateTime, cacheFailer, bc::write)
             expect(dateTime) {
@@ -98,11 +131,11 @@ internal class DateTimeDefinitionTest {
     }
 
     @Test
-    fun convertValuesWithMillisecondPrecisionToTransportBytesAndBack() {
+    fun convertValuesWithSecondsPrecisionToTransportBytesAndBack() {
         val bc = ByteCollector()
         val cacheFailer = WriteCacheFailer()
 
-        for (dateTime in arrayOf(DateTimeDefinition.MAX_IN_SECONDS, DateTimeDefinition.MIN)) {
+        for (dateTime in dateTimesSecondsToTest) {
             bc.reserve(def.calculateTransportByteLength(dateTime, cacheFailer))
             def.writeTransportBytes(dateTime, cacheFailer, bc::write)
             expect(dateTime) { def.readTransportBytes(bc.size, bc::read) }
@@ -111,8 +144,21 @@ internal class DateTimeDefinitionTest {
     }
 
     @Test
+    fun convertValuesWithNanosPrecisionToTransportBytesAndBack() {
+        val bc = ByteCollector()
+        val cacheFailer = WriteCacheFailer()
+
+        for (dateTime in dateTimesNanosToTest) {
+            bc.reserve(defNano.calculateTransportByteLength(dateTime, cacheFailer))
+            defNano.writeTransportBytes(dateTime, cacheFailer, bc::write)
+            expect(dateTime) { defNano.readTransportBytes(bc.size, bc::read) }
+            bc.reset()
+        }
+    }
+
+    @Test
     fun convertValuesToStringAndBack() {
-        for (dateTime in dateTimesToTest) {
+        for (dateTime in dateTimesNanosToTest) {
             val b = def.asString(dateTime)
             expect(dateTime) { def.fromString(b) }
         }

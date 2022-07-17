@@ -7,6 +7,7 @@ import kotlinx.datetime.toLocalDateTime
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initIntByVar
+import maryk.core.extensions.bytes.initLongByVar
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.ContextualDataModel
 import maryk.core.properties.IsPropertyContext
@@ -58,11 +59,13 @@ data class TimeDefinition(
         when (this.precision) {
             TimePrecision.SECONDS -> LocalTime.fromSecondOfDay(initIntByVar(reader))
             TimePrecision.MILLIS -> LocalTime.fromMillisecondOfDay(initIntByVar(reader))
+            TimePrecision.NANOS -> LocalTime.fromNanosecondOfDay(initLongByVar(reader))
         }
 
     override fun calculateTransportByteLength(value: LocalTime) = when (this.precision) {
         TimePrecision.SECONDS -> value.toSecondOfDay().calculateVarByteLength()
         TimePrecision.MILLIS -> value.toMillisecondOfDay().calculateVarByteLength()
+        TimePrecision.NANOS -> value.toNanosecondOfDay().calculateVarByteLength()
     }
 
     override fun writeTransportBytes(
@@ -71,11 +74,11 @@ data class TimeDefinition(
         writer: (byte: Byte) -> Unit,
         context: IsPropertyContext?
     ) {
-        val toEncode = when (this.precision) {
-            TimePrecision.SECONDS -> value.toSecondOfDay()
-            TimePrecision.MILLIS -> value.toMillisecondOfDay()
+        when (this.precision) {
+            TimePrecision.SECONDS -> value.toSecondOfDay().writeVarBytes(writer)
+            TimePrecision.MILLIS -> value.toMillisecondOfDay().writeVarBytes(writer)
+            TimePrecision.NANOS -> value.toNanosecondOfDay().writeVarBytes(writer)
         }
-        toEncode.writeVarBytes(writer)
     }
 
     override fun fromString(string: String) = try {
@@ -150,6 +153,7 @@ data class TimeDefinition(
         val MIN = LocalTime(0, 0)
         val MAX_IN_SECONDS = LocalTime(23, 59, 59)
         val MAX_IN_MILLIS = LocalTime(23, 59, 59, 999_000_000)
+        val MAX_IN_NANOS = LocalTime(23, 59, 59, 999_999_999)
 
         fun nowUTC() = Clock.System.now().toLocalDateTime(TimeZone.UTC).time
     }

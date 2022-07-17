@@ -8,10 +8,12 @@ import maryk.core.properties.types.DateUnit.Centuries
 import maryk.core.properties.types.DateUnit.Days
 import maryk.core.properties.types.DateUnit.Decades
 import maryk.core.properties.types.DateUnit.Hours
+import maryk.core.properties.types.DateUnit.Micros
 import maryk.core.properties.types.DateUnit.Millennia
 import maryk.core.properties.types.DateUnit.Millis
 import maryk.core.properties.types.DateUnit.Minutes
 import maryk.core.properties.types.DateUnit.Months
+import maryk.core.properties.types.DateUnit.Nanos
 import maryk.core.properties.types.DateUnit.Quarters
 import maryk.core.properties.types.DateUnit.Seconds
 import maryk.core.properties.types.DateUnit.Years
@@ -119,9 +121,17 @@ class DateUnitTest {
 
     @Test
     fun roundTime() {
-        val time = LocalTime(13, 45, 23, 999)
+        val time = LocalTime(13, 45, 23, 999999999)
 
         expect(time) {
+            time.roundToDateUnit(Nanos)
+        }
+
+        expect(LocalTime(13, 45, 23, 999_999_000)) {
+            time.roundToDateUnit(Micros)
+        }
+
+        expect(LocalTime(13, 45, 23, 999_000_000)) {
             time.roundToDateUnit(Millis)
         }
 

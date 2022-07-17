@@ -1,6 +1,6 @@
 # Time
-A Time Property which can be used to represent the time in hours, minutes and optionally
-in seconds and milliseconds.
+A Time Property which can be used to represent the time in hours, minutes, seconds and optionally
+in milliseconds and nanoseconds.
 
 - Maryk Yaml Definition: `Time`
 - Kotlin Definition: `TimeDefinition`

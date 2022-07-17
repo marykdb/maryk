@@ -51,5 +51,5 @@ easy to quickly request DataObjects of a specific type. If time is part of
 the key you need to include it after the time so all data is still ordered
 on that time.
 
-- If date with millisecond precision by itself is not enough, it is possible
+- If date with nanosecond precision by itself is not enough, it is possible
 to add a random number to the field.

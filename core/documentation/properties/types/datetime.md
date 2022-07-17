@@ -1,7 +1,7 @@
 # DateTime
 A DateTime Property which can be used to represent the time in a date plus time.
 
-- Maryk Yaml Definition: `DateTime` | `DateTime.Millis` 
+- Maryk Yaml Definition: `DateTime`
 - Kotlin Definition: `DateTimeDefinition`
 - Kotlin Value: `DateTime`
 
@@ -69,7 +69,6 @@ It depends on the precision of the Time how it will be stored
 - `SECONDS` - 7 byte integer counting the seconds from midnight January 1st 1970
 - `MILLIS` - 9 byte combined integer with 7 bits counting the seconds from midnight January 1st 1970 and 2 bytes for the milliseconds 
 - `NANOS` - 11 byte integer with 7 bits counting the seconds from midnight January 1st 1970 and 4 bytes for the nanoseconds
-and 2 bits for the added milliseconds
 
 ## Transport Byte representation
 The bytes are transported in a different way depending on the precision of time.

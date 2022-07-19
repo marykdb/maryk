@@ -2,8 +2,7 @@ package maryk.lib.bytes
 
 import kotlinx.cinterop.CPointer
 import kotlinx.cinterop.get
-import kotlinx.cinterop.interpretCPointer
-import kotlinx.cinterop.nativeHeap
+import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.toCValues
 import maryk.lib.exceptions.ParseException
 import platform.Foundation.NSData
@@ -31,13 +30,14 @@ actual object Base64 {
     }
 
     /** Encode [bytes] array into a base64 String */
-    actual fun encode(bytes: ByteArray) = NSData.create(
-        bytesNoCopy = bytes.toCValues().let {
-            it.place(interpretCPointer(nativeHeap.alloc(it.size, it.align).rawPtr)!!)
-        },
-        length = bytes.size.toULong()
-    ).base64EncodedStringWithOptions(0).dropLastWhile {
-        // Remove any Base64 padding
-        it == '='
+    actual fun encode(bytes: ByteArray) = memScoped {
+        NSData.create(
+            bytesNoCopy = bytes.toCValues().getPointer(this),
+            length = bytes.size.toULong(),
+            freeWhenDone = false,
+        ).base64EncodedStringWithOptions(0).dropLastWhile {
+            // Remove any Base64 padding
+            it == '='
+        }
     }
 }

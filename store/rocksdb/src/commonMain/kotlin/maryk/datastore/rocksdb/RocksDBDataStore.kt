@@ -338,7 +338,6 @@ class RocksDBDataStore(
     }
 
     /** Search for existing unique indices in data store by [uniqueHandle] */
-    @OptIn(ExperimentalStdlibApi::class)
     private fun searchExistingUniqueIndices(
         uniqueHandle: ColumnFamilyHandle
     ) = buildList {

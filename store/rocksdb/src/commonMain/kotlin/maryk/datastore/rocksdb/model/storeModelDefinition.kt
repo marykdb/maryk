@@ -7,7 +7,6 @@ import maryk.core.query.DefinitionsConversionContext
 import maryk.rocksdb.ColumnFamilyHandle
 import maryk.rocksdb.RocksDB
 
-@OptIn(ExperimentalStdlibApi::class)
 fun storeModelDefinition(
     rocksDB: RocksDB,
     modelColumnFamily: ColumnFamilyHandle,

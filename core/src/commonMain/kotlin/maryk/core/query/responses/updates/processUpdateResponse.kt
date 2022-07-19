@@ -5,7 +5,6 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.changes.ObjectSoftDeleteChange
 
-@OptIn(ExperimentalStdlibApi::class)
 fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processUpdateResponse(response: IsUpdateResponse<DM, P>, previousResults: List<ValuesWithMetaData<DM, P>>) =
     when (response) {
         is InitialValuesUpdate<DM, P> -> response.values

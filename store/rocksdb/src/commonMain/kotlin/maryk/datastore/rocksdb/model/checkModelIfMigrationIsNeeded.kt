@@ -13,7 +13,6 @@ import maryk.core.query.DefinitionsConversionContext
 import maryk.rocksdb.ColumnFamilyHandle
 import maryk.rocksdb.RocksDB
 
-@OptIn(ExperimentalStdlibApi::class)
 fun <P: PropertyDefinitions> checkModelIfMigrationIsNeeded(
     rocksDB: RocksDB,
     modelColumnFamily: ColumnFamilyHandle,

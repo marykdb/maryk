@@ -27,7 +27,6 @@ import maryk.datastore.shared.orderToScanType
 import maryk.datastore.shared.updates.Update.Change
 import maryk.lib.extensions.compare.compareTo
 
-@OptIn(ExperimentalStdlibApi::class)
 /** Update listener for scans */
 class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions, RP: IsDataResponse<DM, P>>(
     request: IsScanRequest<DM, P, RP>,

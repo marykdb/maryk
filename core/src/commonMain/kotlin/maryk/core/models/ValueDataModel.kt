@@ -20,7 +20,8 @@ import maryk.core.values.ObjectValues
 import maryk.core.values.SimpleObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
-import maryk.lib.bytes.Base64
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 
 typealias AnyValueDataModel = ValueDataModel<*, *>
 
@@ -110,8 +111,9 @@ abstract class ValueDataModel<DO : ValueDataObject, P : ObjectPropertyDefinition
     /** Converts String [value] to DataObject
      * @throws DefNotFoundException if definition needed for conversion is not found
      */
+    @OptIn(ExperimentalEncodingApi::class)
     fun fromBase64(value: String): DO {
-        val b = Base64.decode(value)
+        val b = Base64.Mime.decode(value)
         var index = 0
         return this.readFromBytes {
             b[index++]

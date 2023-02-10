@@ -2,11 +2,12 @@ package maryk.core.properties.types
 
 import maryk.core.extensions.bytes.initByteArray
 import maryk.core.extensions.bytes.writeBytes
-import maryk.lib.bytes.Base64
 import maryk.lib.exceptions.ParseException
 import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.initByteArrayByHex
 import maryk.lib.extensions.toHex
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 
 /**
  * Represents a ByteArray which is comparable
@@ -14,9 +15,10 @@ import maryk.lib.extensions.toHex
 open class Bytes(val bytes: ByteArray) : Comparable<Bytes> {
     val size = bytes.size
 
+    @OptIn(ExperimentalEncodingApi::class)
     constructor(base64: String) : this(
         try {
-            Base64.decode(base64)
+            Base64.Mime.decode(base64)
         } catch (e: Throwable) {
             throw ParseException(base64)
         }
@@ -26,7 +28,8 @@ open class Bytes(val bytes: ByteArray) : Comparable<Bytes> {
 
     operator fun get(index: Int) = bytes[index]
 
-    override fun toString() = Base64.encode(bytes)
+    @OptIn(ExperimentalEncodingApi::class)
+    override fun toString() = Base64.Mime.encode(bytes).removeSuffix("==").removeSuffix("=")
 
     override infix fun compareTo(other: Bytes) = bytes compareTo other.bytes
 

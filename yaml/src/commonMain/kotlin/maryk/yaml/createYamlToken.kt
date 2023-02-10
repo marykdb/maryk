@@ -15,9 +15,10 @@ import maryk.json.TokenType
 import maryk.json.ValueType
 import maryk.json.ValueType.Bool
 import maryk.json.ValueType.IsNullValueType
-import maryk.lib.bytes.Base64
 import maryk.yaml.YamlValueType.Binary
 import maryk.yaml.YamlValueType.TimeStamp
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.math.pow
 
 private val trueValues = arrayOf("True", "TRUE", "true", "y", "Y", "yes", "YES", "Yes", "on", "ON", "On")
@@ -69,6 +70,7 @@ internal fun checkAndCreateFieldName(
  * Creates a JsonToken.Value by reading [value] and [tag]
  * If from plain string with [isPlainStringReader] = true and [tag] = false it will try to determine ValueType from contents.
  */
+@OptIn(ExperimentalEncodingApi::class)
 internal fun createYamlValueToken(
     value: String?,
     tag: TokenType?,
@@ -102,7 +104,7 @@ internal fun createYamlValueToken(
             is ValueType.Int -> findInt(value!!)?.let<Value<Long>, Value<Long>> { return it }
                 ?: throw InvalidYamlContent("Not an integer: $value")
             is Binary -> {
-                Value(Base64.decode(value!!), tokenType)
+                Value(Base64.Mime.decode(value!!), tokenType)
             }
             is TimeStamp -> {
                 findTimestamp(value!!)

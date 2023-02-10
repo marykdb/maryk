@@ -1,13 +1,15 @@
 package maryk.core.properties.types
 
-import maryk.lib.bytes.Base64
 import maryk.lib.extensions.compare.compareTo
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 
 /** Value Data Objects which can be used to represent as fixed length bytes */
 open class ValueDataObject(internal val _bytes: ByteArray) : Comparable<ValueDataObject> {
     override infix fun compareTo(other: ValueDataObject) = _bytes compareTo other._bytes
 
-    fun toBase64(): String = Base64.encode(this._bytes)
+    @OptIn(ExperimentalEncodingApi::class)
+    fun toBase64(): String = Base64.Mime.encode(this._bytes).removeSuffix("==").removeSuffix("=")
 
     fun toByteArray() = this._bytes
 

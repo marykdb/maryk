@@ -64,7 +64,7 @@ class ListItemReferenceTest {
 
             expect("7a00000005") { bytes!!.toHex() }
 
-            expect(reference) { TestMarykModel.Properties.getPropertyReferenceByStorageBytes(size, ::read) }
+            expect(reference) { TestMarykModel.getPropertyReferenceByStorageBytes(size, ::read) }
         }
     }
 
@@ -78,7 +78,7 @@ class ListItemReferenceTest {
 
             expect("661e7a00000016") { bytes!!.toHex() }
 
-            expect(subReference) { TestMarykModel.Properties.getPropertyReferenceByStorageBytes(size, ::read) }
+            expect(subReference) { TestMarykModel.getPropertyReferenceByStorageBytes(size, ::read) }
         }
     }
 

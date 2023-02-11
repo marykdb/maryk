@@ -12,6 +12,7 @@ class PropertyBaseRootDataModel<P : PropertyDefinitions>(
     reservedIndices: List<UInt>? = null,
     reservedNames: List<String>? = null,
     properties: P,
+    override val name: String = properties::class.simpleName!!,
 ) : RootDataModel<PropertyBaseRootDataModel<P>, P>(
     keyDefinition = keyDefinition,
     version = version,
@@ -19,6 +20,4 @@ class PropertyBaseRootDataModel<P : PropertyDefinitions>(
     reservedIndices = reservedIndices,
     reservedNames = reservedNames,
     properties = properties,
-) {
-    override val name: String get() = properties::class.simpleName!!
-}
+)

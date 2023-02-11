@@ -29,8 +29,8 @@ class ContextualMapDefinitionTest {
     @Suppress("UNCHECKED_CAST")
     private val context = KeyValueDefinitionContext(
         definitionsContext = null,
-        keyDefinition = TestMarykModel.properties.map.keyDefinition as IsSimpleValueDefinition<Any, IsPropertyContext>,
-        valueDefinition = TestMarykModel.properties.map.valueDefinition as IsValueDefinition<Any, IsPropertyContext>
+        keyDefinition = TestMarykModel.map.keyDefinition as IsSimpleValueDefinition<Any, IsPropertyContext>,
+        valueDefinition = TestMarykModel.map.valueDefinition as IsValueDefinition<Any, IsPropertyContext>
     )
 
     @Test

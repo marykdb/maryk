@@ -35,13 +35,13 @@ private val allTestClasses = arrayOf(
 )
 
 val dataModelsForTests = mapOf(
-    1u to TestMarykModel,
+    1u to TestMarykModel.Model,
     2u to SimpleMarykModel.Model,
-    3u to ComplexModel,
+    3u to ComplexModel.Model,
     4u to Log.Model,
-    5u to CompleteMarykModel,
+    5u to CompleteMarykModel.Model,
     6u to UniqueModel.Model,
-    7u to ModelV2ExtraIndex,
+    7u to ModelV2ExtraIndex.Model,
     8u to Person.Model,
 )
 

@@ -5,7 +5,6 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
-import maryk.test.models.SimpleMarykModel
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertNotNull
@@ -24,9 +23,9 @@ class ExistsTest {
 
     private val context = RequestContext(
         mapOf(
-            TestMarykModel.name toUnitLambda { TestMarykModel }
+            TestMarykModel.Model.name toUnitLambda { TestMarykModel.Model }
         ),
-        dataModel = TestMarykModel
+        dataModel = TestMarykModel.Model
     )
 
     @Test

@@ -82,7 +82,7 @@ class SetReferenceTest {
 
         expect("4b0480002c96") { bc.bytes!!.toHex() }
 
-        expect(reference) { TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) }
+        expect(reference) { TestMarykModel.getPropertyReferenceByStorageBytes(bc.size, bc::read) }
     }
 
     @Test
@@ -96,6 +96,6 @@ class SetReferenceTest {
 
         expect("661e4b0480002c96") { bc.bytes!!.toHex() }
 
-        expect(subReference) { TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) }
+        expect(subReference) { TestMarykModel.getPropertyReferenceByStorageBytes(bc.size, bc::read) }
     }
 }

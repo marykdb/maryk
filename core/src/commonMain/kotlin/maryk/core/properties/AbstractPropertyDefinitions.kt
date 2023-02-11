@@ -2,6 +2,7 @@ package maryk.core.properties
 
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initUIntByVar
+import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsUsableInMultiType
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
@@ -26,6 +27,13 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
     protected val indexToDefinition = mutableMapOf<UInt, IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>>()
     protected val nameToDefinition =
         mutableMapOf<String, IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>>()
+
+    val allWithDefaults by lazy {
+        _allProperties.filter {
+            val def = it.definition
+            def is HasDefaultValueDefinition<*> && def.default != null
+        }
+    }
 
     // Implementation of Collection
     override val size = _allProperties.size

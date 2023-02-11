@@ -5,26 +5,24 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.query.DefinitionsConversionContext
 import maryk.lib.extensions.toHex
-import maryk.test.models.TestMarykModel.Properties
-import maryk.test.models.TestMarykModel.Properties.bool
-import maryk.test.models.TestMarykModel.Properties.int
-import maryk.test.models.TestMarykModel.Properties.multi
-import maryk.test.models.TestMarykModel.Properties.string
+import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.expect
 
 class MultipleTest {
-    private val multiple = Multiple(
-        UUIDKey,
-        Reversed(bool.ref()),
-        multi.typeRef(),
-        string.ref(),
-        Reversed(string.ref()),
-        int.ref()
-    )
+    private val multiple = TestMarykModel.run {
+        Multiple(
+            UUIDKey,
+            Reversed(bool.ref()),
+            multi.typeRef(),
+            string.ref(),
+            Reversed(string.ref()),
+            int.ref()
+        )
+    }
 
     private val context = DefinitionsConversionContext(
-        propertyDefinitions = Properties
+        propertyDefinitions = TestMarykModel
     )
 
     @Test

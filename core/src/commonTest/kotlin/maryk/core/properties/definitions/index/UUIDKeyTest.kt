@@ -3,9 +3,7 @@ package maryk.core.properties.definitions.index
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.models.RootDataModel
-import maryk.core.models.key
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.RootModel
 import maryk.core.properties.definitions.string
 import maryk.lib.extensions.initByteArrayByHex
 import maryk.lib.extensions.toHex
@@ -16,21 +14,10 @@ import kotlin.test.assertTrue
 import kotlin.test.expect
 
 internal class UUIDKeyTest {
-    object MarykModel : RootDataModel<MarykModel, MarykModel.Properties>(
-        keyDefinition = UUIDKey,
-        properties = Properties
+    object MarykModel : RootModel<MarykModel>(
+        keyDefinition = { UUIDKey },
     ) {
-        object Properties : PropertyDefinitions() {
-            val value by string(1u)
-        }
-
-        operator fun invoke(
-            value: String
-        ) = this.values {
-            mapNonNulls(
-                this.value with value
-            )
-        }
+        val value by string(1u)
     }
 
     @Test
@@ -40,7 +27,7 @@ internal class UUIDKeyTest {
 
         val b = initByteArrayByHex("8e6d5dc885e4b7d5f4fb932d5a0d0378")
 
-        val keyDef = MarykModel.keyDefinition as UUIDKey
+        val keyDef = MarykModel.Model.keyDefinition as UUIDKey
 
         var i = 0
         val uuid = keyDef.readStorageBytes(16) {
@@ -53,12 +40,12 @@ internal class UUIDKeyTest {
 
     @Test
     fun testKey() {
-        val obj = MarykModel("test")
+        val obj = MarykModel.run { create(value with "test") }
 
         val key = MarykModel.key(obj)
         expect(16) { key.bytes.size }
 
-        val keyDef = MarykModel.keyDefinition
+        val keyDef = MarykModel.Model.keyDefinition
 
         assertIs<UUIDKey>(keyDef).apply {
             var index = 0

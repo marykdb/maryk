@@ -3,8 +3,7 @@ package maryk.core.properties.definitions
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.models.DataModel
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.Model
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
@@ -22,51 +21,40 @@ import kotlin.test.assertTrue
 import kotlin.test.expect
 
 internal class EmbeddedValuesDefinitionTest {
-    object MarykModel : DataModel<MarykModel, MarykModel.Properties>(
-        properties = Properties
-    ) {
-        object Properties : PropertyDefinitions() {
-            val string by string(
-                index = 1u,
-                regEx = "jur"
-            )
-        }
-
-        operator fun invoke(
-            string: String = "jur"
-        ) = this.values {
-            mapNonNulls(
-                this.string with string
-            )
-        }
+    object MarykModel : Model<MarykModel>() {
+        val string by string(
+            index = 1u,
+            regEx = "jur",
+            default = "jur",
+        )
     }
 
     private val def = EmbeddedValuesDefinition(
-        dataModel = { MarykModel }
+        dataModel = { MarykModel.Model }
     )
     private val defMaxDefined = EmbeddedValuesDefinition(
         required = false,
         final = true,
-        dataModel = { MarykModel },
-        default = MarykModel("default")
+        dataModel = { MarykModel.Model },
+        default = MarykModel.run { create(string with "default") }
     )
 
     @Test
     fun hasValues() {
-        expect(MarykModel) { def.dataModel }
+        expect(MarykModel.Model) { def.dataModel }
     }
 
     @Test
     fun validate() {
-        def.validateWithRef(newValue = MarykModel())
+        def.validateWithRef(newValue = MarykModel.create())
         assertFailsWith<ValidationUmbrellaException> {
-            def.validateWithRef(newValue = MarykModel("wrong"))
+            def.validateWithRef(newValue = MarykModel.run { create(string with "wrong") })
         }
     }
 
     @Test
     fun convertObjectToJSONAndBack() {
-        val value = MarykModel()
+        val value = MarykModel.create()
 
         val output = buildString {
             val writer = JsonWriter(pretty = true) {
@@ -88,7 +76,7 @@ internal class EmbeddedValuesDefinitionTest {
         val bc = ByteCollector()
         val cache = WriteCache()
 
-        val value = MarykModel()
+        val value = MarykModel.create()
 
         bc.reserve(
             def.calculateTransportByteLengthWithKey(5u, value, cache)
@@ -144,13 +132,13 @@ internal class EmbeddedValuesDefinitionTest {
     fun isCompatible() {
         assertTrue {
             EmbeddedValuesDefinition(
-                dataModel = { MarykModel }
+                dataModel = { MarykModel.Model }
             ).compatibleWith(def)
         }
 
         assertFalse {
             EmbeddedValuesDefinition(
-                dataModel = { TestMarykModel }
+                dataModel = { TestMarykModel.Model }
             ).compatibleWith(def)
         }
     }

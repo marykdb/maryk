@@ -21,7 +21,7 @@ class UpdatesResponseTest {
     private val key = TestMarykModel.key("AAACKwEAAg")
 
     private val updatesResponse = UpdatesResponse(
-        TestMarykModel,
+        TestMarykModel.Model,
         listOf(
             OrderedKeysUpdate(listOf(key), 1234uL),
             AdditionUpdate(key, 1234uL, 1233uL, 0, false, testMarykModelObject),
@@ -36,9 +36,9 @@ class UpdatesResponseTest {
 
     private val context = RequestContext(
         dataModels = mapOf(
-            TestMarykModel.name toUnitLambda { TestMarykModel }
+            TestMarykModel.Model.name toUnitLambda { TestMarykModel.Model }
         ),
-        dataModel = TestMarykModel
+        dataModel = TestMarykModel.Model
     )
 
     @Test

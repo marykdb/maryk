@@ -63,7 +63,7 @@ internal class MultiTypeDefinitionTest {
 
     private val context = RequestContext(
         dataModels = mapOf(
-            EmbeddedMarykModel.name toUnitLambda { EmbeddedMarykModel }
+            EmbeddedMarykModel.Model.name toUnitLambda { EmbeddedMarykModel.Model }
         )
     )
 

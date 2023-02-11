@@ -18,8 +18,8 @@ class ContextualModelReferenceDefinitionTest {
     private val modelsToTest = listOf<IsNamedDataModel<*>>(
         TestMarykObject,
         EmbeddedMarykObject,
-        TestMarykModel,
-        EmbeddedMarykModel
+        TestMarykModel.Model,
+        EmbeddedMarykModel.Model,
     )
 
     @Suppress("UNCHECKED_CAST")
@@ -31,8 +31,8 @@ class ContextualModelReferenceDefinitionTest {
         dataModels = mapOf(
             TestMarykObject.name toUnitLambda { TestMarykObject },
             EmbeddedMarykObject.name toUnitLambda { EmbeddedMarykObject },
-            TestMarykModel.name toUnitLambda { TestMarykModel },
-            EmbeddedMarykModel.name toUnitLambda { EmbeddedMarykModel }
+            TestMarykModel.Model.name toUnitLambda { TestMarykModel.Model },
+            EmbeddedMarykModel.Model.name toUnitLambda { EmbeddedMarykModel.Model }
         )
     )
 

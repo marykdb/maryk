@@ -6,7 +6,6 @@ import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.inject.Inject
 import maryk.core.models.asValues
-import maryk.core.models.key
 import maryk.core.models.testExtendedMarykModelObject
 import maryk.core.models.testMarykModelObject
 import maryk.core.properties.exceptions.InjectException
@@ -28,7 +27,7 @@ import kotlin.test.expect
 class InjectTest {
     private val definitionsContext = DefinitionsContext(
         dataModels = mutableMapOf(
-            EmbeddedMarykModel.name toUnitLambda { EmbeddedMarykModel }
+            EmbeddedMarykModel.Model.name toUnitLambda { EmbeddedMarykModel.Model }
         )
     )
 
@@ -43,7 +42,7 @@ class InjectTest {
 
     private val valuesResponse = ValuesResponse.asValues(
         ValuesResponse(
-            TestMarykModel,
+            TestMarykModel.Model,
             listOf(
                 ValuesWithMetaData(
                     key = key2,
@@ -69,7 +68,7 @@ class InjectTest {
     init {
         context.addToCollect("testCollection", getRequest)
         context.collectResult("testCollection", valuesResponse)
-        context.addToCollect("testSimpleConvert", EmbeddedMarykModel)
+        context.addToCollect("testSimpleConvert", EmbeddedMarykModel.Model)
     }
 
     private val firstResponseValueRef = ValuesResponse { values.refAt(0u) { values } }
@@ -81,7 +80,7 @@ class InjectTest {
         Inject("testCollection", TestMarykModel(firstResponseValueRef) { embeddedValues { value::ref } })
 
     private val injectFromAny =
-        Inject("testCollection", ValuesResponse { values.atAny { values.refWithDM(TestMarykModel) { string } } })
+        Inject("testCollection", ValuesResponse { values.atAny { values.refWithDM(TestMarykModel.Model) { string } } })
 
     @Test
     fun testGetToCollect() {
@@ -99,18 +98,18 @@ class InjectTest {
         expect(listOf("hay", "haas")) { injectFromAny.resolve(context) as List<*> }
     }
 
-    private val valuesToCollect = EmbeddedMarykModel(
-        value = "a test value",
-        model = EmbeddedMarykModel(
-            "embedded value"
-        )
-    )
+    private val valuesToCollect = EmbeddedMarykModel.run { create(
+        value with "a test value",
+        model with EmbeddedMarykModel.run { create(
+            value  with "embedded value"
+        ) }
+    ) }
 
     @Test
     fun testInjectInValues() {
-        context.addToCollect("testCollection2", EmbeddedMarykModel)
+        context.addToCollect("testCollection2", EmbeddedMarykModel.Model)
 
-        val values = TestMarykModel.values(context) {
+        val values = TestMarykModel.Model.values(context) {
             mapNonNulls(
                 string injectWith Inject("testCollection2", EmbeddedMarykModel { this.model { value::ref } })
             )
@@ -129,7 +128,7 @@ class InjectTest {
 
     @Test
     fun testInjectInValuesWithResponse() {
-        val values = TestMarykModel.values(context) {
+        val values = TestMarykModel.Model.values(context) {
             mapNonNulls(
                 string injectWith injectDeep
             )

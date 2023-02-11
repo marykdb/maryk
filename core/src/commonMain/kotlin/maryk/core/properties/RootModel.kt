@@ -2,6 +2,7 @@ package maryk.core.properties
 
 import maryk.core.models.PropertyBaseRootDataModel
 import maryk.core.models.key
+import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.definitions.index.UUIDKey
@@ -19,6 +20,7 @@ open class RootModel<P: PropertyDefinitions>(
     indices: (() -> List<IsIndexable>)? = null,
     reservedIndices: List<UInt>? = null,
     reservedNames: List<String>? = null,
+    name: String? = null,
 ) : PropertyDefinitions(){
     @Suppress("UNCHECKED_CAST")
     val Model: PropertyBaseRootDataModel<P> by lazy {
@@ -28,6 +30,7 @@ open class RootModel<P: PropertyDefinitions>(
             indices = indices?.invoke(),
             reservedIndices = reservedIndices,
             reservedNames = reservedNames,
+            name = name ?: this::class.simpleName!!,
             properties = this,
         ) as PropertyBaseRootDataModel<P>
     }
@@ -43,10 +46,21 @@ open class RootModel<P: PropertyDefinitions>(
         return block(this as P)
     }
 
-    fun create (vararg pairs: ValueItem?) = Model.values {
+    fun create(
+        vararg pairs: ValueItem?,
+        setDefaults: Boolean = true,
+    ) = Model.values {
         MutableValueItems().also { items ->
-            for (it in pairs) {
-                if (it != null) items += it
+            for (pair in pairs) {
+                if (pair != null) items += pair
+            }
+            if (setDefaults) {
+                for (definition in this.allWithDefaults) {
+                    val innerDef = definition.definition
+                    if (items[definition.index] == null) {
+                        items[definition.index] = (innerDef as HasDefaultValueDefinition<*>).default!!
+                    }
+                }
             }
         }
     }

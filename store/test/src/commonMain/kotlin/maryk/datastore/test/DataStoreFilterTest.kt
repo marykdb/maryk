@@ -4,6 +4,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import maryk.core.clock.HLC
+import maryk.core.models.PropertyBaseRootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.change
@@ -38,9 +39,9 @@ class DataStoreFilterTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
 
-    private val keys = mutableListOf<Key<TestMarykModel>>()
+    private val keys = mutableListOf<Key<PropertyBaseRootDataModel<TestMarykModel>>>()
     private val lastVersions = mutableListOf<ULong>()
-    private lateinit var firstKey: Key<TestMarykModel>
+    private lateinit var firstKey: Key<PropertyBaseRootDataModel<TestMarykModel>>
 
     override val allTests = mapOf(
         "doExistsFilter" to ::doExistsFilter,
@@ -105,13 +106,13 @@ class DataStoreFilterTest(
         )
 
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<TestMarykModel>>(status)
+            val response = assertIs<AddSuccess<PropertyBaseRootDataModel<TestMarykModel>>>(status)
             keys.add(response.key)
             lastVersions.add(response.version)
         }
 
         val changeResponse = dataStore.execute(
-            TestMarykModel.change(
+            TestMarykModel.Model.change(
                 keys[0].change(
                     Change(TestMarykModel { reference::ref } with keys[1])
                 )
@@ -119,7 +120,7 @@ class DataStoreFilterTest(
         )
 
         changeResponse.statuses.forEach { status ->
-            val response = assertIs<ChangeSuccess<TestMarykModel>>(status)
+            val response = assertIs<ChangeSuccess<PropertyBaseRootDataModel<TestMarykModel>>>(status)
             lastVersions.add(response.version)
         }
 
@@ -128,7 +129,7 @@ class DataStoreFilterTest(
 
     override suspend fun resetData() {
         dataStore.execute(
-            TestMarykModel.delete(*keys.toTypedArray(), hardDelete = true)
+            TestMarykModel.Model.delete(*keys.toTypedArray(), hardDelete = true)
         )
         keys.clear()
         lastVersions.clear()

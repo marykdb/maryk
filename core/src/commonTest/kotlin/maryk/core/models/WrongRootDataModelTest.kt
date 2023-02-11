@@ -1,48 +1,34 @@
 package maryk.core.models
 
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.RootModel
 import maryk.core.properties.definitions.string
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 
-object WrongModelIndex : RootDataModel<WrongModelIndex, WrongModelIndex.Properties>(
-    properties = Properties,
-    reservedIndices = listOf(1u)
+object WrongModelIndex : RootModel<WrongModelIndex>(
+    reservedIndices = listOf(1u),
 ) {
-    object Properties : PropertyDefinitions() {
-        val value by string(1u)
-    }
-
-    operator fun invoke(value: String) = this.values {
-        mapNonNulls(this.value with value)
-    }
+    val value by string(1u)
 }
 
-object WrongModelName : RootDataModel<WrongModelName, WrongModelName.Properties>(
-    properties = Properties,
-    reservedNames = listOf("value")
+object WrongModelName : RootModel<WrongModelName>(
+    reservedNames = listOf("value"),
 ) {
-    object Properties : PropertyDefinitions() {
-        val value by string (1u)
-    }
-
-    operator fun invoke(value: String) = this.values {
-        mapNonNulls(this.value with value)
-    }
+    val value by string (1u)
 }
 
 internal class WrongRootDataModelTest {
     @Test
     fun checkDataModel() {
-        TestMarykModel.check()
+        TestMarykModel.Model.check()
 
         assertFailsWith<IllegalArgumentException> {
-            WrongModelIndex.check()
+            WrongModelIndex.Model.check()
         }
 
         assertFailsWith<IllegalArgumentException> {
-            WrongModelName.check()
+            WrongModelName.Model.check()
         }
     }
 }

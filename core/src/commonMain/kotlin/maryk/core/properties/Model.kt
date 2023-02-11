@@ -1,6 +1,7 @@
 package maryk.core.properties
 
 import maryk.core.models.PropertyBaseDataModel
+import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.IsPropertyReference
@@ -29,10 +30,21 @@ open class Model<P: PropertyDefinitions>(
         return block(this as P)
     }
 
-    fun create (vararg pairs: ValueItem?) = Model.values {
+    fun create (
+        vararg pairs: ValueItem?,
+        setDefaults: Boolean = true,
+    ) = Model.values {
         MutableValueItems().also { items ->
             for (it in pairs) {
                 if (it != null) items += it
+            }
+            if (setDefaults) {
+                for (definition in this.allWithDefaults) {
+                    val innerDef = definition.definition
+                    if (items[definition.index] == null) {
+                        items[definition.index] = (innerDef as HasDefaultValueDefinition<*>).default!!
+                    }
+                }
             }
         }
     }

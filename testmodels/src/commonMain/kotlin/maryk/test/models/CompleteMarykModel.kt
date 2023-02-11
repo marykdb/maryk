@@ -3,9 +3,9 @@ package maryk.test.models
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
+import maryk.core.models.PropertyBaseDataModel
 import maryk.core.models.PropertyBaseRootDataModel
-import maryk.core.models.RootDataModel
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.RootModel
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.EnumDefinition
@@ -46,12 +46,6 @@ import maryk.core.properties.types.Version
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.values.Values
-import maryk.test.models.CompleteMarykModel.Properties.booleanForKey
-import maryk.test.models.CompleteMarykModel.Properties.dateForKey
-import maryk.test.models.CompleteMarykModel.Properties.dateTime
-import maryk.test.models.CompleteMarykModel.Properties.multiForKey
-import maryk.test.models.CompleteMarykModel.Properties.number
-import maryk.test.models.CompleteMarykModel.Properties.subModel
 import maryk.test.models.SimpleMarykModel.value
 
 sealed class MarykEnumEmbedded(
@@ -71,267 +65,272 @@ sealed class MarykEnumEmbedded(
     )
 }
 
-object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel.Properties>(
+object CompleteMarykModel : RootModel<CompleteMarykModel>(
     version = Version(2, 1),
-    keyDefinition = Multiple(
-        UUIDKey,
-        multiForKey.typeRef(),
-        booleanForKey.ref(),
-        Reversed(dateForKey.ref())
-    ),
-    indices = listOf(
-        number.ref(),
-        Reversed(dateTime.ref()),
-        Multiple(
-            booleanForKey.ref(),
-            multiForKey.typeRef()
-        ),
-        value.ref(subModel.ref())
-    ),
+    keyDefinition = {
+        CompleteMarykModel.run {
+            Multiple(
+                UUIDKey,
+                multiForKey.typeRef(),
+                booleanForKey.ref(),
+                Reversed(dateForKey.ref())
+            )
+        }
+    },
+    indices = {
+        CompleteMarykModel.run {
+            listOf(
+                number.ref(),
+                Reversed(dateTime.ref()),
+                Multiple(
+                    booleanForKey.ref(),
+                    multiForKey.typeRef()
+                ),
+                value.ref(subModel.ref())
+            )
+        }
+    },
     reservedIndices = listOf(99u),
     reservedNames = listOf("reserved"),
-    properties = Properties
 ) {
-    object Properties : PropertyDefinitions() {
-        val string by string(
-            index = 1u,
-            alternativeNames = setOf("str", "stringValue"),
-            required = false,
-            final = false,
-            unique = true,
-            minValue = "a",
-            maxValue = "zzzz",
-            default = "string",
-            minSize = 1u,
-            maxSize = 10u,
+    val string by string(
+        index = 1u,
+        alternativeNames = setOf("str", "stringValue"),
+        required = false,
+        final = false,
+        unique = true,
+        minValue = "a",
+        maxValue = "zzzz",
+        default = "string",
+        minSize = 1u,
+        maxSize = 10u,
+        regEx = "ha.*"
+    )
+    val number by number(
+        index = 2u,
+        final = false,
+        unique = true,
+        type = UInt32,
+        minValue = 12u,
+        maxValue = 34u,
+        default = 33u
+    )
+    val boolean by boolean(
+        index = 3u,
+        required = false,
+        final = true,
+        default = true
+    )
+    val enum by enum(
+        index = 4u,
+        required = false,
+        final = true,
+        unique = true,
+        enum = Option,
+        minValue = Option.V1,
+        maxValue = Option.V3,
+        default = Option.V1
+    )
+    val date by date(
+        index = 5u,
+        required = false,
+        final = true,
+        unique = true,
+        minValue = LocalDate(1981, 12, 5),
+        maxValue = LocalDate(2200, 12, 31),
+        default = LocalDate(2018, 5, 2)
+    )
+    val dateTime by dateTime(
+        index = 6u,
+        required = false,
+        final = true,
+        unique = true,
+        precision = TimePrecision.MILLIS,
+        minValue = LocalDateTime(1981, 12, 5, 11, 0),
+        maxValue = LocalDateTime(2200, 12, 31, 23, 59, 59),
+        default = LocalDateTime(2018, 5, 2, 10, 11, 12)
+    )
+    val time by time(
+        index = 7u,
+        required = false,
+        final = true,
+        unique = true,
+        precision = TimePrecision.MILLIS,
+        minValue = LocalTime(0, 0),
+        maxValue = LocalTime(23, 59, 59, 999),
+        default = LocalTime(10, 11, 12)
+    )
+    val fixedBytes by fixedBytes(
+        index = 8u,
+        required = false,
+        final = true,
+        unique = true,
+        minValue = Bytes("AAAAAAA"),
+        maxValue = Bytes("f39/f38"),
+        default = Bytes("AAECAwQ"),
+        byteSize = 5
+    )
+    val flexBytes by flexBytes(
+        index = 9u,
+        required = false,
+        final = true,
+        unique = true,
+        minValue = Bytes("AA"),
+        maxValue = Bytes("f39/f39/fw"),
+        default = Bytes("AAECAw"),
+        minSize = 1u,
+        maxSize = 7u
+    )
+    val reference by reference(
+        index = 10u,
+        required = false,
+        final = true,
+        unique = true,
+        minValue = Key("AA"),
+        maxValue = Key("f39/f39/fw"),
+        default = Key("AAECAQAAECAQAAECAQAAEA"),
+        dataModel = { SimpleMarykModel.Model }
+    )
+    val subModel by embed(
+        index = 11u,
+        required = false,
+        final = true,
+        dataModel = { SimpleMarykModel.Model },
+        default = SimpleMarykModel.run { create(
+            value with "a default"
+        ) }
+    )
+    val valueModel by valueObject(
+        index = 12u,
+        required = false,
+        final = true,
+        dataModel = ValueMarykObject,
+        minValue = ValueMarykObject(
+            int = 0,
+            date = LocalDate(100, 1, 1)
+        ),
+        maxValue = ValueMarykObject(
+            int = 999,
+            date = LocalDate(9999, 12, 31)
+        ),
+        default = ValueMarykObject(
+            int = 10,
+            date = LocalDate(2010, 10, 10)
+        )
+    )
+    val list by list(
+        index = 13u,
+        required = false,
+        final = true,
+        minSize = 1u,
+        maxSize = 5u,
+        valueDefinition = StringDefinition(
             regEx = "ha.*"
-        )
-        val number by number(
-            index = 2u,
-            final = false,
-            unique = true,
-            type = UInt32,
-            minValue = 12u,
-            maxValue = 34u,
-            default = 33u
-        )
-        val boolean by boolean(
-            index = 3u,
-            required = false,
-            final = true,
-            default = true
-        )
-        val enum by enum(
-            index = 4u,
-            required = false,
-            final = true,
-            unique = true,
-            enum = Option,
-            minValue = Option.V1,
-            maxValue = Option.V3,
-            default = Option.V1
-        )
-        val date by date(
-            index = 5u,
-            required = false,
-            final = true,
-            unique = true,
-            minValue = LocalDate(1981, 12, 5),
-            maxValue = LocalDate(2200, 12, 31),
-            default = LocalDate(2018, 5, 2)
-        )
-        val dateTime by dateTime(
-            index = 6u,
-            required = false,
-            final = true,
-            unique = true,
-            precision = TimePrecision.MILLIS,
-            minValue = LocalDateTime(1981, 12, 5, 11, 0),
-            maxValue = LocalDateTime(2200, 12, 31, 23, 59, 59),
-            default = LocalDateTime(2018, 5, 2, 10, 11, 12)
-        )
-        val time by time(
-            index = 7u,
-            required = false,
-            final = true,
-            unique = true,
-            precision = TimePrecision.MILLIS,
-            minValue = LocalTime(0, 0),
-            maxValue = LocalTime(23, 59, 59, 999),
-            default = LocalTime(10, 11, 12)
-        )
-        val fixedBytes by fixedBytes(
-            index = 8u,
-            required = false,
-            final = true,
-            unique = true,
-            minValue = Bytes("AAAAAAA"),
-            maxValue = Bytes("f39/f38"),
-            default = Bytes("AAECAwQ"),
-            byteSize = 5
-        )
-        val flexBytes by flexBytes(
-            index = 9u,
-            required = false,
-            final = true,
-            unique = true,
-            minValue = Bytes("AA"),
-            maxValue = Bytes("f39/f39/fw"),
-            default = Bytes("AAECAw"),
-            minSize = 1u,
-            maxSize = 7u
-        )
-        val reference by reference(
-            index = 10u,
-            required = false,
-            final = true,
-            unique = true,
-            minValue = Key("AA"),
-            maxValue = Key("f39/f39/fw"),
-            default = Key("AAECAQAAECAQAAECAQAAEA"),
-            dataModel = { SimpleMarykModel.Model }
-        )
-        val subModel by embed(
-            index = 11u,
-            required = false,
-            final = true,
-            dataModel = { SimpleMarykModel.Model },
-            default = SimpleMarykModel.run { create(
-                value with "a default"
-            ) }
-        )
-        val valueModel by valueObject(
-            index = 12u,
-            required = false,
-            final = true,
-            dataModel = ValueMarykObject,
-            minValue = ValueMarykObject(
-                int = 0,
-                date = LocalDate(100, 1, 1)
-            ),
-            maxValue = ValueMarykObject(
-                int = 999,
-                date = LocalDate(9999, 12, 31)
-            ),
-            default = ValueMarykObject(
-                int = 10,
-                date = LocalDate(2010, 10, 10)
-            )
-        )
-        val list by list(
-            index = 13u,
-            required = false,
-            final = true,
-            minSize = 1u,
-            maxSize = 5u,
-            valueDefinition = StringDefinition(
-                regEx = "ha.*"
-            ),
-            default = listOf("ha1", "ha2", "ha3")
-        )
-        val set by set(
-            index = 14u,
-            required = false,
-            final = true,
-            minSize = 1u,
-            maxSize = 5u,
-            valueDefinition = NumberDefinition(
-                type = SInt32
-            ),
-            default = setOf(1, 2, 3)
-        )
-        val map by map(
-            index = 15u,
-            required = false,
-            final = true,
-            minSize = 1u,
-            maxSize = 5u,
-            keyDefinition = DateDefinition(),
-            valueDefinition = NumberDefinition(
-                type = SInt32
-            ),
-            default = mapOf(LocalDate(2010, 11, 12) to 1, LocalDate(2011, 12, 13) to 1)
-        )
-        val multi by multiType(
-            index = 16u,
-            required = false,
-            final = true,
-            typeEnum = MarykTypeEnum,
-            default = TypedValue(MarykTypeEnum.T1, "a value")
-        )
-        val booleanForKey by boolean(
-            index = 17u,
-            final = true
-        )
-        val dateForKey by date(
-            index = 18u,
-            final = true
-        )
-        val multiForKey by multiType(
-            index = 19u,
-            final = true,
-            typeEnum = SimpleMarykTypeEnum
-        )
-        val enumEmbedded by enum(
-            index = 20u,
-            enum = MarykEnumEmbedded,
-            minValue = MarykEnumEmbedded.E1
-        )
-        val mapWithEnum by map(
-            index = 21u,
-            required = false,
-            final = true,
-            minSize = 1u,
-            maxSize = 5u,
-            keyDefinition = EnumDefinition(
-                enum = MarykEnumEmbedded
-            ),
-            valueDefinition = StringDefinition(),
-            default = mapOf<MarykEnumEmbedded, String>(MarykEnumEmbedded.E1 to "value")
-        )
-        val mapWithList by map(
-            index = 22u,
-            required = false,
+        ),
+        default = listOf("ha1", "ha2", "ha3")
+    )
+    val set by set(
+        index = 14u,
+        required = false,
+        final = true,
+        minSize = 1u,
+        maxSize = 5u,
+        valueDefinition = NumberDefinition(
+            type = SInt32
+        ),
+        default = setOf(1, 2, 3)
+    )
+    val map by map(
+        index = 15u,
+        required = false,
+        final = true,
+        minSize = 1u,
+        maxSize = 5u,
+        keyDefinition = DateDefinition(),
+        valueDefinition = NumberDefinition(
+            type = SInt32
+        ),
+        default = mapOf(LocalDate(2010, 11, 12) to 1, LocalDate(2011, 12, 13) to 1)
+    )
+    val multi by multiType(
+        index = 16u,
+        required = false,
+        final = true,
+        typeEnum = MarykTypeEnum,
+        default = TypedValue(MarykTypeEnum.T1, "a value")
+    )
+    val booleanForKey by boolean(
+        index = 17u,
+        final = true
+    )
+    val dateForKey by date(
+        index = 18u,
+        final = true
+    )
+    val multiForKey by multiType(
+        index = 19u,
+        final = true,
+        typeEnum = SimpleMarykTypeEnum
+    )
+    val enumEmbedded by enum(
+        index = 20u,
+        enum = MarykEnumEmbedded,
+        minValue = MarykEnumEmbedded.E1
+    )
+    val mapWithEnum by map(
+        index = 21u,
+        required = false,
+        final = true,
+        minSize = 1u,
+        maxSize = 5u,
+        keyDefinition = EnumDefinition(
+            enum = MarykEnumEmbedded
+        ),
+        valueDefinition = StringDefinition(),
+        default = mapOf<MarykEnumEmbedded, String>(MarykEnumEmbedded.E1 to "value")
+    )
+    val mapWithList by map(
+        index = 22u,
+        required = false,
+        keyDefinition = StringDefinition(),
+        valueDefinition = ListDefinition(
+            valueDefinition = StringDefinition()
+        ),
+        default = mapOf("a" to listOf("b", "c"))
+    )
+    val mapWithSet by map(
+        index = 23u,
+        required = false,
+        keyDefinition = StringDefinition(),
+        valueDefinition = SetDefinition(
+            valueDefinition = StringDefinition()
+        ),
+        default = mapOf("a" to setOf("b", "c"))
+    )
+    val mapWithMap by map(
+        index = 24u,
+        required = false,
+        keyDefinition = StringDefinition(),
+        valueDefinition = MapDefinition(
             keyDefinition = StringDefinition(),
-            valueDefinition = ListDefinition(
-                valueDefinition = StringDefinition()
-            ),
-            default = mapOf("a" to listOf("b", "c"))
+            valueDefinition = StringDefinition()
+        ),
+        default = mapOf("a" to mapOf("b" to "c"))
+    )
+    val incMap by incrementingMap(
+        index = 25u,
+        required = false,
+        keyNumberDescriptor = UInt32,
+        valueDefinition = EmbeddedValuesDefinition(
+            dataModel = { EmbeddedMarykModel.Model }
         )
-        val mapWithSet by map(
-            index = 23u,
-            required = false,
-            keyDefinition = StringDefinition(),
-            valueDefinition = SetDefinition(
-                valueDefinition = StringDefinition()
-            ),
-            default = mapOf("a" to setOf("b", "c"))
-        )
-        val mapWithMap by map(
-            index = 24u,
-            required = false,
-            keyDefinition = StringDefinition(),
-            valueDefinition = MapDefinition(
-                keyDefinition = StringDefinition(),
-                valueDefinition = StringDefinition()
-            ),
-            default = mapOf("a" to mapOf("b" to "c"))
-        )
-        val incMap by incrementingMap(
-            index = 25u,
-            required = false,
-            keyNumberDescriptor = UInt32,
-            valueDefinition = EmbeddedValuesDefinition(
-                dataModel = { EmbeddedMarykModel }
-            )
-        )
-        val location by geoPoint(
-            index = 26u,
-            required = false,
-            final = true,
-            default = GeoPoint(52.0906448, 5.1212607)
-        )
-    }
+    )
+    val location by geoPoint(
+        index = 26u,
+        required = false,
+        final = true,
+        default = GeoPoint(52.0906448, 5.1212607)
+    )
 
     operator fun invoke(
         string: String = "string",
@@ -363,36 +362,34 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
         mapWithList: Map<String, List<String>> = mapOf("a" to listOf("b", "c")),
         mapWithSet: Map<String, Set<String>> = mapOf("a" to setOf("b", "c")),
         mapWithMap: Map<String, Map<String, String>> = mapOf("a" to mapOf("b" to "c")),
-        incMap: Map<UInt, Values<EmbeddedMarykModel, EmbeddedMarykModel.Properties>>? = null,
+        incMap: Map<UInt, Values<PropertyBaseDataModel<EmbeddedMarykModel>, EmbeddedMarykModel>>? = null,
         location: GeoPoint = GeoPoint(52.0906448, 5.1212607)
-    ) = values {
-        mapNonNulls(
-            this.string with string,
-            this.number with number,
-            this.boolean with boolean,
-            this.enum with enum,
-            this.date with date,
-            this.dateTime with dateTime,
-            this.time with time,
-            this.fixedBytes with fixedBytes,
-            this.flexBytes with flexBytes,
-            this.reference with reference,
-            this.subModel with subModel,
-            this.valueModel with valueModel,
-            this.list with list,
-            this.set with set,
-            this.map with map,
-            this.multi with multi,
-            this.booleanForKey with booleanForKey,
-            this.dateForKey with dateForKey,
-            this.multiForKey with multiForKey,
-            this.enumEmbedded with enumEmbedded,
-            this.mapWithEnum with mapWithEnum,
-            this.mapWithList with mapWithList,
-            this.mapWithSet with mapWithSet,
-            this.mapWithMap with mapWithMap,
-            this.incMap with incMap,
-            this.location with location
-        )
-    }
+    ) = create(
+        this.string with string,
+        this.number with number,
+        this.boolean with boolean,
+        this.enum with enum,
+        this.date with date,
+        this.dateTime with dateTime,
+        this.time with time,
+        this.fixedBytes with fixedBytes,
+        this.flexBytes with flexBytes,
+        this.reference with reference,
+        this.subModel with subModel,
+        this.valueModel with valueModel,
+        this.list with list,
+        this.set with set,
+        this.map with map,
+        this.multi with multi,
+        this.booleanForKey with booleanForKey,
+        this.dateForKey with dateForKey,
+        this.multiForKey with multiForKey,
+        this.enumEmbedded with enumEmbedded,
+        this.mapWithEnum with mapWithEnum,
+        this.mapWithList with mapWithList,
+        this.mapWithSet with mapWithSet,
+        this.mapWithMap with mapWithMap,
+        this.incMap with incMap,
+        this.location with location
+    )
 }

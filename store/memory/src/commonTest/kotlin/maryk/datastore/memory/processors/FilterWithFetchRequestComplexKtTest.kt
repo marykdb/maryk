@@ -16,7 +16,7 @@ import kotlin.test.Test
 import kotlin.test.assertTrue
 
 class FilterWithFetchRequestComplexKtTest {
-    private val value1 = ComplexModel.createDataRecord(
+    private val value1 = ComplexModel.Model.createDataRecord(
         ComplexModel(
             mapStringString = mapOf(
                 "k1" to "v1",

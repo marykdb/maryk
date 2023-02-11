@@ -26,9 +26,9 @@ class SetChangeTest {
 
     private val context = RequestContext(
         mapOf(
-            TestMarykModel.name toUnitLambda { TestMarykModel }
+            TestMarykModel.Model.name toUnitLambda { TestMarykModel.Model }
         ),
-        dataModel = TestMarykModel
+        dataModel = TestMarykModel.Model
     )
 
     @Test
@@ -63,9 +63,9 @@ class SetChangeTest {
             double = 2.3,
             dateTime = LocalDateTime(2018, 7, 18, 0, 0),
             set = setOf(LocalDate(2020, 2, 20), LocalDate(2019, 12, 11)),
-            embeddedValues = EmbeddedMarykModel(
-                value = "test",
-                marykModel = TestMarykModel(
+            embeddedValues = EmbeddedMarykModel.run { create(
+                value with "test",
+                marykModel with TestMarykModel(
                     string = "hi world",
                     int = 3,
                     uint = 67u,
@@ -73,7 +73,7 @@ class SetChangeTest {
                     dateTime = LocalDateTime(2020, 10, 18, 0, 0),
                     set = setOf(LocalDate(2010, 2, 20), LocalDate(2009, 12, 11))
                 )
-            )
+            ) }
         )
 
         val changed = original.change(

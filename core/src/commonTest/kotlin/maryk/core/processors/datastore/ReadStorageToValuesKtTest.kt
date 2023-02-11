@@ -16,7 +16,7 @@ class ReadStorageToValuesKtTest {
     @Test
     fun convertStorageToValues() {
         var qualifierIndex = -1
-        val values = TestMarykModel.readStorageToValues(
+        val values = TestMarykModel.Model.readStorageToValues(
             getQualifier = { resultHander ->
                 val qualifier = valuesAsStorables.getOrNull(++qualifierIndex)?.let {
                     initByteArrayByHex(it.first)
@@ -33,7 +33,7 @@ class ReadStorageToValuesKtTest {
     @Test
     fun convertStorageToComplexValues() {
         var qualifierIndex = -1
-        val values = ComplexModel.readStorageToValues(
+        val values = ComplexModel.Model.readStorageToValues(
             getQualifier = { resultHandler ->
                 val qualifier = complexValuesAsStorables.getOrNull(++qualifierIndex)?.let {
                     initByteArrayByHex(it.first)
@@ -50,7 +50,7 @@ class ReadStorageToValuesKtTest {
     @Test
     fun convertStorageToValuesWithNullsInComplex() {
         var qualifierIndex = -1
-        val values = TestMarykModel.readStorageToValues(
+        val values = TestMarykModel.Model.readStorageToValues(
             getQualifier = { resultHandler ->
                 val qualifier = valuesAsStorablesWithNulls.getOrNull(++qualifierIndex)?.let {
                     initByteArrayByHex(it.first)
@@ -62,7 +62,7 @@ class ReadStorageToValuesKtTest {
         )
 
         assertEquals(
-            TestMarykModel.values {
+            TestMarykModel.Model.values {
                 mapNonNulls(
                     set with setOf(
                         LocalDate(1981, 12, 5)
@@ -70,10 +70,12 @@ class ReadStorageToValuesKtTest {
                     map with mapOf(
                         LocalTime(12, 23, 34) to "twelve"
                     ),
-                    embeddedValues with EmbeddedMarykModel.values {
-                        mapNonNulls(
+                    embeddedValues with EmbeddedMarykModel.run {
+                        create(
                             value with "test",
-                            model with EmbeddedMarykModel.values { mapNonNulls() }
+                            model with EmbeddedMarykModel.run {
+                                create()
+                            }
                         )
                     },
                     listOfString with listOf("v1"),
@@ -99,7 +101,7 @@ class ReadStorageToValuesKtTest {
         )
 
         var qualifierIndex = -1
-        val values = TestMarykModel.readStorageToValues(
+        val values = TestMarykModel.Model.readStorageToValues(
             getQualifier = { resultHandler ->
                 val qualifier = valuesUnset.getOrNull(++qualifierIndex)?.let {
                     initByteArrayByHex(it.first)
@@ -111,7 +113,7 @@ class ReadStorageToValuesKtTest {
         )
 
         assertEquals(
-            TestMarykModel.values {
+            TestMarykModel.Model.values {
                 EmptyValueItems
             },
             values
@@ -128,7 +130,7 @@ class ReadStorageToValuesKtTest {
         )
 
         var qualifierIndex = -1
-        val values = TestMarykModel.readStorageToValues(
+        val values = TestMarykModel.Model.readStorageToValues(
             getQualifier = { resultHandler ->
                 val qualifier = valuesUnset.getOrNull(++qualifierIndex)?.let {
                     initByteArrayByHex(it.first)
@@ -140,7 +142,7 @@ class ReadStorageToValuesKtTest {
         )
 
         assertEquals(
-            TestMarykModel.values {
+            TestMarykModel.Model.values {
                 mapNonNulls(
                     multi with TypedValue(S1, "test")
                 )

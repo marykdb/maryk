@@ -1,5 +1,6 @@
 package maryk.datastore.test
 
+import maryk.core.models.PropertyBaseRootDataModel
 import maryk.core.properties.references.dsl.at
 import maryk.core.properties.references.dsl.atType
 import maryk.core.properties.types.Key
@@ -31,7 +32,7 @@ import kotlin.test.expect
 class DataStoreChangeComplexTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
-    private val keys = mutableListOf<Key<ComplexModel>>()
+    private val keys = mutableListOf<Key<PropertyBaseRootDataModel<ComplexModel>>>()
     private val lastVersions = mutableListOf<ULong>()
 
     override val allTests = mapOf(
@@ -49,11 +50,14 @@ class DataStoreChangeComplexTest(
         val addResponse = dataStore.execute(
             ComplexModel.add(
                 ComplexModel(
-                    multi = TypedValue(T3, EmbeddedMarykModel("u3", EmbeddedMarykModel("ue3"))),
+                    multi = TypedValue(T3, EmbeddedMarykModel.run { create(
+                        value with "u3",
+                        model with create(value with "ue3"),
+                    ) }),
                     mapStringString = mapOf("a" to "b", "c" to "d"),
                     incMap = mapOf(
-                        1u to EmbeddedMarykModel("o"),
-                        2u to EmbeddedMarykModel("p")
+                        1u to EmbeddedMarykModel.run { create(value with "o") },
+                        2u to EmbeddedMarykModel.run { create(value with "p") },
                     )
                 ),
                 ComplexModel(
@@ -62,13 +66,21 @@ class DataStoreChangeComplexTest(
                 ),
                 ComplexModel(
                     mapStringString = mapOf("a" to "b", "c" to "d"),
-                    mapIntObject = mapOf(1u to EmbeddedMarykModel("v1"), 2u to EmbeddedMarykModel("v2"))
+                    mapIntObject = mapOf(
+                        1u to EmbeddedMarykModel.run { create(value with "v1") },
+                        2u to EmbeddedMarykModel("v2"),
+                    )
                 ),
                 ComplexModel(
                     mapStringString = mapOf("a" to "b", "c" to "d"),
                     mapIntObject = mapOf(
-                        1u to EmbeddedMarykModel("v1", EmbeddedMarykModel("sub")),
-                        2u to EmbeddedMarykModel("v2")
+                        1u to EmbeddedMarykModel.run { create(
+                            value with "v1",
+                            model with create(value with "sub")
+                        ) },
+                        2u to EmbeddedMarykModel.run { create(
+                            value with "v2"
+                        ) }
                     )
                 ),
                 ComplexModel(
@@ -111,7 +123,7 @@ class DataStoreChangeComplexTest(
         )
 
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<ComplexModel>>(status)
+            val response = assertIs<AddSuccess<PropertyBaseRootDataModel<ComplexModel>>>(status)
             keys.add(response.key)
             lastVersions.add(response.version)
         }
@@ -119,7 +131,7 @@ class DataStoreChangeComplexTest(
 
     override suspend fun resetData() {
         dataStore.execute(
-            ComplexModel.delete(*keys.toTypedArray(), hardDelete = true)
+            ComplexModel.Model.delete(*keys.toTypedArray(), hardDelete = true)
         )
         keys.clear()
         lastVersions.clear()
@@ -127,7 +139,7 @@ class DataStoreChangeComplexTest(
 
     private suspend fun executeChangeDeleteMultiRequest() {
         val changeResponse = dataStore.execute(
-            ComplexModel.change(
+            ComplexModel.Model.change(
                 keys[0].change(
                     Delete(ComplexModel { multi::ref })
                 )
@@ -151,7 +163,7 @@ class DataStoreChangeComplexTest(
 
     private suspend fun executeChangeDeleteMapRequest() {
         val changeResponse = dataStore.execute(
-            ComplexModel.change(
+            ComplexModel.Model.change(
                 keys[2].change(
                     Delete(ComplexModel { mapIntObject::ref })
                 )
@@ -174,7 +186,7 @@ class DataStoreChangeComplexTest(
 
     private suspend fun executeChangeDeleteMapValueRequest() {
         val changeResponse = dataStore.execute(
-            ComplexModel.change(
+            ComplexModel.Model.change(
                 keys[6].change(
                     Delete(ComplexModel { mapIntObject refAt 2u })
                 )
@@ -201,7 +213,7 @@ class DataStoreChangeComplexTest(
 
     private suspend fun executeChangeDeleteMapSubValueRequest() {
         val changeResponse = dataStore.execute(
-            ComplexModel.change(
+            ComplexModel.Model.change(
                 keys[3].change(
                     Delete(ComplexModel { mapIntObject.at(1u) { model::ref } })
                 )
@@ -228,7 +240,7 @@ class DataStoreChangeComplexTest(
 
     private suspend fun executeChangeDeleteMapTypedSubValueRequest() {
         val changeResponse = dataStore.execute(
-            ComplexModel.change(
+            ComplexModel.Model.change(
                 keys[4].change(
                     Delete(
                         ComplexModel {
@@ -265,7 +277,7 @@ class DataStoreChangeComplexTest(
 
     private suspend fun executeChangeChangeValueRequest() {
         val changeResponse = dataStore.execute(
-            ComplexModel.change(
+            ComplexModel.Model.change(
                 keys[5].change(
                     Change(
                         ComplexModel {
@@ -324,7 +336,7 @@ class DataStoreChangeComplexTest(
         )
 
         val changeResponse = dataStore.execute(
-            ComplexModel.change(
+            ComplexModel.Model.change(
                 keys[5].change(
                     Change(
                         ComplexModel { multi::ref } with newMultiValue,
@@ -357,7 +369,7 @@ class DataStoreChangeComplexTest(
 
     private suspend fun executeChangeIncMapRequest() {
         val changeResponse = dataStore.execute(
-            ComplexModel.change(
+            ComplexModel.Model.change(
                 keys[0].change(
                     Change(
                         ComplexModel { incMap.refAt(1u) } with EmbeddedMarykModel("n")

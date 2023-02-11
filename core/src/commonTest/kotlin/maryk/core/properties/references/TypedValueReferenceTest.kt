@@ -43,7 +43,7 @@ class TypedValueReferenceTest {
 
     @Test
     fun writeAndReadStringValue() {
-        expect(typedValueReference) { TestMarykModel.Properties.getPropertyReferenceByName(typedValueReference.completeName) }
+        expect(typedValueReference) { TestMarykModel.getPropertyReferenceByName(typedValueReference.completeName) }
     }
 
     @Test
@@ -58,7 +58,7 @@ class TypedValueReferenceTest {
 
         expect("0d0002") { bc.bytes!!.toHex() }
 
-        expect(typedValueReference) { TestMarykModel.Properties.getPropertyReferenceByBytes(bc.size, bc::read) }
+        expect(typedValueReference) { TestMarykModel.getPropertyReferenceByBytes(bc.size, bc::read) }
     }
 
     @Test
@@ -72,6 +72,6 @@ class TypedValueReferenceTest {
 
         expect("6915") { bc.bytes!!.toHex() }
 
-        expect(typedValueReference) { TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) }
+        expect(typedValueReference) { TestMarykModel.getPropertyReferenceByStorageBytes(bc.size, bc::read) }
     }
 }

@@ -33,7 +33,7 @@ class GenerateKotlinForDefinitionsTest {
             MarykTypeEnum,
             ValueMarykObject,
             EmbeddedModel.Model,
-            CompleteMarykModel,
+            CompleteMarykModel.Model,
             SimpleMarykModel.Model
         ).generateKotlin("maryk.test.models") { name ->
             setOfNames.add(name)

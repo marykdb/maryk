@@ -23,8 +23,8 @@ class IncMapAdditionTest {
                 23u
             ),
             listOf(
-                EmbeddedMarykModel(value = "ho"),
-                EmbeddedMarykModel(value = "ha")
+                EmbeddedMarykModel.run { create(value with "ho") },
+                EmbeddedMarykModel.run { create(value with "ha") },
             )
         )
     )
@@ -41,23 +41,23 @@ class IncMapAdditionTest {
 
     private val context = RequestContext(
         mapOf(
-            CompleteMarykModel.name toUnitLambda { CompleteMarykModel }
+            CompleteMarykModel.Model.name toUnitLambda { CompleteMarykModel.Model }
         ),
-        dataModel = CompleteMarykModel
+        dataModel = CompleteMarykModel.Model
     )
 
     private val enrichedContext = RequestContext(
         dataModels = mapOf(
-            CompleteMarykModel.name toUnitLambda { CompleteMarykModel }
+            CompleteMarykModel.Model.name toUnitLambda { CompleteMarykModel.Model }
         ),
-        dataModel = CompleteMarykModel
+        dataModel = CompleteMarykModel.Model
     ).apply {
         collectIncMapChange(
             IncMapChange(
                 CompleteMarykModel { incMap::ref }.change(
                     listOf(
-                        EmbeddedMarykModel(value = "ho"),
-                        EmbeddedMarykModel(value = "ha")
+                        EmbeddedMarykModel.run { create(value with "ho") },
+                        EmbeddedMarykModel.run { create(value with "ha") },
                     )
                 )
             )
@@ -127,9 +127,9 @@ class IncMapAdditionTest {
                 2u to "two",
                 3u to "three"
             ),
-            embeddedValues = EmbeddedMarykModel(
-                value = "test",
-                marykModel = TestMarykModel(
+            embeddedValues = EmbeddedMarykModel.run { create(
+                value with "test",
+                marykModel with TestMarykModel(
                     string = "hi world",
                     int = 3,
                     uint = 67u,
@@ -141,7 +141,7 @@ class IncMapAdditionTest {
                         13u to "thirteen"
                     )
                 )
-            )
+            ) }
         )
 
         val changed = original.change(

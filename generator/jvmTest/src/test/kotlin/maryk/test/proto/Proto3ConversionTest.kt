@@ -47,7 +47,7 @@ class Proto3ConversionTest {
     @Test
     fun testNumericMarykModel(){
         // SimpleObject to convert
-        val numericObject = NumericMarykModel()
+        val numericObject = NumericMarykModel.create()
         val numericObjectProto = MarykTestProtos.NumericMarykModel
             .newBuilder()
             .setSInt8(4)
@@ -70,9 +70,9 @@ class Proto3ConversionTest {
         val bc = ByteCollector()
         val cache = WriteCache()
         bc.reserve(
-            NumericMarykModel.calculateProtoBufLength(numericObject, cache)
+            NumericMarykModel.Model.calculateProtoBufLength(numericObject, cache)
         )
-        NumericMarykModel.writeProtoBuf(numericObject, cache, bc::write)
+        NumericMarykModel.Model.writeProtoBuf(numericObject, cache, bc::write)
 
         val protoBufByteArray = numericObjectProto.toByteArray()
 
@@ -146,9 +146,9 @@ class Proto3ConversionTest {
         val bc = ByteCollector()
         val cache = WriteCache()
         bc.reserve(
-            CompleteMarykModel.calculateProtoBufLength(completeObject, cache)
+            CompleteMarykModel.Model.calculateProtoBufLength(completeObject, cache)
         )
-        CompleteMarykModel.writeProtoBuf(completeObject, cache, bc::write)
+        CompleteMarykModel.Model.writeProtoBuf(completeObject, cache, bc::write)
 
         val protoBytes = completeObjectProto.toByteArray()
 

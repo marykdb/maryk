@@ -4,13 +4,9 @@ import kotlinx.datetime.LocalDateTime
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.models.RootDataModel
-import maryk.core.models.key
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.RootModel
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.dateTime
-import maryk.core.properties.definitions.index.ReversedTest.MarykModel.Properties.boolean
-import maryk.core.properties.definitions.index.ReversedTest.MarykModel.Properties.dateTime
 import maryk.core.query.DefinitionsConversionContext
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
@@ -18,45 +14,34 @@ import kotlin.test.Test
 import kotlin.test.expect
 
 internal class ReversedTest {
-    object MarykModel : RootDataModel<MarykModel, MarykModel.Properties>(
-        keyDefinition = Multiple(
-            Reversed(boolean.ref()),
-            Reversed(dateTime.ref())
-        ),
-        properties = Properties
+    object MarykModel : RootModel<MarykModel>(
+        keyDefinition = {
+            Multiple(
+                Reversed(MarykModel.boolean.ref()),
+                Reversed(MarykModel.dateTime.ref())
+            )
+        },
     ) {
-        object Properties : PropertyDefinitions() {
-            val boolean by boolean(1u, final = true)
-            val dateTime by dateTime(
-                index = 2u,
-                final = true
-            )
-        }
-
-        operator fun invoke(
-            boolean: Boolean,
-            dateTime: LocalDateTime,
-        ) = this.values {
-            mapNonNulls(
-                this.boolean with boolean,
-                this.dateTime with dateTime
-            )
-        }
+        val boolean by boolean(1u, final = true)
+        val dateTime by dateTime(
+            index = 2u,
+            final = true
+        )
     }
 
     @Test
     fun testKey() {
         val dt = LocalDateTime(2017, 9, 3, 12, 43, 40)
 
-        val obj = MarykModel(
-            boolean = true,
-            dateTime = dt
+        val obj = MarykModel.create(
+            MarykModel.boolean with true,
+            MarykModel.dateTime with dt
         )
 
         val key = MarykModel.key(obj)
 
         @Suppress("UNCHECKED_CAST")
-        with((MarykModel.keyDefinition as Multiple).references[1] as Reversed<LocalDateTime>) {
+        with((MarykModel.Model.keyDefinition as Multiple).references[1] as Reversed<LocalDateTime>) {
             val bc = ByteCollector()
             bc.reserve(7)
             this.writeStorageBytes(dt, bc::write)
@@ -67,13 +52,13 @@ internal class ReversedTest {
     }
 
     private val context = DefinitionsConversionContext(
-        propertyDefinitions = MarykModel.Properties
+        propertyDefinitions = MarykModel
     )
 
     @Test
     fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(
-            value = Reversed(boolean.ref()),
+            value = Reversed(MarykModel.boolean.ref()),
             dataModel = Reversed.Model,
             context = { context }
         )
@@ -82,7 +67,7 @@ internal class ReversedTest {
     @Test
     fun convertDefinitionToJSONAndBack() {
         checkJsonConversion(
-            value = Reversed(boolean.ref()),
+            value = Reversed(MarykModel.boolean.ref()),
             dataModel = Reversed.Model,
             context = { context }
         )
@@ -92,7 +77,7 @@ internal class ReversedTest {
     fun convertDefinitionToYAMLAndBack() {
         expect("boolean") {
             checkYamlConversion(
-                value = Reversed(boolean.ref()),
+                value = Reversed(MarykModel.boolean.ref()),
                 dataModel = Reversed.Model,
                 context = { context }
             )
@@ -101,6 +86,6 @@ internal class ReversedTest {
 
     @Test
     fun toReferenceStorageBytes() {
-        expect("0b09") { Reversed(boolean.ref()).toReferenceStorageByteArray().toHex() }
+        expect("0b09") { Reversed(MarykModel.boolean.ref()).toReferenceStorageByteArray().toHex() }
     }
 }

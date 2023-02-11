@@ -1,5 +1,6 @@
 package maryk.datastore.rocksdb
 
+import maryk.core.models.PropertyBaseRootDataModel
 import maryk.core.models.migration.MigrationException
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
@@ -34,7 +35,7 @@ class RocksDBDataStoreMigrationTest {
             keepAllVersions = true,
             relativePath = path,
             dataModelsById = mapOf(
-                1u to ModelV1
+                1u to ModelV1.Model
             )
         )
 
@@ -44,7 +45,7 @@ class RocksDBDataStoreMigrationTest {
             keepAllVersions = true,
             relativePath = path,
             dataModelsById = mapOf(
-                1u to ModelV1_1
+                1u to ModelV1_1.Model
             )
         )
 
@@ -56,7 +57,7 @@ class RocksDBDataStoreMigrationTest {
                 keepAllVersions = true,
                 relativePath = path,
                 dataModelsById = mapOf(
-                    1u to ModelV2
+                    1u to ModelV2.Model
                 ),
                 migrationHandler = null
             )
@@ -67,11 +68,11 @@ class RocksDBDataStoreMigrationTest {
                 keepAllVersions = true,
                 relativePath = path,
                 dataModelsById = mapOf(
-                    1u to ModelV2
+                    1u to ModelV2.Model
                 ),
                 migrationHandler = { _, storedDataModel, newDataModel ->
-                    assertEquals(ModelV2, newDataModel)
-                    assertEquals(ModelV1_1.version, storedDataModel.version)
+                    assertEquals(ModelV2.Model, newDataModel)
+                    assertEquals(ModelV1_1.Model.version, storedDataModel.version)
                     // Should throw this exception to proof it is entering this handler
                     throw CustomException()
                 }
@@ -88,31 +89,31 @@ class RocksDBDataStoreMigrationTest {
             keepAllVersions = true,
             relativePath = path,
             dataModelsById = mapOf(
-                1u to ModelV2
+                1u to ModelV2.Model
             )
         )
 
         val addResult = dataStore.execute(
             ModelV2.add(
-                ModelV2("ha1", 100),
-                ModelV2("ha2", 50),
-                ModelV2("ha3", 3500),
-                ModelV2("ha4", 1)
+                ModelV2.run { create (value with "ha1", newNumber with 100) },
+                ModelV2.run { create (value with "ha2", newNumber with 50) },
+                ModelV2.run { create (value with "ha3", newNumber with 3500) },
+                ModelV2.run { create (value with "ha4", newNumber with 1) },
             )
         )
 
         assertEquals(4, addResult.statuses.size)
 
-        val keys = mutableListOf<Key<ModelV2>>()
+        val keys = mutableListOf<Key<PropertyBaseRootDataModel<ModelV2>>>()
 
         for (status in addResult.statuses) {
-            assertIs<AddSuccess<ModelV2>>(status).apply {
+            assertIs<AddSuccess<PropertyBaseRootDataModel<ModelV2>>>(status).apply {
                 keys.add(key)
             }
         }
 
         val changeResult = dataStore.execute(
-            ModelV2.change(
+            ModelV2.Model.change(
                 keys[0].change(Change(ModelV2 { newNumber:: ref} with 40)),
                 keys[1].change(Change(ModelV2 { newNumber:: ref} with 2000)),
                 keys[2].change(Change(ModelV2 { newNumber:: ref} with 500)),
@@ -121,7 +122,7 @@ class RocksDBDataStoreMigrationTest {
         )
 
         for (status in changeResult.statuses) {
-            assertIs<ChangeSuccess<ModelV2>>(status)
+            assertIs<ChangeSuccess<PropertyBaseRootDataModel<ModelV2>>>(status)
         }
 
         dataStore.close()
@@ -130,7 +131,7 @@ class RocksDBDataStoreMigrationTest {
             keepAllVersions = true,
             relativePath = path,
             dataModelsById = mapOf(
-                1u to ModelV2ExtraIndex
+                1u to ModelV2ExtraIndex.Model
             )
         )
 

@@ -59,7 +59,7 @@ class ListReferenceTest {
 
             expect("661e7a") { bytes!!.toHex() }
 
-            expect(listReference) { TestMarykModel.Properties.getPropertyReferenceByStorageBytes(size, ::read) }
+            expect(listReference) { TestMarykModel.getPropertyReferenceByStorageBytes(size, ::read) }
         }
     }
 

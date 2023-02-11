@@ -24,10 +24,10 @@ class DefinitionsTest {
         Option,
         TestValueObject,
         SimpleMarykModel.Model,
-        EmbeddedMarykModel,
+        EmbeddedMarykModel.Model,
         SimpleMarykTypeEnum,
         MarykTypeEnum,
-        TestMarykModel
+        TestMarykModel.Model
     )
 
     @Test

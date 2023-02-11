@@ -88,7 +88,7 @@ internal class RootDataModelTest {
     @Test
     fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(
-            TestMarykModel,
+            TestMarykModel.Model,
             RootDataModel.Model,
             { DefinitionsConversionContext() },
             ::compareDataModels
@@ -350,7 +350,7 @@ internal class RootDataModelTest {
             }""".trimIndent()
         ) {
             checkJsonConversion(
-                TestMarykModel,
+                TestMarykModel.Model,
                 RootDataModel.Model,
                 { DefinitionsConversionContext() },
                 ::compareDataModels
@@ -548,7 +548,7 @@ internal class RootDataModelTest {
             """.trimIndent()
         ) {
             checkYamlConversion(
-                TestMarykModel,
+                TestMarykModel.Model,
                 RootDataModel.Model,
                 { DefinitionsConversionContext() },
                 ::compareDataModels
@@ -635,9 +635,9 @@ internal class RootDataModelTest {
         val reader = MarykYamlReader(simpleYaml)
 
         val newContext = DefinitionsConversionContext()
-        newContext.dataModels["TestMarykModel"] = { TestMarykModel }
+        newContext.dataModels["TestMarykModel"] = { TestMarykModel.Model }
         newContext.dataModels["TestValueObject"] = { TestValueObject }
-        newContext.dataModels["EmbeddedMarykModel"] = { EmbeddedMarykModel }
+        newContext.dataModels["EmbeddedMarykModel"] = { EmbeddedMarykModel.Model }
 
         RootDataModel.Model.readJson(reader, newContext).toDataObject().apply {
             assertEquals("SimpleModel", name)
@@ -709,7 +709,7 @@ internal class RootDataModelTest {
             }
             properties["embedded"]!!.let {
                 expect(12u) { it.index }
-                expect(EmbeddedValuesDefinition(dataModel = { TestMarykModel })) {
+                expect(EmbeddedValuesDefinition(dataModel = { TestMarykModel.Model })) {
                     it.definition as EmbeddedValuesDefinition<*, *>
                 }
             }
@@ -721,7 +721,7 @@ internal class RootDataModelTest {
             }
             properties["ref"]!!.let {
                 expect(14u) { it.index }
-                expect(ReferenceDefinition(dataModel = { TestMarykModel })) {
+                expect(ReferenceDefinition(dataModel = { TestMarykModel.Model })) {
                     it.definition as ReferenceDefinition<*>
                 }
             }

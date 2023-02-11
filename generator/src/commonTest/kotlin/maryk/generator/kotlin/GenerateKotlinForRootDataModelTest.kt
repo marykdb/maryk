@@ -452,7 +452,7 @@ class GenerateKotlinForRootDataModelTest {
             enums = mutableListOf(MarykTypeEnum, Option, SimpleMarykTypeEnum)
         )
         val output = buildString {
-            CompleteMarykModel.generateKotlin("maryk.test.models", generationContext) {
+            CompleteMarykModel.Model.generateKotlin("maryk.test.models", generationContext) {
                 append(it)
             }
         }

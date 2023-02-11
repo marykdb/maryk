@@ -4,9 +4,9 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.aggregations.Aggregations
-import maryk.core.properties.types.DateUnit.Months
 import maryk.core.aggregations.metric.Sum
 import maryk.core.extensions.toUnitLambda
+import maryk.core.properties.types.DateUnit.Months
 import maryk.core.query.RequestContext
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
@@ -25,9 +25,9 @@ class DateHistogramTest {
 
     private val context = RequestContext(
         mapOf(
-            TestMarykModel.name toUnitLambda { TestMarykModel }
+            TestMarykModel.Model.name toUnitLambda { TestMarykModel.Model }
         ),
-        dataModel = TestMarykModel
+        dataModel = TestMarykModel.Model
     )
 
     @Test

@@ -1,47 +1,38 @@
 package maryk.test.models
 
-import maryk.core.models.DataModel
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.models.PropertyBaseDataModel
+import maryk.core.models.PropertyBaseRootDataModel
+import maryk.core.properties.Model
 import maryk.core.properties.definitions.embed
 import maryk.core.properties.definitions.string
 import maryk.core.values.Values
-import maryk.test.models.EmbeddedMarykModel.Properties
 
-object EmbeddedMarykModel : DataModel<EmbeddedMarykModel, Properties>(
+object EmbeddedMarykModel : Model<EmbeddedMarykModel>(
     reservedIndices = listOf(999u),
     reservedNames = listOf("reserved"),
-    properties = Properties
 ) {
-    object Properties : PropertyDefinitions() {
-        val value by string(
-            index = 1u
-        )
-        val model by embed(
-            index = 2u,
-            required = false,
-            dataModel = { EmbeddedMarykModel }
-        )
-        val marykModel by embed(
-            index = 3u,
-            required = false,
-            dataModel = { TestMarykModel }
-        )
-    }
+    val value by string(
+        index = 1u
+    )
+    val model by embed(
+        index = 2u,
+        required = false,
+        dataModel = { EmbeddedMarykModel.Model }
+    )
+    val marykModel by embed(
+        index = 3u,
+        required = false,
+        dataModel = { TestMarykModel.Model }
+    )
 
     operator fun invoke(
         value: String,
-        model: Values<EmbeddedMarykModel, Properties>? = null,
-        marykModel: Values<TestMarykModel, TestMarykModel.Properties>? = null
-    ) = values {
-        mapNonNulls(
+        model: Values<PropertyBaseDataModel<EmbeddedMarykModel>, EmbeddedMarykModel>? = null,
+        marykModel: Values<PropertyBaseRootDataModel<TestMarykModel>, TestMarykModel>? = null
+    ) =
+        create(
             this.value with value,
             this.model with model,
             this.marykModel with marykModel
         )
-    }
-
-    override fun equals(other: Any?) =
-        other is DataModel<*, *> &&
-            this.name == other.name &&
-            this.properties.size == other.properties.size
 }

@@ -32,7 +32,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class FilterWithFetchRequestKtTest {
-    private val value2 = TestMarykModel.createDataRecord(
+    private val value2 = TestMarykModel.Model.createDataRecord(
         TestMarykModel(
             string = "haha2",
             int = 532,
@@ -52,7 +52,7 @@ class FilterWithFetchRequestKtTest {
         )
     )
 
-    private val value1 = TestMarykModel.createDataRecord(
+    private val value1 = TestMarykModel.Model.createDataRecord(
         TestMarykModel(
             string = "haha1",
             int = 5,
@@ -90,7 +90,7 @@ class FilterWithFetchRequestKtTest {
 
     private val recordFetcher = { dataModel: IsRootValuesDataModel<*>, key: Key<*> ->
         when {
-            dataModel === TestMarykModel -> when (key) {
+            dataModel === TestMarykModel.Model -> when (key) {
                 value1.key -> value1
                 value2.key -> value2
                 else -> null

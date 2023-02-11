@@ -1,19 +1,17 @@
 package maryk.core.properties.references
 
 import maryk.core.exceptions.UnexpectedValueException
-import maryk.core.models.RootDataModel
 import maryk.core.processors.datastore.matchers.FuzzyExactLengthMatch
 import maryk.core.processors.datastore.matchers.QualifierExactMatcher
 import maryk.core.processors.datastore.matchers.QualifierFuzzyMatcher
 import maryk.core.processors.datastore.matchers.ReferencedQualifierMatcher
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.RootModel
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.embed
 import maryk.core.properties.definitions.string
 import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
-import maryk.core.properties.references.Properties.embeddedObject
-import maryk.core.properties.references.Properties.test
+import maryk.core.properties.references.Model.test
 import maryk.core.properties.references.dsl.any
 import maryk.core.protobuf.WriteCache
 import maryk.lib.extensions.toHex
@@ -29,7 +27,7 @@ import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import kotlin.test.expect
 
-private object Properties : PropertyDefinitions() {
+private object Model : RootModel<Model>() {
     val test by string(1u)
     val embeddedObject by embed(
         index = 2u,
@@ -37,24 +35,20 @@ private object Properties : PropertyDefinitions() {
     )
 }
 
-private object Model : RootDataModel<Model, Properties>(
-    properties = Properties
-)
-
 private val ref = test.ref()
-private val subRef = test.ref(embeddedObject.ref())
+private val subRef = test.ref(Model.embeddedObject.ref())
 
 internal class PropertyReferenceTest {
     @Test
     fun cacheTest() {
         assertSame(ref, test.ref())
-        assertSame(subRef, test.ref(embeddedObject.ref()))
+        assertSame(subRef, test.ref(Model.embeddedObject.ref()))
     }
 
     @Test
     fun getValueFromList() {
-        val values = Model.values {
-            mapNonNulls(
+        val values = Model.run {
+            create(
                 test with "±testValue"
             )
         }
@@ -89,7 +83,7 @@ internal class PropertyReferenceTest {
     fun testCompareTo() {
         expect(test.ref()) { ref }
         assertNotEquals<IsPropertyReference<*, *, *>>(
-            embeddedObject.ref(), ref
+            Model.embeddedObject.ref(), ref
         )
     }
 
@@ -105,7 +99,7 @@ internal class PropertyReferenceTest {
 
         expect("0201") { bc.bytes!!.toHex() }
 
-        expect(subRef) { Properties.getPropertyReferenceByBytes(bc.size, bc::read) }
+        expect(subRef) { Model.getPropertyReferenceByBytes(bc.size, bc::read) }
     }
 
     @Test
@@ -119,17 +113,17 @@ internal class PropertyReferenceTest {
 
         expect("1609") { bc.bytes!!.toHex() }
 
-        expect(subRef) { Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) }
+        expect(subRef) { Model.getPropertyReferenceByStorageBytes(bc.size, bc::read) }
     }
 
     @Test
     fun compatibleWithModel() {
         assertTrue {
-            ref.isCompatibleWithModel(Model)
+            ref.isCompatibleWithModel(Model.Model)
         }
 
         assertTrue {
-            subRef.isCompatibleWithModel(Model)
+            subRef.isCompatibleWithModel(Model.Model)
         }
 
         // Property definition wrapper which does not exist on Model
@@ -141,12 +135,12 @@ internal class PropertyReferenceTest {
 
         val invalidRef = invalid.ref()
         assertFalse {
-            invalidRef.isCompatibleWithModel(Model)
+            invalidRef.isCompatibleWithModel(Model.Model)
         }
 
-        val invalidSubRef = invalid.ref(embeddedObject.ref())
+        val invalidSubRef = invalid.ref(Model.embeddedObject.ref())
         assertFalse {
-            invalidSubRef.isCompatibleWithModel(Model)
+            invalidSubRef.isCompatibleWithModel(Model.Model)
         }
     }
 

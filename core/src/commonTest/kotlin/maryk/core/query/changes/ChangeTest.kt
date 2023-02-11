@@ -29,9 +29,9 @@ class ChangeTest {
 
     private val context = RequestContext(
         mapOf(
-            TestMarykModel.name toUnitLambda { TestMarykModel }
+            TestMarykModel.Model.name toUnitLambda { TestMarykModel.Model }
         ),
-        dataModel = TestMarykModel
+        dataModel = TestMarykModel.Model
     )
 
     @Test
@@ -80,12 +80,12 @@ class ChangeTest {
                 LocalTime(12, 0) to "Hi",
                 LocalTime(1, 2) to "Hoi"
             ),
-            embeddedValues = EmbeddedMarykModel(
-                value = "hi",
-                model = EmbeddedMarykModel(
-                    value = "bye"
-                )
-            )
+            embeddedValues = EmbeddedMarykModel.run { create(
+                value with "hi",
+                model with EmbeddedMarykModel.run { create(
+                    value with "bye"
+                ) }
+            ) }
         )
 
         var changed = original.change(listOf())

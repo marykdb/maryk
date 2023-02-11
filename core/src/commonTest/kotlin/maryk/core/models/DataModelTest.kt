@@ -99,8 +99,8 @@ internal class DataModelTest {
     @Test
     fun constructByMap() {
         expect(testMarykModelObject) {
-            TestMarykModel.values {
-                mapNonNulls(
+            TestMarykModel.run {
+                create(
                     string with testMarykModelObject { string },
                     int with testMarykModelObject { int },
                     uint with testMarykModelObject { uint },
@@ -115,13 +115,13 @@ internal class DataModelTest {
 
     @Test
     fun validate() {
-        TestMarykModel.validate(testMarykModelObject)
+        TestMarykModel.Model.validate(testMarykModelObject)
     }
 
     @Test
     fun failValidationWithIncorrectValuesInDataObject() {
         assertFailsWith<ValidationUmbrellaException> {
-            TestMarykModel.validate(
+            TestMarykModel.Model.validate(
                 TestMarykModel(
                     string = "haas",
                     int = 9,
@@ -137,8 +137,8 @@ internal class DataModelTest {
     @Test
     fun failValidationWithIncorrectValuesInMap() {
         val e = assertFailsWith<ValidationUmbrellaException> {
-            TestMarykModel.validate(
-                TestMarykModel.values {
+            TestMarykModel.Model.validate(
+                TestMarykModel.Model.values {
                     mapNonNulls(
                         string with "wrong",
                         int with 999
@@ -155,39 +155,39 @@ internal class DataModelTest {
 
     @Test
     fun getPropertyDefinitionByName() {
-        expect(TestMarykModel.Properties.string) {
-            TestMarykModel.properties["string"] as FlexBytesDefinitionWrapper<*, *, *, *, *>
+        expect(TestMarykModel.string) {
+            TestMarykModel["string"] as FlexBytesDefinitionWrapper<*, *, *, *, *>
         }
-        expect(TestMarykModel.Properties.int) {
-            TestMarykModel.properties["int"] as FixedBytesDefinitionWrapper<*, *, *, *, *>
+        expect(TestMarykModel.int) {
+            TestMarykModel["int"] as FixedBytesDefinitionWrapper<*, *, *, *, *>
         }
-        expect(TestMarykModel.Properties.dateTime) {
-            TestMarykModel.properties["dateTime"] as FixedBytesDefinitionWrapper<*, *, *, *, *>
+        expect(TestMarykModel.dateTime) {
+            TestMarykModel["dateTime"] as FixedBytesDefinitionWrapper<*, *, *, *, *>
         }
-        expect(TestMarykModel.Properties.bool) {
-            TestMarykModel.properties["bool"] as FixedBytesDefinitionWrapper<*, *, *, *, *>
+        expect(TestMarykModel.bool) {
+            TestMarykModel["bool"] as FixedBytesDefinitionWrapper<*, *, *, *, *>
         }
     }
 
     @Test
     fun getPropertyDefinitionByIndex() {
-        expect(TestMarykModel.Properties.string) {
-            TestMarykModel.properties[1u] as FlexBytesDefinitionWrapper<*, *, *, *, *>
+        expect(TestMarykModel.string) {
+            TestMarykModel[1u] as FlexBytesDefinitionWrapper<*, *, *, *, *>
         }
-        expect(TestMarykModel.Properties.int) {
-            TestMarykModel.properties[2u] as FixedBytesDefinitionWrapper<*, *, *, *, *>
+        expect(TestMarykModel.int) {
+            TestMarykModel[2u] as FixedBytesDefinitionWrapper<*, *, *, *, *>
         }
-        expect(TestMarykModel.Properties.uint) {
-            TestMarykModel.properties[3u] as FixedBytesDefinitionWrapper<*, *, *, *, *>
+        expect(TestMarykModel.uint) {
+            TestMarykModel[3u] as FixedBytesDefinitionWrapper<*, *, *, *, *>
         }
-        expect(TestMarykModel.Properties.double) {
-            TestMarykModel.properties[4u] as FixedBytesDefinitionWrapper<*, *, *, *, *>
+        expect(TestMarykModel.double) {
+            TestMarykModel[4u] as FixedBytesDefinitionWrapper<*, *, *, *, *>
         }
-        expect(TestMarykModel.Properties.dateTime) {
-            TestMarykModel.properties[5u] as FixedBytesDefinitionWrapper<*, *, *, *, *>
+        expect(TestMarykModel.dateTime) {
+            TestMarykModel[5u] as FixedBytesDefinitionWrapper<*, *, *, *, *>
         }
-        expect(TestMarykModel.Properties.bool) {
-            TestMarykModel.properties[6u] as FixedBytesDefinitionWrapper<*, *, *, *, *>
+        expect(TestMarykModel.bool) {
+            TestMarykModel[6u] as FixedBytesDefinitionWrapper<*, *, *, *, *>
         }
     }
 
@@ -197,7 +197,7 @@ internal class DataModelTest {
             val writer = JsonWriter {
                 append(it)
             }
-            TestMarykModel.writeJson(testExtendedMarykModelObject, writer)
+            TestMarykModel.Model.writeJson(testExtendedMarykModelObject, writer)
         }
 
         assertEquals(JSON, output)
@@ -209,7 +209,7 @@ internal class DataModelTest {
             val writer = JsonWriter(pretty = true) {
                 append(it)
             }
-            TestMarykModel.writeJson(testExtendedMarykModelObject, writer)
+            TestMarykModel.Model.writeJson(testExtendedMarykModelObject, writer)
         }
 
 
@@ -254,7 +254,7 @@ internal class DataModelTest {
                 append(it)
             }
 
-            TestMarykModel.writeJson(testExtendedMarykModelObject, writer)
+            TestMarykModel.Model.writeJson(testExtendedMarykModelObject, writer)
         }
 
 
@@ -292,8 +292,8 @@ internal class DataModelTest {
         val bc = ByteCollector()
         val cache = WriteCache()
 
-        val map = TestMarykModel.values {
-            mapNonNulls(
+        val map = TestMarykModel.run {
+            create(
                 string with "hay",
                 int with 4,
                 uint with 32u,
@@ -306,10 +306,10 @@ internal class DataModelTest {
         }
 
         bc.reserve(
-            TestMarykModel.calculateProtoBufLength(map, cache)
+            TestMarykModel.Model.calculateProtoBufLength(map, cache)
         )
 
-        TestMarykModel.writeProtoBuf(map, cache, bc::write)
+        TestMarykModel.Model.writeProtoBuf(map, cache, bc::write)
 
         expect("0a036861791008182021713d0ad7a3700c4028ccf794d10530013803720701050105010501") { bc.bytes!!.toHex() }
     }
@@ -320,14 +320,14 @@ internal class DataModelTest {
         val cache = WriteCache()
 
         bc.reserve(
-            TestMarykModel.calculateProtoBufLength(testExtendedMarykModelObject, cache)
+            TestMarykModel.Model.calculateProtoBufLength(testExtendedMarykModelObject, cache)
         )
 
-        TestMarykModel.writeProtoBuf(testExtendedMarykModelObject, cache, bc::write)
+        TestMarykModel.Model.writeProtoBuf(testExtendedMarykModelObject, cache, bc::write)
 
         expect("0a036861791008182021713d0ad7a3700c4028ccf794d10530013801420744e024be35fc0b4a08c29102bc87028844520908a4eb021203796573520a08d49a0212046168756d5a0e800000060180000058dfa324010162060a04746573746a0f1a0d0a0b737562496e4d756c7469217a0574657374317a0c616e6f7468657220746573747a04f09fa497") { bc.bytes!!.toHex() }
 
-        expect(testExtendedMarykModelObject) { TestMarykModel.readProtoBuf(bc.size, bc::read) }
+        expect(testExtendedMarykModelObject) { TestMarykModel.Model.readProtoBuf(bc.size, bc::read) }
     }
 
     @Test
@@ -336,7 +336,7 @@ internal class DataModelTest {
             initByteArrayByHex("930408161205ffffffffff9404a20603686179a80608b00620b906400c70a3d70a3d72c80601d006028a07020105")
         var index = 0
 
-        val map = TestMarykModel.readProtoBuf(bytes.size, {
+        val map = TestMarykModel.Model.readProtoBuf(bytes.size, {
             bytes[index++]
         })
 
@@ -357,7 +357,7 @@ internal class DataModelTest {
         ).forEach { jsonInput ->
             input = jsonInput
             index = 0
-            expect(testExtendedMarykModelObject) { TestMarykModel.readJson(reader = jsonReader()) }
+            expect(testExtendedMarykModelObject) { TestMarykModel.Model.readJson(reader = jsonReader()) }
         }
     }
 
@@ -370,12 +370,12 @@ internal class DataModelTest {
             JsonWriter(writer = writer),
             JsonWriter(pretty = true, writer = writer)
         ).forEach { generator ->
-            TestMarykModel.writeJson(testExtendedMarykModelObject, generator)
+            TestMarykModel.Model.writeJson(testExtendedMarykModelObject, generator)
 
             var index = 0
             val reader = { JsonReader(reader = { output[index++] }) }
             expect(testExtendedMarykModelObject) {
-                TestMarykModel.readJson(reader = reader())
+                TestMarykModel.Model.readJson(reader = reader())
             }
 
             output = ""

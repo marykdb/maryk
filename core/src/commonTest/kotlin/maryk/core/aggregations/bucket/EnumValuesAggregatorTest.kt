@@ -30,8 +30,8 @@ class EnumValuesAggregatorTest {
 
         enumValuesAggregator.aggregate(
             createAggregator(
-                TestMarykModel.values {
-                    mapNonNulls(
+                TestMarykModel.run {
+                    create(
                         enum with V1
                     )
                 }
@@ -39,8 +39,8 @@ class EnumValuesAggregatorTest {
         )
         enumValuesAggregator.aggregate(
             createAggregator(
-                TestMarykModel.values {
-                    mapNonNulls(
+                TestMarykModel.run {
+                    create(
                         enum with V1
                     )
                 }
@@ -49,8 +49,8 @@ class EnumValuesAggregatorTest {
 
         enumValuesAggregator.aggregate(
             createAggregator(
-                TestMarykModel.values {
-                    mapNonNulls(
+                TestMarykModel.run {
+                    create(
                         enum with V3
                     )
                 }
@@ -58,8 +58,8 @@ class EnumValuesAggregatorTest {
         )
         enumValuesAggregator.aggregate(
             createAggregator(
-                TestMarykModel.values {
-                    mapNonNulls(
+                TestMarykModel.run {
+                    create(
                         enum with V3,
                         int with 37637
                     )
@@ -68,8 +68,8 @@ class EnumValuesAggregatorTest {
         )
         enumValuesAggregator.aggregate(
             createAggregator(
-                TestMarykModel.values {
-                    mapNonNulls(
+                TestMarykModel.run {
+                    create(
                         enum with V3,
                         int with 1569
                     )

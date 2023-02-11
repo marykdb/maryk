@@ -5,6 +5,7 @@ import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.extensions.bytes.ZERO_BYTE
 import maryk.core.extensions.toUnitLambda
 import maryk.core.models.IsRootDataModel
+import maryk.core.models.PropertyBaseRootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.RequestContext
 import maryk.test.ByteCollector
@@ -14,7 +15,7 @@ import kotlin.test.Test
 import kotlin.test.expect
 
 class ContextualReferenceDefinitionTest {
-    private val refsToTest = arrayOf<Key<TestMarykModel>>(
+    private val refsToTest = arrayOf<Key<PropertyBaseRootDataModel<TestMarykModel>>>(
         Key(ByteArray(7) { ZERO_BYTE }),
         Key(ByteArray(7) { MAX_BYTE }),
         Key(ByteArray(7) { if (it % 2 == 1) 0b1000_1000.toByte() else MAX_BYTE })
@@ -26,10 +27,10 @@ class ContextualReferenceDefinitionTest {
 
     private val context = RequestContext(
         mapOf(
-            TestMarykModel.name toUnitLambda { TestMarykModel },
-            EmbeddedMarykModel.name toUnitLambda { EmbeddedMarykModel }
+            TestMarykModel.Model.name toUnitLambda { TestMarykModel.Model },
+            EmbeddedMarykModel.Model.name toUnitLambda { EmbeddedMarykModel.Model }
         ),
-        dataModel = TestMarykModel
+        dataModel = TestMarykModel.Model
     )
 
     @Test

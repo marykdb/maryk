@@ -1,12 +1,9 @@
 package maryk.core.properties.references
 
-import maryk.core.models.RootDataModel
-import maryk.core.models.key
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.RootModel
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.multiType
 import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
-import maryk.core.properties.references.TypeReferenceTest.MarykModel.Properties.multi
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.lib.extensions.toHex
@@ -23,25 +20,16 @@ import kotlin.test.assertTrue
 import kotlin.test.expect
 
 internal class TypeReferenceTest {
-    object MarykModel : RootDataModel<MarykModel, MarykModel.Properties>(
-        keyDefinition = multi.typeRef(),
-        properties = Properties
+    object MarykModel : RootModel<MarykModel>(
+        keyDefinition = {
+            MarykModel.multi.typeRef()
+        },
     ) {
-        object Properties : PropertyDefinitions() {
-            val multi by multiType(
-                index = 1u,
-                typeEnum = MarykTypeEnum,
-                final = true
-            )
-        }
-
-        operator fun invoke(
-            multi: TypedValue<MarykTypeEnum<*>, *>
-        ) = this.values {
-            mapNonNulls(
-                this.multi with multi
-            )
-        }
+        val multi by multiType(
+            index = 1u,
+            typeEnum = MarykTypeEnum,
+            final = true
+        )
     }
 
     private val typeReference =
@@ -55,17 +43,17 @@ internal class TypeReferenceTest {
 
     @Test
     fun testKey() {
-        val obj = MarykModel(
-            multi = TypedValue(T2, 23)
+        val obj = MarykModel.create(
+            MarykModel.multi with TypedValue(T2, 23)
         )
 
         val key = MarykModel.key(obj)
         expect("0002") { key.bytes.toHex() }
 
-        val keyDef = MarykModel.keyDefinition
+        val keyDef = MarykModel.Model.keyDefinition
 
         val specificDef = assertIs<TypeReference<MarykTypeEnum<*>, *, *>>(keyDef)
-        expect(multi.typeRef()) { specificDef }
+        expect(MarykModel.multi.typeRef()) { specificDef }
 
         expect(T2) { specificDef.getValue(obj) }
 
@@ -77,13 +65,13 @@ internal class TypeReferenceTest {
 
     @Test
     fun toReferenceStorageBytes() {
-        expect("0a09") { multi.typeRef().referenceStorageByteArray.toHex() }
+        expect("0a09") { MarykModel.multi.typeRef().referenceStorageByteArray.toHex() }
     }
 
     @Test
     fun compatibleWithModel() {
         assertTrue {
-            typeReference.isCompatibleWithModel(TestMarykModel)
+            typeReference.isCompatibleWithModel(TestMarykModel.Model)
         }
 
         // Property definition wrapper which does not exist on Model
@@ -95,7 +83,7 @@ internal class TypeReferenceTest {
 
         val invalidRef = invalid.typeRef()
         assertFalse {
-            invalidRef.isCompatibleWithModel(MarykModel)
+            invalidRef.isCompatibleWithModel(MarykModel.Model)
         }
     }
 }

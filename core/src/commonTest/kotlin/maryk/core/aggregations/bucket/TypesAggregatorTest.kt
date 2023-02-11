@@ -32,8 +32,8 @@ class TypesAggregatorTest {
 
         typesAggregator.aggregate(
             createAggregator(
-                TestMarykModel.values {
-                    mapNonNulls(
+                TestMarykModel.run {
+                    create(
                         multi with TypedValue(S1, "value 1"),
                         int with 2324
                     )
@@ -42,8 +42,8 @@ class TypesAggregatorTest {
         )
         typesAggregator.aggregate(
             createAggregator(
-                TestMarykModel.values {
-                    mapNonNulls(
+                TestMarykModel.run {
+                    create(
                         multi with TypedValue(S1, "value 2"),
                         int with 872364
                     )
@@ -53,8 +53,8 @@ class TypesAggregatorTest {
 
         typesAggregator.aggregate(
             createAggregator(
-                TestMarykModel.values {
-                    mapNonNulls(
+                TestMarykModel.run {
+                    create(
                         multi with TypedValue(S3, EmbeddedMarykModel("E1"))
                     )
                 }
@@ -62,8 +62,8 @@ class TypesAggregatorTest {
         )
         typesAggregator.aggregate(
             createAggregator(
-                TestMarykModel.values {
-                    mapNonNulls(
+                TestMarykModel.run {
+                    create(
                         multi with TypedValue(S3, EmbeddedMarykModel("E1"))
                     )
                 }
@@ -71,8 +71,8 @@ class TypesAggregatorTest {
         )
         typesAggregator.aggregate(
             createAggregator(
-                TestMarykModel.values {
-                    mapNonNulls(
+                TestMarykModel.run {
+                    create(
                         multi with TypedValue(S3, EmbeddedMarykModel("E1"))
                     )
                 }

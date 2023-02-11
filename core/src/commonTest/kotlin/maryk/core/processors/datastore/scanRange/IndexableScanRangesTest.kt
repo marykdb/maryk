@@ -3,7 +3,6 @@ package maryk.core.processors.datastore.scanRange
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 import maryk.core.extensions.bytes.MAX_BYTE
-import maryk.core.models.key
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.filters.And
@@ -19,9 +18,8 @@ import maryk.core.query.filters.ValueIn
 import maryk.core.query.pairs.with
 import maryk.lib.extensions.toHex
 import maryk.test.models.CompleteMarykModel
-import maryk.test.models.CompleteMarykModel.Properties.number
-import maryk.test.models.CompleteMarykModel.Properties.string
-import maryk.test.models.CompleteMarykModel.Properties.time
+import maryk.test.models.CompleteMarykModel.number
+import maryk.test.models.CompleteMarykModel.time
 import maryk.test.models.MarykEnumEmbedded.E1
 import maryk.test.models.SimpleMarykTypeEnum.S1
 import kotlin.test.Test
@@ -355,12 +353,12 @@ class IndexableScanRangesTest {
             CompleteMarykModel { string::ref } with "Jan"
         )
 
-        val scanRange = string.ref().createScanRange(filter, keyScanRange)
+        val scanRange = CompleteMarykModel.string.ref().createScanRange(filter, keyScanRange)
 
         expect("4a616e") { scanRange.ranges.first().start.toHex() }
         expect("4a616e") { scanRange.ranges.first().end?.toHex() }
 
-        val matchStringIndexValue = string.ref().toStorageByteArrayForIndex(
+        val matchStringIndexValue = CompleteMarykModel.string.ref().toStorageByteArrayForIndex(
             matchDO, matchKey.bytes
         )!!
 
@@ -368,7 +366,7 @@ class IndexableScanRangesTest {
         assertFalse { scanRange.ranges.first().keyOutOfRange(matchStringIndexValue) }
         assertTrue { scanRange.matchesPartials(matchStringIndexValue) }
 
-        val earlierStringIndexValue = string.ref().toStorageByteArrayForIndex(
+        val earlierStringIndexValue = CompleteMarykModel.string.ref().toStorageByteArrayForIndex(
             earlierDO, earlierKey.bytes
         )!!
 
@@ -376,7 +374,7 @@ class IndexableScanRangesTest {
         assertFalse { scanRange.ranges.first().keyOutOfRange(earlierStringIndexValue) }
         assertTrue { scanRange.matchesPartials(earlierStringIndexValue) }
 
-        val laterStringIndexValue = string.ref().toStorageByteArrayForIndex(
+        val laterStringIndexValue = CompleteMarykModel.string.ref().toStorageByteArrayForIndex(
             laterDO, laterKey.bytes
         )!!
 
@@ -391,12 +389,12 @@ class IndexableScanRangesTest {
             CompleteMarykModel { string::ref} with Regex("^[A-Z]an.*$")
         )
 
-        val scanRange = string.ref().createScanRange(filter, keyScanRange)
+        val scanRange = CompleteMarykModel.string.ref().createScanRange(filter, keyScanRange)
 
         expect("") { scanRange.ranges.first().start.toHex() }
         expect("") { scanRange.ranges.first().end?.toHex() }
 
-        val matchStringIndexValue = string.ref().toStorageByteArrayForIndex(
+        val matchStringIndexValue = CompleteMarykModel.string.ref().toStorageByteArrayForIndex(
             matchDO, matchKey.bytes
         )!!
 
@@ -405,7 +403,7 @@ class IndexableScanRangesTest {
         // Only one to match with the RegEx
         assertTrue { scanRange.matchesPartials(matchStringIndexValue) }
 
-        val earlierStringIndexValue = string.ref().toStorageByteArrayForIndex(
+        val earlierStringIndexValue = CompleteMarykModel.string.ref().toStorageByteArrayForIndex(
             earlierDO, earlierKey.bytes
         )!!
 
@@ -413,7 +411,7 @@ class IndexableScanRangesTest {
         assertFalse { scanRange.ranges.first().keyOutOfRange(earlierStringIndexValue) }
         assertFalse { scanRange.matchesPartials(earlierStringIndexValue) }
 
-        val laterStringIndexValue = string.ref().toStorageByteArrayForIndex(
+        val laterStringIndexValue = CompleteMarykModel.string.ref().toStorageByteArrayForIndex(
             laterDO, laterKey.bytes
         )!!
 

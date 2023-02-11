@@ -28,7 +28,7 @@ internal class ComplexDataModelMapTest {
             val writer = JsonWriter(pretty = true) {
                 append(it)
             }
-            ComplexModel.writeJson(testComplexMap, writer)
+            ComplexModel.Model.writeJson(testComplexMap, writer)
         }
 
         assertEquals(
@@ -64,7 +64,7 @@ internal class ComplexDataModelMapTest {
 
         var index = 0
         val reader = { JsonReader(reader = { output[index++] }) }
-        expect(testComplexMap) { ComplexModel.readJson(reader = reader()) }
+        expect(testComplexMap) { ComplexModel.Model.readJson(reader = reader()) }
     }
 
     @Test
@@ -74,7 +74,7 @@ internal class ComplexDataModelMapTest {
                 append(it)
             }
 
-            ComplexModel.writeJson(testComplexMap, writer)
+            ComplexModel.Model.writeJson(testComplexMap, writer)
         }
 
         assertEquals(
@@ -106,15 +106,15 @@ internal class ComplexDataModelMapTest {
         val cache = WriteCache()
 
         bc.reserve(
-            ComplexModel.calculateProtoBufLength(testComplexMap, cache)
+            ComplexModel.Model.calculateProtoBufLength(testComplexMap, cache)
         )
 
-        ComplexModel.writeProtoBuf(testComplexMap, cache, bc::write)
+        ComplexModel.Model.writeProtoBuf(testComplexMap, cache, bc::write)
 
         expect("0a0d1a0b0a02753312050a0375653312070a02763112016112070a0276321201621a08080112040a0274311a08080212040a027432220a080212061a040a026d33") {
             bc.bytes!!.toHex()
         }
 
-        expect(testComplexMap) { ComplexModel.readProtoBuf(bc.size, bc::read) }
+        expect(testComplexMap) { ComplexModel.Model.readProtoBuf(bc.size, bc::read) }
     }
 }

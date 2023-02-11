@@ -17,12 +17,12 @@ class KeyScanRangesUniqueTest {
             CompleteMarykModel { string::ref } with "🦄"
         )
 
-        val scanRange = CompleteMarykModel.createScanRange(filter, null)
+        val scanRange = CompleteMarykModel.Model.createScanRange(filter, null)
 
         expect(1) { scanRange.uniques?.size }
         scanRange.uniques?.get(0)?.let {
             expect("09") { it.reference.toHex() }
-            expect(CompleteMarykModel.Properties.string.definition) {
+            expect(CompleteMarykModel.string.definition) {
                 it.definition as StringDefinition
             }
             expect("🦄") { it.value }
@@ -37,12 +37,12 @@ class KeyScanRangesUniqueTest {
             CompleteMarykModel { string::ref } with setOf("🦄", "💩", "🤡", "🤖")
         )
 
-        val scanRange = CompleteMarykModel.createScanRange(filter, null)
+        val scanRange = CompleteMarykModel.Model.createScanRange(filter, null)
 
         expect(4) { scanRange.uniques?.size }
         scanRange.uniques?.get(0)?.let {
             expect("09") { it.reference.toHex() }
-            expect(CompleteMarykModel.Properties.string.definition) {
+            expect(CompleteMarykModel.string.definition) {
                 it.definition as StringDefinition
             }
             expect("🦄") { it.value }
@@ -52,7 +52,7 @@ class KeyScanRangesUniqueTest {
 
         scanRange.uniques?.get(3)?.let {
             expect("09") { it.reference.toHex() }
-            expect(CompleteMarykModel.Properties.string.definition) {
+            expect(CompleteMarykModel.string.definition) {
                 it.definition as StringDefinition
             }
             expect("🤖") { it.value }

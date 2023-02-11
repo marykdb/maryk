@@ -3,9 +3,9 @@ package maryk.core.aggregations.bucket
 import kotlinx.datetime.LocalDateTime
 import maryk.core.aggregations.Aggregations
 import maryk.core.aggregations.AggregationsResponse
-import maryk.core.properties.types.DateUnit.Hours
 import maryk.core.aggregations.metric.Sum
 import maryk.core.aggregations.metric.SumResponse
+import maryk.core.properties.types.DateUnit.Hours
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.expect
@@ -31,8 +31,8 @@ class DateHistogramAggregatorTest {
 
         dateHistogramAggregator.aggregate(
             createAggregator(
-                TestMarykModel.values {
-                    mapNonNulls(
+                TestMarykModel.run {
+                    create(
                         dateTime with LocalDateTime(2019, 12, 11, 10, 12, 8),
                         int with 345
                     )
@@ -41,8 +41,8 @@ class DateHistogramAggregatorTest {
         )
         dateHistogramAggregator.aggregate(
             createAggregator(
-                TestMarykModel.values {
-                    mapNonNulls(
+                TestMarykModel.run {
+                    create(
                         dateTime with LocalDateTime(2019, 12, 11, 10, 12, 9),
                         int with 2537
                     )
@@ -51,8 +51,8 @@ class DateHistogramAggregatorTest {
         )
         dateHistogramAggregator.aggregate(
             createAggregator(
-                TestMarykModel.values {
-                    mapNonNulls(
+                TestMarykModel.run {
+                    create(
                         dateTime with LocalDateTime(2019, 12, 11, 11, 32, 19),
                         int with 1
                     )
@@ -61,8 +61,8 @@ class DateHistogramAggregatorTest {
         )
         dateHistogramAggregator.aggregate(
             createAggregator(
-                TestMarykModel.values {
-                    mapNonNulls(
+                TestMarykModel.run {
+                    create(
                         dateTime with LocalDateTime(2019, 12, 11, 12, 55, 56)
                     )
                 }

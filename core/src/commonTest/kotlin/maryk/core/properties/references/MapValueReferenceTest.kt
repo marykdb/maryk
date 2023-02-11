@@ -69,7 +69,7 @@ class MapValueReferenceTest {
 
             expect("540300d84f") { bytes!!.toHex() }
 
-            expect(valReference) { TestMarykModel.Properties.getPropertyReferenceByStorageBytes(size, ::read) }
+            expect(valReference) { TestMarykModel.getPropertyReferenceByStorageBytes(size, ::read) }
         }
 
     }
@@ -84,7 +84,7 @@ class MapValueReferenceTest {
 
             expect("661e540300d84f") { bytes!!.toHex() }
 
-            expect(subReference) { TestMarykModel.Properties.getPropertyReferenceByStorageBytes(size, ::read) }
+            expect(subReference) { TestMarykModel.getPropertyReferenceByStorageBytes(size, ::read) }
         }
     }
 

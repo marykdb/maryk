@@ -46,7 +46,7 @@ class MapReferenceTest {
 
             expect("54") { bytes!!.toHex() }
 
-            expect(mapReference) { TestMarykModel.Properties.getPropertyReferenceByStorageBytes(size, ::read) }
+            expect(mapReference) { TestMarykModel.getPropertyReferenceByStorageBytes(size, ::read) }
         }
     }
 }

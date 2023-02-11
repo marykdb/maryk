@@ -1,6 +1,7 @@
 package maryk.datastore.test
 
 import kotlinx.datetime.LocalDate
+import maryk.core.models.PropertyBaseRootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
@@ -15,7 +16,7 @@ import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.datastore.shared.IsDataStore
 import maryk.test.models.CompleteMarykModel
-import maryk.test.models.CompleteMarykModel.Properties.number
+import maryk.test.models.CompleteMarykModel.number
 import maryk.test.models.MarykEnumEmbedded.E1
 import maryk.test.models.MarykTypeEnum.T2
 import maryk.test.models.SimpleMarykModel
@@ -26,7 +27,7 @@ import kotlin.test.expect
 class DataStoreScanWithFilterTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
-    private val keys = mutableListOf<Key<CompleteMarykModel>>()
+    private val keys = mutableListOf<Key<PropertyBaseRootDataModel<CompleteMarykModel>>>()
     private var lowestVersion = ULong.MAX_VALUE
 
     override val allTests = mapOf(
@@ -54,7 +55,7 @@ class DataStoreScanWithFilterTest(
             CompleteMarykModel.add(*objects)
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<CompleteMarykModel>>(status)
+            val response = assertIs<AddSuccess<PropertyBaseRootDataModel<CompleteMarykModel>>>(status)
             keys.add(response.key)
             if (response.version < lowestVersion) {
                 // Add lowest version for scan test
@@ -65,7 +66,7 @@ class DataStoreScanWithFilterTest(
 
     override suspend fun resetData() {
         dataStore.execute(
-            CompleteMarykModel.delete(*keys.toTypedArray(), hardDelete = true)
+            CompleteMarykModel.Model.delete(*keys.toTypedArray(), hardDelete = true)
         )
         keys.clear()
         lowestVersion = ULong.MAX_VALUE
@@ -90,7 +91,7 @@ class DataStoreScanWithFilterTest(
 
     private suspend fun executeSimpleScanFilterWithToVersionRequest() {
         val changeResponse = dataStore.execute(
-            CompleteMarykModel.change(
+            CompleteMarykModel.Model.change(
                 keys[0].change(
                     Change(number.ref() with 33u)
                 )

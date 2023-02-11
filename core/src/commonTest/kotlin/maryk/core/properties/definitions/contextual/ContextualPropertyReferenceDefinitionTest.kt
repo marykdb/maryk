@@ -22,10 +22,10 @@ class ContextualPropertyReferenceDefinitionTest {
 
     private val context = RequestContext(
         mapOf(
-            TestMarykModel.name toUnitLambda { TestMarykModel },
-            EmbeddedMarykModel.name toUnitLambda { EmbeddedMarykModel }
+            TestMarykModel.Model.name toUnitLambda { TestMarykModel.Model },
+            EmbeddedMarykModel.Model.name toUnitLambda { EmbeddedMarykModel.Model }
         ),
-        dataModel = TestMarykModel
+        dataModel = TestMarykModel.Model
     )
 
     @Test

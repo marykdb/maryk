@@ -13,7 +13,7 @@ import kotlin.test.assertTrue
 import kotlin.test.expect
 
 class PropRefGraphTest {
-    private val graph = TestMarykModel.properties.run {
+    private val graph = TestMarykModel.run {
         graph(embeddedValues) {
             listOf(
                 value,
@@ -26,9 +26,9 @@ class PropRefGraphTest {
 
     private val context = RequestContext(
         dataModels = mapOf(
-            TestMarykModel.name toUnitLambda { TestMarykModel }
+            TestMarykModel.Model.name toUnitLambda { TestMarykModel.Model }
         ),
-        dataModel = TestMarykModel
+        dataModel = TestMarykModel.Model
     )
 
     @Test

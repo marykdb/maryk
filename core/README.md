@@ -1,16 +1,17 @@
 # Maryk Core
 
-Core Maryk project containing all Maryk functionality like for properties, DataModels,
-properties, queries, parsers, readers and more.
+The Maryk Core project is the heart of the Maryk library, providing a comprehensive
+set of tools for creating structured, type-strict data models, and querying, parsing,
+and serializing this data in a variety of formats. This project includes everything
+from data model definition, properties, versioning, queries, filters, and serialization
+support for YAML, JSON, and ProtoBuf.
 
 ## Documentation
 
-See the documentation for more details
+For more information on how to use Maryk Core, check out the following resources:
 
-- [DataModels](documentation/datamodel.md)
-- [Properties](documentation/properties/properties.md)
-- [Versioning](documentation/versioning.md)
-- [Queries](documentation/query.md)
-- [Filters](documentation/filters.md)
-- [Serialization](documentation/serialization.md) - Maryk supports YAML, JSON
-   and ProtoBuf as formats to serialize DataModel, Data Objects and Queries
+- [DataModels](documentation/datamodel.md): Learn how to define complex data models using Maryk's property system.
+- [Properties](documentation/properties/properties.md): Explore the various property types available in Maryk.
+- [Versioning](documentation/versioning.md): Discover how to store versioned data and revert to earlier versions as needed.
+- [Queries](documentation/query.md): Get a comprehensive overview of the query language and how to use it to extract meaningful data from your datasets.
+- [Serialization](documentation/serialization.md): Learn how to serialize and deserialize data in YAML, JSON, and ProtoBuf formats.

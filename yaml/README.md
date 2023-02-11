@@ -1,17 +1,18 @@
 # Maryk YAML
 
-A streaming YAML library written in Kotlin for JS and JVM platforms
+A streaming YAML library written in Kotlin Multiplatform.
 
 ## Writing YAML
 
-### Constructing a writer
+The [`YamlWriter`](src/commonMain/kotlin/maryk/yaml/YamlWriter.kt) class provides methods for writing YAML constructions to the output.
 
-The [`YamlWriter`](src/commonMain/kotlin/maryk/yaml/YamlWriter.kt) constructor takes 
-1 property:
+### Creating a Writer
+
+The [`YamlWriter`](src/commonMain/kotlin/maryk/yaml/YamlWriter.kt) constructor takes a single argument:
  
-- `writer` - A function which consumes a `String` to be added to output.
+- `writer` - a function that consumes a `String` and adds it to the output.
 
-Constructing a writer which writes to a String
+Here is an example of how to construct a writer that writes to a string:
 ```kotlin
 var output = buildString {
     val yamlWriter = YamlWriter {
@@ -24,34 +25,32 @@ var output = buildString {
 
 ### Writing with the YamlWriter
 
-The [`YamlWriter`](src/commonMain/kotlin/maryk/yaml/YamlWriter.kt) has a few 
-methods to write YAML constructions to the output
+The [`YamlWriter`](src/commonMain/kotlin/maryk/yaml/YamlWriter.kt) class has several methods for writing different YAML constructions:
 
-Compatible with [`JsonWriter`](../json/README.md):
+Methods compatible with the [`JsonWriter`](../json/README.md) interface:
 
-- `writeStartObject(isCompact: Boolean)` - writes a new object. If isCompact is `true` it will use the inline 
-   {fieldName: value} syntax and with `false` (default) it will newline any new field
-- `writeEndObject()` - closes an Object
-- `writeStartArray(isCompact: Boolean)` - writes a new array. If isCompact is 'true' it will use the inline [a1, a2, a3]
-   syntax and with false (default) it will use `- a1` with every value on a new line and indented.
-- `writeEndArray()` - closes an array
-- `writeFieldName(name: String)` - Field for an object. Adds `:` at the end.
-- `writeString(value: String)` / `writeValue(value: String)` - Writes a string. Will automatically use 'quotes' if content 
-  can be otherwise interpreted as YAML syntax.
-- `writeInt(int: Int)` - writes an integer
-- `writeFloat(float: Float)` - writes a float
-- `writeBoolean(boolean: Boolean)` - writes a boolean
-- `writeNull()` - writes a null value
+- `writeStartObject(isCompact: Boolean)` - Writes the start of a new object. If `isCompact` is `true` it will use the inline 
+   `{fieldName: value}` syntax. If `false` (the default), it will add newlines for each field
+- `writeEndObject()` - Closes an Object.
+- `writeStartArray(isCompact: Boolean)` - Writes the start of a new array. If isCompact is 'true' it will use the inline `[a1, a2, a3]`
+   syntax and with `false` (default) it will use `- a1` with every value on a new line and indented.
+- `writeEndArray()` - Closes an array
+- `writeFieldName(name: String)` - Writes the field name for an object. Adds `:` at the end.
+- `writeString(value: String)` or `writeValue(value: String)` - Writes a string value. Automatically uses 'quotes' if the content could be interpreted as YAML syntax.
+- `writeInt(int: Int)` - Writes an integer value.
+- `writeFloat(float: Float)` - Writes a float value.
+- `writeBoolean(boolean: Boolean)` - Writes a boolean value.
+- `writeNull()` - Writes a null value.
 
-Special for YAML
-- `writeTag(tag: String)` - writes a yaml tag. Include any `!` preceding the tag.
-- `writeStartComplexField()` - writes the start of a complex field within a map. These fields are preceded by a `?` and 
+Methods for writing YAML specific constructs:
+- `writeTag(tag: String)` - Writes a yaml tag. Includes any preceding `!`.
+- `writeStartComplexField()` - Writes the start of a complex field within a map. These fields are preceded by a `?` and 
   can contain arrays and objects.
 - `writeEndComplexField()` - writes the end of a complex field name and closes it with a `: ` on a new line.
- 
 
 
-Example of writing to above defined `yamlWriter`
+
+Here is an example of how to write YAML to an earlier defined yamlWriter:
 ```kotlin
 yamlWriter.writeStartObject()
 yamlWriter.writeFieldName("name")
@@ -73,7 +72,7 @@ yamlWriter.writeEndObject()
 yamlWriter.writeEndObject()
 ```
 
-Using apply syntax in Kotlin
+An example using the apply syntax in Kotlin
 ```kotlin
 val outputWriter = ...
 
@@ -99,7 +98,7 @@ YamlWriter(
 }
 ```
 
-Result:
+The result:
 ```yaml
 name: John Smith
 age: 32
@@ -110,21 +109,21 @@ pets:
 
 ## Reading YAML
 
-To read YAML values you need to construct a [`YamlReader`](src/commonMain/kotlin/maryk/yaml/YamlReader.kt)
-which can then read the YAML for found tokens which represents YAML elements. `YamlReader`
-takes a `reader` which is a function to return 1 char at a time. This way any 
-outputStream implementation or String reader from any framework can be used.
+You can read YAML values by constructing a [`YamlReader`](src/commonMain/kotlin/maryk/yaml/YamlReader.kt) object. 
+The YamlReader reads YAML elements represented by tokens. The `YamlReader` takes a reader function that returns one character at a time.
+This way, you can use any output stream implementation or string reader from any framework.
 
-Constructor parameters for `YamlReader`:
+### Constructing a YamlReader
+
+To construct a YamlReader, you can use following parameters:
 
 - `defaultTag` - The default application specific local tag definition used for single `!` tags. 
-  Example: `tag:maryk.io,2018:`. Can be null
-- `tagMap` - maps tag namespaces to a map with tag names and TokenTypes to return if encountered.
-- `allowUnknownTags` - set to true if reader should return tags which are not preset in the tagMap as an `UnknownTag`. 
-  Default is `false`
+  Example: `tag:maryk.io,2018:`. This parameter is optional.
+- `tagMap` - A map that maps tag namespaces to a map with tag names and TokenTypes to return if encountered.
+- `allowUnknownTags` - A boolean value that determines if the reader should return tags that are not present in the `tagMap` as an `UnknownTag`. The default value is false.
 - `reader` - a function which only takes one `Char` at a time. Implement it with fitting input stream for platform.
 
-Constructing a reader to read Yaml from a simple String. We recommend to use proper output streams fitting the platform.
+Here's an example of constructing a YamlReader to read YAML from a simple string:
 ```kotlin
 val yaml = ... // Yaml String
 var index = 0
@@ -140,22 +139,22 @@ val reader = YamlReader {
 
 #### Read for tokens
 
-To begin reading for tokens you start to call `nextToken()` on the `YamlReader` instance.
-Each time it finds a token it writes it to the public property `currentToken` and returns
-the value. The first `currentToken` is always `JsonToken.StartDocument`
+To start reading for tokens, you call the `nextToken()` method on the `YamlReader` instance. 
+Each time the method finds a token, it writes it to the public property currentToken and 
+returns the value. The first `currentToken` is always `JsonToken.StartDocument`.
 
-Returnable tokens:
+The following are the returnable tokens:
 
-- `JsonToken.StartDocument` - `currentToken` starts with this value
-- `JsonToken.EndDocument` - if last object or array was closed
-- `JsonToken.StartObject` - when a start of object was read. Can be of type [`Map`](http://yaml.org/type/map.html), 
+- `JsonToken.StartDocument` - This is the first value of `currentToken`.
+- `JsonToken.EndDocument` -  If the last object or array was closed.
+- `JsonToken.StartObject` - When the start of an object was read. The object can be of type [`Map`](http://yaml.org/type/map.html), 
   [`OrderedMap`](http://yaml.org/type/omap.html) or [`Pairs`](http://yaml.org/type/pairs.html)
-- `JsonToken.EndObject` - when a end of object was read
-- `JsonToken.StartArray` - when start of a Yaml sequence was read. Can be of type 
+- `JsonToken.EndObject` - When the end of an object was read.
+- `JsonToken.StartArray` - When the start of a YAML sequence was read. Can be of type 
   [`Sequence`](http://yaml.org/type/seq.html) or [`Set`](http://yaml.org/type/set.html)
-- `JsonToken.EndArray` - when end of a Yaml sequence was read
-- `JsonToken.FieldName` - when a field name was read inside an object. Name is in `name` property
-- `JsonToken.Value` - when a value was read inside object or array. 'value' contains value and
+- `JsonToken.EndArray` - When the end of a YAML sequence was read.
+- `JsonToken.FieldName` - When a field name was read inside an object. The name is in the `name` property.
+- `JsonToken.Value` - When a value was read inside object or array. 'value' contains value and
   is native type defined by `type` property. This could be set with a tag in yaml or autodetected by content.
   Types can be the JSON types of [`String`](http://yaml.org/type/str.html), [`Boolean`](http://yaml.org/type/bool.html), 
   [`Int`](http://yaml.org/type/int.html), [`Float`](http://yaml.org/type/float.html) or 
@@ -167,8 +166,8 @@ Returnable tokens:
   with `allowUnknownTags` = `true` in constructor any `UnknownTag` for local tags preceded with a single `!`. These are 
   also called application specific local tags. 
 
-- `JsonToken.StartComplexFieldName` - when a complex field name was encountered like a sequence or a map.
-- `JsonToken.EndComplexFieldName` - when the end of a complex field name was encountered.
+- `JsonToken.StartComplexFieldName` - When a complex field name was encountered like a sequence or a map.
+- `JsonToken.EndComplexFieldName` - When the end of a complex field name was encountered.
 
 Exception tokens:
 
@@ -178,7 +177,7 @@ Exception tokens:
 - `JsonToken.JsonException` - Extends Stopped. When reader encountered an Exception while reading. This exception 
   was thrown earlier by `nextToken()`
 
-Example
+Example of reading a YAML file: 
 ```kotlin
 val input = """
 name: John Smith
@@ -215,21 +214,18 @@ EndDocument
 
 ##### Line and Column numbers
 
-It is possible to access the current line and column number of the reader by accessing 
-`lineNumber` and `columnNumber`. This way it is possible to see where the tokens started 
-and ended.
+The current line and column number of the reader can be accessed using the `lineNumber` and `columnNumber` properties. 
+This allows you to track the start and end positions of the tokens.
 
 #### Skipping fields
 
-Within objects it is possible to skip fields despite how complex the value is. Even if
-they are multi layered arrays and objects `skipUntilNextField()` will skip until the next
-field name. `skipUntilNextField()` takes one argument in the form of a function which
-consumes any skipped JsonToken. Found tokens can be pushed to the current `YamlReader` with the
-`pushToken()` method so they are returned first. In this way tokens can be parsed later if yaml is 
-dependent on other content.
+Within objects, it is possible to skip fields of any complexity, including multi-layered arrays and objects,
+by using the `skipUntilNextField()` method. This method takes a function as an argument that consumes any skipped
+JsonToken. The `pushToken()` method can be used to return any found tokens to the current `YamlReader`, allowing for 
+later parsing if the YAML is dependent on other content.
 
 #### Other YAML features
 
-- The reader can handle `&anchor` and `*alias` tags to store and reuse elements within a YAML document.
-- The reader can merge maps into other maps with the `<<` field name. This is useful together with `*alias` tags to 
+- The reader supports the `&anchor` and `*alias` tags for storing and reusing elements within a YAML document.
+- Maps can be merged into other maps using the `<<` field name, making it easier to reuse map contents when combined with `*alias` tags. 
   reuse map contents.

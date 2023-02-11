@@ -1,8 +1,12 @@
 # Maryk RocksDB Store implementation
 
-A [RocksDB](https://rocksdb.org) implementation of a Maryk data store. It stores the data
-all in one RocksDB which separated data into multiple column families per model. Read more 
-about how data is stored in [the storage description](documentation/storage.md).
+A powerful implementation of Maryk data store using [RocksDB](https://rocksdb.org). 
+This store organizes data into multiple column families in the format defined by the DataModel.
+Learn more about the storage layout by reading [the storage description](documentation/storage.md).
+
+## Getting Started
+
+To get started with the Maryk RocksDB Store, simply use the following code snippet:
 
 Usage:
 ```kotlin
@@ -31,17 +35,16 @@ RocksDBDataStore(
 }
 ```
 
-Note: when a store is created ensure to call `close()` at the end of use to ensure the release
-of used memory and cleaning up of processes.
+**Note:** It is important to call `close()` at the end of the use block to release memory and clean up any processes.
 
 ## Migrations
 
-The data store always checks on creation if all passed data models are compatible with the stored data models. 
-If not it will trigger a migration. To handle a migration it is needed to define a `migrationHandler`.
+The data store always checks if all passed DataModels are compatible with the stored models upon creation. 
+If they are not, it will trigger a migration. A `migrationHandler` must be defined to handle migrations.
 
-Note: Models, indices and properties can be added without migration. It is also possible to set less strict validation
-rules. It is not possible to change types of properties, rename values without making the old value alternative or add
-more strict validation without automatically trigger a validation.
+**Note:** It is possible to add Models, indices, and properties without a migration. Additionally, it is possible 
+to set less strict validation rules. However, it is not possible to change the types of properties, rename values 
+without making the old value an alternative, or add more strict validation without automatically triggering a migration.
 
 ```kotlin
 Rocks(

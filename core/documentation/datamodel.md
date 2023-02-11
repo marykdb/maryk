@@ -1,23 +1,21 @@
 # What is a DataModel?
-DataModels describe the structure of the data. They contain 
-[property definitions](properties/properties.md) which describe what type of data the 
-property contains, how it is validated and other properties that are relevant to the 
-storage. Data Objects are created from DataModels which can also validate or serialize
-these data objects.  
+A DataModel is a blueprint that defines the structure of the data. It contains
+[property definitions](properties/properties.md), which specify the type of data, 
+how it should be validated, and other relevant information. The property definitions 
+are used to create data objects, which can be validated or serialized.
 
-## Properties are identified by an index
-To keep data transport and storage optimal all properties are required to
-have an index integer besides a name to identify the people property. This index
-must stay the same over the entire lifetime of the application. This index also
-obviated the need of reflection in the code implementations.
+## Properties with Unique Identifiers
+To ensure efficient data transport and storage, each property in a DataModel must
+have both a name and a unique integer index. The index is used to identify the property
+and must remain unchanged throughout the lifetime of the application. This index eliminates
+the need for reflection in code implementation.
 
 ### Example of a DataModel representing a Person in name and date of birth
-The DataModel is contained within the companion object. It contains 3 references to the
-property definitions. The Properties object is there for convenience so it is possible 
-to get each definition in a type strict way. All is wrapped within a data class which 
-can be instantiated. The data class itself should be immutable. The companion object
-contains methods to validate the model. Because this model is a RootDataModel it also
-contains methods to generate a key.
+
+Let us consider a simple DataModel for a person, which includes their first + last name and date of birth.
+
+To define the model within YAML, you create a basic object with a name and you add the names, indices, types and any
+validations
 
 **Maryk Model YAML:**
 ```yaml
@@ -29,6 +27,10 @@ name: Person
 ? 3: dateOfBirth
 : !Date
 ```
+
+To create a model for a storable data object within Kotlin, you start with creating a kotlin object which extends from
+`RootDataModel`. Within you include a Properties object which defines the names, indices, types and any validations of
+any of the properties. Furthermore, you add an invoke object to easily instantiate a data object with its properties.
 
 **Kotlin implementation.** Can be generated from Maryk Model YAML
 ```kotlin
@@ -55,9 +57,9 @@ object Person : RootDataModel<Person, Person.Properties>(
 }
 ```
 
-### Usage
-Below a new Person DataObject is being constructed and after it validated. Lastly 
-it shows how to create a new key representing . 
+### Usage Example
+
+Here's a demonstration of constructing a new Person DataObject, validating it, and creating a new key to represent it.
 
 ```kotlin
 val johnSmith = Person(
@@ -66,20 +68,20 @@ val johnSmith = Person(
     dateOfBirth = Date(2017, 12, 5)
 )
 
-// Will throw a PropertyValidationUmbrellaException if invalid
-// In this case there is no validation on the PropertyDefinitions so will succeed
+// Validate the object, which will throw a PropertyValidationUmbrellaException if it's invalid
+// In this case, since there's no validation on the PropertyDefinitions, validation will succeed
 Person.validate(johnSmith) 
 
 // Because no key definition was defined this model will return a UUID based key
 val key = Person.key(johnSmith)
 ```
 
-## A generic DataModel
-A generic DataModel contains properties and can be validated. They can be embedded
-within other DataModels to contain more specific grouped data on an object. For example
-it is possible to store address details below a Person DataModel. 
+## Basic DataModels
+The basic data models form the foundation for defining data structures. DataModels consist of properties and can be
+validated. With the exception of RootDataModels, they can be nested within other DataModels to group data more 
+specifically. For example, address details can be stored within a Person DataModel.
 
-A generic DataModel extends from DataModel class. In Yaml you add ```embeddable = true```
+If you define the model using Kotlin, any DataModel should extend from the DataModel class.
 
 ** Maryk Yaml example **
 
@@ -94,27 +96,33 @@ name: Address
 ```
 
 ## RootDataModel
-All DataModel structures have a RootDataModel at the root to enable them to be stored.
-The RootDataModel contains extra methods to create a key based on the data of the
-object. Read further about keys on the [key page](key.md).
- 
-Above is an example of a RootDataModel
+A RootDataModel is essential for the storage of all DataModel structures, as it serves as
+the root element. This model has additional methods for creating a unique key that is based
+on the data within the object. For more information about keys, refer to the [key page](key.md).
+
+Above example uses a RootDataModel.
 
 ## ValueDataModel
-Objects of ValueDataModels are stored in a different way compared to objects of the
-normal DataModels. They are more like values and this gives them some unique 
- advantages.
- 
- In contrary to normal DataModels they can be used as:
- - Keys of maps
- - Values in a list
- - Be indexed with multiple values at the same time
- 
-ValueDataModels are constructed by properties which can be represented by a fixed number
-of bytes. This means that any simple property can be used except Strings and
-FlexibleBytes. They cannot contain more complex properties like Sets, Lists and Maps as
-this would make them lose their fixed amount of bytes.
- 
+ValueDataModels are designed to store objects in a more compact and efficient manner
+compared to regular DataModels. They are treated as values rather than objects, and this
+allows them to be used in a variety of ways.
+
+Some of the key advantages of using ValueDataModels include:
+
+- They can be used as keys in maps, allowing for fast and efficient data retrieval.
+- They can be used as values in lists, making it easier to store and manage multiple values.
+- They can be indexed with multiple values at the same time, making it easier to manage large amounts of data.
+
+ValueDataModels are constructed from properties that can be represented by a fixed number of bytes. 
+This means that simple properties such as integers, booleans, dates, times, and floating-point numbers can be used, 
+but more complex properties like strings and flexible bytes cannot. Additionally, ValueDataModels cannot 
+contain more complex properties like sets, lists, and maps, as this would increase their size and make them
+less efficient.
+
+To give an example, consider a simple ValueDataModel representing a period by begin and end date. The properties in this 
+model could include the start and end date, all represented by fixed-size dates. This model could then be used as a key in a map
+to quickly retrieve information related to that period.
+
 ###Example:
  
 **Maryk Yaml Description:**
@@ -178,15 +186,15 @@ data class PersonRoleInPeriod(
 }
 ```
 
-## Extending RootDataModels
+## Creating Derived DataModels
 
-DataModels cannot be extended in an OOP sense. But they can have properties which
-can be of different types. This way it is possible to make a generic RootDataModel
-like a Timeline which can contain different flavors of DataModels below. 
+It is not possible to extend DataModels in a traditional object-oriented programming sense, but it is possible to 
+include properties of different types within a DataModel. This allows you to create a generic RootDataModel, such as a
+Timeline, that can contain different varieties of DataModels.
 
-To accomplish this you create a MultiTypeDefinition mapping the different flavors 
-of DataModels. The property containing the value gets an extra type id. This type id
-can also be encoded into the key so data can be quickly queried on type. 
+To achieve this, you can create a MultiTypeDefinition that maps the different types of DataModels. The property that
+holds the value will receive an additional type identifier. This type identifier can also be encoded into the key,
+allowing for quick querying based on type.
 
 **Example**
 

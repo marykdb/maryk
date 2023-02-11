@@ -1,20 +1,24 @@
 # Maryk Library
 
-This project contains multi-platform implementations for common functions used within Maryk projects.
+Maryk Library is a project that provides multi-platform implementations for essential functions
+used across Maryk projects. The purpose of this library is to abstract platform-specific
+functionality, ensuring that all core Maryk projects have consistent support for the various platforms it supports.
 
-Anything platform specific needed by the core projects should be abstracted into this library. If a 
-platform is supported by the library, it will be supported by all core maryk projects.
+## Platform Support
 
-Currently, all functionality is implemented for JS and JVM. Kotlin/Native is high on the wish list and any 
-contributions are welcome. If implemented it allows all
+At present, Maryk Library provides support for JavaScript (JS), Android, 
+Java Virtual Machine (JVM) and Kotlin/Native with iOS and macOS targets.
 
-Kotlin stdlib is the base dependency for everything in Maryk projects so as soon as Kotlin implements
-any of the functionalities exposed in this library, those functionalities will be deprecated.
+## Dependency
 
-## What is in the library?
+The foundation of Maryk projects is the Kotlin Standard Library, which means that as
+soon as Kotlin implements any of the functionalities exposed in Maryk Library, those functionalities will be deprecated in the library.
 
--  [Streaming String readers and writers](src/commonMain/kotlin/maryk/lib/bytes/String.kt)
--  [ParseException](src/commonMain/kotlin/maryk/lib/exceptions/ParseException.kt)
--  [Extensions to base types](src/commonMain/kotlin/maryk/lib/extensions)
--  [UUID.generateUUID()](src/commonMain/kotlin/maryk/lib/uuid/UUID.kt) - 
-   Creates a `Pair` of `long` together representing a type 4 (Random) UUID 
+## Key Features
+
+Here's a quick rundown of what Maryk Library has to offer:
+
+-  [Streaming String readers and writers](src/commonMain/kotlin/maryk/lib/bytes/String.kt) - Provides efficient and convenient reading and writing of strings from and to byte streams.
+-  [ParseException](src/commonMain/kotlin/maryk/lib/exceptions/ParseException.kt) - An exception that is thrown when a parsing error occurs.
+-  [Extensions to base types](src/commonMain/kotlin/maryk/lib/extensions) - A set of extensions for core data types, adding useful functionality that enhances their usability.
+-  [UUID.generateUUID()](src/commonMain/kotlin/maryk/lib/uuid/UUID.kt) - A function that generates a type 4 (Random) UUID in the form of a pair of long values.

@@ -1,9 +1,14 @@
 # Maryk Memory Store implementation
 
-An in memory implementation of a Maryk data store. It works with an internal sorted list by key
-of `DataRecord` which contain all values in its Kotlin representation.
+A high-performance in-memory implementation of a Maryk data store that uses an internal sorted list
+of `DataRecord` to store data. It provides quick access to data, making it ideal for testing and
+development purposes, where the focus is not on persistence.
 
-Usage:
+
+## Usage
+
+Here's a simple example of how to use the InMemoryDataStore:
+
 ```kotlin
 InMemoryDataStore(
     // True if the data store should keep all past versions of the data
@@ -30,5 +35,15 @@ InMemoryDataStore(
 }
 ```
 
-Note: when a store is created ensure to call `close()` at the end of use to ensure the release
-of used memory and cleaning up of processes.
+**Note:** It's important to call close() at the end of use to release used memory and clean up processes.
+
+## Advantages
+
+- Quick access to data
+- Ideal for testing and development purposes
+- Efficient storage of data in an internal sorted list
+
+## Limitations
+
+- The data is not persisted, so it is lost when the store is closed or the application shuts down.
+- It may not be suitable for large data sets or production environments where data persistence is a concern.

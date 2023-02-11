@@ -1,55 +1,45 @@
-# Keys
+# Keys in DataObjects
 
-All DataObjects can only be stored below a key. The key is a unique index
-to an object and any object can be retrieved by the key. A key is always
-final and unique. If you store data inside an existing key it will
-overwrite the data.
+All DataObjects must be stored under a unique key, which acts as an index to the object.
+The key serves as a permanent identifier for the object and can be used to retrieve it. 
+If you store new data under an existing key, the existing data will be overwritten.
 
-## UUIDs by default
+## Default UUID Keys
 
-If you don't define a Key definition the model will create 128 bit v4 UUID
-keys. These guarantee uniqueness but will not help in scans.
+If you don't specify a key definition, the model will automatically generate 128-bit v4 UUID keys. 
+These keys are guaranteed to be unique, but they won't provide any benefits for scanning the data.
 
-## Right key from the start
+## Choosing the Right Key from the Start
 
-Since a key structure cannot be changed (without complex migrations) once 
-data is stored you need to be careful designing the right key for the 
-DataModel. Always look into the primary use case and order of the data and
-make it fast for that purpose. Secondary usecases can be helped with adding 
-an index. 
+It's essential to be mindful when designing the key for a DataModel, as the
+key structure cannot be changed after data has been stored (without complex migrations).
+Consider the primary use case and ordering of the data and make sure the key is optimized
+for this purpose. Secondary use cases can be addressed by adding an index.
 
-## Properties which can be used in a key
+## Properties for Key Structure
 
-All fixed byte length properties can be used as a key part. This way key
-structure is always predictable and the location of key elements can
-be used in scans.
+Key structures must have fixed byte lengths. This way the location of key elements are
+predictable which are beneficial for scans over keys.
 
-This means you can use numbers, dates & times, fixed bytes, references,
-enums, booleans, type of multi type objects and ValueDataModels which can
-contain all the same kind of values. You cannot use Strings, flexible
-bytes, Sets, Lists, Maps and embedded models since their byte length is not 
-fixed.
+Properties that can be used 
+for key elements include numbers, dates and times, fixed bytes, references, enums, booleans,
+multi-type objects, and ValueDataModels containing similar values. 
+Properties that cannot be used in keys include strings, flexible bytes, sets, lists, maps, and 
+embedded models, as they have varying byte lengths.
 
 ## The order of keys
-All keys are stored in order and with a data scan all data will be walked 
-or skipped in that order. This means that if you start your key with a 
-reference and you give a specific reference to the key, the data scan knows
-exactly where to start. 
+Keys are stored in order, which means that data scans will traverse or skip
+the data in the same order. If the key starts with a reference, the data scan
+can start at the exact location for that reference. 
 
-If you always request data with the newest on top it is wise to reverse the
-date of creation so new items always come back first.
+If the data is often requested in the newest-first order, it is recommended to
+reverse the date of creation so that new data is retrieved first.
 
 ## Tips on designing a key
-- If data "belongs" to something or somebody, always start the key with
-a reference. This way it is easy to request data belonging to it.
 
-- If data should always be ordered on time, include that time. Reverse the 
-time if newest is almost always requested first.
-
-- If the date has a primary MultiTypeProperty, include the type id so it is 
-easy to quickly request DataObjects of a specific type. If time is part of
-the key you need to include it after the time so all data is still ordered
-on that time.
-
-- If date with nanosecond precision by itself is not enough, it is possible
-to add a random number to the field.
+- Consider performance: The key structure should be optimized for the most common use cases, as it will affect the performance of data retrieval and scans.
+- If data "belongs" to a particular entity or person, start the key with a reference to that entity or person.
+- If data needs to be ordered by time, include the time in the key. If newer data is frequently requested first, reverse the time.
+- If the data has a primary multi-type property, include the type ID in the key so you can quickly retrieve data objects of a specific type. If time is also included in the key, make sure to place it after the type ID so that data is still ordered by time.
+- If date precision in nanoseconds is somehow not enough, consider adding a random number to the key.
+- Use indexing: If you have a key structure that is not optimized for your use case, you can use an index to improve performance. This is especially useful if you have large datasets.

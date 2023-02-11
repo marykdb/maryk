@@ -1,30 +1,24 @@
 # Protobuf Transportation
 
-The [ProtoBuf V3](https://developers.google.com/protocol-buffers/) encoding was chosen
-for size efficient bytes transport. This format is a wide adopted standard originally
-developed by Google. 
+The encoding standard for [ProtoBuf V3](https://developers.google.com/protocol-buffers/) has been adopted for efficient
+and compact transportation of data. Developed by Google, ProtoBuf is a widely adopted standard. Currently, only the 
+encoding standard has been adopted, and schema generation is yet to be implemented.
 
-At the current moment only the encoding standard is adopted and not yet the schema 
-generation.
-
-Check out the [ProtoBuf encoding documentation](https://developers.google.com/protocol-buffers/docs/encoding) 
-for much more detail on how values are encoded.
+For a more in-depth understanding of how values are encoded, refer to the [ProtoBuf encoding documentation](https://developers.google.com/protocol-buffers/docs/encoding) 
 
 ## Key Value pairs
 
-A ProtoBuf message is constructed by key value pairs in which the key contains a tag
-to indicate which property is encoded and a wire_type to indicate which type of value
-was encoded. The value is encoded in the transport byte format which is documented
-for each [property type](properties/properties.md).
+A ProtoBuf message is built using key-value pairs, where the key contains a tag that identifies the encoded property and
+a wire_type that indicates the type of value that was encoded. The value is encoded in the byte format for transport, 
+and the encoding format for each property type is documented in the [properties documentation](properties/properties.md).
 
 ## Wire Types
 
-Maryk supports all wire types supported by ProtoBuf. 
+Maryk supports all wire types supported by ProtoBuf, including:
 
-* VarInt - Variable Integer. Is for numeric values and grows with the size of the 
-value.
-* Length Delimited - Used for variable length values. It precedes the value with the
-length of bytes. It can also contain key/value pairs of embedded messages.
-* 32 Bit - Used for a value of 4 bytes.
-* 64 Bit - Used for a value of 8 bytes.
-* Start Group / End Group - Not used at the moment and is also deprecated in ProtoBuf.  
+* VarInt: A variable integer used for numeric values that grow in size with the value.
+* Length Delimited: Used for variable length values. The length of the bytes is preceded by the value.
+  It can also contain key-value pairs of embedded messages.
+* 32 Bit: Used for values of 4 bytes.
+* 64 Bit: Used for values of 8 bytes.
+* Start Group / End Group: Not currently used and also deprecated in ProtoBuf.  

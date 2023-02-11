@@ -1,7 +1,7 @@
 package maryk.datastore.test
 
-import maryk.core.models.RootDataModel
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.models.PropertyBaseRootDataModel
+import maryk.core.properties.RootModel
 import maryk.core.properties.definitions.string
 import maryk.core.properties.exceptions.AlreadyExistsException
 import maryk.core.properties.types.Key
@@ -14,26 +14,17 @@ import maryk.core.query.requests.delete
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.datastore.shared.IsDataStore
-import maryk.datastore.test.UniqueModel.Properties
 import kotlin.test.assertIs
 import kotlin.test.expect
 
-object UniqueModel : RootDataModel<UniqueModel, Properties>(
-    properties = Properties
-) {
-    object Properties : PropertyDefinitions() {
-        val email by string(1u, unique = true)
-    }
-
-    operator fun invoke(email: String) = this.values {
-        mapNonNulls(this.email with email)
-    }
+object UniqueModel : RootModel<UniqueModel>() {
+    val email by string(1u, unique = true)
 }
 
 class UniqueTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
-    private val keys = mutableListOf<Key<UniqueModel>>()
+    private val keys = mutableListOf<Key<PropertyBaseRootDataModel<UniqueModel>>>()
 
     override val allTests = mapOf(
         "checkUnique" to ::checkUnique,
@@ -42,13 +33,13 @@ class UniqueTest(
 
     override suspend fun initData() {
         val addItems = UniqueModel.add(
-            UniqueModel(email = "test@test.com"),
-            UniqueModel(email = "bla@bla.com")
+            UniqueModel.run { create(email with "test@test.com") },
+            UniqueModel.run { create(email with "bla@bla.com") },
         )
 
         dataStore.execute(addItems).also {
             it.statuses.forEach { status ->
-                val response = assertIs<AddSuccess<UniqueModel>>(status)
+                val response = assertIs<AddSuccess<PropertyBaseRootDataModel<UniqueModel>>>(status)
                 keys.add(response.key)
             }
         }
@@ -56,28 +47,28 @@ class UniqueTest(
 
     override suspend fun resetData() {
             dataStore.execute(
-                UniqueModel.delete(*keys.toTypedArray(), hardDelete = true)
+                UniqueModel.Model.delete(*keys.toTypedArray(), hardDelete = true)
             )
         this.keys.clear()
     }
 
     private val addUniqueItem = UniqueModel.add(
-        UniqueModel(email = "test@test.com")
+        UniqueModel.run { create(email with "test@test.com") }
     )
 
     suspend fun checkUnique() {
         val addResponse = dataStore.execute(addUniqueItem)
         addResponse.statuses.forEach { status ->
-            val fail = assertIs<ValidationFail<UniqueModel>>(status)
+            val fail = assertIs<ValidationFail<PropertyBaseRootDataModel<UniqueModel>>>(status)
             val alreadyExists = assertIs<AlreadyExistsException>(fail.exceptions.first())
             expect(UniqueModel { email::ref }) { alreadyExists.reference }
             expect(keys[0]) { alreadyExists.key }
         }
 
-        dataStore.execute(UniqueModel.delete(keys[0]))
+        dataStore.execute(UniqueModel.Model.delete(keys[0]))
 
         dataStore.execute(addUniqueItem).statuses.forEach { status ->
-            assertIs<AddSuccess<UniqueModel>>(status).also {
+            assertIs<AddSuccess<PropertyBaseRootDataModel<UniqueModel>>>(status).also {
                 keys.add(it.key)
             }
         }
@@ -85,7 +76,7 @@ class UniqueTest(
 
     suspend fun checkUniqueChange() {
         val changeResponse = dataStore.execute(
-            UniqueModel.change(
+            UniqueModel.Model.change(
                 keys[1].change(
                     Change(
                         UniqueModel { email::ref } with "test@test.com"
@@ -94,16 +85,16 @@ class UniqueTest(
             )
         )
         changeResponse.statuses.forEach { status ->
-            val fail = assertIs<ValidationFail<UniqueModel>>(status)
+            val fail = assertIs<ValidationFail<PropertyBaseRootDataModel<UniqueModel>>>(status)
             val alreadyExists = assertIs<AlreadyExistsException>(fail.exceptions.first())
             expect(UniqueModel { email::ref }) { alreadyExists.reference }
             expect(keys[0]) { alreadyExists.key }
         }
 
-        dataStore.execute(UniqueModel.delete(keys[0]))
+        dataStore.execute(UniqueModel.Model.delete(keys[0]))
 
         dataStore.execute(addUniqueItem).statuses.forEach { status ->
-            assertIs<AddSuccess<UniqueModel>>(status).also {
+            assertIs<AddSuccess<PropertyBaseRootDataModel<UniqueModel>>>(status).also {
                 keys.add(it.key)
             }
         }

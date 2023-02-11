@@ -1,5 +1,6 @@
 package maryk.datastore.test
 
+import maryk.core.models.PropertyBaseRootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.orders.Orders
 import maryk.core.query.orders.ascending
@@ -7,6 +8,7 @@ import maryk.core.query.requests.add
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.values.Values
 import maryk.datastore.shared.IsDataStore
 import maryk.test.models.Person
 import kotlin.test.assertIs
@@ -15,18 +17,18 @@ import kotlin.test.expect
 class DataStoreScanOnIndexWithPersonTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
-    private val keys = mutableListOf<Key<Person>>()
+    private val keys = mutableListOf<Key<PropertyBaseRootDataModel<Person>>>()
     private var highestCreationVersion = ULong.MIN_VALUE
 
     override val allTests = mapOf(
         "executeIndexScanRequestWithPerson" to ::executeIndexScanRequestWithPerson
     )
 
-    private val persons = arrayOf(
-        Person("Jurriaan", "Mous"),
-        Person("Myra", "Mous"),
-        Person("Desiderio", "Espinosa"),
-        Person("Muffin", "Espinosa")
+    private val persons = arrayOf<Values<PropertyBaseRootDataModel<Person>, Person>>(
+        Person.run { create(firstName with "Jurriaan", surname with "Mous") },
+        Person.run { create(firstName with "Myra", surname with "Mous") },
+        Person.run { create(firstName with "Desiderio", surname with "Espinosa") },
+        Person.run { create(firstName with "Muffin", surname with "Espinosa") },
     )
 
     override suspend fun initData() {
@@ -34,7 +36,7 @@ class DataStoreScanOnIndexWithPersonTest(
             Person.add(*persons)
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<Person>>(status)
+            val response = assertIs<AddSuccess<PropertyBaseRootDataModel<Person>>>(status)
             keys.add(response.key)
             if (response.version > highestCreationVersion) {
                 // Add lowest version for scan test
@@ -45,7 +47,7 @@ class DataStoreScanOnIndexWithPersonTest(
 
     override suspend fun resetData() {
         dataStore.execute(
-            Person.delete(*keys.toTypedArray(), hardDelete = true)
+            Person.Model.delete(*keys.toTypedArray(), hardDelete = true)
         )
         keys.clear()
         highestCreationVersion = ULong.MIN_VALUE

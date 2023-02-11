@@ -3,18 +3,34 @@ package maryk.core.properties
 import maryk.core.models.PropertyBaseRootDataModel
 import maryk.core.models.key
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.index.IsIndexable
+import maryk.core.properties.definitions.index.UUIDKey
 import maryk.core.properties.graph.IsPropRefGraphNode
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.types.Version
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ValueItem
 import maryk.core.values.Values
 
-open class RootModel<P: PropertyDefinitions>() : PropertyDefinitions(){
+open class RootModel<P: PropertyDefinitions>(
+    keyDefinition: () -> IsIndexable = { UUIDKey },
+    version: Version = Version(1),
+    indices: (() -> List<IsIndexable>)? = null,
+    reservedIndices: List<UInt>? = null,
+    reservedNames: List<String>? = null,
+) : PropertyDefinitions(){
     @Suppress("UNCHECKED_CAST")
-    val Model: PropertyBaseRootDataModel<P> = PropertyBaseRootDataModel(
-        properties = this,
-    ) as PropertyBaseRootDataModel<P>
+    val Model: PropertyBaseRootDataModel<P> by lazy {
+        PropertyBaseRootDataModel(
+            keyDefinition = keyDefinition.invoke(),
+            version = version,
+            indices = indices?.invoke(),
+            reservedIndices = reservedIndices,
+            reservedNames = reservedNames,
+            properties = this,
+        ) as PropertyBaseRootDataModel<P>
+    }
 
     @Suppress("UNCHECKED_CAST")
     operator fun <T : Any, R : IsPropertyReference<T, IsPropertyDefinition<T>, *>> invoke(

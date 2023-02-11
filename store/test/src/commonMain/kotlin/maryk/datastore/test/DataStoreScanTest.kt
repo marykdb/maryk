@@ -8,6 +8,7 @@ import maryk.core.aggregations.metric.MaxResponse
 import maryk.core.aggregations.metric.Min
 import maryk.core.aggregations.metric.MinResponse
 import maryk.core.exceptions.RequestException
+import maryk.core.models.PropertyBaseRootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.filters.Equals
 import maryk.core.query.orders.Order.Companion.descending
@@ -18,9 +19,6 @@ import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.datastore.shared.IsDataStore
 import maryk.test.models.Log
-import maryk.test.models.Log.Properties.message
-import maryk.test.models.Log.Properties.severity
-import maryk.test.models.Log.Properties.timestamp
 import maryk.test.models.Severity.DEBUG
 import maryk.test.models.Severity.ERROR
 import maryk.test.models.Severity.INFO
@@ -31,7 +29,7 @@ import kotlin.test.expect
 class DataStoreScanTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
-    private val keys = mutableListOf<Key<Log>>()
+    private val keys = mutableListOf<Key<PropertyBaseRootDataModel<Log>>>()
     private var lowestVersion = ULong.MAX_VALUE
 
     override val allTests = mapOf(
@@ -58,7 +56,7 @@ class DataStoreScanTest(
             Log.add(*logs)
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<Log>>(status)
+            val response = assertIs<AddSuccess<PropertyBaseRootDataModel<Log>>>(status)
             keys.add(response.key)
             if (response.version < lowestVersion) {
                 // Add lowest version for scan test
@@ -69,7 +67,7 @@ class DataStoreScanTest(
 
     override suspend fun resetData() {
         dataStore.execute(
-            Log.delete(*keys.toTypedArray(), hardDelete = true)
+            Log.Model.delete(*keys.toTypedArray(), hardDelete = true)
         )
         keys.clear()
         lowestVersion = ULong.MAX_VALUE
@@ -194,8 +192,8 @@ class DataStoreScanTest(
         // Mind that Log is sorted in reverse, so it goes back in time going forward
         scanResponse.values[0].let {
             expect(
-                Log.values {
-                    mapNonNulls(
+                Log.run {
+                    create(
                         this.severity with INFO,
                         this.timestamp with LocalDateTime(2018, 11, 14, 12, 33, 22, 111000000)
                     )
@@ -209,7 +207,7 @@ class DataStoreScanTest(
         val scanResponse = dataStore.execute(
             Log.scan(
                 where = Equals(
-                    severity.ref() with DEBUG
+                    Log.severity.ref() with DEBUG
                 )
             )
         )
@@ -226,9 +224,9 @@ class DataStoreScanTest(
         val scanResponse = dataStore.execute(
             Log.scan(
                 where = Equals(
-                    severity.ref() with INFO,
-                    timestamp.ref() with LocalDateTime(2018, 11, 14, 11, 22, 33, 40000000),
-                    message.ref() with "Something happened"
+                    Log.severity.ref() with INFO,
+                    Log.timestamp.ref() with LocalDateTime(2018, 11, 14, 11, 22, 33, 40000000),
+                    Log.message.ref() with "Something happened"
                 )
             )
         )
@@ -245,9 +243,9 @@ class DataStoreScanTest(
         val scanResponse = dataStore.execute(
             Log.scan(
                 where = Equals(
-                    severity.ref() with INFO,
-                    timestamp.ref() with LocalDateTime(2018, 11, 14, 11, 22, 33, 40000000),
-                    message.ref() with "WRONG happened"
+                    Log.severity.ref() with INFO,
+                    Log.timestamp.ref() with LocalDateTime(2018, 11, 14, 11, 22, 33, 40000000),
+                    Log.message.ref() with "WRONG happened"
                 )
             )
         )

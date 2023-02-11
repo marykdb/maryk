@@ -1,6 +1,7 @@
 package maryk.datastore.test
 
 import kotlinx.datetime.LocalDateTime
+import maryk.core.models.PropertyBaseRootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.change
@@ -29,7 +30,7 @@ import kotlin.test.assertIs
 class DataStoreScanUpdatesWithLogTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
-    private val testKeys = mutableListOf<Key<Log>>()
+    private val testKeys = mutableListOf<Key<PropertyBaseRootDataModel<Log>>>()
     private var lowestVersion = ULong.MAX_VALUE
     private var highestInitVersion = ULong.MIN_VALUE
 
@@ -49,7 +50,7 @@ class DataStoreScanUpdatesWithLogTest(
             )
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<Log>>(status)
+            val response = assertIs<AddSuccess<PropertyBaseRootDataModel<Log>>>(status)
             testKeys.add(response.key)
             if (response.version < lowestVersion) {
                 // Add lowest version for scan test
@@ -63,7 +64,7 @@ class DataStoreScanUpdatesWithLogTest(
 
     override suspend fun resetData() {
         dataStore.execute(
-            Log.delete(*testKeys.toTypedArray(), hardDelete = true)
+            Log.Model.delete(*testKeys.toTypedArray(), hardDelete = true)
         )
         testKeys.clear()
         lowestVersion = ULong.MAX_VALUE
@@ -86,7 +87,7 @@ class DataStoreScanUpdatesWithLogTest(
             }
 
             val change1 = Change(Log { message::ref } with "new message 5")
-            dataStore.execute(Log.change(
+            dataStore.execute(Log.Model.change(
                 testKeys[0].change(change1)
             ))
 
@@ -96,7 +97,7 @@ class DataStoreScanUpdatesWithLogTest(
             }
 
             val change2 = Change(Log { message::ref } with "new message 0")
-            dataStore.execute(Log.change(
+            dataStore.execute(Log.Model.change(
                 testKeys[2].change(change2)
             ))
 
@@ -124,7 +125,7 @@ class DataStoreScanUpdatesWithLogTest(
             }
 
             val change1 = Change(Log { message::ref } with "new message 1")
-            dataStore.execute(Log.change(
+            dataStore.execute(Log.Model.change(
                 testKeys[0].change(change1)
             ))
 
@@ -135,13 +136,13 @@ class DataStoreScanUpdatesWithLogTest(
             }
 
             val change2 = Change(Log { message::ref } with "new message 3")
-            dataStore.execute(Log.change(
+            dataStore.execute(Log.Model.change(
                 testKeys[2].change(change2)
             ))
 
             // This change should be ignored, otherwise key is wrong after changeUpdate2 check
             // This key is ignored because it is before the key at keys[2]
-            dataStore.execute(Log.change(
+            dataStore.execute(Log.Model.change(
                 testKeys[3].change(change2)
             ))
 
@@ -152,9 +153,9 @@ class DataStoreScanUpdatesWithLogTest(
             }
 
             // Is ignored since keys[1] is filtered away with where clause.
-            dataStore.execute(Log.delete(testKeys[1]))
+            dataStore.execute(Log.Model.delete(testKeys[1]))
 
-            dataStore.execute(Log.delete(testKeys[2]))
+            dataStore.execute(Log.Model.delete(testKeys[2]))
 
             val removalUpdate1 = responses[3].await()
             assertIs<RemovalUpdate<*, *>>(removalUpdate1).apply {

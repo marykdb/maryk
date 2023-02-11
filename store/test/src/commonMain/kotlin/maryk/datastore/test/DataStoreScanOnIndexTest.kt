@@ -2,6 +2,7 @@ package maryk.datastore.test
 
 import kotlinx.datetime.LocalDateTime
 import maryk.core.exceptions.RequestException
+import maryk.core.models.PropertyBaseRootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.change
@@ -18,8 +19,8 @@ import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.datastore.shared.IsDataStore
 import maryk.test.models.Log
-import maryk.test.models.Log.Properties.message
-import maryk.test.models.Log.Properties.severity
+import maryk.test.models.Log.message
+import maryk.test.models.Log.severity
 import maryk.test.models.Severity.DEBUG
 import maryk.test.models.Severity.ERROR
 import maryk.test.models.Severity.INFO
@@ -32,7 +33,7 @@ import kotlin.test.expect
 class DataStoreScanOnIndexTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
-    private val keys = mutableListOf<Key<Log>>()
+    private val keys = mutableListOf<Key<PropertyBaseRootDataModel<Log>>>()
     private var highestCreationVersion = ULong.MIN_VALUE
 
     override val allTests = mapOf(
@@ -60,7 +61,7 @@ class DataStoreScanOnIndexTest(
             Log.add(*logs)
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<Log>>(status)
+            val response = assertIs<AddSuccess<PropertyBaseRootDataModel<Log>>>(status)
             keys.add(response.key)
             if (response.version > highestCreationVersion) {
                 // Add lowest version for scan test
@@ -71,7 +72,7 @@ class DataStoreScanOnIndexTest(
 
     override suspend fun resetData() {
         dataStore.execute(
-            Log.delete(*keys.toTypedArray(), hardDelete = true)
+            Log.Model.delete(*keys.toTypedArray(), hardDelete = true)
         )
         keys.clear()
         highestCreationVersion = ULong.MIN_VALUE
@@ -162,7 +163,7 @@ class DataStoreScanOnIndexTest(
 
     private suspend fun executeIndexScanRequestWithToVersionAscending() {
         dataStore.execute(
-            Log.change(
+            Log.Model.change(
                 keys[0].change(
                     Change(
                         message.ref() with "new message"
@@ -193,7 +194,7 @@ class DataStoreScanOnIndexTest(
 
     private suspend fun executeIndexScanRequestWithToVersionDescending() {
         dataStore.execute(
-            Log.change(
+            Log.Model.change(
                 keys[0].change(
                     Change(
                         message.ref() with "new message"
@@ -240,8 +241,8 @@ class DataStoreScanOnIndexTest(
         // Mind that Log is sorted in reverse, so it goes back in time going forward
         scanResponse.values[0].let {
             expect(
-                Log.values {
-                    mapNonNulls(
+                Log.run {
+                    create(
                         this.severity with INFO,
                         this.timestamp with LocalDateTime(2018, 11, 14, 12, 33, 22, 111000000)
                     )

@@ -6,7 +6,6 @@ import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.inject.Inject
 import maryk.core.models.asValues
-import maryk.core.models.key
 import maryk.core.properties.exceptions.InjectException
 import maryk.core.query.RequestContext
 import maryk.core.query.ValuesWithMetaData
@@ -25,7 +24,7 @@ import kotlin.test.expect
 
 private val context = RequestContext(mapOf(
     SimpleMarykModel.Model.name toUnitLambda { SimpleMarykModel.Model },
-    ReferencesModel.name toUnitLambda { ReferencesModel }
+    ReferencesModel.Model.name toUnitLambda { ReferencesModel.Model }
 )).apply {
     addToCollect("keysToInject", ValuesResponse)
     addToCollect("referencedKeys", ValuesResponse)
@@ -53,7 +52,7 @@ class InjectIntoRequestTest {
 
     @Test
     fun testInjectInValuesGetRequest() {
-        val requestRef = ValuesResponse { values.atAny { values.refWithDM(ReferencesModel) { references } } }
+        val requestRef = ValuesResponse { values.atAny { values.refWithDM(ReferencesModel.Model) { references } } }
 
         val getRequest = GetRequest.values(context) {
             mapNonNulls(
@@ -73,16 +72,16 @@ class InjectIntoRequestTest {
             SimpleMarykModel.key(SimpleMarykModel.run { create(value with "v2") })
         )
 
-        val row1 = ReferencesModel(
-            references = expectedKeys.subList(0, 2)
-        )
+        val row1 = ReferencesModel.run { create(
+            references with expectedKeys.subList(0, 2)
+        ) }
 
-        val row2 = ReferencesModel(
-            references = expectedKeys.subList(2, 3)
-        )
+        val row2 = ReferencesModel.run { create(
+            references with expectedKeys.subList(2, 3)
+        ) }
 
         val response = ValuesResponse(
-            dataModel = ReferencesModel,
+            dataModel = ReferencesModel.Model,
             values = listOf(
                 ValuesWithMetaData(
                     key = ReferencesModel.key(row1),
@@ -103,7 +102,7 @@ class InjectIntoRequestTest {
 
         context.collectResult("referencedKeys", ValuesResponse.asValues(response))
 
-        context.dataModel = ReferencesModel
+        context.dataModel = ReferencesModel.Model
 
         expect(expectedKeys) { getRequest { keys } }
     }

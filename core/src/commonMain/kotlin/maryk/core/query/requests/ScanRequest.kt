@@ -2,9 +2,11 @@ package maryk.core.query.requests
 
 import maryk.core.aggregations.Aggregations
 import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.PropertyBaseRootDataModel
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.RootModel
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.embedObject
 import maryk.core.properties.definitions.number
@@ -36,6 +38,26 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.scan(
     aggregations: Aggregations? = null
 ) =
     ScanRequest(this, startKey, select, where, order, limit, includeStart, toVersion, filterSoftDeleted, aggregations)
+
+/**
+ * Creates a Request to scan DataObjects by key from [startKey] until [limit] and only return [select]
+ * values of properties.
+ * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
+ * Results can be ordered with an [order]
+ */
+fun <DM : RootModel<P>, P : PropertyDefinitions> DM.scan(
+    startKey: Key<PropertyBaseRootDataModel<P>>? = null,
+    select: RootPropRefGraph<P>? = null,
+    where: IsFilter? = null,
+    order: IsOrder? = null,
+    limit: UInt = 100u,
+    includeStart: Boolean = true,
+    toVersion: ULong? = null,
+    filterSoftDeleted: Boolean = true,
+    aggregations: Aggregations? = null
+) =
+    ScanRequest(this.Model, startKey, select, where, order, limit, includeStart, toVersion, filterSoftDeleted, aggregations)
+
 
 /**
  * A Request to scan DataObjects by key from [startKey] until [limit]

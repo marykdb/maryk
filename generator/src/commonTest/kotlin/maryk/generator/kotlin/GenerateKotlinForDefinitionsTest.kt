@@ -34,7 +34,7 @@ class GenerateKotlinForDefinitionsTest {
             ValueMarykObject,
             EmbeddedModel,
             CompleteMarykModel,
-            SimpleMarykModel
+            SimpleMarykModel.Model
         ).generateKotlin("maryk.test.models") { name ->
             setOfNames.add(name)
             val writer = mapOfWriters[name]

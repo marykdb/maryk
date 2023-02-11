@@ -4,9 +4,11 @@ import maryk.core.aggregations.Aggregations
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.PropertyBaseRootDataModel
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.RootModel
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.definitions.embedObject
@@ -35,6 +37,21 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.get(
     aggregations: Aggregations? = null
 ) =
     GetRequest(this, keys.toList(), select, where, toVersion, filterSoftDeleted, aggregations)
+
+/**
+ * Creates a Request to get [select] values of DataObjects by [keys] and [where] filter for the DataModel of type [DM].
+ * Optional: the data can be requested as it was at [toVersion]
+ * If [filterSoftDeleted] (default true) is set to false it will not where away all soft deleted results.
+ */
+fun <DM : RootModel<P>, P : PropertyDefinitions> DM.get(
+    vararg keys: Key<PropertyBaseRootDataModel<P>>,
+    select: RootPropRefGraph<P>? = null,
+    where: IsFilter? = null,
+    toVersion: ULong? = null,
+    filterSoftDeleted: Boolean = true,
+    aggregations: Aggregations? = null
+) =
+    GetRequest(this.Model, keys.toList(), select, where, toVersion, filterSoftDeleted, aggregations)
 
 /**
  * A Request to get [select] values of DataObjects by [keys] and [where] filter for specific DataModel of type [DM].

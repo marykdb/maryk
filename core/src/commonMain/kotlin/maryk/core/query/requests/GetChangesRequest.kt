@@ -6,9 +6,11 @@ import maryk.core.aggregations.Aggregations
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.PropertyBaseRootDataModel
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.RootModel
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.definitions.embedObject
@@ -40,6 +42,31 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.getChanges(
 ) =
     GetChangesRequest(
         this,
+        keys.toList(),
+        where,
+        fromVersion,
+        toVersion,
+        maxVersions,
+        select,
+        filterSoftDeleted
+    )
+
+/**
+ * Creates a request to get DataObject its versioned changes by value [keys]
+ * It will only fetch the changes [fromVersion] (Inclusive) until [maxVersions] (Default=1000) is reached.
+ * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
+ */
+fun <DM : RootModel<P>, P : PropertyDefinitions> DM.getChanges(
+    vararg keys: Key<PropertyBaseRootDataModel<P>>,
+    where: IsFilter? = null,
+    fromVersion: ULong = 0uL,
+    toVersion: ULong? = null,
+    maxVersions: UInt = 1u,
+    select: RootPropRefGraph<P>? = null,
+    filterSoftDeleted: Boolean = true
+) =
+    GetChangesRequest(
+        this.Model,
         keys.toList(),
         where,
         fromVersion,

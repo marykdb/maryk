@@ -17,7 +17,7 @@ class UpdateResponseTest {
 
     private val updateResponse = UpdateResponse(
         id = 1234uL,
-        dataModel = SimpleMarykModel,
+        dataModel = SimpleMarykModel.Model,
         update = RemovalUpdate(
             key,
             version = 1234uL,
@@ -27,9 +27,9 @@ class UpdateResponseTest {
 
     private val context = RequestContext(
         DefinitionsContext(mutableMapOf(
-            SimpleMarykModel.name toUnitLambda { SimpleMarykModel }
+            SimpleMarykModel.Model.name toUnitLambda { SimpleMarykModel.Model }
         )),
-        dataModel = SimpleMarykModel
+        dataModel = SimpleMarykModel.Model
     )
 
     @Test

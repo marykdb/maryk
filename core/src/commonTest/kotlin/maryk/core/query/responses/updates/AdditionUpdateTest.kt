@@ -10,9 +10,9 @@ import kotlin.test.Test
 import kotlin.test.expect
 
 internal class AdditionUpdateTest {
-    private val values = SimpleMarykModel(
-        "nice value"
-    )
+    private val values = SimpleMarykModel.run { create(
+        value with "nice value"
+    ) }
 
     private val key = SimpleMarykModel.key("0ruQCs38S2QaByYof+IJgA")
 
@@ -27,9 +27,9 @@ internal class AdditionUpdateTest {
 
     private val context = RequestContext(
         mapOf(
-            SimpleMarykModel.name toUnitLambda { SimpleMarykModel }
+            SimpleMarykModel.Model.name toUnitLambda { SimpleMarykModel.Model }
         ),
-        dataModel = SimpleMarykModel
+        dataModel = SimpleMarykModel.Model
     )
 
     @Test

@@ -10,7 +10,7 @@ private val key1 = SimpleMarykModel.key("Zk6m4QpZQegUg5s13JVYlQ")
 val scanUpdatesRequest = SimpleMarykModel.scanUpdates()
 
 val scanUpdatesMaxRequest = SimpleMarykModel.run {
-    scanUpdates(
+    Model.scanUpdates(
         startKey = key1,
         where = Exists(this { value::ref }),
         order = this { value::ref }.descending(),

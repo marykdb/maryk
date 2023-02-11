@@ -17,7 +17,7 @@ class FailedActionResponseTest {
     )
 
     private val context = RequestContext(mapOf(
-        SimpleMarykModel.name toUnitLambda { SimpleMarykModel }
+        SimpleMarykModel.Model.name toUnitLambda { SimpleMarykModel.Model }
     ))
 
     @Test

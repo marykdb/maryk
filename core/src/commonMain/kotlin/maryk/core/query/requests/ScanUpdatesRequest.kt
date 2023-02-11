@@ -7,6 +7,7 @@ import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.RootModel
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.definitions.embedObject
@@ -44,6 +45,41 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.scanUpdates(
 ) =
     ScanUpdatesRequest(
         this,
+        startKey,
+        where,
+        order,
+        limit,
+        includeStart,
+        fromVersion,
+        toVersion,
+        maxVersions,
+        select,
+        filterSoftDeleted,
+        orderedKeys
+    )
+
+
+/**
+ * Creates a request to scan DataObjects by key from [startKey] until [limit]
+ * It will only fetch the updates [fromVersion] (Inclusive) until [maxVersions] (Default=1) is reached.
+ * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
+ * Results can be ordered with an [order]
+ */
+fun <DM : RootModel<P>, P : PropertyDefinitions> DM.scanUpdates(
+    startKey: Key<IsRootValuesDataModel<P>>? = null,
+    where: IsFilter? = null,
+    order: IsOrder? = null,
+    limit: UInt = 100u,
+    includeStart: Boolean = true,
+    fromVersion: ULong = 0uL,
+    toVersion: ULong? = null,
+    maxVersions: UInt = 1u,
+    select: RootPropRefGraph<P>? = null,
+    filterSoftDeleted: Boolean = true,
+    orderedKeys: List<Key<IsRootValuesDataModel<P>>>? = null
+) =
+    ScanUpdatesRequest(
+        this.Model,
         startKey,
         where,
         order,

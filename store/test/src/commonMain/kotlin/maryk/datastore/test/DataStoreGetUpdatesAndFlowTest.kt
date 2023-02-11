@@ -1,5 +1,6 @@
 package maryk.datastore.test
 
+import maryk.core.models.PropertyBaseRootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.change
@@ -23,7 +24,6 @@ import maryk.core.query.responses.updates.RemovalReason.SoftDelete
 import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.datastore.shared.IsDataStore
 import maryk.test.models.SimpleMarykModel
-import maryk.test.models.SimpleMarykModel.Properties
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNull
@@ -32,7 +32,7 @@ import kotlin.test.expect
 class DataStoreGetUpdatesAndFlowTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
-    private val testKeys = mutableListOf<Key<SimpleMarykModel>>()
+    private val testKeys = mutableListOf<Key<PropertyBaseRootDataModel<SimpleMarykModel>>>()
     private var lowestVersion = ULong.MAX_VALUE
     private var highestInitVersion = ULong.MIN_VALUE
 
@@ -47,14 +47,20 @@ class DataStoreGetUpdatesAndFlowTest(
 
     override suspend fun initData() {
         val addResponse = dataStore.execute(
-            SimpleMarykModel.add(
-                SimpleMarykModel(value = "haha1"),
-                SimpleMarykModel(value = "haha2"),
-                SimpleMarykModel(value = "haha3")
+            SimpleMarykModel.Model.add(
+                SimpleMarykModel.run { create(
+                    value with "haha1"
+                ) },
+                SimpleMarykModel.run { create(
+                    value with "haha2"
+                ) },
+                SimpleMarykModel.run { create(
+                    value with "haha3"
+                ) },
             )
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<SimpleMarykModel>>(status)
+            val response = assertIs<AddSuccess<PropertyBaseRootDataModel<SimpleMarykModel>>>(status)
             testKeys.add(response.key)
             if (response.version < lowestVersion) {
                 // Add lowest version for scan test
@@ -68,7 +74,7 @@ class DataStoreGetUpdatesAndFlowTest(
 
     override suspend fun resetData() {
         dataStore.execute(
-            SimpleMarykModel.delete(*testKeys.toTypedArray(), hardDelete = true)
+            SimpleMarykModel.Model.delete(*testKeys.toTypedArray(), hardDelete = true)
         )
         testKeys.clear()
         lowestVersion = ULong.MAX_VALUE
@@ -77,7 +83,7 @@ class DataStoreGetUpdatesAndFlowTest(
 
     private suspend fun executeSimpleGetUpdatesRequest() {
         val getResponse = dataStore.execute(
-            SimpleMarykModel.getUpdates(testKeys[0], testKeys[1])
+            SimpleMarykModel.Model.getUpdates(testKeys[0], testKeys[1])
         )
 
         expect(3) { getResponse.updates.size }
@@ -88,14 +94,18 @@ class DataStoreGetUpdatesAndFlowTest(
             assertEquals(highestInitVersion, version)
         }
 
-        assertIs<AdditionUpdate<SimpleMarykModel, Properties>>(getResponse.updates[1]).apply {
+        assertIs<AdditionUpdate<PropertyBaseRootDataModel<SimpleMarykModel>, SimpleMarykModel>>(getResponse.updates[1]).apply {
             assertEquals(testKeys[0], key)
-            assertEquals(SimpleMarykModel(value = "haha1"), values)
+            assertEquals(SimpleMarykModel.run { create(
+                value with "haha1"
+            ) }, values)
         }
 
-        assertIs<AdditionUpdate<SimpleMarykModel, Properties>>(getResponse.updates[2]).apply {
+        assertIs<AdditionUpdate<PropertyBaseRootDataModel<SimpleMarykModel>, SimpleMarykModel>>(getResponse.updates[2]).apply {
             assertEquals(testKeys[1], key)
-            assertEquals(SimpleMarykModel(value = "haha2"), values)
+            assertEquals(SimpleMarykModel.run { create(
+                value with "haha2"
+            ) }, values)
         }
     }
 
@@ -110,7 +120,7 @@ class DataStoreGetUpdatesAndFlowTest(
         }
 
         val change1 = Change(SimpleMarykModel { value::ref } with "haha 55")
-        dataStore.execute(SimpleMarykModel.change(
+        dataStore.execute(SimpleMarykModel.Model.change(
             testKeys[0].change(change1)
         ))
 
@@ -132,7 +142,7 @@ class DataStoreGetUpdatesAndFlowTest(
         }
 
         val change1 = Change(SimpleMarykModel { value::ref } with "haha 66")
-        dataStore.execute(SimpleMarykModel.change(
+        dataStore.execute(SimpleMarykModel.Model.change(
             testKeys[0].change(change1)
         ))
 
@@ -145,7 +155,7 @@ class DataStoreGetUpdatesAndFlowTest(
 
     private suspend fun executeGetUpdatesAsFlowRequest() = updateListenerTester(
         dataStore,
-        SimpleMarykModel.getUpdates(testKeys[0], testKeys[1], fromVersion = highestInitVersion + 1uL),
+        SimpleMarykModel.Model.getUpdates(testKeys[0], testKeys[1], fromVersion = highestInitVersion + 1uL),
         4
     ) { responses ->
         assertIs<OrderedKeysUpdate<*, *>>(responses[0].await()).apply {
@@ -154,7 +164,7 @@ class DataStoreGetUpdatesAndFlowTest(
         }
 
         val change1 = Change(SimpleMarykModel { value::ref } with "haha5")
-        dataStore.execute(SimpleMarykModel.change(
+        dataStore.execute(SimpleMarykModel.Model.change(
             testKeys[0].change(change1)
         ))
 
@@ -165,12 +175,12 @@ class DataStoreGetUpdatesAndFlowTest(
         }
 
         val change2 = Change(SimpleMarykModel { value::ref } with "haha6")
-        dataStore.execute(SimpleMarykModel.change(
+        dataStore.execute(SimpleMarykModel.Model.change(
             testKeys[1].change(change2)
         ))
 
         // This change should be ignored, otherwise key is wrong after changeUpdate2 check
-        dataStore.execute(SimpleMarykModel.change(
+        dataStore.execute(SimpleMarykModel.Model.change(
             testKeys[2].change(change2)
         ))
 
@@ -180,7 +190,7 @@ class DataStoreGetUpdatesAndFlowTest(
             assertEquals(listOf(change2), changes)
         }
 
-        dataStore.execute(SimpleMarykModel.delete(testKeys[1]))
+        dataStore.execute(SimpleMarykModel.Model.delete(testKeys[1]))
 
         val removalUpdate1 = responses[3].await()
         assertIs<RemovalUpdate<*, *>>(removalUpdate1).apply {
@@ -191,7 +201,7 @@ class DataStoreGetUpdatesAndFlowTest(
 
     private suspend fun executeGetUpdatesAsFlowWithMutableWhereRequest() = updateListenerTester(
         dataStore,
-        SimpleMarykModel.getUpdates(
+        SimpleMarykModel.Model.getUpdates(
             testKeys[0],
             testKeys[1],
             where = Not(Equals(SimpleMarykModel { value::ref } with "haha0")),
@@ -205,7 +215,7 @@ class DataStoreGetUpdatesAndFlowTest(
         }
 
         val change1 = Change(SimpleMarykModel { value::ref } with "haha5")
-        dataStore.execute(SimpleMarykModel.change(
+        dataStore.execute(SimpleMarykModel.Model.change(
             testKeys[0].change(change1)
         ))
 
@@ -216,7 +226,7 @@ class DataStoreGetUpdatesAndFlowTest(
         }
 
         val change2 = Change(SimpleMarykModel { value::ref } with "haha0")
-        dataStore.execute(SimpleMarykModel.change(
+        dataStore.execute(SimpleMarykModel.Model.change(
             testKeys[1].change(change2)
         ))
 
@@ -229,7 +239,7 @@ class DataStoreGetUpdatesAndFlowTest(
 
     private suspend fun executeGetUpdatesWithInitChangesAsFlowRequest() = updateListenerTester(
         dataStore,
-        SimpleMarykModel.getUpdates(testKeys[0], testKeys[2]),
+        SimpleMarykModel.Model.getUpdates(testKeys[0], testKeys[2]),
         4
     ) { responses ->
         assertIs<OrderedKeysUpdate<*, *>>(responses[0].await()).apply {
@@ -237,25 +247,29 @@ class DataStoreGetUpdatesAndFlowTest(
             assertEquals(highestInitVersion, version)
         }
 
-        assertIs<AdditionUpdate<SimpleMarykModel, Properties>>(responses[1].await()).apply {
+        assertIs<AdditionUpdate<PropertyBaseRootDataModel<SimpleMarykModel>, SimpleMarykModel>>(responses[1].await()).apply {
             assertEquals(testKeys[0], key)
             assertEquals(lowestVersion, version)
             assertEquals(
-                SimpleMarykModel(value = "haha1"),
+                SimpleMarykModel.run { create(
+                    value with "haha1"
+                ) },
                 values
             )
         }
-        assertIs<AdditionUpdate<SimpleMarykModel, Properties>>(responses[2].await()).apply {
+        assertIs<AdditionUpdate<PropertyBaseRootDataModel<SimpleMarykModel>, SimpleMarykModel>>(responses[2].await()).apply {
             assertEquals(testKeys[2], key)
             assertEquals(highestInitVersion, version)
             assertEquals(
-                SimpleMarykModel(value = "haha3"),
+                SimpleMarykModel.run { create(
+                    value with "haha3"
+                ) },
                 values
             )
         }
 
         val change1 = Change(SimpleMarykModel { value::ref } with "haha5")
-        dataStore.execute(SimpleMarykModel.change(
+        dataStore.execute(SimpleMarykModel.Model.change(
             testKeys[0].change(change1)
         ))
 

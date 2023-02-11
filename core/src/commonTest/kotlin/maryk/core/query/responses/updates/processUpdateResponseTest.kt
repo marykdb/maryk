@@ -1,12 +1,12 @@
 package maryk.core.query.responses.updates
 
+import maryk.core.models.PropertyBaseRootDataModel
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.pairs.with
 import maryk.core.query.responses.updates.RemovalReason.HardDelete
 import maryk.test.models.SimpleMarykModel
-import maryk.test.models.SimpleMarykModel.Properties
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -15,19 +15,19 @@ internal class processUpdateResponseTest {
     val key1 = SimpleMarykModel.key("dR9gVdRcSPw2molM1AiOng")
     val key2 = SimpleMarykModel.key("Vc4WgX/mQHYCSEoLtfLSUQ")
 
-    val initialItems = listOf<ValuesWithMetaData<SimpleMarykModel, Properties>>(
+    val initialItems = listOf<ValuesWithMetaData<PropertyBaseRootDataModel<SimpleMarykModel>, SimpleMarykModel>>(
         ValuesWithMetaData(
             key = key1,
             firstVersion = 1234uL,
             lastVersion = 2345uL,
-            values = SimpleMarykModel(value = "v1"),
+            values = SimpleMarykModel.run { create(value with "v1") },
             isDeleted = false
         ),
         ValuesWithMetaData(
             key = key2,
             firstVersion = 12345uL,
             lastVersion = 23456uL,
-            values = SimpleMarykModel(value = "v2"),
+            values = SimpleMarykModel.run { create(value with "v2") },
             isDeleted = false
         )
     )
@@ -42,9 +42,9 @@ internal class processUpdateResponseTest {
                     firstVersion = 123456uL,
                     lastVersion = 1234568uL,
                     isDeleted = false,
-                    values = SimpleMarykModel(
-                        value = "test value 1"
-                    )
+                    values = SimpleMarykModel.run { create(
+                        value with "test value 1"
+                    ) }
                 )
             )
         )
@@ -82,7 +82,7 @@ internal class processUpdateResponseTest {
             firstVersion = 3456uL,
             version = 4567uL,
             insertionIndex = 1,
-            values = SimpleMarykModel(value = "v3"),
+            values = SimpleMarykModel.run { create(value with "v3") },
             isDeleted = false
         )
 

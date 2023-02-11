@@ -1,6 +1,7 @@
 package maryk.datastore.test
 
 import maryk.core.exceptions.RequestException
+import maryk.core.models.PropertyBaseRootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.ObjectCreate
@@ -22,7 +23,7 @@ import kotlin.test.expect
 class DataStoreGetChangesTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
-    private val keys = mutableListOf<Key<SimpleMarykModel>>()
+    private val keys = mutableListOf<Key<PropertyBaseRootDataModel<SimpleMarykModel>>>()
     private var lowestVersion = ULong.MAX_VALUE
 
     override val allTests = mapOf(
@@ -38,7 +39,7 @@ class DataStoreGetChangesTest(
             addRequest
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<SimpleMarykModel>>(status)
+            val response = assertIs<AddSuccess<PropertyBaseRootDataModel<SimpleMarykModel>>>(status)
             keys.add(response.key)
             if (response.version < lowestVersion) {
                 // Add lowest version for scan test
@@ -49,7 +50,7 @@ class DataStoreGetChangesTest(
 
     override suspend fun resetData() {
         dataStore.execute(
-            SimpleMarykModel.delete(*keys.toTypedArray(), hardDelete = true)
+            SimpleMarykModel.Model.delete(*keys.toTypedArray(), hardDelete = true)
         )
         keys.clear()
         lowestVersion = ULong.MAX_VALUE
@@ -57,14 +58,14 @@ class DataStoreGetChangesTest(
 
     private suspend fun executeSimpleGetChangesRequest() {
         val changeResult = dataStore.execute(
-            SimpleMarykModel.change(
+            SimpleMarykModel.Model.change(
                 keys[1].change(Change(SimpleMarykModel { value::ref } with "haha3"))
             )
         )
 
         var versionAfterChange = 0uL
         for (status in changeResult.statuses) {
-            assertIs<ChangeSuccess<SimpleMarykModel>>(status).apply {
+            assertIs<ChangeSuccess<PropertyBaseRootDataModel<SimpleMarykModel>>>(status).apply {
                 versionAfterChange = this.version
             }
         }
@@ -155,33 +156,33 @@ class DataStoreGetChangesTest(
 
             val change1 = Change(SimpleMarykModel { value::ref } with "ha change 1")
             dataStore.execute(
-                SimpleMarykModel.change(
+                SimpleMarykModel.Model.change(
                     keys[1].change(change1)
                 )
             ).also {
-                assertIs<ChangeSuccess<SimpleMarykModel>>(it.statuses.first()).apply {
+                assertIs<ChangeSuccess<PropertyBaseRootDataModel<SimpleMarykModel>>>(it.statuses.first()).apply {
                     collectedVersions.add(version)
                 }
             }
 
             val change2 = Change(SimpleMarykModel { value::ref } with "ha change 2")
             dataStore.execute(
-                SimpleMarykModel.change(
+                SimpleMarykModel.Model.change(
                     keys[1].change(change2)
                 )
             ).also {
-                assertIs<ChangeSuccess<SimpleMarykModel>>(it.statuses.first()).apply {
+                assertIs<ChangeSuccess<PropertyBaseRootDataModel<SimpleMarykModel>>>(it.statuses.first()).apply {
                     collectedVersions.add(version)
                 }
             }
 
             val change3 = Change(SimpleMarykModel { value::ref } with "ha change 3")
             dataStore.execute(
-                SimpleMarykModel.change(
+                SimpleMarykModel.Model.change(
                     keys[1].change(change3)
                 )
             ).also {
-                assertIs<ChangeSuccess<SimpleMarykModel>>(it.statuses.first()).apply {
+                assertIs<ChangeSuccess<PropertyBaseRootDataModel<SimpleMarykModel>>>(it.statuses.first()).apply {
                     collectedVersions.add(version)
                 }
             }

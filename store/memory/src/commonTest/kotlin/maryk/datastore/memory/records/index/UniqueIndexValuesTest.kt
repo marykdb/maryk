@@ -1,11 +1,10 @@
 package maryk.datastore.memory.records.index
 
 import maryk.core.clock.HLC
-import maryk.core.models.key
+import maryk.core.models.PropertyBaseRootDataModel
 import maryk.datastore.memory.records.DataRecord
 import maryk.test.models.SimpleMarykModel
-import maryk.test.models.SimpleMarykModel.Properties
-import maryk.test.models.SimpleMarykModel.Properties.value
+import maryk.test.models.SimpleMarykModel.value
 import kotlin.test.Test
 import kotlin.test.expect
 
@@ -13,11 +12,11 @@ class UniqueIndexValuesTest {
     private val valueReference = value.ref().toStorageByteArray()
 
     private val uniqueIndex =
-        UniqueIndexValues<SimpleMarykModel, Properties, String>(
+        UniqueIndexValues<PropertyBaseRootDataModel<SimpleMarykModel>, SimpleMarykModel, String>(
             valueReference
         )
 
-    private val simpleValues = SimpleMarykModel("test")
+    private val simpleValues = SimpleMarykModel.run { create(value with "test") }
 
     private val timestamp1 = HLC(1uL)
     private val timestamp2 = HLC(2uL)

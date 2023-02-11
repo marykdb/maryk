@@ -1,5 +1,6 @@
 package maryk.datastore.test
 
+import maryk.core.models.PropertyBaseRootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.change
@@ -67,7 +68,7 @@ class DataStoreScanWithMutableValueIndexTest(
 
         var versionAfterChange = 0uL
         for (status in changeResult.statuses) {
-            assertIs<ChangeSuccess<SimpleMarykModel>>(status).apply {
+            assertIs<ChangeSuccess<PropertyBaseRootDataModel<SimpleMarykModel>>>(status).apply {
                 versionAfterChange = this.version
             }
         }

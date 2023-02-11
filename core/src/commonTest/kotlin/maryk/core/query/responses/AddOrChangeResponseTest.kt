@@ -24,7 +24,7 @@ class AddOrChangeResponseTest {
     private val key = SimpleMarykModel.key("T/sdrQBeRnYrRo1h7uhfQg")
 
     private val addOrChangeResponse = AddOrChangeResponse(
-        SimpleMarykModel,
+        SimpleMarykModel.Model,
         listOf(
             AddSuccess(
                 key, 32352uL, listOf(
@@ -54,7 +54,7 @@ class AddOrChangeResponseTest {
     )
 
     private val context = RequestContext(mapOf(
-        SimpleMarykModel.name toUnitLambda { SimpleMarykModel }
+        SimpleMarykModel.Model.name toUnitLambda { SimpleMarykModel.Model }
     ))
 
     @Test

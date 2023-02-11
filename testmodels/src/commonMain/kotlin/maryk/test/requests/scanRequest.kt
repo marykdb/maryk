@@ -12,11 +12,11 @@ import maryk.test.models.SimpleMarykModel
 private val key1 = SimpleMarykModel.key("Zk6m4QpZQegUg5s13JVYlQ")
 
 val scanRequest = SimpleMarykModel.run {
-    scan()
+    Model.scan()
 }
 
 val scanMaxRequest = SimpleMarykModel.run {
-    scan(
+    Model.scan(
         startKey = key1,
         where = Exists(this { value::ref }),
         order = this { value::ref }.ascending(),
@@ -34,7 +34,7 @@ val scanMaxRequest = SimpleMarykModel.run {
 }
 
 val scanOrdersRequest = SimpleMarykModel.run {
-    scan(
+    Model.scan(
         startKey = key1,
         order = Orders(
             this { value::ref }.ascending(),

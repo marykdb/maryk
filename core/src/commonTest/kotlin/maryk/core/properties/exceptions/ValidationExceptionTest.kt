@@ -4,6 +4,7 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.RequestContext
 import maryk.test.models.SimpleMarykModel
@@ -14,7 +15,7 @@ class ValidationExceptionTest {
 
     private val validationUmbrellaException = ValidationUmbrellaException(
         null, listOf(
-            AlreadyExistsException(ref, Key<SimpleMarykModel>(ByteArray(16))),
+            AlreadyExistsException(ref, Key<IsRootDataModel<SimpleMarykModel>>(ByteArray(16))),
             AlreadySetException(ref),
             InvalidSizeException(ref, "wrong", 1u, 3u),
             InvalidValueException(ref, "wrong"),
@@ -32,9 +33,9 @@ class ValidationExceptionTest {
 
     private val context = RequestContext(
         mapOf(
-            SimpleMarykModel.name toUnitLambda { SimpleMarykModel }
+            SimpleMarykModel.Model.name toUnitLambda { SimpleMarykModel.Model }
         ),
-        dataModel = SimpleMarykModel
+        dataModel = SimpleMarykModel.Model
     )
 
     @Test

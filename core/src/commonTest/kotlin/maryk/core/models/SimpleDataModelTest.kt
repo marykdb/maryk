@@ -12,16 +12,16 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.expect
 
-private val testValues = SimpleMarykModel(
-    value = "haas"
-)
+private val testValues = SimpleMarykModel.run { create(
+    value with "haas"
+) }
 
 internal class SimpleDataModelTest {
     @Test
     fun constructByMap() {
         expect(testValues) {
-            SimpleMarykModel.values {
-                mapNonNulls(
+            SimpleMarykModel.run {
+                create(
                     value with testValues { value }
                 )
             }
@@ -30,7 +30,7 @@ internal class SimpleDataModelTest {
 
     @Test
     fun validate() {
-        SimpleMarykModel.validate(testValues)
+        SimpleMarykModel.Model.validate(testValues)
     }
 
     @Test
@@ -40,7 +40,7 @@ internal class SimpleDataModelTest {
                 append(it)
             }
 
-            SimpleMarykModel.writeJson(testValues, writer)
+            SimpleMarykModel.Model.writeJson(testValues, writer)
         }
 
         assertEquals("""{"value":"haas"}""".trimIndent(), output)
@@ -52,7 +52,7 @@ internal class SimpleDataModelTest {
             val writer = JsonWriter(pretty = true) {
                 append(it)
             }
-            SimpleMarykModel.writeJson(testValues, writer)
+            SimpleMarykModel.Model.writeJson(testValues, writer)
         }
 
         assertEquals(
@@ -72,7 +72,7 @@ internal class SimpleDataModelTest {
                 append(it)
             }
 
-            SimpleMarykModel.writeJson(testValues, writer)
+            SimpleMarykModel.Model.writeJson(testValues, writer)
         }
 
         assertEquals(
@@ -89,15 +89,17 @@ internal class SimpleDataModelTest {
         val bc = ByteCollector()
         val cache = WriteCache()
 
-        val map = SimpleMarykModel(
-            "hay"
-        )
+        val map = SimpleMarykModel.run {
+            create(
+                value with "hay"
+            )
+        }
 
         bc.reserve(
-            SimpleMarykModel.calculateProtoBufLength(map, cache)
+            SimpleMarykModel.Model.calculateProtoBufLength(map, cache)
         )
 
-        SimpleMarykModel.writeProtoBuf(map, cache, bc::write)
+        SimpleMarykModel.Model.writeProtoBuf(map, cache, bc::write)
 
         expect("0a03686179") { bc.bytes!!.toHex() }
     }
@@ -107,7 +109,7 @@ internal class SimpleDataModelTest {
         val bytes = initByteArrayByHex("0a036861790008102019400c70a3d70a3d7220ccf794d105280130026a09010501050105010501")
         var index = 0
 
-        val map = SimpleMarykModel.readProtoBuf(bytes.size, {
+        val map = SimpleMarykModel.Model.readProtoBuf(bytes.size, {
             bytes[index++]
         })
 
@@ -121,14 +123,14 @@ internal class SimpleDataModelTest {
         val cache = WriteCache()
 
         bc.reserve(
-            SimpleMarykModel.calculateProtoBufLength(testValues, cache)
+            SimpleMarykModel.Model.calculateProtoBufLength(testValues, cache)
         )
 
-        SimpleMarykModel.writeProtoBuf(testValues, cache, bc::write)
+        SimpleMarykModel.Model.writeProtoBuf(testValues, cache, bc::write)
 
         expect("0a0468616173") { bc.bytes!!.toHex() }
 
-        expect(testValues) { SimpleMarykModel.readProtoBuf(bc.size, bc::read) }
+        expect(testValues) { SimpleMarykModel.Model.readProtoBuf(bc.size, bc::read) }
     }
 
     @Test
@@ -140,11 +142,11 @@ internal class SimpleDataModelTest {
             JsonWriter(writer = writer),
             JsonWriter(pretty = true, writer = writer)
         ).forEach { generator ->
-            SimpleMarykModel.writeJson(testValues, generator)
+            SimpleMarykModel.Model.writeJson(testValues, generator)
 
             var index = 0
             val reader = { JsonReader(reader = { output[index++] }) }
-            expect(testValues) { SimpleMarykModel.readJson(reader = reader()) }
+            expect(testValues) { SimpleMarykModel.Model.readJson(reader = reader()) }
 
             output = ""
         }

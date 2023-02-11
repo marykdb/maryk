@@ -24,7 +24,7 @@ import kotlin.test.assertFails
 import kotlin.test.expect
 
 private val context = RequestContext(mapOf(
-    SimpleMarykModel.name toUnitLambda { SimpleMarykModel },
+    SimpleMarykModel.Model.name toUnitLambda { SimpleMarykModel.Model },
     ReferencesModel.name toUnitLambda { ReferencesModel }
 )).apply {
     addToCollect("keysToInject", ValuesResponse)
@@ -34,12 +34,12 @@ private val context = RequestContext(mapOf(
 class InjectIntoRequestTest {
     private val getRequestWithInjectable = GetRequest.values(context) {
         mapNonNulls(
-            from with SimpleMarykModel,
+            from with SimpleMarykModel.Model,
             keys injectWith Inject("keysToInject", GetRequest { keys::ref }),
             where with Exists(SimpleMarykModel { value::ref }),
             toVersion with 333uL,
             filterSoftDeleted with true,
-            select with SimpleMarykModel.graph {
+            select with SimpleMarykModel.Model.graph {
                 listOf(value)
             }
         )
@@ -68,9 +68,9 @@ class InjectIntoRequestTest {
         }
 
         val expectedKeys = listOf(
-            SimpleMarykModel.key(SimpleMarykModel("v1")),
-            SimpleMarykModel.key(SimpleMarykModel("v2")),
-            SimpleMarykModel.key(SimpleMarykModel("v3"))
+            SimpleMarykModel.key(SimpleMarykModel.run { create(value with "v1") }),
+            SimpleMarykModel.key(SimpleMarykModel.run { create(value with "v2") }),
+            SimpleMarykModel.key(SimpleMarykModel.run { create(value with "v2") })
         )
 
         val row1 = ReferencesModel(

@@ -438,7 +438,7 @@ class GenerateKotlinForRootDataModelTest {
     @Test
     fun generateKotlinForSimpleModel() {
         val output = buildString {
-            SimpleMarykModel.generateKotlin("maryk.test.models") {
+            SimpleMarykModel.Model.generateKotlin("maryk.test.models") {
                 append(it)
             }
         }

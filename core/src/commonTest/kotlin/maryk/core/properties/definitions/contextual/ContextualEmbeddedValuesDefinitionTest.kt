@@ -12,8 +12,8 @@ import kotlin.test.expect
 
 class ContextualEmbeddedValuesDefinitionTest {
     private val subModelsToTest = listOf(
-        SimpleMarykModel("test1"),
-        SimpleMarykModel("test2")
+        SimpleMarykModel.run { create(value with "test1") },
+        SimpleMarykModel.run { create(value with "test2") }
     )
 
     @Suppress("UNCHECKED_CAST")
@@ -23,7 +23,7 @@ class ContextualEmbeddedValuesDefinitionTest {
 
     private val context = ModelContext(
         definitionsContext = null,
-        model = { SimpleMarykModel }
+        model = { SimpleMarykModel.Model }
     )
 
     @Test

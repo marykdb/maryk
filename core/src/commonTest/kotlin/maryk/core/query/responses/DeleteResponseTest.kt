@@ -17,7 +17,7 @@ class DeleteResponseTest {
     private val key = SimpleMarykModel.key("+1xO4zD4R5sIMcS9pXTZEA")
 
     private val deleteResponse = DeleteResponse(
-        SimpleMarykModel,
+        SimpleMarykModel.Model,
         listOf(
             DeleteSuccess(32352uL),
             DoesNotExist(key),
@@ -27,7 +27,7 @@ class DeleteResponseTest {
     )
 
     private val context = RequestContext(mapOf(
-        SimpleMarykModel.name toUnitLambda { SimpleMarykModel }
+        SimpleMarykModel.Model.name toUnitLambda { SimpleMarykModel.Model }
     ))
 
     @Test

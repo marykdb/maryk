@@ -12,13 +12,13 @@ import kotlin.test.expect
 
 class ChangeRequestTest {
     private val context = RequestContext(mapOf(
-        SimpleMarykModel.name toUnitLambda { SimpleMarykModel }
+        SimpleMarykModel.Model.name toUnitLambda { SimpleMarykModel.Model }
     ))
 
     @Test
     fun testChangeRequest() {
         expect(2) { changeRequest.objects.size }
-        expect(SimpleMarykModel) { changeRequest.dataModel }
+        expect(SimpleMarykModel.Model) { changeRequest.dataModel }
     }
 
     @Test

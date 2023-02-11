@@ -1,5 +1,6 @@
 package maryk.test.models
 
+import maryk.core.models.PropertyBaseRootDataModel
 import maryk.core.models.RootDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.ReferenceDefinition
@@ -13,13 +14,13 @@ object ReferencesModel : RootDataModel<ReferencesModel, ReferencesModel.Properti
         val references by list(
             index = 1u,
             valueDefinition = ReferenceDefinition(
-                dataModel = { SimpleMarykModel }
+                dataModel = { SimpleMarykModel.Model }
             )
         )
     }
 
     operator fun invoke(
-        references: List<Key<SimpleMarykModel>> = listOf()
+        references: List<Key<PropertyBaseRootDataModel<SimpleMarykModel>>> = listOf()
     ) = values {
         mapNonNulls(
             this.references with references

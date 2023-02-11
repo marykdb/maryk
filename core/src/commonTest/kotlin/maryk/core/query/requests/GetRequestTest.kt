@@ -17,7 +17,7 @@ import kotlin.test.expect
 
 class GetRequestTest {
     private val context = RequestContext(mapOf(
-        SimpleMarykModel.name toUnitLambda { SimpleMarykModel }
+        SimpleMarykModel.Model.name toUnitLambda { SimpleMarykModel.Model }
     ))
 
     @Test
@@ -25,7 +25,7 @@ class GetRequestTest {
         expect(getRequest) {
             GetRequest.values(context) {
                 mapNonNulls(
-                    from with SimpleMarykModel,
+                    from with SimpleMarykModel.Model,
                     keys with listOf(getRequest.keys[0], getRequest.keys[1])
                 )
             }.toDataObject()
@@ -37,12 +37,12 @@ class GetRequestTest {
         expect(getMaxRequest) {
             GetRequest.values(context) {
                 mapNonNulls(
-                    from with SimpleMarykModel,
+                    from with SimpleMarykModel.Model,
                     keys with listOf(getMaxRequest.keys[0], getMaxRequest.keys[1]),
                     where with Exists(SimpleMarykModel { value::ref }),
                     toVersion with 333uL,
                     filterSoftDeleted with true,
-                    select with SimpleMarykModel.graph {
+                    select with SimpleMarykModel.Model.graph {
                         listOf(value)
                     },
                     aggregations with Aggregations(
@@ -123,7 +123,7 @@ class GetRequestTest {
         GetRequest.readJson(reader, this.context)
             .toDataObject()
             .apply {
-                expect(SimpleMarykModel) { dataModel }
+                expect(SimpleMarykModel.Model) { dataModel }
                 expect(null) { where }
             }
     }

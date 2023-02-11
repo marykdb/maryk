@@ -21,18 +21,18 @@ internal class InitialValuesUpdateTest {
                 firstVersion = 0uL,
                 lastVersion = 1uL,
                 isDeleted = false,
-                values = SimpleMarykModel(
-                    value = "test value 1"
-                )
+                values = SimpleMarykModel.run { create(
+                    value with "test value 1"
+                ) }
             )
         )
     )
 
     private val context = RequestContext(
         mapOf(
-            SimpleMarykModel.name toUnitLambda { SimpleMarykModel }
+            SimpleMarykModel.Model.name toUnitLambda { SimpleMarykModel.Model }
         ),
-        dataModel = SimpleMarykModel
+        dataModel = SimpleMarykModel.Model
     )
 
     @Test

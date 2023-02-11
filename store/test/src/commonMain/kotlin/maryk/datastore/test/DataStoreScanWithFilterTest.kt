@@ -38,9 +38,9 @@ class DataStoreScanWithFilterTest(
         CompleteMarykModel(
             string="haas",
             number = 24u,
-            subModel = SimpleMarykModel(
-                value = "haha"
-            ),
+            subModel = SimpleMarykModel.run { create(
+                value with "haha"
+            ) },
             multi=TypedValue(T2, 22),
             booleanForKey= true,
             dateForKey= LocalDate(2018, 3, 29),

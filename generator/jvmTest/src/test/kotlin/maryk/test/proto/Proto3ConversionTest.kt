@@ -6,6 +6,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import maryk.MarykTestProtos
+import maryk.core.models.PropertyBaseRootDataModel
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
@@ -25,7 +26,7 @@ class Proto3ConversionTest {
     @Test
     fun testSimpleMarykModel(){
         // SimpleObject to convert
-        val simpleObject = SimpleMarykModel("testSimpleMarykModel")
+        val simpleObject = SimpleMarykModel.run { create(value with "testSimpleMarykModel") }
         val simpleObjectProto = MarykTestProtos.SimpleMarykModel.newBuilder().setValue("testSimpleMarykModel").build()
 
         // Write protobuf
@@ -33,9 +34,9 @@ class Proto3ConversionTest {
         val cache = WriteCache()
 
         bc.reserve(
-            SimpleMarykModel.calculateProtoBufLength(simpleObject, cache)
+            SimpleMarykModel.Model.calculateProtoBufLength(simpleObject, cache)
         )
-        SimpleMarykModel.writeProtoBuf(simpleObject, cache, bc::write)
+        SimpleMarykModel.Model.writeProtoBuf(simpleObject, cache, bc::write)
 
         val protoBufByteArray = simpleObjectProto.toByteArray()
 
@@ -102,7 +103,7 @@ class Proto3ConversionTest {
             .setTime(completeObject { time }!!.toMillisecondOfDay())
             .setFixedBytes(ByteString.copyFrom(Bytes("AAECAwQ").bytes))
             .setFlexBytes(ByteString.copyFrom(Bytes("AAECAw").bytes))
-            .setReference(ByteString.copyFrom(Key<SimpleMarykModel>("AAECAQAAECAQAAECAQAAEC").bytes))
+            .setReference(ByteString.copyFrom(Key<PropertyBaseRootDataModel<SimpleMarykModel>>("AAECAQAAECAQAAECAQAAEC").bytes))
             .setSubModel(MarykTestProtos.SimpleMarykModel.newBuilder().setValue("a default"))
             .setValueModel(ByteString.copyFrom(completeObject { valueModel }!!.toByteArray()))
             .addAllList(mutableListOf("ha1", "ha2", "ha3"))

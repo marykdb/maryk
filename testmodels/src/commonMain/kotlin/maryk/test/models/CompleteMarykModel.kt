@@ -3,6 +3,7 @@ package maryk.test.models
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
+import maryk.core.models.PropertyBaseRootDataModel
 import maryk.core.models.RootDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.DateDefinition
@@ -51,7 +52,7 @@ import maryk.test.models.CompleteMarykModel.Properties.dateTime
 import maryk.test.models.CompleteMarykModel.Properties.multiForKey
 import maryk.test.models.CompleteMarykModel.Properties.number
 import maryk.test.models.CompleteMarykModel.Properties.subModel
-import maryk.test.models.SimpleMarykModel.Properties.value
+import maryk.test.models.SimpleMarykModel.value
 
 sealed class MarykEnumEmbedded(
     index: UInt,
@@ -188,16 +189,16 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
             minValue = Key("AA"),
             maxValue = Key("f39/f39/fw"),
             default = Key("AAECAQAAECAQAAECAQAAEA"),
-            dataModel = { SimpleMarykModel }
+            dataModel = { SimpleMarykModel.Model }
         )
         val subModel by embed(
             index = 11u,
             required = false,
             final = true,
-            dataModel = { SimpleMarykModel },
-            default = SimpleMarykModel(
-                value = "a default"
-            )
+            dataModel = { SimpleMarykModel.Model },
+            default = SimpleMarykModel.run { create(
+                value with "a default"
+            ) }
         )
         val valueModel by valueObject(
             index = 12u,
@@ -342,10 +343,10 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel
         time: LocalTime = LocalTime(10, 11, 12),
         fixedBytes: Bytes = Bytes("AAECAwQ"),
         flexBytes: Bytes = Bytes("AAECAw"),
-        reference: Key<SimpleMarykModel> = Key("AAECAQAAECAQAAECAQAAEA"),
-        subModel: Values<SimpleMarykModel, SimpleMarykModel.Properties> = SimpleMarykModel(
-            value = "a default"
-        ),
+        reference: Key<PropertyBaseRootDataModel<SimpleMarykModel>> = Key("AAECAQAAECAQAAECAQAAEA"),
+        subModel: Values<PropertyBaseRootDataModel<SimpleMarykModel>, SimpleMarykModel> = SimpleMarykModel.run { create(
+            value with "a default"
+        ) },
         valueModel: ValueMarykObject = ValueMarykObject(
             int = 10,
             date = LocalDate(2010, 10, 10)

@@ -23,7 +23,7 @@ class DefinitionsTest {
     private val definitions = Definitions(
         Option,
         TestValueObject,
-        SimpleMarykModel,
+        SimpleMarykModel.Model,
         EmbeddedMarykModel,
         SimpleMarykTypeEnum,
         MarykTypeEnum,

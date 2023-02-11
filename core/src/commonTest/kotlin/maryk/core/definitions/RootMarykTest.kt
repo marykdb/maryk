@@ -20,7 +20,7 @@ class RootMarykTest {
                 Operation.Define,
                 Definitions(
                     Option,
-                    SimpleMarykModel
+                    SimpleMarykModel.Model
                 )
             ),
             TypedValue(

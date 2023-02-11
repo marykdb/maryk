@@ -6,7 +6,6 @@ import maryk.core.query.requests.scanChanges
 import maryk.test.models.SimpleMarykModel
 import maryk.test.models.TestMarykModel
 
-private val key1 = SimpleMarykModel.key("Zk6m4QpZQegUg5s13JVYlQ")
 private val testKey1 = TestMarykModel.key("AAACKwEAAg")
 
 val scanChangesRequest = SimpleMarykModel.scanChanges()

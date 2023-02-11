@@ -13,7 +13,7 @@ val getChangesRequest = SimpleMarykModel.getChanges(
 )
 
 val getChangesMaxRequest = SimpleMarykModel.run {
-    getChanges(
+    Model.getChanges(
         key1,
         key2,
         where = Exists(this { value::ref }),

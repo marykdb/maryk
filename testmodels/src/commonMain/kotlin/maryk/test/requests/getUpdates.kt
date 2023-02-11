@@ -12,7 +12,7 @@ val getUpdatesRequest = SimpleMarykModel.getChanges(
     key2
 )
 
-val getUpdatesMaxRequest = SimpleMarykModel.run {
+val getUpdatesMaxRequest = SimpleMarykModel.Model.run {
     getChanges(
         key1,
         key2,

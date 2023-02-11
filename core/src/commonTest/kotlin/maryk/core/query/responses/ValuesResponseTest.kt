@@ -15,12 +15,12 @@ import kotlin.test.Test
 import kotlin.test.expect
 
 class ValuesResponseTest {
-    private val simpleValue = SimpleMarykModel(value = "haha1")
+    private val simpleValue = SimpleMarykModel.run { create(value with "haha1") }
 
     private val key = SimpleMarykModel.key("+1xO4zD4R5sIMcS9pXTZEA")
 
     private val objectsResponse = ValuesResponse(
-        SimpleMarykModel,
+        SimpleMarykModel.Model,
         listOf(
             ValuesWithMetaData(
                 key = key,
@@ -36,7 +36,7 @@ class ValuesResponseTest {
     )
 
     private val context = RequestContext(mapOf(
-        SimpleMarykModel.name toUnitLambda { SimpleMarykModel }
+        SimpleMarykModel.Model.name toUnitLambda { SimpleMarykModel.Model }
     ))
 
     @Test

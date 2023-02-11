@@ -16,13 +16,13 @@ private val key1 = SimpleMarykModel.key("dR9gVdRcSPw2molM1AiOng")
 private val key2 = SimpleMarykModel.key("Vc4WgX/mQHYCSEoLtfLSUQ")
 
 private val context = RequestContext(mapOf(
-    SimpleMarykModel.name toUnitLambda { SimpleMarykModel }
+    SimpleMarykModel.Model.name toUnitLambda { SimpleMarykModel.Model }
 ))
 
 class ObjectAsMapConversionTest {
     private val getRequestWithInjectable = GetRequest.values(context) {
         mapNonNulls(
-            from with SimpleMarykModel,
+            from with SimpleMarykModel.Model,
             keys with listOf(key1, key2),
             select with SimpleMarykModel.graph {
                 listOf(value)

@@ -1,6 +1,6 @@
 package maryk.datastore.test
 
-import maryk.core.models.PropertyBaseRootDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.references.dsl.at
 import maryk.core.properties.references.dsl.atType
 import maryk.core.properties.types.Key
@@ -26,7 +26,7 @@ import kotlin.test.expect
 class DataStoreGetChangesComplexTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
-    private val keys = mutableListOf<Key<PropertyBaseRootDataModel<ComplexModel>>>()
+    private val keys = mutableListOf<Key<RootDataModel<ComplexModel>>>()
     private var lowestVersion = ULong.MAX_VALUE
 
     override val allTests = mapOf(
@@ -61,7 +61,7 @@ class DataStoreGetChangesComplexTest(
             )
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<PropertyBaseRootDataModel<ComplexModel>>>(status)
+            val response = assertIs<AddSuccess<RootDataModel<ComplexModel>>>(status)
             keys.add(response.key)
             if (response.version < lowestVersion) {
                 // Add lowest version for scan test

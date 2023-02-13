@@ -3,7 +3,7 @@ package maryk.datastore.test
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
-import maryk.core.models.PropertyBaseRootDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
@@ -37,7 +37,7 @@ import kotlin.test.expect
 class DataStoreChangeTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
-    private val keys = mutableListOf<Key<PropertyBaseRootDataModel<TestMarykModel>>>()
+    private val keys = mutableListOf<Key<RootDataModel<TestMarykModel>>>()
     private val lastVersions = mutableListOf<ULong>()
 
     override val allTests = mapOf(
@@ -122,7 +122,7 @@ class DataStoreChangeTest(
         )
 
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<PropertyBaseRootDataModel<TestMarykModel>>>(status)
+            val response = assertIs<AddSuccess<RootDataModel<TestMarykModel>>>(status)
             keys.add(response.key)
             lastVersions.add(response.version)
         }

@@ -2,8 +2,8 @@ package maryk.core.query.requests
 
 import maryk.core.aggregations.Aggregations
 import maryk.core.models.IsRootValuesDataModel
-import maryk.core.models.PropertyBaseRootDataModel
 import maryk.core.models.QueryDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.RootModel
@@ -46,7 +46,7 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.scan(
  * Results can be ordered with an [order]
  */
 fun <DM : RootModel<P>, P : PropertyDefinitions> DM.scan(
-    startKey: Key<PropertyBaseRootDataModel<P>>? = null,
+    startKey: Key<RootDataModel<P>>? = null,
     select: RootPropRefGraph<P>? = null,
     where: IsFilter? = null,
     order: IsOrder? = null,

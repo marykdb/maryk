@@ -1,6 +1,6 @@
 package maryk.core.query.responses.updates
 
-import maryk.core.models.PropertyBaseRootDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.DataObjectVersionedChange
@@ -15,7 +15,7 @@ internal class processUpdateResponseTest {
     val key1 = SimpleMarykModel.key("dR9gVdRcSPw2molM1AiOng")
     val key2 = SimpleMarykModel.key("Vc4WgX/mQHYCSEoLtfLSUQ")
 
-    val initialItems = listOf<ValuesWithMetaData<PropertyBaseRootDataModel<SimpleMarykModel>, SimpleMarykModel>>(
+    val initialItems = listOf<ValuesWithMetaData<RootDataModel<SimpleMarykModel>, SimpleMarykModel>>(
         ValuesWithMetaData(
             key = key1,
             firstVersion = 1234uL,

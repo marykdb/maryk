@@ -2,7 +2,7 @@ package maryk.datastore.test
 
 import kotlinx.datetime.LocalDateTime
 import maryk.core.exceptions.RequestException
-import maryk.core.models.PropertyBaseRootDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.change
@@ -33,7 +33,7 @@ import kotlin.test.expect
 class DataStoreScanOnIndexTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
-    private val keys = mutableListOf<Key<PropertyBaseRootDataModel<Log>>>()
+    private val keys = mutableListOf<Key<RootDataModel<Log>>>()
     private var highestCreationVersion = ULong.MIN_VALUE
 
     override val allTests = mapOf(
@@ -61,7 +61,7 @@ class DataStoreScanOnIndexTest(
             Log.add(*logs)
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<PropertyBaseRootDataModel<Log>>>(status)
+            val response = assertIs<AddSuccess<RootDataModel<Log>>>(status)
             keys.add(response.key)
             if (response.version > highestCreationVersion) {
                 // Add lowest version for scan test

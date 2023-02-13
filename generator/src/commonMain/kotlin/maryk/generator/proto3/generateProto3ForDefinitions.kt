@@ -27,7 +27,7 @@ fun Definitions.generateProto3(
                     writer
                 )
             }
-            is RootDataModel<*, *> -> {
+            is RootDataModel<*> -> {
                 val writer = writerConstructor(obj.name)
                 obj.generateProto3Schema(kotlinGenerationContext, writer)
             }

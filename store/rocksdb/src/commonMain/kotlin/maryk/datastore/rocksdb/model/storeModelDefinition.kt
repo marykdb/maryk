@@ -10,7 +10,7 @@ import maryk.rocksdb.RocksDB
 fun storeModelDefinition(
     rocksDB: RocksDB,
     modelColumnFamily: ColumnFamilyHandle,
-    dataModel: RootDataModel<*, *>
+    dataModel: RootDataModel<*>
 ) {
     rocksDB.put(modelColumnFamily, modelNameKey, dataModel.name.encodeToByteArray())
     rocksDB.put(modelColumnFamily, modelVersionKey, dataModel.version.toByteArray())

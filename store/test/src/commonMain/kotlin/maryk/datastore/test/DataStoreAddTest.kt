@@ -1,7 +1,7 @@
 package maryk.datastore.test
 
 import kotlinx.datetime.LocalDateTime
-import maryk.core.models.PropertyBaseRootDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.add
 import maryk.core.query.requests.delete
@@ -24,7 +24,7 @@ class DataStoreAddTest(
         "notAddSameObjectTwice" to ::notAddSameObjectTwice
     )
 
-    private val keys = mutableListOf<Key<PropertyBaseRootDataModel<Log>>>()
+    private val keys = mutableListOf<Key<RootDataModel<Log>>>()
 
     private val logs = arrayOf(
         Log("Something happened", timestamp = LocalDateTime(2018, 11, 14, 11, 22, 33, 40000000)),
@@ -48,12 +48,12 @@ class DataStoreAddTest(
         expect(Log.Model) { addResponse.dataModel }
         expect(4) { addResponse.statuses.count() }
 
-        val keysToOriginal = mutableMapOf<Key<*>, Values<PropertyBaseRootDataModel<Log>, *>>()
+        val keysToOriginal = mutableMapOf<Key<*>, Values<RootDataModel<Log>, *>>()
         addResponse.statuses.forEachIndexed { index, it ->
-            val response = assertIs<AddSuccess<PropertyBaseRootDataModel<Log>>>(it)
+            val response = assertIs<AddSuccess<RootDataModel<Log>>>(it)
             assertRecent(response.version, 1000uL)
             assertTrue { response.changes.isEmpty() }
-            expect(11) { assertIs<Key<PropertyBaseRootDataModel<Log>>>(response.key).size }
+            expect(11) { assertIs<Key<RootDataModel<Log>>>(response.key).size }
             keys.add(response.key)
             keysToOriginal[response.key] = logs[index]
         }

@@ -1,7 +1,7 @@
 package maryk.datastore.test
 
 import maryk.core.exceptions.RequestException
-import maryk.core.models.PropertyBaseRootDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.ObjectCreate
@@ -23,7 +23,7 @@ import kotlin.test.expect
 class DataStoreGetChangesTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
-    private val keys = mutableListOf<Key<PropertyBaseRootDataModel<SimpleMarykModel>>>()
+    private val keys = mutableListOf<Key<RootDataModel<SimpleMarykModel>>>()
     private var lowestVersion = ULong.MAX_VALUE
 
     override val allTests = mapOf(
@@ -39,7 +39,7 @@ class DataStoreGetChangesTest(
             addRequest
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<PropertyBaseRootDataModel<SimpleMarykModel>>>(status)
+            val response = assertIs<AddSuccess<RootDataModel<SimpleMarykModel>>>(status)
             keys.add(response.key)
             if (response.version < lowestVersion) {
                 // Add lowest version for scan test
@@ -65,7 +65,7 @@ class DataStoreGetChangesTest(
 
         var versionAfterChange = 0uL
         for (status in changeResult.statuses) {
-            assertIs<ChangeSuccess<PropertyBaseRootDataModel<SimpleMarykModel>>>(status).apply {
+            assertIs<ChangeSuccess<RootDataModel<SimpleMarykModel>>>(status).apply {
                 versionAfterChange = this.version
             }
         }
@@ -160,7 +160,7 @@ class DataStoreGetChangesTest(
                     keys[1].change(change1)
                 )
             ).also {
-                assertIs<ChangeSuccess<PropertyBaseRootDataModel<SimpleMarykModel>>>(it.statuses.first()).apply {
+                assertIs<ChangeSuccess<RootDataModel<SimpleMarykModel>>>(it.statuses.first()).apply {
                     collectedVersions.add(version)
                 }
             }
@@ -171,7 +171,7 @@ class DataStoreGetChangesTest(
                     keys[1].change(change2)
                 )
             ).also {
-                assertIs<ChangeSuccess<PropertyBaseRootDataModel<SimpleMarykModel>>>(it.statuses.first()).apply {
+                assertIs<ChangeSuccess<RootDataModel<SimpleMarykModel>>>(it.statuses.first()).apply {
                     collectedVersions.add(version)
                 }
             }
@@ -182,7 +182,7 @@ class DataStoreGetChangesTest(
                     keys[1].change(change3)
                 )
             ).also {
-                assertIs<ChangeSuccess<PropertyBaseRootDataModel<SimpleMarykModel>>>(it.statuses.first()).apply {
+                assertIs<ChangeSuccess<RootDataModel<SimpleMarykModel>>>(it.statuses.first()).apply {
                     collectedVersions.add(version)
                 }
             }

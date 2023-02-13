@@ -5,7 +5,7 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.extensions.bytes.ZERO_BYTE
-import maryk.core.models.PropertyBaseRootDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.DefinitionsContext
 import maryk.lib.exceptions.ParseException
@@ -21,7 +21,7 @@ import kotlin.test.assertTrue
 import kotlin.test.expect
 
 internal class ReferenceDefinitionTest {
-    private val refToTest = arrayOf<Key<PropertyBaseRootDataModel<TestMarykModel>>>(
+    private val refToTest = arrayOf<Key<RootDataModel<TestMarykModel>>>(
         Key(ByteArray(7) { ZERO_BYTE }),
         Key(ByteArray(7) { MAX_BYTE }),
         Key(ByteArray(7) { if (it % 2 == 1) 0b1000_1000.toByte() else MAX_BYTE })

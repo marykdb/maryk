@@ -14,7 +14,7 @@ import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
 import maryk.core.properties.references.ValueWithFlexBytesPropertyReference
 import maryk.core.properties.types.Version
 
-fun RootDataModel<*, *>.generateKotlin(
+fun RootDataModel<*>.generateKotlin(
     packageName: String,
     generationContext: GenerationContext? = null,
     writer: (String) -> Unit

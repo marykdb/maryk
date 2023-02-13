@@ -6,8 +6,8 @@ import maryk.core.aggregations.Aggregations
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsRootValuesDataModel
-import maryk.core.models.PropertyBaseRootDataModel
 import maryk.core.models.QueryDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.RootModel
@@ -57,7 +57,7 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.getChanges(
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  */
 fun <DM : RootModel<P>, P : PropertyDefinitions> DM.getChanges(
-    vararg keys: Key<PropertyBaseRootDataModel<P>>,
+    vararg keys: Key<RootDataModel<P>>,
     where: IsFilter? = null,
     fromVersion: ULong = 0uL,
     toVersion: ULong? = null,

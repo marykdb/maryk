@@ -6,7 +6,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import maryk.MarykTestProtos
-import maryk.core.models.PropertyBaseRootDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
@@ -103,7 +103,7 @@ class Proto3ConversionTest {
             .setTime(completeObject { time }!!.toMillisecondOfDay())
             .setFixedBytes(ByteString.copyFrom(Bytes("AAECAwQ").bytes))
             .setFlexBytes(ByteString.copyFrom(Bytes("AAECAw").bytes))
-            .setReference(ByteString.copyFrom(Key<PropertyBaseRootDataModel<SimpleMarykModel>>("AAECAQAAECAQAAECAQAAEC").bytes))
+            .setReference(ByteString.copyFrom(Key<RootDataModel<SimpleMarykModel>>("AAECAQAAECAQAAECAQAAEC").bytes))
             .setSubModel(MarykTestProtos.SimpleMarykModel.newBuilder().setValue("a default"))
             .setValueModel(ByteString.copyFrom(completeObject { valueModel }!!.toByteArray()))
             .addAllList(mutableListOf("ha1", "ha2", "ha3"))

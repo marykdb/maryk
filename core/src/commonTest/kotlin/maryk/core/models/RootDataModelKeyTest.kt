@@ -1,6 +1,5 @@
 package maryk.core.models
 
-import kotlinx.datetime.LocalDateTime
 import maryk.core.exceptions.InvalidDefinitionException
 import maryk.core.models.WrongProperties.boolean
 import maryk.core.models.WrongProperties.dateTime
@@ -27,46 +26,34 @@ class RootDataModelKeyTest {
     @Test
     fun notAcceptNonRequiredDefinitions() {
         assertFailsWith<IllegalArgumentException> {
-            object : RootDataModel<IsRootValuesDataModel<WrongProperties>, WrongProperties>(
+            RootDataModel(
                 keyDefinition = boolean.ref(),
                 properties = WrongProperties
-            ) {
-                operator fun invoke(boolean: Boolean) = this.values {
-                    mapNonNulls(this.boolean with boolean)
-                }
-            }
+            )
         }
     }
 
     @Test
     fun notAcceptNonFinalDefinitions() {
         assertFailsWith<IllegalArgumentException> {
-            object : RootDataModel<IsRootValuesDataModel<WrongProperties>, WrongProperties>(
+            RootDataModel(
                 keyDefinition = Multiple(
                     dateTime.ref()
                 ),
                 properties = WrongProperties
-            ) {
-                operator fun invoke(dateTime: LocalDateTime) = this.values {
-                    mapNonNulls(this.dateTime with dateTime)
-                }
-            }
+            )
         }
     }
 
     @Test
     fun notAcceptFlexByteDefinitions() {
         assertFailsWith<InvalidDefinitionException> {
-            object : RootDataModel<IsRootValuesDataModel<WrongProperties>, WrongProperties>(
+            RootDataModel(
                 keyDefinition = Multiple(
                     string.ref()
                 ),
                 properties = WrongProperties
-            ) {
-                operator fun invoke(string: String) = this.values {
-                    mapNonNulls(this.string with string)
-                }
-            }
+            )
         }
     }
 }

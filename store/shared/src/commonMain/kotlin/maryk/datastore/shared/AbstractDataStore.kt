@@ -37,7 +37,7 @@ import maryk.datastore.shared.updates.startProcessUpdateFlow
  * Abstract DataStore implementation that takes care of the HLC clock
  */
 abstract class AbstractDataStore(
-    final override val dataModelsById: Map<UInt, RootDataModel<*, *>>
+    final override val dataModelsById: Map<UInt, RootDataModel<*>>
 ): IsDataStore, CoroutineScope {
     override val coroutineContext = DISPATCHER + SupervisorJob()
 

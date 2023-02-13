@@ -4,8 +4,8 @@ import maryk.core.aggregations.Aggregations
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsRootValuesDataModel
-import maryk.core.models.PropertyBaseRootDataModel
 import maryk.core.models.QueryDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.RootModel
@@ -44,7 +44,7 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.get(
  * If [filterSoftDeleted] (default true) is set to false it will not where away all soft deleted results.
  */
 fun <DM : RootModel<P>, P : PropertyDefinitions> DM.get(
-    vararg keys: Key<PropertyBaseRootDataModel<P>>,
+    vararg keys: Key<RootDataModel<P>>,
     select: RootPropRefGraph<P>? = null,
     where: IsFilter? = null,
     toVersion: ULong? = null,

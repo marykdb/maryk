@@ -1,6 +1,6 @@
 package maryk.core.properties
 
-import maryk.core.models.PropertyBaseRootDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.models.key
 import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -23,8 +23,8 @@ open class RootModel<P: PropertyDefinitions>(
     name: String? = null,
 ) : PropertyDefinitions(){
     @Suppress("UNCHECKED_CAST")
-    val Model: PropertyBaseRootDataModel<P> by lazy {
-        PropertyBaseRootDataModel(
+    val Model: RootDataModel<P> by lazy {
+        RootDataModel(
             keyDefinition = keyDefinition.invoke(),
             version = version,
             indices = indices?.invoke(),
@@ -32,7 +32,7 @@ open class RootModel<P: PropertyDefinitions>(
             reservedNames = reservedNames,
             name = name ?: this::class.simpleName!!,
             properties = this,
-        ) as PropertyBaseRootDataModel<P>
+        ) as RootDataModel<P>
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -71,7 +71,7 @@ open class RootModel<P: PropertyDefinitions>(
 
     fun key(bytes: ByteArray) = Model.key(bytes)
 
-    fun key(values: Values<PropertyBaseRootDataModel<P>, P>) = Model.key(values)
+    fun key(values: Values<RootDataModel<P>, P>) = Model.key(values)
 
     /**
      * Create Property reference graph with list of graphables that are generated with [runner] on Properties

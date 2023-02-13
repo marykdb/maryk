@@ -4,7 +4,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import maryk.core.clock.HLC
-import maryk.core.models.PropertyBaseRootDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.change
@@ -39,9 +39,9 @@ class DataStoreFilterTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
 
-    private val keys = mutableListOf<Key<PropertyBaseRootDataModel<TestMarykModel>>>()
+    private val keys = mutableListOf<Key<RootDataModel<TestMarykModel>>>()
     private val lastVersions = mutableListOf<ULong>()
-    private lateinit var firstKey: Key<PropertyBaseRootDataModel<TestMarykModel>>
+    private lateinit var firstKey: Key<RootDataModel<TestMarykModel>>
 
     override val allTests = mapOf(
         "doExistsFilter" to ::doExistsFilter,
@@ -106,7 +106,7 @@ class DataStoreFilterTest(
         )
 
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<PropertyBaseRootDataModel<TestMarykModel>>>(status)
+            val response = assertIs<AddSuccess<RootDataModel<TestMarykModel>>>(status)
             keys.add(response.key)
             lastVersions.add(response.version)
         }
@@ -120,7 +120,7 @@ class DataStoreFilterTest(
         )
 
         changeResponse.statuses.forEach { status ->
-            val response = assertIs<ChangeSuccess<PropertyBaseRootDataModel<TestMarykModel>>>(status)
+            val response = assertIs<ChangeSuccess<RootDataModel<TestMarykModel>>>(status)
             lastVersions.add(response.version)
         }
 

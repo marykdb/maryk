@@ -2,8 +2,8 @@ package maryk.core.query.requests
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.IsRootValuesDataModel
-import maryk.core.models.PropertyBaseRootDataModel
 import maryk.core.models.QueryDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.models.ValuesDataModelImpl
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
@@ -21,7 +21,7 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.add(vararg objec
     AddRequest(this, objectToAdd.toList())
 
 /** Creates a Request to add multiple [objectToAdd] to a store defined by given DataModel */
-fun <DM : RootModel<P>, P : PropertyDefinitions> DM.add(vararg objectToAdd: Values<PropertyBaseRootDataModel<P>, P>) =
+fun <DM : RootModel<P>, P : PropertyDefinitions> DM.add(vararg objectToAdd: Values<RootDataModel<P>, P>) =
     AddRequest(this.Model, objectToAdd.toList())
 
 /** A Request to add [objects] to [dataModel] */

@@ -34,7 +34,7 @@ fun Definitions.generateKotlin(
                     writer
                 )
             }
-            is RootDataModel<*, *> -> {
+            is RootDataModel<*> -> {
                 val writer = writerConstructor(obj.name)
                 obj.generateKotlin(
                     packageName,

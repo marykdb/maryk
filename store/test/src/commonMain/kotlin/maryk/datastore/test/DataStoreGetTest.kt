@@ -5,7 +5,7 @@ import maryk.core.aggregations.AggregationsResponse
 import maryk.core.aggregations.metric.ValueCount
 import maryk.core.aggregations.metric.ValueCountResponse
 import maryk.core.exceptions.RequestException
-import maryk.core.models.PropertyBaseRootDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.get
@@ -20,7 +20,7 @@ import kotlin.test.expect
 class DataStoreGetTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
-    private val keys = mutableListOf<Key<PropertyBaseRootDataModel<SimpleMarykModel>>>()
+    private val keys = mutableListOf<Key<RootDataModel<SimpleMarykModel>>>()
     private var lowestVersion = ULong.MAX_VALUE
 
     override val allTests = mapOf(
@@ -35,7 +35,7 @@ class DataStoreGetTest(
             addRequest
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<PropertyBaseRootDataModel<SimpleMarykModel>>>(status)
+            val response = assertIs<AddSuccess<RootDataModel<SimpleMarykModel>>>(status)
             keys.add(response.key)
             if (response.version < lowestVersion) {
                 // Add lowest version for scan test

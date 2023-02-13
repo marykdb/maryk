@@ -89,7 +89,7 @@ import maryk.rocksdb.use
 class RocksDBDataStore(
     override val keepAllVersions: Boolean = true,
     relativePath: String,
-    dataModelsById: Map<UInt, RootDataModel<*, *>>,
+    dataModelsById: Map<UInt, RootDataModel<*>>,
     rocksDBOptions: DBOptions? = null,
     private val onlyCheckModelVersion: Boolean = false,
     val migrationHandler: MigrationHandler<RocksDBDataStore>? = null
@@ -256,7 +256,7 @@ class RocksDBDataStore(
         walkDataRecordsAndFillIndex(this, tableColumnFamilies, indicesToIndex)
     }
 
-    private fun createColumnFamilyHandles(descriptors: MutableList<ColumnFamilyDescriptor>, tableIndex: UInt, db: RootDataModel<*, *>) {
+    private fun createColumnFamilyHandles(descriptors: MutableList<ColumnFamilyDescriptor>, tableIndex: UInt, db: RootDataModel<*>) {
         val nameSize = tableIndex.calculateVarByteLength() + 1
 
         // Prefix set to key size for more optimal search.

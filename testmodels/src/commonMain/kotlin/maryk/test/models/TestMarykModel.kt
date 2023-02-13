@@ -4,7 +4,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import maryk.core.models.PropertyBaseDataModel
-import maryk.core.models.PropertyBaseRootDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.RootModel
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.NumberDefinition
@@ -199,9 +199,9 @@ object TestMarykModel : RootModel<TestMarykModel>(
         valueObject: TestValueObject? = null,
         embeddedValues: Values<PropertyBaseDataModel<EmbeddedMarykModel>, EmbeddedMarykModel>? = null,
         multi: TypedValue<SimpleMarykTypeEnum<*>, *>? = null,
-        reference: Key<PropertyBaseRootDataModel<TestMarykModel>>? = null,
+        reference: Key<RootDataModel<TestMarykModel>>? = null,
         listOfString: List<String>? = null,
-        selfReference: Key<PropertyBaseRootDataModel<TestMarykModel>>? = null,
+        selfReference: Key<RootDataModel<TestMarykModel>>? = null,
         setOfString: Set<String>? = null,
         incMap: Map<UInt, String>? = null
     ) = create(

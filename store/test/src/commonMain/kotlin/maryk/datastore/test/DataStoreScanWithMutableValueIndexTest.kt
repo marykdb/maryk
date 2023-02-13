@@ -1,6 +1,6 @@
 package maryk.datastore.test
 
-import maryk.core.models.PropertyBaseRootDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.change
@@ -22,7 +22,7 @@ import kotlin.test.expect
 class DataStoreScanWithMutableValueIndexTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
-    private val keys = mutableListOf<Key<PropertyBaseRootDataModel<ModelV2ExtraIndex>>>()
+    private val keys = mutableListOf<Key<RootDataModel<ModelV2ExtraIndex>>>()
     private var lowestVersion = ULong.MAX_VALUE
 
     override val allTests = mapOf(
@@ -42,7 +42,7 @@ class DataStoreScanWithMutableValueIndexTest(
             ModelV2ExtraIndex.add(*objects)
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs< AddSuccess <PropertyBaseRootDataModel<ModelV2ExtraIndex>>>(status)
+            val response = assertIs< AddSuccess <RootDataModel<ModelV2ExtraIndex>>>(status)
             keys.add(response.key)
             if (response.version < lowestVersion) {
                 // Add lowest version for scan test
@@ -68,7 +68,7 @@ class DataStoreScanWithMutableValueIndexTest(
 
         var versionAfterChange = 0uL
         for (status in changeResult.statuses) {
-            assertIs<ChangeSuccess<PropertyBaseRootDataModel<SimpleMarykModel>>>(status).apply {
+            assertIs<ChangeSuccess<RootDataModel<SimpleMarykModel>>>(status).apply {
                 versionAfterChange = this.version
             }
         }

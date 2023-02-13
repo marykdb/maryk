@@ -1,7 +1,7 @@
 package maryk.datastore.test
 
 import kotlinx.datetime.LocalDate
-import maryk.core.models.PropertyBaseRootDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
@@ -27,7 +27,7 @@ import kotlin.test.expect
 class DataStoreScanWithFilterTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
-    private val keys = mutableListOf<Key<PropertyBaseRootDataModel<CompleteMarykModel>>>()
+    private val keys = mutableListOf<Key<RootDataModel<CompleteMarykModel>>>()
     private var lowestVersion = ULong.MAX_VALUE
 
     override val allTests = mapOf(
@@ -55,7 +55,7 @@ class DataStoreScanWithFilterTest(
             CompleteMarykModel.add(*objects)
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<PropertyBaseRootDataModel<CompleteMarykModel>>>(status)
+            val response = assertIs<AddSuccess<RootDataModel<CompleteMarykModel>>>(status)
             keys.add(response.key)
             if (response.version < lowestVersion) {
                 // Add lowest version for scan test

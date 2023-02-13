@@ -16,7 +16,7 @@ import maryk.rocksdb.RocksDB
 fun <P: PropertyDefinitions> checkModelIfMigrationIsNeeded(
     rocksDB: RocksDB,
     modelColumnFamily: ColumnFamilyHandle,
-    dataModel: RootDataModel<*, P>,
+    dataModel: RootDataModel<P>,
     onlyCheckVersion: Boolean
 ): MigrationStatus {
     val name = rocksDB.get(modelColumnFamily, modelNameKey)?.decodeToString()

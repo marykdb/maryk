@@ -1,6 +1,6 @@
 package maryk.datastore.test
 
-import maryk.core.models.PropertyBaseRootDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.change
@@ -32,7 +32,7 @@ import kotlin.test.expect
 class DataStoreGetUpdatesAndFlowTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
-    private val testKeys = mutableListOf<Key<PropertyBaseRootDataModel<SimpleMarykModel>>>()
+    private val testKeys = mutableListOf<Key<RootDataModel<SimpleMarykModel>>>()
     private var lowestVersion = ULong.MAX_VALUE
     private var highestInitVersion = ULong.MIN_VALUE
 
@@ -60,7 +60,7 @@ class DataStoreGetUpdatesAndFlowTest(
             )
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<PropertyBaseRootDataModel<SimpleMarykModel>>>(status)
+            val response = assertIs<AddSuccess<RootDataModel<SimpleMarykModel>>>(status)
             testKeys.add(response.key)
             if (response.version < lowestVersion) {
                 // Add lowest version for scan test
@@ -94,14 +94,14 @@ class DataStoreGetUpdatesAndFlowTest(
             assertEquals(highestInitVersion, version)
         }
 
-        assertIs<AdditionUpdate<PropertyBaseRootDataModel<SimpleMarykModel>, SimpleMarykModel>>(getResponse.updates[1]).apply {
+        assertIs<AdditionUpdate<RootDataModel<SimpleMarykModel>, SimpleMarykModel>>(getResponse.updates[1]).apply {
             assertEquals(testKeys[0], key)
             assertEquals(SimpleMarykModel.run { create(
                 value with "haha1"
             ) }, values)
         }
 
-        assertIs<AdditionUpdate<PropertyBaseRootDataModel<SimpleMarykModel>, SimpleMarykModel>>(getResponse.updates[2]).apply {
+        assertIs<AdditionUpdate<RootDataModel<SimpleMarykModel>, SimpleMarykModel>>(getResponse.updates[2]).apply {
             assertEquals(testKeys[1], key)
             assertEquals(SimpleMarykModel.run { create(
                 value with "haha2"
@@ -247,7 +247,7 @@ class DataStoreGetUpdatesAndFlowTest(
             assertEquals(highestInitVersion, version)
         }
 
-        assertIs<AdditionUpdate<PropertyBaseRootDataModel<SimpleMarykModel>, SimpleMarykModel>>(responses[1].await()).apply {
+        assertIs<AdditionUpdate<RootDataModel<SimpleMarykModel>, SimpleMarykModel>>(responses[1].await()).apply {
             assertEquals(testKeys[0], key)
             assertEquals(lowestVersion, version)
             assertEquals(
@@ -257,7 +257,7 @@ class DataStoreGetUpdatesAndFlowTest(
                 values
             )
         }
-        assertIs<AdditionUpdate<PropertyBaseRootDataModel<SimpleMarykModel>, SimpleMarykModel>>(responses[2].await()).apply {
+        assertIs<AdditionUpdate<RootDataModel<SimpleMarykModel>, SimpleMarykModel>>(responses[2].await()).apply {
             assertEquals(testKeys[2], key)
             assertEquals(highestInitVersion, version)
             assertEquals(

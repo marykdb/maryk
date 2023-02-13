@@ -58,7 +58,7 @@ import maryk.datastore.shared.AbstractDataStore
  */
 class InMemoryDataStore(
     override val keepAllVersions: Boolean = false,
-    dataModelsById: Map<UInt, RootDataModel<*, *>>
+    dataModelsById: Map<UInt, RootDataModel<*>>
 ) : AbstractDataStore(dataModelsById) {
     init {
         startFlows()

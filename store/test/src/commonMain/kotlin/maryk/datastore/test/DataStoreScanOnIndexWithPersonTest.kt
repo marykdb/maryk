@@ -1,6 +1,6 @@
 package maryk.datastore.test
 
-import maryk.core.models.PropertyBaseRootDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.orders.Orders
 import maryk.core.query.orders.ascending
@@ -17,14 +17,14 @@ import kotlin.test.expect
 class DataStoreScanOnIndexWithPersonTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
-    private val keys = mutableListOf<Key<PropertyBaseRootDataModel<Person>>>()
+    private val keys = mutableListOf<Key<RootDataModel<Person>>>()
     private var highestCreationVersion = ULong.MIN_VALUE
 
     override val allTests = mapOf(
         "executeIndexScanRequestWithPerson" to ::executeIndexScanRequestWithPerson
     )
 
-    private val persons = arrayOf<Values<PropertyBaseRootDataModel<Person>, Person>>(
+    private val persons = arrayOf<Values<RootDataModel<Person>, Person>>(
         Person.run { create(firstName with "Jurriaan", surname with "Mous") },
         Person.run { create(firstName with "Myra", surname with "Mous") },
         Person.run { create(firstName with "Desiderio", surname with "Espinosa") },
@@ -36,7 +36,7 @@ class DataStoreScanOnIndexWithPersonTest(
             Person.add(*persons)
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<PropertyBaseRootDataModel<Person>>>(status)
+            val response = assertIs<AddSuccess<RootDataModel<Person>>>(status)
             keys.add(response.key)
             if (response.version > highestCreationVersion) {
                 // Add lowest version for scan test

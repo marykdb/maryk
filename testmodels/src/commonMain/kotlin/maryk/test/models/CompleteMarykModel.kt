@@ -4,7 +4,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import maryk.core.models.PropertyBaseDataModel
-import maryk.core.models.PropertyBaseRootDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.RootModel
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
@@ -342,8 +342,8 @@ object CompleteMarykModel : RootModel<CompleteMarykModel>(
         time: LocalTime = LocalTime(10, 11, 12),
         fixedBytes: Bytes = Bytes("AAECAwQ"),
         flexBytes: Bytes = Bytes("AAECAw"),
-        reference: Key<PropertyBaseRootDataModel<SimpleMarykModel>> = Key("AAECAQAAECAQAAECAQAAEA"),
-        subModel: Values<PropertyBaseRootDataModel<SimpleMarykModel>, SimpleMarykModel> = SimpleMarykModel.run { create(
+        reference: Key<RootDataModel<SimpleMarykModel>> = Key("AAECAQAAECAQAAECAQAAEA"),
+        subModel: Values<RootDataModel<SimpleMarykModel>, SimpleMarykModel> = SimpleMarykModel.run { create(
             value with "a default"
         ) },
         valueModel: ValueMarykObject = ValueMarykObject(

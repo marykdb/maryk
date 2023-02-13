@@ -1,6 +1,6 @@
 package maryk.datastore.test
 
-import maryk.core.models.PropertyBaseRootDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.requests.delete
@@ -21,7 +21,7 @@ import kotlin.test.expect
 class DataStoreDeleteTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
-    private val keys = mutableListOf<Key<PropertyBaseRootDataModel<SimpleMarykModel>>>()
+    private val keys = mutableListOf<Key<RootDataModel<SimpleMarykModel>>>()
 
     override val allTests = mapOf(
         "executeDeleteRequest" to ::executeDeleteRequest,
@@ -33,7 +33,7 @@ class DataStoreDeleteTest(
             addRequest
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<PropertyBaseRootDataModel<SimpleMarykModel>>>(status)
+            val response = assertIs<AddSuccess<RootDataModel<SimpleMarykModel>>>(status)
             keys.add(response.key)
         }
     }
@@ -56,7 +56,7 @@ class DataStoreDeleteTest(
         expect(DELETE_SUCCESS) { deleteResponse.statuses[0].statusType }
         with(deleteResponse.statuses[0]) {
             expect(DELETE_SUCCESS) { statusType }
-            assertIs<DeleteSuccess<PropertyBaseRootDataModel<SimpleMarykModel>>>(this)
+            assertIs<DeleteSuccess<RootDataModel<SimpleMarykModel>>>(this)
         }
 
         val getResponse = dataStore.execute(
@@ -102,7 +102,7 @@ class DataStoreDeleteTest(
         expect(1) { deleteResponse.statuses.size }
         expect(DELETE_SUCCESS) { deleteResponse.statuses[0].statusType }
         with(deleteResponse.statuses[0]) {
-            assertIs<DeleteSuccess<PropertyBaseRootDataModel<SimpleMarykModel>>>(this)
+            assertIs<DeleteSuccess<RootDataModel<SimpleMarykModel>>>(this)
         }
 
         val getResponse = dataStore.execute(

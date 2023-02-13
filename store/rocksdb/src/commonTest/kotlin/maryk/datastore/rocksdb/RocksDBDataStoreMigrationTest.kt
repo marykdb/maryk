@@ -1,6 +1,6 @@
 package maryk.datastore.rocksdb
 
-import maryk.core.models.PropertyBaseRootDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.models.migration.MigrationException
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
@@ -104,10 +104,10 @@ class RocksDBDataStoreMigrationTest {
 
         assertEquals(4, addResult.statuses.size)
 
-        val keys = mutableListOf<Key<PropertyBaseRootDataModel<ModelV2>>>()
+        val keys = mutableListOf<Key<RootDataModel<ModelV2>>>()
 
         for (status in addResult.statuses) {
-            assertIs<AddSuccess<PropertyBaseRootDataModel<ModelV2>>>(status).apply {
+            assertIs<AddSuccess<RootDataModel<ModelV2>>>(status).apply {
                 keys.add(key)
             }
         }
@@ -122,7 +122,7 @@ class RocksDBDataStoreMigrationTest {
         )
 
         for (status in changeResult.statuses) {
-            assertIs<ChangeSuccess<PropertyBaseRootDataModel<ModelV2>>>(status)
+            assertIs<ChangeSuccess<RootDataModel<ModelV2>>>(status)
         }
 
         dataStore.close()

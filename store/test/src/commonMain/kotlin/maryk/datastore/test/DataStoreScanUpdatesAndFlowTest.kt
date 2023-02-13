@@ -1,7 +1,7 @@
 package maryk.datastore.test
 
 import kotlinx.datetime.LocalDateTime
-import maryk.core.models.PropertyBaseRootDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
@@ -82,7 +82,7 @@ val t4 = TestMarykModel(
 class DataStoreScanUpdatesAndFlowTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
-    private val testKeys = mutableListOf<Key<PropertyBaseRootDataModel<TestMarykModel>>>()
+    private val testKeys = mutableListOf<Key<RootDataModel<TestMarykModel>>>()
     private var lowestVersion = ULong.MAX_VALUE
     private var highestInitVersion = ULong.MIN_VALUE
 
@@ -105,7 +105,7 @@ class DataStoreScanUpdatesAndFlowTest(
             TestMarykModel.add(t0, t1, t2, t3, t4)
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<PropertyBaseRootDataModel<TestMarykModel>>>(status)
+            val response = assertIs<AddSuccess<RootDataModel<TestMarykModel>>>(status)
             testKeys.add(response.key)
             if (response.version < lowestVersion) {
                 // Add lowest version for scan test
@@ -133,18 +133,18 @@ class DataStoreScanUpdatesAndFlowTest(
 
         expect(5) { scanResponse.updates.size }
 
-        assertIs<OrderedKeysUpdate<PropertyBaseRootDataModel<TestMarykModel>, TestMarykModel>>(scanResponse.updates[0]).apply {
+        assertIs<OrderedKeysUpdate<RootDataModel<TestMarykModel>, TestMarykModel>>(scanResponse.updates[0]).apply {
             assertEquals(listOf(testKeys[1], testKeys[2], testKeys[3], testKeys[4]), keys)
             assertNull(sortingKeys)
             assertEquals(highestInitVersion, version)
         }
 
-        assertIs<AdditionUpdate<PropertyBaseRootDataModel<TestMarykModel>, TestMarykModel>>(scanResponse.updates[1]).apply {
+        assertIs<AdditionUpdate<RootDataModel<TestMarykModel>, TestMarykModel>>(scanResponse.updates[1]).apply {
             assertEquals(testKeys[1], key)
             assertEquals(t1, values)
         }
 
-        assertIs<AdditionUpdate<PropertyBaseRootDataModel<TestMarykModel>, TestMarykModel>>(scanResponse.updates[4]).apply {
+        assertIs<AdditionUpdate<RootDataModel<TestMarykModel>, TestMarykModel>>(scanResponse.updates[4]).apply {
             assertEquals(testKeys[4], key)
             assertEquals(t4, values)
         }
@@ -162,17 +162,17 @@ class DataStoreScanUpdatesAndFlowTest(
 
         expect(3) { scanResponse.updates.size }
 
-        assertIs<OrderedKeysUpdate<PropertyBaseRootDataModel<TestMarykModel>, TestMarykModel>>(scanResponse.updates[0]).apply {
+        assertIs<OrderedKeysUpdate<RootDataModel<TestMarykModel>, TestMarykModel>>(scanResponse.updates[0]).apply {
             assertEquals(listOf(testKeys[3], testKeys[0]), keys)
             assertEquals(highestInitVersion, version)
         }
 
-        assertIs<AdditionUpdate<PropertyBaseRootDataModel<TestMarykModel>, TestMarykModel>>(scanResponse.updates[1]).apply {
+        assertIs<AdditionUpdate<RootDataModel<TestMarykModel>, TestMarykModel>>(scanResponse.updates[1]).apply {
             assertEquals(testKeys[3], key)
             assertEquals(t3, values)
         }
 
-        assertIs<AdditionUpdate<PropertyBaseRootDataModel<TestMarykModel>, TestMarykModel>>(scanResponse.updates[2]).apply {
+        assertIs<AdditionUpdate<RootDataModel<TestMarykModel>, TestMarykModel>>(scanResponse.updates[2]).apply {
             assertEquals(testKeys[0], key)
             assertEquals(t0, values)
         }
@@ -315,7 +315,7 @@ class DataStoreScanUpdatesAndFlowTest(
             ))
 
             val additionUpdate = responses[6].await()
-            assertIs<AdditionUpdate<PropertyBaseRootDataModel<TestMarykModel>, TestMarykModel>>(additionUpdate).apply {
+            assertIs<AdditionUpdate<RootDataModel<TestMarykModel>, TestMarykModel>>(additionUpdate).apply {
                 assertEquals(newDataObject, values)
                 assertEquals(1, insertionIndex)
                 testKeys.add(key)
@@ -365,7 +365,7 @@ class DataStoreScanUpdatesAndFlowTest(
             }
 
             val prevUpdate1 = responses[1].await()
-            assertIs<AdditionUpdate<PropertyBaseRootDataModel<TestMarykModel>, TestMarykModel>>(prevUpdate1).apply {
+            assertIs<AdditionUpdate<RootDataModel<TestMarykModel>, TestMarykModel>>(prevUpdate1).apply {
                 assertEquals(testKeys[1], key)
                 assertEquals(t1, values)
                 assertEquals(0, insertionIndex)
@@ -374,7 +374,7 @@ class DataStoreScanUpdatesAndFlowTest(
             responses[2].await()
             responses[3].await()
             // Expect this to be the last added value
-            assertIs<AdditionUpdate<PropertyBaseRootDataModel<TestMarykModel>, TestMarykModel>>(responses[4].await()).apply {
+            assertIs<AdditionUpdate<RootDataModel<TestMarykModel>, TestMarykModel>>(responses[4].await()).apply {
                 assertEquals(testKeys[4], key)
                 assertEquals(highestInitVersion, this.version)
                 assertEquals(3, insertionIndex)
@@ -512,11 +512,11 @@ class DataStoreScanUpdatesAndFlowTest(
             dataStore.execute(TestMarykModel.add(
                 newDataObject
             )).also {
-                testKeys.add((it.statuses[0] as AddSuccess<PropertyBaseRootDataModel<TestMarykModel>>).key)
+                testKeys.add((it.statuses[0] as AddSuccess<RootDataModel<TestMarykModel>>).key)
             }
 
             val additionUpdate = responses[4].await()
-            assertIs<AdditionUpdate<PropertyBaseRootDataModel<TestMarykModel>, TestMarykModel>>(additionUpdate).apply {
+            assertIs<AdditionUpdate<RootDataModel<TestMarykModel>, TestMarykModel>>(additionUpdate).apply {
                 assertEquals(newDataObject, values)
                 assertEquals(3, insertionIndex)
             }
@@ -597,7 +597,7 @@ class DataStoreScanUpdatesAndFlowTest(
             dataStore.execute(TestMarykModel.add(
                 newDataObject
             )).also {
-                testKeys.add((it.statuses[0] as AddSuccess<PropertyBaseRootDataModel<TestMarykModel>>).key)
+                testKeys.add((it.statuses[0] as AddSuccess<RootDataModel<TestMarykModel>>).key)
             }
 
             // no updates because is outside the limit otherwise next one will not match
@@ -617,14 +617,14 @@ class DataStoreScanUpdatesAndFlowTest(
             ))
 
             val additionUpdate = responses[5].await()
-            assertIs<AdditionUpdate<PropertyBaseRootDataModel<TestMarykModel>, TestMarykModel>>(additionUpdate).apply {
+            assertIs<AdditionUpdate<RootDataModel<TestMarykModel>, TestMarykModel>>(additionUpdate).apply {
                 assertEquals<Values<*, *>>(values, newDataObject2)
                 assertEquals(1, insertionIndex)
                 testKeys.add(key)
             }
 
             val removalUpdate2 = responses[6].await()
-            assertIs<RemovalUpdate<PropertyBaseRootDataModel<TestMarykModel>, TestMarykModel>>(removalUpdate2).apply {
+            assertIs<RemovalUpdate<RootDataModel<TestMarykModel>, TestMarykModel>>(removalUpdate2).apply {
                 assertEquals(testKeys[2], key)
                 assertEquals(NotInRange, reason)
             }
@@ -770,7 +770,7 @@ class DataStoreScanUpdatesAndFlowTest(
             dataStore.execute(TestMarykModel.add(
                 newDataObject
             )).also {
-                testKeys.add((it.statuses[0] as AddSuccess<PropertyBaseRootDataModel<TestMarykModel>>).key)
+                testKeys.add((it.statuses[0] as AddSuccess<RootDataModel<TestMarykModel>>).key)
             }
 
             // no updates because is outside the limit otherwise next one will not match
@@ -790,14 +790,14 @@ class DataStoreScanUpdatesAndFlowTest(
             ))
 
             val additionUpdate = responses[5].await()
-            assertIs<AdditionUpdate<PropertyBaseRootDataModel<TestMarykModel>, TestMarykModel>>(additionUpdate).apply {
+            assertIs<AdditionUpdate<RootDataModel<TestMarykModel>, TestMarykModel>>(additionUpdate).apply {
                 assertEquals<Values<*, *>>(newDataObject2, values)
                 assertEquals(1, insertionIndex)
                 testKeys.add(key)
             }
 
             val removalUpdate2 = responses[6].await()
-            assertIs<RemovalUpdate<PropertyBaseRootDataModel<TestMarykModel>, TestMarykModel>>(removalUpdate2).apply {
+            assertIs<RemovalUpdate<RootDataModel<TestMarykModel>, TestMarykModel>>(removalUpdate2).apply {
                 assertEquals(testKeys[2], key)
                 assertEquals(NotInRange, reason)
             }

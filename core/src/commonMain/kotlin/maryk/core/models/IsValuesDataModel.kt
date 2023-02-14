@@ -11,7 +11,7 @@ import maryk.core.values.MutableValueItems
 import maryk.core.values.ValueItems
 import maryk.core.values.Values
 
-interface IsValuesDataModel<P : PropertyDefinitions> : IsDataModel<P>, IsNamedDataModel<P> {
+interface IsValuesDataModel<P : PropertyDefinitions> : IsNamedDataModel<P> {
     val reservedIndices: List<UInt>?
     val reservedNames: List<String>?
 

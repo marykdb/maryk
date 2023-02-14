@@ -8,7 +8,11 @@ import maryk.core.properties.exceptions.createValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.values.Values
 
-typealias SimpleDataModel<DM, P> = AbstractValuesDataModel<DM, P, IsPropertyContext>
+abstract class SimpleDataModel<DM : IsValuesDataModel<P>, P : PropertyDefinitions>(
+    reservedIndices: List<UInt>? = null,
+    reservedNames: List<String>? = null,
+    properties: P
+) : AbstractValuesDataModel<DM, P, IsPropertyContext>(reservedIndices, reservedNames, properties)
 typealias ValuesDataModelImpl<CX> = AbstractValuesDataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, CX>
 
 /**

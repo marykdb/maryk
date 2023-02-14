@@ -4,9 +4,9 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import maryk.core.exceptions.TypeException
-import maryk.core.models.DataModel
 import maryk.core.models.IsNamedDataModel
 import maryk.core.models.ObjectDataModel
+import maryk.core.models.SimpleDataModel
 import maryk.core.models.ValueDataModel
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.EnumDefinition
@@ -170,7 +170,7 @@ internal fun generateKotlinValue(
                 } ?: throw TypeException("NamedDataModel $value has to be a function which returns a IsNamedDataModel")
             }
             is EmbeddedValuesDefinition<*, *> -> definition.dataModel.let { dataModel ->
-                if (dataModel is DataModel<*, *>) {
+                if (dataModel is SimpleDataModel<*, *>) {
                     dataModel.generateKotlinValue(value as ValuesImpl, addImport)
                 } else throw TypeException("Only type DataModel can be used for Kotlin generation: ${definition.dataModel} cannot be converted")
             }
@@ -200,7 +200,7 @@ private fun ObjectDataModel<*, *>.generateKotlinValue(value: Any, addImport: (St
     }
 }
 
-private fun DataModel<*, *>.generateKotlinValue(value: ValuesImpl, addImport: (String) -> Unit): String {
+private fun SimpleDataModel<*, *>.generateKotlinValue(value: ValuesImpl, addImport: (String) -> Unit): String {
     val values = mutableListOf<String>()
 
     for (property in this.properties) {

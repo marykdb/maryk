@@ -2,15 +2,12 @@ package maryk.core.models
 
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.definitions.PrimitiveType
-import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.SerializationException
-import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsDataModelPropertyDefinitions
 import maryk.core.properties.MutablePropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.PropertyDefinitionsCollectionDefinition
 import maryk.core.properties.PropertyDefinitionsCollectionDefinitionWrapper
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.StringDefinition
@@ -29,18 +26,17 @@ import maryk.json.IsJsonLikeWriter
  * properties should be validated. It models the DataObjects which can be validated. And it contains a
  * reference to the propertyDefinitions of type [P] which can be used for the references to the properties.
  */
-abstract class DataModel<DM : IsValuesDataModel<P>, P : PropertyDefinitions>(
+open class DataModel<DM : IsValuesDataModel<P>, P : PropertyDefinitions>(
     reservedIndices: List<UInt>? = null,
     reservedNames: List<String>? = null,
-    properties: P
+    properties: P,
+    override val name: String = properties::class.simpleName ?: throw DefNotFoundException("Class $properties has no name")
 ) : SimpleDataModel<DM, P>(
     reservedIndices,
     reservedNames,
     properties
 ), MarykPrimitive {
     override val primitiveType = PrimitiveType.Model
-
-    override val name: String get() = this::class.simpleName ?: throw DefNotFoundException("Class $this has no name")
 
     @Suppress("unused")
     private object Properties :
@@ -67,13 +63,12 @@ abstract class DataModel<DM : IsValuesDataModel<P>, P : PropertyDefinitions>(
         properties = Properties
     ) {
         override fun invoke(values: SimpleObjectValues<DataModel<*, *>>) =
-            object : DataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
+            DataModel(
+                name = values(1u),
                 properties = values(2u),
                 reservedIndices = values(3u),
                 reservedNames = values(4u)
-            ) {
-                override val name: String = values(1u)
-            }
+            )
 
         override fun writeJson(
             values: ObjectValues<DataModel<*, *>, ObjectPropertyDefinitions<DataModel<*, *>>>,
@@ -93,26 +88,6 @@ abstract class DataModel<DM : IsValuesDataModel<P>, P : PropertyDefinitions>(
             context: ContainsDefinitionsContext?
         ) {
             readDataModelJson(context, reader, values, Properties, ::MutablePropertyDefinitions)
-        }
-    }
-
-    companion object {
-        internal fun <DM : IsDataModel<*>> addProperties(definitions: AbstractPropertyDefinitions<DM>): PropertyDefinitionsCollectionDefinitionWrapper<DM> {
-            val wrapper = PropertyDefinitionsCollectionDefinitionWrapper<DM>(
-                2u,
-                "properties",
-                PropertyDefinitionsCollectionDefinition(
-                    capturer = { context, propDefs ->
-                        context?.apply {
-                            this.propertyDefinitions = propDefs
-                        } ?: throw ContextNotFoundException()
-                    }
-                ),
-                getter = { it.properties as PropertyDefinitions }
-            )
-
-            definitions.addSingle(wrapper)
-            return wrapper
         }
     }
 }

@@ -1,6 +1,6 @@
 package maryk.test.models
 
-import maryk.core.models.PropertyBaseDataModel
+import maryk.core.models.DataModel
 import maryk.core.models.RootDataModel
 import maryk.core.properties.Model
 import maryk.core.properties.definitions.embed
@@ -27,7 +27,7 @@ object EmbeddedMarykModel : Model<EmbeddedMarykModel>(
 
     operator fun invoke(
         value: String,
-        model: Values<PropertyBaseDataModel<EmbeddedMarykModel>, EmbeddedMarykModel>? = null,
+        model: Values<DataModel<EmbeddedMarykModel>, EmbeddedMarykModel>? = null,
         marykModel: Values<RootDataModel<TestMarykModel>, TestMarykModel>? = null
     ) =
         create(

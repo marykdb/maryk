@@ -1,6 +1,6 @@
 package maryk.core.properties
 
-import maryk.core.models.PropertyBaseDataModel
+import maryk.core.models.DataModel
 import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.AnyOutPropertyReference
@@ -13,11 +13,11 @@ open class Model<P: PropertyDefinitions>(
     reservedNames: List<String>? = null,
 ) : PropertyDefinitions(){
     @Suppress("UNCHECKED_CAST")
-    val Model = PropertyBaseDataModel(
+    val Model = DataModel(
         reservedIndices = reservedIndices,
         reservedNames = reservedNames,
         properties = this,
-    ) as PropertyBaseDataModel<P>
+    ) as DataModel<P>
 
     @Suppress("UNCHECKED_CAST")
     operator fun <T : Any, R : IsPropertyReference<T, IsPropertyDefinition<T>, *>> invoke(

@@ -31,7 +31,7 @@ fun Definitions.generateProto3(
                 val writer = writerConstructor(obj.name)
                 obj.generateProto3Schema(kotlinGenerationContext, writer)
             }
-            is DataModel<*, *> -> {
+            is DataModel<*> -> {
                 val writer = writerConstructor(obj.name)
                 obj.generateProto3Schema(kotlinGenerationContext, writer)
             }

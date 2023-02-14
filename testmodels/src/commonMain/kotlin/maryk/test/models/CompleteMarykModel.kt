@@ -3,7 +3,7 @@ package maryk.test.models
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
-import maryk.core.models.PropertyBaseDataModel
+import maryk.core.models.DataModel
 import maryk.core.models.RootDataModel
 import maryk.core.properties.RootModel
 import maryk.core.properties.definitions.DateDefinition
@@ -362,7 +362,7 @@ object CompleteMarykModel : RootModel<CompleteMarykModel>(
         mapWithList: Map<String, List<String>> = mapOf("a" to listOf("b", "c")),
         mapWithSet: Map<String, Set<String>> = mapOf("a" to setOf("b", "c")),
         mapWithMap: Map<String, Map<String, String>> = mapOf("a" to mapOf("b" to "c")),
-        incMap: Map<UInt, Values<PropertyBaseDataModel<EmbeddedMarykModel>, EmbeddedMarykModel>>? = null,
+        incMap: Map<UInt, Values<DataModel<EmbeddedMarykModel>, EmbeddedMarykModel>>? = null,
         location: GeoPoint = GeoPoint(52.0906448, 5.1212607)
     ) = create(
         this.string with string,

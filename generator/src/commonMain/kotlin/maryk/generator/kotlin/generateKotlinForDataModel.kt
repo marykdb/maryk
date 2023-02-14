@@ -2,7 +2,7 @@ package maryk.generator.kotlin
 
 import maryk.core.models.DataModel
 
-fun DataModel<*, *>.generateKotlin(
+fun DataModel<*>.generateKotlin(
     packageName: String,
     generationContext: GenerationContext? = null,
     writer: (String) -> Unit

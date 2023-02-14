@@ -1,6 +1,6 @@
 package maryk.test.models
 
-import maryk.core.models.PropertyBaseDataModel
+import maryk.core.models.DataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsUsableInMultiType
@@ -19,7 +19,7 @@ sealed class SimpleMarykTypeEnum<T: Any>(
 ) : IndexedEnumImpl<SimpleMarykTypeEnum<*>>(index, alternativeNames), MultiTypeEnum<T> {
     object S1: SimpleMarykTypeEnum<String>(1u, StringDefinition(regEx = "[^&]+"), setOf("Type1"))
     object S2: SimpleMarykTypeEnum<Short>(2u, NumberDefinition(type = SInt16))
-    object S3: SimpleMarykTypeEnum<Values<PropertyBaseDataModel<EmbeddedMarykModel>, EmbeddedMarykModel>>(3u,
+    object S3: SimpleMarykTypeEnum<Values<DataModel<EmbeddedMarykModel>, EmbeddedMarykModel>>(3u,
         EmbeddedValuesDefinition(dataModel = { EmbeddedMarykModel.Model })
     )
 

@@ -26,12 +26,12 @@ import maryk.json.IsJsonLikeWriter
  * properties should be validated. It models the DataObjects which can be validated. And it contains a
  * reference to the propertyDefinitions of type [P] which can be used for the references to the properties.
  */
-open class DataModel<DM : IsValuesDataModel<P>, P : PropertyDefinitions>(
+open class DataModel<P : PropertyDefinitions>(
     reservedIndices: List<UInt>? = null,
     reservedNames: List<String>? = null,
     properties: P,
     override val name: String = properties::class.simpleName ?: throw DefNotFoundException("Class $properties has no name")
-) : SimpleDataModel<DM, P>(
+) : SimpleDataModel<DataModel<P>, P>(
     reservedIndices,
     reservedNames,
     properties
@@ -40,13 +40,13 @@ open class DataModel<DM : IsValuesDataModel<P>, P : PropertyDefinitions>(
 
     @Suppress("unused")
     private object Properties :
-        ObjectPropertyDefinitions<DataModel<*, *>>(),
-        IsDataModelPropertyDefinitions<DataModel<*, *>, PropertyDefinitionsCollectionDefinitionWrapper<DataModel<*, *>>> {
-        override val name by string(1u, DataModel<*, *>::name)
+        ObjectPropertyDefinitions<DataModel<*>>(),
+        IsDataModelPropertyDefinitions<DataModel<*>, PropertyDefinitionsCollectionDefinitionWrapper<DataModel<*>>> {
+        override val name by string(1u, DataModel<*>::name)
         override val properties = addProperties(this)
         val reservedIndices by list(
             index = 3u,
-            getter = DataModel<*, *>::reservedIndices,
+            getter = DataModel<*>::reservedIndices,
             valueDefinition = NumberDefinition(
                 type = UInt32,
                 minValue = 1u
@@ -54,15 +54,15 @@ open class DataModel<DM : IsValuesDataModel<P>, P : PropertyDefinitions>(
         )
         val reservedNames by list(
             index = 4u,
-            getter = DataModel<*, *>::reservedNames,
+            getter = DataModel<*>::reservedNames,
             valueDefinition = StringDefinition()
         )
     }
 
-    internal object Model : DefinitionDataModel<DataModel<*, *>>(
+    internal object Model : DefinitionDataModel<DataModel<*>>(
         properties = Properties
     ) {
-        override fun invoke(values: SimpleObjectValues<DataModel<*, *>>) =
+        override fun invoke(values: SimpleObjectValues<DataModel<*>>) =
             DataModel(
                 name = values(1u),
                 properties = values(2u),
@@ -71,14 +71,14 @@ open class DataModel<DM : IsValuesDataModel<P>, P : PropertyDefinitions>(
             )
 
         override fun writeJson(
-            values: ObjectValues<DataModel<*, *>, ObjectPropertyDefinitions<DataModel<*, *>>>,
+            values: ObjectValues<DataModel<*>, ObjectPropertyDefinitions<DataModel<*>>>,
             writer: IsJsonLikeWriter,
             context: ContainsDefinitionsContext?
         ) {
             throw SerializationException("Cannot write definitions from Values")
         }
 
-        override fun writeJson(obj: DataModel<*, *>, writer: IsJsonLikeWriter, context: ContainsDefinitionsContext?) {
+        override fun writeJson(obj: DataModel<*>, writer: IsJsonLikeWriter, context: ContainsDefinitionsContext?) {
             this.writeDataModelJson(writer, context, obj, Properties)
         }
 

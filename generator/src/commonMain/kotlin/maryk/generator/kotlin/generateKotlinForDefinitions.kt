@@ -42,7 +42,7 @@ fun Definitions.generateKotlin(
                     writer
                 )
             }
-            is DataModel<*, *> -> {
+            is DataModel<*> -> {
                 val writer = writerConstructor(obj.name)
                 obj.generateKotlin(packageName, kotlinGenerationContext, writer)
             }

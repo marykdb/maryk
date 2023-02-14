@@ -1,6 +1,6 @@
 package maryk.test.models
 
-import maryk.core.models.PropertyBaseDataModel
+import maryk.core.models.DataModel
 import maryk.core.properties.RootModel
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.ListDefinition
@@ -101,12 +101,12 @@ object ComplexModel : RootModel<ComplexModel>() {
     operator fun invoke(
         multi: TypedValue<MarykTypeEnum<*>, Any>? = null,
         mapStringString: Map<String, String>? = null,
-        mapIntObject: Map<UInt, Values<PropertyBaseDataModel<EmbeddedMarykModel>, EmbeddedMarykModel>>? = null,
+        mapIntObject: Map<UInt, Values<DataModel<EmbeddedMarykModel>, EmbeddedMarykModel>>? = null,
         mapIntMulti: Map<UInt, TypedValue<MarykTypeEnum<*>, Any>>? = null,
         mapWithList: Map<String, List<String>>? = null,
         mapWithSet: Map<String, Set<String>>? = null,
         mapWithMap: Map<String, Map<String, String>>? = null,
-        incMap: Map<UInt, Values<PropertyBaseDataModel<EmbeddedMarykModel>, EmbeddedMarykModel>>? = null
+        incMap: Map<UInt, Values<DataModel<EmbeddedMarykModel>, EmbeddedMarykModel>>? = null
     ) = create(
         this.multi with multi,
         this.mapStringString with mapStringString,

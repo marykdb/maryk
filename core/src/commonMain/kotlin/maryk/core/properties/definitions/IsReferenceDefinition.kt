@@ -4,6 +4,8 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.types.Key
+import maryk.core.protobuf.WriteCacheReader
+import maryk.core.protobuf.WriteCacheWriter
 
 /** Interface for property definitions containing references to data objects of model [DM] and context [CX]. */
 interface IsReferenceDefinition<DM : IsRootDataModel<*>, P: PropertyDefinitions, CX : IsPropertyContext> :
@@ -15,6 +17,25 @@ interface IsReferenceDefinition<DM : IsRootDataModel<*>, P: PropertyDefinitions,
 
     override fun calculateStorageByteLength(value: Key<DM>)=
         super.calculateStorageByteLength(value)
+
+    // Overridden because the compiler has issues finding this method in the override
+    override fun calculateTransportByteLengthWithKey(
+        index: UInt,
+        value: Key<DM>,
+        cacher: WriteCacheWriter,
+        context: IsPropertyContext?,
+    ): Int = super<IsComparableDefinition>.calculateTransportByteLengthWithKey(index, value, cacher, context)
+
+    // Overridden because the compiler has issues finding this method in the override
+    override fun writeTransportBytesWithKey(
+        index: UInt,
+        value: Key<DM>,
+        cacheGetter: WriteCacheReader,
+        writer: (byte: Byte) -> Unit,
+        context: IsPropertyContext?,
+    ) {
+        super<IsComparableDefinition>.writeTransportBytesWithKey(index, value, cacheGetter, writer, context)
+    }
 
     override fun compatibleWith(
         definition: IsPropertyDefinition<*>,

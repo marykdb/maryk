@@ -11,9 +11,9 @@ import maryk.core.values.ValueItem
 open class Model<P: PropertyDefinitions>(
     reservedIndices: List<UInt>? = null,
     reservedNames: List<String>? = null,
-) : PropertyDefinitions(){
+) : TypedPropertyDefinitions<DataModel<P>, P>() {
     @Suppress("UNCHECKED_CAST")
-    val Model = DataModel(
+    override val Model = DataModel(
         reservedIndices = reservedIndices,
         reservedNames = reservedNames,
         properties = this,

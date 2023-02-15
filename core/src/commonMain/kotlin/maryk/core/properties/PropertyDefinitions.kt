@@ -1,5 +1,6 @@
 package maryk.core.properties
 
+import maryk.core.models.SimpleDataModel
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsCollectionDefinition
@@ -17,6 +18,11 @@ import maryk.json.JsonToken.StartObject
 import maryk.lib.exceptions.ParseException
 import maryk.yaml.IsYamlReader
 import maryk.yaml.YamlWriter
+
+@Suppress("PropertyName")
+abstract class TypedPropertyDefinitions<DM: SimpleDataModel<DM, P>, P: PropertyDefinitions> : PropertyDefinitions() {
+    abstract val Model : DM
+}
 
 /** A collection of Property Definitions which can be used to model a ObjectDataModel */
 abstract class PropertyDefinitions : AbstractPropertyDefinitions<Any>()

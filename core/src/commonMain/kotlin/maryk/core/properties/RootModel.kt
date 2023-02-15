@@ -21,9 +21,9 @@ open class RootModel<P: PropertyDefinitions>(
     reservedIndices: List<UInt>? = null,
     reservedNames: List<String>? = null,
     name: String? = null,
-) : PropertyDefinitions(){
+) : TypedPropertyDefinitions<RootDataModel<P>, P>(){
     @Suppress("UNCHECKED_CAST")
-    val Model: RootDataModel<P> by lazy {
+    override val Model: RootDataModel<P> by lazy {
         RootDataModel(
             keyDefinition = keyDefinition.invoke(),
             version = version,

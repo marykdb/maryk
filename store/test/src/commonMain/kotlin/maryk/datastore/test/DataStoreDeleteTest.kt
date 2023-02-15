@@ -60,12 +60,12 @@ class DataStoreDeleteTest(
         }
 
         val getResponse = dataStore.execute(
-            addRequest.dataModel.get(keys[0])
+            SimpleMarykModel.get(keys[0])
         )
         assertTrue { getResponse.values.isEmpty() }
 
         val getResponseWithDeleted = dataStore.execute(
-            addRequest.dataModel.get(keys[0], filterSoftDeleted = false)
+            SimpleMarykModel.get(keys[0], filterSoftDeleted = false)
         )
         assertFalse { getResponseWithDeleted.values.isEmpty() }
         assertTrue { getResponseWithDeleted.values[0].isDeleted }
@@ -106,7 +106,7 @@ class DataStoreDeleteTest(
         }
 
         val getResponse = dataStore.execute(
-            addRequest.dataModel.get(keys[1])
+            SimpleMarykModel.get(keys[1])
         )
         assertTrue { getResponse.values.isEmpty() }
     }

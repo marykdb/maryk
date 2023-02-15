@@ -5,7 +5,6 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.AbstractValuesDataModel
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsValuesDataModel
-import maryk.core.models.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
@@ -161,24 +160,21 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P : PropertyDefinition
                         contextualResolver = { context: ContainsDefinitionsContext?, name ->
                             context?.let {
                                 @Suppress("UNCHECKED_CAST")
-                                it.dataModels[name] as? Unit.() -> SimpleDataModel<*, *>
+                                it.dataModels[name] as? Unit.() -> IsValuesDataModel<*>
                                     ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
                             } ?: throw ContextNotFoundException()
                         }
                     ),
                     getter = {
-                        {
-                            @Suppress("UNCHECKED_CAST")
-                            it.dataModel as SimpleDataModel<*, *>
-                        }
+                        { it.dataModel }
                     },
-                    toSerializable = { value: (Unit.() -> SimpleDataModel<*, *>)?, _ ->
+                    toSerializable = { value: (Unit.() -> IsValuesDataModel<*>)?, _ ->
                         value?.invoke(Unit)?.let { model ->
                             DataModelReference(model.name, value)
                         }
                     },
                     fromSerializable = { it?.get },
-                    capturer = { context: ModelContext, dataModel: IsDataModelReference<SimpleDataModel<*, *>> ->
+                    capturer = { context: ModelContext, dataModel: IsDataModelReference<IsValuesDataModel<*>> ->
                         context.definitionsContext?.let {
                             if (!it.dataModels.containsKey(dataModel.name)) {
                                 it.dataModels[dataModel.name] = dataModel.get

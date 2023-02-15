@@ -1,6 +1,6 @@
 package maryk.core.properties
 
-import maryk.core.models.SimpleDataModel
+import maryk.core.models.IsValuesDataModel
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsCollectionDefinition
@@ -20,7 +20,7 @@ import maryk.yaml.IsYamlReader
 import maryk.yaml.YamlWriter
 
 @Suppress("PropertyName")
-abstract class TypedPropertyDefinitions<DM: SimpleDataModel<DM, P>, P: PropertyDefinitions> : PropertyDefinitions() {
+abstract class TypedPropertyDefinitions<DM: IsValuesDataModel<P>, P: PropertyDefinitions> : PropertyDefinitions() {
     abstract val Model : DM
 }
 

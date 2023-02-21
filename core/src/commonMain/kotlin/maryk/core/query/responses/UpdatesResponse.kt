@@ -1,7 +1,9 @@
 package maryk.core.query.responses
 
+import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.SimpleQueryDataModel
+import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
@@ -13,7 +15,7 @@ import maryk.core.query.responses.updates.mapOfUpdateResponses
 import maryk.core.values.SimpleObjectValues
 
 /** Response with [updates] to [dataModel] */
-data class UpdatesResponse<DM : IsRootValuesDataModel<P>, P: PropertyDefinitions>(
+data class UpdatesResponse<DM : IsRootDataModel<P>, P: IsPropertyDefinitions>(
     override val dataModel: DM,
     val updates: List<IsUpdateResponse<DM, P>>
 ) : IsDataResponse<DM, P> {

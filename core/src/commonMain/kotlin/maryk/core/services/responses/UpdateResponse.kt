@@ -1,6 +1,8 @@
 package maryk.core.services.responses
 
+import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsRootValuesDataModel
+import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
@@ -22,7 +24,7 @@ import maryk.core.values.ObjectValues
  * Received an update response
  * Contains an id to listener which sent this response.
  */
-data class UpdateResponse<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
+data class UpdateResponse<DM: IsRootDataModel<P>, P: IsPropertyDefinitions>(
     override val id: ULong,
     override val dataModel: DM,
     val update: IsUpdateResponse<DM, P>

@@ -2,8 +2,8 @@ package maryk.core.query.requests
 
 import maryk.core.aggregations.Aggregations
 import maryk.core.models.IsRootDataModel
+import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.internalMultiType
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.TypedValue
@@ -13,7 +13,7 @@ import maryk.core.query.filters.mapOfFilterDefinitions
 import maryk.core.query.responses.IsResponse
 
 /** Defines a fetch. */
-interface IsFetchRequest<DM : IsRootDataModel<P>, P : PropertyDefinitions, RP : IsResponse> : IsStoreRequest<DM, RP> {
+interface IsFetchRequest<DM : IsRootDataModel<P>, P : IsPropertyDefinitions, RP : IsResponse> : IsStoreRequest<DM, RP> {
     val select: RootPropRefGraph<P>?
     val where: IsFilter?
     val toVersion: ULong?

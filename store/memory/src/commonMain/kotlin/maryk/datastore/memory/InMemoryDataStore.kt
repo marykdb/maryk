@@ -7,6 +7,7 @@ import maryk.core.clock.HLC
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
+import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.RootDataModel
 import maryk.core.properties.PropertyDefinitions
@@ -78,7 +79,7 @@ class InMemoryDataStore(
                     try {
                         clock = clock.calculateMaxTimeStamp()
 
-                        val dataStoreFetcher = { model: IsRootValuesDataModel<*> ->
+                        val dataStoreFetcher = { model: IsRootDataModel<*> ->
                             val index = dataModelIdsByString[model.name] ?: throw DefNotFoundException(model.name)
                             dataStores.getOrPut(index) {
                                 DataStore<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(keepAllVersions)

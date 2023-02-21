@@ -1,8 +1,8 @@
 package maryk.datastore.memory.records
 
 import maryk.core.clock.HLC
-import maryk.core.models.IsRootValuesDataModel
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.models.IsRootDataModel
+import maryk.core.properties.IsPropertyDefinitions
 import maryk.datastore.memory.processors.changers.getValue
 import maryk.datastore.memory.records.index.IndexValues
 import maryk.datastore.memory.records.index.UniqueIndexValues
@@ -12,7 +12,7 @@ import maryk.lib.extensions.compare.compareTo
 /**
  * An in memory data store containing records and indices
  */
-internal class DataStore<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions>(
+internal class DataStore<DM : IsRootDataModel<P>, P : IsPropertyDefinitions>(
     val keepAllVersions: Boolean
 ) {
     val records: MutableList<DataRecord<DM, P>> = mutableListOf()

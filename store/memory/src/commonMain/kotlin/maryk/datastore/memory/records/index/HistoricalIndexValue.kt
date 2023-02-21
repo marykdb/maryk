@@ -1,11 +1,11 @@
 package maryk.datastore.memory.records.index
 
 import maryk.core.clock.HLC
-import maryk.core.models.IsRootValuesDataModel
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.models.IsRootDataModel
+import maryk.core.properties.IsPropertyDefinitions
 
 /**  index with historical [records] for [value] */
-internal class HistoricalIndexValue<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, T : Any>(
+internal class HistoricalIndexValue<DM : IsRootDataModel<P>, P : IsPropertyDefinitions, T : Any>(
     override val value: T,
     val records: MutableList<IsRecordAtVersion<DM, P>>
 ) : IsIndexItem<DM, P, T> {

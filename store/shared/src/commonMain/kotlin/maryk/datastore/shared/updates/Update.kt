@@ -1,13 +1,15 @@
 package maryk.datastore.shared.updates
 
+import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsRootValuesDataModel
+import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.IsChange
 import maryk.core.values.Values
 
 /** Describes an update on an object with [key] in [dataModel] with [version] */
-sealed class Update<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
+sealed class Update<DM: IsRootDataModel<P>, P: IsPropertyDefinitions>(
     val dataModel: DM,
     val key: Key<DM>,
     val version: ULong

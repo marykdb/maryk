@@ -1,12 +1,12 @@
 package maryk.datastore.memory.records.index
 
 import maryk.core.clock.HLC
-import maryk.core.models.IsRootValuesDataModel
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.models.IsRootDataModel
+import maryk.core.properties.IsPropertyDefinitions
 import maryk.datastore.memory.records.DataRecord
 
 /** Defines that this is an [record] reference at a certain [version] */
-internal interface IsRecordAtVersion<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> {
+internal interface IsRecordAtVersion<DM : IsRootDataModel<P>, P : IsPropertyDefinitions> {
     val record: DataRecord<DM, P>?
     val version: HLC
     fun recordAtVersion(version: HLC) =

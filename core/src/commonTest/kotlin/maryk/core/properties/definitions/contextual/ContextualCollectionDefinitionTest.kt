@@ -40,9 +40,9 @@ class ContextualCollectionDefinitionTest {
         val asHex = "ea020154ea02025432ea02025433ea02025434"
 
         bc.reserve(
-            def.calculateTransportByteLengthWithKey(45u, values, cache, this.context)
+            def.calculateTransportByteLengthWithKey(45, values, cache, this.context)
         )
-        def.writeTransportBytesWithKey(45u, values, cache, bc::write, this.context)
+        def.writeTransportBytesWithKey(45, values, cache, bc::write, this.context)
 
         expect(asHex) { bc.bytes!!.toHex() }
 

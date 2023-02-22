@@ -264,7 +264,7 @@ abstract class AbstractDataModel<DO : Any, P : AbstractPropertyDefinitions<DO>, 
         }
 
         definition.capture(context, value)
-        return definition.definition.calculateTransportByteLengthWithKey(definition.index, value, cacher, context)
+        return definition.definition.calculateTransportByteLengthWithKey(definition.index.toInt(), value, cacher, context)
     }
 
     /**
@@ -300,7 +300,7 @@ abstract class AbstractDataModel<DO : Any, P : AbstractPropertyDefinitions<DO>, 
 
         definition.capture(context, value)
 
-        definition.definition.writeTransportBytesWithKey(definition.index, value, cacheGetter, writer, context)
+        definition.definition.writeTransportBytesWithKey(definition.index.toInt(), value, cacheGetter, writer, context)
     }
 
     /**

@@ -26,21 +26,21 @@ interface IsSerializablePropertyDefinition<T : Any, in CX : IsPropertyContext> :
      * Calculate length of bytes for [value] with key [index] to transport
      * Caches any calculated lengths to [cacher]
      */
-    fun calculateTransportByteLengthWithKey(index: UInt, value: T, cacher: WriteCacheWriter) =
+    fun calculateTransportByteLengthWithKey(index: Int, value: T, cacher: WriteCacheWriter) =
         this.calculateTransportByteLengthWithKey(index, value, cacher, null)
 
     /**
      * Calculate length of bytes for [value] with key [index] to transport within [context]
      * Caches any calculated lengths to [cacher]
      */
-    fun calculateTransportByteLengthWithKey(index: UInt, value: T, cacher: WriteCacheWriter, context: CX?): Int
+    fun calculateTransportByteLengthWithKey(index: Int, value: T, cacher: WriteCacheWriter, context: CX?): Int
 
     /**
      * Writes [value] and tag [index] and WireType with [writer] to bytes for transportation.
      * Get any cached sizes from [cacheGetter]
      */
     fun writeTransportBytesWithKey(
-        index: UInt,
+        index: Int,
         value: T,
         cacheGetter: WriteCacheReader,
         writer: (byte: Byte) -> Unit
@@ -52,7 +52,7 @@ interface IsSerializablePropertyDefinition<T : Any, in CX : IsPropertyContext> :
      * Pass a [context] to write more complex properties which depend on other properties
      */
     fun writeTransportBytesWithKey(
-        index: UInt,
+        index: Int,
         value: T,
         cacheGetter: WriteCacheReader,
         writer: (byte: Byte) -> Unit,

@@ -103,7 +103,7 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
 
     /** Calculates the needed byte size to transport [value] within optional [context] and caches it with [cacher] */
     fun calculateTransportByteLengthWithKey(value: T, cacher: WriteCacheWriter, context: CX? = null) =
-        this.calculateTransportByteLengthWithKey(this.index, value, cacher, context)
+        this.calculateTransportByteLengthWithKey(this.index.toInt(), value, cacher, context)
 
     /**
      * Writes [value] to bytes with [writer] for transportation and adds the key with tag and wire type.
@@ -116,7 +116,7 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
         writer: (byte: Byte) -> Unit,
         context: CX? = null
     ) =
-        this.writeTransportBytesWithKey(this.index, value, cacheGetter, writer, context)
+        this.writeTransportBytesWithKey(this.index.toInt(), value, cacheGetter, writer, context)
 
     /** Get the property from the [dataObject] and serialize it for transportation */
     fun getPropertyAndSerialize(dataObject: DO, context: CX?): T? {

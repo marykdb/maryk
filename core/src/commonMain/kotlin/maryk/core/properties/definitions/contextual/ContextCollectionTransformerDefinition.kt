@@ -29,7 +29,7 @@ internal data class ContextCollectionTransformerDefinition<T : Any, C : Collecti
         this.definition.readJson(reader, contextTransformer(Unit, context))
 
     override fun calculateTransportByteLengthWithKey(
-        index: UInt,
+        index: Int,
         value: C,
         cacher: WriteCacheWriter,
         context: CX?
@@ -43,7 +43,7 @@ internal data class ContextCollectionTransformerDefinition<T : Any, C : Collecti
     ) = this.definition.readTransportBytes(length, reader, contextTransformer(Unit, context), earlierValue)
 
     override fun writeTransportBytesWithKey(
-        index: UInt,
+        index: Int,
         value: C,
         cacheGetter: WriteCacheReader,
         writer: (byte: Byte) -> Unit,

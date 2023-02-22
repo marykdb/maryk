@@ -115,9 +115,9 @@ internal class NumberDefinitionTest {
 
         for (value in intArray) {
             bc.reserve(
-                def.calculateTransportByteLengthWithKey(1u, value, cacheFailer)
+                def.calculateTransportByteLengthWithKey(1, value, cacheFailer)
             )
-            def.writeTransportBytesWithKey(1u, value, cacheFailer, bc::write)
+            def.writeTransportBytesWithKey(1, value, cacheFailer, bc::write)
             val key = ProtoBuf.readKey(bc::read)
             expect(VAR_INT) { key.wireType }
             expect(1u) { key.tag }
@@ -138,9 +138,9 @@ internal class NumberDefinitionTest {
 
         for (value in floatArray) {
             bc.reserve(
-                defFloat32.calculateTransportByteLengthWithKey(2u, value, cacheFailer)
+                defFloat32.calculateTransportByteLengthWithKey(2, value, cacheFailer)
             )
-            defFloat32.writeTransportBytesWithKey(2u, value, cacheFailer, bc::write)
+            defFloat32.writeTransportBytesWithKey(2, value, cacheFailer, bc::write)
             val key = ProtoBuf.readKey(bc::read)
             expect(BIT_32) { key.wireType }
             expect(2u) { key.tag }

@@ -32,22 +32,22 @@ internal class ContextualNumberDefinition<in CX : IsPropertyContext>(
     override fun getEmbeddedByIndex(index: UInt): IsDefinitionWrapper<*, *, *, *>? = null
 
     override fun calculateTransportByteLengthWithKey(
-        index: UInt,
+        index: Int,
         value: Comparable<Any>,
         cacher: WriteCacheWriter,
         context: CX?
     ) =
-        ProtoBuf.calculateKeyLength(index) + contextualResolver(Unit, context).calculateTransportByteLength(value)
+        ProtoBuf.calculateKeyLength(index.toUInt()) + contextualResolver(Unit, context).calculateTransportByteLength(value)
 
     override fun writeTransportBytesWithKey(
-        index: UInt,
+        index: Int,
         value: Comparable<Any>,
         cacheGetter: WriteCacheReader,
         writer: (byte: Byte) -> Unit,
         context: CX?
     ) {
         val numType = contextualResolver(Unit, context)
-        ProtoBuf.writeKey(index, numType.wireType, writer)
+        ProtoBuf.writeKey(index.toUInt(), numType.wireType, writer)
         numType.writeTransportBytes(value, writer)
     }
 

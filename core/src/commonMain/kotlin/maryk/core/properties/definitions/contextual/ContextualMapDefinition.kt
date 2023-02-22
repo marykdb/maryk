@@ -26,7 +26,7 @@ class ContextualMapDefinition<K : Any, V : Any, in CX : IsPropertyContext>(
         contextualResolver(Unit, context).readJson(reader, context)
 
     override fun calculateTransportByteLengthWithKey(
-        index: UInt,
+        index: Int,
         value: Map<K, V>,
         cacher: WriteCacheWriter,
         context: CX?
@@ -41,7 +41,7 @@ class ContextualMapDefinition<K : Any, V : Any, in CX : IsPropertyContext>(
     ) = contextualResolver(Unit, context).readTransportBytes(length, reader, context, earlierValue)
 
     override fun writeTransportBytesWithKey(
-        index: UInt,
+        index: Int,
         value: Map<K, V>,
         cacheGetter: WriteCacheReader,
         writer: (byte: Byte) -> Unit,

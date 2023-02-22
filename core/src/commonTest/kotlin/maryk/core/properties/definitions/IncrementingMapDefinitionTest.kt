@@ -114,9 +114,9 @@ internal class IncrementingMapDefinitionTest {
         val cache = WriteCache()
 
         bc.reserve(
-            def.calculateTransportByteLengthWithKey(4u, value, cache)
+            def.calculateTransportByteLengthWithKey(4, value, cache)
         )
-        def.writeTransportBytesWithKey(4u, value, cache, bc::write)
+        def.writeTransportBytesWithKey(4, value, cache, bc::write)
 
         expect("220b080c1207237477656c7665220b081e120723746869727479220c086412082368756e64726564220e08e80712092374686f7573616e64") { bc.bytes!!.toHex() }
 

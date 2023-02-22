@@ -79,10 +79,10 @@ internal class EmbeddedValuesDefinitionTest {
         val value = MarykModel.create()
 
         bc.reserve(
-            def.calculateTransportByteLengthWithKey(5u, value, cache)
+            def.calculateTransportByteLengthWithKey(5, value, cache)
         )
         expect(7) { bc.bytes!!.size }
-        def.writeTransportBytesWithKey(5u, value, cache, bc::write, null)
+        def.writeTransportBytesWithKey(5, value, cache, bc::write, null)
 
         expect("2a050a036a7572") { bc.bytes!!.toHex() }
 

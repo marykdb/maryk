@@ -36,13 +36,13 @@ class SetItemReference<T : Any, CX : IsPropertyContext> internal constructor(
 
     override fun calculateTransportByteLength(cacher: WriteCacheWriter): Int {
         val parentLength = this.parentReference?.calculateTransportByteLength(cacher) ?: 0
-        val valueLength = setDefinition.valueDefinition.calculateTransportByteLengthWithKey(0u, value, cacher)
+        val valueLength = setDefinition.valueDefinition.calculateTransportByteLengthWithKey(0, value, cacher)
         return parentLength + valueLength
     }
 
     override fun writeTransportBytes(cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit) {
         this.parentReference?.writeTransportBytes(cacheGetter, writer)
-        setDefinition.valueDefinition.writeTransportBytesWithKey(0u, value, cacheGetter, writer)
+        setDefinition.valueDefinition.writeTransportBytesWithKey(0, value, cacheGetter, writer)
     }
 
     override fun calculateSelfStorageByteLength(): Int {

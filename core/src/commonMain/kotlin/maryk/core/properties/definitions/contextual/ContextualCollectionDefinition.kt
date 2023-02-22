@@ -20,7 +20,7 @@ internal class ContextualCollectionDefinition<in CX : IsPropertyContext>(
     override fun getEmbeddedByIndex(index: UInt): IsDefinitionWrapper<*, *, *, *>? = null
 
     override fun calculateTransportByteLengthWithKey(
-        index: UInt,
+        index: Int,
         value: Collection<Any>,
         cacher: WriteCacheWriter,
         context: CX?
@@ -41,7 +41,7 @@ internal class ContextualCollectionDefinition<in CX : IsPropertyContext>(
     ) = contextualResolver(Unit, context).readTransportBytes(length, reader, context, earlierValue)
 
     override fun writeTransportBytesWithKey(
-        index: UInt,
+        index: Int,
         value: Collection<Any>,
         cacheGetter: WriteCacheReader,
         writer: (byte: Byte) -> Unit,

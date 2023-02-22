@@ -22,14 +22,14 @@ data class ContextInjectCollectionOnWriteDefinition<T : Any, C : Collection<T>, 
     }
 
     override fun calculateTransportByteLengthWithKey(
-        index: UInt,
+        index: Int,
         value: C,
         cacher: WriteCacheWriter,
         context: CX?
     ) = this.definition.calculateTransportByteLengthWithKey(index, this.valueInjector(Unit, context), cacher, context)
 
     override fun writeTransportBytesWithKey(
-        index: UInt,
+        index: Int,
         value: C,
         cacheGetter: WriteCacheReader,
         writer: (byte: Byte) -> Unit,

@@ -35,8 +35,8 @@ interface IsValueDefinition<T : Any, in CX : IsPropertyContext> : IsSubDefinitio
      */
     fun asString(value: T, context: CX? = null) = value.toString()
 
-    override fun calculateTransportByteLengthWithKey(index: UInt, value: T, cacher: WriteCacheWriter, context: CX?) =
-        calculateKeyAndContentLength(this.wireType, index, cacher) {
+    override fun calculateTransportByteLengthWithKey(index: Int, value: T, cacher: WriteCacheWriter, context: CX?) =
+        calculateKeyAndContentLength(this.wireType, index.toUInt(), cacher) {
             this.calculateTransportByteLength(value, cacher, context)
         }
 
@@ -47,13 +47,13 @@ interface IsValueDefinition<T : Any, in CX : IsPropertyContext> : IsSubDefinitio
     fun calculateTransportByteLength(value: T, cacher: WriteCacheWriter, context: CX? = null): Int
 
     override fun writeTransportBytesWithKey(
-        index: UInt,
+        index: Int,
         value: T,
         cacheGetter: WriteCacheReader,
         writer: (byte: Byte) -> Unit,
         context: CX?
     ) {
-        writeKeyWithLength(this.wireType, index, writer, cacheGetter)
+        writeKeyWithLength(this.wireType, index.toUInt(), writer, cacheGetter)
         this.writeTransportBytes(value, cacheGetter, writer, context)
     }
 

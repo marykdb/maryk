@@ -106,9 +106,9 @@ internal class ListDefinitionTest {
         val cache = WriteCache()
 
         bc.reserve(
-            def.calculateTransportByteLengthWithKey(1u, values, cache)
+            def.calculateTransportByteLengthWithKey(1, values, cache)
         )
-        def.writeTransportBytesWithKey(1u, values, cache, bc::write)
+        def.writeTransportBytesWithKey(1, values, cache, bc::write)
 
         expect(asHex) { bc.bytes!!.toHex() }
 
@@ -183,9 +183,9 @@ internal class ListDefinitionTest {
         val cache = WriteCache()
 
         bc.reserve(
-            def.calculateTransportByteLengthWithKey(index, list, cache)
+            def.calculateTransportByteLengthWithKey(index.toInt(), list, cache)
         )
-        def.writeTransportBytesWithKey(index, list, cache, bc::write)
+        def.writeTransportBytesWithKey(index.toInt(), list, cache, bc::write)
 
         expect(hex) { bc.bytes!!.toHex() }
 

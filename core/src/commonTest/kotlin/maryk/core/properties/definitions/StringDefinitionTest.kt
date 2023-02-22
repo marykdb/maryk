@@ -97,10 +97,10 @@ internal class StringDefinitionTest {
         val cache = WriteCache()
         for ((value, asHex) in stringsToTest) {
             bc.reserve(
-                def.calculateTransportByteLengthWithKey(14u, value, cache)
+                def.calculateTransportByteLengthWithKey(14, value, cache)
             )
             expect(value.calculateUTF8ByteLength() + 2) { bc.bytes!!.size }
-            def.writeTransportBytesWithKey(14u, value, cache, bc::write)
+            def.writeTransportBytesWithKey(14, value, cache, bc::write)
             val key = ProtoBuf.readKey(bc::read)
             expect(LENGTH_DELIMITED) { key.wireType }
             expect(14u) { key.tag }

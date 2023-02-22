@@ -138,7 +138,7 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
     }
 
     override fun calculateTransportByteLengthWithKey(
-        index: UInt,
+        index: Int,
         value: C,
         cacher: WriteCacheWriter,
         context: CX?
@@ -162,7 +162,7 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
                 }
                 container.length = totalByteSize
 
-                totalByteSize += ProtoBuf.calculateKeyLength(index)
+                totalByteSize += ProtoBuf.calculateKeyLength(index.toUInt())
                 totalByteSize += container.length.calculateVarByteLength()
             }
             else -> value.forEachIndexed { position, item ->
@@ -182,7 +182,7 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
     }
 
     override fun writeTransportBytesWithKey(
-        index: UInt,
+        index: Int,
         value: C,
         cacheGetter: WriteCacheReader,
         writer: (byte: Byte) -> Unit,
@@ -193,7 +193,7 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
                 @Suppress("UNCHECKED_CAST")
                 val valueDefinition = this.valueDefinition as IsValueDefinition<T, CX>
 
-                ProtoBuf.writeKey(index, LENGTH_DELIMITED, writer)
+                ProtoBuf.writeKey(index.toUInt(), LENGTH_DELIMITED, writer)
                 cacheGetter.nextLengthFromCache().writeVarBytes(writer)
                 value.forEach { item ->
                     valueDefinition.writeTransportBytes(item, cacheGetter, writer, context)

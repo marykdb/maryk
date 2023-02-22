@@ -133,9 +133,9 @@ internal class MapDefinitionTest {
         val cache = WriteCache()
 
         bc.reserve(
-            def.calculateTransportByteLengthWithKey(4u, value, cache)
+            def.calculateTransportByteLengthWithKey(4, value, cache)
         )
-        def.writeTransportBytesWithKey(4u, value, cache, bc::write)
+        def.writeTransportBytesWithKey(4, value, cache, bc::write)
 
         expect("220b08181207237477656c7665220b083c120723746869727479220d08c80112082368756e64726564220e08d00f12092374686f7573616e64") { bc.bytes!!.toHex() }
 

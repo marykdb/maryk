@@ -327,7 +327,7 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
         val def = this.definition(value.type)
             ?: throw DefNotFoundException("Definition ${value.type} not found on Multi type")
         totalByteLength += def.calculateTransportByteLengthWithKey(
-            value.type.index,
+            value.type.index.toInt(),
             value.value,
             cacher,
             context
@@ -348,7 +348,7 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
     ) {
         val def = this.definition(value.type)
             ?: throw DefNotFoundException("Definition ${value.type} not found on Multi type")
-        def.writeTransportBytesWithKey(value.type.index, value.value, cacheGetter, writer, context)
+        def.writeTransportBytesWithKey(value.type.index.toInt(), value.value, cacheGetter, writer, context)
     }
 
     override fun getEmbeddedByName(name: String): IsDefinitionWrapper<*, *, *, *>? = null

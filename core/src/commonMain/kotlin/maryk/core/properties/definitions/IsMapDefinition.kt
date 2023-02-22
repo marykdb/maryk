@@ -127,22 +127,22 @@ interface IsMapDefinition<K : Any, V : Any, CX : IsPropertyContext> :
     }
 
     override fun calculateTransportByteLengthWithKey(
-        index: UInt,
+        index: Int,
         value: Map<K, V>,
         cacher: WriteCacheWriter,
         context: CX?
     ): Int {
         var totalByteLength = 0
         for ((key, item) in value) {
-            totalByteLength += ProtoBuf.calculateKeyLength(index)
+            totalByteLength += ProtoBuf.calculateKeyLength(index.toUInt())
 
             // Cache length for length delimiter
             val container = ByteLengthContainer()
             cacher.addLengthToCache(container)
 
             var fieldLength = 0
-            fieldLength += keyDefinition.calculateTransportByteLengthWithKey(1u, key, cacher, context)
-            fieldLength += valueDefinition.calculateTransportByteLengthWithKey(2u, item, cacher, context)
+            fieldLength += keyDefinition.calculateTransportByteLengthWithKey(1, key, cacher, context)
+            fieldLength += valueDefinition.calculateTransportByteLengthWithKey(2, item, cacher, context)
             container.length = fieldLength // set length for value
             fieldLength += fieldLength.calculateVarByteLength() // Add field length for length delimiter
 
@@ -152,17 +152,17 @@ interface IsMapDefinition<K : Any, V : Any, CX : IsPropertyContext> :
     }
 
     override fun writeTransportBytesWithKey(
-        index: UInt,
+        index: Int,
         value: Map<K, V>,
         cacheGetter: WriteCacheReader,
         writer: (byte: Byte) -> Unit,
         context: CX?
     ) {
         for ((key, item) in value) {
-            ProtoBuf.writeKey(index, LENGTH_DELIMITED, writer)
+            ProtoBuf.writeKey(index.toUInt(), LENGTH_DELIMITED, writer)
             cacheGetter.nextLengthFromCache().writeVarBytes(writer)
-            keyDefinition.writeTransportBytesWithKey(1u, key, cacheGetter, writer, context)
-            valueDefinition.writeTransportBytesWithKey(2u, item, cacheGetter, writer, context)
+            keyDefinition.writeTransportBytesWithKey(1, key, cacheGetter, writer, context)
+            valueDefinition.writeTransportBytesWithKey(2, item, cacheGetter, writer, context)
         }
     }
 

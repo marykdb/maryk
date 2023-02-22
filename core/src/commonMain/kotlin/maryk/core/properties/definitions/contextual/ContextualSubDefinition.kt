@@ -24,7 +24,7 @@ data class ContextualSubDefinition<CX : IsPropertyContext, CXI : IsPropertyConte
     override fun getEmbeddedByIndex(index: UInt): IsDefinitionWrapper<*, *, *, *>? = null
 
     override fun calculateTransportByteLengthWithKey(
-        index: UInt,
+        index: Int,
         value: T,
         cacher: WriteCacheWriter,
         context: CX?
@@ -32,7 +32,7 @@ data class ContextualSubDefinition<CX : IsPropertyContext, CXI : IsPropertyConte
         contextualResolver(Unit, context).calculateTransportByteLengthWithKey(index, value, cacher, contextTransformer(Unit, context))
 
     override fun writeTransportBytesWithKey(
-        index: UInt,
+        index: Int,
         value: T,
         cacheGetter: WriteCacheReader,
         writer: (byte: Byte) -> Unit,

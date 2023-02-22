@@ -25,7 +25,7 @@ data class ContextTransformerDefinition<T : Any, in CX : IsPropertyContext, CXI 
     override fun asString(value: T, context: CX?) =
         this.definition.asString(value, contextTransformer(Unit, context))
 
-    override fun calculateTransportByteLengthWithKey(index: UInt, value: T, cacher: WriteCacheWriter, context: CX?) =
+    override fun calculateTransportByteLengthWithKey(index: Int, value: T, cacher: WriteCacheWriter, context: CX?) =
         this.definition.calculateTransportByteLengthWithKey(index, value, cacher, contextTransformer(Unit, context))
 
     override fun calculateTransportByteLength(value: T, cacher: WriteCacheWriter, context: CX?) =

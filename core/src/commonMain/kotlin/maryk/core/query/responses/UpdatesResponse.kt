@@ -1,7 +1,6 @@
 package maryk.core.query.responses
 
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -35,7 +34,7 @@ data class UpdatesResponse<DM : IsRootDataModel<P>, P: IsValuesPropertyDefinitio
             )
         }
     ) {
-        override fun invoke(values: SimpleObjectValues<UpdatesResponse<*, *>>) = UpdatesResponse<IsRootValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>(
+        override fun invoke(values: SimpleObjectValues<UpdatesResponse<*, *>>) = UpdatesResponse<IsRootDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>(
             dataModel = values(1u),
             updates = values(2u)
         )

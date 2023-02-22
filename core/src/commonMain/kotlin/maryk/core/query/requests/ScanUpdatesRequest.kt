@@ -3,7 +3,6 @@ package maryk.core.query.requests
 import maryk.core.aggregations.Aggregations
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -30,7 +29,7 @@ import maryk.core.values.ObjectValues
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
-fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> DM.scanUpdates(
+fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> DM.scanUpdates(
     startKey: Key<DM>? = null,
     where: IsFilter? = null,
     order: IsOrder? = null,
@@ -66,7 +65,7 @@ fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> DM.scanUpda
  * Results can be ordered with an [order]
  */
 fun <DM : RootModel<P>, P : IsValuesPropertyDefinitions> DM.scanUpdates(
-    startKey: Key<IsRootValuesDataModel<P>>? = null,
+    startKey: Key<IsRootDataModel<P>>? = null,
     where: IsFilter? = null,
     order: IsOrder? = null,
     limit: UInt = 100u,
@@ -76,7 +75,7 @@ fun <DM : RootModel<P>, P : IsValuesPropertyDefinitions> DM.scanUpdates(
     maxVersions: UInt = 1u,
     select: RootPropRefGraph<P>? = null,
     filterSoftDeleted: Boolean = true,
-    orderedKeys: List<Key<IsRootValuesDataModel<P>>>? = null
+    orderedKeys: List<Key<IsRootDataModel<P>>>? = null
 ) =
     ScanUpdatesRequest(
         this.Model,
@@ -99,7 +98,7 @@ fun <DM : RootModel<P>, P : IsValuesPropertyDefinitions> DM.scanUpdates(
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order] and only selected properties can be returned with a [select] graph
  */
-data class ScanUpdatesRequest<DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> internal constructor(
+data class ScanUpdatesRequest<DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> internal constructor(
     override val dataModel: DM,
     override val startKey: Key<DM>? = null,
     override val where: IsFilter? = null,
@@ -146,7 +145,7 @@ data class ScanUpdatesRequest<DM : IsRootValuesDataModel<P>, P : IsValuesPropert
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<ScanUpdatesRequest<*, *>, Properties>) =
-            ScanUpdatesRequest<IsRootValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>(
+            ScanUpdatesRequest<IsRootDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>(
                 dataModel = values(1u),
                 startKey = values(2u),
                 select = values(3u),

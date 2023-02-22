@@ -2,7 +2,7 @@ package maryk.core.query.requests
 
 import maryk.core.aggregations.Aggregations
 import maryk.core.exceptions.RequestException
-import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -28,40 +28,8 @@ import maryk.core.values.ObjectValues
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
-fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> DM.scanChanges(
-    startKey: Key<DM>? = null,
-    where: IsFilter? = null,
-    order: IsOrder? = null,
-    limit: UInt = 100u,
-    includeStart: Boolean = true,
-    fromVersion: ULong = 0uL,
-    toVersion: ULong? = null,
-    maxVersions: UInt = 1u,
-    select: RootPropRefGraph<P>? = null,
-    filterSoftDeleted: Boolean = true
-) =
-    ScanChangesRequest(
-        this,
-        startKey,
-        where,
-        order,
-        limit,
-        includeStart,
-        fromVersion,
-        toVersion,
-        maxVersions,
-        select,
-        filterSoftDeleted
-    )
-
-/**
- * Creates a request to scan DataObjects by key from [startKey] until [limit]
- * It will only fetch the changes [fromVersion] (Inclusive) until [maxVersions] (Default=1) is reached.
- * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
- * Results can be ordered with an [order]
- */
 fun <DM : RootModel<P>, P : IsValuesPropertyDefinitions> DM.scanChanges(
-    startKey: Key<IsRootValuesDataModel<P>>? = null,
+    startKey: Key<IsRootDataModel<P>>? = null,
     where: IsFilter? = null,
     order: IsOrder? = null,
     limit: UInt = 100u,
@@ -92,7 +60,7 @@ fun <DM : RootModel<P>, P : IsValuesPropertyDefinitions> DM.scanChanges(
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order] and only selected properties can be returned with a [select] graph
  */
-data class ScanChangesRequest<DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> internal constructor(
+data class ScanChangesRequest<DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> internal constructor(
     override val dataModel: DM,
     override val startKey: Key<DM>? = null,
     override val where: IsFilter? = null,
@@ -160,7 +128,7 @@ data class ScanChangesRequest<DM : IsRootValuesDataModel<P>, P : IsValuesPropert
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<ScanChangesRequest<*, *>, Properties>) =
-            ScanChangesRequest<IsRootValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>(
+            ScanChangesRequest<IsRootDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>(
                 dataModel = values(1u),
                 startKey = values(2u),
                 select = values(3u),

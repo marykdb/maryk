@@ -5,7 +5,6 @@ package maryk.core.query.requests
 import maryk.core.aggregations.Aggregations
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -29,7 +28,7 @@ import maryk.core.values.ObjectValues
  * It will only fetch the updates [fromVersion] (Inclusive) until [maxVersions] (Default=1) is reached.
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  */
-fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> DM.getUpdates(
+fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> DM.getUpdates(
     vararg keys: Key<DM>,
     where: IsFilter? = null,
     fromVersion: ULong = 0uL,
@@ -55,7 +54,7 @@ fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> DM.getUpdat
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  * Only selected properties can be returned with a [select] graph
  */
-data class GetUpdatesRequest<DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> internal constructor(
+data class GetUpdatesRequest<DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> internal constructor(
     override val dataModel: DM,
     override val keys: List<Key<DM>>,
     override val where: IsFilter? = null,
@@ -94,7 +93,7 @@ data class GetUpdatesRequest<DM : IsRootValuesDataModel<P>, P : IsValuesProperty
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<GetChangesRequest<*, *>, Properties>) =
-            GetChangesRequest<IsRootValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>(
+            GetChangesRequest<IsRootDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>(
                 dataModel = values(1u),
                 keys = values(2u),
                 select = values(3u),

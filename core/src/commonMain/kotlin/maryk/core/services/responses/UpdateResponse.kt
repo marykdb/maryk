@@ -1,7 +1,6 @@
 package maryk.core.services.responses
 
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
@@ -52,7 +51,7 @@ data class UpdateResponse<DM: IsRootDataModel<P>, P: IsValuesPropertyDefinitions
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<UpdateResponse<*, *>, Properties>) =
-            UpdateResponse<IsRootValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>(
+            UpdateResponse<IsRootDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>(
                 id = values(1u),
                 dataModel = values(2u),
                 update = values(3u)

@@ -2,7 +2,6 @@ package maryk.core.query.responses.updates
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -24,7 +23,7 @@ import maryk.core.values.SimpleObjectValues
  *
  * This way the listener is always sure of the current state on which orders are changed.
  */
-data class OrderedKeysUpdate<DM: IsRootValuesDataModel<P>, P: IsValuesPropertyDefinitions>(
+data class OrderedKeysUpdate<DM: IsRootDataModel<P>, P: IsValuesPropertyDefinitions>(
     val keys: List<Key<DM>>,
     override val version: ULong,
     val sortingKeys: List<Bytes>? = null
@@ -56,7 +55,7 @@ data class OrderedKeysUpdate<DM: IsRootValuesDataModel<P>, P: IsValuesPropertyDe
     internal companion object : SimpleQueryDataModel<OrderedKeysUpdate<*, *>>(
         properties = Properties
     ) {
-        override fun invoke(values: SimpleObjectValues<OrderedKeysUpdate<*, *>>) = OrderedKeysUpdate<IsRootValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>(
+        override fun invoke(values: SimpleObjectValues<OrderedKeysUpdate<*, *>>) = OrderedKeysUpdate<IsRootDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>(
             keys = values(1u),
             version = values(2u),
             sortingKeys = values(3u)

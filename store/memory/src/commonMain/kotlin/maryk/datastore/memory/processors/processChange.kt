@@ -4,7 +4,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
-import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.values
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
@@ -85,7 +85,7 @@ import maryk.lib.extensions.compare.compareTo
 /**
  * Apply [changes] to a specific object at [key] and record them as [version]
  */
-internal suspend fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> processChange(
+internal suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processChange(
     dataStore: DataStore<DM, P>,
     dataModel: DM,
     key: Key<DM>,
@@ -125,7 +125,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinit
     }
 }
 
-private suspend fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> processChangeIntoStore(
+private suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processChangeIntoStore(
     dataModel: DM,
     dataStore: DataStore<DM, P>,
     objectToChange: DataRecord<DM, P>,

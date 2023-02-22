@@ -3,7 +3,7 @@ package maryk.datastore.rocksdb.processors
 import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
 import maryk.core.extensions.bytes.invert
-import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.query.responses.statuses.DeleteSuccess
@@ -28,7 +28,7 @@ import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.rocksDBNotFound
 import maryk.rocksdb.use
 
-internal suspend fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> processDelete(
+internal suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processDelete(
     dataStore: RocksDBDataStore,
     dataModel: DM,
     columnFamilies: TableColumnFamilies,

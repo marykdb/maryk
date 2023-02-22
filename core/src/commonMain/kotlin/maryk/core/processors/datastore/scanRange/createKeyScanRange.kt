@@ -1,7 +1,7 @@
 package maryk.core.processors.datastore.scanRange
 
 import maryk.core.extensions.bytes.MAX_BYTE
-import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.matchers.IndexPartialSizeToMatch
 import maryk.core.processors.datastore.matchers.IndexPartialToBeBigger
 import maryk.core.processors.datastore.matchers.IndexPartialToBeOneOf
@@ -13,10 +13,9 @@ import maryk.core.processors.datastore.matchers.UniqueToMatch
 import maryk.core.processors.datastore.matchers.convertFilterToIndexPartsToMatch
 import maryk.core.query.filters.IsFilter
 import maryk.core.query.pairs.ReferenceValuePair
-import maryk.lib.extensions.compare.nextByteInSameLength
 
 /** Create a scan range by [filter] and [startKey] */
-fun <DM : IsRootValuesDataModel<*>> DM.createScanRange(filter: IsFilter?, startKey: ByteArray?, includeStart: Boolean = true): KeyScanRanges {
+fun <DM : IsRootDataModel<*>> DM.createScanRange(filter: IsFilter?, startKey: ByteArray?, includeStart: Boolean = true): KeyScanRanges {
     val listOfKeyParts = mutableListOf<IsIndexPartialToMatch>()
     val listOfUniqueFilters = mutableListOf<UniqueToMatch>()
     val listOfEqualPairs = mutableListOf<ReferenceValuePair<Any>>()
@@ -39,7 +38,7 @@ fun <DM : IsRootValuesDataModel<*>> DM.createScanRange(filter: IsFilter?, startK
  * Create scan range from [listOfParts] and check with [startKey]
  * It writes complete start and end keys with the partials to match
  */
-private fun <DM : IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
+private fun <DM : IsRootDataModel<*>> DM.createScanRangeFromParts(
     startKey: ByteArray?,
     includeStart: Boolean,
     listOfParts: MutableList<IsIndexPartialToMatch>,

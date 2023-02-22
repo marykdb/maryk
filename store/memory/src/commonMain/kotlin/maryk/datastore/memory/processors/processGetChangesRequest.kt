@@ -1,7 +1,7 @@
 package maryk.datastore.memory.processors
 
 import maryk.core.clock.HLC
-import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.requests.GetChangesRequest
@@ -13,10 +13,10 @@ import maryk.datastore.shared.checkMaxVersions
 import maryk.datastore.shared.checkToVersion
 
 internal typealias GetChangesStoreAction<DM, P> = StoreAction<DM, P, GetChangesRequest<DM, P>, ChangesResponse<DM, P>>
-internal typealias AnyGetChangesStoreAction = GetChangesStoreAction<IsRootValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>
+internal typealias AnyGetChangesStoreAction = GetChangesStoreAction<IsRootDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>
 
 /** Processes a GetChangesRequest in a [storeAction] into a dataStore from [dataStoreFetcher] */
-internal fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> processGetChangesRequest(
+internal fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processGetChangesRequest(
     storeAction: GetChangesStoreAction<DM, P>,
     dataStoreFetcher: IsStoreFetcher<*, *>
 ) {

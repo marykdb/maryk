@@ -5,7 +5,7 @@ import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
 import maryk.core.extensions.bytes.toVarBytes
-import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.values
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
@@ -98,7 +98,7 @@ import maryk.datastore.shared.updates.Update
 import maryk.lib.recyclableByteArray
 import maryk.rocksdb.rocksDBNotFound
 
-internal suspend fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> processChange(
+internal suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processChange(
     dataStore: RocksDBDataStore,
     dataModel: DM,
     columnFamilies: TableColumnFamilies,
@@ -156,7 +156,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinit
 /**
  * Apply [changes] to a specific [transaction] and record them as [version]
  */
-private suspend fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> applyChanges(
+private suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> applyChanges(
     dataModel: DM,
     dataStore: RocksDBDataStore,
     dbIndex: UInt,
@@ -745,7 +745,7 @@ private fun createValueWriter(
                 transaction.getForUpdate(dataStore.defaultReadOptions, columnFamilies.unique, uniqueReference)?.let {
                     throw UniqueException(
                         reference,
-                        Key<IsRootValuesDataModel<IsValuesPropertyDefinitions>>(
+                        Key<IsRootDataModel<IsValuesPropertyDefinitions>>(
                             // Get the key at the end of the stored unique index value
                             it.copyOfRange(fromIndex = it.size - key.size, toIndex = it.size)
                         )

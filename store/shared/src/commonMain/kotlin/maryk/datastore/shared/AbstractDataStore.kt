@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
-import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.models.RootDataModel
 import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.properties.IsValuesPropertyDefinitions
@@ -68,7 +68,7 @@ abstract class AbstractDataStore(
         }
     }
 
-    override suspend fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
+    override suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
         request: RQ
     ): RP {
         waitForInit()
@@ -82,7 +82,7 @@ abstract class AbstractDataStore(
         return response.await()
     }
 
-    override suspend fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> processUpdate(
+    override suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processUpdate(
         updateResponse: UpdateResponse<DM, P>
     ): ProcessResponse<DM> {
         waitForInit()
@@ -96,7 +96,7 @@ abstract class AbstractDataStore(
         return response.await()
     }
 
-    override suspend fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions, RQ: IsFetchRequest<DM, P, RP>, RP: IsDataResponse<DM, P>> executeFlow(
+    override suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions, RQ: IsFetchRequest<DM, P, RP>, RP: IsDataResponse<DM, P>> executeFlow(
         request: RQ
     ): Flow<IsUpdateResponse<DM, P>> {
         if (request.toVersion != null) {
@@ -119,7 +119,7 @@ abstract class AbstractDataStore(
     }
 
     /** Get [dataModel] id to identify it for storage */
-    fun getDataModelId(dataModel: IsRootValuesDataModel<*>) =
+    fun getDataModelId(dataModel: IsRootDataModel<*>) =
         dataModelIdsByString[dataModel.name] ?:
         throw DefNotFoundException("DataStore not found ${dataModel.name}")
 
@@ -133,7 +133,7 @@ abstract class AbstractDataStore(
 }
 
 /** Creates update listener for request with [response] */
-private fun <DM: IsRootValuesDataModel<P>, P: IsValuesPropertyDefinitions, RP: IsDataResponse<DM, P>> IsFetchRequest<DM, P, RP>.createUpdateListener(
+private fun <DM: IsRootDataModel<P>, P: IsValuesPropertyDefinitions, RP: IsDataResponse<DM, P>> IsFetchRequest<DM, P, RP>.createUpdateListener(
     response: RP
 ) =
     when (this) {

@@ -2,7 +2,6 @@ package maryk.datastore.memory.records
 
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.matchers.FuzzyMatchResult.MATCH
 import maryk.core.processors.datastore.matchers.FuzzyMatchResult.NO_MATCH
 import maryk.core.processors.datastore.matchers.FuzzyMatchResult.OUT_OF_RANGE
@@ -41,14 +40,14 @@ internal data class DataRecord<DM : IsRootDataModel<P>, P : IsValuesPropertyDefi
     fun <T : Any> matchQualifier(
         reference: IsPropertyReference<T, *, *>,
         toVersion: HLC?,
-        recordFetcher: (IsRootValuesDataModel<*>, Key<*>) -> DataRecord<*, *>?,
+        recordFetcher: (IsRootDataModel<*>, Key<*>) -> DataRecord<*, *>?,
         matcher: (T?) -> Boolean
     ) = this.matchQualifier(reference.toQualifierMatcher(), toVersion, recordFetcher, matcher)
 
     private fun <T : Any> matchQualifier(
         qualifierMatcher: IsQualifierMatcher,
         toVersion: HLC?,
-        recordFetcher: (IsRootValuesDataModel<*>, Key<*>) -> DataRecord<*, *>?,
+        recordFetcher: (IsRootDataModel<*>, Key<*>) -> DataRecord<*, *>?,
         matcher: (T?) -> Boolean
     ): Boolean {
         when (qualifierMatcher) {
@@ -60,7 +59,7 @@ internal data class DataRecord<DM : IsRootDataModel<P>, P : IsValuesPropertyDefi
                     null -> matcher(value)
                     else -> {
                         recordFetcher(
-                            referencedMatcher.reference.propertyDefinition.dataModel as IsRootValuesDataModel<*>,
+                            referencedMatcher.reference.propertyDefinition.dataModel,
                             value as Key<*>
                         )?.matchQualifier(
                             referencedMatcher.qualifierMatcher,
@@ -91,7 +90,7 @@ internal data class DataRecord<DM : IsRootDataModel<P>, P : IsValuesPropertyDefi
                             val matches = when (val referencedMatcher = qualifierMatcher.referencedQualifierMatcher) {
                                 null -> matcher(value.value)
                                 else -> {
-                                    recordFetcher(referencedMatcher.reference.comparablePropertyDefinition.dataModel as IsRootValuesDataModel<*>, value.value as Key<*>)?.
+                                    recordFetcher(referencedMatcher.reference.comparablePropertyDefinition.dataModel, value.value as Key<*>)?.
                                         matchQualifier(referencedMatcher.qualifierMatcher, toVersion, recordFetcher, matcher)
                                         ?: false
                                 }

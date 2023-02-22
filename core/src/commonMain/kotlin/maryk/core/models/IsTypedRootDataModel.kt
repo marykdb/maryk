@@ -7,7 +7,8 @@ import maryk.lib.exceptions.ParseException
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
-interface IsTypedRootDataModel<DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> : IsRootDataModel<P> {
+interface IsTypedRootDataModel<DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> :
+    IsRootDataModel<P> {
     @OptIn(ExperimentalEncodingApi::class)
     override fun key(base64: String): Key<DM> = this.key(Base64.Mime.decode(base64))
 

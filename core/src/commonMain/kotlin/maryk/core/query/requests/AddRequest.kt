@@ -1,7 +1,7 @@
 package maryk.core.query.requests
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.models.QueryDataModel
 import maryk.core.models.ValuesDataModelImpl
 import maryk.core.properties.IsValuesPropertyDefinitions
@@ -15,11 +15,11 @@ import maryk.core.values.ObjectValues
 import maryk.core.values.Values
 
 /** Creates a Request to add multiple [objectToAdd] to a store defined by given DataModel */
-fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> DM.add(vararg objectToAdd: Values<DM, P>) =
+fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> DM.add(vararg objectToAdd: Values<DM, P>) =
     AddRequest(this, objectToAdd.toList())
 
 /** A Request to add [objects] to [dataModel] */
-data class AddRequest<DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> internal constructor(
+data class AddRequest<DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> internal constructor(
     override val dataModel: DM,
     val objects: List<Values<DM, P>>
 ) : IsStoreRequest<DM, AddResponse<DM>>, IsTransportableRequest<AddResponse<DM>> {
@@ -45,7 +45,7 @@ data class AddRequest<DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinit
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<AddRequest<*, *>, Properties>) =
-            AddRequest<IsRootValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>(
+            AddRequest<IsRootDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>(
                 dataModel = values(1u),
                 objects = values(2u)
             )

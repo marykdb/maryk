@@ -8,7 +8,7 @@ import maryk.core.extensions.bytes.initUInt
 import maryk.core.extensions.bytes.initUIntByVarWithExtraInfo
 import maryk.core.models.IsDataModel
 import maryk.core.models.IsDataModelWithValues
-import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.models.values
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.ListSize
@@ -63,7 +63,7 @@ private typealias AddValue = (Any) -> Unit
  * [getQualifier] gets a qualifier until none is available and returns null
  * [processValue] processes the storage value with given type and definition
  */
-fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> DM.readStorageToValues(
+fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> DM.readStorageToValues(
     getQualifier: (((Int) -> Byte, Int) -> Unit) -> Boolean,
     select: RootPropRefGraph<P>?,
     processValue: ValueReader

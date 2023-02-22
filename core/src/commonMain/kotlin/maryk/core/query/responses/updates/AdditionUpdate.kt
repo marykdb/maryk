@@ -2,7 +2,7 @@ package maryk.core.query.responses.updates
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.AbstractValuesDataModel
-import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.IsValuesPropertyDefinitions
@@ -20,7 +20,7 @@ import maryk.core.values.SimpleObjectValues
 import maryk.core.values.Values
 
 /** Update response describing an addition to query result of [values] at [key] */
-data class AdditionUpdate<DM: IsRootValuesDataModel<P>, P: IsValuesPropertyDefinitions>(
+data class AdditionUpdate<DM: IsRootDataModel<P>, P: IsValuesPropertyDefinitions>(
     val key: Key<DM>,
     override val version: ULong,
     val firstVersion: ULong,
@@ -51,7 +51,7 @@ data class AdditionUpdate<DM: IsRootValuesDataModel<P>, P: IsValuesPropertyDefin
     internal companion object : SimpleQueryDataModel<AdditionUpdate<*, *>>(
         properties = Properties
     ) {
-        override fun invoke(values: SimpleObjectValues<AdditionUpdate<*, *>>) = AdditionUpdate<IsRootValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>(
+        override fun invoke(values: SimpleObjectValues<AdditionUpdate<*, *>>) = AdditionUpdate<IsRootDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>(
             key = values(1u),
             version = values(2u),
             firstVersion = values(3u),

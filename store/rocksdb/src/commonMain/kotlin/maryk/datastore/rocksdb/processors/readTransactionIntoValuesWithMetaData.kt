@@ -3,7 +3,7 @@ package maryk.datastore.rocksdb.processors
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
 import maryk.core.extensions.bytes.initIntByVar
-import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.models.values
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.ListSize
@@ -35,7 +35,7 @@ import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
  * Read values for [key] from an [iterator] to a ValuesWithMeta object.
  * Filter results on [select] and use [toVersion]
  */
-internal fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> DM.readTransactionIntoValuesWithMetaData(
+internal fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> DM.readTransactionIntoValuesWithMetaData(
     iterator: DBIterator,
     creationVersion: ULong,
     columnFamilies: TableColumnFamilies,

@@ -1,7 +1,7 @@
 package maryk.datastore.shared
 
 import maryk.core.exceptions.TypeException
-import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.datastore.shared.ScanType.IndexScan
 import maryk.datastore.shared.ScanType.TableScan
 import maryk.core.properties.definitions.index.Multiple
@@ -13,7 +13,7 @@ import maryk.core.query.pairs.ReferenceValuePair
 /**
  * Try to find index scans with the [equalPairs] for Table Scan since they can make the scan a lot shorter
  */
-fun <DM: IsRootValuesDataModel<*>> DM.optimizeTableScan(
+fun <DM: IsRootDataModel<*>> DM.optimizeTableScan(
     tableScan: TableScan,
     equalPairs: List<ReferenceValuePair<*>>
 ): ScanType {

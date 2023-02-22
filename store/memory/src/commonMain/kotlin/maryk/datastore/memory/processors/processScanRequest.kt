@@ -2,7 +2,7 @@ package maryk.datastore.memory.processors
 
 import maryk.core.aggregations.Aggregator
 import maryk.core.clock.HLC
-import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.IsPropertyReference
@@ -14,10 +14,10 @@ import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.StoreAction
 
 internal typealias ScanStoreAction<DM, P> = StoreAction<DM, P, ScanRequest<DM, P>, ValuesResponse<DM, P>>
-internal typealias AnyScanStoreAction = ScanStoreAction<IsRootValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>
+internal typealias AnyScanStoreAction = ScanStoreAction<IsRootDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>
 
 /** Processes a ScanRequest in a [storeAction] into a dataStore from [dataStoreFetcher] */
-internal fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> processScanRequest(
+internal fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processScanRequest(
     storeAction: ScanStoreAction<DM, P>,
     dataStoreFetcher: IsStoreFetcher<*, *>
 ) {

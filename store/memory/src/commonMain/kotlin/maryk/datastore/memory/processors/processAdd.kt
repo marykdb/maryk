@@ -2,7 +2,7 @@ package maryk.datastore.memory.processors
 
 import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
-import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.writeToStorage
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.definitions.IsComparableDefinition
@@ -26,7 +26,7 @@ import maryk.datastore.shared.updates.IsUpdateAction
 import maryk.datastore.shared.updates.Update.Addition
 import maryk.lib.extensions.compare.compareTo
 
-internal suspend fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> processAdd(
+internal suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processAdd(
     dataStore: DataStore<DM, P>,
     dataModel: DM,
     key: Key<DM>,

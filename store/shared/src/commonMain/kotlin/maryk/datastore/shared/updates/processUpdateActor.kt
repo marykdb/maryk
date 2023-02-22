@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onStart
-import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.datastore.shared.IsDataStore
 
@@ -23,13 +23,13 @@ internal suspend fun IsDataStore.startProcessUpdateFlow(updateSendChannel: Flow<
                     try {
                         @Suppress("UNCHECKED_CAST")
                         val dataModelListeners =
-                            updateListeners[dataModelIdsByString[update.dataModel.name]] as? MutableList<UpdateListener<IsRootValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions, *>>?
+                            updateListeners[dataModelIdsByString[update.dataModel.name]] as? MutableList<UpdateListener<IsRootDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions, *>>?
 
                         if (dataModelListeners != null) {
                             for (updateListener in dataModelListeners) {
                                 @Suppress("UNCHECKED_CAST")
                                 updateListener.process(
-                                    update as Update<IsRootValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>,
+                                    update as Update<IsRootDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>,
                                     this
                                 )
                             }

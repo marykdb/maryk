@@ -2,7 +2,7 @@ package maryk.datastore.memory.processors
 
 import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
-import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.query.responses.statuses.DeleteSuccess
@@ -17,7 +17,7 @@ import maryk.lib.extensions.compare.compareTo
 /**
  * Processed the deletion of the value at [key]/[version] from the in memory data store
  */
-internal suspend fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> processDelete(
+internal suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processDelete(
     dataStore: DataStore<DM, P>,
     dataModel: DM,
     key: Key<DM>,

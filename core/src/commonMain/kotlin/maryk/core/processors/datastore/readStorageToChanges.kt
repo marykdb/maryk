@@ -8,7 +8,7 @@ import maryk.core.extensions.bytes.initUInt
 import maryk.core.extensions.bytes.initUIntByVarWithExtraInfo
 import maryk.core.models.IsDataModel
 import maryk.core.models.IsDataModelWithValues
-import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.ChangeType.CHANGE
 import maryk.core.processors.datastore.ChangeType.OBJECT_CREATE
 import maryk.core.processors.datastore.ChangeType.OBJECT_DELETE
@@ -83,7 +83,7 @@ private enum class ChangeType {
  * [getQualifier] gets a qualifier until none is available and returns null
  * [processValue] processes the storage value with given type and definition
  */
-fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> DM.readStorageToChanges(
+fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> DM.readStorageToChanges(
     getQualifier: (((Int) -> Byte, Int) -> Unit) -> Boolean,
     select: RootPropRefGraph<P>?,
     creationVersion: ULong?,

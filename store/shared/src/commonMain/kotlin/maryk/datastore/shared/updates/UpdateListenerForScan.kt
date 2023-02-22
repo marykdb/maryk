@@ -3,7 +3,7 @@ package maryk.datastore.shared.updates
 import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
 import maryk.core.exceptions.StorageException
-import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.properties.IsValuesPropertyDefinitions
@@ -28,7 +28,7 @@ import maryk.datastore.shared.updates.Update.Change
 import maryk.lib.extensions.compare.compareTo
 
 /** Update listener for scans */
-class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: IsValuesPropertyDefinitions, RP: IsDataResponse<DM, P>>(
+class UpdateListenerForScan<DM: IsRootDataModel<P>, P: IsValuesPropertyDefinitions, RP: IsDataResponse<DM, P>>(
     request: IsScanRequest<DM, P, RP>,
     val scanRange: KeyScanRanges,
     response: IsDataResponse<DM, P>

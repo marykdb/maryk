@@ -3,7 +3,7 @@ package maryk.datastore.rocksdb.processors
 import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
 import maryk.core.extensions.bytes.toVarBytes
-import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.ListSize
 import maryk.core.processors.datastore.StorageTypeEnum.MapSize
@@ -40,7 +40,7 @@ import maryk.datastore.shared.updates.Update.Addition
 import maryk.lib.recyclableByteArray
 import maryk.rocksdb.rocksDBNotFound
 
-internal suspend fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> processAdd(
+internal suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processAdd(
     dataStore: RocksDBDataStore,
     dataModel: DM,
     transaction: Transaction,

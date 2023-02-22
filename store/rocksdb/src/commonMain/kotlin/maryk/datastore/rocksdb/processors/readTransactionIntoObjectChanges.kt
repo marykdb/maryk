@@ -3,7 +3,7 @@ package maryk.datastore.rocksdb.processors
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
 import maryk.core.extensions.bytes.initIntByVar
-import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.ListSize
 import maryk.core.processors.datastore.StorageTypeEnum.MapSize
@@ -31,7 +31,7 @@ import maryk.datastore.rocksdb.processors.helpers.readValue
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
 
 /** Process values for [key] from transaction to a DataObjectWithChanges object */
-internal fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> DM.readTransactionIntoObjectChanges(
+internal fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> DM.readTransactionIntoObjectChanges(
     iterator: DBIterator,
     creationVersion: ULong,
     columnFamilies: TableColumnFamilies,

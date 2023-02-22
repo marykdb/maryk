@@ -1,6 +1,6 @@
 package maryk.core.query.requests
 
-import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
@@ -13,11 +13,11 @@ import maryk.core.values.ObjectValues
 /**
  * Creates a request to change DataObjects with [objectChanges] in a Store.
  */
-fun <DM : IsRootValuesDataModel<*>> DM.change(vararg objectChanges: DataObjectChange<DM>) =
+fun <DM : IsRootDataModel<*>> DM.change(vararg objectChanges: DataObjectChange<DM>) =
     ChangeRequest(this, objectChanges.toList())
 
 /** A Request to change DataObjects for [dataModel] with [objects] */
-data class ChangeRequest<DM : IsRootValuesDataModel<*>> internal constructor(
+data class ChangeRequest<DM : IsRootDataModel<*>> internal constructor(
     override val dataModel: DM,
     val objects: List<DataObjectChange<DM>>
 ) : IsStoreRequest<DM, ChangeResponse<DM>>, IsTransportableRequest<ChangeResponse<DM>> {

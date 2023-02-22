@@ -1,6 +1,6 @@
 package maryk.core.query.responses.updates
 
-import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -19,7 +19,7 @@ import maryk.core.query.responses.updates.UpdateResponseType.Change
 import maryk.core.values.SimpleObjectValues
 
 /** Update response describing a change to query results with [changes] at [key] */
-data class ChangeUpdate<DM: IsRootValuesDataModel<P>, P: IsValuesPropertyDefinitions>(
+data class ChangeUpdate<DM: IsRootDataModel<P>, P: IsValuesPropertyDefinitions>(
     val key: Key<DM>,
     override val version: ULong,
     // The index within the current order
@@ -49,7 +49,7 @@ data class ChangeUpdate<DM: IsRootValuesDataModel<P>, P: IsValuesPropertyDefinit
     internal companion object : SimpleQueryDataModel<ChangeUpdate<*, *>>(
         properties = Properties
     ) {
-        override fun invoke(values: SimpleObjectValues<ChangeUpdate<*, *>>) = ChangeUpdate<IsRootValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>(
+        override fun invoke(values: SimpleObjectValues<ChangeUpdate<*, *>>) = ChangeUpdate<IsRootDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>(
             key = values(1u),
             version = values(2u),
             index = values(3u),

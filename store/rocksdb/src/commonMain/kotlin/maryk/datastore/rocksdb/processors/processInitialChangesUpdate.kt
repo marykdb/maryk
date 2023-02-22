@@ -2,7 +2,7 @@ package maryk.datastore.rocksdb.processors
 
 import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
-import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.models.fromChanges
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.query.changes.ObjectCreate
@@ -19,7 +19,7 @@ import maryk.datastore.shared.updates.IsUpdateAction
 import maryk.rocksdb.use
 
 /** Processes a UpdateResponse with Change in a [storeAction] into a [dataStore] */
-internal suspend fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> processInitialChangesUpdate(
+internal suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processInitialChangesUpdate(
     storeAction: StoreAction<DM, P, UpdateResponse<DM, P>, ProcessResponse<DM>>,
     dataStore: RocksDBDataStore,
     updateSharedFlow: MutableSharedFlow<IsUpdateAction>

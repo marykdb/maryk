@@ -1,6 +1,6 @@
 package maryk.datastore.rocksdb.processors
 
-import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.properties.IsPropertyContext
@@ -25,7 +25,7 @@ import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.rocksDBNotFound
 
 /** Walk with [scanRequest] on [dataStore] and do [processRecord] */
-internal fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> processScan(
+internal fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processScan(
     scanRequest: IsScanRequest<DM, P, *>,
     dataStore: RocksDBDataStore,
     dbAccessor: DBAccessor,
@@ -124,7 +124,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> pr
     }
 }
 
-internal fun <DM: IsRootValuesDataModel<P>, P: IsValuesPropertyDefinitions> shouldProcessRecord(
+internal fun <DM: IsRootDataModel<P>, P: IsValuesPropertyDefinitions> shouldProcessRecord(
     dbAccessor: DBAccessor,
     columnFamilies: TableColumnFamilies,
     readOptions: ReadOptions,

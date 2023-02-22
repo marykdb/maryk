@@ -1,7 +1,7 @@
 package maryk.core.query.requests
 
 import maryk.core.aggregations.Aggregations
-import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.models.QueryDataModel
 import maryk.core.models.RootDataModel
 import maryk.core.properties.IsValuesPropertyDefinitions
@@ -26,7 +26,7 @@ import maryk.core.values.ObjectValues
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
-fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> DM.scan(
+fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> DM.scan(
     startKey: Key<DM>? = null,
     select: RootPropRefGraph<P>? = null,
     where: IsFilter? = null,
@@ -66,7 +66,7 @@ fun <DM : RootModel<P>, P : IsValuesPropertyDefinitions> DM.scan(
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
-data class ScanRequest<DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> internal constructor(
+data class ScanRequest<DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> internal constructor(
     override val dataModel: DM,
     override val startKey: Key<DM>? = null,
     override val select: RootPropRefGraph<P>? = null,
@@ -98,7 +98,7 @@ data class ScanRequest<DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefini
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<ScanRequest<*, *>, Properties>) = ScanRequest(
-            dataModel = values<IsRootValuesDataModel<IsValuesPropertyDefinitions>>(1u),
+            dataModel = values<IsRootDataModel<IsValuesPropertyDefinitions>>(1u),
             startKey = values(2u),
             select = values(3u),
             where = values(4u),

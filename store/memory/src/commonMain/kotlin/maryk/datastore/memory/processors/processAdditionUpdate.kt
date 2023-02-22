@@ -3,7 +3,7 @@ package maryk.datastore.memory.processors
 import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
-import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.query.responses.AddResponse
 import maryk.core.query.responses.updates.AdditionUpdate
@@ -14,15 +14,15 @@ import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.updates.IsUpdateAction
 
 internal typealias ProcessUpdateResponseStoreAction<DM, P> = StoreAction<DM, P, UpdateResponse<DM, P>, ProcessResponse<DM>>
-internal typealias AnyProcessUpdateResponseStoreAction = ProcessUpdateResponseStoreAction<IsRootValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>
+internal typealias AnyProcessUpdateResponseStoreAction = ProcessUpdateResponseStoreAction<IsRootDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>
 
 /**
  * Processes addition update within a store action.
  * The addition is stored in the data store if it does not exist yet.
  */
-internal suspend fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> processAdditionUpdate(
+internal suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processAdditionUpdate(
     storeAction: StoreAction<DM, P, UpdateResponse<DM, P>, ProcessResponse<DM>>,
-    dataStoreFetcher: (IsRootValuesDataModel<*>) -> DataStore<*, *>,
+    dataStoreFetcher: (IsRootDataModel<*>) -> DataStore<*, *>,
     updateSharedFlow: MutableSharedFlow<IsUpdateAction>
 ) {
     val dataModel = storeAction.request.dataModel

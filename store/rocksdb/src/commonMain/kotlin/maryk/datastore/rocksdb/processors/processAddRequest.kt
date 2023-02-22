@@ -2,7 +2,7 @@ package maryk.datastore.rocksdb.processors
 
 import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
-import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.query.requests.AddRequest
@@ -15,10 +15,10 @@ import maryk.datastore.shared.updates.IsUpdateAction
 import maryk.rocksdb.use
 
 internal typealias AddStoreAction<DM, P> = StoreAction<DM, P, AddRequest<DM, P>, AddResponse<DM>>
-internal typealias AnyAddStoreAction = AddStoreAction<IsRootValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>
+internal typealias AnyAddStoreAction = AddStoreAction<IsRootDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>
 
 /** Processes an AddRequest in a [storeAction] into a [dataStore] */
-internal suspend fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> processAddRequest(
+internal suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processAddRequest(
     version: HLC,
     storeAction: StoreAction<DM, P, AddRequest<DM, P>, AddResponse<DM>>,
     dataStore: RocksDBDataStore,

@@ -1,7 +1,6 @@
 package maryk.datastore.shared.updates
 
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.IsChange
@@ -13,21 +12,21 @@ sealed class Update<DM: IsRootDataModel<P>, P: IsValuesPropertyDefinitions>(
     val key: Key<DM>,
     val version: ULong
 ) : IsUpdateAction {
-    class Addition<DM: IsRootValuesDataModel<P>, P: IsValuesPropertyDefinitions>(
+    class Addition<DM: IsRootDataModel<P>, P: IsValuesPropertyDefinitions>(
         dataModel: DM,
         key: Key<DM>,
         version: ULong,
         val values: Values<DM, P>
     ): Update<DM, P>(dataModel, key, version)
 
-    class Deletion<DM: IsRootValuesDataModel<P>, P: IsValuesPropertyDefinitions>(
+    class Deletion<DM: IsRootDataModel<P>, P: IsValuesPropertyDefinitions>(
         dataModel: DM,
         key: Key<DM>,
         version: ULong,
         val isHardDelete: Boolean
     ): Update<DM, P>(dataModel, key, version)
 
-    class Change<DM: IsRootValuesDataModel<P>, P: IsValuesPropertyDefinitions>(
+    class Change<DM: IsRootDataModel<P>, P: IsValuesPropertyDefinitions>(
         dataModel: DM,
         key: Key<DM>,
         version: ULong,

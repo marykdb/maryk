@@ -5,7 +5,6 @@ package maryk.core.query
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.AbstractValuesDataModel
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.IsValuesPropertyDefinitions
@@ -20,7 +19,7 @@ import maryk.core.properties.types.numeric.UInt64
 import maryk.core.values.ObjectValues
 import maryk.core.values.Values
 
-data class ValuesWithMetaData<DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions>(
+data class ValuesWithMetaData<DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions>(
     val key: Key<DM>,
     val values: Values<DM, P>,
     val firstVersion: ULong,
@@ -56,7 +55,7 @@ data class ValuesWithMetaData<DM : IsRootValuesDataModel<P>, P : IsValuesPropert
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<ValuesWithMetaData<*, *>, Properties>) =
-            ValuesWithMetaData<IsRootValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>(
+            ValuesWithMetaData<IsRootDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>(
                 key = values(1u),
                 values = values(2u),
                 firstVersion = values(3u),

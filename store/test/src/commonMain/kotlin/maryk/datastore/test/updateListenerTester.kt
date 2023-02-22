@@ -6,7 +6,7 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
-import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.query.requests.IsFetchRequest
 import maryk.core.query.responses.IsDataResponse
@@ -16,7 +16,7 @@ import maryk.test.runSuspendingTest
 import kotlin.test.assertTrue
 
 /** Test helper for listening to update changes for [request] on [dataStore] */
-fun <DM: IsRootValuesDataModel<P>, P: IsValuesPropertyDefinitions, RP: IsDataResponse<DM, P>> updateListenerTester(
+fun <DM: IsRootDataModel<P>, P: IsValuesPropertyDefinitions, RP: IsDataResponse<DM, P>> updateListenerTester(
     dataStore: IsDataStore,
     request: IsFetchRequest<DM, P, RP>,
     responseCount: Int,

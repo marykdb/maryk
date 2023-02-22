@@ -11,9 +11,7 @@ import maryk.core.properties.types.Key
 import maryk.core.properties.types.Version
 import maryk.lib.synchronizedIteration
 
-interface IsRootValuesDataModel<P : IsValuesPropertyDefinitions> : IsRootDataModel<P>, IsValuesDataModel<P>
-
-interface IsRootDataModel<P : IsValuesPropertyDefinitions> : IsNamedDataModel<P> {
+interface IsRootDataModel<P : IsValuesPropertyDefinitions> : IsValuesDataModel<P> {
     val keyDefinition: IsIndexable
     val indices: List<IsIndexable>?
 

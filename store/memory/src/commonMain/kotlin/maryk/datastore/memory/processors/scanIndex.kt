@@ -1,7 +1,7 @@
 package maryk.datastore.memory.processors
 
 import maryk.core.clock.HLC
-import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.properties.IsValuesPropertyDefinitions
@@ -15,10 +15,10 @@ import maryk.datastore.shared.ScanType.IndexScan
 import maryk.lib.extensions.compare.compareTo
 import kotlin.math.min
 
-internal fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> scanIndex(
+internal fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> scanIndex(
     dataStore: DataStore<DM, P>,
     scanRequest: IsScanRequest<DM, P, *>,
-    recordFetcher: (IsRootValuesDataModel<*>, Key<*>) -> DataRecord<*, *>?,
+    recordFetcher: (IsRootDataModel<*>, Key<*>) -> DataRecord<*, *>?,
     indexScan: IndexScan,
     keyScanRange: KeyScanRanges,
     processStoreValue: (DataRecord<DM, P>, ByteArray?) -> Unit

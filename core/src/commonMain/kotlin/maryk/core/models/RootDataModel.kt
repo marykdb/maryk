@@ -56,8 +56,9 @@ class RootDataModel<P : IsValuesPropertyDefinitions>(
     reservedNames: List<String>? = null,
     properties: P,
     override val name: String = properties::class.simpleName ?: throw DefNotFoundException("Class $properties has no name")
-) : SimpleDataModel<RootDataModel<P>, P>(reservedIndices, reservedNames, properties), IsTypedRootDataModel<RootDataModel<P>, P>,
-    IsRootDataModel<P>, MarykPrimitive {
+) : SimpleDataModel<RootDataModel<P>, P>(reservedIndices, reservedNames, properties),
+    IsTypedRootDataModel<RootDataModel<P>, P>,
+    MarykPrimitive {
     override val primitiveType = RootModel
 
     override val keyByteSize = checkKeyDefinitionAndCountBytes(keyDefinition)

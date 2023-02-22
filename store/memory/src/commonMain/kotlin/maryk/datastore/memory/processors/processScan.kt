@@ -4,7 +4,7 @@ import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.IsScanRequest
 import maryk.datastore.memory.records.DataRecord
@@ -17,7 +17,7 @@ import maryk.datastore.shared.optimizeTableScan
 import maryk.datastore.shared.orderToScanType
 
 /** Walk with [scanRequest] on [dataStore] and do [processRecord] */
-internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processScan(
+internal fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> processScan(
     scanRequest: IsScanRequest<DM, P, *>,
     dataStore: DataStore<DM, P>,
     recordFetcher: (IsRootValuesDataModel<*>, Key<*>) -> DataRecord<*, *>?,
@@ -94,7 +94,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processSca
     }
 }
 
-internal fun <DM: IsRootValuesDataModel<P>, P:PropertyDefinitions> shouldProcessRecord(
+internal fun <DM: IsRootValuesDataModel<P>, P: IsValuesPropertyDefinitions> shouldProcessRecord(
     record: DataRecord<DM, P>,
     scanRequest: IsScanRequest<DM, P, *>,
     scanRange: KeyScanRanges,

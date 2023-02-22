@@ -1,7 +1,7 @@
 package maryk.datastore.rocksdb.processors
 
 import maryk.core.models.IsRootValuesDataModel
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.requests.GetChangesRequest
@@ -19,10 +19,10 @@ import maryk.rocksdb.rocksDBNotFound
 import maryk.rocksdb.use
 
 internal typealias GetChangesStoreAction<DM, P> = StoreAction<DM, P, GetChangesRequest<DM, P>, ChangesResponse<DM, P>>
-internal typealias AnyGetChangesStoreAction = GetChangesStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
+internal typealias AnyGetChangesStoreAction = GetChangesStoreAction<IsRootValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>
 
 /** Processes a GetChangesRequest in a [storeAction] into a [dataStore] */
-internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGetChangesRequest(
+internal fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> processGetChangesRequest(
     storeAction: GetChangesStoreAction<DM, P>,
     dataStore: RocksDBDataStore,
     cache: Cache

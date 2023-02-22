@@ -2,7 +2,7 @@ package maryk.core.models
 
 import maryk.core.inject.Inject
 import maryk.core.inject.InjectWithReference
-import maryk.core.properties.AbstractPropertyDefinitions
+import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
@@ -39,7 +39,7 @@ import maryk.yaml.YamlWriter
  * to read and write. [CXI] is the input Context for properties. This can be different because the ObjectDataModel can create
  * its own context by transforming the given context.
  */
-abstract class AbstractDataModel<DO : Any, P : AbstractPropertyDefinitions<DO>, V : AbstractValues<DO, *, P>, in CXI : IsPropertyContext, CX : IsPropertyContext> internal constructor(
+abstract class AbstractDataModel<DO : Any, P : IsObjectPropertyDefinitions<DO>, V : AbstractValues<DO, *, P>, in CXI : IsPropertyContext, CX : IsPropertyContext> internal constructor(
     final override val properties: P
 ) : IsDataModelWithValues<DO, P, V> {
     /**

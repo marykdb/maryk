@@ -6,8 +6,8 @@ import maryk.core.models.AbstractValuesDataModel
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.PropertyDefinitionType.Embed
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
@@ -33,7 +33,7 @@ import maryk.json.JsonWriter
 import maryk.lib.safeLazy
 
 /** Definition for embedded object properties [P] to [dataModel] of type [DM] */
-class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P : PropertyDefinitions>(
+class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P : IsValuesPropertyDefinitions>(
     override val required: Boolean = true,
     override val final: Boolean = false,
     dataModel: Unit.() -> DM,
@@ -190,14 +190,14 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P : PropertyDefinition
                     index = 4u,
                     getter = EmbeddedValuesDefinition<*, *>::default,
                     contextualResolver = { context: ModelContext? ->
-                        context?.model?.invoke(Unit) as? AbstractValuesDataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, ModelContext>?
+                        context?.model?.invoke(Unit) as? AbstractValuesDataModel<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions, ModelContext>?
                             ?: throw ContextNotFoundException()
                     }
                 )
             }
         ) {
         override fun invoke(values: ObjectValues<EmbeddedValuesDefinition<*, *>, ObjectPropertyDefinitions<EmbeddedValuesDefinition<*, *>>>) =
-            EmbeddedValuesDefinition<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
+            EmbeddedValuesDefinition<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>(
                 required = values(1u),
                 final = values(2u),
                 dataModel = values(3u),
@@ -206,7 +206,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P : PropertyDefinition
     }
 }
 
-fun <P : PropertyDefinitions, DM : IsValuesDataModel<P>> PropertyDefinitions.embed(
+fun <P : IsValuesPropertyDefinitions, DM : IsValuesDataModel<P>> IsValuesPropertyDefinitions.embed(
     index: UInt,
     dataModel: Unit.() -> DM,
     name: String? = null,
@@ -223,7 +223,7 @@ fun <P : PropertyDefinitions, DM : IsValuesDataModel<P>> PropertyDefinitions.emb
     )
 }
 
-fun <P : PropertyDefinitions, DM : IsValuesDataModel<P>> ObjectPropertyDefinitions<Any>.embed(
+fun <P : IsValuesPropertyDefinitions, DM : IsValuesDataModel<P>> ObjectPropertyDefinitions<Any>.embed(
     index: UInt,
     getter: (Any) -> Values<DM, P>? = { null },
     dataModel: Unit.() -> DM,

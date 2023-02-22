@@ -3,8 +3,8 @@ package maryk.core.properties.graph
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
 import maryk.core.properties.IsPropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
@@ -44,7 +44,7 @@ data class RootPropRefGraph<P : IsPropertyDefinitions> internal constructor(
                     ),
                     PropRef to ContextualPropertyReferenceDefinition(
                         contextualResolver = { context: GraphContext? ->
-                            context?.dataModel?.properties as? PropertyDefinitions? ?: throw ContextNotFoundException()
+                            context?.dataModel?.properties as? IsValuesPropertyDefinitions? ?: throw ContextNotFoundException()
                         }
                     )
                 ),
@@ -78,7 +78,7 @@ data class RootPropRefGraph<P : IsPropertyDefinitions> internal constructor(
         }
     ) {
         override fun invoke(values: ObjectValues<RootPropRefGraph<*>, Properties>) =
-            RootPropRefGraph<PropertyDefinitions>(
+            RootPropRefGraph<IsValuesPropertyDefinitions>(
                 properties = values(1u)
             )
 

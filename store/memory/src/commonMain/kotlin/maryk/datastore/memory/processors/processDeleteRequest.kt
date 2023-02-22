@@ -3,7 +3,7 @@ package maryk.datastore.memory.processors
 import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.query.requests.DeleteRequest
 import maryk.core.query.responses.DeleteResponse
 import maryk.core.query.responses.statuses.IsDeleteResponseStatus
@@ -15,13 +15,13 @@ import maryk.datastore.shared.updates.IsUpdateAction
 import kotlin.native.concurrent.SharedImmutable
 
 internal typealias DeleteStoreAction<DM, P> = StoreAction<DM, P, DeleteRequest<DM>, DeleteResponse<DM>>
-internal typealias AnyDeleteStoreAction = DeleteStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
+internal typealias AnyDeleteStoreAction = DeleteStoreAction<IsRootValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>
 
 @SharedImmutable
 internal val objectSoftDeleteQualifier = byteArrayOf(0)
 
 /** Processes a DeleteRequest in a [storeAction] into a data store from [dataStoreFetcher] */
-internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDeleteRequest(
+internal suspend fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> processDeleteRequest(
     version: HLC,
     storeAction: DeleteStoreAction<DM, P>,
     dataStoreFetcher: IsStoreFetcher<*, *>,

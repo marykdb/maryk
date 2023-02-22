@@ -5,9 +5,9 @@ import maryk.core.definitions.PrimitiveType
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.SerializationException
 import maryk.core.properties.IsDataModelPropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.MutablePropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.PropertyDefinitionsCollectionDefinitionWrapper
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.StringDefinition
@@ -26,7 +26,7 @@ import maryk.json.IsJsonLikeWriter
  * properties should be validated. It models the DataObjects which can be validated. And it contains a
  * reference to the propertyDefinitions of type [P] which can be used for the references to the properties.
  */
-open class DataModel<P : PropertyDefinitions>(
+open class DataModel<P : IsValuesPropertyDefinitions>(
     reservedIndices: List<UInt>? = null,
     reservedNames: List<String>? = null,
     properties: P,

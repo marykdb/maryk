@@ -102,7 +102,7 @@ class DataStoreScanUpdatesAndFlowTest(
 
     override suspend fun initData() {
         val addResponse = dataStore.execute(
-            TestMarykModel.add(t0, t1, t2, t3, t4)
+            TestMarykModel.Model.add(t0, t1, t2, t3, t4)
         )
         addResponse.statuses.forEach { status ->
             val response = assertIs<AddSuccess<RootDataModel<TestMarykModel>>>(status)
@@ -310,7 +310,7 @@ class DataStoreScanUpdatesAndFlowTest(
                 dateTime = LocalDateTime(1922, 12, 23, 0, 0)
             )
 
-            dataStore.execute(TestMarykModel.add(
+            dataStore.execute(TestMarykModel.Model.add(
                 newDataObject
             ))
 
@@ -509,7 +509,7 @@ class DataStoreScanUpdatesAndFlowTest(
                 dateTime = LocalDateTime(1922, 12, 23, 0, 0)
             )
 
-            dataStore.execute(TestMarykModel.add(
+            dataStore.execute(TestMarykModel.Model.add(
                 newDataObject
             )).also {
                 testKeys.add((it.statuses[0] as AddSuccess<RootDataModel<TestMarykModel>>).key)
@@ -594,7 +594,7 @@ class DataStoreScanUpdatesAndFlowTest(
                 dateTime = LocalDateTime(1922, 12, 23, 0, 0)
             )
 
-            dataStore.execute(TestMarykModel.add(
+            dataStore.execute(TestMarykModel.Model.add(
                 newDataObject
             )).also {
                 testKeys.add((it.statuses[0] as AddSuccess<RootDataModel<TestMarykModel>>).key)
@@ -612,7 +612,7 @@ class DataStoreScanUpdatesAndFlowTest(
             )
 
             // New object is added within range in already full list, so we expect an add and a delete
-            dataStore.execute(TestMarykModel.add(
+            dataStore.execute(TestMarykModel.Model.add(
                 newDataObject2
             ))
 
@@ -767,7 +767,7 @@ class DataStoreScanUpdatesAndFlowTest(
                 dateTime = LocalDateTime(1922, 12, 23, 0, 0)
             )
 
-            dataStore.execute(TestMarykModel.add(
+            dataStore.execute(TestMarykModel.Model.add(
                 newDataObject
             )).also {
                 testKeys.add((it.statuses[0] as AddSuccess<RootDataModel<TestMarykModel>>).key)
@@ -785,7 +785,7 @@ class DataStoreScanUpdatesAndFlowTest(
             )
 
             // New object is added within range in already full list, so we expect an add and a delete
-            dataStore.execute(TestMarykModel.add(
+            dataStore.execute(TestMarykModel.Model.add(
                 newDataObject2
             ))
 

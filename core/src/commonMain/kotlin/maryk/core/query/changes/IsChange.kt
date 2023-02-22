@@ -1,6 +1,6 @@
 package maryk.core.query.changes
 
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.IsPropertyReferenceForValues
@@ -11,7 +11,7 @@ interface IsChange {
     val changeType: ChangeType
 
     /** Filters the changes with [select] */
-    fun filterWithSelect(select: RootPropRefGraph<out PropertyDefinitions>): IsChange?
+    fun filterWithSelect(select: RootPropRefGraph<out IsValuesPropertyDefinitions>): IsChange?
 
     /** Changes values with [objectChanger] */
     fun changeValues(objectChanger: (IsPropertyReferenceForValues<*, *, *, *>, (Any?, Any?) -> Any?) -> Unit)

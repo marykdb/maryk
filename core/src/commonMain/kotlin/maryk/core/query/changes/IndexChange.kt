@@ -1,8 +1,8 @@
 package maryk.core.query.changes
 
 import maryk.core.models.SingleTypedValueDataModel
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
@@ -21,7 +21,7 @@ data class IndexChange(
 ): IsChange {
     override val changeType = ChangeType.IndexChange
 
-    override fun filterWithSelect(select: RootPropRefGraph<out PropertyDefinitions>) = this
+    override fun filterWithSelect(select: RootPropRefGraph<out IsValuesPropertyDefinitions>) = this
 
     override fun changeValues(objectChanger: (IsPropertyReferenceForValues<*, *, *, *>, (Any?, Any?) -> Any?) -> Unit) {
         // Do nothing since it cannot operate on object itself

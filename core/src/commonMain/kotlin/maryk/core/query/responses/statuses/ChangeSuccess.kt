@@ -2,7 +2,7 @@ package maryk.core.query.responses.statuses
 
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.properties.IsPropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.list
@@ -38,7 +38,7 @@ data class ChangeSuccess<DM : IsRootDataModel<*>>(
             )
         }
     ) {
-        override fun invoke(values: SimpleObjectValues<ChangeSuccess<*>>) = ChangeSuccess<IsRootDataModel<IsPropertyDefinitions>>(
+        override fun invoke(values: SimpleObjectValues<ChangeSuccess<*>>) = ChangeSuccess<IsRootDataModel<IsValuesPropertyDefinitions>>(
             version = values(1u),
             changes = values(2u)
         )

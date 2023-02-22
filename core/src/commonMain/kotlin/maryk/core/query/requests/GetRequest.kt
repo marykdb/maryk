@@ -6,8 +6,8 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.QueryDataModel
 import maryk.core.models.RootDataModel
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.RootModel
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
@@ -28,7 +28,7 @@ import maryk.core.values.ObjectValues
  * Optional: the data can be requested as it was at [toVersion]
  * If [filterSoftDeleted] (default true) is set to false it will not where away all soft deleted results.
  */
-fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.get(
+fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> DM.get(
     vararg keys: Key<DM>,
     select: RootPropRefGraph<P>? = null,
     where: IsFilter? = null,
@@ -43,7 +43,7 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.get(
  * Optional: the data can be requested as it was at [toVersion]
  * If [filterSoftDeleted] (default true) is set to false it will not where away all soft deleted results.
  */
-fun <DM : RootModel<P>, P : PropertyDefinitions> DM.get(
+fun <DM : RootModel<P>, P : IsValuesPropertyDefinitions> DM.get(
     vararg keys: Key<RootDataModel<P>>,
     select: RootPropRefGraph<P>? = null,
     where: IsFilter? = null,
@@ -58,7 +58,7 @@ fun <DM : RootModel<P>, P : PropertyDefinitions> DM.get(
  * Optional: the data can be requested as it was at [toVersion]
  * If [filterSoftDeleted] (default true) is set to false it will not filter away all soft deleted results.
  */
-data class GetRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> internal constructor(
+data class GetRequest<DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> internal constructor(
     override val dataModel: DM,
     override val keys: List<Key<DM>>,
     override val select: RootPropRefGraph<P>? = null,
@@ -92,7 +92,7 @@ data class GetRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> in
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<GetRequest<*, *>, Properties>) = GetRequest(
-            dataModel = values<IsRootValuesDataModel<PropertyDefinitions>>(1u),
+            dataModel = values<IsRootValuesDataModel<IsValuesPropertyDefinitions>>(1u),
             keys = values(2u),
             select = values(3u),
             where = values(4u),

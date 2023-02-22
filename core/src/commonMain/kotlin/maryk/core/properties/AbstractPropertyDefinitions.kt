@@ -17,8 +17,7 @@ import maryk.core.values.ValueItem
 import maryk.lib.exceptions.ParseException
 
 abstract class AbstractPropertyDefinitions<DO : Any> :
-    IsPropertyDefinitions,
-    Collection<IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>> {
+    IsObjectPropertyDefinitions<DO> {
     override fun iterator() = _allProperties.iterator()
 
     private val _allProperties: MutableList<IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>> =
@@ -28,7 +27,7 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
     protected val nameToDefinition =
         mutableMapOf<String, IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>>()
 
-    val allWithDefaults by lazy {
+    override val allWithDefaults by lazy {
         _allProperties.filter {
             val def = it.definition
             def is HasDefaultValueDefinition<*> && def.default != null
@@ -63,7 +62,7 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
         mapOf(*pair)
 
     /** Add a single property definition wrapper */
-    fun addSingle(propertyDefinitionWrapper: IsDefinitionWrapper<out Any, *, *, DO>) {
+    override fun addSingle(propertyDefinitionWrapper: IsDefinitionWrapper<out Any, *, *, DO>) {
         @Suppress("UNCHECKED_CAST")
         _allProperties.add(propertyDefinitionWrapper as IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>)
 

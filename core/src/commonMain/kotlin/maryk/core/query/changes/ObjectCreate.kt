@@ -1,8 +1,8 @@
 package maryk.core.query.changes
 
 import maryk.core.models.SimpleQueryDataModel
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.values.SimpleObjectValues
@@ -11,7 +11,7 @@ import maryk.core.values.SimpleObjectValues
 object ObjectCreate : IsChange {
     override val changeType = ChangeType.ObjectCreate
 
-    override fun filterWithSelect(select: RootPropRefGraph<out PropertyDefinitions>): ObjectCreate {
+    override fun filterWithSelect(select: RootPropRefGraph<out IsValuesPropertyDefinitions>): ObjectCreate {
         // Not influenced by select
         return this
     }

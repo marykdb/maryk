@@ -1,14 +1,14 @@
 package maryk.generator.kotlin
 
 import maryk.core.exceptions.TypeException
-import maryk.core.properties.AbstractPropertyDefinitions
+import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitionType
 
-internal fun AbstractPropertyDefinitions<*>.generateKotlin(
+internal fun IsObjectPropertyDefinitions<*>.generateKotlin(
     addImport: (String) -> Unit,
     generationContext: GenerationContext? = null,
     addEnumDefinition: ((String) -> Unit)? = null

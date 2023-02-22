@@ -2,10 +2,10 @@ package maryk.core.properties.definitions
 
 import maryk.core.models.IsDataModel
 import maryk.core.models.migration.MigrationStatus.NeedsMigration
-import maryk.core.properties.AbstractPropertyDefinitions
+import maryk.core.properties.IsObjectPropertyDefinitions
 
 /** Interface for property definitions defined by data model of [DM] and definitions [P]. */
-interface IsDefinitionWithDataModel<out DM : IsDataModel<P>, P : AbstractPropertyDefinitions<*>> {
+interface IsDefinitionWithDataModel<out DM : IsDataModel<P>, P : IsObjectPropertyDefinitions<*>> {
     val dataModel: DM
 
     /**

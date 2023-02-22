@@ -2,7 +2,7 @@ package maryk.core.properties.definitions
 
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.definitions.wrapper.EmbeddedValuesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
@@ -106,7 +106,7 @@ internal val mapOfPropertyDefWrappers = mapOf(
         EmbeddedValuesDefinitionWrapper(
             index,
             name,
-            definition as EmbeddedValuesDefinition<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>,
+            definition as EmbeddedValuesDefinition<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>,
             altNames
         )
     },

@@ -2,7 +2,7 @@ package maryk.datastore.shared.updates
 
 import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.models.IsRootValuesDataModel
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.IndexChange
@@ -27,7 +27,7 @@ import maryk.datastore.shared.updates.Update.Change
 import maryk.datastore.shared.updates.Update.Deletion
 
 /** processes a single update */
-internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ: IsFetchRequest<DM, P, *>> Update<DM, P>.process(
+internal suspend fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions, RQ: IsFetchRequest<DM, P, *>> Update<DM, P>.process(
     updateListener: UpdateListener<DM, P, RQ>,
     dataStore: IsDataStore,
     sharedFlow: MutableSharedFlow<IsUpdateResponse<DM, P>>
@@ -175,7 +175,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ
     }
 }
 
-private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> Change<DM, P>.createChangeUpdate(
+private fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> Change<DM, P>.createChangeUpdate(
     select: RootPropRefGraph<P>?,
     orderChanged: Boolean,
     newIndex: Int
@@ -198,7 +198,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> Change<DM, 
 }
 
 /** Handles the deletion of Values defined in [change] and if necessary request a new value to put at end */
-private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ: IsFetchRequest<DM, P, *>> handleDeletion(
+private suspend fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions, RQ: IsFetchRequest<DM, P, *>> handleDeletion(
     dataStore: IsDataStore,
     change: Update<DM, P>,
     reason: RemovalReason,
@@ -245,7 +245,7 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ:
 }
 
 /** Requests next values object after last key in [currentKeys] */
-private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> IsDataStore.requestNextValues(
+private suspend fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> IsDataStore.requestNextValues(
     request: IsScanRequest<DM, P, *>,
     currentKeys: List<Key<DM>>
 ): AdditionUpdate<DM, P>? {
@@ -278,7 +278,7 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> IsD
 
 /** Filters a list of changes to only have changes to properties defined in [select] */
 private fun List<IsChange>.filterWithSelect(
-    select: RootPropRefGraph<out PropertyDefinitions>?,
+    select: RootPropRefGraph<out IsValuesPropertyDefinitions>?,
     changeProcessor: ((IsChange) -> Unit)? = null
 ): List<IsChange> {
     if (select == null) {

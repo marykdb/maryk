@@ -4,8 +4,8 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.RequestException
 import maryk.core.models.ContextualDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.contextual.ContextualCollectionDefinition
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
@@ -112,7 +112,7 @@ class ListDefinitionContext(
     }
 }
 
-fun <T: Any, CX: IsPropertyContext> PropertyDefinitions.list(
+fun <T: Any, CX: IsPropertyContext> IsValuesPropertyDefinitions.list(
     index: UInt,
     name: String? = null,
     required: Boolean = true,

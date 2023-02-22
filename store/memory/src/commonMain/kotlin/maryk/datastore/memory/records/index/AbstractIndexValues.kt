@@ -2,13 +2,13 @@ package maryk.datastore.memory.records.index
 
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
-import maryk.core.properties.IsPropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.datastore.memory.records.DataRecord
 
 /**
  * Contains all index values and has methods to add, get or remove unique value references
  */
-internal abstract class AbstractIndexValues<DM : IsRootDataModel<P>, P : IsPropertyDefinitions, T : Any>(
+internal abstract class AbstractIndexValues<DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions, T : Any>(
     val indexReference: ByteArray
 ) {
     abstract val compareTo: T.(T) -> Int

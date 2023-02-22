@@ -9,7 +9,7 @@ import maryk.core.processors.datastore.matchers.FuzzyMatchResult.OUT_OF_RANGE
 import maryk.core.processors.datastore.matchers.IsQualifierMatcher
 import maryk.core.processors.datastore.matchers.QualifierExactMatcher
 import maryk.core.processors.datastore.matchers.QualifierFuzzyMatcher
-import maryk.core.properties.IsPropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Key
@@ -24,7 +24,7 @@ import maryk.lib.extensions.compare.compareTo
  * [firstVersion] and [lastVersion] signify the versions of first and last change
  * [isDeleted] is a state switch to signify record was deleted
  */
-internal data class DataRecord<DM : IsRootDataModel<P>, P : IsPropertyDefinitions>(
+internal data class DataRecord<DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions>(
     val key: Key<DM>,
     var values: List<DataRecordNode>,
     val firstVersion: HLC,

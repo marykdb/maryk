@@ -7,8 +7,8 @@ import maryk.core.models.ContextualDataModel
 import maryk.core.models.ObjectDataModel
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
@@ -201,7 +201,7 @@ class EmbeddedObjectDefinition<DO : Any, P : ObjectPropertyDefinitions<DO>, DM :
     }
 }
 
-fun <DO : Any, P : ObjectPropertyDefinitions<DO>, DM : AbstractObjectDataModel<DO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext> PropertyDefinitions.embedObject(
+fun <DO : Any, P : ObjectPropertyDefinitions<DO>, DM : AbstractObjectDataModel<DO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext> IsValuesPropertyDefinitions.embedObject(
     index: UInt,
     dataModel: Unit.() -> DM,
     name: String? = null,

@@ -6,7 +6,7 @@ import maryk.core.exceptions.StorageException
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.IndexChange
 import maryk.core.query.changes.IndexDelete
@@ -28,7 +28,7 @@ import maryk.datastore.shared.updates.Update.Change
 import maryk.lib.extensions.compare.compareTo
 
 /** Update listener for scans */
-class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions, RP: IsDataResponse<DM, P>>(
+class UpdateListenerForScan<DM: IsRootValuesDataModel<P>, P: IsValuesPropertyDefinitions, RP: IsDataResponse<DM, P>>(
     request: IsScanRequest<DM, P, RP>,
     val scanRange: KeyScanRanges,
     response: IsDataResponse<DM, P>

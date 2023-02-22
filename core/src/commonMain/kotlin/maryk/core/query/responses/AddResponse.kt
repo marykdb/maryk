@@ -2,7 +2,7 @@ package maryk.core.query.responses
 
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.properties.IsPropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.list
 import maryk.core.properties.enum.TypeEnum
@@ -30,7 +30,7 @@ data class AddResponse<DM : IsRootDataModel<*>> constructor(
     ) {
         override fun invoke(values: SimpleObjectValues<AddResponse<*>>) = AddResponse(
             dataModel = values(1u),
-            statuses = values<List<TypedValue<TypeEnum<IsAddResponseStatus<IsRootDataModel<IsPropertyDefinitions>>>, IsAddResponseStatus<IsRootDataModel<IsPropertyDefinitions>>>>?>(2u)?.map { it.value } ?: emptyList()
+            statuses = values<List<TypedValue<TypeEnum<IsAddResponseStatus<IsRootDataModel<IsValuesPropertyDefinitions>>>, IsAddResponseStatus<IsRootDataModel<IsValuesPropertyDefinitions>>>>?>(2u)?.map { it.value } ?: emptyList()
         )
     }
 }

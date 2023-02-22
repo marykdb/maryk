@@ -2,8 +2,8 @@ package maryk.core.properties.definitions
 
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.PropertyDefinitionType.FlexBytes
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
@@ -102,7 +102,7 @@ data class FlexBytesDefinition(
     }
 }
 
-fun PropertyDefinitions.flexBytes(
+fun IsValuesPropertyDefinitions.flexBytes(
     index: UInt,
     required: Boolean = true,
     name: String? = null,

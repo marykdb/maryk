@@ -3,7 +3,7 @@ package maryk.datastore.memory.processors
 import maryk.core.exceptions.TypeException
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.readStorageToChanges
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Bytes
 import maryk.core.query.changes.DataObjectVersionedChange
@@ -14,7 +14,7 @@ import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DeletedValue
 
 /** Processes [record] values to a DataObjectWithChanges object */
-internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordToObjectChanges(
+internal fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> DM.recordToObjectChanges(
     select: RootPropRefGraph<P>?,
     fromVersion: ULong,
     toVersion: ULong?,

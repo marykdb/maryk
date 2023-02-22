@@ -42,7 +42,7 @@ class DataStoreAddTest(
 
     private suspend fun executeAddAndSimpleGetRequest() {
         val addResponse = dataStore.execute(
-            Log.add(*logs)
+            Log.Model.add(*logs)
         )
 
         expect(Log.Model) { addResponse.dataModel }
@@ -75,14 +75,14 @@ class DataStoreAddTest(
         keys += key // make sure data gets cleaned
 
         val addResponse = dataStore.execute(
-            Log.add(log)
+            Log.Model.add(log)
         )
 
         expect(Log.Model) { addResponse.dataModel }
         expect(1) { addResponse.statuses.count() }
 
         val addResponseAgain = dataStore.execute(
-            Log.add(log)
+            Log.Model.add(log)
         )
 
         expect(Log.Model) { addResponseAgain.dataModel }

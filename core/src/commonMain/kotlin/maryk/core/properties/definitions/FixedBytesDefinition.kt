@@ -2,8 +2,8 @@ package maryk.core.properties.definitions
 
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.PropertyDefinitionType.FixedBytes
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
@@ -98,7 +98,7 @@ data class FixedBytesDefinition(
     }
 }
 
-fun PropertyDefinitions.fixedBytes(
+fun IsValuesPropertyDefinitions.fixedBytes(
     index: UInt,
     byteSize: Int,
     name: String? = null,

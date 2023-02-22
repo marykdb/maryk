@@ -41,7 +41,7 @@ class DataStoreScanUpdatesWithLogTest(
 
     override suspend fun initData() {
         val addResponse = dataStore.execute(
-            Log.add(
+            Log.Model.add(
                 // Mind that Log stores in reverse chronological order
                 Log(message = "message 0", severity = ERROR, timestamp = LocalDateTime(2020, 3, 28, 10, 9, 8)),
                 Log(message = "message 1", severity = INFO, timestamp = LocalDateTime(2020, 3, 29, 12, 11, 10)),

@@ -8,8 +8,8 @@ import maryk.core.models.ContextualDataModel
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.models.ValueDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.PropertyDefinitionType.Value
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
@@ -199,7 +199,7 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : ValueDataModel<DO, P
     }
 }
 
-fun <DO : ValueDataObject, DM : ValueDataModel<DO, P>, P : ObjectPropertyDefinitions<DO>> PropertyDefinitions.valueObject(
+fun <DO : ValueDataObject, DM : ValueDataModel<DO, P>, P : ObjectPropertyDefinitions<DO>> IsValuesPropertyDefinitions.valueObject(
     index: UInt,
     dataModel: DM,
     name: String? = null,

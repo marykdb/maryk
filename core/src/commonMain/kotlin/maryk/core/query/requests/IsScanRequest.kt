@@ -3,8 +3,8 @@ package maryk.core.query.requests
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.IsRootDataModel
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
@@ -30,7 +30,7 @@ import maryk.lib.exceptions.ParseException
 import maryk.yaml.IsYamlReader
 
 /** Defines a Scan from key request. */
-interface IsScanRequest<DM : IsRootDataModel<P>, P : PropertyDefinitions, RP : IsResponse> : IsFetchRequest<DM, P, RP> {
+interface IsScanRequest<DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions, RP : IsResponse> : IsFetchRequest<DM, P, RP> {
     val startKey: Key<DM>?
     val order: IsOrder?
     val limit: UInt

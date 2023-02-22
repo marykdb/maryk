@@ -5,9 +5,9 @@ import maryk.core.definitions.PrimitiveType.RootModel
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.SerializationException
 import maryk.core.properties.IsDataModelPropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.MutablePropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.PropertyDefinitionsCollectionDefinitionWrapper
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
@@ -48,7 +48,7 @@ import maryk.yaml.IsYamlReader
  *
  * The dataModel can be referenced by the [name] and the properties are defined by a [properties]
  */
-class RootDataModel<P : PropertyDefinitions>(
+class RootDataModel<P : IsValuesPropertyDefinitions>(
     override val keyDefinition: IsIndexable = UUIDKey,
     override val version: Version = Version(1),
     override val indices: List<IsIndexable>? = null,
@@ -217,7 +217,7 @@ class RootDataModel<P : PropertyDefinitions>(
 }
 
 /** Get Key based on [values] */
-fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.key(values: Values<DM, P>): Key<DM> {
+fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> DM.key(values: Values<DM, P>): Key<DM> {
     val bytes = ByteArray(this.keyByteSize)
     var index = 0
     when (val keyDef = this.keyDefinition) {

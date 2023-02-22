@@ -3,7 +3,7 @@ package maryk.datastore.shared
 import kotlinx.coroutines.flow.Flow
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.RootDataModel
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.query.requests.IsFetchRequest
 import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.responses.IsDataResponse
@@ -19,17 +19,17 @@ interface IsDataStore {
     val keepAllVersions: Boolean
 
     /** Execute a single store [request] and retrieve response */
-    suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
+    suspend fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
         request: RQ
     ): RP
 
     /** Execute a single store [request] and retrieve a flow of responses */
-    suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ: IsFetchRequest<DM, P, RP>, RP: IsDataResponse<DM, P>> executeFlow(
+    suspend fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions, RQ: IsFetchRequest<DM, P, RP>, RP: IsDataResponse<DM, P>> executeFlow(
         request: RQ
     ): Flow<IsUpdateResponse<DM, P>>
 
     /** Processes an update response to sync its results in this data store */
-    suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processUpdate(
+    suspend fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> processUpdate(
         updateResponse: UpdateResponse<DM, P>
     ): ProcessResponse<DM>
 

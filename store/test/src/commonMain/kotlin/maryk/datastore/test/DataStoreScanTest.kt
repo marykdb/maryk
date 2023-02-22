@@ -53,7 +53,7 @@ class DataStoreScanTest(
 
     override suspend fun initData() {
         val addResponse = dataStore.execute(
-            Log.add(*logs)
+            Log.Model.add(*logs)
         )
         addResponse.statuses.forEach { status ->
             val response = assertIs<AddSuccess<RootDataModel<Log>>>(status)

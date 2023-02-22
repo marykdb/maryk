@@ -6,9 +6,8 @@ import maryk.core.models.DefinitionDataModel
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsTypedRootDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsPropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
@@ -34,7 +33,7 @@ class ReferenceDefinition<DM : IsRootDataModel<*>>(
     override val default: Key<DM>? = null,
     dataModel: Unit.() -> DM
 ) :
-    IsReferenceDefinition<DM, PropertyDefinitions, IsPropertyContext> {
+    IsReferenceDefinition<DM, IsValuesPropertyDefinitions, IsPropertyContext> {
     override val propertyDefinitionType = PropertyDefinitionType.Reference
     override val wireType = LENGTH_DELIMITED
     override val byteSize get() = dataModel.keyByteSize
@@ -136,17 +135,17 @@ class ReferenceDefinition<DM : IsRootDataModel<*>>(
             final = values(2u),
             unique = values(3u),
             minValue = values<Bytes?>(4u)?.let {
-                Key<IsTypedRootDataModel<IsRootDataModel<IsPropertyDefinitions>, IsPropertyDefinitions>>(
+                Key(
                     it.bytes
                 )
             },
             maxValue = values<Bytes?>(5u)?.let {
-                Key<IsTypedRootDataModel<IsRootDataModel<IsPropertyDefinitions>, IsPropertyDefinitions>>(
+                Key(
                     it.bytes
                 )
             },
             default = values<Bytes?>(6u)?.let {
-                Key<IsTypedRootDataModel<IsRootDataModel<IsPropertyDefinitions>, IsPropertyDefinitions>>(
+                Key<IsTypedRootDataModel<IsRootDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>>(
                     it.bytes
                 )
             },
@@ -170,7 +169,7 @@ fun <DM: IsRootDataModel<*>, TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.ref
 ): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<Key<DM>, TO, IsPropertyContext, ReferenceDefinition<DM>, DO>, DO, IsPropertyContext> =
     reference(index, getter, name, required, final,  unique, minValue, maxValue, default, dataModel, alternativeNames, toSerializable = null)
 
-fun <DM: IsRootDataModel<P>, P: PropertyDefinitions> PropertyDefinitions.reference(
+fun <DM: IsRootDataModel<P>, P: IsValuesPropertyDefinitions> IsValuesPropertyDefinitions.reference(
     index: UInt,
     name: String? = null,
     required: Boolean = true,

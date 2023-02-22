@@ -8,7 +8,7 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ValueItem
 
-open class Model<P: PropertyDefinitions>(
+open class Model<P: IsValuesPropertyDefinitions>(
     reservedIndices: List<UInt>? = null,
     reservedNames: List<String>? = null,
 ) : TypedPropertyDefinitions<DataModel<P>, P>() {

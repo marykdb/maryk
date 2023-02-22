@@ -12,7 +12,7 @@ import maryk.core.processors.datastore.StorageTypeEnum.SetSize
 import maryk.core.processors.datastore.StorageTypeEnum.TypeValue
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.processors.datastore.readStorageToChanges
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.IsPropertyReferenceForCache
@@ -31,7 +31,7 @@ import maryk.datastore.rocksdb.processors.helpers.readValue
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
 
 /** Process values for [key] from transaction to a DataObjectWithChanges object */
-internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readTransactionIntoObjectChanges(
+internal fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> DM.readTransactionIntoObjectChanges(
     iterator: DBIterator,
     creationVersion: ULong,
     columnFamilies: TableColumnFamilies,

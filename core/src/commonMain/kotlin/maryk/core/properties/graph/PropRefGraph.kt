@@ -5,8 +5,8 @@ import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
@@ -38,7 +38,7 @@ import maryk.lib.exceptions.ParseException
  * The graphables are sorted after generation so the PropRefGraph can be processed quicker.
  */
 @Suppress("unused")
-fun <P : PropertyDefinitions, DM : IsValuesDataModel<PS>, PS : PropertyDefinitions> P.graph(
+fun <P : IsValuesPropertyDefinitions, DM : IsValuesDataModel<PS>, PS : IsValuesPropertyDefinitions> P.graph(
     embed: EmbeddedValuesDefinitionWrapper<DM, PS, IsPropertyContext>,
     runner: PS.() -> List<IsPropRefGraphNode<PS>>
 ) = PropRefGraph<P, DM, PS>(embed, runner(embed.definition.dataModel.properties).sortedBy { it.index })
@@ -47,7 +47,7 @@ fun <P : PropertyDefinitions, DM : IsValuesDataModel<PS>, PS : PropertyDefinitio
  * Represents a Property Reference Graph branch below a [parent] with all [properties] to fetch
  * [properties] should always be sorted by index so processing graphs is a lot easier
  */
-data class PropRefGraph<P : PropertyDefinitions, DM : IsValuesDataModel<PS>, PS : PropertyDefinitions> internal constructor(
+data class PropRefGraph<P : IsValuesPropertyDefinitions, DM : IsValuesDataModel<PS>, PS : IsValuesPropertyDefinitions> internal constructor(
     val parent: EmbeddedValuesDefinitionWrapper<DM, PS, IsPropertyContext>,
     override val properties: List<IsPropRefGraphNode<PS>>
 ) : IsPropRefGraphNode<P>, IsTransportablePropRefGraphNode, IsPropRefGraph<PS> {
@@ -87,7 +87,7 @@ data class PropRefGraph<P : PropertyDefinitions, DM : IsValuesDataModel<PS>, PS 
                     ),
                     PropRef to ContextualPropertyReferenceDefinition(
                         contextualResolver = { context: GraphContext? ->
-                            context?.subDataModel?.properties as? PropertyDefinitions? ?: throw ContextNotFoundException()
+                            context?.subDataModel?.properties as? IsValuesPropertyDefinitions? ?: throw ContextNotFoundException()
                         }
                     )
                 ),
@@ -124,7 +124,7 @@ data class PropRefGraph<P : PropertyDefinitions, DM : IsValuesDataModel<PS>, PS 
             }
         ) {
         override fun invoke(values: ObjectValues<PropRefGraph<*, *, *>, Properties>) =
-            PropRefGraph<PropertyDefinitions, IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
+            PropRefGraph<IsValuesPropertyDefinitions, IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>(
                 parent = values(1u),
                 properties = values(2u)
             )

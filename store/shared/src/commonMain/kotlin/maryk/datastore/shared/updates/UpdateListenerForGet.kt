@@ -1,7 +1,7 @@
 package maryk.datastore.shared.updates
 
 import maryk.core.models.IsRootValuesDataModel
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.IsGetRequest
 import maryk.core.query.responses.IsDataResponse
@@ -10,7 +10,7 @@ import maryk.datastore.shared.IsDataStore
 import maryk.datastore.shared.updates.Update.Change
 
 /** Update listener for get requests */
-class UpdateListenerForGet<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions, RP: IsDataResponse<DM, P>>(
+class UpdateListenerForGet<DM: IsRootValuesDataModel<P>, P: IsValuesPropertyDefinitions, RP: IsDataResponse<DM, P>>(
     request: IsGetRequest<DM, P, RP>,
     response: RP
 ) : UpdateListener<DM, P, IsGetRequest<DM, P, RP>>(

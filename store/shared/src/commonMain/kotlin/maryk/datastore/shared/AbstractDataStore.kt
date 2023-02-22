@@ -15,7 +15,7 @@ import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.RootDataModel
 import maryk.core.processors.datastore.scanRange.createScanRange
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.query.requests.IsFetchRequest
 import maryk.core.query.requests.IsGetRequest
 import maryk.core.query.requests.IsScanRequest
@@ -68,7 +68,7 @@ abstract class AbstractDataStore(
         }
     }
 
-    override suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
+    override suspend fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
         request: RQ
     ): RP {
         waitForInit()
@@ -82,7 +82,7 @@ abstract class AbstractDataStore(
         return response.await()
     }
 
-    override suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processUpdate(
+    override suspend fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> processUpdate(
         updateResponse: UpdateResponse<DM, P>
     ): ProcessResponse<DM> {
         waitForInit()
@@ -96,7 +96,7 @@ abstract class AbstractDataStore(
         return response.await()
     }
 
-    override suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, RQ: IsFetchRequest<DM, P, RP>, RP: IsDataResponse<DM, P>> executeFlow(
+    override suspend fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions, RQ: IsFetchRequest<DM, P, RP>, RP: IsDataResponse<DM, P>> executeFlow(
         request: RQ
     ): Flow<IsUpdateResponse<DM, P>> {
         if (request.toVersion != null) {
@@ -133,7 +133,7 @@ abstract class AbstractDataStore(
 }
 
 /** Creates update listener for request with [response] */
-private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions, RP: IsDataResponse<DM, P>> IsFetchRequest<DM, P, RP>.createUpdateListener(
+private fun <DM: IsRootValuesDataModel<P>, P: IsValuesPropertyDefinitions, RP: IsDataResponse<DM, P>> IsFetchRequest<DM, P, RP>.createUpdateListener(
     response: RP
 ) =
     when (this) {

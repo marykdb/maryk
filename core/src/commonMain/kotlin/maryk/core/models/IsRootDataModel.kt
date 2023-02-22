@@ -3,8 +3,7 @@ package maryk.core.models
 import maryk.core.models.migration.MigrationStatus
 import maryk.core.models.migration.MigrationStatus.NeedsMigration
 import maryk.core.models.migration.MigrationStatus.NewIndicesOnExistingProperties
-import maryk.core.properties.IsPropertyDefinitions
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.graph.IsPropRefGraphNode
 import maryk.core.properties.graph.RootPropRefGraph
@@ -12,9 +11,9 @@ import maryk.core.properties.types.Key
 import maryk.core.properties.types.Version
 import maryk.lib.synchronizedIteration
 
-interface IsRootValuesDataModel<P : PropertyDefinitions> : IsRootDataModel<P>, IsValuesDataModel<P>
+interface IsRootValuesDataModel<P : IsValuesPropertyDefinitions> : IsRootDataModel<P>, IsValuesDataModel<P>
 
-interface IsRootDataModel<P : IsPropertyDefinitions> : IsNamedDataModel<P> {
+interface IsRootDataModel<P : IsValuesPropertyDefinitions> : IsNamedDataModel<P> {
     val keyDefinition: IsIndexable
     val indices: List<IsIndexable>?
 

@@ -51,7 +51,7 @@ class DataStoreScanUniqueTest(
 
     override suspend fun initData() {
         val addResponse = dataStore.execute(
-            CompleteMarykModel.add(*objects)
+            CompleteMarykModel.Model.add(*objects)
         )
         addResponse.statuses.forEach { status ->
             val response = assertIs<AddSuccess<RootDataModel<CompleteMarykModel>>>(status)

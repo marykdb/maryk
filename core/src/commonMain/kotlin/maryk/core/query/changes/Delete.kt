@@ -5,7 +5,7 @@ import maryk.core.exceptions.RequestException
 import maryk.core.models.ReferencesDataModel
 import maryk.core.models.ReferencesObjectPropertyDefinitions
 import maryk.core.properties.AbstractPropertyDefinitions
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.graph.RootPropRefGraph
@@ -23,7 +23,7 @@ data class Delete internal constructor(
 
     constructor(vararg reference: AnyPropertyReference) : this(reference.toList())
 
-    override fun filterWithSelect(select: RootPropRefGraph<out PropertyDefinitions>): Delete? {
+    override fun filterWithSelect(select: RootPropRefGraph<out IsValuesPropertyDefinitions>): Delete? {
         val filtered = references.filter {
             select.contains(it)
         }

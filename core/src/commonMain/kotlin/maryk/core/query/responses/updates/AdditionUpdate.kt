@@ -5,8 +5,8 @@ import maryk.core.models.AbstractValuesDataModel
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.SimpleQueryDataModel
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.contextual.embedContextual
 import maryk.core.properties.definitions.number
@@ -20,7 +20,7 @@ import maryk.core.values.SimpleObjectValues
 import maryk.core.values.Values
 
 /** Update response describing an addition to query result of [values] at [key] */
-data class AdditionUpdate<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
+data class AdditionUpdate<DM: IsRootValuesDataModel<P>, P: IsValuesPropertyDefinitions>(
     val key: Key<DM>,
     override val version: ULong,
     val firstVersion: ULong,
@@ -42,7 +42,7 @@ data class AdditionUpdate<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
             getter = AdditionUpdate<*, *>::values,
             contextualResolver = { context: RequestContext? ->
                 @Suppress("UNCHECKED_CAST")
-                context?.dataModel as? AbstractValuesDataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, RequestContext>?
+                context?.dataModel as? AbstractValuesDataModel<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions, RequestContext>?
                     ?: throw ContextNotFoundException()
             }
         )
@@ -51,7 +51,7 @@ data class AdditionUpdate<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
     internal companion object : SimpleQueryDataModel<AdditionUpdate<*, *>>(
         properties = Properties
     ) {
-        override fun invoke(values: SimpleObjectValues<AdditionUpdate<*, *>>) = AdditionUpdate<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
+        override fun invoke(values: SimpleObjectValues<AdditionUpdate<*, *>>) = AdditionUpdate<IsRootValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>(
             key = values(1u),
             version = values(2u),
             firstVersion = values(3u),

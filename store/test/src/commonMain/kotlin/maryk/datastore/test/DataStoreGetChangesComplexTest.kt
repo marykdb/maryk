@@ -35,7 +35,7 @@ class DataStoreGetChangesComplexTest(
 
     override suspend fun initData() {
         val addResponse = dataStore.execute(
-            ComplexModel.add(
+            ComplexModel.Model.add(
                 ComplexModel(
                     multi = TypedValue(T3, EmbeddedMarykModel("u3", EmbeddedMarykModel("ue3"))),
                     mapStringString = mapOf("a" to "b", "c" to "d"),

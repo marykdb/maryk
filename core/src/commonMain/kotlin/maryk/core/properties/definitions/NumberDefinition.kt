@@ -4,8 +4,8 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.models.ContextualDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualNumberDefinition
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
@@ -210,7 +210,7 @@ fun <T : Comparable<T>> fromNativeType(type: NumberDescriptor<T>, value: Any) =
         else -> null
     }
 
-fun <T : Comparable<T>> PropertyDefinitions.number(
+fun <T : Comparable<T>> IsValuesPropertyDefinitions.number(
     index: UInt,
     type: NumberDescriptor<T>,
     name: String? = null,

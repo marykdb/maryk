@@ -33,7 +33,7 @@ class DataStoreScanOnIndexWithPersonTest(
 
     override suspend fun initData() {
         val addResponse = dataStore.execute(
-            Person.add(*persons)
+            Person.Model.add(*persons)
         )
         addResponse.statuses.forEach { status ->
             val response = assertIs<AddSuccess<RootDataModel<Person>>>(status)

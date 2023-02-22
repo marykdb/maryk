@@ -39,7 +39,7 @@ class DataStoreScanWithMutableValueIndexTest(
 
     override suspend fun initData() {
         val addResponse = dataStore.execute(
-            ModelV2ExtraIndex.add(*objects)
+            ModelV2ExtraIndex.Model.add(*objects)
         )
         addResponse.statuses.forEach { status ->
             val response = assertIs< AddSuccess <RootDataModel<ModelV2ExtraIndex>>>(status)

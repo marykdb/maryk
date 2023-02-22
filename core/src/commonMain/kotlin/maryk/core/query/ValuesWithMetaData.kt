@@ -8,8 +8,8 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.QueryDataModel
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.definitions.contextual.embedContextual
@@ -20,7 +20,7 @@ import maryk.core.properties.types.numeric.UInt64
 import maryk.core.values.ObjectValues
 import maryk.core.values.Values
 
-data class ValuesWithMetaData<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions>(
+data class ValuesWithMetaData<DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions>(
     val key: Key<DM>,
     val values: Values<DM, P>,
     val firstVersion: ULong,
@@ -43,7 +43,7 @@ data class ValuesWithMetaData<DM : IsRootValuesDataModel<P>, P : PropertyDefinit
             getter = ValuesWithMetaData<*, *>::values,
             contextualResolver = { context: RequestContext? ->
                 @Suppress("UNCHECKED_CAST")
-                context?.dataModel as? AbstractValuesDataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, RequestContext>?
+                context?.dataModel as? AbstractValuesDataModel<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions, RequestContext>?
                     ?: throw ContextNotFoundException()
             }
         )
@@ -56,7 +56,7 @@ data class ValuesWithMetaData<DM : IsRootValuesDataModel<P>, P : PropertyDefinit
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<ValuesWithMetaData<*, *>, Properties>) =
-            ValuesWithMetaData<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
+            ValuesWithMetaData<IsRootValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>(
                 key = values(1u),
                 values = values(2u),
                 firstVersion = values(3u),

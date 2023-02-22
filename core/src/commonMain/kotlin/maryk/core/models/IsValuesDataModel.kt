@@ -1,6 +1,6 @@
 package maryk.core.models
 
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
@@ -11,7 +11,7 @@ import maryk.core.values.MutableValueItems
 import maryk.core.values.ValueItems
 import maryk.core.values.Values
 
-interface IsValuesDataModel<P : PropertyDefinitions> : IsNamedDataModel<P> {
+interface IsValuesDataModel<P : IsValuesPropertyDefinitions> : IsNamedDataModel<P> {
     val reservedIndices: List<UInt>?
     val reservedNames: List<String>?
 
@@ -35,7 +35,7 @@ interface IsValuesDataModel<P : PropertyDefinitions> : IsNamedDataModel<P> {
 }
 
 /** A DataModel which holds properties and can be validated */
-interface IsTypedValuesDataModel<DM : IsValuesDataModel<P>, P : PropertyDefinitions> :
+interface IsTypedValuesDataModel<DM : IsValuesDataModel<P>, P : IsValuesPropertyDefinitions> :
     IsDataModelWithValues<Any, P, Values<DM, P>>,
     IsValuesDataModel<P> {
     /**
@@ -54,14 +54,14 @@ interface IsTypedValuesDataModel<DM : IsValuesDataModel<P>, P : PropertyDefiniti
 }
 
 /** Create a Values object with given [createMap] function */
-fun <DM : IsValuesDataModel<P>, P : PropertyDefinitions> DM.values(
+fun <DM : IsValuesDataModel<P>, P : IsValuesPropertyDefinitions> DM.values(
     context: RequestContext?,
     createMap: P.() -> IsValueItems
 ) =
     Values(this, createMap(this.properties), context)
 
 /** Create a Values object with given [changes] */
-fun <DM : IsValuesDataModel<P>, P : PropertyDefinitions> DM.fromChanges(
+fun <DM : IsValuesDataModel<P>, P : IsValuesPropertyDefinitions> DM.fromChanges(
     context: RequestContext?,
     changes: List<IsChange>
 ) = if (changes.isEmpty()) {

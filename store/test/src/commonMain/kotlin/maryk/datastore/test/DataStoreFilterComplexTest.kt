@@ -37,7 +37,7 @@ class DataStoreFilterComplexTest(
 
     override suspend fun initData() {
         val addResponse = dataStore.execute(
-            ComplexModel.add(
+            ComplexModel.Model.add(
                 dataObject
             )
         )

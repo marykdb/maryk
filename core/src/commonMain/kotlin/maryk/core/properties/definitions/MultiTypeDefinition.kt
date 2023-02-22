@@ -2,8 +2,8 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.contextual.ContextValueTransformDefinition
 import maryk.core.properties.definitions.contextual.ContextualSubDefinition
@@ -125,7 +125,7 @@ data class MultiTypeDefinition<E : MultiTypeEnum<out T>, T: Any>(
     }
 }
 
-fun <E : MultiTypeEnum<out T>, T: Any> PropertyDefinitions.multiType(
+fun <E : MultiTypeEnum<out T>, T: Any> IsValuesPropertyDefinitions.multiType(
     index: UInt,
     name: String? = null,
     required: Boolean = true,

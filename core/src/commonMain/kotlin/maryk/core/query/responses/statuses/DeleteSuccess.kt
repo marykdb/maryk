@@ -2,7 +2,7 @@ package maryk.core.query.responses.statuses
 
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.properties.IsPropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.number
 import maryk.core.properties.types.numeric.UInt64
@@ -20,7 +20,7 @@ data class DeleteSuccess<DM : IsRootDataModel<*>>(
             val version by number(1u, DeleteSuccess<*>::version, type = UInt64)
         }
     ) {
-        override fun invoke(values: SimpleObjectValues<DeleteSuccess<*>>) = DeleteSuccess<IsRootDataModel<IsPropertyDefinitions>>(
+        override fun invoke(values: SimpleObjectValues<DeleteSuccess<*>>) = DeleteSuccess<IsRootDataModel<IsValuesPropertyDefinitions>>(
             version = values(1u)
         )
     }

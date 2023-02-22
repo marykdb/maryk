@@ -3,8 +3,8 @@ package maryk.core.properties.definitions
 import maryk.core.exceptions.RequestException
 import maryk.core.models.ContextualDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.IncMapDefinitionWrapper
@@ -129,7 +129,7 @@ data class IncrementingMapDefinition<K : Comparable<K>, V : Any, CX : IsProperty
     }
 }
 
-fun <K : Comparable<K>, V : Any, CX : IsPropertyContext> PropertyDefinitions.incrementingMap(
+fun <K : Comparable<K>, V : Any, CX : IsPropertyContext> IsValuesPropertyDefinitions.incrementingMap(
     index: UInt,
     name: String? = null,
     required: Boolean = true,

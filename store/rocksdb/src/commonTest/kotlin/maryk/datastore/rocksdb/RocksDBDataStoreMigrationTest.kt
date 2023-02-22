@@ -94,7 +94,7 @@ class RocksDBDataStoreMigrationTest {
         )
 
         val addResult = dataStore.execute(
-            ModelV2.add(
+            ModelV2.Model.add(
                 ModelV2.run { create (value with "ha1", newNumber with 100) },
                 ModelV2.run { create (value with "ha2", newNumber with 50) },
                 ModelV2.run { create (value with "ha3", newNumber with 3500) },

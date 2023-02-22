@@ -17,7 +17,7 @@ import maryk.core.processors.datastore.StorageTypeEnum.ObjectDelete
 import maryk.core.processors.datastore.StorageTypeEnum.SetSize
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.definitions.IsEmbeddedDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsListDefinition
@@ -63,7 +63,7 @@ private typealias AddValue = (Any) -> Unit
  * [getQualifier] gets a qualifier until none is available and returns null
  * [processValue] processes the storage value with given type and definition
  */
-fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readStorageToValues(
+fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> DM.readStorageToValues(
     getQualifier: (((Int) -> Byte, Int) -> Unit) -> Boolean,
     select: RootPropRefGraph<P>?,
     processValue: ValueReader
@@ -93,7 +93,7 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readStorageToVal
  * [readValueFromStorage] is used to fetch actual value from storage layer
  * [addToCache] is used to add a sub reader to cache, so it does not need to reprocess the qualifier from start
  */
-private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
+private fun <P : IsValuesPropertyDefinitions> IsDataModel<P>.readQualifier(
     qualifierReader: (Int) -> Byte,
     qualifierLength: Int,
     offset: Int,
@@ -395,7 +395,7 @@ private fun readQualifierOfType(
 }
 
 /** Read embedded values into Values object */
-private fun <P : PropertyDefinitions> readEmbeddedValues(
+private fun <P : IsValuesPropertyDefinitions> readEmbeddedValues(
     qualifierReader: (Int) -> Byte,
     qualifierLength: Int,
     offset: Int,
@@ -407,7 +407,7 @@ private fun <P : PropertyDefinitions> readEmbeddedValues(
     addValueToOutput: AddValue
 ) {
     @Suppress("UNCHECKED_CAST")
-    val dataModel = definition.dataModel as IsDataModelWithValues<*, out PropertyDefinitions, *>
+    val dataModel = definition.dataModel as IsDataModelWithValues<*, out IsValuesPropertyDefinitions, *>
     val values = dataModel.values { MutableValueItems() }
 
     addValueToOutput(values)
@@ -420,7 +420,7 @@ private fun <P : PropertyDefinitions> readEmbeddedValues(
     // Otherwise, it is null or is property itself so needs to be completely selected thus set as null.
     val specificSelect = if (select is IsPropRefGraph<*>) {
         @Suppress("UNCHECKED_CAST")
-        select as IsPropRefGraph<PropertyDefinitions>
+        select as IsPropRefGraph<IsValuesPropertyDefinitions>
     } else null
 
     addToCache(offset - 1) { qr, l ->

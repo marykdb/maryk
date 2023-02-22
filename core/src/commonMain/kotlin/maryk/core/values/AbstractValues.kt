@@ -7,6 +7,7 @@ import maryk.core.models.AbstractDataModel
 import maryk.core.models.IsDataModel
 import maryk.core.models.IsNamedDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
+import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
@@ -35,7 +36,7 @@ typealias AnyAbstractValues = AbstractValues<Any, IsDataModel<AbstractPropertyDe
 /**
  * Contains a [values] with all values related to a DataObject of [dataModel]
  */
-abstract class AbstractValues<DO : Any, DM : IsDataModel<P>, P : AbstractPropertyDefinitions<DO>> : IsValues<P> {
+abstract class AbstractValues<DO : Any, DM : IsDataModel<P>, P : IsObjectPropertyDefinitions<DO>> : IsValues<P> {
     abstract val dataModel: DM
     internal abstract val values: IsValueItems
     abstract val context: RequestContext?
@@ -304,14 +305,14 @@ inline fun <reified T : Any, TO : Any> IsDefinitionWrapper<T, TO, *, *>.convertT
 }
 
 /** Output values to a json string with possible [context] provided */
-fun <V: AbstractValues<DO, DM, P>, DO: Any, DM: AbstractDataModel<DO, P, V, *, CX>, P: AbstractPropertyDefinitions<DO>, CX: IsPropertyContext> V.toJson(
+fun <V: AbstractValues<DO, DM, P>, DO: Any, DM: AbstractDataModel<DO, P, V, *, CX>, P: IsObjectPropertyDefinitions<DO>, CX: IsPropertyContext> V.toJson(
     context: CX? = null,
     pretty: Boolean = false
 ): String =
     this.dataModel.writeJson(this, context = context, pretty = pretty)
 
 /** Get property from values with wrapper in [getProperty] and convert it to native usage */
-inline operator fun <DO : Any, DM : IsDataModel<P>, P : AbstractPropertyDefinitions<DO>, TI : Any, reified TO : Any> AbstractValues<DO, DM, P>?.div(getProperty: P.() -> IsDefinitionWrapper<TI, TO, *, DO>): TO? {
+inline operator fun <DO : Any, DM : IsDataModel<P>, P : IsObjectPropertyDefinitions<DO>, TI : Any, reified TO : Any> AbstractValues<DO, DM, P>?.div(getProperty: P.() -> IsDefinitionWrapper<TI, TO, *, DO>): TO? {
     if (this == null) {
         return null
     }

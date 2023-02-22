@@ -5,7 +5,7 @@ import maryk.core.extensions.bytes.initUIntByVar
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedValuesDefinition
 import maryk.core.properties.definitions.wrapper.EmbeddedValuesDefinitionWrapper
 import maryk.core.properties.references.ReferenceType.EMBED
@@ -19,7 +19,7 @@ import maryk.core.values.Values
  */
 class EmbeddedValuesPropertyRef<
     DM : IsValuesDataModel<P>,
-    P : PropertyDefinitions,
+    P : IsValuesPropertyDefinitions,
     CX : IsPropertyContext
 > internal constructor(
     propertyDefinition: EmbeddedValuesDefinitionWrapper<DM, P, CX>,

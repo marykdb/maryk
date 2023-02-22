@@ -3,7 +3,7 @@ package maryk.core.query.requests
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.IsRootDataModel
-import maryk.core.properties.IsPropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
@@ -40,6 +40,6 @@ internal fun <DM : IsStoreRequest<*, *>> ObjectPropertyDefinitions<DM>.addDataMo
         shouldSerialize = { it !is DataModelReference<*> },
         capturer = { context, value ->
             @Suppress("UNCHECKED_CAST")
-            context.dataModel = value.get(Unit) as IsRootDataModel<IsPropertyDefinitions>
+            context.dataModel = value.get(Unit) as IsRootDataModel<IsValuesPropertyDefinitions>
         }
     )

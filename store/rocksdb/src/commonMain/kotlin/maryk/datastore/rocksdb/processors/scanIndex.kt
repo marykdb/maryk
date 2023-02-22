@@ -5,7 +5,7 @@ import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.scanRange.IndexableScanRanges
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.query.orders.Direction
 import maryk.core.query.orders.Direction.ASC
@@ -25,7 +25,7 @@ import maryk.lib.extensions.compare.matchPart
 import maryk.lib.extensions.compare.nextByteInSameLength
 import maryk.rocksdb.ReadOptions
 
-internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanIndex(
+internal fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> scanIndex(
     dataStore: RocksDBDataStore,
     dbAccessor: DBAccessor,
     columnFamilies: TableColumnFamilies,
@@ -192,7 +192,7 @@ fun createVersionChecker(toVersion: ULong?, iterator: DBIterator, direction: Dir
  * If it is a versioned read, skip all index records but with older versions
  * The order depends on what is defined in the [next] function
  */
-private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> createGotoNext(
+private fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> createGotoNext(
     scanRequest: IsScanRequest<DM, P, *>,
     iterator: DBIterator,
     next: () -> Unit
@@ -212,7 +212,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> createGotoN
     }
 
 /** Walk through index and processes any valid keys and versions */
-private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> checkAndProcess(
+private fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> checkAndProcess(
     dbAccessor: DBAccessor,
     columnFamilies: TableColumnFamilies,
     readOptions: ReadOptions,
@@ -271,7 +271,7 @@ private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> checkAndPro
 }
 
 /** Creates a Key out of a [indexRecord] by reading from [keyOffset] */
-private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> createKey(
+private fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> createKey(
     dataModel: DM,
     indexRecord: ByteArray,
     keyOffset: Int

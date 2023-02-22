@@ -7,19 +7,19 @@ import maryk.core.properties.PropertyDefinitionsCollectionDefinition
 import maryk.core.properties.PropertyDefinitionsCollectionDefinitionWrapper
 
 internal fun <DM : IsDataModel<*>> addProperties(definitions: AbstractPropertyDefinitions<DM>): PropertyDefinitionsCollectionDefinitionWrapper<DM> {
-            val wrapper = PropertyDefinitionsCollectionDefinitionWrapper<DM>(
-                2u,
-                "properties",
-                PropertyDefinitionsCollectionDefinition(
-                    capturer = { context, propDefs ->
-                        context?.apply {
-                            this.propertyDefinitions = propDefs
-                        } ?: throw ContextNotFoundException()
-                    }
-                ),
-                getter = { it.properties as PropertyDefinitions }
-            )
+    val wrapper = PropertyDefinitionsCollectionDefinitionWrapper<DM>(
+        2u,
+        "properties",
+        PropertyDefinitionsCollectionDefinition(
+            capturer = { context, propDefs ->
+                context?.apply {
+                    this.propertyDefinitions = propDefs
+                } ?: throw ContextNotFoundException()
+            }
+        ),
+        getter = { it.properties as PropertyDefinitions }
+    )
 
-            definitions.addSingle(wrapper)
-            return wrapper
-        }
+    definitions.addSingle(wrapper)
+    return wrapper
+}

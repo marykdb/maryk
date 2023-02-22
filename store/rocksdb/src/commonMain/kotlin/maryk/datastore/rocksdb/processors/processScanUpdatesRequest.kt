@@ -2,7 +2,7 @@ package maryk.datastore.rocksdb.processors
 
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.fromChanges
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.properties.types.Bytes
@@ -33,10 +33,10 @@ import maryk.rocksdb.rocksDBNotFound
 import maryk.rocksdb.use
 
 internal typealias ScanUpdatesStoreAction<DM, P> = StoreAction<DM, P, ScanUpdatesRequest<DM, P>, UpdatesResponse<DM, P>>
-internal typealias AnyScanUpdatesStoreAction = ScanUpdatesStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
+internal typealias AnyScanUpdatesStoreAction = ScanUpdatesStoreAction<IsRootValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>
 
 /** Processes a ScanUpdatesRequest in a [storeAction] into a [dataStore] */
-internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processScanUpdatesRequest(
+internal fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> processScanUpdatesRequest(
     storeAction: ScanUpdatesStoreAction<DM, P>,
     dataStore: RocksDBDataStore,
     cache: Cache

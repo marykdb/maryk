@@ -99,7 +99,7 @@ class DataStoreFilterTest(
 
     override suspend fun initData() {
         val addResponse = dataStore.execute(
-            TestMarykModel.add(
+            TestMarykModel.Model.add(
                 dataObject,
                 dataObject2
             )

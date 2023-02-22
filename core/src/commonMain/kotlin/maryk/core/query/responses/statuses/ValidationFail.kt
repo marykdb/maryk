@@ -2,7 +2,7 @@ package maryk.core.query.responses.statuses
 
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.properties.IsPropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.list
@@ -51,7 +51,7 @@ data class ValidationFail<DM : IsRootDataModel<*>>(
         }
     ) {
         override fun invoke(values: SimpleObjectValues<ValidationFail<*>>) =
-            ValidationFail<IsRootDataModel<IsPropertyDefinitions>>(
+            ValidationFail<IsRootDataModel<IsValuesPropertyDefinitions>>(
                 exceptions = values(1u)
             )
     }

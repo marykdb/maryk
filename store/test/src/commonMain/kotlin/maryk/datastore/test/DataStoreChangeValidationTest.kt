@@ -48,7 +48,7 @@ class DataStoreChangeValidationTest(
 
     override suspend fun initData() {
         val addResponse = dataStore.execute(
-            TestMarykModel.add(
+            TestMarykModel.Model.add(
                 TestMarykModel(
                     "haha1",
                     5,

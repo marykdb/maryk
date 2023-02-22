@@ -10,7 +10,7 @@ import maryk.core.exceptions.TypeException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.RootDataModel
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.query.requests.AddRequest
 import maryk.core.query.requests.ChangeRequest
 import maryk.core.query.requests.DeleteRequest
@@ -82,7 +82,7 @@ class InMemoryDataStore(
                         val dataStoreFetcher = { model: IsRootDataModel<*> ->
                             val index = dataModelIdsByString[model.name] ?: throw DefNotFoundException(model.name)
                             dataStores.getOrPut(index) {
-                                DataStore<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(keepAllVersions)
+                                DataStore<IsRootValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>(keepAllVersions)
                             }
                         }
 

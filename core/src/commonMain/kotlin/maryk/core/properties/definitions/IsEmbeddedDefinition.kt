@@ -4,6 +4,7 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initUIntByVar
 import maryk.core.models.IsDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
+import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
@@ -14,7 +15,7 @@ import maryk.core.properties.references.decodeStorageIndex
 typealias IsAnyEmbeddedDefinition = IsEmbeddedDefinition<IsDataModel<AbstractPropertyDefinitions<Any>>, AbstractPropertyDefinitions<Any>>
 
 /** Interface for property definitions containing embedded DataObjects of [DM] and definitions [P]. */
-interface IsEmbeddedDefinition<out DM : IsDataModel<P>, P : AbstractPropertyDefinitions<*>>: IsDefinitionWithDataModel<DM, P> {
+interface IsEmbeddedDefinition<out DM : IsDataModel<P>, P : IsObjectPropertyDefinitions<*>>: IsDefinitionWithDataModel<DM, P> {
     /** Resolve a reference from [reader] found on a [parentReference] */
     fun resolveReference(
         reader: () -> Byte,

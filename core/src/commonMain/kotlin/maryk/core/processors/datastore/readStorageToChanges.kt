@@ -20,7 +20,7 @@ import maryk.core.processors.datastore.StorageTypeEnum.ObjectDelete
 import maryk.core.processors.datastore.StorageTypeEnum.SetSize
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.definitions.IsAnyEmbeddedDefinition
 import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsEmbeddedDefinition
@@ -83,7 +83,7 @@ private enum class ChangeType {
  * [getQualifier] gets a qualifier until none is available and returns null
  * [processValue] processes the storage value with given type and definition
  */
-fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.readStorageToChanges(
+fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> DM.readStorageToChanges(
     getQualifier: (((Int) -> Byte, Int) -> Unit) -> Boolean,
     select: RootPropRefGraph<P>?,
     creationVersion: ULong?,
@@ -195,7 +195,7 @@ private fun createChange(changeType: ChangeType, changePart: Any) = when (change
  * [readValueFromStorage] is used to fetch actual value from storage layer
  * [addToCache] is used to add a sub reader to cache, so it does not need to reprocess the qualifier from start
  */
-private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
+private fun <P : IsValuesPropertyDefinitions> IsDataModel<P>.readQualifier(
     qualifierReader: (Int) -> Byte,
     qualifierLength: Int,
     offset: Int,
@@ -245,7 +245,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readQualifier(
 }
 
 /** Read qualifier from [qualifierReader] at [currentOffset] with [definition] into changes */
-private fun <P : PropertyDefinitions> readQualifierOfType(
+private fun <P : IsValuesPropertyDefinitions> readQualifierOfType(
     qualifierReader: (Int) -> Byte,
     qualifierLength: Int,
     currentOffset: Int,
@@ -487,7 +487,7 @@ private fun <P : PropertyDefinitions> readQualifierOfType(
     }
 }
 
-private fun <P : PropertyDefinitions> readComplexChanges(
+private fun <P : IsValuesPropertyDefinitions> readComplexChanges(
     qualifierReader: (Int) -> Byte,
     qualifierLength: Int,
     offset: Int,
@@ -671,7 +671,7 @@ private fun IsMultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>.readCom
     )
 }
 
-private fun <P : PropertyDefinitions> readEmbeddedValues(
+private fun <P : IsValuesPropertyDefinitions> readEmbeddedValues(
     qualifierReader: (Int) -> Byte,
     qualifierLength: Int,
     offset: Int,
@@ -684,13 +684,13 @@ private fun <P : PropertyDefinitions> readEmbeddedValues(
 ) {
     @Suppress("UNCHECKED_CAST")
     val dataModel =
-        (definition as IsAnyEmbeddedDefinition).dataModel as IsDataModelWithValues<*, PropertyDefinitions, *>
+        (definition as IsAnyEmbeddedDefinition).dataModel as IsDataModelWithValues<*, IsValuesPropertyDefinitions, *>
 
     // If select is Graph then resolve sub graph.
     // Otherwise, it is null or is property itself so needs to be completely selected thus set as null.
     val specificSelect = if (select is IsPropRefGraph<*>) {
         @Suppress("UNCHECKED_CAST")
-        select as IsPropRefGraph<PropertyDefinitions>
+        select as IsPropRefGraph<IsValuesPropertyDefinitions>
     } else null
 
     addToCache(offset - 1) { qr, l ->

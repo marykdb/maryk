@@ -14,7 +14,7 @@ import maryk.core.values.MutableValueItems
 import maryk.core.values.ValueItem
 import maryk.core.values.Values
 
-open class RootModel<P: PropertyDefinitions>(
+open class RootModel<P: IsValuesPropertyDefinitions>(
     keyDefinition: () -> IsIndexable = { UUIDKey },
     version: Version = Version(1),
     indices: (() -> List<IsIndexable>)? = null,

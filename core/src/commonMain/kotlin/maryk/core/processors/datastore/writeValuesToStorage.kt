@@ -7,6 +7,7 @@ import maryk.core.models.IsDataModel
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.AbstractPropertyDefinitions
+import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
@@ -58,7 +59,7 @@ fun <DM : IsDataModel<P>, P : AbstractPropertyDefinitions<*>> AbstractValues<*, 
  * [qualifierCount], [qualifierWriter] define the count and writer for any parent property
  * Pass [valueWriter] to process values
  */
-fun <DM : IsDataModel<P>, P : AbstractPropertyDefinitions<*>> AbstractValues<*, DM, P>.writeToStorage(
+fun <DM : IsDataModel<P>, P : IsObjectPropertyDefinitions<*>> AbstractValues<*, DM, P>.writeToStorage(
     qualifierCount: Int = 0,
     qualifierWriter: QualifierWriter? = null,
     valueWriter: ValueWriter<IsPropertyDefinition<*>>

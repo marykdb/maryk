@@ -2,7 +2,7 @@ package maryk.datastore.memory.processors
 
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.query.filters.IsFilter
 import maryk.core.query.filters.matchesFilter
@@ -14,7 +14,7 @@ import maryk.datastore.memory.records.DataRecord
  * Filters on soft deleted state and given filters.
  * Return true if [dataRecord] should be filtered away.
  */
-internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> IsFetchRequest<DM, P, *>.shouldBeFiltered(
+internal fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> IsFetchRequest<DM, P, *>.shouldBeFiltered(
     dataRecord: DataRecord<DM, P>,
     toVersion: HLC?,
     recordFetcher: (IsRootValuesDataModel<*>, Key<*>) -> DataRecord<*, *>?
@@ -25,7 +25,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> IsFetchReq
 }
 
 /** Test if [dataRecord] is passing given [filter]. True if filter matches. */
-internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> filterMatches(
+internal fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> filterMatches(
     filter: IsFilter?,
     dataRecord: DataRecord<DM, P>,
     toVersion: HLC?,

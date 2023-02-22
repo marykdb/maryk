@@ -23,7 +23,7 @@ import maryk.core.processors.datastore.writeSetToStorage
 import maryk.core.processors.datastore.writeToStorage
 import maryk.core.processors.datastore.writeTypedValueToStorage
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsListDefinition
@@ -98,7 +98,7 @@ import maryk.datastore.shared.updates.Update
 import maryk.lib.recyclableByteArray
 import maryk.rocksdb.rocksDBNotFound
 
-internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processChange(
+internal suspend fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> processChange(
     dataStore: RocksDBDataStore,
     dataModel: DM,
     columnFamilies: TableColumnFamilies,
@@ -156,7 +156,7 @@ internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> pr
 /**
  * Apply [changes] to a specific [transaction] and record them as [version]
  */
-private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChanges(
+private suspend fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> applyChanges(
     dataModel: DM,
     dataStore: RocksDBDataStore,
     dbIndex: UInt,
@@ -339,9 +339,9 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> app
                                     }
 
                                     @Suppress("UNCHECKED_CAST")
-                                    val valuesDefinition = reference.propertyDefinition as IsEmbeddedValuesDefinition<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, IsPropertyContext>
+                                    val valuesDefinition = reference.propertyDefinition as IsEmbeddedValuesDefinition<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions, IsPropertyContext>
                                     @Suppress("UNCHECKED_CAST")
-                                    val valuesReference = reference as IsPropertyReference<Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>, IsPropertyDefinition<Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>>, *>
+                                    val valuesReference = reference as IsPropertyReference<Values<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>, IsPropertyDefinition<Values<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>>, *>
 
                                     // Delete all existing values in placeholder
                                     val hadPrevValue = deleteByReference(transaction, columnFamilies, dataStore.defaultReadOptions, key, reference, reference.toStorageByteArray(), versionBytes) { _, prevValue ->
@@ -351,7 +351,7 @@ private suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> app
                                     @Suppress("UNCHECKED_CAST")
                                     valuesDefinition.validateWithRef(
                                         if (hadPrevValue) valuesDefinition.dataModel.values(null) { EmptyValueItems } else null,
-                                        value as Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
+                                        value as Values<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>
                                     ) { valuesReference }
 
                                     val valueWriter = createValueWriter(
@@ -745,7 +745,7 @@ private fun createValueWriter(
                 transaction.getForUpdate(dataStore.defaultReadOptions, columnFamilies.unique, uniqueReference)?.let {
                     throw UniqueException(
                         reference,
-                        Key<IsRootValuesDataModel<PropertyDefinitions>>(
+                        Key<IsRootValuesDataModel<IsValuesPropertyDefinitions>>(
                             // Get the key at the end of the stored unique index value
                             it.copyOfRange(fromIndex = it.size - key.size, toIndex = it.size)
                         )

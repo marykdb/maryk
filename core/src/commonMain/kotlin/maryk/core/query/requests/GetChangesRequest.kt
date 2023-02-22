@@ -8,8 +8,8 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.QueryDataModel
 import maryk.core.models.RootDataModel
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.RootModel
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
@@ -31,7 +31,7 @@ import maryk.core.values.ObjectValues
  * It will only fetch the changes [fromVersion] (Inclusive) until [maxVersions] (Default=1000) is reached.
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  */
-fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.getChanges(
+fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> DM.getChanges(
     vararg keys: Key<DM>,
     where: IsFilter? = null,
     fromVersion: ULong = 0uL,
@@ -56,7 +56,7 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.getChanges(
  * It will only fetch the changes [fromVersion] (Inclusive) until [maxVersions] (Default=1000) is reached.
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  */
-fun <DM : RootModel<P>, P : PropertyDefinitions> DM.getChanges(
+fun <DM : RootModel<P>, P : IsValuesPropertyDefinitions> DM.getChanges(
     vararg keys: Key<RootDataModel<P>>,
     where: IsFilter? = null,
     fromVersion: ULong = 0uL,
@@ -82,7 +82,7 @@ fun <DM : RootModel<P>, P : PropertyDefinitions> DM.getChanges(
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  * Only selected properties can be returned with a [select] graph
  */
-data class GetChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> internal constructor(
+data class GetChangesRequest<DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> internal constructor(
     override val dataModel: DM,
     override val keys: List<Key<DM>>,
     override val where: IsFilter? = null,
@@ -121,7 +121,7 @@ data class GetChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefiniti
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<GetChangesRequest<*, *>, Properties>) =
-            GetChangesRequest<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
+            GetChangesRequest<IsRootValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>(
                 dataModel = values(1u),
                 keys = values(2u),
                 select = values(3u),

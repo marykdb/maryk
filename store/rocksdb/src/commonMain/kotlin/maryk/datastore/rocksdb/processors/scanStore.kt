@@ -2,7 +2,7 @@ package maryk.datastore.rocksdb.processors
 
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.query.orders.Direction
 import maryk.core.query.orders.Direction.ASC
@@ -13,7 +13,7 @@ import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
 
-internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> scanStore(
+internal fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> scanStore(
     dataStore: RocksDBDataStore,
     dbAccessor: DBAccessor,
     columnFamilies: TableColumnFamilies,

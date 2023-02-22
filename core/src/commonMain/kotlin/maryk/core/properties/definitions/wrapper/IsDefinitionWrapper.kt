@@ -4,8 +4,8 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.inject.Inject
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
@@ -46,7 +46,7 @@ typealias AnyOutDefinitionWrapper = IsDefinitionWrapper<out Any, out Any, IsProp
  */
 interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in DO> :
     IsSerializablePropertyDefinition<T, CX>,
-    IsPropRefGraphNode<PropertyDefinitions> {
+    IsPropRefGraphNode<IsValuesPropertyDefinitions> {
     override val index: UInt
     val name: String
     val alternativeNames: Set<String>?

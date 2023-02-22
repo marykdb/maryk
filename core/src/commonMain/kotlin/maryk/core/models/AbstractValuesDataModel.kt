@@ -1,19 +1,19 @@
 package maryk.core.models
 
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.values.Values
 
-abstract class SimpleDataModel<DM : IsValuesDataModel<P>, P : PropertyDefinitions>(
+abstract class SimpleDataModel<DM : IsValuesDataModel<P>, P : IsValuesPropertyDefinitions>(
     reservedIndices: List<UInt>? = null,
     reservedNames: List<String>? = null,
     properties: P
 ) : AbstractValuesDataModel<DM, P, IsPropertyContext>(reservedIndices, reservedNames, properties)
-typealias ValuesDataModelImpl<CX> = AbstractValuesDataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, CX>
+typealias ValuesDataModelImpl<CX> = AbstractValuesDataModel<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions, CX>
 
 /**
  * A Data Model for converting and validating DataObjects. The [properties] contain all the property definitions for
@@ -21,7 +21,7 @@ typealias ValuesDataModelImpl<CX> = AbstractValuesDataModel<IsValuesDataModel<Pr
  * to read and write. This can be different because the DataModel can create
  * its own context by transforming the given context.
  */
-abstract class AbstractValuesDataModel<DM : IsValuesDataModel<P>, P : PropertyDefinitions, CX : IsPropertyContext> internal constructor(
+abstract class AbstractValuesDataModel<DM : IsValuesDataModel<P>, P : IsValuesPropertyDefinitions, CX : IsPropertyContext> internal constructor(
     final override val reservedIndices: List<UInt>? = null,
     final override val reservedNames: List<String>? = null,
     properties: P

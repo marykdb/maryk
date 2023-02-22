@@ -32,7 +32,7 @@ class UniqueTest(
     )
 
     override suspend fun initData() {
-        val addItems = UniqueModel.add(
+        val addItems = UniqueModel.Model.add(
             UniqueModel.run { create(email with "test@test.com") },
             UniqueModel.run { create(email with "bla@bla.com") },
         )
@@ -52,7 +52,7 @@ class UniqueTest(
         this.keys.clear()
     }
 
-    private val addUniqueItem = UniqueModel.add(
+    private val addUniqueItem = UniqueModel.Model.add(
         UniqueModel.run { create(email with "test@test.com") }
     )
 

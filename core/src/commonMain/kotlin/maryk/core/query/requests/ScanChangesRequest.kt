@@ -4,8 +4,8 @@ import maryk.core.aggregations.Aggregations
 import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.QueryDataModel
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.RootModel
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.embedObject
@@ -28,7 +28,7 @@ import maryk.core.values.ObjectValues
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
-fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.scanChanges(
+fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> DM.scanChanges(
     startKey: Key<DM>? = null,
     where: IsFilter? = null,
     order: IsOrder? = null,
@@ -60,7 +60,7 @@ fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.scanChanges(
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
-fun <DM : RootModel<P>, P : PropertyDefinitions> DM.scanChanges(
+fun <DM : RootModel<P>, P : IsValuesPropertyDefinitions> DM.scanChanges(
     startKey: Key<IsRootValuesDataModel<P>>? = null,
     where: IsFilter? = null,
     order: IsOrder? = null,
@@ -92,7 +92,7 @@ fun <DM : RootModel<P>, P : PropertyDefinitions> DM.scanChanges(
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order] and only selected properties can be returned with a [select] graph
  */
-data class ScanChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> internal constructor(
+data class ScanChangesRequest<DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> internal constructor(
     override val dataModel: DM,
     override val startKey: Key<DM>? = null,
     override val where: IsFilter? = null,
@@ -160,7 +160,7 @@ data class ScanChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinit
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<ScanChangesRequest<*, *>, Properties>) =
-            ScanChangesRequest<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
+            ScanChangesRequest<IsRootValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>(
                 dataModel = values(1u),
                 startKey = values(2u),
                 select = values(3u),

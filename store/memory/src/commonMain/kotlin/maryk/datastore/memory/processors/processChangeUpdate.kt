@@ -4,7 +4,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.fromChanges
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.responses.AddResponse
 import maryk.core.query.responses.ChangeResponse
@@ -18,7 +18,7 @@ import maryk.datastore.shared.updates.IsUpdateAction
 /**
  * Processes the changes to values into the data store
  */
-internal suspend fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processChangeUpdate(
+internal suspend fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> processChangeUpdate(
     storeAction: StoreAction<DM, P, UpdateResponse<DM, P>, ProcessResponse<DM>>,
     dataStoreFetcher: (IsRootValuesDataModel<*>) -> DataStore<*, *>,
     updateSharedFlow: MutableSharedFlow<IsUpdateAction>

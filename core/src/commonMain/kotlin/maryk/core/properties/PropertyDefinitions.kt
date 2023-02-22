@@ -20,12 +20,12 @@ import maryk.yaml.IsYamlReader
 import maryk.yaml.YamlWriter
 
 @Suppress("PropertyName")
-abstract class TypedPropertyDefinitions<DM: IsValuesDataModel<P>, P: PropertyDefinitions> : PropertyDefinitions() {
+abstract class TypedPropertyDefinitions<DM: IsValuesDataModel<P>, P: IsValuesPropertyDefinitions> : PropertyDefinitions() {
     abstract val Model : DM
 }
 
 /** A collection of Property Definitions which can be used to model a ObjectDataModel */
-abstract class PropertyDefinitions : AbstractPropertyDefinitions<Any>()
+abstract class PropertyDefinitions : AbstractPropertyDefinitions<Any>(), IsValuesPropertyDefinitions
 
 /** Mutable variant of ObjectPropertyDefinitions for a IsCollectionDefinition implementation */
 internal class MutablePropertyDefinitions : PropertyDefinitions(), IsMutablePropertyDefinitions<AnyDefinitionWrapper> {

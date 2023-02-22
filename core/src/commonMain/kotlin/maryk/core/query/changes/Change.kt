@@ -3,7 +3,7 @@ package maryk.core.query.changes
 import maryk.core.exceptions.RequestException
 import maryk.core.models.ReferencePairDataModel
 import maryk.core.models.ReferenceValuePairsObjectPropertyDefinitions
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForValues
@@ -19,7 +19,7 @@ data class Change internal constructor(
     @Suppress("UNCHECKED_CAST")
     constructor(vararg referenceValuePair: ReferenceValuePair<*>) : this(referenceValuePair.toList() as List<ReferenceValuePair<Any>>)
 
-    override fun filterWithSelect(select: RootPropRefGraph<out PropertyDefinitions>): Change? {
+    override fun filterWithSelect(select: RootPropRefGraph<out IsValuesPropertyDefinitions>): Change? {
         val filtered = referenceValuePairs.filter {
             select.contains(it.reference)
         }

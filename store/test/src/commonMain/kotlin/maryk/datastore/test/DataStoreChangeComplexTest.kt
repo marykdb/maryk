@@ -48,7 +48,7 @@ class DataStoreChangeComplexTest(
 
     override suspend fun initData() {
         val addResponse = dataStore.execute(
-            ComplexModel.add(
+            ComplexModel.Model.add(
                 ComplexModel(
                     multi = TypedValue(T3, EmbeddedMarykModel.run { create(
                         value with "u3",

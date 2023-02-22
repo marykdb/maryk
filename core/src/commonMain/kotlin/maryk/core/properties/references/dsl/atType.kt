@@ -2,7 +2,7 @@ package maryk.core.properties.references.dsl
 
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.IsValuesDataModel
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsMapDefinition
@@ -19,7 +19,7 @@ import kotlin.jvm.JvmName
 
 /** Specific extension to support fetching deeper references on multi types by [type] */
 @JvmName("atEmbedType")
-fun <P : PropertyDefinitions, T : Any, R : IsPropertyReference<T, IsDefinitionWrapper<T, *, *, *>, *>> IsMultiTypeDefinition<*, *, *>.atType(
+fun <P : IsValuesPropertyDefinitions, T : Any, R : IsPropertyReference<T, IsDefinitionWrapper<T, *, *, *>, *>> IsMultiTypeDefinition<*, *, *>.atType(
     type: TypeEnum<Values<*, P>>,
     referenceGetter: P.() -> (AnyOutPropertyReference?) -> R
 ): (AnyOutPropertyReference?) -> R =

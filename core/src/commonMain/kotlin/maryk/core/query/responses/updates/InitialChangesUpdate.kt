@@ -2,8 +2,8 @@ package maryk.core.query.responses.updates
 
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.SimpleQueryDataModel
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.number
@@ -13,7 +13,7 @@ import maryk.core.query.responses.updates.UpdateResponseType.InitialChanges
 import maryk.core.values.SimpleObjectValues
 
 /** Update containing the initial changes for listeners which listen to a scan changes. */
-data class InitialChangesUpdate<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
+data class InitialChangesUpdate<DM: IsRootValuesDataModel<P>, P: IsValuesPropertyDefinitions>(
     override val version: ULong,
     val changes: List<DataObjectVersionedChange<DM>>
 ): IsUpdateResponse<DM, P> {
@@ -34,7 +34,7 @@ data class InitialChangesUpdate<DM: IsRootValuesDataModel<P>, P: PropertyDefinit
     companion object : SimpleQueryDataModel<InitialChangesUpdate<*, *>>(
         properties = Properties
     ) {
-        override fun invoke(values: SimpleObjectValues<InitialChangesUpdate<*, *>>) = InitialChangesUpdate<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
+        override fun invoke(values: SimpleObjectValues<InitialChangesUpdate<*, *>>) = InitialChangesUpdate<IsRootValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>(
             version = values(1u),
             changes = values(2u)
         )

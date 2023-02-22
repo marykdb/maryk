@@ -4,8 +4,8 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.AbstractValuesDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.wrapper.EmbeddedValuesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
@@ -21,11 +21,11 @@ import maryk.json.JsonWriter
 
 /** Definition for an embedded Values from a context resolved from [contextualResolver] */
 internal data class ContextualEmbeddedValuesDefinition<CX : IsPropertyContext>(
-    val contextualResolver: Unit.(context: CX?) -> AbstractValuesDataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, CX>
-) : IsEmbeddedValuesDefinition<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, CX> {
-    override val dataModel: IsValuesDataModel<PropertyDefinitions>
+    val contextualResolver: Unit.(context: CX?) -> AbstractValuesDataModel<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions, CX>
+) : IsEmbeddedValuesDefinition<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions, CX> {
+    override val dataModel: IsValuesDataModel<IsValuesPropertyDefinitions>
         get() = throw DefNotFoundException("dataModel is contextually determined")
-    override val default: Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>? = null
+    override val default: Values<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>? = null
     override val required = true
     override val final = true
     override val wireType = LENGTH_DELIMITED
@@ -64,21 +64,21 @@ internal data class ContextualEmbeddedValuesDefinition<CX : IsPropertyContext>(
         length: Int,
         reader: () -> Byte,
         context: CX?,
-        earlierValue: Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>?
+        earlierValue: Values<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>?
     ) =
         contextualResolver(Unit, context).readProtoBuf(length, reader, context)
 }
 
 fun <DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.embedContextual(
     index: UInt,
-    getter: (DO) -> Values<out IsValuesDataModel<out PropertyDefinitions>, out PropertyDefinitions>? = { null },
-    contextualResolver: Unit.(context: CX?) -> AbstractValuesDataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, CX>,
+    getter: (DO) -> Values<out IsValuesDataModel<out IsValuesPropertyDefinitions>, out IsValuesPropertyDefinitions>? = { null },
+    contextualResolver: Unit.(context: CX?) -> AbstractValuesDataModel<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions, CX>,
     name: String? = null,
     alternativeNames: Set<String>? = null,
-    toSerializable: (Unit.(Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>?, IsPropertyContext?) -> Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>?)? = null,
-    fromSerializable: (Unit.(Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>?) -> Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>?)? = null,
+    toSerializable: (Unit.(Values<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>?, IsPropertyContext?) -> Values<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>?)? = null,
+    fromSerializable: (Unit.(Values<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>?) -> Values<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>?)? = null,
     shouldSerialize: (Unit.(Any) -> Boolean)? = null,
-    capturer: (Unit.(IsPropertyContext, Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>) -> Unit)? = null
+    capturer: (Unit.(IsPropertyContext, Values<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>) -> Unit)? = null
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     @Suppress("UNCHECKED_CAST")
     EmbeddedValuesDefinitionWrapper(
@@ -86,7 +86,7 @@ fun <DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.embedContextu
         name ?: propName,
         ContextualEmbeddedValuesDefinition(contextualResolver),
         alternativeNames,
-        getter = getter as (Any) -> Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>?,
+        getter = getter as (Any) -> Values<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>?,
         capturer = capturer,
         toSerializable = toSerializable,
         fromSerializable = fromSerializable,

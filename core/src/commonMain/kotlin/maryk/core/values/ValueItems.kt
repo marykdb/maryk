@@ -4,7 +4,7 @@ package maryk.core.values
 
 import maryk.core.models.IsDataModel
 import maryk.core.models.IsValuesDataModel
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.graph.IsPropRefGraph
 import maryk.core.properties.graph.PropRefGraph
 import maryk.core.properties.types.MutableTypedValue
@@ -189,7 +189,7 @@ private fun mutableValueCreator(valueToChange: Any?): Any? = when (valueToChange
     is Values<*, *> ->
         @Suppress("UNCHECKED_CAST")
         Values(
-            valueToChange.dataModel as IsValuesDataModel<PropertyDefinitions>,
+            valueToChange.dataModel as IsValuesDataModel<IsValuesPropertyDefinitions>,
             MutableValueItems(mutableListOf()),
             valueToChange.context
         )

@@ -14,8 +14,8 @@ import maryk.core.extensions.bytes.initLongByVar
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.ContextualDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
@@ -174,7 +174,7 @@ class DateTimeDefinitionContext : TimePrecisionContext() {
     }
 }
 
-fun PropertyDefinitions.dateTime(
+fun IsValuesPropertyDefinitions.dateTime(
     index: UInt,
     name: String? = null,
     required: Boolean = true,

@@ -4,7 +4,7 @@ import maryk.core.clock.HLC
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.key
 import maryk.core.processors.datastore.writeToStorage
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.query.filters.Equals
 import maryk.core.query.filters.Exists
@@ -29,7 +29,7 @@ class FilterWithFetchRequestComplexKtTest {
         null
     }
 
-    private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.createDataRecord(values: Values<DM, P>): DataRecord<DM, P> {
+    private fun <DM : IsRootValuesDataModel<P>, P : IsValuesPropertyDefinitions> DM.createDataRecord(values: Values<DM, P>): DataRecord<DM, P> {
         val recordValues = mutableListOf<DataRecordValue<*>>()
 
         values.writeToStorage { _, reference, _, value ->

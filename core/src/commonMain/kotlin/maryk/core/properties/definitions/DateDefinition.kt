@@ -21,7 +21,6 @@ import maryk.core.properties.types.localDateFromByteReader
 import maryk.core.properties.types.writeBytes
 import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCacheReader
-import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.values.SimpleObjectValues
 import maryk.lib.exceptions.ParseException
 
@@ -55,10 +54,6 @@ data class DateDefinition(
         earlierValue: LocalDate?
     ): LocalDate =
         LocalDate.fromEpochDays(initIntByVar(reader).decodeZigZag())
-
-    override fun calculateTransportByteLengthWithKey(index: UInt, value: LocalDate, cacher: WriteCacheWriter): Int {
-        return super<IsSerializableFixedBytesEncodable>.calculateTransportByteLengthWithKey(index, value, cacher)
-    }
 
     override fun calculateTransportByteLength(value: LocalDate) = value.toEpochDays().encodeZigZag().calculateVarByteLength()
 

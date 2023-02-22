@@ -4,8 +4,6 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.protobuf.WriteCacheReader
-import maryk.core.protobuf.WriteCacheWriter
 
 /**
  * Property Definition to define comparable properties of type [T] with context [CX].
@@ -16,40 +14,6 @@ interface IsComparableDefinition<T : Comparable<T>, in CX : IsPropertyContext> :
     val unique: Boolean
     val minValue: T?
     val maxValue: T?
-
-    // Overridden because the compiler has issues finding this method in the override
-    override fun calculateTransportByteLengthWithKey(index: UInt, value: T, cacher: WriteCacheWriter): Int {
-        return super<IsSimpleValueDefinition>.calculateTransportByteLengthWithKey(index, value, cacher)
-    }
-
-    // Overridden because the compiler has issues finding this method in the override
-    override fun writeTransportBytesWithKey(
-        index: UInt,
-        value: T,
-        cacheGetter: WriteCacheReader,
-        writer: (byte: Byte) -> Unit
-    ) {
-        super<IsSimpleValueDefinition>.writeTransportBytesWithKey(index, value, cacheGetter, writer)
-    }
-
-    // Overridden because the compiler has issues finding this method in the override
-    override fun calculateTransportByteLengthWithKey(
-        index: UInt,
-        value: T,
-        cacher: WriteCacheWriter,
-        context: CX?,
-    ): Int = super<IsSimpleValueDefinition>.calculateTransportByteLengthWithKey(index, value, cacher, context)
-
-    // Overridden because the compiler has issues finding this method in the override
-    override fun writeTransportBytesWithKey(
-        index: UInt,
-        value: T,
-        cacheGetter: WriteCacheReader,
-        writer: (byte: Byte) -> Unit,
-        context: CX?
-    ) {
-        super<IsSimpleValueDefinition>.writeTransportBytesWithKey(index, value, cacheGetter, writer, context)
-    }
 
     /**
      * Validate [newValue] against [previousValue] and get reference from [refGetter] if exception needs to be thrown

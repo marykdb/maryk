@@ -68,7 +68,9 @@ open class DataModel<P : IsValuesPropertyDefinitions>(
                 properties = values(2u),
                 reservedIndices = values(3u),
                 reservedNames = values(4u)
-            )
+            ).apply {
+                (properties as MutablePropertyDefinitions)._model = this
+            }
 
         override fun writeJson(
             values: ObjectValues<DataModel<*>, ObjectPropertyDefinitions<DataModel<*>>>,

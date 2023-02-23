@@ -130,7 +130,9 @@ class RootDataModel<P : IsValuesPropertyDefinitions>(
                 indices = values(5u),
                 reservedIndices = values(6u),
                 reservedNames = values(7u)
-            )
+            ).apply {
+                (properties as MutablePropertyDefinitions)._model = this
+            }
 
         override fun writeJson(
             values: ObjectValues<RootDataModel<*>, ObjectPropertyDefinitions<RootDataModel<*>>>,

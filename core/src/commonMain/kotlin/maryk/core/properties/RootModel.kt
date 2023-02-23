@@ -71,7 +71,7 @@ open class RootModel<P: IsValuesPropertyDefinitions>(
 
     fun key(bytes: ByteArray) = Model.key(bytes)
 
-    fun key(values: Values<RootDataModel<P>, P>) = Model.key(values)
+    fun key(values: Values<P>) = Model.key(values)
 
     /**
      * Create Property reference graph with list of graphables that are generated with [runner] on Properties

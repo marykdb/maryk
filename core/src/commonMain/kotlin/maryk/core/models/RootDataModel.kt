@@ -221,7 +221,7 @@ class RootDataModel<P : IsValuesPropertyDefinitions>(
 }
 
 /** Get Key based on [values] */
-fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> DM.key(values: Values<DM, P>): Key<DM> {
+fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> DM.key(values: Values<P>): Key<DM> {
     val bytes = ByteArray(this.keyByteSize)
     var index = 0
     when (val keyDef = this.keyDefinition) {

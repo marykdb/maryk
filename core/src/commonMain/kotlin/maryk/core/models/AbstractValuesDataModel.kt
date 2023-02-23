@@ -25,11 +25,11 @@ abstract class AbstractValuesDataModel<DM : IsValuesDataModel<P>, P : IsValuesPr
     final override val reservedIndices: List<UInt>? = null,
     final override val reservedNames: List<String>? = null,
     properties: P
-) : IsTypedValuesDataModel<DM, P>, AbstractDataModel<Any, P, Values<DM, P>, CX, CX>(properties) {
+) : IsTypedValuesDataModel<DM, P>, AbstractDataModel<Any, P, Values<P>, CX, CX>(properties) {
 
     override fun validate(
-        values: Values<DM, P>,
-        refGetter: () -> IsPropertyReference<Values<DM, P>, IsPropertyDefinition<Values<DM, P>>, *>?
+        values: Values<P>,
+        refGetter: () -> IsPropertyReference<Values<P>, IsPropertyDefinition<Values<P>>, *>?
     ) {
         createValidationUmbrellaException(refGetter) { addException ->
             for ((index, orgValue) in values.values) {

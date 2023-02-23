@@ -8,7 +8,6 @@ import maryk.core.query.requests.add
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
-import maryk.core.values.Values
 import maryk.datastore.shared.IsDataStore
 import maryk.test.models.Person
 import kotlin.test.assertIs
@@ -24,7 +23,7 @@ class DataStoreScanOnIndexWithPersonTest(
         "executeIndexScanRequestWithPerson" to ::executeIndexScanRequestWithPerson
     )
 
-    private val persons = arrayOf<Values<RootDataModel<Person>, Person>>(
+    private val persons = arrayOf(
         Person.run { create(firstName with "Jurriaan", surname with "Mous") },
         Person.run { create(firstName with "Myra", surname with "Mous") },
         Person.run { create(firstName with "Desiderio", surname with "Espinosa") },

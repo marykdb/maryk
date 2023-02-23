@@ -3,8 +3,6 @@
 package maryk.core.values
 
 import maryk.core.models.IsDataModel
-import maryk.core.models.IsValuesDataModel
-import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.graph.IsPropRefGraph
 import maryk.core.properties.graph.PropRefGraph
 import maryk.core.properties.types.MutableTypedValue
@@ -70,7 +68,7 @@ interface IsValueItemsImpl : IsValueItems {
             if (!select.contains(valueItem.index)) {
                 null
             } else {
-                if (valueItem.value is Values<*, *>) {
+                if (valueItem.value is Values<*>) {
                     (select.selectNodeOrNull(valueItem.index) as? PropRefGraph<*, *, *>)?.let { subSelect ->
                         ValueItem(valueItem.index, valueItem.value.filterWithSelect(subSelect))
                     } ?: valueItem
@@ -123,8 +121,8 @@ value class MutableValueItems(
                         }
                         else -> {
                             list[it] = when (valueItem.value) {
-                                is Values<*, *> -> {
-                                    val newValue = (list[it].value as Values<*, *>).copy(valueItem.value.values)
+                                is Values<*> -> {
+                                    val newValue = (list[it].value as Values<*>).copy(valueItem.value.values)
                                     ValueItem(valueItem.index, newValue)
                                 }
                                 else -> valueItem
@@ -186,10 +184,9 @@ private fun mutableValueCreator(valueToChange: Any?): Any? = when (valueToChange
     is List<*> -> valueToChange.toMutableList()
     is Set<*> -> valueToChange.toMutableSet()
     is Map<*, *> -> valueToChange.toMutableMap()
-    is Values<*, *> ->
-        @Suppress("UNCHECKED_CAST")
+    is Values<*> ->
         Values(
-            valueToChange.dataModel as IsValuesDataModel<IsValuesPropertyDefinitions>,
+            valueToChange.dataModel.properties,
             MutableValueItems(mutableListOf()),
             valueToChange.context
         )

@@ -101,10 +101,10 @@ infix fun <E : TypeEnum<T>, T: Any, D : IsMultiTypeDefinition<E, T, *>> IsProper
 
 /** Convenience infix method to create Reference [values] pairs */
 @Suppress("UNCHECKED_CAST")
-infix fun <DM : IsValuesDataModel<P>, P : IsValuesPropertyDefinitions, D : IsEmbeddedValuesDefinition<DM, P, *>> IsPropertyReference<Values<DM, P>, D, *>.with(
-    values: Values<DM, P>
-): ReferenceValuePair<Values<DM, P>> =
+infix fun <DM : IsValuesDataModel<P>, P : IsValuesPropertyDefinitions, D : IsEmbeddedValuesDefinition<DM, P, *>> IsPropertyReference<Values<P>, D, *>.with(
+    values: Values<P>
+): ReferenceValuePair<Values<P>> =
     ReferenceValuePair(
-        this as IsPropertyReference<Values<DM, P>, IsChangeableValueDefinition<Values<DM, P>, IsPropertyContext>, *>,
+        this as IsPropertyReference<Values<P>, IsChangeableValueDefinition<Values<P>, IsPropertyContext>, *>,
         values
     )

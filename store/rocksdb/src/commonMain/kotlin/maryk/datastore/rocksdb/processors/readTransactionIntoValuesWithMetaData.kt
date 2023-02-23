@@ -47,7 +47,7 @@ internal fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> DM.readT
     var maxVersion = creationVersion
     var isDeleted = false
 
-    val values: Values<DM, P> = if (select != null && select.properties.isEmpty()) {
+    val values: Values<P> = if (select != null && select.properties.isEmpty()) {
         // Don't read the values if no values are selected
         this.values(null) { EmptyValueItems }
     } else if (toVersion == null) {

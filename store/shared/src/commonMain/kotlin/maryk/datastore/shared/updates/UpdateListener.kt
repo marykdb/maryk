@@ -62,7 +62,7 @@ abstract class UpdateListener<DM: IsRootDataModel<P>, P: IsValuesPropertyDefinit
     )
 
     /** Add [values] at [key] and return sort index or null if it should not be added */
-    abstract fun addValues(key: Key<DM>, values: Values<DM, P>): Int?
+    abstract fun addValues(key: Key<DM>, values: Values<P>): Int?
 
     /** Remove [key] from local index */
     open fun removeKey(key: Key<DM>): Int {

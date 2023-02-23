@@ -15,13 +15,13 @@ import maryk.core.values.ObjectValues
 import maryk.core.values.Values
 
 /** Creates a Request to add multiple [objectToAdd] to a store defined by given DataModel */
-fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> DM.add(vararg objectToAdd: Values<DM, P>) =
+fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> DM.add(vararg objectToAdd: Values<P>) =
     AddRequest(this, objectToAdd.toList())
 
 /** A Request to add [objects] to [dataModel] */
 data class AddRequest<DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> internal constructor(
     override val dataModel: DM,
-    val objects: List<Values<DM, P>>
+    val objects: List<Values<P>>
 ) : IsStoreRequest<DM, AddResponse<DM>>, IsTransportableRequest<AddResponse<DM>> {
     override val requestType = Add
     override val responseModel = AddResponse

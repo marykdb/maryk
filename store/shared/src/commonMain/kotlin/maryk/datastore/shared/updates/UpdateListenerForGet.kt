@@ -26,7 +26,7 @@ class UpdateListenerForGet<DM: IsRootDataModel<P>, P: IsValuesPropertyDefinition
         }
     }
 
-    override fun addValues(key: Key<DM>, values: Values<DM, P>) =
+    override fun addValues(key: Key<DM>, values: Values<P>) =
         matchingKeys.value.binarySearch { it compareTo key }.let {
             // Only insert keys which were found in the matching keys
             if (it < 0) null else it

@@ -20,7 +20,7 @@ import kotlin.jvm.JvmName
 /** Specific extension to support fetching deeper references on multi types by [type] */
 @JvmName("atEmbedType")
 fun <P : IsValuesPropertyDefinitions, T : Any, R : IsPropertyReference<T, IsDefinitionWrapper<T, *, *, *>, *>> IsMultiTypeDefinition<*, *, *>.atType(
-    type: TypeEnum<Values<*, P>>,
+    type: TypeEnum<Values<P>>,
     referenceGetter: P.() -> (AnyOutPropertyReference?) -> R
 ): (AnyOutPropertyReference?) -> R =
     @Suppress("UNCHECKED_CAST")

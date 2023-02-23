@@ -36,21 +36,21 @@ interface IsValuesDataModel<P : IsValuesPropertyDefinitions> : IsNamedDataModel<
 
 /** A DataModel which holds properties and can be validated */
 interface IsTypedValuesDataModel<DM : IsValuesDataModel<P>, P : IsValuesPropertyDefinitions> :
-    IsDataModelWithValues<Any, P, Values<DM, P>>,
+    IsDataModelWithValues<Any, P, Values<P>>,
     IsValuesDataModel<P> {
     /**
      * Validate a [map] with values and get reference from [refGetter] if exception needs to be thrown
      * @throws ValidationUmbrellaException if input was invalid
      */
     fun validate(
-        values: Values<DM, P>,
-        refGetter: () -> IsPropertyReference<Values<DM, P>, IsPropertyDefinition<Values<DM, P>>, *>? = { null }
+        values: Values<P>,
+        refGetter: () -> IsPropertyReference<Values<P>, IsPropertyDefinition<Values<P>>, *>? = { null }
     )
 
     /** Create a ObjectValues with given [createValues] function */
     @Suppress("UNCHECKED_CAST")
     override fun values(context: RequestContext?, createValues: P.() -> IsValueItems) =
-        Values(this as DM, createValues(this.properties), context)
+        Values(this.properties, createValues(this.properties), context)
 }
 
 /** Create a Values object with given [createMap] function */
@@ -58,14 +58,14 @@ fun <DM : IsValuesDataModel<P>, P : IsValuesPropertyDefinitions> DM.values(
     context: RequestContext?,
     createMap: P.() -> IsValueItems
 ) =
-    Values(this, createMap(this.properties), context)
+    Values(this.properties, createMap(this.properties), context)
 
 /** Create a Values object with given [changes] */
 fun <DM : IsValuesDataModel<P>, P : IsValuesPropertyDefinitions> DM.fromChanges(
     context: RequestContext?,
     changes: List<IsChange>
 ) = if (changes.isEmpty()) {
-    Values(this, ValueItems(), context)
+    Values(this.properties, ValueItems(), context)
 } else {
     val valueItemsToChange = MutableValueItems(mutableListOf())
 
@@ -75,5 +75,5 @@ fun <DM : IsValuesDataModel<P>, P : IsValuesPropertyDefinitions> DM.fromChanges(
         }
     }
 
-    Values(this, valueItemsToChange, context)
+    Values(this.properties, valueItemsToChange, context)
 }

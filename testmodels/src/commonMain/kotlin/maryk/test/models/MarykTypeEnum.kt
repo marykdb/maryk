@@ -1,6 +1,5 @@
 package maryk.test.models
 
-import maryk.core.models.DataModel
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsUsableInMultiType
 import maryk.core.properties.definitions.ListDefinition
@@ -34,7 +33,7 @@ sealed class MarykTypeEnum<T: Any>(
             maxValue = 2000
         )
     )
-    object T3: MarykTypeEnum<Values<DataModel<EmbeddedMarykModel>, EmbeddedMarykModel>>(3u,
+    object T3: MarykTypeEnum<Values<EmbeddedMarykModel>>(3u,
         EmbeddedValuesDefinition(
             dataModel = { EmbeddedMarykModel.Model }
         )

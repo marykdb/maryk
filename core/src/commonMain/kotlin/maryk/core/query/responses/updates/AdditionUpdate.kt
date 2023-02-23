@@ -26,7 +26,7 @@ data class AdditionUpdate<DM: IsRootDataModel<P>, P: IsValuesPropertyDefinitions
     val firstVersion: ULong,
     val insertionIndex: Int,
     val isDeleted: Boolean,
-    val values: Values<DM, P>
+    val values: Values<P>
 ) : IsUpdateResponse<DM, P> {
     override val type = Addition
 

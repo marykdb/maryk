@@ -21,7 +21,7 @@ import maryk.core.values.Values
 
 data class ValuesWithMetaData<DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions>(
     val key: Key<DM>,
-    val values: Values<DM, P>,
+    val values: Values<P>,
     val firstVersion: ULong,
     val lastVersion: ULong,
     val isDeleted: Boolean

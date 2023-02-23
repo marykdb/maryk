@@ -73,7 +73,7 @@ class FilterWithFetchRequestKtTest {
         )
     )
 
-    private fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> DM.createDataRecord(values: Values<DM, P>): DataRecord<DM, P> {
+    private fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> DM.createDataRecord(values: Values<P>): DataRecord<DM, P> {
         val recordValues = mutableListOf<DataRecordValue<*>>()
 
         values.writeToStorage { _, reference, _, value ->

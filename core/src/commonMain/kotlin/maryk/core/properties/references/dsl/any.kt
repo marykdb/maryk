@@ -12,7 +12,7 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.values.Values
 
 /** Specific extension to support fetching deeper references on Map values by any key */
-fun <K : Any, V : Values<*, P>, DM : IsValuesDataModel<P>, P : IsValuesPropertyDefinitions, T : Any, R : IsPropertyReference<T, IsPropertyDefinition<T>, *>> IsMapDefinition<K, V, *>.any(
+fun <K : Any, V : Values<P>, DM : IsValuesDataModel<P>, P : IsValuesPropertyDefinitions, T : Any, R : IsPropertyReference<T, IsPropertyDefinition<T>, *>> IsMapDefinition<K, V, *>.any(
     referenceGetter: P.() -> (AnyOutPropertyReference?) -> R
 ): (AnyOutPropertyReference?) -> R =
     {

@@ -31,7 +31,7 @@ internal suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> 
     dataModel: DM,
     key: Key<DM>,
     version: HLC,
-    objectToAdd: Values<DM, P>,
+    objectToAdd: Values<P>,
     updateSharedFlow: MutableSharedFlow<IsUpdateAction>
 ): IsAddResponseStatus<DM> = try {
     objectToAdd.validate()

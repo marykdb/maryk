@@ -67,7 +67,7 @@ fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> DM.readStorageToV
     getQualifier: (((Int) -> Byte, Int) -> Unit) -> Boolean,
     select: RootPropRefGraph<P>?,
     processValue: ValueReader
-): Values<DM, P> {
+): Values<P> {
     // Used to collect all found ValueItems
     val mutableValuesItems = MutableValueItems()
 

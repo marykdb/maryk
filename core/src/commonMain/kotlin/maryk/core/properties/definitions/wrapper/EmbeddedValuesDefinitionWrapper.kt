@@ -31,15 +31,15 @@ data class EmbeddedValuesDefinitionWrapper<
     override val name: String,
     override val definition: IsEmbeddedValuesDefinition<DM, P, CX>,
     override val alternativeNames: Set<String>? = null,
-    override val getter: (Any) -> Values<DM, P>? = { null },
-    override val capturer: (Unit.(CX, Values<DM, P>) -> Unit)? = null,
-    override val toSerializable: (Unit.(Values<DM, P>?, CX?) -> Values<DM, P>?)? = null,
-    override val fromSerializable: (Unit.(Values<DM, P>?) -> Values<DM, P>?)? = null,
+    override val getter: (Any) -> Values<P>? = { null },
+    override val capturer: (Unit.(CX, Values<P>) -> Unit)? = null,
+    override val toSerializable: (Unit.(Values<P>?, CX?) -> Values<P>?)? = null,
+    override val fromSerializable: (Unit.(Values<P>?) -> Values<P>?)? = null,
     override val shouldSerialize: (Unit.(Any) -> Boolean)? = null
 ) :
     AbstractDefinitionWrapper(index, name),
     IsEmbeddedValuesDefinition<DM, P, CX> by definition,
-    IsDefinitionWrapper<Values<DM, P>, Values<DM, P>, CX, Any> {
+    IsDefinitionWrapper<Values<P>, Values<P>, CX, Any> {
     override val graphType = PropRef
 
     override fun ref(parentRef: AnyPropertyReference?) = cacheRef(parentRef, refCache) {

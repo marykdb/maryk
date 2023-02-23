@@ -48,7 +48,7 @@ internal suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> 
     dbIndex: UInt,
     key: Key<DM>,
     version: HLC,
-    objectToAdd: Values<DM, P>,
+    objectToAdd: Values<P>,
     updateSharedFlow: MutableSharedFlow<IsUpdateAction>
 ): IsAddResponseStatus<DM> {
     return try {

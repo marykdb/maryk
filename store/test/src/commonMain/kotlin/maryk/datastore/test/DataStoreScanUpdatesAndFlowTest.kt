@@ -259,7 +259,7 @@ class DataStoreScanUpdatesAndFlowTest(
                 assertEquals(testKeys[3], key)
                 assertEquals(highestInitVersion, version)
                 assertEquals(2, insertionIndex)
-                assertEquals<Values<*, *>>(t3, values)
+                assertEquals<Values<*>>(t3, values)
             }
 
             val change1 = Change(TestMarykModel { string::ref } with "ha new message 1")
@@ -618,7 +618,7 @@ class DataStoreScanUpdatesAndFlowTest(
 
             val additionUpdate = responses[5].await()
             assertIs<AdditionUpdate<RootDataModel<TestMarykModel>, TestMarykModel>>(additionUpdate).apply {
-                assertEquals<Values<*, *>>(values, newDataObject2)
+                assertEquals(values, newDataObject2)
                 assertEquals(1, insertionIndex)
                 testKeys.add(key)
             }
@@ -791,7 +791,7 @@ class DataStoreScanUpdatesAndFlowTest(
 
             val additionUpdate = responses[5].await()
             assertIs<AdditionUpdate<RootDataModel<TestMarykModel>, TestMarykModel>>(additionUpdate).apply {
-                assertEquals<Values<*, *>>(newDataObject2, values)
+                assertEquals(newDataObject2, values)
                 assertEquals(1, insertionIndex)
                 testKeys.add(key)
             }

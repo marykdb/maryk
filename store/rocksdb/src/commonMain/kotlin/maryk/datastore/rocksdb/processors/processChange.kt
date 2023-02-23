@@ -332,7 +332,7 @@ private suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> a
                                         value
                                     )
                                 }
-                                is Values<*, *> -> {
+                                is Values<*> -> {
                                     // Process any reference containing values
                                     if (reference.propertyDefinition !is IsEmbeddedValuesDefinition<*, *, *>) {
                                         throw TypeException("Expected a Reference to IsEmbeddedValuesDefinition for Values change")
@@ -341,7 +341,7 @@ private suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> a
                                     @Suppress("UNCHECKED_CAST")
                                     val valuesDefinition = reference.propertyDefinition as IsEmbeddedValuesDefinition<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions, IsPropertyContext>
                                     @Suppress("UNCHECKED_CAST")
-                                    val valuesReference = reference as IsPropertyReference<Values<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>, IsPropertyDefinition<Values<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>>, *>
+                                    val valuesReference = reference as IsPropertyReference<Values<IsValuesPropertyDefinitions>, IsPropertyDefinition<Values<IsValuesPropertyDefinitions>>, *>
 
                                     // Delete all existing values in placeholder
                                     val hadPrevValue = deleteByReference(transaction, columnFamilies, dataStore.defaultReadOptions, key, reference, reference.toStorageByteArray(), versionBytes) { _, prevValue ->
@@ -351,7 +351,7 @@ private suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> a
                                     @Suppress("UNCHECKED_CAST")
                                     valuesDefinition.validateWithRef(
                                         if (hadPrevValue) valuesDefinition.dataModel.values(null) { EmptyValueItems } else null,
-                                        value as Values<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>
+                                        value as Values<IsValuesPropertyDefinitions>
                                     ) { valuesReference }
 
                                     val valueWriter = createValueWriter(

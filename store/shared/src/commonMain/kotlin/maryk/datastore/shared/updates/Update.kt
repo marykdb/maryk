@@ -16,7 +16,7 @@ sealed class Update<DM: IsRootDataModel<P>, P: IsValuesPropertyDefinitions>(
         dataModel: DM,
         key: Key<DM>,
         version: ULong,
-        val values: Values<DM, P>
+        val values: Values<P>
     ): Update<DM, P>(dataModel, key, version)
 
     class Deletion<DM: IsRootDataModel<P>, P: IsValuesPropertyDefinitions>(

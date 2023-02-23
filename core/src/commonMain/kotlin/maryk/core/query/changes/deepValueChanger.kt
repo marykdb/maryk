@@ -20,8 +20,8 @@ object SubObjectChangeException: RequestException("Cannot set sub value on non e
 /** changes deeper value for [reference] based on [originalValue] and [newValue] with [valueChanger] */
 internal fun deepValueChanger(originalValue: Any?, newValue: Any?, reference: AnyPropertyReference, valueChanger: (Any?, Any?) -> Any?) {
     when (newValue) {
-        is Values<*, *> -> (newValue.values as MutableValueItems).copyFromOriginalAndChange(
-            (originalValue as Values<*, *>).values,
+        is Values<*> -> (newValue.values as MutableValueItems).copyFromOriginalAndChange(
+            (originalValue as Values<*>).values,
             (reference as IsPropertyReferenceForValues<*, *, *, *>).index,
             valueChanger
         )

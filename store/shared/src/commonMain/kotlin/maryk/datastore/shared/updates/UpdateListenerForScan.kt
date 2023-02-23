@@ -82,7 +82,7 @@ class UpdateListenerForScan<DM: IsRootDataModel<P>, P: IsValuesPropertyDefinitio
         }
     }
 
-    override fun addValues(key: Key<DM>, values: Values<DM, P>): Int? {
+    override fun addValues(key: Key<DM>, values: Values<P>): Int? {
         // Find position and add it if necessary to order if it fits within limit
         return when (scanType) {
             is IndexScan -> {
@@ -141,7 +141,7 @@ class UpdateListenerForScan<DM: IsRootDataModel<P>, P: IsValuesPropertyDefinitio
         }
 
     /** [values] at [key] are known to be at end of sorted range so add it specifically there */
-    fun addValuesAtEnd(key: Key<DM>, values: Values<DM, P>) {
+    fun addValuesAtEnd(key: Key<DM>, values: Values<P>) {
         matchingKeys.value = matchingKeys.value + key
 
         // Add sort key also to the end

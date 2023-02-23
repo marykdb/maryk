@@ -37,10 +37,10 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P : IsValuesPropertyDe
     override val required: Boolean = true,
     override val final: Boolean = false,
     dataModel: Unit.() -> DM,
-    override val default: Values<DM, P>? = null
+    override val default: Values<P>? = null
 ) :
     IsEmbeddedValuesDefinition<DM, P, IsPropertyContext>,
-    IsTransportablePropertyDefinitionType<Values<DM, P>> {
+    IsTransportablePropertyDefinitionType<Values<P>> {
     override val propertyDefinitionType = Embed
     override val wireType = LENGTH_DELIMITED
 
@@ -52,7 +52,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P : IsValuesPropertyDe
     internal val typedDataModel get() =
         internalDataModel.value as AbstractValuesDataModel<DM, P, IsPropertyContext>
 
-    override fun asString(value: Values<DM, P>, context: IsPropertyContext?): String {
+    override fun asString(value: Values<P>, context: IsPropertyContext?): String {
         var string = ""
         this.writeJsonValue(value, JsonWriter {
             string += it
@@ -60,7 +60,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P : IsValuesPropertyDe
         return string
     }
 
-    override fun fromString(string: String, context: IsPropertyContext?): Values<DM, P> {
+    override fun fromString(string: String, context: IsPropertyContext?): Values<P> {
         val stringIterator = string.iterator()
         return this.readJson(JsonReader { stringIterator.nextChar() }, context)
     }
@@ -70,9 +70,9 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P : IsValuesPropertyDe
     override fun getEmbeddedByIndex(index: UInt): IsDefinitionWrapper<*, *, *, *>? = dataModel.properties[index]
 
     override fun validateWithRef(
-        previousValue: Values<DM, P>?,
-        newValue: Values<DM, P>?,
-        refGetter: () -> IsPropertyReference<Values<DM, P>, IsPropertyDefinition<Values<DM, P>>, *>?
+        previousValue: Values<P>?,
+        newValue: Values<P>?,
+        refGetter: () -> IsPropertyReference<Values<P>, IsPropertyDefinition<Values<P>>, *>?
     ) {
         super<IsEmbeddedValuesDefinition>.validateWithRef(previousValue, newValue, refGetter)
         if (newValue != null) {
@@ -83,7 +83,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P : IsValuesPropertyDe
         }
     }
 
-    override fun writeJsonValue(value: Values<DM, P>, writer: IsJsonLikeWriter, context: IsPropertyContext?) =
+    override fun writeJsonValue(value: Values<P>, writer: IsJsonLikeWriter, context: IsPropertyContext?) =
         this.typedDataModel.writeJson(
             value,
             writer,
@@ -94,7 +94,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P : IsValuesPropertyDe
         this.typedDataModel.readJson(reader, context)
 
     override fun calculateTransportByteLength(
-        value: Values<DM, P>,
+        value: Values<P>,
         cacher: WriteCacheWriter,
         context: IsPropertyContext?
     ) =
@@ -105,7 +105,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P : IsValuesPropertyDe
         )
 
     override fun writeTransportBytes(
-        value: Values<DM, P>,
+        value: Values<P>,
         cacheGetter: WriteCacheReader,
         writer: (byte: Byte) -> Unit,
         context: IsPropertyContext?
@@ -122,7 +122,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P : IsValuesPropertyDe
         length: Int,
         reader: () -> Byte,
         context: IsPropertyContext?,
-        earlierValue: Values<DM, P>?
+        earlierValue: Values<P>?
     ) =
         this.typedDataModel.readProtoBuf(length, reader, context)
 
@@ -212,7 +212,7 @@ fun <P : IsValuesPropertyDefinitions, DM : IsValuesDataModel<P>> IsValuesPropert
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
-    default: Values<DM, P>? = null,
+    default: Values<P>? = null,
     alternativeNames: Set<String>? = null
 ) = DefinitionWrapperDelegateLoader(this) { propName ->
     EmbeddedValuesDefinitionWrapper(
@@ -225,17 +225,17 @@ fun <P : IsValuesPropertyDefinitions, DM : IsValuesDataModel<P>> IsValuesPropert
 
 fun <P : IsValuesPropertyDefinitions, DM : IsValuesDataModel<P>> ObjectPropertyDefinitions<Any>.embed(
     index: UInt,
-    getter: (Any) -> Values<DM, P>? = { null },
+    getter: (Any) -> Values<P>? = { null },
     dataModel: Unit.() -> DM,
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
-    default: Values<DM, P>? = null,
+    default: Values<P>? = null,
     alternativeNames: Set<String>? = null,
-    toSerializable: (Unit.(Values<DM, P>?, IsPropertyContext?) -> Values<DM, P>?)? = null,
-    fromSerializable: (Unit.(Values<DM, P>?) -> Values<DM, P>?)? = null,
+    toSerializable: (Unit.(Values<P>?, IsPropertyContext?) -> Values<P>?)? = null,
+    fromSerializable: (Unit.(Values<P>?) -> Values<P>?)? = null,
     shouldSerialize: (Unit.(Any) -> Boolean)? = null,
-    capturer: (Unit.(IsPropertyContext, Values<DM, P>) -> Unit)? = null
+    capturer: (Unit.(IsPropertyContext, Values<P>) -> Unit)? = null
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     EmbeddedValuesDefinitionWrapper(
         index,

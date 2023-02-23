@@ -75,7 +75,7 @@ data class MultiTypeDefinitionWrapper<E : TypeEnum<T>, T: Any, TO : Any, in CX :
     /** Specific extension to support fetching deeper references with [type] */
     @Suppress("UNCHECKED_CAST")
     fun <P : IsValuesPropertyDefinitions, T : Any, R : IsPropertyReference<T, IsDefinitionWrapper<T, *, *, *>, *>> withType(
-        type: TypeEnum<Values<*, P>>,
+        type: TypeEnum<Values<P>>,
         referenceGetter: P.() ->
             (AnyOutPropertyReference?) -> R
     ): (AnyOutPropertyReference?) -> R  =

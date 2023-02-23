@@ -1,41 +1,46 @@
 package maryk.core.values
 
+import maryk.core.models.AbstractDataModel
 import maryk.core.models.IsNamedDataModel
 import maryk.core.models.IsTypedValuesDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.TypedPropertyDefinitions
 import maryk.core.properties.graph.IsPropRefGraph
 import maryk.core.query.RequestContext
 import maryk.core.query.changes.IsChange
 
-typealias ValuesImpl = Values<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>
+typealias ValuesImpl = Values<IsValuesPropertyDefinitions>
 
 /**
- * Contains a [map] with all values related to a DataObject of [dataModel] of type [DM]
+ * Contains a [map] with all values related to a DataObject of [dataModel]
  */
-data class Values<DM : IsValuesDataModel<P>, P : IsValuesPropertyDefinitions> internal constructor(
-    override val dataModel: DM,
+data class Values<P : IsValuesPropertyDefinitions> internal constructor(
+    val propertyDefinitions: P,
     override val values: IsValueItems,
     override val context: RequestContext? = null
-) : AbstractValues<Any, DM, P>() {
+) : AbstractValues<Any, IsValuesDataModel<P>, P>() {
+    @Suppress("UNCHECKED_CAST")
+    override val dataModel: IsValuesDataModel<P> = propertyDefinitions.Model as IsValuesDataModel<P>
+
     /** make a copy of Values and add new pairs from [pairCreator] */
     fun copy(pairCreator: P.() -> List<ValueItem>) =
         Values(
-            dataModel,
-            values.copyAdding(pairCreator(this.dataModel.properties)),
+            propertyDefinitions,
+            values.copyAdding(pairCreator(this.propertyDefinitions)),
             context
         )
 
     fun copy(values: IsValueItems) =
-        Values(dataModel, values.copyAdding(values), context)
+        Values(propertyDefinitions, values.copyAdding(values), context)
 
-    fun filterWithSelect(select: IsPropRefGraph<*>?): Values<DM, P> {
+    fun filterWithSelect(select: IsPropRefGraph<*>?): Values<P> {
         if (select == null) {
             return this
         }
 
         return Values(
-            dataModel = dataModel,
+            propertyDefinitions = propertyDefinitions,
             values = this.values.copySelecting(select),
             context = context
         )
@@ -44,7 +49,7 @@ data class Values<DM : IsValuesDataModel<P>, P : IsValuesPropertyDefinitions> in
     /** Change the Values with given [change] */
     fun change(vararg change: IsChange) = this.change(listOf(*change))
 
-    fun change(changes: List<IsChange>): Values<DM, P> =
+    fun change(changes: List<IsChange>): Values<P> =
         if (changes.isEmpty()) {
             this
         } else {
@@ -56,14 +61,14 @@ data class Values<DM : IsValuesDataModel<P>, P : IsValuesPropertyDefinitions> in
                 }
             }
 
-            Values(dataModel, values.copyAdding(valueItemsToChange), context)
+            Values(propertyDefinitions, values.copyAdding(valueItemsToChange), context)
         }
 
     // ignore context
     override fun equals(other: Any?) = when {
         this === other -> true
-        other !is Values<*, *> -> false
-        dataModel != other.dataModel -> false
+        other !is Values<*> -> false
+        propertyDefinitions != other.propertyDefinitions -> false
         values != other.values -> false
         else -> true
     }
@@ -85,6 +90,12 @@ data class Values<DM : IsValuesDataModel<P>, P : IsValuesPropertyDefinitions> in
      */
     fun validate() {
         @Suppress("UNCHECKED_CAST")
-        (this.dataModel as IsTypedValuesDataModel<DM, P>).validate(this)
+        (this.dataModel as IsTypedValuesDataModel<*, P>).validate(this)
     }
 }
+
+/** Output values to a json string */
+fun <V: Values<P>, DO: Any, DM: AbstractDataModel<DO, P, V, *, *>, P: TypedPropertyDefinitions<DM, P>> V.toJson(
+    pretty: Boolean = false
+): String =
+    this.propertyDefinitions.Model.writeJson(this, pretty = pretty)

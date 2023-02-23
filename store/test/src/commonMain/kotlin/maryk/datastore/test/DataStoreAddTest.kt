@@ -48,7 +48,7 @@ class DataStoreAddTest(
         expect(Log.Model) { addResponse.dataModel }
         expect(4) { addResponse.statuses.count() }
 
-        val keysToOriginal = mutableMapOf<Key<*>, Values<RootDataModel<Log>, *>>()
+        val keysToOriginal = mutableMapOf<Key<*>, Values<Log>>()
         addResponse.statuses.forEachIndexed { index, it ->
             val response = assertIs<AddSuccess<RootDataModel<Log>>>(it)
             assertRecent(response.version, 1000uL)

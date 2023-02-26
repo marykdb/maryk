@@ -22,7 +22,7 @@ fun <P: IsValuesPropertyDefinitions> checkModelIfMigrationIsNeeded(
     val name = rocksDB.get(modelColumnFamily, modelNameKey)?.decodeToString()
     val version = rocksDB.get(modelColumnFamily, modelVersionKey)?.let {
         var readIndex = 0
-        Version.readFromBytes { it[readIndex++] }
+        Version.Model.readFromBytes { it[readIndex++] }
     }
 
     if (name == null || version == null) {

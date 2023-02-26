@@ -31,7 +31,7 @@ class GenerateKotlinForDefinitionsTest {
             Option,
             SimpleMarykTypeEnum,
             MarykTypeEnum,
-            ValueMarykObject,
+            ValueMarykObject.Model,
             EmbeddedModel.Model,
             CompleteMarykModel.Model,
             SimpleMarykModel.Model

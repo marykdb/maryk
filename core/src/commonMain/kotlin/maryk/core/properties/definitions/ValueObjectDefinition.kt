@@ -8,8 +8,10 @@ import maryk.core.models.ContextualDataModel
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.models.ValueDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.IsValueModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.ValueModel
 import maryk.core.properties.definitions.PropertyDefinitionType.Value
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
@@ -199,7 +201,7 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : ValueDataModel<DO, P
     }
 }
 
-fun <DO : ValueDataObject, DM : ValueDataModel<DO, P>, P : ObjectPropertyDefinitions<DO>> IsValuesPropertyDefinitions.valueObject(
+fun <DO : ValueDataObject, DM : IsValueModel<DO, P>, P : ObjectPropertyDefinitions<DO>> IsValuesPropertyDefinitions.valueObject(
     index: UInt,
     dataModel: DM,
     name: String? = null,
@@ -211,15 +213,15 @@ fun <DO : ValueDataObject, DM : ValueDataModel<DO, P>, P : ObjectPropertyDefinit
     default: DO? = null,
     alternativeNames: Set<String>? = null
 ) = DefinitionWrapperDelegateLoader(this) { propName ->
-    FixedBytesDefinitionWrapper<DO, DO, IsPropertyContext, ValueObjectDefinition<DO, DM, P>, Any>(
+    FixedBytesDefinitionWrapper<DO, DO, IsPropertyContext, ValueObjectDefinition<DO, ValueDataModel<DO, P>, P>, Any>(
         index,
         name ?: propName,
-        ValueObjectDefinition(required, final, unique, dataModel, minValue, maxValue, default),
+        ValueObjectDefinition(required, final, unique, dataModel.Model as ValueDataModel<DO, P>, minValue, maxValue, default),
         alternativeNames
     )
 }
 
-fun <TO: Any, DO: Any, VDO: ValueDataObject, DM : ValueDataModel<VDO, P>, P : ObjectPropertyDefinitions<VDO>> ObjectPropertyDefinitions<DO>.valueObject(
+fun <TO: Any, DO: Any, VDO: ValueDataObject, DM : ValueModel<VDO, P>, P : ObjectPropertyDefinitions<VDO>> ObjectPropertyDefinitions<DO>.valueObject(
     index: UInt,
     getter: (DO) -> TO?,
     dataModel: DM,
@@ -231,8 +233,8 @@ fun <TO: Any, DO: Any, VDO: ValueDataObject, DM : ValueDataModel<VDO, P>, P : Ob
     maxValue: VDO? = null,
     default: VDO? = null,
     alternativeNames: Set<String>? = null
-): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<VDO, TO, IsPropertyContext, ValueObjectDefinition<VDO, DM, P>, DO>, DO, IsPropertyContext> =
-    valueObject(index, getter, dataModel, name, required, final,  unique, minValue, maxValue, default, alternativeNames, toSerializable = null)
+): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<VDO, TO, IsPropertyContext, ValueObjectDefinition<VDO, ValueDataModel<VDO, P>, P>, DO>, DO, IsPropertyContext> =
+    valueObject(index, getter, dataModel.Model, name, required, final,  unique, minValue, maxValue, default, alternativeNames, toSerializable = null)
 
 fun <TO: Any, DO: Any, VDO: ValueDataObject, DM : ValueDataModel<VDO, P>, P : ObjectPropertyDefinitions<VDO>, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.valueObject(
     index: UInt,

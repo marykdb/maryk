@@ -14,7 +14,7 @@ internal class VersionTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.version, Version)
+        checkProtoBufConversion(this.version, Version.Model)
     }
 
     @Test
@@ -24,7 +24,7 @@ internal class VersionTest {
             "1.2.3"
             """.trimIndent()
         ) {
-            checkJsonConversion(this.version, Version)
+            checkJsonConversion(this.version, Version.Model)
         }
 
         expect(
@@ -32,7 +32,7 @@ internal class VersionTest {
             "1.2"
             """.trimIndent()
         ) {
-            checkJsonConversion(Version(1, 2), Version)
+            checkJsonConversion(Version(1, 2), Version.Model)
         }
     }
 
@@ -43,7 +43,7 @@ internal class VersionTest {
             1.2.3
             """.trimIndent()
         ) {
-            checkYamlConversion(this.version, Version)
+            checkYamlConversion(this.version, Version.Model)
         }
 
         expect(
@@ -51,22 +51,22 @@ internal class VersionTest {
             3.4
             """.trimIndent()
         ) {
-            checkYamlConversion(Version(3, 4), Version)
+            checkYamlConversion(Version(3, 4), Version.Model)
         }
     }
 
     @Test
     fun failOnInvalidJson() {
         assertFailsWith<ParseException> {
-            Version.readJson(""""1.2.3.4.5"""")
+            Version.Model.readJson(""""1.2.3.4.5"""")
         }
 
         assertFailsWith<ParseException> {
-            Version.readJson(""""Something dirty"""")
+            Version.Model.readJson(""""Something dirty"""")
         }
 
         assertFailsWith<InvalidJsonContent> {
-            Version.readJson("1.2.3.4")
+            Version.Model.readJson("1.2.3.4")
         }
     }
 }

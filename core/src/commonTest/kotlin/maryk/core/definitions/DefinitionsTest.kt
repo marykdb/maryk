@@ -22,7 +22,7 @@ import kotlin.test.expect
 class DefinitionsTest {
     private val definitions = Definitions(
         Option,
-        TestValueObject,
+        TestValueObject.Model,
         SimpleMarykModel.Model,
         EmbeddedMarykModel.Model,
         SimpleMarykTypeEnum,

@@ -89,7 +89,7 @@ abstract class ValueDataModel<DO : ValueDataObject, P : ObjectPropertyDefinition
     }
 
     /** Creates bytes for given [inputs] */
-    protected fun toBytes(vararg inputs: Any): ByteArray {
+    fun toBytes(vararg inputs: Any): ByteArray {
         val bytes = ByteArray(this.byteSize)
         var offset = 0
 

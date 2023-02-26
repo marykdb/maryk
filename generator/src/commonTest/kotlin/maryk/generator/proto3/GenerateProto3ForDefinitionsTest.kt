@@ -21,7 +21,7 @@ class MixedKotlinGenerationTest {
 
         Definitions(
             MarykTypeEnum,
-            ValueMarykObject,
+            ValueMarykObject.Model,
             CompleteMarykModel.Model,
         ).generateProto3 { name ->
             setOfNames.add(name)

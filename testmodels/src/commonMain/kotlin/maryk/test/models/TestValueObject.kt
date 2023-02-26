@@ -1,9 +1,7 @@
 package maryk.test.models
 
 import kotlinx.datetime.LocalDateTime
-import maryk.core.models.ValueDataModel
-import maryk.core.properties.AbstractPropertyDefinitions
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.ValueModel
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.dateTime
 import maryk.core.properties.definitions.number
@@ -16,7 +14,7 @@ data class TestValueObject(
     val dateTime: LocalDateTime,
     val bool: Boolean
 ) : ValueDataObject(toBytes(int, dateTime, bool)) {
-    object Properties : ObjectPropertyDefinitions<TestValueObject>() {
+    companion object : ValueModel<TestValueObject, Companion>(TestValueObject::class) {
         val int by number(
             1u,
             TestValueObject::int,
@@ -27,21 +25,12 @@ data class TestValueObject(
         val dateTime by dateTime(2u, TestValueObject::dateTime)
 
         val bool by boolean(3u, TestValueObject::bool)
-    }
 
-    companion object : ValueDataModel<TestValueObject, Properties>(
-        name = "TestValueObject",
-        properties = Properties
-    ) {
-        override fun invoke(values: ObjectValues<TestValueObject, Properties>) = TestValueObject(
-            int = values(1u),
-            dateTime = values(2u),
-            bool = values(3u)
-        )
-
-        override fun equals(other: Any?) =
-            other is ValueDataModel<*, *> &&
-                this.name == other.name &&
-                this.properties.size == (other.properties as AbstractPropertyDefinitions<*>).size
+        override fun invoke(values: ObjectValues<TestValueObject, Companion>) =
+            TestValueObject(
+                int = values(1u),
+                dateTime = values(2u),
+                bool = values(3u)
+            )
     }
 }

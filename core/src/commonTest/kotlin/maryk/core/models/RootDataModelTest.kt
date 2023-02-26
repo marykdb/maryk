@@ -636,7 +636,7 @@ internal class RootDataModelTest {
 
         val newContext = DefinitionsConversionContext()
         newContext.dataModels["TestMarykModel"] = { TestMarykModel.Model }
-        newContext.dataModels["TestValueObject"] = { TestValueObject }
+        newContext.dataModels["TestValueObject"] = { TestValueObject.Model }
         newContext.dataModels["EmbeddedMarykModel"] = { EmbeddedMarykModel.Model }
 
         RootDataModel.Model.readJson(reader, newContext).toDataObject().apply {
@@ -715,7 +715,7 @@ internal class RootDataModelTest {
             }
             properties["value"]!!.let {
                 expect(13u) { it.index }
-                expect(ValueObjectDefinition(dataModel = TestValueObject)) {
+                expect(ValueObjectDefinition(dataModel = TestValueObject.Model)) {
                     it.definition as ValueObjectDefinition<*, *, *>
                 }
             }

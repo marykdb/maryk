@@ -2,10 +2,10 @@ package maryk.datastore.memory.processors
 
 import maryk.core.clock.HLC
 import maryk.core.exceptions.TypeException
-import maryk.core.models.IsRootDataModel
+import maryk.core.models.IsValuesDataModel
 import maryk.core.models.values
 import maryk.core.processors.datastore.readStorageToValues
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.values.EmptyValueItems
@@ -17,17 +17,18 @@ import maryk.datastore.memory.records.DeletedValue
 /**
  * Processes [record] values to a ValuesWithMeta object
  */
-internal fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> DM.recordToValueWithMeta(
-    select: RootPropRefGraph<P>?,
+internal fun <DM : IsRootModel> DM.recordToValueWithMeta(
+    select: RootPropRefGraph<DM>?,
     toVersion: HLC?,
-    record: DataRecord<DM, P>
-): ValuesWithMetaData<DM, P>? {
+    record: DataRecord<DM>
+): ValuesWithMetaData<DM>? {
     var valueIndex = -1
     var maxVersion = record.firstVersion
 
     val values = if (select != null && select.properties.isEmpty()) {
+        @Suppress("UNCHECKED_CAST")
         // Don't read the values if no values are selected
-        this.values(null) { EmptyValueItems }
+        (this.Model as IsValuesDataModel<DM>).values(null) { EmptyValueItems }
     } else {
         this.readStorageToValues(
             getQualifier = { resultHandler ->

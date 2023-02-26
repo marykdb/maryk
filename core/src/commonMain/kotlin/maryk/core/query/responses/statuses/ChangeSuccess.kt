@@ -1,8 +1,7 @@
 package maryk.core.query.responses.statuses
 
-import maryk.core.models.IsRootDataModel
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.list
@@ -16,12 +15,13 @@ import maryk.core.query.responses.statuses.StatusType.CHANGE_SUCCESS
 import maryk.core.values.SimpleObjectValues
 
 /** Change action was completed successfully with [version] */
-data class ChangeSuccess<DM : IsRootDataModel<*>>(
+data class ChangeSuccess<DM : IsRootModel>(
     val version: ULong,
     val changes: List<IsChange>?
 ) : IsChangeResponseStatus<DM> {
     override val statusType = CHANGE_SUCCESS
 
+    @Suppress("unused")
     internal companion object : SimpleQueryDataModel<ChangeSuccess<*>>(
         properties = object : ObjectPropertyDefinitions<ChangeSuccess<*>>() {
             val version by number(1u, ChangeSuccess<*>::version, type = UInt64)
@@ -38,7 +38,7 @@ data class ChangeSuccess<DM : IsRootDataModel<*>>(
             )
         }
     ) {
-        override fun invoke(values: SimpleObjectValues<ChangeSuccess<*>>) = ChangeSuccess<IsRootDataModel<IsValuesPropertyDefinitions>>(
+        override fun invoke(values: SimpleObjectValues<ChangeSuccess<*>>) = ChangeSuccess<IsRootModel>(
             version = values(1u),
             changes = values(2u)
         )

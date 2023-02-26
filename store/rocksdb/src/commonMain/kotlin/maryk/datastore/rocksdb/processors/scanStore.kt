@@ -1,8 +1,8 @@
 package maryk.datastore.rocksdb.processors
 
-import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
+import maryk.core.properties.key
 import maryk.core.properties.types.Key
 import maryk.core.query.orders.Direction
 import maryk.core.query.orders.Direction.ASC
@@ -13,11 +13,11 @@ import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
 
-internal fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> scanStore(
+internal fun <DM : IsRootModel> scanStore(
     dataStore: RocksDBDataStore,
     dbAccessor: DBAccessor,
     columnFamilies: TableColumnFamilies,
-    scanRequest: IsScanRequest<DM, P, *>,
+    scanRequest: IsScanRequest<DM, *>,
     direction: Direction,
     scanRange: KeyScanRanges,
     processStoreValue: (Key<DM>, ULong, ByteArray?) -> Unit
@@ -39,8 +39,7 @@ internal fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> scanStor
                 var currentSize: UInt = 0u
 
                 while (iterator.isValid()) {
-                    @Suppress("UNCHECKED_CAST")
-                    val key = scanRequest.dataModel.key(iterator.key()) as Key<DM>
+                    val key = scanRequest.dataModel.key(iterator.key())
 
                     if (range.keyOutOfRange(key.bytes)) {
                         break
@@ -83,8 +82,7 @@ internal fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> scanStor
                 var currentSize: UInt = 0u
 
                 while (iterator.isValid()) {
-                    @Suppress("UNCHECKED_CAST")
-                    val key = scanRequest.dataModel.key(iterator.key()) as Key<DM>
+                    val key = scanRequest.dataModel.key(iterator.key())
 
                     if (range.keyBeforeStart(key.bytes)) {
                         break

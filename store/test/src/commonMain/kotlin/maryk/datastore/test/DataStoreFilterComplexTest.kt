@@ -1,7 +1,6 @@
 package maryk.datastore.test
 
 import maryk.core.clock.HLC
-import maryk.core.models.RootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.filters.Equals
 import maryk.core.query.filters.Exists
@@ -19,9 +18,9 @@ import kotlin.test.assertTrue
 class DataStoreFilterComplexTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
-    private val keys = mutableListOf<Key<RootDataModel<ComplexModel>>>()
+    private val keys = mutableListOf<Key<ComplexModel>>()
     private val lastVersions = mutableListOf<ULong>()
-    private lateinit var firstKey: Key<RootDataModel<ComplexModel>>
+    private lateinit var firstKey: Key<ComplexModel>
 
     override val allTests = mapOf(
         "doExistsFilter" to ::doExistsFilter,
@@ -37,13 +36,13 @@ class DataStoreFilterComplexTest(
 
     override suspend fun initData() {
         val addResponse = dataStore.execute(
-            ComplexModel.Model.add(
+            ComplexModel.add(
                 dataObject
             )
         )
 
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<RootDataModel<ComplexModel>>>(status)
+            val response = assertIs<AddSuccess<ComplexModel>>(status)
             keys.add(response.key)
             lastVersions.add(response.version)
         }
@@ -53,7 +52,7 @@ class DataStoreFilterComplexTest(
 
     override suspend fun resetData() {
         dataStore.execute(
-            ComplexModel.Model.delete(*keys.toTypedArray(), hardDelete = true)
+            ComplexModel.delete(*keys.toTypedArray(), hardDelete = true)
         )
         keys.clear()
         lastVersions.clear()

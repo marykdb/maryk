@@ -3,7 +3,6 @@ package maryk.datastore.test
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
-import maryk.core.models.RootDataModel
 import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.exceptions.InvalidSizeException
 import maryk.core.properties.exceptions.InvalidValueException
@@ -31,7 +30,7 @@ import kotlin.test.expect
 class DataStoreChangeValidationTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
-    private val keys = mutableListOf<Key<RootDataModel<TestMarykModel>>>()
+    private val keys = mutableListOf<Key<TestMarykModel>>()
     private val lastVersions = mutableListOf<ULong>()
 
     override val allTests = mapOf(
@@ -48,7 +47,7 @@ class DataStoreChangeValidationTest(
 
     override suspend fun initData() {
         val addResponse = dataStore.execute(
-            TestMarykModel.Model.add(
+            TestMarykModel.add(
                 TestMarykModel(
                     "haha1",
                     5,
@@ -85,7 +84,7 @@ class DataStoreChangeValidationTest(
         )
 
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<RootDataModel<TestMarykModel>>>(status)
+            val response = assertIs<AddSuccess<TestMarykModel>>(status)
             keys.add(response.key)
             lastVersions.add(response.version)
         }
@@ -93,7 +92,7 @@ class DataStoreChangeValidationTest(
 
     override suspend fun resetData() {
         dataStore.execute(
-            TestMarykModel.Model.delete(*keys.toTypedArray(), hardDelete = true)
+            TestMarykModel.delete(*keys.toTypedArray(), hardDelete = true)
         )
         keys.clear()
         lastVersions.clear()
@@ -101,7 +100,7 @@ class DataStoreChangeValidationTest(
 
     private suspend fun executeChangeChangeWithValidationExceptionRequest() {
         val changeResponse = dataStore.execute(
-            TestMarykModel.Model.change(
+            TestMarykModel.change(
                 keys[1].change(
                     Change(
                         TestMarykModel { string::ref } with "wrong"
@@ -130,7 +129,7 @@ class DataStoreChangeValidationTest(
 
     private suspend fun executeChangeDeleteWithValidationExceptionRequest() {
         val changeResponse = dataStore.execute(
-            TestMarykModel.Model.change(
+            TestMarykModel.change(
                 keys[2].change(
                     Delete(TestMarykModel { uint::ref })
                 )
@@ -157,7 +156,7 @@ class DataStoreChangeValidationTest(
 
     private suspend fun executeChangeListWithTooManyItemsValidationExceptionRequest() {
         val changeResponse = dataStore.execute(
-            TestMarykModel.Model.change(
+            TestMarykModel.change(
                 keys[0].change(
                     ListChange(
                         TestMarykModel { listOfString::ref }.change(
@@ -189,7 +188,7 @@ class DataStoreChangeValidationTest(
 
     private suspend fun executeChangeListWithContentValidationExceptionRequest() {
         val changeResponse = dataStore.execute(
-            TestMarykModel.Model.change(
+            TestMarykModel.change(
                 keys[0].change(
                     ListChange(
                         TestMarykModel { listOfString::ref }.change(
@@ -224,7 +223,7 @@ class DataStoreChangeValidationTest(
 
     private suspend fun executeChangeSetWithMaxSizeValidationExceptionRequest() {
         val changeResponse = dataStore.execute(
-            TestMarykModel.Model.change(
+            TestMarykModel.change(
                 keys[1].change(
                     SetChange(
                         TestMarykModel { set::ref }.change(
@@ -261,7 +260,7 @@ class DataStoreChangeValidationTest(
 
     private suspend fun executeChangeSetWithValueValidationExceptionRequest() {
         val changeResponse = dataStore.execute(
-            TestMarykModel.Model.change(
+            TestMarykModel.change(
                 keys[1].change(
                     SetChange(
                         TestMarykModel { set::ref }.change(
@@ -295,7 +294,7 @@ class DataStoreChangeValidationTest(
 
     private suspend fun executeChangeMapWithSizeValidationExceptionRequest() {
         val changeResponse = dataStore.execute(
-            TestMarykModel.Model.change(
+            TestMarykModel.change(
                 keys[1].change(
                     Change(
                         TestMarykModel { map.refAt(LocalTime(1, 2, 3)) } with "test1",
@@ -336,7 +335,7 @@ class DataStoreChangeValidationTest(
 
     private suspend fun executeChangeMapContentValidationExceptionRequest() {
         val changeResponse = dataStore.execute(
-            TestMarykModel.Model.change(
+            TestMarykModel.change(
                 keys[1].change(
                     Change(
                         TestMarykModel { map.refAt(LocalTime(23, 52, 53)) } with "test1",
@@ -377,7 +376,7 @@ class DataStoreChangeValidationTest(
 
     private suspend fun executeChangeListSizeValidationExceptionRequest() {
         val changeResponse = dataStore.execute(
-            TestMarykModel.Model.change(
+            TestMarykModel.change(
                 keys[2].change(
                     Delete(
                         TestMarykModel { listOfString.refAt(0u) }

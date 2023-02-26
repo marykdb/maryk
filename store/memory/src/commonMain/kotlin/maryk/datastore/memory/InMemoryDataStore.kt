@@ -7,9 +7,8 @@ import maryk.core.clock.HLC
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
-import maryk.core.models.IsRootDataModel
 import maryk.core.models.RootDataModel
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.query.requests.AddRequest
 import maryk.core.query.requests.ChangeRequest
 import maryk.core.query.requests.DeleteRequest
@@ -68,7 +67,7 @@ class InMemoryDataStore(
         super.startFlows()
 
         this.launch {
-            val dataStores = mutableMapOf<UInt, DataStore<*, *>>()
+            val dataStores = mutableMapOf<UInt, DataStore<*>>()
 
             var clock = HLC()
 
@@ -78,40 +77,41 @@ class InMemoryDataStore(
                     try {
                         clock = clock.calculateMaxTimeStamp()
 
-                        val dataStoreFetcher = { model: IsRootDataModel<*> ->
-                            val index = dataModelIdsByString[model.name] ?: throw DefNotFoundException(model.name)
+                        val dataStoreFetcher: (IsRootModel) -> DataStore<IsRootModel> = { model: IsRootModel ->
+                            val index = dataModelIdsByString[model.Model.name] ?: throw DefNotFoundException(model.Model.name)
+                            @Suppress("UNCHECKED_CAST")
                             dataStores.getOrPut(index) {
-                                DataStore<IsRootDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>(keepAllVersions)
-                            }
+                                DataStore<IsRootModel>(keepAllVersions)
+                            } as DataStore<IsRootModel>
                         }
 
                         @Suppress("UNCHECKED_CAST")
                         when (storeAction.request) {
-                            is AddRequest<*, *> ->
+                            is AddRequest<*> ->
                                 processAddRequest(clock, storeAction as AnyAddStoreAction, dataStoreFetcher, updateSharedFlow)
                             is ChangeRequest<*> ->
                                 processChangeRequest(clock, storeAction as AnyChangeStoreAction, dataStoreFetcher, updateSharedFlow)
                             is DeleteRequest<*> ->
                                 processDeleteRequest(clock, storeAction as AnyDeleteStoreAction, dataStoreFetcher, updateSharedFlow)
-                            is GetRequest<*, *> ->
+                            is GetRequest<*> ->
                                 processGetRequest(storeAction as AnyGetStoreAction, dataStoreFetcher)
-                            is GetChangesRequest<*, *> ->
+                            is GetChangesRequest<*> ->
                                 processGetChangesRequest(storeAction as AnyGetChangesStoreAction, dataStoreFetcher)
-                            is GetUpdatesRequest<*, *> ->
+                            is GetUpdatesRequest<*> ->
                                 processGetUpdatesRequest(storeAction as AnyGetUpdatesStoreAction, dataStoreFetcher)
-                            is ScanRequest<*, *> ->
+                            is ScanRequest<*> ->
                                 processScanRequest(storeAction as AnyScanStoreAction, dataStoreFetcher)
-                            is ScanChangesRequest<*, *> ->
+                            is ScanChangesRequest<*> ->
                                 processScanChangesRequest(storeAction as AnyScanChangesStoreAction, dataStoreFetcher)
-                            is ScanUpdatesRequest<*, *> ->
+                            is ScanUpdatesRequest<*> ->
                                 processScanUpdatesRequest(storeAction as AnyScanUpdatesStoreAction, dataStoreFetcher)
-                            is UpdateResponse<*, *> -> when(val update = (storeAction.request as UpdateResponse<*, *>).update) {
-                                is AdditionUpdate<*, *> -> processAdditionUpdate(storeAction as AnyProcessUpdateResponseStoreAction, dataStoreFetcher, updateSharedFlow)
-                                is ChangeUpdate<*, *> -> processChangeUpdate(storeAction as AnyProcessUpdateResponseStoreAction, dataStoreFetcher, updateSharedFlow)
-                                is RemovalUpdate<*, *> -> processDeleteUpdate(storeAction as AnyProcessUpdateResponseStoreAction, dataStoreFetcher, updateSharedFlow)
-                                is InitialChangesUpdate<*, *> -> processInitialChangesUpdate(storeAction as AnyProcessUpdateResponseStoreAction, dataStoreFetcher, updateSharedFlow)
-                                is InitialValuesUpdate<*, *> -> throw RequestException("Cannot process Values requests into data store since they do not contain all version information, do a changes request")
-                                is OrderedKeysUpdate<*, *> -> throw RequestException("Cannot process Update requests into data store since they do not contain all change information, do a changes request")
+                            is UpdateResponse<*> -> when(val update = (storeAction.request as UpdateResponse<*>).update) {
+                                is AdditionUpdate<*> -> processAdditionUpdate(storeAction as AnyProcessUpdateResponseStoreAction, dataStoreFetcher, updateSharedFlow)
+                                is ChangeUpdate<*> -> processChangeUpdate(storeAction as AnyProcessUpdateResponseStoreAction, dataStoreFetcher, updateSharedFlow)
+                                is RemovalUpdate<*> -> processDeleteUpdate(storeAction as AnyProcessUpdateResponseStoreAction, dataStoreFetcher, updateSharedFlow)
+                                is InitialChangesUpdate<*> -> processInitialChangesUpdate(storeAction as AnyProcessUpdateResponseStoreAction, dataStoreFetcher, updateSharedFlow)
+                                is InitialValuesUpdate<*> -> throw RequestException("Cannot process Values requests into data store since they do not contain all version information, do a changes request")
+                                is OrderedKeysUpdate<*> -> throw RequestException("Cannot process Update requests into data store since they do not contain all change information, do a changes request")
                                 else -> throw TypeException("Unknown update type $update for datastore processing")
                             }
                             else -> throw TypeException("Unknown request type ${storeAction.request}")

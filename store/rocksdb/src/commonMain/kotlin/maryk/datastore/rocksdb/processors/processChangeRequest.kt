@@ -2,8 +2,7 @@ package maryk.datastore.rocksdb.processors
 
 import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
-import maryk.core.models.IsRootDataModel
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.query.requests.ChangeRequest
 import maryk.core.query.responses.ChangeResponse
 import maryk.core.query.responses.statuses.IsChangeResponseStatus
@@ -13,13 +12,13 @@ import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.updates.IsUpdateAction
 import maryk.rocksdb.use
 
-internal typealias ChangeStoreAction<DM, P> = StoreAction<DM, P, ChangeRequest<DM>, ChangeResponse<DM>>
-internal typealias AnyChangeStoreAction = ChangeStoreAction<IsRootDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>
+internal typealias ChangeStoreAction<DM> = StoreAction<DM, ChangeRequest<DM>, ChangeResponse<DM>>
+internal typealias AnyChangeStoreAction = ChangeStoreAction<IsRootModel>
 
 /** Processes a ChangeRequest in a [storeAction] into a [dataStore] */
-internal suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processChangeRequest(
+internal suspend fun <DM : IsRootModel> processChangeRequest(
     version: HLC,
-    storeAction: ChangeStoreAction<DM, P>,
+    storeAction: ChangeStoreAction<DM>,
     dataStore: RocksDBDataStore,
     updateSharedFlow: MutableSharedFlow<IsUpdateAction>
 ) {

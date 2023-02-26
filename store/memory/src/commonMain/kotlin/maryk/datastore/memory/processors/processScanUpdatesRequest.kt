@@ -1,9 +1,8 @@
 package maryk.datastore.memory.processors
 
 import maryk.core.clock.HLC
-import maryk.core.models.IsRootDataModel
 import maryk.core.models.fromChanges
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.ObjectCreate
@@ -19,28 +18,27 @@ import maryk.core.query.responses.updates.RemovalReason.SoftDelete
 import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.datastore.memory.IsStoreFetcher
 import maryk.datastore.memory.records.DataRecord
-import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.ScanType.IndexScan
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkMaxVersions
 
-internal typealias ScanUpdatesStoreAction<DM, P> = StoreAction<DM, P, ScanUpdatesRequest<DM, P>, UpdatesResponse<DM, P>>
-internal typealias AnyScanUpdatesStoreAction = ScanUpdatesStoreAction<IsRootDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>
+internal typealias ScanUpdatesStoreAction<DM> = StoreAction<DM, ScanUpdatesRequest<DM>, UpdatesResponse<DM>>
+internal typealias AnyScanUpdatesStoreAction = ScanUpdatesStoreAction<IsRootModel>
 
 /** Processes a ScanUpdatesRequest in a [storeAction] into a dataStore from [dataStoreFetcher] */
-internal fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processScanUpdatesRequest(
-    storeAction: ScanUpdatesStoreAction<DM, P>,
-    dataStoreFetcher: IsStoreFetcher<*, *>
+internal fun <DM : IsRootModel> processScanUpdatesRequest(
+    storeAction: ScanUpdatesStoreAction<DM>,
+    dataStoreFetcher: IsStoreFetcher<*>
 ) {
     val scanRequest = storeAction.request
 
     val recordFetcher = createStoreRecordFetcher(dataStoreFetcher)
 
     @Suppress("UNCHECKED_CAST")
-    val dataStore = dataStoreFetcher(scanRequest.dataModel) as DataStore<DM, P>
+    val dataStore = (dataStoreFetcher as IsStoreFetcher<DM>).invoke(scanRequest.dataModel)
 
     val matchingKeys = mutableListOf<Key<DM>>()
-    val updates = mutableListOf<IsUpdateResponse<DM, P>>()
+    val updates = mutableListOf<IsUpdateResponse<DM>>()
 
     var lastResponseVersion = 0uL
 
@@ -158,7 +156,7 @@ internal fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processS
         matchingKeys.subtract(orderedKeys.toSet()).let { addedKeys ->
             for (addedKey in addedKeys) {
                 @Suppress("UNCHECKED_CAST")
-                val record = recordFetcher(scanRequest.dataModel, addedKey) as DataRecord<DM, P>?
+                val record = recordFetcher(scanRequest.dataModel, addedKey) as DataRecord<DM>?
 
                 if (record != null) {
                     scanRequest.dataModel.recordToValueWithMeta(

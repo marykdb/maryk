@@ -1,9 +1,8 @@
 package maryk.datastore.memory.processors
 
 import maryk.core.exceptions.TypeException
-import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.readStorageToChanges
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Bytes
 import maryk.core.query.changes.DataObjectVersionedChange
@@ -14,13 +13,13 @@ import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DeletedValue
 
 /** Processes [record] values to a DataObjectWithChanges object */
-internal fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> DM.recordToObjectChanges(
-    select: RootPropRefGraph<P>?,
+internal fun <DM : IsRootModel> DM.recordToObjectChanges(
+    select: RootPropRefGraph<DM>?,
     fromVersion: ULong,
     toVersion: ULong?,
     maxVersions: UInt,
     sortingKey: ByteArray?,
-    record: DataRecord<DM, P>
+    record: DataRecord<DM>
 ): DataObjectVersionedChange<DM>? {
     var valueIndex = -1
 

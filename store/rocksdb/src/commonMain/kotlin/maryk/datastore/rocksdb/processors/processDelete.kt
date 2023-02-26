@@ -3,8 +3,7 @@ package maryk.datastore.rocksdb.processors
 import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
 import maryk.core.extensions.bytes.invert
-import maryk.core.models.IsRootDataModel
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.types.Key
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.statuses.DoesNotExist
@@ -28,7 +27,7 @@ import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.rocksDBNotFound
 import maryk.rocksdb.use
 
-internal suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processDelete(
+internal suspend fun <DM : IsRootModel> processDelete(
     dataStore: RocksDBDataStore,
     dataModel: DM,
     columnFamilies: TableColumnFamilies,
@@ -95,7 +94,7 @@ internal suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> 
                 }
 
                 // Delete indexed values
-                dataModel.indices?.let { indices ->
+                dataModel.Model.indices?.let { indices ->
                     val valuesGetter = DBAccessorStoreValuesGetter(columnFamilies, dataStore.defaultReadOptions)
                     valuesGetter.moveToKey(key.bytes, transaction)
 

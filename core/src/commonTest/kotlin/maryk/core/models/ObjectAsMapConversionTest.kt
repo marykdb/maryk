@@ -4,6 +4,7 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufObjectValuesConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
+import maryk.core.properties.graph
 import maryk.core.query.RequestContext
 import maryk.core.query.filters.Exists
 import maryk.core.query.requests.GetRequest
@@ -22,7 +23,7 @@ private val context = RequestContext(mapOf(
 class ObjectAsMapConversionTest {
     private val getRequestWithInjectable = GetRequest.values(context) {
         mapNonNulls(
-            from with SimpleMarykModel.Model,
+            from with SimpleMarykModel,
             keys with listOf(key1, key2),
             select with SimpleMarykModel.graph {
                 listOf(value)

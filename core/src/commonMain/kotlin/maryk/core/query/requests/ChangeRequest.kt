@@ -1,7 +1,7 @@
 package maryk.core.query.requests
 
-import maryk.core.models.IsRootDataModel
 import maryk.core.models.QueryDataModel
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.list
@@ -13,11 +13,11 @@ import maryk.core.values.ObjectValues
 /**
  * Creates a request to change DataObjects with [objectChanges] in a Store.
  */
-fun <DM : IsRootDataModel<*>> DM.change(vararg objectChanges: DataObjectChange<DM>) =
+fun <DM : IsRootModel> DM.change(vararg objectChanges: DataObjectChange<DM>) =
     ChangeRequest(this, objectChanges.toList())
 
 /** A Request to change DataObjects for [dataModel] with [objects] */
-data class ChangeRequest<DM : IsRootDataModel<*>> internal constructor(
+data class ChangeRequest<DM : IsRootModel> internal constructor(
     override val dataModel: DM,
     val objects: List<DataObjectChange<DM>>
 ) : IsStoreRequest<DM, ChangeResponse<DM>>, IsTransportableRequest<ChangeResponse<DM>> {
@@ -26,7 +26,7 @@ data class ChangeRequest<DM : IsRootDataModel<*>> internal constructor(
 
     @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<ChangeRequest<*>>() {
-        val to by addDataModel(ChangeRequest<*>::dataModel)
+        val to by addDataModel { it.dataModel }
         val objects by list(
             index = 2u,
             getter = ChangeRequest<*>::objects,

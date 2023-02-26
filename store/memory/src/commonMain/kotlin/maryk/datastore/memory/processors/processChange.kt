@@ -4,7 +4,6 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
-import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.values
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
@@ -16,6 +15,7 @@ import maryk.core.processors.datastore.writeSetToStorage
 import maryk.core.processors.datastore.writeToStorage
 import maryk.core.processors.datastore.writeTypedValueToStorage
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
@@ -85,8 +85,8 @@ import maryk.lib.extensions.compare.compareTo
 /**
  * Apply [changes] to a specific object at [key] and record them as [version]
  */
-internal suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processChange(
-    dataStore: DataStore<DM, P>,
+internal suspend fun <DM : IsRootModel> processChange(
+    dataStore: DataStore<DM>,
     dataModel: DM,
     key: Key<DM>,
     lastVersion: ULong?,
@@ -125,10 +125,10 @@ internal suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> 
     }
 }
 
-private suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processChangeIntoStore(
+private suspend fun <DM : IsRootModel> processChangeIntoStore(
     dataModel: DM,
-    dataStore: DataStore<DM, P>,
-    objectToChange: DataRecord<DM, P>,
+    dataStore: DataStore<DM>,
+    objectToChange: DataRecord<DM>,
     changes: List<IsChange>,
     version: HLC,
     keepAllVersions: Boolean,
@@ -153,7 +153,7 @@ private suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> p
 
         val outChanges = mutableListOf<IsChange>()
 
-        val oldIndexValues = dataModel.indices?.map {
+        val oldIndexValues = dataModel.Model.indices?.map {
             it.toStorageByteArrayForIndex(objectToChange, objectToChange.key.bytes)
         }
 
@@ -618,7 +618,7 @@ private suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> p
         objectToChange.values = newValueList
 
         // Process indices
-        dataModel.indices?.forEachIndexed { index, it ->
+        dataModel.Model.indices?.forEachIndexed { index, it ->
             if (indexUpdates == null) {
                 indexUpdates = mutableListOf()
             }

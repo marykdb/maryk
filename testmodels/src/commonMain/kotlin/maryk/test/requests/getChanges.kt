@@ -1,5 +1,6 @@
 package maryk.test.requests
 
+import maryk.core.properties.graph
 import maryk.core.query.filters.Exists
 import maryk.core.query.requests.getChanges
 import maryk.test.models.SimpleMarykModel
@@ -13,7 +14,7 @@ val getChangesRequest = SimpleMarykModel.getChanges(
 )
 
 val getChangesMaxRequest = SimpleMarykModel.run {
-    Model.getChanges(
+    getChanges(
         key1,
         key2,
         where = Exists(this { value::ref }),

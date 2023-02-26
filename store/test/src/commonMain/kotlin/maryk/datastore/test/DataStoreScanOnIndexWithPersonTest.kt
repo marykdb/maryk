@@ -1,6 +1,5 @@
 package maryk.datastore.test
 
-import maryk.core.models.RootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.orders.Orders
 import maryk.core.query.orders.ascending
@@ -16,7 +15,7 @@ import kotlin.test.expect
 class DataStoreScanOnIndexWithPersonTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
-    private val keys = mutableListOf<Key<RootDataModel<Person>>>()
+    private val keys = mutableListOf<Key<Person>>()
     private var highestCreationVersion = ULong.MIN_VALUE
 
     override val allTests = mapOf(
@@ -32,10 +31,10 @@ class DataStoreScanOnIndexWithPersonTest(
 
     override suspend fun initData() {
         val addResponse = dataStore.execute(
-            Person.Model.add(*persons)
+            Person.add(*persons)
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<RootDataModel<Person>>>(status)
+            val response = assertIs<AddSuccess<Person>>(status)
             keys.add(response.key)
             if (response.version > highestCreationVersion) {
                 // Add lowest version for scan test
@@ -46,7 +45,7 @@ class DataStoreScanOnIndexWithPersonTest(
 
     override suspend fun resetData() {
         dataStore.execute(
-            Person.Model.delete(*keys.toTypedArray(), hardDelete = true)
+            Person.delete(*keys.toTypedArray(), hardDelete = true)
         )
         keys.clear()
         highestCreationVersion = ULong.MIN_VALUE

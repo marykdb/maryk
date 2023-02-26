@@ -9,7 +9,6 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
 import maryk.core.extensions.bytes.calculateVarByteLength
-import maryk.core.models.IsRootDataModel
 import maryk.core.models.RootDataModel
 import maryk.core.models.migration.MigrationException
 import maryk.core.models.migration.MigrationHandler
@@ -19,6 +18,7 @@ import maryk.core.models.migration.MigrationStatus.NewModel
 import maryk.core.models.migration.MigrationStatus.OnlySafeAdds
 import maryk.core.models.migration.MigrationStatus.UpToDate
 import maryk.core.models.migration.StoredRootDataModel
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.query.requests.AddRequest
 import maryk.core.query.requests.ChangeRequest
@@ -208,31 +208,31 @@ class RocksDBDataStore(
 
                     @Suppress("UNCHECKED_CAST")
                     when (storeAction.request) {
-                        is AddRequest<*, *> ->
+                        is AddRequest<*> ->
                             processAddRequest(clock, storeAction as AnyAddStoreAction, this@RocksDBDataStore, updateSharedFlow)
                         is ChangeRequest<*> ->
                             processChangeRequest(clock, storeAction as AnyChangeStoreAction, this@RocksDBDataStore, updateSharedFlow)
                         is DeleteRequest<*> ->
                             processDeleteRequest(clock, storeAction as AnyDeleteStoreAction, this@RocksDBDataStore, cache, updateSharedFlow)
-                        is GetRequest<*, *> ->
+                        is GetRequest<*> ->
                             processGetRequest(storeAction as AnyGetStoreAction, this@RocksDBDataStore, cache)
-                        is GetChangesRequest<*, *> ->
+                        is GetChangesRequest<*> ->
                             processGetChangesRequest(storeAction as AnyGetChangesStoreAction, this@RocksDBDataStore, cache)
-                        is GetUpdatesRequest<*, *> ->
+                        is GetUpdatesRequest<*> ->
                             processGetUpdatesRequest(storeAction as AnyGetUpdatesStoreAction, this@RocksDBDataStore, cache)
-                        is ScanRequest<*, *> ->
+                        is ScanRequest<*> ->
                             processScanRequest(storeAction as AnyScanStoreAction, this@RocksDBDataStore, cache)
-                        is ScanChangesRequest<*, *> ->
+                        is ScanChangesRequest<*> ->
                             processScanChangesRequest(storeAction as AnyScanChangesStoreAction, this@RocksDBDataStore, cache)
-                        is ScanUpdatesRequest<*, *> ->
+                        is ScanUpdatesRequest<*> ->
                             processScanUpdatesRequest(storeAction as AnyScanUpdatesStoreAction, this@RocksDBDataStore, cache)
-                        is UpdateResponse<*, *> -> when(val update = (storeAction.request as UpdateResponse<*, *>).update) {
-                            is AdditionUpdate<*, *> -> processAdditionUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@RocksDBDataStore, updateSharedFlow)
-                            is ChangeUpdate<*, *> -> processChangeUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@RocksDBDataStore, updateSharedFlow)
-                            is RemovalUpdate<*, *> -> processDeleteUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@RocksDBDataStore, cache, updateSharedFlow)
-                            is InitialChangesUpdate<*, *> -> processInitialChangesUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@RocksDBDataStore, updateSharedFlow)
-                            is InitialValuesUpdate<*, *> -> throw RequestException("Cannot process Values requests into data store since they do not contain all version information, do a changes request")
-                            is OrderedKeysUpdate<*, *> -> throw RequestException("Cannot process Update requests into data store since they do not contain all change information, do a changes request")
+                        is UpdateResponse<*> -> when(val update = (storeAction.request as UpdateResponse<*>).update) {
+                            is AdditionUpdate<*> -> processAdditionUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@RocksDBDataStore, updateSharedFlow)
+                            is ChangeUpdate<*> -> processChangeUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@RocksDBDataStore, updateSharedFlow)
+                            is RemovalUpdate<*> -> processDeleteUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@RocksDBDataStore, cache, updateSharedFlow)
+                            is InitialChangesUpdate<*> -> processInitialChangesUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@RocksDBDataStore, updateSharedFlow)
+                            is InitialValuesUpdate<*> -> throw RequestException("Cannot process Values requests into data store since they do not contain all version information, do a changes request")
+                            is OrderedKeysUpdate<*> -> throw RequestException("Cannot process Update requests into data store since they do not contain all change information, do a changes request")
                             else -> throw TypeException("Unknown update type $update for datastore processing")
                         }
                         else -> throw TypeException("Unknown request type ${storeAction.request}")
@@ -309,9 +309,9 @@ class RocksDBDataStore(
         columnFamilyHandlesByDataModelIndex[dbIndex]
             ?: throw DefNotFoundException("DataModel definition not found for $dbIndex")
 
-    internal fun getColumnFamilies(dataModel: IsRootDataModel<*>) =
-        columnFamilyHandlesByDataModelIndex[dataModelIdsByString[dataModel.name]]
-            ?: throw DefNotFoundException("DataModel definition not found for ${dataModel.name}")
+    internal fun getColumnFamilies(dataModel: IsRootModel) =
+        columnFamilyHandlesByDataModelIndex[dataModelIdsByString[dataModel.Model.name]]
+            ?: throw DefNotFoundException("DataModel definition not found for ${dataModel.Model.name}")
 
     /** Get the unique indices for [dbIndex] and [uniqueHandle] */
     internal fun getUniqueIndices(dbIndex: UInt, uniqueHandle: ColumnFamilyHandle) =

@@ -3,7 +3,6 @@ package maryk.datastore.rocksdb.processors
 import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
 import maryk.core.extensions.bytes.toVarBytes
-import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.ListSize
 import maryk.core.processors.datastore.StorageTypeEnum.MapSize
@@ -12,7 +11,7 @@ import maryk.core.processors.datastore.StorageTypeEnum.SetSize
 import maryk.core.processors.datastore.StorageTypeEnum.TypeValue
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.processors.datastore.writeToStorage
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.exceptions.AlreadyExistsException
 import maryk.core.properties.exceptions.ValidationException
@@ -40,7 +39,7 @@ import maryk.datastore.shared.updates.Update.Addition
 import maryk.lib.recyclableByteArray
 import maryk.rocksdb.rocksDBNotFound
 
-internal suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processAdd(
+internal suspend fun <DM : IsRootModel> processAdd(
     dataStore: RocksDBDataStore,
     dataModel: DM,
     transaction: Transaction,
@@ -48,7 +47,7 @@ internal suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> 
     dbIndex: UInt,
     key: Key<DM>,
     version: HLC,
-    objectToAdd: Values<P>,
+    objectToAdd: Values<DM>,
     updateSharedFlow: MutableSharedFlow<IsUpdateAction>
 ): IsAddResponseStatus<DM> {
     return try {
@@ -72,7 +71,7 @@ internal suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> 
             setLatestVersion(transaction, columnFamilies, key, versionBytes)
 
             // Find new index values to write
-            dataModel.indices?.forEach { indexDefinition ->
+            dataModel.Model.indices?.forEach { indexDefinition ->
                 val indexReference = indexDefinition.referenceStorageByteArray.bytes
                 val valueAndKeyBytes = indexDefinition.toStorageByteArrayForIndex(objectToAdd, key.bytes)
                     ?: return@forEach // skip if no complete values to index are found

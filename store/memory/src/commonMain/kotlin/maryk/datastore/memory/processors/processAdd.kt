@@ -2,9 +2,8 @@ package maryk.datastore.memory.processors
 
 import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
-import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.writeToStorage
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.exceptions.AlreadyExistsException
 import maryk.core.properties.exceptions.ValidationException
@@ -26,12 +25,12 @@ import maryk.datastore.shared.updates.IsUpdateAction
 import maryk.datastore.shared.updates.Update.Addition
 import maryk.lib.extensions.compare.compareTo
 
-internal suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processAdd(
-    dataStore: DataStore<DM, P>,
+internal suspend fun <DM : IsRootModel> processAdd(
+    dataStore: DataStore<DM>,
     dataModel: DM,
     key: Key<DM>,
     version: HLC,
-    objectToAdd: Values<P>,
+    objectToAdd: Values<DM>,
     updateSharedFlow: MutableSharedFlow<IsUpdateAction>
 ): IsAddResponseStatus<DM> = try {
     objectToAdd.validate()
@@ -50,7 +49,7 @@ internal suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> 
         )
 
         // Find new index values to write
-        dataModel.indices?.forEach { indexDefinition ->
+        dataModel.Model.indices?.forEach { indexDefinition ->
             val valueBytes = indexDefinition.toStorageByteArrayForIndex(objectToAdd, key.bytes)
                 ?: return@forEach // skip if no complete values to index are found
 

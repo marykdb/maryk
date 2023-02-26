@@ -1,6 +1,6 @@
 package maryk.core.query.responses.statuses
 
-import maryk.core.models.IsRootDataModel
+import maryk.core.properties.IsRootModel
 
 /** Status for a change object request */
-interface IsChangeResponseStatus<DM : IsRootDataModel<*>> : IsAddOrChangeResponseStatus<DM>
+interface IsChangeResponseStatus<DM : IsRootModel> : IsAddOrChangeResponseStatus<DM>

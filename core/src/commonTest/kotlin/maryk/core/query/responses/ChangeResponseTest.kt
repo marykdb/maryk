@@ -23,7 +23,7 @@ class ChangeResponseTest {
     private val key = CompleteMarykModel.key("+1xO4zD4R5R5R5sEIMcS94D3dpXTZEA")
 
     private val changeResponse = ChangeResponse(
-        CompleteMarykModel.Model,
+        CompleteMarykModel,
         listOf(
             ChangeSuccess(
                 32352uL,

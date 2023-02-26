@@ -1,8 +1,7 @@
 package maryk.core.query.responses.updates
 
-import maryk.core.models.IsRootDataModel
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
@@ -14,15 +13,15 @@ import maryk.core.query.responses.updates.UpdateResponseType.InitialValues
 import maryk.core.values.SimpleObjectValues
 
 /** Update containing the initial values for listeners which listen to a scan. */
-data class InitialValuesUpdate<DM: IsRootDataModel<P>, P: IsValuesPropertyDefinitions>(
+data class InitialValuesUpdate<DM: IsRootModel>(
     override val version: ULong,
-    val values: List<ValuesWithMetaData<DM, P>>
-): IsUpdateResponse<DM, P> {
+    val values: List<ValuesWithMetaData<DM>>
+): IsUpdateResponse<DM> {
     override val type = InitialValues
 
     @Suppress("unused")
-    internal object Properties : ObjectPropertyDefinitions<InitialValuesUpdate<*, *>>() {
-        val version by number(1u, getter = InitialValuesUpdate<*, *>::version, type = UInt64)
+    internal object Properties : ObjectPropertyDefinitions<InitialValuesUpdate<*>>() {
+        val version by number(1u, getter = InitialValuesUpdate<*>::version, type = UInt64)
         val values = ObjectListDefinitionWrapper(
             2u, "values",
             properties = ValuesWithMetaData.Properties,
@@ -31,14 +30,14 @@ data class InitialValuesUpdate<DM: IsRootDataModel<P>, P: IsValuesPropertyDefini
                     dataModel = { ValuesWithMetaData }
                 )
             ),
-            getter = InitialValuesUpdate<*, *>::values
+            getter = InitialValuesUpdate<*>::values
         ).also(::addSingle)
     }
 
-    companion object : SimpleQueryDataModel<InitialValuesUpdate<*, *>>(
+    companion object : SimpleQueryDataModel<InitialValuesUpdate<*>>(
         properties = Properties
     ) {
-        override fun invoke(values: SimpleObjectValues<InitialValuesUpdate<*, *>>) = InitialValuesUpdate<IsRootDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>(
+        override fun invoke(values: SimpleObjectValues<InitialValuesUpdate<*>>) = InitialValuesUpdate<IsRootModel>(
             version = values(1u),
             values = values(2u)
         )

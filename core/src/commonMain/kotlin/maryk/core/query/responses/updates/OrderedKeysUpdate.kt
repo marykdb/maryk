@@ -3,7 +3,7 @@ package maryk.core.query.responses.updates
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.FlexBytesDefinition
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
@@ -23,18 +23,18 @@ import maryk.core.values.SimpleObjectValues
  *
  * This way the listener is always sure of the current state on which orders are changed.
  */
-data class OrderedKeysUpdate<DM: IsRootDataModel<P>, P: IsValuesPropertyDefinitions>(
+data class OrderedKeysUpdate<DM: IsRootModel>(
     val keys: List<Key<DM>>,
     override val version: ULong,
     val sortingKeys: List<Bytes>? = null
-) : IsUpdateResponse<DM, P> {
+) : IsUpdateResponse<DM> {
     override val type = OrderedKeys
 
     @Suppress("unused")
-    object Properties : ObjectPropertyDefinitions<OrderedKeysUpdate<*, *>>() {
+    object Properties : ObjectPropertyDefinitions<OrderedKeysUpdate<*>>() {
         val keys by list(
             index = 1u,
-            getter = OrderedKeysUpdate<*, *>::keys,
+            getter = OrderedKeysUpdate<*>::keys,
             valueDefinition = ContextualReferenceDefinition<RequestContext>(
                 contextualResolver = {
                     it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
@@ -42,20 +42,20 @@ data class OrderedKeysUpdate<DM: IsRootDataModel<P>, P: IsValuesPropertyDefiniti
             )
         )
 
-        val version by number(2u, getter = OrderedKeysUpdate<*, *>::version, type = UInt64)
+        val version by number(2u, getter = OrderedKeysUpdate<*>::version, type = UInt64)
 
         val sortingKeys by list(
             index = 3u,
-            getter = OrderedKeysUpdate<*, *>::sortingKeys,
+            getter = OrderedKeysUpdate<*>::sortingKeys,
             required = false,
             valueDefinition = FlexBytesDefinition()
         )
     }
 
-    internal companion object : SimpleQueryDataModel<OrderedKeysUpdate<*, *>>(
+    internal companion object : SimpleQueryDataModel<OrderedKeysUpdate<*>>(
         properties = Properties
     ) {
-        override fun invoke(values: SimpleObjectValues<OrderedKeysUpdate<*, *>>) = OrderedKeysUpdate<IsRootDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>(
+        override fun invoke(values: SimpleObjectValues<OrderedKeysUpdate<*>>) = OrderedKeysUpdate<IsRootModel>(
             keys = values(1u),
             version = values(2u),
             sortingKeys = values(3u)

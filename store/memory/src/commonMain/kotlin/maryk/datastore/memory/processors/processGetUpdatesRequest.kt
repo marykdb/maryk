@@ -1,9 +1,8 @@
 package maryk.datastore.memory.processors
 
 import maryk.core.clock.HLC
-import maryk.core.models.IsRootDataModel
 import maryk.core.models.fromChanges
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.requests.GetUpdatesRequest
@@ -13,23 +12,22 @@ import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.datastore.memory.IsStoreFetcher
-import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkMaxVersions
 import maryk.datastore.shared.checkToVersion
 
-internal typealias GetUpdatesStoreAction<DM, P> = StoreAction<DM, P, GetUpdatesRequest<DM, P>, UpdatesResponse<DM, P>>
-internal typealias AnyGetUpdatesStoreAction = GetUpdatesStoreAction<IsRootDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>
+internal typealias GetUpdatesStoreAction<DM> = StoreAction<DM, GetUpdatesRequest<DM>, UpdatesResponse<DM>>
+internal typealias AnyGetUpdatesStoreAction = GetUpdatesStoreAction<IsRootModel>
 
 /** Processes a GetUpdatesRequest in a [storeAction] into a dataStore from [dataStoreFetcher] */
-internal fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processGetUpdatesRequest(
-    storeAction: GetUpdatesStoreAction<DM, P>,
-    dataStoreFetcher: IsStoreFetcher<*, *>
+internal fun <DM : IsRootModel> processGetUpdatesRequest(
+    storeAction: GetUpdatesStoreAction<DM>,
+    dataStoreFetcher: IsStoreFetcher<*>
 ) {
     val getRequest = storeAction.request
 
     @Suppress("UNCHECKED_CAST")
-    val dataStore = dataStoreFetcher(getRequest.dataModel) as DataStore<DM, P>
+    val dataStore = (dataStoreFetcher as IsStoreFetcher<DM>).invoke(getRequest.dataModel)
 
     val recordFetcher = createStoreRecordFetcher(dataStoreFetcher)
 
@@ -37,7 +35,7 @@ internal fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processG
     getRequest.checkMaxVersions(dataStore.keepAllVersions)
 
     val matchingKeys = mutableListOf<Key<DM>>()
-    val updates = mutableListOf<IsUpdateResponse<DM, P>>()
+    val updates = mutableListOf<IsUpdateResponse<DM>>()
     var lastResponseVersion = 0uL
     var insertionIndex = -1
 

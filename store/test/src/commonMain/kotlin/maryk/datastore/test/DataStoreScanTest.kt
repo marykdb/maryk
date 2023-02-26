@@ -8,7 +8,7 @@ import maryk.core.aggregations.metric.MaxResponse
 import maryk.core.aggregations.metric.Min
 import maryk.core.aggregations.metric.MinResponse
 import maryk.core.exceptions.RequestException
-import maryk.core.models.RootDataModel
+import maryk.core.properties.graph
 import maryk.core.properties.types.Key
 import maryk.core.query.filters.Equals
 import maryk.core.query.orders.Order.Companion.descending
@@ -29,7 +29,7 @@ import kotlin.test.expect
 class DataStoreScanTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
-    private val keys = mutableListOf<Key<RootDataModel<Log>>>()
+    private val keys = mutableListOf<Key<Log>>()
     private var lowestVersion = ULong.MAX_VALUE
 
     override val allTests = mapOf(
@@ -53,10 +53,10 @@ class DataStoreScanTest(
 
     override suspend fun initData() {
         val addResponse = dataStore.execute(
-            Log.Model.add(*logs)
+            Log.add(*logs)
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<RootDataModel<Log>>>(status)
+            val response = assertIs<AddSuccess<Log>>(status)
             keys.add(response.key)
             if (response.version < lowestVersion) {
                 // Add lowest version for scan test
@@ -67,7 +67,7 @@ class DataStoreScanTest(
 
     override suspend fun resetData() {
         dataStore.execute(
-            Log.Model.delete(*keys.toTypedArray(), hardDelete = true)
+            Log.delete(*keys.toTypedArray(), hardDelete = true)
         )
         keys.clear()
         lowestVersion = ULong.MAX_VALUE

@@ -1,8 +1,7 @@
 package maryk.core.query.responses.updates
 
-import maryk.core.models.IsRootDataModel
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.enum
 import maryk.core.properties.definitions.number
@@ -25,24 +24,24 @@ enum class RemovalReason(override val index: UInt, override val alternativeNames
 }
 
 /** Update response describing a removal from query result at [key] for [reason] */
-data class RemovalUpdate<DM: IsRootDataModel<P>, P: IsValuesPropertyDefinitions>(
+data class RemovalUpdate<DM: IsRootModel>(
     val key: Key<DM>,
     override val version: ULong,
     val reason: RemovalReason
-) : IsUpdateResponse<DM, P> {
+) : IsUpdateResponse<DM> {
     override val type = Removal
 
     @Suppress("unused")
-    object Properties : ObjectPropertyDefinitions<RemovalUpdate<*, *>>() {
-        val key by addKey(RemovalUpdate<*, *>::key)
-        val version by number(2u, getter = RemovalUpdate<*, *>::version, type = UInt64)
-        val reason by enum(3u, getter = RemovalUpdate<*, *>::reason, enum = RemovalReason)
+    object Properties : ObjectPropertyDefinitions<RemovalUpdate<*>>() {
+        val key by addKey(RemovalUpdate<*>::key)
+        val version by number(2u, getter = RemovalUpdate<*>::version, type = UInt64)
+        val reason by enum(3u, getter = RemovalUpdate<*>::reason, enum = RemovalReason)
     }
 
-    internal companion object : SimpleQueryDataModel<RemovalUpdate<*, *>>(
+    internal companion object : SimpleQueryDataModel<RemovalUpdate<*>>(
         properties = Properties
     ) {
-        override fun invoke(values: SimpleObjectValues<RemovalUpdate<*, *>>) = RemovalUpdate<IsRootDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>(
+        override fun invoke(values: SimpleObjectValues<RemovalUpdate<*>>) = RemovalUpdate<IsRootModel>(
             key = values(1u),
             version = values(2u),
             reason = values(3u)

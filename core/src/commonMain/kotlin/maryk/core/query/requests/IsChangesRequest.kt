@@ -1,12 +1,11 @@
 package maryk.core.query.requests
 
-import maryk.core.models.IsRootDataModel
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.query.responses.IsResponse
 
 /** Request for all versioned changes from a version and later */
-interface IsChangesRequest<DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions, RP : IsResponse> :
-    IsFetchRequest<DM, P, RP> {
+interface IsChangesRequest<DM : IsRootModel, RP : IsResponse> :
+    IsFetchRequest<DM, RP> {
     val fromVersion: ULong
     val maxVersions: UInt
 }

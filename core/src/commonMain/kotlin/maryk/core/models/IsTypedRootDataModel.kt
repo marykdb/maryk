@@ -9,13 +9,13 @@ import kotlin.io.encoding.ExperimentalEncodingApi
 
 interface IsTypedRootDataModel<DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> : IsRootDataModel<P> {
     @OptIn(ExperimentalEncodingApi::class)
-    override fun key(base64: String): Key<DM> = this.key(Base64.Mime.decode(base64))
+    override fun key(base64: String): Key<P> = this.key(Base64.Mime.decode(base64))
 
-    override fun key(reader: () -> Byte) = Key<DM>(
+    override fun key(reader: () -> Byte) = Key<P>(
         initByteArray(this.keyByteSize, reader)
     )
 
-    override fun key(bytes: ByteArray): Key<DM> {
+    override fun key(bytes: ByteArray): Key<P> {
         if (bytes.size != this.keyByteSize) {
             throw ParseException("Invalid byte length for key. Expected $keyByteSize instead of ${bytes.size}")
         }

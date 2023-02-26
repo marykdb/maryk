@@ -1,15 +1,14 @@
 package maryk.core.query.responses.updates
 
-import maryk.core.models.IsRootDataModel
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.changes.ObjectSoftDeleteChange
 
-fun <DM: IsRootDataModel<P>, P: IsValuesPropertyDefinitions> processUpdateResponse(response: IsUpdateResponse<DM, P>, previousResults: List<ValuesWithMetaData<DM, P>>) =
+fun <DM: IsRootModel> processUpdateResponse(response: IsUpdateResponse<DM>, previousResults: List<ValuesWithMetaData<DM>>) =
     when (response) {
-        is InitialValuesUpdate<DM, P> -> response.values
-        is InitialChangesUpdate<DM, P> -> throw Exception("processUpdateResponse cannot work with Change requests/responses")
-        is AdditionUpdate<DM, P> -> buildList(previousResults.size + 1) {
+        is InitialValuesUpdate<DM> -> response.values
+        is InitialChangesUpdate<DM> -> throw Exception("processUpdateResponse cannot work with Change requests/responses")
+        is AdditionUpdate<DM> -> buildList(previousResults.size + 1) {
             addAll(previousResults)
             add(response.insertionIndex,
                 ValuesWithMetaData(
@@ -21,7 +20,7 @@ fun <DM: IsRootDataModel<P>, P: IsValuesPropertyDefinitions> processUpdateRespon
                 )
             )
         }
-        is ChangeUpdate<DM, P> -> {
+        is ChangeUpdate<DM> -> {
             if (response.key == previousResults.getOrNull(response.index)?.key) {
                 previousResults.mapIndexed { index, value ->
                     when (index) {
@@ -57,7 +56,7 @@ fun <DM: IsRootDataModel<P>, P: IsValuesPropertyDefinitions> processUpdateRespon
                 }
             }
         }
-        is RemovalUpdate<DM, P> -> previousResults.filter { it.key != response.key }
-        is OrderedKeysUpdate<DM, P> -> previousResults
+        is RemovalUpdate<DM> -> previousResults.filter { it.key != response.key }
+        is OrderedKeysUpdate<DM> -> previousResults
         else -> throw Exception("Unknown update response type: $response")
     }

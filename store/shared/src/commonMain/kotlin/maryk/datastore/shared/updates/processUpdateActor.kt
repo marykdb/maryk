@@ -5,31 +5,30 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onStart
-import maryk.core.models.IsRootDataModel
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.datastore.shared.IsDataStore
 
 internal suspend fun IsDataStore.startProcessUpdateFlow(updateSendChannel: Flow<IsUpdateAction>, updateSendChannelHasStarted: CompletableDeferred<Unit>) {
-    val updateListeners = mutableMapOf<UInt, MutableList<UpdateListener<*, *, *>>>()
+    val updateListeners = mutableMapOf<UInt, MutableList<UpdateListener<*, *>>>()
 
     (updateSendChannel)
         .onStart { updateSendChannelHasStarted.complete(Unit) }
         .onCompletion {
-            updateListeners.values.forEach { it.forEach(UpdateListener<*, *, *>::close) }
+            updateListeners.values.forEach { it.forEach(UpdateListener<*, *>::close) }
             updateListeners.clear()
         }.collect { update ->
             when (update) {
-                is Update<*, *> -> {
+                is Update<*> -> {
                     try {
                         @Suppress("UNCHECKED_CAST")
                         val dataModelListeners =
-                            updateListeners[dataModelIdsByString[update.dataModel.name]] as? MutableList<UpdateListener<IsRootDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions, *>>?
+                            updateListeners[dataModelIdsByString[update.dataModel.Model.name]] as? MutableList<UpdateListener<IsRootModel, *>>?
 
                         if (dataModelListeners != null) {
                             for (updateListener in dataModelListeners) {
                                 @Suppress("UNCHECKED_CAST")
                                 updateListener.process(
-                                    update as Update<IsRootDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>,
+                                    update as Update<IsRootModel>,
                                     this
                                 )
                             }
@@ -53,7 +52,7 @@ internal suspend fun IsDataStore.startProcessUpdateFlow(updateSendChannel: Flow<
                     dataModelListeners -= update.listener
                 }
                 is RemoveAllUpdateListenersAction -> {
-                    updateListeners.values.forEach { it.forEach(UpdateListener<*, *, *>::close) }
+                    updateListeners.values.forEach { it.forEach(UpdateListener<*, *>::close) }
                     updateListeners.clear()
                 }
                 else -> throw RuntimeException("Unknown update listener action: $update")

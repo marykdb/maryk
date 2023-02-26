@@ -3,7 +3,6 @@ package maryk.test.models
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
-import maryk.core.models.RootDataModel
 import maryk.core.properties.RootModel
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.NumberDefinition
@@ -149,7 +148,7 @@ object TestMarykModel : RootModel<TestMarykModel>(
     val reference by reference(
         14u,
         required = false,
-        dataModel = { TestMarykModel.Model }
+        dataModel = { TestMarykModel }
     )
 
     val listOfString by list(
@@ -165,7 +164,7 @@ object TestMarykModel : RootModel<TestMarykModel>(
     val selfReference by reference(
         16u,
         required = false,
-        dataModel = { TestMarykModel.Model }
+        dataModel = { TestMarykModel }
     )
 
     val setOfString by set(
@@ -198,9 +197,9 @@ object TestMarykModel : RootModel<TestMarykModel>(
         valueObject: TestValueObject? = null,
         embeddedValues: Values<EmbeddedMarykModel>? = null,
         multi: TypedValue<SimpleMarykTypeEnum<*>, *>? = null,
-        reference: Key<RootDataModel<TestMarykModel>>? = null,
+        reference: Key<TestMarykModel>? = null,
         listOfString: List<String>? = null,
-        selfReference: Key<RootDataModel<TestMarykModel>>? = null,
+        selfReference: Key<TestMarykModel>? = null,
         setOfString: Set<String>? = null,
         incMap: Map<UInt, String>? = null
     ) = create(

@@ -12,7 +12,7 @@ import kotlin.native.concurrent.SharedImmutable
 enum class UpdateResponseType(
     override val index: UInt,
     override val alternativeNames: Set<String>? = null
-) : IndexedEnumComparable<UpdateResponseType>, IsCoreEnum, TypeEnum<IsUpdateResponse<*, *>> {
+) : IndexedEnumComparable<UpdateResponseType>, IsCoreEnum, TypeEnum<IsUpdateResponse<*>> {
     Addition(1u),
     Change(2u),
     Removal(3u),
@@ -26,7 +26,7 @@ enum class UpdateResponseType(
 }
 
 @SharedImmutable
-internal val mapOfUpdateResponses: Map<UpdateResponseType, EmbeddedObjectDefinition<out IsUpdateResponse<*, *>, *, *, RequestContext, RequestContext>> = mapOf(
+internal val mapOfUpdateResponses: Map<UpdateResponseType, EmbeddedObjectDefinition<out IsUpdateResponse<*>, *, *, RequestContext, RequestContext>> = mapOf(
     UpdateResponseType.Addition to EmbeddedObjectDefinition(dataModel = { AdditionUpdate }),
     UpdateResponseType.Change to EmbeddedObjectDefinition(dataModel = { ChangeUpdate }),
     UpdateResponseType.Removal to EmbeddedObjectDefinition(dataModel = { RemovalUpdate }),

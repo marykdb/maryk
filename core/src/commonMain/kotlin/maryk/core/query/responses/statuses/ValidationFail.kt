@@ -1,8 +1,7 @@
 package maryk.core.query.responses.statuses
 
-import maryk.core.models.IsRootDataModel
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.list
@@ -15,7 +14,7 @@ import maryk.core.query.responses.statuses.StatusType.VALIDATION_FAIL
 import maryk.core.values.SimpleObjectValues
 
 /** Failure in validation with [exceptions] */
-data class ValidationFail<DM : IsRootDataModel<*>>(
+data class ValidationFail<DM : IsRootModel>(
     val exceptions: List<ValidationException>
 ) : IsAddResponseStatus<DM>, IsChangeResponseStatus<DM> {
     constructor(validationException: ValidationException) : this(
@@ -29,6 +28,7 @@ data class ValidationFail<DM : IsRootDataModel<*>>(
     override val statusType = VALIDATION_FAIL
 
     /** Create an UmbrellaException of the Fail, so it can be thrown */
+    @Suppress("unused")
     fun createUmbrellaException() = ValidationUmbrellaException(
         null,
         this.exceptions
@@ -51,7 +51,7 @@ data class ValidationFail<DM : IsRootDataModel<*>>(
         }
     ) {
         override fun invoke(values: SimpleObjectValues<ValidationFail<*>>) =
-            ValidationFail<IsRootDataModel<IsValuesPropertyDefinitions>>(
+            ValidationFail<IsRootModel>(
                 exceptions = values(1u)
             )
     }

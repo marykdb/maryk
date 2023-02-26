@@ -35,7 +35,7 @@ data class RootMaryk(
                             }
                         }
                     ),
-                    Operation.Request to ContextTransformerDefinition<Requests, DefinitionsContext, RequestContext>(
+                    Operation.Request to ContextTransformerDefinition(
                         definition = EmbeddedObjectDefinition(
                             dataModel = { Requests }
                         ),

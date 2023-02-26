@@ -20,7 +20,7 @@ class ValuesResponseTest {
     private val key = SimpleMarykModel.key("+1xO4zD4R5sIMcS9pXTZEA")
 
     private val objectsResponse = ValuesResponse(
-        SimpleMarykModel.Model,
+        SimpleMarykModel,
         listOf(
             ValuesWithMetaData(
                 key = key,

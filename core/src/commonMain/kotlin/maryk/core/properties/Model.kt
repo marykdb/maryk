@@ -1,6 +1,7 @@
 package maryk.core.properties
 
 import maryk.core.models.DataModel
+import maryk.core.models.IsDataModel
 import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.AnyOutPropertyReference
@@ -8,10 +9,14 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ValueItem
 
+interface IsModel<P: IsValuesPropertyDefinitions> {
+    val Model: IsDataModel<P>
+}
+
 open class Model<P: IsValuesPropertyDefinitions>(
     reservedIndices: List<UInt>? = null,
     reservedNames: List<String>? = null,
-) : TypedPropertyDefinitions<DataModel<P>, P>() {
+) : TypedPropertyDefinitions<DataModel<P>, P>(), IsModel<P> {
     @Suppress("UNCHECKED_CAST")
     override val Model = DataModel(
         reservedIndices = reservedIndices,

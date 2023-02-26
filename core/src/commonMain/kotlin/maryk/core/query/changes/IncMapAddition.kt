@@ -2,7 +2,7 @@ package maryk.core.query.changes
 
 import maryk.core.exceptions.RequestException
 import maryk.core.models.ReferenceMappedDataModel
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.list
@@ -22,7 +22,7 @@ data class IncMapAddition(
     @Suppress("UNCHECKED_CAST")
     constructor(vararg valueChanges: IncMapKeyAdditions<*, out Any>) : this(valueChanges.toList() as List<IncMapKeyAdditions<out Comparable<Any>, out Any>>)
 
-    override fun filterWithSelect(select: RootPropRefGraph<out IsValuesPropertyDefinitions>): IncMapAddition? {
+    override fun filterWithSelect(select: RootPropRefGraph<out IsRootModel>): IncMapAddition? {
         val filtered = additions.filter {
             select.contains(it.reference)
         }

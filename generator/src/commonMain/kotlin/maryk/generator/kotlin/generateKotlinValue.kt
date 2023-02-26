@@ -8,6 +8,7 @@ import maryk.core.models.IsNamedDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.ObjectDataModel
 import maryk.core.models.ValueDataModel
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.IsMapDefinition
@@ -164,10 +165,14 @@ internal fun generateKotlinValue(
     else -> {
         when (definition) {
             is ContextualModelReferenceDefinition<*, *, *> -> {
-                @Suppress("UNCHECKED_CAST")
-                (value as? Unit.() -> IsNamedDataModel<*>)?.let {
-                    """{ ${value(Unit).name} }"""
-                } ?: throw TypeException("NamedDataModel $value has to be a function which returns a IsNamedDataModel")
+                when (val model = (value as Unit.() -> Any).invoke(Unit)) {
+                    is IsValuesPropertyDefinitions ->
+                        """{ ${model.Model.name} }"""
+                    is IsNamedDataModel<*> ->
+                        """{ ${model.name} }"""
+                    else ->
+                        throw TypeException("NamedDataModel $value has to be a function which returns a IsValuesPropertyDefinitions or IsNamedDataModel ")
+                }
             }
             is EmbeddedValuesDefinition<*, *> ->
                 definition.dataModel.generateKotlinValue(value as ValuesImpl, addImport)

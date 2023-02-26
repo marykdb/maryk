@@ -2,7 +2,7 @@ package maryk.datastore.test
 
 import kotlinx.datetime.LocalDateTime
 import maryk.core.exceptions.RequestException
-import maryk.core.models.RootDataModel
+import maryk.core.properties.graph
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.change
@@ -33,7 +33,7 @@ import kotlin.test.expect
 class DataStoreScanOnIndexTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
-    private val keys = mutableListOf<Key<RootDataModel<Log>>>()
+    private val keys = mutableListOf<Key<Log>>()
     private var highestCreationVersion = ULong.MIN_VALUE
 
     override val allTests = mapOf(
@@ -58,10 +58,10 @@ class DataStoreScanOnIndexTest(
 
     override suspend fun initData() {
         val addResponse = dataStore.execute(
-            Log.Model.add(*logs)
+            Log.add(*logs)
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<RootDataModel<Log>>>(status)
+            val response = assertIs<AddSuccess<Log>>(status)
             keys.add(response.key)
             if (response.version > highestCreationVersion) {
                 // Add lowest version for scan test
@@ -72,7 +72,7 @@ class DataStoreScanOnIndexTest(
 
     override suspend fun resetData() {
         dataStore.execute(
-            Log.Model.delete(*keys.toTypedArray(), hardDelete = true)
+            Log.delete(*keys.toTypedArray(), hardDelete = true)
         )
         keys.clear()
         highestCreationVersion = ULong.MIN_VALUE
@@ -163,7 +163,7 @@ class DataStoreScanOnIndexTest(
 
     private suspend fun executeIndexScanRequestWithToVersionAscending() {
         dataStore.execute(
-            Log.Model.change(
+            Log.change(
                 keys[0].change(
                     Change(
                         message.ref() with "new message"
@@ -194,7 +194,7 @@ class DataStoreScanOnIndexTest(
 
     private suspend fun executeIndexScanRequestWithToVersionDescending() {
         dataStore.execute(
-            Log.Model.change(
+            Log.change(
                 keys[0].change(
                     Change(
                         message.ref() with "new message"

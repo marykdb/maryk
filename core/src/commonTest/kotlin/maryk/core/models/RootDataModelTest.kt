@@ -721,7 +721,7 @@ internal class RootDataModelTest {
             }
             properties["ref"]!!.let {
                 expect(14u) { it.index }
-                expect(ReferenceDefinition(dataModel = { TestMarykModel.Model })) {
+                expect(ReferenceDefinition(dataModel = { TestMarykModel })) {
                     it.definition as ReferenceDefinition<*>
                 }
             }

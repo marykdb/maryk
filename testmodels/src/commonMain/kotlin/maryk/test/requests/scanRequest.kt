@@ -2,6 +2,7 @@ package maryk.test.requests
 
 import maryk.core.aggregations.Aggregations
 import maryk.core.aggregations.metric.ValueCount
+import maryk.core.properties.graph
 import maryk.core.query.filters.Exists
 import maryk.core.query.orders.Orders
 import maryk.core.query.orders.ascending
@@ -12,13 +13,13 @@ import maryk.test.models.SimpleMarykModel
 private val key1 = SimpleMarykModel.key("Zk6m4QpZQegUg5s13JVYlQ")
 
 val scanRequest = SimpleMarykModel.run {
-    Model.scan()
+    scan()
 }
 
 val scanMaxRequest = SimpleMarykModel.run {
-    Model.scan(
+    scan(
         startKey = key1,
-        where = Exists(this { value::ref }),
+        where = Exists(invoke { value::ref }),
         order = this { value::ref }.ascending(),
         limit = 200u,
         includeStart = false,
@@ -34,7 +35,7 @@ val scanMaxRequest = SimpleMarykModel.run {
 }
 
 val scanOrdersRequest = SimpleMarykModel.run {
-    Model.scan(
+    scan(
         startKey = key1,
         order = Orders(
             this { value::ref }.ascending(),

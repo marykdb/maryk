@@ -30,7 +30,7 @@ class ChangesResponseTest {
     private val subModel = TestMarykModel { embeddedValues::ref }
 
     private val objectChangesResponse = ChangesResponse(
-        TestMarykModel.Model,
+        TestMarykModel,
         listOf(
             DataObjectVersionedChange(
                 key = key,

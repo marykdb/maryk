@@ -3,7 +3,6 @@ package maryk.test.models
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
-import maryk.core.models.RootDataModel
 import maryk.core.properties.RootModel
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
@@ -188,7 +187,7 @@ object CompleteMarykModel : RootModel<CompleteMarykModel>(
         minValue = Key("AA"),
         maxValue = Key("f39/f39/fw"),
         default = Key("AAECAQAAECAQAAECAQAAEA"),
-        dataModel = { SimpleMarykModel.Model }
+        dataModel = { SimpleMarykModel }
     )
     val subModel by embed(
         index = 11u,
@@ -341,7 +340,7 @@ object CompleteMarykModel : RootModel<CompleteMarykModel>(
         time: LocalTime = LocalTime(10, 11, 12),
         fixedBytes: Bytes = Bytes("AAECAwQ"),
         flexBytes: Bytes = Bytes("AAECAw"),
-        reference: Key<RootDataModel<SimpleMarykModel>> = Key("AAECAQAAECAQAAECAQAAEA"),
+        reference: Key<SimpleMarykModel> = Key("AAECAQAAECAQAAECAQAAEA"),
         subModel: Values<SimpleMarykModel> = SimpleMarykModel.run { create(
             value with "a default"
         ) },

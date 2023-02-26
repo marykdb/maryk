@@ -21,7 +21,7 @@ class UpdatesResponseTest {
     private val key = TestMarykModel.key("AAACKwEAAg")
 
     private val updatesResponse = UpdatesResponse(
-        TestMarykModel.Model,
+        TestMarykModel,
         listOf(
             OrderedKeysUpdate(listOf(key), 1234uL),
             AdditionUpdate(key, 1234uL, 1233uL, 0, false, testMarykModelObject),

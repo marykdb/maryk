@@ -1,8 +1,7 @@
 package maryk.datastore.rocksdb.processors
 
-import maryk.core.models.IsRootDataModel
 import maryk.core.models.fromChanges
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.ObjectCreate
@@ -25,12 +24,12 @@ import maryk.lib.recyclableByteArray
 import maryk.rocksdb.rocksDBNotFound
 import maryk.rocksdb.use
 
-internal typealias GetUpdatesStoreAction<DM, P> = StoreAction<DM, P, GetUpdatesRequest<DM, P>, UpdatesResponse<DM, P>>
-internal typealias AnyGetUpdatesStoreAction = GetUpdatesStoreAction<IsRootDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>
+internal typealias GetUpdatesStoreAction<DM> = StoreAction<DM, GetUpdatesRequest<DM>, UpdatesResponse<DM>>
+internal typealias AnyGetUpdatesStoreAction = GetUpdatesStoreAction<IsRootModel>
 
 /** Processes a GetUpdatesRequest in a [storeAction] into a [dataStore] */
-internal fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processGetUpdatesRequest(
-    storeAction: GetUpdatesStoreAction<DM, P>,
+internal fun <DM : IsRootModel> processGetUpdatesRequest(
+    storeAction: GetUpdatesStoreAction<DM>,
     dataStore: RocksDBDataStore,
     cache: Cache
 ) {
@@ -40,7 +39,7 @@ internal fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processG
     getRequest.checkMaxVersions(dataStore.keepAllVersions)
 
     val matchingKeys = mutableListOf<Key<DM>>()
-    val updates = mutableListOf<IsUpdateResponse<DM, P>>()
+    val updates = mutableListOf<IsUpdateResponse<DM>>()
     var lastResponseVersion = 0uL
     var insertionIndex = -1
 

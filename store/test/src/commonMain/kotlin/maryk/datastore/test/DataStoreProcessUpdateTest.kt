@@ -63,7 +63,7 @@ class DataStoreProcessUpdateTest(
 
     override suspend fun resetData() {
         dataStore.execute(
-            Log.Model.delete(*keys.toTypedArray(), hardDelete = true)
+            Log.delete(*keys.toTypedArray(), hardDelete = true)
         )
     }
 
@@ -71,7 +71,7 @@ class DataStoreProcessUpdateTest(
         val addResponse = dataStore.processUpdate(
             UpdateResponse(
                 id = 1234uL,
-                dataModel = Log.Model,
+                dataModel = Log,
                 update = AdditionUpdate(
                     key = keys[0],
                     version = 1234uL,
@@ -100,7 +100,7 @@ class DataStoreProcessUpdateTest(
         dataStore.processUpdate(
             UpdateResponse(
                 id = 1234uL,
-                dataModel = Log.Model,
+                dataModel = Log,
                 update = AdditionUpdate(
                     key = keys[0],
                     version = 1234uL,
@@ -116,7 +116,7 @@ class DataStoreProcessUpdateTest(
         val changeResponse = dataStore.processUpdate(
             UpdateResponse(
                 id = 1235uL,
-                dataModel = Log.Model,
+                dataModel = Log,
                 update = ChangeUpdate(
                     key = keys[0],
                     version = 1235uL,
@@ -146,7 +146,7 @@ class DataStoreProcessUpdateTest(
         val changeResponse = dataStore.processUpdate(
             UpdateResponse(
                 id = 1234uL,
-                dataModel = Log.Model,
+                dataModel = Log,
                 update = ChangeUpdate(
                     key = keys[0],
                     version = 1234uL,
@@ -178,7 +178,7 @@ class DataStoreProcessUpdateTest(
         dataStore.processUpdate(
             UpdateResponse(
                 id = 1234uL,
-                dataModel = Log.Model,
+                dataModel = Log,
                 update = AdditionUpdate(
                     key = keys[0],
                     version = 1234uL,
@@ -193,7 +193,7 @@ class DataStoreProcessUpdateTest(
         dataStore.processUpdate(
             UpdateResponse(
                 id = 1234uL,
-                dataModel = Log.Model,
+                dataModel = Log,
                 update = AdditionUpdate(
                     key = keys[1],
                     version = 1234uL,
@@ -208,7 +208,7 @@ class DataStoreProcessUpdateTest(
         val hardRemovalUpdate = dataStore.processUpdate(
             UpdateResponse(
                 id = 1235uL,
-                dataModel = Log.Model,
+                dataModel = Log,
                 update = RemovalUpdate(
                     key = keys[0],
                     version = 1235uL,
@@ -231,7 +231,7 @@ class DataStoreProcessUpdateTest(
         val softRemovalUpdate = dataStore.processUpdate(
             UpdateResponse(
                 id = 1235uL,
-                dataModel = Log.Model,
+                dataModel = Log,
                 update = RemovalUpdate(
                     key = keys[1],
                     version = 1235uL,
@@ -257,7 +257,7 @@ class DataStoreProcessUpdateTest(
         dataStore.processUpdate(
             UpdateResponse(
                 id = 1234uL,
-                dataModel = Log.Model,
+                dataModel = Log,
                 update = AdditionUpdate(
                     key = keys[0],
                     version = 1234uL,
@@ -274,7 +274,7 @@ class DataStoreProcessUpdateTest(
         val changeResponse = dataStore.processUpdate(
             UpdateResponse(
                 id = 1234uL,
-                dataModel = Log.Model,
+                dataModel = Log,
                 update = InitialChangesUpdate(
                     version = 1234uL,
                     changes = listOf(
@@ -324,7 +324,7 @@ class DataStoreProcessUpdateTest(
             dataStore.processUpdate(
                 UpdateResponse(
                     id = 1234uL,
-                    dataModel = Log.Model,
+                    dataModel = Log,
                     update = InitialValuesUpdate(
                         version = 12345uL,
                         values = listOf()
@@ -339,7 +339,7 @@ class DataStoreProcessUpdateTest(
             dataStore.processUpdate(
                 UpdateResponse(
                     id = 1234uL,
-                    dataModel = Log.Model,
+                    dataModel = Log,
                     update = OrderedKeysUpdate(
                         keys = keys,
                         version = 12345uL

@@ -1,7 +1,7 @@
 package maryk.datastore.rocksdb.processors.helpers
 
 import maryk.core.exceptions.StorageException
-import maryk.core.models.IsRootDataModel
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.TableColumnFamilies
@@ -14,7 +14,7 @@ import maryk.rocksdb.rocksDBNotFound
 /**
  * Get last version for given key to compare with. Object should exist, or it throws an exception.
  */
-internal fun <DM: IsRootDataModel<*>> getLastVersion(dbAccessor: DBAccessor, columnFamilies: TableColumnFamilies, readOptions: ReadOptions, key: Key<DM>): ULong {
+internal fun <DM: IsRootModel> getLastVersion(dbAccessor: DBAccessor, columnFamilies: TableColumnFamilies, readOptions: ReadOptions, key: Key<DM>): ULong {
     key.bytes.copyInto(recyclableByteArray)
     recyclableByteArray[key.bytes.size] = LAST_VERSION_INDICATOR
 

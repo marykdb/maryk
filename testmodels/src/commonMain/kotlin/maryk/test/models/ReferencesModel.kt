@@ -8,7 +8,7 @@ object ReferencesModel : RootModel<ReferencesModel>() {
     val references by list(
         index = 1u,
         valueDefinition = ReferenceDefinition(
-            dataModel = { SimpleMarykModel.Model }
+            dataModel = { SimpleMarykModel }
         )
     )
 }

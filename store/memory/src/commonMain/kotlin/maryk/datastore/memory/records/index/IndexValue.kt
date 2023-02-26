@@ -1,13 +1,12 @@
 package maryk.datastore.memory.records.index
 
 import maryk.core.clock.HLC
-import maryk.core.models.IsRootDataModel
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.datastore.memory.records.DataRecord
 
 /** Defines a single [record] at [version] for [value]. */
-internal class IndexValue<DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions, T : Any>(
+internal class IndexValue<DM : IsRootModel, T : Any>(
     override val value: T,
-    override val record: DataRecord<DM, P>?,
+    override val record: DataRecord<DM>?,
     override val version: HLC
-) : IsIndexItem<DM, P, T>, IsRecordAtVersion<DM, P>
+) : IsIndexItem<DM, T>, IsRecordAtVersion<DM>

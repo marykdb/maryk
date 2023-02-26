@@ -7,6 +7,7 @@ import maryk.core.extensions.toUnitLambda
 import maryk.core.inject.Inject
 import maryk.core.models.asValues
 import maryk.core.properties.exceptions.InjectException
+import maryk.core.properties.graph
 import maryk.core.query.RequestContext
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.filters.Exists
@@ -33,12 +34,12 @@ private val context = RequestContext(mapOf(
 class InjectIntoRequestTest {
     private val getRequestWithInjectable = GetRequest.values(context) {
         mapNonNulls(
-            from with SimpleMarykModel.Model,
+            from with SimpleMarykModel,
             keys injectWith Inject("keysToInject", GetRequest { keys::ref }),
             where with Exists(SimpleMarykModel { value::ref }),
             toVersion with 333uL,
             filterSoftDeleted with true,
-            select with SimpleMarykModel.Model.graph {
+            select with SimpleMarykModel.graph {
                 listOf(value)
             }
         )
@@ -81,7 +82,7 @@ class InjectIntoRequestTest {
         ) }
 
         val response = ValuesResponse(
-            dataModel = ReferencesModel.Model,
+            dataModel = ReferencesModel,
             values = listOf(
                 ValuesWithMetaData(
                     key = ReferencesModel.key(row1),
@@ -108,8 +109,8 @@ class InjectIntoRequestTest {
     }
 
     private fun checker(
-        converted: ObjectValues<GetRequest<*, *>, GetRequest.Properties>,
-        original: ObjectValues<GetRequest<*, *>, GetRequest.Properties>
+        converted: ObjectValues<GetRequest<*>, GetRequest.Properties>,
+        original: ObjectValues<GetRequest<*>, GetRequest.Properties>
     ) {
         when (val originalKeys = converted.original { keys } as Any?) {
             null -> error("Keys should not be null")
@@ -176,8 +177,8 @@ class InjectIntoRequestTest {
             checker = { converted, original ->
                 @Suppress("UNCHECKED_CAST")
                 checker(
-                    converted.original { requests }!![0].value as ObjectValues<GetRequest<*, *>, GetRequest.Properties>,
-                    original.original { requests }!![0].value as ObjectValues<GetRequest<*, *>, GetRequest.Properties>
+                    converted.original { requests }!![0].value as ObjectValues<GetRequest<*>, GetRequest.Properties>,
+                    original.original { requests }!![0].value as ObjectValues<GetRequest<*>, GetRequest.Properties>
                 )
             }
         )

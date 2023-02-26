@@ -18,7 +18,7 @@ class ChangeRequestTest {
     @Test
     fun testChangeRequest() {
         expect(2) { changeRequest.objects.size }
-        expect(SimpleMarykModel.Model) { changeRequest.dataModel }
+        expect(SimpleMarykModel) { changeRequest.dataModel }
     }
 
     @Test

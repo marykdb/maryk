@@ -4,10 +4,8 @@ import maryk.core.aggregations.Aggregations
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.QueryDataModel
-import maryk.core.models.RootDataModel
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.RootModel
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.definitions.embedObject
@@ -27,9 +25,9 @@ import maryk.core.values.ObjectValues
  * Optional: the data can be requested as it was at [toVersion]
  * If [filterSoftDeleted] (default true) is set to false it will not where away all soft deleted results.
  */
-fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> DM.get(
+fun <DM : IsRootModel> DM.get(
     vararg keys: Key<DM>,
-    select: RootPropRefGraph<P>? = null,
+    select: RootPropRefGraph<DM>? = null,
     where: IsFilter? = null,
     toVersion: ULong? = null,
     filterSoftDeleted: Boolean = true,
@@ -38,60 +36,45 @@ fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> DM.get(
     GetRequest(this, keys.toList(), select, where, toVersion, filterSoftDeleted, aggregations)
 
 /**
- * Creates a Request to get [select] values of DataObjects by [keys] and [where] filter for the DataModel of type [DM].
- * Optional: the data can be requested as it was at [toVersion]
- * If [filterSoftDeleted] (default true) is set to false it will not where away all soft deleted results.
- */
-fun <DM : RootModel<P>, P : IsValuesPropertyDefinitions> DM.get(
-    vararg keys: Key<RootDataModel<P>>,
-    select: RootPropRefGraph<P>? = null,
-    where: IsFilter? = null,
-    toVersion: ULong? = null,
-    filterSoftDeleted: Boolean = true,
-    aggregations: Aggregations? = null
-) =
-    GetRequest(this.Model, keys.toList(), select, where, toVersion, filterSoftDeleted, aggregations)
-
-/**
  * A Request to get [select] values of DataObjects by [keys] and [where] filter for specific DataModel of type [DM].
  * Optional: the data can be requested as it was at [toVersion]
  * If [filterSoftDeleted] (default true) is set to false it will not filter away all soft deleted results.
  */
-data class GetRequest<DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> internal constructor(
+data class GetRequest<DM : IsRootModel> internal constructor(
     override val dataModel: DM,
     override val keys: List<Key<DM>>,
-    override val select: RootPropRefGraph<P>? = null,
+    override val select: RootPropRefGraph<DM>? = null,
     override val where: IsFilter?,
     override val toVersion: ULong?,
     override val filterSoftDeleted: Boolean,
     override val aggregations: Aggregations? = null
-) : IsGetRequest<DM, P, ValuesResponse<DM, P>>, IsTransportableRequest<ValuesResponse<DM, P>> {
+) : IsGetRequest<DM, ValuesResponse<DM>>, IsTransportableRequest<ValuesResponse<DM>> {
     override val requestType = Get
     override val responseModel = ValuesResponse
 
-    object Properties : ObjectPropertyDefinitions<GetRequest<*, *>>() {
-        val from by addDataModel(GetRequest<*, *>::dataModel)
+    object Properties : ObjectPropertyDefinitions<GetRequest<*>>() {
+        val from by addDataModel { it.dataModel }
         val keys by list(
             index = 2u,
-            getter = GetRequest<*, *>::keys,
+            getter = GetRequest<*>::keys,
             valueDefinition = ContextualReferenceDefinition<RequestContext>(
                 contextualResolver = {
                     it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
                 }
             )
         )
-        val select by embedObject(3u, GetRequest<*, *>::select, dataModel = { RootPropRefGraph })
-        val where by addFilter(GetRequest<*, *>::where)
-        val toVersion by number(5u, GetRequest<*, *>::toVersion, UInt64, required = false)
-        val filterSoftDeleted  by boolean(6u, GetRequest<*, *>::filterSoftDeleted, default = true)
-        val aggregations by embedObject(7u, GetRequest<*, *>::aggregations, dataModel = { Aggregations }, alternativeNames = setOf("aggs"))
+        val select by embedObject(3u, GetRequest<*>::select, dataModel = { RootPropRefGraph })
+        val where by addFilter(GetRequest<*>::where)
+        val toVersion by number(5u, GetRequest<*>::toVersion, UInt64, required = false)
+        val filterSoftDeleted  by boolean(6u, GetRequest<*>::filterSoftDeleted, default = true)
+        val aggregations by embedObject(7u, GetRequest<*>::aggregations, dataModel = { Aggregations }, alternativeNames = setOf("aggs"))
     }
 
-    companion object : QueryDataModel<GetRequest<*, *>, Properties>(
+    companion object : QueryDataModel<GetRequest<*>, Properties>(
         properties = Properties
     ) {
-        override fun invoke(values: ObjectValues<GetRequest<*, *>, Properties>) = GetRequest(
-            dataModel = values<IsRootDataModel<IsValuesPropertyDefinitions>>(1u),
+        override fun invoke(values: ObjectValues<GetRequest<*>, Properties>) = GetRequest(
+            dataModel = values(1u),
             keys = values(2u),
             select = values(3u),
             where = values(4u),

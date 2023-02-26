@@ -6,6 +6,7 @@ import maryk.checkYamlConversion
 import maryk.core.aggregations.Aggregations
 import maryk.core.aggregations.metric.ValueCount
 import maryk.core.extensions.toUnitLambda
+import maryk.core.properties.graph
 import maryk.core.query.RequestContext
 import maryk.core.query.filters.Exists
 import maryk.core.yaml.MarykYamlReader
@@ -25,7 +26,7 @@ class GetRequestTest {
         expect(getRequest) {
             GetRequest.values(context) {
                 mapNonNulls(
-                    from with SimpleMarykModel.Model,
+                    from with SimpleMarykModel,
                     keys with listOf(getRequest.keys[0], getRequest.keys[1])
                 )
             }.toDataObject()
@@ -37,12 +38,12 @@ class GetRequestTest {
         expect(getMaxRequest) {
             GetRequest.values(context) {
                 mapNonNulls(
-                    from with SimpleMarykModel.Model,
+                    from with SimpleMarykModel,
                     keys with listOf(getMaxRequest.keys[0], getMaxRequest.keys[1]),
                     where with Exists(SimpleMarykModel { value::ref }),
                     toVersion with 333uL,
                     filterSoftDeleted with true,
-                    select with SimpleMarykModel.Model.graph {
+                    select with SimpleMarykModel.graph {
                         listOf(value)
                     },
                     aggregations with Aggregations(
@@ -123,7 +124,7 @@ class GetRequestTest {
         GetRequest.readJson(reader, this.context)
             .toDataObject()
             .apply {
-                expect(SimpleMarykModel.Model) { dataModel }
+                expect(SimpleMarykModel) { dataModel }
                 expect(null) { where }
             }
     }

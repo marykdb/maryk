@@ -85,7 +85,7 @@ class ReadStorageToChangesComplexKtTest {
     @Test
     fun convertStorageToChanges() {
         var qualifierIndex = -1
-        val values = ComplexModel.Model.readStorageToChanges(
+        val values = ComplexModel.readStorageToChanges(
             getQualifier = { resultHandler ->
                 val qualifier = complexValuesAsStorablesWithVersion.getOrNull(++qualifierIndex)?.let {
                     initByteArrayByHex(it.first)

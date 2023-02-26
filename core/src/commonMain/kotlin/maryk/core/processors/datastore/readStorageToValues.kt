@@ -17,6 +17,7 @@ import maryk.core.processors.datastore.StorageTypeEnum.ObjectDelete
 import maryk.core.processors.datastore.StorageTypeEnum.SetSize
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.definitions.IsEmbeddedDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
@@ -63,11 +64,11 @@ private typealias AddValue = (Any) -> Unit
  * [getQualifier] gets a qualifier until none is available and returns null
  * [processValue] processes the storage value with given type and definition
  */
-fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> DM.readStorageToValues(
+fun <DM : IsRootModel> DM.readStorageToValues(
     getQualifier: (((Int) -> Byte, Int) -> Unit) -> Boolean,
-    select: RootPropRefGraph<P>?,
+    select: RootPropRefGraph<DM>?,
     processValue: ValueReader
-): Values<P> {
+): Values<DM> {
     // Used to collect all found ValueItems
     val mutableValuesItems = MutableValueItems()
 
@@ -78,11 +79,13 @@ fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> DM.readStorageToV
 
     processQualifiers(getQualifier) { qualifierReader, qualifierLength, addToCache ->
         // Otherwise, try to get a new qualifier processor from DataModel
-        (this as IsDataModel<P>).readQualifier(qualifierReader, qualifierLength, 0, select, null, valueAdder, processValue, addToCache)
+        @Suppress("UNCHECKED_CAST")
+        (this.Model as IsDataModel<IsValuesPropertyDefinitions>).readQualifier(qualifierReader, qualifierLength, 0, select, null, valueAdder, processValue, addToCache)
     }
 
     // Create Values
-    return this.values(null) {
+    @Suppress("UNCHECKED_CAST")
+    return (this.Model as IsRootDataModel<DM>).values(null) {
         mutableValuesItems
     }
 }
@@ -395,14 +398,14 @@ private fun readQualifierOfType(
 }
 
 /** Read embedded values into Values object */
-private fun <P : IsValuesPropertyDefinitions> readEmbeddedValues(
+private fun <DM : IsRootModel> readEmbeddedValues(
     qualifierReader: (Int) -> Byte,
     qualifierLength: Int,
     offset: Int,
     readValueFromStorage: ValueReader,
     definition: IsEmbeddedDefinition<*, *>,
     parentReference: IsPropertyReference<*, *, *>,
-    select: IsPropRefGraph<P>?,
+    select: IsPropRefGraph<DM>?,
     addToCache: CacheProcessor,
     addValueToOutput: AddValue
 ) {

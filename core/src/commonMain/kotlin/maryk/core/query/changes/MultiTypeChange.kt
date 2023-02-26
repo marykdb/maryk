@@ -3,7 +3,7 @@ package maryk.core.query.changes
 import maryk.core.models.QueryDataModel
 import maryk.core.models.ReferencePairDataModel
 import maryk.core.models.ReferenceValuePairsObjectPropertyDefinitions
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.IsPropertyReferenceForValues
@@ -18,7 +18,7 @@ data class MultiTypeChange internal constructor(
 
     constructor(vararg referenceTypePair: ReferenceTypePair<*>) : this(referenceTypePair.toList())
 
-    override fun filterWithSelect(select: RootPropRefGraph<out IsValuesPropertyDefinitions>): MultiTypeChange? {
+    override fun filterWithSelect(select: RootPropRefGraph<out IsRootModel>): MultiTypeChange? {
         val filtered = referenceTypePairs.filter {
             select.contains(it.reference)
         }

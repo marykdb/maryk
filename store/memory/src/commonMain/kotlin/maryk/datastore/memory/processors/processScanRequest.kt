@@ -2,27 +2,25 @@ package maryk.datastore.memory.processors
 
 import maryk.core.aggregations.Aggregator
 import maryk.core.clock.HLC
-import maryk.core.models.IsRootDataModel
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.requests.ScanRequest
 import maryk.core.query.responses.ValuesResponse
 import maryk.datastore.memory.IsStoreFetcher
-import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.StoreAction
 
-internal typealias ScanStoreAction<DM, P> = StoreAction<DM, P, ScanRequest<DM, P>, ValuesResponse<DM, P>>
-internal typealias AnyScanStoreAction = ScanStoreAction<IsRootDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>
+internal typealias ScanStoreAction<DM> = StoreAction<DM, ScanRequest<DM>, ValuesResponse<DM>>
+internal typealias AnyScanStoreAction = ScanStoreAction<IsRootModel>
 
 /** Processes a ScanRequest in a [storeAction] into a dataStore from [dataStoreFetcher] */
-internal fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processScanRequest(
-    storeAction: ScanStoreAction<DM, P>,
-    dataStoreFetcher: IsStoreFetcher<*, *>
+internal fun <DM : IsRootModel> processScanRequest(
+    storeAction: ScanStoreAction<DM>,
+    dataStoreFetcher: IsStoreFetcher<*>
 ) {
     val scanRequest = storeAction.request
-    val valuesWithMeta = mutableListOf<ValuesWithMetaData<DM, P>>()
+    val valuesWithMeta = mutableListOf<ValuesWithMetaData<DM>>()
 
     val aggregator = scanRequest.aggregations?.let {
         Aggregator(it)
@@ -31,7 +29,7 @@ internal fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processS
     val recordFetcher = createStoreRecordFetcher(dataStoreFetcher)
 
     @Suppress("UNCHECKED_CAST")
-    val dataStore = dataStoreFetcher(scanRequest.dataModel) as DataStore<DM, P>
+    val dataStore = (dataStoreFetcher as IsStoreFetcher<DM>).invoke(scanRequest.dataModel)
 
     processScan(scanRequest, dataStore, recordFetcher) { record, _ ->
         val toVersion = scanRequest.toVersion?.let { HLC(it) }

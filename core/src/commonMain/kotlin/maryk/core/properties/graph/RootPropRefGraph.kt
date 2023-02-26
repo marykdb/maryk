@@ -2,7 +2,7 @@ package maryk.core.properties.graph
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
-import maryk.core.properties.IsPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
@@ -31,7 +31,7 @@ import maryk.lib.exceptions.ParseException
  * Create a Root graph with references to [properties]
  * [properties] should always be sorted by index so processing graphs is a lot easier
  */
-data class RootPropRefGraph<P : IsPropertyDefinitions> internal constructor(
+data class RootPropRefGraph<P : IsRootModel> internal constructor(
     override val properties: List<IsPropRefGraphNode<P>>
 ) : IsPropRefGraph<P> {
     object Properties : ObjectPropertyDefinitions<RootPropRefGraph<*>>() {
@@ -78,7 +78,7 @@ data class RootPropRefGraph<P : IsPropertyDefinitions> internal constructor(
         }
     ) {
         override fun invoke(values: ObjectValues<RootPropRefGraph<*>, Properties>) =
-            RootPropRefGraph<IsValuesPropertyDefinitions>(
+            RootPropRefGraph<IsRootModel>(
                 properties = values(1u)
             )
 

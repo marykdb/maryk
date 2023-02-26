@@ -26,7 +26,7 @@ internal class InjectionContext(
                 null -> throw RequestException("Inject collection name $collectionName not found")
                 is ModelTypeToCollect.Request<*> -> {
                     if (collectType.request is IsObjectRequest<*, *>) {
-                        collectType.request.dataModel
+                        collectType.request.dataModel.Model
                     } else {
                         collectType.request.responseModel
                     }

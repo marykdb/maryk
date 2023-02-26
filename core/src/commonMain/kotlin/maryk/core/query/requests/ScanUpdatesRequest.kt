@@ -4,9 +4,8 @@ import maryk.core.aggregations.Aggregations
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.QueryDataModel
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.RootModel
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.definitions.embedObject
@@ -29,7 +28,7 @@ import maryk.core.values.ObjectValues
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
-fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> DM.scanUpdates(
+fun <DM : IsRootModel> DM.scanUpdates(
     startKey: Key<DM>? = null,
     where: IsFilter? = null,
     order: IsOrder? = null,
@@ -38,47 +37,12 @@ fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> DM.scanUpdates(
     fromVersion: ULong = 0uL,
     toVersion: ULong? = null,
     maxVersions: UInt = 1u,
-    select: RootPropRefGraph<P>? = null,
+    select: RootPropRefGraph<DM>? = null,
     filterSoftDeleted: Boolean = true,
     orderedKeys: List<Key<DM>>? = null
 ) =
     ScanUpdatesRequest(
         this,
-        startKey,
-        where,
-        order,
-        limit,
-        includeStart,
-        fromVersion,
-        toVersion,
-        maxVersions,
-        select,
-        filterSoftDeleted,
-        orderedKeys
-    )
-
-
-/**
- * Creates a request to scan DataObjects by key from [startKey] until [limit]
- * It will only fetch the updates [fromVersion] (Inclusive) until [maxVersions] (Default=1) is reached.
- * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
- * Results can be ordered with an [order]
- */
-fun <DM : RootModel<P>, P : IsValuesPropertyDefinitions> DM.scanUpdates(
-    startKey: Key<IsRootDataModel<P>>? = null,
-    where: IsFilter? = null,
-    order: IsOrder? = null,
-    limit: UInt = 100u,
-    includeStart: Boolean = true,
-    fromVersion: ULong = 0uL,
-    toVersion: ULong? = null,
-    maxVersions: UInt = 1u,
-    select: RootPropRefGraph<P>? = null,
-    filterSoftDeleted: Boolean = true,
-    orderedKeys: List<Key<IsRootDataModel<P>>>? = null
-) =
-    ScanUpdatesRequest(
-        this.Model,
         startKey,
         where,
         order,
@@ -98,7 +62,7 @@ fun <DM : RootModel<P>, P : IsValuesPropertyDefinitions> DM.scanUpdates(
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order] and only selected properties can be returned with a [select] graph
  */
-data class ScanUpdatesRequest<DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> internal constructor(
+data class ScanUpdatesRequest<DM : IsRootModel> internal constructor(
     override val dataModel: DM,
     override val startKey: Key<DM>? = null,
     override val where: IsFilter? = null,
@@ -108,10 +72,10 @@ data class ScanUpdatesRequest<DM : IsRootDataModel<P>, P : IsValuesPropertyDefin
     override val fromVersion: ULong = 0uL,
     override val toVersion: ULong? = null,
     override val maxVersions: UInt = 1u,
-    override val select: RootPropRefGraph<P>? = null,
+    override val select: RootPropRefGraph<DM>? = null,
     override val filterSoftDeleted: Boolean = true,
     val orderedKeys: List<Key<DM>>? = null
-) : IsScanRequest<DM, P, UpdatesResponse<DM, P>>, IsUpdatesRequest<DM, P, UpdatesResponse<DM, P>>, IsTransportableRequest<UpdatesResponse<DM, P>> {
+) : IsScanRequest<DM, UpdatesResponse<DM>>, IsUpdatesRequest<DM, UpdatesResponse<DM>>, IsTransportableRequest<UpdatesResponse<DM>> {
     override val requestType = ScanUpdates
     override val responseModel = UpdatesResponse
 
@@ -119,20 +83,20 @@ data class ScanUpdatesRequest<DM : IsRootDataModel<P>, P : IsValuesPropertyDefin
     override val aggregations: Aggregations? = null
 
     @Suppress("unused")
-    object Properties : ObjectPropertyDefinitions<ScanUpdatesRequest<*, *>>() {
-        val from by addDataModel(ScanUpdatesRequest<*, *>::dataModel)
-        val startKey by addStartKey(ScanUpdatesRequest<*, *>::startKey)
-        val select by embedObject(3u, ScanUpdatesRequest<*, *>::select, dataModel = { RootPropRefGraph })
-        val where by addFilter(ScanUpdatesRequest<*, *>::where)
-        val toVersion by number(5u, ScanUpdatesRequest<*, *>::toVersion, UInt64, required = false)
-        val filterSoftDeleted  by boolean(6u, ScanUpdatesRequest<*, *>::filterSoftDeleted, default = true)
-        val order by addOrder(ScanUpdatesRequest<*, *>::order)
-        val limit by number(9u, ScanUpdatesRequest<*, *>::limit, type = UInt32, default = 100u)
-        val includeStart by boolean(10u, ScanUpdatesRequest<*, *>::includeStart, default = true)
-        val fromVersion by number(11u, ScanUpdatesRequest<*, *>::fromVersion, UInt64)
-        val maxVersions by number(12u, ScanUpdatesRequest<*, *>::maxVersions, UInt32, maxValue = 1u)
+    object Properties : ObjectPropertyDefinitions<ScanUpdatesRequest<*>>() {
+        val from by addDataModel { it.dataModel }
+        val startKey by addStartKey(ScanUpdatesRequest<*>::startKey)
+        val select by embedObject(3u, ScanUpdatesRequest<*>::select, dataModel = { RootPropRefGraph })
+        val where by addFilter(ScanUpdatesRequest<*>::where)
+        val toVersion by number(5u, ScanUpdatesRequest<*>::toVersion, UInt64, required = false)
+        val filterSoftDeleted  by boolean(6u, ScanUpdatesRequest<*>::filterSoftDeleted, default = true)
+        val order by addOrder(ScanUpdatesRequest<*>::order)
+        val limit by number(9u, ScanUpdatesRequest<*>::limit, type = UInt32, default = 100u)
+        val includeStart by boolean(10u, ScanUpdatesRequest<*>::includeStart, default = true)
+        val fromVersion by number(11u, ScanUpdatesRequest<*>::fromVersion, UInt64)
+        val maxVersions by number(12u, ScanUpdatesRequest<*>::maxVersions, UInt32, maxValue = 1u)
         val orderedKeys by list(
-            index = 13u, getter = ScanUpdatesRequest<*, *>::orderedKeys,
+            index = 13u, getter = ScanUpdatesRequest<*>::orderedKeys,
             valueDefinition = ContextualReferenceDefinition<RequestContext>(
                 contextualResolver = {
                     it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
@@ -141,11 +105,11 @@ data class ScanUpdatesRequest<DM : IsRootDataModel<P>, P : IsValuesPropertyDefin
         )
     }
 
-    companion object : QueryDataModel<ScanUpdatesRequest<*, *>, Properties>(
+    companion object : QueryDataModel<ScanUpdatesRequest<*>, Properties>(
         properties = Properties
     ) {
-        override fun invoke(values: ObjectValues<ScanUpdatesRequest<*, *>, Properties>) =
-            ScanUpdatesRequest<IsRootDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>(
+        override fun invoke(values: ObjectValues<ScanUpdatesRequest<*>, Properties>) =
+            ScanUpdatesRequest(
                 dataModel = values(1u),
                 startKey = values(2u),
                 select = values(3u),

@@ -1,8 +1,7 @@
 package maryk.datastore.rocksdb.processors
 
 import maryk.core.aggregations.Aggregator
-import maryk.core.models.IsRootDataModel
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.references.IsPropertyReference
@@ -22,17 +21,17 @@ import maryk.lib.recyclableByteArray
 import maryk.rocksdb.rocksDBNotFound
 import maryk.rocksdb.use
 
-internal typealias GetStoreAction<DM, P> = StoreAction<DM, P, GetRequest<DM, P>, ValuesResponse<DM, P>>
-internal typealias AnyGetStoreAction = GetStoreAction<IsRootDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>
+internal typealias GetStoreAction<DM> = StoreAction<DM, GetRequest<DM>, ValuesResponse<DM>>
+internal typealias AnyGetStoreAction = GetStoreAction<IsRootModel>
 
 /** Processes a GetRequest in a [storeAction] into a [dataStore] */
-internal fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processGetRequest(
-    storeAction: GetStoreAction<DM, P>,
+internal fun <DM : IsRootModel> processGetRequest(
+    storeAction: GetStoreAction<DM>,
     dataStore: RocksDBDataStore,
     cache: Cache
 ) {
     val getRequest = storeAction.request
-    val valuesWithMeta = mutableListOf<ValuesWithMetaData<DM, P>>()
+    val valuesWithMeta = mutableListOf<ValuesWithMetaData<DM>>()
     val dbIndex = dataStore.getDataModelId(getRequest.dataModel)
     val columnFamilies = dataStore.getColumnFamilies(dbIndex)
 

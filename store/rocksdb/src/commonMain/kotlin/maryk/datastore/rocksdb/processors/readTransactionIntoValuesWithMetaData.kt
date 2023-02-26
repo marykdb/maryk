@@ -3,7 +3,7 @@ package maryk.datastore.rocksdb.processors
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
 import maryk.core.extensions.bytes.initIntByVar
-import maryk.core.models.IsRootDataModel
+import maryk.core.models.IsValuesDataModel
 import maryk.core.models.values
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.ListSize
@@ -13,7 +13,7 @@ import maryk.core.processors.datastore.StorageTypeEnum.SetSize
 import maryk.core.processors.datastore.StorageTypeEnum.TypeValue
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.processors.datastore.readStorageToValues
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.IsPropertyReferenceForCache
@@ -35,21 +35,22 @@ import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
  * Read values for [key] from an [iterator] to a ValuesWithMeta object.
  * Filter results on [select] and use [toVersion]
  */
-internal fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> DM.readTransactionIntoValuesWithMetaData(
+internal fun <DM : IsRootModel> DM.readTransactionIntoValuesWithMetaData(
     iterator: DBIterator,
     creationVersion: ULong,
     columnFamilies: TableColumnFamilies,
     key: Key<DM>,
-    select: RootPropRefGraph<P>?,
+    select: RootPropRefGraph<DM>?,
     toVersion: ULong?,
     cachedRead: (IsPropertyReferenceForCache<*, *>, ULong, () -> Any?) -> Any?
-): ValuesWithMetaData<DM, P>? {
+): ValuesWithMetaData<DM>? {
     var maxVersion = creationVersion
     var isDeleted = false
 
-    val values: Values<P> = if (select != null && select.properties.isEmpty()) {
+    val values: Values<DM> = if (select != null && select.properties.isEmpty()) {
+        @Suppress("UNCHECKED_CAST")
         // Don't read the values if no values are selected
-        this.values(null) { EmptyValueItems }
+        (this.Model as IsValuesDataModel<DM>).values(null) { EmptyValueItems }
     } else if (toVersion == null) {
         checkExistence(iterator, key)
 

@@ -17,7 +17,7 @@ class KeyScanRangesUniqueTest {
             CompleteMarykModel { string::ref } with "🦄"
         )
 
-        val scanRange = CompleteMarykModel.Model.createScanRange(filter, null)
+        val scanRange = CompleteMarykModel.createScanRange(filter, null)
 
         expect(1) { scanRange.uniques?.size }
         scanRange.uniques?.get(0)?.let {
@@ -37,7 +37,7 @@ class KeyScanRangesUniqueTest {
             CompleteMarykModel { string::ref } with setOf("🦄", "💩", "🤡", "🤖")
         )
 
-        val scanRange = CompleteMarykModel.Model.createScanRange(filter, null)
+        val scanRange = CompleteMarykModel.createScanRange(filter, null)
 
         expect(4) { scanRange.uniques?.size }
         scanRange.uniques?.get(0)?.let {

@@ -1,7 +1,7 @@
 package maryk.core.query.changes
 
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.graph.RootPropRefGraph
@@ -14,7 +14,7 @@ data class ObjectSoftDeleteChange(
 ) : IsChange {
     override val changeType = ChangeType.ObjectDelete
 
-    override fun filterWithSelect(select: RootPropRefGraph<out IsValuesPropertyDefinitions>): ObjectSoftDeleteChange {
+    override fun filterWithSelect(select: RootPropRefGraph<out IsRootModel>): ObjectSoftDeleteChange {
         // Not influenced by select
         return this
     }

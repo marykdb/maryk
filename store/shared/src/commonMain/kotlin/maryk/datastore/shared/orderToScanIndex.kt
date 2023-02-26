@@ -2,9 +2,7 @@ package maryk.datastore.shared
 
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
-import maryk.core.models.IsRootDataModel
-import maryk.datastore.shared.ScanType.IndexScan
-import maryk.datastore.shared.ScanType.TableScan
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.Reversed
@@ -16,9 +14,11 @@ import maryk.core.query.orders.IsOrder
 import maryk.core.query.orders.Order
 import maryk.core.query.orders.Orders
 import maryk.core.query.pairs.ReferenceValuePair
+import maryk.datastore.shared.ScanType.IndexScan
+import maryk.datastore.shared.ScanType.TableScan
 
 /** Converts an [order] to a ScanIndexType */
-fun IsRootDataModel<*>.orderToScanType(
+fun IsRootModel.orderToScanType(
     order: IsOrder?,
     equalPairs: List<ReferenceValuePair<*>>
 ): ScanType {
@@ -46,7 +46,7 @@ fun IsRootDataModel<*>.orderToScanType(
             }
 
             // Check if is default Table scan
-            indexableToScan(this.keyDefinition, order.orders, equalPairs) { direction ->
+            indexableToScan(this.Model.keyDefinition, order.orders, equalPairs) { direction ->
                 TableScan(
                     direction
                 )
@@ -55,7 +55,7 @@ fun IsRootDataModel<*>.orderToScanType(
             }
 
             // Walk all indices and try to match given Orders
-            this.indices?.let { indices ->
+            this.Model.indices?.let { indices ->
                 indexLoop@ for (indexable in indices) {
                     indexableToScan(indexable, order.orders, equalPairs) { direction ->
                         IndexScan(
@@ -67,27 +67,27 @@ fun IsRootDataModel<*>.orderToScanType(
                     }
                 }
 
-                throw RequestException("No index match found on model ${this.name} for order $order")
-            } ?: throw RequestException("No indices defined on model ${this.name} so order $order is not allowed")
+                throw RequestException("No index match found on model ${this.Model.name} for order $order")
+            } ?: throw RequestException("No indices defined on model ${this.Model.name} so order $order is not allowed")
         }
         else -> throw TypeException("Order type of $order is not supported")
     }
 }
 
 /** Convert Single [order] to ScanType */
-private fun IsRootDataModel<*>.singleOrderToScanType(
+private fun IsRootModel.singleOrderToScanType(
     order: Order
 ): ScanType {
     return if (order.propertyReference == null) {
         TableScan(order.direction)
     } else {
-        singleIndexableToScan(this.keyDefinition, order) { direction ->
+        singleIndexableToScan(this.Model.keyDefinition, order) { direction ->
             TableScan(direction)
         }?.let {
             return it
         }
 
-        this.indices?.let { indices ->
+        this.Model.indices?.let { indices ->
             for (indexable in indices) {
                 singleIndexableToScan(indexable, order) { direction ->
                     IndexScan(indexable, direction)

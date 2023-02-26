@@ -42,7 +42,7 @@ class InjectTest {
 
     private val valuesResponse = ValuesResponse.asValues(
         ValuesResponse(
-            TestMarykModel.Model,
+            TestMarykModel,
             listOf(
                 ValuesWithMetaData(
                     key = key2,

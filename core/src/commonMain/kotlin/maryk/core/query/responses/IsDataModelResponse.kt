@@ -3,6 +3,7 @@ package maryk.core.query.responses
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.IsRootDataModel
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
@@ -32,12 +33,12 @@ import maryk.core.query.responses.statuses.ValidationFail
 import kotlin.native.concurrent.SharedImmutable
 
 /** A response for a data operation on a DataModel */
-interface IsDataModelResponse<out DM : IsRootDataModel<*>> : IsResponse {
+interface IsDataModelResponse<out DM : IsRootModel> : IsResponse {
     val dataModel: DM
 }
 
 internal fun <DM : IsDataModelResponse<*>> ObjectPropertyDefinitions<DM>.addDataModel(
-    getter: (DM) -> IsRootDataModel<*>?,
+    getter: (DM) -> IsRootModel?,
     index: UInt = 1u
 ) =
     this.contextual(
@@ -52,12 +53,12 @@ internal fun <DM : IsDataModelResponse<*>> ObjectPropertyDefinitions<DM>.addData
             }
         ),
         getter = getter,
-        toSerializable = { value: IsRootDataModel<*>?, _ ->
+        toSerializable = { value: IsRootModel?, _ ->
             value?.let {
-                DataModelReference(it.name) { it }
+                DataModelReference(it.Model.name) { it.Model }
             }
         },
-        fromSerializable = { it?.get?.invoke(Unit) },
+        fromSerializable = { it?.get?.invoke(Unit)?.properties as IsRootModel? },
         capturer = { context, value ->
             context.dataModel = value.get(Unit)
         }

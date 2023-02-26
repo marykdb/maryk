@@ -267,7 +267,7 @@ private val definitionNamesMap = mapOf(
     PropertyDefinitionType.Reference to PropertyDefinitionKotlinDescriptor(
         className = "ReferenceDefinition",
         wrapFunctionName = "reference",
-        kotlinTypeName = { "Key<${it.dataModel.name}>" },
+        kotlinTypeName = { "Key<${it.dataModel.Model.name}>" },
         imports = { keyImports },
         definitionModel = ReferenceDefinition.Model
     ),

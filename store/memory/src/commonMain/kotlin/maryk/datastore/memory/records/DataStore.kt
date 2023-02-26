@@ -1,8 +1,7 @@
 package maryk.datastore.memory.records
 
 import maryk.core.clock.HLC
-import maryk.core.models.IsRootDataModel
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.datastore.memory.processors.changers.getValue
 import maryk.datastore.memory.records.index.IndexValues
 import maryk.datastore.memory.records.index.UniqueIndexValues
@@ -12,16 +11,16 @@ import maryk.lib.extensions.compare.compareTo
 /**
  * An in memory data store containing records and indices
  */
-internal class DataStore<DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions>(
+internal class DataStore<DM : IsRootModel>(
     val keepAllVersions: Boolean
 ) {
-    val records: MutableList<DataRecord<DM, P>> = mutableListOf()
-    private val indices: MutableList<IndexValues<DM, P>> = mutableListOf()
-    private val uniqueIndices: MutableList<UniqueIndexValues<DM, P, Comparable<Any>>> = mutableListOf()
+    val records: MutableList<DataRecord<DM>> = mutableListOf()
+    private val indices: MutableList<IndexValues<DM>> = mutableListOf()
+    private val uniqueIndices: MutableList<UniqueIndexValues<DM, Comparable<Any>>> = mutableListOf()
 
     /** Add [record] to index for [value] and pass [previousValue] so that index reference can be deleted */
     internal fun addToIndex(
-        record: DataRecord<DM, P>,
+        record: DataRecord<DM>,
         indexName: ByteArray,
         value: ByteArray,
         version: HLC,
@@ -36,7 +35,7 @@ internal class DataStore<DM : IsRootDataModel<P>, P : IsValuesPropertyDefinition
 
     /** Remove [record] for [previousValue] from index */
     internal fun removeFromIndex(
-        record: DataRecord<DM, P>,
+        record: DataRecord<DM>,
         indexName: ByteArray,
         version: HLC,
         previousValue: ByteArray? = null
@@ -51,7 +50,7 @@ internal class DataStore<DM : IsRootDataModel<P>, P : IsValuesPropertyDefinition
     internal fun deleteHardFromIndex(
         indexName: ByteArray,
         value: ByteArray,
-        record: DataRecord<DM, P>
+        record: DataRecord<DM>
     ) {
         val index = getOrCreateIndex(indexName)
         index.deleteHardFromIndex(record, value)
@@ -59,7 +58,7 @@ internal class DataStore<DM : IsRootDataModel<P>, P : IsValuesPropertyDefinition
 
     /** Add [record] to unique index for [value] and pass [previousValue] so that index reference can be deleted */
     internal fun addToUniqueIndex(
-        record: DataRecord<DM, P>,
+        record: DataRecord<DM>,
         indexName: ByteArray,
         value: Comparable<Any>,
         version: HLC,
@@ -74,7 +73,7 @@ internal class DataStore<DM : IsRootDataModel<P>, P : IsValuesPropertyDefinition
 
     /** Remove [dataRecord] from all unique indices and register removal below [version] */
     internal fun removeFromUniqueIndices(
-        dataRecord: DataRecord<DM, P>,
+        dataRecord: DataRecord<DM>,
         version: HLC,
         hardDelete: Boolean
     ) {
@@ -114,7 +113,7 @@ internal class DataStore<DM : IsRootDataModel<P>, P : IsValuesPropertyDefinition
     /** Validate if value in [dataRecordValue] does not already exist and if it exists it is not [dataRecord] */
     internal fun validateUniqueNotExists(
         dataRecordValue: DataRecordValue<Comparable<Any>>,
-        dataRecord: DataRecord<DM, P>
+        dataRecord: DataRecord<DM>
     ) {
         getOrCreateUniqueIndex(dataRecordValue.reference)[dataRecordValue.value]?.let {
             // if not deleted and not the given record it already exists.
@@ -125,10 +124,10 @@ internal class DataStore<DM : IsRootDataModel<P>, P : IsValuesPropertyDefinition
     }
 
     /** Get unique index for [indexReference] or create it if it does not exist. */
-    internal fun getOrCreateIndex(indexReference: ByteArray): IndexValues<DM, P> {
+    internal fun getOrCreateIndex(indexReference: ByteArray): IndexValues<DM> {
         val i = indices.binarySearch { it.indexReference compareTo indexReference }
         return if (i < 0) {
-            IndexValues<DM, P>(indexReference).also {
+            IndexValues<DM>(indexReference).also {
                 indices.add(
                     i * -1 - 1,
                     it
@@ -140,10 +139,10 @@ internal class DataStore<DM : IsRootDataModel<P>, P : IsValuesPropertyDefinition
     }
 
     /** Get unique index for [indexReference] or create it if it does not exist. */
-    internal fun getOrCreateUniqueIndex(indexReference: ByteArray): UniqueIndexValues<DM, P, Comparable<Any>> {
+    internal fun getOrCreateUniqueIndex(indexReference: ByteArray): UniqueIndexValues<DM, Comparable<Any>> {
         val i = uniqueIndices.binarySearch { it.indexReference compareTo indexReference }
         return if (i < 0) {
-            UniqueIndexValues<DM, P, Comparable<Any>>(indexReference).also {
+            UniqueIndexValues<DM, Comparable<Any>>(indexReference).also {
                 uniqueIndices.add(
                     i * -1 - 1,
                     it
@@ -155,7 +154,7 @@ internal class DataStore<DM : IsRootDataModel<P>, P : IsValuesPropertyDefinition
     }
 
     /** Get DataRecord by [key] */
-    internal fun getByKey(key: ByteArray): DataRecord<DM, P>? {
+    internal fun getByKey(key: ByteArray): DataRecord<DM>? {
         val index = this.records.binarySearch { it.key.bytes compareTo key }
 
         return if (index >= 0) this.records[index] else null

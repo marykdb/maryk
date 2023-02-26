@@ -6,6 +6,7 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.SerializationException
 import maryk.core.properties.IsDataModelPropertyDefinitions
 import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.MutableModel
 import maryk.core.properties.MutablePropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitionsCollectionDefinitionWrapper
@@ -43,7 +44,7 @@ open class DataModel<P : IsValuesPropertyDefinitions>(
         ObjectPropertyDefinitions<DataModel<*>>(),
         IsDataModelPropertyDefinitions<DataModel<*>, PropertyDefinitionsCollectionDefinitionWrapper<DataModel<*>>> {
         override val name by string(1u, DataModel<*>::name)
-        override val properties = addProperties(this)
+        override val properties = addProperties(false, this)
         val reservedIndices by list(
             index = 3u,
             getter = DataModel<*>::reservedIndices,
@@ -89,7 +90,7 @@ open class DataModel<P : IsValuesPropertyDefinitions>(
             values: MutableValueItems,
             context: ContainsDefinitionsContext?
         ) {
-            readDataModelJson(context, reader, values, Properties, ::MutablePropertyDefinitions)
+            readDataModelJson(context, reader, values, Properties, ::MutableModel)
         }
     }
 }

@@ -34,10 +34,10 @@ import maryk.json.JsonToken.Value
 import maryk.lib.exceptions.ParseException
 
 /**
- * To make graph with [runner] on Properties to return list of graphables
+ * To make graph on Properties to return list of graphables
  * The graphables are sorted after generation so the PropRefGraph can be processed quicker.
  */
-@Suppress("unused")
+@Suppress("UnusedReceiverParameter")
 fun <P : IsValuesPropertyDefinitions, DM : IsValuesDataModel<PS>, PS : IsValuesPropertyDefinitions> P.graph(
     embed: EmbeddedValuesDefinitionWrapper<DM, PS, IsPropertyContext>,
     runner: PS.() -> List<IsPropRefGraphNode<PS>>

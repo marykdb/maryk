@@ -1,7 +1,6 @@
 package maryk.datastore.test
 
 import kotlinx.datetime.LocalDate
-import maryk.core.models.RootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
@@ -26,7 +25,7 @@ import kotlin.test.expect
 class DataStoreScanUniqueTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
-    private val keys = mutableListOf<Key<RootDataModel<CompleteMarykModel>>>()
+    private val keys = mutableListOf<Key<CompleteMarykModel>>()
     private var lowestVersion = ULong.MAX_VALUE
 
     override val allTests = mapOf(
@@ -51,10 +50,10 @@ class DataStoreScanUniqueTest(
 
     override suspend fun initData() {
         val addResponse = dataStore.execute(
-            CompleteMarykModel.Model.add(*objects)
+            CompleteMarykModel.add(*objects)
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<RootDataModel<CompleteMarykModel>>>(status)
+            val response = assertIs<AddSuccess<CompleteMarykModel>>(status)
             keys.add(response.key)
             if (response.version < lowestVersion) {
                 // Add lowest version for scan test
@@ -65,7 +64,7 @@ class DataStoreScanUniqueTest(
 
     override suspend fun resetData() {
         dataStore.execute(
-            CompleteMarykModel.Model.delete(*keys.toTypedArray(), hardDelete = true)
+            CompleteMarykModel.delete(*keys.toTypedArray(), hardDelete = true)
         )
         keys.clear()
         lowestVersion = ULong.MAX_VALUE
@@ -90,7 +89,7 @@ class DataStoreScanUniqueTest(
 
     private suspend fun executeSimpleScanFilterWithToVersionRequest() {
         val changeResponse = dataStore.execute(
-            CompleteMarykModel.Model.change(
+            CompleteMarykModel.change(
                 keys[0].change(
                     Change(CompleteMarykModel.string.ref() with "haas2")
                 )

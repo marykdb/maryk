@@ -1,5 +1,6 @@
 package maryk.core.models
 
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.exceptions.ValidationUmbrellaException
@@ -61,11 +62,11 @@ fun <DM : IsValuesDataModel<P>, P : IsValuesPropertyDefinitions> DM.values(
     Values(this.properties, createMap(this.properties), context)
 
 /** Create a Values object with given [changes] */
-fun <DM : IsValuesDataModel<P>, P : IsValuesPropertyDefinitions> DM.fromChanges(
+fun <DM : IsRootModel> DM.fromChanges(
     context: RequestContext?,
     changes: List<IsChange>
 ) = if (changes.isEmpty()) {
-    Values(this.properties, ValueItems(), context)
+    Values(this, ValueItems(), context)
 } else {
     val valueItemsToChange = MutableValueItems(mutableListOf())
 
@@ -75,5 +76,5 @@ fun <DM : IsValuesDataModel<P>, P : IsValuesPropertyDefinitions> DM.fromChanges(
         }
     }
 
-    Values(this.properties, valueItemsToChange, context)
+    Values(this, valueItemsToChange, context)
 }

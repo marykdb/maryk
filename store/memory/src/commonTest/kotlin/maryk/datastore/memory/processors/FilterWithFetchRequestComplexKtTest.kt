@@ -1,10 +1,9 @@
 package maryk.datastore.memory.processors
 
 import maryk.core.clock.HLC
-import maryk.core.models.IsRootDataModel
-import maryk.core.models.key
 import maryk.core.processors.datastore.writeToStorage
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
+import maryk.core.properties.key
 import maryk.core.properties.types.Key
 import maryk.core.query.filters.Equals
 import maryk.core.query.filters.Exists
@@ -16,7 +15,7 @@ import kotlin.test.Test
 import kotlin.test.assertTrue
 
 class FilterWithFetchRequestComplexKtTest {
-    private val value1 = ComplexModel.Model.createDataRecord(
+    private val value1 = ComplexModel.createDataRecord(
         ComplexModel(
             mapStringString = mapOf(
                 "k1" to "v1",
@@ -25,11 +24,11 @@ class FilterWithFetchRequestComplexKtTest {
         )
     )
 
-    private val recordFetcher = { _: IsRootDataModel<*>, _: Key<*> ->
+    private val recordFetcher = { _: IsRootModel, _: Key<*> ->
         null
     }
 
-    private fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> DM.createDataRecord(values: Values<P>): DataRecord<DM, P> {
+    private fun <DM : IsRootModel> DM.createDataRecord(values: Values<DM>): DataRecord<DM> {
         val recordValues = mutableListOf<DataRecordValue<*>>()
 
         values.writeToStorage { _, reference, _, value ->

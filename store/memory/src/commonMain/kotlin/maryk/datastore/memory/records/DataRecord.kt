@@ -1,14 +1,13 @@
 package maryk.datastore.memory.records
 
 import maryk.core.clock.HLC
-import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.matchers.FuzzyMatchResult.MATCH
 import maryk.core.processors.datastore.matchers.FuzzyMatchResult.NO_MATCH
 import maryk.core.processors.datastore.matchers.FuzzyMatchResult.OUT_OF_RANGE
 import maryk.core.processors.datastore.matchers.IsQualifierMatcher
 import maryk.core.processors.datastore.matchers.QualifierExactMatcher
 import maryk.core.processors.datastore.matchers.QualifierFuzzyMatcher
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Key
@@ -23,7 +22,7 @@ import maryk.lib.extensions.compare.compareTo
  * [firstVersion] and [lastVersion] signify the versions of first and last change
  * [isDeleted] is a state switch to signify record was deleted
  */
-internal data class DataRecord<DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions>(
+internal data class DataRecord<DM : IsRootModel>(
     val key: Key<DM>,
     var values: List<DataRecordNode>,
     val firstVersion: HLC,
@@ -40,14 +39,14 @@ internal data class DataRecord<DM : IsRootDataModel<P>, P : IsValuesPropertyDefi
     fun <T : Any> matchQualifier(
         reference: IsPropertyReference<T, *, *>,
         toVersion: HLC?,
-        recordFetcher: (IsRootDataModel<*>, Key<*>) -> DataRecord<*, *>?,
+        recordFetcher: (IsRootModel, Key<*>) -> DataRecord<*>?,
         matcher: (T?) -> Boolean
     ) = this.matchQualifier(reference.toQualifierMatcher(), toVersion, recordFetcher, matcher)
 
     private fun <T : Any> matchQualifier(
         qualifierMatcher: IsQualifierMatcher,
         toVersion: HLC?,
-        recordFetcher: (IsRootDataModel<*>, Key<*>) -> DataRecord<*, *>?,
+        recordFetcher: (IsRootModel, Key<*>) -> DataRecord<*>?,
         matcher: (T?) -> Boolean
     ): Boolean {
         when (qualifierMatcher) {

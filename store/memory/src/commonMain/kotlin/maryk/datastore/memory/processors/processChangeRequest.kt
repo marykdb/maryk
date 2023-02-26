@@ -2,30 +2,28 @@ package maryk.datastore.memory.processors
 
 import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
-import maryk.core.models.IsRootDataModel
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.query.requests.ChangeRequest
 import maryk.core.query.responses.ChangeResponse
 import maryk.core.query.responses.statuses.IsChangeResponseStatus
 import maryk.datastore.memory.IsStoreFetcher
-import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.updates.IsUpdateAction
 
-internal typealias ChangeStoreAction<DM, P> = StoreAction<DM, P, ChangeRequest<DM>, ChangeResponse<DM>>
-internal typealias AnyChangeStoreAction = ChangeStoreAction<IsRootDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>
+internal typealias ChangeStoreAction<DM> = StoreAction<DM, ChangeRequest<DM>, ChangeResponse<DM>>
+internal typealias AnyChangeStoreAction = ChangeStoreAction<IsRootModel>
 
 /** Processes a ChangeRequest in a [storeAction] into a data store from [dataStoreFetcher] */
-internal suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processChangeRequest(
+internal suspend fun <DM : IsRootModel> processChangeRequest(
     version: HLC,
-    storeAction: ChangeStoreAction<DM, P>,
-    dataStoreFetcher: IsStoreFetcher<*, *>,
+    storeAction: ChangeStoreAction<DM>,
+    dataStoreFetcher: IsStoreFetcher<*>,
     updateFlow: MutableSharedFlow<IsUpdateAction>
 ) {
     val changeRequest = storeAction.request
 
     @Suppress("UNCHECKED_CAST")
-    val dataStore = dataStoreFetcher(changeRequest.dataModel) as DataStore<DM, P>
+    val dataStore = (dataStoreFetcher as IsStoreFetcher<DM>).invoke(changeRequest.dataModel)
 
     val statuses = mutableListOf<IsChangeResponseStatus<DM>>()
 

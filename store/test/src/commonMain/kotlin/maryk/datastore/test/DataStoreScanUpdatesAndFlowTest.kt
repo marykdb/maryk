@@ -1,7 +1,7 @@
 package maryk.datastore.test
 
 import kotlinx.datetime.LocalDateTime
-import maryk.core.models.RootDataModel
+import maryk.core.properties.graph
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
@@ -82,7 +82,7 @@ val t4 = TestMarykModel(
 class DataStoreScanUpdatesAndFlowTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
-    private val testKeys = mutableListOf<Key<RootDataModel<TestMarykModel>>>()
+    private val testKeys = mutableListOf<Key<TestMarykModel>>()
     private var lowestVersion = ULong.MAX_VALUE
     private var highestInitVersion = ULong.MIN_VALUE
 
@@ -102,10 +102,10 @@ class DataStoreScanUpdatesAndFlowTest(
 
     override suspend fun initData() {
         val addResponse = dataStore.execute(
-            TestMarykModel.Model.add(t0, t1, t2, t3, t4)
+            TestMarykModel.add(t0, t1, t2, t3, t4)
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<RootDataModel<TestMarykModel>>>(status)
+            val response = assertIs<AddSuccess<TestMarykModel>>(status)
             testKeys.add(response.key)
             if (response.version < lowestVersion) {
                 // Add lowest version for scan test
@@ -119,7 +119,7 @@ class DataStoreScanUpdatesAndFlowTest(
 
     override suspend fun resetData() {
         dataStore.execute(
-            TestMarykModel.Model.delete(*testKeys.toTypedArray(), hardDelete = true)
+            TestMarykModel.delete(*testKeys.toTypedArray(), hardDelete = true)
         )
         testKeys.clear()
         lowestVersion = ULong.MAX_VALUE
@@ -133,18 +133,18 @@ class DataStoreScanUpdatesAndFlowTest(
 
         expect(5) { scanResponse.updates.size }
 
-        assertIs<OrderedKeysUpdate<RootDataModel<TestMarykModel>, TestMarykModel>>(scanResponse.updates[0]).apply {
+        assertIs<OrderedKeysUpdate<TestMarykModel>>(scanResponse.updates[0]).apply {
             assertEquals(listOf(testKeys[1], testKeys[2], testKeys[3], testKeys[4]), keys)
             assertNull(sortingKeys)
             assertEquals(highestInitVersion, version)
         }
 
-        assertIs<AdditionUpdate<RootDataModel<TestMarykModel>, TestMarykModel>>(scanResponse.updates[1]).apply {
+        assertIs<AdditionUpdate<TestMarykModel>>(scanResponse.updates[1]).apply {
             assertEquals(testKeys[1], key)
             assertEquals(t1, values)
         }
 
-        assertIs<AdditionUpdate<RootDataModel<TestMarykModel>, TestMarykModel>>(scanResponse.updates[4]).apply {
+        assertIs<AdditionUpdate<TestMarykModel>>(scanResponse.updates[4]).apply {
             assertEquals(testKeys[4], key)
             assertEquals(t4, values)
         }
@@ -162,17 +162,17 @@ class DataStoreScanUpdatesAndFlowTest(
 
         expect(3) { scanResponse.updates.size }
 
-        assertIs<OrderedKeysUpdate<RootDataModel<TestMarykModel>, TestMarykModel>>(scanResponse.updates[0]).apply {
+        assertIs<OrderedKeysUpdate<TestMarykModel>>(scanResponse.updates[0]).apply {
             assertEquals(listOf(testKeys[3], testKeys[0]), keys)
             assertEquals(highestInitVersion, version)
         }
 
-        assertIs<AdditionUpdate<RootDataModel<TestMarykModel>, TestMarykModel>>(scanResponse.updates[1]).apply {
+        assertIs<AdditionUpdate<TestMarykModel>>(scanResponse.updates[1]).apply {
             assertEquals(testKeys[3], key)
             assertEquals(t3, values)
         }
 
-        assertIs<AdditionUpdate<RootDataModel<TestMarykModel>, TestMarykModel>>(scanResponse.updates[2]).apply {
+        assertIs<AdditionUpdate<TestMarykModel>>(scanResponse.updates[2]).apply {
             assertEquals(testKeys[0], key)
             assertEquals(t0, values)
         }
@@ -186,18 +186,18 @@ class DataStoreScanUpdatesAndFlowTest(
             ),
             2
         ) { responses ->
-            assertIs<InitialValuesUpdate<*, *>>(responses[0].await()).apply {
+            assertIs<InitialValuesUpdate<*>>(responses[0].await()).apply {
                 assertEquals(listOf(testKeys[1], testKeys[2], testKeys[3], testKeys[4]), values.map { it.key })
                 assertEquals(highestInitVersion, version)
             }
 
             val change = Change(TestMarykModel { string::ref } with "ha new message for values")
-            dataStore.execute(TestMarykModel.Model.change(
+            dataStore.execute(TestMarykModel.change(
                 testKeys[1].change(change)
             ))
 
             val changeUpdate = responses[1].await()
-            assertIs<ChangeUpdate<*, *>>(changeUpdate).apply {
+            assertIs<ChangeUpdate<*>>(changeUpdate).apply {
                 assertEquals(testKeys[1], key)
                 assertEquals(listOf(change), changes)
             }
@@ -212,18 +212,18 @@ class DataStoreScanUpdatesAndFlowTest(
             ),
             2
         ) { responses ->
-            assertIs<InitialChangesUpdate<*, *>>(responses[0].await()).apply {
+            assertIs<InitialChangesUpdate<*>>(responses[0].await()).apply {
                 assertEquals(listOf(testKeys[1], testKeys[2], testKeys[3], testKeys[4]), changes.map { it.key })
                 assertEquals(highestInitVersion, version)
             }
 
             val change1 = Change(TestMarykModel { string::ref } with "ha new message for change")
-            dataStore.execute(TestMarykModel.Model.change(
+            dataStore.execute(TestMarykModel.change(
                 testKeys[1].change(change1)
             ))
 
             val changeUpdate1 = responses[1].await()
-            assertIs<ChangeUpdate<*, *>>(changeUpdate1).apply {
+            assertIs<ChangeUpdate<*>>(changeUpdate1).apply {
                 assertEquals(testKeys[1], key)
                 assertEquals(listOf(change1), changes)
             }
@@ -240,14 +240,14 @@ class DataStoreScanUpdatesAndFlowTest(
             ),
             7
         ) { responses ->
-            assertIs<OrderedKeysUpdate<*, *>>(responses[0].await()).apply {
+            assertIs<OrderedKeysUpdate<*>>(responses[0].await()).apply {
                 assertEquals(listOf(testKeys[1], testKeys[2], testKeys[3], testKeys[4]), keys)
                 assertEquals(highestInitVersion, version)
             }
 
             // Based on passed ordered keys to the server
             val removalUpdate0 = responses[1].await()
-            assertIs<RemovalUpdate<*, *>>(removalUpdate0).apply {
+            assertIs<RemovalUpdate<*>>(removalUpdate0).apply {
                 assertEquals(testKeys[0], key)
                 assertEquals(NotInRange, reason)
                 assertEquals(highestInitVersion, version)
@@ -255,7 +255,7 @@ class DataStoreScanUpdatesAndFlowTest(
 
             // Based on passed ordered keys to the server
             val additionUpdate0 = responses[2].await()
-            assertIs<AdditionUpdate<*, *>>(additionUpdate0).apply {
+            assertIs<AdditionUpdate<*>>(additionUpdate0).apply {
                 assertEquals(testKeys[3], key)
                 assertEquals(highestInitVersion, version)
                 assertEquals(2, insertionIndex)
@@ -263,40 +263,40 @@ class DataStoreScanUpdatesAndFlowTest(
             }
 
             val change1 = Change(TestMarykModel { string::ref } with "ha new message 1")
-            dataStore.execute(TestMarykModel.Model.change(
+            dataStore.execute(TestMarykModel.change(
                 testKeys[1].change(change1)
             ))
 
             val changeUpdate1 = responses[3].await()
-            assertIs<ChangeUpdate<*, *>>(changeUpdate1).apply {
+            assertIs<ChangeUpdate<*>>(changeUpdate1).apply {
                 assertEquals(testKeys[1], key)
                 assertEquals(listOf(change1), changes)
             }
 
             // Ignored change because scan starts at later key,
             // next response should be for next change
-            dataStore.execute(TestMarykModel.Model.change(
+            dataStore.execute(TestMarykModel.change(
                 testKeys[0].change(
                     Change(TestMarykModel { string::ref } with "ha newer message 3")
                 )
             ))
 
             val change2 = Change(TestMarykModel { string::ref } with "ha newer message 3")
-            dataStore.execute(TestMarykModel.Model.change(
+            dataStore.execute(TestMarykModel.change(
                 testKeys[2].change(change2)
             ))
 
             val changeUpdate2 = responses[4].await()
-            assertIs<ChangeUpdate<*, *>>(changeUpdate2).apply {
+            assertIs<ChangeUpdate<*>>(changeUpdate2).apply {
                 assertEquals(testKeys[2], key)
                 assertEquals(listOf(change2), changes)
                 assertEquals(1, index)
             }
 
-            dataStore.execute(TestMarykModel.Model.delete(testKeys[2], hardDelete = true))
+            dataStore.execute(TestMarykModel.delete(testKeys[2], hardDelete = true))
 
             val removalUpdate1 = responses[5].await()
-            assertIs<RemovalUpdate<*, *>>(removalUpdate1).apply {
+            assertIs<RemovalUpdate<*>>(removalUpdate1).apply {
                 assertEquals(testKeys[2], key)
                 assertEquals(HardDelete, reason)
             }
@@ -310,12 +310,12 @@ class DataStoreScanUpdatesAndFlowTest(
                 dateTime = LocalDateTime(1922, 12, 23, 0, 0)
             )
 
-            dataStore.execute(TestMarykModel.Model.add(
+            dataStore.execute(TestMarykModel.add(
                 newDataObject
             ))
 
             val additionUpdate = responses[6].await()
-            assertIs<AdditionUpdate<RootDataModel<TestMarykModel>, TestMarykModel>>(additionUpdate).apply {
+            assertIs<AdditionUpdate<TestMarykModel>>(additionUpdate).apply {
                 assertEquals(newDataObject, values)
                 assertEquals(1, insertionIndex)
                 testKeys.add(key)
@@ -333,18 +333,18 @@ class DataStoreScanUpdatesAndFlowTest(
             ),
             2
         ) { responses ->
-            assertIs<OrderedKeysUpdate<*, *>>(responses[0].await()).apply {
+            assertIs<OrderedKeysUpdate<*>>(responses[0].await()).apply {
                 assertEquals(listOf(testKeys[1], testKeys[2], testKeys[3], testKeys[4]), keys)
                 assertEquals(highestInitVersion, version)
             }
 
             val change1 = Change(TestMarykModel { string::ref } with "ha filtered message")
-            dataStore.execute(TestMarykModel.Model.change(
+            dataStore.execute(TestMarykModel.change(
                 testKeys[1].change(change1)
             ))
 
             val changeUpdate1 = responses[1].await()
-            assertIs<RemovalUpdate<*, *>>(changeUpdate1).apply {
+            assertIs<RemovalUpdate<*>>(changeUpdate1).apply {
                 assertEquals(testKeys[1], key)
                 assertEquals(NotInRange, reason)
             }
@@ -359,13 +359,13 @@ class DataStoreScanUpdatesAndFlowTest(
             ),
             6
         ) { responses ->
-            assertIs<OrderedKeysUpdate<*, *>>(responses[0].await()).apply {
+            assertIs<OrderedKeysUpdate<*>>(responses[0].await()).apply {
                 assertEquals(listOf(testKeys[1], testKeys[2], testKeys[3], testKeys[4]), keys)
                 assertEquals(highestInitVersion, version)
             }
 
             val prevUpdate1 = responses[1].await()
-            assertIs<AdditionUpdate<RootDataModel<TestMarykModel>, TestMarykModel>>(prevUpdate1).apply {
+            assertIs<AdditionUpdate<TestMarykModel>>(prevUpdate1).apply {
                 assertEquals(testKeys[1], key)
                 assertEquals(t1, values)
                 assertEquals(0, insertionIndex)
@@ -374,19 +374,19 @@ class DataStoreScanUpdatesAndFlowTest(
             responses[2].await()
             responses[3].await()
             // Expect this to be the last added value
-            assertIs<AdditionUpdate<RootDataModel<TestMarykModel>, TestMarykModel>>(responses[4].await()).apply {
+            assertIs<AdditionUpdate<TestMarykModel>>(responses[4].await()).apply {
                 assertEquals(testKeys[4], key)
                 assertEquals(highestInitVersion, this.version)
                 assertEquals(3, insertionIndex)
             }
 
             val change1 = Change(TestMarykModel { string::ref } with "ha new message 1")
-            dataStore.execute(TestMarykModel.Model.change(
+            dataStore.execute(TestMarykModel.change(
                 testKeys[1].change(change1)
             ))
 
             val changeUpdate1 = responses[5].await()
-            assertIs<ChangeUpdate<*, *>>(changeUpdate1).apply {
+            assertIs<ChangeUpdate<*>>(changeUpdate1).apply {
                 assertEquals(testKeys[1], key)
                 assertEquals(listOf(change1), changes)
             }
@@ -405,7 +405,7 @@ class DataStoreScanUpdatesAndFlowTest(
             ),
             2
         ) { responses ->
-            assertIs<OrderedKeysUpdate<*, *>>(responses[0].await()).apply {
+            assertIs<OrderedKeysUpdate<*>>(responses[0].await()).apply {
                 assertEquals(listOf(testKeys[1], testKeys[2], testKeys[3], testKeys[4]), keys)
                 assertEquals(highestInitVersion, version)
             }
@@ -414,12 +414,12 @@ class DataStoreScanUpdatesAndFlowTest(
                 TestMarykModel { string::ref } with "ha new message 1",
                 TestMarykModel { double::ref } with 1.5
             )
-            dataStore.execute(TestMarykModel.Model.change(
+            dataStore.execute(TestMarykModel.change(
                 testKeys[1].change(change1)
             ))
 
             val changeUpdate1 = responses[1].await()
-            assertIs<ChangeUpdate<*, *>>(changeUpdate1).apply {
+            assertIs<ChangeUpdate<*>>(changeUpdate1).apply {
                 assertEquals(testKeys[1], key)
                 assertEquals(listOf(
                     Change(TestMarykModel { string::ref } with "ha new message 1"),
@@ -433,7 +433,7 @@ class DataStoreScanUpdatesAndFlowTest(
                 ), changes)
             }
 
-            dataStore.execute(TestMarykModel.Model.change(
+            dataStore.execute(TestMarykModel.change(
                 testKeys[1].change(
                     Change(
                         TestMarykModel { double::ref } with 2.5
@@ -455,18 +455,18 @@ class DataStoreScanUpdatesAndFlowTest(
             ),
             5
         ) { responses ->
-            assertIs<OrderedKeysUpdate<*, *>>(responses[0].await()).apply {
+            assertIs<OrderedKeysUpdate<*>>(responses[0].await()).apply {
                 assertEquals(listOf(testKeys[3], testKeys[2], testKeys[1], testKeys[0]), keys)
                 assertEquals(highestInitVersion, version)
             }
 
             val change1 = Change(TestMarykModel { string::ref } with "ha new message 1")
-            dataStore.execute(TestMarykModel.Model.change(
+            dataStore.execute(TestMarykModel.change(
                 testKeys[3].change(change1)
             ))
 
             val changeUpdate1 = responses[1].await()
-            assertIs<ChangeUpdate<*, *>>(changeUpdate1).apply {
+            assertIs<ChangeUpdate<*>>(changeUpdate1).apply {
                 assertEquals(testKeys[3], key)
                 assertEquals(listOf(change1), changes)
                 assertEquals(0, index)
@@ -474,28 +474,28 @@ class DataStoreScanUpdatesAndFlowTest(
 
             // Ignored change because scan starts at earlier key,
             // next response should be for next change
-            dataStore.execute(TestMarykModel.Model.change(
+            dataStore.execute(TestMarykModel.change(
                 testKeys[4].change(
                     Change(TestMarykModel { string::ref } with "ha new message 3")
                 )
             ))
 
             val change2 = Change(TestMarykModel { string::ref } with "ha new message 3")
-            dataStore.execute(TestMarykModel.Model.change(
+            dataStore.execute(TestMarykModel.change(
                 testKeys[2].change(change2)
             ))
 
             val changeUpdate2 = responses[2].await()
-            assertIs<ChangeUpdate<*, *>>(changeUpdate2).apply {
+            assertIs<ChangeUpdate<*>>(changeUpdate2).apply {
                 assertEquals(testKeys[2], key)
                 assertEquals(listOf(change2), changes)
                 assertEquals(1, index)
             }
 
-            dataStore.execute(TestMarykModel.Model.delete(testKeys[2], hardDelete = true))
+            dataStore.execute(TestMarykModel.delete(testKeys[2], hardDelete = true))
 
             val removalUpdate1 = responses[3].await()
-            assertIs<RemovalUpdate<*, *>>(removalUpdate1).apply {
+            assertIs<RemovalUpdate<*>>(removalUpdate1).apply {
                 assertEquals(testKeys[2], key)
                 assertEquals(HardDelete, reason)
             }
@@ -509,14 +509,14 @@ class DataStoreScanUpdatesAndFlowTest(
                 dateTime = LocalDateTime(1922, 12, 23, 0, 0)
             )
 
-            dataStore.execute(TestMarykModel.Model.add(
+            dataStore.execute(TestMarykModel.add(
                 newDataObject
             )).also {
-                testKeys.add((it.statuses[0] as AddSuccess<RootDataModel<TestMarykModel>>).key)
+                testKeys.add((it.statuses[0] as AddSuccess<TestMarykModel>).key)
             }
 
             val additionUpdate = responses[4].await()
-            assertIs<AdditionUpdate<RootDataModel<TestMarykModel>, TestMarykModel>>(additionUpdate).apply {
+            assertIs<AdditionUpdate<TestMarykModel>>(additionUpdate).apply {
                 assertEquals(newDataObject, values)
                 assertEquals(3, insertionIndex)
             }
@@ -537,51 +537,51 @@ class DataStoreScanUpdatesAndFlowTest(
         ) { responses ->
             // Order of keys is now: 1, 3, 0, 2, 4
             // Item at key1 is skipped so starts at 3 now
-            assertIs<OrderedKeysUpdate<*, *>>(responses[0].await()).apply {
+            assertIs<OrderedKeysUpdate<*>>(responses[0].await()).apply {
                 assertEquals(listOf(testKeys[3], testKeys[0]), keys)
                 assertEquals(highestInitVersion, version)
             }
 
             val change1 = Change(TestMarykModel { string::ref } with "ha new message 1")
-            dataStore.execute(TestMarykModel.Model.change(
+            dataStore.execute(TestMarykModel.change(
                 testKeys[3].change(change1)
             ))
 
             val changeUpdate1 = responses[1].await()
-            assertIs<ChangeUpdate<*, *>>(changeUpdate1).apply {
+            assertIs<ChangeUpdate<*>>(changeUpdate1).apply {
                 assertEquals(testKeys[3], key)
                 assertEquals(listOf(change1), changes)
             }
 
             // Ignored change because key is not within startKey to limit
             // next response should be for next change
-            dataStore.execute(TestMarykModel.Model.change(
+            dataStore.execute(TestMarykModel.change(
                 testKeys[2].change(
                     Change(TestMarykModel { string::ref } with "ha new message 3")
                 )
             ))
 
             val change2 = Change(TestMarykModel { string::ref } with "ha new new message 3")
-            dataStore.execute(TestMarykModel.Model.change(
+            dataStore.execute(TestMarykModel.change(
                 testKeys[0].change(change2)
             ))
 
             val changeUpdate2 = responses[2].await()
-            assertIs<ChangeUpdate<*, *>>(changeUpdate2).apply {
+            assertIs<ChangeUpdate<*>>(changeUpdate2).apply {
                 assertEquals(testKeys[0], key)
                 assertEquals(listOf(change2), changes)
             }
 
-            dataStore.execute(TestMarykModel.Model.delete(testKeys[0]))
+            dataStore.execute(TestMarykModel.delete(testKeys[0]))
 
             val removalUpdate1 = responses[3].await()
-            assertIs<RemovalUpdate<*, *>>(removalUpdate1).apply {
+            assertIs<RemovalUpdate<*>>(removalUpdate1).apply {
                 assertEquals(testKeys[0], key)
                 assertEquals(SoftDelete, reason)
             }
 
             val addUpdate = responses[4].await()
-            assertIs<AdditionUpdate<*, *>>(addUpdate).apply {
+            assertIs<AdditionUpdate<*>>(addUpdate).apply {
                 assertEquals(testKeys[2], key)
             }
 
@@ -594,10 +594,10 @@ class DataStoreScanUpdatesAndFlowTest(
                 dateTime = LocalDateTime(1922, 12, 23, 0, 0)
             )
 
-            dataStore.execute(TestMarykModel.Model.add(
+            dataStore.execute(TestMarykModel.add(
                 newDataObject
             )).also {
-                testKeys.add((it.statuses[0] as AddSuccess<RootDataModel<TestMarykModel>>).key)
+                testKeys.add((it.statuses[0] as AddSuccess<TestMarykModel>).key)
             }
 
             // no updates because is outside the limit otherwise next one will not match
@@ -612,31 +612,31 @@ class DataStoreScanUpdatesAndFlowTest(
             )
 
             // New object is added within range in already full list, so we expect an add and a delete
-            dataStore.execute(TestMarykModel.Model.add(
+            dataStore.execute(TestMarykModel.add(
                 newDataObject2
             ))
 
             val additionUpdate = responses[5].await()
-            assertIs<AdditionUpdate<RootDataModel<TestMarykModel>, TestMarykModel>>(additionUpdate).apply {
+            assertIs<AdditionUpdate<TestMarykModel>>(additionUpdate).apply {
                 assertEquals(values, newDataObject2)
                 assertEquals(1, insertionIndex)
                 testKeys.add(key)
             }
 
             val removalUpdate2 = responses[6].await()
-            assertIs<RemovalUpdate<RootDataModel<TestMarykModel>, TestMarykModel>>(removalUpdate2).apply {
+            assertIs<RemovalUpdate<TestMarykModel>>(removalUpdate2).apply {
                 assertEquals(testKeys[2], key)
                 assertEquals(NotInRange, reason)
             }
 
             // Change value which changes order
             val change3 = Change(TestMarykModel { int::ref } with 0)
-            dataStore.execute(TestMarykModel.Model.change(
+            dataStore.execute(TestMarykModel.change(
                 testKeys[3].change(change3)
             ))
 
             val changeUpdate3 = responses[7].await()
-            assertIs<ChangeUpdate<*, *>>(changeUpdate3).apply {
+            assertIs<ChangeUpdate<*>>(changeUpdate3).apply {
                 assertEquals(testKeys[3], key)
                 assertEquals(listOf(
                     change3,
@@ -659,18 +659,18 @@ class DataStoreScanUpdatesAndFlowTest(
             // Move item out of range by changing value on which index is determined
 
             val change4 = Change(TestMarykModel { int::ref } with 5)
-            dataStore.execute(TestMarykModel.Model.change(
+            dataStore.execute(TestMarykModel.change(
                 testKeys[3].change(change4)
             ))
 
             val removalUpdate3 = responses[8].await()
-            assertIs<RemovalUpdate<*, *>>(removalUpdate3).apply {
+            assertIs<RemovalUpdate<*>>(removalUpdate3).apply {
                 assertEquals(testKeys[3], key)
                 assertEquals(NotInRange, reason)
             }
 
             val additionUpdate2 = responses[9].await()
-            assertIs<AdditionUpdate<*, *>>(additionUpdate2).apply {
+            assertIs<AdditionUpdate<*>>(additionUpdate2).apply {
                 assertEquals(testKeys[2], key)
                 assertEquals(1, insertionIndex)
             }
@@ -678,18 +678,18 @@ class DataStoreScanUpdatesAndFlowTest(
             // Move item back to its old position
 
             val change5 = Change(TestMarykModel { int::ref } with -1)
-            dataStore.execute(TestMarykModel.Model.change(
+            dataStore.execute(TestMarykModel.change(
                 testKeys[3].change(change5)
             ))
 
             val removalUpdate4 = responses[10].await()
-            assertIs<RemovalUpdate<*, *>>(removalUpdate4).apply {
+            assertIs<RemovalUpdate<*>>(removalUpdate4).apply {
                 assertEquals(testKeys[2], key)
                 assertEquals(NotInRange, reason)
             }
 
             val additionUpdate3 = responses[11].await()
-            assertIs<AdditionUpdate<*, *>>(additionUpdate3).apply {
+            assertIs<AdditionUpdate<*>>(additionUpdate3).apply {
                 assertEquals(testKeys[3], key)
                 assertEquals(1, insertionIndex)
             }
@@ -710,51 +710,51 @@ class DataStoreScanUpdatesAndFlowTest(
         ) { responses ->
             // Order of keys is now: 4, 2, 0, 3, 1
             // Item at key4 is skipped so starts at 2 now
-            assertIs<OrderedKeysUpdate<*, *>>(responses[0].await()).apply {
+            assertIs<OrderedKeysUpdate<*>>(responses[0].await()).apply {
                 assertEquals(listOf(testKeys[2], testKeys[0]), keys)
                 assertEquals(highestInitVersion, version)
             }
 
             val change1 = Change(TestMarykModel { string::ref } with "ha new message 1")
-            dataStore.execute(TestMarykModel.Model.change(
+            dataStore.execute(TestMarykModel.change(
                 testKeys[2].change(change1)
             ))
 
             val changeUpdate1 = responses[1].await()
-            assertIs<ChangeUpdate<*, *>>(changeUpdate1).apply {
+            assertIs<ChangeUpdate<*>>(changeUpdate1).apply {
                 assertEquals(testKeys[2], key)
                 assertEquals(listOf(change1), changes)
             }
 
             // Ignored change because key is not within startKey to limit
             // next response should be for next change
-            dataStore.execute(TestMarykModel.Model.change(
+            dataStore.execute(TestMarykModel.change(
                 testKeys[4].change(
                     Change(TestMarykModel { string::ref } with "ha new message 3")
                 )
             ))
 
             val change2 = Change(TestMarykModel { string::ref } with "ha new message 3")
-            dataStore.execute(TestMarykModel.Model.change(
+            dataStore.execute(TestMarykModel.change(
                 testKeys[0].change(change2)
             ))
 
             val changeUpdate2 = responses[2].await()
-            assertIs<ChangeUpdate<*, *>>(changeUpdate2).apply {
+            assertIs<ChangeUpdate<*>>(changeUpdate2).apply {
                 assertEquals(testKeys[0], key)
                 assertEquals(listOf(change2), changes)
             }
 
-            dataStore.execute(TestMarykModel.Model.delete(testKeys[0]))
+            dataStore.execute(TestMarykModel.delete(testKeys[0]))
 
             val removalUpdate1 = responses[3].await()
-            assertIs<RemovalUpdate<*, *>>(removalUpdate1).apply {
+            assertIs<RemovalUpdate<*>>(removalUpdate1).apply {
                 assertEquals(testKeys[0], key)
                 assertEquals(SoftDelete, reason)
             }
 
             val addUpdate = responses[4].await()
-            assertIs<AdditionUpdate<*, *>>(addUpdate).apply {
+            assertIs<AdditionUpdate<*>>(addUpdate).apply {
                 assertEquals(testKeys[3], key)
             }
 
@@ -767,10 +767,10 @@ class DataStoreScanUpdatesAndFlowTest(
                 dateTime = LocalDateTime(1922, 12, 23, 0, 0)
             )
 
-            dataStore.execute(TestMarykModel.Model.add(
+            dataStore.execute(TestMarykModel.add(
                 newDataObject
             )).also {
-                testKeys.add((it.statuses[0] as AddSuccess<RootDataModel<TestMarykModel>>).key)
+                testKeys.add((it.statuses[0] as AddSuccess<TestMarykModel>).key)
             }
 
             // no updates because is outside the limit otherwise next one will not match
@@ -785,31 +785,31 @@ class DataStoreScanUpdatesAndFlowTest(
             )
 
             // New object is added within range in already full list, so we expect an add and a delete
-            dataStore.execute(TestMarykModel.Model.add(
+            dataStore.execute(TestMarykModel.add(
                 newDataObject2
             ))
 
             val additionUpdate = responses[5].await()
-            assertIs<AdditionUpdate<RootDataModel<TestMarykModel>, TestMarykModel>>(additionUpdate).apply {
+            assertIs<AdditionUpdate<TestMarykModel>>(additionUpdate).apply {
                 assertEquals(newDataObject2, values)
                 assertEquals(1, insertionIndex)
                 testKeys.add(key)
             }
 
             val removalUpdate2 = responses[6].await()
-            assertIs<RemovalUpdate<RootDataModel<TestMarykModel>, TestMarykModel>>(removalUpdate2).apply {
+            assertIs<RemovalUpdate<TestMarykModel>>(removalUpdate2).apply {
                 assertEquals(testKeys[2], key)
                 assertEquals(NotInRange, reason)
             }
 
             // Change value which changes order
             val change3 = Change(TestMarykModel { int::ref } with -3)
-            dataStore.execute(TestMarykModel.Model.change(
+            dataStore.execute(TestMarykModel.change(
                 testKeys[3].change(change3)
             ))
 
             val changeUpdate3 = responses[7].await()
-            assertIs<ChangeUpdate<*, *>>(changeUpdate3).apply {
+            assertIs<ChangeUpdate<*>>(changeUpdate3).apply {
                 assertEquals(testKeys[3], key)
                 assertEquals(listOf(
                     change3,

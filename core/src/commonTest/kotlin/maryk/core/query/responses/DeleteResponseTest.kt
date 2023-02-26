@@ -17,7 +17,7 @@ class DeleteResponseTest {
     private val key = SimpleMarykModel.key("+1xO4zD4R5sIMcS9pXTZEA")
 
     private val deleteResponse = DeleteResponse(
-        SimpleMarykModel.Model,
+        SimpleMarykModel,
         listOf(
             DeleteSuccess(32352uL),
             DoesNotExist(key),

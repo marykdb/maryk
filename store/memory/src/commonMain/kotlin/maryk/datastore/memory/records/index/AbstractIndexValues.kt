@@ -1,25 +1,24 @@
 package maryk.datastore.memory.records.index
 
 import maryk.core.clock.HLC
-import maryk.core.models.IsRootDataModel
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.datastore.memory.records.DataRecord
 
 /**
  * Contains all index values and has methods to add, get or remove unique value references
  */
-internal abstract class AbstractIndexValues<DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions, T : Any>(
+internal abstract class AbstractIndexValues<DM : IsRootModel, T : Any>(
     val indexReference: ByteArray
 ) {
     abstract val compareTo: T.(T) -> Int
-    val indexValues = mutableListOf<IsIndexItem<DM, P, T>>()
+    val indexValues = mutableListOf<IsIndexItem<DM, T>>()
 
     /**
      * Add a [record] [value] reference at [version] to index.
      * Returns true if succeeds or false when already exists
      */
     fun addToIndex(
-        record: DataRecord<DM, P>,
+        record: DataRecord<DM>,
         value: T,
         version: HLC
     ): Boolean {
@@ -32,8 +31,8 @@ internal abstract class AbstractIndexValues<DM : IsRootDataModel<P>, P : IsValue
                 )
                 true
             }
-            indexValues[i] is HistoricalIndexValue<*, *, *> -> {
-                val lastIndexValue = indexValues[i] as HistoricalIndexValue<DM, P, T>
+            indexValues[i] is HistoricalIndexValue<*, *> -> {
+                val lastIndexValue = indexValues[i] as HistoricalIndexValue<DM, T>
                 if (lastIndexValue.records.last().record == null) {
                     lastIndexValue.records.add(
                         IndexValue(value, record, version)
@@ -55,7 +54,7 @@ internal abstract class AbstractIndexValues<DM : IsRootDataModel<P>, P : IsValue
      * Use [keepAllVersions] on true to keep historical records
      */
     fun removeFromIndex(
-        record: DataRecord<DM, P>,
+        record: DataRecord<DM>,
         value: T,
         version: HLC,
         keepAllVersions: Boolean
@@ -64,8 +63,8 @@ internal abstract class AbstractIndexValues<DM : IsRootDataModel<P>, P : IsValue
         return if (i >= 0 && indexValues[i].record == record) {
             val oldValue = indexValues[i]
             if (keepAllVersions) {
-                val newValue = RecordAtVersion<DM, P>(null, version)
-                if (oldValue is HistoricalIndexValue<DM, P, T>) {
+                val newValue = RecordAtVersion<DM>(null, version)
+                if (oldValue is HistoricalIndexValue<DM, T>) {
                     oldValue.records += newValue
                 } else {
                     indexValues[i] = HistoricalIndexValue(
@@ -81,11 +80,11 @@ internal abstract class AbstractIndexValues<DM : IsRootDataModel<P>, P : IsValue
     }
 
     /** Delete any index of [value] to [record] and return true if an index value was deleted */
-    fun deleteHardFromIndex(record: DataRecord<DM, P>, value: T): Boolean {
+    fun deleteHardFromIndex(record: DataRecord<DM>, value: T): Boolean {
         val i = indexValues.binarySearch { it.value.compareTo(value) }
         return if (i >= 0) {
             val oldValue = indexValues[i]
-            if (oldValue is HistoricalIndexValue<DM, P, T>) {
+            if (oldValue is HistoricalIndexValue<DM, T>) {
                 oldValue.records.removeAll { it.record == record }
             } else {
                 indexValues.removeAt(i)

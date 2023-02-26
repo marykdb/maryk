@@ -7,15 +7,14 @@ import maryk.core.exceptions.SerializationException
 import maryk.core.properties.IsDataModelPropertyDefinitions
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.MutablePropertyDefinitions
+import maryk.core.properties.MutableRootModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitionsCollectionDefinitionWrapper
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
-import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.index.IndexKeyPartType
 import maryk.core.properties.definitions.index.IsIndexable
-import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.UUIDKey
 import maryk.core.properties.definitions.index.calculateKeyIndices
 import maryk.core.properties.definitions.index.checkKeyDefinitionAndCountBytes
@@ -25,8 +24,6 @@ import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.string
 import maryk.core.properties.definitions.valueObject
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
-import maryk.core.properties.references.IsFixedBytesPropertyReference
-import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.Version
 import maryk.core.properties.types.numeric.UInt32
@@ -34,7 +31,6 @@ import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
-import maryk.core.values.Values
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
@@ -71,7 +67,7 @@ class RootDataModel<P : IsValuesPropertyDefinitions>(
         ObjectPropertyDefinitions<RootDataModel<*>>(),
         IsDataModelPropertyDefinitions<RootDataModel<*>, PropertyDefinitionsCollectionDefinitionWrapper<RootDataModel<*>>> {
         override val name by string(1u, RootDataModel<*>::name)
-        override val properties = addProperties(this as ObjectPropertyDefinitions<RootDataModel<*>>)
+        override val properties = addProperties(true, this as ObjectPropertyDefinitions<RootDataModel<*>>)
         val version by valueObject(
             index = 3u,
             dataModel = Version,
@@ -169,7 +165,7 @@ class RootDataModel<P : IsValuesPropertyDefinitions>(
                 reader,
                 values,
                 RootModelProperties,
-                ::MutablePropertyDefinitions
+                ::MutableRootModel
             ) { definition ->
                 when (definition) {
                     RootModelProperties.key -> {
@@ -218,27 +214,4 @@ class RootDataModel<P : IsValuesPropertyDefinitions>(
             }
         }
     }
-}
-
-/** Get Key based on [values] */
-fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> DM.key(values: Values<P>): Key<DM> {
-    val bytes = ByteArray(this.keyByteSize)
-    var index = 0
-    when (val keyDef = this.keyDefinition) {
-        is Multiple -> {
-            keyDef.writeStorageBytes(values) {
-                bytes[index++] = it
-            }
-        }
-        is IsFixedBytesPropertyReference<out Any> -> {
-            val value = keyDef.getValue(values)
-
-            @Suppress("UNCHECKED_CAST")
-            (keyDef as IsFixedStorageBytesEncodable<Any>).writeStorageBytes(value) {
-                bytes[index++] = it
-            }
-        }
-    }
-
-    return Key(bytes)
 }

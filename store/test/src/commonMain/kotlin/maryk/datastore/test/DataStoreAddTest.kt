@@ -1,7 +1,6 @@
 package maryk.datastore.test
 
 import kotlinx.datetime.LocalDateTime
-import maryk.core.models.RootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.add
 import maryk.core.query.requests.delete
@@ -24,7 +23,7 @@ class DataStoreAddTest(
         "notAddSameObjectTwice" to ::notAddSameObjectTwice
     )
 
-    private val keys = mutableListOf<Key<RootDataModel<Log>>>()
+    private val keys = mutableListOf<Key<Log>>()
 
     private val logs = arrayOf(
         Log("Something happened", timestamp = LocalDateTime(2018, 11, 14, 11, 22, 33, 40000000)),
@@ -35,25 +34,25 @@ class DataStoreAddTest(
 
     override suspend fun resetData() {
         dataStore.execute(
-            Log.Model.delete(*keys.toTypedArray(), hardDelete = true)
+            Log.delete(*keys.toTypedArray(), hardDelete = true)
         )
         keys.clear()
     }
 
     private suspend fun executeAddAndSimpleGetRequest() {
         val addResponse = dataStore.execute(
-            Log.Model.add(*logs)
+            Log.add(*logs)
         )
 
-        expect(Log.Model) { addResponse.dataModel }
+        expect(Log) { addResponse.dataModel }
         expect(4) { addResponse.statuses.count() }
 
         val keysToOriginal = mutableMapOf<Key<*>, Values<Log>>()
         addResponse.statuses.forEachIndexed { index, it ->
-            val response = assertIs<AddSuccess<RootDataModel<Log>>>(it)
+            val response = assertIs<AddSuccess<Log>>(it)
             assertRecent(response.version, 1000uL)
             assertTrue { response.changes.isEmpty() }
-            expect(11) { assertIs<Key<RootDataModel<Log>>>(response.key).size }
+            expect(11) { assertIs<Key<Log>>(response.key).size }
             keys.add(response.key)
             keysToOriginal[response.key] = logs[index]
         }
@@ -75,17 +74,17 @@ class DataStoreAddTest(
         keys += key // make sure data gets cleaned
 
         val addResponse = dataStore.execute(
-            Log.Model.add(log)
+            Log.add(log)
         )
 
-        expect(Log.Model) { addResponse.dataModel }
+        expect(Log) { addResponse.dataModel }
         expect(1) { addResponse.statuses.count() }
 
         val addResponseAgain = dataStore.execute(
-            Log.Model.add(log)
+            Log.add(log)
         )
 
-        expect(Log.Model) { addResponseAgain.dataModel }
+        expect(Log) { addResponseAgain.dataModel }
         expect(1) { addResponseAgain.statuses.count() }
 
         expect(AlreadyExists(key)) { addResponseAgain.statuses[0] }

@@ -5,7 +5,6 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.extensions.bytes.ZERO_BYTE
-import maryk.core.models.RootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.DefinitionsContext
 import maryk.lib.exceptions.ParseException
@@ -21,14 +20,14 @@ import kotlin.test.assertTrue
 import kotlin.test.expect
 
 internal class ReferenceDefinitionTest {
-    private val refToTest = arrayOf<Key<RootDataModel<TestMarykModel>>>(
+    private val refToTest = arrayOf<Key<TestMarykModel>>(
         Key(ByteArray(7) { ZERO_BYTE }),
         Key(ByteArray(7) { MAX_BYTE }),
         Key(ByteArray(7) { if (it % 2 == 1) 0b1000_1000.toByte() else MAX_BYTE })
     )
 
     val def = ReferenceDefinition(
-        dataModel = { TestMarykModel.Model }
+        dataModel = { TestMarykModel }
     )
     val defMaxDefined = ReferenceDefinition(
         required = false,
@@ -36,13 +35,13 @@ internal class ReferenceDefinitionTest {
         unique = true,
         minValue = refToTest[0],
         maxValue = refToTest[1],
-        dataModel = { TestMarykModel.Model },
+        dataModel = { TestMarykModel },
         default = Key(ByteArray(7) { 1 })
     )
 
     @Test
     fun hasValues() {
-        expect(TestMarykModel.Model) { def.dataModel }
+        expect(TestMarykModel) { def.dataModel }
     }
 
     @Test
@@ -116,20 +115,20 @@ internal class ReferenceDefinitionTest {
     @Test
     fun isCompatible() {
         assertTrue {
-            ReferenceDefinition(dataModel = { ModelV1.Model }).compatibleWith(
-                ReferenceDefinition(dataModel = { ModelV1_1.Model }),
+            ReferenceDefinition(dataModel = { ModelV1 }).compatibleWith(
+                ReferenceDefinition(dataModel = { ModelV1_1 }),
             )
         }
 
         assertFalse {
-            ReferenceDefinition(dataModel = { ModelV1.Model }).compatibleWith(
-                ReferenceDefinition(dataModel = { ModelV1_1WrongKey.Model })
+            ReferenceDefinition(dataModel = { ModelV1 }).compatibleWith(
+                ReferenceDefinition(dataModel = { ModelV1_1WrongKey })
             )
         }
 
         assertFalse {
-            ReferenceDefinition(dataModel = { ModelV1.Model }).compatibleWith(
-                ReferenceDefinition(dataModel = { TestMarykModel.Model })
+            ReferenceDefinition(dataModel = { ModelV1 }).compatibleWith(
+                ReferenceDefinition(dataModel = { TestMarykModel })
             )
         }
     }

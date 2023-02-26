@@ -4,17 +4,20 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.DefinitionDataModel
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.IsTypedRootDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
+import maryk.core.properties.definitions.contextual.IsDataModelReference
+import maryk.core.properties.definitions.wrapper.ContextualDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.ReferenceDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.contextual
+import maryk.core.properties.key
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
@@ -24,7 +27,7 @@ import maryk.lib.exceptions.ParseException
 import maryk.lib.safeLazy
 
 /** Definition for a reference to another DataObject*/
-class ReferenceDefinition<DM : IsRootDataModel<*>>(
+class ReferenceDefinition<DM : IsRootModel>(
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val unique: Boolean = false,
@@ -33,10 +36,10 @@ class ReferenceDefinition<DM : IsRootDataModel<*>>(
     override val default: Key<DM>? = null,
     dataModel: Unit.() -> DM
 ) :
-    IsReferenceDefinition<DM, IsValuesPropertyDefinitions, IsPropertyContext> {
+    IsReferenceDefinition<DM, IsPropertyContext> {
     override val propertyDefinitionType = PropertyDefinitionType.Reference
     override val wireType = LENGTH_DELIMITED
-    override val byteSize get() = dataModel.keyByteSize
+    override val byteSize get() = dataModel.Model.keyByteSize
 
     private val internalDataModel = safeLazy(dataModel)
     override val dataModel: DM get() = internalDataModel.value
@@ -46,21 +49,20 @@ class ReferenceDefinition<DM : IsRootDataModel<*>>(
     override fun writeStorageBytes(value: Key<DM>, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
 
     @Suppress("UNCHECKED_CAST")
-    override fun readStorageBytes(length: Int, reader: () -> Byte) = dataModel.key(reader) as Key<DM>
+    override fun readStorageBytes(length: Int, reader: () -> Byte) = dataModel.Model.key(reader) as Key<DM>
 
     override fun calculateTransportByteLength(value: Key<DM>) = this.byteSize
 
     override fun fromString(string: String) = try {
         @Suppress("UNCHECKED_CAST")
-        dataModel.key(string) as Key<DM>
+        dataModel.Model.key(string) as Key<DM>
     } catch (e: Throwable) {
         throw ParseException(string, e)
     }
 
     override fun fromNativeType(value: Any) =
         if (value is ByteArray && value.size == this.byteSize) {
-            @Suppress("UNCHECKED_CAST")
-            dataModel.key(value) as Key<DM>
+            dataModel.key(value)
         } else {
             null
         }
@@ -75,7 +77,7 @@ class ReferenceDefinition<DM : IsRootDataModel<*>>(
         if (minValue != other.minValue) return false
         if (maxValue != other.maxValue) return false
         if (default != other.default) return false
-        if (dataModel.name != other.dataModel.name) return false
+        if (dataModel.Model.name != other.dataModel.Model.name) return false
 
         return true
     }
@@ -87,7 +89,7 @@ class ReferenceDefinition<DM : IsRootDataModel<*>>(
         result = 31 * result + (minValue?.hashCode() ?: 0)
         result = 31 * result + (maxValue?.hashCode() ?: 0)
         result = 31 * result + (default?.hashCode() ?: 0)
-        result = 31 * result + dataModel.name.hashCode()
+        result = 31 * result + dataModel.Model.name.hashCode()
         return result
     }
 
@@ -100,9 +102,9 @@ class ReferenceDefinition<DM : IsRootDataModel<*>>(
             val minValue by flexBytes(4u, ReferenceDefinition<*>::minValue)
             val maxValue by flexBytes(5u, ReferenceDefinition<*>::maxValue)
             val default by flexBytes(6u, ReferenceDefinition<*>::default)
-            val dataModel by contextual(
+            val dataModel: ContextualDefinitionWrapper<IsDataModelReference<IsRootDataModel<*>>, Unit.() -> IsRootModel, ContainsDefinitionsContext, ContextualModelReferenceDefinition<IsRootDataModel<*>, ContainsDefinitionsContext, ContainsDefinitionsContext>, ReferenceDefinition<*>> by contextual<IsDataModelReference<IsRootDataModel<*>>, Unit.() -> IsRootModel, ContainsDefinitionsContext, ContextualModelReferenceDefinition<IsRootDataModel<*>, ContainsDefinitionsContext, ContainsDefinitionsContext>, ReferenceDefinition<*>>(
                 index = 7u,
-                definition = ContextualModelReferenceDefinition(
+                definition = ContextualModelReferenceDefinition<IsRootDataModel<*>, ContainsDefinitionsContext>(
                     contextualResolver = { context: ContainsDefinitionsContext?, name ->
                         context?.let {
                             @Suppress("UNCHECKED_CAST")
@@ -114,13 +116,13 @@ class ReferenceDefinition<DM : IsRootDataModel<*>>(
                 getter = {
                     { it.dataModel }
                 },
-                toSerializable = { value: (Unit.() -> IsRootDataModel<*>)?, _ ->
-                    value?.invoke(Unit)?.let { model: IsRootDataModel<*> ->
-                        DataModelReference(model.name, value)
+                toSerializable = { value: (Unit.() -> IsRootModel)?, _ ->
+                    value?.invoke(Unit)?.let { model: IsRootModel ->
+                        DataModelReference(model.Model.name) { model.Model }
                     }
                 },
                 fromSerializable = {
-                    it?.get
+                    it?.let { { it.get(Unit).properties as IsRootModel } }
                 },
                 capturer = { context, dataModel ->
                     if (!context.dataModels.containsKey(dataModel.name)) {
@@ -145,7 +147,7 @@ class ReferenceDefinition<DM : IsRootDataModel<*>>(
                 )
             },
             default = values<Bytes?>(6u)?.let {
-                Key<IsTypedRootDataModel<IsRootDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>>(
+                Key(
                     it.bytes
                 )
             },
@@ -154,7 +156,7 @@ class ReferenceDefinition<DM : IsRootDataModel<*>>(
     }
 }
 
-fun <DM: IsRootDataModel<*>, TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.reference(
+fun <DM: IsRootModel, TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.reference(
     index: UInt,
     getter: (DO) -> TO?,
     name: String? = null,
@@ -169,7 +171,7 @@ fun <DM: IsRootDataModel<*>, TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.ref
 ): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<Key<DM>, TO, IsPropertyContext, ReferenceDefinition<DM>, DO>, DO, IsPropertyContext> =
     reference(index, getter, name, required, final,  unique, minValue, maxValue, default, dataModel, alternativeNames, toSerializable = null)
 
-fun <DM: IsRootDataModel<P>, P: IsValuesPropertyDefinitions> IsValuesPropertyDefinitions.reference(
+fun <DM: IsRootModel> IsValuesPropertyDefinitions.reference(
     index: UInt,
     name: String? = null,
     required: Boolean = true,
@@ -182,15 +184,15 @@ fun <DM: IsRootDataModel<P>, P: IsValuesPropertyDefinitions> IsValuesPropertyDef
     alternativeNames: Set<String>? = null
 ) = DefinitionWrapperDelegateLoader(this) { propName ->
     @Suppress("UNCHECKED_CAST")
-    ReferenceDefinitionWrapper<Key<DM>, DM, P, IsReferenceDefinition<DM, P, IsPropertyContext>, Any>(
+    ReferenceDefinitionWrapper<Key<DM>, DM, IsReferenceDefinition<DM, IsPropertyContext>, Any>(
         index,
         name ?: propName,
-        ReferenceDefinition(required, final, unique, minValue, maxValue, default, dataModel) as IsReferenceDefinition<DM, P, IsPropertyContext>,
+        ReferenceDefinition(required, final, unique, minValue, maxValue, default, dataModel) as IsReferenceDefinition<DM, IsPropertyContext>,
         alternativeNames
     )
 }
 
-fun <DM: IsRootDataModel<*>, TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.reference(
+fun <DM: IsRootModel, TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.reference(
     index: UInt,
     getter: (DO) -> TO?,
     name: String? = null,

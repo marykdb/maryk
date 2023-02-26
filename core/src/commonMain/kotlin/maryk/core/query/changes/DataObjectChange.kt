@@ -5,6 +5,7 @@ package maryk.core.query.changes
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.QueryDataModel
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
@@ -22,7 +23,7 @@ import maryk.core.values.ObjectValues
 /**
  * Creates a DataObjectChange which contains [change] until [lastVersion] for a specific DataObject
  */
-fun <DM : IsRootDataModel<*>> Key<DM>.change(
+fun <DM : IsRootModel> Key<DM>.change(
     vararg change: IsChange,
     lastVersion: ULong? = null
 ) = DataObjectChange(this, change.toList(), lastVersion)
@@ -30,7 +31,7 @@ fun <DM : IsRootDataModel<*>> Key<DM>.change(
 /**
  * Contains [changes] until [lastVersion] for a specific DataObject by [key]
  */
-data class DataObjectChange<out DM : IsRootDataModel<*>> internal constructor(
+data class DataObjectChange<out DM : IsRootModel> internal constructor(
     val key: Key<DM>,
     val changes: List<IsChange>,
     val lastVersion: ULong? = null
@@ -71,7 +72,7 @@ data class DataObjectChange<out DM : IsRootDataModel<*>> internal constructor(
     companion object : QueryDataModel<DataObjectChange<*>, Properties>(
         properties = Properties
     ) {
-        override fun invoke(values: ObjectValues<DataObjectChange<*>, Properties>) = DataObjectChange<IsRootDataModel<*>>(
+        override fun invoke(values: ObjectValues<DataObjectChange<*>, Properties>) = DataObjectChange<IsRootModel>(
             key = values(1u),
             changes = values(2u),
             lastVersion = values(3u)

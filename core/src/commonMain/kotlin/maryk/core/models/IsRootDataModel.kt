@@ -5,8 +5,6 @@ import maryk.core.models.migration.MigrationStatus.NeedsMigration
 import maryk.core.models.migration.MigrationStatus.NewIndicesOnExistingProperties
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.definitions.index.IsIndexable
-import maryk.core.properties.graph.IsPropRefGraphNode
-import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.Version
 import maryk.lib.synchronizedIteration
@@ -30,14 +28,6 @@ interface IsRootDataModel<P : IsValuesPropertyDefinitions> : IsValuesDataModel<P
     fun key(bytes: ByteArray): Key<*>
 
     val orderedIndices: List<IsIndexable>?
-
-    /**
-     * Create Property reference graph with list of graphables that are generated with [runner] on Properties
-     * The graphables are sorted after generation so the RootPropRefGraph can be processed quicker.
-     */
-    fun graph(
-        runner: P.() -> List<IsPropRefGraphNode<P>>
-    ) = RootPropRefGraph(runner(this.properties).sortedBy { it.index })
 
     override fun isMigrationNeeded(
         storedDataModel: IsDataModel<*>,

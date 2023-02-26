@@ -7,36 +7,16 @@ apply {
 }
 
 kotlin {
-
-    jvm() {
-        compilations.all {
-            kotlinOptions.freeCompilerArgs += "-Xcontext-receivers"
-        }
-    }
+    jvm()
 
     js(IR) {
         browser {}
         nodejs {}
-        compilations.all {
-            kotlinOptions.freeCompilerArgs += "-Xcontext-receivers"
-        }
     }
 
-    ios() {
-        compilations.all {
-            kotlinOptions.freeCompilerArgs += "-Xcontext-receivers"
-        }
-    }
-    macosX64() {
-        compilations.all {
-            kotlinOptions.freeCompilerArgs += "-Xcontext-receivers"
-        }
-    }
-    macosArm64() {
-        compilations.all {
-            kotlinOptions.freeCompilerArgs += "-Xcontext-receivers"
-        }
-    }
+    ios()
+    macosX64()
+    macosArm64()
 
     sourceSets {
         commonMain {

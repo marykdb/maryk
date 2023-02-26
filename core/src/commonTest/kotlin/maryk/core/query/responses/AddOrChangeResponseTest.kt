@@ -24,7 +24,7 @@ class AddOrChangeResponseTest {
     private val key = SimpleMarykModel.key("T/sdrQBeRnYrRo1h7uhfQg")
 
     private val addOrChangeResponse = AddOrChangeResponse(
-        SimpleMarykModel.Model,
+        SimpleMarykModel,
         listOf(
             AddSuccess(
                 key, 32352uL, listOf(

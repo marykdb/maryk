@@ -1,5 +1,6 @@
 package maryk.test.requests
 
+import maryk.core.properties.graph
 import maryk.core.query.filters.Exists
 import maryk.core.query.orders.descending
 import maryk.core.query.requests.scanChanges
@@ -13,7 +14,7 @@ val scanChangesRequest = SimpleMarykModel.scanChanges()
 val scanChangesMaxRequest = TestMarykModel.run {
     scanChanges(
         startKey = testKey1,
-        where = Exists(this { uint::ref }),
+        where = Exists(invoke { uint::ref }),
         order = this { uint::ref }.descending(),
         limit = 300u,
         includeStart = false,

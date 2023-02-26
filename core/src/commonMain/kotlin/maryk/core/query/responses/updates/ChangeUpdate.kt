@@ -1,8 +1,7 @@
 package maryk.core.query.responses.updates
 
-import maryk.core.models.IsRootDataModel
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.list
@@ -19,23 +18,23 @@ import maryk.core.query.responses.updates.UpdateResponseType.Change
 import maryk.core.values.SimpleObjectValues
 
 /** Update response describing a change to query results with [changes] at [key] */
-data class ChangeUpdate<DM: IsRootDataModel<P>, P: IsValuesPropertyDefinitions>(
+data class ChangeUpdate<DM: IsRootModel>(
     val key: Key<DM>,
     override val version: ULong,
     // The index within the current order
     val index: Int,
     val changes: List<IsChange>
-) : IsUpdateResponse<DM, P> {
+) : IsUpdateResponse<DM> {
     override val type = Change
 
     @Suppress("unused")
-    object Properties : ObjectPropertyDefinitions<ChangeUpdate<*, *>>() {
-        val key by addKey(ChangeUpdate<*, *>::key)
-        val version by number(2u, getter = ChangeUpdate<*, *>::version, type = UInt64)
-        val index by number(3u, getter = ChangeUpdate<*, *>::index, type = SInt32)
+    object Properties : ObjectPropertyDefinitions<ChangeUpdate<*>>() {
+        val key by addKey(ChangeUpdate<*>::key)
+        val version by number(2u, getter = ChangeUpdate<*>::version, type = UInt64)
+        val index by number(3u, getter = ChangeUpdate<*>::index, type = SInt32)
         val changes by list(
             index = 4u,
-            getter = ChangeUpdate<*, *>::changes,
+            getter = ChangeUpdate<*>::changes,
             default = emptyList(),
             valueDefinition = InternalMultiTypeDefinition(
                 typeEnum = ChangeType,
@@ -46,10 +45,10 @@ data class ChangeUpdate<DM: IsRootDataModel<P>, P: IsValuesPropertyDefinitions>(
         )
     }
 
-    internal companion object : SimpleQueryDataModel<ChangeUpdate<*, *>>(
+    internal companion object : SimpleQueryDataModel<ChangeUpdate<*>>(
         properties = Properties
     ) {
-        override fun invoke(values: SimpleObjectValues<ChangeUpdate<*, *>>) = ChangeUpdate<IsRootDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>(
+        override fun invoke(values: SimpleObjectValues<ChangeUpdate<*>>) = ChangeUpdate<IsRootModel>(
             key = values(1u),
             version = values(2u),
             index = values(3u),

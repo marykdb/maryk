@@ -1,8 +1,8 @@
 package maryk.datastore.shared.updates
 
 import kotlinx.coroutines.flow.MutableSharedFlow
-import maryk.core.models.IsRootDataModel
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
+import maryk.core.properties.graph
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.IndexChange
@@ -27,17 +27,17 @@ import maryk.datastore.shared.updates.Update.Change
 import maryk.datastore.shared.updates.Update.Deletion
 
 /** processes a single update */
-internal suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions, RQ: IsFetchRequest<DM, P, *>> Update<DM, P>.process(
-    updateListener: UpdateListener<DM, P, RQ>,
+internal suspend fun <DM : IsRootModel, RQ: IsFetchRequest<DM, *>> Update<DM>.process(
+    updateListener: UpdateListener<DM, RQ>,
     dataStore: IsDataStore,
-    sharedFlow: MutableSharedFlow<IsUpdateResponse<DM, P>>
+    sharedFlow: MutableSharedFlow<IsUpdateResponse<DM>>
 ) {
     val request = updateListener.request
     val currentKeys = updateListener.matchingKeys.value
     // Only process object requests or change requests if the version is after or equal to from version
-    if (request !is IsChangesRequest<*, *, *> || request.fromVersion <= version) {
+    if (request !is IsChangesRequest<*, *> || request.fromVersion <= version) {
         when (this) {
-            is Addition<DM, P> -> {
+            is Addition<DM> -> {
                 if (values.matches(request.where)) {
                     val insertIndex = updateListener.addValues(key, values)
                     if (insertIndex != null) {
@@ -53,7 +53,7 @@ internal suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions, 
                         )
 
                         // Remove any values after the limit
-                        if (updateListener is UpdateListenerForScan<DM, P, *> && updateListener.request.limit - 1u == insertIndex.toUInt()) {
+                        if (updateListener is UpdateListenerForScan<DM, *> && updateListener.request.limit - 1u == insertIndex.toUInt()) {
                             val keyToRemove = updateListener.getLast()
                             updateListener.removeKey(keyToRemove)
 
@@ -68,7 +68,7 @@ internal suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions, 
                     }
                 }
             }
-            is Change<DM, P> -> {
+            is Change<DM> -> {
                 val shouldDelete = changes.firstOrNull { it is ObjectSoftDeleteChange }?.let { (it as ObjectSoftDeleteChange).isDeleted && request.filterSoftDeleted } ?: false
 
                 if (currentKeys.contains(key)) {
@@ -82,6 +82,7 @@ internal suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions, 
                                 createChangeUpdate(request.select, orderChanged, newIndex)?.let { changeUpdate ->
                                     val update = if (updateListener.filterContainsMutableValues) {
                                         // Check if the value still is valid with the current filter since it could have potentially mutated
+                                        @Suppress("UNCHECKED_CAST")
                                         val response = dataStore.execute(
                                             dataModel.get(
                                                 key,
@@ -109,7 +110,7 @@ internal suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions, 
                             }
                         }
                     }
-                } else if (!shouldDelete && updateListener is UpdateListenerForScan<DM, P, *> && updateListener.indexScanRange != null) {
+                } else if (!shouldDelete && updateListener is UpdateListenerForScan<DM, *> && updateListener.indexScanRange != null) {
                     val lastKey = currentKeys.last()
                     val lastSortedKey = updateListener.sortedValues?.value?.last()
 
@@ -160,7 +161,7 @@ internal suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions, 
                     }
                 }
             }
-            is Deletion<DM, P> -> {
+            is Deletion<DM> -> {
                 if (currentKeys.contains(key) && (isHardDelete || request.filterSoftDeleted)) {
                     handleDeletion(
                         dataStore,
@@ -175,11 +176,11 @@ internal suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions, 
     }
 }
 
-private fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> Change<DM, P>.createChangeUpdate(
-    select: RootPropRefGraph<P>?,
+private fun <DM : IsRootModel> Change<DM>.createChangeUpdate(
+    select: RootPropRefGraph<DM>?,
     orderChanged: Boolean,
     newIndex: Int
-): ChangeUpdate<DM, P>? {
+): ChangeUpdate<DM>? {
     // Filter now in search of possible delete
     val filteredChanges = changes.filterWithSelect(select)
 
@@ -198,12 +199,12 @@ private fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> Change<DM
 }
 
 /** Handles the deletion of Values defined in [change] and if necessary request a new value to put at end */
-private suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions, RQ: IsFetchRequest<DM, P, *>> handleDeletion(
+private suspend fun <DM : IsRootModel, RQ: IsFetchRequest<DM, *>> handleDeletion(
     dataStore: IsDataStore,
-    change: Update<DM, P>,
+    change: Update<DM>,
     reason: RemovalReason,
-    updateListener: UpdateListener<DM, P, RQ>,
-    sharedFlow: MutableSharedFlow<IsUpdateResponse<DM, P>>
+    updateListener: UpdateListener<DM, RQ>,
+    sharedFlow: MutableSharedFlow<IsUpdateResponse<DM>>
 ) {
     val originalIndex = updateListener.removeKey(change.key)
 
@@ -217,12 +218,12 @@ private suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions, R
         )
     }
 
-    if (updateListener is UpdateListenerForScan<DM, P, *> && updateListener.request.limit - 1u == updateListener.matchingKeys.value.size.toUInt()) {
+    if (updateListener is UpdateListenerForScan<DM, *> && updateListener.request.limit - 1u == updateListener.matchingKeys.value.size.toUInt()) {
         dataStore.requestNextValues(updateListener.request, updateListener.matchingKeys.value)?.also { additionUpdate ->
             // Always at the end so no need to order
             updateListener.addValuesAtEnd(additionUpdate.key, additionUpdate.values)
 
-            if (change is Change<DM, P>) {
+            if (change is Change<DM>) {
                 if (additionUpdate.key != change.key) { // if not same key, remove old & add new
                     sendRemoval()
                     sharedFlow.emit(additionUpdate)
@@ -245,10 +246,10 @@ private suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions, R
 }
 
 /** Requests next values object after last key in [currentKeys] */
-private suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> IsDataStore.requestNextValues(
-    request: IsScanRequest<DM, P, *>,
+private suspend fun <DM : IsRootModel> IsDataStore.requestNextValues(
+    request: IsScanRequest<DM, *>,
     currentKeys: List<Key<DM>>
-): AdditionUpdate<DM, P>? {
+): AdditionUpdate<DM>? {
     val nextResults = execute(
         request.dataModel.scan(
             currentKeys.last(),
@@ -278,7 +279,7 @@ private suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> I
 
 /** Filters a list of changes to only have changes to properties defined in [select] */
 private fun List<IsChange>.filterWithSelect(
-    select: RootPropRefGraph<out IsValuesPropertyDefinitions>?,
+    select: RootPropRefGraph<out IsRootModel>?,
     changeProcessor: ((IsChange) -> Unit)? = null
 ): List<IsChange> {
     if (select == null) {

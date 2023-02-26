@@ -8,7 +8,6 @@ import maryk.core.extensions.bytes.initUInt
 import maryk.core.extensions.bytes.initUIntByVarWithExtraInfo
 import maryk.core.models.IsDataModel
 import maryk.core.models.IsDataModelWithValues
-import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.ChangeType.CHANGE
 import maryk.core.processors.datastore.ChangeType.OBJECT_CREATE
 import maryk.core.processors.datastore.ChangeType.OBJECT_DELETE
@@ -20,6 +19,7 @@ import maryk.core.processors.datastore.StorageTypeEnum.ObjectDelete
 import maryk.core.processors.datastore.StorageTypeEnum.SetSize
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.definitions.IsAnyEmbeddedDefinition
 import maryk.core.properties.definitions.IsChangeableValueDefinition
@@ -83,9 +83,9 @@ private enum class ChangeType {
  * [getQualifier] gets a qualifier until none is available and returns null
  * [processValue] processes the storage value with given type and definition
  */
-fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> DM.readStorageToChanges(
+fun <DM : IsRootModel> DM.readStorageToChanges(
     getQualifier: (((Int) -> Byte, Int) -> Unit) -> Boolean,
-    select: RootPropRefGraph<P>?,
+    select: RootPropRefGraph<DM>?,
     creationVersion: ULong?,
     processValue: ValueWithVersionReader
 ): List<VersionedChanges> {
@@ -111,8 +111,9 @@ fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> DM.readStorageToC
     }
 
     processQualifiers(getQualifier) { qualifierReader, qualifierLength, addToCache ->
+        @Suppress("UNCHECKED_CAST")
         // Otherwise, try to get a new qualifier processor from DataModel
-        (this as IsDataModel<P>).readQualifier(qualifierReader, qualifierLength, 0, select, null, changeAdder, processValue, addToCache)
+        (this.Model as IsDataModel<IsValuesPropertyDefinitions>).readQualifier(qualifierReader, qualifierLength, 0, select, null, changeAdder, processValue, addToCache)
     }
 
     // Create Values
@@ -199,7 +200,7 @@ private fun <P : IsValuesPropertyDefinitions> IsDataModel<P>.readQualifier(
     qualifierReader: (Int) -> Byte,
     qualifierLength: Int,
     offset: Int,
-    select: IsPropRefGraph<P>?,
+    select: IsPropRefGraph<*>?,
     parentReference: IsPropertyReference<*, *, *>?,
     addChangeToOutput: ChangeAdder,
     readValueFromStorage: ValueWithVersionReader,

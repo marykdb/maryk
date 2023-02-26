@@ -6,11 +6,15 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.PropertyDefinitionsCollectionDefinition
 import maryk.core.properties.PropertyDefinitionsCollectionDefinitionWrapper
 
-internal fun <DM : IsDataModel<*>> addProperties(definitions: AbstractPropertyDefinitions<DM>): PropertyDefinitionsCollectionDefinitionWrapper<DM> {
+internal fun <DM : IsDataModel<*>> addProperties(
+    isRootModel: Boolean,
+    definitions: AbstractPropertyDefinitions<DM>
+): PropertyDefinitionsCollectionDefinitionWrapper<DM> {
     val wrapper = PropertyDefinitionsCollectionDefinitionWrapper<DM>(
         2u,
         "properties",
         PropertyDefinitionsCollectionDefinition(
+            isRootModel,
             capturer = { context, propDefs ->
                 context?.apply {
                     this.propertyDefinitions = propDefs

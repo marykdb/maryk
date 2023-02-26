@@ -2,32 +2,30 @@ package maryk.datastore.memory.processors
 
 import maryk.core.aggregations.Aggregator
 import maryk.core.clock.HLC
-import maryk.core.models.IsRootDataModel
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.requests.GetRequest
 import maryk.core.query.responses.ValuesResponse
 import maryk.datastore.memory.IsStoreFetcher
-import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkToVersion
 
-internal typealias GetStoreAction<DM, P> = StoreAction<DM, P, GetRequest<DM, P>, ValuesResponse<DM, P>>
-internal typealias AnyGetStoreAction = GetStoreAction<IsRootDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>
+internal typealias GetStoreAction<DM> = StoreAction<DM, GetRequest<DM>, ValuesResponse<DM>>
+internal typealias AnyGetStoreAction = GetStoreAction<IsRootModel>
 
 /** Processes a GetRequest in a [storeAction] and resolve dataStore with [dataStoreFetcher] */
-internal fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processGetRequest(
-    storeAction: GetStoreAction<DM, P>,
-    dataStoreFetcher: IsStoreFetcher<*, *>
+internal fun <DM : IsRootModel> processGetRequest(
+    storeAction: GetStoreAction<DM>,
+    dataStoreFetcher: IsStoreFetcher<*>
 ) {
     val getRequest = storeAction.request
-    val valuesWithMeta = mutableListOf<ValuesWithMetaData<DM, P>>()
+    val valuesWithMeta = mutableListOf<ValuesWithMetaData<DM>>()
     val toVersion = getRequest.toVersion?.let { HLC(it) }
 
     @Suppress("UNCHECKED_CAST")
-    val dataStore = dataStoreFetcher(getRequest.dataModel) as DataStore<DM, P>
+    val dataStore = (dataStoreFetcher as IsStoreFetcher<DM>).invoke(getRequest.dataModel)
 
     getRequest.checkToVersion(dataStore.keepAllVersions)
 

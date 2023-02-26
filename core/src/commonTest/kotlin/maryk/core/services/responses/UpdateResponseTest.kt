@@ -17,7 +17,7 @@ class UpdateResponseTest {
 
     private val updateResponse = UpdateResponse(
         id = 1234uL,
-        dataModel = SimpleMarykModel.Model,
+        dataModel = SimpleMarykModel,
         update = RemovalUpdate(
             key,
             version = 1234uL,

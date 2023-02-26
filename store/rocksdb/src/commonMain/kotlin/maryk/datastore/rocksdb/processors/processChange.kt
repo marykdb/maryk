@@ -5,7 +5,6 @@ import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
 import maryk.core.extensions.bytes.toVarBytes
-import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.values
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
@@ -23,6 +22,7 @@ import maryk.core.processors.datastore.writeSetToStorage
 import maryk.core.processors.datastore.writeToStorage
 import maryk.core.processors.datastore.writeTypedValueToStorage
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
@@ -98,7 +98,7 @@ import maryk.datastore.shared.updates.Update
 import maryk.lib.recyclableByteArray
 import maryk.rocksdb.rocksDBNotFound
 
-internal suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processChange(
+internal suspend fun <DM : IsRootModel> processChange(
     dataStore: RocksDBDataStore,
     dataModel: DM,
     columnFamilies: TableColumnFamilies,
@@ -156,7 +156,7 @@ internal suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> 
 /**
  * Apply [changes] to a specific [transaction] and record them as [version]
  */
-private suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> applyChanges(
+private suspend fun <DM : IsRootModel> applyChanges(
     dataModel: DM,
     dataStore: RocksDBDataStore,
     dbIndex: UInt,
@@ -674,7 +674,7 @@ private suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> a
         var indexUpdates: MutableList<IsIndexUpdate>? = null
 
         // Process indices
-        dataModel.indices?.let { indices ->
+        dataModel.Model.indices?.let { indices ->
             if (indexUpdates == null) {
                 indexUpdates = mutableListOf()
             }
@@ -745,7 +745,7 @@ private fun createValueWriter(
                 transaction.getForUpdate(dataStore.defaultReadOptions, columnFamilies.unique, uniqueReference)?.let {
                     throw UniqueException(
                         reference,
-                        Key<IsRootDataModel<IsValuesPropertyDefinitions>>(
+                        Key<IsValuesPropertyDefinitions>(
                             // Get the key at the end of the stored unique index value
                             it.copyOfRange(fromIndex = it.size - key.size, toIndex = it.size)
                         )

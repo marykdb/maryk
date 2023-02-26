@@ -22,7 +22,7 @@ internal object HistoricStoreIndexValuesWalker {
      * Result is passed to [handleIndexReference] with the index reference and the version
      */
     fun walkHistoricalValuesForIndexKeys(
-        record: DataRecord<*, *>,
+        record: DataRecord<*>,
         indexable: IsIndexable,
         handleIndexReference: (ByteArray, ULong) -> Unit
     ) {
@@ -53,7 +53,7 @@ internal object HistoricStoreIndexValuesWalker {
  * have been captured.
  */
 private class HistoricStoreIndexValuesGetter(
-    val dataRecord: DataRecord<*, *>
+    val dataRecord: DataRecord<*>
 ) : IsValuesGetter {
     val iterableReferenceMap = mutableMapOf<IsPropertyReference<*, *, *>, IterableReference<*>>()
     var latestOverallVersion: ULong? = null

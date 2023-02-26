@@ -6,8 +6,7 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
-import maryk.core.models.IsRootDataModel
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.query.requests.IsFetchRequest
 import maryk.core.query.responses.IsDataResponse
 import maryk.core.query.responses.updates.IsUpdateResponse
@@ -16,14 +15,14 @@ import maryk.test.runSuspendingTest
 import kotlin.test.assertTrue
 
 /** Test helper for listening to update changes for [request] on [dataStore] */
-fun <DM: IsRootDataModel<P>, P: IsValuesPropertyDefinitions, RP: IsDataResponse<DM, P>> updateListenerTester(
+fun <DM: IsRootModel, RP: IsDataResponse<DM>> updateListenerTester(
     dataStore: IsDataStore,
-    request: IsFetchRequest<DM, P, RP>,
+    request: IsFetchRequest<DM, RP>,
     responseCount: Int,
-    changeBlock: suspend CoroutineScope.(Array<CompletableDeferred<IsUpdateResponse<DM, P>>>) -> Unit
+    changeBlock: suspend CoroutineScope.(Array<CompletableDeferred<IsUpdateResponse<DM>>>) -> Unit
 ) = runSuspendingTest {
     val responses = Array(responseCount) {
-        CompletableDeferred<IsUpdateResponse<DM, P>>()
+        CompletableDeferred<IsUpdateResponse<DM>>()
     }
     var counter = 0
 

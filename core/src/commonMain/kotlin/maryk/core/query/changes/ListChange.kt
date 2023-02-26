@@ -2,7 +2,7 @@ package maryk.core.query.changes
 
 import maryk.core.exceptions.RequestException
 import maryk.core.models.ReferenceMappedDataModel
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.list
@@ -21,7 +21,7 @@ data class ListChange internal constructor(
 
     constructor(vararg listValueChange: ListValueChanges<*>) : this(listValueChange.toList())
 
-    override fun filterWithSelect(select: RootPropRefGraph<out IsValuesPropertyDefinitions>): ListChange? {
+    override fun filterWithSelect(select: RootPropRefGraph<out IsRootModel>): ListChange? {
         val filtered = listValueChanges.filter {
             select.contains(it.reference)
         }

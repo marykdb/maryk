@@ -2,8 +2,7 @@ package maryk.datastore.memory.processors
 
 import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
-import maryk.core.models.IsRootDataModel
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.types.Key
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.statuses.DoesNotExist
@@ -17,8 +16,8 @@ import maryk.lib.extensions.compare.compareTo
 /**
  * Processed the deletion of the value at [key]/[version] from the in memory data store
  */
-internal suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processDelete(
-    dataStore: DataStore<DM, P>,
+internal suspend fun <DM : IsRootModel> processDelete(
+    dataStore: DataStore<DM>,
     dataModel: DM,
     key: Key<DM>,
     version: HLC,
@@ -34,7 +33,7 @@ internal suspend fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> 
             dataStore.removeFromUniqueIndices(objectToDelete, version, hardDelete)
 
             // Delete indexed values
-            dataModel.indices?.forEach { indexable ->
+            dataModel.Model.indices?.forEach { indexable ->
                 val oldValue = indexable.toStorageByteArrayForIndex(objectToDelete, objectToDelete.key.bytes)
                 val indexRef = indexable.referenceStorageByteArray.bytes
                 if (oldValue != null) {

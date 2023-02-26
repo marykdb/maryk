@@ -18,7 +18,7 @@ class OptimizeTableScanKtTest {
     @Test
     fun optimizeTableScanNoMatch() {
         expect(tableScan) {
-            TestMarykModel.Model.optimizeTableScan(tableScan, listOf())
+            TestMarykModel.optimizeTableScan(tableScan, listOf())
         }
     }
 
@@ -30,7 +30,7 @@ class OptimizeTableScanKtTest {
                 ASC
             )
         ) {
-            TestMarykModel.Model.optimizeTableScan(
+            TestMarykModel.optimizeTableScan(
                 tableScan,
                 listOf(
                     TestMarykModel.enum.ref() with V3,
@@ -45,7 +45,7 @@ class OptimizeTableScanKtTest {
         expect(
             IndexScan(Reversed(TestMarykModel.double.ref()), ASC)
         ) {
-            TestMarykModel.Model.optimizeTableScan(
+            TestMarykModel.optimizeTableScan(
                 tableScan,
                 listOf(
                     TestMarykModel.double.ref() with 2.5
@@ -68,7 +68,7 @@ class OptimizeTableScanKtTest {
                 ASC
             )
         ) {
-            TestMarykModel.Model.optimizeTableScan(
+            TestMarykModel.optimizeTableScan(
                 tableScan,
                 listOf(
                     TestMarykModel.dateTime.ref() with LocalDateTime(2018, 3, 3, 0, 0),

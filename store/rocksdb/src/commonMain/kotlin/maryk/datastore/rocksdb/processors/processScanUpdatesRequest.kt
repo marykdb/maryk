@@ -1,8 +1,7 @@
 package maryk.datastore.rocksdb.processors
 
-import maryk.core.models.IsRootDataModel
 import maryk.core.models.fromChanges
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.properties.types.Bytes
@@ -32,12 +31,12 @@ import maryk.lib.recyclableByteArray
 import maryk.rocksdb.rocksDBNotFound
 import maryk.rocksdb.use
 
-internal typealias ScanUpdatesStoreAction<DM, P> = StoreAction<DM, P, ScanUpdatesRequest<DM, P>, UpdatesResponse<DM, P>>
-internal typealias AnyScanUpdatesStoreAction = ScanUpdatesStoreAction<IsRootDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>
+internal typealias ScanUpdatesStoreAction<DM> = StoreAction<DM, ScanUpdatesRequest<DM>, UpdatesResponse<DM>>
+internal typealias AnyScanUpdatesStoreAction = ScanUpdatesStoreAction<IsRootModel>
 
 /** Processes a ScanUpdatesRequest in a [storeAction] into a [dataStore] */
-internal fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processScanUpdatesRequest(
-    storeAction: ScanUpdatesStoreAction<DM, P>,
+internal fun <DM : IsRootModel> processScanUpdatesRequest(
+    storeAction: ScanUpdatesStoreAction<DM>,
     dataStore: RocksDBDataStore,
     cache: Cache
 ) {
@@ -46,7 +45,7 @@ internal fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processS
     val columnFamilies = dataStore.getColumnFamilies(dbIndex)
 
     val matchingKeys = mutableListOf<Key<DM>>()
-    val updates = mutableListOf<IsUpdateResponse<DM, P>>()
+    val updates = mutableListOf<IsUpdateResponse<DM>>()
 
     var lastResponseVersion = 0uL
 
@@ -63,7 +62,7 @@ internal fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processS
 
         scanRequest.checkMaxVersions(dataStore.keepAllVersions)
 
-        fun getSingleValues(key: Key<DM>, creationVersion: ULong, cacheReader: (IsPropertyReferenceForCache<*, *>, ULong, () -> Any?) -> Any?): ValuesWithMetaData<DM, P>? {
+        fun getSingleValues(key: Key<DM>, creationVersion: ULong, cacheReader: (IsPropertyReferenceForCache<*, *>, ULong, () -> Any?) -> Any?): ValuesWithMetaData<DM>? {
             dbAccessor.getIterator(dataStore.defaultReadOptions, columnToScan).use { deepIterator ->
                 return scanRequest.dataModel.readTransactionIntoValuesWithMetaData(
                     deepIterator,

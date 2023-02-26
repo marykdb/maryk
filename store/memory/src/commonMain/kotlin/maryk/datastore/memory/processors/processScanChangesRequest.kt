@@ -1,22 +1,20 @@
 package maryk.datastore.memory.processors
 
-import maryk.core.models.IsRootDataModel
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.requests.ScanChangesRequest
 import maryk.core.query.responses.ChangesResponse
 import maryk.datastore.memory.IsStoreFetcher
-import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkMaxVersions
 
-internal typealias ScanChangesStoreAction<DM, P> = StoreAction<DM, P, ScanChangesRequest<DM, P>, ChangesResponse<DM, P>>
-internal typealias AnyScanChangesStoreAction = ScanChangesStoreAction<IsRootDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>
+internal typealias ScanChangesStoreAction<DM> = StoreAction<DM, ScanChangesRequest<DM>, ChangesResponse<DM>>
+internal typealias AnyScanChangesStoreAction = ScanChangesStoreAction<IsRootModel>
 
 /** Processes a ScanChangesRequest in a [storeAction] into a dataStore from [dataStoreFetcher] */
-internal fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processScanChangesRequest(
-    storeAction: ScanChangesStoreAction<DM, P>,
-    dataStoreFetcher: IsStoreFetcher<*, *>
+internal fun <DM : IsRootModel> processScanChangesRequest(
+    storeAction: ScanChangesStoreAction<DM>,
+    dataStoreFetcher: IsStoreFetcher<*>
 ) {
     val scanRequest = storeAction.request
     val objectChanges = mutableListOf<DataObjectVersionedChange<DM>>()
@@ -24,7 +22,7 @@ internal fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processS
     val recordFetcher = createStoreRecordFetcher(dataStoreFetcher)
 
     @Suppress("UNCHECKED_CAST")
-    val dataStore = dataStoreFetcher(scanRequest.dataModel) as DataStore<DM, P>
+    val dataStore = (dataStoreFetcher as IsStoreFetcher<DM>).invoke(scanRequest.dataModel)
 
     scanRequest.checkMaxVersions(dataStore.keepAllVersions)
 

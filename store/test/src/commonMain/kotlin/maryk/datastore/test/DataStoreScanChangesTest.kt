@@ -2,7 +2,7 @@ package maryk.datastore.test
 
 import kotlinx.datetime.LocalDateTime
 import maryk.core.exceptions.RequestException
-import maryk.core.models.RootDataModel
+import maryk.core.properties.graph
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
@@ -32,7 +32,7 @@ import kotlin.test.expect
 class DataStoreScanChangesTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
-    private val keys = mutableListOf<Key<RootDataModel<Log>>>()
+    private val keys = mutableListOf<Key<Log>>()
     private var lowestVersion = ULong.MAX_VALUE
 
     override val allTests = mapOf(
@@ -56,10 +56,10 @@ class DataStoreScanChangesTest(
 
     override suspend fun initData() {
         val addResponse = dataStore.execute(
-            Log.Model.add(*logs)
+            Log.add(*logs)
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<RootDataModel<Log>>>(status)
+            val response = assertIs<AddSuccess<Log>>(status)
             keys.add(response.key)
             if (response.version < lowestVersion) {
                 // Add lowest version for scan test
@@ -70,7 +70,7 @@ class DataStoreScanChangesTest(
 
     override suspend fun resetData() {
         dataStore.execute(
-            Log.Model.delete(*keys.toTypedArray(), hardDelete = true)
+            Log.delete(*keys.toTypedArray(), hardDelete = true)
         )
         keys.clear()
         lowestVersion = ULong.MAX_VALUE
@@ -279,33 +279,33 @@ class DataStoreScanChangesTest(
 
             val change1 = Change(Log { message::ref } with "A change 1")
             dataStore.execute(
-                Log.Model.change(
+                Log.change(
                     keys[2].change(change1)
                 )
             ).also {
-                assertIs<ChangeSuccess<RootDataModel<Log>>>(it.statuses.first()).apply {
+                assertIs<ChangeSuccess<Log>>(it.statuses.first()).apply {
                     collectedVersions.add(version)
                 }
             }
 
             val change2 = Change(Log { message::ref } with "A change 2")
             dataStore.execute(
-                Log.Model.change(
+                Log.change(
                     keys[2].change(change2)
                 )
             ).also {
-                assertIs<ChangeSuccess<RootDataModel<Log>>>(it.statuses.first()).apply {
+                assertIs<ChangeSuccess<Log>>(it.statuses.first()).apply {
                     collectedVersions.add(version)
                 }
             }
 
             val change3 = Change(Log { message::ref } with "A change 3")
             dataStore.execute(
-                Log.Model.change(
+                Log.change(
                     keys[2].change(change3)
                 )
             ).also {
-                assertIs<ChangeSuccess<RootDataModel<Log>>>(it.statuses.first()).apply {
+                assertIs<ChangeSuccess<Log>>(it.statuses.first()).apply {
                     collectedVersions.add(version)
                 }
             }

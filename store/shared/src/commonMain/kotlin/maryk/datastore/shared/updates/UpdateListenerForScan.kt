@@ -3,10 +3,9 @@ package maryk.datastore.shared.updates
 import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
 import maryk.core.exceptions.StorageException
-import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.IndexChange
 import maryk.core.query.changes.IndexDelete
@@ -28,11 +27,11 @@ import maryk.datastore.shared.updates.Update.Change
 import maryk.lib.extensions.compare.compareTo
 
 /** Update listener for scans */
-class UpdateListenerForScan<DM: IsRootDataModel<P>, P: IsValuesPropertyDefinitions, RP: IsDataResponse<DM, P>>(
-    request: IsScanRequest<DM, P, RP>,
+class UpdateListenerForScan<DM: IsRootModel, RP: IsDataResponse<DM>>(
+    request: IsScanRequest<DM, RP>,
     val scanRange: KeyScanRanges,
-    response: IsDataResponse<DM, P>
-) : UpdateListener<DM, P, IsScanRequest<DM, P, RP>>(
+    response: IsDataResponse<DM>
+) : UpdateListener<DM, IsScanRequest<DM, RP>>(
     request,
     response
 ) {
@@ -44,19 +43,19 @@ class UpdateListenerForScan<DM: IsRootDataModel<P>, P: IsValuesPropertyDefinitio
 
     init {
         this.sortedValues = when(response) {
-            is UpdatesResponse<DM, P> -> {
-                (response.updates.firstOrNull() as? OrderedKeysUpdate<DM, P>)?.sortingKeys?.let { sortingKeys ->
+            is UpdatesResponse<DM> -> {
+                (response.updates.firstOrNull() as? OrderedKeysUpdate<DM>)?.sortingKeys?.let { sortingKeys ->
                     atomic(sortingKeys.map { it.bytes }.toList())
                 }
             }
-            is ValuesResponse<DM, P> -> {
+            is ValuesResponse<DM> -> {
                 if (scanType is IndexScan) {
                     response.values.mapNotNull { valuesWithMeta ->
                         scanType.index.toStorageByteArrayForIndex(valuesWithMeta.values, valuesWithMeta.key.bytes)
                     }.let(::atomic)
                 } else null
             }
-            is ChangesResponse<DM, P> -> {
+            is ChangesResponse<DM> -> {
                 if (scanType is IndexScan) {
                     response.changes.mapNotNull { it.sortingKey?.bytes }.let(::atomic)
                 } else null
@@ -66,7 +65,7 @@ class UpdateListenerForScan<DM: IsRootDataModel<P>, P: IsValuesPropertyDefinitio
     }
 
     override suspend fun process(
-        update: Update<DM, P>,
+        update: Update<DM>,
         dataStore: IsDataStore
     ) {
         val shouldProcess: Boolean = when (scanType) {
@@ -82,7 +81,7 @@ class UpdateListenerForScan<DM: IsRootDataModel<P>, P: IsValuesPropertyDefinitio
         }
     }
 
-    override fun addValues(key: Key<DM>, values: Values<P>): Int? {
+    override fun addValues(key: Key<DM>, values: Values<DM>): Int? {
         // Find position and add it if necessary to order if it fits within limit
         return when (scanType) {
             is IndexScan -> {
@@ -141,7 +140,7 @@ class UpdateListenerForScan<DM: IsRootDataModel<P>, P: IsValuesPropertyDefinitio
         }
 
     /** [values] at [key] are known to be at end of sorted range so add it specifically there */
-    fun addValuesAtEnd(key: Key<DM>, values: Values<P>) {
+    fun addValuesAtEnd(key: Key<DM>, values: Values<DM>) {
         matchingKeys.value = matchingKeys.value + key
 
         // Add sort key also to the end
@@ -161,7 +160,7 @@ class UpdateListenerForScan<DM: IsRootDataModel<P>, P: IsValuesPropertyDefinitio
         return index
     }
 
-    override suspend fun changeOrder(change: Change<DM, P>, changedHandler: suspend (Int?, Boolean) -> Unit) {
+    override suspend fun changeOrder(change: Change<DM>, changedHandler: suspend (Int?, Boolean) -> Unit) {
         when (scanType) {
             is TableScan -> {
                 val index = findKeyIndexForTableScan(change.key)

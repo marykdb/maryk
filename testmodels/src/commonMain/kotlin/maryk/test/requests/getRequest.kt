@@ -2,6 +2,7 @@ package maryk.test.requests
 
 import maryk.core.aggregations.Aggregations
 import maryk.core.aggregations.metric.ValueCount
+import maryk.core.properties.graph
 import maryk.core.query.filters.Exists
 import maryk.core.query.requests.get
 import maryk.test.models.SimpleMarykModel
@@ -18,7 +19,7 @@ val getMaxRequest = SimpleMarykModel.run {
     get(
         key1,
         key2,
-        where = Exists(this { value::ref }),
+        where = Exists(invoke { value::ref }),
         toVersion = 333uL,
         filterSoftDeleted = true,
         select = graph { listOf(value) },

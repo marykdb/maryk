@@ -1,6 +1,5 @@
 package maryk.datastore.test
 
-import maryk.core.models.RootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.change
@@ -22,7 +21,7 @@ import kotlin.test.expect
 class DataStoreScanWithMutableValueIndexTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
-    private val keys = mutableListOf<Key<RootDataModel<ModelV2ExtraIndex>>>()
+    private val keys = mutableListOf<Key<ModelV2ExtraIndex>>()
     private var lowestVersion = ULong.MAX_VALUE
 
     override val allTests = mapOf(
@@ -39,10 +38,10 @@ class DataStoreScanWithMutableValueIndexTest(
 
     override suspend fun initData() {
         val addResponse = dataStore.execute(
-            ModelV2ExtraIndex.Model.add(*objects)
+            ModelV2ExtraIndex.add(*objects)
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs< AddSuccess <RootDataModel<ModelV2ExtraIndex>>>(status)
+            val response = assertIs< AddSuccess <ModelV2ExtraIndex>>(status)
             keys.add(response.key)
             if (response.version < lowestVersion) {
                 // Add lowest version for scan test
@@ -53,7 +52,7 @@ class DataStoreScanWithMutableValueIndexTest(
 
     override suspend fun resetData() {
         dataStore.execute(
-            ModelV2ExtraIndex.Model.delete(*keys.toTypedArray(), hardDelete = true)
+            ModelV2ExtraIndex.delete(*keys.toTypedArray(), hardDelete = true)
         )
         keys.clear()
         lowestVersion = ULong.MAX_VALUE
@@ -61,14 +60,14 @@ class DataStoreScanWithMutableValueIndexTest(
 
     private suspend fun executeScanOnAscendingIndexRequest() {
         val changeResult = dataStore.execute(
-            ModelV2ExtraIndex.Model.change(
+            ModelV2ExtraIndex.change(
                 keys[2].change(Change(ModelV2ExtraIndex { newNumber::ref } with 99))
             )
         )
 
         var versionAfterChange = 0uL
         for (status in changeResult.statuses) {
-            assertIs<ChangeSuccess<RootDataModel<SimpleMarykModel>>>(status).apply {
+            assertIs<ChangeSuccess<SimpleMarykModel>>(status).apply {
                 versionAfterChange = this.version
             }
         }

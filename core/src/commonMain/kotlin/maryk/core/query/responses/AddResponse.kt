@@ -1,8 +1,7 @@
 package maryk.core.query.responses
 
-import maryk.core.models.IsRootDataModel
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.list
 import maryk.core.properties.enum.TypeEnum
@@ -11,14 +10,14 @@ import maryk.core.query.responses.statuses.IsAddResponseStatus
 import maryk.core.values.SimpleObjectValues
 
 /** Response with [statuses] to an Add request to [dataModel] */
-data class AddResponse<DM : IsRootDataModel<*>> constructor(
+data class AddResponse<DM : IsRootModel> constructor(
     override val dataModel: DM,
     val statuses: List<IsAddResponseStatus<DM>>
 ) : IsDataModelResponse<DM> {
     @Suppress("unused")
     companion object : SimpleQueryDataModel<AddResponse<*>>(
         properties = object : ObjectPropertyDefinitions<AddResponse<*>>() {
-            val dataModel by addDataModel(AddResponse<*>::dataModel)
+            val dataModel by addDataModel({ it.dataModel })
             val statuses by list(
                 index = 2u,
                 getter = { response ->
@@ -30,7 +29,7 @@ data class AddResponse<DM : IsRootDataModel<*>> constructor(
     ) {
         override fun invoke(values: SimpleObjectValues<AddResponse<*>>) = AddResponse(
             dataModel = values(1u),
-            statuses = values<List<TypedValue<TypeEnum<IsAddResponseStatus<IsRootDataModel<IsValuesPropertyDefinitions>>>, IsAddResponseStatus<IsRootDataModel<IsValuesPropertyDefinitions>>>>?>(2u)?.map { it.value } ?: emptyList()
+            statuses = values<List<TypedValue<TypeEnum<IsAddResponseStatus<IsRootModel>>, IsAddResponseStatus<IsRootModel>>>?>(2u)?.map { it.value } ?: emptyList()
         )
     }
 }

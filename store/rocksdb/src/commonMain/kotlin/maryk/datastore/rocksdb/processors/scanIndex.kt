@@ -1,11 +1,11 @@
 package maryk.datastore.rocksdb.processors
 
 import maryk.core.exceptions.StorageException
-import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.scanRange.IndexableScanRanges
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
+import maryk.core.properties.key
 import maryk.core.properties.types.Key
 import maryk.core.query.orders.Direction
 import maryk.core.query.orders.Direction.ASC
@@ -25,11 +25,11 @@ import maryk.lib.extensions.compare.matchPart
 import maryk.lib.extensions.compare.nextByteInSameLength
 import maryk.rocksdb.ReadOptions
 
-internal fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> scanIndex(
+internal fun <DM : IsRootModel> scanIndex(
     dataStore: RocksDBDataStore,
     dbAccessor: DBAccessor,
     columnFamilies: TableColumnFamilies,
-    scanRequest: IsScanRequest<DM, P, *>,
+    scanRequest: IsScanRequest<DM, *>,
     indexScan: IndexScan,
     keyScanRange: KeyScanRanges,
     processStoreValue: (Key<DM>, ULong, ByteArray?) -> Unit
@@ -53,7 +53,7 @@ internal fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> scanInde
 
     val iterator = dbAccessor.getIterator(dataStore.defaultReadOptions, indexColumnHandle)
 
-    val keySize = scanRequest.dataModel.keyByteSize
+    val keySize = scanRequest.dataModel.Model.keyByteSize
     val valueOffset = indexReference.size
     val versionSize = if(scanRequest.toVersion != null) VERSION_BYTE_SIZE else 0
 
@@ -192,8 +192,8 @@ fun createVersionChecker(toVersion: ULong?, iterator: DBIterator, direction: Dir
  * If it is a versioned read, skip all index records but with older versions
  * The order depends on what is defined in the [next] function
  */
-private fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> createGotoNext(
-    scanRequest: IsScanRequest<DM, P, *>,
+private fun <DM : IsRootModel> createGotoNext(
+    scanRequest: IsScanRequest<DM, *>,
     iterator: DBIterator,
     next: () -> Unit
 ): (ByteArray, Int, Int) -> Unit =
@@ -212,13 +212,13 @@ private fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> createGot
     }
 
 /** Walk through index and processes any valid keys and versions */
-private fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> checkAndProcess(
+private fun <DM : IsRootModel> checkAndProcess(
     dbAccessor: DBAccessor,
     columnFamilies: TableColumnFamilies,
     readOptions: ReadOptions,
     iterator: DBIterator,
     keySize: Int,
-    scanRequest: IsScanRequest<DM, P, *>,
+    scanRequest: IsScanRequest<DM, *>,
     indexScanRange: IndexableScanRanges,
     versionSize: Int,
     valueOffset: Int,
@@ -271,14 +271,13 @@ private fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> checkAndP
 }
 
 /** Creates a Key out of a [indexRecord] by reading from [keyOffset] */
-private fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> createKey(
+private fun <DM : IsRootModel> createKey(
     dataModel: DM,
     indexRecord: ByteArray,
     keyOffset: Int
 ): Key<DM> {
     var readIndex = keyOffset
-    @Suppress("UNCHECKED_CAST")
     return dataModel.key {
         indexRecord[readIndex++]
-    } as Key<DM>
+    }
 }

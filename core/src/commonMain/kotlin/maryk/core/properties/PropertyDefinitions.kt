@@ -1,5 +1,6 @@
 package maryk.core.properties
 
+import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
@@ -22,8 +23,16 @@ import maryk.yaml.YamlWriter
 /** A collection of Property Definitions which can be used to model a ObjectDataModel */
 abstract class PropertyDefinitions : AbstractPropertyDefinitions<Any>(), IsValuesPropertyDefinitions
 
+internal class MutableRootModel : MutablePropertyDefinitions(), IsRootModel {
+    override val Model: IsRootDataModel<out IsValuesPropertyDefinitions> get() = super.Model as IsRootDataModel<out IsValuesPropertyDefinitions>
+}
+
+internal class MutableModel : MutablePropertyDefinitions(), IsRootModel {
+    override val Model: IsRootDataModel<out IsValuesPropertyDefinitions> get() = super.Model as IsRootDataModel<out IsValuesPropertyDefinitions>
+}
+
 /** Mutable variant of ObjectPropertyDefinitions for a IsCollectionDefinition implementation */
-internal class MutablePropertyDefinitions : PropertyDefinitions(), IsMutablePropertyDefinitions<AnyDefinitionWrapper> {
+internal abstract class MutablePropertyDefinitions : PropertyDefinitions(), IsMutablePropertyDefinitions<AnyDefinitionWrapper> {
     internal var _model: IsValuesDataModel<*>? = null
 
     override val Model: IsValuesDataModel<*>
@@ -49,6 +58,7 @@ internal class MutablePropertyDefinitions : PropertyDefinitions(), IsMutableProp
 
 /** Definition for a collection of Property Definitions for in a ObjectPropertyDefinitions */
 internal data class PropertyDefinitionsCollectionDefinition(
+    val isRootModel: Boolean,
     override val capturer: Unit.(DefinitionsConversionContext?, PropertyDefinitions) -> Unit
 ) : IsCollectionDefinition<
     AnyDefinitionWrapper,
@@ -83,8 +93,11 @@ internal data class PropertyDefinitionsCollectionDefinition(
         validator: (item: AnyDefinitionWrapper, itemRefFactory: () -> IsPropertyReference<AnyDefinitionWrapper, IsPropertyDefinition<AnyDefinitionWrapper>, *>?) -> Any
     ) {}
 
-    override fun newMutableCollection(context: DefinitionsConversionContext?) =
-        MutablePropertyDefinitions().apply {
+    override fun newMutableCollection(context: DefinitionsConversionContext?): MutablePropertyDefinitions =
+        when (isRootModel) {
+            true -> MutableRootModel()
+            else -> MutableModel()
+        }.apply {
             capturer(Unit, context, this)
         }
 

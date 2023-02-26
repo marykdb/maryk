@@ -4,7 +4,6 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import maryk.core.clock.HLC
-import maryk.core.models.RootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.change
@@ -39,9 +38,9 @@ class DataStoreFilterTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
 
-    private val keys = mutableListOf<Key<RootDataModel<TestMarykModel>>>()
+    private val keys = mutableListOf<Key<TestMarykModel>>()
     private val lastVersions = mutableListOf<ULong>()
-    private lateinit var firstKey: Key<RootDataModel<TestMarykModel>>
+    private lateinit var firstKey: Key<TestMarykModel>
 
     override val allTests = mapOf(
         "doExistsFilter" to ::doExistsFilter,
@@ -99,20 +98,20 @@ class DataStoreFilterTest(
 
     override suspend fun initData() {
         val addResponse = dataStore.execute(
-            TestMarykModel.Model.add(
+            TestMarykModel.add(
                 dataObject,
                 dataObject2
             )
         )
 
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<RootDataModel<TestMarykModel>>>(status)
+            val response = assertIs<AddSuccess<TestMarykModel>>(status)
             keys.add(response.key)
             lastVersions.add(response.version)
         }
 
         val changeResponse = dataStore.execute(
-            TestMarykModel.Model.change(
+            TestMarykModel.change(
                 keys[0].change(
                     Change(TestMarykModel { reference::ref } with keys[1])
                 )
@@ -120,7 +119,7 @@ class DataStoreFilterTest(
         )
 
         changeResponse.statuses.forEach { status ->
-            val response = assertIs<ChangeSuccess<RootDataModel<TestMarykModel>>>(status)
+            val response = assertIs<ChangeSuccess<TestMarykModel>>(status)
             lastVersions.add(response.version)
         }
 
@@ -129,7 +128,7 @@ class DataStoreFilterTest(
 
     override suspend fun resetData() {
         dataStore.execute(
-            TestMarykModel.Model.delete(*keys.toTypedArray(), hardDelete = true)
+            TestMarykModel.delete(*keys.toTypedArray(), hardDelete = true)
         )
         keys.clear()
         lastVersions.clear()

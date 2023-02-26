@@ -1,7 +1,6 @@
 package maryk.core.processors.datastore.scanRange
 
 import maryk.core.extensions.bytes.MAX_BYTE
-import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.matchers.IndexPartialSizeToMatch
 import maryk.core.processors.datastore.matchers.IndexPartialToBeBigger
 import maryk.core.processors.datastore.matchers.IndexPartialToBeOneOf
@@ -11,18 +10,19 @@ import maryk.core.processors.datastore.matchers.IndexPartialToRegexMatch
 import maryk.core.processors.datastore.matchers.IsIndexPartialToMatch
 import maryk.core.processors.datastore.matchers.UniqueToMatch
 import maryk.core.processors.datastore.matchers.convertFilterToIndexPartsToMatch
+import maryk.core.properties.IsRootModel
 import maryk.core.query.filters.IsFilter
 import maryk.core.query.pairs.ReferenceValuePair
 
 /** Create a scan range by [filter] and [startKey] */
-fun <DM : IsRootDataModel<*>> DM.createScanRange(filter: IsFilter?, startKey: ByteArray?, includeStart: Boolean = true): KeyScanRanges {
+fun <DM : IsRootModel> DM.createScanRange(filter: IsFilter?, startKey: ByteArray?, includeStart: Boolean = true): KeyScanRanges {
     val listOfKeyParts = mutableListOf<IsIndexPartialToMatch>()
     val listOfUniqueFilters = mutableListOf<UniqueToMatch>()
     val listOfEqualPairs = mutableListOf<ReferenceValuePair<Any>>()
     convertFilterToIndexPartsToMatch(
-        this.keyDefinition,
-        this.keyByteSize,
-        { this.keyIndices[it] },
+        this.Model.keyDefinition,
+        this.Model.keyByteSize,
+        { this.Model.keyIndices[it] },
         filter,
         listOfKeyParts,
         listOfEqualPairs,
@@ -38,15 +38,15 @@ fun <DM : IsRootDataModel<*>> DM.createScanRange(filter: IsFilter?, startKey: By
  * Create scan range from [listOfParts] and check with [startKey]
  * It writes complete start and end keys with the partials to match
  */
-private fun <DM : IsRootDataModel<*>> DM.createScanRangeFromParts(
+private fun <DM : IsRootModel> DM.createScanRangeFromParts(
     startKey: ByteArray?,
     includeStart: Boolean,
     listOfParts: MutableList<IsIndexPartialToMatch>,
     listOfEqualPairs: List<ReferenceValuePair<Any>>,
     listOfUniqueFilters: List<UniqueToMatch>
 ): KeyScanRanges {
-    val start: MutableList<MutableList<Byte>> = mutableListOf(ArrayList(this.keyByteSize))
-    val end: MutableList<MutableList<Byte>> = mutableListOf(ArrayList(this.keyByteSize))
+    val start: MutableList<MutableList<Byte>> = mutableListOf(ArrayList(this.Model.keyByteSize))
+    val end: MutableList<MutableList<Byte>> = mutableListOf(ArrayList(this.Model.keyByteSize))
 
     var startShouldContinue = true
     var endShouldContinue = true
@@ -133,12 +133,12 @@ private fun <DM : IsRootDataModel<*>> DM.createScanRangeFromParts(
     }
 
     // Fill start key with MAX bytes so it properly goes to the end
-    for (it in 1..(this.keyByteSize - start.first().size)) {
+    for (it in 1..(this.Model.keyByteSize - start.first().size)) {
         addByte(start, if (startInclusive) 0 else MAX_BYTE)
     }
 
     // Fill end key with MAX bytes so it properly goes to the end
-    for (it in 1..(this.keyByteSize - end.first().size)) {
+    for (it in 1..(this.Model.keyByteSize - end.first().size)) {
         addByte(end, if (endInclusive) MAX_BYTE else 0)
     }
 
@@ -147,7 +147,7 @@ private fun <DM : IsRootDataModel<*>> DM.createScanRangeFromParts(
         partialMatches = listOfParts,
         equalPairs = listOfEqualPairs,
         uniques = listOfUniqueFilters,
-        keySize = this.keyByteSize,
+        keySize = this.Model.keyByteSize,
         startKey = startKey,
         includeStart = includeStart
     )

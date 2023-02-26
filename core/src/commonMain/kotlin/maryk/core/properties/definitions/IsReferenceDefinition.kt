@@ -1,12 +1,11 @@
 package maryk.core.properties.definitions
 
-import maryk.core.models.IsRootDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.types.Key
 
 /** Interface for property definitions containing references to data objects of model [DM] and context [CX]. */
-interface IsReferenceDefinition<DM : IsRootDataModel<*>, P: IsValuesPropertyDefinitions, CX : IsPropertyContext> :
+interface IsReferenceDefinition<DM : IsRootModel, CX : IsPropertyContext> :
     IsComparableDefinition<Key<DM>, IsPropertyContext>,
     IsSerializableFixedBytesEncodable<Key<DM>, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<Key<DM>>,
@@ -22,8 +21,8 @@ interface IsReferenceDefinition<DM : IsRootDataModel<*>, P: IsValuesPropertyDefi
     ): Boolean {
         var compatible = super<IsComparableDefinition>.compatibleWith(definition, addIncompatibilityReason)
 
-        (definition as? IsReferenceDefinition<*, *, *>)?.let {
-            if (definition.dataModel.name != this.dataModel.name || definition.dataModel.keyDefinition != this.dataModel.keyDefinition) {
+        (definition as? IsReferenceDefinition<*, *>)?.let {
+            if (definition.dataModel.Model.name != this.dataModel.Model.name || definition.dataModel.Model.keyDefinition != this.dataModel.Model.keyDefinition) {
                 addIncompatibilityReason?.invoke("Data models are not the same comparing reference properties: $dataModel != ${definition.dataModel}")
                 compatible = false
             }

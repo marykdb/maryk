@@ -4,7 +4,6 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import maryk.core.models.ObjectDataModel
-import maryk.core.models.RootDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.NumberDefinition
@@ -43,7 +42,7 @@ data class TestMarykObject(
     val valueObject: TestValueObject? = null,
     val embeddedObject: EmbeddedMarykObject? = null,
     val multi: TypedValue<SimpleMarykTypeEnumWithObject<*>, *>? = null,
-    val reference: Key<RootDataModel<TestMarykModel>>? = null,
+    val reference: Key<TestMarykModel>? = null,
     val listOfString: List<String>? = null
 ) {
     object Properties : ObjectPropertyDefinitions<TestMarykObject>() {
@@ -142,7 +141,7 @@ data class TestMarykObject(
             index = 14u,
             getter = TestMarykObject::reference,
             required = false,
-            dataModel = { TestMarykModel.Model }
+            dataModel = { TestMarykModel }
         )
 
         val listOfString by list(

@@ -1,6 +1,5 @@
 package maryk.datastore.test
 
-import maryk.core.models.RootDataModel
 import maryk.core.properties.references.dsl.at
 import maryk.core.properties.references.dsl.atType
 import maryk.core.properties.types.Key
@@ -32,7 +31,7 @@ import kotlin.test.expect
 class DataStoreChangeComplexTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
-    private val keys = mutableListOf<Key<RootDataModel<ComplexModel>>>()
+    private val keys = mutableListOf<Key<ComplexModel>>()
     private val lastVersions = mutableListOf<ULong>()
 
     override val allTests = mapOf(
@@ -48,7 +47,7 @@ class DataStoreChangeComplexTest(
 
     override suspend fun initData() {
         val addResponse = dataStore.execute(
-            ComplexModel.Model.add(
+            ComplexModel.add(
                 ComplexModel(
                     multi = TypedValue(T3, EmbeddedMarykModel.run { create(
                         value with "u3",
@@ -123,7 +122,7 @@ class DataStoreChangeComplexTest(
         )
 
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<RootDataModel<ComplexModel>>>(status)
+            val response = assertIs<AddSuccess<ComplexModel>>(status)
             keys.add(response.key)
             lastVersions.add(response.version)
         }
@@ -131,7 +130,7 @@ class DataStoreChangeComplexTest(
 
     override suspend fun resetData() {
         dataStore.execute(
-            ComplexModel.Model.delete(*keys.toTypedArray(), hardDelete = true)
+            ComplexModel.delete(*keys.toTypedArray(), hardDelete = true)
         )
         keys.clear()
         lastVersions.clear()
@@ -139,7 +138,7 @@ class DataStoreChangeComplexTest(
 
     private suspend fun executeChangeDeleteMultiRequest() {
         val changeResponse = dataStore.execute(
-            ComplexModel.Model.change(
+            ComplexModel.change(
                 keys[0].change(
                     Delete(ComplexModel { multi::ref })
                 )
@@ -163,7 +162,7 @@ class DataStoreChangeComplexTest(
 
     private suspend fun executeChangeDeleteMapRequest() {
         val changeResponse = dataStore.execute(
-            ComplexModel.Model.change(
+            ComplexModel.change(
                 keys[2].change(
                     Delete(ComplexModel { mapIntObject::ref })
                 )
@@ -186,7 +185,7 @@ class DataStoreChangeComplexTest(
 
     private suspend fun executeChangeDeleteMapValueRequest() {
         val changeResponse = dataStore.execute(
-            ComplexModel.Model.change(
+            ComplexModel.change(
                 keys[6].change(
                     Delete(ComplexModel { mapIntObject refAt 2u })
                 )
@@ -213,7 +212,7 @@ class DataStoreChangeComplexTest(
 
     private suspend fun executeChangeDeleteMapSubValueRequest() {
         val changeResponse = dataStore.execute(
-            ComplexModel.Model.change(
+            ComplexModel.change(
                 keys[3].change(
                     Delete(ComplexModel { mapIntObject.at(1u) { model::ref } })
                 )
@@ -240,7 +239,7 @@ class DataStoreChangeComplexTest(
 
     private suspend fun executeChangeDeleteMapTypedSubValueRequest() {
         val changeResponse = dataStore.execute(
-            ComplexModel.Model.change(
+            ComplexModel.change(
                 keys[4].change(
                     Delete(
                         ComplexModel {
@@ -277,7 +276,7 @@ class DataStoreChangeComplexTest(
 
     private suspend fun executeChangeChangeValueRequest() {
         val changeResponse = dataStore.execute(
-            ComplexModel.Model.change(
+            ComplexModel.change(
                 keys[5].change(
                     Change(
                         ComplexModel {
@@ -336,7 +335,7 @@ class DataStoreChangeComplexTest(
         )
 
         val changeResponse = dataStore.execute(
-            ComplexModel.Model.change(
+            ComplexModel.change(
                 keys[5].change(
                     Change(
                         ComplexModel { multi::ref } with newMultiValue,
@@ -369,7 +368,7 @@ class DataStoreChangeComplexTest(
 
     private suspend fun executeChangeIncMapRequest() {
         val changeResponse = dataStore.execute(
-            ComplexModel.Model.change(
+            ComplexModel.change(
                 keys[0].change(
                     Change(
                         ComplexModel { incMap.refAt(1u) } with EmbeddedMarykModel("n")

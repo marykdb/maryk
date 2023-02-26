@@ -1,7 +1,6 @@
 package maryk.datastore.memory.records.index
 
 import maryk.core.clock.HLC
-import maryk.core.models.RootDataModel
 import maryk.datastore.memory.records.DataRecord
 import maryk.test.models.SimpleMarykModel
 import maryk.test.models.SimpleMarykModel.value
@@ -12,7 +11,7 @@ class UniqueIndexValuesTest {
     private val valueReference = value.ref().toStorageByteArray()
 
     private val uniqueIndex =
-        UniqueIndexValues<RootDataModel<SimpleMarykModel>, SimpleMarykModel, String>(
+        UniqueIndexValues<SimpleMarykModel, String>(
             valueReference
         )
 

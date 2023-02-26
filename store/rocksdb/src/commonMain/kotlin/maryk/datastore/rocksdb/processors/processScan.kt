@@ -1,11 +1,11 @@
 package maryk.datastore.rocksdb.processors
 
-import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.definitions.IsComparableDefinition
+import maryk.core.properties.key
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.IsScanRequest
 import maryk.datastore.rocksdb.DBAccessor
@@ -25,8 +25,8 @@ import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.rocksDBNotFound
 
 /** Walk with [scanRequest] on [dataStore] and do [processRecord] */
-internal fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processScan(
-    scanRequest: IsScanRequest<DM, P, *>,
+internal fun <DM : IsRootModel> processScan(
+    scanRequest: IsScanRequest<DM, *>,
     dataStore: RocksDBDataStore,
     dbAccessor: DBAccessor,
     columnFamilies: TableColumnFamilies,
@@ -41,8 +41,7 @@ internal fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processS
     when {
         // If hard key match then quit with direct record
         keyScanRange.isSingleKey() -> {
-            @Suppress("UNCHECKED_CAST")
-            val key = scanRequest.dataModel.key(keyScanRange.ranges.first().start) as Key<DM>
+            val key = scanRequest.dataModel.key(keyScanRange.ranges.first().start)
             val mayExist = dataStore.db.keyMayExist(columnFamilies.keys, key.bytes, null)
             if (mayExist) {
                 val valueLength = dbAccessor.get(columnFamilies.keys, readOptions, key.bytes, recyclableByteArray)
@@ -76,7 +75,7 @@ internal fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processS
 
                     getKeyByUniqueValue(dbAccessor, columnFamilies, readOptions, reference, scanRequest.toVersion) { keyReader, setAtVersion ->
                         @Suppress("UNCHECKED_CAST")
-                        val key = scanRequest.dataModel.key(keyReader) as Key<DM>
+                        val key = scanRequest.dataModel.Model.key(keyReader) as Key<DM>
 
                         if (shouldProcessRecord(dbAccessor, columnFamilies, readOptions, key, setAtVersion, scanRequest, keyScanRange)) {
                             readCreationVersion(dbAccessor, columnFamilies, readOptions, key.bytes)?.let { createdVersion ->
@@ -124,13 +123,13 @@ internal fun <DM : IsRootDataModel<P>, P : IsValuesPropertyDefinitions> processS
     }
 }
 
-internal fun <DM: IsRootDataModel<P>, P: IsValuesPropertyDefinitions> shouldProcessRecord(
+internal fun <DM: IsRootModel> shouldProcessRecord(
     dbAccessor: DBAccessor,
     columnFamilies: TableColumnFamilies,
     readOptions: ReadOptions,
     key: Key<*>,
     createdVersion: ULong?,
-    scanRequest: IsScanRequest<DM, P, *>,
+    scanRequest: IsScanRequest<DM, *>,
     scanRange: KeyScanRanges
 ): Boolean {
     if (createdVersion == null) {

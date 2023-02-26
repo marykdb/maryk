@@ -23,10 +23,10 @@ import maryk.yaml.YamlWriter
 /** A collection of Property Definitions which can be used to model a ObjectDataModel */
 abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions<DO>() {
     /** Get a method to retrieve property from DataObject by [name] */
-    fun getPropertyGetter(name: String): ((DO) -> Any?)? = { nameToDefinition[name]?.getPropertyAndSerialize(it, null) }
+    fun getPropertyGetter(name: String): ((DO) -> Any?)? = nameToDefinition[name]?.run { { getPropertyAndSerialize(it, null) } }
 
     /** Get a method to retrieve property from DataObject by [index] */
-    fun getPropertyGetter(index: UInt): ((DO) -> Any?)? = { indexToDefinition[index]?.getPropertyAndSerialize(it, null) }
+    fun getPropertyGetter(index: UInt): ((DO) -> Any?)? = indexToDefinition[index]?.run { { getPropertyAndSerialize(it, null) } }
 
     /** Add flex bytes encodable property [definition] with [name] and [index] and value [getter] */
     fun <T : Any, CX : IsPropertyContext, D : IsContextualEncodable<T, CX>> add(

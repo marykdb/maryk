@@ -1,5 +1,6 @@
 package maryk.core.models
 
+import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
@@ -13,7 +14,7 @@ import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
 
 /** A DataModel which holds properties and can be validated */
-interface IsObjectDataModel<DO : Any, P : ObjectPropertyDefinitions<DO>> :
+interface IsObjectDataModel<DO : Any, P : IsObjectPropertyDefinitions<DO>> :
     IsDataModelWithValues<DO, P, ObjectValues<DO, P>> {
     /**
      * Validate a [dataObject] and get reference from [refGetter] if exception needs to be thrown

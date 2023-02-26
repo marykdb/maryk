@@ -6,7 +6,7 @@ import maryk.core.properties.types.ValueDataObject
 import maryk.core.values.ObjectValues
 import kotlin.reflect.KClass
 
-interface IsValueModel<DO: ValueDataObject, P: ObjectPropertyDefinitions<DO>> {
+interface IsValueModel<DO: ValueDataObject, P: IsObjectPropertyDefinitions<DO>> {
     @Suppress("PropertyName")
     val Model: IsObjectDataModel<DO, P>
 }

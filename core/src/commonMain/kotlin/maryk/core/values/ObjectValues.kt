@@ -2,6 +2,7 @@ package maryk.core.values
 
 import maryk.core.models.IsNamedDataModel
 import maryk.core.models.IsObjectDataModel
+import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.query.RequestContext
 
@@ -10,7 +11,7 @@ typealias SimpleObjectValues<DO> = ObjectValues<DO, ObjectPropertyDefinitions<DO
 /**
  * Contains a [map] with all values related to a DataObject of [dataModel]
  */
-data class ObjectValues<DO : Any, P : ObjectPropertyDefinitions<DO>> internal constructor(
+data class ObjectValues<DO : Any, P : IsObjectPropertyDefinitions<DO>> internal constructor(
     override val dataModel: IsObjectDataModel<DO, P>,
     override val values: IsValueItems,
     override val context: RequestContext? = null

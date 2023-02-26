@@ -24,7 +24,7 @@ import maryk.core.query.responses.updates.InitialChangesUpdate
 import maryk.core.query.responses.updates.InitialValuesUpdate
 import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.core.query.responses.updates.RemovalUpdate
-import maryk.core.services.responses.UpdateResponse
+import maryk.core.query.responses.UpdateResponse
 import maryk.datastore.memory.processors.AnyAddStoreAction
 import maryk.datastore.memory.processors.AnyChangeStoreAction
 import maryk.datastore.memory.processors.AnyDeleteStoreAction

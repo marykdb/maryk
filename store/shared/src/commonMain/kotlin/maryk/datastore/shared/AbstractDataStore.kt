@@ -23,7 +23,7 @@ import maryk.core.query.responses.IsDataResponse
 import maryk.core.query.responses.IsResponse
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.query.responses.updates.ProcessResponse
-import maryk.core.services.responses.UpdateResponse
+import maryk.core.query.responses.UpdateResponse
 import maryk.datastore.shared.updates.AddUpdateListenerAction
 import maryk.datastore.shared.updates.IsUpdateAction
 import maryk.datastore.shared.updates.RemoveAllUpdateListenersAction

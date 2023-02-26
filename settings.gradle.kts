@@ -42,6 +42,7 @@ includeProjects(
     "json",
     "yaml",
     "core",
+    "query",
     "testmodels",
     "generator",
     "generator-jvmTest",

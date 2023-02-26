@@ -9,7 +9,7 @@ import maryk.core.query.responses.AddResponse
 import maryk.core.query.responses.ChangeResponse
 import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.ProcessResponse
-import maryk.core.services.responses.UpdateResponse
+import maryk.core.query.responses.UpdateResponse
 import maryk.datastore.memory.IsStoreFetcher
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.StoreAction

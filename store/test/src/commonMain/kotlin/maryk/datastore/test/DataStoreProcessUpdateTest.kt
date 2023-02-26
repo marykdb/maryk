@@ -13,6 +13,7 @@ import maryk.core.query.responses.AddOrChangeResponse
 import maryk.core.query.responses.AddResponse
 import maryk.core.query.responses.ChangeResponse
 import maryk.core.query.responses.DeleteResponse
+import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
@@ -24,7 +25,6 @@ import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.core.query.responses.updates.RemovalReason.HardDelete
 import maryk.core.query.responses.updates.RemovalReason.SoftDelete
 import maryk.core.query.responses.updates.RemovalUpdate
-import maryk.core.services.responses.UpdateResponse
 import maryk.datastore.shared.IsDataStore
 import maryk.test.models.Log
 import maryk.test.models.Severity.ERROR
@@ -70,7 +70,6 @@ class DataStoreProcessUpdateTest(
     private suspend fun executeProcessAddRequest() {
         val addResponse = dataStore.processUpdate(
             UpdateResponse(
-                id = 1234uL,
                 dataModel = Log,
                 update = AdditionUpdate(
                     key = keys[0],
@@ -99,7 +98,6 @@ class DataStoreProcessUpdateTest(
     private suspend fun executeProcessChangeRequest() {
         dataStore.processUpdate(
             UpdateResponse(
-                id = 1234uL,
                 dataModel = Log,
                 update = AdditionUpdate(
                     key = keys[0],
@@ -115,7 +113,6 @@ class DataStoreProcessUpdateTest(
         val editedMessage = "Edited message"
         val changeResponse = dataStore.processUpdate(
             UpdateResponse(
-                id = 1235uL,
                 dataModel = Log,
                 update = ChangeUpdate(
                     key = keys[0],
@@ -145,7 +142,6 @@ class DataStoreProcessUpdateTest(
         val newMessage = "New message"
         val changeResponse = dataStore.processUpdate(
             UpdateResponse(
-                id = 1234uL,
                 dataModel = Log,
                 update = ChangeUpdate(
                     key = keys[0],
@@ -177,7 +173,6 @@ class DataStoreProcessUpdateTest(
     private suspend fun executeProcessRemovalRequest() {
         dataStore.processUpdate(
             UpdateResponse(
-                id = 1234uL,
                 dataModel = Log,
                 update = AdditionUpdate(
                     key = keys[0],
@@ -192,7 +187,6 @@ class DataStoreProcessUpdateTest(
 
         dataStore.processUpdate(
             UpdateResponse(
-                id = 1234uL,
                 dataModel = Log,
                 update = AdditionUpdate(
                     key = keys[1],
@@ -207,7 +201,6 @@ class DataStoreProcessUpdateTest(
 
         val hardRemovalUpdate = dataStore.processUpdate(
             UpdateResponse(
-                id = 1235uL,
                 dataModel = Log,
                 update = RemovalUpdate(
                     key = keys[0],
@@ -230,7 +223,6 @@ class DataStoreProcessUpdateTest(
 
         val softRemovalUpdate = dataStore.processUpdate(
             UpdateResponse(
-                id = 1235uL,
                 dataModel = Log,
                 update = RemovalUpdate(
                     key = keys[1],
@@ -256,7 +248,6 @@ class DataStoreProcessUpdateTest(
     private suspend fun executeProcessInitialChangesRequest() {
         dataStore.processUpdate(
             UpdateResponse(
-                id = 1234uL,
                 dataModel = Log,
                 update = AdditionUpdate(
                     key = keys[0],
@@ -273,7 +264,6 @@ class DataStoreProcessUpdateTest(
         val editedMessage = "Initially edited message"
         val changeResponse = dataStore.processUpdate(
             UpdateResponse(
-                id = 1234uL,
                 dataModel = Log,
                 update = InitialChangesUpdate(
                     version = 1234uL,
@@ -323,7 +313,6 @@ class DataStoreProcessUpdateTest(
         assertFailsWith<RequestException> {
             dataStore.processUpdate(
                 UpdateResponse(
-                    id = 1234uL,
                     dataModel = Log,
                     update = InitialValuesUpdate(
                         version = 12345uL,
@@ -338,7 +327,6 @@ class DataStoreProcessUpdateTest(
         assertFailsWith<RequestException> {
             dataStore.processUpdate(
                 UpdateResponse(
-                    id = 1234uL,
                     dataModel = Log,
                     update = OrderedKeysUpdate(
                         keys = keys,

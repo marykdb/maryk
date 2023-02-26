@@ -1,4 +1,4 @@
-package maryk.core.services.responses
+package maryk.core.query.responses
 
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
@@ -16,7 +16,6 @@ class UpdateResponseTest {
     private val key = SimpleMarykModel.key("0ruQCs38S2QaByYof+IJgA")
 
     private val updateResponse = UpdateResponse(
-        id = 1234uL,
         dataModel = SimpleMarykModel,
         update = RemovalUpdate(
             key,
@@ -42,7 +41,6 @@ class UpdateResponseTest {
         expect(
             """
             {
-              "id": "1234",
               "dataModel": "SimpleMarykModel",
               "update": ["Removal", {
                 "key": "0ruQCs38S2QaByYof+IJgA",
@@ -60,7 +58,6 @@ class UpdateResponseTest {
     fun convertToYAMLAndBack() {
         expect(
             """
-            id: 1234
             dataModel: SimpleMarykModel
             update: !Removal
               key: 0ruQCs38S2QaByYof+IJgA

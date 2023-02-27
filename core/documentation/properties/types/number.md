@@ -54,19 +54,7 @@ unsigned integers are available.
 
 ## Examples
 
-**Example of a YAML Number property definition**
-```yaml
-!Number
-  type: UInt32
-  required: false
-  unique: false
-  final: true
-  default: 42
-  minValue: 32
-  maxValue: 1000000
-```
-
-**Example of a Kotlin Number property definition for use within a Model its PropertyDefinitions**
+**Example of a Number property definition for use within a Model its PropertyDefinitions**
 ```kotlin
 val count by number(
     index = 1u,
@@ -80,7 +68,7 @@ val count by number(
 )
 ```
 
-**Example of a Kotlin Number property definition**
+**Example of a separate Number property definition**
 ```kotlin
 val def = NumberDefinition(
     type = UInt32,

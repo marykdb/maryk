@@ -1,9 +1,9 @@
 # String
 Basic String property to represent text.
 
-- Maryk Yaml Definition: `String`
 - Kotlin Definition: `StringDefinition`
 - Kotlin Value : `String`
+- Maryk Yaml Definition: `String`
 
 ## Usage options
 - Value
@@ -25,21 +25,7 @@ Basic String property to represent text.
 
 ## Examples
 
-**Example of a YAML String property definition**
-```yaml
-!String
-  required: false
-  unique: false
-  final: true
-  minSize: 3
-  maxSize: 6
-  default: baa
-  minValue: aab
-  maxValue: ddda
-  regEx: [abcd]{3,4}
-```
-
-**Example of a Kotlin String property definition for use within a Model its PropertyDefinitions**
+**Example of a String property definition for use within a Model its PropertyDefinitions**
 ```kotlin
 val codeName by string(
     index = 1u,
@@ -55,7 +41,7 @@ val codeName by string(
 )
 ```
 
-**Example of a Kotlin String property definition**
+**Example of a separate String property definition**
 ```kotlin
 val def = StringDefinition(
     required = true,

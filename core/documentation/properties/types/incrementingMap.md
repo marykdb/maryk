@@ -4,11 +4,11 @@ A property to contain a list of items indexed by an incrementing number.
 See [properties page](../properties.md) to see which property types it can contain for value. 
 Property definitions need to be required and values can thus not be null.
 
-- Maryk Yaml Definition: `IncMap`
 - Kotlin Definition: `IncrementingMapDefinition<K, V>` 
     - K for type of comparable to autoincrement
     - V for type of value definition
 - Kotlin Value: `Map`
+- Maryk Yaml Definition: `IncMap`
 
 ## Usage options
 - Value
@@ -25,18 +25,7 @@ Property definitions need to be required and values can thus not be null.
 
 ## Examples
 
-**Example of a YAML Map property definition**
-```yaml
-!IncMap
-  keyNumberDescriptor: UInt32
-  valueDefinition: !String
-  required: false
-  final: true
-  minSize: 1
-  maxSize: 10
-```
-
-**Example of a Kotlin Map property definition for use within a Model its PropertyDefinitions**
+**Example of a Map property definition for use within a Model its PropertyDefinitions**
 ```kotlin
 val orderNames by incrementingMap(
     index = 1u,
@@ -47,7 +36,7 @@ val orderNames by incrementingMap(
 )
 ```
 
-**Example of a Kotlin Map property definition**
+**Example of a separate Map property definition**
 ```kotlin
 val def = IncrementingMapDefinition(
     required = false,
@@ -63,17 +52,6 @@ or change the contents. It can be defined with a map with `valuesToAdd` or a set
 `keysToDelete`.
 
 Example on a model with a map containing integers mapped to strings:
-
-Maryk Yaml:
-```yaml
-!IncMapChange
-  incMap:
-    addValues:
-    - value: a
-    - value: b
-```
-
-Kotlin:
 ```kotlin
 
 IncMapChange(

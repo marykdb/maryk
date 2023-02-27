@@ -24,27 +24,17 @@ with a status on each object to add.
 
 Example:
 
-Maryk YAML:
-```yaml
-!Add
-  to: Person
-  objects:
-  - firstName: Jurriaan
-    lastName: Mous
-  - firstName: John
-    lastName: Smith
-```
 Kotlin:
 ```kotlin
 val addRequest = Person.add(
-    Person(
-        firstName = "Jurriaan",
-        lastName = "Mous"
-    ),
-    Person(
-        firstName = "John",
-        lastName = "Smith"
-    )    
+    Person.run { create(
+        firstName with "Jurriaan",
+        lastName with "Mous"
+    ) },
+    Person.run { create(
+        firstName with "John",
+        lastName with "Smith"
+    ) }  
 )
 ```
 
@@ -58,23 +48,6 @@ Refer to [property operations](properties/operations.md) to see how to apply
 changes to properties.
 
 Example:
-Maryk YAML:
-```yaml
-!Change
-  to: SimpleMarykObject
-  objects:
-  - key: MYc6LBYcT38nWxoE1ahNxA
-    changes:
-      !Check
-        firstName: Jane
-      !Change
-        lastName: Doe
-  - key: lneV6ioyQL0vnbkLqwVw+A
-    changes:
-      !Change
-        lastName: Smith
-```
-Kotlin:
 ```kotlin
 val person1Key // Containing the key of person 1 to change
 val person2Key // Containing the key of person 2 to change
@@ -117,16 +90,7 @@ still in the store but not viewable unless specifically requested.
 When applied it will deliver an [`DeleteResponse`](../src/commonMain/kotlin/maryk/core/query/responses/DeleteResponse.kt)
 with a status on each delete.
 
-Maryk YAML:
-```yaml
-!Delete
-  from: Person
-  keys: 
-  - WWurg6ysTsozoMei/SurOw
-  - awfbjYrVQ+cdXblfQKV10A
-  hardDelete: true
-```
-Kotlin:
+Example:
 ```kotlin
 val person1Key // Containing the key of person 1 to change
 val person2Key // Containing the key of person 2 to change
@@ -152,15 +116,7 @@ When applied it will deliver an [`ValuesResponse`](../src/commonMain/kotlin/mary
 with a list with [`ValuesWithMetaData`](../src/commonMain/kotlin/maryk/core/query/ValuesWithMetaData.kt)
 containing the `key`, `object`, `firstVersion`, `lastVersion` and `isDeleted`.
 
-Maryk YAML:
-```yaml
-!Get
-  from: Person
-  keys: 
-  - WWurg6ysTsozoMei/SurOw
-  - awfbjYrVQ+cdXblfQKV10A
-```
-Kotlin:
+Example:
 ```kotlin
 val person1Key // Containing the key of person 1 to change
 val person2Key // Containing the key of person 2 to change
@@ -171,26 +127,7 @@ val getRequest = Person.get(
 )
 ```
 
-With all parameters
-Maryk YAML:
-```yaml
-!Get
-  from: Person
-  keys: 
-  - WWurg6ysTsozoMei/SurOw
-  - awfbjYrVQ+cdXblfQKV10A
-  select:
-  - firstName
-  - lastName
-  where: !And
-  - !Equals
-    firstName: Clark
-  - !Exists lastName
-  order: !Desc lastName
-  toVersion: 2
-  filterSoftDeleted: false
-```
-Kotlin:
+With all parameters:
 ```kotlin
 val person1Key // Containing the key of person 1 to change
 val person2Key // Containing the key of person 2 to change
@@ -224,13 +161,6 @@ When applied it will deliver an [`ValuesResponse`](../src/commonMain/kotlin/mary
 with a list with [`ValuesWithMetaData`](../src/commonMain/kotlin/maryk/core/query/ValuesWithMetaData.kt)
 containing the `key`, `object`, `firstVersion`, `lastVersion` and `isDeleted`.
 
-Maryk YAML:
-```yaml
-!Scan
-  from: Logs
-  startKey: Zk6m4QpZQegUg5s13JVYlQ
-```
-Kotlin:
 ```kotlin
 val timedKey // Key which start at certain time
 
@@ -239,24 +169,7 @@ val scanRequest = Logs.scan(
 )
 ```
 
-With all parameters
-Maryk YAML:
-```yaml
-!Scan
-  from: Logs
-  startKey: Zk6m4QpZQegUg5s13JVYlQ
-  select:
-    - timeStamp
-    - severity
-    - message
-  where: !GreaterThanEquals
-    severity: ERROR
-  order: !Desc timeStamp
-  filterSoftDeleted: false
-  limit: 50
-  toVersion: 2
-```
-Kotlin:
+With all parameters:
 ```kotlin
 val timedKey // Key which start at certain time
 
@@ -292,25 +205,7 @@ Optionally it is possible to pass an `orderedKeys` parameter to a `ScanUpdatesRe
 that list as well. This way you are certain you receive hard deleted values, or added values which had their values changed, 
 so they are within range of the passed order/limit.
 
-Get changes with all parameters
-Maryk YAML:
-```yaml
-!GetUpdates
-  dataModel: Person
-  keys: 
-  - WWurg6ysTsozoMei/SurOw
-  - awfbjYrVQ+cdXblfQKV10A
-  where: !And
-  - !Equals
-    firstName: Clark
-  - !Exists lastName
-  order: !Desc lastName
-  toVersion: 2000
-  filterSoftDeleted: false
-  fromVersion: 1000
-  maxVersions: 100
-```
-Kotlin:
+Get changes with all parameters:
 ```kotlin
 val person1Key // Containing the key of person 1 to change
 val person2Key // Containing the key of person 2 to change
@@ -338,25 +233,7 @@ val getRequest = Person.run {
 }
 ```
 
-Scan updates with all parameters
-Maryk YAML:
-```yaml
-!ScanChanges
-  dataModel: Logs
-  startKey: Zk6m4QpZQegUg5s13JVYlQ
-  where: !GreaterThanEquals
-    severity: ERROR
-  order: !Desc timeStamp
-  filterSoftDeleted: false
-  limit: 50
-  fromVersion: 1000
-  toVersion: 2000
-  maxVersions: 100
-  orderedKeys:
-  - WWurg6ysTsozoMei/SurOw
-  - awfbjYrVQ+cdXblfQKV10A
-```
-Kotlin:
+Scan updates with all parameters:
 ```kotlin
 val timedKey // Key which start at certain time
 
@@ -397,25 +274,7 @@ NOTE: This type cannot have a filter or order on mutable properties since then t
 For example if a value is modified it could lead to a different position in the ordering or can lead to a where filter to
 filter the result away. Use Get/Scan Updates to see changes in these cases. 
 
-Get changes with all parameters
-Maryk YAML:
-```yaml
-!GetChanges
-  dataModel: Person
-  keys: 
-  - WWurg6ysTsozoMei/SurOw
-  - awfbjYrVQ+cdXblfQKV10A
-  where: !And
-  - !Equals
-    firstName: Clark
-  - !Exists lastName
-  order: !Desc lastName
-  toVersion: 2000
-  filterSoftDeleted: false
-  fromVersion: 1000
-  maxVersions: 100
-```
-Kotlin:
+Get changes with all parameters:
 ```kotlin
 val person1Key // Containing the key of person 1 to change
 val person2Key // Containing the key of person 2 to change
@@ -443,22 +302,7 @@ val getRequest = Person.run {
 }
 ```
 
-Scan changes with all parameters
-Maryk YAML:
-```yaml
-!ScanChanges
-  dataModel: Logs
-  startKey: Zk6m4QpZQegUg5s13JVYlQ
-  where: !GreaterThanEquals
-    severity: ERROR
-  order: !Desc timeStamp
-  filterSoftDeleted: false
-  limit: 50
-  fromVersion: 1000
-  toVersion: 2000
-  maxVersions: 100
-```
-Kotlin:
+Scan changes with all parameters:
 ```kotlin
 val timedKey // Key which start at certain time
 

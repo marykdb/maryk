@@ -1,9 +1,9 @@
 # DateTime
 A DateTime Property which can be used to represent the time in a date plus time.
 
-- Maryk Yaml Definition: `DateTime`
 - Kotlin Definition: `DateTimeDefinition`
-- Kotlin Value: `DateTime`
+- Kotlin Value: `LocalDateTime`
+- Maryk Yaml Definition: `DateTime`
 
 ## Usage options
 - Value
@@ -24,41 +24,29 @@ A DateTime Property which can be used to represent the time in a date plus time.
 
 ## Examples
 
-**Example of a YAML DateTime property definition**
-```yaml
-!DateTime
-  precision: SECONDS
-  required: false
-  unique: false
-  final: true
-  default: 2018-04-30T22:22:22
-  minValue: 1900-01-01T00:00:00
-  maxValue: 2099-12-31T23:59:59
-```
-
-**Example of a Kotlin DateTime property definition for use within a Model its PropertyDefinitions**
+**Example of a DateTime property definition for use within a Model its PropertyDefinitions**
 ```kotlin
 val startDateTime by dateTime(
     index = 1u,
     required = false,
     final = true,
     unique = true,
-    default = DateTime(Date(2018, 10, 1),Time(9, 30)),
-    minValue = DateTime(Date(2017, 12, 1),Time(8, 30)),
-    maxValue = DateTime(Date(2022, 12, 1),Time(18, 0)),
+    default = LocalDateTime(LocalDate(2018, 10, 1), LocalTime(9, 30)),
+    minValue = LocalDateTime(LocalDate(2017, 12, 1), LocalTime(8, 30)),
+    maxValue = LocalDateTime(LocalDate(2022, 12, 1), LocalTime(18, 0)),
     precision = TimePrecision.MILLIS
 )
 ```
 
-**Example of a Kotlin DateTime property definition**
+**Example of a separate Kotlin DateTime property definition**
 ```kotlin
 val def = DateTimeDefinition(
     required = false,
     final = true,
     unique = true,
-    default = DateTime(Date(2018, 10, 1),Time(9, 30)),
-    minValue = DateTime(Date(2017, 12, 1),Time(8, 30)),
-    maxValue = DateTime(Date(2022, 12, 1),Time(18, 0)),
+    default = LocalDateTime(Date(2018, 10, 1),Time(9, 30)),
+    minValue = LocalDateTime(Date(2017, 12, 1),Time(8, 30)),
+    maxValue = LocalDateTime(Date(2022, 12, 1),Time(18, 0)),
     precision = TimePrecision.MILLIS
 )
 ```

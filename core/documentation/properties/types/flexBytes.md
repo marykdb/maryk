@@ -1,9 +1,9 @@
 # Flex bytes
 Defines a property of a flexible bytes length.
 
-- Maryk Yaml Definition: `FlexBytes`
 - Kotlin Definition: `FlexBytesDefinition`
 - Kotlin Value: `ByteArray`
+- Maryk Yaml Definition: `FlexBytes`
 
 ## Usage options
 - Value
@@ -24,21 +24,7 @@ Defines a property of a flexible bytes length.
 
 ## Examples
 
-**Example of a YAML Flex Bytes property definition**
-```yaml
-!FlexBytes
-  byteSize: 4
-  required: false
-  unique: false
-  final: true
-  minSize: 1
-  maxSize: 6
-  default: BB # Base64 value
-  minValue: AA # Base64 value
-  maxValue: //////////8 # Base64 value
-```
-
-**Example of a Kotlin Flex Bytes property definition for use within a Model its PropertyDefinitions**
+**Example of a Flex Bytes property definition for use within a Model its PropertyDefinitions**
 ```kotlin
 val value by flexBytes(
     index = 1u,
@@ -53,7 +39,7 @@ val value by flexBytes(
 )
 ```
 
-**Example of a Kotlin Flex Bytes property definition**
+**Example of a separate Flex Bytes property definition**
 ```kotlin
 val def = FlexBytesDefinition(
     required = false,

@@ -5,9 +5,9 @@ added multiple times.
 See [properties page](../properties.md) to see which property types it can contain.
 Property definitions need to be required and values can thus not be null.
 
-- Maryk Yaml Definition: `List`
 - Kotlin Definition: `ListDefinition<T>` T is for type of value definition
 - Kotlin Value: `List`
+- Maryk Yaml Definition: `List`
 
 ## Usage options
 - Value
@@ -24,17 +24,7 @@ Property definitions need to be required and values can thus not be null.
 
 ## Examples
 
-**Example of a YAML List property definition**
-```yaml
-!List
-  valueDefinition: !String
-  required: false
-  final: true
-  minSize: 1
-  maxSize: 10
-```
-
-**Example of a Kotlin List property definition for use within a Model its PropertyDefinitions**
+**Example of a List property definition for use within a Model its PropertyDefinitions**
 ```kotlin
 val names by list(
     index = 1u,
@@ -44,7 +34,7 @@ val names by list(
 )
 ```
 
-**Example of a Kotlin List property definition**
+**Example of a separate List property definition**
 ```kotlin
 val def = ListDefinition(
     required = false,
@@ -63,16 +53,6 @@ The current value can be compared against `valueToCompare`
 
 **Example on a model with a list containing strings.**
 
-Maryk Yaml:
-```yaml
-!ListChange
-  listOfStrings:
-    addValuesToEnd:
-    - three 
-    - four
-    deleteValues: [one, two]
-```
-Kotlin:
 ```kotlin
 ListChange(
     Model { listOfStrings::ref }.change(
@@ -95,16 +75,6 @@ ListChange(
         deleteAtIndex = setOf(1, 2)
     )
 )
-```
-
-Maryk Yaml:
-```yaml
-!ListChange
-  listOfStrings:
-    addValuesAtIndex:
-      0: three 
-      1: four
-    deleteAtIndex: [1, 2]
 ```
 
 ## Storage Byte representation

@@ -1,9 +1,9 @@
 # Boolean
 Boolean true or false.
 
-- Maryk Yaml Definition: `Boolean`
 - Kotlin Definition: `BooleanDefinition`
 - Kotlin Value: `Boolean`
+- Maryk Yaml Definition: `Boolean`
 
 ## Usage options
 - Value
@@ -19,15 +19,7 @@ Boolean true or false.
 
 ## Examples
 
-**Example of a YAML Boolean property definition**
-```yaml
-!Boolean
-  required: false
-  final: true
-  default: true
-```
-
-**Example of a Kotlin Boolean property definition for use within a Model its PropertyDefinitions**
+**Example of a Boolean property definition for use within a Model its PropertyDefinitions**
 ```kotlin
 val isActivated by boolean(
     index = 1u,
@@ -37,7 +29,7 @@ val isActivated by boolean(
 )
 ```
 
-**Example of a Kotlin Boolean property definition**
+**Example of a Boolean property definition**
 ```kotlin
 val def = BooleanDefinition(
     required = true,

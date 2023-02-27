@@ -9,26 +9,25 @@ These operations can be defined in Kotlin or any of the serialization formats Ma
 ## Example models
 
 This Person model has 2 top level fields (firstName, lastName) and an Embed named Address 
-```yaml
-name: Person
-? 0: firstName
-: !String
-? 1: lastName
-: !String
-? 2: livingAddress
-: !Embed
-  dataModel: Address
+```kotlin
+object Person : RootModel<Person> {
+    val firstName = string(index = 1u)
+    val lastName = string(index = 2u)
+    val livingAddress = embed(
+        index = 3u,
+        dataModel = { Address }
+    )
+}
 ```
 
-```yaml
-name: Address
-? 0: street
-: !String
-? 1: city
-: !String
+```kotlin
+object Address : Model<Address> {
+  val street = string(index = 1u)
+  val city = string(index = 2u)
+}
 ```
 
-## Creating property references in Kotlin
+## Creating property references
 
 With compiled models Kotlin produces type strict property definitions. This means your IDE will
 help to validate and autocomplete them.

@@ -5,11 +5,11 @@ See [properties page](../properties.md) to see which property types it can conta
 as key and as value. Property definitions need to be required and values can thus not
 be null.
 
-- Maryk Yaml Definition: `Map`
 - Kotlin Definition: `MapDefinition<K, V>` 
     - K for type of key definition 
     - V for type of value definition
 - Kotlin Value: `Map`
+- Maryk Yaml Definition: `Map`
 
 ## Usage options
 - Value
@@ -27,19 +27,7 @@ be null.
 
 ## Examples
 
-**Example of a YAML Map property definition**
-```yaml
-!Map
-  keyDefinition: !Number
-    type: UInt32
-  valueDefinition: !String
-  required: false
-  final: true
-  minSize: 1
-  maxSize: 10
-```
-
-**Example of a Kotlin Map property definition for use within a Model its PropertyDefinitions**
+**Example of a Map property definition for use within a Model its PropertyDefinitions**
 ```kotlin
 val mappedNames by map(
     index = 1u,
@@ -50,7 +38,7 @@ val mappedNames by map(
 )
 ```
 
-**Example of a Kotlin Map property definition**
+**Example of a separate Map property definition**
 ```kotlin
 val def = MapDefinition(
     required = false,
@@ -66,18 +54,6 @@ or change the contents. It can be defined with a map with `valuesToAdd` or a set
 `keysToDelete`.
 
 Example on a model with a map containing integers mapped to strings:
-
-Maryk Yaml:
-```yaml
-!MapChange
-  mapOfIntToString:
-    valuesToAdd:
-        3: "three",
-        4: "four"
-    keysToDelete: [1, 2]
-```
-
-Kotlin:
 ```kotlin
 MapChange(
     Model { mapOfIntToString::ref }.change(

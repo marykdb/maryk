@@ -2,9 +2,9 @@
 A property which contains values from selected DataModel. See 
 [DataModels](../../datamodel.md) for more details on how to define DataModels.
 
-- Maryk Yaml Definition: `Embed`
 - Kotlin Definition: `EmbeddedValuesDefinition<DM, P>` DM is DataModel and P the properties
 - Kotlin Value: `Values<DM, P>` DM is DataModel and P the properties 
+- Maryk Yaml Definition: `Embed`
 
 ## Usage options
 - Value
@@ -20,15 +20,7 @@ A property which contains values from selected DataModel. See
 
 ## Examples
 
-**Example of a YAML EmbeddedObject property definition**
-```yaml
-!Embed
-  dataModel: Address
-  required: false
-  final: true
-```
-
-**Example of a Kotlin Embedded Values property definition for use within a Model its PropertyDefinitions**
+**Example of an Embedded Values property definition for use within a Model its PropertyDefinitions**
 ```kotlin
 val address by embed(
     index = 1u,
@@ -38,7 +30,7 @@ val address by embed(
 )
 ```
 
-**Example of a Kotlin Embedded Values property definition**
+**Example of a separate Embedded Values property definition**
 ```kotlin
 val def = EmbeddedValuesDefinition(
     required = false,

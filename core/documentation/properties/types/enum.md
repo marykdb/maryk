@@ -1,9 +1,9 @@
 # Enum
 Contains an enumeration value. The value is limited to one of the values in an enum. 
 
-- Maryk Yaml Definition: `Enum`
 - Kotlin Definition: `EnumDefinition`
 - Kotlin Value: `IndexedEnum`
+- Maryk Yaml Definition: `Enum`
 
 ## Usage options
 - Value
@@ -23,59 +23,7 @@ Contains an enumeration value. The value is limited to one of the values in an e
 
 ## Examples
 
-**Example of a YAML Enum property definition**
-```yaml
-!Enum
-  enum:
-    name: Role
-    cases:
-      1: Admin
-      2: Moderator
-      3: User
-  required: false
-  unique: false
-  final: true
-  default: User
-  minValue: Admin
-  maxValue: User
-```
-
-**Example of a separately defined enum**
-
-This example is useful if the enum is used in multiple locations.
-
-Set in a definitions list
-```yaml
-Role: !EnumDefinition
-  cases:
-    1: Admin
-    2: Moderator
-    3: User
-```
-
-Set inside a property definition
-```yaml
-!Enum
-  required: false
-  enum: Role
-  unique: false
-  final: true
-  default: User
-  minValue: Admin
-  maxValue: User
-```
-
-**Example of a Kotlin Embedded Values property definition for use within a Model its PropertyDefinitions**
-```kotlin
-val address by embed(
-    index = 1u,
-    required = false,
-    final = true,
-    dataModel = { Address }
-)
-```
-
-**Example of a Kotlin Enum definition**
+**Example of an Enum definition**
 ```kotlin
 sealed class Role(index: Int): IndexedEnumImpl<Role>(index) {
     object Admin: Role(1)
@@ -86,7 +34,7 @@ sealed class Role(index: Int): IndexedEnumImpl<Role>(index) {
 }
 ```
 
-**Example of a Kotlin Enum property definition for use within a Model its PropertyDefinitions**
+**Example of an Enum property definition for use within a Model its PropertyDefinitions**
 
 It refers to the earlier Kotlin enum definition
 ```kotlin
@@ -102,7 +50,7 @@ val role by enum(
 )
 ```
 
-**Example of a Kotlin Enum property definition**
+**Example of a separate Enum property definition**
 
 It refers to the earlier Kotlin enum definition
 ```kotlin

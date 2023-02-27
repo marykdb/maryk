@@ -2,9 +2,9 @@
 A Date Property which can be used to represent the date in years, month and date. The 
 year is unsigned so it can contain negative dates
 
-- Maryk Yaml Definition: `Date`
 - Kotlin Definition: `DateDefinition`
-- Kotlin Value: `Date`
+- Kotlin Value: `LocalDate`
+- Maryk Yaml Definition: `Date`
 
 ## Usage options
 - Value
@@ -23,39 +23,28 @@ year is unsigned so it can contain negative dates
 
 ## Examples
 
-**Example of a YAML Date property definition**
-```yaml
-!Date
-  required: false
-  unique: false
-  final: true
-  default: 2018-04-30
-  minValue: 1900-01-01
-  maxValue: 2100-01-01
-```
-
-**Example of a Kotlin Date property definition for use within a Model its PropertyDefinitions**
+**Example of a Date property definition for use within a Model its PropertyDefinitions**
 ```kotlin
 val birthDate by date(
     index = 1u,
     required = false,
     final = true,
     unique = true,
-    default = Date(2018, 4, 30),
-    minValue = Date(1900, 1, 1),
-    maxValue = Date(2100, 1, 1)
+    default = LocalDate(2018, 4, 30),
+    minValue = LocalDate(1900, 1, 1),
+    maxValue = LocalDate(2100, 1, 1)
 )
 ```
 
-**Example of a Kotlin Date property definition**
+**Example of a Date property definition**
 ```kotlin
 val def = DateDefinition(
     required = false,
     final = true,
     unique = true,
-    default = Date(2018, 4, 30),
-    minValue = Date(1900, 1, 1),
-    maxValue = Date(2100, 1, 1)
+    default = LocalDate(2018, 4, 30),
+    minValue = LocalDate(1900, 1, 1),
+    maxValue = LocalDate(2100, 1, 1)
 )
 ```
 

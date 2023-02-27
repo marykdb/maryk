@@ -15,13 +15,6 @@ Check(
 )
 ```
 
-Maryk YAML:
-```yaml
-!Check
-  firstName: John
-  lastName: Smith
-```
-
 ## Change property value
 A property value can be changed with a `PropertyChange`.
 
@@ -30,13 +23,6 @@ Change(
     Person { firstName::ref } with "Jane",
     Person { lastName::ref } with "Doe"
 )
-```
-
-Maryk YAML:
-```yaml
-!Change
-  firstName: Jane
-  lastName: Doe
 ```
 
 ## Delete a property
@@ -48,17 +34,6 @@ Delete(
     Person { firstName::ref },
     Person { lastName::ref }
 )
-```
-
-Maryk YAML:
-```yaml
-# single
-!Delete firstName
-
-# multiple
-!Delete
-- firstName
-- lastName
 ```
 
 

@@ -12,19 +12,6 @@ The following filters operate on a property within a data object which is referr
 ### Exists
 Checks if a value exists.
 
-Maryk YAML:
-```yaml
-# Single check
-!Exists propertyReference
-
-# Check multiple properties
-!Exists 
-  - propertyReference1
-  - propertyReference2
-  - propertyReference3
-```
-
-Kotlin:
 ```kotlin
 Exists(
     propertyReference1,
@@ -36,15 +23,6 @@ Exists(
 ### Equals
 Checks if a property reference's value is equal to the given value.
 
-Maryk YAML:
-```yaml
-!Equals
-  stringPropertyReference: value
-  numberPropertyReference: 5
-
-```
-
-Kotlin:
 ```kotlin
 Equals(
     stringPropertyReference with "value",
@@ -55,14 +33,6 @@ Equals(
 ### GreaterThan
 Checks if the referenced values are greater than the given value.
 
-Maryk YAML:
-```yaml
-!GreaterThan
-  stringPropertyReference: value
-  numberPropertyReference: 42
-```
-
-Kotlin:
 ```kotlin
 GreaterThan(
     stringPropertyReference with "value",
@@ -73,14 +43,6 @@ GreaterThan(
 ### GreaterThanEquals
 Checks if the referenced value is greater than or equal to the given value.
 
-Maryk YAML:
-```yaml
-!GreaterThanEquals
-  stringPropertyReference: value
-  numberPropertyReference: 42
-```
-
-Kotlin:
 ```kotlin
 GreaterThanEquals(
     stringPropertyReference with "value",
@@ -91,15 +53,6 @@ GreaterThanEquals(
 ### LessThan
 Checks if the referenced value is less than the given value.
 
-Maryk YAML:
-```yaml
-!LessThan
-  stringPropertyReference: value
-  numberPropertyReference: 42
-
-```
-
-Kotlin:
 ```kotlin
 LessThan(
     stringPropertyReference with "value",
@@ -110,14 +63,6 @@ LessThan(
 ### LessThanEquals
 Checks if the referenced value is less than or equal to the given value.
 
-Maryk YAML:
-```yaml
-!LessThanEquals
-  stringPropertyReference: value
-  numberPropertyReference: 42
-```
-
-Kotlin:
 ```kotlin
 LessThanEquals(
     stringPropertyReference with "value",
@@ -129,13 +74,6 @@ LessThanEquals(
 Checks if the referenced value is within the given range.
 
 Maryk YAML:
-```yaml
-!Range
-  intPropertyReference: [2, 42]
-  stringPropertyReference: [!Exclude abba, zeplin]
-```
-
-Kotlin:
 ```kotlin
 Range(
     intPropertyReference with 2..42,
@@ -150,14 +88,6 @@ Range(
 ### Prefix
 Checks if the referenced value is prefixed by the given value.
 
-Maryk YAML:
-```yaml
-!Prefix
-  stringPropertyReference: val
-  anotherStringPropertyReference: do
-```
-
-Kotlin:
 ```kotlin
 Prefix(
     stringPropertyReference with "val",
@@ -168,14 +98,6 @@ Prefix(
 ### RegEx
 Checks if the referenced value matches with the given regular expression.
 
-Maryk YAML:
-```yaml
-!RegEx
-  stringPropertyReference: [A-Z]+al.*
-  anotherStringPropertyReference: [E-Z]+al.*
-```
-
-Kotlin:
 ```kotlin
 RegEx(
     stringPropertyReference with "[A-Z]+al.*",
@@ -186,14 +108,6 @@ RegEx(
 ### ValueIn
 Checks if the referenced value is within the set of given values.
 
-Maryk YAML:
-```yaml
-!ValueIn
-  stringPropertyReference: [a, b, value],
-  intPropertyReference: [1, 3, 5]
-```
-
-Kotlin:
 ```kotlin
 ValueIn(
     stringPropertyReference with setOf("a", "b", "value"),
@@ -209,16 +123,6 @@ They run on top of other filters, making it possible to create intricate and hig
 The And filter returns `true` if all the specified filters match. 
 This is an ideal filter to use if you want to find records that meet multiple conditions.
 
-Maryk YAML:
-```yaml
-!And
-  - !Equals
-    stringPropertyReference: value
-  - !GreaterThan
-    intPropertyReference: 42
-```
-
-Kotlin:
 ```kotlin
 And(
     Equals(
@@ -234,16 +138,6 @@ And(
 The Or filter returns `true` if one of the specified filters matches. 
 This is useful if you want to find records that match either of several conditions.
 
-Maryk YAML:
-```yaml
-!Or
-  - !Equals
-    stringPropertyReference: value
-  - !GreaterThan
-    intPropertyReference: 42
-```
-
-Kotlin:
 ```kotlin
 Or(
     Equals(
@@ -259,15 +153,6 @@ Or(
 The Not filter inverts the meaning of the specified filters. If multiple filters are passed, it performs an And operation. 
 This filter is useful if you want to exclude records that meet certain criteria.
 
-Maryk YAML:
-```yaml
-!Not
-  - !Equals
-    stringPropertyReference: value
-  - !Exists intPropertyReference
-```
-
-Kotlin:
 ```kotlin
 Not(
     Equals(stringPropertyReference equals "value"),

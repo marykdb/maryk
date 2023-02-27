@@ -5,9 +5,9 @@ no order.
 See [properties page](../properties.md) to see which property types it can contain.
 Property definitions need to be required and values can thus not be null.
 
-- Maryk Yaml Definition: `Set`
 - Kotlin Definition: `SetDefinition<T>` T is for type of value definition
 - Kotlin Value: `Set`
+- Maryk Yaml Definition: `Set`
 
 ## Usage options
 - Value
@@ -24,17 +24,7 @@ Property definitions need to be required and values can thus not be null.
 
 ## Examples
 
-**Example of a YAML Set property definition**
-```yaml
-!Set
-  valueDefinition: !String
-  required: false
-  final: true
-  minSize: 1
-  maxSize: 10
-```
-
-**Example of a Kotlin Set property definition for use within a Model its PropertyDefinitions**
+**Example of a Set property definition for use within a Model its PropertyDefinitions**
 ```kotlin
 val names by set(
     index = 1u,
@@ -44,7 +34,7 @@ val names by set(
 )
 ```
 
-**Example of a Kotlin Set property definition**
+**Example of a separate Set property definition**
 ```kotlin
 val def = SetDefinition(
     required = true,
@@ -66,14 +56,6 @@ SetChange(
         deleteValues = setOf("one", "two")
     )
 )
-```
-
-Maryk Yaml:
-```yaml
-!SetChange
-  mapOfIntToString:
-    addValues: [three, four]
-    deleteValues: [one, two]
 ```
 
 ## Byte representation

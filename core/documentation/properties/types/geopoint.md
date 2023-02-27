@@ -2,9 +2,9 @@
 Represents a geographical coordinate for a location. The value can contain up 
 to 7 digits. This represents an accuracy of up to ~11mm or ~0.43 inch.
 
-- Maryk Yaml Definition: `GeoPoint`
 - Kotlin Definition: `GeoPointDefinition`
 - Kotlin Value: `GeoPoint`
+- Maryk Yaml Definition: `GeoPoint`
 
 ## Usage options
 - Value
@@ -20,15 +20,7 @@ to 7 digits. This represents an accuracy of up to ~11mm or ~0.43 inch.
 
 ## Examples
 
-**Example of a YAML Enum property definition**
-```yaml
-!GeoPoint
-  required: false
-  final: true
-  default: 52.0906448,5.1212607
-```
-
-**Example of a Kotlin GeoPoint property definition for use within a Model its PropertyDefinitions**
+**Example of a GeoPoint property definition for use within a Model its PropertyDefinitions**
 ```kotlin
 val location by geoPoint(
     index = 1u,
@@ -38,7 +30,7 @@ val location by geoPoint(
 )
 ```
 
-**Example of a Kotlin Enum property definition**
+**Example of a separate Enum property definition**
 ```kotlin
 val def = GeoPointDefinition(
     required = true,

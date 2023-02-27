@@ -1,9 +1,9 @@
 # Fixed bytes
 Defines a property of a fixed bytes length.
 
-- Maryk Yaml Definition: `FixedBytes`
 - Kotlin Definition: `FixedBytesDefinition`
 - Kotlin Value: `ByteArray`
+- Maryk Yaml Definition: `FixedBytes`
 
 ## Usage options
 - Value
@@ -23,19 +23,7 @@ Defines a property of a fixed bytes length.
 
 ## Examples
 
-**Example of a YAML Fixed Bytes property definition**
-```yaml
-!FixedBytes
-  byteSize: 4
-  required: false
-  unique: false
-  final: true
-  default: BBBBBBB # Base64 value
-  minValue: AAAAAAA # Base64 value
-  maxValue: //////8 # Base64 value
-```
-
-**Example of a Kotlin Fixed Bytes property definition for use within a Model its PropertyDefinitions**
+**Example of a Fixed Bytes property definition for use within a Model its PropertyDefinitions**
 ```kotlin
 val value by fixedBytes(
     index = 1u,
@@ -49,7 +37,7 @@ val value by fixedBytes(
 )
 ```
 
-**Example of a Kotlin Fixed Bytes property definition**
+**Example of a separate Kotlin Fixed Bytes property definition**
 ```kotlin
 val def = FixedBytesDefinition(
     required = false,

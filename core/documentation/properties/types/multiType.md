@@ -13,9 +13,9 @@ multi types.
 It is also possible to store the type in the key or index with a Type Reference. This way it will be
 cheaper to query on type.
 
-- Maryk Yaml Definition: `MultiType`
 - Kotlin Definition: `MultiTypeDefinition`
 - Kotlin Value: `TypedValue`
+- Maryk Yaml Definition: `MultiType`
 
 ## Usage options
 - Value
@@ -32,44 +32,10 @@ cheaper to query on type.
 
 ## Examples
 
-**Example of a YAML MultiType property definition**
-```yaml
-!MultiType
-  required: false
-  final: true
-  typeEnum:
-    name: MarykTypeEnum
-    cases:
-      ? 1: T1
-      : !String
-      ? 2: T2
-      : !Number
-        type: SInt32
-```
-
 **Example of a separately defined Multi type enum**
 This example is useful if the multi type definition is used in multiple locations.
 
-Set in a definitions list
-```yaml
-MarykTypeEnum: !TypeDefinition
-  cases:
-    ? 1: T1
-    : !String
-    ? 2: T2
-    : !Number
-      type: SInt32
-```
-
-Set inside a property definition
-```yaml
-!MultiType
-  required: false
-  final: true
-  typeEnum: MarykTypeEnum
-```
-
-**Example of a Kotlin Multi type enum**
+**Example of a Multi type enum**
 ```kotlin
 sealed class MultiType<T: Any>(
     index: UInt,
@@ -88,7 +54,7 @@ sealed class MultiType<T: Any>(
 }
 ```
 
-**Example of a Kotlin multi type property definition for use within a Model its PropertyDefinitions**
+**Example of a multi type property definition for use within a Model its PropertyDefinitions**
 ```kotlin
 val category by multiType(
     index = 1u,
@@ -99,7 +65,7 @@ val category by multiType(
 )
 ```
 
-**Example of a Kotlin Enum property definition**
+**Example of a separate Enum property definition**
 ```kotlin
 val def = MultiTypeDefinition(
     required = false,

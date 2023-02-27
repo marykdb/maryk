@@ -2,9 +2,9 @@
 A Time Property which can be used to represent the time in hours, minutes, seconds and optionally
 in milliseconds and nanoseconds.
 
-- Maryk Yaml Definition: `Time`
 - Kotlin Definition: `TimeDefinition`
-- Kotlin Value : `Time`
+- Kotlin Value : `LocalTime`
+- Maryk Yaml Definition: `Time`
 
 ## Usage options
 - Value
@@ -25,41 +25,29 @@ in milliseconds and nanoseconds.
 
 ## Examples
 
-**Example of a YAML Time property definition**
-```yaml
-!Time
-  precision: SECONDS
-  required: false
-  unique: false
-  final: true
-  default: 12:00:00
-  minValue: 08:00:00
-  maxValue: 17:59:59
-```
-
-**Example of a Kotlin String property definition for use within a Model its PropertyDefinitions**
+**Example of a String property definition for use within a Model its PropertyDefinitions**
 ```kotlin
 val arrivalTime by time(
     index = 1u,
     required = false,
         final = true,
         unique = true,
-        default = Time(12, 0),
-        minValue = Time(8, 30),
-        maxValue = Time(18, 0),
+        default = LocalTime(12, 0),
+        minValue = LocalTime(8, 30),
+        maxValue = LocalTime(18, 0),
         precision = TimePrecision.MILLIS
 )
 ```
 
-**Example of a Kotlin String property definition**
+**Example of a separate String property definition**
 ```kotlin
 val def = TimeDefinition(
     required = false,
     final = true,
     unique = true,
-    default = Time(12, 0),
-    minValue = Time(8, 30),
-    maxValue = Time(18, 0),
+    default = LocalTime(12, 0),
+    minValue = LocalTime(8, 30),
+    maxValue = LocalTime(18, 0),
     precision = TimePrecision.MILLIS
 )
 ```

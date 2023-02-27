@@ -14,46 +14,14 @@ the need for reflection in code implementation.
 
 Let us consider a simple DataModel for a person, which includes their first + last name and date of birth.
 
-To define the model within YAML, you create a basic object with a name and you add the names, indices, types and any
-validations
+To create a model for a data object within Kotlin, you start with creating a kotlin object which extends from
+`RootModel`. Within you define properties by their names, indices, types and any validations.
 
-**Maryk Model YAML:**
-```yaml
-name: Person
-? 1: firstName
-: !String
-? 2: lastName
-: !String
-? 3: dateOfBirth
-: !Date
-```
-
-To create a model for a storable data object within Kotlin, you start with creating a kotlin object which extends from
-`RootDataModel`. Within you include a Properties object which defines the names, indices, types and any validations of
-any of the properties. Furthermore, you add an invoke object to easily instantiate a data object with its properties.
-
-**Kotlin implementation.** Can be generated from Maryk Model YAML
 ```kotlin
-object Person : RootDataModel<Person, Person.Properties>(
-    properties = Properties
-){ 
-    object Properties: PropertyDefinitions() {
-        val firstName by string(1u)
-        val lastName by string(2u)
-        val dateOfBirth by date(3u)
-    }
-
-    operator fun invoke(
-        firstName: String,
-        lastName: String,
-        dateOfBirth: Date
-    ) = map {
-        mapNonNulls(
-            this.firstName with firstName,
-            this.lastName with lastName,
-            this.dateOfBirth with dateOfBirth
-        )
-    }
+object Person : RootModel<Person> { 
+    val firstName by string(index = 1u)
+    val lastName by string(index = 2u)
+    val dateOfBirth by date(index = 3u)
 }
 ```
 
@@ -62,11 +30,13 @@ object Person : RootDataModel<Person, Person.Properties>(
 Here's a demonstration of constructing a new Person DataObject, validating it, and creating a new key to represent it.
 
 ```kotlin
-val johnSmith = Person(
-    firstName = "John",
-    lastName = "Smith",
-    dateOfBirth = Date(2017, 12, 5)
-)
+val johnSmith = Person.run {
+    create(
+        firstName with "John",
+        lastName with "Smith",
+        dateOfBirth with LocalDate(2017, 12, 5),
+    )
+}
 
 // Validate the object, which will throw a PropertyValidationUmbrellaException if it's invalid
 // In this case, since there's no validation on the PropertyDefinitions, validation will succeed
@@ -81,18 +51,16 @@ The basic data models form the foundation for defining data structures. DataMode
 validated. With the exception of RootDataModels, they can be nested within other DataModels to group data more 
 specifically. For example, address details can be stored within a Person DataModel.
 
-If you define the model using Kotlin, any DataModel should extend from the DataModel class.
+If you define the model using Kotlin, any DataModel should extend from the Model class.
 
-** Maryk Yaml example **
+** Example **
 
-```yaml
-name: Address
-? 1: streetName
-: !String
-? 2: city
-: !String
-? 3: zipCode
-: !String
+```kotlin
+object Address : Model<Address> {
+    val streetName = string(index = 1u)
+    val city = string(index = 2u)
+    val zipCode = string(index = 3u)
+}
 ```
 
 ## RootDataModel
@@ -100,7 +68,7 @@ A RootDataModel is essential for the storage of all DataModel structures, as it 
 the root element. This model has additional methods for creating a unique key that is based
 on the data within the object. For more information about keys, refer to the [key page](key.md).
 
-Above example uses a RootDataModel.
+The first example above uses a RootDataModel.
 
 ## ValueDataModel
 ValueDataModels are designed to store objects in a more compact and efficient manner
@@ -123,30 +91,7 @@ To give an example, consider a simple ValueDataModel representing a period by be
 model could include the start and end date, all represented by fixed-size dates. This model could then be used as a key in a map
 to quickly retrieve information related to that period.
 
-###Example:
- 
-**Maryk Yaml Description:**
-```yaml
-name: PersonRoleInPeriod
-? 1: person
-: !Reference
-  dataModel: Person
-? 2: role
-: !Enum
-  dataModel: Role
-? 3: startDate
-: !Date
-? 4: endDate
-: !Date
-```
- 
-```yaml
-// Role.enum.yml
-cases:
-  Admin: 1
-  Moderator: 2
-  User: 3
-```
+### Example:
  
 **Kotlin description** 
 
@@ -158,7 +103,6 @@ sealed class Role(index: Int): IndexedEnumImpl<Role>(index) {
     
     companion object: IndexedEnumDefinition<Role>(Role::class, { arrayOf(Admin, Moderator, User) })
 }
-
  
 data class PersonRoleInPeriod(
     val person: Person,
@@ -166,17 +110,13 @@ data class PersonRoleInPeriod(
     val startDate: Date,
     val endDate: Date
 ) : ValueDataObject(toBytes(person, role, startDate, stopDate)) {
-    object Properties : ObjectProperties<PersonRoleInPeriod>() {
+    companion object: ValueModel<TestValueObject, Companion>(ValueModel::class) {
         val person by reference(1u, dataModel = { Person })
         val role by enum(2u, enum = Role)
         val startDate by date(3u)
         val endDate by date(4u)
-    }
-
-    companion object: ValueDataModel<TestValueObject, Properties>(
-        properties = Properties
-    ) {
-        override fun invoke(values: ObjectValues<TestValueObject, Properties>) = TestValueObject(
+        
+        override fun invoke(values: ObjectValues<TestValueObject, Companion>) = TestValueObject(
             person = values(1u),
             role = values(2u),
             startDate = values(3u),
@@ -199,43 +139,27 @@ allowing for quick querying based on type.
 **Example**
 
 ```kotlin
-data class Post ...
-data class Event ...
-data class Advertisement ...
-
-object TimelineItem: RootDataModel<TimelineItem>(
+object TimelineItem: RootModel<TimelineItem>(
     keyDefinition = Multiple(
         Reversed(Properties.dateOfPosting),
         TypeId(Properties.item)
     ),
     properties = Properties
 ) {
-    object Properties: PropertyDefinitions() {
-        val dateOfPosting by dateTime(
-            index = 1u,
-            final = true,
-            precision = TimePrecision.SECONDS
+    val dateOfPosting by dateTime(
+        index = 1u,
+        final = true,
+        precision = TimePrecision.SECONDS
+    )
+    
+    val item by multiType(
+        index = 2u,
+        final = true,
+        typeMap = mapOf(
+            1 to EmbeddedObjectDefinition(dataModel = { Post }),
+            2 to EmbeddedObjectDefinition(dataModel = { Event }),
+            3 to EmbeddedObjectDefinition(dataModel = { Advertisement })
         )
-        
-        val item by multiType(
-            index = 2u,
-            final = true,
-            typeMap = mapOf(
-                1 to EmbeddedObjectDefinition(dataModel = Post),
-                2 to EmbeddedObjectDefinition(dataModel = Event),
-                3 to EmbeddedObjectDefinition(dataModel = Advertisement)
-            )
-        )
-    }
-
-    operator fun invoke(
-        dateOfPosting: DateTime,
-        item: TypedValue
-    ) = values {
-        mapNonNulls(
-            this.dataOfPosting with dateOfPosting,
-            this.item with item
-        )
-    }
+    )
 }
 ```

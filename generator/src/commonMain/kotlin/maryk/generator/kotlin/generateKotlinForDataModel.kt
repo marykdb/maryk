@@ -8,8 +8,7 @@ fun DataModel<*>.generateKotlin(
     writer: (String) -> Unit
 ) {
     val importsToAdd = mutableSetOf(
-        "maryk.core.models.DataModel",
-        "maryk.core.properties.PropertyDefinitions"
+        "maryk.core.properties.Model",
     )
     val addImport: (String) -> Unit = { importsToAdd.add(it) }
 
@@ -20,32 +19,25 @@ fun DataModel<*>.generateKotlin(
 
     val reservedIndices = this.reservedIndices.let { indices ->
         when {
-            indices.isNullOrEmpty() -> ""
-            else -> "reservedIndices = listOf(${indices.joinToString(", ", postfix = "u")}),\n        "
+            indices.isNullOrEmpty() -> null
+            else -> "reservedIndices = listOf(${indices.joinToString(", ", postfix = "u")}),"
         }
     }
     val reservedNames = this.reservedNames.let { names ->
         when {
-            names.isNullOrEmpty() -> ""
-            else -> "reservedNames = listOf(${names.joinToString(", ", "\"", "\"")}),\n        "
+            names.isNullOrEmpty() -> null
+            else -> "reservedNames = listOf(${names.joinToString(", ", "\"", "\"")}),"
         }
     }
 
-    val code = """
-    object $name : DataModel<$name, $name.Properties>(
-        $reservedIndices${reservedNames}properties = Properties
-    ) {
-        object Properties : PropertyDefinitions() {
-            ${propertiesKotlin.generateDefinitionsForProperties(addImport).prependIndent().trimStart()}
-        }
+    val constructorParameters = arrayOf(reservedIndices, reservedNames)
+        .filterNotNull()
+        .joinToString("\n        ")
+        .let { if (it.isBlank()) "" else "\n        $it\n    " }
 
-        operator fun invoke(
-            ${propertiesKotlin.generateValuesForProperties().prependIndent().prependIndent().prependIndent().trimStart()}
-        ) = values {
-            mapNonNulls(
-                ${propertiesKotlin.generateAssignsForProperties().prependIndent().prependIndent().prependIndent().prependIndent().trimStart()}
-            )
-        }
+    val code = """
+    object $name : Model<$name>($constructorParameters) {
+        ${propertiesKotlin.generateDefinitionsForProperties(addImport).trimStart()}
     }
     """.trimIndent()
 
@@ -67,24 +59,6 @@ internal fun List<KotlinForProperty>.generateDefinitionsForProperties(addImport:
         val ${it.name} by ${it.wrapName}(
             index = ${it.index}u$propertiesToBeAdded
         )"""
-    }
-    return properties
-}
-
-internal fun List<KotlinForProperty>.generateValuesForProperties(): String {
-    var properties = ""
-    for (it in this) {
-        if (properties.isNotEmpty()) properties += ",\n"
-        properties += it.value
-    }
-    return properties
-}
-
-internal fun List<KotlinForProperty>.generateAssignsForProperties(): String {
-    var properties = ""
-    for (it in this) {
-        if (properties.isNotEmpty()) properties += ",\n"
-        properties += it.assign
     }
     return properties
 }

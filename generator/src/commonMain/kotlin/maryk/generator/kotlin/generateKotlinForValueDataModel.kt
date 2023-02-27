@@ -8,9 +8,8 @@ fun ValueDataModel<*, *>.generateKotlin(
     writer: (String) -> Unit
 ) {
     val importsToAdd = mutableSetOf(
-        "maryk.core.models.ValueDataModel",
         "maryk.core.values.ObjectValues",
-        "maryk.core.properties.ObjectPropertyDefinitions",
+        "maryk.core.properties.ValueModel",
         "maryk.core.properties.types.ValueDataObject"
     )
     val addImport: (String) -> Unit = { importsToAdd.add(it) }
@@ -24,14 +23,10 @@ fun ValueDataModel<*, *>.generateKotlin(
     data class $name(
         ${propertiesKotlin.generateObjectValuesForProperties().prependIndent().prependIndent().trimStart()}
     ) : ValueDataObject(toBytes(${propertiesKotlin.generatePropertyNamesForConstructor()})) {
-        object Properties : ObjectPropertyDefinitions<$name>() {
+        companion object : ValueModel<$name, Companion>($name::class) {
             ${propertiesKotlin.generateDefinitionsForObjectProperties(modelName = name, addImport = addImport).prependIndent().trimStart()}
-        }
 
-        companion object : ValueDataModel<$name, Properties>(
-            properties = Properties
-        ) {
-            override fun invoke(values: ObjectValues<$name, Properties>) = $name(
+            override fun invoke(values: ObjectValues<$name, Companion>) = $name(
                 ${propertiesKotlin.generateInvokesForProperties().prependIndent().prependIndent().prependIndent().trimStart()}
             )
         }

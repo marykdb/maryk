@@ -20,11 +20,9 @@ fun RootDataModel<*>.generateKotlin(
     writer: (String) -> Unit
 ) {
     val importsToAdd = mutableSetOf(
-        "maryk.core.models.RootDataModel",
-        "maryk.core.properties.PropertyDefinitions"
+        "maryk.core.properties.RootModel",
     )
     val addImport: (String) -> Unit = { importsToAdd.add(it) }
-
 
     // Add key definitions if they are not the default UUID key
     val versionAsKotlin = if (this.version != Version(1)) {
@@ -33,17 +31,15 @@ fun RootDataModel<*>.generateKotlin(
 
         addImport("maryk.core.properties.types.Version")
 
-        """version = Version($major, $minor$patchValue),
-        """.trimStart()
-    } else ""
+        "version = Version($major, $minor$patchValue)"
+    } else null
 
     // Add key definitions if they are not the default UUID key
     val keyDefAsKotlin = if (this.keyDefinition != UUIDKey) {
         val keyDefs = this.keyDefinition.generateKotlin(packageName, name, addImport)
 
-        """keyDefinition = ${keyDefs.prependIndent().prependIndent().trimStart()},
-        """.trimStart()
-    } else ""
+        "keyDefinition = ${keyDefs.prependIndent().prependIndent().trimStart()}"
+    } else null
 
     // Add indices if they are not null
     val indicesAsKotlin = this.indices?.let { indexables ->
@@ -51,19 +47,19 @@ fun RootDataModel<*>.generateKotlin(
         for (it in indexables) {
             output += it.generateKotlin(packageName, name, addImport)
         }
-        "indices = listOf(\n${output.joinToString(",\n").prependIndent().prependIndent().prependIndent()}\n        ),\n        "
-    } ?: ""
+        "indices = listOf(\n${output.joinToString(",\n").prependIndent().prependIndent().prependIndent()}\n        ),"
+    }
 
     val reservedIndices = this.reservedIndices.let { indices ->
         when {
-            indices.isNullOrEmpty() -> ""
-            else -> "reservedIndices = listOf(${indices.joinToString(", ", postfix = "u")}),\n        "
+            indices.isNullOrEmpty() -> null
+            else -> "reservedIndices = listOf(${indices.joinToString(", ", postfix = "u")})"
         }
     }
     val reservedNames = this.reservedNames.let { names ->
         when {
-            names.isNullOrEmpty() -> ""
-            else -> "reservedNames = listOf(${names.joinToString(", ", "\"", "\"")}),\n        "
+            names.isNullOrEmpty() -> null
+            else -> "reservedNames = listOf(${names.joinToString(", ", "\"", "\"")})"
         }
     }
 
@@ -72,21 +68,14 @@ fun RootDataModel<*>.generateKotlin(
         enumKotlinDefinitions.add(it)
     }
 
-    val code = """
-    object $name : RootDataModel<$name, $name.Properties>(
-        $versionAsKotlin$keyDefAsKotlin$indicesAsKotlin$reservedIndices${reservedNames}properties = Properties
-    ) {
-        object Properties : PropertyDefinitions() {
-            ${propertiesKotlin.generateDefinitionsForProperties(addImport).prependIndent().trimStart()}
-        }
+    val constructorParameters = arrayOf(versionAsKotlin, keyDefAsKotlin, indicesAsKotlin, reservedIndices, reservedNames)
+        .filterNotNull()
+        .joinToString("\n        ")
+        .let { if (it.isBlank()) "" else "\n        $it\n    " }
 
-        operator fun invoke(
-            ${propertiesKotlin.generateValuesForProperties().prependIndent().prependIndent().prependIndent().trimStart()}
-        ) = values {
-            mapNonNulls(
-                ${propertiesKotlin.generateAssignsForProperties().prependIndent().prependIndent().prependIndent().prependIndent().trimStart()}
-            )
-        }
+    val code = """
+    object $name : RootModel<$name>($constructorParameters) {
+        ${propertiesKotlin.generateDefinitionsForProperties(addImport).trimStart()}
     }
     """.trimIndent()
 

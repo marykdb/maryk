@@ -63,18 +63,18 @@ internal fun generateKotlinValue(
     }
     is LocalTime -> {
         when {
-            value.nanosecond != 0 -> "Time(${value.hour}, ${value.minute}, ${value.second}, ${value.nanosecond})"
-            value.second != 0 -> "Time(${value.hour}, ${value.minute}, ${value.second})"
-            else -> "Time(${value.hour}, ${value.minute})"
+            value.nanosecond != 0 -> "LocalTime(${value.hour}, ${value.minute}, ${value.second}, ${value.nanosecond})"
+            value.second != 0 -> "LocalTime(${value.hour}, ${value.minute}, ${value.second})"
+            else -> "LocalTime(${value.hour}, ${value.minute})"
         }
     }
     is LocalDateTime -> {
         when {
             value.nanosecond != 0 -> "LocalDate(${value.year}, ${value.monthNumber}, ${value.dayOfMonth}, ${value.hour}, ${value.minute}, ${value.second}, ${value.nanosecond})"
-            value.second != 0 -> "DateTime(${value.year}, ${value.monthNumber}, ${value.dayOfMonth}, ${value.hour}, ${value.minute}, ${value.second})"
-            value.minute != 0 -> "DateTime(${value.year}, ${value.monthNumber}, ${value.dayOfMonth}, ${value.hour}, ${value.minute})"
-            value.hour != 0 -> "DateTime(${value.year}, ${value.monthNumber}, ${value.dayOfMonth}, ${value.hour})"
-            else -> "DateTime(${value.year}, ${value.monthNumber}, ${value.dayOfMonth})"
+            value.second != 0 -> "LocalDateTime(${value.year}, ${value.monthNumber}, ${value.dayOfMonth}, ${value.hour}, ${value.minute}, ${value.second})"
+            value.minute != 0 -> "LocalDateTime(${value.year}, ${value.monthNumber}, ${value.dayOfMonth}, ${value.hour}, ${value.minute})"
+            value.hour != 0 -> "LocalDateTime(${value.year}, ${value.monthNumber}, ${value.dayOfMonth}, ${value.hour})"
+            else -> "LocalDateTime(${value.year}, ${value.monthNumber}, ${value.dayOfMonth})"
         }
     }
     is LocalDate -> "LocalDate(${value.year}, ${value.monthNumber}, ${value.dayOfMonth})"

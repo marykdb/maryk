@@ -50,7 +50,7 @@ private val dateTimeImports = arrayOf("kotlinx.datetime.LocalDateTime")
 @SharedImmutable
 private val geoPointImports = arrayOf("maryk.core.properties.types.GeoPoint")
 @SharedImmutable
-private val timeImports = arrayOf("maryk.lib.time.Time")
+private val timeImports = arrayOf("kotlinx.datetime.LocalTime")
 @SharedImmutable
 private val multiTypeImports = arrayOf("maryk.core.properties.types.TypedValue")
 @SharedImmutable
@@ -95,14 +95,14 @@ private val definitionNamesMap = mapOf(
     PropertyDefinitionType.Date to PropertyDefinitionKotlinDescriptor(
         className = "DateDefinition",
         wrapFunctionName = "date",
-        kotlinTypeName = { "Date" },
+        kotlinTypeName = { "LocalDate" },
         definitionModel = DateDefinition.Model,
         imports = { dateImports }
     ),
     PropertyDefinitionType.DateTime to PropertyDefinitionKotlinDescriptor(
         className = "DateTimeDefinition",
         wrapFunctionName = "dateTime",
-        kotlinTypeName = { "DateTime" },
+        kotlinTypeName = { "LocalDateTime" },
         definitionModel = DateTimeDefinition.Model,
         imports = { dateTimeImports }
     ),
@@ -304,7 +304,7 @@ private val definitionNamesMap = mapOf(
     PropertyDefinitionType.Time to PropertyDefinitionKotlinDescriptor(
         className = "TimeDefinition",
         wrapFunctionName = "time",
-        kotlinTypeName = { "Time" },
+        kotlinTypeName = { "LocalTime" },
         imports = { timeImports },
         definitionModel = TimeDefinition.Model
     ),

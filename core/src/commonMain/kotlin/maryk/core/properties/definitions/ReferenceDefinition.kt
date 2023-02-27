@@ -10,8 +10,6 @@ import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
-import maryk.core.properties.definitions.contextual.IsDataModelReference
-import maryk.core.properties.definitions.wrapper.ContextualDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
@@ -102,9 +100,9 @@ class ReferenceDefinition<DM : IsRootModel>(
             val minValue by flexBytes(4u, ReferenceDefinition<*>::minValue)
             val maxValue by flexBytes(5u, ReferenceDefinition<*>::maxValue)
             val default by flexBytes(6u, ReferenceDefinition<*>::default)
-            val dataModel: ContextualDefinitionWrapper<IsDataModelReference<IsRootDataModel<*>>, Unit.() -> IsRootModel, ContainsDefinitionsContext, ContextualModelReferenceDefinition<IsRootDataModel<*>, ContainsDefinitionsContext, ContainsDefinitionsContext>, ReferenceDefinition<*>> by contextual<IsDataModelReference<IsRootDataModel<*>>, Unit.() -> IsRootModel, ContainsDefinitionsContext, ContextualModelReferenceDefinition<IsRootDataModel<*>, ContainsDefinitionsContext, ContainsDefinitionsContext>, ReferenceDefinition<*>>(
+            val dataModel by contextual(
                 index = 7u,
-                definition = ContextualModelReferenceDefinition<IsRootDataModel<*>, ContainsDefinitionsContext>(
+                definition = ContextualModelReferenceDefinition(
                     contextualResolver = { context: ContainsDefinitionsContext?, name ->
                         context?.let {
                             @Suppress("UNCHECKED_CAST")

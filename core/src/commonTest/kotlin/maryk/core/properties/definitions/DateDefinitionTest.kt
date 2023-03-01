@@ -73,19 +73,19 @@ internal class DateDefinitionTest {
 
     @Test
     fun convertDefinitionToProtoBufAndBack() {
-        checkProtoBufConversion(this.def, DateDefinition.Model)
-        checkProtoBufConversion(this.defMaxDefined, DateDefinition.Model)
+        checkProtoBufConversion(this.def, DateDefinition.Model.Model)
+        checkProtoBufConversion(this.defMaxDefined, DateDefinition.Model.Model)
     }
 
     @Test
     fun convertDefinitionToJSONAndBack() {
-        checkJsonConversion(this.def, DateDefinition.Model)
-        checkJsonConversion(this.defMaxDefined, DateDefinition.Model)
+        checkJsonConversion(this.def, DateDefinition.Model.Model)
+        checkJsonConversion(this.defMaxDefined, DateDefinition.Model.Model)
     }
 
     @Test
     fun convertDefinitionToYAMLAndBack() {
-        checkYamlConversion(this.def, DateDefinition.Model)
+        checkYamlConversion(this.def, DateDefinition.Model.Model)
 
         expect(
             """
@@ -98,7 +98,7 @@ internal class DateDefinitionTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.defMaxDefined, DateDefinition.Model)
+            checkYamlConversion(this.defMaxDefined, DateDefinition.Model.Model)
         }
     }
 }

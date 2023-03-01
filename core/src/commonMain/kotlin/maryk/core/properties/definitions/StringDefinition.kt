@@ -1,9 +1,9 @@
 package maryk.core.properties.definitions
 
-import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SimpleObjectModel
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
@@ -100,20 +100,17 @@ data class StringDefinition(
         return compatible
     }
 
-    @Suppress("unused")
-    object Model : SimpleObjectDataModel<StringDefinition, ObjectPropertyDefinitions<StringDefinition>>(
-        properties = object : ObjectPropertyDefinitions<StringDefinition>() {
-            val required by boolean(1u, StringDefinition::required, default = true)
-            val final by boolean(2u, StringDefinition::final, default = false)
-            val unique by boolean(3u, StringDefinition::unique, default = false)
-            val minValue by string(4u, StringDefinition::minValue)
-            val maxValue by string(5u, StringDefinition::maxValue)
-            val default by string(6u, StringDefinition::default)
-            val minSize by number(7u, StringDefinition::minSize, type = UInt32)
-            val maxSize by number(8u, StringDefinition::maxSize, type = UInt32)
-            val regEx by string(9u, StringDefinition::regEx)
-        }
-    ) {
+    object Model : SimpleObjectModel<StringDefinition, ObjectPropertyDefinitions<StringDefinition>>() {
+        val required by boolean(1u, StringDefinition::required, default = true)
+        val final by boolean(2u, StringDefinition::final, default = false)
+        val unique by boolean(3u, StringDefinition::unique, default = false)
+        val minValue by string(4u, StringDefinition::minValue)
+        val maxValue by string(5u, StringDefinition::maxValue)
+        val default by string(6u, StringDefinition::default)
+        val minSize by number(7u, StringDefinition::minSize, type = UInt32)
+        val maxSize by number(8u, StringDefinition::maxSize, type = UInt32)
+        val regEx by string(9u, StringDefinition::regEx)
+
         override fun invoke(values: SimpleObjectValues<StringDefinition>) = StringDefinition(
             required = values(1u),
             final = values(2u),

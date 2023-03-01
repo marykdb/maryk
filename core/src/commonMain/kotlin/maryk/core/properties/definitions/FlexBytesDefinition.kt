@@ -1,9 +1,9 @@
 package maryk.core.properties.definitions
 
-import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SimpleObjectModel
 import maryk.core.properties.definitions.PropertyDefinitionType.FlexBytes
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
@@ -76,19 +76,16 @@ data class FlexBytesDefinition(
         return compatible
     }
 
-    @Suppress("unused")
-    object Model : SimpleObjectDataModel<FlexBytesDefinition, ObjectPropertyDefinitions<FlexBytesDefinition>>(
-        properties = object : ObjectPropertyDefinitions<FlexBytesDefinition>() {
-            val required by boolean(1u, FlexBytesDefinition::required, default = true)
-            val final by boolean(2u, FlexBytesDefinition::final, default = false)
-            val unique by boolean(3u, FlexBytesDefinition::unique, default = false)
-            val minValue by flexBytes(4u, FlexBytesDefinition::minValue)
-            val maxValue by flexBytes(5u, FlexBytesDefinition::maxValue)
-            val default by flexBytes(6u, FlexBytesDefinition::default)
-            val minSize by number(7u, FlexBytesDefinition::minSize, type = UInt32)
-            val maxSize by number(8u, FlexBytesDefinition::maxSize, type = UInt32)
-        }
-    ) {
+    object Model : SimpleObjectModel<FlexBytesDefinition, ObjectPropertyDefinitions<FlexBytesDefinition>>() {
+        val required by boolean(1u, FlexBytesDefinition::required, default = true)
+        val final by boolean(2u, FlexBytesDefinition::final, default = false)
+        val unique by boolean(3u, FlexBytesDefinition::unique, default = false)
+        val minValue by flexBytes(4u, FlexBytesDefinition::minValue)
+        val maxValue by flexBytes(5u, FlexBytesDefinition::maxValue)
+        val default by flexBytes(6u, FlexBytesDefinition::default)
+        val minSize by number(7u, FlexBytesDefinition::minSize, type = UInt32)
+        val maxSize by number(8u, FlexBytesDefinition::maxSize, type = UInt32)
+
         override fun invoke(values: SimpleObjectValues<FlexBytesDefinition>) = FlexBytesDefinition(
             required = values(1u),
             final = values(2u),

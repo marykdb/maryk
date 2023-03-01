@@ -74,19 +74,19 @@ internal class GeoPointDefinitionTest {
 
     @Test
     fun convertDefinitionToProtoBufAndBack() {
-        checkProtoBufConversion(this.def, GeoPointDefinition.Model)
-        checkProtoBufConversion(this.defMaxDefined, GeoPointDefinition.Model)
+        checkProtoBufConversion(this.def, GeoPointDefinition.Model.Model)
+        checkProtoBufConversion(this.defMaxDefined, GeoPointDefinition.Model.Model)
     }
 
     @Test
     fun convertDefinitionToJSONAndBack() {
-        checkJsonConversion(this.def, GeoPointDefinition.Model)
-        checkJsonConversion(this.defMaxDefined, GeoPointDefinition.Model)
+        checkJsonConversion(this.def, GeoPointDefinition.Model.Model)
+        checkJsonConversion(this.defMaxDefined, GeoPointDefinition.Model.Model)
     }
 
     @Test
     fun convertDefinitionToYAMLAndBack() {
-        checkYamlConversion(this.def, GeoPointDefinition.Model)
+        checkYamlConversion(this.def, GeoPointDefinition.Model.Model)
 
         expect(
             """
@@ -96,7 +96,7 @@ internal class GeoPointDefinitionTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.defMaxDefined, GeoPointDefinition.Model)
+            checkYamlConversion(this.defMaxDefined, GeoPointDefinition.Model.Model)
         }
     }
 }

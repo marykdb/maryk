@@ -1,9 +1,9 @@
 package maryk.core.properties.definitions
 
-import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SimpleObjectModel
 import maryk.core.properties.definitions.PropertyDefinitionType.FixedBytes
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
@@ -66,26 +66,23 @@ data class FixedBytesDefinition(
         return compatible
     }
 
-    @Suppress("unused")
-    object Model : SimpleObjectDataModel<FixedBytesDefinition, ObjectPropertyDefinitions<FixedBytesDefinition>>(
-        properties = object : ObjectPropertyDefinitions<FixedBytesDefinition>() {
-            val required by boolean(1u, FixedBytesDefinition::required, default = true)
-            val final by boolean(2u, FixedBytesDefinition::final, default = false)
-            val unique by boolean(3u, FixedBytesDefinition::unique, default = false)
-            val minValue by flexBytes(4u, FixedBytesDefinition::minValue)
-            val maxValue by flexBytes(5u, FixedBytesDefinition::maxValue)
-            val default by flexBytes(6u, FixedBytesDefinition::default)
-            val byteSize by number(
-                7u,
-                getter = FixedBytesDefinition::byteSize,
-                type = UInt32,
-                toSerializable = { value, _: IsPropertyContext? ->
-                    value?.toUInt()
-                },
-                fromSerializable = { it?.toInt() }
-            )
-        }
-    ) {
+    object Model : SimpleObjectModel<FixedBytesDefinition, ObjectPropertyDefinitions<FixedBytesDefinition>>() {
+        val required by boolean(1u, FixedBytesDefinition::required, default = true)
+        val final by boolean(2u, FixedBytesDefinition::final, default = false)
+        val unique by boolean(3u, FixedBytesDefinition::unique, default = false)
+        val minValue by flexBytes(4u, FixedBytesDefinition::minValue)
+        val maxValue by flexBytes(5u, FixedBytesDefinition::maxValue)
+        val default by flexBytes(6u, FixedBytesDefinition::default)
+        val byteSize by number(
+            7u,
+            getter = FixedBytesDefinition::byteSize,
+            type = UInt32,
+            toSerializable = { value, _: IsPropertyContext? ->
+                value?.toUInt()
+            },
+            fromSerializable = { it?.toInt() }
+        )
+
         override fun invoke(values: SimpleObjectValues<FixedBytesDefinition>) = FixedBytesDefinition(
             required = values(1u),
             final = values(2u),
@@ -118,6 +115,7 @@ fun IsValuesPropertyDefinitions.fixedBytes(
     )
 }
 
+@Suppress("unused")
 fun <TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.fixedBytes(
     index: UInt,
     getter: (DO) -> TO?,

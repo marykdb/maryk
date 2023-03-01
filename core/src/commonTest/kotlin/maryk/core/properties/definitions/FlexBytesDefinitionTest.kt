@@ -89,19 +89,19 @@ internal class FlexBytesDefinitionTest {
 
     @Test
     fun convertDefinitionToProtoBufAndBack() {
-        checkProtoBufConversion(this.def, FlexBytesDefinition.Model)
-        checkProtoBufConversion(this.defMaxDefined, FlexBytesDefinition.Model)
+        checkProtoBufConversion(this.def, FlexBytesDefinition.Model.Model)
+        checkProtoBufConversion(this.defMaxDefined, FlexBytesDefinition.Model.Model)
     }
 
     @Test
     fun convertDefinitionToJSONAndBack() {
-        checkJsonConversion(this.def, FlexBytesDefinition.Model)
-        checkJsonConversion(this.defMaxDefined, FlexBytesDefinition.Model)
+        checkJsonConversion(this.def, FlexBytesDefinition.Model.Model)
+        checkJsonConversion(this.defMaxDefined, FlexBytesDefinition.Model.Model)
     }
 
     @Test
     fun convertDefinitionToYAMLAndBack() {
-        checkYamlConversion(this.def, FlexBytesDefinition.Model)
+        checkYamlConversion(this.def, FlexBytesDefinition.Model.Model)
 
         expect(
             """
@@ -116,7 +116,7 @@ internal class FlexBytesDefinitionTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.defMaxDefined, FlexBytesDefinition.Model)
+            checkYamlConversion(this.defMaxDefined, FlexBytesDefinition.Model.Model)
         }
     }
 

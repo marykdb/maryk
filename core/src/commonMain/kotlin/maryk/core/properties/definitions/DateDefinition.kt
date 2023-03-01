@@ -10,10 +10,10 @@ import maryk.core.extensions.bytes.decodeZigZag
 import maryk.core.extensions.bytes.encodeZigZag
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SimpleObjectModel
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
@@ -85,17 +85,14 @@ data class DateDefinition(
         }
     }
 
-    @Suppress("unused")
-    object Model : SimpleObjectDataModel<DateDefinition, ObjectPropertyDefinitions<DateDefinition>>(
-        properties = object : ObjectPropertyDefinitions<DateDefinition>() {
-            val required by boolean(1u, DateDefinition::required, default = true)
-            val final by boolean(2u, DateDefinition::final, default = false)
-            val unique by boolean(3u, DateDefinition::unique, default = false)
-            val minValue by date(4u, DateDefinition::minValue)
-            val maxValue by date(5u, DateDefinition::maxValue)
-            val default by date(6u, DateDefinition::default)
-        }
-    ) {
+    object Model : SimpleObjectModel<DateDefinition, ObjectPropertyDefinitions<DateDefinition>>() {
+        val required by boolean(1u, DateDefinition::required, default = true)
+        val final by boolean(2u, DateDefinition::final, default = false)
+        val unique by boolean(3u, DateDefinition::unique, default = false)
+        val minValue by date(4u, DateDefinition::minValue)
+        val maxValue by date(5u, DateDefinition::maxValue)
+        val default by date(6u, DateDefinition::default)
+
         override fun invoke(values: SimpleObjectValues<DateDefinition>) = DateDefinition(
             required = values(1u),
             final = values(2u),

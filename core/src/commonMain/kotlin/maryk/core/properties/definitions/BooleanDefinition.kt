@@ -2,10 +2,10 @@ package maryk.core.properties.definitions
 
 import maryk.core.extensions.bytes.initBoolean
 import maryk.core.extensions.bytes.writeBytes
-import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SimpleObjectModel
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
@@ -48,14 +48,11 @@ data class BooleanDefinition(
         writer.writeBoolean(value)
     }
 
-    @Suppress("unused")
-    object Model : SimpleObjectDataModel<BooleanDefinition, ObjectPropertyDefinitions<BooleanDefinition>>(
-        properties = object : ObjectPropertyDefinitions<BooleanDefinition>() {
-            val required by boolean(1u, BooleanDefinition::required, default = true)
-            val final by boolean(2u, BooleanDefinition::final, default = false)
-            val default by boolean(3u, BooleanDefinition::default)
-        }
-    ) {
+    object Model : SimpleObjectModel<BooleanDefinition, ObjectPropertyDefinitions<BooleanDefinition>>() {
+        val required by boolean(1u, BooleanDefinition::required, default = true)
+        val final by boolean(2u, BooleanDefinition::final, default = false)
+        val default by boolean(3u, BooleanDefinition::default)
+
         override fun invoke(values: SimpleObjectValues<BooleanDefinition>) = BooleanDefinition(
             required = values(1u),
             final = values(2u),

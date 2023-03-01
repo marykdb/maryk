@@ -54,22 +54,22 @@ enum class PropertyDefinitionType(
 @SharedImmutable
 internal val mapOfPropertyDefEmbeddedObjectDefinitions =
     mapOf<PropertyDefinitionType, IsUsableInMultiType<out Any, ContainsDefinitionsContext>>(
-        PropertyDefinitionType.Boolean to EmbeddedObjectDefinition(dataModel = { BooleanDefinition.Model }),
-        PropertyDefinitionType.Date to EmbeddedObjectDefinition(dataModel = { DateDefinition.Model }),
+        PropertyDefinitionType.Boolean to EmbeddedObjectDefinition(dataModel = { BooleanDefinition.Model.Model }),
+        PropertyDefinitionType.Date to EmbeddedObjectDefinition(dataModel = { DateDefinition.Model.Model }),
         PropertyDefinitionType.DateTime to EmbeddedObjectDefinition(dataModel = { DateTimeDefinition.Model }),
         PropertyDefinitionType.Embed to EmbeddedObjectDefinition(dataModel = { EmbeddedValuesDefinition.Model }),
         PropertyDefinitionType.Enum to EmbeddedObjectDefinition(dataModel = { EnumDefinition.Model }),
-        PropertyDefinitionType.FixedBytes to EmbeddedObjectDefinition(dataModel = { FixedBytesDefinition.Model }),
-        PropertyDefinitionType.FlexBytes to EmbeddedObjectDefinition(dataModel = { FlexBytesDefinition.Model }),
-        PropertyDefinitionType.GeoPoint to EmbeddedObjectDefinition(dataModel = { GeoPointDefinition.Model }),
+        PropertyDefinitionType.FixedBytes to EmbeddedObjectDefinition(dataModel = { FixedBytesDefinition.Model.Model }),
+        PropertyDefinitionType.FlexBytes to EmbeddedObjectDefinition(dataModel = { FlexBytesDefinition.Model.Model }),
+        PropertyDefinitionType.GeoPoint to EmbeddedObjectDefinition(dataModel = { GeoPointDefinition.Model.Model }),
         PropertyDefinitionType.IncMap to EmbeddedObjectDefinition(dataModel = { IncrementingMapDefinition.Model }),
         PropertyDefinitionType.List to EmbeddedObjectDefinition(dataModel = { ListDefinition.Model }),
         PropertyDefinitionType.Map to EmbeddedObjectDefinition(dataModel = { MapDefinition.Model }),
         PropertyDefinitionType.MultiType to EmbeddedObjectDefinition(dataModel = { MultiTypeDefinition.Model }),
         PropertyDefinitionType.Number to EmbeddedObjectDefinition(dataModel = { NumberDefinition.Model }),
-        PropertyDefinitionType.Reference to EmbeddedObjectDefinition(dataModel = { ReferenceDefinition.Model }),
+        PropertyDefinitionType.Reference to EmbeddedObjectDefinition(dataModel = { ReferenceDefinition.Model.Model }),
         PropertyDefinitionType.Set to EmbeddedObjectDefinition(dataModel = { SetDefinition.Model }),
-        PropertyDefinitionType.String to EmbeddedObjectDefinition(dataModel = { StringDefinition.Model }),
+        PropertyDefinitionType.String to EmbeddedObjectDefinition(dataModel = { StringDefinition.Model.Model }),
         PropertyDefinitionType.Time to EmbeddedObjectDefinition(dataModel = { TimeDefinition.Model }),
         PropertyDefinitionType.Value to EmbeddedObjectDefinition(dataModel = { ValueObjectDefinition.Model })
     )

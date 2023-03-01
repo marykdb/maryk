@@ -82,19 +82,19 @@ internal class ReferenceDefinitionTest {
 
     @Test
     fun convertDefinitionToProtoBufAndBack() {
-        checkProtoBufConversion(this.def, ReferenceDefinition.Model, { DefinitionsContext() })
-        checkProtoBufConversion(this.defMaxDefined, ReferenceDefinition.Model, { DefinitionsContext() })
+        checkProtoBufConversion(this.def, ReferenceDefinition.Model.Model, { DefinitionsContext() })
+        checkProtoBufConversion(this.defMaxDefined, ReferenceDefinition.Model.Model, { DefinitionsContext() })
     }
 
     @Test
     fun convertDefinitionToJSONAndBack() {
-        checkJsonConversion(this.def, ReferenceDefinition.Model, { DefinitionsContext() })
-        checkJsonConversion(this.defMaxDefined, ReferenceDefinition.Model, { DefinitionsContext() })
+        checkJsonConversion(this.def, ReferenceDefinition.Model.Model, { DefinitionsContext() })
+        checkJsonConversion(this.defMaxDefined, ReferenceDefinition.Model.Model, { DefinitionsContext() })
     }
 
     @Test
     fun convertDefinitionToYAMLAndBack() {
-        checkYamlConversion(this.def, ReferenceDefinition.Model, { DefinitionsContext() })
+        checkYamlConversion(this.def, ReferenceDefinition.Model.Model, { DefinitionsContext() })
 
         expect(
             """
@@ -108,7 +108,7 @@ internal class ReferenceDefinitionTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.defMaxDefined, ReferenceDefinition.Model, { DefinitionsContext() })
+            checkYamlConversion(this.defMaxDefined, ReferenceDefinition.Model.Model, { DefinitionsContext() })
         }
     }
 

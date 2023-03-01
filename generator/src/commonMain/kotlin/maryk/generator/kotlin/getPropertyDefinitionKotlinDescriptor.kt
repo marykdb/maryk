@@ -90,13 +90,13 @@ private val definitionNamesMap = mapOf(
         className = "BooleanDefinition",
         wrapFunctionName = "boolean",
         kotlinTypeName = { "Boolean" },
-        definitionModel = BooleanDefinition.Model
+        definitionModel = BooleanDefinition.Model.Model,
     ),
     PropertyDefinitionType.Date to PropertyDefinitionKotlinDescriptor(
         className = "DateDefinition",
         wrapFunctionName = "date",
         kotlinTypeName = { "LocalDate" },
-        definitionModel = DateDefinition.Model,
+        definitionModel = DateDefinition.Model.Model,
         imports = { dateImports }
     ),
     PropertyDefinitionType.DateTime to PropertyDefinitionKotlinDescriptor(
@@ -141,19 +141,19 @@ private val definitionNamesMap = mapOf(
         className = "FixedBytesDefinition",
         wrapFunctionName = "fixedBytes",
         kotlinTypeName = { "Bytes" },
-        definitionModel = FixedBytesDefinition.Model
+        definitionModel = FixedBytesDefinition.Model.Model,
     ),
     PropertyDefinitionType.FlexBytes to PropertyDefinitionKotlinDescriptor(
         className = "FlexBytesDefinition",
         wrapFunctionName = "flexBytes",
         kotlinTypeName = { "Bytes" },
-        definitionModel = FlexBytesDefinition.Model
+        definitionModel = FlexBytesDefinition.Model.Model,
     ),
     PropertyDefinitionType.GeoPoint to PropertyDefinitionKotlinDescriptor(
         className = "GeoPointDefinition",
         wrapFunctionName = "geoPoint",
         kotlinTypeName = { "GeoPoint" },
-        definitionModel = GeoPointDefinition.Model,
+        definitionModel = GeoPointDefinition.Model.Model,
         imports = { geoPointImports }
     ),
     PropertyDefinitionType.IncMap to PropertyDefinitionKotlinDescriptor(
@@ -269,7 +269,7 @@ private val definitionNamesMap = mapOf(
         wrapFunctionName = "reference",
         kotlinTypeName = { "Key<${it.dataModel.Model.name}>" },
         imports = { keyImports },
-        definitionModel = ReferenceDefinition.Model
+        definitionModel = ReferenceDefinition.Model.Model,
     ),
     PropertyDefinitionType.Set to PropertyDefinitionKotlinDescriptor(
         className = "SetDefinition",
@@ -286,7 +286,7 @@ private val definitionNamesMap = mapOf(
         className = "StringDefinition",
         wrapFunctionName = "string",
         kotlinTypeName = { "String" },
-        definitionModel = StringDefinition.Model
+        definitionModel = StringDefinition.Model.Model,
     ),
     PropertyDefinitionType.Embed to PropertyDefinitionKotlinDescriptor(
         className = "EmbeddedValuesDefinition",

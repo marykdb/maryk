@@ -4,10 +4,10 @@ import maryk.core.extensions.bytes.initInt
 import maryk.core.extensions.bytes.initLongLittleEndian
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeLittleEndianBytes
-import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SimpleObjectModel
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
@@ -69,14 +69,11 @@ data class GeoPointDefinition(
         else -> null
     }
 
-    @Suppress("unused")
-    object Model : SimpleObjectDataModel<GeoPointDefinition, ObjectPropertyDefinitions<GeoPointDefinition>>(
-        properties = object : ObjectPropertyDefinitions<GeoPointDefinition>() {
-            val required by boolean(1u, GeoPointDefinition::required, default = true)
-            val final by boolean(2u, GeoPointDefinition::final, default = false)
-            val default by geoPoint(3u, GeoPointDefinition::default)
-        }
-    ) {
+    object Model : SimpleObjectModel<GeoPointDefinition, ObjectPropertyDefinitions<GeoPointDefinition>>() {
+        val required by boolean(1u, GeoPointDefinition::required, default = true)
+        val final by boolean(2u, GeoPointDefinition::final, default = false)
+        val default by geoPoint(3u, GeoPointDefinition::default)
+
         override fun invoke(values: SimpleObjectValues<GeoPointDefinition>) = GeoPointDefinition(
             required = values(1u),
             final = values(2u),

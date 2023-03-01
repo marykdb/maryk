@@ -2,8 +2,8 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.models.DefinitionDataModel
 import maryk.core.models.IsRootDataModel
+import maryk.core.properties.DefinitionModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsRootModel
 import maryk.core.properties.IsValuesPropertyDefinitions
@@ -91,45 +91,42 @@ class ReferenceDefinition<DM : IsRootModel>(
         return result
     }
 
-    @Suppress("unused")
-    object Model : DefinitionDataModel<ReferenceDefinition<*>>(
-        properties = object : ObjectPropertyDefinitions<ReferenceDefinition<*>>() {
-            val required by boolean(1u, ReferenceDefinition<*>::required, default = true)
-            val final by boolean(2u, ReferenceDefinition<*>::final, default = false)
-            val unique by boolean(3u, ReferenceDefinition<*>::unique, default = false)
-            val minValue by flexBytes(4u, ReferenceDefinition<*>::minValue)
-            val maxValue by flexBytes(5u, ReferenceDefinition<*>::maxValue)
-            val default by flexBytes(6u, ReferenceDefinition<*>::default)
-            val dataModel by contextual(
-                index = 7u,
-                definition = ContextualModelReferenceDefinition(
-                    contextualResolver = { context: ContainsDefinitionsContext?, name ->
-                        context?.let {
-                            @Suppress("UNCHECKED_CAST")
-                            it.dataModels[name] as (Unit.() -> IsRootDataModel<*>)?
-                                ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
-                        } ?: throw ContextNotFoundException()
-                    }
-                ),
-                getter = {
-                    { it.dataModel }
-                },
-                toSerializable = { value: (Unit.() -> IsRootModel)?, _ ->
-                    value?.invoke(Unit)?.let { model: IsRootModel ->
-                        DataModelReference(model.Model.name) { model.Model }
-                    }
-                },
-                fromSerializable = {
-                    it?.let { { it.get(Unit).properties as IsRootModel } }
-                },
-                capturer = { context, dataModel ->
-                    if (!context.dataModels.containsKey(dataModel.name)) {
-                        context.dataModels[dataModel.name] = dataModel.get
-                    }
+    object Model : DefinitionModel<ReferenceDefinition<*>>() {
+        val required by boolean(1u, ReferenceDefinition<*>::required, default = true)
+        val final by boolean(2u, ReferenceDefinition<*>::final, default = false)
+        val unique by boolean(3u, ReferenceDefinition<*>::unique, default = false)
+        val minValue by flexBytes(4u, ReferenceDefinition<*>::minValue)
+        val maxValue by flexBytes(5u, ReferenceDefinition<*>::maxValue)
+        val default by flexBytes(6u, ReferenceDefinition<*>::default)
+        val dataModel by contextual(
+            index = 7u,
+            definition = ContextualModelReferenceDefinition(
+                contextualResolver = { context: ContainsDefinitionsContext?, name ->
+                    context?.let {
+                        @Suppress("UNCHECKED_CAST")
+                        it.dataModels[name] as (Unit.() -> IsRootDataModel<*>)?
+                            ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
+                    } ?: throw ContextNotFoundException()
                 }
-            )
-        }
-    ) {
+            ),
+            getter = {
+                { it.dataModel }
+            },
+            toSerializable = { value: (Unit.() -> IsRootModel)?, _ ->
+                value?.invoke(Unit)?.let { model: IsRootModel ->
+                    DataModelReference(model.Model.name) { model.Model }
+                }
+            },
+            fromSerializable = {
+                it?.let { { it.get(Unit).properties as IsRootModel } }
+            },
+            capturer = { context, dataModel ->
+                if (!context.dataModels.containsKey(dataModel.name)) {
+                    context.dataModels[dataModel.name] = dataModel.get
+                }
+            }
+        )
+
         override fun invoke(values: SimpleObjectValues<ReferenceDefinition<*>>) = ReferenceDefinition(
             required = values(1u),
             final = values(2u),

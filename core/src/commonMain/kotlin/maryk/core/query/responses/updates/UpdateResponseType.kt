@@ -27,10 +27,10 @@ enum class UpdateResponseType(
 
 @SharedImmutable
 internal val mapOfUpdateResponses: Map<UpdateResponseType, EmbeddedObjectDefinition<out IsUpdateResponse<*>, *, *, RequestContext, RequestContext>> = mapOf(
-    UpdateResponseType.Addition to EmbeddedObjectDefinition(dataModel = { AdditionUpdate }),
-    UpdateResponseType.Change to EmbeddedObjectDefinition(dataModel = { ChangeUpdate }),
-    UpdateResponseType.Removal to EmbeddedObjectDefinition(dataModel = { RemovalUpdate }),
-    UpdateResponseType.OrderedKeys to EmbeddedObjectDefinition(dataModel = { OrderedKeysUpdate }),
-    UpdateResponseType.InitialValues to EmbeddedObjectDefinition(dataModel = { InitialValuesUpdate }),
-    UpdateResponseType.InitialChanges to EmbeddedObjectDefinition(dataModel = { InitialChangesUpdate })
+    UpdateResponseType.Addition to EmbeddedObjectDefinition(dataModel = { AdditionUpdate.Model }),
+    UpdateResponseType.Change to EmbeddedObjectDefinition(dataModel = { ChangeUpdate.Model }),
+    UpdateResponseType.Removal to EmbeddedObjectDefinition(dataModel = { RemovalUpdate.Model }),
+    UpdateResponseType.OrderedKeys to EmbeddedObjectDefinition(dataModel = { OrderedKeysUpdate.Model }),
+    UpdateResponseType.InitialValues to EmbeddedObjectDefinition(dataModel = { InitialValuesUpdate.Model }),
+    UpdateResponseType.InitialChanges to EmbeddedObjectDefinition(dataModel = { InitialChangesUpdate.Model })
 )

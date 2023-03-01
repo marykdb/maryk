@@ -1,8 +1,7 @@
 package maryk.core.query.responses.updates
 
-import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.IsRootModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SimpleQueryModel
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.number
@@ -27,8 +26,7 @@ data class ChangeUpdate<DM: IsRootModel>(
 ) : IsUpdateResponse<DM> {
     override val type = Change
 
-    @Suppress("unused")
-    object Properties : ObjectPropertyDefinitions<ChangeUpdate<*>>() {
+    internal companion object : SimpleQueryModel<ChangeUpdate<*>>() {
         val key by addKey(ChangeUpdate<*>::key)
         val version by number(2u, getter = ChangeUpdate<*>::version, type = UInt64)
         val index by number(3u, getter = ChangeUpdate<*>::index, type = SInt32)
@@ -43,11 +41,7 @@ data class ChangeUpdate<DM: IsRootModel>(
             toSerializable = { TypedValue(it.changeType, it) },
             fromSerializable = { it.value }
         )
-    }
 
-    internal companion object : SimpleQueryDataModel<ChangeUpdate<*>>(
-        properties = Properties
-    ) {
         override fun invoke(values: SimpleObjectValues<ChangeUpdate<*>>) = ChangeUpdate<IsRootModel>(
             key = values(1u),
             version = values(2u),

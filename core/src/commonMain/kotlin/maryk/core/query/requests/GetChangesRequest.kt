@@ -5,9 +5,8 @@ package maryk.core.query.requests
 import maryk.core.aggregations.Aggregations
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.QueryDataModel
 import maryk.core.properties.IsRootModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.definitions.embedObject
@@ -70,7 +69,7 @@ data class GetChangesRequest<DM : IsRootModel> internal constructor(
     // Aggregations are not allowed on a get changes request
     override val aggregations: Aggregations? = null
 
-    object Properties : ObjectPropertyDefinitions<GetChangesRequest<*>>() {
+    companion object : QueryModel<GetChangesRequest<*>, Companion>() {
         val from by addDataModel { it.dataModel }
         val keys by list(
             index = 2u,
@@ -87,12 +86,8 @@ data class GetChangesRequest<DM : IsRootModel> internal constructor(
         val filterSoftDeleted by boolean(6u, GetChangesRequest<*>::filterSoftDeleted, default = true)
         val fromVersion by number(7u, GetChangesRequest<*>::fromVersion, UInt64)
         val maxVersions by number(8u, GetChangesRequest<*>::maxVersions, UInt32, maxValue = 1u)
-    }
 
-    companion object : QueryDataModel<GetChangesRequest<*>, Properties>(
-        properties = Properties
-    ) {
-        override fun invoke(values: ObjectValues<GetChangesRequest<*>, Properties>) =
+        override fun invoke(values: ObjectValues<GetChangesRequest<*>, Companion>) =
             GetChangesRequest(
                 dataModel = values(1u),
                 keys = values(2u),

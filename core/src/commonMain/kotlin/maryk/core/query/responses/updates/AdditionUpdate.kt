@@ -3,10 +3,9 @@ package maryk.core.query.responses.updates
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.AbstractValuesDataModel
 import maryk.core.models.IsValuesDataModel
-import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.IsRootModel
 import maryk.core.properties.IsValuesPropertyDefinitions
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SimpleQueryModel
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.contextual.embedContextual
 import maryk.core.properties.definitions.number
@@ -30,8 +29,7 @@ data class AdditionUpdate<DM: IsRootModel>(
 ) : IsUpdateResponse<DM> {
     override val type = Addition
 
-    @Suppress("unused")
-    object Properties : ObjectPropertyDefinitions<AdditionUpdate<*>>() {
+    companion object : SimpleQueryModel<AdditionUpdate<*>>() {
         val key by addKey(AdditionUpdate<*>::key)
         val version by number(2u, getter = AdditionUpdate<*>::version, type = UInt64)
         val firstVersion by number(3u, getter = AdditionUpdate<*>::firstVersion, type = UInt64)
@@ -46,11 +44,7 @@ data class AdditionUpdate<DM: IsRootModel>(
                     ?: throw ContextNotFoundException()
             }
         )
-    }
 
-    internal companion object : SimpleQueryDataModel<AdditionUpdate<*>>(
-        properties = Properties
-    ) {
         override fun invoke(values: SimpleObjectValues<AdditionUpdate<*>>) = AdditionUpdate<IsRootModel>(
             key = values(1u),
             version = values(2u),

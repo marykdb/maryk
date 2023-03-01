@@ -1,9 +1,8 @@
 package maryk.core.query.responses
 
 import maryk.core.aggregations.AggregationsResponse
-import maryk.core.models.QueryDataModel
 import maryk.core.properties.IsRootModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.embedObject
@@ -17,7 +16,7 @@ data class ValuesResponse<DM : IsRootModel>(
     val values: List<ValuesWithMetaData<DM>>,
     val aggregations: AggregationsResponse? = null
 ) : IsDataResponse<DM> {
-    object Properties : ObjectPropertyDefinitions<ValuesResponse<*>>() {
+    companion object : QueryModel<ValuesResponse<*>, Companion>() {
         val dataModel by addDataModel({ it.dataModel })
         val values = ObjectListDefinitionWrapper(
             2u, "values",
@@ -36,12 +35,8 @@ data class ValuesResponse<DM : IsRootModel>(
             dataModel = { AggregationsResponse },
             alternativeNames = setOf("aggs")
         )
-    }
 
-    companion object : QueryDataModel<ValuesResponse<*>, Properties>(
-        properties = Properties
-    ) {
-        override fun invoke(values: ObjectValues<ValuesResponse<*>, Properties>) = ValuesResponse(
+        override fun invoke(values: ObjectValues<ValuesResponse<*>, Companion>) = ValuesResponse(
             dataModel = values(1u),
             values = values(2u),
             aggregations = values(3u)

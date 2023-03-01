@@ -92,7 +92,7 @@ internal class ObjectDataModelTest {
     @Test
     fun constructByMap() {
         expect(testObject) {
-            TestMarykObject.values {
+            TestMarykObject.Model.values {
                 mapNonNulls(
                     string with testObject.string,
                     int with testObject.int,
@@ -108,89 +108,89 @@ internal class ObjectDataModelTest {
 
     @Test
     fun validate() {
-        TestMarykObject.validate(testObject)
+        TestMarykObject.Model.validate(testObject)
     }
 
     @Test
     fun failValidationWithIncorrectValues() {
         assertFailsWith<ValidationUmbrellaException> {
-            TestMarykObject.validate(testObject.copy(int = 9))
+            TestMarykObject.Model.validate(testObject.copy(int = 9))
         }
     }
 
     @Test
     fun getPropertyDefinitionByName() {
-        expect(TestMarykObject.Properties.string) {
-            TestMarykObject.properties["string"] as FlexBytesDefinitionWrapper<*, *, *, *, *>
+        expect(TestMarykObject.string) {
+            TestMarykObject["string"] as FlexBytesDefinitionWrapper<*, *, *, *, *>
         }
-        expect(TestMarykObject.Properties.int) {
-            TestMarykObject.properties["int"] as FixedBytesDefinitionWrapper<*, *, *, *, *>
+        expect(TestMarykObject.int) {
+            TestMarykObject["int"] as FixedBytesDefinitionWrapper<*, *, *, *, *>
         }
-        expect(TestMarykObject.Properties.dateTime) {
-            TestMarykObject.properties["dateTime"] as FixedBytesDefinitionWrapper<*, *, *, *, *>
+        expect(TestMarykObject.dateTime) {
+            TestMarykObject["dateTime"] as FixedBytesDefinitionWrapper<*, *, *, *, *>
         }
-        expect(TestMarykObject.Properties.bool) {
-            TestMarykObject.properties["bool"] as FixedBytesDefinitionWrapper<*, *, *, *, *>
+        expect(TestMarykObject.bool) {
+            TestMarykObject["bool"] as FixedBytesDefinitionWrapper<*, *, *, *, *>
         }
     }
 
     @Test
     fun getPropertyDefinitionByIndex() {
-        expect(TestMarykObject.Properties.string) {
-            TestMarykObject.properties[1u] as FlexBytesDefinitionWrapper<*, *, *, *, *>
+        expect(TestMarykObject.string) {
+            TestMarykObject[1u] as FlexBytesDefinitionWrapper<*, *, *, *, *>
         }
-        expect(TestMarykObject.Properties.int) {
-            TestMarykObject.properties[2u] as FixedBytesDefinitionWrapper<*, *, *, *, *>
+        expect(TestMarykObject.int) {
+            TestMarykObject[2u] as FixedBytesDefinitionWrapper<*, *, *, *, *>
         }
-        expect(TestMarykObject.Properties.uint) {
-            TestMarykObject.properties[3u] as FixedBytesDefinitionWrapper<*, *, *, *, *>
+        expect(TestMarykObject.uint) {
+            TestMarykObject[3u] as FixedBytesDefinitionWrapper<*, *, *, *, *>
         }
-        expect(TestMarykObject.Properties.double) {
-            TestMarykObject.properties[4u] as FixedBytesDefinitionWrapper<*, *, *, *, *>
+        expect(TestMarykObject.double) {
+            TestMarykObject[4u] as FixedBytesDefinitionWrapper<*, *, *, *, *>
         }
-        expect(TestMarykObject.Properties.dateTime) {
-            TestMarykObject.properties[5u] as FixedBytesDefinitionWrapper<*, *, *, *, *>
+        expect(TestMarykObject.dateTime) {
+            TestMarykObject[5u] as FixedBytesDefinitionWrapper<*, *, *, *, *>
         }
-        expect(TestMarykObject.Properties.bool) {
-            TestMarykObject.properties[6u] as FixedBytesDefinitionWrapper<*, *, *, *, *>
+        expect(TestMarykObject.bool) {
+            TestMarykObject[6u] as FixedBytesDefinitionWrapper<*, *, *, *, *>
         }
     }
 
     @Test
     fun getPropertiesByName() {
         expect("hay") {
-            TestMarykObject.properties.getPropertyGetter("string")!!.invoke(testExtendedObject)
+            TestMarykObject.getPropertyGetter("string")!!.invoke(testExtendedObject)
         }
         expect(4) {
-            TestMarykObject.properties.getPropertyGetter("int")!!.invoke(testExtendedObject)
+            TestMarykObject.getPropertyGetter("int")!!.invoke(testExtendedObject)
         }
         expect(LocalDateTime(2017, 12, 4, 12, 13)) {
-            TestMarykObject.properties.getPropertyGetter("dateTime")!!.invoke(testExtendedObject)
+            TestMarykObject.getPropertyGetter("dateTime")!!.invoke(testExtendedObject)
         }
         expect(true) {
-            TestMarykObject.properties.getPropertyGetter("bool")!!.invoke(testExtendedObject)
+            TestMarykObject.getPropertyGetter("bool")!!.invoke(testExtendedObject)
         }
     }
 
     @Test
     fun getPropertiesByIndex() {
         expect("hay") {
-            TestMarykObject.properties.getPropertyGetter(1u)!!.invoke(testExtendedObject)
+            TestMarykObject.getPropertyGetter(1u)!!.invoke(testExtendedObject)
         }
         expect(4) {
-            TestMarykObject.properties.getPropertyGetter(2u)!!.invoke(testExtendedObject)
+            TestMarykObject.getPropertyGetter(2u)!!.invoke(testExtendedObject)
         }
         expect(32u) {
-            TestMarykObject.properties.getPropertyGetter(3u)!!.invoke(testExtendedObject)
+            TestMarykObject.getPropertyGetter(3u)!!.invoke(testExtendedObject)
         }
         expect(3.555) {
-            TestMarykObject.properties.getPropertyGetter(4u)!!.invoke(testExtendedObject)
+            TestMarykObject.getPropertyGetter(4u)!!.invoke(testExtendedObject)
         }
         expect(LocalDateTime(2017, 12, 4, 12, 13)) {
-            TestMarykObject.properties.getPropertyGetter(5u)!!.invoke(testExtendedObject)
+            TestMarykObject.getPropertyGetter(5u)!!.invoke(testExtendedObject)
         }
         expect(true) {
-            TestMarykObject.properties.getPropertyGetter(6u)!!.invoke(testExtendedObject)
+            TestMarykObject.getPropertyGetter(6u)!!.invoke(testExtendedObject)
         }
     }
 
@@ -201,7 +201,7 @@ internal class ObjectDataModelTest {
                 append(it)
             }
 
-            TestMarykObject.writeJson(testExtendedObject, writer)
+            TestMarykObject.Model.writeJson(testExtendedObject, writer)
         }
 
         assertEquals(JSON, output)
@@ -213,7 +213,7 @@ internal class ObjectDataModelTest {
             val writer = JsonWriter(pretty = true) {
                 append(it)
             }
-            TestMarykObject.writeJson(testExtendedObject, writer)
+            TestMarykObject.Model.writeJson(testExtendedObject, writer)
         }
 
         assertEquals(
@@ -257,7 +257,7 @@ internal class ObjectDataModelTest {
                 append(it)
             }
 
-            TestMarykObject.writeJson(testExtendedObject, writer)
+            TestMarykObject.Model.writeJson(testExtendedObject, writer)
         }
 
         assertEquals(
@@ -295,16 +295,16 @@ internal class ObjectDataModelTest {
         val cache = WriteCache()
 
         bc.reserve(
-            TestMarykObject.calculateProtoBufLength(testExtendedObject, cache)
+            TestMarykObject.Model.calculateProtoBufLength(testExtendedObject, cache)
         )
 
-        TestMarykObject.writeProtoBuf(testExtendedObject, cache, bc::write)
+        TestMarykObject.Model.writeProtoBuf(testExtendedObject, cache, bc::write)
 
         expect("0a036861791008182021713d0ad7a3700c4028ccf794d10530013801420744e024be35fc0b4a08c29102bc87028844520908a4eb021203796573520a08d49a0212046168756d5a0e800000060180000058dfa324010162060a04746573746a0f1a0d0a0b737562496e4d756c7469217a0574657374317a0c616e6f7468657220746573747a04f09fa497") {
             bc.bytes!!.toHex()
         }
 
-        expect(testExtendedObject) { TestMarykObject.readProtoBuf(bc.size, bc::read).toDataObject() }
+        expect(testExtendedObject) { TestMarykObject.Model.readProtoBuf(bc.size, bc::read).toDataObject() }
     }
 
     @Test
@@ -313,7 +313,7 @@ internal class ObjectDataModelTest {
             initByteArrayByHex("930408161205ffffffffff9404a20603686179a80608b00620b906400c70a3d70a3d72c80601d006028a07020105")
         var index = 0
 
-        val map = TestMarykObject.readProtoBuf(bytes.size, {
+        val map = TestMarykObject.Model.readProtoBuf(bytes.size, {
             bytes[index++]
         })
 
@@ -333,7 +333,7 @@ internal class ObjectDataModelTest {
         ).forEach { jsonInput ->
             input = jsonInput
             index = 0
-            expect(testExtendedObject) { TestMarykObject.readJson(reader = jsonReader()).toDataObject() }
+            expect(testExtendedObject) { TestMarykObject.Model.readJson(reader = jsonReader()).toDataObject() }
         }
     }
 
@@ -346,11 +346,11 @@ internal class ObjectDataModelTest {
             JsonWriter(writer = writer),
             JsonWriter(pretty = true, writer = writer)
         ).forEach { generator ->
-            TestMarykObject.writeJson(testExtendedObject, generator)
+            TestMarykObject.Model.writeJson(testExtendedObject, generator)
 
             var index = 0
             val reader = { JsonReader(reader = { output[index++] }) }
-            expect(testExtendedObject) { TestMarykObject.readJson(reader = reader()).toDataObject() }
+            expect(testExtendedObject) { TestMarykObject.Model.readJson(reader = reader()).toDataObject() }
 
             output = ""
         }

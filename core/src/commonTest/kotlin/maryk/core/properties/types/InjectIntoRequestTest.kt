@@ -27,12 +27,12 @@ private val context = RequestContext(mapOf(
     SimpleMarykModel.Model.name toUnitLambda { SimpleMarykModel.Model },
     ReferencesModel.Model.name toUnitLambda { ReferencesModel.Model }
 )).apply {
-    addToCollect("keysToInject", ValuesResponse)
-    addToCollect("referencedKeys", ValuesResponse)
+    addToCollect("keysToInject", ValuesResponse.Model)
+    addToCollect("referencedKeys", ValuesResponse.Model)
 }
 
 class InjectIntoRequestTest {
-    private val getRequestWithInjectable = GetRequest.values(context) {
+    private val getRequestWithInjectable = GetRequest.Model.values(context) {
         mapNonNulls(
             from with SimpleMarykModel,
             keys injectWith Inject("keysToInject", GetRequest { keys::ref }),
@@ -55,7 +55,7 @@ class InjectIntoRequestTest {
     fun testInjectInValuesGetRequest() {
         val requestRef = ValuesResponse { values.atAny { values.refWithDM(ReferencesModel.Model) { references } } }
 
-        val getRequest = GetRequest.values(context) {
+        val getRequest = GetRequest.Model.values(context) {
             mapNonNulls(
                 keys injectWith Inject("referencedKeys", requestRef)
             )
@@ -101,7 +101,7 @@ class InjectIntoRequestTest {
             )
         )
 
-        context.collectResult("referencedKeys", ValuesResponse.asValues(response))
+        context.collectResult("referencedKeys", ValuesResponse.Model.asValues(response))
 
         context.dataModel = ReferencesModel.Model
 
@@ -109,8 +109,8 @@ class InjectIntoRequestTest {
     }
 
     private fun checker(
-        converted: ObjectValues<GetRequest<*>, GetRequest.Properties>,
-        original: ObjectValues<GetRequest<*>, GetRequest.Properties>
+        converted: ObjectValues<GetRequest<*>, GetRequest.Companion>,
+        original: ObjectValues<GetRequest<*>, GetRequest.Companion>
     ) {
         when (val originalKeys = converted.original { keys } as Any?) {
             null -> error("Keys should not be null")
@@ -124,7 +124,7 @@ class InjectIntoRequestTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        context.addToCollect("keysToInject", GetRequest)
+        context.addToCollect("keysToInject", GetRequest.Model)
 
         expect(
             """
@@ -141,7 +141,7 @@ class InjectIntoRequestTest {
         ) {
             checkYamlConversion(
                 getRequestWithInjectable,
-                GetRequest,
+                GetRequest.Model,
                 { context },
                 checker = ::checker
             )
@@ -150,7 +150,7 @@ class InjectIntoRequestTest {
 
     @Test
     fun convertToJSONAndBack() {
-        context.addToCollect("keysToInject", GetRequest)
+        context.addToCollect("keysToInject", GetRequest.Model)
 
         expect(
             """
@@ -159,7 +159,7 @@ class InjectIntoRequestTest {
         ) {
             checkJsonConversion(
                 getRequestWithInjectable,
-                GetRequest,
+                GetRequest.Model,
                 { context },
                 checker = ::checker
             )
@@ -168,7 +168,7 @@ class InjectIntoRequestTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        context.addToCollect("keysToInject", GetRequest)
+        context.addToCollect("keysToInject", GetRequest.Model)
 
         checkProtoBufObjectValuesConversion(
             requests,
@@ -177,8 +177,8 @@ class InjectIntoRequestTest {
             checker = { converted, original ->
                 @Suppress("UNCHECKED_CAST")
                 checker(
-                    converted.original { requests }!![0].value as ObjectValues<GetRequest<*>, GetRequest.Properties>,
-                    original.original { requests }!![0].value as ObjectValues<GetRequest<*>, GetRequest.Properties>
+                    converted.original { requests }!![0].value as ObjectValues<GetRequest<*>, GetRequest.Companion>,
+                    original.original { requests }!![0].value as ObjectValues<GetRequest<*>, GetRequest.Companion>
                 )
             }
         )

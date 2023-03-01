@@ -19,7 +19,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.expect
 
-private val testExtendedObject = TestMarykObject.values {
+private val testExtendedObject = TestMarykObject.Model.values {
     mapNonNulls(
         string with "hay",
         int with 4,
@@ -39,8 +39,8 @@ private val testExtendedObject = TestMarykObject.values {
             LocalTime(10, 3) to "ahum"
         ),
         valueObject with TestValueObject(6, LocalDateTime(2017, 4, 1, 12, 55), true),
-        embeddedObject with EmbeddedMarykObject.values {
-            mapNonNulls(
+        embeddedObject with EmbeddedMarykObject.run {
+            create(
                 value with "test"
             )
         },
@@ -89,7 +89,7 @@ internal class ObjectDataModelAsValuesTest {
             val writer = JsonWriter {
                 append(it)
             }
-            TestMarykObject.writeJson(testExtendedObject, writer)
+            TestMarykObject.Model.writeJson(testExtendedObject, writer)
         }
 
         assertEquals(JSON, output)
@@ -101,7 +101,7 @@ internal class ObjectDataModelAsValuesTest {
             val writer = JsonWriter(pretty = true) {
                 append(it)
             }
-            TestMarykObject.writeJson(testExtendedObject, writer)
+            TestMarykObject.Model.writeJson(testExtendedObject, writer)
         }
 
         assertEquals(
@@ -145,7 +145,7 @@ internal class ObjectDataModelAsValuesTest {
                 append(it)
             }
 
-            TestMarykObject.writeJson(testExtendedObject, writer)
+            TestMarykObject.Model.writeJson(testExtendedObject, writer)
         }
 
         assertEquals(
@@ -183,16 +183,16 @@ internal class ObjectDataModelAsValuesTest {
         val cache = WriteCache()
 
         bc.reserve(
-            TestMarykObject.calculateProtoBufLength(testExtendedObject, cache)
+            TestMarykObject.Model.calculateProtoBufLength(testExtendedObject, cache)
         )
 
-        TestMarykObject.writeProtoBuf(testExtendedObject, cache, bc::write)
+        TestMarykObject.Model.writeProtoBuf(testExtendedObject, cache, bc::write)
 
         expect("0a036861791008182021713d0ad7a3700c4028ccf794d10530013801420744e024be35fc0b4a08c29102bc87028844520908a4eb021203796573520a08d49a0212046168756d5a0e800000060180000058dfa324010162060a04746573746a0f1a0d0a0b737562496e4d756c7469217a0574657374317a0c616e6f7468657220746573747a04f09fa497") {
             bc.bytes!!.toHex()
         }
 
-        expect(testExtendedObject) { TestMarykObject.readProtoBuf(bc.size, bc::read) }
+        expect(testExtendedObject) { TestMarykObject.Model.readProtoBuf(bc.size, bc::read) }
     }
 
     @Test
@@ -208,7 +208,7 @@ internal class ObjectDataModelAsValuesTest {
         ).forEach { jsonInput ->
             input = jsonInput
             index = 0
-            expect(testExtendedObject) { TestMarykObject.readJson(reader = jsonReader()) }
+            expect(testExtendedObject) { TestMarykObject.Model.readJson(reader = jsonReader()) }
         }
     }
 
@@ -221,11 +221,11 @@ internal class ObjectDataModelAsValuesTest {
             JsonWriter(writer = writer),
             JsonWriter(pretty = true, writer = writer)
         ).forEach { generator ->
-            TestMarykObject.writeJson(testExtendedObject, generator)
+            TestMarykObject.Model.writeJson(testExtendedObject, generator)
 
             var index = 0
             val reader = { JsonReader(reader = { output[index++] }) }
-            expect(testExtendedObject) { TestMarykObject.readJson(reader = reader()) }
+            expect(testExtendedObject) { TestMarykObject.Model.readJson(reader = reader()) }
 
             output = ""
         }

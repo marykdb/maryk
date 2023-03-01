@@ -32,12 +32,12 @@ class DeleteResponseTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.deleteResponse, DeleteResponse, { this.context })
+        checkProtoBufConversion(this.deleteResponse, DeleteResponse.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.deleteResponse, DeleteResponse, { this.context })
+        checkJsonConversion(this.deleteResponse, DeleteResponse.Model, { this.context })
     }
 
     @Test
@@ -56,7 +56,7 @@ class DeleteResponseTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.deleteResponse, DeleteResponse, { this.context })
+            checkYamlConversion(this.deleteResponse, DeleteResponse.Model, { this.context })
         }
     }
 }

@@ -21,7 +21,7 @@ private val context = RequestContext(mapOf(
 ))
 
 class ObjectAsMapConversionTest {
-    private val getRequestWithInjectable = GetRequest.values(context) {
+    private val getRequestWithInjectable = GetRequest.Model.values(context) {
         mapNonNulls(
             from with SimpleMarykModel,
             keys with listOf(key1, key2),
@@ -50,7 +50,7 @@ class ObjectAsMapConversionTest {
         ) {
             checkYamlConversion(
                 getRequestWithInjectable,
-                GetRequest,
+                GetRequest.Model,
                 { context },
                 checker = { a, b ->
                     assertEquals(b.toDataObject(), a.toDataObject())
@@ -63,7 +63,7 @@ class ObjectAsMapConversionTest {
     fun convertToJSONAndBack() {
         checkJsonConversion(
             getRequestWithInjectable,
-            GetRequest,
+            GetRequest.Model,
             { context },
             checker = { a, b ->
                 assertEquals(b.toDataObject(), a.toDataObject())
@@ -75,7 +75,7 @@ class ObjectAsMapConversionTest {
     fun convertToProtoBufAndBack() {
         checkProtoBufObjectValuesConversion(
             getRequestWithInjectable,
-            GetRequest,
+            GetRequest.Model,
             { context },
             checker = { a, b ->
                 assertEquals(b.toDataObject(), a.toDataObject())

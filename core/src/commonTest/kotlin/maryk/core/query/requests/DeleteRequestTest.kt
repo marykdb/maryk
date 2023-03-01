@@ -17,12 +17,12 @@ class DeleteRequestTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(deleteRequest, DeleteRequest, { this.context })
+        checkProtoBufConversion(deleteRequest, DeleteRequest.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(deleteRequest, DeleteRequest, { this.context })
+        checkJsonConversion(deleteRequest, DeleteRequest.Model, { this.context })
     }
 
     @Test
@@ -35,7 +35,7 @@ class DeleteRequestTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(deleteRequest, DeleteRequest, { this.context })
+            checkYamlConversion(deleteRequest, DeleteRequest.Model, { this.context })
         }
     }
 }

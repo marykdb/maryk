@@ -40,7 +40,7 @@ class InjectTest {
 
     private val getRequest = TestMarykModel.get(key1, key2)
 
-    private val valuesResponse = ValuesResponse.asValues(
+    private val valuesResponse = ValuesResponse.Model.asValues(
         ValuesResponse(
             TestMarykModel,
             listOf(
@@ -84,7 +84,7 @@ class InjectTest {
 
     @Test
     fun testGetToCollect() {
-        expect(ValuesResponse) { context.getToCollectModel("testCollection")?.model }
+        expect(ValuesResponse.Model) { context.getToCollectModel("testCollection")?.model }
     }
 
     @Test
@@ -141,7 +141,7 @@ class InjectTest {
     fun testInjectInObject() {
         context.addToCollect("where", Equals)
 
-        val getRequest = GetRequest.values(context) {
+        val getRequest = GetRequest.Model.values(context) {
             mapNonNulls(
                 where injectWith Inject("where", EmbeddedMarykModel { this.model { value::ref } })
             )

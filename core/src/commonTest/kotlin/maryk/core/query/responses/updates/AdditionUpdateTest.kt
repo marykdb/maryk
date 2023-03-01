@@ -34,12 +34,12 @@ internal class AdditionUpdateTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.additionUpdate, AdditionUpdate, { this.context })
+        checkProtoBufConversion(this.additionUpdate, AdditionUpdate.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.additionUpdate, AdditionUpdate, { this.context })
+        checkJsonConversion(this.additionUpdate, AdditionUpdate.Model, { this.context })
     }
 
     @Test
@@ -56,7 +56,7 @@ internal class AdditionUpdateTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.additionUpdate, AdditionUpdate, { this.context })
+            checkYamlConversion(this.additionUpdate, AdditionUpdate.Model, { this.context })
         }
     }
 }

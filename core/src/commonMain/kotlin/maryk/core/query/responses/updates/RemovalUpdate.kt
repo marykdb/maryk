@@ -1,8 +1,7 @@
 package maryk.core.query.responses.updates
 
-import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.IsRootModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SimpleQueryModel
 import maryk.core.properties.definitions.enum
 import maryk.core.properties.definitions.number
 import maryk.core.properties.enum.IndexedEnumComparable
@@ -31,16 +30,11 @@ data class RemovalUpdate<DM: IsRootModel>(
 ) : IsUpdateResponse<DM> {
     override val type = Removal
 
-    @Suppress("unused")
-    object Properties : ObjectPropertyDefinitions<RemovalUpdate<*>>() {
+    internal companion object : SimpleQueryModel<RemovalUpdate<*>>() {
         val key by addKey(RemovalUpdate<*>::key)
         val version by number(2u, getter = RemovalUpdate<*>::version, type = UInt64)
         val reason by enum(3u, getter = RemovalUpdate<*>::reason, enum = RemovalReason)
-    }
 
-    internal companion object : SimpleQueryDataModel<RemovalUpdate<*>>(
-        properties = Properties
-    ) {
         override fun invoke(values: SimpleObjectValues<RemovalUpdate<*>>) = RemovalUpdate<IsRootModel>(
             key = values(1u),
             version = values(2u),

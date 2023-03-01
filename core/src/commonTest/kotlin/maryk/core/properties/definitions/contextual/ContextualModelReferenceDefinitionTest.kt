@@ -16,8 +16,8 @@ import kotlin.test.expect
 
 class ContextualModelReferenceDefinitionTest {
     private val modelsToTest = listOf<IsNamedDataModel<*>>(
-        TestMarykObject,
-        EmbeddedMarykObject,
+        TestMarykObject.Model,
+        EmbeddedMarykObject.Model,
         TestMarykModel.Model,
         EmbeddedMarykModel.Model,
     )
@@ -29,8 +29,8 @@ class ContextualModelReferenceDefinitionTest {
 
     private val context = RequestContext(
         dataModels = mapOf(
-            TestMarykObject.name toUnitLambda { TestMarykObject },
-            EmbeddedMarykObject.name toUnitLambda { EmbeddedMarykObject },
+            TestMarykObject.Model.name toUnitLambda { TestMarykObject.Model },
+            EmbeddedMarykObject.Model.name toUnitLambda { EmbeddedMarykObject.Model },
             TestMarykModel.Model.name toUnitLambda { TestMarykModel.Model },
             EmbeddedMarykModel.Model.name toUnitLambda { EmbeddedMarykModel.Model }
         )

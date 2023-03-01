@@ -232,7 +232,7 @@ fun <TO: Any, DO: Any, EDO : Any, P : ObjectPropertyDefinitions<EDO>, DM : Abstr
     shouldSerialize: (Unit.(Any) -> Boolean)? = null,
     capturer: (Unit.(CXI, EDO) -> Unit)? = null
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
-    EmbeddedObjectDefinitionWrapper<EDO, TO, P, DM, CXI, CX, DO>(
+    EmbeddedObjectDefinitionWrapper(
         index,
         name ?: propName,
         EmbeddedObjectDefinition(required, final, dataModel, default),

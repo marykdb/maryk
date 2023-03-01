@@ -11,7 +11,7 @@ class EmbeddedObjectDefinitionWrapperTest {
         index = 1u,
         name = "wrapper",
         definition = EmbeddedObjectDefinition(
-            dataModel = { EmbeddedMarykObject }
+            dataModel = { EmbeddedMarykObject.Model }
         ),
         getter = { _: Any -> null }
     )

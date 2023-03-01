@@ -1,8 +1,7 @@
 package maryk.core.query.responses.updates
 
-import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.IsRootModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SimpleQueryModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.number
@@ -18,8 +17,7 @@ data class InitialChangesUpdate<DM: IsRootModel>(
 ): IsUpdateResponse<DM> {
     override val type = InitialChanges
 
-    @Suppress("unused")
-    internal object Properties : ObjectPropertyDefinitions<InitialChangesUpdate<*>>() {
+    companion object : SimpleQueryModel<InitialChangesUpdate<*>>() {
         val version by number(1u, getter = InitialChangesUpdate<*>::version, type = UInt64)
         val changes by list(
             index = 2u,
@@ -28,11 +26,7 @@ data class InitialChangesUpdate<DM: IsRootModel>(
                 dataModel = { DataObjectVersionedChange }
             )
         )
-    }
 
-    companion object : SimpleQueryDataModel<InitialChangesUpdate<*>>(
-        properties = Properties
-    ) {
         override fun invoke(values: SimpleObjectValues<InitialChangesUpdate<*>>) = InitialChangesUpdate<IsRootModel>(
             version = values(1u),
             changes = values(2u)

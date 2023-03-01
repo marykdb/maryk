@@ -3,8 +3,7 @@ package maryk.core.properties.definitions
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.models.ObjectDataModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.ObjectModel
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
@@ -26,37 +25,33 @@ internal class EmbeddedObjectDefinitionTest {
     private data class MarykObject(
         val string: String = "jur"
     ) {
-        object Properties : ObjectPropertyDefinitions<MarykObject>() {
+        @Suppress("unused")
+        companion object : ObjectModel<MarykObject, Companion>(MarykObject::class) {
             val string by string(
                 1u,
                 getter = MarykObject::string,
                 regEx = "jur"
             )
-        }
 
-        companion object : ObjectDataModel<MarykObject, Properties>(
-            name = "MarykObject",
-            properties = Properties
-        ) {
-            override fun invoke(values: ObjectValues<MarykObject, Properties>) = MarykObject(
+            override fun invoke(values: ObjectValues<MarykObject, Companion>) = MarykObject(
                 values(1u)
             )
         }
     }
 
     private val def = EmbeddedObjectDefinition(
-        dataModel = { MarykObject }
+        dataModel = { MarykObject.Model }
     )
     private val defMaxDefined = EmbeddedObjectDefinition(
         required = false,
         final = true,
-        dataModel = { MarykObject },
+        dataModel = { MarykObject.Model },
         default = MarykObject("default")
     )
 
     @Test
     fun hasValues() {
-        expect(MarykObject) { def.dataModel }
+        expect(MarykObject.Model) { def.dataModel }
     }
 
     @Test
@@ -151,13 +146,13 @@ internal class EmbeddedObjectDefinitionTest {
     fun isCompatible() {
         assertTrue {
             EmbeddedObjectDefinition(
-                dataModel = { MarykObject }
+                dataModel = { MarykObject.Model }
             ).compatibleWith(def)
         }
 
         assertFalse {
             EmbeddedObjectDefinition(
-                dataModel = { TestMarykObject }
+                dataModel = { TestMarykObject.Model }
             ).compatibleWith(def)
         }
     }

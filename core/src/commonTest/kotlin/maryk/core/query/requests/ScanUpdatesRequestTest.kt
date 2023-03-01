@@ -18,14 +18,14 @@ class ScanUpdatesRequestTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(scanUpdatesRequest, ScanUpdatesRequest, { this.context })
-        checkProtoBufConversion(scanUpdatesMaxRequest, ScanUpdatesRequest, { this.context })
+        checkProtoBufConversion(scanUpdatesRequest, ScanUpdatesRequest.Model, { this.context })
+        checkProtoBufConversion(scanUpdatesMaxRequest, ScanUpdatesRequest.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(scanUpdatesRequest, ScanUpdatesRequest, { this.context })
-        checkJsonConversion(scanUpdatesMaxRequest, ScanUpdatesRequest, { this.context })
+        checkJsonConversion(scanUpdatesRequest, ScanUpdatesRequest.Model, { this.context })
+        checkJsonConversion(scanUpdatesMaxRequest, ScanUpdatesRequest.Model, { this.context })
     }
 
     @Test
@@ -41,7 +41,7 @@ class ScanUpdatesRequestTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(scanUpdatesRequest, ScanUpdatesRequest, { this.context })
+            checkYamlConversion(scanUpdatesRequest, ScanUpdatesRequest.Model, { this.context })
         }
 
         expect(
@@ -62,7 +62,7 @@ class ScanUpdatesRequestTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(scanUpdatesMaxRequest, ScanUpdatesRequest, { this.context })
+            checkYamlConversion(scanUpdatesMaxRequest, ScanUpdatesRequest.Model, { this.context })
         }
     }
 }

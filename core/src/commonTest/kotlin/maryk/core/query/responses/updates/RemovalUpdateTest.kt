@@ -28,12 +28,12 @@ internal class RemovalUpdateTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.removalUpdate, RemovalUpdate, { this.context })
+        checkProtoBufConversion(this.removalUpdate, RemovalUpdate.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.removalUpdate, RemovalUpdate, { this.context })
+        checkJsonConversion(this.removalUpdate, RemovalUpdate.Model, { this.context })
     }
 
     @Test
@@ -46,7 +46,7 @@ internal class RemovalUpdateTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.removalUpdate, RemovalUpdate, { this.context })
+            checkYamlConversion(this.removalUpdate, RemovalUpdate.Model, { this.context })
         }
     }
 }

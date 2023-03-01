@@ -1,9 +1,8 @@
 package maryk.core.query.requests
 
 import maryk.core.aggregations.Aggregations
-import maryk.core.models.QueryDataModel
 import maryk.core.properties.IsRootModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.embedObject
 import maryk.core.properties.definitions.number
@@ -36,7 +35,6 @@ fun <DM : IsRootModel> DM.scan(
 ) =
     ScanRequest(this, startKey, select, where, order, limit, includeStart, toVersion, filterSoftDeleted, aggregations)
 
-
 /**
  * A Request to scan DataObjects by key from [startKey] until [limit]
  * for specific [dataModel] and only return [select]
@@ -59,7 +57,7 @@ data class ScanRequest<DM : IsRootModel> internal constructor(
     override val requestType = Scan
     override val responseModel = ValuesResponse
 
-    object Properties : ObjectPropertyDefinitions<ScanRequest<*>>() {
+    companion object : QueryModel<ScanRequest<*>, Companion>() {
         val from by addDataModel { it.dataModel }
         val startKey by addStartKey(ScanRequest<*>::startKey)
         val select by embedObject(3u, ScanRequest<*>::select, dataModel = { RootPropRefGraph })
@@ -70,12 +68,8 @@ data class ScanRequest<DM : IsRootModel> internal constructor(
         val order by addOrder(ScanRequest<*>::order)
         val limit by number(9u, ScanRequest<*>::limit, type = UInt32, default = 100u)
         val includeStart by boolean(10u, ScanRequest<*>::includeStart, default = true)
-    }
 
-    companion object : QueryDataModel<ScanRequest<*>, Properties>(
-        properties = Properties
-    ) {
-        override fun invoke(values: ObjectValues<ScanRequest<*>, Properties>) = ScanRequest(
+        override fun invoke(values: ObjectValues<ScanRequest<*>, Companion>) = ScanRequest(
             dataModel = values(1u),
             startKey = values(2u),
             select = values(3u),

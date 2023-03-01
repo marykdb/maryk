@@ -59,12 +59,12 @@ class AddOrChangeResponseTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.addOrChangeResponse, AddOrChangeResponse, { this.context })
+        checkProtoBufConversion(this.addOrChangeResponse, AddOrChangeResponse.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.addOrChangeResponse, AddOrChangeResponse, { this.context })
+        checkJsonConversion(this.addOrChangeResponse, AddOrChangeResponse.Model, { this.context })
     }
 
     @Test
@@ -99,7 +99,7 @@ class AddOrChangeResponseTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.addOrChangeResponse, AddOrChangeResponse, { this.context })
+            checkYamlConversion(this.addOrChangeResponse, AddOrChangeResponse.Model, { this.context })
         }
     }
 }

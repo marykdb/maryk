@@ -68,14 +68,14 @@ internal fun <DM : IsDataModelResponse<*>> ObjectPropertyDefinitions<DM>.addData
 internal val statusesMultiType = InternalMultiTypeDefinition(
     typeEnum = StatusType,
     definitionMap = mapOf(
-        ADD_SUCCESS to EmbeddedObjectDefinition(dataModel = { AddSuccess }),
-        CHANGE_SUCCESS to EmbeddedObjectDefinition(dataModel = { ChangeSuccess }),
-        DELETE_SUCCESS to EmbeddedObjectDefinition(dataModel = { DeleteSuccess }),
-        AUTH_FAIL to EmbeddedObjectDefinition(dataModel = { AuthFail }),
-        REQUEST_FAIL to EmbeddedObjectDefinition(dataModel = { RequestFail }),
-        SERVER_FAIL to EmbeddedObjectDefinition(dataModel = { ServerFail }),
-        VALIDATION_FAIL to EmbeddedObjectDefinition(dataModel = { ValidationFail }),
-        ALREADY_EXISTS to EmbeddedObjectDefinition(dataModel = { AlreadyExists }),
-        DOES_NOT_EXIST to EmbeddedObjectDefinition(dataModel = { DoesNotExist })
+        ADD_SUCCESS to EmbeddedObjectDefinition(dataModel = { AddSuccess.Model }),
+        CHANGE_SUCCESS to EmbeddedObjectDefinition(dataModel = { ChangeSuccess.Model }),
+        DELETE_SUCCESS to EmbeddedObjectDefinition(dataModel = { DeleteSuccess.Model }),
+        AUTH_FAIL to EmbeddedObjectDefinition(dataModel = { AuthFail.Model }),
+        REQUEST_FAIL to EmbeddedObjectDefinition(dataModel = { RequestFail.Model }),
+        SERVER_FAIL to EmbeddedObjectDefinition(dataModel = { ServerFail.Model }),
+        VALIDATION_FAIL to EmbeddedObjectDefinition(dataModel = { ValidationFail.Model }),
+        ALREADY_EXISTS to EmbeddedObjectDefinition(dataModel = { AlreadyExists.Model }),
+        DOES_NOT_EXIST to EmbeddedObjectDefinition(dataModel = { DoesNotExist.Model })
     )
 )

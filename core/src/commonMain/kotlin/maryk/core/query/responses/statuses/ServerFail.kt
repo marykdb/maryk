@@ -1,8 +1,7 @@
 package maryk.core.query.responses.statuses
 
-import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.IsRootModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SimpleQueryModel
 import maryk.core.properties.definitions.string
 import maryk.core.query.responses.statuses.StatusType.SERVER_FAIL
 import maryk.core.values.SimpleObjectValues
@@ -15,13 +14,11 @@ data class ServerFail<DM : IsRootModel>(
     override val statusType = SERVER_FAIL
 
     @Suppress("unused")
-    internal companion object : SimpleQueryDataModel<ServerFail<*>>(
-        properties = object : ObjectPropertyDefinitions<ServerFail<*>>() {
-            val reason by string(
-                1u, ServerFail<*>::reason
-            )
-        }
-    ) {
+    internal companion object : SimpleQueryModel<ServerFail<*>>() {
+        val reason by string(
+            1u, ServerFail<*>::reason
+        )
+
         override fun invoke(values: SimpleObjectValues<ServerFail<*>>) =
             ServerFail<IsRootModel>(
                 reason = values(1u)

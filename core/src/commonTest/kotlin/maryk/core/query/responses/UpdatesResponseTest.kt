@@ -43,12 +43,12 @@ class UpdatesResponseTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(updatesResponse, UpdatesResponse, { this.context })
+        checkProtoBufConversion(updatesResponse, UpdatesResponse.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(updatesResponse, UpdatesResponse, { this.context })
+        checkJsonConversion(updatesResponse, UpdatesResponse.Model, { this.context })
     }
 
     @Test
@@ -88,7 +88,7 @@ class UpdatesResponseTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(updatesResponse, UpdatesResponse, { this.context })
+            checkYamlConversion(updatesResponse, UpdatesResponse.Model, { this.context })
         }
     }
 }

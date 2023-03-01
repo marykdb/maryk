@@ -3,9 +3,8 @@ package maryk.core.query.requests
 import maryk.core.aggregations.Aggregations
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.QueryDataModel
 import maryk.core.properties.IsRootModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.definitions.embedObject
@@ -83,7 +82,7 @@ data class ScanUpdatesRequest<DM : IsRootModel> internal constructor(
     override val aggregations: Aggregations? = null
 
     @Suppress("unused")
-    object Properties : ObjectPropertyDefinitions<ScanUpdatesRequest<*>>() {
+    companion object : QueryModel<ScanUpdatesRequest<*>, Companion>() {
         val from by addDataModel { it.dataModel }
         val startKey by addStartKey(ScanUpdatesRequest<*>::startKey)
         val select by embedObject(3u, ScanUpdatesRequest<*>::select, dataModel = { RootPropRefGraph })
@@ -103,12 +102,8 @@ data class ScanUpdatesRequest<DM : IsRootModel> internal constructor(
                 }
             )
         )
-    }
 
-    companion object : QueryDataModel<ScanUpdatesRequest<*>, Properties>(
-        properties = Properties
-    ) {
-        override fun invoke(values: ObjectValues<ScanUpdatesRequest<*>, Properties>) =
+        override fun invoke(values: ObjectValues<ScanUpdatesRequest<*>, Companion>) =
             ScanUpdatesRequest(
                 dataModel = values(1u),
                 startKey = values(2u),

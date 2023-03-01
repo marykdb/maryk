@@ -2,9 +2,8 @@ package maryk.core.query.responses.updates
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.IsRootModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SimpleQueryModel
 import maryk.core.properties.definitions.FlexBytesDefinition
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.definitions.list
@@ -31,7 +30,7 @@ data class OrderedKeysUpdate<DM: IsRootModel>(
     override val type = OrderedKeys
 
     @Suppress("unused")
-    object Properties : ObjectPropertyDefinitions<OrderedKeysUpdate<*>>() {
+    internal companion object : SimpleQueryModel<OrderedKeysUpdate<*>>() {
         val keys by list(
             index = 1u,
             getter = OrderedKeysUpdate<*>::keys,
@@ -50,11 +49,7 @@ data class OrderedKeysUpdate<DM: IsRootModel>(
             required = false,
             valueDefinition = FlexBytesDefinition()
         )
-    }
 
-    internal companion object : SimpleQueryDataModel<OrderedKeysUpdate<*>>(
-        properties = Properties
-    ) {
         override fun invoke(values: SimpleObjectValues<OrderedKeysUpdate<*>>) = OrderedKeysUpdate<IsRootModel>(
             keys = values(1u),
             version = values(2u),

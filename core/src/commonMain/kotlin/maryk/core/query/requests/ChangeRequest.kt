@@ -1,8 +1,7 @@
 package maryk.core.query.requests
 
-import maryk.core.models.QueryDataModel
 import maryk.core.properties.IsRootModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.query.changes.DataObjectChange
@@ -24,8 +23,7 @@ data class ChangeRequest<DM : IsRootModel> internal constructor(
     override val requestType = Change
     override val responseModel = ChangeResponse
 
-    @Suppress("unused")
-    object Properties : ObjectPropertyDefinitions<ChangeRequest<*>>() {
+    companion object : QueryModel<ChangeRequest<*>, Companion>() {
         val to by addDataModel { it.dataModel }
         val objects by list(
             index = 2u,
@@ -34,12 +32,8 @@ data class ChangeRequest<DM : IsRootModel> internal constructor(
                 dataModel = { DataObjectChange }
             )
         )
-    }
 
-    companion object : QueryDataModel<ChangeRequest<*>, Properties>(
-        properties = Properties
-    ) {
-        override fun invoke(values: ObjectValues<ChangeRequest<*>, Properties>) = ChangeRequest(
+        override fun invoke(values: ObjectValues<ChangeRequest<*>, Companion>) = ChangeRequest(
             dataModel = values(1u),
             objects = values(2u)
         )

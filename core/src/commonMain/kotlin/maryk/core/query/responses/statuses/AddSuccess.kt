@@ -1,8 +1,7 @@
 package maryk.core.query.responses.statuses
 
-import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.IsRootModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SimpleQueryModel
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.number
@@ -23,25 +22,22 @@ data class AddSuccess<DM : IsRootModel>(
 ) : IsAddResponseStatus<DM> {
     override val statusType = ADD_SUCCESS
 
-    @Suppress("unused")
-    internal companion object : SimpleQueryDataModel<AddSuccess<*>>(
-        properties = object : ObjectPropertyDefinitions<AddSuccess<*>>() {
-            val key by addKey(AddSuccess<*>::key)
-            val version by number(2u, getter = AddSuccess<*>::version, type = UInt64)
+    internal companion object : SimpleQueryModel<AddSuccess<*>>() {
+        val key by addKey(AddSuccess<*>::key)
+        val version by number(2u, getter = AddSuccess<*>::version, type = UInt64)
 
-            val changes by list(
-                index = 3u,
-                getter = AddSuccess<*>::changes,
-                        default = emptyList(),
-                        valueDefinition = InternalMultiTypeDefinition(
-                            typeEnum = ChangeType,
-                            definitionMap = mapOfChangeDefinitions
-                    ),
-                    toSerializable = { TypedValue(it.changeType, it) },
-                    fromSerializable = { it.value }
-                )
-            }
-    ) {
+        val changes by list(
+            index = 3u,
+            getter = AddSuccess<*>::changes,
+            default = emptyList(),
+            valueDefinition = InternalMultiTypeDefinition(
+                typeEnum = ChangeType,
+                definitionMap = mapOfChangeDefinitions
+            ),
+            toSerializable = { TypedValue(it.changeType, it) },
+            fromSerializable = { it.value }
+        )
+
         override fun invoke(values: SimpleObjectValues<AddSuccess<*>>) =
             AddSuccess<IsRootModel>(
                 key = values(1u),

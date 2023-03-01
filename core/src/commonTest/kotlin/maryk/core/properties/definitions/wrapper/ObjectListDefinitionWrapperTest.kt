@@ -11,13 +11,13 @@ class ObjectListDefinitionWrapperTest {
     private val def = ObjectListDefinitionWrapper(
         index = 1u,
         name = "wrapper",
-        properties = SimpleMarykObject.Properties,
+        properties = SimpleMarykObject,
         definition = ListDefinition(
             valueDefinition = EmbeddedObjectDefinition(
-                dataModel = { SimpleMarykObject }
+                dataModel = { SimpleMarykObject.Model }
             )
         ),
-        getter = { _: Any -> listOf<Any>() }
+        getter = { _: Any -> listOf() }
     )
 
     @Test

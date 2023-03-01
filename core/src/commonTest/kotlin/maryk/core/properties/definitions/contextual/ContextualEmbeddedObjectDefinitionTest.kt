@@ -21,7 +21,7 @@ class ContextualEmbeddedObjectDefinitionTest {
 
     private val context = ModelContext(
         definitionsContext = null,
-        model = { SimpleMarykObject }
+        model = { SimpleMarykObject.Model }
     )
 
     @Test

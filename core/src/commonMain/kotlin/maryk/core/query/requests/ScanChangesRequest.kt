@@ -2,9 +2,8 @@ package maryk.core.query.requests
 
 import maryk.core.aggregations.Aggregations
 import maryk.core.exceptions.RequestException
-import maryk.core.models.QueryDataModel
 import maryk.core.properties.IsRootModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.embedObject
 import maryk.core.properties.definitions.number
@@ -107,8 +106,7 @@ data class ScanChangesRequest<DM : IsRootModel> internal constructor(
     // Aggregations are not allowed on a scan changes request
     override val aggregations: Aggregations? = null
 
-    @Suppress("unused")
-    object Properties : ObjectPropertyDefinitions<ScanChangesRequest<*>>() {
+    companion object : QueryModel<ScanChangesRequest<*>, Companion>() {
         val from by addDataModel { it.dataModel }
         val startKey by addStartKey(ScanChangesRequest<*>::startKey)
         val select by embedObject(3u, ScanChangesRequest<*>::select, dataModel = { RootPropRefGraph })
@@ -120,12 +118,8 @@ data class ScanChangesRequest<DM : IsRootModel> internal constructor(
         val includeStart by boolean(10u, ScanChangesRequest<*>::includeStart, default = true)
         val fromVersion by number(11u, ScanChangesRequest<*>::fromVersion, UInt64)
         val maxVersions by number(12u, ScanChangesRequest<*>::maxVersions, UInt32, maxValue = 1u)
-    }
 
-    companion object : QueryDataModel<ScanChangesRequest<*>, Properties>(
-        properties = Properties
-    ) {
-        override fun invoke(values: ObjectValues<ScanChangesRequest<*>, Properties>) =
+        override fun invoke(values: ObjectValues<ScanChangesRequest<*>, Companion>) =
             ScanChangesRequest(
                 dataModel = values(1u),
                 startKey = values(2u),

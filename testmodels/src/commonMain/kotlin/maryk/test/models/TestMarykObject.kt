@@ -3,8 +3,7 @@ package maryk.test.models
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
-import maryk.core.models.ObjectDataModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.ObjectModel
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.StringDefinition
@@ -45,7 +44,8 @@ data class TestMarykObject(
     val reference: Key<TestMarykModel>? = null,
     val listOfString: List<String>? = null
 ) {
-    object Properties : ObjectPropertyDefinitions<TestMarykObject>() {
+    @Suppress("unused")
+    companion object : ObjectModel<TestMarykObject, Companion>(TestMarykObject::class) {
         val string by string(
             index = 1u,
             getter = TestMarykObject::string,
@@ -126,7 +126,7 @@ data class TestMarykObject(
         val embeddedObject by embedObject(
             index = 12u,
             getter = TestMarykObject::embeddedObject,
-            dataModel = { EmbeddedMarykObject },
+            dataModel = { EmbeddedMarykObject.Model },
             required = false
         )
 
@@ -150,13 +150,8 @@ data class TestMarykObject(
             valueDefinition = StringDefinition(),
             required = false
         )
-    }
 
-    companion object : ObjectDataModel<TestMarykObject, Properties>(
-        name = "TestMarykObject",
-        properties = Properties
-    ) {
-        override fun invoke(values: ObjectValues<TestMarykObject, Properties>) = TestMarykObject(
+        override fun invoke(values: ObjectValues<TestMarykObject, Companion>) = TestMarykObject(
             string = values(1u),
             int = values(2u),
             uint = values(3u),
@@ -173,10 +168,5 @@ data class TestMarykObject(
             reference = values(14u),
             listOfString = values(15u)
         )
-
-        override fun equals(other: Any?) =
-            other is ObjectDataModel<*, *> &&
-                this.name == other.name &&
-                this.properties.size == other.properties.size
     }
 }

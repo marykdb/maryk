@@ -30,12 +30,12 @@ internal class OrderedKeysUpdateTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.orderedKeysUpdate, OrderedKeysUpdate, { this.context })
+        checkProtoBufConversion(this.orderedKeysUpdate, OrderedKeysUpdate.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.orderedKeysUpdate, OrderedKeysUpdate, { this.context })
+        checkJsonConversion(this.orderedKeysUpdate, OrderedKeysUpdate.Model, { this.context })
     }
 
     @Test
@@ -48,7 +48,7 @@ internal class OrderedKeysUpdateTest {
             
             """.trimIndent()
         ) {
-            checkYamlConversion(this.orderedKeysUpdate, OrderedKeysUpdate, { this.context })
+            checkYamlConversion(this.orderedKeysUpdate, OrderedKeysUpdate.Model, { this.context })
         }
     }
 }

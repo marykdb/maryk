@@ -41,12 +41,12 @@ class ValuesResponseTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.objectsResponse, ValuesResponse, { this.context })
+        checkProtoBufConversion(this.objectsResponse, ValuesResponse.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.objectsResponse, ValuesResponse, { this.context })
+        checkJsonConversion(this.objectsResponse, ValuesResponse.Model, { this.context })
     }
 
     @Test
@@ -68,7 +68,7 @@ class ValuesResponseTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.objectsResponse, ValuesResponse, { this.context })
+            checkYamlConversion(this.objectsResponse, ValuesResponse.Model, { this.context })
         }
     }
 
@@ -80,7 +80,7 @@ class ValuesResponseTest {
         expect("values.@0.values") { valuesResponseRef.completeName }
         expect("values.@0.values.value") { simpleValueRef.completeName }
 
-        val objectValues = ValuesResponse.asValues(objectsResponse)
+        val objectValues = ValuesResponse.Model.asValues(objectsResponse)
 
         expect("haha1") { objectValues[simpleValueRef] }
     }

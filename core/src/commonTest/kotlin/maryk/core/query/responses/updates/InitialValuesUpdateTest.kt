@@ -37,12 +37,12 @@ internal class InitialValuesUpdateTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.initialValues, InitialValuesUpdate, { this.context })
+        checkProtoBufConversion(this.initialValues, InitialValuesUpdate.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.initialValues, InitialValuesUpdate, { this.context })
+        checkJsonConversion(this.initialValues, InitialValuesUpdate.Model, { this.context })
     }
 
     @Test
@@ -60,7 +60,7 @@ internal class InitialValuesUpdateTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.initialValues, InitialValuesUpdate, { this.context })
+            checkYamlConversion(this.initialValues, InitialValuesUpdate.Model, { this.context })
         }
     }
 }

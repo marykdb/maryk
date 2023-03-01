@@ -2,9 +2,8 @@ package maryk.core.query.requests
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.QueryDataModel
 import maryk.core.properties.IsRootModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.definitions.list
@@ -35,8 +34,7 @@ data class DeleteRequest<DM : IsRootModel> internal constructor(
     override val requestType = Delete
     override val responseModel = DeleteResponse
 
-    @Suppress("unused")
-    object Properties : ObjectPropertyDefinitions<DeleteRequest<*>>() {
+    companion object : QueryModel<DeleteRequest<*>, Companion>() {
         val from by addDataModel { it.dataModel }
         val keys by list(
             index = 2u,
@@ -53,12 +51,8 @@ data class DeleteRequest<DM : IsRootModel> internal constructor(
             getter = DeleteRequest<*>::hardDelete,
             default = false
         )
-    }
 
-    companion object : QueryDataModel<DeleteRequest<*>, Properties>(
-        properties = Properties
-    ) {
-        override fun invoke(values: ObjectValues<DeleteRequest<*>, Properties>) = DeleteRequest(
+        override fun invoke(values: ObjectValues<DeleteRequest<*>, Companion>) = DeleteRequest(
             dataModel = values(1u),
             keys = values(2u),
             hardDelete = values(3u)

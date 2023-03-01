@@ -3,9 +3,8 @@ package maryk.core.query.requests
 import maryk.core.aggregations.Aggregations
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.QueryDataModel
 import maryk.core.properties.IsRootModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.definitions.embedObject
@@ -52,7 +51,7 @@ data class GetRequest<DM : IsRootModel> internal constructor(
     override val requestType = Get
     override val responseModel = ValuesResponse
 
-    object Properties : ObjectPropertyDefinitions<GetRequest<*>>() {
+    companion object : QueryModel<GetRequest<*>, Companion>() {
         val from by addDataModel { it.dataModel }
         val keys by list(
             index = 2u,
@@ -68,12 +67,8 @@ data class GetRequest<DM : IsRootModel> internal constructor(
         val toVersion by number(5u, GetRequest<*>::toVersion, UInt64, required = false)
         val filterSoftDeleted  by boolean(6u, GetRequest<*>::filterSoftDeleted, default = true)
         val aggregations by embedObject(7u, GetRequest<*>::aggregations, dataModel = { Aggregations }, alternativeNames = setOf("aggs"))
-    }
 
-    companion object : QueryDataModel<GetRequest<*>, Properties>(
-        properties = Properties
-    ) {
-        override fun invoke(values: ObjectValues<GetRequest<*>, Properties>) = GetRequest(
+        override fun invoke(values: ObjectValues<GetRequest<*>, Companion>) = GetRequest(
             dataModel = values(1u),
             keys = values(2u),
             select = values(3u),

@@ -28,7 +28,7 @@ internal class InjectionContext(
                     if (collectType.request is IsObjectRequest<*, *>) {
                         collectType.request.dataModel.Model
                     } else {
-                        collectType.request.responseModel
+                        collectType.request.responseModel.Model
                     }
                 }
                 is ModelTypeToCollect.Model<*> -> {

@@ -1,10 +1,9 @@
 package maryk.core.query.requests
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.QueryDataModel
 import maryk.core.models.ValuesDataModelImpl
 import maryk.core.properties.IsRootModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedValuesDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.query.RequestContext
@@ -25,7 +24,7 @@ data class AddRequest<DM : IsRootModel> internal constructor(
     override val requestType = Add
     override val responseModel = AddResponse
 
-    object Properties : ObjectPropertyDefinitions<AddRequest<*>>() {
+    companion object : QueryModel<AddRequest<*>, Companion>() {
         val to by addDataModel { it.dataModel }
 
         val objects by list(
@@ -38,12 +37,8 @@ data class AddRequest<DM : IsRootModel> internal constructor(
                 }
             )
         )
-    }
 
-    companion object : QueryDataModel<AddRequest<*>, Properties>(
-        properties = Properties
-    ) {
-        override fun invoke(values: ObjectValues<AddRequest<*>, Properties>) =
+        override fun invoke(values: ObjectValues<AddRequest<*>, Companion>) =
             AddRequest(
                 dataModel = values(1u),
                 objects = values(2u)

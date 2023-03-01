@@ -35,7 +35,7 @@ open class Model<P: IsValuesPropertyDefinitions>(
         return block(this as P)
     }
 
-    fun create (
+    fun create(
         vararg pairs: ValueItem?,
         setDefaults: Boolean = true,
     ) = Model.values {

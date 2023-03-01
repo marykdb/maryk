@@ -19,15 +19,15 @@ class ScanSelectRequestTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(scanRequest, ScanRequest, { this.context })
-        checkProtoBufConversion(scanMaxRequest, ScanRequest, { this.context })
+        checkProtoBufConversion(scanRequest, ScanRequest.Model, { this.context })
+        checkProtoBufConversion(scanMaxRequest, ScanRequest.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(scanRequest, ScanRequest, { this.context })
-        checkJsonConversion(scanMaxRequest, ScanRequest, { this.context })
-        checkJsonConversion(scanOrdersRequest, ScanRequest, { this.context })
+        checkJsonConversion(scanRequest, ScanRequest.Model, { this.context })
+        checkJsonConversion(scanMaxRequest, ScanRequest.Model, { this.context })
+        checkJsonConversion(scanOrdersRequest, ScanRequest.Model, { this.context })
     }
 
     @Test
@@ -41,7 +41,7 @@ class ScanSelectRequestTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(scanRequest, ScanRequest, { this.context })
+            checkYamlConversion(scanRequest, ScanRequest.Model, { this.context })
         }
 
         expect(
@@ -62,7 +62,7 @@ class ScanSelectRequestTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(scanMaxRequest, ScanRequest, { this.context })
+            checkYamlConversion(scanMaxRequest, ScanRequest.Model, { this.context })
         }
 
         expect(
@@ -80,7 +80,7 @@ class ScanSelectRequestTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(scanOrdersRequest, ScanRequest, { this.context })
+            checkYamlConversion(scanOrdersRequest, ScanRequest.Model, { this.context })
         }
     }
 }

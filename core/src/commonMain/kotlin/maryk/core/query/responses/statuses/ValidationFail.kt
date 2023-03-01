@@ -1,8 +1,7 @@
 package maryk.core.query.responses.statuses
 
-import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.IsRootModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SimpleQueryModel
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.exceptions.ValidationException
@@ -35,21 +34,19 @@ data class ValidationFail<DM : IsRootModel>(
     )
 
     @Suppress("unused")
-    internal companion object : SimpleQueryDataModel<ValidationFail<*>>(
-        properties = object : ObjectPropertyDefinitions<ValidationFail<*>>() {
-            val exceptions by list(
-                index = 1u,
-                getter = ValidationFail<*>::exceptions,
-                default = emptyList(),
-                valueDefinition = InternalMultiTypeDefinition(
-                    typeEnum = ValidationExceptionType,
-                    definitionMap = mapOfValidationExceptionDefinitions
-                ),
-                toSerializable = { TypedValue(it.validationExceptionType, it) },
-                fromSerializable = { it.value }
-            )
-        }
-    ) {
+    internal companion object : SimpleQueryModel<ValidationFail<*>>() {
+        val exceptions by list(
+            index = 1u,
+            getter = ValidationFail<*>::exceptions,
+            default = emptyList(),
+            valueDefinition = InternalMultiTypeDefinition(
+                typeEnum = ValidationExceptionType,
+                definitionMap = mapOfValidationExceptionDefinitions
+            ),
+            toSerializable = { TypedValue(it.validationExceptionType, it) },
+            fromSerializable = { it.value }
+        )
+
         override fun invoke(values: SimpleObjectValues<ValidationFail<*>>) =
             ValidationFail<IsRootModel>(
                 exceptions = values(1u)

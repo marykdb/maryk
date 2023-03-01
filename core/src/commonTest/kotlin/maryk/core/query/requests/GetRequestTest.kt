@@ -24,7 +24,7 @@ class GetRequestTest {
     @Test
     fun createAsMap() {
         expect(getRequest) {
-            GetRequest.values(context) {
+            GetRequest.Model.values(context) {
                 mapNonNulls(
                     from with SimpleMarykModel,
                     keys with listOf(getRequest.keys[0], getRequest.keys[1])
@@ -36,7 +36,7 @@ class GetRequestTest {
     @Test
     fun createAsMaxMap() {
         expect(getMaxRequest) {
-            GetRequest.values(context) {
+            GetRequest.Model.values(context) {
                 mapNonNulls(
                     from with SimpleMarykModel,
                     keys with listOf(getMaxRequest.keys[0], getMaxRequest.keys[1]),
@@ -58,14 +58,14 @@ class GetRequestTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(getRequest, GetRequest, { this.context })
-        checkProtoBufConversion(getMaxRequest, GetRequest, { this.context })
+        checkProtoBufConversion(getRequest, GetRequest.Model, { this.context })
+        checkProtoBufConversion(getMaxRequest, GetRequest.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(getRequest, GetRequest, { this.context })
-        checkJsonConversion(getMaxRequest, GetRequest, { this.context })
+        checkJsonConversion(getRequest, GetRequest.Model, { this.context })
+        checkJsonConversion(getMaxRequest, GetRequest.Model, { this.context })
     }
 
     @Test
@@ -78,7 +78,7 @@ class GetRequestTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(getRequest, GetRequest, { this.context })
+            checkYamlConversion(getRequest, GetRequest.Model, { this.context })
         }
 
         expect(
@@ -96,7 +96,7 @@ class GetRequestTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(getMaxRequest, GetRequest, { this.context })
+            checkYamlConversion(getMaxRequest, GetRequest.Model, { this.context })
         }
     }
 
@@ -121,7 +121,7 @@ class GetRequestTest {
             }
         }
 
-        GetRequest.readJson(reader, this.context)
+        GetRequest.Model.readJson(reader, this.context)
             .toDataObject()
             .apply {
                 expect(SimpleMarykModel) { dataModel }

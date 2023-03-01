@@ -30,7 +30,7 @@ class TypesTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.types, Types, { this.context })
+        checkProtoBufConversion(this.types, Types.Model, { this.context })
     }
 
     @Test
@@ -47,7 +47,7 @@ class TypesTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.types, Types, { this.context })
+            checkJsonConversion(this.types, Types.Model, { this.context })
         }
     }
 
@@ -62,7 +62,7 @@ class TypesTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.types, Types, { this.context })
+            checkYamlConversion(this.types, Types.Model, { this.context })
         }
     }
 }

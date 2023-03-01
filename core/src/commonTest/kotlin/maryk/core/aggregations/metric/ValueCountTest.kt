@@ -23,7 +23,7 @@ class ValueCountTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.valueCount, ValueCount, { this.context })
+        checkProtoBufConversion(this.valueCount, ValueCount.Model, { this.context })
     }
 
     @Test
@@ -35,7 +35,7 @@ class ValueCountTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.valueCount, ValueCount, { this.context })
+            checkJsonConversion(this.valueCount, ValueCount.Model, { this.context })
         }
     }
 
@@ -47,7 +47,7 @@ class ValueCountTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.valueCount, ValueCount, { this.context })
+            checkYamlConversion(this.valueCount, ValueCount.Model, { this.context })
         }
     }
 }

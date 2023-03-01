@@ -23,7 +23,7 @@ class MaxTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.max, Max, { this.context })
+        checkProtoBufConversion(this.max, Max.Model, { this.context })
     }
 
     @Test
@@ -35,7 +35,7 @@ class MaxTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.max, Max, { this.context })
+            checkJsonConversion(this.max, Max.Model, { this.context })
         }
     }
 
@@ -47,7 +47,7 @@ class MaxTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.max, Max, { this.context })
+            checkYamlConversion(this.max, Max.Model, { this.context })
         }
     }
 }

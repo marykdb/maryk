@@ -2,8 +2,7 @@ package maryk.core.aggregations.metric
 
 import maryk.core.aggregations.AggregationRequestType.ValueCountType
 import maryk.core.aggregations.IsAggregationRequest
-import maryk.core.models.SimpleQueryDataModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SimpleQueryModel
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.addReference
@@ -18,12 +17,9 @@ data class ValueCount<T: Comparable<T>>(
     override fun createAggregator() =
         ValueCountAggregator(this)
 
-    @Suppress("unused")
-    companion object : SimpleQueryDataModel<ValueCount<*>>(
-        properties = object : ObjectPropertyDefinitions<ValueCount<*>>() {
-            val of by addReference(ValueCount<*>::reference)
-        }
-    ) {
+    companion object : SimpleQueryModel<ValueCount<*>>() {
+        val of by addReference(ValueCount<*>::reference)
+
         override fun invoke(values: SimpleObjectValues<ValueCount<*>>) = ValueCount<Comparable<Any>>(
             reference = values(1u)
         )

@@ -60,7 +60,7 @@ class EnumValuesResponseTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.enumValuesResponse, EnumValuesResponse, { this.context })
+        checkProtoBufConversion(this.enumValuesResponse, EnumValuesResponse.Model, { this.context })
     }
 
     @Test
@@ -101,7 +101,7 @@ class EnumValuesResponseTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.enumValuesResponse, EnumValuesResponse, { this.context })
+            checkJsonConversion(this.enumValuesResponse, EnumValuesResponse.Model, { this.context })
         }
     }
 
@@ -134,7 +134,7 @@ class EnumValuesResponseTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.enumValuesResponse, EnumValuesResponse, { this.context })
+            checkYamlConversion(this.enumValuesResponse, EnumValuesResponse.Model, { this.context })
         }
     }
 }

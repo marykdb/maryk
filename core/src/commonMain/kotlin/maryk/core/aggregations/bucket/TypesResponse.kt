@@ -2,8 +2,7 @@ package maryk.core.aggregations.bucket
 
 import maryk.core.aggregations.AggregationResponseType.TypesType
 import maryk.core.aggregations.IsAggregationResponse
-import maryk.core.models.SimpleQueryDataModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SimpleQueryModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.list
@@ -21,20 +20,18 @@ data class TypesResponse<T: TypeEnum<*>>(
     override val aggregationType = TypesType
 
     @Suppress("unused")
-    companion object : SimpleQueryDataModel<TypesResponse<*>>(
-        properties = object : ObjectPropertyDefinitions<TypesResponse<*>>() {
-            val of by addReference(TypesResponse<*>::reference)
+    companion object : SimpleQueryModel<TypesResponse<*>>() {
+        val of by addReference(TypesResponse<*>::reference)
 
-            val buckets by list(
-                index = 2u,
-                getter = TypesResponse<*>::buckets,
-                valueDefinition = EmbeddedObjectDefinition(
-                    dataModel = { Bucket }
-                ),
-                default = emptyList()
-            )
-        }
-    ) {
+        val buckets by list(
+            index = 2u,
+            getter = TypesResponse<*>::buckets,
+            valueDefinition = EmbeddedObjectDefinition(
+                dataModel = { Bucket.Model }
+            ),
+            default = emptyList()
+        )
+
         override fun invoke(values: SimpleObjectValues<TypesResponse<*>>) =
             TypesResponse<MultiTypeEnum<Any>>(
                 reference = values(1u),

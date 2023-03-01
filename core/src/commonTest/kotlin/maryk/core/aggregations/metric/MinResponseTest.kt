@@ -24,7 +24,7 @@ class MinResponseTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.minResponse, MinResponse, { this.context })
+        checkProtoBufConversion(this.minResponse, MinResponse.Model, { this.context })
     }
 
     @Test
@@ -37,7 +37,7 @@ class MinResponseTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.minResponse, MinResponse, { this.context })
+            checkJsonConversion(this.minResponse, MinResponse.Model, { this.context })
         }
     }
 
@@ -50,7 +50,7 @@ class MinResponseTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.minResponse, MinResponse, { this.context })
+            checkYamlConversion(this.minResponse, MinResponse.Model, { this.context })
         }
     }
 }

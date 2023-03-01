@@ -2,8 +2,7 @@ package maryk.core.aggregations.metric
 
 import maryk.core.aggregations.AggregationRequestType.StatsType
 import maryk.core.aggregations.IsAggregationRequest
-import maryk.core.models.SimpleQueryDataModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SimpleQueryModel
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.addReference
@@ -21,11 +20,9 @@ data class Stats<T: Comparable<T>>(
     override fun createAggregator() =
         StatsAggregator(this)
 
-    companion object : SimpleQueryDataModel<Stats<*>>(
-        properties = object : ObjectPropertyDefinitions<Stats<*>>() {
-            val of by addReference(Stats<*>::reference)
-        }
-    ) {
+    companion object : SimpleQueryModel<Stats<*>>() {
+        val of by addReference(Stats<*>::reference)
+
         override fun invoke(values: SimpleObjectValues<Stats<*>>) = Stats<Comparable<Any>>(
             reference = values(1u)
         )

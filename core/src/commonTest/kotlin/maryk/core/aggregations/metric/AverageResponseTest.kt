@@ -31,8 +31,8 @@ class AverageResponseTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.avgResponse, AverageResponse, { this.context })
-        checkProtoBufConversion(this.avgResponseNull, AverageResponse, { this.context })
+        checkProtoBufConversion(this.avgResponse, AverageResponse.Model, { this.context })
+        checkProtoBufConversion(this.avgResponseNull, AverageResponse.Model, { this.context })
     }
 
     @Test
@@ -46,7 +46,7 @@ class AverageResponseTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.avgResponse, AverageResponse, { this.context })
+            checkJsonConversion(this.avgResponse, AverageResponse.Model, { this.context })
         }
 
         expect(
@@ -57,7 +57,7 @@ class AverageResponseTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.avgResponseNull, AverageResponse, { this.context })
+            checkJsonConversion(this.avgResponseNull, AverageResponse.Model, { this.context })
         }
     }
 
@@ -71,7 +71,7 @@ class AverageResponseTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.avgResponse, AverageResponse, { this.context })
+            checkYamlConversion(this.avgResponse, AverageResponse.Model, { this.context })
         }
 
         expect(
@@ -81,7 +81,7 @@ class AverageResponseTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.avgResponseNull, AverageResponse, { this.context })
+            checkYamlConversion(this.avgResponseNull, AverageResponse.Model, { this.context })
         }
     }
 }

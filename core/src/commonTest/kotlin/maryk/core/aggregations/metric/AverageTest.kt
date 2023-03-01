@@ -23,7 +23,7 @@ class AverageTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.average, Average, { this.context })
+        checkProtoBufConversion(this.average, Average.Model, { this.context })
     }
 
     @Test
@@ -35,7 +35,7 @@ class AverageTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.average, Average, { this.context })
+            checkJsonConversion(this.average, Average.Model, { this.context })
         }
     }
 
@@ -47,7 +47,7 @@ class AverageTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.average, Average, { this.context })
+            checkYamlConversion(this.average, Average.Model, { this.context })
         }
     }
 }

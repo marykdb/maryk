@@ -29,8 +29,8 @@ class MaxResponseTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.maxResponse, MaxResponse, { this.context })
-        checkProtoBufConversion(this.maxResponseNull, MaxResponse, { this.context })
+        checkProtoBufConversion(this.maxResponse, MaxResponse.Model, { this.context })
+        checkProtoBufConversion(this.maxResponseNull, MaxResponse.Model, { this.context })
     }
 
     @Test
@@ -43,7 +43,7 @@ class MaxResponseTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.maxResponse, MaxResponse, { this.context })
+            checkJsonConversion(this.maxResponse, MaxResponse.Model, { this.context })
         }
 
         expect(
@@ -53,7 +53,7 @@ class MaxResponseTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.maxResponseNull, MaxResponse, { this.context })
+            checkJsonConversion(this.maxResponseNull, MaxResponse.Model, { this.context })
         }
     }
 
@@ -65,7 +65,7 @@ class MaxResponseTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.maxResponseNull, MaxResponse, { this.context })
+            checkYamlConversion(this.maxResponseNull, MaxResponse.Model, { this.context })
         }
     }
 }

@@ -2,8 +2,7 @@ package maryk.core.aggregations.metric
 
 import maryk.core.aggregations.AggregationRequestType.MinType
 import maryk.core.aggregations.IsAggregationRequest
-import maryk.core.models.SimpleQueryDataModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SimpleQueryModel
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.addReference
@@ -18,12 +17,9 @@ data class Min<T: Comparable<T>>(
     override fun createAggregator() =
         MinAggregator(this)
 
-    @Suppress("unused")
-    companion object : SimpleQueryDataModel<Min<*>>(
-        properties = object : ObjectPropertyDefinitions<Min<*>>() {
-            val of by addReference(Min<*>::reference)
-        }
-    ) {
+    companion object : SimpleQueryModel<Min<*>>() {
+        val of by addReference(Min<*>::reference)
+
         override fun invoke(values: SimpleObjectValues<Min<*>>) = Min<Comparable<Any>>(
             reference = values(1u)
         )

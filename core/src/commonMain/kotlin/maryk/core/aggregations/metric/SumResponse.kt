@@ -3,9 +3,8 @@ package maryk.core.aggregations.metric
 import maryk.core.aggregations.AggregationResponseType.SumType
 import maryk.core.aggregations.IsAggregationResponse
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SimpleQueryModel
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
@@ -22,26 +21,23 @@ data class SumResponse<T: Any>(
 ) : IsAggregationResponse {
     override val aggregationType = SumType
 
-    @Suppress("unused")
-    companion object : SimpleQueryDataModel<SumResponse<*>>(
-        properties = object : ObjectPropertyDefinitions<SumResponse<*>>() {
-            val of by addReference(SumResponse<*>::reference)
+    companion object : SimpleQueryModel<SumResponse<*>>() {
+        val of by addReference(SumResponse<*>::reference)
 
-            val value by contextual(
-                index = 2u,
-                getter = SumResponse<*>::value,
-                definition = ContextualValueDefinition(
-                    required = false,
-                    contextualResolver = { context: RequestContext? ->
-                        context?.reference?.let {
-                            @Suppress("UNCHECKED_CAST")
-                            it.comparablePropertyDefinition as IsValueDefinition<Any, IsPropertyContext>
-                        } ?: throw ContextNotFoundException()
-                    }
-                )
+        val value by contextual(
+            index = 2u,
+            getter = SumResponse<*>::value,
+            definition = ContextualValueDefinition(
+                required = false,
+                contextualResolver = { context: RequestContext? ->
+                    context?.reference?.let {
+                        @Suppress("UNCHECKED_CAST")
+                        it.comparablePropertyDefinition as IsValueDefinition<Any, IsPropertyContext>
+                    } ?: throw ContextNotFoundException()
+                }
             )
-        }
-    ) {
+        )
+
         override fun invoke(values: SimpleObjectValues<SumResponse<*>>) =
             SumResponse<Comparable<Any>>(
                 reference = values(1u),

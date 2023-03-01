@@ -2,8 +2,7 @@ package maryk.core.aggregations.metric
 
 import maryk.core.aggregations.AggregationRequestType.SumType
 import maryk.core.aggregations.IsAggregationRequest
-import maryk.core.models.SimpleQueryDataModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SimpleQueryModel
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.addReference
@@ -19,11 +18,9 @@ data class Sum<T: Comparable<T>>(
         SumAggregator(this)
 
     @Suppress("unused")
-    companion object : SimpleQueryDataModel<Sum<*>>(
-        properties = object : ObjectPropertyDefinitions<Sum<*>>() {
-            val of by addReference(Sum<*>::reference)
-        }
-    ) {
+    companion object : SimpleQueryModel<Sum<*>>() {
+        val of by addReference(Sum<*>::reference)
+
         override fun invoke(values: SimpleObjectValues<Sum<*>>) = Sum<Comparable<Any>>(
             reference = values(1u)
         )

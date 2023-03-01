@@ -23,7 +23,7 @@ class MinTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.min, Min, { this.context })
+        checkProtoBufConversion(this.min, Min.Model, { this.context })
     }
 
     @Test
@@ -35,7 +35,7 @@ class MinTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.min, Min, { this.context })
+            checkJsonConversion(this.min, Min.Model, { this.context })
         }
     }
 
@@ -47,7 +47,7 @@ class MinTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.min, Min, { this.context })
+            checkYamlConversion(this.min, Min.Model, { this.context })
         }
     }
 }

@@ -2,8 +2,7 @@ package maryk.core.aggregations.bucket
 
 import maryk.core.aggregations.AggregationResponseType.EnumValuesType
 import maryk.core.aggregations.IsAggregationResponse
-import maryk.core.models.SimpleQueryDataModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SimpleQueryModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.list
@@ -20,19 +19,17 @@ data class EnumValuesResponse<T: IndexedEnumComparable<T>>(
     override val aggregationType = EnumValuesType
 
     @Suppress("unused")
-    companion object : SimpleQueryDataModel<EnumValuesResponse<*>>(
-        properties = object : ObjectPropertyDefinitions<EnumValuesResponse<*>>() {
-            val of by addReference(EnumValuesResponse<*>::reference)
-            val buckets by list(
-                index = 2u,
-                getter = EnumValuesResponse<*>::buckets,
-                valueDefinition = EmbeddedObjectDefinition(
-                    dataModel = { Bucket }
-                ),
-                default = emptyList()
-            )
-        }
-    ) {
+    companion object : SimpleQueryModel<EnumValuesResponse<*>>() {
+        val of by addReference(EnumValuesResponse<*>::reference)
+        val buckets by list(
+            index = 2u,
+            getter = EnumValuesResponse<*>::buckets,
+            valueDefinition = EmbeddedObjectDefinition(
+                dataModel = { Bucket.Model }
+            ),
+            default = emptyList()
+        )
+
         override fun invoke(values: SimpleObjectValues<EnumValuesResponse<*>>) =
             EnumValuesResponse<IndexedEnumComparable<Any>>(
                 reference = values(1u),

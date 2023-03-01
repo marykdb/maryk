@@ -3,8 +3,7 @@ package maryk.core.aggregations.bucket
 import maryk.core.aggregations.AggregationRequestType.EnumValuesType
 import maryk.core.aggregations.Aggregations
 import maryk.core.aggregations.IsAggregationRequest
-import maryk.core.models.SimpleQueryDataModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SimpleQueryModel
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.embedObject
 import maryk.core.properties.enum.IndexedEnumComparable
@@ -22,18 +21,15 @@ data class EnumValues<T: IndexedEnumComparable<T>>(
     override fun createAggregator() =
         EnumValuesAggregator(this)
 
-    @Suppress("unused")
-    companion object : SimpleQueryDataModel<EnumValues<*>>(
-        properties = object : ObjectPropertyDefinitions<EnumValues<*>>() {
-            val of by addReference(EnumValues<*>::reference)
-            val aggregations by embedObject(
-                index = 2u,
-                getter = EnumValues<*>::aggregations,
-                dataModel = { Aggregations },
-                alternativeNames = setOf("aggs")
-            )
-        }
-    ) {
+    companion object : SimpleQueryModel<EnumValues<*>>() {
+        val of by addReference(EnumValues<*>::reference)
+        val aggregations by embedObject(
+            index = 2u,
+            getter = EnumValues<*>::aggregations,
+            dataModel = { Aggregations },
+            alternativeNames = setOf("aggs")
+        )
+
         override fun invoke(values: SimpleObjectValues<EnumValues<*>>) = EnumValues<IndexedEnumComparable<Any>>(
             reference = values(1u),
             aggregations = values(2u)

@@ -3,8 +3,7 @@ package maryk.core.aggregations.bucket
 import maryk.core.aggregations.AggregationRequestType.TypesType
 import maryk.core.aggregations.Aggregations
 import maryk.core.aggregations.IsAggregationRequest
-import maryk.core.models.SimpleQueryDataModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SimpleQueryModel
 import maryk.core.properties.definitions.embedObject
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.references.TypeReference
@@ -22,18 +21,16 @@ data class Types<T: TypeEnum<*>>(
         TypesAggregator(this)
 
     @Suppress("unused")
-    companion object : SimpleQueryDataModel<Types<*>>(
-        properties = object : ObjectPropertyDefinitions<Types<*>>() {
-            val of by addReference(Types<*>::reference)
+    companion object : SimpleQueryModel<Types<*>>() {
+        val of by addReference(Types<*>::reference)
 
-            val aggregations by embedObject(
-                index = 2u,
-                getter = Types<*>::aggregations,
-                dataModel = { Aggregations },
-                alternativeNames = setOf("aggs")
-            )
-        }
-    ) {
+        val aggregations by embedObject(
+            index = 2u,
+            getter = Types<*>::aggregations,
+            dataModel = { Aggregations },
+            alternativeNames = setOf("aggs")
+        )
+
         override fun invoke(values: SimpleObjectValues<Types<*>>) = Types<TypeEnum<*>>(
             reference = values(1u),
             aggregations = values(2u)

@@ -36,16 +36,16 @@ sealed class AggregationRequestType(
         dataModel = { dataModel as AbstractObjectDataModel<IsAggregationRequest<*, *, *>, ObjectPropertyDefinitions<IsAggregationRequest<*, *, *>>, RequestContext, RequestContext> }
     )
 
-    object ValueCountType : AggregationRequestType(1u, "ValueCount", ValueCount)
-    object SumType : AggregationRequestType(2u, "Sum", Sum)
-    object AverageType : AggregationRequestType(3u, "Average", Average)
-    object MinType : AggregationRequestType(4u, "Min", Min)
-    object MaxType : AggregationRequestType(5u, "Max", Max)
-    object StatsType : AggregationRequestType(6u, "Stats", Stats)
+    object ValueCountType : AggregationRequestType(1u, "ValueCount", ValueCount.Model)
+    object SumType : AggregationRequestType(2u, "Sum", Sum.Model)
+    object AverageType : AggregationRequestType(3u, "Average", Average.Model)
+    object MinType : AggregationRequestType(4u, "Min", Min.Model)
+    object MaxType : AggregationRequestType(5u, "Max", Max.Model)
+    object StatsType : AggregationRequestType(6u, "Stats", Stats.Model)
 
-    object EnumValuesType : AggregationRequestType(50u, "EnumValues", EnumValues)
-    object TypesType : AggregationRequestType(51u, "Types", Types)
-    object DateHistogramType : AggregationRequestType(52u, "DateHistogram", DateHistogram)
+    object EnumValuesType : AggregationRequestType(50u, "EnumValues", EnumValues.Model)
+    object TypesType : AggregationRequestType(51u, "Types", Types.Model)
+    object DateHistogramType : AggregationRequestType(52u, "DateHistogram", DateHistogram.Model)
 
     companion object : MultiTypeEnumDefinition<AggregationRequestType>(
         AggregationRequestType::class,

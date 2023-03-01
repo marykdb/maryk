@@ -2,8 +2,7 @@ package maryk.core.aggregations.bucket
 
 import maryk.core.aggregations.AggregationResponseType.DateHistogramType
 import maryk.core.aggregations.IsAggregationResponse
-import maryk.core.models.SimpleQueryDataModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SimpleQueryModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.list
@@ -19,19 +18,17 @@ data class DateHistogramResponse<T: Comparable<*>>(
     override val aggregationType = DateHistogramType
 
     @Suppress("unused")
-    companion object : SimpleQueryDataModel<DateHistogramResponse<*>>(
-        properties = object : ObjectPropertyDefinitions<DateHistogramResponse<*>>() {
-            val of by addReference(DateHistogramResponse<*>::reference)
-            val buckets by list(
-                index = 2u,
-                getter = DateHistogramResponse<*>::buckets,
-                default = emptyList(),
-                valueDefinition = EmbeddedObjectDefinition(
-                    dataModel = { Bucket }
-                )
+    companion object : SimpleQueryModel<DateHistogramResponse<*>>() {
+        val of by addReference(DateHistogramResponse<*>::reference)
+        val buckets by list(
+            index = 2u,
+            getter = DateHistogramResponse<*>::buckets,
+            default = emptyList(),
+            valueDefinition = EmbeddedObjectDefinition(
+                dataModel = { Bucket.Model }
             )
-        }
-    ) {
+        )
+
         override fun invoke(values: SimpleObjectValues<DateHistogramResponse<*>>) =
             DateHistogramResponse<Comparable<Any>>(
                 reference = values(1u),

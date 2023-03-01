@@ -30,7 +30,7 @@ class EnumValuesTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.enumValues, EnumValues, { this.context })
+        checkProtoBufConversion(this.enumValues, EnumValues.Model, { this.context })
     }
 
     @Test
@@ -47,7 +47,7 @@ class EnumValuesTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.enumValues, EnumValues, { this.context })
+            checkJsonConversion(this.enumValues, EnumValues.Model, { this.context })
         }
     }
 
@@ -62,7 +62,7 @@ class EnumValuesTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.enumValues, EnumValues, { this.context })
+            checkYamlConversion(this.enumValues, EnumValues.Model, { this.context })
         }
     }
 }

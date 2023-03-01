@@ -2,8 +2,7 @@ package maryk.core.aggregations.metric
 
 import maryk.core.aggregations.AggregationRequestType.AverageType
 import maryk.core.aggregations.IsAggregationRequest
-import maryk.core.models.SimpleQueryDataModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SimpleQueryModel
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.addReference
@@ -19,11 +18,8 @@ data class Average<T: Comparable<T>>(
         AverageAggregator(this)
 
     @Suppress("unused")
-    companion object : SimpleQueryDataModel<Average<*>>(
-        properties = object : ObjectPropertyDefinitions<Average<*>>() {
-            val of by addReference(Average<*>::reference)
-        }
-    ) {
+    companion object : SimpleQueryModel<Average<*>>() {
+        val of by addReference(Average<*>::reference)
         override fun invoke(values: SimpleObjectValues<Average<*>>) = Average<Comparable<Any>>(
             reference = values(1u)
         )

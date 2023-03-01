@@ -23,7 +23,7 @@ class StatsTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.stats, Stats, { this.context })
+        checkProtoBufConversion(this.stats, Stats.Model, { this.context })
     }
 
     @Test
@@ -35,7 +35,7 @@ class StatsTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.stats, Stats, { this.context })
+            checkJsonConversion(this.stats, Stats.Model, { this.context })
         }
     }
 
@@ -47,7 +47,7 @@ class StatsTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.stats, Stats, { this.context })
+            checkYamlConversion(this.stats, Stats.Model, { this.context })
         }
     }
 }

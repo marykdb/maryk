@@ -48,7 +48,7 @@ class DateHistogramResponseTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.dateHistogramResponse, DateHistogramResponse, { this.context })
+        checkProtoBufConversion(this.dateHistogramResponse, DateHistogramResponse.Model, { this.context })
     }
 
     @Test
@@ -79,7 +79,7 @@ class DateHistogramResponseTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.dateHistogramResponse, DateHistogramResponse, { this.context })
+            checkJsonConversion(this.dateHistogramResponse, DateHistogramResponse.Model, { this.context })
         }
     }
 
@@ -104,7 +104,7 @@ class DateHistogramResponseTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.dateHistogramResponse, DateHistogramResponse, { this.context })
+            checkYamlConversion(this.dateHistogramResponse, DateHistogramResponse.Model, { this.context })
         }
     }
 }

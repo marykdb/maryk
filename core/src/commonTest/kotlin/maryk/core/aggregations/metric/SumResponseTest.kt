@@ -24,7 +24,7 @@ class SumResponseTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.sumResponse, SumResponse, { this.context })
+        checkProtoBufConversion(this.sumResponse, SumResponse.Model, { this.context })
     }
 
     @Test
@@ -37,7 +37,7 @@ class SumResponseTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.sumResponse, SumResponse, { this.context })
+            checkJsonConversion(this.sumResponse, SumResponse.Model, { this.context })
         }
     }
 
@@ -50,7 +50,7 @@ class SumResponseTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.sumResponse, SumResponse, { this.context })
+            checkYamlConversion(this.sumResponse, SumResponse.Model, { this.context })
         }
     }
 }

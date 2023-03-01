@@ -36,16 +36,16 @@ sealed class AggregationResponseType(
         dataModel = { dataModel as AbstractObjectDataModel<IsAggregationResponse, ObjectPropertyDefinitions<IsAggregationResponse>, RequestContext, RequestContext> }
     )
 
-    object ValueCountType : AggregationResponseType(1u, "ValueCount", ValueCountResponse)
-    object SumType : AggregationResponseType(2u, "Sum", SumResponse)
-    object AverageType : AggregationResponseType(3u, "Average", AverageResponse)
-    object MinType : AggregationResponseType(4u, "Min", MinResponse)
-    object MaxType : AggregationResponseType(5u, "Max", MaxResponse)
-    object StatsType : AggregationResponseType(6u, "Stats", StatsResponse)
+    object ValueCountType : AggregationResponseType(1u, "ValueCount", ValueCountResponse.Model)
+    object SumType : AggregationResponseType(2u, "Sum", SumResponse.Model)
+    object AverageType : AggregationResponseType(3u, "Average", AverageResponse.Model)
+    object MinType : AggregationResponseType(4u, "Min", MinResponse.Model)
+    object MaxType : AggregationResponseType(5u, "Max", MaxResponse.Model)
+    object StatsType : AggregationResponseType(6u, "Stats", StatsResponse.Model)
 
-    object EnumValuesType : AggregationResponseType(50u, "EnumValues", EnumValuesResponse)
-    object TypesType : AggregationResponseType(51u, "Types", TypesResponse)
-    object DateHistogramType : AggregationResponseType(52u, "DateHistogram", DateHistogramResponse)
+    object EnumValuesType : AggregationResponseType(50u, "EnumValues", EnumValuesResponse.Model)
+    object TypesType : AggregationResponseType(51u, "Types", TypesResponse.Model)
+    object DateHistogramType : AggregationResponseType(52u, "DateHistogram", DateHistogramResponse.Model)
 
     companion object : MultiTypeEnumDefinition<AggregationResponseType>(
         AggregationResponseType::class,

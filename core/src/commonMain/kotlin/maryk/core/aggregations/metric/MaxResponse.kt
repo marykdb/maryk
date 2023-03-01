@@ -3,9 +3,8 @@ package maryk.core.aggregations.metric
 import maryk.core.aggregations.AggregationResponseType.MaxType
 import maryk.core.aggregations.IsAggregationResponse
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SimpleQueryModel
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
@@ -23,25 +22,23 @@ data class MaxResponse<T: Comparable<T>>(
     override val aggregationType = MaxType
 
     @Suppress("unused")
-    companion object : SimpleQueryDataModel<MaxResponse<*>>(
-        properties = object : ObjectPropertyDefinitions<MaxResponse<*>>() {
-            val of by addReference(MaxResponse<*>::reference)
+    companion object : SimpleQueryModel<MaxResponse<*>>() {
+        val of by addReference(MaxResponse<*>::reference)
 
-            val value by contextual(
-                index = 2u,
-                getter = MaxResponse<*>::value,
-                definition = ContextualValueDefinition(
-                    required = false,
-                    contextualResolver = { context: RequestContext? ->
-                        context?.reference?.let {
-                            @Suppress("UNCHECKED_CAST")
-                            it.comparablePropertyDefinition as IsValueDefinition<Any, IsPropertyContext>
-                        } ?: throw ContextNotFoundException()
-                    }
-                )
+        val value by contextual(
+            index = 2u,
+            getter = MaxResponse<*>::value,
+            definition = ContextualValueDefinition(
+                required = false,
+                contextualResolver = { context: RequestContext? ->
+                    context?.reference?.let {
+                        @Suppress("UNCHECKED_CAST")
+                        it.comparablePropertyDefinition as IsValueDefinition<Any, IsPropertyContext>
+                    } ?: throw ContextNotFoundException()
+                }
             )
-        }
-    ) {
+        )
+
         override fun invoke(values: SimpleObjectValues<MaxResponse<*>>) =
             MaxResponse<Comparable<Any>>(
                 reference = values(1u),

@@ -2,8 +2,7 @@ package maryk.core.aggregations.metric
 
 import maryk.core.aggregations.AggregationRequestType.MaxType
 import maryk.core.aggregations.IsAggregationRequest
-import maryk.core.models.SimpleQueryDataModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SimpleQueryModel
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.addReference
@@ -18,12 +17,9 @@ data class Max<T: Comparable<T>>(
     override fun createAggregator() =
         MaxAggregator(this)
 
-    @Suppress("unused")
-    companion object : SimpleQueryDataModel<Max<*>>(
-        properties = object : ObjectPropertyDefinitions<Max<*>>() {
-            val of by addReference(Max<*>::reference)
-        }
-    ) {
+    companion object : SimpleQueryModel<Max<*>>() {
+        val of by addReference(Max<*>::reference)
+
         override fun invoke(values: SimpleObjectValues<Max<*>>) = Max<Comparable<Any>>(
             reference = values(1u)
         )

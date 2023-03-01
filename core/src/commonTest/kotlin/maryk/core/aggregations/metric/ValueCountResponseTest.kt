@@ -24,7 +24,7 @@ class ValueCountResponseTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.valueCountResponse, ValueCountResponse, { this.context })
+        checkProtoBufConversion(this.valueCountResponse, ValueCountResponse.Model, { this.context })
     }
 
     @Test
@@ -37,7 +37,7 @@ class ValueCountResponseTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.valueCountResponse, ValueCountResponse, { this.context })
+            checkJsonConversion(this.valueCountResponse, ValueCountResponse.Model, { this.context })
         }
     }
 
@@ -50,7 +50,7 @@ class ValueCountResponseTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.valueCountResponse, ValueCountResponse, { this.context })
+            checkYamlConversion(this.valueCountResponse, ValueCountResponse.Model, { this.context })
         }
     }
 }

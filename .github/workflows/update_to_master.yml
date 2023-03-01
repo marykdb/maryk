@@ -5,9 +5,9 @@ name: Run tests on commit and PR to master
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, function_mangling_issues ]
   pull_request:
-    branches: [ master ]
+    branches: [ master, function_mangling_issues ]
 
 jobs:
   test-jvm:

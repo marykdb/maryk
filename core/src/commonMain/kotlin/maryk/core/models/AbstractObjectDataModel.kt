@@ -1,5 +1,6 @@
 package maryk.core.models
 
+import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -25,7 +26,7 @@ internal typealias SimpleQueryDataModel<DO> = AbstractObjectDataModel<DO, Object
  * to read and write. [CXI] is the input Context for properties. This can be different because the ObjectDataModel can create
  * its own context by transforming the given context.
  */
-abstract class AbstractObjectDataModel<DO : Any, P : ObjectPropertyDefinitions<DO>, in CXI : IsPropertyContext, CX : IsPropertyContext> internal constructor(
+abstract class AbstractObjectDataModel<DO : Any, P : IsObjectPropertyDefinitions<DO>, in CXI : IsPropertyContext, CX : IsPropertyContext> internal constructor(
     properties: P
 ) : IsObjectDataModel<DO, P>, AbstractDataModel<DO, P, ObjectValues<DO, P>, CXI, CX>(properties) {
     override fun validate(

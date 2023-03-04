@@ -59,7 +59,7 @@ internal class ReversedTest {
     fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(
             value = Reversed(MarykModel.boolean.ref()),
-            dataModel = Reversed.Model,
+            dataModel = Reversed.Model.Model,
             context = { context }
         )
     }
@@ -68,7 +68,7 @@ internal class ReversedTest {
     fun convertDefinitionToJSONAndBack() {
         checkJsonConversion(
             value = Reversed(MarykModel.boolean.ref()),
-            dataModel = Reversed.Model,
+            dataModel = Reversed.Model.Model,
             context = { context }
         )
     }
@@ -78,7 +78,7 @@ internal class ReversedTest {
         expect("boolean") {
             checkYamlConversion(
                 value = Reversed(MarykModel.boolean.ref()),
-                dataModel = Reversed.Model,
+                dataModel = Reversed.Model.Model,
                 context = { context }
             )
         }

@@ -40,12 +40,12 @@ class ValuesWithMetaDataTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.valuesMetaData, ValuesWithMetaData, { this.context })
+        checkProtoBufConversion(this.valuesMetaData, ValuesWithMetaData.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.valuesMetaData, ValuesWithMetaData, { this.context })
+        checkJsonConversion(this.valuesMetaData, ValuesWithMetaData.Model, { this.context })
     }
 
     @Test
@@ -67,7 +67,7 @@ class ValuesWithMetaDataTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.valuesMetaData, ValuesWithMetaData, { this.context })
+            checkYamlConversion(this.valuesMetaData, ValuesWithMetaData.Model, { this.context })
         }
     }
 }

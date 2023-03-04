@@ -24,12 +24,12 @@ internal class IndexChangeTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.indexChange, IndexChange)
+        checkProtoBufConversion(this.indexChange, IndexChange.Model)
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.indexChange, IndexChange)
+        checkJsonConversion(this.indexChange, IndexChange.Model)
     }
 
     @Test
@@ -46,7 +46,7 @@ internal class IndexChangeTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.indexChange, IndexChange)
+            checkYamlConversion(this.indexChange, IndexChange.Model)
         }
     }
 }

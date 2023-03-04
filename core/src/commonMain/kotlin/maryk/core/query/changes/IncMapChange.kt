@@ -84,15 +84,15 @@ data class IncMapChange internal constructor(
             index = 1u,
             getter = IncMapChange::valueChanges,
             valueDefinition = EmbeddedObjectDefinition(
-                dataModel = { IncMapValueChanges }
+                dataModel = { IncMapValueChanges.Model }
             )
         )
     }
 
-    companion object : ReferenceMappedDataModel<IncMapChange, IncMapValueChanges<out Comparable<Any>, out Any>, Properties, IncMapValueChanges.Properties>(
+    companion object : ReferenceMappedDataModel<IncMapChange, IncMapValueChanges<out Comparable<Any>, out Any>, Properties, IncMapValueChanges.Companion>(
         properties = Properties,
-        containedDataModel = IncMapValueChanges,
-        referenceProperty = IncMapValueChanges.Properties.reference
+        containedDataModel = IncMapValueChanges.Model,
+        referenceProperty = IncMapValueChanges.reference
     ) {
         override fun invoke(values: ObjectValues<IncMapChange, Properties>) = IncMapChange(
             valueChanges = values<List<IncMapValueChanges<out Comparable<Any>, out Any>>>(1u)

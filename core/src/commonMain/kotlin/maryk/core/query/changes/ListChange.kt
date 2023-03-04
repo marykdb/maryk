@@ -81,16 +81,16 @@ data class ListChange internal constructor(
             index = 1u,
             getter = ListChange::listValueChanges,
             valueDefinition = EmbeddedObjectDefinition(
-                dataModel = { ListValueChanges }
+                dataModel = { ListValueChanges.Model }
             )
         )
     }
 
     companion object :
-        ReferenceMappedDataModel<ListChange, ListValueChanges<*>, Properties, ListValueChanges.Properties>(
+        ReferenceMappedDataModel<ListChange, ListValueChanges<*>, Properties, ListValueChanges.Companion>(
             properties = Properties,
-            containedDataModel = ListValueChanges,
-            referenceProperty = ListValueChanges.Properties.reference
+            containedDataModel = ListValueChanges.Model,
+            referenceProperty = ListValueChanges.reference
         ) {
         override fun invoke(values: ObjectValues<ListChange, Properties>) = ListChange(
             listValueChanges = values(1u)

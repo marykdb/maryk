@@ -1,6 +1,7 @@
 package maryk.core.models
 
 import maryk.core.exceptions.SerializationException
+import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.list
@@ -114,7 +115,7 @@ abstract class ReferencePairDataModel<DO : Any, P : ReferenceValuePairsObjectPro
 abstract class ReferenceValuePairsObjectPropertyDefinitions<DO : Any, R : DefinedByReference<*>>(
     val pairName: String,
     pairGetter: (DO) -> List<R>?,
-    val pairModel: QueryDataModel<R, *>
+    val pairModel: QueryDataModel<R, out IsObjectPropertyDefinitions<R>>
 ) : ObjectPropertyDefinitions<DO>() {
     val referenceValuePairs by list(
         index = 1u,

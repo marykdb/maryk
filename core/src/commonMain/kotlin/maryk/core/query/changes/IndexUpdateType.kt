@@ -17,9 +17,8 @@ enum class IndexUpdateType(
 ) : IndexedEnumComparable<IndexUpdateType>,
     IsCoreEnum,
     MultiTypeEnum<IsIndexUpdate> {
-    Update(1u, IndexUpdate), Delete(2u,
-        IndexDelete
-    );
+    Update(1u, IndexUpdate.Model),
+    Delete(2u, IndexDelete.Model);
 
     @Suppress("UNCHECKED_CAST")
     override val definition = EmbeddedObjectDefinition(

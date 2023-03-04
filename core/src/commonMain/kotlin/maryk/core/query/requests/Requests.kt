@@ -66,7 +66,7 @@ data class Requests internal constructor(
     @Suppress("UNCHECKED_CAST")
     companion object : SingleTypedValueDataModel<TypedValue<RequestType, Any>, Requests, Properties, RequestContext>(
         properties = Properties,
-        singlePropertyDefinition = Properties.requests as IsDefinitionWrapper<TypedValue<RequestType, Any>, TypedValue<RequestType, Any>, RequestContext, Requests>
+        singlePropertyDefinitionGetter = { Properties.requests as IsDefinitionWrapper<TypedValue<RequestType, Any>, TypedValue<RequestType, Any>, RequestContext, Requests> }
     ) {
         override fun invoke(values: ObjectValues<Requests, Properties>) = Requests(
             requests = values(1u),

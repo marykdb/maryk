@@ -46,11 +46,11 @@ internal val mapOfSimpleIndexKeyPartDefinitions: Map<IndexKeyPartType<IsIndexabl
                 it?.propertyDefinitions as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()
             }
         ),
-        IndexKeyPartType.Reversed to EmbeddedObjectDefinition(dataModel = { ReversedInstance.Model })
+        IndexKeyPartType.Reversed to EmbeddedObjectDefinition(dataModel = { ReversedInstance.Model.Model })
     )
 
 @SharedImmutable
 internal val mapOfIndexKeyPartDefinitions: Map<IndexKeyPartType<*>, IsValueDefinition<*, DefinitionsConversionContext>> =
     mapOfSimpleIndexKeyPartDefinitions.plus(
-        IndexKeyPartType.Multiple to EmbeddedObjectDefinition(dataModel = { MultipleInstance.Model })
+        IndexKeyPartType.Multiple to EmbeddedObjectDefinition(dataModel = { MultipleInstance.Model.Model })
     )

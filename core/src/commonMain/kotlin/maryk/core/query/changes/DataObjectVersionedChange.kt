@@ -2,9 +2,8 @@ package maryk.core.query.changes
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.QueryDataModel
 import maryk.core.properties.IsRootModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.definitions.flexBytes
@@ -23,7 +22,7 @@ data class DataObjectVersionedChange<out DM : IsRootModel>(
     val sortingKey: Bytes? = null,
     val changes: List<VersionedChanges>
 ) {
-    object Properties : ObjectPropertyDefinitions<DataObjectVersionedChange<*>>() {
+    companion object : QueryModel<DataObjectVersionedChange<*>, Companion>() {
         val key by contextual(
             index = 1u,
             getter = DataObjectVersionedChange<*>::key,
@@ -46,15 +45,11 @@ data class DataObjectVersionedChange<out DM : IsRootModel>(
             getter = DataObjectVersionedChange<*>::changes,
             default = emptyList(),
             valueDefinition = EmbeddedObjectDefinition(
-                dataModel = { VersionedChanges }
+                dataModel = { VersionedChanges.Model }
             )
         )
-    }
 
-    companion object : QueryDataModel<DataObjectVersionedChange<*>, Properties>(
-        properties = Properties
-    ) {
-        override fun invoke(values: ObjectValues<DataObjectVersionedChange<*>, Properties>) = DataObjectVersionedChange<IsRootModel>(
+        override fun invoke(values: ObjectValues<DataObjectVersionedChange<*>, Companion>) = DataObjectVersionedChange<IsRootModel>(
             key = values(1u),
             sortingKey = values(2u),
             changes = values(3u)

@@ -1,12 +1,11 @@
 package maryk.core.query.orders
 
-import maryk.core.models.SingleTypedValueDataModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SingleTypedValueModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.query.RequestContext
 import maryk.core.query.orders.OrderType.ORDERS
-import maryk.core.query.orders.Orders.Properties.orders
+import maryk.core.query.orders.Orders.Companion.orders
 import maryk.core.values.ObjectValues
 
 /** Defines multiple orders into one object */
@@ -17,7 +16,9 @@ data class Orders(
 
     override val orderType = ORDERS
 
-    object Properties : ObjectPropertyDefinitions<Orders>() {
+    companion object : SingleTypedValueModel<List<Order>, Orders, Companion, RequestContext>(
+        singlePropertyDefinitionGetter = { orders }
+    ) {
         val orders by list(
             index = 1u,
             getter = Orders::orders,
@@ -25,13 +26,8 @@ data class Orders(
                 dataModel = { Order }
             )
         )
-    }
 
-    companion object : SingleTypedValueDataModel<List<Order>, Orders, Properties, RequestContext>(
-        properties = Properties,
-        singlePropertyDefinition = orders
-    ) {
-        override fun invoke(values: ObjectValues<Orders, Properties>) =
+        override fun invoke(values: ObjectValues<Orders, Companion>) =
             Orders(
                 orders = values(1u)
             )

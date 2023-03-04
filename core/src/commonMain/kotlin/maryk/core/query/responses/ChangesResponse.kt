@@ -19,7 +19,7 @@ data class ChangesResponse<out DM : IsRootModel>(
             index = 2u,
             getter = ChangesResponse<*>::changes,
             valueDefinition = EmbeddedObjectDefinition(
-                dataModel = { DataObjectVersionedChange }
+                dataModel = { DataObjectVersionedChange.Model }
             )
         )
 

@@ -61,7 +61,7 @@ class AggregationsResponseTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.aggregationsResponse, AggregationsResponse, { this.context })
+        checkProtoBufConversion(this.aggregationsResponse, AggregationsResponse.Model, { this.context })
     }
 
     @Test
@@ -105,7 +105,7 @@ class AggregationsResponseTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.aggregationsResponse, AggregationsResponse, { this.context })
+            checkJsonConversion(this.aggregationsResponse, AggregationsResponse.Model, { this.context })
         }
     }
 
@@ -141,7 +141,7 @@ class AggregationsResponseTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.aggregationsResponse, AggregationsResponse, { this.context })
+            checkYamlConversion(this.aggregationsResponse, AggregationsResponse.Model, { this.context })
         }
     }
 }

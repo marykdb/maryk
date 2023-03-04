@@ -1,8 +1,7 @@
 package maryk.core.query.changes
 
-import maryk.core.models.SingleTypedValueDataModel
 import maryk.core.properties.IsRootModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SingleTypedValueModel
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
@@ -27,7 +26,10 @@ data class IndexChange(
         // Do nothing since it cannot operate on object itself
     }
 
-    object Properties : ObjectPropertyDefinitions<IndexChange>() {
+    @Suppress("UNCHECKED_CAST")
+    companion object : SingleTypedValueModel<List<TypedValue<IndexUpdateType, IsIndexUpdate>>, IndexChange, Companion, ContainsDefinitionsContext>(
+        singlePropertyDefinitionGetter = { Companion.changes as IsDefinitionWrapper<List<TypedValue<IndexUpdateType, IsIndexUpdate>>, out List<TypedValue<IndexUpdateType, IsIndexUpdate>>, ContainsDefinitionsContext, IndexChange> }
+    ) {
         val changes by list(
             index = 1u,
             getter = IndexChange::changes,
@@ -39,14 +41,8 @@ data class IndexChange(
             toSerializable = { TypedValue(it.type, it) },
             fromSerializable = { it.value }
         )
-    }
 
-    @Suppress("UNCHECKED_CAST")
-    companion object : SingleTypedValueDataModel<List<TypedValue<IndexUpdateType, IsIndexUpdate>>, IndexChange, Properties, ContainsDefinitionsContext>(
-        properties = Properties,
-        singlePropertyDefinition = Properties.changes as IsDefinitionWrapper<List<TypedValue<IndexUpdateType, IsIndexUpdate>>, out List<TypedValue<IndexUpdateType, IsIndexUpdate>>, ContainsDefinitionsContext, IndexChange>
-    ) {
-        override fun invoke(values: ObjectValues<IndexChange, Properties>) =
+        override fun invoke(values: ObjectValues<IndexChange, Companion>) =
             IndexChange(
                 changes = values(1u)
             )

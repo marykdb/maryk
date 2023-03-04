@@ -1,7 +1,6 @@
 package maryk.core.aggregations
 
-import maryk.core.models.SingleValueDataModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SingleValueModel
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.map
@@ -17,7 +16,9 @@ data class AggregationsResponse internal constructor(
         vararg aggregationPair: Pair<String, IsAggregationResponse>
     ) : this(aggregationPair.toMap())
 
-    object Properties : ObjectPropertyDefinitions<AggregationsResponse>() {
+    companion object : SingleValueModel<Map<String, TypedValue<AggregationResponseType, IsAggregationResponse>>, Map<String, IsAggregationResponse>, AggregationsResponse, Companion, RequestContext>(
+        singlePropertyDefinitionGetter = { Companion.namedAggregations }
+    ) {
         val namedAggregations by map(
             index = 1u,
             getter = AggregationsResponse::namedAggregations,
@@ -36,13 +37,8 @@ data class AggregationsResponse internal constructor(
                 }
             }
         )
-    }
 
-    companion object : SingleValueDataModel<Map<String, TypedValue<AggregationResponseType, IsAggregationResponse>>, Map<String, IsAggregationResponse>, AggregationsResponse, Properties, RequestContext>(
-        properties = Properties,
-        singlePropertyDefinition = Properties.namedAggregations
-    ) {
-        override fun invoke(values: ObjectValues<AggregationsResponse, Properties>) = AggregationsResponse(
+        override fun invoke(values: ObjectValues<AggregationsResponse, Companion>) = AggregationsResponse(
             namedAggregations = values(1u)
         )
     }

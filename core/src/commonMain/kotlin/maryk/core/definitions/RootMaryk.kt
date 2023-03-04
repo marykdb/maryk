@@ -1,7 +1,6 @@
 package maryk.core.definitions
 
-import maryk.core.models.SingleTypedValueDataModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SingleTypedValueModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
@@ -18,7 +17,10 @@ import maryk.core.values.ObjectValues
 data class RootMaryk(
     val operations: List<TypedValue<Operation, IsOperation>> = listOf()
 ) {
-    object Properties : ObjectPropertyDefinitions<RootMaryk>() {
+    companion object :
+        SingleTypedValueModel<List<TypedValue<Operation, IsOperation>>, RootMaryk, Companion, DefinitionsContext>(
+            singlePropertyDefinitionGetter = { Companion.operations }
+        ) {
         val operations by list(
             index = 1u,
             getter = RootMaryk::operations,
@@ -48,14 +50,8 @@ data class RootMaryk(
                 )
             )
         )
-    }
 
-    companion object :
-        SingleTypedValueDataModel<List<TypedValue<Operation, IsOperation>>, RootMaryk, Properties, DefinitionsContext>(
-            properties = Properties,
-            singlePropertyDefinition = Properties.operations
-        ) {
-        override fun invoke(values: ObjectValues<RootMaryk, Properties>) = RootMaryk(
+        override fun invoke(values: ObjectValues<RootMaryk, Companion>) = RootMaryk(
             operations = values(1u)
         )
     }

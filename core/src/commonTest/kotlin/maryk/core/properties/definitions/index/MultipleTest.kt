@@ -29,7 +29,7 @@ class MultipleTest {
     fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(
             value = multiple,
-            dataModel = Multiple.Model,
+            dataModel = Multiple.Model.Model,
             context = { context }
         )
     }
@@ -38,7 +38,7 @@ class MultipleTest {
     fun convertDefinitionToJSONAndBack() {
         checkJsonConversion(
             value = multiple,
-            dataModel = Multiple.Model,
+            dataModel = Multiple.Model.Model,
             context = { context }
         )
     }
@@ -58,7 +58,7 @@ class MultipleTest {
         ) {
             checkYamlConversion(
                 value = multiple,
-                dataModel = Multiple.Model,
+                dataModel = Multiple.Model.Model,
                 context = { context }
             )
         }

@@ -3,8 +3,7 @@ package maryk.core.properties.definitions.index
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.SingleValueDataModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SingleValueModel
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.references.IsIndexablePropertyReference
@@ -93,7 +92,14 @@ data class Multiple(
         }
     }
 
-    object Properties : ObjectPropertyDefinitions<Multiple>() {
+    internal object Model :
+        SingleValueModel<List<TypedValue<IndexKeyPartType<*>, IsIndexable>>, List<IsIndexablePropertyReference<*>>, Multiple, Model, DefinitionsConversionContext>(
+            singlePropertyDefinitionGetter = { Model.references }
+        ) {
+        override fun invoke(values: ObjectValues<Multiple, Model>) = Multiple(
+            references = values(1u)
+        )
+
         val references by list(
             1u,
             getter = Multiple::references,
@@ -107,16 +113,6 @@ data class Multiple(
             fromSerializable = { typedValue ->
                 typedValue.value as IsIndexablePropertyReference<*>
             }
-        )
-    }
-
-    internal object Model :
-        SingleValueDataModel<List<TypedValue<IndexKeyPartType<*>, IsIndexable>>, List<IsIndexablePropertyReference<*>>, Multiple, Properties, DefinitionsConversionContext>(
-            properties = Properties,
-            singlePropertyDefinition = Properties.references
-        ) {
-        override fun invoke(values: ObjectValues<Multiple, Properties>) = Multiple(
-            references = values(1u)
         )
     }
 }

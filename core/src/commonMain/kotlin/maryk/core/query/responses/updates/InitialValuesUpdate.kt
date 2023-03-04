@@ -22,10 +22,10 @@ data class InitialValuesUpdate<DM: IsRootModel>(
         val version by number(1u, getter = InitialValuesUpdate<*>::version, type = UInt64)
         val values = ObjectListDefinitionWrapper(
             2u, "values",
-            properties = ValuesWithMetaData.Properties,
+            properties = ValuesWithMetaData.Companion,
             definition = ListDefinition(
                 valueDefinition = EmbeddedObjectDefinition(
-                    dataModel = { ValuesWithMetaData }
+                    dataModel = { ValuesWithMetaData.Model }
                 )
             ),
             getter = InitialValuesUpdate<*>::values

@@ -74,15 +74,15 @@ data class SetChange internal constructor(
             index = 1u,
             getter = SetChange::setValueChanges,
             valueDefinition = EmbeddedObjectDefinition(
-                dataModel = { SetValueChanges }
+                dataModel = { SetValueChanges.Model }
             )
         )
     }
 
-    companion object : ReferenceMappedDataModel<SetChange, SetValueChanges<*>, Properties, SetValueChanges.Properties>(
+    companion object : ReferenceMappedDataModel<SetChange, SetValueChanges<*>, Properties, SetValueChanges.Companion>(
         properties = Properties,
-        containedDataModel = SetValueChanges,
-        referenceProperty = SetValueChanges.Properties.reference
+        containedDataModel = SetValueChanges.Model,
+        referenceProperty = SetValueChanges.reference
     ) {
         override fun invoke(values: ObjectValues<SetChange, Properties>) = SetChange(
             setValueChanges = values(1u)

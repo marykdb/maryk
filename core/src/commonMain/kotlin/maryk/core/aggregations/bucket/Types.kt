@@ -27,7 +27,7 @@ data class Types<T: TypeEnum<*>>(
         val aggregations by embedObject(
             index = 2u,
             getter = Types<*>::aggregations,
-            dataModel = { Aggregations },
+            dataModel = { Aggregations.Model },
             alternativeNames = setOf("aggs")
         )
 

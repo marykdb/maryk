@@ -64,7 +64,7 @@ data class ScanRequest<DM : IsRootModel> internal constructor(
         val where by addFilter(ScanRequest<*>::where)
         val toVersion by number(5u, ScanRequest<*>::toVersion, UInt64, required = false)
         val filterSoftDeleted  by boolean(6u, ScanRequest<*>::filterSoftDeleted, default = true)
-        val aggregations by embedObject(7u, ScanRequest<*>::aggregations, dataModel = { Aggregations }, alternativeNames = setOf("aggs"))
+        val aggregations by embedObject(7u, ScanRequest<*>::aggregations, dataModel = { Aggregations.Model }, alternativeNames = setOf("aggs"))
         val order by addOrder(ScanRequest<*>::order)
         val limit by number(9u, ScanRequest<*>::limit, type = UInt32, default = 100u)
         val includeStart by boolean(10u, ScanRequest<*>::includeStart, default = true)

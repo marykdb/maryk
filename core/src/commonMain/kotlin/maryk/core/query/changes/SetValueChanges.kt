@@ -1,9 +1,8 @@
 package maryk.core.query.changes
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.QueryDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.set
@@ -21,8 +20,7 @@ data class SetValueChanges<T : Any> internal constructor(
     override val reference: IsPropertyReference<Set<T>, IsPropertyDefinition<Set<T>>, *>,
     val addValues: Set<T>? = null
 ) : DefinedByReference<Set<T>> {
-    @Suppress("unused")
-    object Properties : ObjectPropertyDefinitions<SetValueChanges<*>>() {
+    companion object : QueryModel<SetValueChanges<out Any>, Companion>() {
         val reference by addReference(
             SetValueChanges<*>::reference
         )
@@ -33,13 +31,8 @@ data class SetValueChanges<T : Any> internal constructor(
             required = false,
             valueDefinition = valueDefinition
         )
-    }
 
-    companion object : QueryDataModel<SetValueChanges<out Any>, Properties>(
-        properties = Properties
-    ) {
-        @Suppress("RemoveExplicitTypeArguments")
-        override fun invoke(values: ObjectValues<SetValueChanges<out Any>, Properties>) = SetValueChanges<Any>(
+        override fun invoke(values: ObjectValues<SetValueChanges<out Any>, Companion>) = SetValueChanges<Any>(
             reference = values(1u),
             addValues = values(2u)
         )

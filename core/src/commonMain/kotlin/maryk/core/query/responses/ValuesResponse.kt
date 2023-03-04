@@ -20,10 +20,10 @@ data class ValuesResponse<DM : IsRootModel>(
         val dataModel by addDataModel({ it.dataModel })
         val values = ObjectListDefinitionWrapper(
             2u, "values",
-            properties = ValuesWithMetaData.Properties,
+            properties = ValuesWithMetaData.Companion,
             definition = ListDefinition(
                 valueDefinition = EmbeddedObjectDefinition(
-                    dataModel = { ValuesWithMetaData }
+                    dataModel = { ValuesWithMetaData.Model }
                 )
             ),
             getter = ValuesResponse<*>::values
@@ -32,7 +32,7 @@ data class ValuesResponse<DM : IsRootModel>(
         val aggregations by embedObject(
             index = 3u,
             getter = ValuesResponse<*>::aggregations,
-            dataModel = { AggregationsResponse },
+            dataModel = { AggregationsResponse.Model },
             alternativeNames = setOf("aggs")
         )
 

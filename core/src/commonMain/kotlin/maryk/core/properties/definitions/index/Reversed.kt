@@ -5,9 +5,8 @@ import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.SingleTypedValueDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SingleTypedValueModel
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.references.AnyPropertyReference
@@ -64,7 +63,10 @@ data class Reversed<T : Any>(
     override fun isCompatibleWithModel(dataModel: IsRootDataModel<*>): Boolean =
         reference.isCompatibleWithModel(dataModel)
 
-    object Properties : ObjectPropertyDefinitions<Reversed<out Any>>() {
+    internal object Model :
+        SingleTypedValueModel<AnyPropertyReference, Reversed<out Any>, Model, DefinitionsConversionContext>(
+            singlePropertyDefinitionGetter = { Model.reference }
+        ) {
         val reference by contextual(
             index = 1u,
             getter = Reversed<*>::reference,
@@ -74,14 +76,8 @@ data class Reversed<T : Any>(
                 }
             )
         )
-    }
 
-    internal object Model :
-        SingleTypedValueDataModel<AnyPropertyReference, Reversed<out Any>, Properties, DefinitionsConversionContext>(
-            properties = Properties,
-            singlePropertyDefinition = Properties.reference
-        ) {
-        override fun invoke(values: ObjectValues<Reversed<out Any>, Properties>) = Reversed<Any>(
+        override fun invoke(values: ObjectValues<Reversed<out Any>, Model>) = Reversed<Any>(
             reference = values(1u)
         )
     }

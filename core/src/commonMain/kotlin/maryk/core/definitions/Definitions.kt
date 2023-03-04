@@ -18,7 +18,6 @@ import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.contextual.ContextValueTransformDefinition
 import maryk.core.properties.definitions.list
-import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.MultiTypeEnumDefinition
 import maryk.core.properties.types.TypedValue
@@ -136,7 +135,7 @@ data class Definitions(
     internal companion object :
         SingleValueDataModel<List<TypedValue<PrimitiveType, MarykPrimitive>>, List<MarykPrimitive>, Definitions, Properties, ContainsDefinitionsContext>(
             properties = Properties,
-            singlePropertyDefinition = Properties.definitions as IsDefinitionWrapper<List<TypedValue<PrimitiveType, MarykPrimitive>>, List<MarykPrimitive>, ContainsDefinitionsContext, Definitions>
+            singlePropertyDefinitionGetter = { Properties.definitions }
         ) {
         override fun invoke(values: ObjectValues<Definitions, Properties>) = Definitions(
             definitions = values(1u)

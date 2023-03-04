@@ -37,7 +37,7 @@ data class Bucket<out T: Any>(
         val aggregations by contextual(
             2u,
             definition = ContextTransformerDefinition(
-                EmbeddedObjectDefinition(dataModel = { AggregationsResponse })
+                EmbeddedObjectDefinition(dataModel = { AggregationsResponse.Model })
             ) { context: RequestContext? -> context?.let { RequestContext(context.definitionsContext, context.dataModel) } },
             getter = Bucket<*>::aggregations,
             alternativeNames = setOf("aggs")

@@ -1,7 +1,7 @@
 package maryk.core.models
 
+import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
@@ -18,10 +18,12 @@ typealias SingleTypedValueDataModel<T, DO, P, CX> = SingleValueDataModel<T, T, D
  *
  * In JSON/YAML this model is represented as just that property.
  */
-abstract class SingleValueDataModel<T : Any, TO : Any, DO : Any, P : ObjectPropertyDefinitions<DO>, CX : IsPropertyContext>(
+abstract class SingleValueDataModel<T : Any, TO : Any, DO : Any, P : IsObjectPropertyDefinitions<DO>, CX : IsPropertyContext>(
     properties: P,
-    private val singlePropertyDefinition: IsDefinitionWrapper<T, out TO, CX, DO>
+    singlePropertyDefinitionGetter: () -> IsDefinitionWrapper<T, out TO, CX, DO>
 ) : AbstractObjectDataModel<DO, P, CX, CX>(properties) {
+    private val singlePropertyDefinition by lazy(singlePropertyDefinitionGetter)
+
     override fun writeJson(values: ObjectValues<DO, P>, writer: IsJsonLikeWriter, context: CX?) {
         val value = values.original { singlePropertyDefinition }
             ?: throw ParseException("Missing ${singlePropertyDefinition.name} value")

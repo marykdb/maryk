@@ -11,9 +11,6 @@ import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.HasEmbeddedPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.decodeStorageIndex
-import maryk.core.values.IsValueItems
-import maryk.core.values.MutableValueItems
-import maryk.core.values.ValueItem
 import maryk.lib.exceptions.ParseException
 
 abstract class AbstractPropertyDefinitions<DO : Any> :
@@ -48,14 +45,6 @@ abstract class AbstractPropertyDefinitions<DO : Any> :
     override operator fun get(name: String) = nameToDefinition[name]
 
     override operator fun get(index: UInt) = indexToDefinition[index]
-
-    /** Converts a list of optional [pairs] to values */
-    fun mapNonNulls(vararg pairs: ValueItem?): IsValueItems =
-        MutableValueItems().also { items ->
-            for (it in pairs) {
-                if (it != null) items += it
-            }
-        }
 
     /** Helper for definition maps for multi types. Add enum/usableInMultiType [pair] to map */
     fun <E : TypeEnum<*>> definitionMap(vararg pair: Pair<E, IsUsableInMultiType<*, IsPropertyContext>>) =

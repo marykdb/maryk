@@ -1,7 +1,6 @@
 package maryk.core.query.changes
 
-import maryk.core.models.QueryDataModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.number
@@ -16,7 +15,7 @@ data class VersionedChanges(
 ) {
     override fun toString() = "VersionedChanges($version)[${changes.joinToString()}]"
 
-    object Properties : ObjectPropertyDefinitions<VersionedChanges>() {
+    companion object : QueryModel<VersionedChanges, Companion>() {
         val version by number(
             1u,
             VersionedChanges::version,
@@ -34,12 +33,8 @@ data class VersionedChanges(
             toSerializable = { TypedValue(it.changeType, it) },
             fromSerializable = { it.value }
         )
-    }
 
-    companion object : QueryDataModel<VersionedChanges, Properties>(
-        properties = Properties
-    ) {
-        override fun invoke(values: ObjectValues<VersionedChanges, Properties>) = VersionedChanges(
+        override fun invoke(values: ObjectValues<VersionedChanges, Companion>) = VersionedChanges(
             version = values(1u),
             changes = values(2u)
         )

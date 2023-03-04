@@ -6,10 +6,9 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.AbstractValuesDataModel
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsValuesDataModel
-import maryk.core.models.QueryDataModel
 import maryk.core.properties.IsRootModel
 import maryk.core.properties.IsValuesPropertyDefinitions
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.definitions.contextual.embedContextual
@@ -27,7 +26,7 @@ data class ValuesWithMetaData<DM : IsRootModel>(
     val lastVersion: ULong,
     val isDeleted: Boolean
 ) {
-    object Properties : ObjectPropertyDefinitions<ValuesWithMetaData<*>>() {
+    companion object : QueryModel<ValuesWithMetaData<*>, Companion>() {
         val key by contextual(
             index = 1u,
             getter = ValuesWithMetaData<*>::key,
@@ -50,12 +49,8 @@ data class ValuesWithMetaData<DM : IsRootModel>(
         val firstVersion by number(3u, ValuesWithMetaData<*>::firstVersion, UInt64)
         val lastVersion by number(4u, ValuesWithMetaData<*>::lastVersion, UInt64)
         val isDeleted by boolean(5u, ValuesWithMetaData<*>::isDeleted)
-    }
 
-    companion object : QueryDataModel<ValuesWithMetaData<*>, Properties>(
-        properties = Properties
-    ) {
-        override fun invoke(values: ObjectValues<ValuesWithMetaData<*>, Properties>) =
+        override fun invoke(values: ObjectValues<ValuesWithMetaData<*>, Companion>) =
             ValuesWithMetaData<IsRootModel>(
                 key = values(1u),
                 values = values(2u),

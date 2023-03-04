@@ -53,12 +53,12 @@ class DataObjectVersionedChangeTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.dataObjectVersionedChanges, DataObjectVersionedChange, { this.context })
+        checkProtoBufConversion(this.dataObjectVersionedChanges, DataObjectVersionedChange.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.dataObjectVersionedChanges, DataObjectVersionedChange, { this.context })
+        checkJsonConversion(this.dataObjectVersionedChanges, DataObjectVersionedChange.Model, { this.context })
     }
 
     @Test
@@ -87,7 +87,7 @@ class DataObjectVersionedChangeTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.dataObjectVersionedChanges, DataObjectVersionedChange, { this.context })
+            checkYamlConversion(this.dataObjectVersionedChanges, DataObjectVersionedChange.Model, { this.context })
         }
     }
 }

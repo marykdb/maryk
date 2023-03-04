@@ -37,12 +37,12 @@ class VersionedChangesTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.versionedChanges, VersionedChanges, { this.context })
+        checkProtoBufConversion(this.versionedChanges, VersionedChanges.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.versionedChanges, VersionedChanges, { this.context })
+        checkJsonConversion(this.versionedChanges, VersionedChanges.Model, { this.context })
     }
 
     @Test
@@ -66,7 +66,7 @@ class VersionedChangesTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.versionedChanges, VersionedChanges, { this.context })
+            checkYamlConversion(this.versionedChanges, VersionedChanges.Model, { this.context })
         }
     }
 }

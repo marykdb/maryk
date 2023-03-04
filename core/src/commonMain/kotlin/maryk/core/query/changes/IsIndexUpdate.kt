@@ -2,8 +2,8 @@
 
 package maryk.core.query.changes
 
-import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SimpleObjectModel
 import maryk.core.properties.definitions.flexBytes
 import maryk.core.properties.types.Bytes
 import maryk.core.query.changes.IndexUpdateType.Delete
@@ -25,6 +25,10 @@ data class IndexUpdate(
     override val type = Update
 
     object Properties : ObjectPropertyDefinitions<IndexUpdate>() {
+
+    }
+
+    companion object : SimpleObjectModel<IndexUpdate, Properties>() {
         val index by flexBytes(
             index = 1u,
             getter = IndexUpdate::index
@@ -40,11 +44,7 @@ data class IndexUpdate(
             getter = IndexUpdate::previousIndexKey,
             required = false
         )
-    }
 
-    companion object : SimpleObjectDataModel<IndexUpdate, Properties>(
-        properties = Properties
-    ) {
         override fun invoke(values: ObjectValues<IndexUpdate, Properties>) = IndexUpdate(
             index = values(1u),
             indexKey = values(2u),
@@ -60,7 +60,7 @@ data class IndexDelete(
 ): IsIndexUpdate {
     override val type = Delete
 
-    object Properties : ObjectPropertyDefinitions<IndexDelete>() {
+    companion object : SimpleObjectModel<IndexDelete, Companion>() {
         val index by flexBytes(
             index = 1u,
             getter = IndexDelete::index
@@ -70,12 +70,8 @@ data class IndexDelete(
             index = 2u,
             getter = IndexDelete::indexKey
         )
-    }
 
-    companion object : SimpleObjectDataModel<IndexDelete, Properties>(
-        properties = Properties
-    ) {
-        override fun invoke(values: ObjectValues<IndexDelete, Properties>) = IndexDelete(
+        override fun invoke(values: ObjectValues<IndexDelete, Companion>) = IndexDelete(
             index = values(1u),
             indexKey = values(2u)
         )

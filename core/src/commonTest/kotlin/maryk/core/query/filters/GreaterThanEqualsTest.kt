@@ -25,12 +25,12 @@ class GreaterThanEqualsTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.greaterThanEquals, GreaterThanEquals, { this.context })
+        checkProtoBufConversion(this.greaterThanEquals, GreaterThanEquals.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.greaterThanEquals, GreaterThanEquals, { this.context })
+        checkJsonConversion(this.greaterThanEquals, GreaterThanEquals.Model, { this.context })
     }
 
     @Test
@@ -42,7 +42,7 @@ class GreaterThanEqualsTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.greaterThanEquals, GreaterThanEquals, { this.context })
+            checkYamlConversion(this.greaterThanEquals, GreaterThanEquals.Model, { this.context })
         }
     }
 }

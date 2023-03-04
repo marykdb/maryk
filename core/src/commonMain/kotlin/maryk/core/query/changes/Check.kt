@@ -1,8 +1,7 @@
 package maryk.core.query.changes
 
-import maryk.core.models.ReferencePairDataModel
-import maryk.core.models.ReferenceValuePairsObjectPropertyDefinitions
 import maryk.core.properties.IsRootModel
+import maryk.core.properties.ReferenceValuePairModel
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.query.pairs.ReferenceValuePair
@@ -30,17 +29,13 @@ data class Check internal constructor(
 
     override fun toString() = "Check[${referenceValuePairs.joinToString()}]"
 
-    object Properties : ReferenceValuePairsObjectPropertyDefinitions<Check, ReferenceValuePair<Any>>(
+    companion object : ReferenceValuePairModel<Check, Companion, ReferenceValuePair<Any>, Any, Any>(
         pairName = "referenceValuePairs",
         pairGetter = Check::referenceValuePairs,
-        pairModel = ReferenceValuePair
-    )
-
-    companion object : ReferencePairDataModel<Check, Properties, ReferenceValuePair<Any>, Any, Any>(
-        properties = Properties,
+        pairModel = ReferenceValuePair,
         pairProperties = ReferenceValuePair.Properties
     ) {
-        override fun invoke(values: ObjectValues<Check, Properties>) = Check(
+        override fun invoke(values: ObjectValues<Check, Companion>) = Check(
             referenceValuePairs = values(1u)
         )
     }

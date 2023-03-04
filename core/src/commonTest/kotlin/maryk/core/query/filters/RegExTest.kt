@@ -24,12 +24,12 @@ class RegExTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.regEx, RegEx, { this.context })
+        checkProtoBufConversion(this.regEx, RegEx.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.regEx, RegEx, { this.context })
+        checkJsonConversion(this.regEx, RegEx.Model, { this.context })
     }
 
     @Test
@@ -40,7 +40,7 @@ class RegExTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.regEx, RegEx, { this.context })
+            checkYamlConversion(this.regEx, RegEx.Model, { this.context })
         }
     }
 }

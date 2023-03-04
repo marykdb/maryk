@@ -25,12 +25,12 @@ class GreaterThanTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.greaterThan, GreaterThan, { this.context })
+        checkProtoBufConversion(this.greaterThan, GreaterThan.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.greaterThan, GreaterThan, { this.context })
+        checkJsonConversion(this.greaterThan, GreaterThan.Model, { this.context })
     }
 
     @Test
@@ -42,7 +42,7 @@ class GreaterThanTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.greaterThan, GreaterThan, { this.context })
+            checkYamlConversion(this.greaterThan, GreaterThan.Model, { this.context })
         }
     }
 }

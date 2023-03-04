@@ -1,7 +1,6 @@
 package maryk.core.query.filters
 
-import maryk.core.models.ReferencePairDataModel
-import maryk.core.models.ReferenceValuePairsObjectPropertyDefinitions
+import maryk.core.properties.ReferenceValuePairModel
 import maryk.core.query.pairs.ReferenceValuePair
 import maryk.core.values.ObjectValues
 
@@ -14,17 +13,13 @@ data class GreaterThan internal constructor(
     @Suppress("UNCHECKED_CAST")
     constructor(vararg referenceValuePair: ReferenceValuePair<*>) : this(referenceValuePair.toList() as List<ReferenceValuePair<Any>>)
 
-    object Properties : ReferenceValuePairsObjectPropertyDefinitions<GreaterThan, ReferenceValuePair<Any>>(
+    companion object : ReferenceValuePairModel<GreaterThan, Companion, ReferenceValuePair<Any>, Any, Any>(
         pairName = "referenceValuePairs",
         pairGetter = GreaterThan::referenceValuePairs,
-        pairModel = ReferenceValuePair
-    )
-
-    companion object : ReferencePairDataModel<GreaterThan, Properties, ReferenceValuePair<Any>, Any, Any>(
-        properties = Properties,
+        pairModel = ReferenceValuePair,
         pairProperties = ReferenceValuePair.Properties
     ) {
-        override fun invoke(values: ObjectValues<GreaterThan, Properties>) = GreaterThan(
+        override fun invoke(values: ObjectValues<GreaterThan, Companion>) = GreaterThan(
             referenceValuePairs = values(1u)
         )
     }

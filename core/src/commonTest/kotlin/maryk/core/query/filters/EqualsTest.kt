@@ -44,7 +44,7 @@ class EqualsTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.equals, Equals, { this.context })
+        checkProtoBufConversion(this.equals, Equals.Model, { this.context })
     }
 
     @Test
@@ -57,7 +57,7 @@ class EqualsTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.equals, Equals, { this.context })
+            checkJsonConversion(this.equals, Equals.Model, { this.context })
         }
     }
 
@@ -70,7 +70,7 @@ class EqualsTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.equals, Equals, { this.context })
+            checkYamlConversion(this.equals, Equals.Model, { this.context })
         }
     }
 }

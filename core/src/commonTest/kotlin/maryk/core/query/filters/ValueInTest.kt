@@ -25,12 +25,12 @@ class ValueInTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.valueIn, ValueIn, { this.context })
+        checkProtoBufConversion(this.valueIn, ValueIn.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.valueIn, ValueIn, { this.context })
+        checkJsonConversion(this.valueIn, ValueIn.Model, { this.context })
     }
 
     @Test
@@ -42,7 +42,7 @@ class ValueInTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.valueIn, ValueIn, { this.context })
+            checkYamlConversion(this.valueIn, ValueIn.Model, { this.context })
         }
     }
 }

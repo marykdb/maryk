@@ -1,7 +1,6 @@
 package maryk.core.query.filters
 
-import maryk.core.models.ReferencePairDataModel
-import maryk.core.models.ReferenceValuePairsObjectPropertyDefinitions
+import maryk.core.properties.ReferenceValuePairModel
 import maryk.core.query.pairs.ReferenceValuePair
 import maryk.core.values.ObjectValues
 
@@ -14,17 +13,13 @@ data class LessThanEquals internal constructor(
     @Suppress("UNCHECKED_CAST")
     constructor(vararg referenceValuePair: ReferenceValuePair<out Any>) : this(referenceValuePair.toList() as List<ReferenceValuePair<Any>>)
 
-    object Properties : ReferenceValuePairsObjectPropertyDefinitions<LessThanEquals, ReferenceValuePair<Any>>(
+    companion object : ReferenceValuePairModel<LessThanEquals, Companion, ReferenceValuePair<Any>, Any, Any>(
         pairName = "referenceValuePairs",
         pairGetter = LessThanEquals::referenceValuePairs,
-        pairModel = ReferenceValuePair
-    )
-
-    companion object : ReferencePairDataModel<LessThanEquals, Properties, ReferenceValuePair<Any>, Any, Any>(
-        properties = Properties,
+        pairModel = ReferenceValuePair,
         pairProperties = ReferenceValuePair.Properties
     ) {
-        override fun invoke(values: ObjectValues<LessThanEquals, Properties>) = LessThanEquals(
+        override fun invoke(values: ObjectValues<LessThanEquals, Companion>) = LessThanEquals(
             referenceValuePairs = values(1u)
         )
     }

@@ -1,8 +1,7 @@
 package maryk.core.query.filters
 
 import maryk.core.models.QueryDataModel
-import maryk.core.models.ReferencePairDataModel
-import maryk.core.models.ReferenceValuePairsObjectPropertyDefinitions
+import maryk.core.properties.ReferenceValuePairModel
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.query.RequestContext
 import maryk.core.query.pairs.ReferenceValuePair
@@ -18,18 +17,13 @@ data class Prefix internal constructor(
     constructor(vararg referenceValuePair: ReferenceValuePair<String>) : this(referenceValuePair.toList())
 
     @Suppress("UNCHECKED_CAST")
-    object Properties : ReferenceValuePairsObjectPropertyDefinitions<Prefix, ReferenceValuePair<String>>(
+    companion object : ReferenceValuePairModel<Prefix, Companion, ReferenceValuePair<String>, String, String>(
         pairName = "referenceValuePairs",
         pairGetter = Prefix::referenceValuePairs,
-        pairModel = ReferenceValuePair as QueryDataModel<ReferenceValuePair<String>, *>
-    )
-
-    @Suppress("UNCHECKED_CAST")
-    companion object : ReferencePairDataModel<Prefix, Properties, ReferenceValuePair<String>, String, String>(
-        properties = Properties,
+        pairModel = ReferenceValuePair as QueryDataModel<ReferenceValuePair<String>, *>,
         pairProperties = ReferenceValuePair.Properties as ReferenceValuePairPropertyDefinitions<ReferenceValuePair<String>, String, String, IsDefinitionWrapper<String, String, RequestContext, ReferenceValuePair<String>>>
     ) {
-        override fun invoke(values: ObjectValues<Prefix, Properties>) = Prefix(
+        override fun invoke(values: ObjectValues<Prefix, Companion>) = Prefix(
             referenceValuePairs = values(1u)
         )
     }

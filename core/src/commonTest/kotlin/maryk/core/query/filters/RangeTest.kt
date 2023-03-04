@@ -31,12 +31,12 @@ class RangeTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.range, Range, { this.context })
+        checkProtoBufConversion(this.range, Range.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.range, Range, { this.context })
+        checkJsonConversion(this.range, Range.Model, { this.context })
     }
 
     @Test
@@ -48,7 +48,7 @@ class RangeTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.range, Range, { this.context })
+            checkYamlConversion(this.range, Range.Model, { this.context })
         }
     }
 }

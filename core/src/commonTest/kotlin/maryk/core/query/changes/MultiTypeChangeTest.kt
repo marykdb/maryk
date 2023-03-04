@@ -28,12 +28,12 @@ class MultiTypeChangeTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.multiTypeChange, MultiTypeChange, { this.context })
+        checkProtoBufConversion(this.multiTypeChange, MultiTypeChange.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.multiTypeChange, MultiTypeChange, { this.context })
+        checkJsonConversion(this.multiTypeChange, MultiTypeChange.Model, { this.context })
     }
 
     @Test
@@ -44,7 +44,7 @@ class MultiTypeChangeTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.multiTypeChange, MultiTypeChange, { this.context })
+            checkYamlConversion(this.multiTypeChange, MultiTypeChange.Model, { this.context })
         }
     }
 }

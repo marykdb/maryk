@@ -25,12 +25,12 @@ class LessThanEqualsTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.lessThanEquals, LessThanEquals, { this.context })
+        checkProtoBufConversion(this.lessThanEquals, LessThanEquals.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.lessThanEquals, LessThanEquals, { this.context })
+        checkJsonConversion(this.lessThanEquals, LessThanEquals.Model, { this.context })
     }
 
     @Test
@@ -42,7 +42,7 @@ class LessThanEqualsTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.lessThanEquals, LessThanEquals, { this.context })
+            checkYamlConversion(this.lessThanEquals, LessThanEquals.Model, { this.context })
         }
     }
 }

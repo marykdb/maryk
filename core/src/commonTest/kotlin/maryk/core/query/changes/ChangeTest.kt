@@ -44,12 +44,12 @@ class ChangeTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.valueChange, Change, { this.context })
+        checkProtoBufConversion(this.valueChange, Change.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.valueChange, Change, { this.context })
+        checkJsonConversion(this.valueChange, Change.Model, { this.context })
     }
 
     @Test
@@ -61,7 +61,7 @@ class ChangeTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.valueChange, Change, { this.context })
+            checkYamlConversion(this.valueChange, Change.Model, { this.context })
         }
     }
 

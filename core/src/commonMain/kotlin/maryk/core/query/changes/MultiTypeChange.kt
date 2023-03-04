@@ -1,9 +1,8 @@
 package maryk.core.query.changes
 
 import maryk.core.models.QueryDataModel
-import maryk.core.models.ReferencePairDataModel
-import maryk.core.models.ReferenceValuePairsObjectPropertyDefinitions
 import maryk.core.properties.IsRootModel
+import maryk.core.properties.ReferenceValuePairModel
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.IsPropertyReferenceForValues
@@ -29,17 +28,13 @@ data class MultiTypeChange internal constructor(
         // Ignore since it only describes change in type which can also be determined with actual value changes
     }
 
-    object Properties : ReferenceValuePairsObjectPropertyDefinitions<MultiTypeChange, ReferenceTypePair<*>>(
+    companion object : ReferenceValuePairModel<MultiTypeChange, Companion, ReferenceTypePair<*>, IndexedEnum, IndexedEnum>(
         pairName = "referenceValuePairs",
         pairGetter = MultiTypeChange::referenceTypePairs,
-        pairModel = ReferenceTypePair as QueryDataModel<ReferenceTypePair<*>, *>
-    )
-
-    companion object : ReferencePairDataModel<MultiTypeChange, Properties, ReferenceTypePair<*>, IndexedEnum, IndexedEnum>(
-        properties = Properties,
-        pairProperties = ReferenceTypePair.Properties
+        pairModel = ReferenceTypePair as QueryDataModel<ReferenceTypePair<*>, *>,
+        pairProperties = ReferenceTypePair.Properties,
     ) {
-        override fun invoke(values: ObjectValues<MultiTypeChange, Properties>) = MultiTypeChange(
+        override fun invoke(values: ObjectValues<MultiTypeChange, Companion>) = MultiTypeChange(
             referenceTypePairs = values(1u)
         )
     }

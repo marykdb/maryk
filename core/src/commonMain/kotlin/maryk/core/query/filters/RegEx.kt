@@ -1,8 +1,7 @@
 package maryk.core.query.filters
 
 import maryk.core.models.QueryDataModel
-import maryk.core.models.ReferencePairDataModel
-import maryk.core.models.ReferenceValuePairsObjectPropertyDefinitions
+import maryk.core.properties.ReferenceValuePairModel
 import maryk.core.query.pairs.ReferenceValueRegexPair
 import maryk.core.values.ObjectValues
 
@@ -15,17 +14,13 @@ data class RegEx internal constructor(
     constructor(vararg referenceValuePair: ReferenceValueRegexPair) : this(referenceValuePair.toList())
 
     @Suppress("UNCHECKED_CAST")
-    object Properties : ReferenceValuePairsObjectPropertyDefinitions<RegEx, ReferenceValueRegexPair>(
+    companion object : ReferenceValuePairModel<RegEx, Companion, ReferenceValueRegexPair, String, Regex>(
         pairName = "referenceValuePairs",
         pairGetter = RegEx::referenceValuePairs,
-        pairModel = ReferenceValueRegexPair as QueryDataModel<ReferenceValueRegexPair, *>
-    )
-
-    companion object : ReferencePairDataModel<RegEx, Properties, ReferenceValueRegexPair, String, Regex>(
-        properties = Properties,
+        pairModel = ReferenceValueRegexPair as QueryDataModel<ReferenceValueRegexPair, *>,
         pairProperties = ReferenceValueRegexPair.Properties
     ) {
-        override fun invoke(values: ObjectValues<RegEx, Properties>) = RegEx(
+        override fun invoke(values: ObjectValues<RegEx, Companion>) = RegEx(
             referenceValuePairs = values(1u)
         )
     }

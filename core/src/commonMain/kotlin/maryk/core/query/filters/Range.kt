@@ -1,8 +1,7 @@
 package maryk.core.query.filters
 
 import maryk.core.models.QueryDataModel
-import maryk.core.models.ReferencePairDataModel
-import maryk.core.models.ReferenceValuePairsObjectPropertyDefinitions
+import maryk.core.properties.ReferenceValuePairModel
 import maryk.core.query.ValueRange
 import maryk.core.query.pairs.ReferenceValueRangePair
 import maryk.core.values.ObjectValues
@@ -18,17 +17,13 @@ data class Range internal constructor(
     constructor(vararg range: ReferenceValueRangePair<*>) : this(range.toList())
 
     @Suppress("UNCHECKED_CAST")
-    object Properties : ReferenceValuePairsObjectPropertyDefinitions<Range, ReferenceValueRangePair<*>>(
+    companion object : ReferenceValuePairModel<Range, Companion, ReferenceValueRangePair<*>, ValueRange<*>, ValueRange<*>>(
         pairName = "referenceValuePairs",
         pairGetter = Range::referenceValuePairs,
-        pairModel = ReferenceValueRangePair as QueryDataModel<ReferenceValueRangePair<*>, *>
-    )
-
-    companion object : ReferencePairDataModel<Range, Properties, ReferenceValueRangePair<*>, ValueRange<*>, ValueRange<*>>(
-        properties = Properties,
+        pairModel = ReferenceValueRangePair as QueryDataModel<ReferenceValueRangePair<*>, *>,
         pairProperties = ReferenceValueRangePair.Properties
     ) {
-        override fun invoke(values: ObjectValues<Range, Properties>) = Range(
+        override fun invoke(values: ObjectValues<Range, Companion>) = Range(
             referenceValuePairs = values(1u)
         )
     }

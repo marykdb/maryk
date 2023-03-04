@@ -25,12 +25,12 @@ class CheckTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.valueCheck, Check, { this.context })
+        checkProtoBufConversion(this.valueCheck, Check.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.valueCheck, Check, { this.context })
+        checkJsonConversion(this.valueCheck, Check.Model, { this.context })
     }
 
     @Test
@@ -42,7 +42,7 @@ class CheckTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.valueCheck, Check, { this.context })
+            checkYamlConversion(this.valueCheck, Check.Model, { this.context })
         }
     }
 }

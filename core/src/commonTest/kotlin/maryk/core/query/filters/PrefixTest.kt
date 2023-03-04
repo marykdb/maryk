@@ -24,12 +24,12 @@ class PrefixTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.prefix, Prefix, { this.context })
+        checkProtoBufConversion(this.prefix, Prefix.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.prefix, Prefix, { this.context })
+        checkJsonConversion(this.prefix, Prefix.Model, { this.context })
     }
 
     @Test
@@ -40,7 +40,7 @@ class PrefixTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.prefix, Prefix, { this.context })
+            checkYamlConversion(this.prefix, Prefix.Model, { this.context })
         }
     }
 }

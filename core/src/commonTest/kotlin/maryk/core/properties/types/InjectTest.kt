@@ -139,7 +139,7 @@ class InjectTest {
 
     @Test
     fun testInjectInObject() {
-        context.addToCollect("where", Equals)
+        context.addToCollect("where", Equals.Model)
 
         val getRequest = GetRequest.Model.values(context) {
             mapNonNulls(
@@ -157,7 +157,7 @@ class InjectTest {
             EmbeddedMarykModel { value::ref } with "hoi"
         )
 
-        context.collectResult("where", Equals.asValues(equals))
+        context.collectResult("where", Equals.Model.asValues(equals))
 
         expect(equals) { getRequest { where } }
     }

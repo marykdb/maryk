@@ -26,12 +26,12 @@ class LessThanTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.lessThan, LessThan, { this.context })
+        checkProtoBufConversion(this.lessThan, LessThan.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.lessThan, LessThan, { this.context })
+        checkJsonConversion(this.lessThan, LessThan.Model, { this.context })
     }
 
     @Test
@@ -43,7 +43,7 @@ class LessThanTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.lessThan, LessThan, { this.context })
+            checkYamlConversion(this.lessThan, LessThan.Model, { this.context })
         }
     }
 }

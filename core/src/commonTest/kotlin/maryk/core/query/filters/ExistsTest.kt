@@ -47,12 +47,12 @@ class ExistsTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.exists, Exists, { this.context })
+        checkProtoBufConversion(this.exists, Exists.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.exists, Exists, { this.context })
+        checkJsonConversion(this.exists, Exists.Model, { this.context })
     }
 
     @Test
@@ -62,7 +62,7 @@ class ExistsTest {
             string
             """.trimIndent()
         ) {
-            checkYamlConversion(this.exists, Exists, { this.context })
+            checkYamlConversion(this.exists, Exists.Model, { this.context })
         }
 
         expect(
@@ -73,7 +73,7 @@ class ExistsTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.existsMultiple, Exists, { this.context })
+            checkYamlConversion(this.existsMultiple, Exists.Model, { this.context })
         }
     }
 }

@@ -2,10 +2,9 @@ package maryk.core.query.changes
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.RequestException
-import maryk.core.models.ReferencesDataModel
-import maryk.core.models.ReferencesObjectPropertyDefinitions
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsRootModel
+import maryk.core.properties.ReferencesModel
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.graph.RootPropRefGraph
@@ -13,7 +12,6 @@ import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
-import maryk.json.IsJsonLikeWriter
 
 /** Delete of a property referred by [references] */
 data class Delete internal constructor(
@@ -62,7 +60,9 @@ data class Delete internal constructor(
 
     override fun toString() = "Delete[${references.joinToString()}]"
 
-    object Properties : ReferencesObjectPropertyDefinitions<Delete>() {
+    companion object : ReferencesModel<Delete, Companion>(
+        Delete::references
+    ) {
         override val references by list(
             index = 1u,
             getter = Delete::references,
@@ -73,17 +73,9 @@ data class Delete internal constructor(
                 }
             )
         )
-    }
 
-    companion object : ReferencesDataModel<Delete, Properties>(
-        properties = Properties
-    ) {
-        override fun invoke(values: ObjectValues<Delete, Properties>) = Delete(
+        override fun invoke(values: ObjectValues<Delete, Companion>) = Delete(
             references = values(1u)
         )
-
-        override fun writeJson(obj: Delete, writer: IsJsonLikeWriter, context: RequestContext?) {
-            writer.writeJsonReferences(obj.references, context)
-        }
     }
 }

@@ -38,14 +38,14 @@ class DeleteTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.propertyDelete, Delete, { this.context })
-        checkProtoBufConversion(this.propertyDeleteMultiple, Delete, { this.context })
+        checkProtoBufConversion(this.propertyDelete, Delete.Model, { this.context })
+        checkProtoBufConversion(this.propertyDeleteMultiple, Delete.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.propertyDelete, Delete, { this.context })
-        checkJsonConversion(this.propertyDeleteMultiple, Delete, { this.context })
+        checkJsonConversion(this.propertyDelete, Delete.Model, { this.context })
+        checkJsonConversion(this.propertyDeleteMultiple, Delete.Model, { this.context })
     }
 
     @Test
@@ -55,7 +55,7 @@ class DeleteTest {
             string
             """.trimIndent()
         ) {
-            checkYamlConversion(this.propertyDelete, Delete, { this.context })
+            checkYamlConversion(this.propertyDelete, Delete.Model, { this.context })
         }
 
         expect(
@@ -66,7 +66,7 @@ class DeleteTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.propertyDeleteMultiple, Delete, { this.context })
+            checkYamlConversion(this.propertyDeleteMultiple, Delete.Model, { this.context })
         }
     }
 

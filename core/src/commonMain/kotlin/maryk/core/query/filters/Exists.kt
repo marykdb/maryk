@@ -1,9 +1,8 @@
 package maryk.core.query.filters
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.ReferencesDataModel
-import maryk.core.models.ReferencesObjectPropertyDefinitions
 import maryk.core.properties.AbstractPropertyDefinitions
+import maryk.core.properties.ReferencesModel
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.list
@@ -12,7 +11,6 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceWithParent
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
-import maryk.json.IsJsonLikeWriter
 
 /** Checks if [references] exist on DataModel */
 data class Exists internal constructor(
@@ -38,7 +36,9 @@ data class Exists internal constructor(
         return null
     }
 
-    object Properties : ReferencesObjectPropertyDefinitions<Exists>() {
+    companion object : ReferencesModel<Exists, Companion>(
+        Exists::references
+    ) {
         override val references by list(
             index = 1u,
             getter = Exists::references,
@@ -49,17 +49,9 @@ data class Exists internal constructor(
                 }
             )
         )
-    }
 
-    companion object : ReferencesDataModel<Exists, Properties>(
-        properties = Properties
-    ) {
-        override fun invoke(values: ObjectValues<Exists, Properties>) = Exists(
+        override fun invoke(values: ObjectValues<Exists, Companion>) = Exists(
             references = values(1u)
         )
-
-        override fun writeJson(obj: Exists, writer: IsJsonLikeWriter, context: RequestContext?) {
-            writer.writeJsonReferences(obj.references, context)
-        }
     }
 }

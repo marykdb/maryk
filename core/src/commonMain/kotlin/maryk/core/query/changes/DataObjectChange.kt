@@ -4,9 +4,8 @@ package maryk.core.query.changes
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.QueryDataModel
 import maryk.core.properties.IsRootModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
@@ -36,7 +35,7 @@ data class DataObjectChange<out DM : IsRootModel> internal constructor(
     val changes: List<IsChange>,
     val lastVersion: ULong? = null
 ) {
-    object Properties : ObjectPropertyDefinitions<DataObjectChange<*>>() {
+    companion object : QueryModel<DataObjectChange<*>, Companion>() {
         val key by contextual(
             index = 1u,
             getter = DataObjectChange<*>::key,
@@ -67,12 +66,8 @@ data class DataObjectChange<out DM : IsRootModel> internal constructor(
         )
 
         val lastVersion by number(3u, DataObjectChange<*>::lastVersion, type = UInt64)
-    }
 
-    companion object : QueryDataModel<DataObjectChange<*>, Properties>(
-        properties = Properties
-    ) {
-        override fun invoke(values: ObjectValues<DataObjectChange<*>, Properties>) = DataObjectChange<IsRootModel>(
+        override fun invoke(values: ObjectValues<DataObjectChange<*>, Companion>) = DataObjectChange<IsRootModel>(
             key = values(1u),
             changes = values(2u),
             lastVersion = values(3u)

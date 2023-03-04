@@ -2,7 +2,6 @@
 
 package maryk.core.query.changes
 
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.SimpleObjectModel
 import maryk.core.properties.definitions.flexBytes
 import maryk.core.properties.types.Bytes
@@ -24,11 +23,7 @@ data class IndexUpdate(
 ): IsIndexUpdate {
     override val type = Update
 
-    object Properties : ObjectPropertyDefinitions<IndexUpdate>() {
-
-    }
-
-    companion object : SimpleObjectModel<IndexUpdate, Properties>() {
+    companion object : SimpleObjectModel<IndexUpdate, Companion>() {
         val index by flexBytes(
             index = 1u,
             getter = IndexUpdate::index
@@ -45,7 +40,7 @@ data class IndexUpdate(
             required = false
         )
 
-        override fun invoke(values: ObjectValues<IndexUpdate, Properties>) = IndexUpdate(
+        override fun invoke(values: ObjectValues<IndexUpdate, Companion>) = IndexUpdate(
             index = values(1u),
             indexKey = values(2u),
             previousIndexKey = values(3u)

@@ -50,7 +50,7 @@ class DataObjectChangeTest {
     fun convertToProtoBufAndBack() {
         val requestContext = this.createContext()
 
-        checkProtoBufConversion(this.dataObjectChange, DataObjectChange, { requestContext })
+        checkProtoBufConversion(this.dataObjectChange, DataObjectChange.Model, { requestContext })
 
         checkContext(requestContext)
     }
@@ -59,7 +59,7 @@ class DataObjectChangeTest {
     fun convertToJSONAndBack() {
         val requestContext = this.createContext()
 
-        checkJsonConversion(this.dataObjectChange, DataObjectChange, { requestContext })
+        checkJsonConversion(this.dataObjectChange, DataObjectChange.Model, { requestContext })
 
         checkContext(requestContext)
     }
@@ -92,7 +92,7 @@ class DataObjectChangeTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.dataObjectChange, DataObjectChange, { requestContext })
+            checkYamlConversion(this.dataObjectChange, DataObjectChange.Model, { requestContext })
         }
 
         checkContext(requestContext)

@@ -1,7 +1,7 @@
 package maryk.core.query.pairs
 
-import maryk.core.models.QueryDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ReferenceValuePairModel
 import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.string
@@ -32,7 +32,7 @@ data class ReferenceValueRegexPair internal constructor(
         return result
     }
 
-    object Properties : ReferenceValuePairPropertyDefinitions<ReferenceValueRegexPair, String, Regex, FlexBytesDefinitionWrapper<String, Regex, IsPropertyContext, StringDefinition, ReferenceValueRegexPair>>() {
+    companion object : ReferenceValuePairModel<ReferenceValueRegexPair, Companion, String, Regex, FlexBytesDefinitionWrapper<String, Regex, IsPropertyContext, StringDefinition, ReferenceValueRegexPair>>() {
         override val reference by addReference(
             ReferenceValueRegexPair::reference
         )
@@ -47,12 +47,8 @@ data class ReferenceValueRegexPair internal constructor(
             shouldSerialize = { it is Regex },
             getter = ReferenceValueRegexPair::regex
         )
-    }
 
-    companion object : QueryDataModel<ReferenceValueRegexPair, Properties>(
-        properties = Properties
-    ) {
-        override fun invoke(values: ObjectValues<ReferenceValueRegexPair, Properties>) = ReferenceValueRegexPair(
+        override fun invoke(values: ObjectValues<ReferenceValueRegexPair, Companion>) = ReferenceValueRegexPair(
             reference = values(1u),
             regex = values(2u)
         )

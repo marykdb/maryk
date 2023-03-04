@@ -1,7 +1,7 @@
 package maryk.core.query.pairs
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.QueryDataModel
+import maryk.core.properties.ReferenceValuePairModel
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.contextual.ContextualIndexedEnumDefinition
@@ -26,7 +26,7 @@ data class ReferenceTypePair<E : TypeEnum<Any>> internal constructor(
 
     override fun toString() = "$reference: $type"
 
-    object Properties : ReferenceValuePairPropertyDefinitions<ReferenceTypePair<*>, IndexedEnum, IndexedEnum, ContextualDefinitionWrapper<IndexedEnum, IndexedEnum, RequestContext, ContextualIndexedEnumDefinition<RequestContext, RequestContext, IndexedEnum, IsMultiTypeDefinition<TypeEnum<Any>, Any, RequestContext>>, ReferenceTypePair<*>>>() {
+    companion object : ReferenceValuePairModel<ReferenceTypePair<*>, Companion, IndexedEnum, IndexedEnum, ContextualDefinitionWrapper<IndexedEnum, IndexedEnum, RequestContext, ContextualIndexedEnumDefinition<RequestContext, RequestContext, IndexedEnum, IsMultiTypeDefinition<TypeEnum<Any>, Any, RequestContext>>, ReferenceTypePair<*>>>() {
         override val reference by addReference(
             ReferenceTypePair<*>::reference
         )
@@ -42,12 +42,8 @@ data class ReferenceTypePair<E : TypeEnum<Any>> internal constructor(
                 }
             )
         )
-    }
 
-    companion object : QueryDataModel<ReferenceTypePair<*>, Properties>(
-        properties = Properties
-    ) {
-        override fun invoke(values: ObjectValues<ReferenceTypePair<*>, Properties>) = ReferenceTypePair(
+        override fun invoke(values: ObjectValues<ReferenceTypePair<*>, Companion>) = ReferenceTypePair(
             reference = values(1u),
             type = values(2u)
         )

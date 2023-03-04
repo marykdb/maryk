@@ -1,6 +1,6 @@
 package maryk.core.query.filters
 
-import maryk.core.properties.ReferenceValuePairModel
+import maryk.core.properties.ReferenceValuePairsModel
 import maryk.core.query.pairs.ReferenceValuePair
 import maryk.core.values.ObjectValues
 
@@ -13,11 +13,9 @@ data class Equals internal constructor(
     @Suppress("UNCHECKED_CAST")
     constructor(vararg referenceValuePair: ReferenceValuePair<*>) : this(referenceValuePair.toList() as List<ReferenceValuePair<Any>>)
 
-    companion object : ReferenceValuePairModel<Equals, Companion, ReferenceValuePair<Any>, Any, Any>(
-        pairName = "referenceValuePairs",
+    companion object : ReferenceValuePairsModel<Equals, Companion, ReferenceValuePair<Any>, Any, Any>(
         pairGetter = Equals::referenceValuePairs,
         pairModel = ReferenceValuePair,
-        pairProperties = ReferenceValuePair.Properties,
     ) {
         override fun invoke(values: ObjectValues<Equals, Companion>) = Equals(
             referenceValuePairs = values(1u)

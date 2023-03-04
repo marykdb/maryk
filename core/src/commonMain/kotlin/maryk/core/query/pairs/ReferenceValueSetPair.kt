@@ -1,8 +1,8 @@
 package maryk.core.query.pairs
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ReferenceValuePairModel
 import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
@@ -21,7 +21,7 @@ data class ReferenceValueSetPair<T : Any> internal constructor(
 ) : DefinedByReference<T> {
     override fun toString() = "$reference: $values]"
 
-    object Properties : ReferenceValuePairPropertyDefinitions<ReferenceValueSetPair<*>, Set<Any>, Set<Any>, SetDefinitionWrapper<Any, RequestContext, ReferenceValueSetPair<*>>>() {
+    companion object : ReferenceValuePairModel<ReferenceValueSetPair<*>, Companion, Set<Any>, Set<Any>, SetDefinitionWrapper<Any, RequestContext, ReferenceValueSetPair<*>>>() {
         override val reference by addReference(
             ReferenceValueSetPair<*>::reference
         )
@@ -37,12 +37,8 @@ data class ReferenceValueSetPair<T : Any> internal constructor(
                 }
             )
         )
-    }
 
-    companion object : SimpleObjectDataModel<ReferenceValueSetPair<*>, Properties>(
-        properties = Properties
-    ) {
-        override fun invoke(values: ObjectValues<ReferenceValueSetPair<*>, Properties>) = ReferenceValueSetPair<Any>(
+        override fun invoke(values: ObjectValues<ReferenceValueSetPair<*>, Companion>) = ReferenceValueSetPair<Any>(
             reference = values(1u),
             values = values(2u)
         )

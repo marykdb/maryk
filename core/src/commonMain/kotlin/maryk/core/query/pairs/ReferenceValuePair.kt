@@ -2,9 +2,9 @@ package maryk.core.query.pairs
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.IsValuesDataModel
-import maryk.core.models.QueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.ReferenceValuePairModel
 import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsListDefinition
@@ -33,7 +33,7 @@ data class ReferenceValuePair<T : Any> internal constructor(
 
     override fun toString() = "$reference: $value"
 
-    object Properties : ReferenceValuePairPropertyDefinitions<ReferenceValuePair<Any>, Any, Any, ContextualDefinitionWrapper<Any, Any, RequestContext, ContextualValueDefinition<RequestContext, IsPropertyContext, Any, IsValueDefinition<Any, IsPropertyContext>>, ReferenceValuePair<Any>>>() {
+    companion object : ReferenceValuePairModel<ReferenceValuePair<Any>, Companion, Any, Any, ContextualDefinitionWrapper<Any, Any, RequestContext, ContextualValueDefinition<RequestContext, IsPropertyContext, Any, IsValueDefinition<Any, IsPropertyContext>>, ReferenceValuePair<Any>>>() {
         override val reference by addReference(
             ReferenceValuePair<*>::reference
         )
@@ -49,12 +49,8 @@ data class ReferenceValuePair<T : Any> internal constructor(
                 }
             )
         )
-    }
 
-    companion object : QueryDataModel<ReferenceValuePair<Any>, Properties>(
-        properties = Properties
-    ) {
-        override fun invoke(values: ObjectValues<ReferenceValuePair<Any>, Properties>) = ReferenceValuePair(
+        override fun invoke(values: ObjectValues<ReferenceValuePair<Any>, Companion>) = ReferenceValuePair(
             reference = values(1u),
             value = values(2u)
         )

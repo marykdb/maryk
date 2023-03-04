@@ -2,7 +2,7 @@ package maryk.core.query.changes
 
 import maryk.core.exceptions.RequestException
 import maryk.core.properties.IsRootModel
-import maryk.core.properties.ReferenceValuePairModel
+import maryk.core.properties.ReferenceValuePairsModel
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForValues
@@ -57,11 +57,9 @@ data class Change internal constructor(
 
     override fun toString() = "Change[${referenceValuePairs.joinToString()}]"
 
-    companion object : ReferenceValuePairModel<Change, Companion, ReferenceValuePair<Any>, Any, Any>(
-        pairName = "referenceValuePairs",
+    companion object : ReferenceValuePairsModel<Change, Companion, ReferenceValuePair<Any>, Any, Any>(
         pairGetter = Change::referenceValuePairs,
         pairModel = ReferenceValuePair,
-        ReferenceValuePair.Properties
     ) {
         override fun invoke(values: ObjectValues<Change, Companion>) = Change(
             referenceValuePairs = values(1u)

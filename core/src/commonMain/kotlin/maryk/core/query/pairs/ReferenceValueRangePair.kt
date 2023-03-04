@@ -1,7 +1,7 @@
 package maryk.core.query.pairs
 
-import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ReferenceValuePairModel
 import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.embedObject
 import maryk.core.properties.definitions.wrapper.EmbeddedObjectDefinitionWrapper
@@ -17,10 +17,9 @@ data class ReferenceValueRangePair<T : Comparable<T>> internal constructor(
     override val reference: IsPropertyReference<T, IsChangeableValueDefinition<T, IsPropertyContext>, *>,
     val range: ValueRange<T>
 ) : DefinedByReference<T> {
-
     override fun toString() = "$reference: $range"
 
-    object Properties : ReferenceValuePairPropertyDefinitions<ReferenceValueRangePair<*>, ValueRange<*>, ValueRange<*>, EmbeddedObjectDefinitionWrapper<ValueRange<*>, ValueRange<*>, ValueRange.Properties, ValueRange.Companion, RequestContext, RequestContext, ReferenceValueRangePair<*>>>() {
+    companion object : ReferenceValuePairModel<ReferenceValueRangePair<*>, Companion, ValueRange<*>, ValueRange<*>, EmbeddedObjectDefinitionWrapper<ValueRange<*>, ValueRange<*>, ValueRange.Properties, ValueRange.Companion, RequestContext, RequestContext, ReferenceValueRangePair<*>>>() {
         override val reference by addReference(
             ReferenceValueRangePair<*>::reference
         )
@@ -29,12 +28,8 @@ data class ReferenceValueRangePair<T : Comparable<T>> internal constructor(
             getter = ReferenceValueRangePair<*>::range,
             dataModel = { ValueRange }
         )
-    }
 
-    companion object : SimpleObjectDataModel<ReferenceValueRangePair<*>, Properties>(
-        properties = Properties
-    ) {
-        override fun invoke(values: ObjectValues<ReferenceValueRangePair<*>, Properties>) =
+        override fun invoke(values: ObjectValues<ReferenceValueRangePair<*>, Companion>) =
             ReferenceValueRangePair<Comparable<Any>>(
                 reference = values(1u),
                 range = values(2u)

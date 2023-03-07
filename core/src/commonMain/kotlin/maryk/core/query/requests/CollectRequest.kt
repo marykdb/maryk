@@ -1,7 +1,7 @@
 package maryk.core.query.requests
 
 import maryk.core.models.QueryDataModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.internalMultiType
 import maryk.core.properties.definitions.string
 import maryk.core.properties.types.TypedValue
@@ -25,7 +25,7 @@ data class CollectRequest<RQ : IsTransportableRequest<RP>, RP : IsResponse>(
     override val requestType = Collect
     override val responseModel = request.responseModel
 
-    object Properties : ObjectPropertyDefinitions<AnyCollectRequest>() {
+    companion object : QueryModel<AnyCollectRequest, Companion>() {
         val name by string(1u, AnyCollectRequest::name)
 
         // It transmits any instead of IsRequest so the ObjectValues can also be transmitted
@@ -43,53 +43,56 @@ data class CollectRequest<RQ : IsTransportableRequest<RP>, RP : IsResponse>(
                 request?.value
             }
         )
-    }
 
-    companion object : QueryDataModel<AnyCollectRequest, Properties>(
-        properties = Properties
-    ) {
-        override fun invoke(values: ObjectValues<AnyCollectRequest, Properties>) =
-            CollectRequest<IsTransportableRequest<IsResponse>, IsResponse>(
-                name = values(1u),
-                request = values(2u)
-            )
+        override fun invoke(values: ObjectValues<CollectRequest<*, *>, Companion>): CollectRequest<*, *> =
+            Model.invoke(values)
 
-        override fun writeJson(obj: AnyCollectRequest, writer: IsJsonLikeWriter, context: RequestContext?) {
-            writer.writeStartObject()
-            writer.writeFieldName(obj.name)
-            val typedRequest = Properties.request.toSerializable?.invoke(Unit, obj.request, context)!!
-            Properties.request.definition.writeJsonValue(typedRequest, writer, context)
-            writer.writeEndObject()
-        }
-
-        override fun readJson(
-            reader: IsJsonLikeReader,
-            context: RequestContext?
-        ): ObjectValues<AnyCollectRequest, Properties> {
-            if (reader.currentToken == StartDocument) {
-                reader.nextToken()
-            }
-
-            if (reader.currentToken !is StartObject) {
-                throw ParseException("JSON value should be an Object")
-            }
-
-            val currentToken = reader.nextToken()
-
-            val name = if (currentToken is FieldName) {
-                currentToken.value
-            } else throw ParseException("Expected a name in a CollectRequest")
-
-            reader.nextToken()
-            val request = Properties.request.readJson(reader, context)
-
-            reader.nextToken() // read past end object
-
-            return this.values(context) {
-                mapNonNulls(
-                    this.name withSerializable name,
-                    this.request withSerializable request
+        override val Model: QueryDataModel<AnyCollectRequest, Companion> = object : QueryDataModel<AnyCollectRequest, Companion>(
+            properties = this@Companion,
+        ) {
+            override fun invoke(values: ObjectValues<AnyCollectRequest, Companion>) =
+                CollectRequest<IsTransportableRequest<IsResponse>, IsResponse>(
+                    name = values(1u),
+                    request = values(2u)
                 )
+
+            override fun writeJson(obj: AnyCollectRequest, writer: IsJsonLikeWriter, context: RequestContext?) {
+                writer.writeStartObject()
+                writer.writeFieldName(obj.name)
+                val typedRequest = request.toSerializable?.invoke(Unit, obj.request, context)!!
+                request.definition.writeJsonValue(typedRequest, writer, context)
+                writer.writeEndObject()
+            }
+
+            override fun readJson(
+                reader: IsJsonLikeReader,
+                context: RequestContext?
+            ): ObjectValues<AnyCollectRequest, Companion> {
+                if (reader.currentToken == StartDocument) {
+                    reader.nextToken()
+                }
+
+                if (reader.currentToken !is StartObject) {
+                    throw ParseException("JSON value should be an Object")
+                }
+
+                val currentToken = reader.nextToken()
+
+                val name = if (currentToken is FieldName) {
+                    currentToken.value
+                } else throw ParseException("Expected a name in a CollectRequest")
+
+                reader.nextToken()
+                val request = request.readJson(reader, context)
+
+                reader.nextToken() // read past end object
+
+                return this.values(context) {
+                    mapNonNulls(
+                        this.name withSerializable name,
+                        this.request withSerializable request
+                    )
+                }
             }
         }
     }

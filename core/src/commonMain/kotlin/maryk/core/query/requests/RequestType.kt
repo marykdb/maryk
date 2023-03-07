@@ -1,10 +1,13 @@
 package maryk.core.query.requests
 
+import maryk.core.models.AbstractObjectDataModel
+import maryk.core.properties.InternalModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IsCoreEnum
 import maryk.core.properties.enum.TypeEnum
+import maryk.core.query.RequestContext
 import maryk.core.query.requests.RequestType.Add
 import maryk.core.query.requests.RequestType.Change
 import maryk.core.query.requests.RequestType.Collect
@@ -38,7 +41,7 @@ enum class RequestType(
 }
 
 @SharedImmutable
-val mapOfRequestTypeEmbeddedObjectDefinitions = mapOf(
+val mapOfRequestTypeEmbeddedObjectDefinitions = mapOf<RequestType, EmbeddedObjectDefinition<out IsTransportableRequest<*>, out InternalModel<out IsTransportableRequest<*>, *, RequestContext, RequestContext>, out AbstractObjectDataModel<out IsTransportableRequest<*>, out InternalModel<out IsTransportableRequest<*>, *, RequestContext, RequestContext>, RequestContext, RequestContext>, RequestContext, RequestContext>>(
     Add to EmbeddedObjectDefinition(dataModel = { AddRequest.Model }),
     Change to EmbeddedObjectDefinition(dataModel = { ChangeRequest.Model }),
     Delete to EmbeddedObjectDefinition(dataModel = { DeleteRequest.Model }),
@@ -48,5 +51,5 @@ val mapOfRequestTypeEmbeddedObjectDefinitions = mapOf(
     Scan to EmbeddedObjectDefinition(dataModel = { ScanRequest.Model }),
     ScanChanges to EmbeddedObjectDefinition(dataModel = { ScanChangesRequest.Model }),
     ScanUpdates to EmbeddedObjectDefinition(dataModel = { ScanUpdatesRequest.Model }),
-    Collect to EmbeddedObjectDefinition(dataModel = { CollectRequest })
+    Collect to EmbeddedObjectDefinition(dataModel = { CollectRequest.Model })
 )

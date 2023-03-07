@@ -76,8 +76,8 @@ abstract class AbstractDataModel<DO : Any, P : IsObjectPropertyDefinitions<DO>, 
                     writer.writeFieldName("?${definition.name}")
                 }
 
-                val injectionContext = Inject.transformContext(context as RequestContext)
-                Inject.writeJson(value, writer, injectionContext)
+                val injectionContext = Inject.Model.transformContext(context as RequestContext)
+                Inject.Model.writeJson(value, writer, injectionContext)
             } else {
                 definition.capture(context, value)
                 writeJsonValue(definition, writer, value, context)
@@ -188,7 +188,7 @@ abstract class AbstractDataModel<DO : Any, P : IsObjectPropertyDefinitions<DO>, 
                         }
 
                         if (isInject) {
-                            val inject = Inject.readJson(reader, Inject.transformContext(context as RequestContext))
+                            val inject = Inject.Model.readJson(reader, Inject.Model.transformContext(context as RequestContext))
 
                             values[definition.index] = inject
                         } else {

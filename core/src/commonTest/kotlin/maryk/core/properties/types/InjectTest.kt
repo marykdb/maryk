@@ -164,12 +164,12 @@ class InjectTest {
 
     @Test
     fun convertSimpleToJSONAndBack() {
-        checkJsonConversion(injectSimple, Inject, { this.context })
+        checkJsonConversion(injectSimple, Inject.Model, { this.context })
     }
 
     @Test
     fun convertSimpleToProtoBufAndBack() {
-        checkProtoBufConversion(injectSimple, Inject, { this.context })
+        checkProtoBufConversion(injectSimple, Inject.Model, { this.context })
     }
 
     @Test
@@ -180,7 +180,7 @@ class InjectTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.inject, Inject, { this.context })
+            checkYamlConversion(this.inject, Inject.Model, { this.context })
         }
     }
 
@@ -191,18 +191,18 @@ class InjectTest {
             testCompleteConvert
             """.trimIndent()
         ) {
-            checkYamlConversion(injectCompleteObject, Inject, { this.context })
+            checkYamlConversion(injectCompleteObject, Inject.Model, { this.context })
         }
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.inject, Inject, { this.context })
+        checkJsonConversion(this.inject, Inject.Model, { this.context })
     }
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.inject, Inject, { this.context })
+        checkProtoBufConversion(this.inject, Inject.Model, { this.context })
     }
 
     @Test
@@ -213,7 +213,7 @@ class InjectTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.injectFromAny, Inject, { this.context })
+            checkYamlConversion(this.injectFromAny, Inject.Model, { this.context })
         }
     }
 
@@ -226,12 +226,12 @@ class InjectTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.injectFromAny, Inject, { this.context })
+            checkJsonConversion(this.injectFromAny, Inject.Model, { this.context })
         }
     }
 
     @Test
     fun convertAnyToProtoBufAndBack() {
-        checkProtoBufConversion(this.injectFromAny, Inject, { this.context })
+        checkProtoBufConversion(this.injectFromAny, Inject.Model, { this.context })
     }
 }

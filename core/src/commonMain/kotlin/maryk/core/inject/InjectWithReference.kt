@@ -49,7 +49,7 @@ internal class InjectWithReference(
         val inject by embedObject(
             index = 1u,
             getter = InjectWithReference::inject,
-            dataModel = { Inject }
+            dataModel = { Inject.Model }
         )
 
         val reference by contextual(

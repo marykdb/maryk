@@ -6,6 +6,7 @@ import maryk.core.models.AbstractObjectDataModel
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.ObjectDataModel
 import maryk.core.models.SimpleObjectDataModel
+import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -31,7 +32,7 @@ import maryk.json.JsonWriter
 import maryk.lib.safeLazy
 
 /** Definition for embedded object properties to [dataModel] of type [DM] returning dataObject of [DO] */
-class EmbeddedObjectDefinition<DO : Any, P : ObjectPropertyDefinitions<DO>, DM : AbstractObjectDataModel<DO, P, CXI, CX>, CXI : IsPropertyContext, CX : IsPropertyContext>(
+class EmbeddedObjectDefinition<DO : Any, P : IsObjectPropertyDefinitions<DO>, DM : AbstractObjectDataModel<DO, P, CXI, CX>, CXI : IsPropertyContext, CX : IsPropertyContext>(
     override val required: Boolean = true,
     override val final: Boolean = false,
     dataModel: Unit.() -> DM,

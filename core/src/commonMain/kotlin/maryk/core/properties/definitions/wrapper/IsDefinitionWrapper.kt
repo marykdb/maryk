@@ -188,10 +188,9 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
         )
     }
 
-    object Model :
-        SimpleObjectDataModel<AnyOutDefinitionWrapper, ObjectPropertyDefinitions<AnyOutDefinitionWrapper>>(
-            properties = Properties
-        ) {
+    object Model : SimpleObjectDataModel<AnyOutDefinitionWrapper, ObjectPropertyDefinitions<AnyOutDefinitionWrapper>>(
+        properties = Properties
+    ) {
         override fun invoke(values: SimpleObjectValues<AnyOutDefinitionWrapper>): AnyOutDefinitionWrapper {
             val typedDefinition =
                 values<TypedValue<PropertyDefinitionType, IsTransportablePropertyDefinitionType<*>>>(

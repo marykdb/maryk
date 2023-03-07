@@ -2,6 +2,7 @@ package maryk.core.properties.definitions.wrapper
 
 import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
+import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
@@ -57,7 +58,7 @@ data class ObjectListDefinitionWrapper<
             { parentRef ->
                 objectValuesDefinition.dataModel(
                     this.definition.itemRef(index, this.ref(parentRef)),
-                    referenceGetter as ObjectPropertyDefinitions<*>.() -> (AnyOutPropertyReference?) -> IsPropertyReference<Any, IsDefinitionWrapper<Any, *, *, *>, *>
+                    referenceGetter as IsObjectPropertyDefinitions<*>.() -> (AnyOutPropertyReference?) -> IsPropertyReference<Any, IsDefinitionWrapper<Any, *, *, *>, *>
                 )
             }
         }
@@ -89,7 +90,7 @@ data class ObjectListDefinitionWrapper<
 
             objectValuesDefinition.dataModel(
                 this.getItemRef(index, it),
-                referenceGetter as ObjectPropertyDefinitions<*>.() -> (AnyOutPropertyReference?) -> R
+                referenceGetter as IsObjectPropertyDefinitions<*>.() -> (AnyOutPropertyReference?) -> R
             )
         }
 
@@ -103,7 +104,7 @@ data class ObjectListDefinitionWrapper<
 
             objectValuesDefinition.dataModel(
                 this.getAnyItemRef(it),
-                referenceGetter as ObjectPropertyDefinitions<*>.() -> (AnyOutPropertyReference?) -> R
+                referenceGetter as IsObjectPropertyDefinitions<*>.() -> (AnyOutPropertyReference?) -> R
             )
         }
 }

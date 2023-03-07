@@ -29,7 +29,7 @@ data class RootMaryk(
                 definitionMap = mapOf(
                     Operation.Define to ContextTransformerDefinition<Definitions, DefinitionsContext, DefinitionsConversionContext>(
                         definition = EmbeddedObjectDefinition(
-                            dataModel = { Definitions }
+                            dataModel = { Definitions.Model }
                         ),
                         contextTransformer = {
                             it?.let { modelContext ->

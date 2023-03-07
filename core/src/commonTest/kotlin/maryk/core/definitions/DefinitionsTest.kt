@@ -34,7 +34,7 @@ class DefinitionsTest {
     fun convertToProtoBufAndBack() {
         checkProtoBufConversion(
             this.definitions,
-            Definitions,
+            Definitions.Model,
             { DefinitionsConversionContext() },
             ::compareDefinitions,
             true
@@ -45,7 +45,7 @@ class DefinitionsTest {
     fun convertToJSONAndBack() {
         checkJsonConversion(
             this.definitions,
-            Definitions,
+            Definitions.Model,
             { DefinitionsConversionContext() },
             ::compareDefinitions,
             true
@@ -349,7 +349,7 @@ class DefinitionsTest {
         ) {
             checkYamlConversion(
                 this.definitions,
-                Definitions,
+                Definitions.Model,
                 { DefinitionsConversionContext() },
                 ::compareDefinitions,
                 true

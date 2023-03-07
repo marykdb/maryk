@@ -14,9 +14,9 @@ interface IsFilter {
 
 @SharedImmutable
 internal val mapOfFilterDefinitions = mapOf(
-    FilterType.And to EmbeddedObjectDefinition(dataModel = { And }),
+    FilterType.And to EmbeddedObjectDefinition(dataModel = { And.Model }),
     FilterType.Or to EmbeddedObjectDefinition(dataModel = { Or.Model }),
-    FilterType.Not to EmbeddedObjectDefinition(dataModel = { Not }),
+    FilterType.Not to EmbeddedObjectDefinition(dataModel = { Not.Model }),
     FilterType.Exists to EmbeddedObjectDefinition(dataModel = { Exists.Model }),
     FilterType.Equals to EmbeddedObjectDefinition(dataModel = { Equals.Model }),
     FilterType.LessThan to EmbeddedObjectDefinition(dataModel = { LessThan.Model }),

@@ -23,12 +23,12 @@ class NotTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.not, Not, { this.context })
+        checkProtoBufConversion(this.not, Not.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.not, Not, { this.context })
+        checkJsonConversion(this.not, Not.Model, { this.context })
     }
 
     @Test
@@ -39,7 +39,7 @@ class NotTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.not, Not, { this.context })
+            checkYamlConversion(this.not, Not.Model, { this.context })
         }
     }
 }

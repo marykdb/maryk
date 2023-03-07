@@ -1,7 +1,7 @@
 package maryk.core.query.filters
 
 import maryk.core.models.QueryDataModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.types.TypedValue
@@ -20,7 +20,7 @@ data class And(
 
     constructor(vararg filters: IsFilter) : this(filters.toList())
 
-    object Properties : ObjectPropertyDefinitions<And>() {
+    companion object : QueryModel<And, Companion>() {
         val filters by list(
             index = 1u,
             getter = And::filters,
@@ -31,33 +31,36 @@ data class And(
             toSerializable = { TypedValue(it.filterType, it) },
             fromSerializable = { it.value }
         )
-    }
 
-    companion object : QueryDataModel<And, Properties>(
-        properties = Properties
-    ) {
-        override fun invoke(values: ObjectValues<And, Properties>) = And(
-            filters = values<List<IsFilter>>(1u)
-        )
+        override fun invoke(values: ObjectValues<And, Companion>) =
+            Model.invoke(values)
 
-        override fun writeJson(obj: And, writer: IsJsonLikeWriter, context: RequestContext?) {
-            Properties.filters.writeJsonValue(
-                Properties.filters.getPropertyAndSerialize(obj, context)
-                    ?: throw ParseException("Missing filters in And filter"),
-                writer,
-                context
+        override val Model: QueryDataModel<And, Companion> = object : QueryDataModel<And, Companion>(
+            Companion,
+        ) {
+            override fun invoke(values: ObjectValues<And, Companion>) = And(
+                filters = values<List<IsFilter>>(1u)
             )
-        }
 
-        override fun readJson(reader: IsJsonLikeReader, context: RequestContext?): ObjectValues<And, Properties> {
-            if (reader.currentToken == StartDocument) {
-                reader.nextToken()
+            override fun writeJson(obj: And, writer: IsJsonLikeWriter, context: RequestContext?) {
+                filters.writeJsonValue(
+                    filters.getPropertyAndSerialize(obj, context)
+                        ?: throw ParseException("Missing filters in And filter"),
+                    writer,
+                    context
+                )
             }
 
-            return this.values(context) {
-                mapNonNulls(
-                    filters withSerializable filters.readJson(reader, context)
-                )
+            override fun readJson(reader: IsJsonLikeReader, context: RequestContext?): ObjectValues<And, Companion> {
+                if (reader.currentToken == StartDocument) {
+                    reader.nextToken()
+                }
+
+                return this.values(context) {
+                    mapNonNulls(
+                        filters withSerializable filters.readJson(reader, context)
+                    )
+                }
             }
         }
     }

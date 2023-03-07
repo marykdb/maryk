@@ -25,12 +25,12 @@ class OrTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.or, Or, { this.context })
+        checkProtoBufConversion(this.or, Or.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.or, Or, { this.context })
+        checkJsonConversion(this.or, Or.Model, { this.context })
     }
 
     @Test
@@ -43,7 +43,7 @@ class OrTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.or, Or, { this.context })
+            checkYamlConversion(this.or, Or.Model, { this.context })
         }
     }
 }

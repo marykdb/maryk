@@ -1,7 +1,7 @@
 package maryk.core.query.filters
 
 import maryk.core.models.QueryDataModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.types.TypedValue
@@ -20,7 +20,7 @@ data class Or(
 
     constructor(vararg filters: IsFilter) : this(filters.toList())
 
-    object Properties : ObjectPropertyDefinitions<Or>() {
+    companion object : QueryModel<Or, Companion>() {
         val filters by list(
             index = 1u,
             getter = Or::filters,
@@ -31,33 +31,36 @@ data class Or(
             toSerializable = { TypedValue(it.filterType, it) },
             fromSerializable = { it.value }
         )
-    }
 
-    companion object : QueryDataModel<Or, Properties>(
-        properties = Properties
-    ) {
-        override fun invoke(values: ObjectValues<Or, Properties>) = Or(
-            filters = values<List<IsFilter>>(1u)
-        )
+        override fun invoke(values: ObjectValues<Or, Companion>) =
+            Model.invoke(values)
 
-        override fun writeJson(obj: Or, writer: IsJsonLikeWriter, context: RequestContext?) {
-            Properties.filters.writeJsonValue(
-                Properties.filters.getPropertyAndSerialize(obj, context)
-                    ?: throw ParseException("Missing filters in Or"),
-                writer,
-                context
+        override val Model: QueryDataModel<Or, Companion> = object : QueryDataModel<Or, Companion>(
+            properties = Companion,
+        ) {
+            override fun invoke(values: ObjectValues<Or, Companion>) = Or(
+                filters = values<List<IsFilter>>(1u)
             )
-        }
 
-        override fun readJson(reader: IsJsonLikeReader, context: RequestContext?): ObjectValues<Or, Properties> {
-            if (reader.currentToken == StartDocument) {
-                reader.nextToken()
+            override fun writeJson(obj: Or, writer: IsJsonLikeWriter, context: RequestContext?) {
+                filters.writeJsonValue(
+                    filters.getPropertyAndSerialize(obj, context)
+                        ?: throw ParseException("Missing filters in Or"),
+                    writer,
+                    context
+                )
             }
 
-            return this.values(context) {
-                mapNonNulls(
-                    filters withSerializable filters.readJson(reader, context)
-                )
+            override fun readJson(reader: IsJsonLikeReader, context: RequestContext?): ObjectValues<Or, Companion> {
+                if (reader.currentToken == StartDocument) {
+                    reader.nextToken()
+                }
+
+                return this.values(context) {
+                    mapNonNulls(
+                        filters withSerializable filters.readJson(reader, context)
+                    )
+                }
             }
         }
     }

@@ -21,7 +21,7 @@ class EmbeddedValuesDefinitionWrapperTest {
     fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(
             this.def,
-            IsDefinitionWrapper.Model,
+            IsDefinitionWrapper.Model.Model,
             { DefinitionsContext() },
             ::comparePropertyDefinitionWrapper
         )
@@ -31,7 +31,7 @@ class EmbeddedValuesDefinitionWrapperTest {
     fun convertDefinitionToJSONAndBack() {
         checkJsonConversion(
             this.def,
-            IsDefinitionWrapper.Model,
+            IsDefinitionWrapper.Model.Model,
             { DefinitionsContext() },
             ::comparePropertyDefinitionWrapper
         )

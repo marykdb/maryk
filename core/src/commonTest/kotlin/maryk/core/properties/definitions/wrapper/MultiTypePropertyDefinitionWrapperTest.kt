@@ -23,7 +23,7 @@ class MultiTypePropertyDefinitionWrapperTest {
     fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(
             this.def,
-            IsDefinitionWrapper.Model,
+            IsDefinitionWrapper.Model.Model,
             { DefinitionsContext() },
             ::comparePropertyDefinitionWrapper
         )
@@ -33,7 +33,7 @@ class MultiTypePropertyDefinitionWrapperTest {
     fun convertDefinitionToJSONAndBack() {
         checkJsonConversion(
             this.def,
-            IsDefinitionWrapper.Model,
+            IsDefinitionWrapper.Model.Model,
             { DefinitionsContext() },
             ::comparePropertyDefinitionWrapper
         )

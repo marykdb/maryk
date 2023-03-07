@@ -5,7 +5,7 @@ import maryk.core.inject.Inject
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsValuesPropertyDefinitions
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SimpleObjectModel
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
@@ -28,7 +28,7 @@ import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.RequestContext
 import maryk.core.values.MutableValueItems
-import maryk.core.values.SimpleObjectValues
+import maryk.core.values.ObjectValues
 import maryk.core.values.ValueItem
 import maryk.core.yaml.readNamedIndexField
 import maryk.core.yaml.writeNamedIndexField
@@ -168,8 +168,7 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
         return compatible
     }
 
-    private object Properties :
-        ObjectPropertyDefinitions<AnyOutDefinitionWrapper>() {
+    object Model : SimpleObjectModel<AnyOutDefinitionWrapper, Model>() {
         val index by number(1u, IsDefinitionWrapper<*, *, *, *>::index, UInt32)
         val name by string(2u, IsDefinitionWrapper<*, *, *, *>::name)
         val alternativeNames by set(
@@ -186,62 +185,65 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
             typeEnum = PropertyDefinitionType,
             definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
         )
-    }
 
-    object Model : SimpleObjectDataModel<AnyOutDefinitionWrapper, ObjectPropertyDefinitions<AnyOutDefinitionWrapper>>(
-        properties = Properties
-    ) {
-        override fun invoke(values: SimpleObjectValues<AnyOutDefinitionWrapper>): AnyOutDefinitionWrapper {
+        override fun invoke(values: ObjectValues<IsDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>, Model>): IsDefinitionWrapper<out Any, out Any, IsPropertyContext, Any> {
             val typedDefinition =
                 values<TypedValue<PropertyDefinitionType, IsTransportablePropertyDefinitionType<*>>>(
-                    Properties.definition.index
+                    definition.index
                 )
             val type = typedDefinition.type
 
             return mapOfPropertyDefWrappers[type]?.invoke(
-                values(Properties.index.index),
-                values(Properties.name.index),
-                values(Properties.alternativeNames.index),
+                values(index.index),
+                values(name.index),
+                values(alternativeNames.index),
                 typedDefinition.value
             ) ?: throw DefNotFoundException("Property type $type not found")
         }
 
-        override fun writeJson(
-            obj: AnyOutDefinitionWrapper,
-            writer: IsJsonLikeWriter,
-            context: IsPropertyContext?
+        override val Model = object: SimpleObjectDataModel<AnyOutDefinitionWrapper, Model>(
+            properties = this@Model,
         ) {
-            // When writing YAML, use YAML optimized format with complex field names
-            if (writer is YamlWriter) {
-                val typedDefinition =
-                    Properties.definition.getPropertyAndSerialize(obj, context as ContainsDefinitionsContext)
-                        ?: throw DefNotFoundException("Unknown type ${obj.definition} so cannot serialize contents")
+            override fun invoke(values: ObjectValues<AnyOutDefinitionWrapper, Model>): AnyOutDefinitionWrapper =
+                this@Model.invoke(values)
 
-                writer.writeNamedIndexField(obj.name, obj.index, obj.alternativeNames)
+            override fun writeJson(
+                obj: AnyOutDefinitionWrapper,
+                writer: IsJsonLikeWriter,
+                context: IsPropertyContext?
+            ) {
+                // When writing YAML, use YAML optimized format with complex field names
+                if (writer is YamlWriter) {
+                    val typedDefinition =
+                        definition.getPropertyAndSerialize(obj, context as ContainsDefinitionsContext)
+                            ?: throw DefNotFoundException("Unknown type ${obj.definition} so cannot serialize contents")
 
-                Properties.definition.writeJsonValue(typedDefinition, writer, context)
-            } else {
-                super.writeJson(obj, writer, context)
-            }
-        }
+                    writer.writeNamedIndexField(obj.name, obj.index, obj.alternativeNames)
 
-        override fun readJson(
-            reader: IsJsonLikeReader,
-            context: IsPropertyContext?
-        ): SimpleObjectValues<AnyOutDefinitionWrapper> {
-            // When reading YAML, use YAML optimized format with complex field names
-            return if (reader is IsYamlReader) {
-                val valueMap = MutableValueItems()
-
-                reader.readNamedIndexField(valueMap, Properties.name, Properties.index, Properties.alternativeNames)
-                valueMap[Properties.definition.index] =
-                    Properties.definition.readJson(reader, context as ContainsDefinitionsContext)
-
-                this.values(context as? RequestContext) {
-                    valueMap
+                    definition.writeJsonValue(typedDefinition, writer, context)
+                } else {
+                    super.writeJson(obj, writer, context)
                 }
-            } else {
-                super.readJson(reader, context)
+            }
+
+            override fun readJson(
+                reader: IsJsonLikeReader,
+                context: IsPropertyContext?
+            ): ObjectValues<AnyOutDefinitionWrapper, Model> {
+                // When reading YAML, use YAML optimized format with complex field names
+                return if (reader is IsYamlReader) {
+                    val valueMap = MutableValueItems()
+
+                    reader.readNamedIndexField(valueMap, name, index, alternativeNames)
+                    valueMap[definition.index] =
+                        definition.readJson(reader, context as ContainsDefinitionsContext)
+
+                    this.values(context as? RequestContext) {
+                        valueMap
+                    }
+                } else {
+                    super.readJson(reader, context)
+                }
             }
         }
     }

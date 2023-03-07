@@ -56,7 +56,7 @@ internal class InjectWithReference(
             index = 2u,
             getter = InjectWithReference::reference,
             definition = ContextualPropertyReferenceDefinition<RequestContext>(
-                contextualResolver = { Requests.Properties }
+                contextualResolver = { Requests.Companion }
             )
         )
     }

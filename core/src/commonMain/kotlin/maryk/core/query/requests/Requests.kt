@@ -4,7 +4,7 @@ import maryk.core.definitions.Operation.Request
 import maryk.core.inject.InjectWithReference
 import maryk.core.models.SingleTypedValueDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.ListDefinition
@@ -30,7 +30,11 @@ data class Requests internal constructor(
 
     constructor(requests: List<IsTransportableRequest<*>>) : this(requests, null)
 
-    object Properties : ObjectPropertyDefinitions<Requests>() {
+    /**
+     * From the context of JSON/YAML this object only contains a single property.
+     * This is however not true for Protobuf. There this object contains a list of injectables.
+     */
+    companion object : QueryModel<Requests, Companion>() {
         val requests by list(
             index = 1u,
             getter = Requests::requests,
@@ -57,65 +61,65 @@ data class Requests internal constructor(
                 }
             )
         )
-    }
 
-    /**
-     * From the context of JSON/YAML this object only contains a single property.
-     * This is however not true for Protobuf. There this object contains a list of injectables.
-     */
-    @Suppress("UNCHECKED_CAST")
-    companion object : SingleTypedValueDataModel<TypedValue<RequestType, Any>, Requests, Properties, RequestContext>(
-        properties = Properties,
-        singlePropertyDefinitionGetter = { Properties.requests as IsDefinitionWrapper<TypedValue<RequestType, Any>, TypedValue<RequestType, Any>, RequestContext, Requests> }
-    ) {
-        override fun invoke(values: ObjectValues<Requests, Properties>) = Requests(
-            requests = values(1u),
-            injectables = values(2u)
-        )
+        override fun invoke(values: ObjectValues<Requests, Companion>): Requests =
+            Model.invoke(values)
 
-        override fun protoBufLengthToAddForField(
-            value: Any?,
-            definition: IsDefinitionWrapper<Any, Any, IsPropertyContext, Requests>,
-            cacher: WriteCacheWriter,
-            context: RequestContext?
-        ): Int {
-            val valueToPass = injectValues(definition, context, value)
-            return super.protoBufLengthToAddForField(valueToPass, definition, cacher, context)
-        }
-
-        override fun writeProtoBufField(
-            value: Any?,
-            definition: IsDefinitionWrapper<Any, Any, IsPropertyContext, Requests>,
-            cacheGetter: WriteCacheReader,
-            writer: (byte: Byte) -> Unit,
-            context: RequestContext?
+        @Suppress("UNCHECKED_CAST")
+        override val Model = object: SingleTypedValueDataModel<TypedValue<RequestType, Any>, Requests, Companion, RequestContext>(
+            properties = this@Companion,
+            singlePropertyDefinitionGetter = { requests as IsDefinitionWrapper<TypedValue<RequestType, Any>, TypedValue<RequestType, Any>, RequestContext, Requests> }
         ) {
-            val valueToPass = injectValues(definition, context, value)
-            super.writeProtoBufField(valueToPass, definition, cacheGetter, writer, context)
-        }
+            override fun invoke(values: ObjectValues<Requests, Companion>) = Requests(
+                requests = values(1u),
+                injectables = values(2u)
+            )
 
-        /** Inject injectables if it is found on context */
-        private fun injectValues(
-            definition: IsDefinitionWrapper<Any, Any, IsPropertyContext, Requests>,
-            context: RequestContext?,
-            value: Any?
-        ) = if (definition == Properties.injectables && context != null) {
-            context.collectedInjects
-        } else value
-
-        override fun values(
-            context: RequestContext?,
-            createValues: Properties.() -> IsValueItems
-        ): ObjectValues<Requests, Properties> {
-            val map = ObjectValues(this, createValues(this.properties), context)
-
-            val injectables = map.remove(Properties.injectables.index) as? List<InjectWithReference>?
-
-            injectables?.forEach {
-                it.injectInValues(map)
+            override fun protoBufLengthToAddForField(
+                value: Any?,
+                definition: IsDefinitionWrapper<Any, Any, IsPropertyContext, Requests>,
+                cacher: WriteCacheWriter,
+                context: RequestContext?
+            ): Int {
+                val valueToPass = injectValues(definition, context, value)
+                return super.protoBufLengthToAddForField(valueToPass, definition, cacher, context)
             }
 
-            return map
+            override fun writeProtoBufField(
+                value: Any?,
+                definition: IsDefinitionWrapper<Any, Any, IsPropertyContext, Requests>,
+                cacheGetter: WriteCacheReader,
+                writer: (byte: Byte) -> Unit,
+                context: RequestContext?
+            ) {
+                val valueToPass = injectValues(definition, context, value)
+                super.writeProtoBufField(valueToPass, definition, cacheGetter, writer, context)
+            }
+
+            /** Inject injectables if it is found on context */
+            private fun injectValues(
+                definition: IsDefinitionWrapper<Any, Any, IsPropertyContext, Requests>,
+                context: RequestContext?,
+                value: Any?
+            ) = if (definition == injectables && context != null) {
+                context.collectedInjects
+            } else value
+
+            override fun values(
+                context: RequestContext?,
+                createValues: Companion.() -> IsValueItems
+            ): ObjectValues<Requests, Companion> {
+                val map = ObjectValues(this, createValues(this@Companion), context)
+
+                val injectables = map.remove(injectables.index) as? List<InjectWithReference>?
+
+                injectables?.forEach {
+                    it.injectInValues(map)
+                }
+
+                return map
+            }
         }
     }
+
 }

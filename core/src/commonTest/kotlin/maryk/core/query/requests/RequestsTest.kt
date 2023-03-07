@@ -37,7 +37,7 @@ class RequestsTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.requests, Requests, { this.context }, { converted, original ->
+        checkProtoBufConversion(this.requests, Requests.Model, { this.context }, { converted, original ->
             expect(original.requests.size) { converted.requests.size }
 
             converted.requests.zip(original.requests).forEach { pair ->
@@ -51,7 +51,7 @@ class RequestsTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.requests, Requests, { this.context })
+        checkJsonConversion(this.requests, Requests.Model, { this.context })
     }
 
     @Test
@@ -104,7 +104,7 @@ class RequestsTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.requests, Requests, { this.context })
+            checkYamlConversion(this.requests, Requests.Model, { this.context })
         }
     }
 }

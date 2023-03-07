@@ -45,7 +45,7 @@ class InjectIntoRequestTest {
         )
     }
 
-    private val requests = Requests.values {
+    private val requests = Requests.Model.values {
         mapNonNulls(
             requests withSerializable listOf(TypedValue(RequestType.Get, getRequestWithInjectable))
         )
@@ -172,7 +172,7 @@ class InjectIntoRequestTest {
 
         checkProtoBufObjectValuesConversion(
             requests,
-            Requests,
+            Requests.Model,
             { context },
             checker = { converted, original ->
                 @Suppress("UNCHECKED_CAST")

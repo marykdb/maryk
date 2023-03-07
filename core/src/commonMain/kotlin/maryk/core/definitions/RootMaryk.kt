@@ -39,7 +39,7 @@ data class RootMaryk(
                     ),
                     Operation.Request to ContextTransformerDefinition(
                         definition = EmbeddedObjectDefinition(
-                            dataModel = { Requests }
+                            dataModel = { Requests.Model }
                         ),
                         contextTransformer = {
                             it?.let { modelContext ->

@@ -4,6 +4,7 @@ import maryk.core.definitions.MarykPrimitive
 import maryk.core.definitions.PrimitiveType.RootModel
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.SerializationException
+import maryk.core.properties.DefinitionModel
 import maryk.core.properties.IsDataModelPropertyDefinitions
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.MutablePropertyDefinitions
@@ -62,9 +63,8 @@ class RootDataModel<P : IsValuesPropertyDefinitions>(
 
     override val orderedIndices: List<IsIndexable>? = indices?.sortedBy { it.referenceStorageByteArray }
 
-    @Suppress("unused")
-    private object RootModelProperties :
-        ObjectPropertyDefinitions<RootDataModel<*>>(),
+    internal object InternalModel :
+        DefinitionModel<RootDataModel<*>>(),
         IsDataModelPropertyDefinitions<RootDataModel<*>, PropertyDefinitionsCollectionDefinitionWrapper<RootDataModel<*>>> {
         override val name by string(1u, RootDataModel<*>::name)
         override val properties = addProperties(true, this as ObjectPropertyDefinitions<RootDataModel<*>>)
@@ -111,107 +111,115 @@ class RootDataModel<P : IsValuesPropertyDefinitions>(
             getter = RootDataModel<*>::reservedNames,
             valueDefinition = StringDefinition()
         )
+
+        override fun invoke(values: ObjectValues<RootDataModel<*>, ObjectPropertyDefinitions<RootDataModel<*>>>) =
+            Model.invoke(values)
+
+        override val Model = object :
+            AbstractObjectDataModel<RootDataModel<*>, ObjectPropertyDefinitions<RootDataModel<*>>, ContainsDefinitionsContext, ContainsDefinitionsContext>(
+                properties = InternalModel,
+            ) {
+            override fun invoke(values: ObjectValues<RootDataModel<*>, ObjectPropertyDefinitions<RootDataModel<*>>>) =
+                RootDataModel(
+                    name = values(1u),
+                    properties = values(2u),
+                    version = values(3u),
+                    keyDefinition = values(4u) ?: UUIDKey,
+                    indices = values(5u),
+                    reservedIndices = values(6u),
+                    reservedNames = values(7u)
+                ).apply {
+                    (properties as MutablePropertyDefinitions)._model = this
+                }
+
+            override fun writeJson(
+                values: ObjectValues<RootDataModel<*>, ObjectPropertyDefinitions<RootDataModel<*>>>,
+                writer: IsJsonLikeWriter,
+                context: ContainsDefinitionsContext?
+            ) {
+                throw SerializationException("Cannot write definitions from Values")
+            }
+
+            /**
+             * Overridden to handle earlier definition of keys compared to Properties
+             */
+            override fun writeJson(
+                obj: RootDataModel<*>,
+                writer: IsJsonLikeWriter,
+                context: ContainsDefinitionsContext?
+            ) {
+                this.writeDataModelJson(writer, context, obj, InternalModel)
+            }
+
+            /**
+             * Overridden to handle earlier definition of keys compared to Properties
+             */
+            override fun walkJsonToRead(
+                reader: IsJsonLikeReader,
+                values: MutableValueItems,
+                context: ContainsDefinitionsContext?
+            ) {
+                var keyDefinitionToReadLater: List<JsonToken>? = null
+                var indicesToReadLater: List<JsonToken>? = null
+
+                readDataModelJson(
+                    context,
+                    reader,
+                    values,
+                    InternalModel,
+                    ::MutableRootModel
+                ) { definition ->
+                    when (definition) {
+                        key -> {
+                            keyDefinitionToReadLater = mutableListOf<JsonToken>().apply {
+                                reader.skipUntilNextField(::add)
+                            }
+                            true
+                        }
+                        indices -> {
+                            indicesToReadLater = mutableListOf<JsonToken>().apply {
+                                reader.skipUntilNextField(::add)
+                            }
+                            true
+                        }
+                        else -> false
+                    }
+                }
+
+                readDelayed(keyDefinitionToReadLater, key, reader, values, context)
+                readDelayed(indicesToReadLater, indices, reader, values, context)
+            }
+
+            private fun readDelayed(
+                tokensToReadLater: List<JsonToken>?,
+                propertyDefinitionWrapper: IsDefinitionWrapper<*, *, DefinitionsConversionContext, *>,
+                reader: IsJsonLikeReader,
+                values: MutableValueItems,
+                context: ContainsDefinitionsContext?
+            ) {
+                tokensToReadLater?.let { jsonTokens ->
+                    val lateReader = if (reader is IsYamlReader) {
+                        jsonTokens.map { reader.pushToken(it) }
+                        reader.pushToken(reader.currentToken)
+                        reader.nextToken()
+                        reader
+                    } else {
+                        PresetJsonTokenReader(jsonTokens)
+                    }
+
+                    values[propertyDefinitionWrapper.index] =
+                        propertyDefinitionWrapper.readJson(lateReader, context as DefinitionsConversionContext?)
+
+                    if (reader is IsYamlReader) {
+                        reader.nextToken()
+                    }
+                }
+            }
+        }
+
     }
 
-    object Model :
-        AbstractObjectDataModel<RootDataModel<*>, ObjectPropertyDefinitions<RootDataModel<*>>, ContainsDefinitionsContext, ContainsDefinitionsContext>(
-            properties = RootModelProperties
-        ) {
-        override fun invoke(values: ObjectValues<RootDataModel<*>, ObjectPropertyDefinitions<RootDataModel<*>>>) =
-            RootDataModel(
-                name = values(1u),
-                properties = values(2u),
-                version = values(3u),
-                keyDefinition = values(4u) ?: UUIDKey,
-                indices = values(5u),
-                reservedIndices = values(6u),
-                reservedNames = values(7u)
-            ).apply {
-                (properties as MutablePropertyDefinitions)._model = this
-            }
-
-        override fun writeJson(
-            values: ObjectValues<RootDataModel<*>, ObjectPropertyDefinitions<RootDataModel<*>>>,
-            writer: IsJsonLikeWriter,
-            context: ContainsDefinitionsContext?
-        ) {
-            throw SerializationException("Cannot write definitions from Values")
-        }
-
-        /**
-         * Overridden to handle earlier definition of keys compared to Properties
-         */
-        override fun writeJson(
-            obj: RootDataModel<*>,
-            writer: IsJsonLikeWriter,
-            context: ContainsDefinitionsContext?
-        ) {
-            this.writeDataModelJson(writer, context, obj, RootModelProperties)
-        }
-
-        /**
-         * Overridden to handle earlier definition of keys compared to Properties
-         */
-        override fun walkJsonToRead(
-            reader: IsJsonLikeReader,
-            values: MutableValueItems,
-            context: ContainsDefinitionsContext?
-        ) {
-            var keyDefinitionToReadLater: List<JsonToken>? = null
-            var indicesToReadLater: List<JsonToken>? = null
-
-            readDataModelJson(
-                context,
-                reader,
-                values,
-                RootModelProperties,
-                ::MutableRootModel
-            ) { definition ->
-                when (definition) {
-                    RootModelProperties.key -> {
-                        keyDefinitionToReadLater = mutableListOf<JsonToken>().apply {
-                            reader.skipUntilNextField(::add)
-                        }
-                        true
-                    }
-                    RootModelProperties.indices -> {
-                        indicesToReadLater = mutableListOf<JsonToken>().apply {
-                            reader.skipUntilNextField(::add)
-                        }
-                        true
-                    }
-                    else -> false
-                }
-            }
-
-            readDelayed(keyDefinitionToReadLater, RootModelProperties.key, reader, values, context)
-            readDelayed(indicesToReadLater, RootModelProperties.indices, reader, values, context)
-        }
-
-        private fun readDelayed(
-            tokensToReadLater: List<JsonToken>?,
-            propertyDefinitionWrapper: IsDefinitionWrapper<*, *, DefinitionsConversionContext, *>,
-            reader: IsJsonLikeReader,
-            values: MutableValueItems,
-            context: ContainsDefinitionsContext?
-        ) {
-            tokensToReadLater?.let { jsonTokens ->
-                val lateReader = if (reader is IsYamlReader) {
-                    jsonTokens.map { reader.pushToken(it) }
-                    reader.pushToken(reader.currentToken)
-                    reader.nextToken()
-                    reader
-                } else {
-                    PresetJsonTokenReader(jsonTokens)
-                }
-
-                values[propertyDefinitionWrapper.index] =
-                    propertyDefinitionWrapper.readJson(lateReader, context as DefinitionsConversionContext?)
-
-                if (reader is IsYamlReader) {
-                    reader.nextToken()
-                }
-            }
-        }
+    companion object {
+        val Model: DefinitionModel<RootDataModel<*>> = InternalModel
     }
 }

@@ -4,6 +4,7 @@ import maryk.core.definitions.MarykPrimitive
 import maryk.core.definitions.PrimitiveType
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.SerializationException
+import maryk.core.properties.DefinitionModel
 import maryk.core.properties.IsDataModelPropertyDefinitions
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.MutableModel
@@ -40,8 +41,8 @@ open class DataModel<P : IsValuesPropertyDefinitions>(
     override val primitiveType = PrimitiveType.Model
 
     @Suppress("unused")
-    private object Properties :
-        ObjectPropertyDefinitions<DataModel<*>>(),
+    internal object Model :
+        DefinitionModel<DataModel<*>>(),
         IsDataModelPropertyDefinitions<DataModel<*>, PropertyDefinitionsCollectionDefinitionWrapper<DataModel<*>>> {
         override val name by string(1u, DataModel<*>::name)
         override val properties = addProperties(false, this)
@@ -58,39 +59,42 @@ open class DataModel<P : IsValuesPropertyDefinitions>(
             getter = DataModel<*>::reservedNames,
             valueDefinition = StringDefinition()
         )
-    }
 
-    internal object Model : DefinitionDataModel<DataModel<*>>(
-        properties = Properties
-    ) {
-        override fun invoke(values: SimpleObjectValues<DataModel<*>>) =
-            DataModel(
-                name = values(1u),
-                properties = values(2u),
-                reservedIndices = values(3u),
-                reservedNames = values(4u)
-            ).apply {
-                (properties as MutablePropertyDefinitions)._model = this
+        override fun invoke(values: ObjectValues<DataModel<*>, ObjectPropertyDefinitions<DataModel<*>>>): DataModel<*> =
+            Model.invoke(values)
+
+        override val Model: DefinitionDataModel<DataModel<*>> = object : DefinitionDataModel<DataModel<*>>(
+            properties = DataModel.Model,
+        ) {
+            override fun invoke(values: SimpleObjectValues<DataModel<*>>) =
+                DataModel(
+                    name = values(1u),
+                    properties = values(2u),
+                    reservedIndices = values(3u),
+                    reservedNames = values(4u)
+                ).apply {
+                    (properties as MutablePropertyDefinitions)._model = this
+                }
+
+            override fun writeJson(
+                values: ObjectValues<DataModel<*>, ObjectPropertyDefinitions<DataModel<*>>>,
+                writer: IsJsonLikeWriter,
+                context: ContainsDefinitionsContext?
+            ) {
+                throw SerializationException("Cannot write definitions from Values")
             }
 
-        override fun writeJson(
-            values: ObjectValues<DataModel<*>, ObjectPropertyDefinitions<DataModel<*>>>,
-            writer: IsJsonLikeWriter,
-            context: ContainsDefinitionsContext?
-        ) {
-            throw SerializationException("Cannot write definitions from Values")
-        }
+            override fun writeJson(obj: DataModel<*>, writer: IsJsonLikeWriter, context: ContainsDefinitionsContext?) {
+                this.writeDataModelJson(writer, context, obj, DataModel.Model)
+            }
 
-        override fun writeJson(obj: DataModel<*>, writer: IsJsonLikeWriter, context: ContainsDefinitionsContext?) {
-            this.writeDataModelJson(writer, context, obj, Properties)
-        }
-
-        override fun walkJsonToRead(
-            reader: IsJsonLikeReader,
-            values: MutableValueItems,
-            context: ContainsDefinitionsContext?
-        ) {
-            readDataModelJson(context, reader, values, Properties, ::MutableModel)
+            override fun walkJsonToRead(
+                reader: IsJsonLikeReader,
+                values: MutableValueItems,
+                context: ContainsDefinitionsContext?
+            ) {
+                readDataModelJson(context, reader, values, DataModel.Model, ::MutableModel)
+            }
         }
     }
 }

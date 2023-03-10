@@ -1,7 +1,6 @@
 package maryk.datastore.rocksdb.model
 
 import maryk.core.models.RootDataModel
-import maryk.core.models.RootDataModel.Model
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DefinitionsConversionContext
 import maryk.rocksdb.ColumnFamilyHandle
@@ -17,10 +16,10 @@ fun storeModelDefinition(
 
     val context = DefinitionsConversionContext()
     val cache = WriteCache()
-    val modelByteSize = Model.calculateProtoBufLength(dataModel, cache, context)
+    val modelByteSize = RootDataModel.Model.Model.calculateProtoBufLength(dataModel, cache, context)
     val bytes = ByteArray(modelByteSize)
     var writeIndex = 0
-    Model.writeProtoBuf(dataModel, cache, { bytes[writeIndex++] = it }, context)
+    RootDataModel.Model.Model.writeProtoBuf(dataModel, cache, { bytes[writeIndex++] = it }, context)
 
     rocksDB.put(modelColumnFamily, modelDefinitionKey, bytes)
 }

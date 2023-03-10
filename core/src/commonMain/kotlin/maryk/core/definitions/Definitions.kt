@@ -52,7 +52,7 @@ data class Definitions(
                 definitionMap = mapOf(
                     PrimitiveType.Model to ContextCaptureDefinition(
                         definition = EmbeddedObjectDefinition(
-                            dataModel = { DataModel.Model }
+                            dataModel = { DataModel.Model.Model }
                         ),
                         capturer = { context, model ->
                             context?.let {
@@ -62,7 +62,7 @@ data class Definitions(
                     ),
                     ValueModel to ContextCaptureDefinition(
                         definition = EmbeddedObjectDefinition(
-                            dataModel = { ValueDataModel.Model }
+                            dataModel = { ValueDataModel.Model.Model }
                         ),
                         capturer = { context, model ->
                             context?.let {
@@ -72,7 +72,7 @@ data class Definitions(
                     ),
                     RootModel to ContextCaptureDefinition(
                         definition = EmbeddedObjectDefinition(
-                            dataModel = { RootDataModel.Model }
+                            dataModel = { RootDataModel.Model.Model }
                         ),
                         capturer = { context: ContainsDefinitionsContext?, model ->
                             context?.let {

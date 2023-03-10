@@ -89,7 +89,7 @@ internal class RootDataModelTest {
     fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(
             TestMarykModel.Model,
-            RootDataModel.Model,
+            RootDataModel.Model.Model,
             { DefinitionsConversionContext() },
             ::compareDataModels
         )
@@ -351,7 +351,7 @@ internal class RootDataModelTest {
         ) {
             checkJsonConversion(
                 TestMarykModel.Model,
-                RootDataModel.Model,
+                RootDataModel.Model.Model,
                 { DefinitionsConversionContext() },
                 ::compareDataModels
             )
@@ -549,7 +549,7 @@ internal class RootDataModelTest {
         ) {
             checkYamlConversion(
                 TestMarykModel.Model,
-                RootDataModel.Model,
+                RootDataModel.Model.Model,
                 { DefinitionsConversionContext() },
                 ::compareDataModels
             )
@@ -639,7 +639,7 @@ internal class RootDataModelTest {
         newContext.dataModels["TestValueObject"] = { TestValueObject.Model }
         newContext.dataModels["EmbeddedMarykModel"] = { EmbeddedMarykModel.Model }
 
-        RootDataModel.Model.readJson(reader, newContext).toDataObject().apply {
+        RootDataModel.Model.Model.readJson(reader, newContext).toDataObject().apply {
             assertEquals("SimpleModel", name)
 
             properties["string"]!!.let {

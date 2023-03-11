@@ -11,7 +11,7 @@ import maryk.json.IsJsonLikeWriter
 /**
  * Definition wrapper to transform the value with context with [valueTransformer] for valueDefinition of [T] defined by [definition]
  */
-internal data class ContextValueTransformDefinition<T : Any, in CX : IsPropertyContext>(
+data class ContextValueTransformDefinition<T : Any, in CX : IsPropertyContext>(
     val definition: IsValueDefinition<T, CX>,
     private val valueTransformer: Unit.(CX?, T) -> T
 ) : IsValueDefinition<T, CX>, IsContextualEncodable<T, CX> {

@@ -2,6 +2,7 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
+import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -17,6 +18,7 @@ import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.query.ContainsDefinitionsContext
+import maryk.core.values.ObjectValues
 import maryk.core.values.SimpleObjectValues
 import maryk.lib.exceptions.ParseException
 
@@ -127,85 +129,89 @@ data class EnumDefinition<E : IndexedEnumComparable<E>>(
         return compatible
     }
 
-    @Suppress("unused")
-    object Model :
-        ContextualDataModel<EnumDefinition<*>, ObjectPropertyDefinitions<EnumDefinition<*>>, ContainsDefinitionsContext, EnumDefinitionContext>(
-            contextTransformer = { EnumDefinitionContext(it) },
-            properties = object : ObjectPropertyDefinitions<EnumDefinition<*>>() {
-                val required by boolean(1u, EnumDefinition<*>::required, default = true)
-                val final by boolean(2u, EnumDefinition<*>::final, default = false)
-                val unique by boolean(3u, EnumDefinition<*>::unique, default = false)
-                val enum by contextual(
-                    index = 4u,
-                    getter = EnumDefinition<*>::enum,
-                    definition = ContextValueTransformDefinition(
-                        definition = ContextTransformerDefinition(
-                            definition = EmbeddedObjectDefinition(
-                                dataModel = { IndexedEnumDefinition.Model.Model }
-                            ),
-                            contextTransformer = {
-                                it?.definitionsContext
-                            }
-                        ),
-                        valueTransformer = { context: EnumDefinitionContext?, value ->
-                            if (value.optionalCases == null) {
-                                context?.let { c ->
-                                    c.definitionsContext?.let {
-                                        it.enums[value.name] ?: throw ParseException("Enum ${value.name} is not Defined")
-                                    }
-                                } ?: throw ContextNotFoundException()
-                            } else {
-                                value
-                            }
-                        }
+    object Model : ContextualModel<EnumDefinition<*>, ContainsDefinitionsContext, EnumDefinitionContext>() {
+        val required by boolean(1u, EnumDefinition<*>::required, default = true)
+        val final by boolean(2u, EnumDefinition<*>::final, default = false)
+        val unique by boolean(3u, EnumDefinition<*>::unique, default = false)
+        val enum by contextual(
+            index = 4u,
+            getter = EnumDefinition<*>::enum,
+            definition = ContextValueTransformDefinition(
+                definition = ContextTransformerDefinition(
+                    definition = EmbeddedObjectDefinition(
+                        dataModel = { IndexedEnumDefinition.Model.Model }
                     ),
-                    capturer = { context, value ->
-                        @Suppress("UNCHECKED_CAST")
-                        context.enumDefinition =
-                            EnumDefinition(enum = value as IndexedEnumDefinition<IndexedEnumComparable<Any>>)
+                    contextTransformer = {
+                        it?.definitionsContext
                     }
-                )
-                val minValue by contextual(
-                    index = 5u,
-                    getter = EnumDefinition<*>::minValue,
-                    definition = ContextualValueDefinition(
-                        contextualResolver = { context: EnumDefinitionContext? ->
-                            @Suppress("UNCHECKED_CAST")
-                            context?.enumDefinition as IsValueDefinition<Any, IsPropertyContext>
-                        }
-                    )
-                )
-                val maxValue by contextual(
-                    index = 6u,
-                    getter = EnumDefinition<*>::maxValue,
-                    definition = ContextualValueDefinition(
-                        contextualResolver = { context: EnumDefinitionContext? ->
-                            @Suppress("UNCHECKED_CAST")
-                            context?.enumDefinition as IsValueDefinition<Any, IsPropertyContext>
-                        }
-                    )
-                )
-                val default by contextual(
-                    index = 7u,
-                    getter = EnumDefinition<*>::default,
-                    definition = ContextualValueDefinition(
-                        contextualResolver = { context: EnumDefinitionContext? ->
-                            @Suppress("UNCHECKED_CAST")
-                            context?.enumDefinition as IsValueDefinition<Any, IsPropertyContext>
-                        }
-                    )
-                )
+                ),
+                valueTransformer = { context: EnumDefinitionContext?, value ->
+                    if (value.optionalCases == null) {
+                        context?.let { c ->
+                            c.definitionsContext?.let {
+                                it.enums[value.name] ?: throw ParseException("Enum ${value.name} is not Defined")
+                            }
+                        } ?: throw ContextNotFoundException()
+                    } else {
+                        value
+                    }
+                }
+            ),
+            capturer = { context, value ->
+                @Suppress("UNCHECKED_CAST")
+                context.enumDefinition =
+                    EnumDefinition(enum = value as IndexedEnumDefinition<IndexedEnumComparable<Any>>)
             }
-        ) {
-        override fun invoke(values: SimpleObjectValues<EnumDefinition<*>>) = EnumDefinition<IndexedEnumComparable<Any>>(
-            required = values(1u),
-            final = values(2u),
-            unique = values(3u),
-            enum = values(4u),
-            minValue = values(5u),
-            maxValue = values(6u),
-            default = values(7u)
         )
+        val minValue by contextual(
+            index = 5u,
+            getter = EnumDefinition<*>::minValue,
+            definition = ContextualValueDefinition(
+                contextualResolver = { context: EnumDefinitionContext? ->
+                    @Suppress("UNCHECKED_CAST")
+                    context?.enumDefinition as IsValueDefinition<Any, IsPropertyContext>
+                }
+            )
+        )
+        val maxValue by contextual(
+            index = 6u,
+            getter = EnumDefinition<*>::maxValue,
+            definition = ContextualValueDefinition(
+                contextualResolver = { context: EnumDefinitionContext? ->
+                    @Suppress("UNCHECKED_CAST")
+                    context?.enumDefinition as IsValueDefinition<Any, IsPropertyContext>
+                }
+            )
+        )
+        val default by contextual(
+            index = 7u,
+            getter = EnumDefinition<*>::default,
+            definition = ContextualValueDefinition(
+                contextualResolver = { context: EnumDefinitionContext? ->
+                    @Suppress("UNCHECKED_CAST")
+                    context?.enumDefinition as IsValueDefinition<Any, IsPropertyContext>
+                }
+            )
+        )
+
+        override fun invoke(values: ObjectValues<EnumDefinition<*>, ObjectPropertyDefinitions<EnumDefinition<*>>>): EnumDefinition<*> =
+            Model.invoke(values)
+
+        @Suppress("unused")
+        override val Model = object : ContextualDataModel<EnumDefinition<*>, ObjectPropertyDefinitions<EnumDefinition<*>>, ContainsDefinitionsContext, EnumDefinitionContext>(
+            contextTransformer = { EnumDefinitionContext(it) },
+            properties = this
+        ) {
+            override fun invoke(values: SimpleObjectValues<EnumDefinition<*>>) = EnumDefinition<IndexedEnumComparable<Any>>(
+                required = values(1u),
+                final = values(2u),
+                unique = values(3u),
+                enum = values(4u),
+                minValue = values(5u),
+                maxValue = values(6u),
+                default = values(7u)
+            )
+        }
     }
 }
 

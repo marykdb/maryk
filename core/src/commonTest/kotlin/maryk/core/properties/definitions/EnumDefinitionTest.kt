@@ -113,19 +113,19 @@ internal class EnumDefinitionTest {
 
     @Test
     fun convertDefinitionToProtoBufAndBack() {
-        checkProtoBufConversion(this.def, EnumDefinition.Model, null, ::compare)
-        checkProtoBufConversion(this.defMaxDefined, EnumDefinition.Model, null, ::compare)
+        checkProtoBufConversion(this.def, EnumDefinition.Model.Model, null, ::compare)
+        checkProtoBufConversion(this.defMaxDefined, EnumDefinition.Model.Model, null, ::compare)
     }
 
     @Test
     fun convertDefinitionToJSONAndBack() {
-        checkJsonConversion(this.def, EnumDefinition.Model, null, ::compare)
-        checkJsonConversion(this.defMaxDefined, EnumDefinition.Model, null, ::compare)
+        checkJsonConversion(this.def, EnumDefinition.Model.Model, null, ::compare)
+        checkJsonConversion(this.defMaxDefined, EnumDefinition.Model.Model, null, ::compare)
     }
 
     @Test
     fun convertDefinitionToYAMLAndBack() {
-        checkYamlConversion(this.def, EnumDefinition.Model, null, ::compare)
+        checkYamlConversion(this.def, EnumDefinition.Model.Model, null, ::compare)
 
         expect(
             """
@@ -146,7 +146,7 @@ internal class EnumDefinitionTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.defMaxDefined, EnumDefinition.Model, null, ::compare)
+            checkYamlConversion(this.defMaxDefined, EnumDefinition.Model.Model, null, ::compare)
         }
     }
 
@@ -167,7 +167,7 @@ internal class EnumDefinitionTest {
             }
         }
         @Suppress("UNCHECKED_CAST")
-        val context = EnumDefinition.Model.transformContext(
+        val context = EnumDefinition.Model.Model.transformContext(
             DefinitionsContext(
                 enums = mutableMapOf(
                     "Option" to Option as IndexedEnumDefinition<IndexedEnum>
@@ -183,7 +183,7 @@ internal class EnumDefinitionTest {
                 default = V2
             )
         ) {
-            EnumDefinition.Model.readJson(reader, context).toDataObject()
+            EnumDefinition.Model.Model.readJson(reader, context).toDataObject()
         }
     }
 

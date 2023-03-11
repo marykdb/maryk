@@ -113,82 +113,81 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : ValueDataModel<DO, P
     }
 
     @Suppress("unused")
-    object Model :
-        ContextualDataModel<ValueObjectDefinition<*, *, *>, ObjectPropertyDefinitions<ValueObjectDefinition<*, *, *>>, ContainsDefinitionsContext, ModelContext>(
-            contextTransformer = { ModelContext(it) },
-            properties = object : ObjectPropertyDefinitions<ValueObjectDefinition<*, *, *>>() {
-                val required by boolean(1u, ValueObjectDefinition<*, *, *>::required, default = true)
-                val final by boolean(2u, ValueObjectDefinition<*, *, *>::final, default = false)
-                val unique by boolean(3u, ValueObjectDefinition<*, *, *>::unique, default = false)
-                val dataModel by contextual(
-                    index = 4u,
-                    getter = ValueObjectDefinition<*, *, *>::dataModel,
-                    definition = ContextualModelReferenceDefinition<ValueDataModel<*, *>, ModelContext>(
-                        contextualResolver = { context, name ->
-                            context?.definitionsContext?.let {
-                                @Suppress("UNCHECKED_CAST")
-                                it.dataModels[name] as (Unit.() -> ValueDataModel<*, *>)?
-                                    ?: throw DefNotFoundException("DataModel with name $name not found on dataModels")
-                            } ?: throw ContextNotFoundException()
-                        }
-                    ),
-                    toSerializable = { value: ValueDataModel<*, *>?, _ ->
-                        value?.let {
-                            DataModelReference(it.name) { it }
-                        }
-                    },
-                    fromSerializable = {
-                        it?.get?.invoke(Unit)
-                    },
-                    capturer = { context, dataModel ->
-                        context.let {
-                            context.definitionsContext?.let { modelContext ->
-                                if (!modelContext.dataModels.containsKey(dataModel.name)) {
-                                    modelContext.dataModels[dataModel.name] = dataModel.get
-                                }
-                            } ?: throw ContextNotFoundException()
-
+    object Model : ContextualDataModel<ValueObjectDefinition<*, *, *>, ObjectPropertyDefinitions<ValueObjectDefinition<*, *, *>>, ContainsDefinitionsContext, ModelContext>(
+        contextTransformer = { ModelContext(it) },
+        properties = object : ObjectPropertyDefinitions<ValueObjectDefinition<*, *, *>>() {
+            val required by boolean(1u, ValueObjectDefinition<*, *, *>::required, default = true)
+            val final by boolean(2u, ValueObjectDefinition<*, *, *>::final, default = false)
+            val unique by boolean(3u, ValueObjectDefinition<*, *, *>::unique, default = false)
+            val dataModel by contextual(
+                index = 4u,
+                getter = ValueObjectDefinition<*, *, *>::dataModel,
+                definition = ContextualModelReferenceDefinition<ValueDataModel<*, *>, ModelContext>(
+                    contextualResolver = { context, name ->
+                        context?.definitionsContext?.let {
                             @Suppress("UNCHECKED_CAST")
-                            context.model =
-                                dataModel.get as Unit.() -> AbstractObjectDataModel<Any, ObjectPropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>
-                        }
+                            it.dataModels[name] as (Unit.() -> ValueDataModel<*, *>)?
+                                ?: throw DefNotFoundException("DataModel with name $name not found on dataModels")
+                        } ?: throw ContextNotFoundException()
+                    }
+                ),
+                toSerializable = { value: ValueDataModel<*, *>?, _ ->
+                    value?.let {
+                        DataModelReference(it.name) { it }
+                    }
+                },
+                fromSerializable = {
+                    it?.get?.invoke(Unit)
+                },
+                capturer = { context, dataModel ->
+                    context.let {
+                        context.definitionsContext?.let { modelContext ->
+                            if (!modelContext.dataModels.containsKey(dataModel.name)) {
+                                modelContext.dataModels[dataModel.name] = dataModel.get
+                            }
+                        } ?: throw ContextNotFoundException()
+
+                        @Suppress("UNCHECKED_CAST")
+                        context.model =
+                            dataModel.get as Unit.() -> AbstractObjectDataModel<Any, ObjectPropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>
+                    }
+                }
+            )
+            val minValue by contextual(
+                index = 5u,
+                getter = ValueObjectDefinition<*, *, *>::minValue,
+                definition = ContextualEmbeddedObjectDefinition(
+                    contextualResolver = { context: ModelContext? ->
+                        @Suppress("UNCHECKED_CAST")
+                        context?.model?.invoke(Unit) as? SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>?
+                            ?: throw ContextNotFoundException()
                     }
                 )
-                val minValue by contextual(
-                    index = 5u,
-                    getter = ValueObjectDefinition<*, *, *>::minValue,
-                    definition = ContextualEmbeddedObjectDefinition(
-                        contextualResolver = { context: ModelContext? ->
-                            @Suppress("UNCHECKED_CAST")
-                            context?.model?.invoke(Unit) as? SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>?
-                                ?: throw ContextNotFoundException()
-                        }
-                    )
+            )
+            val maxValue by contextual(
+                index = 6u,
+                getter = ValueObjectDefinition<*, *, *>::maxValue,
+                definition = ContextualEmbeddedObjectDefinition(
+                    contextualResolver = { context: ModelContext? ->
+                        @Suppress("UNCHECKED_CAST")
+                        context?.model?.invoke(Unit) as? SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>?
+                            ?: throw ContextNotFoundException()
+                    }
                 )
-                val maxValue by contextual(
-                    index = 6u,
-                    getter = ValueObjectDefinition<*, *, *>::maxValue,
-                    definition = ContextualEmbeddedObjectDefinition(
-                        contextualResolver = { context: ModelContext? ->
-                            @Suppress("UNCHECKED_CAST")
-                            context?.model?.invoke(Unit) as? SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>?
-                                ?: throw ContextNotFoundException()
-                        }
-                    )
+            )
+            val default by contextual(
+                index = 7u,
+                getter = ValueObjectDefinition<*, *, *>::default,
+                definition = ContextualEmbeddedObjectDefinition(
+                    contextualResolver = { context: ModelContext? ->
+                        @Suppress("UNCHECKED_CAST")
+                        context?.model?.invoke(Unit) as? SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>
+                            ?: throw ContextNotFoundException()
+                    }
                 )
-                val default by contextual(
-                    index = 7u,
-                    getter = ValueObjectDefinition<*, *, *>::default,
-                    definition = ContextualEmbeddedObjectDefinition(
-                        contextualResolver = { context: ModelContext? ->
-                            @Suppress("UNCHECKED_CAST")
-                            context?.model?.invoke(Unit) as? SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>
-                                ?: throw ContextNotFoundException()
-                        }
-                    )
-                )
-            }
-        ) {
+            )
+        }
+    ) {
         override fun invoke(values: SimpleObjectValues<ValueObjectDefinition<*, *, *>>) = ValueObjectDefinition(
             required = values(1u),
             final = values(2u),

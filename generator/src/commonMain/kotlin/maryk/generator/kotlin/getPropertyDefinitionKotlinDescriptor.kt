@@ -110,7 +110,7 @@ private val definitionNamesMap = mapOf(
         className = "EnumDefinition",
         wrapFunctionName = "enum",
         kotlinTypeName = { it.enum.name },
-        definitionModel = EnumDefinition.Model,
+        definitionModel = EnumDefinition.Model.Model,
         propertyValueOverride = mapOf(
             "maxValue" to { definition, value, _ ->
                 val enumDefinition = definition as EnumDefinition<*>

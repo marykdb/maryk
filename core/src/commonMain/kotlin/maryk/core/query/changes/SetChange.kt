@@ -3,7 +3,7 @@ package maryk.core.query.changes
 import maryk.core.exceptions.RequestException
 import maryk.core.models.ReferenceMappedDataModel
 import maryk.core.properties.IsRootModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.graph.RootPropRefGraph
@@ -68,8 +68,8 @@ data class SetChange internal constructor(
         }
     }
 
-    @Suppress("unused")
-    object Properties : ObjectPropertyDefinitions<SetChange>() {
+    companion object : QueryModel<SetChange, Companion>() {
+        @Suppress("unused")
         val setValueChanges by list(
             index = 1u,
             getter = SetChange::setValueChanges,
@@ -77,19 +77,22 @@ data class SetChange internal constructor(
                 dataModel = { SetValueChanges.Model }
             )
         )
-    }
 
-    companion object : ReferenceMappedDataModel<SetChange, SetValueChanges<*>, Properties, SetValueChanges.Companion>(
-        properties = Properties,
-        containedDataModel = SetValueChanges.Model,
-        referenceProperty = SetValueChanges.reference
-    ) {
-        override fun invoke(values: ObjectValues<SetChange, Properties>) = SetChange(
-            setValueChanges = values(1u)
-        )
+        override fun invoke(values: ObjectValues<SetChange, Companion>): SetChange =
+            Model.invoke(values)
 
-        override fun writeJson(obj: SetChange, writer: IsJsonLikeWriter, context: RequestContext?) {
-            writeReferenceValueMap(writer, obj.setValueChanges, context)
+        override val Model = object : ReferenceMappedDataModel<SetChange, SetValueChanges<*>, Companion, SetValueChanges.Companion>(
+            properties = Companion,
+            containedDataModel = SetValueChanges.Model,
+            referenceProperty = SetValueChanges.reference
+        ) {
+            override fun invoke(values: ObjectValues<SetChange, Companion>) = SetChange(
+                setValueChanges = values(1u)
+            )
+
+            override fun writeJson(obj: SetChange, writer: IsJsonLikeWriter, context: RequestContext?) {
+                writeReferenceValueMap(writer, obj.setValueChanges, context)
+            }
         }
     }
 }

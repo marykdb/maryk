@@ -3,7 +3,7 @@ package maryk.core.query.changes
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.SubListDefinition
 import maryk.core.properties.definitions.contextual.ContextualSubDefinition
 import maryk.core.properties.definitions.subList
@@ -23,7 +23,7 @@ data class IncMapKeyAdditions<K : Comparable<K>, V : Any>(
     val addedValues: List<V>? = null
 ) : DefinedByReference<Map<K, V>> {
     @Suppress("unused")
-    object Properties : ObjectPropertyDefinitions<IncMapKeyAdditions<out Comparable<Any>, out Any>>() {
+    companion object : QueryModel<IncMapKeyAdditions<out Comparable<Any>, out Any>, Companion>() {
         val reference by addReference(IncMapKeyAdditions<*, *>::reference)
 
         val addedKeys by subList(
@@ -56,45 +56,48 @@ data class IncMapKeyAdditions<K : Comparable<K>, V : Any>(
                     null // Reset value to null, so it does not get serialized/send.
                 }
             ).also(::addSingle)
-    }
 
-    companion object : QueryDataModel<IncMapKeyAdditions<out Comparable<Any>, out Any>, Properties>(
-        properties = Properties
-    ) {
-        override fun invoke(values: ObjectValues<IncMapKeyAdditions<out Comparable<Any>, out Any>, Properties>) = IncMapKeyAdditions<Comparable<Any>, Any>(
-            reference = values(1u),
-            addedKeys = values(2u),
-            addedValues = values(3u)
-        )
+        override fun invoke(values: ObjectValues<IncMapKeyAdditions<out Comparable<Any>, out Any>, Companion>): IncMapKeyAdditions<out Comparable<Any>, out Any> =
+            Model.invoke(values)
 
-        override fun walkJsonToRead(reader: IsJsonLikeReader, values: MutableValueItems, context: RequestContext?) {
-            super.walkJsonToRead(reader, values, context)
+        override val Model = object : QueryDataModel<IncMapKeyAdditions<out Comparable<Any>, out Any>, Companion>(
+            properties = Companion
+        ) {
+            override fun invoke(values: ObjectValues<IncMapKeyAdditions<out Comparable<Any>, out Any>, Companion>) = IncMapKeyAdditions<Comparable<Any>, Any>(
+                reference = values(1u),
+                addedKeys = values(2u),
+                addedValues = values(3u)
+            )
 
-            addAddedValuesFromContext(values, context)
-        }
+            override fun walkJsonToRead(reader: IsJsonLikeReader, values: MutableValueItems, context: RequestContext?) {
+                super.walkJsonToRead(reader, values, context)
 
-        override fun readProtoBuf(
-            length: Int,
-            reader: () -> Byte,
-            context: RequestContext?
-        ) =
-            super.readProtoBuf(length, reader, context).also {
-                addAddedValuesFromContext(it.values as MutableValueItems, context)
+                addAddedValuesFromContext(values, context)
             }
 
-        private fun addAddedValuesFromContext(
-            values: MutableValueItems,
-            context: RequestContext?
-        ) {
-            if (values[Properties.addedValues.index] == null) {
-                context?.getCollectedIncMapChanges()?.find { incMapChange ->
-                    val foundValueChange = incMapChange.valueChanges.find {
-                        it.reference == context.reference
-                    }?.also {
-                        values[Properties.addedValues.index] = it.addValues ?: emptyList<Any>()
-                    }
+            override fun readProtoBuf(
+                length: Int,
+                reader: () -> Byte,
+                context: RequestContext?
+            ) =
+                super.readProtoBuf(length, reader, context).also {
+                    addAddedValuesFromContext(it.values as MutableValueItems, context)
+                }
 
-                    foundValueChange != null
+            private fun addAddedValuesFromContext(
+                values: MutableValueItems,
+                context: RequestContext?
+            ) {
+                if (values[addedValues.index] == null) {
+                    context?.getCollectedIncMapChanges()?.find { incMapChange ->
+                        val foundValueChange = incMapChange.valueChanges.find {
+                            it.reference == context.reference
+                        }?.also {
+                            values[addedValues.index] = it.addValues ?: emptyList<Any>()
+                        }
+
+                        foundValueChange != null
+                    }
                 }
             }
         }

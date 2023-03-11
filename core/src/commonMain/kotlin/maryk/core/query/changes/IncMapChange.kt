@@ -3,7 +3,7 @@ package maryk.core.query.changes
 import maryk.core.exceptions.RequestException
 import maryk.core.models.ReferenceMappedDataModel
 import maryk.core.properties.IsRootModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.graph.RootPropRefGraph
@@ -79,7 +79,7 @@ data class IncMapChange internal constructor(
     }
 
     @Suppress("unused")
-    object Properties : ObjectPropertyDefinitions<IncMapChange>() {
+    companion object : QueryModel<IncMapChange, Companion>() {
         val valueChanges by list(
             index = 1u,
             getter = IncMapChange::valueChanges,
@@ -87,19 +87,22 @@ data class IncMapChange internal constructor(
                 dataModel = { IncMapValueChanges.Model }
             )
         )
-    }
 
-    companion object : ReferenceMappedDataModel<IncMapChange, IncMapValueChanges<out Comparable<Any>, out Any>, Properties, IncMapValueChanges.Companion>(
-        properties = Properties,
-        containedDataModel = IncMapValueChanges.Model,
-        referenceProperty = IncMapValueChanges.reference
-    ) {
-        override fun invoke(values: ObjectValues<IncMapChange, Properties>) = IncMapChange(
-            valueChanges = values<List<IncMapValueChanges<out Comparable<Any>, out Any>>>(1u)
-        )
+        override fun invoke(values: ObjectValues<IncMapChange, Companion>): IncMapChange =
+            Model.invoke(values)
 
-        override fun writeJson(obj: IncMapChange, writer: IsJsonLikeWriter, context: RequestContext?) {
-            writeReferenceValueMap(writer, obj.valueChanges, context)
+        override val Model = object : ReferenceMappedDataModel<IncMapChange, IncMapValueChanges<out Comparable<Any>, out Any>, Companion, IncMapValueChanges.Companion>(
+            properties = Companion,
+            containedDataModel = IncMapValueChanges.Model,
+            referenceProperty = IncMapValueChanges.reference
+        ) {
+            override fun invoke(values: ObjectValues<IncMapChange, Companion>) = IncMapChange(
+                valueChanges = values<List<IncMapValueChanges<out Comparable<Any>, out Any>>>(1u)
+            )
+
+            override fun writeJson(obj: IncMapChange, writer: IsJsonLikeWriter, context: RequestContext?) {
+                writeReferenceValueMap(writer, obj.valueChanges, context)
+            }
         }
     }
 }

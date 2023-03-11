@@ -3,7 +3,7 @@ package maryk.core.query.changes
 import maryk.core.exceptions.RequestException
 import maryk.core.models.ReferenceMappedDataModel
 import maryk.core.properties.IsRootModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.graph.RootPropRefGraph
@@ -76,7 +76,7 @@ data class ListChange internal constructor(
     }
 
     @Suppress("unused")
-    object Properties : ObjectPropertyDefinitions<ListChange>() {
+    companion object : QueryModel<ListChange, Companion>() {
         val referenceListValueChangesPairs by list(
             index = 1u,
             getter = ListChange::listValueChanges,
@@ -84,20 +84,23 @@ data class ListChange internal constructor(
                 dataModel = { ListValueChanges.Model }
             )
         )
-    }
 
-    companion object :
-        ReferenceMappedDataModel<ListChange, ListValueChanges<*>, Properties, ListValueChanges.Companion>(
-            properties = Properties,
-            containedDataModel = ListValueChanges.Model,
-            referenceProperty = ListValueChanges.reference
-        ) {
-        override fun invoke(values: ObjectValues<ListChange, Properties>) = ListChange(
-            listValueChanges = values(1u)
-        )
+        override fun invoke(values: ObjectValues<ListChange, Companion>): ListChange =
+            Model.invoke(values)
 
-        override fun writeJson(obj: ListChange, writer: IsJsonLikeWriter, context: RequestContext?) {
-            writeReferenceValueMap(writer, obj.listValueChanges, context)
+        override val Model = object :
+            ReferenceMappedDataModel<ListChange, ListValueChanges<*>, Companion, ListValueChanges.Companion>(
+                properties = Companion,
+                containedDataModel = ListValueChanges.Model,
+                referenceProperty = ListValueChanges.reference
+            ) {
+            override fun invoke(values: ObjectValues<ListChange, Companion>) = ListChange(
+                listValueChanges = values(1u)
+            )
+
+            override fun writeJson(obj: ListChange, writer: IsJsonLikeWriter, context: RequestContext?) {
+                writeReferenceValueMap(writer, obj.listValueChanges, context)
+            }
         }
     }
 }

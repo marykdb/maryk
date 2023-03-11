@@ -1,8 +1,7 @@
 package maryk.core.query.changes
 
-import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.IsRootModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SimpleQueryModel
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.IsPropertyReferenceForValues
@@ -25,12 +24,9 @@ data class ObjectSoftDeleteChange(
 
     override fun toString() = "ObjectSoftDelete[$isDeleted]"
 
-    @Suppress("unused")
-    internal companion object : SimpleQueryDataModel<ObjectSoftDeleteChange>(
-        properties = object : ObjectPropertyDefinitions<ObjectSoftDeleteChange>() {
-            val isDeleted by boolean(1u, ObjectSoftDeleteChange::isDeleted)
-        }
-    ) {
+    internal companion object : SimpleQueryModel<ObjectSoftDeleteChange>() {
+        val isDeleted by boolean(1u, ObjectSoftDeleteChange::isDeleted)
+
         override fun invoke(values: SimpleObjectValues<ObjectSoftDeleteChange>) = ObjectSoftDeleteChange(
             isDeleted = values(1u)
         )

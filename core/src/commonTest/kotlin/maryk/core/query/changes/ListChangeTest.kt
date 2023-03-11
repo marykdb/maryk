@@ -31,12 +31,12 @@ class ListChangeTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.listPropertyChange, ListChange, { this.context })
+        checkProtoBufConversion(this.listPropertyChange, ListChange.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.listPropertyChange, ListChange, { this.context })
+        checkJsonConversion(this.listPropertyChange, ListChange.Model, { this.context })
     }
 
     @Test
@@ -52,7 +52,7 @@ class ListChangeTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.listPropertyChange, ListChange, { this.context })
+            checkYamlConversion(this.listPropertyChange, ListChange.Model, { this.context })
         }
     }
 

@@ -33,12 +33,12 @@ class SetChangeTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.setPropertyChange, SetChange, { this.context })
+        checkProtoBufConversion(this.setPropertyChange, SetChange.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.setPropertyChange, SetChange, { this.context })
+        checkJsonConversion(this.setPropertyChange, SetChange.Model, { this.context })
     }
 
     @Test
@@ -50,7 +50,7 @@ class SetChangeTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.setPropertyChange, SetChange, { this.context })
+            checkYamlConversion(this.setPropertyChange, SetChange.Model, { this.context })
         }
     }
 

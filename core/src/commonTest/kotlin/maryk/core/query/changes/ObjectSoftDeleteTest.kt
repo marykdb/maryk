@@ -23,12 +23,12 @@ class ObjectSoftDeleteTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.objectSoftDeleteChange, ObjectSoftDeleteChange, { this.context })
+        checkProtoBufConversion(this.objectSoftDeleteChange, ObjectSoftDeleteChange.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.objectSoftDeleteChange, ObjectSoftDeleteChange, { this.context })
+        checkJsonConversion(this.objectSoftDeleteChange, ObjectSoftDeleteChange.Model, { this.context })
     }
 
     @Test
@@ -39,7 +39,7 @@ class ObjectSoftDeleteTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.objectSoftDeleteChange, ObjectSoftDeleteChange, { this.context })
+            checkYamlConversion(this.objectSoftDeleteChange, ObjectSoftDeleteChange.Model, { this.context })
         }
     }
 }

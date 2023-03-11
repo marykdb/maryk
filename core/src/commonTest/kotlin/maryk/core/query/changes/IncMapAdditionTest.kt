@@ -70,12 +70,12 @@ class IncMapAdditionTest {
 
     @Test
     fun convertToProtoBufAndBackWithoutEnrichedContext() {
-        checkProtoBufConversion(this.incMapAddition, IncMapAddition, { this.context }, conversionChecker)
+        checkProtoBufConversion(this.incMapAddition, IncMapAddition.Model, { this.context }, conversionChecker)
     }
 
     @Test
     fun convertToJSONAndBackWithoutEnrichedContext() {
-        checkJsonConversion(this.incMapAddition, IncMapAddition, { this.context }, conversionChecker)
+        checkJsonConversion(this.incMapAddition, IncMapAddition.Model, { this.context }, conversionChecker)
     }
 
     @Test
@@ -87,18 +87,18 @@ class IncMapAdditionTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.incMapAddition, IncMapAddition, { this.context }, conversionChecker)
+            checkYamlConversion(this.incMapAddition, IncMapAddition.Model, { this.context }, conversionChecker)
         }
     }
 
     @Test
     fun convertToProtoBufAndBackWithEnrichedContext() {
-        checkProtoBufConversion(this.incMapAddition, IncMapAddition, { enrichedContext })
+        checkProtoBufConversion(this.incMapAddition, IncMapAddition.Model, { enrichedContext })
     }
 
     @Test
     fun convertToJSONAndBackWithEnrichedContext() {
-        checkJsonConversion(this.incMapAddition, IncMapAddition, { enrichedContext })
+        checkJsonConversion(this.incMapAddition, IncMapAddition.Model, { enrichedContext })
     }
 
     @Test
@@ -110,7 +110,7 @@ class IncMapAdditionTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.incMapAddition, IncMapAddition, { enrichedContext })
+            checkYamlConversion(this.incMapAddition, IncMapAddition.Model, { enrichedContext })
         }
     }
 

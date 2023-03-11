@@ -33,12 +33,12 @@ class IncMapChangeTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.incMapChange, IncMapChange, { this.context })
+        checkProtoBufConversion(this.incMapChange, IncMapChange.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.incMapChange, IncMapChange, { this.context })
+        checkJsonConversion(this.incMapChange, IncMapChange.Model, { this.context })
     }
 
     @Test
@@ -52,7 +52,7 @@ class IncMapChangeTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.incMapChange, IncMapChange, { this.context })
+            checkYamlConversion(this.incMapChange, IncMapChange.Model, { this.context })
         }
     }
 

@@ -14,12 +14,12 @@ class ObjectCreateTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(ObjectCreate, ObjectCreateModel, { this.context })
+        checkProtoBufConversion(ObjectCreate, ObjectCreate.Model.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(ObjectCreate, ObjectCreateModel, { this.context })
+        checkJsonConversion(ObjectCreate, ObjectCreate.Model.Model, { this.context })
     }
 
     @Test
@@ -29,7 +29,7 @@ class ObjectCreateTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(ObjectCreate, ObjectCreateModel, { this.context })
+            checkYamlConversion(ObjectCreate, ObjectCreate.Model.Model, { this.context })
         }
     }
 }

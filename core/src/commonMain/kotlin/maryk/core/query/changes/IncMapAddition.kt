@@ -3,7 +3,7 @@ package maryk.core.query.changes
 import maryk.core.exceptions.RequestException
 import maryk.core.models.ReferenceMappedDataModel
 import maryk.core.properties.IsRootModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.graph.RootPropRefGraph
@@ -77,27 +77,30 @@ data class IncMapAddition(
     }
 
     @Suppress("unused")
-    object Properties : ObjectPropertyDefinitions<IncMapAddition>() {
+    companion object : QueryModel<IncMapAddition, Companion>() {
         val additions by list(
             index = 1u,
             getter = IncMapAddition::additions,
             valueDefinition = EmbeddedObjectDefinition(
-                dataModel = { IncMapKeyAdditions }
+                dataModel = { IncMapKeyAdditions.Model }
             )
         )
-    }
 
-    companion object : ReferenceMappedDataModel<IncMapAddition, IncMapKeyAdditions<out Comparable<Any>, out Any>, Properties, IncMapKeyAdditions.Properties>(
-        properties = Properties,
-        containedDataModel = IncMapKeyAdditions,
-        referenceProperty = IncMapKeyAdditions.Properties.reference
-    ) {
-        override fun invoke(values: ObjectValues<IncMapAddition, Properties>) = IncMapAddition(
-            additions = values(1u)
-        )
+        override fun invoke(values: ObjectValues<IncMapAddition, Companion>): IncMapAddition =
+            Model.invoke(values)
 
-        override fun writeJson(obj: IncMapAddition, writer: IsJsonLikeWriter, context: RequestContext?) {
-            writeReferenceValueMap(writer, obj.additions, context)
+        override val Model = object : ReferenceMappedDataModel<IncMapAddition, IncMapKeyAdditions<out Comparable<Any>, out Any>, Companion, IncMapKeyAdditions.Companion>(
+            properties = Companion,
+            containedDataModel = IncMapKeyAdditions.Model,
+            referenceProperty = IncMapKeyAdditions.reference
+        ) {
+            override fun invoke(values: ObjectValues<IncMapAddition, Companion>) = IncMapAddition(
+                additions = values(1u)
+            )
+
+            override fun writeJson(obj: IncMapAddition, writer: IsJsonLikeWriter, context: RequestContext?) {
+                writeReferenceValueMap(writer, obj.additions, context)
+            }
         }
     }
 }

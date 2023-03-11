@@ -1,5 +1,6 @@
 package maryk.core.query.pairs
 
+import maryk.core.models.QueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ReferenceValuePairModel
 import maryk.core.properties.definitions.IsChangeableValueDefinition
@@ -19,14 +20,14 @@ data class ReferenceValueRangePair<T : Comparable<T>> internal constructor(
 ) : DefinedByReference<T> {
     override fun toString() = "$reference: $range"
 
-    companion object : ReferenceValuePairModel<ReferenceValueRangePair<*>, Companion, ValueRange<*>, ValueRange<*>, EmbeddedObjectDefinitionWrapper<ValueRange<*>, ValueRange<*>, ValueRange.Properties, ValueRange.Companion, RequestContext, RequestContext, ReferenceValueRangePair<*>>>() {
+    companion object : ReferenceValuePairModel<ReferenceValueRangePair<*>, Companion, ValueRange<*>, ValueRange<*>, EmbeddedObjectDefinitionWrapper<ValueRange<*>, ValueRange<*>, ValueRange.Companion, QueryDataModel<ValueRange<*>, ValueRange.Companion>, RequestContext, RequestContext, ReferenceValueRangePair<*>>>() {
         override val reference by addReference(
             ReferenceValueRangePair<*>::reference
         )
         override val value by embedObject(
             index = 2u,
             getter = ReferenceValueRangePair<*>::range,
-            dataModel = { ValueRange }
+            dataModel = { ValueRange.Model }
         )
 
         override fun invoke(values: ObjectValues<ReferenceValueRangePair<*>, Companion>) =

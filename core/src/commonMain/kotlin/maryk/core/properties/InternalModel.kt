@@ -18,6 +18,7 @@ typealias SimpleObjectModel<DO, P> = InternalModel<DO, P, IsPropertyContext, IsP
 typealias DefinitionModel<DO> = InternalModel<DO, ObjectPropertyDefinitions<DO>, ContainsDefinitionsContext, ContainsDefinitionsContext>
 internal typealias QueryModel<DO, P> = InternalModel<DO, P, RequestContext, RequestContext>
 internal typealias SimpleQueryModel<DO> = InternalModel<DO, ObjectPropertyDefinitions<DO>, RequestContext, RequestContext>
+internal typealias ContextualModel<DO, CXI, CX> = InternalModel<DO, ObjectPropertyDefinitions<DO>, CXI, CX>
 
 abstract class InternalModel<DO: Any, P: ObjectPropertyDefinitions<DO>, in CXI : IsPropertyContext, CX : IsPropertyContext>: ObjectPropertyDefinitions<DO>(), IsInternalModel<DO, P> {
     abstract fun invoke(values: ObjectValues<DO, P>): DO

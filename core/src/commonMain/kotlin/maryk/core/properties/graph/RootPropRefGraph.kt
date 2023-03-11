@@ -2,6 +2,7 @@ package maryk.core.properties.graph
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
+import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsRootModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -19,12 +20,7 @@ import maryk.core.query.ContainsDataModelContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
-import maryk.json.JsonToken.EndArray
-import maryk.json.JsonToken.StartArray
-import maryk.json.JsonToken.StartDocument
-import maryk.json.JsonToken.StartObject
-import maryk.json.JsonToken.Stopped
-import maryk.json.JsonToken.Value
+import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
 /**
@@ -34,7 +30,7 @@ import maryk.lib.exceptions.ParseException
 data class RootPropRefGraph<P : IsRootModel> internal constructor(
     override val properties: List<IsPropRefGraphNode<P>>
 ) : IsPropRefGraph<P> {
-    object Properties : ObjectPropertyDefinitions<RootPropRefGraph<*>>() {
+    companion object : ContextualModel<RootPropRefGraph<*>, ContainsDataModelContext<*>, GraphContext>() {
         val properties by list(
             index = 1u,
             valueDefinition = InternalMultiTypeDefinition(
@@ -67,81 +63,84 @@ data class RootPropRefGraph<P : IsRootModel> internal constructor(
                 }
             }
         )
+
+        override fun invoke(values: ObjectValues<RootPropRefGraph<*>, ObjectPropertyDefinitions<RootPropRefGraph<*>>>): RootPropRefGraph<*> =
+            Model.invoke(values)
+
+        override val Model = object : ContextualDataModel<RootPropRefGraph<*>, ObjectPropertyDefinitions<RootPropRefGraph<*>>, ContainsDataModelContext<*>, GraphContext>(
+            properties = Companion,
+            contextTransformer = {
+                GraphContext(it?.dataModel)
+            }
+        ) {
+            override fun invoke(values: ObjectValues<RootPropRefGraph<*>, ObjectPropertyDefinitions<RootPropRefGraph<*>>>) =
+                RootPropRefGraph<IsRootModel>(
+                    properties = values(1u)
+                )
+
+            override fun writeJson(obj: RootPropRefGraph<*>, writer: IsJsonLikeWriter, context: GraphContext?) {
+                writeJsonValues(obj.properties, writer, context)
+            }
+
+            private fun writeJsonValues(
+                listOfPropRefGraphNodes: List<IsPropRefGraphNode<*>>,
+                writer: IsJsonLikeWriter,
+                context: GraphContext?
+            ) {
+                writePropertiesToJson(listOfPropRefGraphNodes, writer, context)
+            }
+
+            override fun readJson(
+                reader: IsJsonLikeReader,
+                context: GraphContext?
+            ): ObjectValues<RootPropRefGraph<*>, ObjectPropertyDefinitions<RootPropRefGraph<*>>> {
+                if (reader.currentToken == JsonToken.StartDocument) {
+                    reader.nextToken()
+                }
+
+                if (reader.currentToken !is JsonToken.StartArray) {
+                    throw ParseException("JSON value should be an Array")
+                }
+
+                var currentToken = reader.nextToken()
+
+                val propertiesList = mutableListOf<TypedValue<PropRefGraphType, IsTransportablePropRefGraphNode>>()
+
+                while (currentToken != JsonToken.EndArray && currentToken !is JsonToken.Stopped) {
+                    when (currentToken) {
+                        is JsonToken.StartObject -> {
+                            propertiesList.add(
+                                TypedValue(
+                                    Graph,
+                                    PropRefGraph.readJson(reader, context).toDataObject()
+                                )
+                            )
+                        }
+                        is JsonToken.Value<*> -> {
+                            val multiTypeDefinition =
+                                this@Companion.properties.valueDefinition as IsMultiTypeDefinition<PropRefGraphType, IsTransportablePropRefGraphNode, GraphContext>
+
+                            propertiesList.add(
+                                TypedValue(
+                                    PropRef,
+                                    multiTypeDefinition.definition(PropRef)!!.readJson(reader, context)
+                                )
+                            )
+                        }
+                        else -> throw ParseException("JSON value should be a String or an Object")
+                    }
+
+                    currentToken = reader.nextToken()
+                }
+
+                return this.values {
+                    mapNonNulls(
+                        this@Companion.properties withSerializable propertiesList
+                    )
+                }
+            }
+        }
     }
 
     override fun toString() = "RootPropRefGraph { ${renderPropsAsString()} }"
-
-    companion object : ContextualDataModel<RootPropRefGraph<*>, Properties, ContainsDataModelContext<*>, GraphContext>(
-        properties = Properties,
-        contextTransformer = {
-            GraphContext(it?.dataModel)
-        }
-    ) {
-        override fun invoke(values: ObjectValues<RootPropRefGraph<*>, Properties>) =
-            RootPropRefGraph<IsRootModel>(
-                properties = values(1u)
-            )
-
-        override fun writeJson(obj: RootPropRefGraph<*>, writer: IsJsonLikeWriter, context: GraphContext?) {
-            writeJsonValues(obj.properties, writer, context)
-        }
-
-        private fun writeJsonValues(
-            listOfPropRefGraphNodes: List<IsPropRefGraphNode<*>>,
-            writer: IsJsonLikeWriter,
-            context: GraphContext?
-        ) {
-            writePropertiesToJson(listOfPropRefGraphNodes, writer, context)
-        }
-
-        override fun readJson(
-            reader: IsJsonLikeReader,
-            context: GraphContext?
-        ): ObjectValues<RootPropRefGraph<*>, Properties> {
-            if (reader.currentToken == StartDocument) {
-                reader.nextToken()
-            }
-
-            if (reader.currentToken !is StartArray) {
-                throw ParseException("JSON value should be an Array")
-            }
-
-            var currentToken = reader.nextToken()
-
-            val propertiesList = mutableListOf<TypedValue<PropRefGraphType, IsTransportablePropRefGraphNode>>()
-
-            while (currentToken != EndArray && currentToken !is Stopped) {
-                when (currentToken) {
-                    is StartObject -> {
-                        propertiesList.add(
-                            TypedValue(
-                                Graph,
-                                PropRefGraph.readJson(reader, context).toDataObject()
-                            )
-                        )
-                    }
-                    is Value<*> -> {
-                        val multiTypeDefinition =
-                            Properties.properties.valueDefinition as IsMultiTypeDefinition<PropRefGraphType, IsTransportablePropRefGraphNode, GraphContext>
-
-                        propertiesList.add(
-                            TypedValue(
-                                PropRef,
-                                multiTypeDefinition.definition(PropRef)!!.readJson(reader, context)
-                            )
-                        )
-                    }
-                    else -> throw ParseException("JSON value should be a String or an Object")
-                }
-
-                currentToken = reader.nextToken()
-            }
-
-            return this.values {
-                mapNonNulls(
-                    properties withSerializable propertiesList
-                )
-            }
-        }
-    }
 }

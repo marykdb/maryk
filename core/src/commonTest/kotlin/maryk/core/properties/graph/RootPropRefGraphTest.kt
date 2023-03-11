@@ -36,12 +36,12 @@ class RootPropRefGraphTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.graph, RootPropRefGraph, { this.context })
+        checkProtoBufConversion(this.graph, RootPropRefGraph.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.graph, RootPropRefGraph, { this.context })
+        checkJsonConversion(this.graph, RootPropRefGraph.Model, { this.context })
     }
 
     @Test
@@ -57,7 +57,7 @@ class RootPropRefGraphTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.graph, RootPropRefGraph, { this.context })
+            checkYamlConversion(this.graph, RootPropRefGraph.Model, { this.context })
         }
     }
 }

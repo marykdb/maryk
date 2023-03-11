@@ -80,7 +80,7 @@ data class GetUpdatesRequest<DM : IsRootModel> internal constructor(
                 }
             )
         )
-        val select by embedObject(3u, GetUpdatesRequest<*>::select, dataModel = { RootPropRefGraph })
+        val select by embedObject(3u, GetUpdatesRequest<*>::select, dataModel = { RootPropRefGraph.Model })
         val where by addFilter(GetUpdatesRequest<*>::where)
         val toVersion by number(5u, GetUpdatesRequest<*>::toVersion, UInt64, required = false)
         val filterSoftDeleted by boolean(6u, GetUpdatesRequest<*>::filterSoftDeleted, default = true)

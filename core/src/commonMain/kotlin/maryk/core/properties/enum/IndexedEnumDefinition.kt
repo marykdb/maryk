@@ -4,7 +4,7 @@ import maryk.core.definitions.PrimitiveType.EnumDefinition
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.SerializationException
 import maryk.core.models.ContextualDataModel
-import maryk.core.properties.InternalModel
+import maryk.core.properties.ContextualModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.SingleOrListDefinition
@@ -62,7 +62,7 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
         unknownCreator = unknownCreator
     )
 
-    internal object Model : InternalModel<IndexedEnumDefinition<IndexedEnum>, ObjectPropertyDefinitions<IndexedEnumDefinition<IndexedEnum>>, ContainsDefinitionsContext, EnumNameContext>() {
+    internal object Model : ContextualModel<IndexedEnumDefinition<IndexedEnum>, ContainsDefinitionsContext, EnumNameContext>() {
         val name by contextual(
             index = 1u,
             getter = IndexedEnumDefinition<*>::name,

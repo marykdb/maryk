@@ -4,7 +4,7 @@ import maryk.core.definitions.PrimitiveType.TypeDefinition
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.SerializationException
 import maryk.core.models.ContextualDataModel
-import maryk.core.properties.InternalModel
+import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
@@ -86,7 +86,7 @@ open class MultiTypeEnumDefinition<E : MultiTypeEnum<*>> internal constructor(
         unknownCreator = unknownCreator
     )
 
-    internal object Model : InternalModel<MultiTypeEnumDefinition<MultiTypeEnum<*>>, ObjectPropertyDefinitions<MultiTypeEnumDefinition<MultiTypeEnum<*>>>, ContainsDefinitionsContext, MultiTypeDefinitionContext>() {
+    internal object Model : ContextualModel<MultiTypeEnumDefinition<MultiTypeEnum<*>>, ContainsDefinitionsContext, MultiTypeDefinitionContext>() {
         val name by string(
             1u,
             MultiTypeEnumDefinition<*>::name

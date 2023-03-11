@@ -239,7 +239,13 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
             val definition = this.definition(type)
                 ?: throw DefNotFoundException("No definition for type $type")
 
-            return TypedValue(type, definition.readJson(reader, context))
+            val value = if (definition is IsEmbeddedObjectDefinition<*, *, *, CX, *> && this.keepAsValues()) {
+                @Suppress("UNCHECKED_CAST")
+                definition.readJsonToValues(reader, context) as T
+            } else definition.readJson(reader, context)
+
+
+            return TypedValue(type, value)
         } else {
             reader.nextToken().let {
                 if (it !is Value<*>) {
@@ -251,7 +257,11 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
                     ?: throw DefNotFoundException("Unknown multi type index ${type.index}")
 
                 reader.nextToken()
-                val value = definition.readJson(reader, context)
+                val value = if (definition is IsEmbeddedObjectDefinition<*, *, *, CX, *> && this.keepAsValues()) {
+                    @Suppress("UNCHECKED_CAST")
+                    definition.readJsonToValues(reader, context) as T
+                } else definition.readJson(reader, context)
+
                 reader.nextToken() // skip end object
 
                 return TypedValue(type, value)

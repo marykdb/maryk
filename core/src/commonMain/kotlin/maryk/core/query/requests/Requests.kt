@@ -43,8 +43,15 @@ data class Requests internal constructor(
                 definitionMap = mapOfRequestTypeEmbeddedObjectDefinitions,
                 keepAsValues = true
             ),
-            fromSerializable = { it.value as IsTransportableRequest<*> },
-            toSerializable = { TypedValue(it.requestType, it) }
+            fromSerializable = { it.value },
+            toSerializable = {
+                @Suppress("UNCHECKED_CAST")
+                when (it) {
+                    is TypedValue<*, *> -> it as TypedValue<RequestType, Any>
+                    is IsTransportableRequest<*> -> TypedValue(it.requestType, it)
+                    else -> throw Exception("Unknown type for MultiType")
+                }
+            }
         )
 
         internal val injectables by contextual(

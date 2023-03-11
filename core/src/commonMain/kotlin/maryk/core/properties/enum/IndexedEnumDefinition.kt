@@ -4,6 +4,7 @@ import maryk.core.definitions.PrimitiveType.EnumDefinition
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.SerializationException
 import maryk.core.models.ContextualDataModel
+import maryk.core.properties.InternalModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.SingleOrListDefinition
@@ -17,8 +18,7 @@ import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
-import maryk.json.JsonToken.StartDocument
-import maryk.json.JsonToken.Value
+import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 import kotlin.reflect.KClass
 
@@ -62,7 +62,7 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
         unknownCreator = unknownCreator
     )
 
-    internal object Properties : ObjectPropertyDefinitions<IndexedEnumDefinition<IndexedEnum>>() {
+    internal object Model : InternalModel<IndexedEnumDefinition<IndexedEnum>, ObjectPropertyDefinitions<IndexedEnumDefinition<IndexedEnum>>, ContainsDefinitionsContext, EnumNameContext>() {
         val name by contextual(
             index = 1u,
             getter = IndexedEnumDefinition<*>::name,
@@ -144,88 +144,90 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
             getter = IndexedEnumDefinition<*>::reservedNames,
             valueDefinition = StringDefinition()
         )
-    }
 
-    internal object Model :
-        ContextualDataModel<IndexedEnumDefinition<IndexedEnum>, Properties, ContainsDefinitionsContext, EnumNameContext>(
-            properties = Properties,
+        override fun invoke(values: ObjectValues<IndexedEnumDefinition<IndexedEnum>, ObjectPropertyDefinitions<IndexedEnumDefinition<IndexedEnum>>>): IndexedEnumDefinition<IndexedEnum> =
+            Model.invoke(values)
+
+        override val Model = object : ContextualDataModel<IndexedEnumDefinition<IndexedEnum>, ObjectPropertyDefinitions<IndexedEnumDefinition<IndexedEnum>>, ContainsDefinitionsContext, EnumNameContext>(
+            properties = IndexedEnumDefinition.Model,
             contextTransformer = { EnumNameContext(it) }
         ) {
-        override fun invoke(values: ObjectValues<IndexedEnumDefinition<IndexedEnum>, Properties>) =
-            IndexedEnumDefinition<IndexedEnum>(
-                name = values(1u),
-                optionalCases = values(2u),
-                reservedIndices = values(3u),
-                reservedNames = values(4u),
-                unknownCreator = { index, name -> IndexedEnumComparable(index, name) }
-            )
+            override fun invoke(values: ObjectValues<IndexedEnumDefinition<IndexedEnum>, ObjectPropertyDefinitions<IndexedEnumDefinition<IndexedEnum>>>) =
+                IndexedEnumDefinition<IndexedEnum>(
+                    name = values(1u),
+                    optionalCases = values(2u),
+                    reservedIndices = values(3u),
+                    reservedNames = values(4u),
+                    unknownCreator = { index, name -> IndexedEnumComparable(index, name) }
+                )
 
-        override fun writeJson(
-            values: ObjectValues<IndexedEnumDefinition<IndexedEnum>, Properties>,
-            writer: IsJsonLikeWriter,
-            context: EnumNameContext?
-        ) {
-            throw SerializationException("Cannot write definitions from Values")
-        }
-
-        override fun writeJson(
-            obj: IndexedEnumDefinition<IndexedEnum>,
-            writer: IsJsonLikeWriter,
-            context: EnumNameContext?
-        ) {
-            if (context?.definitionsContext?.enums?.containsKey(obj.name) == true) {
-                // Write a single string name if no options was defined
-                val value = Properties.name.getPropertyAndSerialize(obj, context)
-                    ?: throw ParseException("Missing requests in Requests")
-                Properties.name.writeJsonValue(value, writer, context)
-                Properties.name.capture(context, value)
-            } else {
-                // Only skip when DefinitionsContext was set
-                when {
-                    context?.definitionsContext != null && context.definitionsContext.currentDefinitionName == obj.name -> {
-                        super.writeJson(obj, writer, context, skip = listOf(Properties.name))
-                        context.definitionsContext.currentDefinitionName = ""
-                    }
-                    else -> {
-                        super.writeJson(obj, writer, context)
-                    }
-                }
-            }
-        }
-
-        override fun readJson(
-            reader: IsJsonLikeReader,
-            context: EnumNameContext?
-        ): ObjectValues<IndexedEnumDefinition<IndexedEnum>, Properties> {
-            if (reader.currentToken == StartDocument) {
-                reader.nextToken()
+            override fun writeJson(
+                values: ObjectValues<IndexedEnumDefinition<IndexedEnum>, ObjectPropertyDefinitions<IndexedEnumDefinition<IndexedEnum>>>,
+                writer: IsJsonLikeWriter,
+                context: EnumNameContext?
+            ) {
+                throw SerializationException("Cannot write definitions from Values")
             }
 
-            return if (reader.currentToken is Value<*>) {
-                val value = Properties.name.readJson(reader, context)
-                Properties.name.capture(context, value)
-
-                this.values {
-                    mapNonNulls(
-                        name withSerializable value
-                    )
-                }
-            } else {
-                super.readJson(reader, context)
-            }
-        }
-
-        override fun readJsonToMap(reader: IsJsonLikeReader, context: EnumNameContext?) =
-            context?.definitionsContext?.currentDefinitionName.let { name ->
-                when (name) {
-                    null, "" -> super.readJsonToMap(reader, context)
-                    else -> {
-                        context?.definitionsContext?.currentDefinitionName = ""
-                        super.readJsonToMap(reader, context).also {
-                            it[Properties.name.index] = name
+            override fun writeJson(
+                obj: IndexedEnumDefinition<IndexedEnum>,
+                writer: IsJsonLikeWriter,
+                context: EnumNameContext?
+            ) {
+                if (context?.definitionsContext?.enums?.containsKey(obj.name) == true) {
+                    // Write a single string name if no options was defined
+                    val value = name.getPropertyAndSerialize(obj, context)
+                        ?: throw ParseException("Missing requests in Requests")
+                    name.writeJsonValue(value, writer, context)
+                    name.capture(context, value)
+                } else {
+                    // Only skip when DefinitionsContext was set
+                    when {
+                        context?.definitionsContext != null && context.definitionsContext.currentDefinitionName == obj.name -> {
+                            super.writeJson(obj, writer, context, skip = listOf(name))
+                            context.definitionsContext.currentDefinitionName = ""
+                        }
+                        else -> {
+                            super.writeJson(obj, writer, context)
                         }
                     }
                 }
             }
+
+            override fun readJson(
+                reader: IsJsonLikeReader,
+                context: EnumNameContext?
+            ): ObjectValues<IndexedEnumDefinition<IndexedEnum>, ObjectPropertyDefinitions<IndexedEnumDefinition<IndexedEnum>>> {
+                if (reader.currentToken == JsonToken.StartDocument) {
+                    reader.nextToken()
+                }
+
+                return if (reader.currentToken is JsonToken.Value<*>) {
+                    val value = name.readJson(reader, context)
+                    name.capture(context, value)
+
+                    this.values {
+                        mapNonNulls(
+                            this@Model.name withSerializable value
+                        )
+                    }
+                } else {
+                    super.readJson(reader, context)
+                }
+            }
+
+            override fun readJsonToMap(reader: IsJsonLikeReader, context: EnumNameContext?) =
+                context?.definitionsContext?.currentDefinitionName.let { name ->
+                    when (name) {
+                        null, "" -> super.readJsonToMap(reader, context)
+                        else -> {
+                            context?.definitionsContext?.currentDefinitionName = ""
+                            super.readJsonToMap(reader, context).also {
+                                it[this@Model.name.index] = name
+                            }
+                        }
+                    }
+                }
+        }
     }
 }

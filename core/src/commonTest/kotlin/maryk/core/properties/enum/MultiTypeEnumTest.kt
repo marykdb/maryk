@@ -159,7 +159,7 @@ class MultiTypeEnumTest {
             """.trimIndent()
         )
 
-        val enum = IndexedEnumDefinition.Model.readJson(
+        val enum = IndexedEnumDefinition.Model.Model.readJson(
             reader
         ).toDataObject()
 

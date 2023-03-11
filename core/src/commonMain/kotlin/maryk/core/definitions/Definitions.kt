@@ -85,7 +85,7 @@ data class Definitions(
                         // with previously defined Enums which are stored in the context
                         definition = ContextValueTransformDefinition(
                             definition = EmbeddedObjectDefinition(
-                                dataModel = { IndexedEnumDefinition.Model }
+                                dataModel = { IndexedEnumDefinition.Model.Model }
                             ),
                             valueTransformer = { context, value ->
                                 if (value.optionalCases == null) {

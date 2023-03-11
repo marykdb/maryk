@@ -33,7 +33,7 @@ class IndexedEnumTest {
         @Suppress("UNCHECKED_CAST")
         checkProtoBufConversion(
             Option,
-            IndexedEnumDefinition.Model as AbstractObjectDataModel<Option.Companion, ObjectPropertyDefinitions<Option.Companion>, DefinitionsContext, DefinitionsContext>,
+            IndexedEnumDefinition.Model.Model as AbstractObjectDataModel<Option.Companion, ObjectPropertyDefinitions<Option.Companion>, DefinitionsContext, DefinitionsContext>,
             null,
             ::compareEnumDefinitions
         )
@@ -44,7 +44,7 @@ class IndexedEnumTest {
         @Suppress("UNCHECKED_CAST")
         checkJsonConversion(
             Option,
-            IndexedEnumDefinition.Model as AbstractObjectDataModel<Option.Companion, ObjectPropertyDefinitions<Option.Companion>, DefinitionsContext, DefinitionsContext>,
+            IndexedEnumDefinition.Model.Model as AbstractObjectDataModel<Option.Companion, ObjectPropertyDefinitions<Option.Companion>, DefinitionsContext, DefinitionsContext>,
             null,
             ::compareEnumDefinitions
         )
@@ -67,7 +67,7 @@ class IndexedEnumTest {
             @Suppress("UNCHECKED_CAST")
             checkYamlConversion(
                 Option,
-                IndexedEnumDefinition.Model as AbstractObjectDataModel<Option.Companion, ObjectPropertyDefinitions<Option.Companion>, DefinitionsContext, DefinitionsContext>,
+                IndexedEnumDefinition.Model.Model as AbstractObjectDataModel<Option.Companion, ObjectPropertyDefinitions<Option.Companion>, DefinitionsContext, DefinitionsContext>,
                 null,
                 ::compareEnumDefinitions
             )
@@ -82,7 +82,7 @@ class IndexedEnumTest {
             """.trimIndent()
         )
 
-        val enum = IndexedEnumDefinition.Model.readJson(
+        val enum = IndexedEnumDefinition.Model.Model.readJson(
             reader
         ).toDataObject()
 
@@ -98,7 +98,7 @@ internal fun compareEnumDefinitions(
     assertEquals(against.name, value.name)
     assertEquals(against.cases().size, value.cases().size)
 
-    val valueMap = value.cases().map { Pair(it.index, it.name) }.toMap()
+    val valueMap = value.cases().associate { it.index to it.name }
 
     for (enum in against.cases()) {
         expect(enum.name) { valueMap[enum.index] }

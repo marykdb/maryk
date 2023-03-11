@@ -1,9 +1,10 @@
 package maryk.core.properties.enum
 
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.models.SimpleObjectDataModel
+import maryk.core.models.AbstractObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SimpleObjectModel
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.IsUsableInMultiType
 import maryk.core.properties.definitions.PropertyDefinitionType
@@ -18,6 +19,7 @@ import maryk.core.properties.types.numeric.UInt32
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.RequestContext
 import maryk.core.values.MutableValueItems
+import maryk.core.values.ObjectValues
 import maryk.core.values.SimpleObjectValues
 import maryk.core.yaml.readNamedIndexField
 import maryk.core.yaml.writeNamedIndexField
@@ -46,8 +48,7 @@ interface MultiTypeEnum<T: Any>: TypeEnum<T> {
         } as MultiTypeEnum<Any>
     }
 
-    private object Properties :
-        ObjectPropertyDefinitions<MultiTypeEnum<*>>() {
+    object Model : SimpleObjectModel<MultiTypeEnum<*>, ObjectPropertyDefinitions<MultiTypeEnum<*>>>() {
         val index by number(1u, MultiTypeEnum<*>::index, UInt32)
         val name by string(2u, MultiTypeEnum<*>::name)
         val alternativeNames by set(
@@ -64,62 +65,64 @@ interface MultiTypeEnum<T: Any>: TypeEnum<T> {
                 TypedValue(def.propertyDefinitionType, def)
             }
         )
-    }
 
-    object Model :
-        SimpleObjectDataModel<MultiTypeEnum<*>, ObjectPropertyDefinitions<MultiTypeEnum<*>>>(
-            properties = Properties
+        override fun invoke(values: ObjectValues<MultiTypeEnum<*>, ObjectPropertyDefinitions<MultiTypeEnum<*>>>): MultiTypeEnum<*> =
+            Model.invoke(values)
+
+        override val Model = object : AbstractObjectDataModel<MultiTypeEnum<*>, ObjectPropertyDefinitions<MultiTypeEnum<*>>, IsPropertyContext, IsPropertyContext>(
+            properties = MultiTypeEnum.Model,
         ) {
-        override fun invoke(values: SimpleObjectValues<MultiTypeEnum<*>>): MultiTypeEnum<*> {
-            val typedDefinition =
-                values<TypedValue<PropertyDefinitionType, IsTransportablePropertyDefinitionType<*>>>(
-                    Properties.definition.index
-                )
-
-            return invoke(
-                values(Properties.index.index),
-                values(Properties.name.index),
-                typedDefinition.value as IsUsableInMultiType<out Any, *>,
-                values(Properties.alternativeNames.index)
-            )
-        }
-
-        override fun writeJson(
-            obj: MultiTypeEnum<*>,
-            writer: IsJsonLikeWriter,
-            context: IsPropertyContext?
-        ) {
-            // When writing YAML, use YAML optimized format with complex field names
-            if (writer is YamlWriter) {
+            override fun invoke(values: ObjectValues<MultiTypeEnum<*>, ObjectPropertyDefinitions<MultiTypeEnum<*>>>): MultiTypeEnum<*> {
                 val typedDefinition =
-                    Properties.definition.getPropertyAndSerialize(obj, context as ContainsDefinitionsContext)
-                        ?: throw DefNotFoundException("Unknown type ${obj.definition} so cannot serialize contents")
+                    values<TypedValue<PropertyDefinitionType, IsTransportablePropertyDefinitionType<*>>>(
+                        definition.index
+                    )
 
-                writer.writeNamedIndexField(obj.name, obj.index, obj.alternativeNames)
-
-                Properties.definition.writeJsonValue(typedDefinition, writer, context)
-            } else {
-                super.writeJson(obj, writer, context)
+                return invoke(
+                    values(index.index),
+                    values(name.index),
+                    typedDefinition.value as IsUsableInMultiType<out Any, *>,
+                    values(alternativeNames.index)
+                )
             }
-        }
 
-        override fun readJson(
-            reader: IsJsonLikeReader,
-            context: IsPropertyContext?
-        ): SimpleObjectValues<MultiTypeEnum<*>> {
-            // When reading YAML, use YAML optimized format with complex field names
-            return if (reader is IsYamlReader) {
-                val valueMap = MutableValueItems()
+            override fun writeJson(
+                obj: MultiTypeEnum<*>,
+                writer: IsJsonLikeWriter,
+                context: IsPropertyContext?
+            ) {
+                // When writing YAML, use YAML optimized format with complex field names
+                if (writer is YamlWriter) {
+                    val typedDefinition =
+                        definition.getPropertyAndSerialize(obj, context as ContainsDefinitionsContext)
+                            ?: throw DefNotFoundException("Unknown type ${obj.definition} so cannot serialize contents")
 
-                reader.readNamedIndexField(valueMap, Properties.name, Properties.index, Properties.alternativeNames)
-                valueMap[Properties.definition.index] =
-                    Properties.definition.readJson(reader, context as ContainsDefinitionsContext)
+                    writer.writeNamedIndexField(obj.name, obj.index, obj.alternativeNames)
 
-                this.values(context as? RequestContext) {
-                    valueMap
+                    definition.writeJsonValue(typedDefinition, writer, context)
+                } else {
+                    super.writeJson(obj, writer, context)
                 }
-            } else {
-                super.readJson(reader, context)
+            }
+
+            override fun readJson(
+                reader: IsJsonLikeReader,
+                context: IsPropertyContext?
+            ): SimpleObjectValues<MultiTypeEnum<*>> {
+                // When reading YAML, use YAML optimized format with complex field names
+                return if (reader is IsYamlReader) {
+                    val valueMap = MutableValueItems()
+
+                    reader.readNamedIndexField(valueMap, name, index, alternativeNames)
+                    valueMap[definition.index] =
+                        definition.readJson(reader, context as ContainsDefinitionsContext)
+
+                    this.values(context as? RequestContext) {
+                        valueMap
+                    }
+                } else {
+                    super.readJson(reader, context)
+                }
             }
         }
     }

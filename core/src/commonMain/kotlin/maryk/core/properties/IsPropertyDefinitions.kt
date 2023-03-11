@@ -1,5 +1,6 @@
 package maryk.core.properties
 
+import maryk.core.models.IsDataModel
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.references.AnyOutPropertyReference
@@ -7,6 +8,8 @@ import maryk.core.properties.references.IsPropertyReference
 
 @PropertyReferenceMarker
 interface IsPropertyDefinitions {
+    val Model : IsDataModel<*>
+
     /** Get the definition with a property [name] */
     operator fun get(name: String): IsDefinitionWrapper<*, *, *, *>?
 

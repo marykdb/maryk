@@ -141,6 +141,8 @@ abstract class ValueDataModel<DO : ValueDataObject, P : ObjectPropertyDefinition
                     override fun invoke(values: ObjectValues<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>): ValueDataObjectWithValues {
                         return ValueDataObjectWithValues(toBytes(values), values)
                     }
+                }.apply {
+                    (properties as MutableObjectPropertyDefinitions)._model = this
                 }
 
             override fun writeJson(

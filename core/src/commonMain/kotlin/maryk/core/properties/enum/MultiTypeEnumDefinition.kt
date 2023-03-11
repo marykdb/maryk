@@ -4,6 +4,7 @@ import maryk.core.definitions.PrimitiveType.TypeDefinition
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.SerializationException
 import maryk.core.models.ContextualDataModel
+import maryk.core.properties.InternalModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
@@ -20,8 +21,7 @@ import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
-import maryk.json.JsonToken.StartDocument
-import maryk.json.JsonToken.Value
+import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 import maryk.yaml.IsYamlReader
 import kotlin.reflect.KClass
@@ -86,7 +86,7 @@ open class MultiTypeEnumDefinition<E : MultiTypeEnum<*>> internal constructor(
         unknownCreator = unknownCreator
     )
 
-    internal object Properties : ObjectPropertyDefinitions<MultiTypeEnumDefinition<MultiTypeEnum<*>>>() {
+    internal object Model : InternalModel<MultiTypeEnumDefinition<MultiTypeEnum<*>>, ObjectPropertyDefinitions<MultiTypeEnumDefinition<MultiTypeEnum<*>>>, ContainsDefinitionsContext, MultiTypeDefinitionContext>() {
         val name by string(
             1u,
             MultiTypeEnumDefinition<*>::name
@@ -127,6 +127,92 @@ open class MultiTypeEnumDefinition<E : MultiTypeEnum<*>> internal constructor(
             getter = MultiTypeEnumDefinition<*>::reservedNames,
             valueDefinition = StringDefinition()
         )
+
+        override fun invoke(values: ObjectValues<MultiTypeEnumDefinition<MultiTypeEnum<*>>, ObjectPropertyDefinitions<MultiTypeEnumDefinition<MultiTypeEnum<*>>>>): MultiTypeEnumDefinition<MultiTypeEnum<*>> {
+            return Model(values)
+        }
+
+        override val Model = object : ContextualDataModel<MultiTypeEnumDefinition<MultiTypeEnum<*>>, ObjectPropertyDefinitions<MultiTypeEnumDefinition<MultiTypeEnum<*>>>, ContainsDefinitionsContext, MultiTypeDefinitionContext>(
+            properties = MultiTypeEnumDefinition.Model,
+            contextTransformer = { MultiTypeDefinitionContext(it) }
+        ) {
+            override fun invoke(values: ObjectValues<MultiTypeEnumDefinition<MultiTypeEnum<*>>, ObjectPropertyDefinitions<MultiTypeEnumDefinition<MultiTypeEnum<*>>>>): MultiTypeEnumDefinition<MultiTypeEnum<*>> =
+                MultiTypeEnumDefinition(
+                    name = values(1u),
+                    optionalCases = values<Array<MultiTypeEnum<*>>?>(2u)?.let { { it } },
+                    reservedIndices = values(3u),
+                    reservedNames = values(4u),
+                    unknownCreator = { index, name -> MultiTypeEnum.invoke(index, name, null) }
+                )
+
+            override fun writeJson(
+                values: ObjectValues<MultiTypeEnumDefinition<MultiTypeEnum<*>>, ObjectPropertyDefinitions<MultiTypeEnumDefinition<MultiTypeEnum<*>>>>,
+                writer: IsJsonLikeWriter,
+                context: MultiTypeDefinitionContext?
+            ) {
+                throw SerializationException("Cannot write definitions from Values")
+            }
+
+            override fun writeJson(
+                obj: MultiTypeEnumDefinition<MultiTypeEnum<*>>,
+                writer: IsJsonLikeWriter,
+                context: MultiTypeDefinitionContext?
+            ) {
+                if (context?.definitionsContext?.typeEnums?.containsKey(obj.name) == true) {
+                    // Write a single string name if no options was defined
+                    val value = name.getPropertyAndSerialize(obj, context)
+                        ?: throw ParseException("Missing requests in Requests")
+                    name.writeJsonValue(value, writer, context)
+                    name.capture(context, value)
+                } else {
+                    // Only skip when DefinitionsContext was set
+                    when {
+                        context?.definitionsContext != null && context.definitionsContext.currentDefinitionName == obj.name -> {
+                            super.writeJson(obj, writer, context, skip = listOf(name))
+                            context.definitionsContext.currentDefinitionName = ""
+                        }
+                        else -> {
+                            super.writeJson(obj, writer, context)
+                        }
+                    }
+                }
+            }
+
+            override fun readJson(
+                reader: IsJsonLikeReader,
+                context: MultiTypeDefinitionContext?
+            ): ObjectValues<MultiTypeEnumDefinition<MultiTypeEnum<*>>, ObjectPropertyDefinitions<MultiTypeEnumDefinition<MultiTypeEnum<*>>>> {
+                if (reader.currentToken == JsonToken.StartDocument) {
+                    reader.nextToken()
+                }
+
+                return if (reader.currentToken is JsonToken.Value<*>) {
+                    val value = name.readJson(reader, context)
+                    name.capture(context, value)
+
+                    values {
+                        mapNonNulls(
+                            this@Model.name withSerializable value
+                        )
+                    }
+                } else {
+                    super.readJson(reader, context)
+                }
+            }
+
+            override fun readJsonToMap(reader: IsJsonLikeReader, context: MultiTypeDefinitionContext?) =
+                context?.definitionsContext?.currentDefinitionName.let { name ->
+                    when (name) {
+                        null, "" -> super.readJsonToMap(reader, context)
+                        else -> {
+                            context?.definitionsContext?.currentDefinitionName = ""
+                            super.readJsonToMap(reader, context).also {
+                                it[MultiTypeEnumDefinition.Model.name.index] = name
+                            }
+                        }
+                    }
+                }
+        }
     }
 
     override fun equals(other: Any?): Boolean {
@@ -155,90 +241,6 @@ open class MultiTypeEnumDefinition<E : MultiTypeEnum<*>> internal constructor(
 
     override fun enumTypeIsCompatible(storedEnum: E, newEnum: E, addIncompatibilityReason: ((String) -> Unit)?): Boolean {
         return newEnum.definition!!.compatibleWith(storedEnum.definition!!, addIncompatibilityReason)
-    }
-
-    internal object Model :
-        ContextualDataModel<MultiTypeEnumDefinition<MultiTypeEnum<*>>, Properties, ContainsDefinitionsContext, MultiTypeDefinitionContext>(
-            properties = Properties,
-            contextTransformer = { MultiTypeDefinitionContext(it) }
-        ) {
-        override fun invoke(values: ObjectValues<MultiTypeEnumDefinition<MultiTypeEnum<*>>, Properties>): MultiTypeEnumDefinition<MultiTypeEnum<*>> {
-            return MultiTypeEnumDefinition(
-                name = values(1u),
-                optionalCases = values<Array<MultiTypeEnum<*>>?>(2u)?.let { { it } },
-                reservedIndices = values(3u),
-                reservedNames = values(4u),
-                unknownCreator = { index, name -> MultiTypeEnum.invoke(index, name, null) }
-            )
-        }
-
-        override fun writeJson(
-            values: ObjectValues<MultiTypeEnumDefinition<MultiTypeEnum<*>>, Properties>,
-            writer: IsJsonLikeWriter,
-            context: MultiTypeDefinitionContext?
-        ) {
-            throw SerializationException("Cannot write definitions from Values")
-        }
-
-        override fun writeJson(
-            obj: MultiTypeEnumDefinition<MultiTypeEnum<*>>,
-            writer: IsJsonLikeWriter,
-            context: MultiTypeDefinitionContext?
-        ) {
-            if (context?.definitionsContext?.typeEnums?.containsKey(obj.name) == true) {
-                // Write a single string name if no options was defined
-                val value = Properties.name.getPropertyAndSerialize(obj, context)
-                    ?: throw ParseException("Missing requests in Requests")
-                Properties.name.writeJsonValue(value, writer, context)
-                Properties.name.capture(context, value)
-            } else {
-                // Only skip when DefinitionsContext was set
-                when {
-                    context?.definitionsContext != null && context.definitionsContext.currentDefinitionName == obj.name -> {
-                        super.writeJson(obj, writer, context, skip = listOf(Properties.name))
-                        context.definitionsContext.currentDefinitionName = ""
-                    }
-                    else -> {
-                        super.writeJson(obj, writer, context)
-                    }
-                }
-            }
-        }
-
-        override fun readJson(
-            reader: IsJsonLikeReader,
-            context: MultiTypeDefinitionContext?
-        ): ObjectValues<MultiTypeEnumDefinition<MultiTypeEnum<*>>, Properties> {
-            if (reader.currentToken == StartDocument) {
-                reader.nextToken()
-            }
-
-            return if (reader.currentToken is Value<*>) {
-                val value = Properties.name.readJson(reader, context)
-                Properties.name.capture(context, value)
-
-                this.values {
-                    mapNonNulls(
-                        name withSerializable value
-                    )
-                }
-            } else {
-                super.readJson(reader, context)
-            }
-        }
-
-        override fun readJsonToMap(reader: IsJsonLikeReader, context: MultiTypeDefinitionContext?) =
-            context?.definitionsContext?.currentDefinitionName.let { name ->
-                when (name) {
-                    null, "" -> super.readJsonToMap(reader, context)
-                    else -> {
-                        context?.definitionsContext?.currentDefinitionName = ""
-                        super.readJsonToMap(reader, context).also {
-                            it[Properties.name.index] = name
-                        }
-                    }
-                }
-            }
     }
 }
 
@@ -284,20 +286,20 @@ private class MultiTypeDescriptorListDefinition :
         val collection: MutableList<MultiTypeEnum<*>> = newMutableCollection(context)
 
         if (reader is IsYamlReader) {
-            if (reader.currentToken !is maryk.json.JsonToken.StartObject) {
+            if (reader.currentToken !is JsonToken.StartObject) {
                 throw ParseException("YAML definition map should be an Object")
             }
 
-            while (reader.nextToken() !== maryk.json.JsonToken.EndObject) {
+            while (reader.nextToken() !== JsonToken.EndObject) {
                 collection.add(
                     valueDefinition.readJson(reader, context)
                 )
             }
         } else {
-            if (reader.currentToken !is maryk.json.JsonToken.StartArray) {
+            if (reader.currentToken !is JsonToken.StartArray) {
                 throw ParseException("JSON value should be an Array")
             }
-            while (reader.nextToken() !== maryk.json.JsonToken.EndArray) {
+            while (reader.nextToken() !== JsonToken.EndArray) {
                 collection.add(
                     valueDefinition.readJson(reader, context)
                 )

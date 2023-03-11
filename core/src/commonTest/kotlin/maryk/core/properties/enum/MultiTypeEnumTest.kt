@@ -36,7 +36,7 @@ class MultiTypeEnumTest {
         @Suppress("UNCHECKED_CAST")
         checkProtoBufConversion(
             MarykTypeEnum,
-            MultiTypeEnumDefinition.Model as AbstractObjectDataModel<MarykTypeEnum.Companion, ObjectPropertyDefinitions<MarykTypeEnum.Companion>, DefinitionsContext, DefinitionsContext>,
+            MultiTypeEnumDefinition.Model.Model as AbstractObjectDataModel<MarykTypeEnum.Companion, ObjectPropertyDefinitions<MarykTypeEnum.Companion>, DefinitionsContext, DefinitionsContext>,
             { context },
             ::compareEnumDefinitions
         )
@@ -47,7 +47,7 @@ class MultiTypeEnumTest {
         @Suppress("UNCHECKED_CAST")
         checkJsonConversion(
             MarykTypeEnum,
-            MultiTypeEnumDefinition.Model as AbstractObjectDataModel<MarykTypeEnum.Companion, ObjectPropertyDefinitions<MarykTypeEnum.Companion>, DefinitionsContext, DefinitionsContext>,
+            MultiTypeEnumDefinition.Model.Model as AbstractObjectDataModel<MarykTypeEnum.Companion, ObjectPropertyDefinitions<MarykTypeEnum.Companion>, DefinitionsContext, DefinitionsContext>,
             { context },
             ::compareEnumDefinitions
         )
@@ -144,7 +144,7 @@ class MultiTypeEnumTest {
             @Suppress("UNCHECKED_CAST")
             checkYamlConversion(
                 MarykTypeEnum,
-                MultiTypeEnumDefinition.Model as AbstractObjectDataModel<MarykTypeEnum.Companion, ObjectPropertyDefinitions<MarykTypeEnum.Companion>, DefinitionsContext, DefinitionsContext>,
+                MultiTypeEnumDefinition.Model.Model as AbstractObjectDataModel<MarykTypeEnum.Companion, ObjectPropertyDefinitions<MarykTypeEnum.Companion>, DefinitionsContext, DefinitionsContext>,
                 { context },
                 ::compareEnumDefinitions
             )

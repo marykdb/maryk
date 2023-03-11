@@ -60,7 +60,7 @@ data class Requests internal constructor(
             definition = ContextInjectCollectionOnWriteDefinition(
                 definition = ListDefinition(
                     valueDefinition = EmbeddedObjectDefinition(
-                        dataModel = { InjectWithReference }
+                        dataModel = { InjectWithReference.Model }
                     )
                 ),
                 valueInjector = { context: RequestContext? ->

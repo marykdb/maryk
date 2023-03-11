@@ -244,9 +244,9 @@ abstract class AbstractDataModel<DO : Any, P : IsObjectPropertyDefinitions<DO>, 
             return 0 // Skip null value in counting
         }
 
-        // If it is inject it needs to be collected for protobuf since it cannot be encoded inline
+        // If it is an Inject it needs to be collected for protobuf since it cannot be encoded inline
         // Except if it is the InjectWithReference object in which it is encoded
-        if (value is Inject<*, *> && this !is InjectWithReference.Companion) {
+        if (value is Inject<*, *> && this != InjectWithReference.Model) {
             if (context is RequestContext) {
                 context.collectInjectLevel(this, definition::ref)
                 context.collectInject(value)
@@ -294,7 +294,7 @@ abstract class AbstractDataModel<DO : Any, P : IsObjectPropertyDefinitions<DO>, 
     ) {
         if (value == null) return // Skip empty values
 
-        if (value is Inject<*, *> && this !is InjectWithReference.Companion) {
+        if (value is Inject<*, *> && this != InjectWithReference.Model) {
             return // Skip Inject values since they are encoded in Requests object
         }
 

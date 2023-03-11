@@ -1,8 +1,7 @@
 package maryk.core.inject
 
 import maryk.core.exceptions.RequestException
-import maryk.core.models.QueryDataModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.embedObject
 import maryk.core.properties.definitions.wrapper.contextual
@@ -45,7 +44,7 @@ internal class InjectWithReference(
         )
     }
 
-    internal object Properties : ObjectPropertyDefinitions<InjectWithReference>() {
+    internal companion object : QueryModel<InjectWithReference, Companion>() {
         val inject by embedObject(
             index = 1u,
             getter = InjectWithReference::inject,
@@ -59,12 +58,8 @@ internal class InjectWithReference(
                 contextualResolver = { Requests.Companion }
             )
         )
-    }
 
-    internal companion object : QueryDataModel<InjectWithReference, Properties>(
-        properties = Properties
-    ) {
-        override fun invoke(values: ObjectValues<InjectWithReference, Properties>) = InjectWithReference(
+        override fun invoke(values: ObjectValues<InjectWithReference, Companion>) = InjectWithReference(
             inject = values(1u),
             reference = values(2u)
         )

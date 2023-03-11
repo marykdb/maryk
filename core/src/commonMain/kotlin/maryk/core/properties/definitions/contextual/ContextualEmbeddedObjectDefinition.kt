@@ -14,7 +14,7 @@ import maryk.json.JsonReader
 import maryk.json.JsonWriter
 
 /** Definition for an embedded DataObject from a context resolved from [contextualResolver] */
-internal data class ContextualEmbeddedObjectDefinition<CX : IsPropertyContext>(
+data class ContextualEmbeddedObjectDefinition<CX : IsPropertyContext>(
     val contextualResolver: Unit.(context: CX?) -> SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>
 ) : IsValueDefinition<Any, CX>, IsContextualEncodable<Any, CX> {
     override val required = true

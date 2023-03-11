@@ -206,7 +206,7 @@ private val definitionNamesMap = mapOf(
         className = "MultiTypeDefinition",
         wrapFunctionName = "multiType",
         kotlinTypeName = { "TypedValue<${it.typeEnum.name}<out Any>, Any>" },
-        definitionModel = MultiTypeDefinition.Model,
+        definitionModel = MultiTypeDefinition.Model.Model,
         imports = { multiTypeImports },
         propertyValueOverride = mapOf(
             "definitionMap" to { definition, _, _ ->
@@ -312,7 +312,7 @@ private val definitionNamesMap = mapOf(
         className = "ValueObjectDefinition",
         wrapFunctionName = "valueObject",
         kotlinTypeName = { it.dataModel.name },
-        definitionModel = ValueObjectDefinition.Model,
+        definitionModel = ValueObjectDefinition.Model.Model,
         propertyValueOverride = mapOf(
             "default" to generateKotlinValueWithDefinition,
             "minValue" to generateKotlinValueWithDefinition,

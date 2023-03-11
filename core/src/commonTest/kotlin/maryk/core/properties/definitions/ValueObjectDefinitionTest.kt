@@ -112,19 +112,19 @@ internal class ValueObjectDefinitionTest {
 
     @Test
     fun convertDefinitionToProtoBufAndBack() {
-        checkProtoBufConversion(this.def, ValueObjectDefinition.Model, { DefinitionsContext() })
-        checkProtoBufConversion(this.defMaxDefined, ValueObjectDefinition.Model, { DefinitionsContext() })
+        checkProtoBufConversion(this.def, ValueObjectDefinition.Model.Model, { DefinitionsContext() })
+        checkProtoBufConversion(this.defMaxDefined, ValueObjectDefinition.Model.Model, { DefinitionsContext() })
     }
 
     @Test
     fun convertDefinitionToJSONAndBack() {
-        checkJsonConversion(this.def, ValueObjectDefinition.Model, { DefinitionsContext() })
-        checkJsonConversion(this.defMaxDefined, ValueObjectDefinition.Model, { DefinitionsContext() })
+        checkJsonConversion(this.def, ValueObjectDefinition.Model.Model, { DefinitionsContext() })
+        checkJsonConversion(this.defMaxDefined, ValueObjectDefinition.Model.Model, { DefinitionsContext() })
     }
 
     @Test
     fun convertDefinitionToYAMLAndBack() {
-        checkYamlConversion(this.def, ValueObjectDefinition.Model, { DefinitionsContext() })
+        checkYamlConversion(this.def, ValueObjectDefinition.Model.Model, { DefinitionsContext() })
 
         expect(
             """
@@ -147,7 +147,7 @@ internal class ValueObjectDefinitionTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.defMaxDefined, ValueObjectDefinition.Model, { DefinitionsContext() })
+            checkYamlConversion(this.defMaxDefined, ValueObjectDefinition.Model.Model, { DefinitionsContext() })
         }
     }
 

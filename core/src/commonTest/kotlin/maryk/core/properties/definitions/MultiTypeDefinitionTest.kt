@@ -168,19 +168,19 @@ internal class MultiTypeDefinitionTest {
 
     @Test
     fun convertDefinitionToProtoBufAndBack() {
-        checkProtoBufConversion(this.def, MultiTypeDefinition.Model, { context })
-        checkProtoBufConversion(this.defMaxDefined, MultiTypeDefinition.Model, { context })
+        checkProtoBufConversion(this.def, MultiTypeDefinition.Model.Model, { context })
+        checkProtoBufConversion(this.defMaxDefined, MultiTypeDefinition.Model.Model, { context })
     }
 
     @Test
     fun convertDefinitionToJSONAndBack() {
-        checkJsonConversion(this.def, MultiTypeDefinition.Model, { context })
-        checkJsonConversion(this.defMaxDefined, MultiTypeDefinition.Model, { context })
+        checkJsonConversion(this.def, MultiTypeDefinition.Model.Model, { context })
+        checkJsonConversion(this.defMaxDefined, MultiTypeDefinition.Model.Model, { context })
     }
 
     @Test
     fun convertDefinitionToYAMLAndBack() {
-        checkYamlConversion(this.def, MultiTypeDefinition.Model, { context })
+        checkYamlConversion(this.def, MultiTypeDefinition.Model.Model, { context })
         expect(
             """
             required: false
@@ -272,7 +272,7 @@ internal class MultiTypeDefinitionTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.defMaxDefined, MultiTypeDefinition.Model, { context })
+            checkYamlConversion(this.defMaxDefined, MultiTypeDefinition.Model.Model, { context })
         }
     }
 

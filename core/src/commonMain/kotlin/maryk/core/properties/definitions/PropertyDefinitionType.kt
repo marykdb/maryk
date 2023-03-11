@@ -65,13 +65,13 @@ internal val mapOfPropertyDefEmbeddedObjectDefinitions =
         PropertyDefinitionType.IncMap to EmbeddedObjectDefinition(dataModel = { IncrementingMapDefinition.Model }),
         PropertyDefinitionType.List to EmbeddedObjectDefinition(dataModel = { ListDefinition.Model }),
         PropertyDefinitionType.Map to EmbeddedObjectDefinition(dataModel = { MapDefinition.Model }),
-        PropertyDefinitionType.MultiType to EmbeddedObjectDefinition(dataModel = { MultiTypeDefinition.Model }),
+        PropertyDefinitionType.MultiType to EmbeddedObjectDefinition(dataModel = { MultiTypeDefinition.Model.Model }),
         PropertyDefinitionType.Number to EmbeddedObjectDefinition(dataModel = { NumberDefinition.Model }),
         PropertyDefinitionType.Reference to EmbeddedObjectDefinition(dataModel = { ReferenceDefinition.Model.Model }),
         PropertyDefinitionType.Set to EmbeddedObjectDefinition(dataModel = { SetDefinition.Model }),
         PropertyDefinitionType.String to EmbeddedObjectDefinition(dataModel = { StringDefinition.Model.Model }),
         PropertyDefinitionType.Time to EmbeddedObjectDefinition(dataModel = { TimeDefinition.Model }),
-        PropertyDefinitionType.Value to EmbeddedObjectDefinition(dataModel = { ValueObjectDefinition.Model })
+        PropertyDefinitionType.Value to EmbeddedObjectDefinition(dataModel = { ValueObjectDefinition.Model.Model })
     )
 
 typealias WrapperCreator = (index: UInt, name: String, altNames: Set<String>?, definition: IsPropertyDefinition<out Any>) -> IsDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>

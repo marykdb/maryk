@@ -44,12 +44,12 @@ class PropRefGraphTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.graph, PropRefGraph, { this.context })
+        checkProtoBufConversion(this.graph, PropRefGraph.Model, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.graph, PropRefGraph, { this.context })
+        checkJsonConversion(this.graph, PropRefGraph.Model, { this.context })
     }
 
     @Test
@@ -63,7 +63,7 @@ class PropRefGraphTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.graph, PropRefGraph, { this.context })
+            checkYamlConversion(this.graph, PropRefGraph.Model, { this.context })
         }
     }
 }

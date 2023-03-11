@@ -12,6 +12,7 @@ import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.ListDefinitionWrapper
 import maryk.core.properties.graph.PropRefGraphType.Graph
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.IsPropertyReferenceForValues
@@ -31,12 +32,12 @@ data class RootPropRefGraph<P : IsRootModel> internal constructor(
     override val properties: List<IsPropRefGraphNode<P>>
 ) : IsPropRefGraph<P> {
     companion object : ContextualModel<RootPropRefGraph<*>, ContainsDataModelContext<*>, GraphContext>() {
-        val properties by list(
+        val properties: ListDefinitionWrapper<TypedValue<PropRefGraphType, IsTransportablePropRefGraphNode>, IsPropRefGraphNode<Nothing>, GraphContext, RootPropRefGraph<*>> by list(
             index = 1u,
             valueDefinition = InternalMultiTypeDefinition(
                 definitionMap = mapOf(
                     Graph to EmbeddedObjectDefinition(
-                        dataModel = { PropRefGraph }
+                        dataModel = { PropRefGraph.Model }
                     ),
                     PropRef to ContextualPropertyReferenceDefinition(
                         contextualResolver = { context: GraphContext? ->
@@ -112,7 +113,7 @@ data class RootPropRefGraph<P : IsRootModel> internal constructor(
                             propertiesList.add(
                                 TypedValue(
                                     Graph,
-                                    PropRefGraph.readJson(reader, context).toDataObject()
+                                    PropRefGraph.Model.readJson(reader, context).toDataObject()
                                 )
                             )
                         }

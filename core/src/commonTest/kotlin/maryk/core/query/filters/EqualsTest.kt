@@ -44,7 +44,7 @@ class EqualsTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.equals, Equals.Model, { this.context })
+        checkProtoBufConversion(this.equals, Equals, { this.context })
     }
 
     @Test

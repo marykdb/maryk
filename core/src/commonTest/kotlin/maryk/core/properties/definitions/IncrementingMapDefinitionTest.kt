@@ -166,13 +166,13 @@ internal class IncrementingMapDefinitionTest {
 
     @Test
     fun convertDefinitionToJSONAndBack() {
-        checkJsonConversion(this.def, IncrementingMapDefinition.Model)
-        checkJsonConversion(this.defMaxDefined, IncrementingMapDefinition.Model)
+        checkJsonConversion(this.def, IncrementingMapDefinition.Model.Model)
+        checkJsonConversion(this.defMaxDefined, IncrementingMapDefinition.Model.Model)
     }
 
     @Test
     fun convertDefinitionToYAMLAndBack() {
-        checkYamlConversion(this.def, IncrementingMapDefinition.Model)
+        checkYamlConversion(this.def, IncrementingMapDefinition.Model.Model)
 
         expect(
             """
@@ -189,7 +189,7 @@ internal class IncrementingMapDefinitionTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.defMaxDefined, IncrementingMapDefinition.Model)
+            checkYamlConversion(this.defMaxDefined, IncrementingMapDefinition.Model.Model)
         }
     }
 

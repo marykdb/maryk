@@ -24,7 +24,7 @@ class PrefixTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.prefix, Prefix.Model, { this.context })
+        checkProtoBufConversion(this.prefix, Prefix, { this.context })
     }
 
     @Test

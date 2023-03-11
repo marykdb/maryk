@@ -31,8 +31,8 @@ class AverageResponseTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.avgResponse, AverageResponse.Model, { this.context })
-        checkProtoBufConversion(this.avgResponseNull, AverageResponse.Model, { this.context })
+        checkProtoBufConversion(this.avgResponse, AverageResponse, { this.context })
+        checkProtoBufConversion(this.avgResponseNull, AverageResponse, { this.context })
     }
 
     @Test

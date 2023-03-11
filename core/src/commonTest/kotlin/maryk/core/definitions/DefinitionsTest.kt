@@ -34,7 +34,7 @@ class DefinitionsTest {
     fun convertToProtoBufAndBack() {
         checkProtoBufConversion(
             this.definitions,
-            Definitions.Model,
+            Definitions,
             { DefinitionsConversionContext() },
             ::compareDefinitions,
             true

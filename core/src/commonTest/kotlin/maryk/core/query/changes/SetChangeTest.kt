@@ -33,7 +33,7 @@ class SetChangeTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.setPropertyChange, SetChange.Model, { this.context })
+        checkProtoBufConversion(this.setPropertyChange, SetChange, { this.context })
     }
 
     @Test

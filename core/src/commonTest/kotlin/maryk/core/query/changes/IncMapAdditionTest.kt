@@ -70,7 +70,7 @@ class IncMapAdditionTest {
 
     @Test
     fun convertToProtoBufAndBackWithoutEnrichedContext() {
-        checkProtoBufConversion(this.incMapAddition, IncMapAddition.Model, { this.context }, conversionChecker)
+        checkProtoBufConversion(this.incMapAddition, IncMapAddition, { this.context }, conversionChecker)
     }
 
     @Test
@@ -93,7 +93,7 @@ class IncMapAdditionTest {
 
     @Test
     fun convertToProtoBufAndBackWithEnrichedContext() {
-        checkProtoBufConversion(this.incMapAddition, IncMapAddition.Model, { enrichedContext })
+        checkProtoBufConversion(this.incMapAddition, IncMapAddition, { enrichedContext })
     }
 
     @Test

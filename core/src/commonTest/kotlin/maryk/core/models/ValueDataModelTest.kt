@@ -21,7 +21,7 @@ internal class ValueDataModelTest {
     fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(
             TestValueObject.Model,
-            ValueDataModel.Model.Model,
+            ValueDataModel.Model,
             { DefinitionsConversionContext() },
             { converted: ValueDataModel<*, *>, original: ValueDataModel<*, *> ->
                 compareDataModels(converted, original)

@@ -2,6 +2,7 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.RequestException
 import maryk.core.models.ContextualDataModel
+import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -15,7 +16,7 @@ import maryk.core.properties.types.numeric.NumberDescriptor
 import maryk.core.properties.types.numeric.NumberType
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.query.ContainsDefinitionsContext
-import maryk.core.values.SimpleObjectValues
+import maryk.core.values.ObjectValues
 
 /** Definition for Map property in which the key auto increments */
 data class IncrementingMapDefinition<K : Comparable<K>, V : Any, CX : IsPropertyContext> internal constructor(
@@ -55,77 +56,82 @@ data class IncrementingMapDefinition<K : Comparable<K>, V : Any, CX : IsProperty
         valueDefinition as IsSubDefinition<V, CX>
     )
 
-    @Suppress("unused")
-    object Model :
-        ContextualDataModel<IncrementingMapDefinition<*, *, *>, ObjectPropertyDefinitions<IncrementingMapDefinition<*, *, *>>, ContainsDefinitionsContext, KeyValueDefinitionContext>(
-            contextTransformer = { KeyValueDefinitionContext(it) },
-            properties = object : ObjectPropertyDefinitions<IncrementingMapDefinition<*, *, *>>() {
-                val required by boolean(1u, IncrementingMapDefinition<*, *, *>::required, default = true)
-                val final by boolean(2u, IncrementingMapDefinition<*, *, *>::final, default = false)
+    object Model : ContextualModel<IncrementingMapDefinition<*, *, *>, Model, ContainsDefinitionsContext, KeyValueDefinitionContext>(
+        contextTransformer = { KeyValueDefinitionContext(it) },
+    ) {
+        val required by boolean(1u, IncrementingMapDefinition<*, *, *>::required, default = true)
+        val final by boolean(2u, IncrementingMapDefinition<*, *, *>::final, default = false)
 
-                val minSize by number(
-                    index = 3u,
-                    getter = IncrementingMapDefinition<*, *, *>::minSize,
-                    type = UInt32
-                )
-
-                val maxSize by number(
-                    index = 4u,
-                    getter = IncrementingMapDefinition<*, *, *>::maxSize,
-                    type = UInt32
-                )
-
-                @Suppress("UNCHECKED_CAST")
-                val keyNumberDescriptor by enum(
-                    index = 5u,
-                    getter = IncrementingMapDefinition<*, *, *>::keyNumberDescriptor as (IncrementingMapDefinition<*, *, *>) -> NumberDescriptor<Comparable<Any>>?,
-                    enum = NumberType,
-                    fromSerializable = { value: NumberType? ->
-                        value?.let {
-                            it.descriptor() as NumberDescriptor<Comparable<Any>>
-                        }
-                    },
-                    toSerializable = { value: NumberDescriptor<Comparable<Any>>?, _: KeyValueDefinitionContext? ->
-                        value?.type
-                    }
-                )
-
-                val valueDefinition by contextual(
-                    index = 6u,
-                    definition = ContextTransformerDefinition(
-                        contextTransformer = { it?.definitionsContext },
-                        definition = InternalMultiTypeDefinition(
-                            typeEnum = PropertyDefinitionType,
-                            definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
-                        )
-                    ),
-                    getter = IncrementingMapDefinition<*, *, *>::valueDefinition,
-                    toSerializable = { value, _ ->
-                        val defType = value as? IsTransportablePropertyDefinitionType<*>
-                            ?: throw RequestException("$value is not transportable")
-                        TypedValue(defType.propertyDefinitionType, value)
-                    },
-                    fromSerializable = {
-                        it?.value as IsSubDefinition<*, *>?
-                    },
-                    capturer = { context: KeyValueDefinitionContext, value ->
-                        @Suppress("UNCHECKED_CAST")
-                        context.valueDefinition = value.value as IsSubDefinition<Any, IsPropertyContext>
-                    }
-                )
-            }
-        ) {
-        override fun invoke(values: SimpleObjectValues<IncrementingMapDefinition<*, *, *>>) = IncrementingMapDefinition<Comparable<Any>, Any, IsPropertyContext>(
-            required = values(1u),
-            final = values(2u),
-            minSize = values(3u),
-            maxSize = values(4u),
-            keyDefinition = NumberDefinition(
-                type = values(5u),
-                reversedStorage = true
-            ),
-            valueDefinition = values(6u)
+        val minSize by number(
+            index = 3u,
+            getter = IncrementingMapDefinition<*, *, *>::minSize,
+            type = UInt32
         )
+
+        val maxSize by number(
+            index = 4u,
+            getter = IncrementingMapDefinition<*, *, *>::maxSize,
+            type = UInt32
+        )
+
+        @Suppress("UNCHECKED_CAST")
+        val keyNumberDescriptor by enum(
+            index = 5u,
+            getter = IncrementingMapDefinition<*, *, *>::keyNumberDescriptor as (IncrementingMapDefinition<*, *, *>) -> NumberDescriptor<Comparable<Any>>?,
+            enum = NumberType,
+            fromSerializable = { value: NumberType? ->
+                value?.let {
+                    it.descriptor() as NumberDescriptor<Comparable<Any>>
+                }
+            },
+            toSerializable = { value: NumberDescriptor<Comparable<Any>>?, _: KeyValueDefinitionContext? ->
+                value?.type
+            }
+        )
+
+        val valueDefinition by contextual(
+            index = 6u,
+            definition = ContextTransformerDefinition(
+                contextTransformer = { it?.definitionsContext },
+                definition = InternalMultiTypeDefinition(
+                    typeEnum = PropertyDefinitionType,
+                    definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
+                )
+            ),
+            getter = IncrementingMapDefinition<*, *, *>::valueDefinition,
+            toSerializable = { value, _ ->
+                val defType = value as? IsTransportablePropertyDefinitionType<*>
+                    ?: throw RequestException("$value is not transportable")
+                TypedValue(defType.propertyDefinitionType, value)
+            },
+            fromSerializable = {
+                it?.value as IsSubDefinition<*, *>?
+            },
+            capturer = { context: KeyValueDefinitionContext, value ->
+                @Suppress("UNCHECKED_CAST")
+                context.valueDefinition = value.value as IsSubDefinition<Any, IsPropertyContext>
+            }
+        )
+
+        override fun invoke(values: ObjectValues<IncrementingMapDefinition<*, *, *>, Model>): IncrementingMapDefinition<*, *, *> =
+            Model.invoke(values)
+
+        override val Model = object : ContextualDataModel<IncrementingMapDefinition<*, *, *>, Model, ContainsDefinitionsContext, KeyValueDefinitionContext>(
+            contextTransformer = contextTransformer,
+            properties = this,
+        ) {
+            override fun invoke(values: ObjectValues<IncrementingMapDefinition<*, *, *>, Model>) = IncrementingMapDefinition<Comparable<Any>, Any, IsPropertyContext>(
+                required = values(1u),
+                final = values(2u),
+                minSize = values(3u),
+                maxSize = values(4u),
+                keyDefinition = NumberDefinition(
+                    type = values(5u),
+                    reversedStorage = true
+                ),
+                valueDefinition = values(6u)
+            )
+        }
     }
 }
 
@@ -148,6 +154,7 @@ fun <K : Comparable<K>, V : Any, CX : IsPropertyContext> IsValuesPropertyDefinit
     )
 }
 
+@Suppress("unused")
 fun <K : Comparable<K>, V : Any, TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.incrementingMap(
     index: UInt,
     getter: (DO) -> TO?,

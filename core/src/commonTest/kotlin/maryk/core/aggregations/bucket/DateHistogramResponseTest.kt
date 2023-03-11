@@ -48,7 +48,7 @@ class DateHistogramResponseTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.dateHistogramResponse, DateHistogramResponse.Model, { this.context })
+        checkProtoBufConversion(this.dateHistogramResponse, DateHistogramResponse, { this.context })
     }
 
     @Test

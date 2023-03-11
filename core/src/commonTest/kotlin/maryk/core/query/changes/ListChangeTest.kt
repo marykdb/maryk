@@ -31,7 +31,7 @@ class ListChangeTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.listPropertyChange, ListChange.Model, { this.context })
+        checkProtoBufConversion(this.listPropertyChange, ListChange, { this.context })
     }
 
     @Test

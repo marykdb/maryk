@@ -50,7 +50,7 @@ class DataObjectChangeTest {
     fun convertToProtoBufAndBack() {
         val requestContext = this.createContext()
 
-        checkProtoBufConversion(this.dataObjectChange, DataObjectChange.Model, { requestContext })
+        checkProtoBufConversion(this.dataObjectChange, DataObjectChange, { requestContext })
 
         checkContext(requestContext)
     }

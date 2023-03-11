@@ -77,8 +77,8 @@ class ScanChangesRequestTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(scanChangesRequest, ScanChangesRequest.Model, { this.context })
-        checkProtoBufConversion(scanChangesMaxRequest, ScanChangesRequest.Model, { this.context })
+        checkProtoBufConversion(scanChangesRequest, ScanChangesRequest, { this.context })
+        checkProtoBufConversion(scanChangesMaxRequest, ScanChangesRequest, { this.context })
     }
 
     @Test

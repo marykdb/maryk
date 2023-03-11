@@ -113,8 +113,8 @@ internal class EnumDefinitionTest {
 
     @Test
     fun convertDefinitionToProtoBufAndBack() {
-        checkProtoBufConversion(this.def, EnumDefinition.Model.Model, null, ::compare)
-        checkProtoBufConversion(this.defMaxDefined, EnumDefinition.Model.Model, null, ::compare)
+        checkProtoBufConversion(this.def, EnumDefinition.Model, null, ::compare)
+        checkProtoBufConversion(this.defMaxDefined, EnumDefinition.Model, null, ::compare)
     }
 
     @Test

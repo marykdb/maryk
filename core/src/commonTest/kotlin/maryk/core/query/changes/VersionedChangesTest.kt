@@ -37,7 +37,7 @@ class VersionedChangesTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.versionedChanges, VersionedChanges.Model, { this.context })
+        checkProtoBufConversion(this.versionedChanges, VersionedChanges, { this.context })
     }
 
     @Test

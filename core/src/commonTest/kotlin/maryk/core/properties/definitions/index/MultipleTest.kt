@@ -29,7 +29,7 @@ class MultipleTest {
     fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(
             value = multiple,
-            dataModel = Multiple.Model.Model,
+            dataModel = Multiple.Model,
             context = { context }
         )
     }

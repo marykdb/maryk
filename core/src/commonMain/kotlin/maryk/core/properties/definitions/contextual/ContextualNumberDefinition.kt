@@ -22,7 +22,7 @@ import maryk.lib.exceptions.ParseException
  * Definition for Number properties which are based on a context from [contextualResolver] which can be set by a property
  * which defines the number type
  */
-internal class ContextualNumberDefinition<in CX : IsPropertyContext>(
+class ContextualNumberDefinition<in CX : IsPropertyContext>(
     override val required: Boolean = true,
     val contextualResolver: Unit.(context: CX?) -> NumberDescriptor<Comparable<Any>>
 ) : IsSubDefinition<Comparable<Any>, CX>, IsContextualEncodable<Comparable<Any>, CX> {

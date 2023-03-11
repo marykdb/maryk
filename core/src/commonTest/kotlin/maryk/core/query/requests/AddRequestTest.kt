@@ -17,7 +17,7 @@ class AddRequestTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(addRequest, AddRequest.Model, { this.context })
+        checkProtoBufConversion(addRequest, AddRequest, { this.context })
     }
 
     @Test

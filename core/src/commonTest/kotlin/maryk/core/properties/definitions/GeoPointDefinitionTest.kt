@@ -74,8 +74,8 @@ internal class GeoPointDefinitionTest {
 
     @Test
     fun convertDefinitionToProtoBufAndBack() {
-        checkProtoBufConversion(this.def, GeoPointDefinition.Model.Model)
-        checkProtoBufConversion(this.defMaxDefined, GeoPointDefinition.Model.Model)
+        checkProtoBufConversion(this.def, GeoPointDefinition.Model)
+        checkProtoBufConversion(this.defMaxDefined, GeoPointDefinition.Model)
     }
 
     @Test

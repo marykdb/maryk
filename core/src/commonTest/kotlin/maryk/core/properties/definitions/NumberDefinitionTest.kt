@@ -177,13 +177,13 @@ internal class NumberDefinitionTest {
 
     @Test
     fun convertDefinitionToJSONAndBack() {
-        checkJsonConversion(this.def, NumberDefinition.Model)
-        checkJsonConversion(this.defMaxDefined, NumberDefinition.Model)
+        checkJsonConversion(this.def, NumberDefinition.Model.Model)
+        checkJsonConversion(this.defMaxDefined, NumberDefinition.Model.Model)
     }
 
     @Test
     fun convertDefinitionToYAMLAndBack() {
-        checkYamlConversion(this.def, NumberDefinition.Model)
+        checkYamlConversion(this.def, NumberDefinition.Model.Model)
         expect(
             """
             required: false
@@ -197,7 +197,7 @@ internal class NumberDefinitionTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.defMaxDefined, NumberDefinition.Model)
+            checkYamlConversion(this.defMaxDefined, NumberDefinition.Model.Model)
         }
     }
 

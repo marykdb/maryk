@@ -31,7 +31,7 @@ class RangeTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.range, Range.Model, { this.context })
+        checkProtoBufConversion(this.range, Range, { this.context })
     }
 
     @Test

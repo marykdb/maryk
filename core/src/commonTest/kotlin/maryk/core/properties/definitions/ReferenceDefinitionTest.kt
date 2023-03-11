@@ -82,8 +82,8 @@ internal class ReferenceDefinitionTest {
 
     @Test
     fun convertDefinitionToProtoBufAndBack() {
-        checkProtoBufConversion(this.def, ReferenceDefinition.Model.Model, { DefinitionsContext() })
-        checkProtoBufConversion(this.defMaxDefined, ReferenceDefinition.Model.Model, { DefinitionsContext() })
+        checkProtoBufConversion(this.def, ReferenceDefinition.Model, { DefinitionsContext() })
+        checkProtoBufConversion(this.defMaxDefined, ReferenceDefinition.Model, { DefinitionsContext() })
     }
 
     @Test

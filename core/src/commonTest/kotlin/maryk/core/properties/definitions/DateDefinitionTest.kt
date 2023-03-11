@@ -73,8 +73,8 @@ internal class DateDefinitionTest {
 
     @Test
     fun convertDefinitionToProtoBufAndBack() {
-        checkProtoBufConversion(this.def, DateDefinition.Model.Model)
-        checkProtoBufConversion(this.defMaxDefined, DateDefinition.Model.Model)
+        checkProtoBufConversion(this.def, DateDefinition.Model)
+        checkProtoBufConversion(this.defMaxDefined, DateDefinition.Model)
     }
 
     @Test

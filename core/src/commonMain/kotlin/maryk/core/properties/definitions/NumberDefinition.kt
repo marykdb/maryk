@@ -2,7 +2,7 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.extensions.bytes.MAX_BYTE
-import maryk.core.models.ContextualDataModel
+import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -18,7 +18,7 @@ import maryk.core.properties.types.numeric.NumberType
 import maryk.core.properties.types.numeric.SInt64
 import maryk.core.properties.types.numeric.UInt64
 import maryk.core.protobuf.WriteCacheReader
-import maryk.core.values.SimpleObjectValues
+import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeWriter
 import maryk.lib.exceptions.ParseException
 import kotlin.experimental.xor
@@ -119,65 +119,63 @@ data class NumberDefinition<T : Comparable<T>>(
     }
 
     @Suppress("unused")
-    object Model :
-        ContextualDataModel<NumberDefinition<*>, ObjectPropertyDefinitions<NumberDefinition<*>>, IsPropertyContext, NumericContext>(
-            contextTransformer = { NumericContext() },
-            properties = object : ObjectPropertyDefinitions<NumberDefinition<*>>() {
-                val required by boolean(1u, NumberDefinition<*>::required, default = true)
-                val final by boolean(2u, NumberDefinition<*>::final, default = false)
-                val unique by boolean(3u, NumberDefinition<*>::unique, default = false)
+    object Model : ContextualModel<NumberDefinition<*>, Model, IsPropertyContext, NumericContext>(
+        contextTransformer = { NumericContext() },
+    ) {
+        val required by boolean(1u, NumberDefinition<*>::required, default = true)
+        val final by boolean(2u, NumberDefinition<*>::final, default = false)
+        val unique by boolean(3u, NumberDefinition<*>::unique, default = false)
 
-                @Suppress("UNCHECKED_CAST")
-                val type by enum(
-                    4u,
-                    getter = NumberDefinition<*>::type as (NumberDefinition<*>) -> NumberDescriptor<Comparable<Any>>?,
-                    enum = NumberType,
-                    capturer = { context: NumericContext, value ->
-                        context.numberType = value.descriptor() as NumberDescriptor<Comparable<Any>>
-                    },
-                    fromSerializable = { value ->
-                        value?.let {
-                            it.descriptor() as NumberDescriptor<Comparable<Any>>
-                        }
-                    },
-                    toSerializable = { value, _ ->
-                        value?.type
-                    }
-                )
-                val minValue by contextual(
-                    index = 5u,
-                    getter = {
-                        @Suppress("UNCHECKED_CAST")
-                        it.minValue as Comparable<Any>?
-                    },
-                    definition = ContextualNumberDefinition<NumericContext>(required = false) {
-                        it?.numberType ?: throw ContextNotFoundException()
-                    }
-                )
-                val maxValue by contextual(
-                    index = 6u,
-                    definition = ContextualNumberDefinition<NumericContext>(required = false) {
-                        it?.numberType ?: throw ContextNotFoundException()
-                    },
-                    getter = {
-                        @Suppress("UNCHECKED_CAST")
-                        it.maxValue as Comparable<Any>?
-                    }
-                )
-                val default by contextual(
-                    index = 7u,
-                    getter = {
-                        @Suppress("UNCHECKED_CAST")
-                        it.default as Comparable<Any>?
-                    },
-                    definition = ContextualNumberDefinition<NumericContext>(required = false) {
-                        it?.numberType ?: throw ContextNotFoundException()
-                    }
-                )
-                val reversedStorage by boolean(8u, NumberDefinition<*>::reversedStorage, required = false)
+        @Suppress("UNCHECKED_CAST")
+        val type by enum(
+            4u,
+            getter = NumberDefinition<*>::type as (NumberDefinition<*>) -> NumberDescriptor<Comparable<Any>>?,
+            enum = NumberType,
+            capturer = { context: NumericContext, value ->
+                context.numberType = value.descriptor() as NumberDescriptor<Comparable<Any>>
+            },
+            fromSerializable = { value ->
+                value?.let {
+                    it.descriptor() as NumberDescriptor<Comparable<Any>>
+                }
+            },
+            toSerializable = { value, _ ->
+                value?.type
             }
-        ) {
-        override fun invoke(values: SimpleObjectValues<NumberDefinition<*>>) = NumberDefinition<Comparable<Any>>(
+        )
+        val minValue by contextual(
+            index = 5u,
+            getter = {
+                @Suppress("UNCHECKED_CAST")
+                it.minValue as Comparable<Any>?
+            },
+            definition = ContextualNumberDefinition<NumericContext>(required = false) {
+                it?.numberType ?: throw ContextNotFoundException()
+            }
+        )
+        val maxValue by contextual(
+            index = 6u,
+            definition = ContextualNumberDefinition<NumericContext>(required = false) {
+                it?.numberType ?: throw ContextNotFoundException()
+            },
+            getter = {
+                @Suppress("UNCHECKED_CAST")
+                it.maxValue as Comparable<Any>?
+            }
+        )
+        val default by contextual(
+            index = 7u,
+            getter = {
+                @Suppress("UNCHECKED_CAST")
+                it.default as Comparable<Any>?
+            },
+            definition = ContextualNumberDefinition<NumericContext>(required = false) {
+                it?.numberType ?: throw ContextNotFoundException()
+            }
+        )
+        val reversedStorage by boolean(8u, NumberDefinition<*>::reversedStorage, required = false)
+
+        override fun invoke(values: ObjectValues<NumberDefinition<*>, Model>) = NumberDefinition<Comparable<Any>>(
             required = values(1u),
             final = values(2u),
             unique = values(3u),

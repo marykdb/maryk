@@ -17,7 +17,7 @@ class DeleteRequestTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(deleteRequest, DeleteRequest.Model, { this.context })
+        checkProtoBufConversion(deleteRequest, DeleteRequest, { this.context })
     }
 
     @Test

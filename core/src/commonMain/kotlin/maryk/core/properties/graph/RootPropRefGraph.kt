@@ -5,7 +5,6 @@ import maryk.core.models.ContextualDataModel
 import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsRootModel
 import maryk.core.properties.IsValuesPropertyDefinitions
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
@@ -31,7 +30,11 @@ import maryk.lib.exceptions.ParseException
 data class RootPropRefGraph<P : IsRootModel> internal constructor(
     override val properties: List<IsPropRefGraphNode<P>>
 ) : IsPropRefGraph<P> {
-    companion object : ContextualModel<RootPropRefGraph<*>, ContainsDataModelContext<*>, GraphContext>() {
+    companion object : ContextualModel<RootPropRefGraph<*>, Companion, ContainsDataModelContext<*>, GraphContext>(
+        contextTransformer = {
+            GraphContext(it?.dataModel)
+        },
+    ) {
         val properties: ListDefinitionWrapper<TypedValue<PropRefGraphType, IsTransportablePropRefGraphNode>, IsPropRefGraphNode<Nothing>, GraphContext, RootPropRefGraph<*>> by list(
             index = 1u,
             valueDefinition = InternalMultiTypeDefinition(
@@ -65,16 +68,14 @@ data class RootPropRefGraph<P : IsRootModel> internal constructor(
             }
         )
 
-        override fun invoke(values: ObjectValues<RootPropRefGraph<*>, ObjectPropertyDefinitions<RootPropRefGraph<*>>>): RootPropRefGraph<*> =
+        override fun invoke(values: ObjectValues<RootPropRefGraph<*>, Companion>): RootPropRefGraph<*> =
             Model.invoke(values)
 
-        override val Model = object : ContextualDataModel<RootPropRefGraph<*>, ObjectPropertyDefinitions<RootPropRefGraph<*>>, ContainsDataModelContext<*>, GraphContext>(
+        override val Model = object : ContextualDataModel<RootPropRefGraph<*>, Companion, ContainsDataModelContext<*>, GraphContext>(
             properties = Companion,
-            contextTransformer = {
-                GraphContext(it?.dataModel)
-            }
+            contextTransformer = contextTransformer,
         ) {
-            override fun invoke(values: ObjectValues<RootPropRefGraph<*>, ObjectPropertyDefinitions<RootPropRefGraph<*>>>) =
+            override fun invoke(values: ObjectValues<RootPropRefGraph<*>, Companion>) =
                 RootPropRefGraph<IsRootModel>(
                     properties = values(1u)
                 )
@@ -94,7 +95,7 @@ data class RootPropRefGraph<P : IsRootModel> internal constructor(
             override fun readJson(
                 reader: IsJsonLikeReader,
                 context: GraphContext?
-            ): ObjectValues<RootPropRefGraph<*>, ObjectPropertyDefinitions<RootPropRefGraph<*>>> {
+            ): ObjectValues<RootPropRefGraph<*>, Companion> {
                 if (reader.currentToken == JsonToken.StartDocument) {
                     reader.nextToken()
                 }

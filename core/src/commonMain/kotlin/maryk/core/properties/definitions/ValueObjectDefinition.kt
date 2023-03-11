@@ -28,7 +28,6 @@ import maryk.core.properties.types.ValueDataObject
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.ObjectValues
-import maryk.core.values.SimpleObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 
@@ -114,7 +113,9 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : ValueDataModel<DO, P
         return compatible
     }
 
-    object Model : ContextualModel<ValueObjectDefinition<*, *, *>, ContainsDefinitionsContext, ModelContext>() {
+    object Model : ContextualModel<ValueObjectDefinition<*, *, *>, Model, ContainsDefinitionsContext, ModelContext>(
+        contextTransformer = { ModelContext(it) },
+    ) {
         val required by boolean(1u, ValueObjectDefinition<*, *, *>::required, default = true)
         val final by boolean(2u, ValueObjectDefinition<*, *, *>::final, default = false)
         val unique by boolean(3u, ValueObjectDefinition<*, *, *>::unique, default = false)
@@ -186,15 +187,15 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : ValueDataModel<DO, P
             )
         )
 
-        override fun invoke(values: ObjectValues<ValueObjectDefinition<*, *, *>, ObjectPropertyDefinitions<ValueObjectDefinition<*, *, *>>>): ValueObjectDefinition<*, *, *> =
+        override fun invoke(values: ObjectValues<ValueObjectDefinition<*, *, *>, Model>): ValueObjectDefinition<*, *, *> =
             Model.invoke(values)
 
         @Suppress("unused")
-        override val Model = object : ContextualDataModel<ValueObjectDefinition<*, *, *>, ObjectPropertyDefinitions<ValueObjectDefinition<*, *, *>>, ContainsDefinitionsContext, ModelContext>(
-            contextTransformer = { ModelContext(it) },
+        override val Model = object : ContextualDataModel<ValueObjectDefinition<*, *, *>, Model, ContainsDefinitionsContext, ModelContext>(
+            contextTransformer = contextTransformer,
             properties = this,
         ) {
-            override fun invoke(values: SimpleObjectValues<ValueObjectDefinition<*, *, *>>) = ValueObjectDefinition(
+            override fun invoke(values: ObjectValues<ValueObjectDefinition<*, *, *>, Model>) = ValueObjectDefinition(
                 required = values(1u),
                 final = values(2u),
                 unique = values(3u),

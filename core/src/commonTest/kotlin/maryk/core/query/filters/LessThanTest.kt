@@ -26,7 +26,7 @@ class LessThanTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.lessThan, LessThan.Model, { this.context })
+        checkProtoBufConversion(this.lessThan, LessThan, { this.context })
     }
 
     @Test

@@ -2,8 +2,7 @@ package maryk.core.properties.exceptions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.SimpleQueryDataModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SimpleQueryModel
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.exceptions.ValidationExceptionType.ALREADY_EXISTS
@@ -26,25 +25,24 @@ data class AlreadyExistsException(
     override val validationExceptionType = ALREADY_EXISTS
 
     @Suppress("unused")
-    internal companion object : SimpleQueryDataModel<AlreadyExistsException>(
-        properties = object : ObjectPropertyDefinitions<AlreadyExistsException>() {
-            val reference by addReference(AlreadyExistsException::reference)
-            val key by contextual(
-                index = 2u,
-                getter = AlreadyExistsException::key,
-                definition = ContextualReferenceDefinition<RequestContext>(
-                    required = false,
-                    contextualResolver = {
-                        it?.dataModel as IsRootDataModel<*>?
-                            ?: throw ContextNotFoundException()
-                    }
-                )
+    internal companion object : SimpleQueryModel<AlreadyExistsException>() {
+        val reference by addReference(AlreadyExistsException::reference)
+        val key by contextual(
+            index = 2u,
+            getter = AlreadyExistsException::key,
+            definition = ContextualReferenceDefinition<RequestContext>(
+                required = false,
+                contextualResolver = {
+                    it?.dataModel as IsRootDataModel<*>?
+                        ?: throw ContextNotFoundException()
+                }
             )
-        }
-    ) {
-        override fun invoke(values: SimpleObjectValues<AlreadyExistsException>) = AlreadyExistsException(
-            reference = values(1u),
-            key = values(2u)
         )
+
+        override fun invoke(values: SimpleObjectValues<AlreadyExistsException>) =
+            AlreadyExistsException(
+                reference = values(1u),
+                key = values(2u)
+            )
     }
 }

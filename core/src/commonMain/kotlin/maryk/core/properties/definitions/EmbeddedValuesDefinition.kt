@@ -3,8 +3,8 @@ package maryk.core.properties.definitions
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.AbstractValuesDataModel
-import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsValuesDataModel
+import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -49,7 +49,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P : IsValuesPropertyDe
 
     @Suppress("UNCHECKED_CAST")
     // internal strong typed version so type system is not in a loop when creating EmbeddedValuesDefinition
-    internal val typedDataModel get() =
+    private val typedDataModel get() =
         internalDataModel.value as AbstractValuesDataModel<DM, P, IsPropertyContext>
 
     override fun asString(value: Values<P>, context: IsPropertyContext?): String {
@@ -144,59 +144,56 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P : IsValuesPropertyDe
         return result
     }
 
-    @Suppress("unused")
-    object Model :
-        ContextualDataModel<EmbeddedValuesDefinition<*, *>, ObjectPropertyDefinitions<EmbeddedValuesDefinition<*, *>>, ContainsDefinitionsContext, ModelContext>(
-            contextTransformer = { ModelContext(it) },
-            properties = object : ObjectPropertyDefinitions<EmbeddedValuesDefinition<*, *>>() {
-                val required by boolean(1u, EmbeddedValuesDefinition<*, *>::required, default = true)
-                val final by boolean(2u, EmbeddedValuesDefinition<*, *>::final, default = false)
-                val dataModel by contextual(
-                    index = 3u,
-                    definition = ContextualModelReferenceDefinition(
-                        contextTransformer = { context: ModelContext? ->
-                            context?.definitionsContext
-                        },
-                        contextualResolver = { context: ContainsDefinitionsContext?, name ->
-                            context?.let {
-                                @Suppress("UNCHECKED_CAST")
-                                it.dataModels[name] as? Unit.() -> IsValuesDataModel<*>
-                                    ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
-                            } ?: throw ContextNotFoundException()
-                        }
-                    ),
-                    getter = {
-                        { it.dataModel }
-                    },
-                    toSerializable = { value: (Unit.() -> IsValuesDataModel<*>)?, _ ->
-                        value?.invoke(Unit)?.let { model ->
-                            DataModelReference(model.name, value)
-                        }
-                    },
-                    fromSerializable = { it?.get },
-                    capturer = { context: ModelContext, dataModel: IsDataModelReference<IsValuesDataModel<*>> ->
-                        context.definitionsContext?.let {
-                            if (!it.dataModels.containsKey(dataModel.name)) {
-                                it.dataModels[dataModel.name] = dataModel.get
-                            }
-                        } ?: throw ContextNotFoundException()
-
-                        context.model = dataModel.get
+    object Model : ContextualModel<EmbeddedValuesDefinition<*, *>, Model, ContainsDefinitionsContext, ModelContext>(
+        contextTransformer = { ModelContext(it) },
+    ) {
+        val required by boolean(1u, EmbeddedValuesDefinition<*, *>::required, default = true)
+        val final by boolean(2u, EmbeddedValuesDefinition<*, *>::final, default = false)
+        val dataModel by contextual(
+            index = 3u,
+            definition = ContextualModelReferenceDefinition(
+                contextTransformer = { context: ModelContext? ->
+                    context?.definitionsContext
+                },
+                contextualResolver = { context: ContainsDefinitionsContext?, name ->
+                    context?.let {
+                        @Suppress("UNCHECKED_CAST")
+                        it.dataModels[name] as? Unit.() -> IsValuesDataModel<*>
+                            ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
+                    } ?: throw ContextNotFoundException()
+                }
+            ),
+            getter = {
+                { it.dataModel }
+            },
+            toSerializable = { value: (Unit.() -> IsValuesDataModel<*>)?, _ ->
+                value?.invoke(Unit)?.let { model ->
+                    DataModelReference(model.name, value)
+                }
+            },
+            fromSerializable = { it?.get },
+            capturer = { context: ModelContext, dataModel: IsDataModelReference<IsValuesDataModel<*>> ->
+                context.definitionsContext?.let {
+                    if (!it.dataModels.containsKey(dataModel.name)) {
+                        it.dataModels[dataModel.name] = dataModel.get
                     }
-                )
+                } ?: throw ContextNotFoundException()
 
-                @Suppress("UNCHECKED_CAST")
-                val default by embedContextual(
-                    index = 4u,
-                    getter = EmbeddedValuesDefinition<*, *>::default,
-                    contextualResolver = { context: ModelContext? ->
-                        context?.model?.invoke(Unit) as? AbstractValuesDataModel<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions, ModelContext>?
-                            ?: throw ContextNotFoundException()
-                    }
-                )
+                context.model = dataModel.get
             }
-        ) {
-        override fun invoke(values: ObjectValues<EmbeddedValuesDefinition<*, *>, ObjectPropertyDefinitions<EmbeddedValuesDefinition<*, *>>>) =
+        )
+
+        @Suppress("UNCHECKED_CAST")
+        val default by embedContextual(
+            index = 4u,
+            getter = EmbeddedValuesDefinition<*, *>::default,
+            contextualResolver = { context: ModelContext? ->
+                context?.model?.invoke(Unit) as? AbstractValuesDataModel<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions, ModelContext>?
+                    ?: throw ContextNotFoundException()
+            }
+        )
+
+        override fun invoke(values: ObjectValues<EmbeddedValuesDefinition<*, *>, Model>) =
             EmbeddedValuesDefinition<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>(
                 required = values(1u),
                 final = values(2u),

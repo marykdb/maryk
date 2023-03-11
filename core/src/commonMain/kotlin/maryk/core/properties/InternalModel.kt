@@ -1,7 +1,6 @@
 package maryk.core.properties
 
 import maryk.core.models.AbstractObjectDataModel
-import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.IsPropertyReference
@@ -9,18 +8,17 @@ import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 
-interface IsInternalModel<DO: Any, P: IsObjectPropertyDefinitions<DO>> {
+interface IsInternalModel<DO: Any, P: IsObjectPropertyDefinitions<DO>, in CXI : IsPropertyContext, CX : IsPropertyContext>: IsBaseModel<DO, P, CXI, CX> {
     @Suppress("PropertyName")
-    val Model: IsObjectDataModel<DO, P>
+    override val Model: AbstractObjectDataModel<DO, P, CXI, CX>
 }
 
 typealias SimpleObjectModel<DO, P> = InternalModel<DO, P, IsPropertyContext, IsPropertyContext>
 typealias DefinitionModel<DO> = InternalModel<DO, ObjectPropertyDefinitions<DO>, ContainsDefinitionsContext, ContainsDefinitionsContext>
 internal typealias QueryModel<DO, P> = InternalModel<DO, P, RequestContext, RequestContext>
 internal typealias SimpleQueryModel<DO> = InternalModel<DO, ObjectPropertyDefinitions<DO>, RequestContext, RequestContext>
-internal typealias ContextualModel<DO, CXI, CX> = InternalModel<DO, ObjectPropertyDefinitions<DO>, CXI, CX>
 
-abstract class InternalModel<DO: Any, P: ObjectPropertyDefinitions<DO>, in CXI : IsPropertyContext, CX : IsPropertyContext>: ObjectPropertyDefinitions<DO>(), IsInternalModel<DO, P> {
+abstract class InternalModel<DO: Any, P: ObjectPropertyDefinitions<DO>, in CXI : IsPropertyContext, CX : IsPropertyContext>: ObjectPropertyDefinitions<DO>(), IsInternalModel<DO, P, CXI, CX> {
     abstract fun invoke(values: ObjectValues<DO, P>): DO
 
     @Suppress("UNCHECKED_CAST")

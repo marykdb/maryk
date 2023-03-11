@@ -48,7 +48,7 @@ class AddResponseTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.addResponse, AddResponse.Model, { this.context })
+        checkProtoBufConversion(this.addResponse, AddResponse, { this.context })
     }
 
     @Test

@@ -43,7 +43,7 @@ class UpdatesResponseTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(updatesResponse, UpdatesResponse.Model, { this.context })
+        checkProtoBufConversion(updatesResponse, UpdatesResponse, { this.context })
     }
 
     @Test

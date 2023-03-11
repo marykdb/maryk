@@ -25,7 +25,7 @@ class OrTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.or, Or.Model, { this.context })
+        checkProtoBufConversion(this.or, Or, { this.context })
     }
 
     @Test

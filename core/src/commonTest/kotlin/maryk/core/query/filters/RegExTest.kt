@@ -24,7 +24,7 @@ class RegExTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.regEx, RegEx.Model, { this.context })
+        checkProtoBufConversion(this.regEx, RegEx, { this.context })
     }
 
     @Test

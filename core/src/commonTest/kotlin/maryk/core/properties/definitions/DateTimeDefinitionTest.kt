@@ -179,13 +179,13 @@ internal class DateTimeDefinitionTest {
 
     @Test
     fun convertDefinitionToJSONAndBack() {
-        checkJsonConversion(this.def, DateTimeDefinition.Model)
-        checkJsonConversion(this.defMaxDefined, DateTimeDefinition.Model)
+        checkJsonConversion(this.def, DateTimeDefinition.Model.Model)
+        checkJsonConversion(this.defMaxDefined, DateTimeDefinition.Model.Model)
     }
 
     @Test
     fun convertDefinitionToYAMLAndBack() {
-        checkYamlConversion(this.def, DateTimeDefinition.Model)
+        checkYamlConversion(this.def, DateTimeDefinition.Model.Model)
 
         expect(
             """
@@ -199,7 +199,7 @@ internal class DateTimeDefinitionTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.defMaxDefined, DateTimeDefinition.Model)
+            checkYamlConversion(this.defMaxDefined, DateTimeDefinition.Model.Model)
         }
     }
 }

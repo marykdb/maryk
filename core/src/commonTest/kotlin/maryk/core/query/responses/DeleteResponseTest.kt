@@ -32,7 +32,7 @@ class DeleteResponseTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.deleteResponse, DeleteResponse.Model, { this.context })
+        checkProtoBufConversion(this.deleteResponse, DeleteResponse, { this.context })
     }
 
     @Test

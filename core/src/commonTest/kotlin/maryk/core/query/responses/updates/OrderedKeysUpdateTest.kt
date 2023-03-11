@@ -30,7 +30,7 @@ internal class OrderedKeysUpdateTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.orderedKeysUpdate, OrderedKeysUpdate.Model, { this.context })
+        checkProtoBufConversion(this.orderedKeysUpdate, OrderedKeysUpdate, { this.context })
     }
 
     @Test

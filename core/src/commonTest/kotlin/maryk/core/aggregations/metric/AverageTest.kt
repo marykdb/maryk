@@ -23,7 +23,7 @@ class AverageTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.average, Average.Model, { this.context })
+        checkProtoBufConversion(this.average, Average, { this.context })
     }
 
     @Test

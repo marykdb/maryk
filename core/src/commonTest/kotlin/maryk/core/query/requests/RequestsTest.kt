@@ -47,7 +47,7 @@ class RequestsTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.requests, Requests.Model, { this.context }, ::requestsComparison)
+        checkProtoBufConversion(this.requests, Requests, { this.context }, ::requestsComparison)
     }
 
     @Test

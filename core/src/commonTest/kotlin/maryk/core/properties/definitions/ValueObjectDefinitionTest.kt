@@ -112,8 +112,8 @@ internal class ValueObjectDefinitionTest {
 
     @Test
     fun convertDefinitionToProtoBufAndBack() {
-        checkProtoBufConversion(this.def, ValueObjectDefinition.Model.Model, { DefinitionsContext() })
-        checkProtoBufConversion(this.defMaxDefined, ValueObjectDefinition.Model.Model, { DefinitionsContext() })
+        checkProtoBufConversion(this.def, ValueObjectDefinition.Model, { DefinitionsContext() })
+        checkProtoBufConversion(this.defMaxDefined, ValueObjectDefinition.Model, { DefinitionsContext() })
     }
 
     @Test

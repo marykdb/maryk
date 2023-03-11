@@ -14,7 +14,7 @@ class ObjectCreateTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(ObjectCreate, ObjectCreate.Model.Model, { this.context })
+        checkProtoBufConversion(ObjectCreate, ObjectCreate.Model, { this.context })
     }
 
     @Test

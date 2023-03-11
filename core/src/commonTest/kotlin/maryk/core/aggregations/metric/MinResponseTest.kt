@@ -24,7 +24,7 @@ class MinResponseTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.minResponse, MinResponse.Model, { this.context })
+        checkProtoBufConversion(this.minResponse, MinResponse, { this.context })
     }
 
     @Test

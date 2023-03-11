@@ -28,7 +28,7 @@ internal class RemovalUpdateTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.removalUpdate, RemovalUpdate.Model, { this.context })
+        checkProtoBufConversion(this.removalUpdate, RemovalUpdate, { this.context })
     }
 
     @Test

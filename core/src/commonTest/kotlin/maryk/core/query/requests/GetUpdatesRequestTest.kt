@@ -18,8 +18,8 @@ class GetUpdatesRequestTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(getUpdatesRequest, GetChangesRequest.Model, { this.context })
-        checkProtoBufConversion(getUpdatesMaxRequest, GetChangesRequest.Model, { this.context })
+        checkProtoBufConversion(getUpdatesRequest, GetChangesRequest, { this.context })
+        checkProtoBufConversion(getUpdatesMaxRequest, GetChangesRequest, { this.context })
     }
 
     @Test

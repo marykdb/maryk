@@ -9,7 +9,7 @@ import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.initLongByVar
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.models.ContextualDataModel
+import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -25,7 +25,7 @@ import maryk.core.properties.types.writeBytes
 import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.query.ContainsDefinitionsContext
-import maryk.core.values.SimpleObjectValues
+import maryk.core.values.ObjectValues
 import maryk.lib.exceptions.ParseException
 
 /** Definition for Time properties */
@@ -94,51 +94,49 @@ data class TimeDefinition(
     }
 
     @Suppress("unused")
-    object Model :
-        ContextualDataModel<TimeDefinition, ObjectPropertyDefinitions<TimeDefinition>, ContainsDefinitionsContext, TimeDefinitionContext>(
-            contextTransformer = { TimeDefinitionContext() },
-            properties = object : ObjectPropertyDefinitions<TimeDefinition>() {
-                val required by boolean(1u, TimeDefinition::required, default = true)
-                val final by boolean(2u, TimeDefinition::final, default = false)
-                val unique by boolean(3u, TimeDefinition::unique, default = false)
-                val precision by enum(4u,
-                    TimeDefinition::precision,
-                    enum = TimePrecision,
-                    default = TimePrecision.SECONDS,
-                    capturer = { context: TimePrecisionContext, timePrecision ->
-                        context.precision = timePrecision
-                    }
-                )
-                val minValue by contextual(
-                    index = 5u,
-                    getter = TimeDefinition::minValue,
-                    definition = ContextualValueDefinition(
-                        contextualResolver = { context: TimeDefinitionContext? ->
-                            context?.timeDefinition ?: throw ContextNotFoundException()
-                        }
-                    )
-                )
-                val maxValue by contextual(
-                    index = 6u,
-                    getter = TimeDefinition::maxValue,
-                    definition = ContextualValueDefinition(
-                        contextualResolver = { context: TimeDefinitionContext? ->
-                            context?.timeDefinition ?: throw ContextNotFoundException()
-                        }
-                    )
-                )
-                val default by contextual(
-                    index = 7u,
-                    getter = TimeDefinition::default,
-                    definition = ContextualValueDefinition(
-                        contextualResolver = { context: TimeDefinitionContext? ->
-                            context?.timeDefinition ?: throw ContextNotFoundException()
-                        }
-                    )
-                )
+    object Model : ContextualModel<TimeDefinition, Model, ContainsDefinitionsContext, TimeDefinitionContext>(
+        contextTransformer = { TimeDefinitionContext() },
+    ) {
+        val required by boolean(1u, TimeDefinition::required, default = true)
+        val final by boolean(2u, TimeDefinition::final, default = false)
+        val unique by boolean(3u, TimeDefinition::unique, default = false)
+        val precision by enum(4u,
+            TimeDefinition::precision,
+            enum = TimePrecision,
+            default = TimePrecision.SECONDS,
+            capturer = { context: TimePrecisionContext, timePrecision ->
+                context.precision = timePrecision
             }
-        ) {
-        override fun invoke(values: SimpleObjectValues<TimeDefinition>) = TimeDefinition(
+        )
+        val minValue by contextual(
+            index = 5u,
+            getter = TimeDefinition::minValue,
+            definition = ContextualValueDefinition(
+                contextualResolver = { context: TimeDefinitionContext? ->
+                    context?.timeDefinition ?: throw ContextNotFoundException()
+                }
+            )
+        )
+        val maxValue by contextual(
+            index = 6u,
+            getter = TimeDefinition::maxValue,
+            definition = ContextualValueDefinition(
+                contextualResolver = { context: TimeDefinitionContext? ->
+                    context?.timeDefinition ?: throw ContextNotFoundException()
+                }
+            )
+        )
+        val default by contextual(
+            index = 7u,
+            getter = TimeDefinition::default,
+            definition = ContextualValueDefinition(
+                contextualResolver = { context: TimeDefinitionContext? ->
+                    context?.timeDefinition ?: throw ContextNotFoundException()
+                }
+            )
+        )
+
+        override fun invoke(values: ObjectValues<TimeDefinition, Model>) = TimeDefinition(
             required = values(1u),
             final = values(2u),
             unique = values(3u),

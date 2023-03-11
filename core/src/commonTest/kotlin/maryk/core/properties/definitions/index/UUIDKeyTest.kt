@@ -70,12 +70,12 @@ internal class UUIDKeyTest {
 
     @Test
     fun convertDefinitionToJSONAndBack() {
-        checkJsonConversion(UUIDKey, UUIDKey.Model)
+        checkJsonConversion(UUIDKey, UUIDKey.Model.Model)
     }
 
     @Test
     fun convertDefinitionToYAMLAndBack() {
-        checkYamlConversion(UUIDKey, UUIDKey.Model)
+        checkYamlConversion(UUIDKey, UUIDKey.Model.Model)
     }
 
     @Test

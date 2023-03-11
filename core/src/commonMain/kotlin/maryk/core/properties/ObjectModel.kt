@@ -9,7 +9,7 @@ import kotlin.reflect.KClass
 
 abstract class ObjectModel<DO: Any, P: ObjectPropertyDefinitions<DO>>(
     objClass: KClass<DO>,
-): InternalModel<DO, P, IsPropertyContext, IsPropertyContext>(), IsInternalModel<DO, P> {
+): InternalModel<DO, P, IsPropertyContext, IsPropertyContext>(), IsInternalModel<DO, P, IsPropertyContext, IsPropertyContext> {
     fun create(
         vararg pairs: ValueItem?,
         setDefaults: Boolean = true,

@@ -89,7 +89,7 @@ internal class RootDataModelTest {
     fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(
             TestMarykModel.Model,
-            RootDataModel.Model.Model,
+            RootDataModel.Model,
             { DefinitionsConversionContext() },
             ::compareDataModels
         )

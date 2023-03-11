@@ -44,7 +44,7 @@ class ChangeTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.valueChange, Change.Model, { this.context })
+        checkProtoBufConversion(this.valueChange, Change, { this.context })
     }
 
     @Test

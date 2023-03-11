@@ -61,7 +61,7 @@ class AggregationsResponseTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.aggregationsResponse, AggregationsResponse.Model, { this.context })
+        checkProtoBufConversion(this.aggregationsResponse, AggregationsResponse, { this.context })
     }
 
     @Test

@@ -14,7 +14,7 @@ internal class VersionTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.version, Version.Model)
+        checkProtoBufConversion(this.version, Version)
     }
 
     @Test

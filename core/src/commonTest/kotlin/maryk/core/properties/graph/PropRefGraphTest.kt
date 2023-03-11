@@ -44,7 +44,7 @@ class PropRefGraphTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.graph, PropRefGraph.Model, { this.context })
+        checkProtoBufConversion(this.graph, PropRefGraph, { this.context })
     }
 
     @Test

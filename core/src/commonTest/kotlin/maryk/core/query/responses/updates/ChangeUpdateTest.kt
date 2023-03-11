@@ -32,7 +32,7 @@ internal class ChangeUpdateTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.changeUpdate, ChangeUpdate.Model, { this.context })
+        checkProtoBufConversion(this.changeUpdate, ChangeUpdate, { this.context })
     }
 
     @Test

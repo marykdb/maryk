@@ -36,7 +36,7 @@ class RootPropRefGraphTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.graph, RootPropRefGraph.Model, { this.context })
+        checkProtoBufConversion(this.graph, RootPropRefGraph, { this.context })
     }
 
     @Test

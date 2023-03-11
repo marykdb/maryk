@@ -38,8 +38,8 @@ class DeleteTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.propertyDelete, Delete.Model, { this.context })
-        checkProtoBufConversion(this.propertyDeleteMultiple, Delete.Model, { this.context })
+        checkProtoBufConversion(this.propertyDelete, Delete, { this.context })
+        checkProtoBufConversion(this.propertyDeleteMultiple, Delete, { this.context })
     }
 
     @Test

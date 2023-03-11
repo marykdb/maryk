@@ -125,8 +125,8 @@ internal class StringDefinitionTest {
 
     @Test
     fun convertDefinitionToProtoBufAndBack() {
-        checkProtoBufConversion(this.def, StringDefinition.Model.Model)
-        checkProtoBufConversion(this.defMaxDefined, StringDefinition.Model.Model)
+        checkProtoBufConversion(this.def, StringDefinition.Model)
+        checkProtoBufConversion(this.defMaxDefined, StringDefinition.Model)
     }
 
     @Test

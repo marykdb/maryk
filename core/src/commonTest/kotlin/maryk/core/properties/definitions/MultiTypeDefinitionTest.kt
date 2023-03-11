@@ -168,8 +168,8 @@ internal class MultiTypeDefinitionTest {
 
     @Test
     fun convertDefinitionToProtoBufAndBack() {
-        checkProtoBufConversion(this.def, MultiTypeDefinition.Model.Model, { context })
-        checkProtoBufConversion(this.defMaxDefined, MultiTypeDefinition.Model.Model, { context })
+        checkProtoBufConversion(this.def, MultiTypeDefinition.Model, { context })
+        checkProtoBufConversion(this.defMaxDefined, MultiTypeDefinition.Model, { context })
     }
 
     @Test

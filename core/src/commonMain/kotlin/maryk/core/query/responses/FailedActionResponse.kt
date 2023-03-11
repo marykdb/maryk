@@ -1,7 +1,6 @@
 package maryk.core.query.responses
 
-import maryk.core.models.SimpleQueryDataModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SimpleQueryModel
 import maryk.core.properties.definitions.enum
 import maryk.core.properties.definitions.string
 import maryk.core.properties.enum.IndexedEnumComparable
@@ -27,12 +26,11 @@ data class FailedActionResponse(
     val message: String,
     val failType: FailType
 ) : IsResponse {
-    internal companion object : SimpleQueryDataModel<FailedActionResponse>(
-        properties = object : ObjectPropertyDefinitions<FailedActionResponse>() {
-            val message by string(1u, FailedActionResponse::message)
-            val failType by enum(2u, FailedActionResponse::failType, enum = FailType)
-        }
-    ) {
+    @Suppress("unused")
+    internal companion object : SimpleQueryModel<FailedActionResponse>() {
+        val message by string(1u, FailedActionResponse::message)
+        val failType by enum(2u, FailedActionResponse::failType, enum = FailType)
+
         override fun invoke(values: SimpleObjectValues<FailedActionResponse>) = FailedActionResponse(
             message = values(1u),
             failType = values(2u)

@@ -23,7 +23,7 @@ class NotTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.not, Not.Model, { this.context })
+        checkProtoBufConversion(this.not, Not, { this.context })
     }
 
     @Test

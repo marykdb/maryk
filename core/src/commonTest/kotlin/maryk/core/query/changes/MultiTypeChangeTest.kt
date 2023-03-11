@@ -28,7 +28,7 @@ class MultiTypeChangeTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.multiTypeChange, MultiTypeChange.Model, { this.context })
+        checkProtoBufConversion(this.multiTypeChange, MultiTypeChange, { this.context })
     }
 
     @Test

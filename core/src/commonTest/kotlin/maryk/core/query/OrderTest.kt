@@ -35,7 +35,7 @@ class OrderTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.order, Order.Model.Model, { this.context }, ::compareRequest)
+        checkProtoBufConversion(this.order, Order.Model, { this.context }, ::compareRequest)
     }
 
     @Test
@@ -56,7 +56,7 @@ class OrderTest {
 
     @Test
     fun convertDefaultToProtoBufAndBack() {
-        checkProtoBufConversion(this.orderDefault, Order.Model.Model, { this.context }, ::compareRequest)
+        checkProtoBufConversion(this.orderDefault, Order.Model, { this.context }, ::compareRequest)
     }
 
     @Test
@@ -73,7 +73,7 @@ class OrderTest {
 
     @Test
     fun convertDescToProtoBufAndBack() {
-        checkProtoBufConversion(this.orderDesc, Order.Model.Model, { this.context }, ::compareRequest)
+        checkProtoBufConversion(this.orderDesc, Order.Model, { this.context }, ::compareRequest)
     }
 
     @Test

@@ -25,7 +25,7 @@ class LessThanEqualsTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.lessThanEquals, LessThanEquals.Model, { this.context })
+        checkProtoBufConversion(this.lessThanEquals, LessThanEquals, { this.context })
     }
 
     @Test

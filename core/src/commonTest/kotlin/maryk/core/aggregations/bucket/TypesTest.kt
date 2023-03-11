@@ -30,7 +30,7 @@ class TypesTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.types, Types.Model, { this.context })
+        checkProtoBufConversion(this.types, Types, { this.context })
     }
 
     @Test

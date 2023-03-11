@@ -58,13 +58,13 @@ internal fun <DO : ValidationException> ObjectPropertyDefinitions<DO>.addReferen
 
 @SharedImmutable
 internal val mapOfValidationExceptionDefinitions = mapOf(
-    ALREADY_EXISTS to EmbeddedObjectDefinition(dataModel = { AlreadyExistsException }),
-    ALREADY_SET to EmbeddedObjectDefinition(dataModel = { AlreadySetException }),
-    INVALID_SIZE to EmbeddedObjectDefinition(dataModel = { InvalidSizeException }),
-    INVALID_VALUE to EmbeddedObjectDefinition(dataModel = { InvalidValueException }),
-    OUT_OF_RANGE to EmbeddedObjectDefinition(dataModel = { OutOfRangeException }),
-    REQUIRED to EmbeddedObjectDefinition(dataModel = { RequiredException }),
-    NOT_ENOUGH_ITEMS to EmbeddedObjectDefinition(dataModel = { NotEnoughItemsException }),
-    TOO_MANY_ITEMS to EmbeddedObjectDefinition(dataModel = { TooManyItemsException }),
-    UMBRELLA to EmbeddedObjectDefinition(dataModel = { ValidationUmbrellaException })
+    ALREADY_EXISTS to EmbeddedObjectDefinition(dataModel = { AlreadyExistsException.Model }),
+    ALREADY_SET to EmbeddedObjectDefinition(dataModel = { AlreadySetException.Model }),
+    INVALID_SIZE to EmbeddedObjectDefinition(dataModel = { InvalidSizeException.Model }),
+    INVALID_VALUE to EmbeddedObjectDefinition(dataModel = { InvalidValueException.Model }),
+    OUT_OF_RANGE to EmbeddedObjectDefinition(dataModel = { OutOfRangeException.Model }),
+    REQUIRED to EmbeddedObjectDefinition(dataModel = { RequiredException.Model }),
+    NOT_ENOUGH_ITEMS to EmbeddedObjectDefinition(dataModel = { NotEnoughItemsException.Model }),
+    TOO_MANY_ITEMS to EmbeddedObjectDefinition(dataModel = { TooManyItemsException.Model }),
+    UMBRELLA to EmbeddedObjectDefinition(dataModel = { ValidationUmbrellaException.Model })
 )

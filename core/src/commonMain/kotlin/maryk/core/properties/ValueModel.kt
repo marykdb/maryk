@@ -1,14 +1,14 @@
 package maryk.core.properties
 
-import maryk.core.models.IsObjectDataModel
+import maryk.core.models.AbstractObjectDataModel
 import maryk.core.models.ValueDataModel
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.values.ObjectValues
 import kotlin.reflect.KClass
 
-interface IsValueModel<DO: ValueDataObject, P: IsObjectPropertyDefinitions<DO>> {
+interface IsValueModel<DO: ValueDataObject, P: IsObjectPropertyDefinitions<DO>>: IsBaseModel<DO, P, IsPropertyContext, IsPropertyContext> {
     @Suppress("PropertyName")
-    val Model: IsObjectDataModel<DO, P>
+    override val Model: AbstractObjectDataModel<DO, P, IsPropertyContext, IsPropertyContext>
 }
 
 abstract class ValueModel<DO: ValueDataObject, P: ObjectPropertyDefinitions<DO>>(

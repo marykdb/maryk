@@ -36,7 +36,7 @@ class RootMarykTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.rootMaryk, RootMaryk.Model, { DefinitionsContext() }, ::compareRootMaryk, true)
+        checkProtoBufConversion(this.rootMaryk, RootMaryk, { DefinitionsContext() }, ::compareRootMaryk, true)
     }
 
     @Test

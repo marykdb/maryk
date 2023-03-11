@@ -19,8 +19,8 @@ class ScanSelectRequestTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(scanRequest, ScanRequest.Model, { this.context })
-        checkProtoBufConversion(scanMaxRequest, ScanRequest.Model, { this.context })
+        checkProtoBufConversion(scanRequest, ScanRequest, { this.context })
+        checkProtoBufConversion(scanMaxRequest, ScanRequest, { this.context })
     }
 
     @Test

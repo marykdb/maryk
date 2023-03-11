@@ -47,7 +47,7 @@ class ExistsTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.exists, Exists.Model, { this.context })
+        checkProtoBufConversion(this.exists, Exists, { this.context })
     }
 
     @Test

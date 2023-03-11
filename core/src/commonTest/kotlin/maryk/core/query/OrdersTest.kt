@@ -30,7 +30,7 @@ class OrdersTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.orders, Orders.Model, { this.context }, ::compareRequest)
+        checkProtoBufConversion(this.orders, Orders, { this.context }, ::compareRequest)
     }
 
     @Test

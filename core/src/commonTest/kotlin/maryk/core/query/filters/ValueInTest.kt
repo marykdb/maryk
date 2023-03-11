@@ -25,7 +25,7 @@ class ValueInTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.valueIn, ValueIn.Model, { this.context })
+        checkProtoBufConversion(this.valueIn, ValueIn, { this.context })
     }
 
     @Test

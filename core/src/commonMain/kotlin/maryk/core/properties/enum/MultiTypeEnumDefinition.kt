@@ -6,7 +6,6 @@ import maryk.core.exceptions.SerializationException
 import maryk.core.models.ContextualDataModel
 import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.NumberDefinition
@@ -86,7 +85,9 @@ open class MultiTypeEnumDefinition<E : MultiTypeEnum<*>> internal constructor(
         unknownCreator = unknownCreator
     )
 
-    internal object Model : ContextualModel<MultiTypeEnumDefinition<MultiTypeEnum<*>>, ContainsDefinitionsContext, MultiTypeDefinitionContext>() {
+    internal object Model : ContextualModel<MultiTypeEnumDefinition<MultiTypeEnum<*>>, Model, ContainsDefinitionsContext, MultiTypeDefinitionContext>(
+        contextTransformer = { MultiTypeDefinitionContext(it) },
+    ) {
         val name by string(
             1u,
             MultiTypeEnumDefinition<*>::name
@@ -128,15 +129,14 @@ open class MultiTypeEnumDefinition<E : MultiTypeEnum<*>> internal constructor(
             valueDefinition = StringDefinition()
         )
 
-        override fun invoke(values: ObjectValues<MultiTypeEnumDefinition<MultiTypeEnum<*>>, ObjectPropertyDefinitions<MultiTypeEnumDefinition<MultiTypeEnum<*>>>>): MultiTypeEnumDefinition<MultiTypeEnum<*>> {
-            return Model(values)
-        }
+        override fun invoke(values: ObjectValues<MultiTypeEnumDefinition<MultiTypeEnum<*>>, Model>): MultiTypeEnumDefinition<MultiTypeEnum<*>> =
+            Model(values)
 
-        override val Model = object : ContextualDataModel<MultiTypeEnumDefinition<MultiTypeEnum<*>>, ObjectPropertyDefinitions<MultiTypeEnumDefinition<MultiTypeEnum<*>>>, ContainsDefinitionsContext, MultiTypeDefinitionContext>(
+        override val Model = object : ContextualDataModel<MultiTypeEnumDefinition<MultiTypeEnum<*>>, Model, ContainsDefinitionsContext, MultiTypeDefinitionContext>(
             properties = MultiTypeEnumDefinition.Model,
-            contextTransformer = { MultiTypeDefinitionContext(it) }
+            contextTransformer = contextTransformer,
         ) {
-            override fun invoke(values: ObjectValues<MultiTypeEnumDefinition<MultiTypeEnum<*>>, ObjectPropertyDefinitions<MultiTypeEnumDefinition<MultiTypeEnum<*>>>>): MultiTypeEnumDefinition<MultiTypeEnum<*>> =
+            override fun invoke(values: ObjectValues<MultiTypeEnumDefinition<MultiTypeEnum<*>>, Model>): MultiTypeEnumDefinition<MultiTypeEnum<*>> =
                 MultiTypeEnumDefinition(
                     name = values(1u),
                     optionalCases = values<Array<MultiTypeEnum<*>>?>(2u)?.let { { it } },
@@ -146,7 +146,7 @@ open class MultiTypeEnumDefinition<E : MultiTypeEnum<*>> internal constructor(
                 )
 
             override fun writeJson(
-                values: ObjectValues<MultiTypeEnumDefinition<MultiTypeEnum<*>>, ObjectPropertyDefinitions<MultiTypeEnumDefinition<MultiTypeEnum<*>>>>,
+                values: ObjectValues<MultiTypeEnumDefinition<MultiTypeEnum<*>>, Model>,
                 writer: IsJsonLikeWriter,
                 context: MultiTypeDefinitionContext?
             ) {
@@ -181,7 +181,7 @@ open class MultiTypeEnumDefinition<E : MultiTypeEnum<*>> internal constructor(
             override fun readJson(
                 reader: IsJsonLikeReader,
                 context: MultiTypeDefinitionContext?
-            ): ObjectValues<MultiTypeEnumDefinition<MultiTypeEnum<*>>, ObjectPropertyDefinitions<MultiTypeEnumDefinition<MultiTypeEnum<*>>>> {
+            ): ObjectValues<MultiTypeEnumDefinition<MultiTypeEnum<*>>, Model> {
                 if (reader.currentToken == JsonToken.StartDocument) {
                     reader.nextToken()
                 }

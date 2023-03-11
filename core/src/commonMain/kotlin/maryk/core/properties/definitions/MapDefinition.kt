@@ -2,7 +2,7 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.RequestException
-import maryk.core.models.ContextualDataModel
+import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -15,7 +15,7 @@ import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.query.ContainsDefinitionsContext
-import maryk.core.values.SimpleObjectValues
+import maryk.core.values.ObjectValues
 
 /** Definition for Map property */
 data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal constructor(
@@ -50,77 +50,74 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
         default: Map<K, V>? = null
     ) : this(required, final, minSize, maxSize, keyDefinition, valueDefinition as IsSubDefinition<V, CX>, default)
 
-    @Suppress("unused")
-    object Model :
-        ContextualDataModel<MapDefinition<*, *, *>, ObjectPropertyDefinitions<MapDefinition<*, *, *>>, ContainsDefinitionsContext, KeyValueDefinitionContext>(
-            contextTransformer = { KeyValueDefinitionContext(it) },
-            properties = object : ObjectPropertyDefinitions<MapDefinition<*, *, *>>() {
-                val required by boolean(1u, MapDefinition<*, *, *>::required, default = true)
-                val final by boolean(2u, MapDefinition<*, *, *>::final, default = false)
-                val minSize by number(3u, MapDefinition<*, *, *>::minSize, type = UInt32)
-                val maxSize by number(4u, MapDefinition<*, *, *>::maxSize, type = UInt32)
-                val keyDefinition by contextual(
-                    index = 5u,
-                    getter = MapDefinition<*, *, *>::keyDefinition,
-                    definition = ContextTransformerDefinition(
-                        contextTransformer = { it?.definitionsContext },
-                        definition = InternalMultiTypeDefinition(
-                            typeEnum = PropertyDefinitionType,
-                            definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
-                        )
-                    ),
-                    toSerializable = { value, _ ->
-                        val defType = value as? IsTransportablePropertyDefinitionType<*>
-                            ?: throw RequestException("$value is not transportable")
-                        TypedValue(defType.propertyDefinitionType, defType)
-                    },
-                    fromSerializable = {
-                        it?.value as IsSimpleValueDefinition<*, *>?
-                    },
-                    capturer = { context: KeyValueDefinitionContext, value: TypedValue<PropertyDefinitionType, *> ->
-                        @Suppress("UNCHECKED_CAST")
-                        context.keyDefinition = value.value as IsSimpleValueDefinition<Any, IsPropertyContext>
-                    }
+    object Model : ContextualModel<MapDefinition<*, *, *>, Model, ContainsDefinitionsContext, KeyValueDefinitionContext>(
+        contextTransformer = { KeyValueDefinitionContext(it) },
+    ) {
+        val required by boolean(1u, MapDefinition<*, *, *>::required, default = true)
+        val final by boolean(2u, MapDefinition<*, *, *>::final, default = false)
+        val minSize by number(3u, MapDefinition<*, *, *>::minSize, type = UInt32)
+        val maxSize by number(4u, MapDefinition<*, *, *>::maxSize, type = UInt32)
+        val keyDefinition by contextual(
+            index = 5u,
+            getter = MapDefinition<*, *, *>::keyDefinition,
+            definition = ContextTransformerDefinition(
+                contextTransformer = { it?.definitionsContext },
+                definition = InternalMultiTypeDefinition(
+                    typeEnum = PropertyDefinitionType,
+                    definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
                 )
-
-                val valueDefinition by contextual(
-                    index = 6u,
-                    getter = MapDefinition<*, *, *>::valueDefinition,
-                    definition = ContextTransformerDefinition(
-                        contextTransformer = { it?.definitionsContext },
-                        definition = InternalMultiTypeDefinition(
-                            typeEnum = PropertyDefinitionType,
-                            definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
-                        )
-                    ),
-                    toSerializable = { value, _ ->
-                        val defType = value as? IsTransportablePropertyDefinitionType<*>
-                            ?: throw RequestException("$value is not transportable")
-                        TypedValue(defType.propertyDefinitionType, value)
-                    },
-                    fromSerializable = {
-                        it?.value as IsSubDefinition<*, *>?
-                    },
-                    capturer = { context: KeyValueDefinitionContext, value ->
-                        @Suppress("UNCHECKED_CAST")
-                        context.valueDefinition = value.value as IsSubDefinition<Any, IsPropertyContext>
-                    }
-                )
-
+            ),
+            toSerializable = { value, _ ->
+                val defType = value as? IsTransportablePropertyDefinitionType<*>
+                    ?: throw RequestException("$value is not transportable")
+                TypedValue(defType.propertyDefinitionType, defType)
+            },
+            fromSerializable = {
+                it?.value as IsSimpleValueDefinition<*, *>?
+            },
+            capturer = { context: KeyValueDefinitionContext, value: TypedValue<PropertyDefinitionType, *> ->
                 @Suppress("UNCHECKED_CAST")
-                val default by contextual(
-                    index = 7u,
-                    getter = MapDefinition<*, *, *>::default,
-                    definition = ContextualMapDefinition(
-                        contextualResolver = { context: KeyValueDefinitionContext? ->
-                            context?.mapDefinition ?: throw ContextNotFoundException()
-                        },
-                        required = false
-                    ) as IsContextualEncodable<Map<out Any, Any>, KeyValueDefinitionContext>
-                )
+                context.keyDefinition = value.value as IsSimpleValueDefinition<Any, IsPropertyContext>
             }
-        ) {
-        override fun invoke(values: SimpleObjectValues<MapDefinition<*, *, *>>) = MapDefinition<Any, Any, IsPropertyContext>(
+        )
+
+        val valueDefinition by contextual(
+            index = 6u,
+            getter = MapDefinition<*, *, *>::valueDefinition,
+            definition = ContextTransformerDefinition(
+                contextTransformer = { it?.definitionsContext },
+                definition = InternalMultiTypeDefinition(
+                    typeEnum = PropertyDefinitionType,
+                    definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
+                )
+            ),
+            toSerializable = { value, _ ->
+                val defType = value as? IsTransportablePropertyDefinitionType<*>
+                    ?: throw RequestException("$value is not transportable")
+                TypedValue(defType.propertyDefinitionType, value)
+            },
+            fromSerializable = {
+                it?.value as IsSubDefinition<*, *>?
+            },
+            capturer = { context: KeyValueDefinitionContext, value ->
+                @Suppress("UNCHECKED_CAST")
+                context.valueDefinition = value.value as IsSubDefinition<Any, IsPropertyContext>
+            }
+        )
+
+        @Suppress("UNCHECKED_CAST")
+        val default by contextual(
+            index = 7u,
+            getter = MapDefinition<*, *, *>::default,
+            definition = ContextualMapDefinition(
+                contextualResolver = { context: KeyValueDefinitionContext? ->
+                    context?.mapDefinition ?: throw ContextNotFoundException()
+                },
+                required = false
+            ) as IsContextualEncodable<Map<out Any, Any>, KeyValueDefinitionContext>
+        )
+
+        override fun invoke(values: ObjectValues<MapDefinition<*, *, *>, Model>) = MapDefinition<Any, Any, IsPropertyContext>(
             required = values(1u),
             final = values(2u),
             minSize = values(3u),

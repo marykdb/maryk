@@ -60,7 +60,7 @@ class EnumValuesResponseTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.enumValuesResponse, EnumValuesResponse.Model, { this.context })
+        checkProtoBufConversion(this.enumValuesResponse, EnumValuesResponse, { this.context })
     }
 
     @Test

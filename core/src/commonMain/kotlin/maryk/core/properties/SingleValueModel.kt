@@ -4,9 +4,9 @@ import maryk.core.models.SingleValueDataModel
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.values.ObjectValues
 
-interface IsSingleValueModel<T : Any, TO : Any, DO : Any, P : IsObjectPropertyDefinitions<DO>, CX : IsPropertyContext> {
+interface IsSingleValueModel<T : Any, TO : Any, DO : Any, P : IsObjectPropertyDefinitions<DO>, CX : IsPropertyContext>: IsBaseModel<DO, P, CX, CX> {
     @Suppress("PropertyName")
-    val Model: SingleValueDataModel<T, TO, DO, P, CX>
+    override val Model: SingleValueDataModel<T, TO, DO, P, CX>
 }
 
 typealias SingleTypedValueModel<T, DO, P, CX> = SingleValueModel<T, T, DO, P, CX>

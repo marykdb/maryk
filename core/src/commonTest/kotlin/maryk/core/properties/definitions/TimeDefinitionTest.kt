@@ -165,13 +165,13 @@ internal class TimeDefinitionTest {
 
     @Test
     fun convertDefinitionToJSONAndBack() {
-        checkJsonConversion(this.def, TimeDefinition.Model)
-        checkJsonConversion(this.defMaxDefined, TimeDefinition.Model)
+        checkJsonConversion(this.def, TimeDefinition.Model.Model)
+        checkJsonConversion(this.defMaxDefined, TimeDefinition.Model.Model)
     }
 
     @Test
     fun convertDefinitionToYAMLAndBack() {
-        checkYamlConversion(this.def, TimeDefinition.Model)
+        checkYamlConversion(this.def, TimeDefinition.Model.Model)
 
         expect(
             """
@@ -185,7 +185,7 @@ internal class TimeDefinitionTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.defMaxDefined, TimeDefinition.Model)
+            checkYamlConversion(this.defMaxDefined, TimeDefinition.Model.Model)
         }
     }
 

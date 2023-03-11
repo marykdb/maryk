@@ -1,7 +1,6 @@
 package maryk.core.properties.exceptions
 
-import maryk.core.models.SimpleQueryDataModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SimpleQueryModel
 import maryk.core.properties.exceptions.ValidationExceptionType.ALREADY_SET
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.values.SimpleObjectValues
@@ -18,13 +17,12 @@ data class AlreadySetException(
 ) {
     override val validationExceptionType = ALREADY_SET
 
-    internal companion object : SimpleQueryDataModel<AlreadySetException>(
-        properties = object : ObjectPropertyDefinitions<AlreadySetException>() {
-            val reference by addReference(AlreadySetException::reference)
-        }
-    ) {
-        override fun invoke(values: SimpleObjectValues<AlreadySetException>) = AlreadySetException(
-            reference = values(1u)
-        )
+    internal companion object : SimpleQueryModel<AlreadySetException>() {
+        val reference by addReference(AlreadySetException::reference)
+
+        override fun invoke(values: SimpleObjectValues<AlreadySetException>) =
+            AlreadySetException(
+                reference = values(1u)
+            )
     }
 }

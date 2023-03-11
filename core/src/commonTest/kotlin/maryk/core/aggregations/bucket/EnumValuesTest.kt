@@ -30,7 +30,7 @@ class EnumValuesTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.enumValues, EnumValues.Model, { this.context })
+        checkProtoBufConversion(this.enumValues, EnumValues, { this.context })
     }
 
     @Test

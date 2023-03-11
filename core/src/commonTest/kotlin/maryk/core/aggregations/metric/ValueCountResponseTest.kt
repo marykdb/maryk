@@ -24,7 +24,7 @@ class ValueCountResponseTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.valueCountResponse, ValueCountResponse.Model, { this.context })
+        checkProtoBufConversion(this.valueCountResponse, ValueCountResponse, { this.context })
     }
 
     @Test

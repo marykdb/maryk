@@ -23,7 +23,7 @@ class SumTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.sum, Sum.Model, { this.context })
+        checkProtoBufConversion(this.sum, Sum, { this.context })
     }
 
     @Test

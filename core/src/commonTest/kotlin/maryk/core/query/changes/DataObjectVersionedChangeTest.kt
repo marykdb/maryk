@@ -53,7 +53,7 @@ class DataObjectVersionedChangeTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.dataObjectVersionedChanges, DataObjectVersionedChange.Model, { this.context })
+        checkProtoBufConversion(this.dataObjectVersionedChanges, DataObjectVersionedChange, { this.context })
     }
 
     @Test

@@ -24,7 +24,7 @@ class SumResponseTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.sumResponse, SumResponse.Model, { this.context })
+        checkProtoBufConversion(this.sumResponse, SumResponse, { this.context })
     }
 
     @Test

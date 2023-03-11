@@ -17,7 +17,7 @@ class CollectRequestTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(collectRequest, CollectRequest.Model, { this.context })
+        checkProtoBufConversion(collectRequest, CollectRequest, { this.context })
     }
 
     @Test

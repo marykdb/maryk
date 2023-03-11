@@ -60,7 +60,7 @@ class TypesResponseTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.typesResponse, TypesResponse.Model, { this.context })
+        checkProtoBufConversion(this.typesResponse, TypesResponse, { this.context })
     }
 
     @Test

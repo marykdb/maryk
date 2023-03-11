@@ -6,6 +6,7 @@ import maryk.core.models.AbstractObjectDataModel
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.ObjectDataModel
 import maryk.core.models.SimpleObjectDataModel
+import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsValuesPropertyDefinitions
@@ -139,66 +140,71 @@ class EmbeddedObjectDefinition<DO : Any, P : IsObjectPropertyDefinitions<DO>, DM
         return result
     }
 
-    @Suppress("unused")
-    object Model :
-        ContextualDataModel<EmbeddedObjectDefinition<*, *, *, *, *>, ObjectPropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>, ContainsDefinitionsContext, ModelContext>(
-            contextTransformer = { ModelContext(it) },
-            properties = object : ObjectPropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>() {
-                val required by boolean(1u, EmbeddedObjectDefinition<*, *, *, *, *>::required, default = true)
-                val final by boolean(2u, EmbeddedObjectDefinition<*, *, *, *, *>::final, default = false)
-                val dataModel by contextual(
-                    index = 3u,
-                    definition = ContextualModelReferenceDefinition(
-                        contextualResolver = { context: ModelContext?, name ->
-                            context?.definitionsContext?.let {
-                                @Suppress("UNCHECKED_CAST")
-                                it.dataModels[name] as? Unit.() -> ObjectDataModel<*, *>
-                                    ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
-                            } ?: throw ContextNotFoundException()
-                        }
-                    ),
-                    getter = {
-                        { it.dataModel as ObjectDataModel<*, *> }
-                    },
-                    toSerializable = { value: (Unit.() -> ObjectDataModel<*, *>)?, _ ->
-                        value?.invoke(Unit)?.let { model ->
-                            DataModelReference(model.name, value)
-                        }
-                    },
-                    fromSerializable = { it?.get },
-                    capturer = { context: ModelContext, dataModel: IsDataModelReference<ObjectDataModel<*, *>> ->
-                        context.definitionsContext?.let {
-                            if (!it.dataModels.containsKey(dataModel.name)) {
-                                it.dataModels[dataModel.name] = dataModel.get
-                            }
-                        } ?: throw ContextNotFoundException()
-
+    object Model : ContextualModel<EmbeddedObjectDefinition<*, *, *, *, *>, Model, ContainsDefinitionsContext, ModelContext>(
+        contextTransformer = { ModelContext(it) }
+    ) {
+        val required by boolean(1u, EmbeddedObjectDefinition<*, *, *, *, *>::required, default = true)
+        val final by boolean(2u, EmbeddedObjectDefinition<*, *, *, *, *>::final, default = false)
+        val dataModel by contextual(
+            index = 3u,
+            definition = ContextualModelReferenceDefinition(
+                contextualResolver = { context: ModelContext?, name ->
+                    context?.definitionsContext?.let {
                         @Suppress("UNCHECKED_CAST")
-                        context.model =
-                            dataModel.get as Unit.() -> AbstractObjectDataModel<Any, ObjectPropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>
+                        it.dataModels[name] as? Unit.() -> ObjectDataModel<*, *>
+                            ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
+                    } ?: throw ContextNotFoundException()
+                }
+            ),
+            getter = {
+                { it.dataModel as ObjectDataModel<*, *> }
+            },
+            toSerializable = { value: (Unit.() -> ObjectDataModel<*, *>)?, _ ->
+                value?.invoke(Unit)?.let { model ->
+                    DataModelReference(model.name, value)
+                }
+            },
+            fromSerializable = { it?.get },
+            capturer = { context: ModelContext, dataModel: IsDataModelReference<ObjectDataModel<*, *>> ->
+                context.definitionsContext?.let {
+                    if (!it.dataModels.containsKey(dataModel.name)) {
+                        it.dataModels[dataModel.name] = dataModel.get
                     }
-                )
+                } ?: throw ContextNotFoundException()
 
-                val default by contextual(
-                    index = 4u,
-                    getter = EmbeddedObjectDefinition<*, *, *, *, *>::default,
-                    definition = ContextualEmbeddedObjectDefinition(
-                        contextualResolver = { context: ModelContext? ->
-                            @Suppress("UNCHECKED_CAST")
-                            context?.model?.invoke(Unit) as? SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>?
-                                ?: throw ContextNotFoundException()
-                        }
-                    )
-                )
+                @Suppress("UNCHECKED_CAST")
+                context.model =
+                    dataModel.get as Unit.() -> AbstractObjectDataModel<Any, ObjectPropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>
             }
-        ) {
-        override fun invoke(values: ObjectValues<EmbeddedObjectDefinition<*, *, *, *, *>, ObjectPropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>>) =
-            EmbeddedObjectDefinition(
-                required = values(1u),
-                final = values(2u),
-                dataModel = values<Unit.() -> ObjectDataModel<Any, ObjectPropertyDefinitions<Any>>>(3u),
-                default = values(4u)
+        )
+
+        val default by contextual(
+            index = 4u,
+            getter = EmbeddedObjectDefinition<*, *, *, *, *>::default,
+            definition = ContextualEmbeddedObjectDefinition(
+                contextualResolver = { context: ModelContext? ->
+                    @Suppress("UNCHECKED_CAST")
+                    context?.model?.invoke(Unit) as? SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>?
+                        ?: throw ContextNotFoundException()
+                }
             )
+        )
+
+        override fun invoke(values: ObjectValues<EmbeddedObjectDefinition<*, *, *, *, *>, Model>): EmbeddedObjectDefinition<*, *, *, *, *> =
+            Model.invoke(values)
+
+        override val Model = object : ContextualDataModel<EmbeddedObjectDefinition<*, *, *, *, *>, Model, ContainsDefinitionsContext, ModelContext>(
+            contextTransformer = contextTransformer,
+            properties = this,
+        ) {
+            override fun invoke(values: ObjectValues<EmbeddedObjectDefinition<*, *, *, *, *>, Model>) =
+                EmbeddedObjectDefinition(
+                    required = values(1u),
+                    final = values(2u),
+                    dataModel = values<Unit.() -> ObjectDataModel<Any, ObjectPropertyDefinitions<Any>>>(3u),
+                    default = values(4u)
+                )
+        }
     }
 }
 

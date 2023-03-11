@@ -59,7 +59,7 @@ internal class ReversedTest {
     fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(
             value = Reversed(MarykModel.boolean.ref()),
-            dataModel = Reversed.Model.Model,
+            dataModel = Reversed.Model,
             context = { context }
         )
     }

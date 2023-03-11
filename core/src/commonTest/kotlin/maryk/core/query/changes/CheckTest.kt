@@ -25,7 +25,7 @@ class CheckTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.valueCheck, Check.Model, { this.context })
+        checkProtoBufConversion(this.valueCheck, Check, { this.context })
     }
 
     @Test

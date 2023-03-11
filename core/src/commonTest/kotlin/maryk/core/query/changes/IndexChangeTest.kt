@@ -24,7 +24,7 @@ internal class IndexChangeTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.indexChange, IndexChange.Model)
+        checkProtoBufConversion(this.indexChange, IndexChange)
     }
 
     @Test

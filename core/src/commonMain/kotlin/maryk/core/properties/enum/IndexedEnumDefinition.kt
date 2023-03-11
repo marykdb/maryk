@@ -5,7 +5,6 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.SerializationException
 import maryk.core.models.ContextualDataModel
 import maryk.core.properties.ContextualModel
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.SingleOrListDefinition
 import maryk.core.properties.definitions.StringDefinition
@@ -62,7 +61,9 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
         unknownCreator = unknownCreator
     )
 
-    internal object Model : ContextualModel<IndexedEnumDefinition<IndexedEnum>, ContainsDefinitionsContext, EnumNameContext>() {
+    internal object Model : ContextualModel<IndexedEnumDefinition<IndexedEnum>, Model, ContainsDefinitionsContext, EnumNameContext>(
+        contextTransformer = { EnumNameContext(it) }
+    ) {
         val name by contextual(
             index = 1u,
             getter = IndexedEnumDefinition<*>::name,
@@ -145,14 +146,14 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
             valueDefinition = StringDefinition()
         )
 
-        override fun invoke(values: ObjectValues<IndexedEnumDefinition<IndexedEnum>, ObjectPropertyDefinitions<IndexedEnumDefinition<IndexedEnum>>>): IndexedEnumDefinition<IndexedEnum> =
+        override fun invoke(values: ObjectValues<IndexedEnumDefinition<IndexedEnum>, Model>): IndexedEnumDefinition<IndexedEnum> =
             Model.invoke(values)
 
-        override val Model = object : ContextualDataModel<IndexedEnumDefinition<IndexedEnum>, ObjectPropertyDefinitions<IndexedEnumDefinition<IndexedEnum>>, ContainsDefinitionsContext, EnumNameContext>(
+        override val Model = object : ContextualDataModel<IndexedEnumDefinition<IndexedEnum>, Model, ContainsDefinitionsContext, EnumNameContext>(
             properties = IndexedEnumDefinition.Model,
-            contextTransformer = { EnumNameContext(it) }
+            contextTransformer = contextTransformer,
         ) {
-            override fun invoke(values: ObjectValues<IndexedEnumDefinition<IndexedEnum>, ObjectPropertyDefinitions<IndexedEnumDefinition<IndexedEnum>>>) =
+            override fun invoke(values: ObjectValues<IndexedEnumDefinition<IndexedEnum>, Model>) =
                 IndexedEnumDefinition<IndexedEnum>(
                     name = values(1u),
                     optionalCases = values(2u),
@@ -162,7 +163,7 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
                 )
 
             override fun writeJson(
-                values: ObjectValues<IndexedEnumDefinition<IndexedEnum>, ObjectPropertyDefinitions<IndexedEnumDefinition<IndexedEnum>>>,
+                values: ObjectValues<IndexedEnumDefinition<IndexedEnum>, Model>,
                 writer: IsJsonLikeWriter,
                 context: EnumNameContext?
             ) {
@@ -197,7 +198,7 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
             override fun readJson(
                 reader: IsJsonLikeReader,
                 context: EnumNameContext?
-            ): ObjectValues<IndexedEnumDefinition<IndexedEnum>, ObjectPropertyDefinitions<IndexedEnumDefinition<IndexedEnum>>> {
+            ): ObjectValues<IndexedEnumDefinition<IndexedEnum>, Model> {
                 if (reader.currentToken == JsonToken.StartDocument) {
                     reader.nextToken()
                 }

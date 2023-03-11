@@ -41,7 +41,7 @@ class AndTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.and, And.Model, { this.context })
+        checkProtoBufConversion(this.and, And, { this.context })
     }
 
     @Test

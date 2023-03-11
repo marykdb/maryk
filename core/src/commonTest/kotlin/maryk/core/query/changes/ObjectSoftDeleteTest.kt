@@ -23,7 +23,7 @@ class ObjectSoftDeleteTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.objectSoftDeleteChange, ObjectSoftDeleteChange.Model, { this.context })
+        checkProtoBufConversion(this.objectSoftDeleteChange, ObjectSoftDeleteChange, { this.context })
     }
 
     @Test

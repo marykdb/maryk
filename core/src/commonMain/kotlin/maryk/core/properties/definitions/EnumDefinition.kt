@@ -19,7 +19,6 @@ import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.ObjectValues
-import maryk.core.values.SimpleObjectValues
 import maryk.lib.exceptions.ParseException
 
 /** Definition for Enum properties */
@@ -129,7 +128,9 @@ data class EnumDefinition<E : IndexedEnumComparable<E>>(
         return compatible
     }
 
-    object Model : ContextualModel<EnumDefinition<*>, ContainsDefinitionsContext, EnumDefinitionContext>() {
+    object Model : ContextualModel<EnumDefinition<*>, Model, ContainsDefinitionsContext, EnumDefinitionContext>(
+        contextTransformer = { EnumDefinitionContext(it) },
+    ) {
         val required by boolean(1u, EnumDefinition<*>::required, default = true)
         val final by boolean(2u, EnumDefinition<*>::final, default = false)
         val unique by boolean(3u, EnumDefinition<*>::unique, default = false)
@@ -194,15 +195,15 @@ data class EnumDefinition<E : IndexedEnumComparable<E>>(
             )
         )
 
-        override fun invoke(values: ObjectValues<EnumDefinition<*>, ObjectPropertyDefinitions<EnumDefinition<*>>>): EnumDefinition<*> =
+        override fun invoke(values: ObjectValues<EnumDefinition<*>, Model>): EnumDefinition<*> =
             Model.invoke(values)
 
         @Suppress("unused")
-        override val Model = object : ContextualDataModel<EnumDefinition<*>, ObjectPropertyDefinitions<EnumDefinition<*>>, ContainsDefinitionsContext, EnumDefinitionContext>(
-            contextTransformer = { EnumDefinitionContext(it) },
+        override val Model = object : ContextualDataModel<EnumDefinition<*>, Model, ContainsDefinitionsContext, EnumDefinitionContext>(
+            contextTransformer = contextTransformer,
             properties = this
         ) {
-            override fun invoke(values: SimpleObjectValues<EnumDefinition<*>>) = EnumDefinition<IndexedEnumComparable<Any>>(
+            override fun invoke(values: ObjectValues<EnumDefinition<*>, Model>) = EnumDefinition<IndexedEnumComparable<Any>>(
                 required = values(1u),
                 final = values(2u),
                 unique = values(3u),

@@ -23,7 +23,7 @@ class MinTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.min, Min.Model, { this.context })
+        checkProtoBufConversion(this.min, Min, { this.context })
     }
 
     @Test

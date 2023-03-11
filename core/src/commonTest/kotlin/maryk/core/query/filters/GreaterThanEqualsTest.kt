@@ -25,7 +25,7 @@ class GreaterThanEqualsTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.greaterThanEquals, GreaterThanEquals.Model, { this.context })
+        checkProtoBufConversion(this.greaterThanEquals, GreaterThanEquals, { this.context })
     }
 
     @Test

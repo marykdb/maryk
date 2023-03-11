@@ -29,8 +29,8 @@ class MaxResponseTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.maxResponse, MaxResponse.Model, { this.context })
-        checkProtoBufConversion(this.maxResponseNull, MaxResponse.Model, { this.context })
+        checkProtoBufConversion(this.maxResponse, MaxResponse, { this.context })
+        checkProtoBufConversion(this.maxResponseNull, MaxResponse, { this.context })
     }
 
     @Test

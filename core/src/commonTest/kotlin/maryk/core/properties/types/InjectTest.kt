@@ -169,7 +169,7 @@ class InjectTest {
 
     @Test
     fun convertSimpleToProtoBufAndBack() {
-        checkProtoBufConversion(injectSimple, Inject.Model, { this.context })
+        checkProtoBufConversion(injectSimple, Inject, { this.context })
     }
 
     @Test
@@ -202,7 +202,7 @@ class InjectTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.inject, Inject.Model, { this.context })
+        checkProtoBufConversion(this.inject, Inject, { this.context })
     }
 
     @Test
@@ -232,6 +232,6 @@ class InjectTest {
 
     @Test
     fun convertAnyToProtoBufAndBack() {
-        checkProtoBufConversion(this.injectFromAny, Inject.Model, { this.context })
+        checkProtoBufConversion(this.injectFromAny, Inject, { this.context })
     }
 }

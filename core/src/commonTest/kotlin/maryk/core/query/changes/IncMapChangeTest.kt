@@ -33,7 +33,7 @@ class IncMapChangeTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.incMapChange, IncMapChange.Model, { this.context })
+        checkProtoBufConversion(this.incMapChange, IncMapChange, { this.context })
     }
 
     @Test

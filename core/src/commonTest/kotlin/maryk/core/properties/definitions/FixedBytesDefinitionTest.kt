@@ -76,8 +76,8 @@ internal class FixedBytesDefinitionTest {
 
     @Test
     fun convertDefinitionToProtoBufAndBack() {
-        checkProtoBufConversion(this.def, FixedBytesDefinition.Model.Model)
-        checkProtoBufConversion(this.defMaxDefined, FixedBytesDefinition.Model.Model)
+        checkProtoBufConversion(this.def, FixedBytesDefinition.Model)
+        checkProtoBufConversion(this.defMaxDefined, FixedBytesDefinition.Model)
     }
 
     @Test

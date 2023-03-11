@@ -15,7 +15,7 @@ import maryk.lib.exceptions.ParseException
 abstract class ReferencesModel<DO: Any, P: ReferencesModel<DO, P>>(
     referencesGetter: (DO) -> List<AnyPropertyReference>,
 )
-    : ObjectPropertyDefinitions<DO>(), IsObjectPropertyDefinitions<DO>, IsInternalModel<DO, P> {
+    : ObjectPropertyDefinitions<DO>(), IsObjectPropertyDefinitions<DO>, IsInternalModel<DO, P, RequestContext, RequestContext> {
     abstract val references: ListDefinitionWrapper<AnyPropertyReference, AnyPropertyReference, RequestContext, DO>
 
     abstract fun invoke(values: ObjectValues<DO, P>): DO

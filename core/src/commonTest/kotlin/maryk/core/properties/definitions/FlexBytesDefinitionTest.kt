@@ -89,8 +89,8 @@ internal class FlexBytesDefinitionTest {
 
     @Test
     fun convertDefinitionToProtoBufAndBack() {
-        checkProtoBufConversion(this.def, FlexBytesDefinition.Model.Model)
-        checkProtoBufConversion(this.defMaxDefined, FlexBytesDefinition.Model.Model)
+        checkProtoBufConversion(this.def, FlexBytesDefinition.Model)
+        checkProtoBufConversion(this.defMaxDefined, FlexBytesDefinition.Model)
     }
 
     @Test

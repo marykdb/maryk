@@ -42,7 +42,7 @@ internal class InitialChangesUpdateTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.initialChanges, InitialChangesUpdate.Model, { this.context })
+        checkProtoBufConversion(this.initialChanges, InitialChangesUpdate, { this.context })
     }
 
     @Test

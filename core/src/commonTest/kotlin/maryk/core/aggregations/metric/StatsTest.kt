@@ -23,7 +23,7 @@ class StatsTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.stats, Stats.Model, { this.context })
+        checkProtoBufConversion(this.stats, Stats, { this.context })
     }
 
     @Test

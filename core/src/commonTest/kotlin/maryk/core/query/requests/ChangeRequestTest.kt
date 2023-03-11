@@ -23,7 +23,7 @@ class ChangeRequestTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(changeRequest, ChangeRequest.Model, { this.context })
+        checkProtoBufConversion(changeRequest, ChangeRequest, { this.context })
     }
 
     @Test

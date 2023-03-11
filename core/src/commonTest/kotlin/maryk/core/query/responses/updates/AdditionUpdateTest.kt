@@ -34,7 +34,7 @@ internal class AdditionUpdateTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.additionUpdate, AdditionUpdate.Model, { this.context })
+        checkProtoBufConversion(this.additionUpdate, AdditionUpdate, { this.context })
     }
 
     @Test

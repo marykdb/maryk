@@ -19,7 +19,6 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.ObjectValues
-import maryk.core.values.SimpleObjectValues
 import maryk.lib.exceptions.ParseException
 
 /**
@@ -63,7 +62,9 @@ data class MultiTypeDefinition<E : MultiTypeEnum<out T>, T: Any>(
     }
 
     @Suppress("unused")
-    object Model : ContextualModel<MultiTypeDefinition<*, *>, ContainsDefinitionsContext, MultiTypeDefinitionContext>() {
+    object Model : ContextualModel<MultiTypeDefinition<*, *>, Model, ContainsDefinitionsContext, MultiTypeDefinitionContext>(
+        contextTransformer = { MultiTypeDefinitionContext(it) },
+    ) {
         val required by boolean(1u, MultiTypeDefinition<*, *>::required, default = true)
         val final by boolean(2u, MultiTypeDefinition<*, *>::final, default = false)
         val typeEnum by contextual(
@@ -112,14 +113,14 @@ data class MultiTypeDefinition<E : MultiTypeEnum<out T>, T: Any>(
             )
         )
 
-        override fun invoke(values: ObjectValues<MultiTypeDefinition<*, *>, ObjectPropertyDefinitions<MultiTypeDefinition<*, *>>>): MultiTypeDefinition<*, *> =
+        override fun invoke(values: ObjectValues<MultiTypeDefinition<*, *>, Model>): MultiTypeDefinition<*, *> =
             Model.invoke(values)
 
-        override val Model = object : ContextualDataModel<MultiTypeDefinition<*, *>, ObjectPropertyDefinitions<MultiTypeDefinition<*, *>>, ContainsDefinitionsContext, MultiTypeDefinitionContext>(
-            contextTransformer = { MultiTypeDefinitionContext(it) },
+        override val Model = object : ContextualDataModel<MultiTypeDefinition<*, *>, Model, ContainsDefinitionsContext, MultiTypeDefinitionContext>(
+            contextTransformer = contextTransformer,
             properties = this
         ) {
-            override fun invoke(values: SimpleObjectValues<MultiTypeDefinition<*, *>>) =
+            override fun invoke(values: ObjectValues<MultiTypeDefinition<*, *>, Model>) =
                 MultiTypeDefinition<MultiTypeEnum<Any>, Any>(
                     required = values(1u),
                     final = values(2u),

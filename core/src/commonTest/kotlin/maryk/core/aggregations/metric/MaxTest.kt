@@ -23,7 +23,7 @@ class MaxTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.max, Max.Model, { this.context })
+        checkProtoBufConversion(this.max, Max, { this.context })
     }
 
     @Test

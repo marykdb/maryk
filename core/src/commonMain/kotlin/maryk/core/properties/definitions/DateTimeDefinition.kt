@@ -12,7 +12,7 @@ import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.initLongByVar
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.models.ContextualDataModel
+import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -28,7 +28,7 @@ import maryk.core.properties.types.writeBytes
 import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.query.ContainsDefinitionsContext
-import maryk.core.values.SimpleObjectValues
+import maryk.core.values.ObjectValues
 import maryk.lib.exceptions.ParseException
 
 /**
@@ -100,52 +100,49 @@ data class DateTimeDefinition(
 
     override fun fromNativeType(value: Any) = value as? LocalDateTime
 
-    @Suppress("unused")
-    object Model :
-        ContextualDataModel<DateTimeDefinition, ObjectPropertyDefinitions<DateTimeDefinition>, ContainsDefinitionsContext, DateTimeDefinitionContext>(
-            contextTransformer = { DateTimeDefinitionContext() },
-            properties = object : ObjectPropertyDefinitions<DateTimeDefinition>() {
-                val required by boolean(1u, DateTimeDefinition::required, default = true)
-                val final by boolean(2u, DateTimeDefinition::final, default = false)
-                val unique by boolean(3u, DateTimeDefinition::unique, default = false)
-                val precision by enum(4u,
-                    DateTimeDefinition::precision,
-                    enum = TimePrecision,
-                    default = TimePrecision.SECONDS,
-                    capturer = { context: TimePrecisionContext, timePrecision ->
-                        context.precision = timePrecision
-                    }
-                )
-                val minValue by contextual(
-                    index = 5u,
-                    getter = DateTimeDefinition::minValue,
-                    definition = ContextualValueDefinition(
-                        contextualResolver = { context: DateTimeDefinitionContext? ->
-                            context?.dateTimeDefinition ?: throw ContextNotFoundException()
-                        }
-                    )
-                )
-                val maxValue by contextual(
-                    index = 6u,
-                    getter = DateTimeDefinition::maxValue,
-                    definition = ContextualValueDefinition(
-                        contextualResolver = { context: DateTimeDefinitionContext? ->
-                            context?.dateTimeDefinition ?: throw ContextNotFoundException()
-                        }
-                    )
-                )
-                val default by contextual(
-                    index = 7u,
-                    getter = DateTimeDefinition::default,
-                    definition = ContextualValueDefinition(
-                        contextualResolver = { context: DateTimeDefinitionContext? ->
-                            context?.dateTimeDefinition ?: throw ContextNotFoundException()
-                        }
-                    )
-                )
+    object Model : ContextualModel<DateTimeDefinition, Model, ContainsDefinitionsContext, DateTimeDefinitionContext>(
+        contextTransformer = { DateTimeDefinitionContext() },
+    ) {
+        val required by boolean(1u, DateTimeDefinition::required, default = true)
+        val final by boolean(2u, DateTimeDefinition::final, default = false)
+        val unique by boolean(3u, DateTimeDefinition::unique, default = false)
+        val precision by enum(4u,
+            DateTimeDefinition::precision,
+            enum = TimePrecision,
+            default = TimePrecision.SECONDS,
+            capturer = { context: TimePrecisionContext, timePrecision ->
+                context.precision = timePrecision
             }
-        ) {
-        override fun invoke(values: SimpleObjectValues<DateTimeDefinition>) = DateTimeDefinition(
+        )
+        val minValue by contextual(
+            index = 5u,
+            getter = DateTimeDefinition::minValue,
+            definition = ContextualValueDefinition(
+                contextualResolver = { context: DateTimeDefinitionContext? ->
+                    context?.dateTimeDefinition ?: throw ContextNotFoundException()
+                }
+            )
+        )
+        val maxValue by contextual(
+            index = 6u,
+            getter = DateTimeDefinition::maxValue,
+            definition = ContextualValueDefinition(
+                contextualResolver = { context: DateTimeDefinitionContext? ->
+                    context?.dateTimeDefinition ?: throw ContextNotFoundException()
+                }
+            )
+        )
+        val default by contextual(
+            index = 7u,
+            getter = DateTimeDefinition::default,
+            definition = ContextualValueDefinition(
+                contextualResolver = { context: DateTimeDefinitionContext? ->
+                    context?.dateTimeDefinition ?: throw ContextNotFoundException()
+                }
+            )
+        )
+
+        override fun invoke(values: ObjectValues<DateTimeDefinition, Model>) = DateTimeDefinition(
             required = values(1u),
             final = values(2u),
             unique = values(3u),

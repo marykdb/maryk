@@ -4,7 +4,9 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.models.AbstractObjectDataModel
+import maryk.core.properties.IsBaseModel
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.DefinitionsContext
 import maryk.core.yaml.MarykYamlModelReader
 import maryk.test.models.Option
@@ -33,7 +35,7 @@ class IndexedEnumTest {
         @Suppress("UNCHECKED_CAST")
         checkProtoBufConversion(
             Option,
-            IndexedEnumDefinition.Model.Model as AbstractObjectDataModel<Option.Companion, ObjectPropertyDefinitions<Option.Companion>, DefinitionsContext, DefinitionsContext>,
+            IndexedEnumDefinition.Model as IsBaseModel<Option.Companion, ObjectPropertyDefinitions<Option.Companion>, ContainsDefinitionsContext, EnumNameContext>,
             null,
             ::compareEnumDefinitions
         )

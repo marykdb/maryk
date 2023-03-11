@@ -23,7 +23,7 @@ class ValueCountTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.valueCount, ValueCount.Model, { this.context })
+        checkProtoBufConversion(this.valueCount, ValueCount, { this.context })
     }
 
     @Test

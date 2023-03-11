@@ -1,6 +1,7 @@
 package maryk
 
 import maryk.core.models.AbstractObjectDataModel
+import maryk.core.properties.IsBaseModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.protobuf.WriteCache
@@ -11,25 +12,25 @@ import kotlin.test.assertEquals
 /** Convert dataObject with a object DataModel */
 fun <DO : Any, P : ObjectPropertyDefinitions<DO>, CXI : IsPropertyContext, CX : IsPropertyContext> checkProtoBufConversion(
     value: DO,
-    dataModel: AbstractObjectDataModel<DO, P, CXI, CX>,
+    dataModel: IsBaseModel<DO, P, CXI, CX>,
     context: (() -> CXI)? = null,
     checker: (DO, DO) -> Unit = { converted, original -> assertEquals(original, converted) },
     resetContextBeforeRead: Boolean = false
 ) {
-    var newContext = dataModel.transformContext(context?.invoke())
+    var newContext = dataModel.Model.transformContext(context?.invoke())
 
     val bc = ByteCollector()
     val cache = WriteCache()
 
-    val byteLength = dataModel.calculateProtoBufLength(value, cache, newContext)
+    val byteLength = dataModel.Model.calculateProtoBufLength(value, cache, newContext)
     bc.reserve(byteLength)
-    dataModel.writeProtoBuf(value, cache, bc::write, newContext)
+    dataModel.Model.writeProtoBuf(value, cache, bc::write, newContext)
 
     if (resetContextBeforeRead) {
-        newContext = dataModel.transformContext(context?.invoke())
+        newContext = dataModel.Model.transformContext(context?.invoke())
     }
 
-    val converted = dataModel.readProtoBuf(byteLength, bc::read, newContext).toDataObject()
+    val converted = dataModel.Model.readProtoBuf(byteLength, bc::read, newContext).toDataObject()
 
     checker(converted, value)
 }

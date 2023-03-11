@@ -40,7 +40,7 @@ class ValuesWithMetaDataTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.valuesMetaData, ValuesWithMetaData.Model, { this.context })
+        checkProtoBufConversion(this.valuesMetaData, ValuesWithMetaData, { this.context })
     }
 
     @Test

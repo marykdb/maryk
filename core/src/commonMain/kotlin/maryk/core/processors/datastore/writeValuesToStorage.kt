@@ -37,7 +37,7 @@ sealed class StorageTypeEnum<out T : IsPropertyDefinition<*>>(val referenceType:
     object SetSize : StorageTypeEnum<IsSetDefinition<Any, IsPropertyContext>>(SET)
     object MapSize : StorageTypeEnum<IsMapDefinition<Any, Any, IsPropertyContext>>(MAP)
     object TypeValue : StorageTypeEnum<IsMultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>>(TYPE)
-    object Embed : StorageTypeEnum<IsEmbeddedValuesDefinition<*, *, *>>(EMBED)
+    object Embed : StorageTypeEnum<IsEmbeddedValuesDefinition<*, *>>(EMBED)
 
     @Suppress("UNCHECKED_CAST")
     fun castDefinition(definition: IsPropertyDefinition<*>?) = definition as T

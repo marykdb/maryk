@@ -55,7 +55,7 @@ data class RootPropRefGraph<P : IsRootModel> internal constructor(
                 value.let {
                     when (it) {
                         is IsDefinitionWrapper<*, *, *, *> -> TypedValue(it.graphType, it.ref() as IsTransportablePropRefGraphNode)
-                        is PropRefGraph<*, *, *> -> TypedValue(it.graphType, it)
+                        is PropRefGraph<*, *> -> TypedValue(it.graphType, it)
                         else -> throw ParseException("Unknown PropRefGraphType ${it.graphType}")
                     }
                 }

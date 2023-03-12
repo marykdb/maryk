@@ -173,7 +173,7 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
                 if (it.value == Unit) {
                     @Suppress("UNCHECKED_CAST")
                     val value: T = when (definition) {
-                        is IsEmbeddedValuesDefinition<*, *, *> -> (definition.dataModel as IsTypedValuesDataModel<*, *>).values(
+                        is IsEmbeddedValuesDefinition<*, *> -> (definition.dataModel as IsTypedValuesDataModel<*, *>).values(
                             null
                         ) { EmptyValueItems } as T
                         is IsListDefinition<*, *> -> emptyList<Any>() as T

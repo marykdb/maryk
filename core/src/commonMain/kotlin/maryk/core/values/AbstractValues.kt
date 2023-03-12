@@ -227,7 +227,7 @@ abstract class AbstractValues<DO : Any, DM : IsDataModel<P>, P : IsObjectPropert
     ) {
         @Suppress("UNCHECKED_CAST")
         when (definition) {
-            is IsEmbeddedValuesDefinition<*, *, *> -> {
+            is IsEmbeddedValuesDefinition<*, *> -> {
                 (value as AbstractValues<*, *, *>).processAllValues(parentReference, processor)
             }
             is IsListDefinition<*, *> ->

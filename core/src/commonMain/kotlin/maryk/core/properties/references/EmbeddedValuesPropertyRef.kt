@@ -14,20 +14,19 @@ import maryk.core.values.AbstractValues
 import maryk.core.values.Values
 
 /**
- * Reference to a Embed property containing type Values, [P] PropertyDefinitions. Which is defined by
+ * Reference to an Embed property containing type Values, [DM] PropertyDefinitions. Which is defined by
  * DataModel of type [DM] and expects context of type [CX].
  */
 class EmbeddedValuesPropertyRef<
-    DM : IsValuesDataModel<P>,
-    P : IsValuesPropertyDefinitions,
+    DM : IsValuesPropertyDefinitions,
     CX : IsPropertyContext
 > internal constructor(
-    propertyDefinition: EmbeddedValuesDefinitionWrapper<DM, P, CX>,
+    propertyDefinition: EmbeddedValuesDefinitionWrapper<DM, CX>,
     parentReference: CanHaveComplexChildReference<*, *, *, *>?
-) : CanHaveComplexChildReference<Values<P>, EmbeddedValuesDefinitionWrapper<DM, P, CX>, CanHaveComplexChildReference<*, *, *, *>, AbstractValues<*, *, *>>(
+) : CanHaveComplexChildReference<Values<DM>, EmbeddedValuesDefinitionWrapper<DM, CX>, CanHaveComplexChildReference<*, *, *, *>, AbstractValues<*, *, *>>(
     propertyDefinition, parentReference
-), HasEmbeddedPropertyReference<Values<P>>,
-    IsPropertyReferenceForValues<Values<P>, Values<P>, EmbeddedValuesDefinitionWrapper<DM, P, CX>, CanHaveComplexChildReference<*, *, *, *>> {
+), HasEmbeddedPropertyReference<Values<DM>>,
+    IsPropertyReferenceForValues<Values<DM>, Values<DM>, EmbeddedValuesDefinitionWrapper<DM, CX>, CanHaveComplexChildReference<*, *, *, *>> {
     override val name = this.propertyDefinition.name
 
     override fun getEmbedded(name: String, context: IsPropertyContext?) =

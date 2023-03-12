@@ -41,7 +41,7 @@ class EmbeddedValuesDefinition<DM : IsValuesPropertyDefinitions>(
     dataModel: Unit.() -> DM,
     override val default: Values<DM>? = null
 ) :
-    IsEmbeddedValuesDefinition<IsValuesDataModel<DM>, DM, IsPropertyContext>,
+    IsEmbeddedValuesDefinition<DM, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<Values<DM>> {
     override val propertyDefinitionType = Embed
     override val wireType = LENGTH_DELIMITED
@@ -209,13 +209,13 @@ class EmbeddedValuesDefinition<DM : IsValuesPropertyDefinitions>(
     }
 }
 
-fun <P : IsValuesPropertyDefinitions> IsValuesPropertyDefinitions.embed(
+fun <DM : IsValuesPropertyDefinitions> IsValuesPropertyDefinitions.embed(
     index: UInt,
-    dataModel: Unit.() -> P,
+    dataModel: Unit.() -> DM,
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
-    default: Values<P>? = null,
+    default: Values<DM>? = null,
     alternativeNames: Set<String>? = null
 ) = DefinitionWrapperDelegateLoader(this) { propName ->
     EmbeddedValuesDefinitionWrapper(
@@ -226,19 +226,19 @@ fun <P : IsValuesPropertyDefinitions> IsValuesPropertyDefinitions.embed(
     )
 }
 
-fun <P : IsValuesPropertyDefinitions> ObjectPropertyDefinitions<Any>.embed(
+fun <DM : IsValuesPropertyDefinitions> ObjectPropertyDefinitions<Any>.embed(
     index: UInt,
-    getter: (Any) -> Values<P>? = { null },
-    dataModel: Unit.() -> P,
+    getter: (Any) -> Values<DM>? = { null },
+    dataModel: Unit.() -> DM,
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
-    default: Values<P>? = null,
+    default: Values<DM>? = null,
     alternativeNames: Set<String>? = null,
-    toSerializable: (Unit.(Values<P>?, IsPropertyContext?) -> Values<P>?)? = null,
-    fromSerializable: (Unit.(Values<P>?) -> Values<P>?)? = null,
+    toSerializable: (Unit.(Values<DM>?, IsPropertyContext?) -> Values<DM>?)? = null,
+    fromSerializable: (Unit.(Values<DM>?) -> Values<DM>?)? = null,
     shouldSerialize: (Unit.(Any) -> Boolean)? = null,
-    capturer: (Unit.(IsPropertyContext, Values<P>) -> Unit)? = null
+    capturer: (Unit.(IsPropertyContext, Values<DM>) -> Unit)? = null
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     EmbeddedValuesDefinitionWrapper(
         index,

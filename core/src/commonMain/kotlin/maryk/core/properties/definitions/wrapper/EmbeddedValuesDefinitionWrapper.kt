@@ -1,7 +1,6 @@
 package maryk.core.properties.definitions.wrapper
 
 import maryk.core.models.IsDataModel
-import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
@@ -17,29 +16,28 @@ import maryk.core.values.Values
 import kotlin.reflect.KProperty
 
 /**
- * Contains a Embedded Values property [definition] containing Values and Properties described by [P]
+ * Contains an Embedded Values property [definition] containing Values and Properties described by [DM]
  * in a DataModel of [DM]
  * It contains an [index] and [name] to which it is referred inside DataModel
  * It has an input context of [CX]
  */
 data class EmbeddedValuesDefinitionWrapper<
-    DM : IsValuesDataModel<P>,
-    P : IsValuesPropertyDefinitions,
+    DM : IsValuesPropertyDefinitions,
     CX : IsPropertyContext
 > internal constructor(
     override val index: UInt,
     override val name: String,
-    override val definition: IsEmbeddedValuesDefinition<DM, P, CX>,
+    override val definition: IsEmbeddedValuesDefinition<DM, CX>,
     override val alternativeNames: Set<String>? = null,
-    override val getter: (Any) -> Values<P>? = { null },
-    override val capturer: (Unit.(CX, Values<P>) -> Unit)? = null,
-    override val toSerializable: (Unit.(Values<P>?, CX?) -> Values<P>?)? = null,
-    override val fromSerializable: (Unit.(Values<P>?) -> Values<P>?)? = null,
+    override val getter: (Any) -> Values<DM>? = { null },
+    override val capturer: (Unit.(CX, Values<DM>) -> Unit)? = null,
+    override val toSerializable: (Unit.(Values<DM>?, CX?) -> Values<DM>?)? = null,
+    override val fromSerializable: (Unit.(Values<DM>?) -> Values<DM>?)? = null,
     override val shouldSerialize: (Unit.(Any) -> Boolean)? = null
 ) :
     AbstractDefinitionWrapper(index, name),
-    IsEmbeddedValuesDefinition<DM, P, CX> by definition,
-    IsDefinitionWrapper<Values<P>, Values<P>, CX, Any> {
+    IsEmbeddedValuesDefinition<DM, CX> by definition,
+    IsDefinitionWrapper<Values<DM>, Values<DM>, CX, Any> {
     override val graphType = PropRef
 
     override fun ref(parentRef: AnyPropertyReference?) = cacheRef(parentRef, refCache) {
@@ -64,7 +62,7 @@ data class EmbeddedValuesDefinitionWrapper<
 
     /** For quick notation to fetch property references with [referenceGetter] within embedded object */
     operator fun <T : Any, W : IsPropertyDefinition<T>, R : IsPropertyReference<T, W, *>> invoke(
-        referenceGetter: P.() -> (AnyOutPropertyReference?) -> R
+        referenceGetter: DM.() -> (AnyOutPropertyReference?) -> R
     ): (AnyOutPropertyReference?) -> R =
         { this.definition.dataModel(this.ref(it), referenceGetter) }
 

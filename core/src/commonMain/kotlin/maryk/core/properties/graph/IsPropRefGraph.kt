@@ -27,7 +27,7 @@ interface IsPropRefGraph<in P : IsPropertyDefinitions> {
             if (isNotBlank()) append(", ")
             when (it) {
                 is IsDefinitionWrapper<*, *, *, *> -> append(it.name)
-                is PropRefGraph<*, *, *> -> append(it)
+                is PropRefGraph<*, *> -> append(it)
                 else -> throw TypeException("Unknown Graphable type")
             }
         }
@@ -48,9 +48,9 @@ interface IsPropRefGraph<in P : IsPropertyDefinitions> {
         loop@ while (referenceIndex <= elements.size) {
             return when (currentReference) {
                 is IsPropertyReferenceForValues<*, *, *, *> -> {
-                    if (referenceIndex < elements.size && currentReference is EmbeddedValuesPropertyRef<*, *, *> || currentReference is EmbeddedObjectPropertyRef<*, *, *, *, *, *>) {
+                    if (referenceIndex < elements.size && currentReference is EmbeddedValuesPropertyRef<*, *> || currentReference is EmbeddedObjectPropertyRef<*, *, *, *, *, *>) {
                         when (val node = currentSelect.selectNodeOrNull(currentReference.index)) {
-                            is PropRefGraph<*, *, *> -> {
+                            is PropRefGraph<*, *> -> {
                                 currentReference = elements[referenceIndex++]
                                 currentSelect = node
                                 continue@loop

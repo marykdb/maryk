@@ -4,7 +4,6 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
-import maryk.core.models.IsValuesDataModel
 import maryk.core.models.values
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.ValueWriter
@@ -288,12 +287,12 @@ private suspend fun <DM : IsRootModel> processChangeIntoStore(
                                 }
                                 is Values<*> -> {
                                     // Process any reference containing values
-                                    if (reference.propertyDefinition !is IsEmbeddedValuesDefinition<*, *, *>) {
+                                    if (reference.propertyDefinition !is IsEmbeddedValuesDefinition<*, *>) {
                                         throw TypeException("Expected a Reference to IsEmbeddedValuesDefinition for Values change")
                                     }
 
                                     @Suppress("UNCHECKED_CAST")
-                                    val valuesDefinition = reference.propertyDefinition as IsEmbeddedValuesDefinition<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions, IsPropertyContext>
+                                    val valuesDefinition = reference.propertyDefinition as IsEmbeddedValuesDefinition<IsValuesPropertyDefinitions, IsPropertyContext>
                                     @Suppress("UNCHECKED_CAST")
                                     val valuesReference = reference as IsPropertyReference<Values<IsValuesPropertyDefinitions>, IsPropertyDefinition<Values<IsValuesPropertyDefinitions>>, *>
 

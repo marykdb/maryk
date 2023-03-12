@@ -322,7 +322,7 @@ private fun <P : IsValuesPropertyDefinitions> readQualifierOfType(
                 }
             } else {
                 // Only embedded types can be encoded as complex EMBED qualifier
-                if (definition !is IsEmbeddedValuesDefinition<*, *, *>) {
+                if (definition !is IsEmbeddedValuesDefinition<*, *>) {
                     throw TypeException("Only Embeds types are allowed to be encoded as EMBED type with complex qualifiers. Not $definition")
                 }
                 readEmbeddedValues(

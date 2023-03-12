@@ -69,7 +69,7 @@ interface IsValueItemsImpl : IsValueItems {
                 null
             } else {
                 if (valueItem.value is Values<*>) {
-                    (select.selectNodeOrNull(valueItem.index) as? PropRefGraph<*, *, *>)?.let { subSelect ->
+                    (select.selectNodeOrNull(valueItem.index) as? PropRefGraph<*, *>)?.let { subSelect ->
                         ValueItem(valueItem.index, valueItem.value.filterWithSelect(subSelect))
                     } ?: valueItem
                 } else valueItem

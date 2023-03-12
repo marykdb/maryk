@@ -22,7 +22,7 @@ import maryk.json.JsonWriter
 /** Definition for an embedded Values from a context resolved from [contextualResolver] */
 internal data class ContextualEmbeddedValuesDefinition<CX : IsPropertyContext>(
     val contextualResolver: Unit.(context: CX?) -> AbstractValuesDataModel<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions, CX>
-) : IsEmbeddedValuesDefinition<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions, CX> {
+) : IsEmbeddedValuesDefinition<IsValuesPropertyDefinitions, CX> {
     override val dataModel: IsValuesDataModel<IsValuesPropertyDefinitions>
         get() = throw DefNotFoundException("dataModel is contextually determined")
     override val default: Values<IsValuesPropertyDefinitions>? = null

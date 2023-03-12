@@ -6,13 +6,13 @@ import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.values.Values
 
 /** Interface for property definitions containing embedded Values of model [DM] and context [CX]. */
-interface IsEmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P : IsValuesPropertyDefinitions, CX : IsPropertyContext> :
-    IsValueDefinition<Values<P>, CX>,
-    HasDefaultValueDefinition<Values<P>>,
-    IsEmbeddedDefinition<DM, P>,
-    IsUsableInMultiType<Values<P>, CX>,
-    IsUsableInMapValue<Values<P>, CX> {
-    override val dataModel: DM
+interface IsEmbeddedValuesDefinition<DM : IsValuesPropertyDefinitions, CX : IsPropertyContext> :
+    IsValueDefinition<Values<DM>, CX>,
+    HasDefaultValueDefinition<Values<DM>>,
+    IsEmbeddedDefinition<IsValuesDataModel<DM>, DM>,
+    IsUsableInMultiType<Values<DM>, CX>,
+    IsUsableInMapValue<Values<DM>, CX> {
+    override val dataModel: IsValuesDataModel<DM>
 
     override fun compatibleWith(
         definition: IsPropertyDefinition<*>,
@@ -20,7 +20,7 @@ interface IsEmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P : IsValuesProp
     ): Boolean {
         var compatible = super<IsValueDefinition>.compatibleWith(definition, addIncompatibilityReason)
 
-        (definition as? IsEmbeddedValuesDefinition<*, *, *>)?.let {
+        (definition as? IsEmbeddedValuesDefinition<*, *>)?.let {
             compatible = this.compatibleWithDefinitionWithDataModel(definition, addIncompatibilityReason) && compatible
         }
 

@@ -38,7 +38,7 @@ class MultipleTest {
     fun convertDefinitionToJSONAndBack() {
         checkJsonConversion(
             value = multiple,
-            dataModel = Multiple.Model.Model,
+            dataModel = Multiple.Model,
             context = { context }
         )
     }
@@ -58,7 +58,7 @@ class MultipleTest {
         ) {
             checkYamlConversion(
                 value = multiple,
-                dataModel = Multiple.Model.Model,
+                dataModel = Multiple.Model,
                 context = { context }
             )
         }

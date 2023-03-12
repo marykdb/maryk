@@ -35,7 +35,7 @@ class StatsTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.stats, Stats.Model, { this.context })
+            checkJsonConversion(this.stats, Stats, { this.context })
         }
     }
 
@@ -47,7 +47,7 @@ class StatsTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.stats, Stats.Model, { this.context })
+            checkYamlConversion(this.stats, Stats, { this.context })
         }
     }
 }

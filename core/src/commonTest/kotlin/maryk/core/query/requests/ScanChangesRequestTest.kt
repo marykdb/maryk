@@ -83,8 +83,8 @@ class ScanChangesRequestTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(scanChangesRequest, ScanChangesRequest.Model, { this.context })
-        checkJsonConversion(scanChangesMaxRequest, ScanChangesRequest.Model, { this.context })
+        checkJsonConversion(scanChangesRequest, ScanChangesRequest, { this.context })
+        checkJsonConversion(scanChangesMaxRequest, ScanChangesRequest, { this.context })
     }
 
     @Test
@@ -100,7 +100,7 @@ class ScanChangesRequestTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(scanChangesRequest, ScanChangesRequest.Model, { this.context })
+            checkYamlConversion(scanChangesRequest, ScanChangesRequest, { this.context })
         }
 
         expect(
@@ -120,7 +120,7 @@ class ScanChangesRequestTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(scanChangesMaxRequest, ScanChangesRequest.Model, { this.context })
+            checkYamlConversion(scanChangesMaxRequest, ScanChangesRequest, { this.context })
         }
     }
 }

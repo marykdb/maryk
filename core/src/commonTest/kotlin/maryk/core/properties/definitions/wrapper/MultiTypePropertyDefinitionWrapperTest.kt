@@ -33,7 +33,7 @@ class MultiTypePropertyDefinitionWrapperTest {
     fun convertDefinitionToJSONAndBack() {
         checkJsonConversion(
             this.def,
-            IsDefinitionWrapper.Model.Model,
+            IsDefinitionWrapper.Model,
             { DefinitionsContext() },
             ::comparePropertyDefinitionWrapper
         )

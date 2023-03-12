@@ -30,7 +30,7 @@ class OrTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.or, Or.Model, { this.context })
+        checkJsonConversion(this.or, Or, { this.context })
     }
 
     @Test
@@ -43,7 +43,7 @@ class OrTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.or, Or.Model, { this.context })
+            checkYamlConversion(this.or, Or, { this.context })
         }
     }
 }

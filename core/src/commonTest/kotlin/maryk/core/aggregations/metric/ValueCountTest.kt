@@ -35,7 +35,7 @@ class ValueCountTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.valueCount, ValueCount.Model, { this.context })
+            checkJsonConversion(this.valueCount, ValueCount, { this.context })
         }
     }
 
@@ -47,7 +47,7 @@ class ValueCountTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.valueCount, ValueCount.Model, { this.context })
+            checkYamlConversion(this.valueCount, ValueCount, { this.context })
         }
     }
 }

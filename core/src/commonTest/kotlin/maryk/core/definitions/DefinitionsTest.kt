@@ -45,7 +45,7 @@ class DefinitionsTest {
     fun convertToJSONAndBack() {
         checkJsonConversion(
             this.definitions,
-            Definitions.Model,
+            Definitions,
             { DefinitionsConversionContext() },
             ::compareDefinitions,
             true
@@ -349,7 +349,7 @@ class DefinitionsTest {
         ) {
             checkYamlConversion(
                 this.definitions,
-                Definitions.Model,
+                Definitions,
                 { DefinitionsConversionContext() },
                 ::compareDefinitions,
                 true

@@ -57,7 +57,7 @@ class EqualsTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.equals, Equals.Model, { this.context })
+            checkJsonConversion(this.equals, Equals, { this.context })
         }
     }
 
@@ -70,7 +70,7 @@ class EqualsTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.equals, Equals.Model, { this.context })
+            checkYamlConversion(this.equals, Equals, { this.context })
         }
     }
 }

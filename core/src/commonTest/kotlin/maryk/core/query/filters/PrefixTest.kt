@@ -29,7 +29,7 @@ class PrefixTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.prefix, Prefix.Model, { this.context })
+        checkJsonConversion(this.prefix, Prefix, { this.context })
     }
 
     @Test
@@ -40,7 +40,7 @@ class PrefixTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.prefix, Prefix.Model, { this.context })
+            checkYamlConversion(this.prefix, Prefix, { this.context })
         }
     }
 }

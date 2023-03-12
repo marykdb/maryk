@@ -24,7 +24,7 @@ internal class VersionTest {
             "1.2.3"
             """.trimIndent()
         ) {
-            checkJsonConversion(this.version, Version.Model)
+            checkJsonConversion(this.version, Version)
         }
 
         expect(
@@ -32,7 +32,7 @@ internal class VersionTest {
             "1.2"
             """.trimIndent()
         ) {
-            checkJsonConversion(Version(1, 2), Version.Model)
+            checkJsonConversion(Version(1, 2), Version)
         }
     }
 
@@ -43,7 +43,7 @@ internal class VersionTest {
             1.2.3
             """.trimIndent()
         ) {
-            checkYamlConversion(this.version, Version.Model)
+            checkYamlConversion(this.version, Version)
         }
 
         expect(
@@ -51,7 +51,7 @@ internal class VersionTest {
             3.4
             """.trimIndent()
         ) {
-            checkYamlConversion(Version(3, 4), Version.Model)
+            checkYamlConversion(Version(3, 4), Version)
         }
     }
 

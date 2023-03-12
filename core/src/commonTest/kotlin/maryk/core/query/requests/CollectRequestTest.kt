@@ -22,7 +22,7 @@ class CollectRequestTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(collectRequest, CollectRequest.Model, { this.context })
+        checkJsonConversion(collectRequest, CollectRequest, { this.context })
     }
 
     @Test
@@ -36,7 +36,7 @@ class CollectRequestTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(collectRequest, CollectRequest.Model, { this.context })
+            checkYamlConversion(collectRequest, CollectRequest, { this.context })
         }
     }
 }

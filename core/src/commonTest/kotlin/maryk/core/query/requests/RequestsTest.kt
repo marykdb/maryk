@@ -52,7 +52,7 @@ class RequestsTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.requests, Requests.Model, { this.context }, ::requestsComparison)
+        checkJsonConversion(this.requests, Requests, { this.context }, ::requestsComparison)
     }
 
     @Test
@@ -105,7 +105,7 @@ class RequestsTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.requests, Requests.Model, { this.context }, ::requestsComparison)
+            checkYamlConversion(this.requests, Requests, { this.context }, ::requestsComparison)
         }
     }
 }

@@ -44,8 +44,8 @@ class DeleteTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.propertyDelete, Delete.Model, { this.context })
-        checkJsonConversion(this.propertyDeleteMultiple, Delete.Model, { this.context })
+        checkJsonConversion(this.propertyDelete, Delete, { this.context })
+        checkJsonConversion(this.propertyDeleteMultiple, Delete, { this.context })
     }
 
     @Test
@@ -55,7 +55,7 @@ class DeleteTest {
             string
             """.trimIndent()
         ) {
-            checkYamlConversion(this.propertyDelete, Delete.Model, { this.context })
+            checkYamlConversion(this.propertyDelete, Delete, { this.context })
         }
 
         expect(
@@ -66,7 +66,7 @@ class DeleteTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.propertyDeleteMultiple, Delete.Model, { this.context })
+            checkYamlConversion(this.propertyDeleteMultiple, Delete, { this.context })
         }
     }
 

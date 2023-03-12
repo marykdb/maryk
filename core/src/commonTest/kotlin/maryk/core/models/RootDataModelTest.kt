@@ -351,7 +351,7 @@ internal class RootDataModelTest {
         ) {
             checkJsonConversion(
                 TestMarykModel.Model,
-                RootDataModel.Model.Model,
+                RootDataModel.Model,
                 { DefinitionsConversionContext() },
                 ::compareDataModels
             )
@@ -549,7 +549,7 @@ internal class RootDataModelTest {
         ) {
             checkYamlConversion(
                 TestMarykModel.Model,
-                RootDataModel.Model.Model,
+                RootDataModel.Model,
                 { DefinitionsConversionContext() },
                 ::compareDataModels
             )

@@ -25,9 +25,9 @@ class ScanSelectRequestTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(scanRequest, ScanRequest.Model, { this.context })
-        checkJsonConversion(scanMaxRequest, ScanRequest.Model, { this.context })
-        checkJsonConversion(scanOrdersRequest, ScanRequest.Model, { this.context })
+        checkJsonConversion(scanRequest, ScanRequest, { this.context })
+        checkJsonConversion(scanMaxRequest, ScanRequest, { this.context })
+        checkJsonConversion(scanOrdersRequest, ScanRequest, { this.context })
     }
 
     @Test
@@ -41,7 +41,7 @@ class ScanSelectRequestTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(scanRequest, ScanRequest.Model, { this.context })
+            checkYamlConversion(scanRequest, ScanRequest, { this.context })
         }
 
         expect(
@@ -62,7 +62,7 @@ class ScanSelectRequestTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(scanMaxRequest, ScanRequest.Model, { this.context })
+            checkYamlConversion(scanMaxRequest, ScanRequest, { this.context })
         }
 
         expect(
@@ -80,7 +80,7 @@ class ScanSelectRequestTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(scanOrdersRequest, ScanRequest.Model, { this.context })
+            checkYamlConversion(scanOrdersRequest, ScanRequest, { this.context })
         }
     }
 }

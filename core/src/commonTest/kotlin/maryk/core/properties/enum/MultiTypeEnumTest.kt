@@ -3,7 +3,6 @@ package maryk.core.properties.enum
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.models.AbstractObjectDataModel
 import maryk.core.properties.IsBaseModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.MultiTypeDefinitionContext
@@ -50,7 +49,7 @@ class MultiTypeEnumTest {
         @Suppress("UNCHECKED_CAST")
         checkJsonConversion(
             MarykTypeEnum,
-            MultiTypeEnumDefinition.Model.Model as AbstractObjectDataModel<MarykTypeEnum.Companion, ObjectPropertyDefinitions<MarykTypeEnum.Companion>, DefinitionsContext, DefinitionsContext>,
+            MultiTypeEnumDefinition.Model as IsBaseModel<MarykTypeEnum.Companion, ObjectPropertyDefinitions<MarykTypeEnum.Companion>, DefinitionsContext, DefinitionsContext>,
             { context },
             ::compareEnumDefinitions
         )
@@ -147,7 +146,7 @@ class MultiTypeEnumTest {
             @Suppress("UNCHECKED_CAST")
             checkYamlConversion(
                 MarykTypeEnum,
-                MultiTypeEnumDefinition.Model.Model as AbstractObjectDataModel<MarykTypeEnum.Companion, ObjectPropertyDefinitions<MarykTypeEnum.Companion>, DefinitionsContext, DefinitionsContext>,
+                MultiTypeEnumDefinition.Model as IsBaseModel<MarykTypeEnum.Companion, ObjectPropertyDefinitions<MarykTypeEnum.Companion>, DefinitionsContext, DefinitionsContext>,
                 { context },
                 ::compareEnumDefinitions
             )

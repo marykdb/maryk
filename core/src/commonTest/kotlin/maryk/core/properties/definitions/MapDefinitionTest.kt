@@ -185,13 +185,13 @@ internal class MapDefinitionTest {
 
     @Test
     fun convertDefinitionToJSONAndBack() {
-        checkJsonConversion(this.def, MapDefinition.Model.Model)
-        checkJsonConversion(this.defMaxDefined, MapDefinition.Model.Model)
+        checkJsonConversion(this.def, MapDefinition.Model)
+        checkJsonConversion(this.defMaxDefined, MapDefinition.Model)
     }
 
     @Test
     fun convertDefinitionToYAMLAndBack() {
-        checkYamlConversion(this.def, MapDefinition.Model.Model)
+        checkYamlConversion(this.def, MapDefinition.Model)
 
         expect(
             """
@@ -216,7 +216,7 @@ internal class MapDefinitionTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.defMaxDefined, MapDefinition.Model.Model)
+            checkYamlConversion(this.defMaxDefined, MapDefinition.Model)
         }
     }
 

@@ -46,7 +46,7 @@ class AverageResponseTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.avgResponse, AverageResponse.Model, { this.context })
+            checkJsonConversion(this.avgResponse, AverageResponse, { this.context })
         }
 
         expect(
@@ -57,7 +57,7 @@ class AverageResponseTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.avgResponseNull, AverageResponse.Model, { this.context })
+            checkJsonConversion(this.avgResponseNull, AverageResponse, { this.context })
         }
     }
 
@@ -71,7 +71,7 @@ class AverageResponseTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.avgResponse, AverageResponse.Model, { this.context })
+            checkYamlConversion(this.avgResponse, AverageResponse, { this.context })
         }
 
         expect(
@@ -81,7 +81,7 @@ class AverageResponseTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.avgResponseNull, AverageResponse.Model, { this.context })
+            checkYamlConversion(this.avgResponseNull, AverageResponse, { this.context })
         }
     }
 }

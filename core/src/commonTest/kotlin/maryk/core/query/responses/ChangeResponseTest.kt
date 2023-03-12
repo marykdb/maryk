@@ -64,7 +64,7 @@ class ChangeResponseTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.changeResponse, ChangeResponse.Model, { this.context })
+        checkJsonConversion(this.changeResponse, ChangeResponse, { this.context })
     }
 
     @Test
@@ -94,7 +94,7 @@ class ChangeResponseTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.changeResponse, ChangeResponse.Model, { this.context })
+            checkYamlConversion(this.changeResponse, ChangeResponse, { this.context })
         }
     }
 }

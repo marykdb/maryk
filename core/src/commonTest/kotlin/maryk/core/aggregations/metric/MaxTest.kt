@@ -35,7 +35,7 @@ class MaxTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.max, Max.Model, { this.context })
+            checkJsonConversion(this.max, Max, { this.context })
         }
     }
 
@@ -47,7 +47,7 @@ class MaxTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.max, Max.Model, { this.context })
+            checkYamlConversion(this.max, Max, { this.context })
         }
     }
 }

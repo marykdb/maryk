@@ -79,13 +79,13 @@ internal class BooleanDefinitionTest {
 
     @Test
     fun convertDefinitionToJSONAndBack() {
-        checkJsonConversion(this.def, BooleanDefinition.Model.Model)
-        checkJsonConversion(this.defMaxDefined, BooleanDefinition.Model.Model)
+        checkJsonConversion(this.def, BooleanDefinition.Model)
+        checkJsonConversion(this.defMaxDefined, BooleanDefinition.Model)
     }
 
     @Test
     fun convertDefinitionToYAMLAndBack() {
-        checkYamlConversion(this.def, BooleanDefinition.Model.Model)
+        checkYamlConversion(this.def, BooleanDefinition.Model)
 
         expect(
             """
@@ -95,7 +95,7 @@ internal class BooleanDefinitionTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.defMaxDefined, BooleanDefinition.Model.Model)
+            checkYamlConversion(this.defMaxDefined, BooleanDefinition.Model)
         }
     }
 }

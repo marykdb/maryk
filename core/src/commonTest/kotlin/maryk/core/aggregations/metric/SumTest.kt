@@ -35,7 +35,7 @@ class SumTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.sum, Sum.Model, { this.context })
+            checkJsonConversion(this.sum, Sum, { this.context })
         }
     }
 
@@ -47,7 +47,7 @@ class SumTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.sum, Sum.Model, { this.context })
+            checkYamlConversion(this.sum, Sum, { this.context })
         }
     }
 }

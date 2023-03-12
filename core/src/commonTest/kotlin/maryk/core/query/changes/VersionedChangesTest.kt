@@ -42,7 +42,7 @@ class VersionedChangesTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.versionedChanges, VersionedChanges.Model, { this.context })
+        checkJsonConversion(this.versionedChanges, VersionedChanges, { this.context })
     }
 
     @Test
@@ -66,7 +66,7 @@ class VersionedChangesTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.versionedChanges, VersionedChanges.Model, { this.context })
+            checkYamlConversion(this.versionedChanges, VersionedChanges, { this.context })
         }
     }
 }

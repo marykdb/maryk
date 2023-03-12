@@ -37,7 +37,7 @@ class ValueCountResponseTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.valueCountResponse, ValueCountResponse.Model, { this.context })
+            checkJsonConversion(this.valueCountResponse, ValueCountResponse, { this.context })
         }
     }
 
@@ -50,7 +50,7 @@ class ValueCountResponseTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.valueCountResponse, ValueCountResponse.Model, { this.context })
+            checkYamlConversion(this.valueCountResponse, ValueCountResponse, { this.context })
         }
     }
 }

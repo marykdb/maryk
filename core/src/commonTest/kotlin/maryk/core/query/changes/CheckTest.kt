@@ -30,7 +30,7 @@ class CheckTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.valueCheck, Check.Model, { this.context })
+        checkJsonConversion(this.valueCheck, Check, { this.context })
     }
 
     @Test
@@ -42,7 +42,7 @@ class CheckTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.valueCheck, Check.Model, { this.context })
+            checkYamlConversion(this.valueCheck, Check, { this.context })
         }
     }
 }

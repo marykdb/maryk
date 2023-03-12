@@ -45,7 +45,7 @@ class ValuesWithMetaDataTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.valuesMetaData, ValuesWithMetaData.Model, { this.context })
+        checkJsonConversion(this.valuesMetaData, ValuesWithMetaData, { this.context })
     }
 
     @Test
@@ -67,7 +67,7 @@ class ValuesWithMetaDataTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.valuesMetaData, ValuesWithMetaData.Model, { this.context })
+            checkYamlConversion(this.valuesMetaData, ValuesWithMetaData, { this.context })
         }
     }
 }

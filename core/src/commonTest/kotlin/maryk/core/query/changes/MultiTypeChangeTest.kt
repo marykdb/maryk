@@ -33,7 +33,7 @@ class MultiTypeChangeTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.multiTypeChange, MultiTypeChange.Model, { this.context })
+        checkJsonConversion(this.multiTypeChange, MultiTypeChange, { this.context })
     }
 
     @Test
@@ -44,7 +44,7 @@ class MultiTypeChangeTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.multiTypeChange, MultiTypeChange.Model, { this.context })
+            checkYamlConversion(this.multiTypeChange, MultiTypeChange, { this.context })
         }
     }
 }

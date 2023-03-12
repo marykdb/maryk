@@ -35,7 +35,7 @@ internal class OrderedKeysUpdateTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.orderedKeysUpdate, OrderedKeysUpdate.Model, { this.context })
+        checkJsonConversion(this.orderedKeysUpdate, OrderedKeysUpdate, { this.context })
     }
 
     @Test
@@ -48,7 +48,7 @@ internal class OrderedKeysUpdateTest {
             
             """.trimIndent()
         ) {
-            checkYamlConversion(this.orderedKeysUpdate, OrderedKeysUpdate.Model, { this.context })
+            checkYamlConversion(this.orderedKeysUpdate, OrderedKeysUpdate, { this.context })
         }
     }
 }

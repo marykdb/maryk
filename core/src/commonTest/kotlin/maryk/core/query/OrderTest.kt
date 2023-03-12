@@ -40,7 +40,7 @@ class OrderTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.order, Order.Model.Model, { this.context }, ::compareRequest)
+        checkJsonConversion(this.order, Order.Model, { this.context }, ::compareRequest)
     }
 
     @Test
@@ -50,7 +50,7 @@ class OrderTest {
             !Desc value
             """.trimIndent()
         ) {
-            checkYamlConversion(this.order, Order.Model.Model, { this.context }, ::compareRequest)
+            checkYamlConversion(this.order, Order.Model, { this.context }, ::compareRequest)
         }
     }
 
@@ -61,13 +61,13 @@ class OrderTest {
 
     @Test
     fun convertDefaultToJSONAndBack() {
-        checkJsonConversion(this.orderDefault, Order.Model.Model, { this.context }, ::compareRequest)
+        checkJsonConversion(this.orderDefault, Order.Model, { this.context }, ::compareRequest)
     }
 
     @Test
     fun convertDefaultToYAMLAndBack() {
         expect("!Asc") {
-            checkYamlConversion(this.orderDefault, Order.Model.Model, { this.context }, ::compareRequest)
+            checkYamlConversion(this.orderDefault, Order.Model, { this.context }, ::compareRequest)
         }
     }
 
@@ -78,7 +78,7 @@ class OrderTest {
 
     @Test
     fun convertDescToJSONAndBack() {
-        checkJsonConversion(this.orderDesc, Order.Model.Model, { this.context }, ::compareRequest)
+        checkJsonConversion(this.orderDesc, Order.Model, { this.context }, ::compareRequest)
     }
 
     @Test
@@ -88,7 +88,7 @@ class OrderTest {
             !Desc
             """.trimIndent()
         ) {
-            checkYamlConversion(this.orderDesc, Order.Model.Model, { this.context }, ::compareRequest)
+            checkYamlConversion(this.orderDesc, Order.Model, { this.context }, ::compareRequest)
         }
     }
 

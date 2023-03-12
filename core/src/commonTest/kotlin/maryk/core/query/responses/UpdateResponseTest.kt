@@ -50,7 +50,7 @@ class UpdateResponseTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.updateResponse, UpdateResponse.Model, { this.context })
+            checkJsonConversion(this.updateResponse, UpdateResponse, { this.context })
         }
     }
 
@@ -66,7 +66,7 @@ class UpdateResponseTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.updateResponse, UpdateResponse.Model, { this.context })
+            checkYamlConversion(this.updateResponse, UpdateResponse, { this.context })
         }
     }
 }

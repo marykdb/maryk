@@ -119,13 +119,13 @@ internal class EnumDefinitionTest {
 
     @Test
     fun convertDefinitionToJSONAndBack() {
-        checkJsonConversion(this.def, EnumDefinition.Model.Model, null, ::compare)
-        checkJsonConversion(this.defMaxDefined, EnumDefinition.Model.Model, null, ::compare)
+        checkJsonConversion(this.def, EnumDefinition.Model, null, ::compare)
+        checkJsonConversion(this.defMaxDefined, EnumDefinition.Model, null, ::compare)
     }
 
     @Test
     fun convertDefinitionToYAMLAndBack() {
-        checkYamlConversion(this.def, EnumDefinition.Model.Model, null, ::compare)
+        checkYamlConversion(this.def, EnumDefinition.Model, null, ::compare)
 
         expect(
             """
@@ -146,7 +146,7 @@ internal class EnumDefinitionTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.defMaxDefined, EnumDefinition.Model.Model, null, ::compare)
+            checkYamlConversion(this.defMaxDefined, EnumDefinition.Model, null, ::compare)
         }
     }
 

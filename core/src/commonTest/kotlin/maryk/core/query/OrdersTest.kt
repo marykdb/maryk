@@ -50,7 +50,7 @@ class OrdersTest {
             }]
             """.trimIndent()
         ) {
-            checkJsonConversion(this.orders, Orders.Model, { this.context }, ::compareRequest)
+            checkJsonConversion(this.orders, Orders, { this.context }, ::compareRequest)
         }
     }
 
@@ -64,7 +64,7 @@ class OrdersTest {
             - !Desc
             """.trimIndent()
         ) {
-            checkYamlConversion(this.orders, Orders.Model, { this.context }, ::compareRequest)
+            checkYamlConversion(this.orders, Orders, { this.context }, ::compareRequest)
         }
     }
 

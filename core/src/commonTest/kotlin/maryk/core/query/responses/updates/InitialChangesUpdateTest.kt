@@ -47,7 +47,7 @@ internal class InitialChangesUpdateTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.initialChanges, InitialChangesUpdate.Model, { this.context })
+        checkJsonConversion(this.initialChanges, InitialChangesUpdate, { this.context })
     }
 
     @Test
@@ -65,7 +65,7 @@ internal class InitialChangesUpdateTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.initialChanges, InitialChangesUpdate.Model, { this.context })
+            checkYamlConversion(this.initialChanges, InitialChangesUpdate, { this.context })
         }
     }
 }

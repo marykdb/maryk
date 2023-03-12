@@ -82,13 +82,13 @@ internal class FixedBytesDefinitionTest {
 
     @Test
     fun convertDefinitionToJSONAndBack() {
-        checkJsonConversion(this.def, FixedBytesDefinition.Model.Model)
-        checkJsonConversion(this.defMaxDefined, FixedBytesDefinition.Model.Model)
+        checkJsonConversion(this.def, FixedBytesDefinition.Model)
+        checkJsonConversion(this.defMaxDefined, FixedBytesDefinition.Model)
     }
 
     @Test
     fun convertDefinitionToYAMLAndBack() {
-        checkYamlConversion(this.def, FixedBytesDefinition.Model.Model)
+        checkYamlConversion(this.def, FixedBytesDefinition.Model)
 
         expect(
             """
@@ -102,7 +102,7 @@ internal class FixedBytesDefinitionTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.defMaxDefined, FixedBytesDefinition.Model.Model)
+            checkYamlConversion(this.defMaxDefined, FixedBytesDefinition.Model)
         }
     }
 

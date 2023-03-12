@@ -35,7 +35,7 @@ class MinTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.min, Min.Model, { this.context })
+            checkJsonConversion(this.min, Min, { this.context })
         }
     }
 
@@ -47,7 +47,7 @@ class MinTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.min, Min.Model, { this.context })
+            checkYamlConversion(this.min, Min, { this.context })
         }
     }
 }

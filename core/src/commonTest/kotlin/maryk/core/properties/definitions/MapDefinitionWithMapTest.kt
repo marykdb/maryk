@@ -145,7 +145,7 @@ internal class MapDefinitionWithMapTest {
 
     @Test
     fun convertDefinitionToJSONAndBack() {
-        checkJsonConversion(this.def, MapDefinition.Model.Model)
+        checkJsonConversion(this.def, MapDefinition.Model)
     }
 
     @Test
@@ -179,7 +179,7 @@ internal class MapDefinitionWithMapTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.def, MapDefinition.Model.Model)
+            checkYamlConversion(this.def, MapDefinition.Model)
         }
     }
 }

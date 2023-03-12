@@ -38,7 +38,7 @@ class SetChangeTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.setPropertyChange, SetChange.Model, { this.context })
+        checkJsonConversion(this.setPropertyChange, SetChange, { this.context })
     }
 
     @Test
@@ -50,7 +50,7 @@ class SetChangeTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.setPropertyChange, SetChange.Model, { this.context })
+            checkYamlConversion(this.setPropertyChange, SetChange, { this.context })
         }
     }
 

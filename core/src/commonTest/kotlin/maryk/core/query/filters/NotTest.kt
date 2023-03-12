@@ -28,7 +28,7 @@ class NotTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.not, Not.Model, { this.context })
+        checkJsonConversion(this.not, Not, { this.context })
     }
 
     @Test
@@ -39,7 +39,7 @@ class NotTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.not, Not.Model, { this.context })
+            checkYamlConversion(this.not, Not, { this.context })
         }
     }
 }

@@ -27,7 +27,7 @@ class FailedActionResponseTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.failedActionResponse, FailedActionResponse.Model, { this.context })
+        checkJsonConversion(this.failedActionResponse, FailedActionResponse, { this.context })
     }
 
     @Test
@@ -39,7 +39,7 @@ class FailedActionResponseTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.failedActionResponse, FailedActionResponse.Model, { this.context })
+            checkYamlConversion(this.failedActionResponse, FailedActionResponse, { this.context })
         }
     }
 }

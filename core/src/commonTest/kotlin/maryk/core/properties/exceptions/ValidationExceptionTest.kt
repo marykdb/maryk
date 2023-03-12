@@ -44,11 +44,11 @@ class ValidationExceptionTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.validationUmbrellaException, ValidationUmbrellaException.Model, { this.context })
+        checkJsonConversion(this.validationUmbrellaException, ValidationUmbrellaException, { this.context })
     }
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(this.validationUmbrellaException, ValidationUmbrellaException.Model, { this.context })
+        checkYamlConversion(this.validationUmbrellaException, ValidationUmbrellaException, { this.context })
     }
 }

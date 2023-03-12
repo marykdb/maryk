@@ -116,13 +116,13 @@ internal class EmbeddedObjectDefinitionTest {
 
     @Test
     fun convertDefinitionToJSONAndBack() {
-        checkJsonConversion(this.def, EmbeddedObjectDefinition.Model.Model, { DefinitionsConversionContext() })
-        checkJsonConversion(this.defMaxDefined, EmbeddedObjectDefinition.Model.Model, { DefinitionsConversionContext() })
+        checkJsonConversion(this.def, EmbeddedObjectDefinition.Model, { DefinitionsConversionContext() })
+        checkJsonConversion(this.defMaxDefined, EmbeddedObjectDefinition.Model, { DefinitionsConversionContext() })
     }
 
     @Test
     fun convertDefinitionToYAMLAndBack() {
-        checkYamlConversion(this.def, EmbeddedObjectDefinition.Model.Model, { DefinitionsConversionContext() })
+        checkYamlConversion(this.def, EmbeddedObjectDefinition.Model, { DefinitionsConversionContext() })
 
         expect(
             """
@@ -136,7 +136,7 @@ internal class EmbeddedObjectDefinitionTest {
         ) {
             checkYamlConversion(
                 this.defMaxDefined,
-                EmbeddedObjectDefinition.Model.Model,
+                EmbeddedObjectDefinition.Model,
                 { DefinitionsConversionContext() }
             )
         }

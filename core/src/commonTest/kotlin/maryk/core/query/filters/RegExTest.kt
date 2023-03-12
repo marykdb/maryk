@@ -29,7 +29,7 @@ class RegExTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.regEx, RegEx.Model, { this.context })
+        checkJsonConversion(this.regEx, RegEx, { this.context })
     }
 
     @Test
@@ -40,7 +40,7 @@ class RegExTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.regEx, RegEx.Model, { this.context })
+            checkYamlConversion(this.regEx, RegEx, { this.context })
         }
     }
 }

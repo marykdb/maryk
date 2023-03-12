@@ -28,7 +28,7 @@ class ChangeRequestTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(changeRequest, ChangeRequest.Model, { this.context })
+        checkJsonConversion(changeRequest, ChangeRequest, { this.context })
     }
 
     @Test
@@ -44,7 +44,7 @@ class ChangeRequestTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(changeRequest, ChangeRequest.Model, { this.context })
+            checkYamlConversion(changeRequest, ChangeRequest, { this.context })
         }
     }
 }

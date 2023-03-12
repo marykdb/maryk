@@ -46,7 +46,7 @@ class AndTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.and, And.Model, { this.context })
+        checkJsonConversion(this.and, And, { this.context })
     }
 
     @Test
@@ -59,7 +59,7 @@ class AndTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.and, And.Model, { this.context })
+            checkYamlConversion(this.and, And, { this.context })
         }
     }
 }

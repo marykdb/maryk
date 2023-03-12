@@ -36,7 +36,7 @@ class ListChangeTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.listPropertyChange, ListChange.Model, { this.context })
+        checkJsonConversion(this.listPropertyChange, ListChange, { this.context })
     }
 
     @Test
@@ -52,7 +52,7 @@ class ListChangeTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.listPropertyChange, ListChange.Model, { this.context })
+            checkYamlConversion(this.listPropertyChange, ListChange, { this.context })
         }
     }
 

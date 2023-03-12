@@ -36,7 +36,7 @@ class RangeTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.range, Range.Model, { this.context })
+        checkJsonConversion(this.range, Range, { this.context })
     }
 
     @Test
@@ -48,7 +48,7 @@ class RangeTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.range, Range.Model, { this.context })
+            checkYamlConversion(this.range, Range, { this.context })
         }
     }
 }

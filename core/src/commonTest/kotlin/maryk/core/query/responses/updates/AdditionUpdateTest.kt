@@ -39,7 +39,7 @@ internal class AdditionUpdateTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.additionUpdate, AdditionUpdate.Model, { this.context })
+        checkJsonConversion(this.additionUpdate, AdditionUpdate, { this.context })
     }
 
     @Test
@@ -56,7 +56,7 @@ internal class AdditionUpdateTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.additionUpdate, AdditionUpdate.Model, { this.context })
+            checkYamlConversion(this.additionUpdate, AdditionUpdate, { this.context })
         }
     }
 }

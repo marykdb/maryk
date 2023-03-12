@@ -35,7 +35,7 @@ class AverageTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.average, Average.Model, { this.context })
+            checkJsonConversion(this.average, Average, { this.context })
         }
     }
 
@@ -47,7 +47,7 @@ class AverageTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.average, Average.Model, { this.context })
+            checkYamlConversion(this.average, Average, { this.context })
         }
     }
 }

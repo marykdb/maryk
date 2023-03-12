@@ -28,7 +28,7 @@ class ObjectSoftDeleteTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.objectSoftDeleteChange, ObjectSoftDeleteChange.Model, { this.context })
+        checkJsonConversion(this.objectSoftDeleteChange, ObjectSoftDeleteChange, { this.context })
     }
 
     @Test
@@ -39,7 +39,7 @@ class ObjectSoftDeleteTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.objectSoftDeleteChange, ObjectSoftDeleteChange.Model, { this.context })
+            checkYamlConversion(this.objectSoftDeleteChange, ObjectSoftDeleteChange, { this.context })
         }
     }
 }

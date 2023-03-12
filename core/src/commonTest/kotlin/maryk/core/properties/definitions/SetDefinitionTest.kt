@@ -140,13 +140,13 @@ internal class SetDefinitionTest {
 
     @Test
     fun convertDefinitionToJSONAndBack() {
-        checkJsonConversion(this.def, SetDefinition.Model.Model)
-        checkJsonConversion(this.defMaxDefined, SetDefinition.Model.Model)
+        checkJsonConversion(this.def, SetDefinition.Model)
+        checkJsonConversion(this.defMaxDefined, SetDefinition.Model)
     }
 
     @Test
     fun convertDefinitionToYAMLAndBack() {
-        checkYamlConversion(this.def, SetDefinition.Model.Model)
+        checkYamlConversion(this.def, SetDefinition.Model)
         expect(
             """
             required: false
@@ -162,7 +162,7 @@ internal class SetDefinitionTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.defMaxDefined, SetDefinition.Model.Model)
+            checkYamlConversion(this.defMaxDefined, SetDefinition.Model)
         }
     }
 

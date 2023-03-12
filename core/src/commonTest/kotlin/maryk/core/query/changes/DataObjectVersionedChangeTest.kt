@@ -58,7 +58,7 @@ class DataObjectVersionedChangeTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.dataObjectVersionedChanges, DataObjectVersionedChange.Model, { this.context })
+        checkJsonConversion(this.dataObjectVersionedChanges, DataObjectVersionedChange, { this.context })
     }
 
     @Test
@@ -87,7 +87,7 @@ class DataObjectVersionedChangeTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.dataObjectVersionedChanges, DataObjectVersionedChange.Model, { this.context })
+            checkYamlConversion(this.dataObjectVersionedChanges, DataObjectVersionedChange, { this.context })
         }
     }
 }

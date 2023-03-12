@@ -37,7 +37,7 @@ internal class ChangeUpdateTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.changeUpdate, ChangeUpdate.Model, { this.context })
+        checkJsonConversion(this.changeUpdate, ChangeUpdate, { this.context })
     }
 
     @Test
@@ -53,7 +53,7 @@ internal class ChangeUpdateTest {
             
             """.trimIndent()
         ) {
-            checkYamlConversion(this.changeUpdate, ChangeUpdate.Model, { this.context })
+            checkYamlConversion(this.changeUpdate, ChangeUpdate, { this.context })
         }
     }
 }

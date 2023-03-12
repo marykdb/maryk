@@ -118,13 +118,13 @@ internal class ValueObjectDefinitionTest {
 
     @Test
     fun convertDefinitionToJSONAndBack() {
-        checkJsonConversion(this.def, ValueObjectDefinition.Model.Model, { DefinitionsContext() })
-        checkJsonConversion(this.defMaxDefined, ValueObjectDefinition.Model.Model, { DefinitionsContext() })
+        checkJsonConversion(this.def, ValueObjectDefinition.Model, { DefinitionsContext() })
+        checkJsonConversion(this.defMaxDefined, ValueObjectDefinition.Model, { DefinitionsContext() })
     }
 
     @Test
     fun convertDefinitionToYAMLAndBack() {
-        checkYamlConversion(this.def, ValueObjectDefinition.Model.Model, { DefinitionsContext() })
+        checkYamlConversion(this.def, ValueObjectDefinition.Model, { DefinitionsContext() })
 
         expect(
             """
@@ -147,7 +147,7 @@ internal class ValueObjectDefinitionTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.defMaxDefined, ValueObjectDefinition.Model.Model, { DefinitionsContext() })
+            checkYamlConversion(this.defMaxDefined, ValueObjectDefinition.Model, { DefinitionsContext() })
         }
     }
 

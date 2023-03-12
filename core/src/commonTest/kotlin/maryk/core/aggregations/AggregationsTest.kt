@@ -92,7 +92,7 @@ class AggregationsTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.aggregations, Aggregations.Model, { this.context })
+            checkJsonConversion(this.aggregations, Aggregations, { this.context })
         }
     }
 
@@ -120,7 +120,7 @@ class AggregationsTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.aggregations, Aggregations.Model, { this.context })
+            checkYamlConversion(this.aggregations, Aggregations, { this.context })
         }
     }
 }

@@ -164,7 +164,7 @@ class InjectTest {
 
     @Test
     fun convertSimpleToJSONAndBack() {
-        checkJsonConversion(injectSimple, Inject.Model, { this.context })
+        checkJsonConversion(injectSimple, Inject, { this.context })
     }
 
     @Test
@@ -180,7 +180,7 @@ class InjectTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.inject, Inject.Model, { this.context })
+            checkYamlConversion(this.inject, Inject, { this.context })
         }
     }
 
@@ -191,13 +191,13 @@ class InjectTest {
             testCompleteConvert
             """.trimIndent()
         ) {
-            checkYamlConversion(injectCompleteObject, Inject.Model, { this.context })
+            checkYamlConversion(injectCompleteObject, Inject, { this.context })
         }
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.inject, Inject.Model, { this.context })
+        checkJsonConversion(this.inject, Inject, { this.context })
     }
 
     @Test
@@ -213,7 +213,7 @@ class InjectTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.injectFromAny, Inject.Model, { this.context })
+            checkYamlConversion(this.injectFromAny, Inject, { this.context })
         }
     }
 
@@ -226,7 +226,7 @@ class InjectTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.injectFromAny, Inject.Model, { this.context })
+            checkJsonConversion(this.injectFromAny, Inject, { this.context })
         }
     }
 

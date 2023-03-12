@@ -38,7 +38,7 @@ class IncMapChangeTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.incMapChange, IncMapChange.Model, { this.context })
+        checkJsonConversion(this.incMapChange, IncMapChange, { this.context })
     }
 
     @Test
@@ -52,7 +52,7 @@ class IncMapChangeTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.incMapChange, IncMapChange.Model, { this.context })
+            checkYamlConversion(this.incMapChange, IncMapChange, { this.context })
         }
     }
 

@@ -59,7 +59,7 @@ internal class ValueDataModelTest {
     fun convertDefinitionToJSONAndBack() {
         checkJsonConversion(
             TestValueObject.Model,
-            ValueDataModel.Model.Model,
+            ValueDataModel.Model,
             { DefinitionsConversionContext() },
             ::compareDataModels
         )
@@ -92,7 +92,7 @@ internal class ValueDataModelTest {
         ) {
             checkYamlConversion(
                 TestValueObject.Model,
-                ValueDataModel.Model.Model,
+                ValueDataModel.Model,
                 { DefinitionsConversionContext() },
                 ::compareDataModels
             )

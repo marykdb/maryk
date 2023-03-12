@@ -24,8 +24,8 @@ class GetUpdatesRequestTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(getUpdatesRequest, GetChangesRequest.Model, { this.context })
-        checkJsonConversion(getUpdatesMaxRequest, GetChangesRequest.Model, { this.context })
+        checkJsonConversion(getUpdatesRequest, GetChangesRequest, { this.context })
+        checkJsonConversion(getUpdatesMaxRequest, GetChangesRequest, { this.context })
     }
 
     @Test
@@ -40,7 +40,7 @@ class GetUpdatesRequestTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(getUpdatesRequest, GetChangesRequest.Model, { this.context })
+            checkYamlConversion(getUpdatesRequest, GetChangesRequest, { this.context })
         }
 
         expect(
@@ -57,7 +57,7 @@ class GetUpdatesRequestTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(getUpdatesMaxRequest, GetChangesRequest.Model, { this.context })
+            checkYamlConversion(getUpdatesMaxRequest, GetChangesRequest, { this.context })
         }
     }
 }

@@ -41,7 +41,7 @@ class RootMarykTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.rootMaryk, RootMaryk.Model, { DefinitionsContext() }, ::compareRootMaryk, true)
+        checkJsonConversion(this.rootMaryk, RootMaryk, { DefinitionsContext() }, ::compareRootMaryk, true)
     }
 
     @Test
@@ -86,7 +86,7 @@ class RootMarykTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.rootMaryk, RootMaryk.Model, { DefinitionsContext() }, ::compareRootMaryk, true)
+            checkYamlConversion(this.rootMaryk, RootMaryk, { DefinitionsContext() }, ::compareRootMaryk, true)
         }
     }
 

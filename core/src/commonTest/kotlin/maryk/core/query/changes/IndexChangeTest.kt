@@ -29,7 +29,7 @@ internal class IndexChangeTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.indexChange, IndexChange.Model)
+        checkJsonConversion(this.indexChange, IndexChange)
     }
 
     @Test
@@ -46,7 +46,7 @@ internal class IndexChangeTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.indexChange, IndexChange.Model)
+            checkYamlConversion(this.indexChange, IndexChange)
         }
     }
 }

@@ -22,7 +22,7 @@ class AddRequestTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(addRequest, AddRequest.Model, { this.context })
+        checkJsonConversion(addRequest, AddRequest, { this.context })
     }
 
     @Test
@@ -36,7 +36,7 @@ class AddRequestTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(addRequest, AddRequest.Model, { this.context })
+            checkYamlConversion(addRequest, AddRequest, { this.context })
         }
     }
 }

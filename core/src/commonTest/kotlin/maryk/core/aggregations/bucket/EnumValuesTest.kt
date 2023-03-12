@@ -47,7 +47,7 @@ class EnumValuesTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.enumValues, EnumValues.Model, { this.context })
+            checkJsonConversion(this.enumValues, EnumValues, { this.context })
         }
     }
 
@@ -62,7 +62,7 @@ class EnumValuesTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.enumValues, EnumValues.Model, { this.context })
+            checkYamlConversion(this.enumValues, EnumValues, { this.context })
         }
     }
 }

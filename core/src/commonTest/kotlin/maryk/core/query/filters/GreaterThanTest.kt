@@ -30,7 +30,7 @@ class GreaterThanTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.greaterThan, GreaterThan.Model, { this.context })
+        checkJsonConversion(this.greaterThan, GreaterThan, { this.context })
     }
 
     @Test
@@ -42,7 +42,7 @@ class GreaterThanTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.greaterThan, GreaterThan.Model, { this.context })
+            checkYamlConversion(this.greaterThan, GreaterThan, { this.context })
         }
     }
 }

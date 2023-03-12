@@ -3,7 +3,6 @@ package maryk.core.properties.enum
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.models.AbstractObjectDataModel
 import maryk.core.properties.IsBaseModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.query.ContainsDefinitionsContext
@@ -46,7 +45,7 @@ class IndexedEnumTest {
         @Suppress("UNCHECKED_CAST")
         checkJsonConversion(
             Option,
-            IndexedEnumDefinition.Model.Model as AbstractObjectDataModel<Option.Companion, ObjectPropertyDefinitions<Option.Companion>, DefinitionsContext, DefinitionsContext>,
+            IndexedEnumDefinition.Model as IsBaseModel<Option.Companion, ObjectPropertyDefinitions<Option.Companion>, DefinitionsContext, DefinitionsContext>,
             null,
             ::compareEnumDefinitions
         )
@@ -69,7 +68,7 @@ class IndexedEnumTest {
             @Suppress("UNCHECKED_CAST")
             checkYamlConversion(
                 Option,
-                IndexedEnumDefinition.Model.Model as AbstractObjectDataModel<Option.Companion, ObjectPropertyDefinitions<Option.Companion>, DefinitionsContext, DefinitionsContext>,
+                IndexedEnumDefinition.Model as IsBaseModel<Option.Companion, ObjectPropertyDefinitions<Option.Companion>, DefinitionsContext, DefinitionsContext>,
                 null,
                 ::compareEnumDefinitions
             )

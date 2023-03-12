@@ -22,7 +22,7 @@ class DeleteRequestTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(deleteRequest, DeleteRequest.Model, { this.context })
+        checkJsonConversion(deleteRequest, DeleteRequest, { this.context })
     }
 
     @Test
@@ -35,7 +35,7 @@ class DeleteRequestTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(deleteRequest, DeleteRequest.Model, { this.context })
+            checkYamlConversion(deleteRequest, DeleteRequest, { this.context })
         }
     }
 }

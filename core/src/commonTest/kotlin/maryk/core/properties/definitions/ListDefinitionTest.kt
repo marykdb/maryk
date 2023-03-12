@@ -227,13 +227,13 @@ internal class ListDefinitionTest {
 
     @Test
     fun convertDefinitionToJSONAndBack() {
-        checkJsonConversion(this.def, ListDefinition.Model.Model)
-        checkJsonConversion(this.defMaxDefined, ListDefinition.Model.Model)
+        checkJsonConversion(this.def, ListDefinition.Model)
+        checkJsonConversion(this.defMaxDefined, ListDefinition.Model)
     }
 
     @Test
     fun convertDefinitionToYAMLAndBack() {
-        checkYamlConversion(this.def, ListDefinition.Model.Model)
+        checkYamlConversion(this.def, ListDefinition.Model)
 
         expect(
             """
@@ -250,7 +250,7 @@ internal class ListDefinitionTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.defMaxDefined, ListDefinition.Model.Model)
+            checkYamlConversion(this.defMaxDefined, ListDefinition.Model)
         }
     }
 

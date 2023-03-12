@@ -37,7 +37,7 @@ class MinResponseTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.minResponse, MinResponse.Model, { this.context })
+            checkJsonConversion(this.minResponse, MinResponse, { this.context })
         }
     }
 
@@ -50,7 +50,7 @@ class MinResponseTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.minResponse, MinResponse.Model, { this.context })
+            checkYamlConversion(this.minResponse, MinResponse, { this.context })
         }
     }
 }

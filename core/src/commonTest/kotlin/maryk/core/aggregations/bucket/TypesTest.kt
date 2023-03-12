@@ -47,7 +47,7 @@ class TypesTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.types, Types.Model, { this.context })
+            checkJsonConversion(this.types, Types, { this.context })
         }
     }
 
@@ -62,7 +62,7 @@ class TypesTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.types, Types.Model, { this.context })
+            checkYamlConversion(this.types, Types, { this.context })
         }
     }
 }

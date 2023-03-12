@@ -19,7 +19,7 @@ class ObjectCreateTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(ObjectCreate, ObjectCreate.Model.Model, { this.context })
+        checkJsonConversion(ObjectCreate, ObjectCreate.Model, { this.context })
     }
 
     @Test
@@ -29,7 +29,7 @@ class ObjectCreateTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(ObjectCreate, ObjectCreate.Model.Model, { this.context })
+            checkYamlConversion(ObjectCreate, ObjectCreate.Model, { this.context })
         }
     }
 }

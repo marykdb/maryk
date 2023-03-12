@@ -131,13 +131,13 @@ internal class StringDefinitionTest {
 
     @Test
     fun convertDefinitionToJSONAndBack() {
-        checkJsonConversion(this.def, StringDefinition.Model.Model)
-        checkJsonConversion(this.defMaxDefined, StringDefinition.Model.Model)
+        checkJsonConversion(this.def, StringDefinition.Model)
+        checkJsonConversion(this.defMaxDefined, StringDefinition.Model)
     }
 
     @Test
     fun convertDefinitionToYAMLAndBack() {
-        checkYamlConversion(this.def, StringDefinition.Model.Model)
+        checkYamlConversion(this.def, StringDefinition.Model)
 
         expect(
             """
@@ -153,7 +153,7 @@ internal class StringDefinitionTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.defMaxDefined, StringDefinition.Model.Model)
+            checkYamlConversion(this.defMaxDefined, StringDefinition.Model)
         }
     }
 

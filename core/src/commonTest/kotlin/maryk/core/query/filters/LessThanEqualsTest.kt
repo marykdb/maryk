@@ -30,7 +30,7 @@ class LessThanEqualsTest {
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.lessThanEquals, LessThanEquals.Model, { this.context })
+        checkJsonConversion(this.lessThanEquals, LessThanEquals, { this.context })
     }
 
     @Test
@@ -42,7 +42,7 @@ class LessThanEqualsTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.lessThanEquals, LessThanEquals.Model, { this.context })
+            checkYamlConversion(this.lessThanEquals, LessThanEquals, { this.context })
         }
     }
 }

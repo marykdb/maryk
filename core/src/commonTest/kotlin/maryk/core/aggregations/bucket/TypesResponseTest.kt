@@ -101,7 +101,7 @@ class TypesResponseTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.typesResponse, TypesResponse.Model, { this.context })
+            checkJsonConversion(this.typesResponse, TypesResponse, { this.context })
         }
     }
 
@@ -134,7 +134,7 @@ class TypesResponseTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.typesResponse, TypesResponse.Model, { this.context })
+            checkYamlConversion(this.typesResponse, TypesResponse, { this.context })
         }
     }
 }

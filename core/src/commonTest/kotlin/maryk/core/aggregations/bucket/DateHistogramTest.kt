@@ -50,7 +50,7 @@ class DateHistogramTest {
             }
             """.trimIndent()
         ) {
-            checkJsonConversion(this.dateHistogram, DateHistogram.Model, { this.context })
+            checkJsonConversion(this.dateHistogram, DateHistogram, { this.context })
         }
     }
 
@@ -66,7 +66,7 @@ class DateHistogramTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.dateHistogram, DateHistogram.Model, { this.context })
+            checkYamlConversion(this.dateHistogram, DateHistogram, { this.context })
         }
     }
 }

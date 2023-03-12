@@ -106,13 +106,13 @@ internal class EmbeddedValuesDefinitionTest {
 
     @Test
     fun convertDefinitionToJSONAndBack() {
-        checkJsonConversion(this.def, EmbeddedValuesDefinition.Model.Model, { DefinitionsContext() })
-        checkJsonConversion(this.defMaxDefined, EmbeddedValuesDefinition.Model.Model, { DefinitionsContext() })
+        checkJsonConversion(this.def, EmbeddedValuesDefinition.Model, { DefinitionsContext() })
+        checkJsonConversion(this.defMaxDefined, EmbeddedValuesDefinition.Model, { DefinitionsContext() })
     }
 
     @Test
     fun convertDefinitionToYAMLAndBack() {
-        checkYamlConversion(this.def, EmbeddedValuesDefinition.Model.Model, { DefinitionsContext() })
+        checkYamlConversion(this.def, EmbeddedValuesDefinition.Model, { DefinitionsContext() })
 
         expect(
             """
@@ -124,7 +124,7 @@ internal class EmbeddedValuesDefinitionTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.defMaxDefined, EmbeddedValuesDefinition.Model.Model, { DefinitionsContext() })
+            checkYamlConversion(this.defMaxDefined, EmbeddedValuesDefinition.Model, { DefinitionsContext() })
         }
     }
 

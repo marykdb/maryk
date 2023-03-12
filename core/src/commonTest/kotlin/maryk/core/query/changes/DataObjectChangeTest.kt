@@ -59,7 +59,7 @@ class DataObjectChangeTest {
     fun convertToJSONAndBack() {
         val requestContext = this.createContext()
 
-        checkJsonConversion(this.dataObjectChange, DataObjectChange.Model, { requestContext })
+        checkJsonConversion(this.dataObjectChange, DataObjectChange, { requestContext })
 
         checkContext(requestContext)
     }
@@ -92,7 +92,7 @@ class DataObjectChangeTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.dataObjectChange, DataObjectChange.Model, { requestContext })
+            checkYamlConversion(this.dataObjectChange, DataObjectChange, { requestContext })
         }
 
         checkContext(requestContext)

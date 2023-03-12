@@ -709,8 +709,8 @@ internal class RootDataModelTest {
             }
             properties["embedded"]!!.let {
                 expect(12u) { it.index }
-                expect(EmbeddedValuesDefinition(dataModel = { TestMarykModel.Model })) {
-                    it.definition as EmbeddedValuesDefinition<*, *>
+                expect(EmbeddedValuesDefinition(dataModel = { TestMarykModel })) {
+                    it.definition as EmbeddedValuesDefinition<*>
                 }
             }
             properties["value"]!!.let {

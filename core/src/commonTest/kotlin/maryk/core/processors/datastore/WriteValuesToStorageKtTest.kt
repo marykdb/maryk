@@ -45,7 +45,7 @@ class WriteValuesToStorageKtTest {
                     assertIs<IsMultiTypeDefinition<*, *, *>>(type.castDefinition(definition))
                 }
                 Embed -> {
-                    assertIs<EmbeddedValuesDefinition<*, *>>(type.castDefinition(definition))
+                    assertIs<EmbeddedValuesDefinition<*>>(type.castDefinition(definition))
                 }
                 ObjectDelete -> {
                     // Not in this write

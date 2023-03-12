@@ -30,12 +30,12 @@ internal class EmbeddedValuesDefinitionTest {
     }
 
     private val def = EmbeddedValuesDefinition(
-        dataModel = { MarykModel.Model }
+        dataModel = { MarykModel }
     )
     private val defMaxDefined = EmbeddedValuesDefinition(
         required = false,
         final = true,
-        dataModel = { MarykModel.Model },
+        dataModel = { MarykModel },
         default = MarykModel.run { create(string with "default") }
     )
 
@@ -132,13 +132,13 @@ internal class EmbeddedValuesDefinitionTest {
     fun isCompatible() {
         assertTrue {
             EmbeddedValuesDefinition(
-                dataModel = { MarykModel.Model }
+                dataModel = { MarykModel }
             ).compatibleWith(def)
         }
 
         assertFalse {
             EmbeddedValuesDefinition(
-                dataModel = { TestMarykModel.Model }
+                dataModel = { TestMarykModel }
             ).compatibleWith(def)
         }
     }

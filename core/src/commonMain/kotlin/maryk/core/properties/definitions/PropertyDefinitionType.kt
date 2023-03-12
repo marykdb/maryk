@@ -1,6 +1,5 @@
 package maryk.core.properties.definitions
 
-import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.definitions.wrapper.EmbeddedValuesDefinitionWrapper
@@ -106,7 +105,7 @@ internal val mapOfPropertyDefWrappers = mapOf(
         EmbeddedValuesDefinitionWrapper(
             index,
             name,
-            definition as EmbeddedValuesDefinition<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>,
+            definition as EmbeddedValuesDefinition<IsValuesPropertyDefinitions>,
             altNames
         )
     },

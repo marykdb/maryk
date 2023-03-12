@@ -12,7 +12,7 @@ class EmbeddedValuesDefinitionWrapperTest {
         index = 1u,
         name = "wrapper",
         definition = EmbeddedValuesDefinition(
-            dataModel = { EmbeddedMarykModel.Model }
+            dataModel = { EmbeddedMarykModel }
         ),
         getter = { null }
     )

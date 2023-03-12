@@ -44,7 +44,7 @@ object ComplexModel : RootModel<ComplexModel>() {
             type = UInt32
         ),
         valueDefinition = EmbeddedValuesDefinition(
-            dataModel = { EmbeddedMarykModel.Model }
+            dataModel = { EmbeddedMarykModel }
         )
     )
 
@@ -93,7 +93,7 @@ object ComplexModel : RootModel<ComplexModel>() {
         required = false,
         keyNumberDescriptor = UInt32,
         valueDefinition = EmbeddedValuesDefinition(
-            dataModel = { EmbeddedMarykModel.Model }
+            dataModel = { EmbeddedMarykModel }
         )
     )
 

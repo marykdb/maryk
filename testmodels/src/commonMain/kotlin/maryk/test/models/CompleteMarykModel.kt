@@ -193,7 +193,7 @@ object CompleteMarykModel : RootModel<CompleteMarykModel>(
         index = 11u,
         required = false,
         final = true,
-        dataModel = { SimpleMarykModel.Model },
+        dataModel = { SimpleMarykModel },
         default = SimpleMarykModel.run { create(
             value with "a default"
         ) }
@@ -320,7 +320,7 @@ object CompleteMarykModel : RootModel<CompleteMarykModel>(
         required = false,
         keyNumberDescriptor = UInt32,
         valueDefinition = EmbeddedValuesDefinition(
-            dataModel = { EmbeddedMarykModel.Model }
+            dataModel = { EmbeddedMarykModel }
         )
     )
     val location by geoPoint(

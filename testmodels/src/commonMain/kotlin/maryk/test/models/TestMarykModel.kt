@@ -136,7 +136,7 @@ object TestMarykModel : RootModel<TestMarykModel>(
     val embeddedValues by embed(
         index = 12u,
         required = false,
-        dataModel = { EmbeddedMarykModel.Model }
+        dataModel = { EmbeddedMarykModel }
     )
 
     val multi by multiType(

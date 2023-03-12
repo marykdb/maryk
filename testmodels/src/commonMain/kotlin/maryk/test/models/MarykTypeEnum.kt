@@ -35,7 +35,7 @@ sealed class MarykTypeEnum<T: Any>(
     )
     object T3: MarykTypeEnum<Values<EmbeddedMarykModel>>(3u,
         EmbeddedValuesDefinition(
-            dataModel = { EmbeddedMarykModel.Model }
+            dataModel = { EmbeddedMarykModel }
         )
     )
     object T4: MarykTypeEnum<List<String>>(4u,

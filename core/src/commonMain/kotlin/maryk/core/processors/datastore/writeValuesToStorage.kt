@@ -137,7 +137,7 @@ internal fun <T : IsPropertyDefinition<*>> writeValue(
             )
         }
         is AbstractValues<*, *, *> -> {
-            if (definition !is EmbeddedValuesDefinition<*, *>) {
+            if (definition !is EmbeddedValuesDefinition<*>) {
                 throw TypeException("Expected Embedded Values Definition for Values object")
             }
 

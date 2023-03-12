@@ -2,7 +2,6 @@ package maryk.core.properties.definitions.wrapper
 
 import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
-import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
@@ -74,14 +73,14 @@ data class MultiTypeDefinitionWrapper<E : TypeEnum<T>, T: Any, TO : Any, in CX :
 
     /** Specific extension to support fetching deeper references with [type] */
     @Suppress("UNCHECKED_CAST")
-    fun <P : IsValuesPropertyDefinitions, T : Any, R : IsPropertyReference<T, IsDefinitionWrapper<T, *, *, *>, *>> withType(
-        type: TypeEnum<Values<P>>,
-        referenceGetter: P.() ->
+    fun <DM : IsValuesPropertyDefinitions, T : Any, R : IsPropertyReference<T, IsDefinitionWrapper<T, *, *, *>, *>> withType(
+        type: TypeEnum<Values<DM>>,
+        referenceGetter: DM.() ->
             (AnyOutPropertyReference?) -> R
     ): (AnyOutPropertyReference?) -> R  =
         {
             val typeRef = this.typedValueReference(type as E, it)
-            (this.definition(type) as EmbeddedValuesDefinition<IsValuesDataModel<P>, P>).dataModel(
+            (this.definition(type) as EmbeddedValuesDefinition<DM>).dataModel(
                 typeRef,
                 referenceGetter
             )

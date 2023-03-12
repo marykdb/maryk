@@ -1,7 +1,6 @@
 package maryk.core.properties.references.dsl
 
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsListDefinition
@@ -32,7 +31,7 @@ fun <P : IsValuesPropertyDefinitions, T : Any, R : IsPropertyReference<T, IsDefi
         } else it
 
         val typedValueRef = multiTypeDef.typedValueRef(type, parent as CanHaveComplexChildReference<*, *, *, *>)
-        (multiTypeDef.definition(type) as EmbeddedValuesDefinition<IsValuesDataModel<P>, P>).dataModel(
+        (multiTypeDef.definition(type) as EmbeddedValuesDefinition<P>).dataModel(
             typedValueRef,
             referenceGetter
         )

@@ -174,7 +174,7 @@ internal fun generateKotlinValue(
                         throw TypeException("NamedDataModel $value has to be a function which returns a IsValuesPropertyDefinitions or IsNamedDataModel ")
                 }
             }
-            is EmbeddedValuesDefinition<*, *> ->
+            is EmbeddedValuesDefinition<*> ->
                 definition.dataModel.generateKotlinValue(value as ValuesImpl, addImport)
             is ValueObjectDefinition<*, *, *> -> definition.dataModel.let {
                 return it.generateKotlinValue(value, addImport)

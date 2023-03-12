@@ -1,6 +1,5 @@
 package maryk.core.properties.references.dsl
 
-import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsMapDefinition
@@ -13,9 +12,9 @@ import kotlin.jvm.JvmName
 
 /** Specific extension to support fetching deeper references on Map values by [key] */
 @JvmName("atEmbed")
-fun <K : Any, V : Values<P>, DM : IsValuesDataModel<P>, P : IsValuesPropertyDefinitions, T : Any, W : IsDefinitionWrapper<T, *, *, *>, R : IsPropertyReference<T, W, *>> IsMapDefinition<K, V, *>.at(
+fun <K : Any, V : Values<DM>, DM : IsValuesPropertyDefinitions, T : Any, W : IsDefinitionWrapper<T, *, *, *>, R : IsPropertyReference<T, W, *>> IsMapDefinition<K, V, *>.at(
     key: K,
-    referenceGetter: P.() -> (AnyOutPropertyReference?) -> R
+    referenceGetter: DM.() -> (AnyOutPropertyReference?) -> R
 ): (AnyOutPropertyReference?) -> R =
     {
         val parent = if (this is IsDefinitionWrapper<*, *, *, *>) {
@@ -23,7 +22,7 @@ fun <K : Any, V : Values<P>, DM : IsValuesDataModel<P>, P : IsValuesPropertyDefi
         } else it
 
         @Suppress("UNCHECKED_CAST")
-        (this.valueDefinition as EmbeddedValuesDefinition<DM, P>).dataModel(
+        (this.valueDefinition as EmbeddedValuesDefinition<DM>).dataModel(
             this.valueRef(key, parent as CanContainMapItemReference<*, *, *>),
             referenceGetter
         )

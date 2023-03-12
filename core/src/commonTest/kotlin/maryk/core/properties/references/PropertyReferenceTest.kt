@@ -31,7 +31,7 @@ private object Model : RootModel<Model>() {
     val test by string(1u)
     val embeddedObject by embed(
         index = 2u,
-        dataModel = { Model }
+        dataModel = { this@Model }
     )
 }
 

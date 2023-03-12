@@ -15,12 +15,12 @@ object EmbeddedMarykModel : Model<EmbeddedMarykModel>(
     val model by embed(
         index = 2u,
         required = false,
-        dataModel = { EmbeddedMarykModel.Model }
+        dataModel = { EmbeddedMarykModel }
     )
     val marykModel by embed(
         index = 3u,
         required = false,
-        dataModel = { TestMarykModel.Model }
+        dataModel = { TestMarykModel }
     )
 
     operator fun invoke(

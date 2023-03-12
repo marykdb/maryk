@@ -84,7 +84,7 @@ internal fun <T : Any> deleteByReference(
                     when (val valueDefinition = mapReference.propertyDefinition.definition.valueDefinition) {
                         is IsStorageBytesEncodable<*> ->
                             valueDefinition.fromStorageBytes(b, o, l) as T
-                        is EmbeddedValuesDefinition<*, *> ->
+                        is EmbeddedValuesDefinition<*> ->
                             (valueDefinition.dataModel as IsDataModelWithValues<*, *, *>).values { EmptyValueItems } as T
                         is IsMapDefinition<*, *, *> -> mapOf<Any, Any>() as T
                         is IsListDefinition<*, *> -> listOf<Any>() as T

@@ -61,7 +61,6 @@ internal fun IsObjectPropertyDefinitions<*>.generateKotlin(
                 index = propertyDefinitionWrapper.index,
                 altNames = propertyDefinitionWrapper.alternativeNames,
                 value = "${propertyDefinitionWrapper.name}$nativeTypeName$default",
-                assign = "this.${propertyDefinitionWrapper.name} with ${propertyDefinitionWrapper.name}",
                 definition = kotlinDescriptor.definitionToKotlinFields(definition, addImport),
                 invoke = "values(${propertyDefinitionWrapper.index}u)"
             )

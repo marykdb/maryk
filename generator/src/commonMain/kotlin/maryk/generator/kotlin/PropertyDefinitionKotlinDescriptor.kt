@@ -1,6 +1,6 @@
 package maryk.generator.kotlin
 
-import maryk.core.models.IsObjectDataModel
+import maryk.core.properties.IsBaseModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -12,7 +12,7 @@ internal open class PropertyDefinitionKotlinDescriptor<in T : Any, D : IsTranspo
     val className: String,
     val wrapFunctionName: String,
     val kotlinTypeName: (D) -> String,
-    val definitionModel: IsObjectDataModel<D, P>,
+    val definitionModel: IsBaseModel<D, P, *, *>,
     val propertyValueOverride: Map<String, (IsTransportablePropertyDefinitionType<out Any>, Any, (String) -> Unit) -> String?> = mapOf(),
     val propertyNameOverride: Map<String, String> = mapOf(),
     private val imports: ((D) -> Array<String>?)? = null
@@ -47,7 +47,7 @@ internal open class PropertyDefinitionKotlinDescriptor<in T : Any, D : IsTranspo
     fun definitionToKotlinFields(definition: D, addImport: (String) -> Unit): String {
         val output = mutableListOf<String>()
 
-        properties@ for (property in definitionModel.properties) {
+        properties@ for (property in definitionModel) {
             val value = property.getter(definition)
 
             val def = property.definition

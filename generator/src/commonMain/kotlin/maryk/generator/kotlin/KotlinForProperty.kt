@@ -7,7 +7,6 @@ internal class KotlinForProperty(
     val wrapName: String,
     val altNames: Set<String>?,
     val value: String,
-    val assign: String,
     val definition: String,
     val invoke: String
 )

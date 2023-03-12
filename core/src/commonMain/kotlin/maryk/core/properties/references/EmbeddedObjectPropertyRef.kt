@@ -3,8 +3,8 @@ package maryk.core.properties.references
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.models.AbstractObjectDataModel
+import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.wrapper.EmbeddedObjectDefinitionWrapper
 import maryk.core.properties.references.ReferenceType.EMBED
 import maryk.core.values.AbstractValues
@@ -16,7 +16,7 @@ import maryk.core.values.AbstractValues
 class EmbeddedObjectPropertyRef<
     DO : Any,
     TO : Any,
-    P : ObjectPropertyDefinitions<DO>,
+    P : IsObjectPropertyDefinitions<DO>,
     out DM : AbstractObjectDataModel<DO, P, CXI, CX>,
     CXI : IsPropertyContext,
     CX : IsPropertyContext

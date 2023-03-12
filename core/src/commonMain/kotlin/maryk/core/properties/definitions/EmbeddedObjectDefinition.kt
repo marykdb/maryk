@@ -7,6 +7,7 @@ import maryk.core.models.ContextualDataModel
 import maryk.core.models.ObjectDataModel
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.ContextualModel
+import maryk.core.properties.IsBaseModel
 import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsValuesPropertyDefinitions
@@ -208,24 +209,24 @@ class EmbeddedObjectDefinition<DO : Any, P : IsObjectPropertyDefinitions<DO>, DM
     }
 }
 
-fun <DO : Any, P : ObjectPropertyDefinitions<DO>, DM : AbstractObjectDataModel<DO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext> IsValuesPropertyDefinitions.embedObject(
+fun <DO : Any, P : IsBaseModel<DO, ObjectPropertyDefinitions<DO>, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext> IsValuesPropertyDefinitions.embedObject(
     index: UInt,
-    dataModel: Unit.() -> DM,
+    dataModel: Unit.() -> P,
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
     default: DO? = null,
     alternativeNames: Set<String>? = null
 ) = DefinitionWrapperDelegateLoader(this) { propName ->
-    EmbeddedObjectDefinitionWrapper<DO, DO, P, DM, CXI, CX, Any>(
+    EmbeddedObjectDefinitionWrapper<DO, DO, ObjectPropertyDefinitions<DO>, AbstractObjectDataModel<DO, ObjectPropertyDefinitions<DO>, CXI, CX>, CXI, CX, Any>(
         index,
         name ?: propName,
-        EmbeddedObjectDefinition(required, final, dataModel, default),
+        EmbeddedObjectDefinition(required, final, { dataModel().Model }, default),
         alternativeNames
     )
 }
 
-fun <TO: Any, DO: Any, EDO : Any, P : ObjectPropertyDefinitions<EDO>, DM : AbstractObjectDataModel<EDO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.embedObject(
+fun <TO: Any, DO: Any, EDO : Any, DM : IsBaseModel<EDO, DM, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.embedObject(
     index: UInt,
     getter: (DO) -> TO?,
     dataModel: Unit.() -> DM,
@@ -242,7 +243,7 @@ fun <TO: Any, DO: Any, EDO : Any, P : ObjectPropertyDefinitions<EDO>, DM : Abstr
     EmbeddedObjectDefinitionWrapper(
         index,
         name ?: propName,
-        EmbeddedObjectDefinition(required, final, dataModel, default),
+        EmbeddedObjectDefinition(required, final, { dataModel().Model }, default),
         alternativeNames,
         getter = getter,
         capturer = capturer,

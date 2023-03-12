@@ -1,8 +1,8 @@
 package maryk.core.properties.definitions.wrapper
 
 import maryk.core.models.AbstractObjectDataModel
+import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.graph.PropRefGraphType.PropRef
@@ -27,7 +27,7 @@ import kotlin.reflect.KProperty
 data class EmbeddedObjectDefinitionWrapper<
     EODO : Any,
     TO : Any,
-    P : ObjectPropertyDefinitions<EODO>,
+    P : IsObjectPropertyDefinitions<EODO>,
     out DM : AbstractObjectDataModel<EODO, P, CXI, CX>,
     CXI : IsPropertyContext, CX : IsPropertyContext, in DO : Any
 > internal constructor(

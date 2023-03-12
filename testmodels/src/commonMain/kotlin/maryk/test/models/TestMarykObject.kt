@@ -126,7 +126,7 @@ data class TestMarykObject(
         val embeddedObject by embedObject(
             index = 12u,
             getter = TestMarykObject::embeddedObject,
-            dataModel = { EmbeddedMarykObject.Model },
+            dataModel = { EmbeddedMarykObject },
             required = false
         )
 

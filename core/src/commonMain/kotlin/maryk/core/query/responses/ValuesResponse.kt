@@ -32,7 +32,7 @@ data class ValuesResponse<DM : IsRootModel>(
         val aggregations by embedObject(
             index = 3u,
             getter = ValuesResponse<*>::aggregations,
-            dataModel = { AggregationsResponse.Model },
+            dataModel = { AggregationsResponse },
             alternativeNames = setOf("aggs")
         )
 

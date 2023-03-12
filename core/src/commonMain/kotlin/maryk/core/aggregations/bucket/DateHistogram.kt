@@ -31,7 +31,7 @@ data class DateHistogram<T: Comparable<*>>(
         val aggregations by embedObject(
             index = 2u,
             getter = DateHistogram<*>::aggregations,
-            dataModel = { Aggregations.Model },
+            dataModel = { Aggregations },
             alternativeNames = setOf("aggs")
         )
 

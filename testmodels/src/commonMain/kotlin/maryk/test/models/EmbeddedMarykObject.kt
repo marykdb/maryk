@@ -19,13 +19,13 @@ data class EmbeddedMarykObject(
         val model by embedObject(
             index = 2u,
             getter = EmbeddedMarykObject::model,
-            dataModel = { EmbeddedMarykObject.Model },
+            dataModel = { EmbeddedMarykObject },
             required = false
         )
         val marykModel by embedObject(
             index = 3u,
             getter = EmbeddedMarykObject::marykModel,
-            dataModel = { TestMarykObject.Model },
+            dataModel = { TestMarykObject },
             required = false
         )
 

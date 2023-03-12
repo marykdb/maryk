@@ -85,7 +85,7 @@ data class ScanUpdatesRequest<DM : IsRootModel> internal constructor(
     companion object : QueryModel<ScanUpdatesRequest<*>, Companion>() {
         val from by addDataModel { it.dataModel }
         val startKey by addStartKey(ScanUpdatesRequest<*>::startKey)
-        val select by embedObject(3u, ScanUpdatesRequest<*>::select, dataModel = { RootPropRefGraph.Model })
+        val select by embedObject(3u, ScanUpdatesRequest<*>::select, dataModel = { RootPropRefGraph })
         val where by addFilter(ScanUpdatesRequest<*>::where)
         val toVersion by number(5u, ScanUpdatesRequest<*>::toVersion, UInt64, required = false)
         val filterSoftDeleted  by boolean(6u, ScanUpdatesRequest<*>::filterSoftDeleted, default = true)

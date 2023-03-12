@@ -27,7 +27,7 @@ data class ReferenceValueRangePair<T : Comparable<T>> internal constructor(
         override val value by embedObject(
             index = 2u,
             getter = ReferenceValueRangePair<*>::range,
-            dataModel = { ValueRange.Model }
+            dataModel = { ValueRange }
         )
 
         override fun invoke(values: ObjectValues<ReferenceValueRangePair<*>, Companion>) =

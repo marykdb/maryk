@@ -62,11 +62,11 @@ data class GetRequest<DM : IsRootModel> internal constructor(
                 }
             )
         )
-        val select by embedObject(3u, GetRequest<*>::select, dataModel = { RootPropRefGraph.Model })
+        val select by embedObject(3u, GetRequest<*>::select, dataModel = { RootPropRefGraph })
         val where by addFilter(GetRequest<*>::where)
         val toVersion by number(5u, GetRequest<*>::toVersion, UInt64, required = false)
         val filterSoftDeleted  by boolean(6u, GetRequest<*>::filterSoftDeleted, default = true)
-        val aggregations by embedObject(7u, GetRequest<*>::aggregations, dataModel = { Aggregations.Model }, alternativeNames = setOf("aggs"))
+        val aggregations by embedObject(7u, GetRequest<*>::aggregations, dataModel = { Aggregations }, alternativeNames = setOf("aggs"))
 
         override fun invoke(values: ObjectValues<GetRequest<*>, Companion>) = GetRequest(
             dataModel = values(1u),

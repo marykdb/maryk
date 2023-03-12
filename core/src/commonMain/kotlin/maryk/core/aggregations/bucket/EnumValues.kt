@@ -26,7 +26,7 @@ data class EnumValues<T: IndexedEnumComparable<T>>(
         val aggregations by embedObject(
             index = 2u,
             getter = EnumValues<*>::aggregations,
-            dataModel = { Aggregations.Model },
+            dataModel = { Aggregations },
             alternativeNames = setOf("aggs")
         )
 

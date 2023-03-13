@@ -8,6 +8,7 @@ import maryk.core.models.ContextualDataModel
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.models.ValueDataModel
 import maryk.core.properties.ContextualModel
+import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsValueModel
 import maryk.core.properties.IsValuesPropertyDefinitions
@@ -33,11 +34,11 @@ import maryk.json.IsJsonLikeWriter
 private typealias GenericValueModelDefinition = ValueObjectDefinition<*, *, *>
 
 /** Definition for value object properties containing dataObjects of [DO] defined by [dataModel] of [DM] */
-data class ValueObjectDefinition<DO : ValueDataObject, DM : ValueDataModel<DO, P>, P : IsValueModel<DO, *>>(
+data class ValueObjectDefinition<DO : ValueDataObject, DM : ValueDataModel<DO, P>, P : IsObjectPropertyDefinitions<DO>>(
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val unique: Boolean = false,
-    override val dataModel: DM,
+    val properties: P,
     override val minValue: DO? = null,
     override val maxValue: DO? = null,
     override val default: DO? = null
@@ -47,6 +48,9 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : ValueDataModel<DO, P
     IsSerializableFixedBytesEncodable<DO, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<DO>,
     HasDefaultValueDefinition<DO> {
+    @Suppress("UNCHECKED_CAST")
+    override val dataModel: DM = properties.Model as DM
+
     override val propertyDefinitionType = Value
     override val wireType = LENGTH_DELIMITED
     override val byteSize = dataModel.byteSize
@@ -198,7 +202,7 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : ValueDataModel<DO, P
                 required = values(1u),
                 final = values(2u),
                 unique = values(3u),
-                dataModel = values(4u),
+                properties = values<ValueDataModel<ValueDataObject, IsObjectPropertyDefinitions<ValueDataObject>>>(4u).properties,
                 minValue = values(5u),
                 maxValue = values(6u),
                 default = values(7u)
@@ -222,7 +226,7 @@ fun <DO : ValueDataObject, DM : IsValueModel<DO, DM>> IsValuesPropertyDefinition
     FixedBytesDefinitionWrapper<DO, DO, IsPropertyContext, ValueObjectDefinition<DO, ValueDataModel<DO, DM>, DM>, Any>(
         index,
         name ?: propName,
-        ValueObjectDefinition(required, final, unique, dataModel.Model as ValueDataModel<DO, DM>, minValue, maxValue, default),
+        ValueObjectDefinition(required, final, unique, dataModel, minValue, maxValue, default),
         alternativeNames
     )
 }
@@ -262,7 +266,7 @@ fun <TO: Any, DO: Any, VDO: ValueDataObject, DM : IsValueModel<VDO, DM>, CX: IsP
     FixedBytesDefinitionWrapper(
         index,
         name ?: propName,
-        ValueObjectDefinition(required, final, unique, dataModel.Model as ValueDataModel<VDO, DM>, minValue, maxValue, default),
+        ValueObjectDefinition(required, final, unique, dataModel, minValue, maxValue, default),
         alternativeNames,
         getter = getter,
         capturer = capturer,

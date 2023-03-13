@@ -21,7 +21,7 @@ import kotlin.test.expect
 
 internal class ValueObjectDefinitionTest {
     private val def = ValueObjectDefinition(
-        dataModel = TestValueObject.Model,
+        properties = TestValueObject,
     )
     private val defMaxDefined = ValueObjectDefinition(
         required = false,
@@ -37,7 +37,7 @@ internal class ValueObjectDefinitionTest {
             dateTime = LocalDateTime(2017, 12, 5, 0, 0, 0),
             bool = true
         ),
-        dataModel = TestValueObject.Model,
+        properties = TestValueObject,
         default = TestValueObject(
             int = 10,
             dateTime = LocalDateTime(2010, 10, 10, 0, 0, 0),
@@ -155,14 +155,14 @@ internal class ValueObjectDefinitionTest {
     @Test
     fun isCompatible() {
         assertTrue {
-            ValueObjectDefinition(dataModel = TestValueObject.Model).compatibleWith(
-                ValueObjectDefinition(dataModel = TestValueObject.Model)
+            ValueObjectDefinition(properties = TestValueObject).compatibleWith(
+                ValueObjectDefinition(properties = TestValueObject)
             )
         }
 
         assertFalse {
-            ValueObjectDefinition(dataModel = TestValueObject.Model).compatibleWith(
-                ValueObjectDefinition(dataModel = TestValueObject2.Model)
+            ValueObjectDefinition(properties = TestValueObject).compatibleWith(
+                ValueObjectDefinition(properties = TestValueObject2)
             )
         }
     }

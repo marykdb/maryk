@@ -2,6 +2,7 @@ package maryk.core.models
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.properties.AbstractPropertyDefinitions
+import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitionsCollectionDefinition
 import maryk.core.properties.ObjectPropertyDefinitionsCollectionDefinitionWrapper
@@ -11,7 +12,7 @@ import maryk.core.properties.ObjectPropertyDefinitionsCollectionDefinitionWrappe
  * properties should be validated. It models the DataObjects of type [DO] which can be validated. And it contains a
  * reference to the propertyDefinitions of type [P] which can be used for the references to the properties.
  */
-abstract class ObjectDataModel<DO : Any, P : ObjectPropertyDefinitions<DO>>(
+abstract class ObjectDataModel<DO : Any, P : IsObjectPropertyDefinitions<DO>>(
     override val name: String,
     properties: P
 ) : SimpleObjectDataModel<DO, P>(

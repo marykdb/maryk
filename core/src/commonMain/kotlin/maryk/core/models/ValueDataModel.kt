@@ -6,6 +6,7 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.SerializationException
 import maryk.core.properties.DefinitionModel
 import maryk.core.properties.IsDataModelPropertyDefinitions
+import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.MutableObjectPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -30,7 +31,7 @@ typealias AnyValueDataModel = ValueDataModel<*, *>
  * ObjectDataModel of type [DO] for objects that can be encoded in fixed length width.
  * Contains [properties] definitions.
  */
-abstract class ValueDataModel<DO : ValueDataObject, P : ObjectPropertyDefinitions<DO>>(
+abstract class ValueDataModel<DO : ValueDataObject, P : IsObjectPropertyDefinitions<DO>>(
     name: String,
     properties: P
 ) : ObjectDataModel<DO, P>(name, properties), MarykPrimitive {

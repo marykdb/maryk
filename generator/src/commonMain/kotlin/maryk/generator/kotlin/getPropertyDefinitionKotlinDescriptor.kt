@@ -311,7 +311,7 @@ private val definitionNamesMap = mapOf(
     PropertyDefinitionType.Value to PropertyDefinitionKotlinDescriptor(
         className = "ValueObjectDefinition",
         wrapFunctionName = "valueObject",
-        kotlinTypeName = { it.dataModel.name },
+        kotlinTypeName = { (it.dataModel as IsNamedDataModel<*>).name },
         definitionModel = ValueObjectDefinition.Model,
         propertyValueOverride = mapOf(
             "default" to generateKotlinValueWithDefinition,

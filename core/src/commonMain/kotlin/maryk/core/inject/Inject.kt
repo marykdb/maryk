@@ -138,6 +138,5 @@ data class Inject<T : Any, D : IsPropertyDefinition<T>>(
                 }
             }
         }
-
     }
 }

@@ -257,7 +257,7 @@ private class MultiTypeDescriptorListDefinition :
     override val default: List<MultiTypeEnum<*>>? = null
     override val valueDefinition: IsValueDefinition<MultiTypeEnum<*>, IsPropertyContext> =
         EmbeddedObjectDefinition(
-            dataModel = { MultiTypeEnum.Model.Model }
+            dataModel = { MultiTypeEnum.Model }
         )
 
     /** Write [value] to JSON [writer] with [context] */

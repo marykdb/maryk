@@ -23,7 +23,7 @@ data class Orders(
             index = 1u,
             getter = Orders::orders,
             valueDefinition = EmbeddedObjectDefinition(
-                dataModel = { Order.Model.Model }
+                dataModel = { Order.Model }
             )
         )
 

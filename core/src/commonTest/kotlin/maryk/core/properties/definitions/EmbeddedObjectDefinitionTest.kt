@@ -40,12 +40,12 @@ internal class EmbeddedObjectDefinitionTest {
     }
 
     private val def = EmbeddedObjectDefinition(
-        dataModel = { MarykObject.Model }
+        dataModel = { MarykObject }
     )
     private val defMaxDefined = EmbeddedObjectDefinition(
         required = false,
         final = true,
-        dataModel = { MarykObject.Model },
+        dataModel = { MarykObject },
         default = MarykObject("default")
     )
 
@@ -146,13 +146,13 @@ internal class EmbeddedObjectDefinitionTest {
     fun isCompatible() {
         assertTrue {
             EmbeddedObjectDefinition(
-                dataModel = { MarykObject.Model }
+                dataModel = { MarykObject }
             ).compatibleWith(def)
         }
 
         assertFalse {
             EmbeddedObjectDefinition(
-                dataModel = { TestMarykObject.Model }
+                dataModel = { TestMarykObject }
             ).compatibleWith(def)
         }
     }

@@ -140,7 +140,7 @@ data class EnumDefinition<E : IndexedEnumComparable<E>>(
             definition = ContextValueTransformDefinition(
                 definition = ContextTransformerDefinition(
                     definition = EmbeddedObjectDefinition(
-                        dataModel = { IndexedEnumDefinition.Model.Model }
+                        dataModel = { IndexedEnumDefinition.Model }
                     ),
                     contextTransformer = {
                         it?.definitionsContext

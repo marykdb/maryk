@@ -25,6 +25,6 @@ enum class OrderType(
 @SharedImmutable
 internal val mapOfOrderTypeToEmbeddedObject =
     mapOf(
-        ORDER to EmbeddedObjectDefinition(dataModel = { Order.Model.Model }),
-        ORDERS to EmbeddedObjectDefinition(dataModel = { Orders.Model })
+        ORDER to EmbeddedObjectDefinition(dataModel = { Order.Model }),
+        ORDERS to EmbeddedObjectDefinition(dataModel = { Orders })
     )

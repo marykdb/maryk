@@ -1,7 +1,6 @@
 package maryk.core.properties
 
 import maryk.core.models.IsObjectDataModel
-import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsContextualEncodable
@@ -76,11 +75,7 @@ internal data class ObjectPropertyDefinitionsCollectionDefinition(
         DefinitionsConversionContext,
         EmbeddedObjectDefinition<
                 AnyDefinitionWrapper,
-                ObjectPropertyDefinitions<AnyDefinitionWrapper>,
-                SimpleObjectDataModel<
-                        AnyDefinitionWrapper,
-                        ObjectPropertyDefinitions<AnyDefinitionWrapper>
-                >,
+                IsSimpleBaseModel<AnyDefinitionWrapper, IsPropertyContext, IsPropertyContext>,
                 IsPropertyContext,
                 IsPropertyContext
         >
@@ -93,7 +88,7 @@ internal data class ObjectPropertyDefinitionsCollectionDefinition(
     override val valueDefinition = EmbeddedObjectDefinition(
         dataModel = {
             @Suppress("UNCHECKED_CAST")
-            IsDefinitionWrapper.Model.Model as SimpleObjectDataModel<AnyDefinitionWrapper, ObjectPropertyDefinitions<AnyDefinitionWrapper>>
+            IsDefinitionWrapper.Model as IsSimpleBaseModel<AnyDefinitionWrapper, IsPropertyContext, IsPropertyContext>
         }
     )
 
@@ -157,7 +152,7 @@ internal data class ObjectPropertyDefinitionsCollectionDefinitionWrapper<in DO :
     override val getter: (DO) -> ObjectPropertyDefinitions<Any>?,
     override val alternativeNames: Set<String>? = null
 ) :
-    IsCollectionDefinition<AnyDefinitionWrapper, ObjectPropertyDefinitions<Any>, DefinitionsConversionContext, EmbeddedObjectDefinition<AnyDefinitionWrapper, ObjectPropertyDefinitions<AnyDefinitionWrapper>, SimpleObjectDataModel<AnyDefinitionWrapper, ObjectPropertyDefinitions<AnyDefinitionWrapper>>, IsPropertyContext, IsPropertyContext>> by definition,
+    IsCollectionDefinition<AnyDefinitionWrapper, ObjectPropertyDefinitions<Any>, DefinitionsConversionContext, EmbeddedObjectDefinition<AnyDefinitionWrapper, IsSimpleBaseModel<AnyDefinitionWrapper, IsPropertyContext, IsPropertyContext>, IsPropertyContext, IsPropertyContext>> by definition,
     IsDefinitionWrapper<ObjectPropertyDefinitions<Any>, ObjectPropertyDefinitions<Any>, DefinitionsConversionContext, DO>
 {
     override val graphType = PropRef

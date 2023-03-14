@@ -84,7 +84,7 @@ data class IncMapChange internal constructor(
             index = 1u,
             getter = IncMapChange::valueChanges,
             valueDefinition = EmbeddedObjectDefinition(
-                dataModel = { IncMapValueChanges.Model }
+                dataModel = { IncMapValueChanges }
             )
         )
 

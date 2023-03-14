@@ -40,17 +40,17 @@ sealed class IndexKeyPartType<out T: IsIndexable>(
 @SharedImmutable
 internal val mapOfSimpleIndexKeyPartDefinitions: Map<IndexKeyPartType<IsIndexable>, IsValueDefinition<*, DefinitionsConversionContext>> =
     mapOf(
-        IndexKeyPartType.UUID to EmbeddedObjectDefinition(dataModel = { UUIDKey.Model.Model }),
+        IndexKeyPartType.UUID to EmbeddedObjectDefinition(dataModel = { UUIDKey.Model }),
         IndexKeyPartType.Reference to ContextualPropertyReferenceDefinition(
             contextualResolver = {
                 it?.propertyDefinitions as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()
             }
         ),
-        IndexKeyPartType.Reversed to EmbeddedObjectDefinition(dataModel = { ReversedInstance.Model.Model })
+        IndexKeyPartType.Reversed to EmbeddedObjectDefinition(dataModel = { ReversedInstance.Model })
     )
 
 @SharedImmutable
 internal val mapOfIndexKeyPartDefinitions: Map<IndexKeyPartType<*>, IsValueDefinition<*, DefinitionsConversionContext>> =
     mapOfSimpleIndexKeyPartDefinitions.plus(
-        IndexKeyPartType.Multiple to EmbeddedObjectDefinition(dataModel = { MultipleInstance.Model.Model })
+        IndexKeyPartType.Multiple to EmbeddedObjectDefinition(dataModel = { MultipleInstance.Model })
     )

@@ -14,17 +14,17 @@ interface IsFilter {
 
 @SharedImmutable
 internal val mapOfFilterDefinitions = mapOf(
-    FilterType.And to EmbeddedObjectDefinition(dataModel = { And.Model }),
-    FilterType.Or to EmbeddedObjectDefinition(dataModel = { Or.Model }),
-    FilterType.Not to EmbeddedObjectDefinition(dataModel = { Not.Model }),
-    FilterType.Exists to EmbeddedObjectDefinition(dataModel = { Exists.Model }),
-    FilterType.Equals to EmbeddedObjectDefinition(dataModel = { Equals.Model }),
-    FilterType.LessThan to EmbeddedObjectDefinition(dataModel = { LessThan.Model }),
-    FilterType.LessThanEquals to EmbeddedObjectDefinition(dataModel = { LessThanEquals.Model }),
-    FilterType.GreaterThan to EmbeddedObjectDefinition(dataModel = { GreaterThan.Model }),
-    FilterType.GreaterThanEquals to EmbeddedObjectDefinition(dataModel = { GreaterThanEquals.Model }),
-    FilterType.Prefix to EmbeddedObjectDefinition(dataModel = { Prefix.Model }),
-    FilterType.Range to EmbeddedObjectDefinition(dataModel = { Range.Model }),
-    FilterType.RegEx to EmbeddedObjectDefinition(dataModel = { RegEx.Model }),
-    FilterType.ValueIn to EmbeddedObjectDefinition(dataModel = { ValueIn.Model })
+    FilterType.And to EmbeddedObjectDefinition(dataModel = { And }),
+    FilterType.Or to EmbeddedObjectDefinition(dataModel = { Or }),
+    FilterType.Not to EmbeddedObjectDefinition(dataModel = { Not }),
+    FilterType.Exists to EmbeddedObjectDefinition(dataModel = { Exists }),
+    FilterType.Equals to EmbeddedObjectDefinition(dataModel = { Equals }),
+    FilterType.LessThan to EmbeddedObjectDefinition(dataModel = { LessThan }),
+    FilterType.LessThanEquals to EmbeddedObjectDefinition(dataModel = { LessThanEquals }),
+    FilterType.GreaterThan to EmbeddedObjectDefinition(dataModel = { GreaterThan }),
+    FilterType.GreaterThanEquals to EmbeddedObjectDefinition(dataModel = { GreaterThanEquals }),
+    FilterType.Prefix to EmbeddedObjectDefinition(dataModel = { Prefix }),
+    FilterType.Range to EmbeddedObjectDefinition(dataModel = { Range }),
+    FilterType.RegEx to EmbeddedObjectDefinition(dataModel = { RegEx }),
+    FilterType.ValueIn to EmbeddedObjectDefinition(dataModel = { ValueIn })
 )

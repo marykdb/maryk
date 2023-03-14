@@ -1,6 +1,7 @@
 package maryk.core.models
 
 import maryk.core.properties.IsObjectPropertyDefinitions
+import maryk.core.properties.IsSimpleBaseModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
@@ -44,7 +45,7 @@ fun <DO : Any, DM : IsObjectDataModel<DO, P>, P : ObjectPropertyDefinitions<DO>>
         when (property) {
             is ObjectListDefinitionWrapper<out Any, *, *, *, DO> -> {
                 val dataModel =
-                    (property.definition.valueDefinition as EmbeddedObjectDefinition<Any, ObjectPropertyDefinitions<Any>, *, *, *>).dataModel as IsObjectDataModel<Any, ObjectPropertyDefinitions<Any>>
+                    (property.definition.valueDefinition as EmbeddedObjectDefinition<Any, IsSimpleBaseModel<Any, *, *>, *, *>).dataModel as IsObjectDataModel<Any, ObjectPropertyDefinitions<Any>>
                 property.getter(dataObject)?.let { list ->
                     mutableMap[property.index] = list.map {
                         dataModel.asValues(it, context)

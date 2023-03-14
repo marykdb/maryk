@@ -73,7 +73,7 @@ data class MultiTypeDefinition<E : MultiTypeEnum<out T>, T: Any>(
             definition = ContextValueTransformDefinition(
                 definition = ContextTransformerDefinition(
                     definition = EmbeddedObjectDefinition(
-                        dataModel = { MultiTypeEnumDefinition.Model.Model }
+                        dataModel = { MultiTypeEnumDefinition.Model }
                     ),
                     contextTransformer = {
                         it?.definitionsContext

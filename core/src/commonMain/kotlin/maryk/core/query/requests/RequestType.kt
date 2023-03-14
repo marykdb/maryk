@@ -39,14 +39,14 @@ enum class RequestType(
 
 @SharedImmutable
 val mapOfRequestTypeEmbeddedObjectDefinitions = mapOf(
-    Add to EmbeddedObjectDefinition(dataModel = { AddRequest.Model }),
-    Change to EmbeddedObjectDefinition(dataModel = { ChangeRequest.Model }),
-    Delete to EmbeddedObjectDefinition(dataModel = { DeleteRequest.Model }),
-    Get to EmbeddedObjectDefinition(dataModel = { GetRequest.Model }),
-    GetChanges to EmbeddedObjectDefinition(dataModel = { GetChangesRequest.Model }),
-    GetUpdates to EmbeddedObjectDefinition(dataModel = { GetUpdatesRequest.Model }),
-    Scan to EmbeddedObjectDefinition(dataModel = { ScanRequest.Model }),
-    ScanChanges to EmbeddedObjectDefinition(dataModel = { ScanChangesRequest.Model }),
-    ScanUpdates to EmbeddedObjectDefinition(dataModel = { ScanUpdatesRequest.Model }),
-    Collect to EmbeddedObjectDefinition(dataModel = { CollectRequest.Model })
+    Add to EmbeddedObjectDefinition(dataModel = { AddRequest }),
+    Change to EmbeddedObjectDefinition(dataModel = { ChangeRequest }),
+    Delete to EmbeddedObjectDefinition(dataModel = { DeleteRequest }),
+    Get to EmbeddedObjectDefinition(dataModel = { GetRequest }),
+    GetChanges to EmbeddedObjectDefinition(dataModel = { GetChangesRequest }),
+    GetUpdates to EmbeddedObjectDefinition(dataModel = { GetUpdatesRequest }),
+    Scan to EmbeddedObjectDefinition(dataModel = { ScanRequest }),
+    ScanChanges to EmbeddedObjectDefinition(dataModel = { ScanChangesRequest }),
+    ScanUpdates to EmbeddedObjectDefinition(dataModel = { ScanUpdatesRequest }),
+    Collect to EmbeddedObjectDefinition(dataModel = { CollectRequest })
 )

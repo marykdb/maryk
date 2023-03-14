@@ -74,7 +74,7 @@ data class SetChange internal constructor(
             index = 1u,
             getter = SetChange::setValueChanges,
             valueDefinition = EmbeddedObjectDefinition(
-                dataModel = { SetValueChanges.Model }
+                dataModel = { SetValueChanges }
             )
         )
 

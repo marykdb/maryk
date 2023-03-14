@@ -25,7 +25,7 @@ data class InitialValuesUpdate<DM: IsRootModel>(
             properties = ValuesWithMetaData.Companion,
             definition = ListDefinition(
                 valueDefinition = EmbeddedObjectDefinition(
-                    dataModel = { ValuesWithMetaData.Model }
+                    dataModel = { ValuesWithMetaData }
                 )
             ),
             getter = InitialValuesUpdate<*>::values

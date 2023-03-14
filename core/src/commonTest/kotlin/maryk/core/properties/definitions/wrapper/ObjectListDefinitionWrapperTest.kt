@@ -14,7 +14,7 @@ class ObjectListDefinitionWrapperTest {
         properties = SimpleMarykObject,
         definition = ListDefinition(
             valueDefinition = EmbeddedObjectDefinition(
-                dataModel = { SimpleMarykObject.Model }
+                dataModel = { SimpleMarykObject }
             )
         ),
         getter = { _: Any -> listOf() }

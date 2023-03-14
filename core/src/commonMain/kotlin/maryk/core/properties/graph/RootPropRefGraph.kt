@@ -40,7 +40,7 @@ data class RootPropRefGraph<P : IsRootModel> internal constructor(
             valueDefinition = InternalMultiTypeDefinition(
                 definitionMap = mapOf(
                     Graph to EmbeddedObjectDefinition(
-                        dataModel = { PropRefGraph.Model }
+                        dataModel = { PropRefGraph }
                     ),
                     PropRef to ContextualPropertyReferenceDefinition(
                         contextualResolver = { context: GraphContext? ->

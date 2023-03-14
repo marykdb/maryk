@@ -82,7 +82,7 @@ data class IncMapAddition(
             index = 1u,
             getter = IncMapAddition::additions,
             valueDefinition = EmbeddedObjectDefinition(
-                dataModel = { IncMapKeyAdditions.Model }
+                dataModel = { IncMapKeyAdditions }
             )
         )
 

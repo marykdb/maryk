@@ -1,8 +1,7 @@
 package maryk.core.query.changes
 
-import maryk.core.models.AbstractObjectDataModel
 import maryk.core.models.IsObjectDataModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.IsSimpleBaseModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.enum.IsCoreEnum
@@ -22,7 +21,7 @@ enum class IndexUpdateType(
 
     @Suppress("UNCHECKED_CAST")
     override val definition = EmbeddedObjectDefinition(
-        dataModel = { dataModel as AbstractObjectDataModel<IsIndexUpdate, ObjectPropertyDefinitions<IsIndexUpdate>, RequestContext, RequestContext> }
+        dataModel = { dataModel.properties as IsSimpleBaseModel<IsIndexUpdate, RequestContext, RequestContext> }
     )
 
     override val alternativeNames: Set<String>? = null

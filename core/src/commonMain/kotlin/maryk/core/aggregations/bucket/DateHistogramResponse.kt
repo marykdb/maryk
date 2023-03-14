@@ -25,7 +25,7 @@ data class DateHistogramResponse<T: Comparable<*>>(
             getter = DateHistogramResponse<*>::buckets,
             default = emptyList(),
             valueDefinition = EmbeddedObjectDefinition(
-                dataModel = { Bucket.Model }
+                dataModel = { Bucket }
             )
         )
 

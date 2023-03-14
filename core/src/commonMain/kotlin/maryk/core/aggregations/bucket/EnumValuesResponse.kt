@@ -25,7 +25,7 @@ data class EnumValuesResponse<T: IndexedEnumComparable<T>>(
             index = 2u,
             getter = EnumValuesResponse<*>::buckets,
             valueDefinition = EmbeddedObjectDefinition(
-                dataModel = { Bucket.Model }
+                dataModel = { Bucket }
             ),
             default = emptyList()
         )

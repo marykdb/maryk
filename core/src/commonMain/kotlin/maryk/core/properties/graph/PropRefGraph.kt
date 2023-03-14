@@ -83,7 +83,7 @@ data class PropRefGraph<P : IsValuesPropertyDefinitions, PS : IsValuesPropertyDe
             valueDefinition = InternalMultiTypeDefinition(
                 definitionMap = mapOf(
                     Graph to EmbeddedObjectDefinition(
-                        dataModel = { Model }
+                        dataModel = { this@Companion }
                     ),
                     PropRef to ContextualPropertyReferenceDefinition(
                         contextualResolver = { context: GraphContext? ->

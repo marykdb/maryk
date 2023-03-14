@@ -45,7 +45,7 @@ data class DataObjectVersionedChange<out DM : IsRootModel>(
             getter = DataObjectVersionedChange<*>::changes,
             default = emptyList(),
             valueDefinition = EmbeddedObjectDefinition(
-                dataModel = { VersionedChanges.Model }
+                dataModel = { VersionedChanges }
             )
         )
 

@@ -27,7 +27,7 @@ data class TypesResponse<T: TypeEnum<*>>(
             index = 2u,
             getter = TypesResponse<*>::buckets,
             valueDefinition = EmbeddedObjectDefinition(
-                dataModel = { Bucket.Model }
+                dataModel = { Bucket }
             ),
             default = emptyList()
         )

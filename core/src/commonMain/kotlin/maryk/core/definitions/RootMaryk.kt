@@ -29,7 +29,7 @@ data class RootMaryk(
                 definitionMap = mapOf(
                     Operation.Define to ContextTransformerDefinition<Definitions, DefinitionsContext, DefinitionsConversionContext>(
                         definition = EmbeddedObjectDefinition(
-                            dataModel = { Definitions.Model }
+                            dataModel = { Definitions }
                         ),
                         contextTransformer = {
                             it?.let { modelContext ->
@@ -39,7 +39,7 @@ data class RootMaryk(
                     ),
                     Operation.Request to ContextTransformerDefinition(
                         definition = EmbeddedObjectDefinition(
-                            dataModel = { Requests.Model }
+                            dataModel = { Requests }
                         ),
                         contextTransformer = {
                             it?.let { modelContext ->

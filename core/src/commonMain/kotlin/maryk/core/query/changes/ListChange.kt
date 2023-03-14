@@ -81,7 +81,7 @@ data class ListChange internal constructor(
             index = 1u,
             getter = ListChange::listValueChanges,
             valueDefinition = EmbeddedObjectDefinition(
-                dataModel = { ListValueChanges.Model }
+                dataModel = { ListValueChanges }
             )
         )
 

@@ -23,7 +23,7 @@ data class ValuesResponse<DM : IsRootModel>(
             properties = ValuesWithMetaData.Companion,
             definition = ListDefinition(
                 valueDefinition = EmbeddedObjectDefinition(
-                    dataModel = { ValuesWithMetaData.Model }
+                    dataModel = { ValuesWithMetaData }
                 )
             ),
             getter = ValuesResponse<*>::values

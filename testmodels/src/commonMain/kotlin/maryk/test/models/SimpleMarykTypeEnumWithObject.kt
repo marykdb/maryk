@@ -18,7 +18,7 @@ sealed class SimpleMarykTypeEnumWithObject<T: Any>(
     object S1: SimpleMarykTypeEnumWithObject<String>(1u, StringDefinition(regEx = "[^&]+"), setOf("Type1"))
     object S2: SimpleMarykTypeEnumWithObject<Short>(2u, NumberDefinition(type = SInt16))
     object S3: SimpleMarykTypeEnumWithObject<EmbeddedMarykObject>(3u,
-        EmbeddedObjectDefinition(dataModel = { EmbeddedMarykObject.Model })
+        EmbeddedObjectDefinition(dataModel = { EmbeddedMarykObject })
     )
 
     class UnknownMarykTypeEnum(index: UInt, override val name: String): SimpleMarykTypeEnumWithObject<Any>(index, null)

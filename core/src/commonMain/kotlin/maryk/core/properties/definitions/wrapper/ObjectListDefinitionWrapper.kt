@@ -4,7 +4,7 @@ import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
 import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.IsSimpleBaseModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.ListDefinition
@@ -20,7 +20,7 @@ import maryk.core.properties.references.IsPropertyReference
  */
 data class ObjectListDefinitionWrapper<
     ODO : Any,
-    P : ObjectPropertyDefinitions<ODO>,
+    P : IsSimpleBaseModel<ODO, CX, CX>,
     TO : Any,
     CX : IsPropertyContext,
     in DO : Any
@@ -52,7 +52,7 @@ data class ObjectListDefinitionWrapper<
         (P.() -> (AnyOutPropertyReference?) -> AnySpecificWrappedPropertyReference) ->
             (AnyOutPropertyReference?) -> AnySpecificWrappedPropertyReference
     ) {
-        val objectValuesDefinition = this.definition.valueDefinition as EmbeddedObjectDefinition<ODO, P, *, *, *>
+        val objectValuesDefinition = this.definition.valueDefinition as EmbeddedObjectDefinition<ODO, P, *, *>
 
         return { referenceGetter ->
             { parentRef ->
@@ -70,11 +70,11 @@ data class ObjectListDefinitionWrapper<
         index: UInt,
         propertyDefinitionGetter: P.() -> IsDefinitionWrapper<T, *, *, *>
     ): (AnyOutPropertyReference?) -> IsPropertyReference<T, IsDefinitionWrapper<T, *, *, *>, *> {
-        val objectValuesDefinition = this.definition.valueDefinition as EmbeddedObjectDefinition<ODO, P, *, *, *>
+        val objectValuesDefinition = this.definition.valueDefinition as EmbeddedObjectDefinition<ODO, P, *, *>
 
         return {
             propertyDefinitionGetter(
-                objectValuesDefinition.dataModel.properties as P
+                objectValuesDefinition.dataModel.properties
             ).ref(this.getItemRef(index,it)) as IsPropertyReference<T, IsDefinitionWrapper<T, *, *, *>, *>
         }
     }
@@ -86,7 +86,7 @@ data class ObjectListDefinitionWrapper<
     ): (AnyOutPropertyReference?) -> R =
         @Suppress("UNCHECKED_CAST")
         {
-            val objectValuesDefinition = this.definition.valueDefinition as EmbeddedObjectDefinition<ODO, P, *, *, *>
+            val objectValuesDefinition = this.definition.valueDefinition as EmbeddedObjectDefinition<ODO, P, *, *>
 
             objectValuesDefinition.dataModel(
                 this.getItemRef(index, it),
@@ -100,7 +100,7 @@ data class ObjectListDefinitionWrapper<
     ): (AnyOutPropertyReference?) -> R =
         @Suppress("UNCHECKED_CAST")
         {
-            val objectValuesDefinition = this.definition.valueDefinition as EmbeddedObjectDefinition<ODO, P, *, *, *>
+            val objectValuesDefinition = this.definition.valueDefinition as EmbeddedObjectDefinition<ODO, P, *, *>
 
             objectValuesDefinition.dataModel(
                 this.getAnyItemRef(it),

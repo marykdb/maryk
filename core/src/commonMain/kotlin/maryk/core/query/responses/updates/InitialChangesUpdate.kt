@@ -23,7 +23,7 @@ data class InitialChangesUpdate<DM: IsRootModel>(
             index = 2u,
             getter = InitialChangesUpdate<*>::changes,
             valueDefinition = EmbeddedObjectDefinition(
-                dataModel = { DataObjectVersionedChange.Model }
+                dataModel = { DataObjectVersionedChange }
             )
         )
 

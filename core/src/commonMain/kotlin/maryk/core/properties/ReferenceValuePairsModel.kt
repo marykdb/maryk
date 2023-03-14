@@ -23,10 +23,7 @@ abstract class ReferenceValuePairsModel<DO: Any, P: ReferenceValuePairsModel<DO,
         index = 1u,
         getter = pairGetter,
         valueDefinition = EmbeddedObjectDefinition(
-            dataModel = {
-                @Suppress("UNCHECKED_CAST")
-                pairModel.Model as QueryDataModel<R, ObjectPropertyDefinitions<R>>
-            }
+            dataModel = { pairModel }
         )
     )
 

@@ -29,7 +29,7 @@ data class ChangeRequest<DM : IsRootModel> internal constructor(
             index = 2u,
             getter = ChangeRequest<*>::objects,
             valueDefinition = EmbeddedObjectDefinition(
-                dataModel = { DataObjectChange.Model }
+                dataModel = { DataObjectChange }
             )
         )
 

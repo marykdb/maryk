@@ -9,8 +9,8 @@ import maryk.core.aggregations.metric.Min
 import maryk.core.aggregations.metric.Stats
 import maryk.core.aggregations.metric.Sum
 import maryk.core.aggregations.metric.ValueCount
-import maryk.core.models.AbstractObjectDataModel
 import maryk.core.models.IsObjectDataModel
+import maryk.core.properties.IsBaseModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.enum.IndexedEnumImpl
@@ -33,7 +33,7 @@ sealed class AggregationRequestType(
 
     @Suppress("UNCHECKED_CAST")
     override val definition = EmbeddedObjectDefinition(
-        dataModel = { dataModel as AbstractObjectDataModel<IsAggregationRequest<*, *, *>, ObjectPropertyDefinitions<IsAggregationRequest<*, *, *>>, RequestContext, RequestContext> }
+        dataModel = { dataModel.properties as IsBaseModel<IsAggregationRequest<*, *, *>, ObjectPropertyDefinitions<IsAggregationRequest<*, *, *>>, RequestContext, RequestContext> }
     )
 
     object ValueCountType : AggregationRequestType(1u, "ValueCount", ValueCount.Model)

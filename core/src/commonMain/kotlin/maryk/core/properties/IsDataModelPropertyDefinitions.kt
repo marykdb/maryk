@@ -10,7 +10,7 @@ import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
 @PropertyReferenceMarker
 internal interface IsDataModelPropertyDefinitions<
     DM : IsDataModel<*>,
-    C : IsCollectionDefinition<AnyDefinitionWrapper, *, *, EmbeddedObjectDefinition<AnyDefinitionWrapper, ObjectPropertyDefinitions<AnyDefinitionWrapper>, *, IsPropertyContext, IsPropertyContext>>
+    C : IsCollectionDefinition<AnyDefinitionWrapper, *, *, EmbeddedObjectDefinition<AnyDefinitionWrapper, IsSimpleBaseModel<AnyDefinitionWrapper, IsPropertyContext, IsPropertyContext>, IsPropertyContext, IsPropertyContext>>
 > : IsPropertyDefinitions {
     val name: FlexBytesDefinitionWrapper<String, String, IsPropertyContext, StringDefinition, DM>
     val properties: C

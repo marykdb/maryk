@@ -19,14 +19,14 @@ interface IsChange {
 
 @SharedImmutable
 internal val mapOfChangeDefinitions = mapOf(
-    ChangeType.Change to EmbeddedObjectDefinition(dataModel = { Change.Model }),
-    ChangeType.Check to EmbeddedObjectDefinition(dataModel = { Check.Model }),
-    ChangeType.Delete to EmbeddedObjectDefinition(dataModel = { Delete.Model }),
-    ChangeType.ObjectCreate to EmbeddedObjectDefinition(dataModel = { ObjectCreate.Model.Model }),
-    ChangeType.ObjectDelete to EmbeddedObjectDefinition(dataModel = { ObjectSoftDeleteChange.Model }),
-    ChangeType.ListChange to EmbeddedObjectDefinition(dataModel = { ListChange.Model }),
-    ChangeType.SetChange to EmbeddedObjectDefinition(dataModel = { SetChange.Model }),
-    ChangeType.TypeChange to EmbeddedObjectDefinition(dataModel = { MultiTypeChange.Model }),
-    ChangeType.IncMapChange to EmbeddedObjectDefinition(dataModel = { IncMapChange.Model }),
-    ChangeType.IncMapAddition to EmbeddedObjectDefinition(dataModel = { IncMapAddition.Model })
+    ChangeType.Change to EmbeddedObjectDefinition(dataModel = { Change }),
+    ChangeType.Check to EmbeddedObjectDefinition(dataModel = { Check }),
+    ChangeType.Delete to EmbeddedObjectDefinition(dataModel = { Delete }),
+    ChangeType.ObjectCreate to EmbeddedObjectDefinition(dataModel = { ObjectCreate.Model }),
+    ChangeType.ObjectDelete to EmbeddedObjectDefinition(dataModel = { ObjectSoftDeleteChange }),
+    ChangeType.ListChange to EmbeddedObjectDefinition(dataModel = { ListChange }),
+    ChangeType.SetChange to EmbeddedObjectDefinition(dataModel = { SetChange }),
+    ChangeType.TypeChange to EmbeddedObjectDefinition(dataModel = { MultiTypeChange }),
+    ChangeType.IncMapChange to EmbeddedObjectDefinition(dataModel = { IncMapChange }),
+    ChangeType.IncMapAddition to EmbeddedObjectDefinition(dataModel = { IncMapAddition })
 )

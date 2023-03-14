@@ -52,7 +52,7 @@ data class Definitions(
                 definitionMap = mapOf(
                     PrimitiveType.Model to ContextCaptureDefinition(
                         definition = EmbeddedObjectDefinition(
-                            dataModel = { DataModel.Model.Model }
+                            dataModel = { DataModel.Model }
                         ),
                         capturer = { context, model ->
                             context?.let {
@@ -62,7 +62,7 @@ data class Definitions(
                     ),
                     ValueModel to ContextCaptureDefinition(
                         definition = EmbeddedObjectDefinition(
-                            dataModel = { ValueDataModel.Model.Model }
+                            dataModel = { ValueDataModel.Model }
                         ),
                         capturer = { context, model ->
                             context?.let {
@@ -72,7 +72,7 @@ data class Definitions(
                     ),
                     RootModel to ContextCaptureDefinition(
                         definition = EmbeddedObjectDefinition(
-                            dataModel = { RootDataModel.Model.Model }
+                            dataModel = { RootDataModel.Model }
                         ),
                         capturer = { context: ContainsDefinitionsContext?, model ->
                             context?.let {
@@ -85,7 +85,7 @@ data class Definitions(
                         // with previously defined Enums which are stored in the context
                         definition = ContextValueTransformDefinition(
                             definition = EmbeddedObjectDefinition(
-                                dataModel = { IndexedEnumDefinition.Model.Model }
+                                dataModel = { IndexedEnumDefinition.Model }
                             ),
                             valueTransformer = { context, value ->
                                 if (value.optionalCases == null) {
@@ -108,7 +108,7 @@ data class Definitions(
                         // with previously defined Enums which are stored in the context
                         definition = ContextValueTransformDefinition(
                             definition = EmbeddedObjectDefinition(
-                                dataModel = { MultiTypeEnumDefinition.Model.Model }
+                                dataModel = { MultiTypeEnumDefinition.Model }
                             ),
                             valueTransformer = { context, value ->
                                 if (value.optionalCases == null) {

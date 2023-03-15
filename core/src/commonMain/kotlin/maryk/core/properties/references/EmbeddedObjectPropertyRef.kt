@@ -2,35 +2,33 @@ package maryk.core.properties.references
 
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
-import maryk.core.models.AbstractObjectDataModel
-import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.IsSimpleBaseModel
 import maryk.core.properties.definitions.wrapper.EmbeddedObjectDefinitionWrapper
 import maryk.core.properties.references.ReferenceType.EMBED
 import maryk.core.values.AbstractValues
 
 /**
- * Reference to a Embed property containing type [DO] DataObjects, [P] ObjectPropertyDefinitions. Which is defined by
+ * Reference to a Embed property containing type [DO] DataObjects. Which is defined by
  * DataModel of type [DM] and expects context of type [CX] which is transformed into context [CXI] for properties.
  */
 class EmbeddedObjectPropertyRef<
     DO : Any,
     TO : Any,
-    P : IsObjectPropertyDefinitions<DO>,
-    out DM : AbstractObjectDataModel<DO, P, CXI, CX>,
+    DM : IsSimpleBaseModel<DO, CXI, CX>,
     CXI : IsPropertyContext,
     CX : IsPropertyContext
 > internal constructor(
-    propertyDefinition: EmbeddedObjectDefinitionWrapper<DO, TO, P, DM, CXI, CX, *>,
+    propertyDefinition: EmbeddedObjectDefinitionWrapper<DO, TO, DM, CXI, CX, *>,
     parentReference: CanHaveComplexChildReference<*, *, *, *>?
-) : CanHaveComplexChildReference<DO, EmbeddedObjectDefinitionWrapper<DO, TO, P, DM, CXI, CX, *>, CanHaveComplexChildReference<*, *, *, *>, AbstractValues<*, *, *>>(
+) : CanHaveComplexChildReference<DO, EmbeddedObjectDefinitionWrapper<DO, TO, DM, CXI, CX, *>, CanHaveComplexChildReference<*, *, *, *>, AbstractValues<*, *, *>>(
     propertyDefinition, parentReference
 ), HasEmbeddedPropertyReference<DO>,
-    IsPropertyReferenceForValues<DO, TO, EmbeddedObjectDefinitionWrapper<DO, TO, P, DM, CXI, CX, *>, CanHaveComplexChildReference<*, *, *, *>> {
+    IsPropertyReferenceForValues<DO, TO, EmbeddedObjectDefinitionWrapper<DO, TO, DM, CXI, CX, *>, CanHaveComplexChildReference<*, *, *, *>> {
     override val name = this.propertyDefinition.name
 
     override fun getEmbedded(name: String, context: IsPropertyContext?) =
-        this.propertyDefinition.definition.dataModel.properties[name]?.ref(this)
+        this.propertyDefinition.definition.dataModel[name]?.ref(this)
             ?: throw DefNotFoundException("Embedded Definition with $name not found")
 
     override fun getEmbeddedRef(reader: () -> Byte, context: IsPropertyContext?) =

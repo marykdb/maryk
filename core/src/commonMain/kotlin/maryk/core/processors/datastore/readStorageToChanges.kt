@@ -514,7 +514,7 @@ private fun <P : IsValuesPropertyDefinitions> readComplexChanges(
                 addChangeToOutput
             )
         }
-        is IsEmbeddedDefinition<*, *> -> {
+        is IsEmbeddedDefinition<*> -> {
             readEmbeddedValues(
                 qualifierReader,
                 qualifierLength,
@@ -677,7 +677,7 @@ private fun <P : IsValuesPropertyDefinitions> readEmbeddedValues(
     qualifierLength: Int,
     offset: Int,
     readValueFromStorage: ValueWithVersionReader,
-    definition: IsEmbeddedDefinition<*, *>,
+    definition: IsEmbeddedDefinition<*>,
     select: IsPropRefGraph<P>?,
     parentReference: IsPropertyReference<*, *, *>?,
     addToCache: CacheProcessor,
@@ -685,7 +685,7 @@ private fun <P : IsValuesPropertyDefinitions> readEmbeddedValues(
 ) {
     @Suppress("UNCHECKED_CAST")
     val dataModel =
-        (definition as IsAnyEmbeddedDefinition).dataModel as IsDataModelWithValues<*, IsValuesPropertyDefinitions, *>
+        (definition as IsAnyEmbeddedDefinition).dataModel.Model as IsDataModelWithValues<*, IsValuesPropertyDefinitions, *>
 
     // If select is Graph then resolve sub graph.
     // Otherwise, it is null or is property itself so needs to be completely selected thus set as null.

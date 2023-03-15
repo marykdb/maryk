@@ -6,6 +6,7 @@ import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.graph.PropRefGraphType.PropRef
+import maryk.core.properties.invoke
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference

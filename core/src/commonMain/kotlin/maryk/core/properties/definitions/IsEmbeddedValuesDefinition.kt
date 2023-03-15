@@ -1,6 +1,5 @@
 package maryk.core.properties.definitions
 
-import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.values.Values
@@ -9,10 +8,10 @@ import maryk.core.values.Values
 interface IsEmbeddedValuesDefinition<DM : IsValuesPropertyDefinitions, CX : IsPropertyContext> :
     IsValueDefinition<Values<DM>, CX>,
     HasDefaultValueDefinition<Values<DM>>,
-    IsEmbeddedDefinition<IsValuesDataModel<DM>, DM>,
+    IsEmbeddedDefinition<DM>,
     IsUsableInMultiType<Values<DM>, CX>,
     IsUsableInMapValue<Values<DM>, CX> {
-    override val dataModel: IsValuesDataModel<DM>
+    override val dataModel: DM
 
     override fun compatibleWith(
         definition: IsPropertyDefinition<*>,

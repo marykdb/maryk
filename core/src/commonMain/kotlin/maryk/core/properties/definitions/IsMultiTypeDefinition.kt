@@ -173,7 +173,7 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
                 if (it.value == Unit) {
                     @Suppress("UNCHECKED_CAST")
                     val value: T = when (definition) {
-                        is IsEmbeddedValuesDefinition<*, *> -> (definition.dataModel as IsTypedValuesDataModel<*, *>).values(
+                        is IsEmbeddedValuesDefinition<*, *> -> (definition.dataModel.Model as IsTypedValuesDataModel<*, *>).values(
                             null
                         ) { EmptyValueItems } as T
                         is IsListDefinition<*, *> -> emptyList<Any>() as T
@@ -239,7 +239,7 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
             val definition = this.definition(type)
                 ?: throw DefNotFoundException("No definition for type $type")
 
-            val value = if (definition is IsEmbeddedObjectDefinition<*, *, *, CX, *> && this.keepAsValues()) {
+            val value = if (definition is IsEmbeddedObjectDefinition<*, *, CX, *> && this.keepAsValues()) {
                 @Suppress("UNCHECKED_CAST")
                 definition.readJsonToValues(reader, context) as T
             } else definition.readJson(reader, context)
@@ -257,7 +257,7 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
                     ?: throw DefNotFoundException("Unknown multi type index ${type.index}")
 
                 reader.nextToken()
-                val value = if (definition is IsEmbeddedObjectDefinition<*, *, *, CX, *> && this.keepAsValues()) {
+                val value = if (definition is IsEmbeddedObjectDefinition<*, *, CX, *> && this.keepAsValues()) {
                     @Suppress("UNCHECKED_CAST")
                     definition.readJsonToValues(reader, context) as T
                 } else definition.readJson(reader, context)
@@ -300,7 +300,7 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
             val def = this.definition(type)
                 ?: throw ParseException("Unknown multi type ${key.tag}")
 
-            value = if (def is IsEmbeddedObjectDefinition<*, *, *, CX, *> && this.keepAsValues()) {
+            value = if (def is IsEmbeddedObjectDefinition<*, *, CX, *> && this.keepAsValues()) {
                 @Suppress("UNCHECKED_CAST")
                 def.readTransportBytesToValues(
                     ProtoBuf.getLength(key.wireType, wrappedReader),

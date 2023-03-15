@@ -42,7 +42,7 @@ interface IsPropertyDefinitions {
  * Optionally pass an already resolved [parent]
  * For Strongly typed reference notation
  */
-operator fun <T : Any, P: IsValuesPropertyDefinitions, W : IsPropertyDefinition<T>, R : IsPropertyReference<T, W, *>> P.invoke(
+operator fun <T : Any, P: IsPropertyDefinitions, W : IsPropertyDefinition<T>, R : IsPropertyReference<T, W, *>> P.invoke(
     parent: AnyOutPropertyReference? = null,
     referenceGetter: P.() -> (AnyOutPropertyReference?) -> R
 ) = referenceGetter(this)(parent)

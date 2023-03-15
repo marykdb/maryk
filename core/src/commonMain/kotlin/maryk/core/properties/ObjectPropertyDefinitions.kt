@@ -1,6 +1,7 @@
 package maryk.core.properties
 
 import maryk.core.models.IsObjectDataModel
+import maryk.core.models.ValueDataModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsContextualEncodable
@@ -11,6 +12,7 @@ import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.types.ValueDataObject
 import maryk.core.query.DefinitionsConversionContext
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
@@ -42,8 +44,8 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
 }
 
 /** Mutable variant of ObjectPropertyDefinitions for a IsCollectionDefinition implementation */
-internal class MutableObjectPropertyDefinitions<DO: Any> : ObjectPropertyDefinitions<DO>(), IsMutablePropertyDefinitions<IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>> {
-    internal var _model: IsObjectDataModel<*, *>? = null
+internal open class MutableObjectPropertyDefinitions<DO: Any> : ObjectPropertyDefinitions<DO>(), IsMutablePropertyDefinitions<IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>> {
+    internal open var _model: IsObjectDataModel<*, *>? = null
 
     override val Model: IsObjectDataModel<*, *>
         get() = _model ?: throw Exception("No Model yet set, likely DataModel was not initialized yet")
@@ -66,9 +68,15 @@ internal class MutableObjectPropertyDefinitions<DO: Any> : ObjectPropertyDefinit
     override fun retainAll(elements: Collection<IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>>) = false
 }
 
+internal class MutableValueModel<DO: ValueDataObject>: MutableObjectPropertyDefinitions<DO>(), IsValueModel<DO, MutableValueModel<DO>> {
+    @Suppress("UNCHECKED_CAST")
+    override val Model get() = _model as? ValueDataModel<DO, MutableValueModel<DO>>
+        ?: throw Exception("No Model yet set, likely DataModel was not initialized yet")
+}
+
 /** Definition for a collection of Property Definitions for in a ObjectPropertyDefinitions */
 internal data class ObjectPropertyDefinitionsCollectionDefinition(
-    override val capturer: Unit.(DefinitionsConversionContext?, ObjectPropertyDefinitions<Any>) -> Unit
+    override val capturer: Unit.(DefinitionsConversionContext?, IsObjectPropertyDefinitions<Any>) -> Unit
 ) : IsCollectionDefinition<
         AnyDefinitionWrapper,
         ObjectPropertyDefinitions<Any>,
@@ -98,10 +106,11 @@ internal data class ObjectPropertyDefinitionsCollectionDefinition(
         validator: (item: AnyDefinitionWrapper, itemRefFactory: () -> IsPropertyReference<AnyDefinitionWrapper, IsPropertyDefinition<AnyDefinitionWrapper>, *>?) -> Any
     ) {}
 
+    @Suppress("UNCHECKED_CAST")
     override fun newMutableCollection(context: DefinitionsConversionContext?) =
-        MutableObjectPropertyDefinitions<Any>().apply {
-            capturer(Unit, context, this)
-        }
+        MutableValueModel<ValueDataObject>().apply {
+            capturer(Unit, context, this as IsObjectPropertyDefinitions<Any>)
+        } as MutableObjectPropertyDefinitions<Any>
 
     /**
      * Overridden to render definitions list in YAML as objects

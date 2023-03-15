@@ -51,7 +51,7 @@ internal class EmbeddedObjectDefinitionTest {
 
     @Test
     fun hasValues() {
-        expect(MarykObject.Model) { def.dataModel }
+        expect(MarykObject) { def.dataModel }
     }
 
     @Test

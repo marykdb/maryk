@@ -34,7 +34,7 @@ class EmbeddedValuesPropertyRef<
             (context.dataModel as? IsValuesDataModel<*>)?.properties?.get(name)?.ref(this)
                 ?: throw DefNotFoundException("Embedded Definition with $name not found")
         } else {
-            this.propertyDefinition.definition.dataModel.properties[name]?.ref(this)
+            this.propertyDefinition.definition.dataModel[name]?.ref(this)
                 ?: throw DefNotFoundException("Embedded Definition with $name not found")
         }
 
@@ -43,7 +43,7 @@ class EmbeddedValuesPropertyRef<
         return if (this.propertyDefinition.definition is ContextualEmbeddedValuesDefinition<*> && context is ContainsDataModelContext<*>) {
             (context.dataModel as? IsValuesDataModel<*>)?.properties?.get(index)?.ref(this)
         } else {
-            this.propertyDefinition.definition.dataModel.properties[index]?.ref(this)
+            this.propertyDefinition.definition.dataModel[index]?.ref(this)
         } ?: throw DefNotFoundException("Embedded Definition with $index not found")
     }
 
@@ -58,7 +58,7 @@ class EmbeddedValuesPropertyRef<
                 if (this.propertyDefinition.definition is ContextualEmbeddedValuesDefinition<*> && context is ContainsDataModelContext<*>) {
                     (context.dataModel as? IsValuesDataModel<*>)?.properties?.get(index)?.ref(this)
                 } else {
-                    this.propertyDefinition.definition.dataModel.properties[index]?.ref(this)
+                    this.propertyDefinition.definition.dataModel[index]?.ref(this)
                 } ?: throw DefNotFoundException("Embedded Definition with $name not found")
 
             if (isDoneReading()) {

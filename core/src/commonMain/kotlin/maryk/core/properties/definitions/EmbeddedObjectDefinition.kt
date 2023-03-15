@@ -2,7 +2,6 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.models.AbstractObjectDataModel
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsNamedDataModel
 import maryk.core.models.ObjectDataModel
@@ -43,12 +42,10 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsSimpleBaseModel<DO, CXI, CX>, CX
     override val default: DO? = null
 ) :
     IsUsableInMultiType<DO, CXI>,
-    IsEmbeddedObjectDefinition<DO, DM, AbstractObjectDataModel<DO, DM, CXI, CX>, CXI, CX> {
+    IsEmbeddedObjectDefinition<DO, DM, CXI, CX> {
     override val wireType = LENGTH_DELIMITED
 
-    private val internalDataModel = safeLazy(dataModel)
-    @Suppress("UNCHECKED_CAST")
-    override val dataModel: AbstractObjectDataModel<DO, DM, CXI, CX> get() = internalDataModel.value.Model as AbstractObjectDataModel<DO, DM, CXI, CX>
+    override val dataModel: DM by safeLazy(dataModel)
 
     override fun asString(value: DO, context: CXI?): String {
         var string = ""
@@ -63,9 +60,9 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsSimpleBaseModel<DO, CXI, CX>, CX
         return this.readJson(JsonReader { stringIterator.nextChar() }, context)
     }
 
-    override fun getEmbeddedByName(name: String): IsDefinitionWrapper<*, *, *, *>? = dataModel.properties[name]
+    override fun getEmbeddedByName(name: String): IsDefinitionWrapper<*, *, *, *>? = dataModel[name]
 
-    override fun getEmbeddedByIndex(index: UInt): IsDefinitionWrapper<*, *, *, *>? = dataModel.properties[index]
+    override fun getEmbeddedByIndex(index: UInt): IsDefinitionWrapper<*, *, *, *>? = dataModel[index]
 
     override fun validateWithRef(
         previousValue: DO?,
@@ -74,29 +71,29 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsSimpleBaseModel<DO, CXI, CX>, CX
     ) {
         super<IsEmbeddedObjectDefinition>.validateWithRef(previousValue, newValue, refGetter)
         if (newValue != null) {
-            this.dataModel.validate(
+            this.dataModel.Model.validate(
                 refGetter = refGetter,
                 dataObject = newValue
             )
         }
     }
 
-    override fun writeJsonValue(value: DO, writer: IsJsonLikeWriter, context: CXI?) = this.dataModel.writeJson(
+    override fun writeJsonValue(value: DO, writer: IsJsonLikeWriter, context: CXI?) = this.dataModel.Model.writeJson(
         value,
         writer,
-        this.dataModel.transformContext(context)
+        this.dataModel.Model.transformContext(context)
     )
 
     override fun calculateTransportByteLength(value: DO, cacher: WriteCacheWriter, context: CXI?) =
-        this.dataModel.calculateProtoBufLength(
+        this.dataModel.Model.calculateProtoBufLength(
             value,
             cacher,
             transformContext(context, cacher)
         )
 
     private fun transformContext(context: CXI?, cacher: WriteCacheWriter) =
-        if (dataModel is ContextualDataModel<*, *, *, *>) {
-            dataModel.transformContext(context)?.apply {
+        if (dataModel.Model is ContextualDataModel<*, *, *, *>) {
+            dataModel.Model.transformContext(context)?.apply {
                 cacher.addContextToCache(this)
             }
         } else {
@@ -110,7 +107,7 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsSimpleBaseModel<DO, CXI, CX>, CX
         writer: (byte: Byte) -> Unit,
         context: CXI?
     ) {
-        this.dataModel.writeProtoBuf(
+        this.dataModel.Model.writeProtoBuf(
             value,
             cacheGetter,
             writer,
@@ -120,7 +117,7 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsSimpleBaseModel<DO, CXI, CX>, CX
 
     @Suppress("UNCHECKED_CAST")
     private fun getTransformedContextFromCache(cacheGetter: WriteCacheReader, context: CXI?) =
-        if (dataModel is ContextualDataModel<*, *, *, *>) {
+        if (dataModel.Model is ContextualDataModel<*, *, *, *>) {
             cacheGetter.nextContextFromCache() as CX?
         } else {
             context as CX?
@@ -132,7 +129,7 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsSimpleBaseModel<DO, CXI, CX>, CX
 
         if (required != other.required) return false
         if (final != other.final) return false
-        if (internalDataModel.value.Model != other.internalDataModel.value.Model) return false
+        if (dataModel.Model != other.dataModel.Model) return false
 
         return true
     }
@@ -140,7 +137,7 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsSimpleBaseModel<DO, CXI, CX>, CX
     override fun hashCode(): Int {
         var result = required.hashCode()
         result = 31 * result + final.hashCode()
-        result = 31 * result + internalDataModel.value.hashCode()
+        result = 31 * result + dataModel.hashCode()
         return result
     }
 
@@ -161,7 +158,7 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsSimpleBaseModel<DO, CXI, CX>, CX
                 }
             ),
             getter = {
-                { it.internalDataModel.value }
+                { it.dataModel }
             },
             toSerializable = { value: (Unit.() -> IsSimpleBaseModel<*, *, *>)?, _ ->
                 value?.invoke(Unit)?.let { model ->
@@ -224,7 +221,7 @@ fun <DO : Any, P : IsBaseModel<DO, IsObjectPropertyDefinitions<DO>, CXI, CX>, CX
     default: DO? = null,
     alternativeNames: Set<String>? = null
 ) = DefinitionWrapperDelegateLoader(this) { propName ->
-    EmbeddedObjectDefinitionWrapper<DO, DO, IsSimpleBaseModel<DO, CXI, CX>, AbstractObjectDataModel<DO, IsSimpleBaseModel<DO, CXI, CX>, CXI, CX>, CXI, CX, Any>(
+    EmbeddedObjectDefinitionWrapper<DO, DO, IsSimpleBaseModel<DO, CXI, CX>, CXI, CX, Any>(
         index,
         name ?: propName,
         EmbeddedObjectDefinition(required, final, dataModel, default),

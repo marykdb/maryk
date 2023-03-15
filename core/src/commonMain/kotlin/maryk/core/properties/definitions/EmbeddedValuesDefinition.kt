@@ -46,14 +46,12 @@ class EmbeddedValuesDefinition<DM : IsValuesPropertyDefinitions>(
     override val propertyDefinitionType = Embed
     override val wireType = LENGTH_DELIMITED
 
-    private val internalDataModel = safeLazy(dataModel)
-    @Suppress("UNCHECKED_CAST")
-    override val dataModel: IsValuesDataModel<DM> get() = internalDataModel.value.Model as IsValuesDataModel<DM>
+    override val dataModel: DM by safeLazy(dataModel)
 
     @Suppress("UNCHECKED_CAST")
     // internal strong typed version so type system is not in a loop when creating EmbeddedValuesDefinition
     private val typedDataModel get() =
-        internalDataModel.value.Model as AbstractValuesDataModel<IsValuesDataModel<DM>, DM, IsPropertyContext>
+        dataModel.Model as AbstractValuesDataModel<IsValuesDataModel<DM>, DM, IsPropertyContext>
 
     override fun asString(value: Values<DM>, context: IsPropertyContext?): String {
         var string = ""
@@ -68,9 +66,9 @@ class EmbeddedValuesDefinition<DM : IsValuesPropertyDefinitions>(
         return this.readJson(JsonReader { stringIterator.nextChar() }, context)
     }
 
-    override fun getEmbeddedByName(name: String): IsDefinitionWrapper<*, *, *, *>? = dataModel.properties[name]
+    override fun getEmbeddedByName(name: String): IsDefinitionWrapper<*, *, *, *>? = dataModel[name]
 
-    override fun getEmbeddedByIndex(index: UInt): IsDefinitionWrapper<*, *, *, *>? = dataModel.properties[index]
+    override fun getEmbeddedByIndex(index: UInt): IsDefinitionWrapper<*, *, *, *>? = dataModel[index]
 
     override fun validateWithRef(
         previousValue: Values<DM>?,
@@ -135,7 +133,7 @@ class EmbeddedValuesDefinition<DM : IsValuesPropertyDefinitions>(
 
         if (required != other.required) return false
         if (final != other.final) return false
-        if (internalDataModel.value.Model != other.internalDataModel.value.Model) return false
+        if (dataModel.Model != other.dataModel.Model) return false
 
         return true
     }
@@ -143,7 +141,7 @@ class EmbeddedValuesDefinition<DM : IsValuesPropertyDefinitions>(
     override fun hashCode(): Int {
         var result = required.hashCode()
         result = 31 * result + final.hashCode()
-        result = 31 * result + internalDataModel.value.hashCode()
+        result = 31 * result + dataModel.hashCode()
         return result
     }
 
@@ -167,7 +165,7 @@ class EmbeddedValuesDefinition<DM : IsValuesPropertyDefinitions>(
                 }
             ),
             getter = {
-                { it.internalDataModel.value }
+                { it.dataModel }
             },
             toSerializable = { value: (Unit.() -> IsValuesPropertyDefinitions)?, _ ->
                 value?.invoke(Unit)?.let { model ->

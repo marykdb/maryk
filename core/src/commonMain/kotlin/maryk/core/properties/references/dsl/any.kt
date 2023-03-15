@@ -5,6 +5,7 @@ import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
+import maryk.core.properties.invoke
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.CanContainMapItemReference
 import maryk.core.properties.references.IsPropertyReference

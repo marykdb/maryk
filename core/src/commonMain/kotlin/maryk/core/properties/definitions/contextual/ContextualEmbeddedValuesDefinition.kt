@@ -23,7 +23,7 @@ import maryk.json.JsonWriter
 internal data class ContextualEmbeddedValuesDefinition<CX : IsPropertyContext>(
     val contextualResolver: Unit.(context: CX?) -> AbstractValuesDataModel<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions, CX>
 ) : IsEmbeddedValuesDefinition<IsValuesPropertyDefinitions, CX> {
-    override val dataModel: IsValuesDataModel<IsValuesPropertyDefinitions>
+    override val dataModel: IsValuesPropertyDefinitions
         get() = throw DefNotFoundException("dataModel is contextually determined")
     override val default: Values<IsValuesPropertyDefinitions>? = null
     override val required = true

@@ -3,6 +3,7 @@ package maryk.core.inject
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
 import maryk.core.properties.InternalModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.string
@@ -43,8 +44,8 @@ data class Inject<T : Any, D : IsPropertyDefinition<T>>(
         val collectionName by string(
             1u,
             getter = Inject<*, *>::collectionName,
-            capturer = { context: InjectionContext, value ->
-                context.collectionName = value
+            capturer = { context: IsPropertyContext, value ->
+                (context as InjectionContext).collectionName = value
             }
         )
         val propertyReference by contextual(

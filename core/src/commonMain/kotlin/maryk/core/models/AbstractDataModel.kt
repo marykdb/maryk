@@ -192,9 +192,9 @@ abstract class AbstractDataModel<DO : Any, P : IsObjectPropertyDefinitions<DO>, 
 
                             values[definition.index] = inject
                         } else {
-                            val readValue = if (definition is IsEmbeddedObjectDefinition<*, *, *, *, *>) {
+                            val readValue = if (definition is IsEmbeddedObjectDefinition<*, *, *, *>) {
                                 @Suppress("UNCHECKED_CAST")
-                                (definition as IsEmbeddedObjectDefinition<*, *, *, CX, *>).readJsonToValues(
+                                (definition as IsEmbeddedObjectDefinition<*, *, CX, *>).readJsonToValues(
                                     reader,
                                     context
                                 )
@@ -255,7 +255,7 @@ abstract class AbstractDataModel<DO : Any, P : IsObjectPropertyDefinitions<DO>, 
             return 0 // Don't count length of Inject values since they are encoded in Requests object
         } else if (
             context is RequestContext
-            && (definition is IsEmbeddedObjectDefinition<*, *, *, *, *>
+            && (definition is IsEmbeddedObjectDefinition<*, *, *, *>
                     || definition is IsCollectionDefinition<*, *, *, *>
                     || definition is IsMapDefinition<*, *, *>)
         ) {
@@ -351,7 +351,7 @@ abstract class AbstractDataModel<DO : Any, P : IsObjectPropertyDefinitions<DO>, 
         } else {
             values[key.tag] =
                 when (propertyDefinition) {
-                    is IsEmbeddedObjectDefinition<Any, *, *, CX, *> ->
+                    is IsEmbeddedObjectDefinition<Any, *, CX, *> ->
                         propertyDefinition.readTransportBytesToValues(
                             ProtoBuf.getLength(key.wireType, byteReader),
                             byteReader,

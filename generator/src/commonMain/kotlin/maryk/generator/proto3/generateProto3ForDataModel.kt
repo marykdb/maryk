@@ -103,7 +103,7 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(
         is BooleanDefinition -> "bool"
         is FixedBytesDefinition,
         is FlexBytesDefinition,
-        is ValueObjectDefinition<*, *, *>,
+        is ValueObjectDefinition<*, *>,
         is ReferenceDefinition<*> -> "bytes"
         is TimeDefinition -> "uint32"
         is DateDefinition -> "sint32"
@@ -188,8 +188,8 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(
             // Separate object
             "map<${this.keyDefinition.toProtoBufType(name, generationContext, messageAdder)}, ${this.valueDefinition.toProtoBufType(name, generationContext, messageAdder)}>"
         }
-        is EmbeddedValuesDefinition<*> -> this.dataModel.name
-        is EmbeddedObjectDefinition<*, *, *, *> -> (this.dataModel as IsNamedDataModel<*>).name
+        is EmbeddedValuesDefinition<*> -> this.dataModel.Model.name
+        is EmbeddedObjectDefinition<*, *, *, *> -> (this.dataModel.Model as IsNamedDataModel<*>).name
         is MultiTypeDefinition<*, *> -> {
             val multiTypeName = "${name.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }}Type"
 

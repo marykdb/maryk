@@ -1,11 +1,10 @@
 package maryk.core.properties.definitions
 
-import maryk.core.models.IsDataModel
 import maryk.core.models.migration.MigrationStatus.NeedsMigration
 import maryk.core.properties.IsObjectPropertyDefinitions
 
-/** Interface for property definitions defined by data model of [DM] and definitions [P]. */
-interface IsDefinitionWithDataModel<out DM : IsDataModel<P>, P : IsObjectPropertyDefinitions<*>> {
+/** Interface for property definitions defined by data model of [DM]. */
+interface IsDefinitionWithDataModel<out DM : IsObjectPropertyDefinitions<*>> {
     val dataModel: DM
 
     /**
@@ -13,9 +12,9 @@ interface IsDefinitionWithDataModel<out DM : IsDataModel<P>, P : IsObjectPropert
      * If it does not match the reason is added with [addIncompatibilityReason]
      */
     fun compatibleWithDefinitionWithDataModel(
-        definition: IsDefinitionWithDataModel<*, *>,
+        definition: IsDefinitionWithDataModel<*>,
         addIncompatibilityReason: ((String) -> Unit)?
-    ) = when (val migrationStatus = this.dataModel.isMigrationNeeded(definition.dataModel)) {
+    ) = when (val migrationStatus = this.dataModel.Model.isMigrationNeeded(definition.dataModel.Model)) {
         is NeedsMigration -> {
             for (reason in migrationStatus.migrationReasons) {
                 addIncompatibilityReason?.invoke("DataModel not matching: $reason")

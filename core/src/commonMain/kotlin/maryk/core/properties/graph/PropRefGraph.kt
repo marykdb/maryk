@@ -41,7 +41,7 @@ import maryk.lib.exceptions.ParseException
 fun <P : IsValuesPropertyDefinitions, PS : IsValuesPropertyDefinitions> P.graph(
     embed: EmbeddedValuesDefinitionWrapper<PS, IsPropertyContext>,
     runner: PS.() -> List<IsPropRefGraphNode<PS>>
-) = PropRefGraph<P, PS>(embed, runner(embed.definition.dataModel.properties).sortedBy { it.index })
+) = PropRefGraph<P, PS>(embed, runner(embed.definition.dataModel).sortedBy { it.index })
 
 /**
  * Represents a Property Reference Graph branch below a [parent] with all [properties] to fetch
@@ -67,7 +67,7 @@ data class PropRefGraph<P : IsValuesPropertyDefinitions, PS : IsValuesPropertyDe
             ),
             capturer = { context, value ->
                 context.subDataModel =
-                    (value.propertyDefinition as EmbeddedValuesDefinitionWrapper<*, *>).dataModel
+                    (value.propertyDefinition as EmbeddedValuesDefinitionWrapper<*, *>).dataModel.Model
             },
             toSerializable = { value: IsDefinitionWrapper<*, *, *, *>?, _ ->
                 value?.ref()

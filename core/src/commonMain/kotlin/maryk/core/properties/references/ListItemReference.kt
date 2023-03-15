@@ -35,7 +35,7 @@ class ListItemReference<T : Any, CX : IsPropertyContext> internal constructor(
 
     override fun getEmbedded(name: String, context: IsPropertyContext?) =
         when (this.propertyDefinition) {
-            is IsEmbeddedDefinition<*, *> ->
+            is IsEmbeddedDefinition<*> ->
                 this.propertyDefinition.resolveReferenceByName(name, this)
             is IsMultiTypeDefinition<*, *, *> -> {
                 this.propertyDefinition.resolveReferenceByName(name, this)
@@ -45,7 +45,7 @@ class ListItemReference<T : Any, CX : IsPropertyContext> internal constructor(
 
     override fun getEmbeddedRef(reader: () -> Byte, context: IsPropertyContext?): IsPropertyReference<Any, *, *> {
         return when (this.propertyDefinition) {
-            is IsEmbeddedDefinition<*, *> -> {
+            is IsEmbeddedDefinition<*> -> {
                 this.propertyDefinition.resolveReference(reader, this)
             }
             is IsMultiTypeDefinition<*, *, *> -> {
@@ -62,7 +62,7 @@ class ListItemReference<T : Any, CX : IsPropertyContext> internal constructor(
         isDoneReading: () -> Boolean
     ): AnyPropertyReference {
         return when (this.propertyDefinition) {
-            is IsEmbeddedObjectDefinition<*, *, *, *, *> -> {
+            is IsEmbeddedObjectDefinition<*, *, *, *> -> {
                 this.propertyDefinition.resolveReferenceFromStorage(reader, this, context, isDoneReading)
             }
             is IsMultiTypeDefinition<*, *, *> -> {

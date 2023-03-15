@@ -9,6 +9,7 @@ import maryk.core.properties.IsDataModelPropertyDefinitions
 import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.MutableObjectPropertyDefinitions
+import maryk.core.properties.MutableValueModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitionsCollectionDefinitionWrapper
 import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
@@ -170,7 +171,9 @@ abstract class ValueDataModel<DO : ValueDataObject, P : IsObjectPropertyDefiniti
                 readDataModelJson(
                     context, reader, values,
                     properties = ValueDataModel.Model,
-                    propertyDefinitionsCreator = { MutableObjectPropertyDefinitions<ValueDataModel<*, *>>() }
+                    propertyDefinitionsCreator = {
+                        MutableValueModel<ValueDataObject>()
+                    }
                 )
             }
         }

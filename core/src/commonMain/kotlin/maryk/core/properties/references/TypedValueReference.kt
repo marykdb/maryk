@@ -49,13 +49,13 @@ class TypedValueReference<E : TypeEnum<T>, T: Any, in CX : IsPropertyContext> in
         ?: throw UnexpectedValueException("Expected typed value to get value by reference")
 
     override fun getEmbedded(name: String, context: IsPropertyContext?): IsPropertyReference<Any, *, *> {
-        return if (this.propertyDefinition is IsEmbeddedDefinition<*, *>) {
+        return if (this.propertyDefinition is IsEmbeddedDefinition<*>) {
             this.propertyDefinition.resolveReferenceByName(name, this)
         } else throw DefNotFoundException("Type reference can not contain embedded name references ($name)")
     }
 
     override fun getEmbeddedRef(reader: () -> Byte, context: IsPropertyContext?): AnyPropertyReference {
-        if (this.propertyDefinition is IsEmbeddedObjectDefinition<*, *, *, *, *>) {
+        if (this.propertyDefinition is IsEmbeddedObjectDefinition<*, *, *, *>) {
             return this.propertyDefinition.resolveReference(reader, this)
         } else throw DefNotFoundException("Type reference can not contain embedded index references (${type.name})")
     }
@@ -66,7 +66,7 @@ class TypedValueReference<E : TypeEnum<T>, T: Any, in CX : IsPropertyContext> in
         referenceType: ReferenceType,
         isDoneReading: () -> Boolean
     ): AnyPropertyReference {
-        return if (this.propertyDefinition is IsEmbeddedObjectDefinition<*, *, *, *, *>) {
+        return if (this.propertyDefinition is IsEmbeddedObjectDefinition<*, *, *, *>) {
             this.propertyDefinition.resolveReferenceFromStorage(reader, this, context, isDoneReading)
         } else throw DefNotFoundException("Type reference can not contain embedded index references (${type.name})")
     }

@@ -9,6 +9,7 @@ import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.graph.PropRefGraphType.PropRef
+import maryk.core.properties.invoke
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.AnySpecificWrappedPropertyReference
 import maryk.core.properties.references.IsPropertyReference
@@ -74,7 +75,7 @@ data class ObjectListDefinitionWrapper<
 
         return {
             propertyDefinitionGetter(
-                objectValuesDefinition.dataModel.properties
+                objectValuesDefinition.dataModel
             ).ref(this.getItemRef(index,it)) as IsPropertyReference<T, IsDefinitionWrapper<T, *, *, *>, *>
         }
     }

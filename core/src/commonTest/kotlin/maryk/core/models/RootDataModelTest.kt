@@ -715,8 +715,8 @@ internal class RootDataModelTest {
             }
             properties["value"]!!.let {
                 expect(13u) { it.index }
-                expect(ValueObjectDefinition(properties = TestValueObject)) {
-                    it.definition as ValueObjectDefinition<*, *, *>
+                expect(ValueObjectDefinition(dataModel = TestValueObject)) {
+                    it.definition as ValueObjectDefinition<*, *>
                 }
             }
             properties["ref"]!!.let {

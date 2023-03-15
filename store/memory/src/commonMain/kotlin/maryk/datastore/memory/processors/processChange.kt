@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
+import maryk.core.models.IsValuesDataModel
 import maryk.core.models.values
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.ValueWriter
@@ -306,7 +307,7 @@ private suspend fun <DM : IsRootModel> processChangeIntoStore(
 
                                     @Suppress("UNCHECKED_CAST")
                                     valuesDefinition.validateWithRef(
-                                        if (hadPrevValue) valuesDefinition.dataModel.values(null) { EmptyValueItems } else null,
+                                        if (hadPrevValue) (valuesDefinition.dataModel.Model as IsValuesDataModel<IsValuesPropertyDefinitions>).values(null) { EmptyValueItems } else null,
                                         value as Values<IsValuesPropertyDefinitions>
                                     ) { valuesReference }
 

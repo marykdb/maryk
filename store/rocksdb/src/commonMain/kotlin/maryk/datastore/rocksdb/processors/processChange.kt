@@ -5,6 +5,7 @@ import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
 import maryk.core.extensions.bytes.toVarBytes
+import maryk.core.models.IsValuesDataModel
 import maryk.core.models.values
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.ListSize
@@ -349,7 +350,7 @@ private suspend fun <DM : IsRootModel> applyChanges(
 
                                     @Suppress("UNCHECKED_CAST")
                                     valuesDefinition.validateWithRef(
-                                        if (hadPrevValue) valuesDefinition.dataModel.values(null) { EmptyValueItems } else null,
+                                        if (hadPrevValue) (valuesDefinition.dataModel.Model as IsValuesDataModel<IsValuesPropertyDefinitions>).values(null) { EmptyValueItems } else null,
                                         value as Values<IsValuesPropertyDefinitions>
                                     ) { valuesReference }
 

@@ -76,7 +76,7 @@ private val multiTypeDefinition = InternalMultiTypeDefinition(
 private object OrderTypesDefinition : IsMultiTypeDefinition<OrderType, IsOrder, RequestContext> by multiTypeDefinition {
     override fun writeJsonValue(value: TypedValue<OrderType, IsOrder>, writer: IsJsonLikeWriter, context: RequestContext?) {
         @Suppress("UNCHECKED_CAST")
-        val definition = mapOfOrderTypeToEmbeddedObject[value.type] as IsEmbeddedObjectDefinition<IsOrder, *, *, RequestContext, RequestContext>?
+        val definition = mapOfOrderTypeToEmbeddedObject[value.type] as IsEmbeddedObjectDefinition<IsOrder, *, RequestContext, RequestContext>?
             ?: throw DefNotFoundException("No def found for index ${value.type.name}")
 
         definition.writeJsonValue(value.value, writer, context)

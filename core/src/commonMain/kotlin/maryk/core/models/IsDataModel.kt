@@ -66,11 +66,11 @@ interface IsDataModel<P : IsPropertyDefinitions> {
                     else -> {
                         val propertyDefinition = reference.propertyDefinition
 
-                        if (propertyDefinition is IsEmbeddedDefinition<*, *>) {
-                            if (storedPropertyDefinition !is IsEmbeddedDefinition<*, *>) {
+                        if (propertyDefinition is IsEmbeddedDefinition<*>) {
+                            if (storedPropertyDefinition !is IsEmbeddedDefinition<*>) {
                                 return false // Types are not matching
                             } else {
-                                model = storedPropertyDefinition.dataModel
+                                model = storedPropertyDefinition.dataModel.Model
                             }
                         }
                     }

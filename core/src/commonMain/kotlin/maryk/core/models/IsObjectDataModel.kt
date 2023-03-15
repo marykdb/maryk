@@ -45,15 +45,15 @@ fun <DO : Any, DM : IsObjectDataModel<DO, P>, P : ObjectPropertyDefinitions<DO>>
         when (property) {
             is ObjectListDefinitionWrapper<out Any, *, *, *, DO> -> {
                 val dataModel =
-                    (property.definition.valueDefinition as EmbeddedObjectDefinition<Any, IsSimpleBaseModel<Any, *, *>, *, *>).dataModel as IsObjectDataModel<Any, ObjectPropertyDefinitions<Any>>
+                    (property.definition.valueDefinition as EmbeddedObjectDefinition<Any, IsSimpleBaseModel<Any, *, *>, *, *>).dataModel.Model as IsObjectDataModel<Any, ObjectPropertyDefinitions<Any>>
                 property.getter(dataObject)?.let { list ->
                     mutableMap[property.index] = list.map {
                         dataModel.asValues(it, context)
                     }.toList()
                 }
             }
-            is IsEmbeddedObjectDefinition<*, *, *, *, *> -> {
-                val dataModel = property.dataModel as IsObjectDataModel<Any, ObjectPropertyDefinitions<Any>>
+            is IsEmbeddedObjectDefinition<*, *, *, *> -> {
+                val dataModel = property.dataModel.Model as IsObjectDataModel<Any, ObjectPropertyDefinitions<Any>>
                 property.getter(dataObject)?.let {
                     mutableMap[property.index] = dataModel.asValues(it, context)
                 }

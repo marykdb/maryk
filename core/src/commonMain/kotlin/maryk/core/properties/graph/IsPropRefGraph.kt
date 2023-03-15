@@ -48,7 +48,7 @@ interface IsPropRefGraph<in P : IsPropertyDefinitions> {
         loop@ while (referenceIndex <= elements.size) {
             return when (currentReference) {
                 is IsPropertyReferenceForValues<*, *, *, *> -> {
-                    if (referenceIndex < elements.size && currentReference is EmbeddedValuesPropertyRef<*, *> || currentReference is EmbeddedObjectPropertyRef<*, *, *, *, *, *>) {
+                    if (referenceIndex < elements.size && currentReference is EmbeddedValuesPropertyRef<*, *> || currentReference is EmbeddedObjectPropertyRef<*, *, *, *, *>) {
                         when (val node = currentSelect.selectNodeOrNull(currentReference.index)) {
                             is PropRefGraph<*, *> -> {
                                 currentReference = elements[referenceIndex++]

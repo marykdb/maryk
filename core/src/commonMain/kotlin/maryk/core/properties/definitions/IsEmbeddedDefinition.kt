@@ -2,7 +2,6 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initUIntByVar
-import maryk.core.models.IsDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
@@ -12,17 +11,17 @@ import maryk.core.properties.references.HasEmbeddedPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.decodeStorageIndex
 
-typealias IsAnyEmbeddedDefinition = IsEmbeddedDefinition<IsDataModel<AbstractPropertyDefinitions<Any>>, AbstractPropertyDefinitions<Any>>
+typealias IsAnyEmbeddedDefinition = IsEmbeddedDefinition<AbstractPropertyDefinitions<Any>>
 
-/** Interface for property definitions containing embedded DataObjects of [DM] and definitions [P]. */
-interface IsEmbeddedDefinition<out DM : IsDataModel<P>, P : IsObjectPropertyDefinitions<*>>: IsDefinitionWithDataModel<DM, P> {
+/** Interface for property definitions containing embedded DataObjects of type [DM]. */
+interface IsEmbeddedDefinition<out DM : IsObjectPropertyDefinitions<*>>: IsDefinitionWithDataModel<DM> {
     /** Resolve a reference from [reader] found on a [parentReference] */
     fun resolveReference(
         reader: () -> Byte,
         parentReference: CanHaveComplexChildReference<*, *, *, *>? = null
     ): IsPropertyReference<Any, *, *> {
         val index = initUIntByVar(reader)
-        return this.dataModel.properties[index]?.ref(parentReference)
+        return this.dataModel[index]?.ref(parentReference)
             ?: throw DefNotFoundException("Embedded Definition with $index not found")
     }
 
@@ -34,7 +33,7 @@ interface IsEmbeddedDefinition<out DM : IsDataModel<P>, P : IsObjectPropertyDefi
         isDoneReading: () -> Boolean
     ): AnyPropertyReference {
         return decodeStorageIndex(reader) { index, type ->
-            val propertyReference = this.dataModel.properties[index]?.ref(parentReference)
+            val propertyReference = this.dataModel[index]?.ref(parentReference)
                 ?: throw DefNotFoundException("Embedded Definition with $index not found")
 
             if (isDoneReading()) {
@@ -58,7 +57,7 @@ interface IsEmbeddedDefinition<out DM : IsDataModel<P>, P : IsObjectPropertyDefi
         name: String,
         parentReference: CanHaveComplexChildReference<*, *, *, *>? = null
     ): IsPropertyReference<Any, *, *> {
-        return this.dataModel.properties[name]?.ref(parentReference)
+        return this.dataModel[name]?.ref(parentReference)
             ?: throw DefNotFoundException("Embedded Definition with $name not found")
     }
 }

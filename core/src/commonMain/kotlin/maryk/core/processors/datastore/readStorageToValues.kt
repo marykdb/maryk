@@ -403,14 +403,14 @@ private fun <DM : IsRootModel> readEmbeddedValues(
     qualifierLength: Int,
     offset: Int,
     readValueFromStorage: ValueReader,
-    definition: IsEmbeddedDefinition<*, *>,
+    definition: IsEmbeddedDefinition<*>,
     parentReference: IsPropertyReference<*, *, *>,
     select: IsPropRefGraph<DM>?,
     addToCache: CacheProcessor,
     addValueToOutput: AddValue
 ) {
     @Suppress("UNCHECKED_CAST")
-    val dataModel = definition.dataModel as IsDataModelWithValues<*, out IsValuesPropertyDefinitions, *>
+    val dataModel = definition.dataModel.Model as IsDataModelWithValues<*, out IsValuesPropertyDefinitions, *>
     val values = dataModel.values { MutableValueItems() }
 
     addValueToOutput(values)
@@ -580,7 +580,7 @@ private fun readComplexWithSubDefinition(
             valueAdder
         )
     }
-    is IsEmbeddedDefinition<*, *> -> {
+    is IsEmbeddedDefinition<*> -> {
         readEmbeddedValues(
             qualifierReader,
             qualifierLength,

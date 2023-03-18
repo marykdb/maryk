@@ -86,7 +86,9 @@ data class ListChange internal constructor(
         )
 
         override fun invoke(values: ObjectValues<ListChange, Companion>): ListChange =
-            Model.invoke(values)
+            ListChange(
+                listValueChanges = values(1u)
+            )
 
         override val Model = object :
             ReferenceMappedDataModel<ListChange, ListValueChanges<*>, Companion, ListValueChanges.Companion>(
@@ -94,10 +96,6 @@ data class ListChange internal constructor(
                 containedDataModel = ListValueChanges.Model,
                 referenceProperty = ListValueChanges.reference
             ) {
-            override fun invoke(values: ObjectValues<ListChange, Companion>) = ListChange(
-                listValueChanges = values(1u)
-            )
-
             override fun writeJson(obj: ListChange, writer: IsJsonLikeWriter, context: RequestContext?) {
                 writeReferenceValueMap(writer, obj.listValueChanges, context)
             }

@@ -1,7 +1,6 @@
 package maryk.core.properties.definitions
 
 import maryk.core.exceptions.RequestException
-import maryk.core.models.ContextualDataModel
 import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsValuesPropertyDefinitions
@@ -114,13 +113,7 @@ data class IncrementingMapDefinition<K : Comparable<K>, V : Any, CX : IsProperty
         )
 
         override fun invoke(values: ObjectValues<IncrementingMapDefinition<*, *, *>, Model>): IncrementingMapDefinition<*, *, *> =
-            Model.invoke(values)
-
-        override val Model = object : ContextualDataModel<IncrementingMapDefinition<*, *, *>, Model, ContainsDefinitionsContext, KeyValueDefinitionContext>(
-            contextTransformer = contextTransformer,
-            properties = this,
-        ) {
-            override fun invoke(values: ObjectValues<IncrementingMapDefinition<*, *, *>, Model>) = IncrementingMapDefinition<Comparable<Any>, Any, IsPropertyContext>(
+            IncrementingMapDefinition<Comparable<Any>, Any, IsPropertyContext>(
                 required = values(1u),
                 final = values(2u),
                 minSize = values(3u),
@@ -131,7 +124,6 @@ data class IncrementingMapDefinition<K : Comparable<K>, V : Any, CX : IsProperty
                 ),
                 valueDefinition = values(6u)
             )
-        }
     }
 }
 

@@ -3,7 +3,6 @@ package maryk.core.processors.datastore
 import maryk.core.exceptions.TypeException
 import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
-import maryk.core.models.IsDataModel
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.AbstractPropertyDefinitions
@@ -50,7 +49,7 @@ internal typealias QualifierWriter = ((Byte) -> Unit) -> Unit
  * Walk Values and process storable values.
  * Pass [valueWriter] to process values
  */
-fun <DM : IsDataModel<P>, P : AbstractPropertyDefinitions<*>> AbstractValues<*, DM, P>.writeToStorage(
+fun <DM : AbstractPropertyDefinitions<*>> AbstractValues<*, DM>.writeToStorage(
     valueWriter: ValueWriter<IsPropertyDefinition<*>>
 ) = this.writeToStorage(0, null, valueWriter)
 
@@ -59,13 +58,13 @@ fun <DM : IsDataModel<P>, P : AbstractPropertyDefinitions<*>> AbstractValues<*, 
  * [qualifierCount], [qualifierWriter] define the count and writer for any parent property
  * Pass [valueWriter] to process values
  */
-fun <DM : IsDataModel<P>, P : IsObjectPropertyDefinitions<*>> AbstractValues<*, DM, P>.writeToStorage(
+fun <DM : IsObjectPropertyDefinitions<*>> AbstractValues<*, DM>.writeToStorage(
     qualifierCount: Int = 0,
     qualifierWriter: QualifierWriter? = null,
     valueWriter: ValueWriter<IsPropertyDefinition<*>>
 ) {
     for ((index, value) in this.values) {
-        val definition = this.dataModel.properties[index]!!
+        val definition = this.dataModel[index]!!
         writeValue(definition.index, qualifierCount, qualifierWriter, definition.definition, value, valueWriter)
     }
 }
@@ -136,7 +135,7 @@ internal fun <T : IsPropertyDefinition<*>> writeValue(
                 value as Map<Any, Any>
             )
         }
-        is AbstractValues<*, *, *> -> {
+        is AbstractValues<*, *> -> {
             if (definition !is EmbeddedValuesDefinition<*>) {
                 throw TypeException("Expected Embedded Values Definition for Values object")
             }

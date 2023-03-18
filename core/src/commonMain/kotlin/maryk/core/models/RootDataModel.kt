@@ -113,25 +113,21 @@ class RootDataModel<P : IsValuesPropertyDefinitions>(
         )
 
         override fun invoke(values: ObjectValues<RootDataModel<*>, ObjectPropertyDefinitions<RootDataModel<*>>>) =
-            Model.invoke(values)
+            RootDataModel(
+                name = values(1u),
+                properties = values(2u),
+                version = values(3u),
+                keyDefinition = values(4u) ?: UUIDKey,
+                indices = values(5u),
+                reservedIndices = values(6u),
+                reservedNames = values(7u)
+            ).apply {
+                (properties as MutablePropertyDefinitions)._model = this
+            }
 
-        override val Model = object :
-            AbstractObjectDataModel<RootDataModel<*>, ObjectPropertyDefinitions<RootDataModel<*>>, ContainsDefinitionsContext, ContainsDefinitionsContext>(
-                properties = InternalModel,
-            ) {
-            override fun invoke(values: ObjectValues<RootDataModel<*>, ObjectPropertyDefinitions<RootDataModel<*>>>) =
-                RootDataModel(
-                    name = values(1u),
-                    properties = values(2u),
-                    version = values(3u),
-                    keyDefinition = values(4u) ?: UUIDKey,
-                    indices = values(5u),
-                    reservedIndices = values(6u),
-                    reservedNames = values(7u)
-                ).apply {
-                    (properties as MutablePropertyDefinitions)._model = this
-                }
-
+        override val Model = object : AbstractObjectDataModel<RootDataModel<*>, ObjectPropertyDefinitions<RootDataModel<*>>, ContainsDefinitionsContext, ContainsDefinitionsContext>(
+            properties = InternalModel,
+        ) {
             override fun writeJson(
                 values: ObjectValues<RootDataModel<*>, ObjectPropertyDefinitions<RootDataModel<*>>>,
                 writer: IsJsonLikeWriter,

@@ -194,21 +194,12 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsSimpleBaseModel<DO, CXI, CX>, CX
             )
         )
 
-        override fun invoke(values: ObjectValues<EmbeddedObjectDefinition<*, *, *, *>, Model>): EmbeddedObjectDefinition<*, *, *, *> =
-            Model.invoke(values)
-
-        override val Model = object : ContextualDataModel<EmbeddedObjectDefinition<*, *, *, *>, Model, ContainsDefinitionsContext, ModelContext>(
-            contextTransformer = contextTransformer,
-            properties = this,
-        ) {
-            override fun invoke(values: ObjectValues<EmbeddedObjectDefinition<*, *, *, *>, Model>) =
-                EmbeddedObjectDefinition<Any, IsSimpleBaseModel<Any, IsPropertyContext, IsPropertyContext>, IsPropertyContext, IsPropertyContext>(
-                    required = values(1u),
-                    final = values(2u),
-                    dataModel = values(3u),
-                    default = values(4u)
-                )
-        }
+        override fun invoke(values: ObjectValues<EmbeddedObjectDefinition<*, *, *, *>, Model>): EmbeddedObjectDefinition<*, *, *, *> = EmbeddedObjectDefinition<Any, IsSimpleBaseModel<Any, IsPropertyContext, IsPropertyContext>, IsPropertyContext, IsPropertyContext>(
+            required = values(1u),
+            final = values(2u),
+            dataModel = values(3u),
+            default = values(4u)
+        )
     }
 }
 

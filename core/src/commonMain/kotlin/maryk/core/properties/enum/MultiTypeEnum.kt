@@ -66,26 +66,23 @@ interface MultiTypeEnum<T: Any>: TypeEnum<T> {
             }
         )
 
-        override fun invoke(values: ObjectValues<MultiTypeEnum<*>, ObjectPropertyDefinitions<MultiTypeEnum<*>>>): MultiTypeEnum<*> =
-            Model.invoke(values)
+        override fun invoke(values: ObjectValues<MultiTypeEnum<*>, ObjectPropertyDefinitions<MultiTypeEnum<*>>>): MultiTypeEnum<*>  {
+            val typedDefinition =
+                values<TypedValue<PropertyDefinitionType, IsTransportablePropertyDefinitionType<*>>>(
+                    definition.index
+                )
+
+            return invoke(
+                values(index.index),
+                values(name.index),
+                typedDefinition.value as IsUsableInMultiType<out Any, *>,
+                values(alternativeNames.index)
+            )
+        }
 
         override val Model = object : AbstractObjectDataModel<MultiTypeEnum<*>, ObjectPropertyDefinitions<MultiTypeEnum<*>>, IsPropertyContext, IsPropertyContext>(
             properties = MultiTypeEnum.Model,
         ) {
-            override fun invoke(values: ObjectValues<MultiTypeEnum<*>, ObjectPropertyDefinitions<MultiTypeEnum<*>>>): MultiTypeEnum<*> {
-                val typedDefinition =
-                    values<TypedValue<PropertyDefinitionType, IsTransportablePropertyDefinitionType<*>>>(
-                        definition.index
-                    )
-
-                return invoke(
-                    values(index.index),
-                    values(name.index),
-                    typedDefinition.value as IsUsableInMultiType<out Any, *>,
-                    values(alternativeNames.index)
-                )
-            }
-
             override fun writeJson(
                 obj: MultiTypeEnum<*>,
                 writer: IsJsonLikeWriter,

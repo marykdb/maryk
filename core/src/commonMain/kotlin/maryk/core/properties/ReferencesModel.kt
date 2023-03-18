@@ -18,15 +18,12 @@ abstract class ReferencesModel<DO: Any, P: ReferencesModel<DO, P>>(
     : ObjectPropertyDefinitions<DO>(), IsObjectPropertyDefinitions<DO>, IsInternalModel<DO, P, RequestContext, RequestContext> {
     abstract val references: ListDefinitionWrapper<AnyPropertyReference, AnyPropertyReference, RequestContext, DO>
 
-    abstract fun invoke(values: ObjectValues<DO, P>): DO
+    abstract override fun invoke(values: ObjectValues<DO, P>): DO
 
     @Suppress("UNCHECKED_CAST")
     override val Model = object: QueryDataModel<DO, P>(
         this@ReferencesModel as P,
     ) {
-        override fun invoke(values: ObjectValues<DO, P>): DO =
-            this@ReferencesModel.invoke(values)
-
         override fun writeJson(obj: DO, writer: IsJsonLikeWriter, context: RequestContext?) {
             writer.writeJsonReferences(referencesGetter(obj), context)
         }

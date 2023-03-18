@@ -391,8 +391,8 @@ private fun readQualifierOfType(
                 readValueFromStorage,
                 select,
                 reference,
-                addToCache,
-                { addValueToOutput(index, it) })
+                addToCache
+            ) { addValueToOutput(index, it) }
         }
     }
 }

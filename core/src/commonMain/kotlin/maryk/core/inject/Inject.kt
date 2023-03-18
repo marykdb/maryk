@@ -58,8 +58,10 @@ data class Inject<T : Any, D : IsPropertyDefinition<T>>(
             }
         )
 
-        override fun invoke(values: ObjectValues<AnyInject, Companion>): AnyInject =
-            Model.invoke(values)
+        override fun invoke(values: ObjectValues<AnyInject, Companion>) = Inject<Any, IsPropertyDefinition<Any>>(
+            collectionName = values(1u),
+            propertyReference = values(2u)
+        )
 
         override val Model: ContextualDataModel<AnyInject, Companion, RequestContext, InjectionContext> = object : ContextualDataModel<AnyInject, Companion, RequestContext, InjectionContext>(
             properties = Companion,
@@ -69,11 +71,6 @@ data class Inject<T : Any, D : IsPropertyDefinition<T>>(
                 )
             }
         ) {
-            override fun invoke(values: ObjectValues<AnyInject, Companion>) = Inject<Any, IsPropertyDefinition<Any>>(
-                collectionName = values(1u),
-                propertyReference = values(2u)
-            )
-
             override fun writeJson(obj: AnyInject, writer: IsJsonLikeWriter, context: InjectionContext?) {
                 if (obj.propertyReference != null) {
                     writer.writeStartObject()

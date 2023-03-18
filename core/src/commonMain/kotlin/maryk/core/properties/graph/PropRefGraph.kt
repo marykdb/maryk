@@ -112,7 +112,10 @@ data class PropRefGraph<P : IsValuesPropertyDefinitions, PS : IsValuesPropertyDe
         )
 
         override fun invoke(values: ObjectValues<PropRefGraph<*, *>, Companion>): PropRefGraph<*, *> =
-            Model.invoke(values)
+            PropRefGraph<IsValuesPropertyDefinitions, IsValuesPropertyDefinitions>(
+                parent = values(1u),
+                properties = values(2u)
+            )
 
         override val Model = object : ContextualDataModel<PropRefGraph<*, *>, Companion, ContainsDataModelContext<*>, GraphContext>(
             properties = Companion,
@@ -124,12 +127,6 @@ data class PropRefGraph<P : IsValuesPropertyDefinitions, PS : IsValuesPropertyDe
                 }
             }
         ) {
-            override fun invoke(values: ObjectValues<PropRefGraph<*, *>, Companion>) =
-                PropRefGraph<IsValuesPropertyDefinitions, IsValuesPropertyDefinitions>(
-                    parent = values(1u),
-                    properties = values(2u)
-                )
-
             override fun writeJson(obj: PropRefGraph<*, *>, writer: IsJsonLikeWriter, context: GraphContext?) {
                 writeJsonValues(obj.parent.ref(), obj.properties, writer, context)
             }

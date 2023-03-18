@@ -204,9 +204,6 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
         override val Model = object: SimpleObjectDataModel<AnyOutDefinitionWrapper, Model>(
             properties = this@Model,
         ) {
-            override fun invoke(values: ObjectValues<AnyOutDefinitionWrapper, Model>): AnyOutDefinitionWrapper =
-                this@Model.invoke(values)
-
             override fun writeJson(
                 obj: AnyOutDefinitionWrapper,
                 writer: IsJsonLikeWriter,

@@ -1,12 +1,9 @@
 package maryk.core.query.changes
 
-import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.IsRootModel
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.SimpleQueryModel
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.IsPropertyReferenceForValues
-import maryk.core.values.ObjectValues
 import maryk.core.values.SimpleObjectValues
 
 /** The creation of a DataObject */
@@ -25,11 +22,6 @@ object ObjectCreate : IsChange {
     override fun toString() = "ObjectCreate"
 
     val Model = object : SimpleQueryModel<ObjectCreate>() {
-        override fun invoke(values: SimpleObjectValues<ObjectCreate>) = Model.invoke(values)
-
-        override val Model = object : SimpleQueryDataModel<ObjectCreate>(this) {
-            override fun invoke(values: ObjectValues<ObjectCreate, ObjectPropertyDefinitions<ObjectCreate>>): ObjectCreate =
-                ObjectCreate
-        }
+        override fun invoke(values: SimpleObjectValues<ObjectCreate>) = ObjectCreate
     }
 }

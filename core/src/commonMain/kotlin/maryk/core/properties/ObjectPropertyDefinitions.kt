@@ -13,7 +13,9 @@ import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.ValueDataObject
+import maryk.core.properties.types.ValueDataObjectWithValues
 import maryk.core.query.DefinitionsConversionContext
+import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken.EndObject
@@ -72,6 +74,11 @@ internal class MutableValueModel<DO: ValueDataObject>: MutableObjectPropertyDefi
     @Suppress("UNCHECKED_CAST")
     override val Model get() = _model as? ValueDataModel<DO, MutableValueModel<DO>>
         ?: throw Exception("No Model yet set, likely DataModel was not initialized yet")
+
+    override fun invoke(values: ObjectValues<DO, MutableValueModel<DO>>): DO {
+        @Suppress("UNCHECKED_CAST")
+        return ValueDataObjectWithValues(this.toBytes(values), values) as DO
+    }
 }
 
 /** Definition for a collection of Property Definitions for in a ObjectPropertyDefinitions */

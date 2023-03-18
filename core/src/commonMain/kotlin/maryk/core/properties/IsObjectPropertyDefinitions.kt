@@ -3,9 +3,14 @@ package maryk.core.properties
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.values.IsValueItems
 import maryk.core.values.MutableValueItems
+import maryk.core.values.ObjectValues
 import maryk.core.values.ValueItem
 
-interface IsObjectPropertyDefinitions<DO>:
+interface IsTypedObjectPropertyDefinitions<DO: Any, P: IsObjectPropertyDefinitions<DO>>: IsObjectPropertyDefinitions<DO> {
+    operator fun invoke(values: ObjectValues<DO, P>): DO
+}
+
+interface IsObjectPropertyDefinitions<DO> :
     IsPropertyDefinitions,
     Collection<IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>> {
 

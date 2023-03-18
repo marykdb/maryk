@@ -59,7 +59,7 @@ data class EmbeddedObjectDefinitionWrapper<
     }
 
     /** Get a top level reference on a model with [propertyDefinitionGetter] */
-    infix fun <T : Any, W : IsDefinitionWrapper<T, *, *, AbstractValues<*, *, *>>> ref(
+    infix fun <T : Any, W : IsDefinitionWrapper<T, *, *, AbstractValues<*, *>>> ref(
         propertyDefinitionGetter: DM.() -> W
     ): (AnyOutPropertyReference?) -> IsPropertyReference<T, W, *> =
         {

@@ -33,15 +33,13 @@ data class And(
         )
 
         override fun invoke(values: ObjectValues<And, Companion>) =
-            Model.invoke(values)
+            And(
+                filters = values<List<IsFilter>>(1u)
+            )
 
         override val Model: QueryDataModel<And, Companion> = object : QueryDataModel<And, Companion>(
             Companion,
         ) {
-            override fun invoke(values: ObjectValues<And, Companion>) = And(
-                filters = values<List<IsFilter>>(1u)
-            )
-
             override fun writeJson(obj: And, writer: IsJsonLikeWriter, context: RequestContext?) {
                 filters.writeJsonValue(
                     filters.getPropertyAndSerialize(obj, context)

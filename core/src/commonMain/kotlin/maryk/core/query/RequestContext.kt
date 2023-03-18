@@ -42,7 +42,7 @@ class RequestContext(
     )
 
     private var toCollect: MutableMap<String, ModelTypeToCollect<*>>? = null
-    private var collectedResults: MutableMap<String, AbstractValues<*, *, *>>? = null
+    private var collectedResults: MutableMap<String, AbstractValues<*, *>>? = null
 
     internal var collectedInjects: MutableList<InjectWithReference>? = null
 
@@ -71,11 +71,11 @@ class RequestContext(
     fun getToCollectModel(collectionName: String) = toCollect?.get(collectionName)
 
     /** Collect result [values] by [collectionName] */
-    fun collectResult(collectionName: String, values: AbstractValues<*, *, *>) {
+    fun collectResult(collectionName: String, values: AbstractValues<*, *>) {
         val toCollect = toCollect?.get(collectionName)
             ?: throw RequestException("$collectionName was not defined as to collect in RequestContext")
 
-        if (values.dataModel !== toCollect.model) {
+        if (values.dataModel.Model !== toCollect.model) {
             throw RequestException("Collect($collectionName): Value $values is not of right dataModel $toCollect ")
         }
 

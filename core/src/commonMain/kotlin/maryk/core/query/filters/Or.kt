@@ -33,15 +33,13 @@ data class Or(
         )
 
         override fun invoke(values: ObjectValues<Or, Companion>) =
-            Model.invoke(values)
+            Or(
+                filters = values<List<IsFilter>>(1u)
+            )
 
         override val Model: QueryDataModel<Or, Companion> = object : QueryDataModel<Or, Companion>(
             properties = Companion,
         ) {
-            override fun invoke(values: ObjectValues<Or, Companion>) = Or(
-                filters = values<List<IsFilter>>(1u)
-            )
-
             override fun writeJson(obj: Or, writer: IsJsonLikeWriter, context: RequestContext?) {
                 filters.writeJsonValue(
                     filters.getPropertyAndSerialize(obj, context)

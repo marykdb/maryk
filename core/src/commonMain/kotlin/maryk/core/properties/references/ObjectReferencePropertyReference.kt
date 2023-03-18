@@ -28,7 +28,7 @@ open class ObjectReferencePropertyReference<
     propertyDefinition: D,
     parentReference: P?
 ) :
-    CanHaveComplexChildReference<Key<DM>, D, P, AbstractValues<*, *, *>>(propertyDefinition, parentReference),
+    CanHaveComplexChildReference<Key<DM>, D, P, AbstractValues<*, *>>(propertyDefinition, parentReference),
     IsPropertyReferenceForValues<Key<DM>, TO, D, P>,
     IsValuePropertyReference<Key<DM>, TO, D, P>,
     IsFixedBytesPropertyReference<Key<DM>>,

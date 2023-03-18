@@ -20,7 +20,7 @@ open class MultiTypePropertyReference<
 > internal constructor(
     propertyDefinition: D,
     parentReference: P?
-) : CanHaveComplexChildReference<TypedValue<E, T>, D, P, AbstractValues<*, *, *>>(
+) : CanHaveComplexChildReference<TypedValue<E, T>, D, P, AbstractValues<*, *>>(
     propertyDefinition,
     parentReference
 ), IsPropertyReferenceForValues<TypedValue<E, T>, TO, D, P>, HasEmbeddedPropertyReference<TypedValue<E, T>> {

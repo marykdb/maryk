@@ -8,7 +8,7 @@ import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 
-interface IsInternalModel<DO: Any, P: IsObjectPropertyDefinitions<DO>, in CXI : IsPropertyContext, CX : IsPropertyContext>: IsBaseModel<DO, P, CXI, CX> {
+interface IsInternalModel<DO: Any, P: IsObjectPropertyDefinitions<DO>, in CXI : IsPropertyContext, CX : IsPropertyContext>: IsBaseModel<DO, P, CXI, CX>, IsTypedObjectPropertyDefinitions<DO, P> {
     @Suppress("PropertyName")
     override val Model: AbstractObjectDataModel<DO, P, CXI, CX>
 }
@@ -18,8 +18,8 @@ typealias DefinitionModel<DO> = InternalModel<DO, ObjectPropertyDefinitions<DO>,
 internal typealias QueryModel<DO, P> = InternalModel<DO, P, RequestContext, RequestContext>
 internal typealias SimpleQueryModel<DO> = InternalModel<DO, ObjectPropertyDefinitions<DO>, RequestContext, RequestContext>
 
-abstract class InternalModel<DO: Any, P: ObjectPropertyDefinitions<DO>, in CXI : IsPropertyContext, CX : IsPropertyContext>: ObjectPropertyDefinitions<DO>(), IsInternalModel<DO, P, CXI, CX> {
-    abstract fun invoke(values: ObjectValues<DO, P>): DO
+abstract class InternalModel<DO: Any, P: IsObjectPropertyDefinitions<DO>, in CXI : IsPropertyContext, CX : IsPropertyContext>: ObjectPropertyDefinitions<DO>(), IsInternalModel<DO, P, CXI, CX> {
+    abstract override operator fun invoke(values: ObjectValues<DO, P>): DO
 
     @Suppress("UNCHECKED_CAST")
     operator fun <T : Any, R : IsPropertyReference<T, IsPropertyDefinition<T>, *>> invoke(
@@ -35,8 +35,5 @@ abstract class InternalModel<DO: Any, P: ObjectPropertyDefinitions<DO>, in CXI :
     @Suppress("UNCHECKED_CAST")
     override val Model = object: AbstractObjectDataModel<DO, P, CXI, CX>(
         properties = this@InternalModel as P,
-    ) {
-        override fun invoke(values: ObjectValues<DO, P>): DO =
-            this@InternalModel.invoke(values)
-    }
+    ) {}
 }

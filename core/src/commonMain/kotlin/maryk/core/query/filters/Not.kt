@@ -32,16 +32,14 @@ data class Not(
             fromSerializable = { it.value }
         )
 
-        override fun invoke(values: ObjectValues<Not, Companion>): Not
-            = Model.invoke(values)
+        override fun invoke(values: ObjectValues<Not, Companion>): Not =
+            Not(
+                filters = values<List<IsFilter>>(1u)
+            )
 
         override val Model: QueryDataModel<Not, Companion> = object : QueryDataModel<Not, Companion>(
             properties = Companion,
         ) {
-            override fun invoke(values: ObjectValues<Not, Companion>) = Not(
-                filters = values<List<IsFilter>>(1u)
-            )
-
             override fun writeJson(obj: Not, writer: IsJsonLikeWriter, context: RequestContext?) {
                 filters.writeJsonValue(
                     filters.getPropertyAndSerialize(obj, context)

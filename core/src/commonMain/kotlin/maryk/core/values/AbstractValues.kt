@@ -4,11 +4,10 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.inject.AnyInject
 import maryk.core.models.AbstractDataModel
-import maryk.core.models.IsDataModel
 import maryk.core.models.IsNamedDataModel
-import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.IsSimpleBaseModel
 import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsListDefinition
@@ -31,12 +30,12 @@ import maryk.core.query.RequestContext
 import maryk.core.query.filters.IsFilter
 import maryk.lib.exceptions.ParseException
 
-typealias AnyAbstractValues = AbstractValues<Any, IsDataModel<AbstractPropertyDefinitions<Any>>, AbstractPropertyDefinitions<Any>>
+typealias AnyAbstractValues = AbstractValues<Any, IsObjectPropertyDefinitions<Any>>
 
 /**
  * Contains a [values] with all values related to a DataObject of [dataModel]
  */
-abstract class AbstractValues<DO : Any, DM : IsDataModel<P>, P : IsObjectPropertyDefinitions<DO>> : IsValues<P> {
+abstract class AbstractValues<DO : Any, DM : IsObjectPropertyDefinitions<DO>> : IsValues<DM> {
     abstract val dataModel: DM
     internal abstract val values: IsValueItems
     abstract val context: RequestContext?
@@ -52,7 +51,7 @@ abstract class AbstractValues<DO : Any, DM : IsDataModel<P>, P : IsObjectPropert
     inline operator fun <reified T> invoke(index: UInt): T {
         val value = this.original(index)
 
-        val valueDef = this.dataModel.properties[index]
+        val valueDef = this.dataModel[index]
             ?: throw DefNotFoundException("Value definition of index $index is missing")
 
         return process(valueDef, value, null is T) {
@@ -91,29 +90,29 @@ abstract class AbstractValues<DO : Any, DM : IsDataModel<P>, P : IsObjectPropert
     }
 
     /** Mutate Values with [pairToAddCreator]. */
-    fun mutate(pairToAddCreator: P.() -> Array<ValueItem>) {
+    fun mutate(pairToAddCreator: DM.() -> Array<ValueItem>) {
         val mutableValues = values as MutableValueItems
 
-        for (toAdd in pairToAddCreator(this.dataModel.properties)) {
+        for (toAdd in pairToAddCreator(this.dataModel)) {
             mutableValues += toAdd
         }
     }
 
     /** Get property from values with wrapper in [getProperty] and convert it to native usage */
-    fun <TI : Any, TO : Any> get(getProperty: P.() -> IsDefinitionWrapper<TI, TO, *, DO>): TO? {
+    fun <TI : Any, TO : Any> get(getProperty: DM.() -> IsDefinitionWrapper<TI, TO, *, DO>): TO? {
         @Suppress("UNCHECKED_CAST")
-        return this.invoke(getProperty as P.() -> IsDefinitionWrapper<TI, Any, *, DO>) as TO?
+        return this.invoke(getProperty as DM.() -> IsDefinitionWrapper<TI, Any, *, DO>) as TO?
     }
 
     /** Get property from values with wrapper in [getProperty] and convert it to native usage */
-    inline operator fun <TI : Any, reified TO : Any> invoke(getProperty: P.() -> IsDefinitionWrapper<TI, TO, *, DO>): TO? {
+    inline operator fun <TI : Any, reified TO : Any> invoke(getProperty: DM.() -> IsDefinitionWrapper<TI, TO, *, DO>): TO? {
         val index = getProperty(
-            this.dataModel.properties
+            this.dataModel
         ).index
 
         val value = this.original(index)
 
-        val valueDef = this.dataModel.properties[index]
+        val valueDef = this.dataModel[index]
             ?: throw DefNotFoundException("Value definition of index $index is missing")
 
         return process(valueDef, value, true) {
@@ -122,9 +121,9 @@ abstract class AbstractValues<DO : Any, DM : IsDataModel<P>, P : IsObjectPropert
     }
 
     /** Get property from values with wrapper in [getProperty] and convert it to native usage */
-    fun <T : Any> original(getProperty: P.() -> IsDefinitionWrapper<T, *, *, DO>): T? {
+    fun <T : Any> original(getProperty: DM.() -> IsDefinitionWrapper<T, *, *, DO>): T? {
         val index = getProperty(
-            this.dataModel.properties
+            this.dataModel
         ).index
 
         @Suppress("UNCHECKED_CAST")
@@ -208,7 +207,7 @@ abstract class AbstractValues<DO : Any, DM : IsDataModel<P>, P : IsObjectPropert
      */
     fun processAllValues(parentReference: IsPropertyReference<*, *, *>? = null, processor: (IsPropertyReference<out Any, IsPropertyDefinition<out Any>, IsValues<*>>, Any) -> Unit) {
         for ((index, value) in this.values) {
-            this.dataModel.properties[index]?.let { definition ->
+            this.dataModel[index]?.let { definition ->
                 processDefinitionForProcessor(
                     definition.definition as IsPropertyDefinition<out Any>,
                     value,
@@ -228,7 +227,7 @@ abstract class AbstractValues<DO : Any, DM : IsDataModel<P>, P : IsObjectPropert
         @Suppress("UNCHECKED_CAST")
         when (definition) {
             is IsEmbeddedValuesDefinition<*, *> -> {
-                (value as AbstractValues<*, *, *>).processAllValues(parentReference, processor)
+                (value as AbstractValues<*, *>).processAllValues(parentReference, processor)
             }
             is IsListDefinition<*, *> ->
                 for ((listIndex, item) in (value as List<Any>).withIndex()) {
@@ -306,14 +305,15 @@ inline fun <reified T : Any, TO : Any> IsDefinitionWrapper<T, TO, *, *>.convertT
 }
 
 /** Output values to a json string with possible [context] provided */
-fun <V: AbstractValues<DO, DM, P>, DO: Any, DM: AbstractDataModel<DO, P, V, *, CX>, P: IsObjectPropertyDefinitions<DO>, CX: IsPropertyContext> V.toJson(
+@Suppress("UNCHECKED_CAST")
+fun <V: AbstractValues<DO, DM>, DO: Any, DM: IsSimpleBaseModel<DO, *, CX>, CX: IsPropertyContext> V.toJson(
     context: CX? = null,
     pretty: Boolean = false
 ): String =
-    this.dataModel.writeJson(this, context = context, pretty = pretty)
+    (this.dataModel.Model as AbstractDataModel<DO, DM, V, *, CX>).writeJson(this, context = context, pretty = pretty)
 
 /** Get property from values with wrapper in [getProperty] and convert it to native usage */
-inline operator fun <DO : Any, DM : IsDataModel<P>, P : IsObjectPropertyDefinitions<DO>, TI : Any, reified TO : Any> AbstractValues<DO, DM, P>?.div(getProperty: P.() -> IsDefinitionWrapper<TI, TO, *, DO>): TO? {
+inline operator fun <DO : Any, DM : IsObjectPropertyDefinitions<DO>, TI : Any, reified TO : Any> AbstractValues<DO, DM>?.div(getProperty: DM.() -> IsDefinitionWrapper<TI, TO, *, DO>): TO? {
     if (this == null) {
         return null
     }

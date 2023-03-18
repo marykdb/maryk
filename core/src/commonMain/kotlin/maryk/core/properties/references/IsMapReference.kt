@@ -16,7 +16,7 @@ import maryk.lib.exceptions.ParseException
  */
 interface IsMapReference<K : Any, V : Any, CX : IsPropertyContext, D: IsMapDefinitionWrapper<K, V, Any, CX, *>> :
     IsPropertyReferenceForValues<Map<K, V>, Any, D, CanHaveComplexChildReference<*, *, *, *>>,
-    CanContainMapItemReference<Map<K, V>, D, AbstractValues<*, *, *>>,
+    CanContainMapItemReference<Map<K, V>, D, AbstractValues<*, *>>,
     HasEmbeddedPropertyReference<Map<K, V>> {
     override fun getEmbedded(name: String, context: IsPropertyContext?): AnyPropertyReference = when (name[0]) {
         '@' -> MapValueReference(

@@ -3,7 +3,6 @@ package maryk.core.properties.definitions
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.writeBytes
-import maryk.core.models.ContextualDataModel
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.models.ValueDataModel
 import maryk.core.properties.ContextualModel
@@ -186,15 +185,8 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueModel<DO, *>>
             )
         )
 
-        override fun invoke(values: ObjectValues<ValueObjectDefinition<*, *>, Model>): ValueObjectDefinition<*, *> =
-            Model.invoke(values)
-
-        @Suppress("unused")
-        override val Model = object : ContextualDataModel<ValueObjectDefinition<*, *>, Model, ContainsDefinitionsContext, ModelContext>(
-            contextTransformer = contextTransformer,
-            properties = this,
-        ) {
-            override fun invoke(values: ObjectValues<ValueObjectDefinition<*, *>, Model>) = ValueObjectDefinition(
+        override fun invoke(values: ObjectValues<ValueObjectDefinition<*, *>, Model>): GenericValueModelDefinition =
+            ValueObjectDefinition(
                 required = values(1u),
                 final = values(2u),
                 unique = values(3u),
@@ -202,8 +194,7 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueModel<DO, *>>
                 minValue = values(5u),
                 maxValue = values(6u),
                 default = values(7u)
-            ) as GenericValueModelDefinition
-        }
+            )
     }
 }
 

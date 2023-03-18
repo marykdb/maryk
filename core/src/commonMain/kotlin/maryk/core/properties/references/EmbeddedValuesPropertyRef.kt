@@ -23,7 +23,7 @@ class EmbeddedValuesPropertyRef<
 > internal constructor(
     propertyDefinition: EmbeddedValuesDefinitionWrapper<DM, CX>,
     parentReference: CanHaveComplexChildReference<*, *, *, *>?
-) : CanHaveComplexChildReference<Values<DM>, EmbeddedValuesDefinitionWrapper<DM, CX>, CanHaveComplexChildReference<*, *, *, *>, AbstractValues<*, *, *>>(
+) : CanHaveComplexChildReference<Values<DM>, EmbeddedValuesDefinitionWrapper<DM, CX>, CanHaveComplexChildReference<*, *, *, *>, AbstractValues<*, *>>(
     propertyDefinition, parentReference
 ), HasEmbeddedPropertyReference<Values<DM>>,
     IsPropertyReferenceForValues<Values<DM>, Values<DM>, EmbeddedValuesDefinitionWrapper<DM, CX>, CanHaveComplexChildReference<*, *, *, *>> {

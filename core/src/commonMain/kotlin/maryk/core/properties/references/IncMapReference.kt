@@ -21,7 +21,7 @@ open class IncMapReference<K : Comparable<K>, V : Any, CX : IsPropertyContext> i
         propertyDefinition,
         parentReference
     ),
-    CanContainMapItemReference<Map<K, V>, IncMapDefinitionWrapper<K, V, Any, CX, *>, AbstractValues<*, *, *>>,
+    CanContainMapItemReference<Map<K, V>, IncMapDefinitionWrapper<K, V, Any, CX, *>, AbstractValues<*, *>>,
     HasEmbeddedPropertyReference<Map<K, V>>,
     IsMapReference<K, V, CX, IncMapDefinitionWrapper<K, V, Any, CX, *>> {
     override fun getEmbedded(name: String, context: IsPropertyContext?): AnyPropertyReference = when (name[0]) {

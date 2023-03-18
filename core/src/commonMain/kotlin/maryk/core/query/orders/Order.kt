@@ -80,17 +80,14 @@ data class Order internal constructor(
         )
 
         override fun invoke(values: ObjectValues<Order, Model>): Order =
-            Model.invoke(values)
+            Order(
+                propertyReference = values(1u),
+                direction = values(2u)
+            )
 
         override val Model: QueryDataModel<Order, Model> = object : QueryDataModel<Order, Model>(
             Order.Model
         ) {
-            override fun invoke(values: ObjectValues<Order, Model>) =
-                Order(
-                    propertyReference = values(1u),
-                    direction = values(2u)
-                )
-
             override fun writeJson(obj: Order, writer: IsJsonLikeWriter, context: RequestContext?) {
                 if (writer is YamlWriter) {
                     writeJsonOrderValue(

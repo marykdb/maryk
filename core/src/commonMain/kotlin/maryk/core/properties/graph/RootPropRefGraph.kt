@@ -69,17 +69,14 @@ data class RootPropRefGraph<P : IsRootModel> internal constructor(
         )
 
         override fun invoke(values: ObjectValues<RootPropRefGraph<*>, Companion>): RootPropRefGraph<*> =
-            Model.invoke(values)
+            RootPropRefGraph<IsRootModel>(
+                properties = values(1u)
+            )
 
         override val Model = object : ContextualDataModel<RootPropRefGraph<*>, Companion, ContainsDataModelContext<*>, GraphContext>(
             properties = Companion,
             contextTransformer = contextTransformer,
         ) {
-            override fun invoke(values: ObjectValues<RootPropRefGraph<*>, Companion>) =
-                RootPropRefGraph<IsRootModel>(
-                    properties = values(1u)
-                )
-
             override fun writeJson(obj: RootPropRefGraph<*>, writer: IsJsonLikeWriter, context: GraphContext?) {
                 writeJsonValues(obj.properties, writer, context)
             }

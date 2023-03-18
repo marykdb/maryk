@@ -79,17 +79,15 @@ data class SetChange internal constructor(
         )
 
         override fun invoke(values: ObjectValues<SetChange, Companion>): SetChange =
-            Model.invoke(values)
+            SetChange(
+                setValueChanges = values(1u)
+            )
 
         override val Model = object : ReferenceMappedDataModel<SetChange, SetValueChanges<*>, Companion, SetValueChanges.Companion>(
             properties = Companion,
             containedDataModel = SetValueChanges.Model,
             referenceProperty = SetValueChanges.reference
         ) {
-            override fun invoke(values: ObjectValues<SetChange, Companion>) = SetChange(
-                setValueChanges = values(1u)
-            )
-
             override fun writeJson(obj: SetChange, writer: IsJsonLikeWriter, context: RequestContext?) {
                 writeReferenceValueMap(writer, obj.setValueChanges, context)
             }

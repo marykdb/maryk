@@ -19,7 +19,6 @@ import maryk.core.properties.types.numeric.UInt32
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
-import maryk.core.values.SimpleObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 
@@ -60,22 +59,19 @@ open class DataModel<P : IsValuesPropertyDefinitions>(
             valueDefinition = StringDefinition()
         )
 
-        override fun invoke(values: ObjectValues<DataModel<*>, ObjectPropertyDefinitions<DataModel<*>>>): DataModel<*> =
-            Model.invoke(values)
+        override fun invoke(values: ObjectValues<DataModel<*>, ObjectPropertyDefinitions<DataModel<*>>>) =
+            DataModel(
+                name = values(1u),
+                properties = values(2u),
+                reservedIndices = values(3u),
+                reservedNames = values(4u)
+            ).apply {
+                (properties as MutablePropertyDefinitions)._model = this
+            }
 
         override val Model: DefinitionDataModel<DataModel<*>> = object : DefinitionDataModel<DataModel<*>>(
             properties = DataModel.Model,
         ) {
-            override fun invoke(values: SimpleObjectValues<DataModel<*>>) =
-                DataModel(
-                    name = values(1u),
-                    properties = values(2u),
-                    reservedIndices = values(3u),
-                    reservedNames = values(4u)
-                ).apply {
-                    (properties as MutablePropertyDefinitions)._model = this
-                }
-
             override fun writeJson(
                 values: ObjectValues<DataModel<*>, ObjectPropertyDefinitions<DataModel<*>>>,
                 writer: IsJsonLikeWriter,

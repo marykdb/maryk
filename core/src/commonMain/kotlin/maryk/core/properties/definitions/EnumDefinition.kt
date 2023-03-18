@@ -1,7 +1,6 @@
 package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.ContextualDataModel
 import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsValuesPropertyDefinitions
@@ -195,24 +194,15 @@ data class EnumDefinition<E : IndexedEnumComparable<E>>(
             )
         )
 
-        override fun invoke(values: ObjectValues<EnumDefinition<*>, Model>): EnumDefinition<*> =
-            Model.invoke(values)
-
-        @Suppress("unused")
-        override val Model = object : ContextualDataModel<EnumDefinition<*>, Model, ContainsDefinitionsContext, EnumDefinitionContext>(
-            contextTransformer = contextTransformer,
-            properties = this
-        ) {
-            override fun invoke(values: ObjectValues<EnumDefinition<*>, Model>) = EnumDefinition<IndexedEnumComparable<Any>>(
-                required = values(1u),
-                final = values(2u),
-                unique = values(3u),
-                enum = values(4u),
-                minValue = values(5u),
-                maxValue = values(6u),
-                default = values(7u)
-            )
-        }
+        override fun invoke(values: ObjectValues<EnumDefinition<*>, Model>): EnumDefinition<*> = EnumDefinition<IndexedEnumComparable<Any>>(
+            required = values(1u),
+            final = values(2u),
+            unique = values(3u),
+            enum = values(4u),
+            minValue = values(5u),
+            maxValue = values(6u),
+            default = values(7u)
+        )
     }
 }
 

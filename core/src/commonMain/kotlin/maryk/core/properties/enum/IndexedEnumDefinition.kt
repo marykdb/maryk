@@ -147,21 +147,18 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
         )
 
         override fun invoke(values: ObjectValues<IndexedEnumDefinition<IndexedEnum>, Model>): IndexedEnumDefinition<IndexedEnum> =
-            Model.invoke(values)
+            IndexedEnumDefinition(
+                name = values(1u),
+                optionalCases = values(2u),
+                reservedIndices = values(3u),
+                reservedNames = values(4u),
+                unknownCreator = { index, name -> IndexedEnumComparable(index, name) }
+            )
 
         override val Model = object : ContextualDataModel<IndexedEnumDefinition<IndexedEnum>, Model, ContainsDefinitionsContext, EnumNameContext>(
             properties = IndexedEnumDefinition.Model,
             contextTransformer = contextTransformer,
         ) {
-            override fun invoke(values: ObjectValues<IndexedEnumDefinition<IndexedEnum>, Model>) =
-                IndexedEnumDefinition<IndexedEnum>(
-                    name = values(1u),
-                    optionalCases = values(2u),
-                    reservedIndices = values(3u),
-                    reservedNames = values(4u),
-                    unknownCreator = { index, name -> IndexedEnumComparable(index, name) }
-                )
-
             override fun writeJson(
                 values: ObjectValues<IndexedEnumDefinition<IndexedEnum>, Model>,
                 writer: IsJsonLikeWriter,

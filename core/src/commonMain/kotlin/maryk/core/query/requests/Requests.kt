@@ -69,19 +69,16 @@ data class Requests internal constructor(
             )
         )
 
-        override fun invoke(values: ObjectValues<Requests, Companion>): Requests =
-            Model.invoke(values)
+        override fun invoke(values: ObjectValues<Requests, Companion>)= Requests(
+            requests = values(1u),
+            injectables = values(2u)
+        )
 
         @Suppress("UNCHECKED_CAST")
         override val Model = object: SingleTypedValueDataModel<TypedValue<RequestType, Any>, Requests, Companion, RequestContext>(
             properties = this@Companion,
             singlePropertyDefinitionGetter = { requests as IsDefinitionWrapper<TypedValue<RequestType, Any>, TypedValue<RequestType, Any>, RequestContext, Requests> }
         ) {
-            override fun invoke(values: ObjectValues<Requests, Companion>) = Requests(
-                requests = values(1u),
-                injectables = values(2u)
-            )
-
             override fun protoBufLengthToAddForField(
                 value: Any?,
                 definition: IsDefinitionWrapper<Any, Any, IsPropertyContext, Requests>,
@@ -116,7 +113,7 @@ data class Requests internal constructor(
                 context: RequestContext?,
                 createValues: Companion.() -> IsValueItems
             ): ObjectValues<Requests, Companion> {
-                val map = ObjectValues(this, createValues(this@Companion), context)
+                val map = ObjectValues(this@Companion, createValues(this@Companion), context)
 
                 val injectables = map.remove(injectables.index) as? List<InjectWithReference>?
 

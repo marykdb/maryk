@@ -87,17 +87,15 @@ data class IncMapAddition(
         )
 
         override fun invoke(values: ObjectValues<IncMapAddition, Companion>): IncMapAddition =
-            Model.invoke(values)
+            IncMapAddition(
+                additions = values(1u)
+            )
 
         override val Model = object : ReferenceMappedDataModel<IncMapAddition, IncMapKeyAdditions<out Comparable<Any>, out Any>, Companion, IncMapKeyAdditions.Companion>(
             properties = Companion,
             containedDataModel = IncMapKeyAdditions.Model,
             referenceProperty = IncMapKeyAdditions.reference
         ) {
-            override fun invoke(values: ObjectValues<IncMapAddition, Companion>) = IncMapAddition(
-                additions = values(1u)
-            )
-
             override fun writeJson(obj: IncMapAddition, writer: IsJsonLikeWriter, context: RequestContext?) {
                 writeReferenceValueMap(writer, obj.additions, context)
             }

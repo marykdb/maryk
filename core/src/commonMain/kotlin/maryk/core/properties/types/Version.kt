@@ -49,9 +49,6 @@ data class Version(
             name = this::class.simpleName!!,
             properties = this@Companion,
         ) {
-            override fun invoke(values: ObjectValues<Version, Version.Companion>): Version =
-                this@Companion.invoke(values)
-
             override fun writeJson(obj: Version, writer: IsJsonLikeWriter, context: IsPropertyContext?) {
                 writer.writeString(obj.toString())
             }

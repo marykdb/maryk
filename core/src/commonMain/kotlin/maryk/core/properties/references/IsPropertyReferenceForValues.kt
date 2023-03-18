@@ -23,7 +23,7 @@ interface IsPropertyReferenceForValues<
     TO : Any,
     out D : IsDefinitionWrapper<T, TO, *, *>,
     out P : AnyPropertyReference
-> : IsPropertyReference<T, D, AbstractValues<*, *, *>>, IsPropertyReferenceWithParent<T, D, P, AbstractValues<*, *, *>>, IsTransportablePropRefGraphNode {
+> : IsPropertyReference<T, D, AbstractValues<*, *>>, IsPropertyReferenceWithParent<T, D, P, AbstractValues<*, *>>, IsTransportablePropRefGraphNode {
     val name: String
     override val index get() = this.propertyDefinition.index
     override val graphType get() = PropRef
@@ -53,13 +53,13 @@ interface IsPropertyReferenceForValues<
         this.propertyDefinition.index.writeVarIntWithExtraInfo(VALUE.value, writer)
     }
 
-    override fun resolve(values: AbstractValues<*, *, *>): T? {
+    override fun resolve(values: AbstractValues<*, *>): T? {
         @Suppress("UNCHECKED_CAST")
         return values.original(propertyDefinition.index) as T?
     }
 
     override fun resolveFromAny(value: Any): Any {
-        val valueAsValues = (value as? AbstractValues<*, *, *>)
+        val valueAsValues = (value as? AbstractValues<*, *>)
             ?: throw UnexpectedValueException("Expected Values object for getting value by reference")
 
         return valueAsValues.original(this.propertyDefinition.index)

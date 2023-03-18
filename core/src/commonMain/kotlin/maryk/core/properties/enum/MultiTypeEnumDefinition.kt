@@ -130,21 +130,18 @@ open class MultiTypeEnumDefinition<E : MultiTypeEnum<*>> internal constructor(
         )
 
         override fun invoke(values: ObjectValues<MultiTypeEnumDefinition<MultiTypeEnum<*>>, Model>): MultiTypeEnumDefinition<MultiTypeEnum<*>> =
-            Model(values)
+            MultiTypeEnumDefinition(
+                name = values(1u),
+                optionalCases = values<Array<MultiTypeEnum<*>>?>(2u)?.let { { it } },
+                reservedIndices = values(3u),
+                reservedNames = values(4u),
+                unknownCreator = { index, name -> MultiTypeEnum.invoke(index, name, null) }
+            )
 
         override val Model = object : ContextualDataModel<MultiTypeEnumDefinition<MultiTypeEnum<*>>, Model, ContainsDefinitionsContext, MultiTypeDefinitionContext>(
             properties = MultiTypeEnumDefinition.Model,
             contextTransformer = contextTransformer,
         ) {
-            override fun invoke(values: ObjectValues<MultiTypeEnumDefinition<MultiTypeEnum<*>>, Model>): MultiTypeEnumDefinition<MultiTypeEnum<*>> =
-                MultiTypeEnumDefinition(
-                    name = values(1u),
-                    optionalCases = values<Array<MultiTypeEnum<*>>?>(2u)?.let { { it } },
-                    reservedIndices = values(3u),
-                    reservedNames = values(4u),
-                    unknownCreator = { index, name -> MultiTypeEnum.invoke(index, name, null) }
-                )
-
             override fun writeJson(
                 values: ObjectValues<MultiTypeEnumDefinition<MultiTypeEnum<*>>, Model>,
                 writer: IsJsonLikeWriter,

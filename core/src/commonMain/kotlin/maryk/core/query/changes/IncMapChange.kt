@@ -89,17 +89,15 @@ data class IncMapChange internal constructor(
         )
 
         override fun invoke(values: ObjectValues<IncMapChange, Companion>): IncMapChange =
-            Model.invoke(values)
+            IncMapChange(
+                valueChanges = values<List<IncMapValueChanges<out Comparable<Any>, out Any>>>(1u)
+            )
 
         override val Model = object : ReferenceMappedDataModel<IncMapChange, IncMapValueChanges<out Comparable<Any>, out Any>, Companion, IncMapValueChanges.Companion>(
             properties = Companion,
             containedDataModel = IncMapValueChanges.Model,
             referenceProperty = IncMapValueChanges.reference
         ) {
-            override fun invoke(values: ObjectValues<IncMapChange, Companion>) = IncMapChange(
-                valueChanges = values<List<IncMapValueChanges<out Comparable<Any>, out Any>>>(1u)
-            )
-
             override fun writeJson(obj: IncMapChange, writer: IsJsonLikeWriter, context: RequestContext?) {
                 writeReferenceValueMap(writer, obj.valueChanges, context)
             }

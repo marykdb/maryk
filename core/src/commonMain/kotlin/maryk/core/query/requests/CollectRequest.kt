@@ -45,17 +45,14 @@ data class CollectRequest<RQ : IsTransportableRequest<RP>, RP : IsResponse>(
         )
 
         override fun invoke(values: ObjectValues<CollectRequest<*, *>, Companion>): CollectRequest<*, *> =
-            Model.invoke(values)
+            CollectRequest<IsTransportableRequest<IsResponse>, IsResponse>(
+                name = values(1u),
+                request = values(2u)
+            )
 
         override val Model: QueryDataModel<AnyCollectRequest, Companion> = object : QueryDataModel<AnyCollectRequest, Companion>(
             properties = this@Companion,
         ) {
-            override fun invoke(values: ObjectValues<AnyCollectRequest, Companion>) =
-                CollectRequest<IsTransportableRequest<IsResponse>, IsResponse>(
-                    name = values(1u),
-                    request = values(2u)
-                )
-
             override fun writeJson(obj: AnyCollectRequest, writer: IsJsonLikeWriter, context: RequestContext?) {
                 writer.writeStartObject()
                 writer.writeFieldName(obj.name)

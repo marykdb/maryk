@@ -1,7 +1,6 @@
 package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.ContextualDataModel
 import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -114,21 +113,13 @@ data class MultiTypeDefinition<E : MultiTypeEnum<out T>, T: Any>(
         )
 
         override fun invoke(values: ObjectValues<MultiTypeDefinition<*, *>, Model>): MultiTypeDefinition<*, *> =
-            Model.invoke(values)
-
-        override val Model = object : ContextualDataModel<MultiTypeDefinition<*, *>, Model, ContainsDefinitionsContext, MultiTypeDefinitionContext>(
-            contextTransformer = contextTransformer,
-            properties = this
-        ) {
-            override fun invoke(values: ObjectValues<MultiTypeDefinition<*, *>, Model>) =
-                MultiTypeDefinition<MultiTypeEnum<Any>, Any>(
-                    required = values(1u),
-                    final = values(2u),
-                    typeEnum = values(3u),
-                    typeIsFinal = values(4u),
-                    default = values(5u)
-                )
-        }
+            MultiTypeDefinition<MultiTypeEnum<Any>, Any>(
+                required = values(1u),
+                final = values(2u),
+                typeEnum = values(3u),
+                typeIsFinal = values(4u),
+                default = values(5u)
+            )
     }
 }
 

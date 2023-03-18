@@ -27,7 +27,7 @@ abstract class ReferenceValuePairsModel<DO: Any, P: ReferenceValuePairsModel<DO,
         )
     )
 
-    abstract fun invoke(values: ObjectValues<DO, P>): DO
+    abstract override fun invoke(values: ObjectValues<DO, P>): DO
 
     @Suppress("UNCHECKED_CAST", "LeakingThis")
     override val Model = object: QueryDataModel<DO, P>(
@@ -117,8 +117,5 @@ abstract class ReferenceValuePairsModel<DO: Any, P: ReferenceValuePairsModel<DO,
                 )
             }
         }
-
-        override fun invoke(values: ObjectValues<DO, P>): DO =
-            this@ReferenceValuePairsModel.invoke(values)
     }
 }

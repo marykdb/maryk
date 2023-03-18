@@ -23,12 +23,9 @@ interface IsObjectDataModel<DO : Any, P : IsObjectPropertyDefinitions<DO>> :
      */
     fun validate(dataObject: DO, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>, *>? = { null })
 
-    /** Creates a Data Object by [values] */
-    operator fun invoke(values: ObjectValues<DO, P>): DO
-
     /** Create a ObjectValues with given [createValues] function */
     override fun values(context: RequestContext?, createValues: P.() -> IsValueItems) =
-        ObjectValues(this, createValues(this.properties), context)
+        ObjectValues(this.properties, createValues(this.properties), context)
 }
 
 /**

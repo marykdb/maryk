@@ -186,7 +186,7 @@ private fun mutableValueCreator(valueToChange: Any?): Any? = when (valueToChange
     is Map<*, *> -> valueToChange.toMutableMap()
     is Values<*> ->
         Values(
-            valueToChange.dataModel.properties,
+            valueToChange.dataModel,
             MutableValueItems(mutableListOf()),
             valueToChange.context
         )

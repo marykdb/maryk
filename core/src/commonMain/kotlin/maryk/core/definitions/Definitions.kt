@@ -132,17 +132,14 @@ data class Definitions(
             toSerializable = { TypedValue(it.primitiveType, it) }
         )
 
-        override fun invoke(values: ObjectValues<Definitions, Companion>): Definitions =
-            Model.invoke(values)
+        override fun invoke(values: ObjectValues<Definitions, Companion>) = Definitions(
+            definitions = values(1u)
+        )
 
         override val Model = object: SingleValueDataModel<List<TypedValue<PrimitiveType, MarykPrimitive>>, List<MarykPrimitive>, Definitions, Companion, ContainsDefinitionsContext>(
             properties = Companion,
             singlePropertyDefinitionGetter = { definitions }
         ) {
-            override fun invoke(values: ObjectValues<Definitions, Companion>) = Definitions(
-                definitions = values(1u)
-            )
-
             override fun writeJsonValue(
                 value: List<TypedValue<PrimitiveType, MarykPrimitive>>,
                 writer: IsJsonLikeWriter,

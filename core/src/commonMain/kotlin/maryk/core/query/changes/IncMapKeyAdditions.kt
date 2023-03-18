@@ -58,17 +58,15 @@ data class IncMapKeyAdditions<K : Comparable<K>, V : Any>(
             ).also(::addSingle)
 
         override fun invoke(values: ObjectValues<IncMapKeyAdditions<out Comparable<Any>, out Any>, Companion>): IncMapKeyAdditions<out Comparable<Any>, out Any> =
-            Model.invoke(values)
-
-        override val Model = object : QueryDataModel<IncMapKeyAdditions<out Comparable<Any>, out Any>, Companion>(
-            properties = Companion
-        ) {
-            override fun invoke(values: ObjectValues<IncMapKeyAdditions<out Comparable<Any>, out Any>, Companion>) = IncMapKeyAdditions<Comparable<Any>, Any>(
+            IncMapKeyAdditions(
                 reference = values(1u),
                 addedKeys = values(2u),
                 addedValues = values(3u)
             )
 
+        override val Model = object : QueryDataModel<IncMapKeyAdditions<out Comparable<Any>, out Any>, Companion>(
+            properties = Companion
+        ) {
             override fun walkJsonToRead(reader: IsJsonLikeReader, values: MutableValueItems, context: RequestContext?) {
                 super.walkJsonToRead(reader, values, context)
 

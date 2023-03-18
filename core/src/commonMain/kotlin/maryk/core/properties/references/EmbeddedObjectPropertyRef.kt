@@ -21,7 +21,7 @@ class EmbeddedObjectPropertyRef<
 > internal constructor(
     propertyDefinition: EmbeddedObjectDefinitionWrapper<DO, TO, DM, CXI, CX, *>,
     parentReference: CanHaveComplexChildReference<*, *, *, *>?
-) : CanHaveComplexChildReference<DO, EmbeddedObjectDefinitionWrapper<DO, TO, DM, CXI, CX, *>, CanHaveComplexChildReference<*, *, *, *>, AbstractValues<*, *, *>>(
+) : CanHaveComplexChildReference<DO, EmbeddedObjectDefinitionWrapper<DO, TO, DM, CXI, CX, *>, CanHaveComplexChildReference<*, *, *, *>, AbstractValues<*, *>>(
     propertyDefinition, parentReference
 ), HasEmbeddedPropertyReference<DO>,
     IsPropertyReferenceForValues<DO, TO, EmbeddedObjectDefinitionWrapper<DO, TO, DM, CXI, CX, *>, CanHaveComplexChildReference<*, *, *, *>> {

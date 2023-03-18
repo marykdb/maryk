@@ -68,18 +68,16 @@ data class ValueRange<T : Comparable<T>> internal constructor(
         val inclusiveTo by boolean(4u, default = true, getter = ValueRange<*>::inclusiveTo)
 
         override fun invoke(values: ObjectValues<ValueRange<*>, Companion>): ValueRange<*> =
-            Model.invoke(values)
-
-        override val Model = object : QueryDataModel<ValueRange<*>, Companion>(
-            properties = Companion
-        ) {
-            override fun invoke(values: ObjectValues<ValueRange<*>, Companion>) = ValueRange(
+            ValueRange(
                 from = values<Comparable<Any>>(1u),
                 to = values(2u),
                 inclusiveFrom = values(3u),
                 inclusiveTo = values(4u)
             )
 
+        override val Model = object : QueryDataModel<ValueRange<*>, Companion>(
+            properties = Companion
+        ) {
             override fun writeJson(obj: ValueRange<*>, writer: IsJsonLikeWriter, context: RequestContext?) {
                 @Suppress("UNCHECKED_CAST")
                 if (writer is YamlWriter) {

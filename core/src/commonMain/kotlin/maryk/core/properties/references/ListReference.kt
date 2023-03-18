@@ -20,7 +20,7 @@ open class ListReference<T : Any, CX : IsPropertyContext> internal constructor(
 ) : PropertyReferenceForValues<List<T>, List<Any>, IsListDefinitionWrapper<T, Any, ListDefinition<T, CX>, CX, *>, CanHaveComplexChildReference<*, *, *, *>>(
     propertyDefinition,
     parentReference
-), HasEmbeddedPropertyReference<T>, CanContainListItemReference<List<T>, IsListDefinitionWrapper<T, Any, ListDefinition<T, CX>, CX, *>, AbstractValues<*, *, *>> {
+), HasEmbeddedPropertyReference<T>, CanContainListItemReference<List<T>, IsListDefinitionWrapper<T, Any, ListDefinition<T, CX>, CX, *>, AbstractValues<*, *>> {
     override fun getEmbedded(name: String, context: IsPropertyContext?): AnyPropertyReference = when (name[0]) {
         '@' -> ListItemReference(name.substring(1).toUInt(), propertyDefinition.definition, this)
         '*' -> ListAnyItemReference(propertyDefinition.definition, this)

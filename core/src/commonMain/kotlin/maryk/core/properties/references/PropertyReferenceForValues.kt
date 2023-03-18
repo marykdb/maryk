@@ -15,7 +15,7 @@ open class PropertyReferenceForValues<
 > internal constructor(
     propertyDefinition: D,
     parentReference: P?
-) : PropertyReference<T, D, P, AbstractValues<*, *, *>>(propertyDefinition, parentReference),
+) : PropertyReference<T, D, P, AbstractValues<*, *>>(propertyDefinition, parentReference),
     IsPropertyReferenceForValues<T, TO, D, P> {
     override val name = this.propertyDefinition.name
 }

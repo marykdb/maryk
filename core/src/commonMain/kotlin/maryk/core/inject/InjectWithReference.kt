@@ -23,7 +23,7 @@ internal class InjectWithReference(
     val reference: IsPropertyReference<*, *, *>
 ) {
     /** Place the inject by reference inside the [values] */
-    fun injectInValues(values: AbstractValues<*, *, *>) {
+    fun injectInValues(values: AbstractValues<*, *>) {
         val refList = this.reference.unwrap().dropLast(1)
         var toAddTo: Any = values
 
@@ -33,7 +33,7 @@ internal class InjectWithReference(
 
         if (
             this.reference !is PropertyReferenceForValues<*, *, *, *>
-            || toAddTo !is AbstractValues<*, *, *>
+            || toAddTo !is AbstractValues<*, *>
         ) {
             throw RequestException("Inject can only be contained in Values")
         }

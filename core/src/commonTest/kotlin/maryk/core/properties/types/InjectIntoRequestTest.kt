@@ -101,7 +101,7 @@ class InjectIntoRequestTest {
             )
         )
 
-        context.collectResult("referencedKeys", ValuesResponse.Model.asValues(response))
+        context.collectResult("referencedKeys", ValuesResponse.asValues(response))
 
         context.dataModel = ReferencesModel.Model
 

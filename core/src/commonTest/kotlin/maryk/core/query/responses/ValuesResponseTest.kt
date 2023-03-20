@@ -80,7 +80,7 @@ class ValuesResponseTest {
         expect("values.@0.values") { valuesResponseRef.completeName }
         expect("values.@0.values.value") { simpleValueRef.completeName }
 
-        val objectValues = ValuesResponse.Model.asValues(objectsResponse)
+        val objectValues = ValuesResponse.asValues(objectsResponse)
 
         expect("haha1") { objectValues[simpleValueRef] }
     }

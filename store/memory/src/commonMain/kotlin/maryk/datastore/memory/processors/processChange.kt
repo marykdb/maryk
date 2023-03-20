@@ -307,7 +307,7 @@ private suspend fun <DM : IsRootModel> processChangeIntoStore(
 
                                     @Suppress("UNCHECKED_CAST")
                                     valuesDefinition.validateWithRef(
-                                        if (hadPrevValue) (valuesDefinition.dataModel.Model as IsValuesDataModel<IsValuesPropertyDefinitions>).values(null) { EmptyValueItems } else null,
+                                        if (hadPrevValue) valuesDefinition.dataModel.values(null) { EmptyValueItems } else null,
                                         value as Values<IsValuesPropertyDefinitions>
                                     ) { valuesReference }
 

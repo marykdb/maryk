@@ -2,7 +2,6 @@ package maryk.datastore.memory.processors
 
 import maryk.core.clock.HLC
 import maryk.core.exceptions.TypeException
-import maryk.core.models.IsValuesDataModel
 import maryk.core.models.values
 import maryk.core.processors.datastore.readStorageToValues
 import maryk.core.properties.IsRootModel
@@ -26,9 +25,8 @@ internal fun <DM : IsRootModel> DM.recordToValueWithMeta(
     var maxVersion = record.firstVersion
 
     val values = if (select != null && select.properties.isEmpty()) {
-        @Suppress("UNCHECKED_CAST")
         // Don't read the values if no values are selected
-        (this.Model as IsValuesDataModel<DM>).values(null) { EmptyValueItems }
+        this.values(null) { EmptyValueItems }
     } else {
         this.readStorageToValues(
             getQualifier = { resultHandler ->

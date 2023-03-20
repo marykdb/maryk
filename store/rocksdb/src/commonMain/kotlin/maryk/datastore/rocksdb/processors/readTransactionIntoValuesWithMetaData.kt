@@ -3,7 +3,6 @@ package maryk.datastore.rocksdb.processors
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
 import maryk.core.extensions.bytes.initIntByVar
-import maryk.core.models.IsValuesDataModel
 import maryk.core.models.values
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.ListSize
@@ -48,9 +47,8 @@ internal fun <DM : IsRootModel> DM.readTransactionIntoValuesWithMetaData(
     var isDeleted = false
 
     val values: Values<DM> = if (select != null && select.properties.isEmpty()) {
-        @Suppress("UNCHECKED_CAST")
         // Don't read the values if no values are selected
-        (this.Model as IsValuesDataModel<DM>).values(null) { EmptyValueItems }
+        this.values(null) { EmptyValueItems }
     } else if (toVersion == null) {
         checkExistence(iterator, key)
 

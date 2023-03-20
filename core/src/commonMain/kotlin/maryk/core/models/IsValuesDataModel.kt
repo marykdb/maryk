@@ -55,11 +55,11 @@ interface IsTypedValuesDataModel<DM : IsValuesDataModel<P>, P : IsValuesProperty
 }
 
 /** Create a Values object with given [createMap] function */
-fun <DM : IsValuesDataModel<P>, P : IsValuesPropertyDefinitions> DM.values(
+fun <DM : IsValuesPropertyDefinitions> DM.values(
     context: RequestContext?,
-    createMap: P.() -> IsValueItems
+    createMap: DM.() -> IsValueItems
 ) =
-    Values(this.properties, createMap(this.properties), context)
+    Values(this, createMap(this), context)
 
 /** Create a Values object with given [changes] */
 fun <DM : IsRootModel> DM.fromChanges(

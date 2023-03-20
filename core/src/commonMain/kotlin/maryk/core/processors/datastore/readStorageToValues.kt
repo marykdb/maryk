@@ -84,8 +84,7 @@ fun <DM : IsRootModel> DM.readStorageToValues(
     }
 
     // Create Values
-    @Suppress("UNCHECKED_CAST")
-    return (this.Model as IsRootDataModel<DM>).values(null) {
+    return this.values(null) {
         mutableValuesItems
     }
 }

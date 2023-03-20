@@ -11,7 +11,10 @@ import maryk.core.aggregations.metric.Sum
 import maryk.core.aggregations.metric.ValueCount
 import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.IsBaseModel
+import maryk.core.properties.IsObjectPropertyDefinitions
+import maryk.core.properties.IsSimpleBaseModel
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.SimpleQueryModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.enum.IndexedEnumImpl
 import maryk.core.properties.enum.IsCoreEnum
@@ -24,7 +27,7 @@ import maryk.json.MapType
 sealed class AggregationRequestType(
     index: UInt,
     override val name: String,
-    dataModel: IsObjectDataModel<out IsAggregationRequest<*, *, *>, *>,
+    dataModel: IsObjectPropertyDefinitions<out IsAggregationRequest<*, *, *>>,
     alternativeNames: Set<String>? = null
 ) : IndexedEnumImpl<AggregationRequestType>(index, alternativeNames),
     MapType,
@@ -33,19 +36,19 @@ sealed class AggregationRequestType(
 
     @Suppress("UNCHECKED_CAST")
     override val definition = EmbeddedObjectDefinition(
-        dataModel = { dataModel.properties as IsBaseModel<IsAggregationRequest<*, *, *>, ObjectPropertyDefinitions<IsAggregationRequest<*, *, *>>, RequestContext, RequestContext> }
+        dataModel = { dataModel as SimpleQueryModel<IsAggregationRequest<*, *, *>> }
     )
 
-    object ValueCountType : AggregationRequestType(1u, "ValueCount", ValueCount.Model)
-    object SumType : AggregationRequestType(2u, "Sum", Sum.Model)
-    object AverageType : AggregationRequestType(3u, "Average", Average.Model)
-    object MinType : AggregationRequestType(4u, "Min", Min.Model)
-    object MaxType : AggregationRequestType(5u, "Max", Max.Model)
-    object StatsType : AggregationRequestType(6u, "Stats", Stats.Model)
+    object ValueCountType : AggregationRequestType(1u, "ValueCount", ValueCount)
+    object SumType : AggregationRequestType(2u, "Sum", Sum)
+    object AverageType : AggregationRequestType(3u, "Average", Average)
+    object MinType : AggregationRequestType(4u, "Min", Min)
+    object MaxType : AggregationRequestType(5u, "Max", Max)
+    object StatsType : AggregationRequestType(6u, "Stats", Stats)
 
-    object EnumValuesType : AggregationRequestType(50u, "EnumValues", EnumValues.Model)
-    object TypesType : AggregationRequestType(51u, "Types", Types.Model)
-    object DateHistogramType : AggregationRequestType(52u, "DateHistogram", DateHistogram.Model)
+    object EnumValuesType : AggregationRequestType(50u, "EnumValues", EnumValues)
+    object TypesType : AggregationRequestType(51u, "Types", Types)
+    object DateHistogramType : AggregationRequestType(52u, "DateHistogram", DateHistogram)
 
     companion object : MultiTypeEnumDefinition<AggregationRequestType>(
         AggregationRequestType::class,

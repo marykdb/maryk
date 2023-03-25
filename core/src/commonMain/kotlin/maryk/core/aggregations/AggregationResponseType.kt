@@ -10,7 +10,9 @@ import maryk.core.aggregations.metric.StatsResponse
 import maryk.core.aggregations.metric.SumResponse
 import maryk.core.aggregations.metric.ValueCountResponse
 import maryk.core.models.IsObjectDataModel
+import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsSimpleBaseModel
+import maryk.core.properties.SimpleQueryModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.enum.IndexedEnumImpl
 import maryk.core.properties.enum.IsCoreEnum
@@ -23,7 +25,7 @@ import maryk.json.MapType
 sealed class AggregationResponseType(
     index: UInt,
     override val name: String,
-    dataModel: IsObjectDataModel<out IsAggregationResponse, *>,
+    dataModel: IsObjectPropertyDefinitions<out IsAggregationResponse>,
     alternativeNames: Set<String>? = null
 ) : IndexedEnumImpl<AggregationResponseType>(index, alternativeNames),
     MapType,
@@ -32,19 +34,19 @@ sealed class AggregationResponseType(
 
     @Suppress("UNCHECKED_CAST")
     override val definition = EmbeddedObjectDefinition(
-        dataModel = { dataModel.properties as IsSimpleBaseModel<IsAggregationResponse, *, RequestContext> }
+        dataModel = { dataModel as IsSimpleBaseModel<IsAggregationResponse, *, RequestContext> }
     )
 
-    object ValueCountType : AggregationResponseType(1u, "ValueCount", ValueCountResponse.Model)
-    object SumType : AggregationResponseType(2u, "Sum", SumResponse.Model)
-    object AverageType : AggregationResponseType(3u, "Average", AverageResponse.Model)
-    object MinType : AggregationResponseType(4u, "Min", MinResponse.Model)
-    object MaxType : AggregationResponseType(5u, "Max", MaxResponse.Model)
-    object StatsType : AggregationResponseType(6u, "Stats", StatsResponse.Model)
+    object ValueCountType : AggregationResponseType(1u, "ValueCount", ValueCountResponse)
+    object SumType : AggregationResponseType(2u, "Sum", SumResponse)
+    object AverageType : AggregationResponseType(3u, "Average", AverageResponse)
+    object MinType : AggregationResponseType(4u, "Min", MinResponse)
+    object MaxType : AggregationResponseType(5u, "Max", MaxResponse)
+    object StatsType : AggregationResponseType(6u, "Stats", StatsResponse)
 
-    object EnumValuesType : AggregationResponseType(50u, "EnumValues", EnumValuesResponse.Model)
-    object TypesType : AggregationResponseType(51u, "Types", TypesResponse.Model)
-    object DateHistogramType : AggregationResponseType(52u, "DateHistogram", DateHistogramResponse.Model)
+    object EnumValuesType : AggregationResponseType(50u, "EnumValues", EnumValuesResponse)
+    object TypesType : AggregationResponseType(51u, "Types", TypesResponse)
+    object DateHistogramType : AggregationResponseType(52u, "DateHistogram", DateHistogramResponse)
 
     companion object : MultiTypeEnumDefinition<AggregationResponseType>(
         AggregationResponseType::class,

@@ -27,8 +27,8 @@ private val context = RequestContext(mapOf(
     SimpleMarykModel.Model.name toUnitLambda { SimpleMarykModel },
     ReferencesModel.Model.name toUnitLambda { ReferencesModel }
 )).apply {
-    addToCollect("keysToInject", ValuesResponse.Model)
-    addToCollect("referencedKeys", ValuesResponse.Model)
+    addToCollect("keysToInject", ValuesResponse)
+    addToCollect("referencedKeys", ValuesResponse)
 }
 
 class InjectIntoRequestTest {
@@ -124,7 +124,7 @@ class InjectIntoRequestTest {
 
     @Test
     fun convertToYAMLAndBack() {
-        context.addToCollect("keysToInject", GetRequest.Model)
+        context.addToCollect("keysToInject", GetRequest)
 
         expect(
             """
@@ -150,7 +150,7 @@ class InjectIntoRequestTest {
 
     @Test
     fun convertToJSONAndBack() {
-        context.addToCollect("keysToInject", GetRequest.Model)
+        context.addToCollect("keysToInject", GetRequest)
 
         expect(
             """
@@ -168,7 +168,7 @@ class InjectIntoRequestTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        context.addToCollect("keysToInject", GetRequest.Model)
+        context.addToCollect("keysToInject", GetRequest)
 
         checkProtoBufObjectValuesConversion(
             requests,

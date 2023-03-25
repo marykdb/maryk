@@ -31,7 +31,7 @@ internal class InjectionContext(
                     }
                 }
                 is ModelTypeToCollect.Model<*> -> {
-                    collectType.model.properties
+                    collectType.model
                 }
             }
         } ?: throw ContextNotFoundException()
@@ -41,10 +41,10 @@ internal class InjectionContext(
             when (val collectType = requestContext.getToCollectModel(collectionName)) {
                 null -> throw RequestException("Inject collection name $collectionName not found")
                 is ModelTypeToCollect.Request<*> -> {
-                    collectType.model.properties
+                    collectType.model
                 }
                 is ModelTypeToCollect.Model<*> -> {
-                    collectType.model.properties
+                    collectType.model
                 }
             }
         } ?: throw ContextNotFoundException()

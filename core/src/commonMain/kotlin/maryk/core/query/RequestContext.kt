@@ -3,8 +3,7 @@ package maryk.core.query
 import maryk.core.exceptions.RequestException
 import maryk.core.inject.Inject
 import maryk.core.inject.InjectWithReference
-import maryk.core.models.IsDataModel
-import maryk.core.models.IsObjectDataModel
+import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.references.AnyPropertyReference
@@ -14,11 +13,11 @@ import maryk.core.query.requests.IsTransportableRequest
 import maryk.core.query.responses.IsResponse
 import maryk.core.values.AbstractValues
 
-sealed class ModelTypeToCollect<DM : IsDataModel<*>>(val model: DM) {
+sealed class ModelTypeToCollect<DM : IsPropertyDefinitions>(val model: DM) {
     class Request<RP : IsResponse>(val request: IsTransportableRequest<RP>) :
-        ModelTypeToCollect<IsObjectDataModel<in RP, *>>(request.responseModel.Model)
+        ModelTypeToCollect<IsObjectPropertyDefinitions<in RP>>(request.responseModel)
 
-    class Model<DM : IsDataModel<*>>(value: DM) : ModelTypeToCollect<DM>(value)
+    class Model<DM : IsPropertyDefinitions>(value: DM) : ModelTypeToCollect<DM>(value)
 }
 
 /**
@@ -52,7 +51,7 @@ class RequestContext(
     private var collectedIncMapChanges: MutableList<IncMapChange>? = null
 
     /** Add to collect values by [model] into [collectionName] */
-    fun addToCollect(collectionName: String, model: IsDataModel<*>) {
+    fun addToCollect(collectionName: String, model: IsPropertyDefinitions) {
         if (toCollect == null) {
             toCollect = mutableMapOf()
         }
@@ -75,7 +74,7 @@ class RequestContext(
         val toCollect = toCollect?.get(collectionName)
             ?: throw RequestException("$collectionName was not defined as to collect in RequestContext")
 
-        if (values.dataModel.Model !== toCollect.model) {
+        if (values.dataModel !== toCollect.model) {
             throw RequestException("Collect($collectionName): Value $values is not of right dataModel $toCollect ")
         }
 

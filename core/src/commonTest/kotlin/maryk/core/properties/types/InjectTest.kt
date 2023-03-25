@@ -68,7 +68,7 @@ class InjectTest {
     init {
         context.addToCollect("testCollection", getRequest)
         context.collectResult("testCollection", valuesResponse)
-        context.addToCollect("testSimpleConvert", EmbeddedMarykModel.Model)
+        context.addToCollect("testSimpleConvert", EmbeddedMarykModel)
     }
 
     private val firstResponseValueRef = ValuesResponse { values.refAt(0u) { values } }
@@ -84,7 +84,7 @@ class InjectTest {
 
     @Test
     fun testGetToCollect() {
-        expect(ValuesResponse.Model) { context.getToCollectModel("testCollection")?.model }
+        expect(ValuesResponse) { context.getToCollectModel("testCollection")?.model }
     }
 
     @Test
@@ -107,7 +107,7 @@ class InjectTest {
 
     @Test
     fun testInjectInValues() {
-        context.addToCollect("testCollection2", EmbeddedMarykModel.Model)
+        context.addToCollect("testCollection2", EmbeddedMarykModel)
 
         val values = TestMarykModel.Model.values(context) {
             mapNonNulls(
@@ -139,7 +139,7 @@ class InjectTest {
 
     @Test
     fun testInjectInObject() {
-        context.addToCollect("where", Equals.Model)
+        context.addToCollect("where", Equals)
 
         val getRequest = GetRequest.Model.values(context) {
             mapNonNulls(

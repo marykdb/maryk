@@ -1,7 +1,7 @@
 package maryk.core.query.responses.statuses
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.IsRootDataModel
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.definitions.wrapper.contextual
@@ -19,7 +19,7 @@ internal fun <DO : Any> ObjectPropertyDefinitions<DO>.addKey(getter: (DO) -> Key
         getter = getter,
         definition = ContextualReferenceDefinition<RequestContext>(
             contextualResolver = {
-                it?.dataModel?.Model as IsRootDataModel<*>? ?: throw ContextNotFoundException()
+                it?.dataModel as? IsRootModel ?: throw ContextNotFoundException()
             }
         )
     )

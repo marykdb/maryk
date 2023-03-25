@@ -2,7 +2,6 @@ package maryk.core.query.requests
 
 import maryk.core.aggregations.Aggregations
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.IsRootDataModel
 import maryk.core.properties.IsRootModel
 import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.boolean
@@ -58,7 +57,7 @@ data class GetRequest<DM : IsRootModel> internal constructor(
             getter = GetRequest<*>::keys,
             valueDefinition = ContextualReferenceDefinition<RequestContext>(
                 contextualResolver = {
-                    it?.dataModel?.Model as IsRootDataModel<*>? ?: throw ContextNotFoundException()
+                    it?.dataModel as? IsRootModel ?: throw ContextNotFoundException()
                 }
             )
         )

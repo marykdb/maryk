@@ -2,6 +2,7 @@ package maryk.core.properties.exceptions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.IsRootDataModel
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.SimpleQueryModel
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.definitions.wrapper.contextual
@@ -33,7 +34,7 @@ data class AlreadyExistsException(
             definition = ContextualReferenceDefinition<RequestContext>(
                 required = false,
                 contextualResolver = {
-                    it?.dataModel?.Model as IsRootDataModel<*>?
+                    it?.dataModel as? IsRootModel
                         ?: throw ContextNotFoundException()
                 }
             )

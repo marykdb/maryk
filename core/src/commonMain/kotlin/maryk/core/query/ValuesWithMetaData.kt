@@ -32,7 +32,7 @@ data class ValuesWithMetaData<DM : IsRootModel>(
             getter = ValuesWithMetaData<*>::key,
             definition = ContextualReferenceDefinition<RequestContext>(
                 contextualResolver = {
-                    it?.dataModel?.Model as IsRootDataModel<*>? ?: throw ContextNotFoundException()
+                    it?.dataModel as? IsRootModel ?: throw ContextNotFoundException()
                 }
             )
         )

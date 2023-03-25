@@ -1,7 +1,6 @@
 package maryk.core.query.changes
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.IsRootDataModel
 import maryk.core.properties.IsRootModel
 import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
@@ -28,7 +27,7 @@ data class DataObjectVersionedChange<out DM : IsRootModel>(
             getter = DataObjectVersionedChange<*>::key,
             definition = ContextualReferenceDefinition<RequestContext>(
                 contextualResolver = {
-                    it?.dataModel?.Model as IsRootDataModel<*>? ?: throw ContextNotFoundException()
+                    it?.dataModel as? IsRootModel ?: throw ContextNotFoundException()
                 }
             )
         )

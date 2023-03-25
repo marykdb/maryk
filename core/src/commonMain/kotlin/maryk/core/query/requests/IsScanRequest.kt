@@ -46,7 +46,7 @@ internal fun <DO : IsScanRequest<*, *>, DM : IsRootModel> ObjectPropertyDefiniti
         definition = ContextualReferenceDefinition<RequestContext>(
             required = false,
             contextualResolver = {
-                it?.dataModel?.Model as IsRootDataModel<*>? ?: throw ContextNotFoundException()
+                it?.dataModel as? IsRootModel ?: throw ContextNotFoundException()
             }
         )
     )

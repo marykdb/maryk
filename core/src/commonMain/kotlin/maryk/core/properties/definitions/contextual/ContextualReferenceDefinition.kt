@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions.contextual
 
-import maryk.core.models.IsRootDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.types.Key
@@ -16,13 +16,13 @@ import maryk.lib.exceptions.ParseException
 /** Definition for a reference to another DataObject from a context resolved from [contextualResolver] */
 class ContextualReferenceDefinition<in CX : IsPropertyContext>(
     override val required: Boolean = true,
-    val contextualResolver: Unit.(context: CX?) -> IsRootDataModel<*>
+    val contextualResolver: Unit.(context: CX?) -> IsRootModel
 ) : IsValueDefinition<Key<*>, CX>, IsContextualEncodable<Key<*>, CX> {
     override val final = true
     override val wireType = LENGTH_DELIMITED
 
     override fun fromString(string: String, context: CX?) =
-        contextualResolver(Unit, context).key(string)
+        contextualResolver(Unit, context).Model.key(string)
 
     override fun asString(value: Key<*>, context: CX?): String = value.toString()
 
@@ -34,7 +34,7 @@ class ContextualReferenceDefinition<in CX : IsPropertyContext>(
             is Value<*> -> {
                 when (val jsonValue = it.value) {
                     null -> throw ParseException("Reference cannot be null in JSON")
-                    is String -> contextualResolver(Unit, context).key(jsonValue)
+                    is String -> contextualResolver(Unit, context).Model.key(jsonValue)
                     else -> throw ParseException("Reference has to be a String")
                 }
             }
@@ -59,5 +59,5 @@ class ContextualReferenceDefinition<in CX : IsPropertyContext>(
         context: CX?,
         earlierValue: Key<*>?
     ) =
-        contextualResolver(Unit, context).key(reader)
+        contextualResolver(Unit, context).Model.key(reader)
 }

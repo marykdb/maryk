@@ -43,11 +43,11 @@ internal fun <DM : IsDataModelResponse<*>> ObjectPropertyDefinitions<DM>.addData
 ) =
     this.contextual(
         index = index,
-        definition = ContextualModelReferenceDefinition<IsRootDataModel<*>, RequestContext>(
+        definition = ContextualModelReferenceDefinition<IsRootModel, RequestContext>(
             contextualResolver = { context, name ->
                 context?.let {
                     @Suppress("UNCHECKED_CAST")
-                    it.dataModels[name] as (Unit.() -> IsRootDataModel<*>)?
+                    it.dataModels[name] as (Unit.() -> IsRootModel)?
                         ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
                 } ?: throw ContextNotFoundException()
             }
@@ -55,12 +55,12 @@ internal fun <DM : IsDataModelResponse<*>> ObjectPropertyDefinitions<DM>.addData
         getter = getter,
         toSerializable = { value: IsRootModel?, _ ->
             value?.let {
-                DataModelReference(it.Model.name) { it.Model }
+                DataModelReference(it.Model.name) { it }
             }
         },
-        fromSerializable = { it?.get?.invoke(Unit)?.properties as IsRootModel? },
+        fromSerializable = { it?.get?.invoke(Unit) },
         capturer = { context, value ->
-            context.dataModel = value.get(Unit).properties
+            context.dataModel = value.get(Unit)
         }
     )
 

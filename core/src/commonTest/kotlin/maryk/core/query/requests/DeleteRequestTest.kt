@@ -12,7 +12,7 @@ import kotlin.test.expect
 
 class DeleteRequestTest {
     private val context = RequestContext(mapOf(
-        SimpleMarykModel.Model.name toUnitLambda { SimpleMarykModel.Model }
+        SimpleMarykModel.Model.name toUnitLambda { SimpleMarykModel }
     ))
 
     @Test

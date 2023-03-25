@@ -119,25 +119,25 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueModel<DO, *>>
         val required by boolean(1u, ValueObjectDefinition<*, *>::required, default = true)
         val final by boolean(2u, ValueObjectDefinition<*, *>::final, default = false)
         val unique by boolean(3u, ValueObjectDefinition<*, *>::unique, default = false)
-        val dataModel: ContextualDefinitionWrapper<IsDataModelReference<ValueDataModel<*, *>>, IsValueModel<*, *>, ModelContext, ContextualModelReferenceDefinition<ValueDataModel<*, *>, ModelContext, ModelContext>, ValueObjectDefinition<*, *>> by contextual(
+        val dataModel: ContextualDefinitionWrapper<IsDataModelReference<IsValueModel<*, *>>, IsValueModel<*, *>, ModelContext, ContextualModelReferenceDefinition<IsValueModel<*, *>, ModelContext, ModelContext>, ValueObjectDefinition<*, *>> by contextual(
             index = 4u,
             getter = ValueObjectDefinition<*, *>::dataModel,
             definition = ContextualModelReferenceDefinition(
                 contextualResolver = { context, name ->
                     context?.definitionsContext?.let {
                         @Suppress("UNCHECKED_CAST")
-                        it.dataModels[name] as (Unit.() -> ValueDataModel<*, *>)?
+                        it.dataModels[name] as (Unit.() -> IsValueModel<*, *>)?
                             ?: throw DefNotFoundException("DataModel with name $name not found on dataModels")
                     } ?: throw ContextNotFoundException()
                 }
             ),
             toSerializable = { value: IsValueModel<*, *>?, _: ModelContext? ->
                 value?.let {
-                    DataModelReference(it.Model.name) { it.Model }
+                    DataModelReference(it.Model.name) { it }
                 }
             },
             fromSerializable = {
-                it?.get?.invoke(Unit)?.properties as IsValueModel<*, *>?
+                it?.get?.invoke(Unit)
             },
             capturer = { context, dataModel ->
                 context.let {
@@ -157,7 +157,7 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueModel<DO, *>>
             definition = ContextualEmbeddedObjectDefinition(
                 contextualResolver = { context: ModelContext? ->
                     @Suppress("UNCHECKED_CAST")
-                    context?.model?.invoke(Unit) as? SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>?
+                    context?.model?.invoke(Unit)?.Model as? SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>?
                         ?: throw ContextNotFoundException()
                 }
             )
@@ -168,7 +168,7 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueModel<DO, *>>
             definition = ContextualEmbeddedObjectDefinition(
                 contextualResolver = { context: ModelContext? ->
                     @Suppress("UNCHECKED_CAST")
-                    context?.model?.invoke(Unit) as? SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>?
+                    context?.model?.invoke(Unit)?.Model as? SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>?
                         ?: throw ContextNotFoundException()
                 }
             )
@@ -179,7 +179,7 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueModel<DO, *>>
             definition = ContextualEmbeddedObjectDefinition(
                 contextualResolver = { context: ModelContext? ->
                     @Suppress("UNCHECKED_CAST")
-                    context?.model?.invoke(Unit) as? SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>
+                    context?.model?.invoke(Unit)?.Model as? SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>
                         ?: throw ContextNotFoundException()
                 }
             )

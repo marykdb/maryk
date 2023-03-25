@@ -26,8 +26,8 @@ class ContextualReferenceDefinitionTest {
 
     private val context = RequestContext(
         mapOf(
-            TestMarykModel.Model.name toUnitLambda { TestMarykModel.Model },
-            EmbeddedMarykModel.Model.name toUnitLambda { EmbeddedMarykModel.Model }
+            TestMarykModel.Model.name toUnitLambda { TestMarykModel },
+            EmbeddedMarykModel.Model.name toUnitLambda { EmbeddedMarykModel }
         ),
         dataModel = TestMarykModel
     )

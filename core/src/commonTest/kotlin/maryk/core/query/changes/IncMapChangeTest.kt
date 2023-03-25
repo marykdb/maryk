@@ -26,7 +26,7 @@ class IncMapChangeTest {
 
     private val context = RequestContext(
         mapOf(
-            CompleteMarykModel.Model.name toUnitLambda { CompleteMarykModel.Model }
+            CompleteMarykModel.Model.name toUnitLambda { CompleteMarykModel }
         ),
         dataModel = CompleteMarykModel
     )

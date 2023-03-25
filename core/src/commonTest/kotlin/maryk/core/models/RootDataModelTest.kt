@@ -635,9 +635,9 @@ internal class RootDataModelTest {
         val reader = MarykYamlReader(simpleYaml)
 
         val newContext = DefinitionsConversionContext()
-        newContext.dataModels["TestMarykModel"] = { TestMarykModel.Model }
-        newContext.dataModels["TestValueObject"] = { TestValueObject.Model }
-        newContext.dataModels["EmbeddedMarykModel"] = { EmbeddedMarykModel.Model }
+        newContext.dataModels["TestMarykModel"] = { TestMarykModel }
+        newContext.dataModels["TestValueObject"] = { TestValueObject }
+        newContext.dataModels["EmbeddedMarykModel"] = { EmbeddedMarykModel }
 
         RootDataModel.Model.Model.readJson(reader, newContext).toDataObject().apply {
             assertEquals("SimpleModel", name)

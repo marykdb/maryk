@@ -104,7 +104,7 @@ class ReferenceDefinition<DM : IsRootModel>(
                 contextualResolver = { context: ContainsDefinitionsContext?, name ->
                     context?.let {
                         @Suppress("UNCHECKED_CAST")
-                        it.dataModels[name] as (Unit.() -> IsRootDataModel<*>)?
+                        it.dataModels[name] as (Unit.() -> IsRootModel)?
                             ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
                     } ?: throw ContextNotFoundException()
                 }
@@ -114,11 +114,11 @@ class ReferenceDefinition<DM : IsRootModel>(
             },
             toSerializable = { value: (Unit.() -> IsRootModel)?, _ ->
                 value?.invoke(Unit)?.let { model: IsRootModel ->
-                    DataModelReference(model.Model.name) { model.Model }
+                    DataModelReference(model.Model.name) { model }
                 }
             },
             fromSerializable = {
-                it?.let { { it.get(Unit).properties as IsRootModel } }
+                it?.get
             },
             capturer = { context, dataModel ->
                 if (!context.dataModels.containsKey(dataModel.name)) {

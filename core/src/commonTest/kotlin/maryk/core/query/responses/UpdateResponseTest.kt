@@ -26,7 +26,7 @@ class UpdateResponseTest {
 
     private val context = RequestContext(
         DefinitionsContext(mutableMapOf(
-            SimpleMarykModel.Model.name toUnitLambda { SimpleMarykModel.Model }
+            SimpleMarykModel.Model.name toUnitLambda { SimpleMarykModel }
         )),
         dataModel = SimpleMarykModel
     )

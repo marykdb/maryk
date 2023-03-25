@@ -16,7 +16,7 @@ class MaxTest {
 
     private val context = RequestContext(
         mapOf(
-            TestMarykModel.Model.name toUnitLambda { TestMarykModel.Model }
+            TestMarykModel.Model.name toUnitLambda { TestMarykModel }
         ),
         dataModel = TestMarykModel
     )

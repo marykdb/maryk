@@ -4,7 +4,6 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.IsRootModel
-import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
@@ -22,11 +21,11 @@ internal fun <DM : IsStoreRequest<*, *>> ObjectPropertyDefinitions<DM>.addDataMo
 ) =
     this.contextual(
         index = 1u,
-        definition = ContextualModelReferenceDefinition<IsRootDataModel<*>, RequestContext>(
+        definition = ContextualModelReferenceDefinition<IsRootModel, RequestContext>(
             contextualResolver = { context, modelName ->
                 context?.let {
                     @Suppress("UNCHECKED_CAST")
-                    it.dataModels[modelName] as (Unit.() -> IsRootDataModel<*>)?
+                    it.dataModels[modelName] as (Unit.() -> IsRootModel)?
                         ?: throw DefNotFoundException("DataModel of name $modelName not found on dataModels")
                 } ?: throw ContextNotFoundException()
             }
@@ -34,13 +33,12 @@ internal fun <DM : IsStoreRequest<*, *>> ObjectPropertyDefinitions<DM>.addDataMo
         getter = getter,
         toSerializable = { value, _ ->
             value?.let {
-                DataModelReference(it.Model.name) { it.Model }
+                DataModelReference(it.Model.name) { it }
             }
         },
-        fromSerializable = { it?.get?.invoke(Unit)?.properties as IsRootModel? },
+        fromSerializable = { it?.get?.invoke(Unit) },
         shouldSerialize = { it !is DataModelReference<*> },
         capturer = { context, value ->
-            @Suppress("UNCHECKED_CAST")
-            context.dataModel = (value.get(Unit) as IsRootDataModel<IsValuesPropertyDefinitions>).properties
+            context.dataModel = value.get(Unit)
         }
     )

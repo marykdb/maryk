@@ -4,7 +4,6 @@ import maryk.core.exceptions.RequestException
 import maryk.core.inject.Inject
 import maryk.core.inject.InjectWithReference
 import maryk.core.models.IsDataModel
-import maryk.core.models.IsNamedDataModel
 import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
@@ -33,7 +32,7 @@ class RequestContext(
 ) : ContainsDataModelContext<IsPropertyDefinitions>, ContainsDefinitionsContext by definitionsContext {
     /** For test use */
     internal constructor(
-        dataModels: Map<String, Unit.() -> IsNamedDataModel<*>>,
+        dataModels: Map<String, Unit.() -> IsPropertyDefinitions>,
         dataModel: IsPropertyDefinitions? = null,
         reference: IsPropertyReference<*, IsSerializablePropertyDefinition<*, *>, *>? = null
     ) : this(

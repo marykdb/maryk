@@ -3,6 +3,7 @@ package maryk.core.properties.definitions.contextual
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.IsNamedDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
@@ -18,7 +19,7 @@ import maryk.lib.exceptions.ParseException
 
 /** Definition for a reference to another DataObject resolved from context by [contextualResolver]. */
 @Suppress("FunctionName")
-fun <DM : IsNamedDataModel<*>, CX : IsPropertyContext> ContextualModelReferenceDefinition(
+fun <DM : IsPropertyDefinitions, CX : IsPropertyContext> ContextualModelReferenceDefinition(
     contextualResolver: Unit.(context: CX?, name: String) -> Unit.() -> DM
 ) = ContextualModelReferenceDefinition<DM, CX, CX>(contextualResolver) {
     it
@@ -28,7 +29,7 @@ fun <DM : IsNamedDataModel<*>, CX : IsPropertyContext> ContextualModelReferenceD
  * Definition for a reference to another DataObject resolved from context by [contextualResolver].
  * Has a [contextTransformer] to transform context.
  */
-data class ContextualModelReferenceDefinition<DM : IsNamedDataModel<*>, in CX : IsPropertyContext, CXI : IsPropertyContext>(
+data class ContextualModelReferenceDefinition<DM : IsPropertyDefinitions, in CX : IsPropertyContext, CXI : IsPropertyContext>(
     val contextualResolver: Unit.(context: CXI?, name: String) -> Unit.() -> DM,
     val contextTransformer: Unit.(CX?) -> CXI?
 ) : IsValueDefinition<IsDataModelReference<DM>, CX>, IsContextualEncodable<IsDataModelReference<DM>, CX> {

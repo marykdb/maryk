@@ -30,7 +30,7 @@ internal class InitialValuesUpdateTest {
 
     private val context = RequestContext(
         mapOf(
-            SimpleMarykModel.Model.name toUnitLambda { SimpleMarykModel.Model }
+            SimpleMarykModel.Model.name toUnitLambda { SimpleMarykModel }
         ),
         dataModel = SimpleMarykModel
     )

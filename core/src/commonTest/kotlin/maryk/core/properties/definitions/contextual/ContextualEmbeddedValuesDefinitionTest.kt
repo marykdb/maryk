@@ -18,12 +18,12 @@ class ContextualEmbeddedValuesDefinitionTest {
 
     @Suppress("UNCHECKED_CAST")
     private val def = ContextualEmbeddedValuesDefinition<ModelContext>(
-        contextualResolver = { it!!.model!!.invoke(Unit) as AbstractValuesDataModel<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions, ModelContext> }
+        contextualResolver = { it!!.model!!.invoke(Unit).Model as AbstractValuesDataModel<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions, ModelContext> }
     )
 
     private val context = ModelContext(
         definitionsContext = null,
-        model = { SimpleMarykModel.Model }
+        model = { SimpleMarykModel }
     )
 
     @Test

@@ -41,7 +41,7 @@ class DataObjectChangeTest {
 
     private fun createContext() = RequestContext(
         mapOf(
-            TestMarykModel.Model.name toUnitLambda { TestMarykModel.Model }
+            TestMarykModel.Model.name toUnitLambda { TestMarykModel }
         ),
         dataModel = TestMarykModel
     )

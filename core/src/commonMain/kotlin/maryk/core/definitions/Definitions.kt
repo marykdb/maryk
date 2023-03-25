@@ -56,7 +56,7 @@ data class Definitions(
                         ),
                         capturer = { context, model ->
                             context?.let {
-                                it.dataModels[model.name] = { model }
+                                it.dataModels[model.name] = { model.properties }
                             } ?: throw ContextNotFoundException()
                         }
                     ),
@@ -66,7 +66,7 @@ data class Definitions(
                         ),
                         capturer = { context, model ->
                             context?.let {
-                                it.dataModels[model.name] = { model }
+                                it.dataModels[model.name] = { model.properties }
                             } ?: throw ContextNotFoundException()
                         }
                     ),
@@ -76,7 +76,7 @@ data class Definitions(
                         ),
                         capturer = { context: ContainsDefinitionsContext?, model ->
                             context?.let {
-                                it.dataModels[model.name] = { model }
+                                it.dataModels[model.name] = { model.properties }
                             } ?: throw ContextNotFoundException()
                         }
                     ),

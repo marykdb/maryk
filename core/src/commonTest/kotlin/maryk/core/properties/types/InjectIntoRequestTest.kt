@@ -24,8 +24,8 @@ import kotlin.test.assertFails
 import kotlin.test.expect
 
 private val context = RequestContext(mapOf(
-    SimpleMarykModel.Model.name toUnitLambda { SimpleMarykModel.Model },
-    ReferencesModel.Model.name toUnitLambda { ReferencesModel.Model }
+    SimpleMarykModel.Model.name toUnitLambda { SimpleMarykModel },
+    ReferencesModel.Model.name toUnitLambda { ReferencesModel }
 )).apply {
     addToCollect("keysToInject", ValuesResponse.Model)
     addToCollect("referencedKeys", ValuesResponse.Model)

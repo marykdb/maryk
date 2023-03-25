@@ -36,7 +36,7 @@ class UpdatesResponseTest {
 
     private val context = RequestContext(
         dataModels = mapOf(
-            TestMarykModel.Model.name toUnitLambda { TestMarykModel.Model }
+            TestMarykModel.Model.name toUnitLambda { TestMarykModel }
         ),
         dataModel = TestMarykModel
     )

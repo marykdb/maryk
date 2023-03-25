@@ -17,7 +17,7 @@ private val key1 = SimpleMarykModel.key("dR9gVdRcSPw2molM1AiOng")
 private val key2 = SimpleMarykModel.key("Vc4WgX/mQHYCSEoLtfLSUQ")
 
 private val context = RequestContext(mapOf(
-    SimpleMarykModel.Model.name toUnitLambda { SimpleMarykModel.Model }
+    SimpleMarykModel.Model.name toUnitLambda { SimpleMarykModel }
 ))
 
 class ObjectAsMapConversionTest {

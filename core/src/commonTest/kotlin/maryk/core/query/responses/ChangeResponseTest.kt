@@ -54,7 +54,7 @@ class ChangeResponseTest {
     )
 
     private val context = RequestContext(mapOf(
-        CompleteMarykModel.Model.name toUnitLambda { CompleteMarykModel.Model }
+        CompleteMarykModel.Model.name toUnitLambda { CompleteMarykModel }
     ))
 
     @Test

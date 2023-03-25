@@ -1,14 +1,14 @@
 package maryk.core.properties.definitions.contextual
 
-import maryk.core.models.IsNamedDataModel
+import maryk.core.properties.IsPropertyDefinitions
 
-interface IsDataModelReference<DM : IsNamedDataModel<*>> {
+interface IsDataModelReference<DM : IsPropertyDefinitions> {
     val name: String
     val get: Unit.() -> DM
 }
 
 /** Reference to a ObjectDataModel */
-class DataModelReference<DM : IsNamedDataModel<*>>(
+class DataModelReference<DM : IsPropertyDefinitions>(
     override val name: String,
     override val get: Unit.() -> DM
 ) : IsDataModelReference<DM> {
@@ -27,7 +27,7 @@ class DataModelReference<DM : IsNamedDataModel<*>>(
 }
 
 /** Lazy reference to a ObjectDataModel */
-class LazyDataModelReference<DM : IsNamedDataModel<*>>(
+class LazyDataModelReference<DM : IsPropertyDefinitions>(
     override val name: String,
     getLater: () -> Unit.() -> DM
 ) : IsDataModelReference<DM> {

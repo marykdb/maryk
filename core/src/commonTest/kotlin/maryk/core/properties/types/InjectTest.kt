@@ -27,7 +27,7 @@ import kotlin.test.expect
 class InjectTest {
     private val definitionsContext = DefinitionsContext(
         dataModels = mutableMapOf(
-            EmbeddedMarykModel.Model.name toUnitLambda { EmbeddedMarykModel.Model }
+            EmbeddedMarykModel.Model.name toUnitLambda { EmbeddedMarykModel }
         )
     )
 

@@ -10,6 +10,7 @@ import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsBaseModel
 import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.IsSimpleBaseModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -152,7 +153,7 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsSimpleBaseModel<DO, CXI, CX>, CX
                 contextualResolver = { context: ModelContext?, name ->
                     context?.definitionsContext?.let {
                         @Suppress("UNCHECKED_CAST")
-                        it.dataModels[name] as? Unit.() -> ObjectDataModel<*, *>
+                        it.dataModels[name] as? Unit.() -> IsSimpleBaseModel<*, *, *>
                             ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
                     } ?: throw ContextNotFoundException()
                 }
@@ -162,16 +163,13 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsSimpleBaseModel<DO, CXI, CX>, CX
             },
             toSerializable = { value: (Unit.() -> IsSimpleBaseModel<*, *, *>)?, _ ->
                 value?.invoke(Unit)?.let { model ->
-                    DataModelReference((model.Model as IsNamedDataModel<*>).name) { model.Model as ObjectDataModel<*, *> }
+                    DataModelReference((model.Model as IsNamedDataModel<*>).name) { model }
                 }
             },
             fromSerializable = { ref ->
-                (ref?.get?.invoke(Unit)?.properties)?.let { props ->
-                    @Suppress("UNCHECKED_CAST")
-                    { _: Unit -> props as IsSimpleBaseModel<*, *, *> }
-                }
+                ref?.get
             },
-            capturer = { context: ModelContext, dataModel: IsDataModelReference<ObjectDataModel<*, *>> ->
+            capturer = { context: ModelContext, dataModel: IsDataModelReference<IsSimpleBaseModel<*, *, *>> ->
                 context.definitionsContext?.let {
                     if (!it.dataModels.containsKey(dataModel.name)) {
                         it.dataModels[dataModel.name] = dataModel.get
@@ -188,7 +186,7 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsSimpleBaseModel<DO, CXI, CX>, CX
             definition = ContextualEmbeddedObjectDefinition(
                 contextualResolver = { context: ModelContext? ->
                     @Suppress("UNCHECKED_CAST")
-                    context?.model?.invoke(Unit) as? SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>?
+                    context?.model?.invoke(Unit)?.Model as? SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>?
                         ?: throw ContextNotFoundException()
                 }
             )

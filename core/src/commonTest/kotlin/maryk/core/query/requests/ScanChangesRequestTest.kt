@@ -22,8 +22,8 @@ import kotlin.test.expect
 
 class ScanChangesRequestTest {
     private val context = RequestContext(mapOf(
-        SimpleMarykModel.Model.name toUnitLambda { SimpleMarykModel.Model },
-        TestMarykModel.Model.name toUnitLambda { TestMarykModel.Model }
+        SimpleMarykModel.Model.name toUnitLambda { SimpleMarykModel },
+        TestMarykModel.Model.name toUnitLambda { TestMarykModel }
     ))
 
     @Test

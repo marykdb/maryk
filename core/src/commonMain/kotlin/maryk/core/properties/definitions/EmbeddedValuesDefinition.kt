@@ -150,7 +150,7 @@ class EmbeddedValuesDefinition<DM : IsValuesPropertyDefinitions>(
     ) {
         val required by boolean(1u, EmbeddedValuesDefinition<*>::required, default = true)
         val final by boolean(2u, EmbeddedValuesDefinition<*>::final, default = false)
-        val dataModel: ContextualDefinitionWrapper<IsDataModelReference<IsValuesDataModel<*>>, Unit.() -> IsValuesPropertyDefinitions, ModelContext, ContextualModelReferenceDefinition<IsValuesDataModel<*>, ModelContext, ContainsDefinitionsContext>, EmbeddedValuesDefinition<*>> by contextual(
+        val dataModel: ContextualDefinitionWrapper<IsDataModelReference<IsValuesPropertyDefinitions>, Unit.() -> IsValuesPropertyDefinitions, ModelContext, ContextualModelReferenceDefinition<IsValuesPropertyDefinitions, ModelContext, ContainsDefinitionsContext>, EmbeddedValuesDefinition<*>> by contextual(
             index = 3u,
             definition = ContextualModelReferenceDefinition(
                 contextTransformer = { context: ModelContext? ->
@@ -159,7 +159,7 @@ class EmbeddedValuesDefinition<DM : IsValuesPropertyDefinitions>(
                 contextualResolver = { context: ContainsDefinitionsContext?, name ->
                     context?.let {
                         @Suppress("UNCHECKED_CAST")
-                        it.dataModels[name] as? Unit.() -> IsValuesDataModel<*>
+                        it.dataModels[name] as? Unit.() -> IsValuesPropertyDefinitions
                             ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
                     } ?: throw ContextNotFoundException()
                 }
@@ -169,14 +169,13 @@ class EmbeddedValuesDefinition<DM : IsValuesPropertyDefinitions>(
             },
             toSerializable = { value: (Unit.() -> IsValuesPropertyDefinitions)?, _ ->
                 value?.invoke(Unit)?.let { model ->
-                    DataModelReference(model.Model.name) { model.Model }
+                    DataModelReference(model.Model.name) { model }
                 }
             },
-            fromSerializable = { {
-                @Suppress("UNCHECKED_CAST")
-                (it?.get?.let { it(Unit) } as IsNamedDataModel<IsValuesPropertyDefinitions>).properties
-            } },
-            capturer = { context: ModelContext, dataModel: IsDataModelReference<IsValuesDataModel<*>> ->
+            fromSerializable = {
+                it?.get
+            },
+            capturer = { context: ModelContext, dataModel: IsDataModelReference<IsValuesPropertyDefinitions> ->
                 context.definitionsContext?.let {
                     if (!it.dataModels.containsKey(dataModel.name)) {
                         it.dataModels[dataModel.name] = dataModel.get
@@ -192,7 +191,7 @@ class EmbeddedValuesDefinition<DM : IsValuesPropertyDefinitions>(
             index = 4u,
             getter = EmbeddedValuesDefinition<*>::default,
             contextualResolver = { context: ModelContext? ->
-                context?.model?.invoke(Unit) as? AbstractValuesDataModel<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions, ModelContext>?
+                context?.model?.invoke(Unit)?.Model as? AbstractValuesDataModel<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions, ModelContext>?
                     ?: throw ContextNotFoundException()
             }
         )

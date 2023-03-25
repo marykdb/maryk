@@ -80,7 +80,7 @@ data class Values<DM : IsValuesPropertyDefinitions> internal constructor(
 
     override fun toString(): String {
         val modelName = (dataModel.Model as? IsNamedDataModel<*>)?.name ?: dataModel
-        return "Values<$modelName>${values.toString(dataModel.Model)}"
+        return "Values<$modelName>${values.toString(dataModel)}"
     }
 
     /**

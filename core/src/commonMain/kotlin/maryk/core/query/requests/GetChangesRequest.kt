@@ -76,7 +76,7 @@ data class GetChangesRequest<DM : IsRootModel> internal constructor(
             getter = GetChangesRequest<*>::keys,
             valueDefinition = ContextualReferenceDefinition<RequestContext>(
                 contextualResolver = {
-                    it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
+                    it?.dataModel?.Model as IsRootDataModel<*>? ?: throw ContextNotFoundException()
                 }
             )
         )

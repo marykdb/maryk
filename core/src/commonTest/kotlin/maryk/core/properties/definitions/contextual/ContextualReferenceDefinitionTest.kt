@@ -21,7 +21,7 @@ class ContextualReferenceDefinitionTest {
     )
 
     private val def = ContextualReferenceDefinition<RequestContext>(
-        contextualResolver = { it!!.dataModel!! as IsRootDataModel<*> }
+        contextualResolver = { it!!.dataModel!!.Model as IsRootDataModel<*> }
     )
 
     private val context = RequestContext(
@@ -29,7 +29,7 @@ class ContextualReferenceDefinitionTest {
             TestMarykModel.Model.name toUnitLambda { TestMarykModel.Model },
             EmbeddedMarykModel.Model.name toUnitLambda { EmbeddedMarykModel.Model }
         ),
-        dataModel = TestMarykModel.Model
+        dataModel = TestMarykModel
     )
 
     @Test

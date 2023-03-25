@@ -40,7 +40,7 @@ data class AdditionUpdate<DM: IsRootModel>(
             getter = AdditionUpdate<*>::values,
             contextualResolver = { context: RequestContext? ->
                 @Suppress("UNCHECKED_CAST")
-                context?.dataModel as? AbstractValuesDataModel<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions, RequestContext>?
+                context?.dataModel?.Model as? AbstractValuesDataModel<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions, RequestContext>?
                     ?: throw ContextNotFoundException()
             }
         )

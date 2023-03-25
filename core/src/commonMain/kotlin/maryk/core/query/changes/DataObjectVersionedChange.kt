@@ -28,7 +28,7 @@ data class DataObjectVersionedChange<out DM : IsRootModel>(
             getter = DataObjectVersionedChange<*>::key,
             definition = ContextualReferenceDefinition<RequestContext>(
                 contextualResolver = {
-                    it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
+                    it?.dataModel?.Model as IsRootDataModel<*>? ?: throw ContextNotFoundException()
                 }
             )
         )

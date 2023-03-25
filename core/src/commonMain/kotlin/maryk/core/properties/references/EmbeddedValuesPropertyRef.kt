@@ -31,7 +31,7 @@ class EmbeddedValuesPropertyRef<
 
     override fun getEmbedded(name: String, context: IsPropertyContext?) =
         if (this.propertyDefinition.definition is ContextualEmbeddedValuesDefinition<*> && context is ContainsDataModelContext<*>) {
-            (context.dataModel as? IsValuesDataModel<*>)?.properties?.get(name)?.ref(this)
+            (context.dataModel?.Model as? IsValuesDataModel<*>)?.properties?.get(name)?.ref(this)
                 ?: throw DefNotFoundException("Embedded Definition with $name not found")
         } else {
             this.propertyDefinition.definition.dataModel[name]?.ref(this)
@@ -41,7 +41,7 @@ class EmbeddedValuesPropertyRef<
     override fun getEmbeddedRef(reader: () -> Byte, context: IsPropertyContext?): AnyPropertyReference {
         val index = initUIntByVar(reader)
         return if (this.propertyDefinition.definition is ContextualEmbeddedValuesDefinition<*> && context is ContainsDataModelContext<*>) {
-            (context.dataModel as? IsValuesDataModel<*>)?.properties?.get(index)?.ref(this)
+            (context.dataModel?.Model as? IsValuesDataModel<*>)?.properties?.get(index)?.ref(this)
         } else {
             this.propertyDefinition.definition.dataModel[index]?.ref(this)
         } ?: throw DefNotFoundException("Embedded Definition with $index not found")
@@ -56,7 +56,7 @@ class EmbeddedValuesPropertyRef<
         return decodeStorageIndex(reader) { index, type ->
             val propertyReference =
                 if (this.propertyDefinition.definition is ContextualEmbeddedValuesDefinition<*> && context is ContainsDataModelContext<*>) {
-                    (context.dataModel as? IsValuesDataModel<*>)?.properties?.get(index)?.ref(this)
+                    (context.dataModel?.Model as? IsValuesDataModel<*>)?.properties?.get(index)?.ref(this)
                 } else {
                     this.propertyDefinition.definition.dataModel[index]?.ref(this)
                 } ?: throw DefNotFoundException("Embedded Definition with $name not found")

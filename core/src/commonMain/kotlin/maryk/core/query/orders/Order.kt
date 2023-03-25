@@ -67,7 +67,7 @@ data class Order internal constructor(
             getter = Order::propertyReference,
             definition = ContextualPropertyReferenceDefinition<RequestContext>(
                 contextualResolver = {
-                    it?.dataModel?.properties as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()
+                    it?.dataModel as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()
                 }
             )
         )

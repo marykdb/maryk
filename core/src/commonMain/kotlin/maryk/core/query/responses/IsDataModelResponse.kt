@@ -60,7 +60,7 @@ internal fun <DM : IsDataModelResponse<*>> ObjectPropertyDefinitions<DM>.addData
         },
         fromSerializable = { it?.get?.invoke(Unit)?.properties as IsRootModel? },
         capturer = { context, value ->
-            context.dataModel = value.get(Unit)
+            context.dataModel = value.get(Unit).properties
         }
     )
 

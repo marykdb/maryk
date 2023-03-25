@@ -22,7 +22,7 @@ class MultiTypeChangeTest {
         mapOf(
             TestMarykModel.Model.name toUnitLambda { TestMarykModel.Model }
         ),
-        dataModel = TestMarykModel.Model,
+        dataModel = TestMarykModel,
         reference = TestMarykModel { multi::ref }
     )
 

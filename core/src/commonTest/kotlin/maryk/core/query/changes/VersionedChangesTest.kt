@@ -32,7 +32,7 @@ class VersionedChangesTest {
             EmbeddedMarykModel.Model.name toUnitLambda { EmbeddedMarykModel.Model },
             TestMarykModel.Model.name toUnitLambda { TestMarykModel.Model }
         ),
-        dataModel = TestMarykModel.Model
+        dataModel = TestMarykModel
     )
 
     @Test

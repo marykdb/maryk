@@ -43,14 +43,14 @@ class IncMapAdditionTest {
         mapOf(
             CompleteMarykModel.Model.name toUnitLambda { CompleteMarykModel.Model }
         ),
-        dataModel = CompleteMarykModel.Model
+        dataModel = CompleteMarykModel
     )
 
     private val enrichedContext = RequestContext(
         dataModels = mapOf(
             CompleteMarykModel.Model.name toUnitLambda { CompleteMarykModel.Model }
         ),
-        dataModel = CompleteMarykModel.Model
+        dataModel = CompleteMarykModel
     ).apply {
         collectIncMapChange(
             IncMapChange(

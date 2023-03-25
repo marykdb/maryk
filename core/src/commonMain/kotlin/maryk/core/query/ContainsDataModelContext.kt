@@ -1,8 +1,8 @@
 package maryk.core.query
 
-import maryk.core.models.IsDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.IsPropertyDefinitions
 
-interface ContainsDataModelContext<out DM : IsDataModel<*>> : IsPropertyContext {
+interface ContainsDataModelContext<out DM : IsPropertyDefinitions> : IsPropertyContext {
     val dataModel: DM?
 }

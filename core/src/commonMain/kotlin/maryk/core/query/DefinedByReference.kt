@@ -24,7 +24,7 @@ internal fun <DO : Any> ObjectPropertyDefinitions<DO>.addReference(
         index = 1u,
         definition = ContextualPropertyReferenceDefinition<RequestContext>(
             contextualResolver = {
-                it?.dataModel?.properties as? AbstractPropertyDefinitions<*>?
+                it?.dataModel as? AbstractPropertyDefinitions<*>?
                     ?: throw ContextNotFoundException()
             }
         ),

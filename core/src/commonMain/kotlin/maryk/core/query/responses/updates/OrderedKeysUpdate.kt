@@ -36,7 +36,7 @@ data class OrderedKeysUpdate<DM: IsRootModel>(
             getter = OrderedKeysUpdate<*>::keys,
             valueDefinition = ContextualReferenceDefinition<RequestContext>(
                 contextualResolver = {
-                    it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
+                    it?.dataModel?.Model as IsRootDataModel<*>? ?: throw ContextNotFoundException()
                 }
             )
         )

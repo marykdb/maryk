@@ -26,7 +26,7 @@ class AverageResponseTest {
         mapOf(
             TestMarykModel.Model.name toUnitLambda { TestMarykModel.Model }
         ),
-        dataModel = TestMarykModel.Model
+        dataModel = TestMarykModel
     )
 
     @Test

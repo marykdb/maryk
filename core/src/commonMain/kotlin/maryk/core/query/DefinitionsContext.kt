@@ -9,7 +9,7 @@ import maryk.core.properties.enum.MultiTypeEnumDefinition
 
 /** Saves the context while writing and parsing Definitions */
 open class DefinitionsContext(
-    override val dataModels: MutableMap<String, Unit.() -> IsNamedDataModel<*>> = mutableMapOf<String, Unit.() -> IsNamedDataModel<*>>(),
+    override val dataModels: MutableMap<String, Unit.() -> IsNamedDataModel<*>> = mutableMapOf(),
     override val enums: MutableMap<String, IndexedEnumDefinition<IndexedEnum>> = mutableMapOf(),
     override var currentDefinitionName: String = "",
     override val typeEnums: MutableMap<String, MultiTypeEnumDefinition<MultiTypeEnum<*>>> = mutableMapOf()

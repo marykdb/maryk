@@ -41,6 +41,6 @@ internal fun <DM : IsStoreRequest<*, *>> ObjectPropertyDefinitions<DM>.addDataMo
         shouldSerialize = { it !is DataModelReference<*> },
         capturer = { context, value ->
             @Suppress("UNCHECKED_CAST")
-            context.dataModel = value.get(Unit) as IsRootDataModel<IsValuesPropertyDefinitions>
+            context.dataModel = (value.get(Unit) as IsRootDataModel<IsValuesPropertyDefinitions>).properties
         }
     )

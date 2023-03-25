@@ -44,7 +44,7 @@ data class RootPropRefGraph<P : IsRootModel> internal constructor(
                     ),
                     PropRef to ContextualPropertyReferenceDefinition(
                         contextualResolver = { context: GraphContext? ->
-                            context?.dataModel?.properties as? IsValuesPropertyDefinitions? ?: throw ContextNotFoundException()
+                            context?.dataModel as? IsValuesPropertyDefinitions? ?: throw ContextNotFoundException()
                         }
                     )
                 ),

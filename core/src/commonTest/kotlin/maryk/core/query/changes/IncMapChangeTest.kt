@@ -28,7 +28,7 @@ class IncMapChangeTest {
         mapOf(
             CompleteMarykModel.Model.name toUnitLambda { CompleteMarykModel.Model }
         ),
-        dataModel = CompleteMarykModel.Model
+        dataModel = CompleteMarykModel
     )
 
     @Test

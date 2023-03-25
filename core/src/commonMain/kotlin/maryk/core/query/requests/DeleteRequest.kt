@@ -41,7 +41,7 @@ data class DeleteRequest<DM : IsRootModel> internal constructor(
             getter = DeleteRequest<*>::keys,
             valueDefinition = ContextualReferenceDefinition<RequestContext>(
                 contextualResolver = {
-                    it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
+                    it?.dataModel?.Model as IsRootDataModel<*>? ?: throw ContextNotFoundException()
                 }
             )
         )

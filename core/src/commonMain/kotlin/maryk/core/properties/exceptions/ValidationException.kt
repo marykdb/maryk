@@ -46,7 +46,7 @@ internal fun <DO : ValidationException> ObjectPropertyDefinitions<DO>.addReferen
         definition = ContextualPropertyReferenceDefinition<RequestContext>(
             required = false,
             contextualResolver = {
-                it?.dataModel?.properties as? AbstractPropertyDefinitions<*>?
+                it?.dataModel as? AbstractPropertyDefinitions<*>?
                     ?: throw ContextNotFoundException()
             }
         ),

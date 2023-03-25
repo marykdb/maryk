@@ -18,7 +18,7 @@ class ObjectSoftDeleteTest {
         mapOf(
             SimpleMarykModel.Model.name toUnitLambda { SimpleMarykModel.Model }
         ),
-        dataModel = SimpleMarykModel.Model
+        dataModel = SimpleMarykModel
     )
 
     @Test

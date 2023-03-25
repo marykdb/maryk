@@ -61,13 +61,13 @@ data class PropRefGraph<P : IsValuesPropertyDefinitions, PS : IsValuesPropertyDe
             index = 1u,
             definition = ContextualPropertyReferenceDefinition(
                 contextualResolver = { context: GraphContext? ->
-                    context?.dataModel?.properties as? AbstractPropertyDefinitions<*>?
+                    context?.dataModel as? AbstractPropertyDefinitions<*>?
                         ?: throw ContextNotFoundException()
                 }
             ),
             capturer = { context, value ->
                 context.subDataModel =
-                    (value.propertyDefinition as EmbeddedValuesDefinitionWrapper<*, *>).dataModel.Model
+                    (value.propertyDefinition as EmbeddedValuesDefinitionWrapper<*, *>).dataModel
             },
             toSerializable = { value: IsDefinitionWrapper<*, *, *, *>?, _ ->
                 value?.ref()
@@ -87,7 +87,7 @@ data class PropRefGraph<P : IsValuesPropertyDefinitions, PS : IsValuesPropertyDe
                     ),
                     PropRef to ContextualPropertyReferenceDefinition(
                         contextualResolver = { context: GraphContext? ->
-                            context?.subDataModel?.properties as? IsValuesPropertyDefinitions? ?: throw ContextNotFoundException()
+                            context?.subDataModel as? IsValuesPropertyDefinitions? ?: throw ContextNotFoundException()
                         }
                     )
                 ),

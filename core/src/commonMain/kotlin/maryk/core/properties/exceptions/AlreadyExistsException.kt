@@ -33,7 +33,7 @@ data class AlreadyExistsException(
             definition = ContextualReferenceDefinition<RequestContext>(
                 required = false,
                 contextualResolver = {
-                    it?.dataModel as IsRootDataModel<*>?
+                    it?.dataModel?.Model as IsRootDataModel<*>?
                         ?: throw ContextNotFoundException()
                 }
             )

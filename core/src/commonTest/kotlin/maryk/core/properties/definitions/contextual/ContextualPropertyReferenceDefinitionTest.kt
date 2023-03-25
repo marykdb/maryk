@@ -17,7 +17,7 @@ class ContextualPropertyReferenceDefinitionTest {
     )
 
     private val def = ContextualPropertyReferenceDefinition<RequestContext>(
-        contextualResolver = { it!!.dataModel!!.properties as AbstractPropertyDefinitions<*> }
+        contextualResolver = { it!!.dataModel as AbstractPropertyDefinitions<*> }
     )
 
     private val context = RequestContext(
@@ -25,7 +25,7 @@ class ContextualPropertyReferenceDefinitionTest {
             TestMarykModel.Model.name toUnitLambda { TestMarykModel.Model },
             EmbeddedMarykModel.Model.name toUnitLambda { EmbeddedMarykModel.Model }
         ),
-        dataModel = TestMarykModel.Model
+        dataModel = TestMarykModel
     )
 
     @Test

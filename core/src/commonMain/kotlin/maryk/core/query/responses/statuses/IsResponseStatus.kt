@@ -19,7 +19,7 @@ internal fun <DO : Any> ObjectPropertyDefinitions<DO>.addKey(getter: (DO) -> Key
         getter = getter,
         definition = ContextualReferenceDefinition<RequestContext>(
             contextualResolver = {
-                it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
+                it?.dataModel?.Model as IsRootDataModel<*>? ?: throw ContextNotFoundException()
             }
         )
     )

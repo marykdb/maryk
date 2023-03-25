@@ -32,7 +32,7 @@ data class ValuesWithMetaData<DM : IsRootModel>(
             getter = ValuesWithMetaData<*>::key,
             definition = ContextualReferenceDefinition<RequestContext>(
                 contextualResolver = {
-                    it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
+                    it?.dataModel?.Model as IsRootDataModel<*>? ?: throw ContextNotFoundException()
                 }
             )
         )
@@ -42,7 +42,7 @@ data class ValuesWithMetaData<DM : IsRootModel>(
             getter = ValuesWithMetaData<*>::values,
             contextualResolver = { context: RequestContext? ->
                 @Suppress("UNCHECKED_CAST")
-                context?.dataModel as? AbstractValuesDataModel<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions, RequestContext>?
+                context?.dataModel?.Model as? AbstractValuesDataModel<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions, RequestContext>?
                     ?: throw ContextNotFoundException()
             }
         )

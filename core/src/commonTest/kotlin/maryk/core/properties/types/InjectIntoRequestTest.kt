@@ -103,7 +103,7 @@ class InjectIntoRequestTest {
 
         context.collectResult("referencedKeys", ValuesResponse.asValues(response))
 
-        context.dataModel = ReferencesModel.Model
+        context.dataModel = ReferencesModel
 
         expect(expectedKeys) { getRequest { keys } }
     }

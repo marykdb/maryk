@@ -68,7 +68,7 @@ data class Delete internal constructor(
             getter = Delete::references,
             valueDefinition = ContextualPropertyReferenceDefinition<RequestContext>(
                 contextualResolver = {
-                    it?.dataModel?.properties as? AbstractPropertyDefinitions<*>?
+                    it?.dataModel as? AbstractPropertyDefinitions<*>?
                         ?: throw ContextNotFoundException()
                 }
             )

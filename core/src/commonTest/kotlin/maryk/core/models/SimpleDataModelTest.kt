@@ -30,7 +30,7 @@ internal class SimpleDataModelTest {
 
     @Test
     fun validate() {
-        SimpleMarykModel.Model.validate(testValues)
+        SimpleMarykModel.validate(testValues)
     }
 
     @Test

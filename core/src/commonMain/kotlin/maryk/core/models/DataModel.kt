@@ -25,18 +25,14 @@ import maryk.json.IsJsonLikeWriter
 /**
  * DataModel for non contextual models. Contains a [name] to identify the model and [properties] which define how the
  * properties should be validated. It models the DataObjects which can be validated. And it contains a
- * reference to the propertyDefinitions of type [P] which can be used for the references to the properties.
+ * reference to the propertyDefinitions of type [DM] which can be used for the references to the properties.
  */
-open class DataModel<P : IsValuesPropertyDefinitions>(
-    reservedIndices: List<UInt>? = null,
-    reservedNames: List<String>? = null,
-    properties: P,
+open class DataModel<DM : IsValuesPropertyDefinitions>(
+    override val reservedIndices: List<UInt>? = null,
+    override val reservedNames: List<String>? = null,
+    properties: DM,
     override val name: String = properties::class.simpleName ?: throw DefNotFoundException("Class $properties has no name")
-) : SimpleDataModel<DataModel<P>, P>(
-    reservedIndices,
-    reservedNames,
-    properties
-), MarykPrimitive {
+) : SimpleValuesDataModel<DM>(properties), MarykPrimitive, IsValuesDataModel<DM> {
     override val primitiveType = PrimitiveType.Model
 
     @Suppress("unused")

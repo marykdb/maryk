@@ -116,13 +116,13 @@ internal class DataModelTest {
 
     @Test
     fun validate() {
-        TestMarykModel.Model.validate(testMarykModelObject)
+        TestMarykModel.validate(testMarykModelObject)
     }
 
     @Test
     fun failValidationWithIncorrectValuesInDataObject() {
         assertFailsWith<ValidationUmbrellaException> {
-            TestMarykModel.Model.validate(
+            TestMarykModel.validate(
                 TestMarykModel(
                     string = "haas",
                     int = 9,
@@ -138,7 +138,7 @@ internal class DataModelTest {
     @Test
     fun failValidationWithIncorrectValuesInMap() {
         val e = assertFailsWith<ValidationUmbrellaException> {
-            TestMarykModel.Model.validate(
+            TestMarykModel.validate(
                 TestMarykModel.run {
                     create(
                         string with "wrong",

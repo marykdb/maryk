@@ -20,6 +20,7 @@ import maryk.core.query.RequestContext
 import maryk.core.values.AbstractValues
 import maryk.core.values.IsValueItems
 import maryk.core.values.MutableValueItems
+import maryk.core.values.Values
 import maryk.json.IllegalJsonOperation
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
@@ -35,6 +36,8 @@ import maryk.lib.exceptions.ParseException
 import maryk.yaml.IsYamlReader
 import maryk.yaml.UnknownYamlTag
 import maryk.yaml.YamlWriter
+
+typealias SimpleValuesDataModel<DM> = AbstractDataModel<Any, DM, Values<DM>, IsPropertyContext, IsPropertyContext>
 
 /**
  * A Data Model for converting and validating DataObjects. The [properties] contain all the property definitions for

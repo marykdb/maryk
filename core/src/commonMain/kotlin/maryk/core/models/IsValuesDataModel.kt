@@ -2,9 +2,6 @@ package maryk.core.models
 
 import maryk.core.properties.IsRootModel
 import maryk.core.properties.IsValuesPropertyDefinitions
-import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.exceptions.ValidationUmbrellaException
-import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.RequestContext
 import maryk.core.query.changes.IsChange
 import maryk.core.values.IsValueItems
@@ -33,19 +30,6 @@ interface IsValuesDataModel<P : IsValuesPropertyDefinitions> : IsNamedDataModel<
             }
         }
     }
-}
-
-/** A DataModel which holds properties and can be validated */
-interface IsTypedValuesDataModel<DM : IsValuesDataModel<P>, P : IsValuesPropertyDefinitions> :
-    IsValuesDataModel<P> {
-    /**
-     * Validate a [map] with values and get reference from [refGetter] if exception needs to be thrown
-     * @throws ValidationUmbrellaException if input was invalid
-     */
-    fun validate(
-        values: Values<P>,
-        refGetter: () -> IsPropertyReference<Values<P>, IsPropertyDefinition<Values<P>>, *>? = { null }
-    )
 }
 
 /** Create a Values object with given [createMap] function */

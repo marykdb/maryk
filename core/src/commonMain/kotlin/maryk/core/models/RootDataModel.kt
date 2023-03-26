@@ -45,16 +45,16 @@ import maryk.yaml.IsYamlReader
  *
  * The dataModel can be referenced by the [name] and the properties are defined by a [properties]
  */
-class RootDataModel<P : IsValuesPropertyDefinitions>(
+class RootDataModel<DM : IsValuesPropertyDefinitions>(
     override val keyDefinition: IsIndexable = UUIDKey,
     override val version: Version = Version(1),
     override val indices: List<IsIndexable>? = null,
-    reservedIndices: List<UInt>? = null,
-    reservedNames: List<String>? = null,
-    properties: P,
+    override val reservedIndices: List<UInt>? = null,
+    override val reservedNames: List<String>? = null,
+    properties: DM,
     override val name: String = properties::class.simpleName ?: throw DefNotFoundException("Class $properties has no name")
-) : SimpleDataModel<RootDataModel<P>, P>(reservedIndices, reservedNames, properties),
-    IsRootDataModel<P>,
+) : SimpleValuesDataModel<DM>(properties),
+    IsRootDataModel<DM>,
     MarykPrimitive {
     override val primitiveType = RootModel
 

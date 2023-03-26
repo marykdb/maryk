@@ -1,8 +1,7 @@
 package maryk.core.properties.definitions.contextual
 
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.models.AbstractValuesDataModel
-import maryk.core.models.IsValuesDataModel
+import maryk.core.models.SimpleValuesDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -21,7 +20,7 @@ import maryk.json.JsonWriter
 
 /** Definition for an embedded Values from a context resolved from [contextualResolver] */
 internal data class ContextualEmbeddedValuesDefinition<CX : IsPropertyContext>(
-    val contextualResolver: Unit.(context: CX?) -> AbstractValuesDataModel<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions, CX>
+    val contextualResolver: Unit.(context: CX?) -> SimpleValuesDataModel<in IsValuesPropertyDefinitions>
 ) : IsEmbeddedValuesDefinition<IsValuesPropertyDefinitions, CX> {
     override val dataModel: IsValuesPropertyDefinitions
         get() = throw DefNotFoundException("dataModel is contextually determined")
@@ -72,7 +71,7 @@ internal data class ContextualEmbeddedValuesDefinition<CX : IsPropertyContext>(
 fun <DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.embedContextual(
     index: UInt,
     getter: (DO) -> Values<out IsValuesPropertyDefinitions>? = { null },
-    contextualResolver: Unit.(context: CX?) -> AbstractValuesDataModel<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions, CX>,
+    contextualResolver: Unit.(context: CX?) -> SimpleValuesDataModel<IsValuesPropertyDefinitions>,
     name: String? = null,
     alternativeNames: Set<String>? = null,
     toSerializable: (Unit.(Values<IsValuesPropertyDefinitions>?, IsPropertyContext?) -> Values<IsValuesPropertyDefinitions>?)? = null,

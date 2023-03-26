@@ -3,9 +3,7 @@
 package maryk.core.query
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.AbstractValuesDataModel
-import maryk.core.models.IsRootDataModel
-import maryk.core.models.IsValuesDataModel
+import maryk.core.models.SimpleValuesDataModel
 import maryk.core.properties.IsRootModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.QueryModel
@@ -42,7 +40,7 @@ data class ValuesWithMetaData<DM : IsRootModel>(
             getter = ValuesWithMetaData<*>::values,
             contextualResolver = { context: RequestContext? ->
                 @Suppress("UNCHECKED_CAST")
-                context?.dataModel?.Model as? AbstractValuesDataModel<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions, RequestContext>?
+                context?.dataModel?.Model as? SimpleValuesDataModel<IsValuesPropertyDefinitions>
                     ?: throw ContextNotFoundException()
             }
         )

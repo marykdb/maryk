@@ -2,10 +2,10 @@ package maryk.core.values
 
 import maryk.core.models.AbstractDataModel
 import maryk.core.models.IsNamedDataModel
-import maryk.core.models.IsTypedValuesDataModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.TypedPropertyDefinitions
 import maryk.core.properties.graph.IsPropRefGraph
+import maryk.core.properties.validate
 import maryk.core.query.RequestContext
 import maryk.core.query.changes.IsChange
 
@@ -87,8 +87,7 @@ data class Values<DM : IsValuesPropertyDefinitions> internal constructor(
      * Validates the contents of values
      */
     fun validate() {
-        @Suppress("UNCHECKED_CAST")
-        (this.dataModel.Model as IsTypedValuesDataModel<*, DM>).validate(this)
+        this.dataModel.validate(this)
     }
 }
 

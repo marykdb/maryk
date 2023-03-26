@@ -2,9 +2,7 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.models.AbstractValuesDataModel
-import maryk.core.models.IsNamedDataModel
-import maryk.core.models.IsValuesDataModel
+import maryk.core.models.SimpleValuesDataModel
 import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsValuesPropertyDefinitions
@@ -22,6 +20,7 @@ import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.validate
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
@@ -50,8 +49,7 @@ class EmbeddedValuesDefinition<DM : IsValuesPropertyDefinitions>(
 
     @Suppress("UNCHECKED_CAST")
     // internal strong typed version so type system is not in a loop when creating EmbeddedValuesDefinition
-    private val typedDataModel get() =
-        dataModel.Model as AbstractValuesDataModel<IsValuesDataModel<DM>, DM, IsPropertyContext>
+    private val typedDataModel get() = dataModel.Model as SimpleValuesDataModel<DM>
 
     override fun asString(value: Values<DM>, context: IsPropertyContext?): String {
         var string = ""
@@ -77,7 +75,7 @@ class EmbeddedValuesDefinition<DM : IsValuesPropertyDefinitions>(
     ) {
         super<IsEmbeddedValuesDefinition>.validateWithRef(previousValue, newValue, refGetter)
         if (newValue != null) {
-            this.typedDataModel.validate(
+            this.dataModel.validate(
                 values = newValue,
                 refGetter = refGetter
             )
@@ -191,7 +189,7 @@ class EmbeddedValuesDefinition<DM : IsValuesPropertyDefinitions>(
             index = 4u,
             getter = EmbeddedValuesDefinition<*>::default,
             contextualResolver = { context: ModelContext? ->
-                context?.model?.invoke(Unit)?.Model as? AbstractValuesDataModel<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions, ModelContext>?
+                context?.model?.invoke(Unit)?.Model as? SimpleValuesDataModel<IsValuesPropertyDefinitions>
                     ?: throw ContextNotFoundException()
             }
         )

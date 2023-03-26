@@ -1,8 +1,9 @@
 package maryk.core.query.requests
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.ValuesDataModelImpl
+import maryk.core.models.SimpleValuesDataModel
 import maryk.core.properties.IsRootModel
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedValuesDefinition
 import maryk.core.properties.definitions.list
@@ -33,7 +34,7 @@ data class AddRequest<DM : IsRootModel> internal constructor(
             valueDefinition = ContextualEmbeddedValuesDefinition<RequestContext>(
                 contextualResolver = {
                     @Suppress("UNCHECKED_CAST")
-                    it?.dataModel?.Model as? ValuesDataModelImpl<RequestContext>? ?: throw ContextNotFoundException()
+                    it?.dataModel?.Model as? SimpleValuesDataModel<in IsValuesPropertyDefinitions> ?: throw ContextNotFoundException()
                 }
             )
         )

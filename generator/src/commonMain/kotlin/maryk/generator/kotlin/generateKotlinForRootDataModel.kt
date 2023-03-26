@@ -2,7 +2,7 @@ package maryk.generator.kotlin
 
 import maryk.core.exceptions.TypeException
 import maryk.core.models.IsNamedDataModel
-import maryk.core.models.RootDataModel
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.definitions.IsEmbeddedDefinition
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.definitions.index.Multiple
@@ -14,7 +14,7 @@ import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
 import maryk.core.properties.references.ValueWithFlexBytesPropertyReference
 import maryk.core.properties.types.Version
 
-fun RootDataModel<*>.generateKotlin(
+fun IsRootModel.generateKotlin(
     packageName: String,
     generationContext: GenerationContext? = null,
     writer: (String) -> Unit
@@ -25,8 +25,8 @@ fun RootDataModel<*>.generateKotlin(
     val addImport: (String) -> Unit = { importsToAdd.add(it) }
 
     // Add key definitions if they are not the default UUID key
-    val versionAsKotlin = if (this.version != Version(1)) {
-        val (major, minor, patch) = this.version
+    val versionAsKotlin = if (Model.version != Version(1)) {
+        val (major, minor, patch) = Model.version
         val patchValue = if (patch == UShort.MIN_VALUE) "" else ", $patch"
 
         addImport("maryk.core.properties.types.Version")
@@ -35,28 +35,28 @@ fun RootDataModel<*>.generateKotlin(
     } else null
 
     // Add key definitions if they are not the default UUID key
-    val keyDefAsKotlin = if (this.keyDefinition != UUIDKey) {
-        val keyDefs = this.keyDefinition.generateKotlin(packageName, name, addImport)
+    val keyDefAsKotlin = if (Model.keyDefinition != UUIDKey) {
+        val keyDefs = Model.keyDefinition.generateKotlin(packageName, Model.name, addImport)
 
         "keyDefinition = ${keyDefs.prependIndent().prependIndent().trimStart()}"
     } else null
 
     // Add indices if they are not null
-    val indicesAsKotlin = this.indices?.let { indexables ->
+    val indicesAsKotlin = Model.indices?.let { indexables ->
         val output = mutableListOf<String>()
         for (it in indexables) {
-            output += it.generateKotlin(packageName, name, addImport)
+            output += it.generateKotlin(packageName, Model.name, addImport)
         }
         "indices = listOf(\n${output.joinToString(",\n").prependIndent().prependIndent().prependIndent()}\n        ),"
     }
 
-    val reservedIndices = this.reservedIndices.let { indices ->
+    val reservedIndices = Model.reservedIndices.let { indices ->
         when {
             indices.isNullOrEmpty() -> null
             else -> "reservedIndices = listOf(${indices.joinToString(", ", postfix = "u")})"
         }
     }
-    val reservedNames = this.reservedNames.let { names ->
+    val reservedNames = Model.reservedNames.let { names ->
         when {
             names.isNullOrEmpty() -> null
             else -> "reservedNames = listOf(${names.joinToString(", ", "\"", "\"")})"
@@ -64,7 +64,7 @@ fun RootDataModel<*>.generateKotlin(
     }
 
     val enumKotlinDefinitions = mutableListOf<String>()
-    val propertiesKotlin = this.properties.generateKotlin(addImport, generationContext) {
+    val propertiesKotlin = this.generateKotlin(addImport, generationContext) {
         enumKotlinDefinitions.add(it)
     }
 
@@ -74,7 +74,7 @@ fun RootDataModel<*>.generateKotlin(
         .let { if (it.isBlank()) "" else "\n        $it\n    " }
 
     val code = """
-    object $name : RootModel<$name>($constructorParameters) {
+    object ${Model.name} : RootModel<${Model.name}>($constructorParameters) {
         ${propertiesKotlin.generateDefinitionsForProperties(addImport).trimStart()}
     }
     """.trimIndent()

@@ -36,7 +36,7 @@ class GenerateKotlinForDataModelTest {
     @Test
     fun generateKotlinForDataModel() {
         val output = buildString {
-            EmbeddedMarykModel.Model.generateKotlin("maryk.test.models") {
+            EmbeddedMarykModel.generateKotlin("maryk.test.models") {
                 append(it)
             }
         }

@@ -44,7 +44,7 @@ class GenerateKotlinForValueDataModelTest {
     @Test
     fun generateKotlinForSimpleModel() {
         val output = buildString {
-            ValueMarykObject.Model.generateKotlin("maryk.test.models") {
+            ValueMarykObject.generateKotlin("maryk.test.models") {
                 append(it)
             }
         }

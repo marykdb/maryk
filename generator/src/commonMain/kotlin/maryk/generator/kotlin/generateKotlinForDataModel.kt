@@ -1,8 +1,8 @@
 package maryk.generator.kotlin
 
-import maryk.core.models.DataModel
+import maryk.core.properties.IsModel
 
-fun DataModel<*>.generateKotlin(
+fun IsModel.generateKotlin(
     packageName: String,
     generationContext: GenerationContext? = null,
     writer: (String) -> Unit
@@ -13,17 +13,17 @@ fun DataModel<*>.generateKotlin(
     val addImport: (String) -> Unit = { importsToAdd.add(it) }
 
     val enumKotlinDefinitions = mutableListOf<String>()
-    val propertiesKotlin = properties.generateKotlin(addImport, generationContext) {
+    val propertiesKotlin = generateKotlin(addImport, generationContext) {
         enumKotlinDefinitions.add(it)
     }
 
-    val reservedIndices = this.reservedIndices.let { indices ->
+    val reservedIndices = Model.reservedIndices.let { indices ->
         when {
             indices.isNullOrEmpty() -> null
             else -> "reservedIndices = listOf(${indices.joinToString(", ", postfix = "u")}),"
         }
     }
-    val reservedNames = this.reservedNames.let { names ->
+    val reservedNames = Model.reservedNames.let { names ->
         when {
             names.isNullOrEmpty() -> null
             else -> "reservedNames = listOf(${names.joinToString(", ", "\"", "\"")}),"
@@ -36,7 +36,7 @@ fun DataModel<*>.generateKotlin(
         .let { if (it.isBlank()) "" else "\n        $it\n    " }
 
     val code = """
-    object $name : Model<$name>($constructorParameters) {
+    object ${Model.name} : Model<${Model.name}>($constructorParameters) {
         ${propertiesKotlin.generateDefinitionsForProperties(addImport).trimStart()}
     }
     """.trimIndent()

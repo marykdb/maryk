@@ -23,7 +23,7 @@ class GenerateKotlinForEmbeddedDataModelTest {
     @Test
     fun generateKotlinForSimpleModel() {
         val output = buildString {
-            EmbeddedModel.Model.generateKotlin("maryk.test.models") {
+            EmbeddedModel.generateKotlin("maryk.test.models") {
                 append(it)
             }
         }

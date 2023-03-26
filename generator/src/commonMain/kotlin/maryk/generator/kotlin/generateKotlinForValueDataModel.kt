@@ -1,8 +1,8 @@
 package maryk.generator.kotlin
 
-import maryk.core.models.ValueDataModel
+import maryk.core.properties.IsValueModel
 
-fun ValueDataModel<*, *>.generateKotlin(
+fun IsValueModel<*, *>.generateKotlin(
     packageName: String,
     generationContext: GenerationContext? = null,
     writer: (String) -> Unit
@@ -15,18 +15,18 @@ fun ValueDataModel<*, *>.generateKotlin(
     val addImport: (String) -> Unit = { importsToAdd.add(it) }
 
     val enumKotlinDefinitions = mutableListOf<String>()
-    val propertiesKotlin = properties.generateKotlin(addImport, generationContext) {
+    val propertiesKotlin = generateKotlin(addImport, generationContext) {
         enumKotlinDefinitions.add(it)
     }
 
     val code = """
-    data class $name(
+    data class ${Model.name}(
         ${propertiesKotlin.generateObjectValuesForProperties().prependIndent().prependIndent().trimStart()}
     ) : ValueDataObject(toBytes(${propertiesKotlin.generatePropertyNamesForConstructor()})) {
-        companion object : ValueModel<$name, Companion>($name::class) {
-            ${propertiesKotlin.generateDefinitionsForObjectProperties(modelName = name, addImport = addImport).prependIndent().trimStart()}
+        companion object : ValueModel<${Model.name}, Companion>(${Model.name}::class) {
+            ${propertiesKotlin.generateDefinitionsForObjectProperties(modelName = Model.name, addImport = addImport).prependIndent().trimStart()}
 
-            override fun invoke(values: ObjectValues<$name, Companion>) = $name(
+            override fun invoke(values: ObjectValues<${Model.name}, Companion>) = ${Model.name}(
                 ${propertiesKotlin.generateInvokesForProperties().prependIndent().prependIndent().prependIndent().trimStart()}
             )
         }

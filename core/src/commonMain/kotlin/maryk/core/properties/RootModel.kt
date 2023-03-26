@@ -30,7 +30,7 @@ open class RootModel<P: IsValuesPropertyDefinitions>(
     reservedIndices: List<UInt>? = null,
     reservedNames: List<String>? = null,
     name: String? = null,
-) : TypedPropertyDefinitions<RootDataModel<P>, P>(), IsRootModel, IsModel {
+) : TypedPropertyDefinitions<RootDataModel<P>, P>(), IsRootModel {
     @Suppress("UNCHECKED_CAST")
     override val Model: RootDataModel<P> by lazy {
         RootDataModel(

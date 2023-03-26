@@ -93,7 +93,7 @@ data class IncMapAddition(
 
         override val Model = object : ReferenceMappedDataModel<IncMapAddition, IncMapKeyAdditions<out Comparable<Any>, out Any>, Companion, IncMapKeyAdditions.Companion>(
             properties = Companion,
-            containedDataModel = IncMapKeyAdditions.Model,
+            containedDataModel = IncMapKeyAdditions,
             referenceProperty = IncMapKeyAdditions.reference
         ) {
             override fun writeJson(obj: IncMapAddition, writer: IsJsonLikeWriter, context: RequestContext?) {

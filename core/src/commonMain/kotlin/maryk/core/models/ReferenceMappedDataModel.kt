@@ -2,6 +2,7 @@ package maryk.core.models
 
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.wrapper.ContextualDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
@@ -23,11 +24,11 @@ import maryk.json.JsonToken.Stopped
 import maryk.lib.exceptions.ParseException
 
 /** For data models which contains only reference pairs */
-abstract class ReferenceMappedDataModel<DO : Any, CDO : DefinedByReference<*>, P : ObjectPropertyDefinitions<DO>, CP : ObjectPropertyDefinitions<CDO>>(
-    properties: P,
-    private val containedDataModel: QueryDataModel<CDO, CP>,
+abstract class ReferenceMappedDataModel<DO : Any, CDO : DefinedByReference<*>, DM : ObjectPropertyDefinitions<DO>, CP : ObjectPropertyDefinitions<CDO>>(
+    properties: DM,
+    private val containedDataModel: QueryModel<CDO, CP>,
     private val referenceProperty: ContextualDefinitionWrapper<AnyPropertyReference, AnyPropertyReference, RequestContext, ContextualPropertyReferenceDefinition<RequestContext>, CDO>
-) : QueryDataModel<DO, P>(properties) {
+) : QueryDataModel<DO, DM>(properties) {
 
     /** Write a values to [writer] with references mapped to the internal model for [items] within [context] */
     internal fun writeReferenceValueMap(
@@ -43,7 +44,7 @@ abstract class ReferenceMappedDataModel<DO : Any, CDO : DefinedByReference<*>, P
             referenceProperty.capture(context, item.reference)
 
             writer.writeStartObject()
-            for (propertyWrapper in this.containedDataModel.properties) {
+            for (propertyWrapper in this.containedDataModel) {
                 if (propertyWrapper != this.referenceProperty) {
                     writer.writeField(item, propertyWrapper, context)
                 }
@@ -65,7 +66,7 @@ abstract class ReferenceMappedDataModel<DO : Any, CDO : DefinedByReference<*>, P
         }
     }
 
-    override fun readJson(reader: IsJsonLikeReader, context: RequestContext?): ObjectValues<DO, P> {
+    override fun readJson(reader: IsJsonLikeReader, context: RequestContext?): ObjectValues<DO, DM> {
         if (reader.currentToken == StartDocument) {
             reader.nextToken()
         }
@@ -99,10 +100,10 @@ abstract class ReferenceMappedDataModel<DO : Any, CDO : DefinedByReference<*>, P
                         }
                         reader.nextToken()
 
-                        this.containedDataModel.walkJsonToRead(reader, valueMap, context)
+                        this.containedDataModel.Model.walkJsonToRead(reader, valueMap, context)
                     }
 
-                    val dataObjectMap = this.containedDataModel.properties.values(context) {
+                    val dataObjectMap = this.containedDataModel.values(context) {
                         valueMap
                     }
                     items.add(

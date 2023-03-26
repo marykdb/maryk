@@ -95,7 +95,7 @@ data class IncMapChange internal constructor(
 
         override val Model = object : ReferenceMappedDataModel<IncMapChange, IncMapValueChanges<out Comparable<Any>, out Any>, Companion, IncMapValueChanges.Companion>(
             properties = Companion,
-            containedDataModel = IncMapValueChanges.Model,
+            containedDataModel = IncMapValueChanges,
             referenceProperty = IncMapValueChanges.reference
         ) {
             override fun writeJson(obj: IncMapChange, writer: IsJsonLikeWriter, context: RequestContext?) {

@@ -85,7 +85,7 @@ data class SetChange internal constructor(
 
         override val Model = object : ReferenceMappedDataModel<SetChange, SetValueChanges<*>, Companion, SetValueChanges.Companion>(
             properties = Companion,
-            containedDataModel = SetValueChanges.Model,
+            containedDataModel = SetValueChanges,
             referenceProperty = SetValueChanges.reference
         ) {
             override fun writeJson(obj: SetChange, writer: IsJsonLikeWriter, context: RequestContext?) {

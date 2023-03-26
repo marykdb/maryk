@@ -93,7 +93,7 @@ data class ListChange internal constructor(
         override val Model = object :
             ReferenceMappedDataModel<ListChange, ListValueChanges<*>, Companion, ListValueChanges.Companion>(
                 properties = Companion,
-                containedDataModel = ListValueChanges.Model,
+                containedDataModel = ListValueChanges,
                 referenceProperty = ListValueChanges.reference
             ) {
             override fun writeJson(obj: ListChange, writer: IsJsonLikeWriter, context: RequestContext?) {

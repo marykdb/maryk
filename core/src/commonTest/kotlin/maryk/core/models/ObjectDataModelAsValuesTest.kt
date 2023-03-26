@@ -19,8 +19,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.expect
 
-private val testExtendedObject = TestMarykObject.Model.values {
-    mapNonNulls(
+private val testExtendedObject = TestMarykObject.run {
+    create(
         string with "hay",
         int with 4,
         uint with 32u,

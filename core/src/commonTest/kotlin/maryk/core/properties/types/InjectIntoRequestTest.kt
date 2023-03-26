@@ -33,8 +33,8 @@ private val context = RequestContext(mapOf(
 }
 
 class InjectIntoRequestTest {
-    private val getRequestWithInjectable = GetRequest.Model.values(context) {
-        mapNonNulls(
+    private val getRequestWithInjectable = GetRequest.run {
+        create(
             from with SimpleMarykModel,
             keys injectWith Inject("keysToInject", GetRequest { keys::ref }),
             where with Exists(SimpleMarykModel { value::ref }),
@@ -42,12 +42,13 @@ class InjectIntoRequestTest {
             filterSoftDeleted with true,
             select with SimpleMarykModel.graph {
                 listOf(value)
-            }
+            },
+            context = context,
         )
     }
 
-    private val requests = Requests.Model.values {
-        mapNonNulls(
+    private val requests = Requests.run {
+        create(
             requests withSerializable listOf(TypedValue(RequestType.Get, getRequestWithInjectable))
         )
     }
@@ -56,9 +57,10 @@ class InjectIntoRequestTest {
     fun testInjectInValuesGetRequest() {
         val requestRef = ValuesResponse { values.atAny { values.refWithDM(ReferencesModel.Model) { references } } }
 
-        val getRequest = GetRequest.Model.values(context) {
-            mapNonNulls(
-                keys injectWith Inject("referencedKeys", requestRef)
+        val getRequest = GetRequest.run {
+            create(
+                keys injectWith Inject("referencedKeys", requestRef),
+                context = context,
             )
         }
 
@@ -113,6 +115,7 @@ class InjectIntoRequestTest {
         converted: ObjectValues<GetRequest<*>, GetRequest.Companion>,
         original: ObjectValues<GetRequest<*>, GetRequest.Companion>
     ) {
+        @Suppress("RemoveExplicitTypeArguments")
         when (val originalKeys = converted.original { keys } as Any?) {
             null -> error("Keys should not be null")
             is ObjectValues<*, *> ->

@@ -6,6 +6,7 @@ import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceD
 import maryk.core.properties.definitions.wrapper.ContextualDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.references.AnyPropertyReference
+import maryk.core.properties.values
 import maryk.core.query.DefinedByReference
 import maryk.core.query.RequestContext
 import maryk.core.values.MutableValueItems
@@ -101,7 +102,7 @@ abstract class ReferenceMappedDataModel<DO : Any, CDO : DefinedByReference<*>, P
                         this.containedDataModel.walkJsonToRead(reader, valueMap, context)
                     }
 
-                    val dataObjectMap = this.containedDataModel.values(context) {
+                    val dataObjectMap = this.containedDataModel.properties.values(context) {
                         valueMap
                     }
                     items.add(
@@ -113,7 +114,7 @@ abstract class ReferenceMappedDataModel<DO : Any, CDO : DefinedByReference<*>, P
             reader.nextToken()
         } while (token !is Stopped)
 
-        return this.values(context) {
+        return this.properties.values(context) {
             ValueItems(
                 referenceProperty withNotNull items
             )

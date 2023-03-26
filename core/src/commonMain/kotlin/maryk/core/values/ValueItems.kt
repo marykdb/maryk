@@ -1,9 +1,9 @@
-@file:Suppress("EXPERIMENTAL_FEATURE_WARNING", "FunctionName")
 
 package maryk.core.values
 
-import maryk.core.models.IsDataModel
 import maryk.core.properties.IsPropertyDefinitions
+import maryk.core.properties.IsTypedPropertyDefinitions
+import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.graph.IsPropRefGraph
 import maryk.core.properties.graph.PropRefGraph
 import maryk.core.properties.types.MutableTypedValue
@@ -90,6 +90,7 @@ internal fun List<ValueItem>.searchItemByIndex(index: UInt): Int =
 
 @SharedImmutable
 val EmptyValueItems: IsValueItems = MutableValueItems()
+@Suppress("FunctionName")
 fun ValueItems(vararg item: ValueItem): IsValueItems = MutableValueItems(*item)
 
 @JvmInline
@@ -172,6 +173,20 @@ value class MutableValueItems(
             else -> {
                 valueChanger(originalValue, list[index].value)?.also {
                     list[index] = ValueItem(referenceIndex, it)
+                }
+            }
+        }
+    }
+
+    fun fillWithPairs(dataModel: IsTypedPropertyDefinitions<*>, pairs: Array<out ValueItem?>, setDefaults: Boolean) {
+        for (it in pairs) {
+            if (it != null) this += it
+        }
+        if (setDefaults) {
+            for (definition in dataModel.allWithDefaults) {
+                val innerDef = definition.definition
+                if (this[definition.index] == null) {
+                    this[definition.index] = (innerDef as HasDefaultValueDefinition<*>).default!!
                 }
             }
         }

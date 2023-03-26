@@ -17,6 +17,7 @@ import maryk.core.properties.definitions.string
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.properties.types.ValueDataObjectWithValues
+import maryk.core.properties.values
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
@@ -58,7 +59,7 @@ abstract class ValueDataModel<DO : ValueDataObject, P : IsObjectPropertyDefiniti
             values[it.index] = def.readStorageBytes(def.byteSize, reader)
         }
         @Suppress("UNCHECKED_CAST")
-        return (this.properties as IsTypedObjectPropertyDefinitions<DO, P>)(this.values { values })
+        return (this.properties as IsTypedObjectPropertyDefinitions<DO, P>)(this.properties.values { values })
     }
 
     override fun getValueWithDefinition(

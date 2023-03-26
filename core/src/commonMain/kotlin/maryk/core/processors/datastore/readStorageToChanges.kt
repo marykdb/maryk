@@ -7,7 +7,6 @@ import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.initUInt
 import maryk.core.extensions.bytes.initUIntByVarWithExtraInfo
 import maryk.core.models.IsDataModel
-import maryk.core.models.IsDataModelWithValues
 import maryk.core.processors.datastore.ChangeType.CHANGE
 import maryk.core.processors.datastore.ChangeType.OBJECT_CREATE
 import maryk.core.processors.datastore.ChangeType.OBJECT_DELETE
@@ -685,7 +684,7 @@ private fun <P : IsValuesPropertyDefinitions> readEmbeddedValues(
 ) {
     @Suppress("UNCHECKED_CAST")
     val dataModel =
-        (definition as IsAnyEmbeddedDefinition).dataModel.Model as IsDataModelWithValues<*, IsValuesPropertyDefinitions, *>
+        (definition as IsAnyEmbeddedDefinition).dataModel.Model as IsDataModel<out IsValuesPropertyDefinitions>
 
     // If select is Graph then resolve sub graph.
     // Otherwise, it is null or is property itself so needs to be completely selected thus set as null.

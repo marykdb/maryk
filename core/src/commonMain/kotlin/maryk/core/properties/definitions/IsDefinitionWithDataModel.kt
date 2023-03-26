@@ -1,10 +1,10 @@
 package maryk.core.properties.definitions
 
 import maryk.core.models.migration.MigrationStatus.NeedsMigration
-import maryk.core.properties.IsObjectPropertyDefinitions
+import maryk.core.properties.IsTypedPropertyDefinitions
 
 /** Interface for property definitions defined by data model of [DM]. */
-interface IsDefinitionWithDataModel<out DM : IsObjectPropertyDefinitions<*>> {
+interface IsDefinitionWithDataModel<out DM : IsTypedPropertyDefinitions<*>> {
     val dataModel: DM
 
     /**

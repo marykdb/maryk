@@ -16,6 +16,7 @@ import maryk.core.properties.definitions.set
 import maryk.core.properties.definitions.string
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
+import maryk.core.properties.values
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.RequestContext
 import maryk.core.values.MutableValueItems
@@ -114,7 +115,7 @@ interface MultiTypeEnum<T: Any>: TypeEnum<T> {
                     valueMap[definition.index] =
                         definition.readJson(reader, context as ContainsDefinitionsContext)
 
-                    this.values(context as? RequestContext) {
+                    values(context as? RequestContext) {
                         valueMap
                     }
                 } else {

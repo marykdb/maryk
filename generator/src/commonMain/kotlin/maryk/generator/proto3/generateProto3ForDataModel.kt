@@ -3,7 +3,7 @@ package maryk.generator.proto3
 import maryk.core.exceptions.TypeException
 import maryk.core.models.IsNamedDataModel
 import maryk.core.models.IsValuesDataModel
-import maryk.core.properties.IsObjectPropertyDefinitions
+import maryk.core.properties.IsTypedPropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
@@ -40,7 +40,7 @@ import maryk.core.properties.types.numeric.NumberType.UInt64Type
 import maryk.core.properties.types.numeric.NumberType.UInt8Type
 import maryk.generator.kotlin.GenerationContext
 
-fun <P : IsObjectPropertyDefinitions<*>> IsNamedDataModel<P>.generateProto3Schema(
+fun <P : IsTypedPropertyDefinitions<*>> IsNamedDataModel<P>.generateProto3Schema(
     generationContext: GenerationContext,
     writer: (String) -> Unit
 ) {
@@ -80,7 +80,7 @@ fun <P : IsObjectPropertyDefinitions<*>> IsNamedDataModel<P>.generateProto3Schem
     writer(schema)
 }
 
-private fun IsObjectPropertyDefinitions<*>.generateSchemaForProperties(
+private fun IsTypedPropertyDefinitions<*>.generateSchemaForProperties(
     generationContext: GenerationContext,
     messageAdder: (String) -> Unit
 ): String {

@@ -16,6 +16,7 @@ import maryk.core.properties.graph.PropRefGraphType.Graph
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.properties.types.TypedValue
+import maryk.core.properties.values
 import maryk.core.query.ContainsDataModelContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
@@ -132,7 +133,7 @@ data class RootPropRefGraph<P : IsRootModel> internal constructor(
                     currentToken = reader.nextToken()
                 }
 
-                return this.values {
+                return values {
                     mapNonNulls(
                         this@Companion.properties withSerializable propertiesList
                     )

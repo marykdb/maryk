@@ -13,7 +13,7 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.decodeStorageIndex
 import maryk.lib.exceptions.ParseException
 
-abstract class AbstractPropertyDefinitions<DO : Any> : IsObjectPropertyDefinitions<DO> {
+abstract class AbstractPropertyDefinitions<DO : Any> : IsTypedPropertyDefinitions<DO> {
     override fun iterator() = _allProperties.iterator()
 
     private val _allProperties: MutableList<IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>> =

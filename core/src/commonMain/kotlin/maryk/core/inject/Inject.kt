@@ -10,6 +10,7 @@ import maryk.core.properties.definitions.string
 import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.exceptions.InjectException
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.values
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
@@ -111,7 +112,7 @@ data class Inject<T : Any, D : IsPropertyDefinition<T>>(
 
                         reader.nextToken() // read past end object
 
-                        this.values(context?.requestContext) {
+                        this.properties.values(context?.requestContext) {
                             mapNonNulls(
                                 Companion.collectionName withSerializable collectionName,
                                 Companion.propertyReference withSerializable propertyReference
@@ -126,7 +127,7 @@ data class Inject<T : Any, D : IsPropertyDefinition<T>>(
 
                         reader.nextToken()
 
-                        this.values(context?.requestContext) {
+                        this.properties.values(context?.requestContext) {
                             mapNonNulls(
                                 Companion.collectionName withSerializable collectionName
                             )

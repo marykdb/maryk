@@ -4,11 +4,14 @@ import maryk.core.inject.Inject
 import maryk.core.inject.InjectWithReference
 import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.IsTypedPropertyDefinitions
+import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
+import maryk.core.properties.values
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.ProtoBufKey
 import maryk.core.protobuf.WriteCacheReader
@@ -39,9 +42,9 @@ import maryk.yaml.YamlWriter
  * to read and write. [CXI] is the input Context for properties. This can be different because the ObjectDataModel can create
  * its own context by transforming the given context.
  */
-abstract class AbstractDataModel<DO : Any, P : IsObjectPropertyDefinitions<DO>, V : AbstractValues<DO, P>, in CXI : IsPropertyContext, CX : IsPropertyContext> internal constructor(
-    final override val properties: P
-) : IsDataModelWithValues<DO, P, V> {
+abstract class AbstractDataModel<DO : Any, DM : IsTypedPropertyDefinitions<DO>, V : AbstractValues<DO, DM>, in CXI : IsPropertyContext, CX : IsPropertyContext> internal constructor(
+    final override val properties: DM
+) : IsDataModel<DM> {
     /**
      * Write [values] for this ObjectDataModel to JSON
      * Optionally pass a [context] when needed for more complex property types
@@ -110,11 +113,8 @@ abstract class AbstractDataModel<DO : Any, P : IsObjectPropertyDefinitions<DO>, 
      * Read JSON from [reader] to a Map with values
      * Optionally pass a [context] when needed to read more complex property types
      */
-    open fun readJson(reader: IsJsonLikeReader, context: CX? = null): V {
-        return this.values(context as? RequestContext) {
-            this@AbstractDataModel.readJsonToMap(reader, context)
-        }
-    }
+    open fun readJson(reader: IsJsonLikeReader, context: CX? = null): V =
+        createValues(context, readJsonToMap(reader, context))
 
     /**
      * Read JSON from [reader] to a Map
@@ -307,9 +307,22 @@ abstract class AbstractDataModel<DO : Any, P : IsObjectPropertyDefinitions<DO>, 
      * Read ProtoBuf bytes from [reader] until [length] to a Map of values
      * Optionally pass a [context] to read more complex properties which depend on other properties
      */
-    open fun readProtoBuf(length: Int, reader: () -> Byte, context: CX? = null): V {
-        return this.values(context as? RequestContext) {
-            this@AbstractDataModel.readProtoBufToMap(length, reader, context)
+    open fun readProtoBuf(length: Int, reader: () -> Byte, context: CX? = null): V =
+        createValues(context, readProtoBufToMap(length, reader, context))
+
+    /** Creates Values [V] from a [items] map */
+    internal open fun createValues(context: CX?, items: IsValueItems): V {
+        @Suppress("UNCHECKED_CAST")
+        return when (this.properties) {
+            is IsObjectPropertyDefinitions<*> ->
+                (this.properties as IsObjectPropertyDefinitions<Any>).values(context as? RequestContext) {
+                    items
+                } as V
+            is IsValuesPropertyDefinitions ->
+                this.properties.values(context as? RequestContext) {
+                    items
+                } as V
+            else -> throw Exception("Unknown properties type ${this.properties::class.simpleName}")
         }
     }
 

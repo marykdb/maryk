@@ -92,8 +92,8 @@ internal class ObjectDataModelTest {
     @Test
     fun constructByMap() {
         expect(testObject) {
-            TestMarykObject.Model.values {
-                mapNonNulls(
+            TestMarykObject.run {
+                create(
                     string with testObject.string,
                     int with testObject.int,
                     uint with testObject.uint,

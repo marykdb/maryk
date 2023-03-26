@@ -2,6 +2,7 @@ package maryk.core.processors.datastore
 
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
+import maryk.core.models.values
 import maryk.core.properties.types.TypedValue
 import maryk.core.values.EmptyValueItems
 import maryk.lib.extensions.initByteArrayByHex
@@ -62,7 +63,7 @@ class ReadStorageToValuesKtTest {
         )
 
         assertEquals(
-            TestMarykModel.Model.values {
+            TestMarykModel.values {
                 mapNonNulls(
                     set with setOf(
                         LocalDate(1981, 12, 5)
@@ -113,7 +114,7 @@ class ReadStorageToValuesKtTest {
         )
 
         assertEquals(
-            TestMarykModel.Model.values {
+            TestMarykModel.values {
                 EmptyValueItems
             },
             values
@@ -142,7 +143,7 @@ class ReadStorageToValuesKtTest {
         )
 
         assertEquals(
-            TestMarykModel.Model.values {
+            TestMarykModel.values {
                 mapNonNulls(
                     multi with TypedValue(S1, "test")
                 )

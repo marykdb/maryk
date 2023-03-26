@@ -20,6 +20,7 @@ import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.properties.types.TypedValue
+import maryk.core.properties.values
 import maryk.core.query.ContainsDataModelContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
@@ -210,7 +211,7 @@ data class PropRefGraph<P : IsValuesPropertyDefinitions, PS : IsValuesPropertyDe
 
                 reader.nextToken()
 
-                return this.values {
+                return values {
                     mapNonNulls(
                         parent withSerializable parentValue,
                         properties withSerializable propertiesValue

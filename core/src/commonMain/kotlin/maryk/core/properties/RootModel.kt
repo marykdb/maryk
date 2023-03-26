@@ -3,7 +3,6 @@ package maryk.core.properties
 import maryk.core.extensions.bytes.initByteArray
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.RootDataModel
-import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.index.IsIndexable
@@ -16,8 +15,6 @@ import maryk.core.properties.references.IsFixedBytesPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.Version
-import maryk.core.values.MutableValueItems
-import maryk.core.values.ValueItem
 import maryk.core.values.Values
 import maryk.lib.exceptions.ParseException
 import kotlin.io.encoding.Base64
@@ -53,25 +50,6 @@ open class RootModel<DM: IsValuesPropertyDefinitions>(
         parent: AnyOutPropertyReference? = null,
         referenceGetter: DM.() -> (AnyOutPropertyReference?) -> R
     ) = referenceGetter(this as DM)(parent)
-
-    fun create(
-        vararg pairs: ValueItem?,
-        setDefaults: Boolean = true,
-    ) = Model.values {
-        MutableValueItems().also { items ->
-            for (pair in pairs) {
-                if (pair != null) items += pair
-            }
-            if (setDefaults) {
-                for (definition in this.allWithDefaults) {
-                    val innerDef = definition.definition
-                    if (items[definition.index] == null) {
-                        items[definition.index] = (innerDef as HasDefaultValueDefinition<*>).default!!
-                    }
-                }
-            }
-        }
-    }
 }
 
 @OptIn(ExperimentalEncodingApi::class)

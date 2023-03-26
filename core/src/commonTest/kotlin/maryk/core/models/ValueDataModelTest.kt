@@ -6,6 +6,7 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.types.ValueDataObject
+import maryk.core.properties.values
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.DefinitionsConversionContext
@@ -32,7 +33,7 @@ internal class ValueDataModelTest {
                 val convertedValueModel =
                     converted as ValueDataModel<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>
 
-                val value = converted.values {
+                val value = converted.properties.values {
                     ValueItems(
                         convertedValueModel.properties[1u]!! withNotNull 5,
                         convertedValueModel.properties[2u]!! withNotNull LocalDateTime(2018, 7, 18, 12, 0, 0),

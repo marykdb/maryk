@@ -5,6 +5,7 @@ import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.internalMultiType
 import maryk.core.properties.definitions.string
 import maryk.core.properties.types.TypedValue
+import maryk.core.properties.values
 import maryk.core.query.RequestContext
 import maryk.core.query.requests.RequestType.Collect
 import maryk.core.query.responses.IsResponse
@@ -84,7 +85,7 @@ data class CollectRequest<RQ : IsTransportableRequest<RP>, RP : IsResponse>(
 
                 reader.nextToken() // read past end object
 
-                return this.values(context) {
+                return values(context) {
                     mapNonNulls(
                         this.name withSerializable name,
                         this.request withSerializable request

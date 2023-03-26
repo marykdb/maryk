@@ -16,6 +16,7 @@ import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.string
 import maryk.core.properties.definitions.wrapper.ContextualDefinitionWrapper
 import maryk.core.properties.types.numeric.UInt32
+import maryk.core.properties.values
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
@@ -189,7 +190,7 @@ open class MultiTypeEnumDefinition<E : MultiTypeEnum<*>> internal constructor(
 
                     values {
                         mapNonNulls(
-                            this@Model.name withSerializable value
+                            name withSerializable value
                         )
                     }
                 } else {

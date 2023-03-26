@@ -11,6 +11,7 @@ import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IsCoreEnum
 import maryk.core.properties.references.AnyPropertyReference
+import maryk.core.properties.values
 import maryk.core.query.RequestContext
 import maryk.core.query.orders.Direction.ASC
 import maryk.core.query.orders.Direction.DESC
@@ -126,7 +127,7 @@ data class Order internal constructor(
 
                         when (currentToken) {
                             is Suspended -> currentToken = currentToken.lastToken
-                            is EndDocument -> return this.values(context) { EmptyValueItems }
+                            is EndDocument -> return values(context) { EmptyValueItems }
                             else -> Unit
                         }
                     }
@@ -142,10 +143,10 @@ data class Order internal constructor(
                             }
 
                             reader.nextToken() // Read until EndObject
-                            this.values(context) { valueMap }
+                            values(context) { valueMap }
                         }
                         is Value<*> -> {
-                            this.values(context) {
+                            values(context) {
                                 currentToken.type.let { valueType ->
                                     if (valueType is UnknownYamlTag && valueType.name == "Desc") {
                                         valueMap += direction withNotNull DESC

@@ -73,9 +73,9 @@ abstract class ReferencesModel<DO: Any, P: ReferencesModel<DO, P>>(
                 else -> throw ParseException("Expected a list or a single property reference in Exists filter")
             }
 
-            return this.values(context) {
+            return values(context) {
                 valueMap
-            }
+            } as ObjectValues<DO, P>
         }
     }
 }

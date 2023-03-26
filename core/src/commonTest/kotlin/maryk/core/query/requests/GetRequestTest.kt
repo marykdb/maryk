@@ -7,6 +7,7 @@ import maryk.core.aggregations.Aggregations
 import maryk.core.aggregations.metric.ValueCount
 import maryk.core.extensions.toUnitLambda
 import maryk.core.properties.graph
+import maryk.core.properties.values
 import maryk.core.query.RequestContext
 import maryk.core.query.filters.Exists
 import maryk.core.yaml.MarykYamlReader
@@ -24,7 +25,7 @@ class GetRequestTest {
     @Test
     fun createAsMap() {
         expect(getRequest) {
-            GetRequest.Model.values(context) {
+            GetRequest.values(context) {
                 mapNonNulls(
                     from with SimpleMarykModel,
                     keys with listOf(getRequest.keys[0], getRequest.keys[1])
@@ -36,7 +37,7 @@ class GetRequestTest {
     @Test
     fun createAsMaxMap() {
         expect(getMaxRequest) {
-            GetRequest.Model.values(context) {
+            GetRequest.values(context) {
                 mapNonNulls(
                     from with SimpleMarykModel,
                     keys with listOf(getMaxRequest.keys[0], getMaxRequest.keys[1]),

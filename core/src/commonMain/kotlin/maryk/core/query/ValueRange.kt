@@ -9,6 +9,7 @@ import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.contextual
+import maryk.core.properties.values
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
@@ -137,7 +138,7 @@ data class ValueRange<T : Comparable<T>> internal constructor(
                         reader.nextToken()
                     }
 
-                    this.values(context) {
+                    values(context) {
                         val valueMap = MutableValueItems()
 
                         if (reader.currentToken !is JsonToken.StartArray) {

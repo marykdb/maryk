@@ -23,6 +23,7 @@ import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
+import maryk.core.properties.values
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.ContainsDefinitionsContext
@@ -235,7 +236,7 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
                     valueMap[definition.index] =
                         definition.readJson(reader, context as ContainsDefinitionsContext)
 
-                    this.values(context as? RequestContext) {
+                    values(context as? RequestContext) {
                         valueMap
                     }
                 } else {

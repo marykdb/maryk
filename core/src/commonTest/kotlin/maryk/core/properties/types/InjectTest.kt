@@ -8,6 +8,7 @@ import maryk.core.inject.Inject
 import maryk.core.models.asValues
 import maryk.core.models.testExtendedMarykModelObject
 import maryk.core.models.testMarykModelObject
+import maryk.core.models.values
 import maryk.core.properties.exceptions.InjectException
 import maryk.core.properties.key
 import maryk.core.query.DefinitionsContext
@@ -110,7 +111,7 @@ class InjectTest {
     fun testInjectInValues() {
         context.addToCollect("testCollection2", EmbeddedMarykModel)
 
-        val values = TestMarykModel.Model.values(context) {
+        val values = TestMarykModel.values(context) {
             mapNonNulls(
                 string injectWith Inject("testCollection2", EmbeddedMarykModel { this.model { value::ref } })
             )
@@ -129,7 +130,7 @@ class InjectTest {
 
     @Test
     fun testInjectInValuesWithResponse() {
-        val values = TestMarykModel.Model.values(context) {
+        val values = TestMarykModel.values(context) {
             mapNonNulls(
                 string injectWith injectDeep
             )
@@ -142,9 +143,10 @@ class InjectTest {
     fun testInjectInObject() {
         context.addToCollect("where", Equals)
 
-        val getRequest = GetRequest.Model.values(context) {
-            mapNonNulls(
-                where injectWith Inject("where", EmbeddedMarykModel { this.model { value::ref } })
+        val getRequest = GetRequest.run {
+            create(
+                where injectWith Inject("where", EmbeddedMarykModel { this.model { value::ref } }),
+                context = context,
             )
         }
 

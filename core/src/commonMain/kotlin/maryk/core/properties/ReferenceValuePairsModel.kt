@@ -98,7 +98,7 @@ abstract class ReferenceValuePairsModel<DO: Any, P: ReferenceValuePairsModel<DO,
                         val value = pairModel.value.readJson(reader, context) as TO?
 
                         listOfTypePairs.add(
-                            properties.pairModel.Model.values {
+                            properties.pairModel.values {
                                 mapNonNulls(
                                     this@ReferenceValuePairsModel.pairModel.reference with reference,
                                     this@ReferenceValuePairsModel.pairModel.value with value
@@ -111,7 +111,7 @@ abstract class ReferenceValuePairsModel<DO: Any, P: ReferenceValuePairsModel<DO,
                 reader.nextToken()
             } while (token !is JsonToken.Stopped)
 
-            return this.values(context) {
+            return this.properties.values(context) {
                 mapNonNulls(
                     properties.referenceValuePairs withSerializable listOfTypePairs
                 )

@@ -37,7 +37,6 @@ interface IsValuesDataModel<P : IsValuesPropertyDefinitions> : IsNamedDataModel<
 
 /** A DataModel which holds properties and can be validated */
 interface IsTypedValuesDataModel<DM : IsValuesDataModel<P>, P : IsValuesPropertyDefinitions> :
-    IsDataModelWithValues<Any, P, Values<P>>,
     IsValuesDataModel<P> {
     /**
      * Validate a [map] with values and get reference from [refGetter] if exception needs to be thrown
@@ -47,16 +46,11 @@ interface IsTypedValuesDataModel<DM : IsValuesDataModel<P>, P : IsValuesProperty
         values: Values<P>,
         refGetter: () -> IsPropertyReference<Values<P>, IsPropertyDefinition<Values<P>>, *>? = { null }
     )
-
-    /** Create a ObjectValues with given [createValues] function */
-    @Suppress("UNCHECKED_CAST")
-    override fun values(context: RequestContext?, createValues: P.() -> IsValueItems) =
-        Values(this.properties, createValues(this.properties), context)
 }
 
 /** Create a Values object with given [createMap] function */
 fun <DM : IsValuesPropertyDefinitions> DM.values(
-    context: RequestContext?,
+    context: RequestContext? = null,
     createMap: DM.() -> IsValueItems
 ) =
     Values(this, createMap(this), context)

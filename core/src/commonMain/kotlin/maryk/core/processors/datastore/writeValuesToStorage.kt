@@ -6,8 +6,8 @@ import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.AbstractPropertyDefinitions
-import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.IsTypedPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsListDefinition
@@ -58,7 +58,7 @@ fun <DM : AbstractPropertyDefinitions<*>> AbstractValues<*, DM>.writeToStorage(
  * [qualifierCount], [qualifierWriter] define the count and writer for any parent property
  * Pass [valueWriter] to process values
  */
-fun <DM : IsObjectPropertyDefinitions<*>> AbstractValues<*, DM>.writeToStorage(
+fun <DM : IsTypedPropertyDefinitions<*>> AbstractValues<*, DM>.writeToStorage(
     qualifierCount: Int = 0,
     qualifierWriter: QualifierWriter? = null,
     valueWriter: ValueWriter<IsPropertyDefinition<*>>
@@ -146,7 +146,7 @@ internal fun <T : IsPropertyDefinition<*>> writeValue(
                 if (index == null) qualifierLength else qualifierLength + index.calculateVarIntWithExtraInfoByteSize()
 
             // Write complex values existence indicator
-            // Write parent value with Unit so it knows this one is not deleted. So possible lingering old types are not read.
+            // Write parent value with Unit, so it knows this one is not deleted. So possible lingering old types are not read.
             val qualifier = writeQualifier(abstractValuesQualifierCount, indexWriter)
             valueWriter(Embed as StorageTypeEnum<T>, qualifier, definition, Unit)
 

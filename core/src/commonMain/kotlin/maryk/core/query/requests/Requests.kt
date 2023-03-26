@@ -109,11 +109,11 @@ data class Requests internal constructor(
                 context.collectedInjects
             } else value
 
-            override fun values(
+            override fun createValues(
                 context: RequestContext?,
-                createValues: Companion.() -> IsValueItems
+                items: IsValueItems
             ): ObjectValues<Requests, Companion> {
-                val map = ObjectValues(this@Companion, createValues(this@Companion), context)
+                val map = super.createValues(context, items)
 
                 val injectables = map.remove(injectables.index) as? List<InjectWithReference>?
 
@@ -125,5 +125,4 @@ data class Requests internal constructor(
             }
         }
     }
-
 }

@@ -25,7 +25,7 @@ import maryk.yaml.IsYamlReader
 import maryk.yaml.YamlWriter
 
 /** A collection of Property Definitions which can be used to model a ObjectDataModel */
-abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions<DO>() {
+abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions<DO>(), IsObjectPropertyDefinitions<DO> {
     /** Get a method to retrieve property from DataObject by [name] */
     fun getPropertyGetter(name: String): ((DO) -> Any?)? = nameToDefinition[name]?.run { { getPropertyAndSerialize(it, null) } }
 

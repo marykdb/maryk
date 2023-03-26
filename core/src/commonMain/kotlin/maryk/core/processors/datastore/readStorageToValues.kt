@@ -7,8 +7,6 @@ import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.initUInt
 import maryk.core.extensions.bytes.initUIntByVarWithExtraInfo
 import maryk.core.models.IsDataModel
-import maryk.core.models.IsDataModelWithValues
-import maryk.core.models.IsRootDataModel
 import maryk.core.models.values
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.ListSize
@@ -84,7 +82,7 @@ fun <DM : IsRootModel> DM.readStorageToValues(
     }
 
     // Create Values
-    return this.values(null) {
+    return values(null) {
         mutableValuesItems
     }
 }
@@ -409,8 +407,8 @@ private fun <DM : IsRootModel> readEmbeddedValues(
     addValueToOutput: AddValue
 ) {
     @Suppress("UNCHECKED_CAST")
-    val dataModel = definition.dataModel.Model as IsDataModelWithValues<*, out IsValuesPropertyDefinitions, *>
-    val values = dataModel.values { MutableValueItems() }
+    val dataModel = definition.dataModel.Model as IsDataModel<IsValuesPropertyDefinitions>
+    val values = dataModel.properties.values { MutableValueItems() }
 
     addValueToOutput(values)
 

@@ -18,7 +18,6 @@ import maryk.json.IsJsonLikeWriter
 typealias SimpleObjectDataModel<DO, P> = AbstractObjectDataModel<DO, P, IsPropertyContext, IsPropertyContext>
 typealias DefinitionDataModel<DO> = AbstractObjectDataModel<DO, ObjectPropertyDefinitions<DO>, ContainsDefinitionsContext, ContainsDefinitionsContext>
 internal typealias QueryDataModel<DO, P> = AbstractObjectDataModel<DO, P, RequestContext, RequestContext>
-internal typealias SimpleQueryDataModel<DO> = AbstractObjectDataModel<DO, ObjectPropertyDefinitions<DO>, RequestContext, RequestContext>
 
 /**
  * A Data Model for converting and validating DataObjects. The [properties] contain all the property definitions for

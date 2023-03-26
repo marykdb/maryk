@@ -5,9 +5,9 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.inject.AnyInject
 import maryk.core.models.AbstractDataModel
 import maryk.core.models.IsNamedDataModel
-import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsSimpleBaseModel
+import maryk.core.properties.IsTypedPropertyDefinitions
 import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsListDefinition
@@ -30,12 +30,12 @@ import maryk.core.query.RequestContext
 import maryk.core.query.filters.IsFilter
 import maryk.lib.exceptions.ParseException
 
-typealias AnyAbstractValues = AbstractValues<Any, IsObjectPropertyDefinitions<Any>>
+typealias AnyAbstractValues = AbstractValues<Any, IsTypedPropertyDefinitions<Any>>
 
 /**
  * Contains a [values] with all values related to a DataObject of [dataModel]
  */
-abstract class AbstractValues<DO : Any, DM : IsObjectPropertyDefinitions<DO>> : IsValues<DM> {
+abstract class AbstractValues<DO : Any, DM : IsTypedPropertyDefinitions<DO>> : IsValues<DM> {
     abstract val dataModel: DM
     internal abstract val values: IsValueItems
     abstract val context: RequestContext?
@@ -313,7 +313,7 @@ fun <V: AbstractValues<DO, DM>, DO: Any, DM: IsSimpleBaseModel<DO, *, CX>, CX: I
     (this.dataModel.Model as AbstractDataModel<DO, DM, V, *, CX>).writeJson(this, context = context, pretty = pretty)
 
 /** Get property from values with wrapper in [getProperty] and convert it to native usage */
-inline operator fun <DO : Any, DM : IsObjectPropertyDefinitions<DO>, TI : Any, reified TO : Any> AbstractValues<DO, DM>?.div(getProperty: DM.() -> IsDefinitionWrapper<TI, TO, *, DO>): TO? {
+inline operator fun <DO : Any, DM : IsTypedPropertyDefinitions<DO>, TI : Any, reified TO : Any> AbstractValues<DO, DM>?.div(getProperty: DM.() -> IsDefinitionWrapper<TI, TO, *, DO>): TO? {
     if (this == null) {
         return null
     }

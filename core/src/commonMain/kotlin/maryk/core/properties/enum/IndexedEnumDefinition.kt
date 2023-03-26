@@ -13,6 +13,7 @@ import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.map
 import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.types.numeric.UInt32
+import maryk.core.properties.values
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
@@ -204,7 +205,7 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
                     val value = name.readJson(reader, context)
                     name.capture(context, value)
 
-                    this.values {
+                    values {
                         mapNonNulls(
                             this@Model.name withSerializable value
                         )

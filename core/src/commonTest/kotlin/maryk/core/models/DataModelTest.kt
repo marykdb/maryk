@@ -139,8 +139,8 @@ internal class DataModelTest {
     fun failValidationWithIncorrectValuesInMap() {
         val e = assertFailsWith<ValidationUmbrellaException> {
             TestMarykModel.Model.validate(
-                TestMarykModel.Model.values {
-                    mapNonNulls(
+                TestMarykModel.run {
+                    create(
                         string with "wrong",
                         int with 999
                     )

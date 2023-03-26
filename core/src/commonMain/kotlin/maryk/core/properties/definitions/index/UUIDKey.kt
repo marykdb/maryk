@@ -7,12 +7,15 @@ import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.DefinitionDataModel
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.DefinitionModel
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.references.IsFixedBytesPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Bytes
+import maryk.core.properties.values
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.EmptyValueItems
 import maryk.core.values.IsValuesGetter
+import maryk.core.values.ObjectValues
 import maryk.core.values.SimpleObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.lib.uuid.generateUUID
@@ -53,7 +56,8 @@ object UUIDKey : IsFixedBytesPropertyReference<Pair<Long, Long>> {
         override val Model = object : DefinitionDataModel<UUIDKey>(this) {
             override fun readJson(reader: IsJsonLikeReader, context: ContainsDefinitionsContext?) =
                 if (reader is IsYamlReader) {
-                    this.values { EmptyValueItems }
+                    @Suppress("UNCHECKED_CAST")
+                    this@Model.values { EmptyValueItems } as ObjectValues<UUIDKey, ObjectPropertyDefinitions<UUIDKey>>
                 } else {
                     super.readJson(reader, context)
                 }

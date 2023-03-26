@@ -2,7 +2,7 @@ package maryk.datastore.memory.processors.changers
 
 import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
-import maryk.core.models.IsDataModelWithValues
+import maryk.core.models.values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.wrapper.IsMapDefinitionWrapper
@@ -62,7 +62,7 @@ internal fun <T : Any> deleteByReference(
                 is MapReference<*, *, *> -> mapOf<Any, Any>() as T
                 is ListReference<*, *> -> listOf<Any>() as T
                 is SetReference<*, *> -> setOf<Any>() as T
-                is EmbeddedValuesPropertyRef<*, *> -> (reference.propertyDefinition.definition.dataModel.Model as IsDataModelWithValues<*, *, *>).values { EmptyValueItems } as T
+                is EmbeddedValuesPropertyRef<*, *> -> reference.propertyDefinition.definition.dataModel.values { EmptyValueItems } as T
                 is MapValueReference<*, *, *> -> {
                     val mapReference = reference.parentReference as IsMapReference<Any, Any, IsPropertyContext, IsMapDefinitionWrapper<Any, Any, Any, IsPropertyContext, *>>
                     createCountUpdater(

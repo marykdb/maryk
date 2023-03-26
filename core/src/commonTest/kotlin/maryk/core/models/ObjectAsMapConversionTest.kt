@@ -22,8 +22,8 @@ private val context = RequestContext(mapOf(
 ))
 
 class ObjectAsMapConversionTest {
-    private val getRequestWithInjectable = GetRequest.Model.values(context) {
-        mapNonNulls(
+    private val getRequestWithInjectable = GetRequest.run {
+        create(
             from with SimpleMarykModel,
             keys with listOf(key1, key2),
             select with SimpleMarykModel.graph {
@@ -31,7 +31,8 @@ class ObjectAsMapConversionTest {
             },
             where with Exists(SimpleMarykModel { value::ref }),
             toVersion with 333uL,
-            filterSoftDeleted with true
+            filterSoftDeleted with true,
+            context = context,
         )
     }
 

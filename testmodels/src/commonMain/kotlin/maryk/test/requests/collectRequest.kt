@@ -1,5 +1,6 @@
 package maryk.test.requests
 
+import maryk.core.properties.key
 import maryk.core.query.requests.CollectRequest
 import maryk.core.query.requests.get
 import maryk.test.models.SimpleMarykModel

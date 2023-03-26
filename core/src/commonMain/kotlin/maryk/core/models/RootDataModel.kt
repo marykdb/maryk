@@ -39,7 +39,7 @@ import maryk.json.PresetJsonTokenReader
 import maryk.yaml.IsYamlReader
 
 /**
- * DataModel defining data objects which is on root level, so it can be stored and thus can have a [key].
+ * DataModel defining data objects which is on root level, so it can be stored and thus can have a key.
  * The key is defined by passing an ordered array of key definitions.
  * If no key is defined the data model will get a UUID.
  *
@@ -54,7 +54,7 @@ class RootDataModel<P : IsValuesPropertyDefinitions>(
     properties: P,
     override val name: String = properties::class.simpleName ?: throw DefNotFoundException("Class $properties has no name")
 ) : SimpleDataModel<RootDataModel<P>, P>(reservedIndices, reservedNames, properties),
-    IsTypedRootDataModel<RootDataModel<P>, P>,
+    IsRootDataModel<P>,
     MarykPrimitive {
     override val primitiveType = RootModel
 

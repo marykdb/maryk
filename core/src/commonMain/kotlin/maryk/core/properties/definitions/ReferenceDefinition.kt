@@ -2,7 +2,6 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.models.IsRootDataModel
 import maryk.core.properties.DefinitionModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsRootModel
@@ -47,13 +46,12 @@ class ReferenceDefinition<DM : IsRootModel>(
     override fun writeStorageBytes(value: Key<DM>, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
 
     @Suppress("UNCHECKED_CAST")
-    override fun readStorageBytes(length: Int, reader: () -> Byte) = dataModel.Model.key(reader) as Key<DM>
+    override fun readStorageBytes(length: Int, reader: () -> Byte) = dataModel.key(reader)
 
     override fun calculateTransportByteLength(value: Key<DM>) = this.byteSize
 
     override fun fromString(string: String) = try {
-        @Suppress("UNCHECKED_CAST")
-        dataModel.Model.key(string) as Key<DM>
+        dataModel.key(string)
     } catch (e: Throwable) {
         throw ParseException(string, e)
     }

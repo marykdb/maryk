@@ -5,6 +5,7 @@ import maryk.checkProtoBufObjectValuesConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.properties.graph
+import maryk.core.properties.key
 import maryk.core.query.RequestContext
 import maryk.core.query.filters.Exists
 import maryk.core.query.requests.GetRequest

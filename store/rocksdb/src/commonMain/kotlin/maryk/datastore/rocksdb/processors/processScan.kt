@@ -74,8 +74,7 @@ internal fun <DM : IsRootModel> processScan(
                     valueBytes.copyInto(reference, uniqueReference.size + 1, 0, valueBytes.size)
 
                     getKeyByUniqueValue(dbAccessor, columnFamilies, readOptions, reference, scanRequest.toVersion) { keyReader, setAtVersion ->
-                        @Suppress("UNCHECKED_CAST")
-                        val key = scanRequest.dataModel.Model.key(keyReader) as Key<DM>
+                        val key = scanRequest.dataModel.key(keyReader)
 
                         if (shouldProcessRecord(dbAccessor, columnFamilies, readOptions, key, setAtVersion, scanRequest, keyScanRange)) {
                             readCreationVersion(dbAccessor, columnFamilies, readOptions, key.bytes)?.let { createdVersion ->

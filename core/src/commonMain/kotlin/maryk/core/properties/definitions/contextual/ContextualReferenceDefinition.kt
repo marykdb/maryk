@@ -4,6 +4,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsRootModel
 import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsValueDefinition
+import maryk.core.properties.key
 import maryk.core.properties.types.Key
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCacheReader
@@ -22,7 +23,7 @@ class ContextualReferenceDefinition<in CX : IsPropertyContext>(
     override val wireType = LENGTH_DELIMITED
 
     override fun fromString(string: String, context: CX?) =
-        contextualResolver(Unit, context).Model.key(string)
+        contextualResolver(Unit, context).key(string)
 
     override fun asString(value: Key<*>, context: CX?): String = value.toString()
 
@@ -34,7 +35,7 @@ class ContextualReferenceDefinition<in CX : IsPropertyContext>(
             is Value<*> -> {
                 when (val jsonValue = it.value) {
                     null -> throw ParseException("Reference cannot be null in JSON")
-                    is String -> contextualResolver(Unit, context).Model.key(jsonValue)
+                    is String -> contextualResolver(Unit, context).key(jsonValue)
                     else -> throw ParseException("Reference has to be a String")
                 }
             }
@@ -59,5 +60,5 @@ class ContextualReferenceDefinition<in CX : IsPropertyContext>(
         context: CX?,
         earlierValue: Key<*>?
     ) =
-        contextualResolver(Unit, context).Model.key(reader)
+        contextualResolver(Unit, context).key(reader)
 }

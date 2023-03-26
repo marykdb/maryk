@@ -1,5 +1,6 @@
 package maryk.core.properties
 
+import maryk.core.extensions.bytes.initByteArray
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.HasDefaultValueDefinition
@@ -18,21 +19,24 @@ import maryk.core.properties.types.Version
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ValueItem
 import maryk.core.values.Values
+import maryk.lib.exceptions.ParseException
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 
 interface IsRootModel: IsValuesPropertyDefinitions {
     override val Model: IsRootDataModel<out IsValuesPropertyDefinitions>
 }
 
-open class RootModel<P: IsValuesPropertyDefinitions>(
+open class RootModel<DM: IsValuesPropertyDefinitions>(
     keyDefinition: () -> IsIndexable = { UUIDKey },
     version: Version = Version(1),
     indices: (() -> List<IsIndexable>)? = null,
     reservedIndices: List<UInt>? = null,
     reservedNames: List<String>? = null,
     name: String? = null,
-) : TypedPropertyDefinitions<RootDataModel<P>, P>(), IsRootModel {
+) : TypedPropertyDefinitions<RootDataModel<DM>, DM>(), IsRootModel {
     @Suppress("UNCHECKED_CAST")
-    override val Model: RootDataModel<P> by lazy {
+    override val Model: RootDataModel<DM> by lazy {
         RootDataModel(
             keyDefinition = keyDefinition.invoke(),
             version = version,
@@ -41,14 +45,14 @@ open class RootModel<P: IsValuesPropertyDefinitions>(
             reservedNames = reservedNames,
             name = name ?: this::class.simpleName!!,
             properties = this,
-        ) as RootDataModel<P>
+        ) as RootDataModel<DM>
     }
 
     @Suppress("UNCHECKED_CAST")
     operator fun <T : Any, R : IsPropertyReference<T, IsPropertyDefinition<T>, *>> invoke(
         parent: AnyOutPropertyReference? = null,
-        referenceGetter: P.() -> (AnyOutPropertyReference?) -> R
-    ) = referenceGetter(this as P)(parent)
+        referenceGetter: DM.() -> (AnyOutPropertyReference?) -> R
+    ) = referenceGetter(this as DM)(parent)
 
     fun create(
         vararg pairs: ValueItem?,
@@ -68,25 +72,22 @@ open class RootModel<P: IsValuesPropertyDefinitions>(
             }
         }
     }
-
-    fun key(base64: String) = Model.key(base64)
-
-    fun key(reader: () -> Byte) = Model.key(reader)
-
-    fun key(bytes: ByteArray) = Model.key(bytes)
-
-    @Suppress("UNCHECKED_CAST")
-    fun key(values: Values<P>) = (this as IsRootModel).key(values as Values<IsRootModel>) as Key<P>
 }
 
-@Suppress("UNCHECKED_CAST")
-fun <DM: IsRootModel> DM.key(base64: String) = Model.key(base64) as Key<DM>
+@OptIn(ExperimentalEncodingApi::class)
+fun <DM: IsRootModel> DM.key(base64: String) = key(Base64.Mime.decode(base64))
 
 @Suppress("UNCHECKED_CAST")
-fun <DM: IsRootModel> DM.key(reader: () -> Byte) = Model.key(reader) as Key<DM>
+fun <DM: IsRootModel> DM.key(reader: () -> Byte) = Key<DM>(
+    initByteArray(Model.keyByteSize, reader)
+)
 
-@Suppress("UNCHECKED_CAST")
-fun <DM: IsRootModel> DM.key(bytes: ByteArray) = Model.key(bytes) as Key<DM>
+fun <DM: IsRootModel> DM.key(bytes: ByteArray): Key<DM> {
+    if (bytes.size != Model.keyByteSize) {
+        throw ParseException("Invalid byte length for key. Expected ${ Model.keyByteSize } instead of ${bytes.size}")
+    }
+    return Key(bytes)
+}
 
 /**
  * Create Property reference graph with list of graphables that are generated with [runner] on Properties

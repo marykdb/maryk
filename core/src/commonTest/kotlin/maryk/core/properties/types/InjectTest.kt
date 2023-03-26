@@ -9,6 +9,7 @@ import maryk.core.models.asValues
 import maryk.core.models.testExtendedMarykModelObject
 import maryk.core.models.testMarykModelObject
 import maryk.core.properties.exceptions.InjectException
+import maryk.core.properties.key
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.RequestContext
 import maryk.core.query.ValuesWithMetaData

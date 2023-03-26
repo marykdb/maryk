@@ -5,6 +5,7 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
+import maryk.core.properties.key
 import maryk.test.models.Option.V3
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test

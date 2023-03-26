@@ -7,6 +7,7 @@ import maryk.checkYamlConversion
 import maryk.core.properties.RootModel
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.dateTime
+import maryk.core.properties.key
 import maryk.core.query.DefinitionsConversionContext
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector

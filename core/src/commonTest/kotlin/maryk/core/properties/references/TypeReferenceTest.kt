@@ -4,6 +4,7 @@ import maryk.core.properties.RootModel
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.multiType
 import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
+import maryk.core.properties.key
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.lib.extensions.toHex

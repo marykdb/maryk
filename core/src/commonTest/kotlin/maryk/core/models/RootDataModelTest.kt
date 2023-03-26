@@ -20,6 +20,7 @@ import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.definitions.ValueObjectDefinition
+import maryk.core.properties.key
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.protobuf.WriteCache

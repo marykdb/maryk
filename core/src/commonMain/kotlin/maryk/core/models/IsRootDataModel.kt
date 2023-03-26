@@ -5,7 +5,6 @@ import maryk.core.models.migration.MigrationStatus.NeedsMigration
 import maryk.core.models.migration.MigrationStatus.NewIndicesOnExistingProperties
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.definitions.index.IsIndexable
-import maryk.core.properties.types.Key
 import maryk.core.properties.types.Version
 import maryk.lib.synchronizedIteration
 
@@ -17,15 +16,6 @@ interface IsRootDataModel<P : IsValuesPropertyDefinitions> : IsValuesDataModel<P
 
     val keyByteSize: Int
     val keyIndices: IntArray
-
-    /** Get Key by [base64] bytes as string representation */
-    fun key(base64: String): Key<*>
-
-    /** Get Key by byte [reader] */
-    fun key(reader: () -> Byte): Key<*>
-
-    /** Get Key by [bytes] array */
-    fun key(bytes: ByteArray): Key<*>
 
     val orderedIndices: List<IsIndexable>?
 

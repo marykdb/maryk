@@ -1,5 +1,6 @@
 package maryk.test.requests
 
+import maryk.core.properties.key
 import maryk.core.query.changes.change
 import maryk.core.query.requests.change
 import maryk.test.models.SimpleMarykModel

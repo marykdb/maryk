@@ -1,5 +1,6 @@
 package maryk.core.query.responses.updates
 
+import maryk.core.properties.key
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.DataObjectVersionedChange

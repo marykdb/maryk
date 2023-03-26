@@ -1,6 +1,7 @@
 package maryk.datastore.memory.records.index
 
 import maryk.core.clock.HLC
+import maryk.core.properties.key
 import maryk.datastore.memory.records.DataRecord
 import maryk.test.models.SimpleMarykModel
 import maryk.test.models.SimpleMarykModel.value

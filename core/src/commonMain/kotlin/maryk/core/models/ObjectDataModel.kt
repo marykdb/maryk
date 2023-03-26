@@ -1,11 +1,6 @@
 package maryk.core.models
 
-import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsObjectPropertyDefinitions
-import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.ObjectPropertyDefinitionsCollectionDefinition
-import maryk.core.properties.ObjectPropertyDefinitionsCollectionDefinitionWrapper
 
 /**
  * ObjectDataModel for non contextual models. Contains a [name] to identify the model and [properties] which define how the
@@ -17,23 +12,4 @@ abstract class ObjectDataModel<DO : Any, P : IsObjectPropertyDefinitions<DO>>(
     properties: P
 ) : SimpleObjectDataModel<DO, P>(
     properties
-), IsNamedDataModel<P> {
-    companion object {
-        internal fun <DM : ObjectDataModel<*, *>> addProperties(definitions: AbstractPropertyDefinitions<DM>): ObjectPropertyDefinitionsCollectionDefinitionWrapper<DM> =
-            ObjectPropertyDefinitionsCollectionDefinitionWrapper<DM>(
-                2u,
-                "properties",
-                ObjectPropertyDefinitionsCollectionDefinition(
-                    capturer = { context, propDefs ->
-                        context?.apply {
-                            this.propertyDefinitions = propDefs
-                        } ?: throw ContextNotFoundException()
-                    }
-                ),
-                getter = {
-                    @Suppress("UNCHECKED_CAST")
-                    it.properties as ObjectPropertyDefinitions<in Any>
-                }
-            ).also(definitions::addSingle)
-    }
-}
+), IsNamedDataModel<P>

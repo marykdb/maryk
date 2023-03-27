@@ -72,7 +72,7 @@ internal class TypeReferenceTest {
     @Test
     fun compatibleWithModel() {
         assertTrue {
-            typeReference.isCompatibleWithModel(TestMarykModel.Model)
+            typeReference.isCompatibleWithModel(TestMarykModel)
         }
 
         // Property definition wrapper which does not exist on Model
@@ -84,7 +84,7 @@ internal class TypeReferenceTest {
 
         val invalidRef = invalid.typeRef()
         assertFalse {
-            invalidRef.isCompatibleWithModel(MarykModel.Model)
+            invalidRef.isCompatibleWithModel(MarykModel)
         }
     }
 }

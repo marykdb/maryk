@@ -6,9 +6,6 @@ import maryk.core.models.migration.MigrationStatus.OnlySafeAdds
 import maryk.core.models.migration.MigrationStatus.UpToDate
 import maryk.core.models.migration.checkProperties
 import maryk.core.properties.IsPropertyDefinitions
-import maryk.core.properties.definitions.IsEmbeddedDefinition
-import maryk.core.properties.references.AnyPropertyReference
-import maryk.core.properties.references.IsPropertyReferenceForValues
 
 /** A DataModel which holds properties and can be validated */
 interface IsDataModel<P : IsPropertyDefinitions> {
@@ -34,36 +31,5 @@ interface IsDataModel<P : IsPropertyDefinitions> {
             hasNewProperties -> OnlySafeAdds
             else -> UpToDate
         }
-    }
-
-    /**
-     * Checks if the DataModel is compatible with [propertyReference]
-     * This is useful to test if reference is compatible after migration with already stored model.
-     * This result can be used to know if an index has to be indexed with existing values.
-     */
-    fun compatibleWithReference(propertyReference: AnyPropertyReference): Boolean {
-        val unwrappedReferences = propertyReference.unwrap()
-
-        var model: IsDataModel<*> = this
-
-        for (reference in unwrappedReferences) {
-            if (reference is IsPropertyReferenceForValues<*, *, *, *>) {
-                when(val storedPropertyDefinition = model.properties[reference.index]) {
-                    null -> return false
-                    else -> {
-                        val propertyDefinition = reference.propertyDefinition
-
-                        if (propertyDefinition is IsEmbeddedDefinition<*>) {
-                            if (storedPropertyDefinition !is IsEmbeddedDefinition<*>) {
-                                return false // Types are not matching
-                            } else {
-                                model = storedPropertyDefinition.dataModel.Model
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return true
     }
 }

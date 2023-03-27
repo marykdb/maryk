@@ -5,8 +5,8 @@ import maryk.core.extensions.bytes.initLong
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.DefinitionDataModel
-import maryk.core.models.IsRootDataModel
 import maryk.core.properties.DefinitionModel
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.references.IsFixedBytesPropertyReference
 import maryk.core.properties.references.IsPropertyReference
@@ -48,7 +48,7 @@ object UUIDKey : IsFixedBytesPropertyReference<Pair<Long, Long>> {
         this.indexKeyPartType.index.writeVarBytes(writer)
     }
 
-    override fun isCompatibleWithModel(dataModel: IsRootDataModel<*>) = true
+    override fun isCompatibleWithModel(dataModel: IsRootModel) = true
 
     internal object Model : DefinitionModel<UUIDKey>() {
         override fun invoke(values: SimpleObjectValues<UUIDKey>) = UUIDKey

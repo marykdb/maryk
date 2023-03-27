@@ -4,8 +4,8 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
-import maryk.core.models.IsRootDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.SingleTypedValueModel
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.wrapper.contextual
@@ -60,7 +60,7 @@ data class Reversed<T : Any>(
         this.reference.writeStorageBytes(writer)
     }
 
-    override fun isCompatibleWithModel(dataModel: IsRootDataModel<*>): Boolean =
+    override fun isCompatibleWithModel(dataModel: IsRootModel): Boolean =
         reference.isCompatibleWithModel(dataModel)
 
     internal object Model :

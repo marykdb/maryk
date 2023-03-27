@@ -119,11 +119,11 @@ internal class PropertyReferenceTest {
     @Test
     fun compatibleWithModel() {
         assertTrue {
-            ref.isCompatibleWithModel(Model.Model)
+            ref.isCompatibleWithModel(Model)
         }
 
         assertTrue {
-            subRef.isCompatibleWithModel(Model.Model)
+            subRef.isCompatibleWithModel(Model)
         }
 
         // Property definition wrapper which does not exist on Model
@@ -135,12 +135,12 @@ internal class PropertyReferenceTest {
 
         val invalidRef = invalid.ref()
         assertFalse {
-            invalidRef.isCompatibleWithModel(Model.Model)
+            invalidRef.isCompatibleWithModel(Model)
         }
 
         val invalidSubRef = invalid.ref(Model.embeddedObject.ref())
         assertFalse {
-            invalidSubRef.isCompatibleWithModel(Model.Model)
+            invalidSubRef.isCompatibleWithModel(Model)
         }
     }
 

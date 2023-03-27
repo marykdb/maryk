@@ -2,7 +2,7 @@ package maryk.core.properties.definitions.index
 
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.models.IsRootDataModel
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.SingleValueModel
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.list
@@ -62,7 +62,7 @@ data class Multiple(
         }
     }
 
-    override fun isCompatibleWithModel(dataModel: IsRootDataModel<*>): Boolean {
+    override fun isCompatibleWithModel(dataModel: IsRootModel): Boolean {
         for (reference in this.references) {
             if (!reference.isCompatibleWithModel(dataModel)) {
                 return false

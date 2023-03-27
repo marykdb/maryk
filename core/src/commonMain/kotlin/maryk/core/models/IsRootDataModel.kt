@@ -3,6 +3,7 @@ package maryk.core.models
 import maryk.core.models.migration.MigrationStatus
 import maryk.core.models.migration.MigrationStatus.NeedsMigration
 import maryk.core.models.migration.MigrationStatus.NewIndicesOnExistingProperties
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.types.Version
@@ -30,7 +31,7 @@ interface IsRootDataModel<P : IsValuesPropertyDefinitions> : IsValuesDataModel<P
             orderedIndices?.let { indices ->
                 if (storedDataModel.orderedIndices == null) {
                     // Only index the values which have stored properties on the stored model
-                    val toIndex = indices.filter { it.isCompatibleWithModel(storedDataModel) }
+                    val toIndex = indices.filter { it.isCompatibleWithModel(storedDataModel.properties as IsRootModel) }
                     indicesToIndex.addAll(toIndex)
                 } else {
                     synchronizedIteration(
@@ -41,7 +42,7 @@ interface IsRootDataModel<P : IsValuesPropertyDefinitions> : IsValuesDataModel<P
                         },
                         processOnlyOnIterator1 = { newIndex ->
                             // Only index the values which have stored properties on the stored model
-                            if (newIndex.isCompatibleWithModel(storedDataModel)) {
+                            if (newIndex.isCompatibleWithModel(storedDataModel.properties as IsRootModel)) {
                                 indicesToIndex.add(newIndex)
                             }
                         }

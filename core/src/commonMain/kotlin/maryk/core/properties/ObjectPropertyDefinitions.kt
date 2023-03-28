@@ -1,6 +1,6 @@
 package maryk.core.properties
 
-import maryk.core.models.IsObjectDataModel
+import maryk.core.models.IsDataModel
 import maryk.core.models.ValueDataModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsCollectionDefinition
@@ -47,9 +47,9 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
 
 /** Mutable variant of ObjectPropertyDefinitions for a IsCollectionDefinition implementation */
 internal open class MutableObjectPropertyDefinitions<DO: Any> : ObjectPropertyDefinitions<DO>(), IsMutablePropertyDefinitions<IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>> {
-    internal open var _model: IsObjectDataModel<*, *>? = null
+    internal open var _model: IsDataModel<*>? = null
 
-    override val Model: IsObjectDataModel<*, *>
+    override val Model: IsDataModel<*>
         get() = _model ?: throw Exception("No Model yet set, likely DataModel was not initialized yet")
 
     override fun add(element: IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>): Boolean {

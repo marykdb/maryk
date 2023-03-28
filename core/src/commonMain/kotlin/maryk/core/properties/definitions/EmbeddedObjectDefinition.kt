@@ -4,13 +4,11 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsNamedDataModel
-import maryk.core.models.ObjectDataModel
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsBaseModel
 import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.IsSimpleBaseModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -72,7 +70,7 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsSimpleBaseModel<DO, CXI, CX>, CX
     ) {
         super<IsEmbeddedObjectDefinition>.validateWithRef(previousValue, newValue, refGetter)
         if (newValue != null) {
-            this.dataModel.Model.validate(
+            this.dataModel.validate(
                 refGetter = refGetter,
                 dataObject = newValue
             )

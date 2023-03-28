@@ -1,6 +1,5 @@
 package maryk.core.query.changes
 
-import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsSimpleBaseModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition

@@ -3,11 +3,7 @@ package maryk.core.models
 import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
-import maryk.core.properties.exceptions.ValidationException
-import maryk.core.properties.exceptions.createValidationUmbrellaException
-import maryk.core.properties.references.IsPropertyReference
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.ContainsDefinitionsContext
@@ -27,24 +23,7 @@ internal typealias QueryDataModel<DO, P> = AbstractObjectDataModel<DO, P, Reques
  */
 abstract class AbstractObjectDataModel<DO : Any, P : IsObjectPropertyDefinitions<DO>, in CXI : IsPropertyContext, CX : IsPropertyContext> internal constructor(
     properties: P
-) : IsObjectDataModel<DO, P>, AbstractDataModel<DO, P, ObjectValues<DO, P>, CXI, CX>(properties) {
-    override fun validate(
-        dataObject: DO,
-        refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>, *>?
-    ) {
-        createValidationUmbrellaException(refGetter) { addException ->
-            for (it in this.properties) {
-                try {
-                    it.validate(
-                        newValue = getValueWithDefinition(it, dataObject, null),
-                        parentRefFactory = refGetter
-                    )
-                } catch (e: ValidationException) {
-                    addException(e)
-                }
-            }
-        }
-    }
+) : IsDataModel<P>, AbstractDataModel<DO, P, ObjectValues<DO, P>, CXI, CX>(properties) {
 
     open fun writeJson(
         obj: DO,
@@ -116,11 +95,11 @@ abstract class AbstractObjectDataModel<DO : Any, P : IsObjectPropertyDefinitions
         }
     }
 
-    protected open fun getValueWithDefinition(
+    internal open fun getValueWithDefinition(
         definition: IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>,
         obj: DO,
         context: CX?
-    ) = if (obj is ObjectValues<*, *>) {
+    ): Any? = if (obj is ObjectValues<*, *>) {
         obj.original(definition.index)
     } else {
         definition.getPropertyAndSerialize(obj, context)

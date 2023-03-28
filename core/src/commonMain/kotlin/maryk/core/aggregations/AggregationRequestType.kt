@@ -9,18 +9,13 @@ import maryk.core.aggregations.metric.Min
 import maryk.core.aggregations.metric.Stats
 import maryk.core.aggregations.metric.Sum
 import maryk.core.aggregations.metric.ValueCount
-import maryk.core.models.IsObjectDataModel
-import maryk.core.properties.IsBaseModel
 import maryk.core.properties.IsObjectPropertyDefinitions
-import maryk.core.properties.IsSimpleBaseModel
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.SimpleQueryModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.enum.IndexedEnumImpl
 import maryk.core.properties.enum.IsCoreEnum
 import maryk.core.properties.enum.MultiTypeEnum
 import maryk.core.properties.enum.MultiTypeEnumDefinition
-import maryk.core.query.RequestContext
 import maryk.json.MapType
 
 /** Indexed type of Aggregation */

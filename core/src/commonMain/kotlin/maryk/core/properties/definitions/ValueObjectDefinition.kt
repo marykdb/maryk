@@ -4,7 +4,6 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.models.SimpleObjectDataModel
-import maryk.core.models.ValueDataModel
 import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsValueModel
@@ -76,7 +75,7 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueModel<DO, *>>
     ) {
         super<IsComparableDefinition>.validateWithRef(previousValue, newValue, refGetter)
         if (newValue != null) {
-            this.dataModel.Model.validate(
+            this.dataModel.validate(
                 refGetter = refGetter,
                 dataObject = newValue
             )

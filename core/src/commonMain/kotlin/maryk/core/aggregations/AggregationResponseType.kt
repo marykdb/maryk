@@ -9,10 +9,8 @@ import maryk.core.aggregations.metric.MinResponse
 import maryk.core.aggregations.metric.StatsResponse
 import maryk.core.aggregations.metric.SumResponse
 import maryk.core.aggregations.metric.ValueCountResponse
-import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsSimpleBaseModel
-import maryk.core.properties.SimpleQueryModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.enum.IndexedEnumImpl
 import maryk.core.properties.enum.IsCoreEnum

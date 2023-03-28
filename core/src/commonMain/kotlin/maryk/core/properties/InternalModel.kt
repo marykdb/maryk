@@ -11,7 +11,6 @@ import maryk.core.values.ObjectValues
 import maryk.core.values.ValueItem
 
 interface IsInternalModel<DO: Any, P: IsObjectPropertyDefinitions<DO>, in CXI : IsPropertyContext, CX : IsPropertyContext>: IsBaseModel<DO, P, CXI, CX>, IsTypedObjectPropertyDefinitions<DO, P> {
-    @Suppress("PropertyName")
     override val Model: AbstractObjectDataModel<DO, P, CXI, CX>
 }
 

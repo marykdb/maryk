@@ -108,13 +108,13 @@ internal class ObjectDataModelTest {
 
     @Test
     fun validate() {
-        TestMarykObject.Model.validate(testObject)
+        TestMarykObject.validate(testObject)
     }
 
     @Test
     fun failValidationWithIncorrectValues() {
         assertFailsWith<ValidationUmbrellaException> {
-            TestMarykObject.Model.validate(testObject.copy(int = 9))
+            TestMarykObject.validate(testObject.copy(int = 9))
         }
     }
 

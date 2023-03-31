@@ -9,7 +9,7 @@ interface IsObjectModel<DO: Any, P: IsObjectPropertyDefinitions<DO>>: IsBaseMode
 
 abstract class ObjectModel<DO: Any, P: ObjectPropertyDefinitions<DO>>(
     objClass: KClass<DO>,
-): InternalModel<DO, P, IsPropertyContext, IsPropertyContext>() {
+): InternalModel<DO, P, IsPropertyContext, IsPropertyContext>(), IsObjectModel<DO, P> {
     @Suppress("UNCHECKED_CAST")
     override val Model = object: ObjectDataModel<DO, P>(
         objClass.simpleName!!,

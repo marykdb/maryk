@@ -21,45 +21,45 @@ class IsMigrationNeededTest {
     fun migrationIsNotNeeded() {
         assertEquals(
             UpToDate,
-            ModelV1.Model.isMigrationNeeded(ModelV1.Model)
+            ModelV1.isMigrationNeeded(ModelV1)
         )
     }
 
     @Test
     fun migrationIsNeededWithVersion() {
-        assertIs<NeedsMigration>(ModelV2.Model.isMigrationNeeded(ModelV1.Model))
+        assertIs<NeedsMigration>(ModelV2.isMigrationNeeded(ModelV1))
     }
 
     @Test
     fun migrationIsNeededForWrongKey() {
-        assertIs<NeedsMigration>(ModelV1_1WrongKey.Model.isMigrationNeeded(ModelV1.Model))
+        assertIs<NeedsMigration>(ModelV1_1WrongKey.isMigrationNeeded(ModelV1))
     }
 
     @Test
     fun missingProperty() {
-        assertIs<NeedsMigration>(ModelMissingProperty.Model.isMigrationNeeded(ModelV1.Model))
+        assertIs<NeedsMigration>(ModelMissingProperty.isMigrationNeeded(ModelV1))
     }
 
     @Test
     fun reservedIndexAndName() {
-        assertIs<OnlySafeAdds>(ModelV2ReservedNamesAndIndices.Model.isMigrationNeeded(ModelV1.Model))
+        assertIs<OnlySafeAdds>(ModelV2ReservedNamesAndIndices.isMigrationNeeded(ModelV1))
     }
 
     @Test
     fun onlySafeAdditions() {
-        assertIs<OnlySafeAdds>(ModelV1_1.Model.isMigrationNeeded(ModelV1.Model))
+        assertIs<OnlySafeAdds>(ModelV1_1.isMigrationNeeded(ModelV1))
     }
 
     @Test
     fun newIndexAddedOnExistingProperties() {
-        assertIs<NewIndicesOnExistingProperties>(ModelV2ExtraIndex.Model.isMigrationNeeded(ModelV2.Model)).apply {
+        assertIs<NewIndicesOnExistingProperties>(ModelV2ExtraIndex.isMigrationNeeded(ModelV2)).apply {
             indicesToIndex.containsAll(listOf(ModelV2ExtraIndex { newNumber::ref }))
         }
     }
 
     @Test
     fun noNewIndexAddedOnExistingProperties() {
-        assertIs<NeedsMigration>(ModelV2ExtraIndex.Model.isMigrationNeeded(ModelV1.Model)).apply {
+        assertIs<NeedsMigration>(ModelV2ExtraIndex.isMigrationNeeded(ModelV1)).apply {
             assertNull(indicesToIndex)
         }
     }

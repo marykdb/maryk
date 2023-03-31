@@ -7,6 +7,7 @@ import maryk.core.models.migration.MigrationStatus
 import maryk.core.models.migration.MigrationStatus.NewModel
 import maryk.core.models.migration.MigrationStatus.UpToDate
 import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.properties.RootModel
 import maryk.core.properties.types.Version
 import maryk.core.query.DefinitionsConversionContext
 import maryk.rocksdb.ColumnFamilyHandle
@@ -15,7 +16,7 @@ import maryk.rocksdb.RocksDB
 fun <P: IsValuesPropertyDefinitions> checkModelIfMigrationIsNeeded(
     rocksDB: RocksDB,
     modelColumnFamily: ColumnFamilyHandle,
-    dataModel: RootDataModel<P>,
+    dataModel: RootModel<P>,
     onlyCheckVersion: Boolean
 ): MigrationStatus {
     val name = rocksDB.get(modelColumnFamily, modelNameKey)?.decodeToString()
@@ -29,10 +30,10 @@ fun <P: IsValuesPropertyDefinitions> checkModelIfMigrationIsNeeded(
     }
 
     return when {
-        dataModel.version != version || !onlyCheckVersion -> {
+        dataModel.Model.version != version || !onlyCheckVersion -> {
             // Read currently stored model
             val modelBytes = rocksDB.get(modelColumnFamily, modelDefinitionKey)
-                ?: throw StorageException("Model is unexpectedly missing in metadata for ${dataModel.name}")
+                ?: throw StorageException("Model is unexpectedly missing in metadata for ${dataModel.Model.name}")
 
             var readIndex = 0
             val context = DefinitionsConversionContext()
@@ -40,7 +41,7 @@ fun <P: IsValuesPropertyDefinitions> checkModelIfMigrationIsNeeded(
             val storedDataModel = RootDataModel.Model.Model.readProtoBuf(modelBytes.size, { modelBytes[readIndex++] }, context).toDataObject() as IsRootDataModel<P>
 
             // Check by comparing the data models for if migration is needed
-            return dataModel.isMigrationNeeded(storedDataModel)
+            return dataModel.isMigrationNeeded(storedDataModel.properties)
         }
         else -> UpToDate
     }

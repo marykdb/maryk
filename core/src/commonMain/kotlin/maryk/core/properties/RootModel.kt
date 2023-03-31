@@ -3,6 +3,7 @@ package maryk.core.properties
 import maryk.core.extensions.bytes.initByteArray
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.RootDataModel
+import maryk.core.models.migration.MigrationStatus
 import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.index.IsIndexable
@@ -17,6 +18,7 @@ import maryk.core.properties.types.Key
 import maryk.core.properties.types.Version
 import maryk.core.values.Values
 import maryk.lib.exceptions.ParseException
+import maryk.lib.synchronizedIteration
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
@@ -50,12 +52,66 @@ open class RootModel<DM: IsValuesPropertyDefinitions>(
         parent: AnyOutPropertyReference? = null,
         referenceGetter: DM.() -> (AnyOutPropertyReference?) -> R
     ) = referenceGetter(this as DM)(parent)
+
+    override fun isMigrationNeeded(
+        storedDataModel: IsSerializableModel,
+        migrationReasons: MutableList<String>
+    ): MigrationStatus {
+        val indicesToIndex = mutableListOf<IsIndexable>()
+        if (storedDataModel is IsRootModel) {
+            // Only process indices if they are present on new model.
+            // If they are present on stored but not on new, accept it.
+            Model.orderedIndices?.let { indices ->
+                if (storedDataModel.Model.orderedIndices == null) {
+                    // Only index the values which have stored properties on the stored model
+                    val toIndex = indices.filter { it.isCompatibleWithModel(storedDataModel) }
+                    indicesToIndex.addAll(toIndex)
+                } else {
+                    synchronizedIteration(
+                        indices.iterator(),
+                        storedDataModel.Model.orderedIndices!!.iterator(),
+                        { newValue, storedValue ->
+                            newValue.referenceStorageByteArray compareTo storedValue.referenceStorageByteArray
+                        },
+                        processOnlyOnIterator1 = { newIndex ->
+                            // Only index the values which have stored properties on the stored model
+                            if (newIndex.isCompatibleWithModel(storedDataModel)) {
+                                indicesToIndex.add(newIndex)
+                            }
+                        }
+                    )
+                }
+            }
+
+            if (storedDataModel.Model.version.major != this.Model.version.major) {
+                migrationReasons += "Major version was increased: ${storedDataModel.Model.version} -> ${this.Model.version}"
+            }
+
+            if (storedDataModel.Model.keyDefinition !== this.Model.keyDefinition) {
+                migrationReasons += "Key definition was not the same"
+            }
+        } else {
+            migrationReasons += "Stored model is not a root data model"
+        }
+
+        val parentResult = super<TypedPropertyDefinitions>.isMigrationNeeded(storedDataModel, migrationReasons)
+
+        return if (indicesToIndex.isEmpty()) {
+            parentResult
+        } else when (parentResult) {
+            is MigrationStatus.NeedsMigration -> MigrationStatus.NeedsMigration(
+                storedDataModel.Model,
+                migrationReasons,
+                indicesToIndex
+            )
+            else -> MigrationStatus.NewIndicesOnExistingProperties(indicesToIndex)
+        }
+    }
 }
 
 @OptIn(ExperimentalEncodingApi::class)
 fun <DM: IsRootModel> DM.key(base64: String) = key(Base64.Mime.decode(base64))
 
-@Suppress("UNCHECKED_CAST")
 fun <DM: IsRootModel> DM.key(reader: () -> Byte) = Key<DM>(
     initByteArray(Model.keyByteSize, reader)
 )

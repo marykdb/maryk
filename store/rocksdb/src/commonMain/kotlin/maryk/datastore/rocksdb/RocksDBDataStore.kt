@@ -19,6 +19,7 @@ import maryk.core.models.migration.MigrationStatus.OnlySafeAdds
 import maryk.core.models.migration.MigrationStatus.UpToDate
 import maryk.core.models.migration.StoredRootDataModel
 import maryk.core.properties.IsRootModel
+import maryk.core.properties.RootModel
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.query.requests.AddRequest
 import maryk.core.query.requests.ChangeRequest
@@ -29,13 +30,13 @@ import maryk.core.query.requests.GetUpdatesRequest
 import maryk.core.query.requests.ScanChangesRequest
 import maryk.core.query.requests.ScanRequest
 import maryk.core.query.requests.ScanUpdatesRequest
+import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.InitialChangesUpdate
 import maryk.core.query.responses.updates.InitialValuesUpdate
 import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.core.query.responses.updates.RemovalUpdate
-import maryk.core.query.responses.UpdateResponse
 import maryk.datastore.rocksdb.TableType.HistoricIndex
 import maryk.datastore.rocksdb.TableType.HistoricTable
 import maryk.datastore.rocksdb.TableType.HistoricUnique
@@ -156,7 +157,7 @@ class RocksDBDataStore(
             for ((index, dataModel) in dataModelsById) {
                 columnFamilyHandlesByDataModelIndex[index]?.let { tableColumnFamilies ->
                     tableColumnFamilies.model.let { modelColumnFamily ->
-                        when (val migrationStatus = checkModelIfMigrationIsNeeded(this.db, modelColumnFamily, dataModel, this.onlyCheckModelVersion)) {
+                        when (val migrationStatus = checkModelIfMigrationIsNeeded(this.db, modelColumnFamily, dataModel.properties as RootModel<*>, this.onlyCheckModelVersion)) {
                             UpToDate -> Unit // Do nothing since no work is needed
                             NewModel, OnlySafeAdds -> {
                                 // Model updated so can be stored

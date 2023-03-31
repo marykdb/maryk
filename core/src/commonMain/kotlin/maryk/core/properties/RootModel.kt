@@ -100,7 +100,7 @@ open class RootModel<DM: IsValuesPropertyDefinitions>(
             parentResult
         } else when (parentResult) {
             is MigrationStatus.NeedsMigration -> MigrationStatus.NeedsMigration(
-                storedDataModel.Model,
+                storedDataModel,
                 migrationReasons,
                 indicesToIndex
             )

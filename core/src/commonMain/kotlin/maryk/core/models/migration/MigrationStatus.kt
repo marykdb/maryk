@@ -1,6 +1,6 @@
 package maryk.core.models.migration
 
-import maryk.core.models.IsDataModel
+import maryk.core.properties.IsSerializableModel
 import maryk.core.properties.definitions.index.IsIndexable
 
 sealed class MigrationStatus {
@@ -14,7 +14,7 @@ sealed class MigrationStatus {
     class NewIndicesOnExistingProperties(val indicesToIndex: List<IsIndexable>): MigrationStatus()
     /** The model is incompatible with the stored version and needs a migration */
     class NeedsMigration(
-        val storedDataModel: IsDataModel<*>,
+        val storedDataModel: IsSerializableModel,
         val migrationReasons: List<String>,
         val indicesToIndex: List<IsIndexable>?
     ): MigrationStatus() {

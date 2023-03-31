@@ -25,7 +25,7 @@ interface IsSerializableModel: IsPropertyDefinitions {
         }
 
         return when {
-            migrationReasons.isNotEmpty() -> MigrationStatus.NeedsMigration(storedDataModel.Model, migrationReasons, null)
+            migrationReasons.isNotEmpty() -> MigrationStatus.NeedsMigration(storedDataModel, migrationReasons, null)
             hasNewProperties -> MigrationStatus.OnlySafeAdds
             else -> MigrationStatus.UpToDate
         }

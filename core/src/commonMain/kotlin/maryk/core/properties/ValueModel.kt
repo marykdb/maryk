@@ -6,8 +6,7 @@ import maryk.core.properties.types.ValueDataObject
 import maryk.core.values.ObjectValues
 import kotlin.reflect.KClass
 
-interface IsValueModel<DO: ValueDataObject, P: IsObjectPropertyDefinitions<DO>>: IsBaseModel<DO, P, IsPropertyContext, IsPropertyContext>, IsTypedObjectPropertyDefinitions<DO, P> {
-    @Suppress("PropertyName")
+interface IsValueModel<DO: ValueDataObject, P: IsObjectPropertyDefinitions<DO>>: IsBaseModel<DO, P, IsPropertyContext, IsPropertyContext>, IsTypedObjectPropertyDefinitions<DO, P>, IsObjectModel<DO, P> {
     override val Model: ValueDataModel<DO, P>
 
     /** Creates bytes for given [values] */

@@ -5,7 +5,7 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.values.Values
 
-interface IsValuesPropertyDefinitions: IsTypedPropertyDefinitions<Any> {
+interface IsValuesPropertyDefinitions: IsTypedPropertyDefinitions<Any>, IsSerializableModel {
     override val Model : IsValuesDataModel<*>
 }
 

@@ -3,7 +3,7 @@ package maryk.core.properties.enum
 import maryk.core.definitions.PrimitiveType.TypeDefinition
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.SerializationException
-import maryk.core.models.ContextualDataModel
+import maryk.core.models.AbstractObjectDataModel
 import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
@@ -139,9 +139,8 @@ open class MultiTypeEnumDefinition<E : MultiTypeEnum<*>> internal constructor(
                 unknownCreator = { index, name -> MultiTypeEnum.invoke(index, name, null) }
             )
 
-        override val Model = object : ContextualDataModel<MultiTypeEnumDefinition<MultiTypeEnum<*>>, Model, ContainsDefinitionsContext, MultiTypeDefinitionContext>(
+        override val Model = object : AbstractObjectDataModel<MultiTypeEnumDefinition<MultiTypeEnum<*>>, Model, ContainsDefinitionsContext, MultiTypeDefinitionContext>(
             properties = MultiTypeEnumDefinition.Model,
-            contextTransformer = contextTransformer,
         ) {
             override fun writeJson(
                 values: ObjectValues<MultiTypeEnumDefinition<MultiTypeEnum<*>>, Model>,

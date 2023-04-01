@@ -145,7 +145,7 @@ class InjectIntoRequestTest {
         ) {
             checkYamlConversion(
                 getRequestWithInjectable,
-                GetRequest.Model,
+                GetRequest,
                 { context },
                 checker = ::checker
             )
@@ -163,7 +163,7 @@ class InjectIntoRequestTest {
         ) {
             checkJsonConversion(
                 getRequestWithInjectable,
-                GetRequest.Model,
+                GetRequest,
                 { context },
                 checker = ::checker
             )
@@ -176,7 +176,7 @@ class InjectIntoRequestTest {
 
         checkProtoBufObjectValuesConversion(
             requests,
-            Requests.Model,
+            Requests,
             { context },
             checker = { converted, original ->
                 @Suppress("UNCHECKED_CAST")

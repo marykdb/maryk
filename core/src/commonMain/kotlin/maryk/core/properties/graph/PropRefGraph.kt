@@ -1,7 +1,7 @@
 package maryk.core.properties.graph
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.ContextualDataModel
+import maryk.core.models.AbstractObjectDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsPropertyContext
@@ -126,9 +126,8 @@ data class PropRefGraph<P : IsValuesPropertyDefinitions, PS : IsValuesPropertyDe
                 properties = values(2u)
             )
 
-        override val Model = object : ContextualDataModel<PropRefGraph<*, *>, Companion, ContainsDataModelContext<*>, GraphContext>(
+        override val Model = object : AbstractObjectDataModel<PropRefGraph<*, *>, Companion, ContainsDataModelContext<*>, GraphContext>(
             properties = Companion,
-            contextTransformer = contextTransformer,
         ) {
             override fun writeJson(obj: PropRefGraph<*, *>, writer: IsJsonLikeWriter, context: GraphContext?) {
                 writeJsonValues(obj.parent.ref(), obj.properties, writer, context)
@@ -185,7 +184,7 @@ data class PropRefGraph<P : IsValuesPropertyDefinitions, PS : IsValuesPropertyDe
                 while (currentToken != EndArray && currentToken !is Stopped) {
                     when (currentToken) {
                         is StartObject -> {
-                            val newContext = transformContext(context)
+                            val newContext = Serializer.transformContext(context)
 
                             propertiesValue.add(
                                 TypedValue(

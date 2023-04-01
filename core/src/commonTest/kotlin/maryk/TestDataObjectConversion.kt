@@ -1,6 +1,5 @@
 package maryk
 
-import maryk.core.models.AbstractObjectDataModel
 import maryk.core.properties.IsBaseModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -18,7 +17,7 @@ fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : Is
     checker: (T, T) -> Unit = { converted, original -> assertEquals(original, converted) },
     resetContextBeforeRead: Boolean = false
 ): String {
-    var newContext = dataModel.Model.transformContext(context?.invoke())
+    var newContext = dataModel.Serializer.transformContext(context?.invoke())
 
     val output = buildString {
         val writer = JsonWriter(pretty = true) {
@@ -29,7 +28,7 @@ fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : Is
     }
 
     if (resetContextBeforeRead) {
-        newContext = dataModel.Model.transformContext(context?.invoke())
+        newContext = dataModel.Serializer.transformContext(context?.invoke())
     }
 
     val chars = output.iterator()
@@ -48,7 +47,7 @@ fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : Is
     checker: (T, T) -> Unit = { converted, original -> assertEquals(original, converted) },
     resetContextBeforeRead: Boolean = false
 ): String {
-    var newContext = dataModel.Model.transformContext(context?.invoke())
+    var newContext = dataModel.Serializer.transformContext(context?.invoke())
 
     val output = buildString {
         val writer = YamlWriter {
@@ -59,7 +58,7 @@ fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : Is
     }
 
     if (resetContextBeforeRead) {
-        newContext = dataModel.Model.transformContext(context?.invoke())
+        newContext = dataModel.Serializer.transformContext(context?.invoke())
     }
 
     val chars = output.iterator()
@@ -79,23 +78,23 @@ fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : Is
 
 fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : IsPropertyContext> checkYamlConversion(
     value: ObjectValues<T, P>,
-    dataModel: AbstractObjectDataModel<T, P, CXI, CX>,
+    dataModel: IsBaseModel<T, P, CXI, CX>,
     context: (() -> CXI)? = null,
     checker: (ObjectValues<T, P>, ObjectValues<T, P>) -> Unit = { converted, original -> assertEquals(original, converted) },
     resetContextBeforeRead: Boolean = false
 ): String {
-    var newContext = dataModel.transformContext(context?.invoke())
+    var newContext = dataModel.Serializer.transformContext(context?.invoke())
 
     val output = buildString {
         val writer = YamlWriter {
             append(it)
         }
 
-        dataModel.writeJson(value, writer, newContext)
+        dataModel.Model.writeJson(value, writer, newContext)
     }
 
     if (resetContextBeforeRead) {
-        newContext = dataModel.transformContext(context?.invoke())
+        newContext = dataModel.Serializer.transformContext(context?.invoke())
     }
 
     val chars = output.iterator()
@@ -106,7 +105,7 @@ fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : Is
             }
         }
     }
-    val converted = dataModel.readJson(reader, newContext)
+    val converted = dataModel.Model.readJson(reader, newContext)
 
     checker(converted, value)
 
@@ -116,28 +115,28 @@ fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : Is
 
 fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : IsPropertyContext> checkJsonConversion(
     value: ObjectValues<T, P>,
-    dataModel: AbstractObjectDataModel<T, P, CXI, CX>,
+    dataModel: IsBaseModel<T, P, CXI, CX>,
     context: (() -> CXI)? = null,
     checker: (ObjectValues<T, P>, ObjectValues<T, P>) -> Unit = { converted, original -> assertEquals(original, converted) },
     resetContextBeforeRead: Boolean = false
 ): String {
-    var newContext = dataModel.transformContext(context?.invoke())
+    var newContext = dataModel.Serializer.transformContext(context?.invoke())
 
     val output = buildString {
         val writer = JsonWriter {
             append(it)
         }
 
-        dataModel.writeJson(value, writer, newContext)
+        dataModel.Model.writeJson(value, writer, newContext)
     }
 
     if (resetContextBeforeRead) {
-        newContext = dataModel.transformContext(context?.invoke())
+        newContext = dataModel.Serializer.transformContext(context?.invoke())
     }
 
     val chars = output.iterator()
     val reader = JsonReader { chars.nextChar() }
-    val converted = dataModel.readJson(reader, newContext)
+    val converted = dataModel.Model.readJson(reader, newContext)
 
     checker(converted, value)
 

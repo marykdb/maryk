@@ -1,6 +1,5 @@
 package maryk
 
-import maryk.core.models.AbstractObjectDataModel
 import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.IsBaseModel
 import maryk.core.properties.IsPropertyContext
@@ -18,23 +17,20 @@ fun <DO : Any, P : ObjectPropertyDefinitions<DO>, CXI : IsPropertyContext, CX : 
     checker: (DO, DO) -> Unit = { converted, original -> assertEquals(original, converted) },
     resetContextBeforeRead: Boolean = false
 ) {
-    var newContext = dataModel.Model.transformContext(context?.invoke())
+    var newContext = dataModel.Serializer.transformContext(context?.invoke())
 
     val bc = ByteCollector()
     val cache = WriteCache()
 
-    @Suppress("UNCHECKED_CAST")
-    val serializer = dataModel.Serializer as ObjectDataModelSerializer<DO, P, CXI, CX>
-
-    val byteLength = serializer.calculateObjectProtoBufLength(value, cache, newContext)
+    val byteLength = dataModel.Serializer.calculateObjectProtoBufLength(value, cache, newContext)
     bc.reserve(byteLength)
-    serializer.writeObjectProtoBuf(value, cache, bc::write, newContext)
+    dataModel.Serializer.writeObjectProtoBuf(value, cache, bc::write, newContext)
 
     if (resetContextBeforeRead) {
-        newContext = dataModel.Model.transformContext(context?.invoke())
+        newContext = dataModel.Serializer.transformContext(context?.invoke())
     }
 
-    val converted = serializer.readProtoBuf(byteLength, bc::read, newContext).toDataObject()
+    val converted = dataModel.Serializer.readProtoBuf(byteLength, bc::read, newContext).toDataObject()
 
     checker(converted, value)
 }
@@ -42,7 +38,7 @@ fun <DO : Any, P : ObjectPropertyDefinitions<DO>, CXI : IsPropertyContext, CX : 
 /** Convert values with a values DataModel */
 fun <DO : Any, P : ObjectPropertyDefinitions<DO>, CX : IsPropertyContext> checkProtoBufObjectValuesConversion(
     values: ObjectValues<DO, P>,
-    dataModel: AbstractObjectDataModel<DO, P, CX, CX>,
+    dataModel: IsBaseModel<DO, P, CX, CX>,
     context: (() -> CX)? = null,
     checker: (ObjectValues<DO, P>, ObjectValues<DO, P>) -> Unit = { converted, original -> assertEquals(original, converted) },
     resetContextBeforeRead: Boolean = false
@@ -53,7 +49,7 @@ fun <DO : Any, P : ObjectPropertyDefinitions<DO>, CX : IsPropertyContext> checkP
     var newContext = context?.invoke()
 
     @Suppress("UNCHECKED_CAST")
-    val serializer = dataModel.properties.Serializer as ObjectDataModelSerializer<DO, P, CX, CX>
+    val serializer = dataModel.Serializer as ObjectDataModelSerializer<DO, P, CX, CX>
 
     val byteLength = serializer.calculateProtoBufLength(values, cache, newContext)
     bc.reserve(byteLength)

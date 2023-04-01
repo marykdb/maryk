@@ -75,7 +75,7 @@ abstract class AbstractDataModel<DO : Any, DM : IsTypedPropertyDefinitions<DO>, 
                     writer.writeFieldName("?${definition.name}")
                 }
 
-                val injectionContext = Inject.Model.transformContext(context as RequestContext)
+                val injectionContext = Inject.Serializer.transformContext(context as RequestContext)
                 Inject.Model.writeJson(value, writer, injectionContext)
             } else {
                 definition.capture(context, value)
@@ -184,7 +184,7 @@ abstract class AbstractDataModel<DO : Any, DM : IsTypedPropertyDefinitions<DO>, 
                         }
 
                         if (isInject) {
-                            val inject = Inject.Model.readJson(reader, Inject.Model.transformContext(context as RequestContext))
+                            val inject = Inject.Model.readJson(reader, Inject.Serializer.transformContext(context as RequestContext))
 
                             values[definition.index] = inject
                         } else {

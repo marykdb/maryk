@@ -52,7 +52,7 @@ class ObjectAsMapConversionTest {
         ) {
             checkYamlConversion(
                 getRequestWithInjectable,
-                GetRequest.Model,
+                GetRequest,
                 { context },
                 checker = { a, b ->
                     assertEquals(b.toDataObject(), a.toDataObject())
@@ -65,7 +65,7 @@ class ObjectAsMapConversionTest {
     fun convertToJSONAndBack() {
         checkJsonConversion(
             getRequestWithInjectable,
-            GetRequest.Model,
+            GetRequest,
             { context },
             checker = { a, b ->
                 assertEquals(b.toDataObject(), a.toDataObject())
@@ -77,7 +77,7 @@ class ObjectAsMapConversionTest {
     fun convertToProtoBufAndBack() {
         checkProtoBufObjectValuesConversion(
             getRequestWithInjectable,
-            GetRequest.Model,
+            GetRequest,
             { context },
             checker = { a, b ->
                 assertEquals(b.toDataObject(), a.toDataObject())

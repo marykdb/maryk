@@ -30,6 +30,10 @@ interface IsObjectDataModelSerializer<DO: Any, DM: IsObjectPropertyDefinitions<D
         writer: (byte: Byte) -> Unit,
         context: CX? = null
     )
+
+    /** Transform [context] into context specific to ObjectDataModel. Override for specific implementation */
+    @Suppress("UNCHECKED_CAST")
+    fun transformContext(context: CXI?): CX? = context as CX?
 }
 
 open class ObjectDataModelSerializer<DO: Any, DM: IsObjectPropertyDefinitions<DO>, CXI:IsPropertyContext, CX: IsPropertyContext>(
@@ -75,8 +79,4 @@ open class ObjectDataModelSerializer<DO: Any, DM: IsObjectPropertyDefinitions<DO
         else ->
             definition.getPropertyAndSerialize(obj, context)
     }
-
-    /** Transform [context] into context specific to ObjectDataModel. Override for specific implementation */
-    @Suppress("UNCHECKED_CAST")
-    internal open fun transformContext(context: CXI?): CX? = context as CX?
 }

@@ -64,8 +64,4 @@ abstract class AbstractObjectDataModel<DO : Any, P : IsObjectPropertyDefinitions
     } else {
         definition.getPropertyAndSerialize(obj, context)
     }
-
-    /** Transform [context] into context specific to ObjectDataModel. Override for specific implementation */
-    @Suppress("UNCHECKED_CAST")
-    internal open fun transformContext(context: CXI?): CX? = context as CX?
 }

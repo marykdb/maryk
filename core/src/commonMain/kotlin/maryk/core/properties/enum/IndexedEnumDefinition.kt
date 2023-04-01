@@ -3,7 +3,7 @@ package maryk.core.properties.enum
 import maryk.core.definitions.PrimitiveType.EnumDefinition
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.SerializationException
-import maryk.core.models.ContextualDataModel
+import maryk.core.models.AbstractObjectDataModel
 import maryk.core.properties.ContextualModel
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.SingleOrListDefinition
@@ -156,9 +156,8 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
                 unknownCreator = { index, name -> IndexedEnumComparable(index, name) }
             )
 
-        override val Model = object : ContextualDataModel<IndexedEnumDefinition<IndexedEnum>, Model, ContainsDefinitionsContext, EnumNameContext>(
+        override val Model = object : AbstractObjectDataModel<IndexedEnumDefinition<IndexedEnum>, Model, ContainsDefinitionsContext, EnumNameContext>(
             properties = IndexedEnumDefinition.Model,
-            contextTransformer = contextTransformer,
         ) {
             override fun writeJson(
                 values: ObjectValues<IndexedEnumDefinition<IndexedEnum>, Model>,

@@ -1,7 +1,7 @@
 package maryk.core.inject
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.ContextualDataModel
+import maryk.core.models.AbstractObjectDataModel
 import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -69,9 +69,8 @@ data class Inject<T : Any, D : IsPropertyDefinition<T>>(
             propertyReference = values(2u)
         )
 
-        override val Model: ContextualDataModel<AnyInject, Companion, RequestContext, InjectionContext> = object : ContextualDataModel<AnyInject, Companion, RequestContext, InjectionContext>(
+        override val Model = object : AbstractObjectDataModel<AnyInject, Companion, RequestContext, InjectionContext>(
             properties = Companion,
-            contextTransformer = contextTransformer
         ) {
             override fun writeJson(obj: AnyInject, writer: IsJsonLikeWriter, context: InjectionContext?) {
                 if (obj.propertyReference != null) {

@@ -2,7 +2,6 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsNamedDataModel
 import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.ContextualModel
@@ -80,7 +79,7 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsSimpleBaseModel<DO, CXI, CX>, CX
     override fun writeJsonValue(value: DO, writer: IsJsonLikeWriter, context: CXI?) = this.dataModel.Model.writeJson(
         value,
         writer,
-        this.dataModel.Model.transformContext(context)
+        this.dataModel.Serializer.transformContext(context)
     )
 
     override fun calculateTransportByteLength(value: DO, cacher: WriteCacheWriter, context: CXI?) =
@@ -90,13 +89,13 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsSimpleBaseModel<DO, CXI, CX>, CX
             transformContext(context, cacher)
         )
 
-    @Suppress("UNCHECKED_CAST")
     private fun transformContext(context: CXI?, cacher: WriteCacheWriter) =
         if (dataModel is ContextualModel<*, *, *, *>) {
-            (dataModel as ContextualModel<*, *, CXI, CX>).Serializer.transformContext(context)?.apply {
+            dataModel.Serializer.transformContext(context)?.apply {
                 cacher.addContextToCache(this)
             }
         } else {
+            @Suppress("UNCHECKED_CAST")
             context as CX?
         }
 
@@ -117,7 +116,7 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsSimpleBaseModel<DO, CXI, CX>, CX
 
     @Suppress("UNCHECKED_CAST")
     private fun getTransformedContextFromCache(cacheGetter: WriteCacheReader, context: CXI?) =
-        if (dataModel.Model is ContextualDataModel<*, *, *, *>) {
+        if (dataModel is ContextualModel<*, *, *, *>) {
             cacheGetter.nextContextFromCache() as CX?
         } else {
             context as CX?

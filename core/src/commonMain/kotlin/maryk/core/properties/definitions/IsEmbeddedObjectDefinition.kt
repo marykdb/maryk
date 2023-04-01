@@ -18,7 +18,7 @@ interface IsEmbeddedObjectDefinition<DO : Any, out DM : IsSimpleBaseModel<DO, CX
 
     /** Read JSON into ObjectValues */
     fun readJsonToValues(reader: IsJsonLikeReader, context: CXI?): ObjectValues<DO, out IsObjectPropertyDefinitions<DO>> =
-        this.dataModel.Model.readJson(reader, this.dataModel.Model.transformContext(context))
+        this.dataModel.Model.readJson(reader, this.dataModel.Serializer.transformContext(context))
 
     override fun readJson(reader: IsJsonLikeReader, context: CXI?) =
         this.readJsonToValues(reader, context).toDataObject()

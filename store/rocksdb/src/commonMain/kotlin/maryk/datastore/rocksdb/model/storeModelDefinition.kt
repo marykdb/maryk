@@ -16,10 +16,10 @@ fun storeModelDefinition(
 
     val context = DefinitionsConversionContext()
     val cache = WriteCache()
-    val modelByteSize = RootDataModel.Model.Model.calculateProtoBufLength(dataModel, cache, context)
+    val modelByteSize = RootDataModel.Model.Serializer.calculateObjectProtoBufLength(dataModel, cache, context)
     val bytes = ByteArray(modelByteSize)
     var writeIndex = 0
-    RootDataModel.Model.Model.writeProtoBuf(dataModel, cache, { bytes[writeIndex++] = it }, context)
+    RootDataModel.Model.Serializer.writeObjectProtoBuf(dataModel, cache, { bytes[writeIndex++] = it }, context)
 
     rocksDB.put(modelColumnFamily, modelDefinitionKey, bytes)
 }

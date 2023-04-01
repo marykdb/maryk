@@ -3,7 +3,7 @@ package maryk.core.properties
 import maryk.core.models.ObjectDataModel
 import kotlin.reflect.KClass
 
-interface IsObjectModel<DO: Any, P: IsObjectPropertyDefinitions<DO>>: IsBaseModel<DO, P, IsPropertyContext, IsPropertyContext>, IsTypedObjectPropertyDefinitions<DO, P>, IsSerializableModel {
+interface IsObjectModel<DO: Any, P: IsObjectPropertyDefinitions<DO>>: IsBaseModel<DO, P, IsPropertyContext, IsPropertyContext>, IsTypedObjectPropertyDefinitions<DO, P, IsPropertyContext>, IsSerializableModel {
     override val Model: ObjectDataModel<DO, P>
 }
 

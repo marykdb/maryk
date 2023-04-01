@@ -1,6 +1,8 @@
 package maryk.core.properties.definitions.contextual
 
 import maryk.core.models.SimpleObjectDataModel
+import maryk.core.models.serializers.IsDataModelSerializer
+import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsContextualEncodable
@@ -8,6 +10,7 @@ import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonReader
@@ -40,22 +43,25 @@ data class ContextualEmbeddedObjectDefinition<CX : IsPropertyContext>(
     override fun readJson(reader: IsJsonLikeReader, context: CX?) =
         contextualResolver(Unit, context).readJson(reader, context).toDataObject()
 
+    @Suppress("UNCHECKED_CAST")
     override fun calculateTransportByteLength(value: Any, cacher: WriteCacheWriter, context: CX?) =
-        contextualResolver(Unit, context).calculateProtoBufLength(value, cacher, context)
+        (contextualResolver(Unit, context).properties.Serializer as ObjectDataModelSerializer<Any, *, CX, CX>).calculateObjectProtoBufLength(value, cacher, context)
 
+    @Suppress("UNCHECKED_CAST")
     override fun writeTransportBytes(
         value: Any,
         cacheGetter: WriteCacheReader,
         writer: (byte: Byte) -> Unit,
         context: CX?
     ) =
-        contextualResolver(Unit, context).writeProtoBuf(value, cacheGetter, writer, context)
+        (contextualResolver(Unit, context).properties.Serializer as ObjectDataModelSerializer<Any, *, CX, CX>).writeObjectProtoBuf(value, cacheGetter, writer, context)
 
+    @Suppress("UNCHECKED_CAST")
     override fun readTransportBytes(
         length: Int,
         reader: () -> Byte,
         context: CX?,
         earlierValue: Any?
     ) =
-        contextualResolver(Unit, context).readProtoBuf(length, reader, context).toDataObject()
+        (contextualResolver(Unit, context).properties.Serializer as IsDataModelSerializer<ObjectValues<Any, *>, *, CX>).readProtoBuf(length, reader, context).toDataObject()
 }

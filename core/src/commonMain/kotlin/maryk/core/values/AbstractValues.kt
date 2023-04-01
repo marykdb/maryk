@@ -135,11 +135,12 @@ abstract class AbstractValues<DO : Any, DM : IsTypedPropertyDefinitions<DO>> : I
         (this.values as IsValueItemsImpl).list[index]
 
     /** Get the original value by [index] */
-    fun original(index: UInt) = this.values[index]
+    override fun original(index: UInt) = this.values[index]
 
     override fun toString(): String {
-        val name = if (dataModel is IsNamedDataModel<*>) {
-            (dataModel as IsNamedDataModel<*>).name
+        val model = dataModel.Model
+        val name = if (model is IsNamedDataModel<*>) {
+            model.name
         } else "ObjectValues"
 
         return "$name $values"

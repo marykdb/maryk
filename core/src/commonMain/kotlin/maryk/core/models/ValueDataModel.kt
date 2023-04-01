@@ -59,7 +59,7 @@ abstract class ValueDataModel<DO : ValueDataObject, P : IsObjectPropertyDefiniti
             values[it.index] = def.readStorageBytes(def.byteSize, reader)
         }
         @Suppress("UNCHECKED_CAST")
-        return (this.properties as IsTypedObjectPropertyDefinitions<DO, P>)(this.properties.values { values })
+        return (this.properties as IsTypedObjectPropertyDefinitions<DO, P, IsPropertyContext>)(this.properties.values { values })
     }
 
     override fun getValueWithDefinition(
@@ -114,7 +114,7 @@ abstract class ValueDataModel<DO : ValueDataObject, P : IsObjectPropertyDefiniti
             name = values(1u),
             properties = values(2u)
         ) {}.apply {
-            (properties as MutableValueModel<*>)._model = this
+            (properties as MutableValueModel<ValueDataObject>)._model = this
         }
 
         override val Model = object : DefinitionDataModel<AnyValueDataModel>(

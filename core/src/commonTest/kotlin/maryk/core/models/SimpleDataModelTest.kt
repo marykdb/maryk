@@ -96,10 +96,10 @@ internal class SimpleDataModelTest {
         }
 
         bc.reserve(
-            SimpleMarykModel.Model.calculateProtoBufLength(map, cache)
+            SimpleMarykModel.Serializer.calculateProtoBufLength(map, cache)
         )
 
-        SimpleMarykModel.Model.writeProtoBuf(map, cache, bc::write)
+        SimpleMarykModel.Serializer.writeProtoBuf(map, cache, bc::write)
 
         expect("0a03686179") { bc.bytes!!.toHex() }
     }
@@ -109,7 +109,7 @@ internal class SimpleDataModelTest {
         val bytes = initByteArrayByHex("0a036861790008102019400c70a3d70a3d7220ccf794d105280130026a09010501050105010501")
         var index = 0
 
-        val map = SimpleMarykModel.Model.readProtoBuf(bytes.size, {
+        val map = SimpleMarykModel.Serializer.readProtoBuf(bytes.size, {
             bytes[index++]
         })
 
@@ -123,14 +123,14 @@ internal class SimpleDataModelTest {
         val cache = WriteCache()
 
         bc.reserve(
-            SimpleMarykModel.Model.calculateProtoBufLength(testValues, cache)
+            SimpleMarykModel.Serializer.calculateProtoBufLength(testValues, cache)
         )
 
-        SimpleMarykModel.Model.writeProtoBuf(testValues, cache, bc::write)
+        SimpleMarykModel.Serializer.writeProtoBuf(testValues, cache, bc::write)
 
         expect("0a0468616173") { bc.bytes!!.toHex() }
 
-        expect(testValues) { SimpleMarykModel.Model.readProtoBuf(bc.size, bc::read) }
+        expect(testValues) { SimpleMarykModel.Serializer.readProtoBuf(bc.size, bc::read) }
     }
 
     @Test

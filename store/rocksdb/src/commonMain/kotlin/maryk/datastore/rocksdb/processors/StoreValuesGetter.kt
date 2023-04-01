@@ -4,8 +4,8 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.values.IsValuesGetter
 import maryk.datastore.rocksdb.TableColumnFamilies
-import maryk.datastore.rocksdb.processors.helpers.convertToValue
 import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
+import maryk.datastore.rocksdb.processors.helpers.convertToValue
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
 import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.RocksDB
@@ -32,7 +32,6 @@ internal class StoreValuesGetter(
 
     override fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(propertyReference: IsPropertyReference<T, D, C>): T? {
         key?.let { currentKey ->
-            @Suppress("UNCHECKED_CAST")
             val valueAsBytes = cache.getOrPut(propertyReference) {
                 val reference = byteArrayOf(*currentKey, *propertyReference.toStorageByteArray())
 

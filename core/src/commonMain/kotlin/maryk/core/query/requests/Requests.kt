@@ -3,6 +3,7 @@ package maryk.core.query.requests
 import maryk.core.definitions.Operation.Request
 import maryk.core.inject.InjectWithReference
 import maryk.core.models.SingleTypedValueDataModel
+import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
@@ -74,11 +75,7 @@ data class Requests internal constructor(
             injectables = values(2u)
         )
 
-        @Suppress("UNCHECKED_CAST")
-        override val Model = object: SingleTypedValueDataModel<TypedValue<RequestType, Any>, Requests, Companion, RequestContext>(
-            properties = this@Companion,
-            singlePropertyDefinitionGetter = { requests as IsDefinitionWrapper<TypedValue<RequestType, Any>, TypedValue<RequestType, Any>, RequestContext, Requests> }
-        ) {
+        override val Serializer = object: ObjectDataModelSerializer<Requests, Companion, RequestContext, RequestContext>(this) {
             override fun protoBufLengthToAddForField(
                 value: Any?,
                 definition: IsDefinitionWrapper<Any, Any, IsPropertyContext, Requests>,
@@ -100,15 +97,28 @@ data class Requests internal constructor(
                 super.writeProtoBufField(valueToPass, definition, cacheGetter, writer, context)
             }
 
-            /** Inject injectables if it is found on context */
-            private fun injectValues(
-                definition: IsDefinitionWrapper<Any, Any, IsPropertyContext, Requests>,
+            override fun createValues(
                 context: RequestContext?,
-                value: Any?
-            ) = if (definition == injectables && context != null) {
-                context.collectedInjects
-            } else value
+                items: IsValueItems
+            ): ObjectValues<Requests, Companion> {
+                val map = super.createValues(context, items)
 
+                @Suppress("UNCHECKED_CAST")
+                val injectables = map.remove(injectables.index) as? List<InjectWithReference>?
+
+                injectables?.forEach {
+                    it.injectInValues(map)
+                }
+
+                return map
+            }
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        override val Model = object: SingleTypedValueDataModel<TypedValue<RequestType, Any>, Requests, Companion, RequestContext>(
+            properties = this@Companion,
+            singlePropertyDefinitionGetter = { requests as IsDefinitionWrapper<TypedValue<RequestType, Any>, TypedValue<RequestType, Any>, RequestContext, Requests> }
+        ) {
             override fun createValues(
                 context: RequestContext?,
                 items: IsValueItems
@@ -124,5 +134,13 @@ data class Requests internal constructor(
                 return map
             }
         }
+        /** Inject injectables if it is found on context */
+        private fun injectValues(
+            definition: IsDefinitionWrapper<Any, Any, IsPropertyContext, Requests>,
+            context: RequestContext?,
+            value: Any?
+        ) = if (definition == injectables && context != null) {
+            context.collectedInjects
+        } else value
     }
 }

@@ -1,6 +1,7 @@
 package maryk.core.properties
 
 import maryk.core.models.AbstractObjectDataModel
+import maryk.core.models.serializers.IsDataModelSerializer
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -14,7 +15,9 @@ import maryk.core.values.IsValueItems
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
 
-interface IsTypedObjectPropertyDefinitions<DO: Any, P: IsObjectPropertyDefinitions<DO>>: IsObjectPropertyDefinitions<DO> {
+interface IsTypedObjectPropertyDefinitions<DO: Any, P: IsObjectPropertyDefinitions<DO>, CX: IsPropertyContext>: IsObjectPropertyDefinitions<DO> {
+    override val Serializer : IsDataModelSerializer<ObjectValues<DO, P>, P, CX>
+
     operator fun invoke(values: ObjectValues<DO, P>): DO
 }
 

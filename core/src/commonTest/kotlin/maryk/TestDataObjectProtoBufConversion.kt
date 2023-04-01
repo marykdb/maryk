@@ -1,6 +1,7 @@
 package maryk
 
 import maryk.core.models.AbstractObjectDataModel
+import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.IsBaseModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -9,7 +10,7 @@ import maryk.core.values.ObjectValues
 import maryk.test.ByteCollector
 import kotlin.test.assertEquals
 
-/** Convert dataObject with a object DataModel */
+/** Convert dataObject with an object DataModel */
 fun <DO : Any, P : ObjectPropertyDefinitions<DO>, CXI : IsPropertyContext, CX : IsPropertyContext> checkProtoBufConversion(
     value: DO,
     dataModel: IsBaseModel<DO, P, CXI, CX>,
@@ -22,15 +23,18 @@ fun <DO : Any, P : ObjectPropertyDefinitions<DO>, CXI : IsPropertyContext, CX : 
     val bc = ByteCollector()
     val cache = WriteCache()
 
-    val byteLength = dataModel.Model.calculateProtoBufLength(value, cache, newContext)
+    @Suppress("UNCHECKED_CAST")
+    val serializer = dataModel.Serializer as ObjectDataModelSerializer<DO, P, CXI, CX>
+
+    val byteLength = serializer.calculateObjectProtoBufLength(value, cache, newContext)
     bc.reserve(byteLength)
-    dataModel.Model.writeProtoBuf(value, cache, bc::write, newContext)
+    serializer.writeObjectProtoBuf(value, cache, bc::write, newContext)
 
     if (resetContextBeforeRead) {
         newContext = dataModel.Model.transformContext(context?.invoke())
     }
 
-    val converted = dataModel.Model.readProtoBuf(byteLength, bc::read, newContext).toDataObject()
+    val converted = serializer.readProtoBuf(byteLength, bc::read, newContext).toDataObject()
 
     checker(converted, value)
 }
@@ -48,15 +52,18 @@ fun <DO : Any, P : ObjectPropertyDefinitions<DO>, CX : IsPropertyContext> checkP
 
     var newContext = context?.invoke()
 
-    val byteLength = dataModel.calculateProtoBufLength(values, cache, newContext)
+    @Suppress("UNCHECKED_CAST")
+    val serializer = dataModel.properties.Serializer as ObjectDataModelSerializer<DO, P, CX, CX>
+
+    val byteLength = serializer.calculateProtoBufLength(values, cache, newContext)
     bc.reserve(byteLength)
-    dataModel.writeProtoBuf(values, cache, bc::write, newContext)
+    serializer.writeProtoBuf(values, cache, bc::write, newContext)
 
     if (resetContextBeforeRead) {
         newContext = context?.invoke()
     }
 
-    val converted = dataModel.readProtoBuf(byteLength, bc::read, newContext)
+    val converted = serializer.readProtoBuf(byteLength, bc::read, newContext)
 
     checker(converted, values)
 }

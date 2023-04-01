@@ -2,6 +2,7 @@ package maryk.core.properties
 
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsValuesDataModel
+import maryk.core.models.serializers.DataModelSerializer
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -11,6 +12,7 @@ import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DefinitionsConversionContext
+import maryk.core.values.Values
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken.EndObject
@@ -23,10 +25,12 @@ import maryk.yaml.YamlWriter
 abstract class PropertyDefinitions : AbstractPropertyDefinitions<Any>(), IsValuesPropertyDefinitions
 
 internal class MutableRootModel : MutablePropertyDefinitions(), IsRootModel {
+    override val Serializer = DataModelSerializer<Any, Values<MutableRootModel>, MutableRootModel, IsPropertyContext>(this)
     override val Model: IsRootDataModel<out IsValuesPropertyDefinitions> get() = super.Model as IsRootDataModel<out IsValuesPropertyDefinitions>
 }
 
 internal class MutableModel : MutablePropertyDefinitions(), IsRootModel {
+    override val Serializer = DataModelSerializer<Any, Values<MutableModel>, MutableModel, IsPropertyContext>(this)
     override val Model: IsRootDataModel<out IsValuesPropertyDefinitions> get() = super.Model as IsRootDataModel<out IsValuesPropertyDefinitions>
 }
 

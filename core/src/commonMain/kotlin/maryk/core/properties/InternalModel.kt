@@ -1,6 +1,7 @@
 package maryk.core.properties
 
 import maryk.core.models.AbstractObjectDataModel
+import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.IsPropertyReference
@@ -10,7 +11,7 @@ import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
 import maryk.core.values.ValueItem
 
-interface IsInternalModel<DO: Any, P: IsObjectPropertyDefinitions<DO>, in CXI : IsPropertyContext, CX : IsPropertyContext>: IsBaseModel<DO, P, CXI, CX>, IsTypedObjectPropertyDefinitions<DO, P> {
+interface IsInternalModel<DO: Any, P: IsObjectPropertyDefinitions<DO>, in CXI : IsPropertyContext, CX : IsPropertyContext>: IsBaseModel<DO, P, CXI, CX>, IsTypedObjectPropertyDefinitions<DO, P, CX> {
     override val Model: AbstractObjectDataModel<DO, P, CXI, CX>
 }
 
@@ -20,6 +21,9 @@ internal typealias QueryModel<DO, P> = InternalModel<DO, P, RequestContext, Requ
 internal typealias SimpleQueryModel<DO> = InternalModel<DO, ObjectPropertyDefinitions<DO>, RequestContext, RequestContext>
 
 abstract class InternalModel<DO: Any, P: IsObjectPropertyDefinitions<DO>, CXI : IsPropertyContext, CX : IsPropertyContext>: ObjectPropertyDefinitions<DO>(), IsInternalModel<DO, P, CXI, CX> {
+    @Suppress("UNCHECKED_CAST", "LeakingThis")
+    override val Serializer = ObjectDataModelSerializer<DO, P, CXI, CX>(this as P)
+
     abstract override operator fun invoke(values: ObjectValues<DO, P>): DO
 
     @Suppress("UNCHECKED_CAST")
@@ -47,7 +51,7 @@ abstract class InternalModel<DO: Any, P: IsObjectPropertyDefinitions<DO>, CXI : 
         context,
     )
 
-    @Suppress("UNCHECKED_CAST")
+    @Suppress("UNCHECKED_CAST", "LeakingThis")
     override val Model = object: AbstractObjectDataModel<DO, P, CXI, CX>(
         properties = this@InternalModel as P,
     ) {}

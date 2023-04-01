@@ -4,8 +4,6 @@ import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
-import maryk.core.protobuf.WriteCacheReader
-import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
@@ -55,44 +53,6 @@ abstract class AbstractObjectDataModel<DO : Any, P : IsObjectPropertyDefinitions
             writeJsonValue(definition, writer, value, context)
         }
         writer.writeEndObject()
-    }
-
-    /**
-     * Calculates the byte length for [dataObject]
-     * The [cacher] caches any values needed to write later.
-     * Optionally pass a [context] to write more complex properties which depend on other properties
-     */
-    fun calculateProtoBufLength(dataObject: DO, cacher: WriteCacheWriter, context: CX? = null): Int {
-        var totalByteLength = 0
-        for (definition in this.properties) {
-            val value = getValueWithDefinition(definition, dataObject, context)
-
-            totalByteLength += protoBufLengthToAddForField(value, definition, cacher, context)
-        }
-
-        if (context is RequestContext && this.properties.isNotEmpty()) {
-            context.closeInjectLevel(this)
-        }
-
-        return totalByteLength
-    }
-
-    /**
-     * Write a ProtoBuf from a [dataObject] to [writer] and get
-     * possible cached values from [cacheGetter]
-     * Optionally pass a [context] to write more complex properties which depend on other properties
-     */
-    fun writeProtoBuf(
-        dataObject: DO,
-        cacheGetter: WriteCacheReader,
-        writer: (byte: Byte) -> Unit,
-        context: CX? = null
-    ) {
-        for (definition in this.properties) {
-            val value = getValueWithDefinition(definition, dataObject, context)
-
-            this.writeProtoBufField(value, definition, cacheGetter, writer, context)
-        }
     }
 
     internal open fun getValueWithDefinition(

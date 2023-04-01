@@ -1,6 +1,7 @@
 package maryk.core.properties
 
 import maryk.core.models.IsValuesDataModel
+import maryk.core.models.serializers.DataModelSerializer
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
@@ -23,6 +24,8 @@ interface IsTypedValuePropertyDefinitions<DM: IsValuesDataModel<P>, P: IsValuesP
 
 abstract class TypedPropertyDefinitions<DM: IsValuesDataModel<P>, P: IsValuesPropertyDefinitions> : PropertyDefinitions(), IsTypedValuePropertyDefinitions<DM, P> {
     abstract override val Model : DM
+    @Suppress("UNCHECKED_CAST", "LeakingThis")
+    override val Serializer = DataModelSerializer<Any, Values<P>, P, IsPropertyContext>(this as P)
 
     /**
      * Create a new [Values] object with [pairs] and set defaults if [setDefaults] is true

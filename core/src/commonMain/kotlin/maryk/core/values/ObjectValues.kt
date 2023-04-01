@@ -21,7 +21,7 @@ data class ObjectValues<DO : Any, DM : IsObjectPropertyDefinitions<DO>> internal
      * Will throw exception if values is missing values for a complete DataObject
      */
     @Suppress("UNCHECKED_CAST")
-    fun toDataObject() = (this.dataModel as IsTypedObjectPropertyDefinitions<DO, DM>).invoke(this)
+    fun toDataObject() = (this.dataModel as IsTypedObjectPropertyDefinitions<DO, DM, *>).invoke(this)
 
     // ignore context
     override fun equals(other: Any?) = when {

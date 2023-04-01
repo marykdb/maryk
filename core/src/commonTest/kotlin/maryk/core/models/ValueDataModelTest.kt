@@ -4,6 +4,9 @@ import kotlinx.datetime.LocalDateTime
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
+import maryk.core.models.serializers.ObjectDataModelSerializer
+import maryk.core.properties.IsObjectPropertyDefinitions
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.properties.values
@@ -46,10 +49,13 @@ internal class ValueDataModelTest {
                 val bc = ByteCollector()
                 val cache = WriteCache()
 
-                val byteLength = convertedValueModel.calculateProtoBufLength(value, cache, context)
+                @Suppress("UNCHECKED_CAST")
+                val serializer = convertedValueModel.properties.Serializer as ObjectDataModelSerializer<ValueDataObject, IsObjectPropertyDefinitions<ValueDataObject>, IsPropertyContext, IsPropertyContext>
+
+                val byteLength = serializer.calculateObjectProtoBufLength(value, cache, context)
                 bc.reserve(byteLength)
-                convertedValueModel.writeProtoBuf(value, cache, bc::write, context)
-                val convertedValue = convertedValueModel.readProtoBuf(byteLength, bc::read, context).toDataObject()
+                serializer.writeObjectProtoBuf(value, cache, bc::write, context)
+                val convertedValue = serializer.readProtoBuf(byteLength, bc::read, context).toDataObject()
 
                 assertEquals(value, convertedValue)
             }

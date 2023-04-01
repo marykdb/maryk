@@ -295,16 +295,16 @@ internal class ObjectDataModelTest {
         val cache = WriteCache()
 
         bc.reserve(
-            TestMarykObject.Model.calculateProtoBufLength(testExtendedObject, cache)
+            TestMarykObject.Serializer.calculateObjectProtoBufLength(testExtendedObject, cache)
         )
 
-        TestMarykObject.Model.writeProtoBuf(testExtendedObject, cache, bc::write)
+        TestMarykObject.Serializer.writeObjectProtoBuf(testExtendedObject, cache, bc::write)
 
         expect("0a036861791008182021713d0ad7a3700c4028ccf794d10530013801420744e024be35fc0b4a08c29102bc87028844520908a4eb021203796573520a08d49a0212046168756d5a0e800000060180000058dfa324010162060a04746573746a0f1a0d0a0b737562496e4d756c7469217a0574657374317a0c616e6f7468657220746573747a04f09fa497") {
             bc.bytes!!.toHex()
         }
 
-        expect(testExtendedObject) { TestMarykObject.Model.readProtoBuf(bc.size, bc::read).toDataObject() }
+        expect(testExtendedObject) { TestMarykObject.Serializer.readProtoBuf(bc.size, bc::read).toDataObject() }
     }
 
     @Test
@@ -313,7 +313,7 @@ internal class ObjectDataModelTest {
             initByteArrayByHex("930408161205ffffffffff9404a20603686179a80608b00620b906400c70a3d70a3d72c80601d006028a07020105")
         var index = 0
 
-        val map = TestMarykObject.Model.readProtoBuf(bytes.size, {
+        val map = TestMarykObject.Serializer.readProtoBuf(bytes.size, {
             bytes[index++]
         })
 

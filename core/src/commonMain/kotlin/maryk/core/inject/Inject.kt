@@ -2,7 +2,7 @@ package maryk.core.inject
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
-import maryk.core.properties.InternalModel
+import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
@@ -20,7 +20,6 @@ import maryk.lib.exceptions.ParseException
 
 typealias AnyInject = Inject<*, *>
 
-@Suppress("FunctionName")
 fun Inject(collectionName: String) = Inject<Any, IsPropertyDefinition<Any>>(collectionName, null)
 
 /**
@@ -41,7 +40,13 @@ data class Inject<T : Any, D : IsPropertyDefinition<T>>(
         } ?: result as T?
     }
 
-    internal companion object : InternalModel<AnyInject, Companion, RequestContext, InjectionContext>() {
+    internal companion object : ContextualModel<AnyInject, Companion, RequestContext, InjectionContext>(
+        contextTransformer = { requestContext ->
+            InjectionContext(
+                requestContext ?: throw ContextNotFoundException()
+            )
+        }
+    ) {
         val collectionName by string(
             1u,
             getter = Inject<*, *>::collectionName,
@@ -66,11 +71,7 @@ data class Inject<T : Any, D : IsPropertyDefinition<T>>(
 
         override val Model: ContextualDataModel<AnyInject, Companion, RequestContext, InjectionContext> = object : ContextualDataModel<AnyInject, Companion, RequestContext, InjectionContext>(
             properties = Companion,
-            contextTransformer = { requestContext ->
-                InjectionContext(
-                    requestContext ?: throw ContextNotFoundException()
-                )
-            }
+            contextTransformer = contextTransformer
         ) {
             override fun writeJson(obj: AnyInject, writer: IsJsonLikeWriter, context: InjectionContext?) {
                 if (obj.propertyReference != null) {

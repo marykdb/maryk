@@ -31,7 +31,7 @@ abstract class AbstractPropertyDefinitions<DO : Any> : IsTypedPropertyDefinition
     }
 
     // Implementation of Collection
-    override val size = _allProperties.size
+    override val size get() = _allProperties.size
 
     override fun contains(element: IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>) =
         this._allProperties.contains(element)

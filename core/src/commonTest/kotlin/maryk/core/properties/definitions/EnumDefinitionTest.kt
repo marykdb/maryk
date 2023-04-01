@@ -167,7 +167,7 @@ internal class EnumDefinitionTest {
             }
         }
         @Suppress("UNCHECKED_CAST")
-        val context = EnumDefinition.Model.Model.transformContext(
+        val context = EnumDefinition.Model.Serializer.transformContext(
             DefinitionsContext(
                 enums = mutableMapOf(
                     "Option" to Option as IndexedEnumDefinition<IndexedEnum>

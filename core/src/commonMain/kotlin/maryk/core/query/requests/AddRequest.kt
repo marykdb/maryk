@@ -34,7 +34,7 @@ data class AddRequest<DM : IsRootModel> internal constructor(
             valueDefinition = ContextualEmbeddedValuesDefinition<RequestContext>(
                 contextualResolver = {
                     @Suppress("UNCHECKED_CAST")
-                    it?.dataModel?.Model as? SimpleValuesDataModel<in IsValuesPropertyDefinitions> ?: throw ContextNotFoundException()
+                    it?.dataModel?.Model as? SimpleValuesDataModel<IsValuesPropertyDefinitions> ?: throw ContextNotFoundException()
                 }
             )
         )

@@ -2,6 +2,7 @@ package maryk.core.properties
 
 import maryk.core.models.IsDataModel
 import maryk.core.models.ValueDataModel
+import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsContextualEncodable
@@ -45,13 +46,7 @@ abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions
     }
 }
 
-/** Mutable variant of ObjectPropertyDefinitions for a IsCollectionDefinition implementation */
-internal open class MutableObjectPropertyDefinitions<DO: Any> : ObjectPropertyDefinitions<DO>(), IsMutablePropertyDefinitions<IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>> {
-    internal open var _model: IsDataModel<*>? = null
-
-    override val Model: IsDataModel<*>
-        get() = _model ?: throw Exception("No Model yet set, likely DataModel was not initialized yet")
-
+internal abstract class BaseMutableObjectPropertyDefinitions<DO: Any> : ObjectPropertyDefinitions<DO>(), IsMutablePropertyDefinitions<IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>> {
     override fun add(element: IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>): Boolean {
         this.addSingle(propertyDefinitionWrapper = element)
         return true
@@ -70,7 +65,10 @@ internal open class MutableObjectPropertyDefinitions<DO: Any> : ObjectPropertyDe
     override fun retainAll(elements: Collection<IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>>) = false
 }
 
-internal class MutableValueModel<DO: ValueDataObject>: MutableObjectPropertyDefinitions<DO>(), IsValueModel<DO, MutableValueModel<DO>> {
+internal class MutableValueModel<DO: ValueDataObject>: BaseMutableObjectPropertyDefinitions<DO>(), IsValueModel<DO, MutableValueModel<DO>> {
+    internal var _model: IsDataModel<*>? = null
+    override val Serializer = ObjectDataModelSerializer<DO, MutableValueModel<DO>, IsPropertyContext, IsPropertyContext>(this)
+
     @Suppress("UNCHECKED_CAST")
     override val Model get() = _model as? ValueDataModel<DO, MutableValueModel<DO>>
         ?: throw Exception("No Model yet set, likely DataModel was not initialized yet")
@@ -117,7 +115,7 @@ internal data class ObjectPropertyDefinitionsCollectionDefinition(
     override fun newMutableCollection(context: DefinitionsConversionContext?) =
         MutableValueModel<ValueDataObject>().apply {
             capturer(Unit, context, this as IsObjectPropertyDefinitions<Any>)
-        } as MutableObjectPropertyDefinitions<Any>
+        } as BaseMutableObjectPropertyDefinitions<Any>
 
     /**
      * Overridden to render definitions list in YAML as objects

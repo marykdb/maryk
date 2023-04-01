@@ -5,6 +5,7 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsNamedDataModel
 import maryk.core.models.SimpleObjectDataModel
+import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsBaseModel
 import maryk.core.properties.IsObjectPropertyDefinitions
@@ -83,16 +84,18 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsSimpleBaseModel<DO, CXI, CX>, CX
         this.dataModel.Model.transformContext(context)
     )
 
+    @Suppress("UNCHECKED_CAST")
     override fun calculateTransportByteLength(value: DO, cacher: WriteCacheWriter, context: CXI?) =
-        this.dataModel.Model.calculateProtoBufLength(
+        (this.dataModel.Serializer as ObjectDataModelSerializer<DO, DM, CXI, CX>).calculateObjectProtoBufLength(
             value,
             cacher,
             transformContext(context, cacher)
         )
 
     private fun transformContext(context: CXI?, cacher: WriteCacheWriter) =
-        if (dataModel.Model is ContextualDataModel<*, *, *, *>) {
-            dataModel.Model.transformContext(context)?.apply {
+        if (dataModel is ContextualModel<*, *, *, *>) {
+            @Suppress("UNCHECKED_CAST")
+            (dataModel as ContextualModel<*, *, CXI, CX>).Serializer.transformContext(context)?.apply {
                 cacher.addContextToCache(this)
             }
         } else {
@@ -106,7 +109,8 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsSimpleBaseModel<DO, CXI, CX>, CX
         writer: (byte: Byte) -> Unit,
         context: CXI?
     ) {
-        this.dataModel.Model.writeProtoBuf(
+        @Suppress("UNCHECKED_CAST")
+        (this.dataModel.Serializer as ObjectDataModelSerializer<DO, DM, CXI, CX>).writeObjectProtoBuf(
             value,
             cacheGetter,
             writer,

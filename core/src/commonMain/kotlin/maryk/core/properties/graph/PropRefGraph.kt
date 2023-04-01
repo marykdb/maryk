@@ -3,7 +3,7 @@ package maryk.core.properties.graph
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
-import maryk.core.properties.InternalModel
+import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
@@ -57,7 +57,15 @@ data class PropRefGraph<P : IsValuesPropertyDefinitions, PS : IsValuesPropertyDe
 
     override fun toString() = "Graph { ${renderPropsAsString()} }"
 
-    companion object : InternalModel<PropRefGraph<*, *>, Companion, ContainsDataModelContext<*>, GraphContext>() {
+    companion object : ContextualModel<PropRefGraph<*, *>, Companion, ContainsDataModelContext<*>, GraphContext>(
+        contextTransformer = {
+            if (it is GraphContext && it.subDataModel != null) {
+                GraphContext(it.subDataModel)
+            } else {
+                GraphContext(it?.dataModel)
+            }
+        }
+    ) {
         val parent by contextual(
             index = 1u,
             definition = ContextualPropertyReferenceDefinition(
@@ -120,13 +128,7 @@ data class PropRefGraph<P : IsValuesPropertyDefinitions, PS : IsValuesPropertyDe
 
         override val Model = object : ContextualDataModel<PropRefGraph<*, *>, Companion, ContainsDataModelContext<*>, GraphContext>(
             properties = Companion,
-            contextTransformer = {
-                if (it is GraphContext && it.subDataModel != null) {
-                    GraphContext(it.subDataModel)
-                } else {
-                    GraphContext(it?.dataModel)
-                }
-            }
+            contextTransformer = contextTransformer,
         ) {
             override fun writeJson(obj: PropRefGraph<*, *>, writer: IsJsonLikeWriter, context: GraphContext?) {
                 writeJsonValues(obj.parent.ref(), obj.properties, writer, context)

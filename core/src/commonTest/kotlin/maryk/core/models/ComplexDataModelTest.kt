@@ -106,15 +106,15 @@ internal class ComplexDataModelMapTest {
         val cache = WriteCache()
 
         bc.reserve(
-            ComplexModel.Model.calculateProtoBufLength(testComplexMap, cache)
+            ComplexModel.Serializer.calculateProtoBufLength(testComplexMap, cache)
         )
 
-        ComplexModel.Model.writeProtoBuf(testComplexMap, cache, bc::write)
+        ComplexModel.Serializer.writeProtoBuf(testComplexMap, cache, bc::write)
 
         expect("0a0d1a0b0a02753312050a0375653312070a02763112016112070a0276321201621a08080112040a0274311a08080212040a027432220a080212061a040a026d33") {
             bc.bytes!!.toHex()
         }
 
-        expect(testComplexMap) { ComplexModel.Model.readProtoBuf(bc.size, bc::read) }
+        expect(testComplexMap) { ComplexModel.Serializer.readProtoBuf(bc.size, bc::read) }
     }
 }

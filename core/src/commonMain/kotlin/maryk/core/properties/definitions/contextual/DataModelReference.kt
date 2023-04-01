@@ -24,6 +24,8 @@ class DataModelReference<DM : IsPropertyDefinitions>(
     override fun hashCode(): Int {
         return name.hashCode()
     }
+
+    override fun toString() = "DataModelReference($name)"
 }
 
 /** Lazy reference to a ObjectDataModel */

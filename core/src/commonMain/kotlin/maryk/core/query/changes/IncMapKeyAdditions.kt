@@ -2,6 +2,7 @@ package maryk.core.query.changes
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.QueryDataModel
+import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.SubListDefinition
@@ -64,15 +65,9 @@ data class IncMapKeyAdditions<K : Comparable<K>, V : Any>(
                 addedValues = values(3u)
             )
 
-        override val Model = object : QueryDataModel<IncMapKeyAdditions<out Comparable<Any>, out Any>, Companion>(
-            properties = Companion
+        override val Serializer = object: ObjectDataModelSerializer<IncMapKeyAdditions<out Comparable<Any>, out Any>, Companion, RequestContext, RequestContext>(
+            this
         ) {
-            override fun walkJsonToRead(reader: IsJsonLikeReader, values: MutableValueItems, context: RequestContext?) {
-                super.walkJsonToRead(reader, values, context)
-
-                addAddedValuesFromContext(values, context)
-            }
-
             override fun readProtoBuf(
                 length: Int,
                 reader: () -> Byte,
@@ -81,21 +76,31 @@ data class IncMapKeyAdditions<K : Comparable<K>, V : Any>(
                 super.readProtoBuf(length, reader, context).also {
                     addAddedValuesFromContext(it.values as MutableValueItems, context)
                 }
+        }
 
-            private fun addAddedValuesFromContext(
-                values: MutableValueItems,
-                context: RequestContext?
-            ) {
-                if (values[addedValues.index] == null) {
-                    context?.getCollectedIncMapChanges()?.find { incMapChange ->
-                        val foundValueChange = incMapChange.valueChanges.find {
-                            it.reference == context.reference
-                        }?.also {
-                            values[addedValues.index] = it.addValues ?: emptyList<Any>()
-                        }
+        override val Model = object : QueryDataModel<IncMapKeyAdditions<out Comparable<Any>, out Any>, Companion>(
+            properties = Companion
+        ) {
+            override fun walkJsonToRead(reader: IsJsonLikeReader, values: MutableValueItems, context: RequestContext?) {
+                super.walkJsonToRead(reader, values, context)
 
-                        foundValueChange != null
+                addAddedValuesFromContext(values, context)
+            }
+        }
+
+        private fun addAddedValuesFromContext(
+            values: MutableValueItems,
+            context: RequestContext?
+        ) {
+            if (values[addedValues.index] == null) {
+                context?.getCollectedIncMapChanges()?.find { incMapChange ->
+                    val foundValueChange = incMapChange.valueChanges.find {
+                        it.reference == context.reference
+                    }?.also {
+                        values[addedValues.index] = it.addValues ?: emptyList<Any>()
                     }
+
+                    foundValueChange != null
                 }
             }
         }

@@ -3,6 +3,7 @@ package maryk.core.properties.definitions
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.SimpleValuesDataModel
+import maryk.core.models.serializers.IsDataModelSerializer
 import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsValuesPropertyDefinitions
@@ -92,12 +93,13 @@ class EmbeddedValuesDefinition<DM : IsValuesPropertyDefinitions>(
     override fun readJson(reader: IsJsonLikeReader, context: IsPropertyContext?) =
         this.typedDataModel.readJson(reader, context)
 
+    @Suppress("UNCHECKED_CAST")
     override fun calculateTransportByteLength(
         value: Values<DM>,
         cacher: WriteCacheWriter,
         context: IsPropertyContext?
     ) =
-        this.typedDataModel.calculateProtoBufLength(
+        (this.dataModel.Serializer as IsDataModelSerializer<Values<DM>, DM, IsPropertyContext>).calculateProtoBufLength(
             value,
             cacher,
             context
@@ -109,7 +111,8 @@ class EmbeddedValuesDefinition<DM : IsValuesPropertyDefinitions>(
         writer: (byte: Byte) -> Unit,
         context: IsPropertyContext?
     ) {
-        this.typedDataModel.writeProtoBuf(
+        @Suppress("UNCHECKED_CAST")
+        (this.dataModel.Serializer as IsDataModelSerializer<Values<DM>, DM, IsPropertyContext>).writeProtoBuf(
             value,
             cacheGetter,
             writer,
@@ -117,13 +120,14 @@ class EmbeddedValuesDefinition<DM : IsValuesPropertyDefinitions>(
         )
     }
 
+    @Suppress("UNCHECKED_CAST")
     override fun readTransportBytes(
         length: Int,
         reader: () -> Byte,
         context: IsPropertyContext?,
         earlierValue: Values<DM>?
     ) =
-        this.typedDataModel.readProtoBuf(length, reader, context)
+        (this.dataModel.Serializer as IsDataModelSerializer<Values<DM>, DM, IsPropertyContext>).readProtoBuf(length, reader, context)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

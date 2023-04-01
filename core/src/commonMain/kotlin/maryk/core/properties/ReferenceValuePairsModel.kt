@@ -18,7 +18,7 @@ import maryk.lib.exceptions.ParseException
 abstract class ReferenceValuePairsModel<DO: Any, P: ReferenceValuePairsModel<DO, P, R, T, TO>, R: DefinedByReference<*>, T : Any, TO : Any>(
     pairGetter: (DO) -> List<R>,
     val pairModel: ReferenceValuePairModel<R, *, *, *, out IsDefinitionWrapper<T, TO, RequestContext, R>>,
-): ObjectPropertyDefinitions<DO>(), IsInternalModel<DO, P, RequestContext, RequestContext> {
+): InternalModel<DO, P, RequestContext, RequestContext>() {
     val referenceValuePairs by list(
         index = 1u,
         getter = pairGetter,

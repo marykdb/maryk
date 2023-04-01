@@ -7,7 +7,7 @@ import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.TypedPropertyDefinitions
+import maryk.core.properties.TypedValuesModel
 import maryk.core.properties.definitions.PropertyDefinitionType.Embed
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
@@ -50,7 +50,7 @@ class EmbeddedValuesDefinition<DM : IsValuesPropertyDefinitions>(
 
     @Suppress("UNCHECKED_CAST")
     // internal strong typed version so type system is not in a loop when creating EmbeddedValuesDefinition
-    private val typedDataModel get() = dataModel as TypedPropertyDefinitions<IsValuesDataModel<DM>, DM>
+    private val typedDataModel get() = dataModel as TypedValuesModel<IsValuesDataModel<DM>, DM>
 
     override fun asString(value: Values<DM>, context: IsPropertyContext?): String {
         var string = ""
@@ -190,7 +190,7 @@ class EmbeddedValuesDefinition<DM : IsValuesPropertyDefinitions>(
             index = 4u,
             getter = EmbeddedValuesDefinition<*>::default,
             contextualResolver = { context: ModelContext? ->
-                context?.model?.invoke(Unit) as? TypedPropertyDefinitions<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>
+                context?.model?.invoke(Unit) as? TypedValuesModel<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>
                     ?: throw ContextNotFoundException()
             }
         )

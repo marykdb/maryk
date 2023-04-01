@@ -17,5 +17,5 @@ internal fun <DM: IsValuesPropertyDefinitions> DM.validate(
     refGetter: () -> IsPropertyReference<Values<DM>, IsPropertyDefinition<Values<DM>>, *>? = { null },
 ) {
     @Suppress("UNCHECKED_CAST")
-    (this as IsTypedValuePropertyDefinitions<*, DM>).validate(values, refGetter)
+    (this as IsTypedValuesModel<*, DM>).validate(values, refGetter)
 }

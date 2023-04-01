@@ -11,7 +11,7 @@ import maryk.core.values.MutableValueItems
 import maryk.core.values.ValueItem
 import maryk.core.values.Values
 
-interface IsTypedValuePropertyDefinitions<DM: IsValuesDataModel<P>, P: IsValuesPropertyDefinitions>: IsValuesPropertyDefinitions {
+interface IsTypedValuesModel<DM: IsValuesDataModel<P>, P: IsValuesPropertyDefinitions>: IsValuesPropertyDefinitions {
     /**
      * Validate a [map] with values and get reference from [refGetter] if exception needs to be thrown
      * @throws ValidationUmbrellaException if input was invalid
@@ -22,7 +22,7 @@ interface IsTypedValuePropertyDefinitions<DM: IsValuesDataModel<P>, P: IsValuesP
     )
 }
 
-abstract class TypedPropertyDefinitions<DM: IsValuesDataModel<P>, P: IsValuesPropertyDefinitions> : PropertyDefinitions(), IsTypedValuePropertyDefinitions<DM, P> {
+abstract class TypedValuesModel<DM: IsValuesDataModel<P>, P: IsValuesPropertyDefinitions> : PropertyDefinitions(), IsTypedValuesModel<DM, P> {
     abstract override val Model : DM
     @Suppress("UNCHECKED_CAST", "LeakingThis")
     override val Serializer = DataModelSerializer<Any, Values<P>, P, IsPropertyContext>(this as P)
@@ -37,7 +37,7 @@ abstract class TypedPropertyDefinitions<DM: IsValuesDataModel<P>, P: IsValuesPro
     ) = Values(
         this as P,
         MutableValueItems().apply {
-            fillWithPairs(this@TypedPropertyDefinitions, pairs, setDefaults)
+            fillWithPairs(this@TypedValuesModel, pairs, setDefaults)
         }
     )
 

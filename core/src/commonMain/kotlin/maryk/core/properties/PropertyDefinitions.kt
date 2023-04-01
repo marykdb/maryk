@@ -35,7 +35,7 @@ internal class MutableModel : MutablePropertyDefinitions<IsValuesDataModel<Mutab
 }
 
 /** Mutable variant of ObjectPropertyDefinitions for a IsCollectionDefinition implementation */
-internal abstract class MutablePropertyDefinitions<DEF: IsValuesDataModel<DM>, DM: IsValuesPropertyDefinitions> : TypedPropertyDefinitions<IsValuesDataModel<DM>, DM>(), IsMutablePropertyDefinitions<AnyDefinitionWrapper> {
+internal abstract class MutablePropertyDefinitions<DEF: IsValuesDataModel<DM>, DM: IsValuesPropertyDefinitions> : TypedValuesModel<IsValuesDataModel<DM>, DM>(), IsMutablePropertyDefinitions<AnyDefinitionWrapper> {
     internal var _model: IsValuesDataModel<DM>? = null
 
     override val Model: IsValuesDataModel<DM>

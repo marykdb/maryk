@@ -13,7 +13,7 @@ interface IsModel: IsValuesPropertyDefinitions {
 open class Model<P: IsValuesPropertyDefinitions>(
     reservedIndices: List<UInt>? = null,
     reservedNames: List<String>? = null,
-) : TypedPropertyDefinitions<DataModel<P>, P>(), IsModel {
+) : TypedValuesModel<DataModel<P>, P>(), IsModel {
     @Suppress("UNCHECKED_CAST")
     override val Model = DataModel(
         reservedIndices = reservedIndices,

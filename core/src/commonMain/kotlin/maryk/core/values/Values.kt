@@ -3,7 +3,7 @@ package maryk.core.values
 import maryk.core.models.AbstractDataModel
 import maryk.core.models.IsNamedDataModel
 import maryk.core.properties.IsValuesPropertyDefinitions
-import maryk.core.properties.TypedPropertyDefinitions
+import maryk.core.properties.TypedValuesModel
 import maryk.core.properties.graph.IsPropRefGraph
 import maryk.core.properties.validate
 import maryk.core.query.RequestContext
@@ -19,8 +19,6 @@ data class Values<DM : IsValuesPropertyDefinitions> internal constructor(
     override val values: IsValueItems,
     override val context: RequestContext? = null
 ) : AbstractValues<Any, DM>() {
-    @Suppress("UNCHECKED_CAST")
-
     /** make a copy of Values and add new pairs from [pairCreator] */
     fun copy(pairCreator: DM.() -> List<ValueItem>) =
         Values(
@@ -92,7 +90,7 @@ data class Values<DM : IsValuesPropertyDefinitions> internal constructor(
 }
 
 /** Output values to a json string */
-fun <V: Values<P>, DO: Any, DM: AbstractDataModel<DO, P, V, *, *>, P: TypedPropertyDefinitions<DM, P>> V.toJson(
+fun <V: Values<P>, DO: Any, DM: AbstractDataModel<DO, P, V, *, *>, P: TypedValuesModel<DM, P>> V.toJson(
     pretty: Boolean = false
 ): String =
     this.dataModel.Model.writeJson(this, pretty = pretty)

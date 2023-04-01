@@ -5,7 +5,7 @@ import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.IsRootModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.SimpleQueryModel
-import maryk.core.properties.TypedPropertyDefinitions
+import maryk.core.properties.TypedValuesModel
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.contextual.embedContextual
 import maryk.core.properties.definitions.number
@@ -40,7 +40,7 @@ data class AdditionUpdate<DM: IsRootModel>(
             getter = AdditionUpdate<*>::values,
             contextualResolver = { context: RequestContext? ->
                 @Suppress("UNCHECKED_CAST")
-                context?.dataModel as? TypedPropertyDefinitions<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>
+                context?.dataModel as? TypedValuesModel<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>
                     ?: throw ContextNotFoundException()
             }
         )

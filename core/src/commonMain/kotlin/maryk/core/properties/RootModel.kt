@@ -33,7 +33,7 @@ open class RootModel<DM: IsValuesPropertyDefinitions>(
     reservedIndices: List<UInt>? = null,
     reservedNames: List<String>? = null,
     name: String? = null,
-) : TypedPropertyDefinitions<RootDataModel<DM>, DM>(), IsRootModel {
+) : TypedValuesModel<RootDataModel<DM>, DM>(), IsRootModel {
     @Suppress("UNCHECKED_CAST")
     override val Model: RootDataModel<DM> by lazy {
         RootDataModel(
@@ -94,7 +94,7 @@ open class RootModel<DM: IsValuesPropertyDefinitions>(
             migrationReasons += "Stored model is not a root data model"
         }
 
-        val parentResult = super<TypedPropertyDefinitions>.isMigrationNeeded(storedDataModel, migrationReasons)
+        val parentResult = super<TypedValuesModel>.isMigrationNeeded(storedDataModel, migrationReasons)
 
         return if (indicesToIndex.isEmpty()) {
             parentResult

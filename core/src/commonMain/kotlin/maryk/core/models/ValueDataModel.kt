@@ -8,13 +8,13 @@ import maryk.core.properties.DefinitionModel
 import maryk.core.properties.IsDataModelPropertyDefinitions
 import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsTypedObjectPropertyDefinitions
 import maryk.core.properties.MutableValueModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitionsCollectionDefinitionWrapper
 import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 import maryk.core.properties.definitions.string
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
+import maryk.core.properties.invoke
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.properties.types.ValueDataObjectWithValues
 import maryk.core.properties.values
@@ -58,8 +58,7 @@ abstract class ValueDataModel<DO : ValueDataObject, P : IsObjectPropertyDefiniti
             val def = it as IsFixedStorageBytesEncodable<*>
             values[it.index] = def.readStorageBytes(def.byteSize, reader)
         }
-        @Suppress("UNCHECKED_CAST")
-        return (this.properties as IsTypedObjectPropertyDefinitions<DO, P, IsPropertyContext>)(this.properties.values { values })
+        return this.properties.invoke(this.properties.values { values })
     }
 
     override fun getValueWithDefinition(

@@ -21,7 +21,14 @@ interface IsTypedObjectPropertyDefinitions<DO: Any, P: IsObjectPropertyDefinitio
     operator fun invoke(values: ObjectValues<DO, P>): DO
 }
 
+@Suppress("UNCHECKED_CAST")
+fun <DO: Any, P: IsObjectPropertyDefinitions<DO>> P.invoke(
+    values: ObjectValues<DO, P>
+) = (this as IsTypedObjectPropertyDefinitions<DO, P, *>)(values)
+
 interface IsObjectPropertyDefinitions<DO: Any>: IsTypedPropertyDefinitions<DO> {
+    override val Serializer : IsObjectDataModelSerializer<DO, *, *, *>
+
     /**
      * Validate a [dataObject] and get reference from [refGetter] if exception needs to be thrown
      * @throws ValidationUmbrellaException if input was invalid

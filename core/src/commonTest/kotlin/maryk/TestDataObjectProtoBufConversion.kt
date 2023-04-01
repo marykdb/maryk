@@ -1,6 +1,5 @@
 package maryk
 
-import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.IsBaseModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -48,18 +47,15 @@ fun <DO : Any, P : ObjectPropertyDefinitions<DO>, CX : IsPropertyContext> checkP
 
     var newContext = context?.invoke()
 
-    @Suppress("UNCHECKED_CAST")
-    val serializer = dataModel.Serializer as ObjectDataModelSerializer<DO, P, CX, CX>
-
-    val byteLength = serializer.calculateProtoBufLength(values, cache, newContext)
+    val byteLength = dataModel.Serializer.calculateProtoBufLength(values, cache, newContext)
     bc.reserve(byteLength)
-    serializer.writeProtoBuf(values, cache, bc::write, newContext)
+    dataModel.Serializer.writeProtoBuf(values, cache, bc::write, newContext)
 
     if (resetContextBeforeRead) {
         newContext = context?.invoke()
     }
 
-    val converted = serializer.readProtoBuf(byteLength, bc::read, newContext)
+    val converted = dataModel.Serializer.readProtoBuf(byteLength, bc::read, newContext)
 
     checker(converted, values)
 }

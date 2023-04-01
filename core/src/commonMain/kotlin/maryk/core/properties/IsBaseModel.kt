@@ -10,5 +10,6 @@ interface IsSimpleBaseModel<DO: Any, in CXI: IsPropertyContext, CX: IsPropertyCo
 }
 
 interface IsBaseModel<DO: Any, P: IsObjectPropertyDefinitions<DO>, in CXI: IsPropertyContext, CX: IsPropertyContext> : IsSimpleBaseModel<DO, CXI, CX> {
+    override val Serializer: IsObjectDataModelSerializer<DO, P, CXI, CX>
     override val Model: AbstractObjectDataModel<DO, P, CXI, CX>
 }

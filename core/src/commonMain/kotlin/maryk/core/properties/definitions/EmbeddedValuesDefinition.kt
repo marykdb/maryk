@@ -2,12 +2,14 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
+import maryk.core.models.IsValuesDataModel
 import maryk.core.models.SimpleValuesDataModel
 import maryk.core.models.serializers.IsDataModelSerializer
 import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.TypedPropertyDefinitions
 import maryk.core.properties.definitions.PropertyDefinitionType.Embed
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
@@ -193,7 +195,7 @@ class EmbeddedValuesDefinition<DM : IsValuesPropertyDefinitions>(
             index = 4u,
             getter = EmbeddedValuesDefinition<*>::default,
             contextualResolver = { context: ModelContext? ->
-                context?.model?.invoke(Unit)?.Model as? SimpleValuesDataModel<IsValuesPropertyDefinitions>
+                context?.model?.invoke(Unit) as? TypedPropertyDefinitions<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>
                     ?: throw ContextNotFoundException()
             }
         )

@@ -1,10 +1,11 @@
 package maryk.core.query.responses.updates
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.SimpleValuesDataModel
+import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.IsRootModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.SimpleQueryModel
+import maryk.core.properties.TypedPropertyDefinitions
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.contextual.embedContextual
 import maryk.core.properties.definitions.number
@@ -39,7 +40,7 @@ data class AdditionUpdate<DM: IsRootModel>(
             getter = AdditionUpdate<*>::values,
             contextualResolver = { context: RequestContext? ->
                 @Suppress("UNCHECKED_CAST")
-                context?.dataModel?.Model as? SimpleValuesDataModel<IsValuesPropertyDefinitions>
+                context?.dataModel as? TypedPropertyDefinitions<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>
                     ?: throw ContextNotFoundException()
             }
         )

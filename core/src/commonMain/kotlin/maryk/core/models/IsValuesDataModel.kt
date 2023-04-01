@@ -1,5 +1,7 @@
 package maryk.core.models
 
+import maryk.core.models.serializers.IsJsonSerializer
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsRootModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.query.RequestContext
@@ -9,7 +11,7 @@ import maryk.core.values.MutableValueItems
 import maryk.core.values.ValueItems
 import maryk.core.values.Values
 
-interface IsValuesDataModel<P : IsValuesPropertyDefinitions> : IsNamedDataModel<P> {
+interface IsValuesDataModel<P : IsValuesPropertyDefinitions> : IsNamedDataModel<P>, IsJsonSerializer<Values<P>, IsPropertyContext> {
     val reservedIndices: List<UInt>?
     val reservedNames: List<String>?
 

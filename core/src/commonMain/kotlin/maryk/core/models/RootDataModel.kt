@@ -6,6 +6,7 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.SerializationException
 import maryk.core.properties.DefinitionModel
 import maryk.core.properties.IsDataModelPropertyDefinitions
+import maryk.core.properties.IsRootModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.MutablePropertyDefinitions
 import maryk.core.properties.MutableRootModel
@@ -122,7 +123,8 @@ class RootDataModel<DM : IsValuesPropertyDefinitions>(
                 reservedIndices = values(6u),
                 reservedNames = values(7u)
             ).apply {
-                (properties as MutablePropertyDefinitions)._model = this
+                @Suppress("UNCHECKED_CAST")
+                (properties as MutablePropertyDefinitions<*, IsRootModel>)._model = this as IsValuesDataModel<IsRootModel>
             }
 
         override val Model = object : AbstractObjectDataModel<RootDataModel<*>, ObjectPropertyDefinitions<RootDataModel<*>>, ContainsDefinitionsContext, ContainsDefinitionsContext>(

@@ -24,21 +24,21 @@ import maryk.yaml.YamlWriter
 /** A collection of Property Definitions which can be used to model a ObjectDataModel */
 abstract class PropertyDefinitions : AbstractPropertyDefinitions<Any>(), IsValuesPropertyDefinitions
 
-internal class MutableRootModel : MutablePropertyDefinitions(), IsRootModel {
+internal class MutableRootModel : MutablePropertyDefinitions<IsRootDataModel<MutableRootModel>, MutableRootModel>(), IsRootModel {
     override val Serializer = DataModelSerializer<Any, Values<MutableRootModel>, MutableRootModel, IsPropertyContext>(this)
-    override val Model: IsRootDataModel<out IsValuesPropertyDefinitions> get() = super.Model as IsRootDataModel<out IsValuesPropertyDefinitions>
+    override val Model: IsRootDataModel<MutableRootModel> get() = super.Model as IsRootDataModel<MutableRootModel>
 }
 
-internal class MutableModel : MutablePropertyDefinitions(), IsRootModel {
+internal class MutableModel : MutablePropertyDefinitions<IsValuesDataModel<MutableModel>, MutableModel>(), IsModel {
     override val Serializer = DataModelSerializer<Any, Values<MutableModel>, MutableModel, IsPropertyContext>(this)
-    override val Model: IsRootDataModel<out IsValuesPropertyDefinitions> get() = super.Model as IsRootDataModel<out IsValuesPropertyDefinitions>
+    override val Model: IsValuesDataModel<MutableModel> get() = super.Model
 }
 
 /** Mutable variant of ObjectPropertyDefinitions for a IsCollectionDefinition implementation */
-internal abstract class MutablePropertyDefinitions : PropertyDefinitions(), IsMutablePropertyDefinitions<AnyDefinitionWrapper> {
-    internal var _model: IsValuesDataModel<*>? = null
+internal abstract class MutablePropertyDefinitions<DEF: IsValuesDataModel<DM>, DM: IsValuesPropertyDefinitions> : TypedPropertyDefinitions<IsValuesDataModel<DM>, DM>(), IsMutablePropertyDefinitions<AnyDefinitionWrapper> {
+    internal var _model: IsValuesDataModel<DM>? = null
 
-    override val Model: IsValuesDataModel<*>
+    override val Model: IsValuesDataModel<DM>
         get() = _model ?: throw Exception("No Model yet set, likely DataModel was not initialized yet")
 
     override fun add(element: AnyDefinitionWrapper): Boolean {
@@ -92,7 +92,7 @@ internal data class PropertyDefinitionsCollectionDefinition(
         validator: (item: AnyDefinitionWrapper, itemRefFactory: () -> IsPropertyReference<AnyDefinitionWrapper, IsPropertyDefinition<AnyDefinitionWrapper>, *>?) -> Any
     ) {}
 
-    override fun newMutableCollection(context: DefinitionsConversionContext?): MutablePropertyDefinitions =
+    override fun newMutableCollection(context: DefinitionsConversionContext?): MutablePropertyDefinitions<*, *> =
         when (isRootModel) {
             true -> MutableRootModel()
             else -> MutableModel()

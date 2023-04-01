@@ -62,7 +62,8 @@ open class DataModel<DM : IsValuesPropertyDefinitions>(
                 reservedIndices = values(3u),
                 reservedNames = values(4u)
             ).apply {
-                (properties as MutablePropertyDefinitions)._model = this
+                @Suppress("UNCHECKED_CAST")
+                (properties as MutablePropertyDefinitions<*, IsValuesPropertyDefinitions>)._model = this
             }
 
         override val Model: DefinitionDataModel<DataModel<*>> = object : DefinitionDataModel<DataModel<*>>(

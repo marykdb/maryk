@@ -3,8 +3,6 @@ package maryk.core.properties.definitions
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.IsValuesDataModel
-import maryk.core.models.SimpleValuesDataModel
-import maryk.core.models.serializers.IsDataModelSerializer
 import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsValuesPropertyDefinitions
@@ -52,7 +50,7 @@ class EmbeddedValuesDefinition<DM : IsValuesPropertyDefinitions>(
 
     @Suppress("UNCHECKED_CAST")
     // internal strong typed version so type system is not in a loop when creating EmbeddedValuesDefinition
-    private val typedDataModel get() = dataModel.Model as SimpleValuesDataModel<DM>
+    private val typedDataModel get() = dataModel as TypedPropertyDefinitions<IsValuesDataModel<DM>, DM>
 
     override fun asString(value: Values<DM>, context: IsPropertyContext?): String {
         var string = ""
@@ -86,22 +84,21 @@ class EmbeddedValuesDefinition<DM : IsValuesPropertyDefinitions>(
     }
 
     override fun writeJsonValue(value: Values<DM>, writer: IsJsonLikeWriter, context: IsPropertyContext?) =
-        this.typedDataModel.writeJson(
+        this.typedDataModel.Model.writeJson(
             value,
             writer,
             context
         )
 
     override fun readJson(reader: IsJsonLikeReader, context: IsPropertyContext?) =
-        this.typedDataModel.readJson(reader, context)
+        this.typedDataModel.Model.readJson(reader, context)
 
-    @Suppress("UNCHECKED_CAST")
     override fun calculateTransportByteLength(
         value: Values<DM>,
         cacher: WriteCacheWriter,
         context: IsPropertyContext?
     ) =
-        (this.dataModel.Serializer as IsDataModelSerializer<Values<DM>, DM, IsPropertyContext>).calculateProtoBufLength(
+        this.typedDataModel.Serializer.calculateProtoBufLength(
             value,
             cacher,
             context
@@ -113,8 +110,7 @@ class EmbeddedValuesDefinition<DM : IsValuesPropertyDefinitions>(
         writer: (byte: Byte) -> Unit,
         context: IsPropertyContext?
     ) {
-        @Suppress("UNCHECKED_CAST")
-        (this.dataModel.Serializer as IsDataModelSerializer<Values<DM>, DM, IsPropertyContext>).writeProtoBuf(
+        this.typedDataModel.Serializer.writeProtoBuf(
             value,
             cacheGetter,
             writer,
@@ -122,14 +118,13 @@ class EmbeddedValuesDefinition<DM : IsValuesPropertyDefinitions>(
         )
     }
 
-    @Suppress("UNCHECKED_CAST")
     override fun readTransportBytes(
         length: Int,
         reader: () -> Byte,
         context: IsPropertyContext?,
         earlierValue: Values<DM>?
     ) =
-        (this.dataModel.Serializer as IsDataModelSerializer<Values<DM>, DM, IsPropertyContext>).readProtoBuf(length, reader, context)
+        this.typedDataModel.Serializer.readProtoBuf(length, reader, context)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

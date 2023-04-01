@@ -1,6 +1,7 @@
 package maryk.core.properties
 
 import maryk.core.models.AbstractObjectDataModel
+import maryk.core.models.serializers.IsObjectDataModelSerializer
 import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.AnyOutPropertyReference
@@ -12,6 +13,7 @@ import maryk.core.values.ObjectValues
 import maryk.core.values.ValueItem
 
 interface IsInternalModel<DO: Any, P: IsObjectPropertyDefinitions<DO>, in CXI : IsPropertyContext, CX : IsPropertyContext>: IsBaseModel<DO, P, CXI, CX>, IsTypedObjectPropertyDefinitions<DO, P, CX> {
+    override val Serializer: IsObjectDataModelSerializer<DO, P, CXI, CX>
     override val Model: AbstractObjectDataModel<DO, P, CXI, CX>
 }
 

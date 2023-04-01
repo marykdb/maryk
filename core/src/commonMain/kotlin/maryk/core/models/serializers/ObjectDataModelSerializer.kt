@@ -10,7 +10,7 @@ import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 import kotlin.js.JsName
 
-interface IsObjectDataModelSerializer<DO: Any, DM: IsObjectPropertyDefinitions<DO>, CXI:IsPropertyContext, CX: IsPropertyContext> : IsDataModelSerializer<ObjectValues<DO, DM>, DM, CX> {
+interface IsObjectDataModelSerializer<DO: Any, DM: IsObjectPropertyDefinitions<DO>, in CXI:IsPropertyContext, CX: IsPropertyContext> : IsDataModelSerializer<ObjectValues<DO, DM>, DM, CX> {
     /**
      * Calculates the byte length for [dataObject]
      * The [cacher] caches any values needed to write later.

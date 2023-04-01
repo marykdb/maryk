@@ -3,9 +3,9 @@ package maryk.core.properties.definitions
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.writeBytes
-import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.IsSimpleBaseModel
 import maryk.core.properties.IsValueModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -156,7 +156,7 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueModel<DO, *>>
             definition = ContextualEmbeddedObjectDefinition(
                 contextualResolver = { context: ModelContext? ->
                     @Suppress("UNCHECKED_CAST")
-                    context?.model?.invoke(Unit)?.Model as? SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>?
+                    context?.model?.invoke(Unit) as? IsSimpleBaseModel<Any, *, ModelContext>?
                         ?: throw ContextNotFoundException()
                 }
             )
@@ -167,7 +167,7 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueModel<DO, *>>
             definition = ContextualEmbeddedObjectDefinition(
                 contextualResolver = { context: ModelContext? ->
                     @Suppress("UNCHECKED_CAST")
-                    context?.model?.invoke(Unit)?.Model as? SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>?
+                    context?.model?.invoke(Unit) as? IsSimpleBaseModel<Any, *, ModelContext>?
                         ?: throw ContextNotFoundException()
                 }
             )
@@ -178,7 +178,7 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueModel<DO, *>>
             definition = ContextualEmbeddedObjectDefinition(
                 contextualResolver = { context: ModelContext? ->
                     @Suppress("UNCHECKED_CAST")
-                    context?.model?.invoke(Unit)?.Model as? SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>
+                    context?.model?.invoke(Unit) as? IsSimpleBaseModel<Any, *, ModelContext>?
                         ?: throw ContextNotFoundException()
                 }
             )

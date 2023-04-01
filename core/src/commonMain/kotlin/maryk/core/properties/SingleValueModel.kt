@@ -1,10 +1,12 @@
 package maryk.core.properties
 
 import maryk.core.models.SingleValueDataModel
+import maryk.core.models.serializers.IsObjectDataModelSerializer
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.values.ObjectValues
 
 interface IsSingleValueModel<T : Any, TO : Any, DO : Any, P : IsObjectPropertyDefinitions<DO>, CX : IsPropertyContext>: IsBaseModel<DO, P, CX, CX>, IsTypedObjectPropertyDefinitions<DO, P, CX> {
+    override val Serializer: IsObjectDataModelSerializer<DO, P, CX, CX>
     override val Model: SingleValueDataModel<T, TO, DO, P, CX>
 }
 

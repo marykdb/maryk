@@ -1,6 +1,7 @@
 package maryk.core.models
 
 import maryk.core.inject.Inject
+import maryk.core.models.serializers.IsJsonSerializer
 import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsTypedPropertyDefinitions
@@ -39,15 +40,15 @@ typealias SimpleValuesDataModel<DM> = AbstractDataModel<Any, DM, Values<DM>, IsP
  */
 abstract class AbstractDataModel<DO : Any, DM : IsTypedPropertyDefinitions<DO>, V : AbstractValues<DO, DM>, in CXI : IsPropertyContext, CX : IsPropertyContext> internal constructor(
     final override val properties: DM
-) : IsDataModel<DM> {
+) : IsDataModel<DM>, IsJsonSerializer<V, CX> {
     /**
      * Write [values] for this ObjectDataModel to JSON
      * Optionally pass a [context] when needed for more complex property types
      */
-    fun writeJson(
+    override fun writeJson(
         values: V,
-        context: CX? = null,
-        pretty: Boolean = false
+        context: CX?,
+        pretty: Boolean
     ) = buildString {
         val writer = JsonWriter(pretty = pretty, ::append)
         writeJson(values, writer, context)
@@ -57,10 +58,10 @@ abstract class AbstractDataModel<DO : Any, DM : IsTypedPropertyDefinitions<DO>, 
      * Write [values] for this ObjectDataModel to JSON with [writer]
      * Optionally pass a [context] when needed for more complex property types
      */
-    open fun writeJson(
+    override fun writeJson(
         values: V,
         writer: IsJsonLikeWriter,
-        context: CX? = null
+        context: CX?
     ) {
         writer.writeStartObject()
         for ((index, value) in values) {
@@ -98,7 +99,7 @@ abstract class AbstractDataModel<DO : Any, DM : IsTypedPropertyDefinitions<DO>, 
      * Read JSON from [json] to a Map with values
      * Optionally pass a [context] when needed to read more complex property types
      */
-    fun readJson(json: String, context: CX? = null): V {
+    override fun readJson(json: String, context: CX?): V {
         var i = 0
         val reader = JsonReader { json[i++] }
         return this.readJson(reader, context)
@@ -108,7 +109,7 @@ abstract class AbstractDataModel<DO : Any, DM : IsTypedPropertyDefinitions<DO>, 
      * Read JSON from [reader] to a Map with values
      * Optionally pass a [context] when needed to read more complex property types
      */
-    open fun readJson(reader: IsJsonLikeReader, context: CX? = null): V =
+    override fun readJson(reader: IsJsonLikeReader, context: CX?): V =
         createValues(context, readJsonToMap(reader, context))
 
     /**

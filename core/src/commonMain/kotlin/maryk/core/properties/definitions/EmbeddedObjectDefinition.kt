@@ -4,7 +4,6 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsNamedDataModel
-import maryk.core.models.SimpleObjectDataModel
 import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsBaseModel
@@ -188,7 +187,7 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsSimpleBaseModel<DO, CXI, CX>, CX
             definition = ContextualEmbeddedObjectDefinition(
                 contextualResolver = { context: ModelContext? ->
                     @Suppress("UNCHECKED_CAST")
-                    context?.model?.invoke(Unit)?.Model as? SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>?
+                    context?.model?.invoke(Unit) as? IsSimpleBaseModel<Any, *, ModelContext>
                         ?: throw ContextNotFoundException()
                 }
             )

@@ -1,8 +1,7 @@
 package maryk.core.properties.definitions.contextual
 
 import maryk.checkProtoBufConversion
-import maryk.core.models.SimpleObjectDataModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.IsSimpleBaseModel
 import maryk.test.ByteCollector
 import maryk.test.models.SimpleMarykObject
 import kotlin.test.Test
@@ -16,7 +15,7 @@ class ContextualEmbeddedObjectDefinitionTest {
 
     @Suppress("UNCHECKED_CAST")
     private val def = ContextualEmbeddedObjectDefinition<ModelContext>(
-        contextualResolver = { it!!.model!!.invoke(Unit).Model as SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>> }
+        contextualResolver = { it!!.model!!.invoke(Unit) as IsSimpleBaseModel<Any, *, ModelContext> }
     )
 
     private val context = ModelContext(

@@ -30,11 +30,11 @@ interface IsJsonSerializer<V: IsValues<*>, CX: IsPropertyContext> {
      * Read JSON from [json] to a Map with values
      * Optionally pass a [context] when needed to read more complex property types
      */
-    fun readJson(json: String, context: IsPropertyContext? = null): V
+    fun readJson(json: String, context: CX? = null): V
 
     /**
      * Read JSON from [reader] to a Map with values
      * Optionally pass a [context] when needed to read more complex property types
      */
-    fun readJson(reader: IsJsonLikeReader, context: IsPropertyContext? = null): V
+    fun readJson(reader: IsJsonLikeReader, context: CX? = null): V
 }

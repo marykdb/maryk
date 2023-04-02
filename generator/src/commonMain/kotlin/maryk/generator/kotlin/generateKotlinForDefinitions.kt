@@ -2,9 +2,9 @@ package maryk.generator.kotlin
 
 import maryk.core.definitions.Definitions
 import maryk.core.exceptions.TypeException
-import maryk.core.models.DataModel
-import maryk.core.models.RootDataModel
-import maryk.core.models.ValueDataModel
+import maryk.core.models.definitions.DataModelDefinition
+import maryk.core.models.definitions.RootDataModelDefinition
+import maryk.core.models.definitions.ValueDataModelDefinition
 import maryk.core.properties.IsModel
 import maryk.core.properties.IsRootModel
 import maryk.core.properties.IsValueModel
@@ -29,7 +29,7 @@ fun Definitions.generateKotlin(
                 obj.generateKotlin(packageName, writer)
                 kotlinGenerationContext.enums.add(obj)
             }
-            is ValueDataModel<*, *> -> {
+            is ValueDataModelDefinition<*, *> -> {
                 val writer = writerConstructor(obj.name)
                 (obj.properties as IsValueModel<*, *>).generateKotlin(
                     packageName,
@@ -37,7 +37,7 @@ fun Definitions.generateKotlin(
                     writer
                 )
             }
-            is RootDataModel<*> -> {
+            is RootDataModelDefinition<*> -> {
                 val writer = writerConstructor(obj.name)
                 (obj.properties as IsRootModel).generateKotlin(
                     packageName,
@@ -45,7 +45,7 @@ fun Definitions.generateKotlin(
                     writer
                 )
             }
-            is DataModel<*> -> {
+            is DataModelDefinition<*> -> {
                 val writer = writerConstructor(obj.name)
                 (obj.properties as IsModel).generateKotlin(packageName, kotlinGenerationContext, writer)
             }

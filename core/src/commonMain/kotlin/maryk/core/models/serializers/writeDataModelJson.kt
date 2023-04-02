@@ -1,6 +1,6 @@
 package maryk.core.models.serializers
 
-import maryk.core.models.IsNamedDataModel
+import maryk.core.models.definitions.IsNamedDataModelDefinition
 import maryk.core.properties.IsDataModelPropertyDefinitions
 import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
@@ -11,7 +11,7 @@ import maryk.json.IsJsonLikeWriter
 import maryk.yaml.YamlWriter
 
 internal fun <
-    DM : IsNamedDataModel<*>,
+    DM : IsNamedDataModelDefinition<*>,
     P : IsDataModelPropertyDefinitions<DM, *>,
     P2 : IsObjectPropertyDefinitions<DM>
 > ObjectDataModelSerializer<DM, P2, ContainsDefinitionsContext, ContainsDefinitionsContext>.writeDataModelJson(

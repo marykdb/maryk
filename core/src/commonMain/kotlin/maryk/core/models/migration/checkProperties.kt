@@ -1,6 +1,6 @@
 package maryk.core.models.migration
 
-import maryk.core.models.IsValuesDataModel
+import maryk.core.models.definitions.IsValuesDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsStorableModel
 import maryk.lib.synchronizedIteration

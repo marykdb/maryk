@@ -6,8 +6,7 @@ import maryk.core.exceptions.TypeException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.initUInt
 import maryk.core.extensions.bytes.initUIntByVarWithExtraInfo
-import maryk.core.models.IsDataModel
-import maryk.core.models.values
+import maryk.core.models.definitions.IsDataModelDefinition
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.ListSize
 import maryk.core.processors.datastore.StorageTypeEnum.MapSize
@@ -47,6 +46,7 @@ import maryk.core.properties.references.ReferenceType.VALUE
 import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.references.referenceStorageTypeOf
 import maryk.core.properties.types.TypedValue
+import maryk.core.properties.values
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ValueItem
 import maryk.core.values.Values
@@ -77,7 +77,7 @@ fun <DM : IsRootModel> DM.readStorageToValues(
     processQualifiers(getQualifier) { qualifierReader, qualifierLength, addToCache ->
         // Otherwise, try to get a new qualifier processor from DataModel
         @Suppress("UNCHECKED_CAST")
-        (this.Model as IsDataModel<IsValuesPropertyDefinitions>).readQualifier(qualifierReader, qualifierLength, 0, select, null, valueAdder, processValue, addToCache)
+        (this.Model as IsDataModelDefinition<IsValuesPropertyDefinitions>).readQualifier(qualifierReader, qualifierLength, 0, select, null, valueAdder, processValue, addToCache)
     }
 
     // Create Values
@@ -92,7 +92,7 @@ fun <DM : IsRootModel> DM.readStorageToValues(
  * [readValueFromStorage] is used to fetch actual value from storage layer
  * [addToCache] is used to add a sub reader to cache, so it does not need to reprocess the qualifier from start
  */
-private fun <P : IsValuesPropertyDefinitions> IsDataModel<P>.readQualifier(
+private fun <P : IsValuesPropertyDefinitions> IsDataModelDefinition<P>.readQualifier(
     qualifierReader: (Int) -> Byte,
     qualifierLength: Int,
     offset: Int,

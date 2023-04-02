@@ -1,6 +1,6 @@
 package maryk.core.properties
 
-import maryk.core.models.IsValuesDataModel
+import maryk.core.models.definitions.IsValuesDataModel
 import maryk.core.models.serializers.DataModelSerializer
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.exceptions.ValidationException

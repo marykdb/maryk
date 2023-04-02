@@ -3,7 +3,6 @@ package maryk.datastore.rocksdb.processors
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
 import maryk.core.extensions.bytes.initIntByVar
-import maryk.core.models.values
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.ListSize
 import maryk.core.processors.datastore.StorageTypeEnum.MapSize
@@ -17,6 +16,7 @@ import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.properties.types.Key
+import maryk.core.properties.values
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.values.EmptyValueItems
 import maryk.core.values.Values
@@ -135,7 +135,7 @@ internal fun <DM : IsRootModel> DM.readTransactionIntoValuesWithMetaData(
 
         checkExistence(iterator, key)
 
-        var currentVersion: ULong = 0uL
+        var currentVersion = 0uL
         // Will start by going to next key so will miss the creation timestamp
         val getQualifier = iterator.historicQualifierRetriever(key, toVersion, 1u) { version ->
             currentVersion = version

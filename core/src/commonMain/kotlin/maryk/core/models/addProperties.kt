@@ -1,6 +1,8 @@
 package maryk.core.models
 
 import maryk.core.exceptions.ContextNotFoundException
+import maryk.core.models.definitions.IsDataModelDefinition
+import maryk.core.models.definitions.IsObjectDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitionsCollectionDefinition
@@ -9,7 +11,7 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.PropertyDefinitionsCollectionDefinition
 import maryk.core.properties.PropertyDefinitionsCollectionDefinitionWrapper
 
-internal fun <DM : IsDataModel<*>> addProperties(
+internal fun <DM : IsDataModelDefinition<*>> addProperties(
     isRootModel: Boolean,
     definitions: AbstractPropertyDefinitions<DM>
 ): PropertyDefinitionsCollectionDefinitionWrapper<DM> {

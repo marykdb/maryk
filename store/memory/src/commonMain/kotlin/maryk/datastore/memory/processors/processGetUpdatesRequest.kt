@@ -1,8 +1,8 @@
 package maryk.datastore.memory.processors
 
 import maryk.core.clock.HLC
-import maryk.core.models.fromChanges
 import maryk.core.properties.IsRootModel
+import maryk.core.properties.fromChanges
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.requests.GetUpdatesRequest

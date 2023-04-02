@@ -1,7 +1,6 @@
 package maryk.core.properties.definitions.contextual
 
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.models.IsNamedDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.definitions.IsContextualEncodable
@@ -18,7 +17,6 @@ import maryk.lib.bytes.writeUTF8Bytes
 import maryk.lib.exceptions.ParseException
 
 /** Definition for a reference to another DataObject resolved from context by [contextualResolver]. */
-@Suppress("FunctionName")
 fun <DM : IsPropertyDefinitions, CX : IsPropertyContext> ContextualModelReferenceDefinition(
     contextualResolver: Unit.(context: CX?, name: String) -> Unit.() -> DM
 ) = ContextualModelReferenceDefinition<DM, CX, CX>(contextualResolver) {

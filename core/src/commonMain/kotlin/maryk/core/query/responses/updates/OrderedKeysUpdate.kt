@@ -1,7 +1,6 @@
 package maryk.core.query.responses.updates
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.IsRootDataModel
 import maryk.core.properties.IsRootModel
 import maryk.core.properties.SimpleQueryModel
 import maryk.core.properties.definitions.FlexBytesDefinition

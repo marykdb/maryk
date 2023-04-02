@@ -1,7 +1,7 @@
 package maryk.datastore.rocksdb.processors
 
-import maryk.core.models.fromChanges
 import maryk.core.properties.IsRootModel
+import maryk.core.properties.fromChanges
 import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.ObjectCreate

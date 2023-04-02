@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
-import maryk.core.models.RootDataModel
+import maryk.core.models.definitions.RootDataModelDefinition
 import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.properties.IsRootModel
 import maryk.core.query.requests.IsFetchRequest
@@ -21,9 +21,9 @@ import maryk.core.query.requests.IsScanRequest
 import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.responses.IsDataResponse
 import maryk.core.query.responses.IsResponse
+import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.query.responses.updates.ProcessResponse
-import maryk.core.query.responses.UpdateResponse
 import maryk.datastore.shared.updates.AddUpdateListenerAction
 import maryk.datastore.shared.updates.IsUpdateAction
 import maryk.datastore.shared.updates.RemoveAllUpdateListenersAction
@@ -36,7 +36,7 @@ import maryk.datastore.shared.updates.startProcessUpdateFlow
  * Abstract DataStore implementation that takes care of the HLC clock
  */
 abstract class AbstractDataStore(
-    final override val dataModelsById: Map<UInt, RootDataModel<*>>
+    final override val dataModelsById: Map<UInt, RootDataModelDefinition<*>>
 ): IsDataStore, CoroutineScope {
     override val coroutineContext = DISPATCHER + SupervisorJob()
 

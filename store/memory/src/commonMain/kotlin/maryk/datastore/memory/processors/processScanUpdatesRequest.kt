@@ -1,8 +1,8 @@
 package maryk.datastore.memory.processors
 
 import maryk.core.clock.HLC
-import maryk.core.models.fromChanges
 import maryk.core.properties.IsRootModel
+import maryk.core.properties.fromChanges
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.ObjectCreate
@@ -138,7 +138,6 @@ internal fun <DM : IsRootModel> processScanUpdatesRequest(
         // This so the requester is up to date with any in between filtered values
         orderedKeys.subtract(matchingKeys.toSet()).let { removedKeys ->
             for (removedKey in removedKeys) {
-                @Suppress("UNCHECKED_CAST")
                 val record = recordFetcher(scanRequest.dataModel, removedKey)
 
                 updates += RemovalUpdate(

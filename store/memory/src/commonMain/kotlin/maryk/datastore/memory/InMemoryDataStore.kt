@@ -7,7 +7,7 @@ import maryk.core.clock.HLC
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
-import maryk.core.models.RootDataModel
+import maryk.core.models.definitions.RootDataModelDefinition
 import maryk.core.properties.IsRootModel
 import maryk.core.query.requests.AddRequest
 import maryk.core.query.requests.ChangeRequest
@@ -57,7 +57,7 @@ import maryk.datastore.shared.AbstractDataStore
  */
 class InMemoryDataStore(
     override val keepAllVersions: Boolean = false,
-    dataModelsById: Map<UInt, RootDataModel<*>>
+    dataModelsById: Map<UInt, RootDataModelDefinition<*>>
 ) : AbstractDataStore(dataModelsById) {
     init {
         startFlows()

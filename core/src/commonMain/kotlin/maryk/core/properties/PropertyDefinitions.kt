@@ -1,7 +1,7 @@
 package maryk.core.properties
 
-import maryk.core.models.IsRootDataModel
-import maryk.core.models.IsValuesDataModel
+import maryk.core.models.definitions.IsRootDataModelDefinition
+import maryk.core.models.definitions.IsValuesDataModel
 import maryk.core.models.serializers.DataModelSerializer
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsCollectionDefinition
@@ -24,9 +24,9 @@ import maryk.yaml.YamlWriter
 /** A collection of Property Definitions which can be used to model a ObjectDataModel */
 abstract class PropertyDefinitions : AbstractPropertyDefinitions<Any>(), IsValuesPropertyDefinitions
 
-internal class MutableRootModel : MutablePropertyDefinitions<IsRootDataModel<MutableRootModel>, MutableRootModel>(), IsRootModel {
+internal class MutableRootModel : MutablePropertyDefinitions<IsRootDataModelDefinition<MutableRootModel>, MutableRootModel>(), IsRootModel {
     override val Serializer = DataModelSerializer<Any, Values<MutableRootModel>, MutableRootModel, IsPropertyContext>(this)
-    override val Model: IsRootDataModel<MutableRootModel> get() = super.Model as IsRootDataModel<MutableRootModel>
+    override val Model: IsRootDataModelDefinition<MutableRootModel> get() = super.Model as IsRootDataModelDefinition<MutableRootModel>
 }
 
 internal class MutableModel : MutablePropertyDefinitions<IsValuesDataModel<MutableModel>, MutableModel>(), IsModel {

@@ -4,10 +4,10 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import maryk.core.exceptions.TypeException
-import maryk.core.models.IsNamedDataModel
-import maryk.core.models.IsObjectDataModel
-import maryk.core.models.IsValuesDataModel
-import maryk.core.models.ValueDataModel
+import maryk.core.models.definitions.IsNamedDataModelDefinition
+import maryk.core.models.definitions.IsObjectDataModel
+import maryk.core.models.definitions.IsValuesDataModel
+import maryk.core.models.definitions.ValueDataModelDefinition
 import maryk.core.properties.IsValueModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
@@ -80,7 +80,7 @@ internal fun generateKotlinValue(
     }
     is LocalDate -> "LocalDate(${value.year}, ${value.monthNumber}, ${value.dayOfMonth})"
     is IsIndexedEnumDefinition<*> -> value.name
-    is ValueDataModel<*, *> -> value.name
+    is ValueDataModelDefinition<*, *> -> value.name
     is Key<*> -> """Key("$value")"""
     is Bytes -> {
         addImport("maryk.core.properties.types.Bytes")
@@ -169,7 +169,7 @@ internal fun generateKotlinValue(
                 when (val model = (value as? Unit.() -> Any)?.invoke(Unit)) {
                     is IsValuesPropertyDefinitions ->
                         """{ ${model.Model.name} }"""
-                    is IsNamedDataModel<*> ->
+                    is IsNamedDataModelDefinition<*> ->
                         """{ ${model.name} }"""
                     null ->
                         if (value is IsValueModel<* , *>) {

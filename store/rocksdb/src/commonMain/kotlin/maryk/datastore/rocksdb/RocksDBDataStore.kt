@@ -9,7 +9,7 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
 import maryk.core.extensions.bytes.calculateVarByteLength
-import maryk.core.models.RootDataModel
+import maryk.core.models.definitions.RootDataModelDefinition
 import maryk.core.models.migration.MigrationException
 import maryk.core.models.migration.MigrationHandler
 import maryk.core.models.migration.MigrationStatus.NeedsMigration
@@ -17,7 +17,7 @@ import maryk.core.models.migration.MigrationStatus.NewIndicesOnExistingPropertie
 import maryk.core.models.migration.MigrationStatus.NewModel
 import maryk.core.models.migration.MigrationStatus.OnlySafeAdds
 import maryk.core.models.migration.MigrationStatus.UpToDate
-import maryk.core.models.migration.StoredRootDataModel
+import maryk.core.models.migration.StoredRootDataModelDefinition
 import maryk.core.properties.IsRootModel
 import maryk.core.properties.RootModel
 import maryk.core.properties.definitions.index.IsIndexable
@@ -90,7 +90,7 @@ import maryk.rocksdb.use
 class RocksDBDataStore(
     override val keepAllVersions: Boolean = true,
     relativePath: String,
-    dataModelsById: Map<UInt, RootDataModel<*>>,
+    dataModelsById: Map<UInt, RootDataModelDefinition<*>>,
     rocksDBOptions: DBOptions? = null,
     private val onlyCheckModelVersion: Boolean = false,
     val migrationHandler: MigrationHandler<RocksDBDataStore>? = null
@@ -168,11 +168,11 @@ class RocksDBDataStore(
                                 storeModelDefinition(this.db, modelColumnFamily, dataModel)
                             }
                             is NeedsMigration -> {
-                                val succeeded = migrationHandler?.invoke(this, migrationStatus.storedDataModel.Model as StoredRootDataModel, dataModel)
+                                val succeeded = migrationHandler?.invoke(this, migrationStatus.storedDataModel.Model as StoredRootDataModelDefinition, dataModel)
                                     ?: throw MigrationException("Migration needed: No migration handler present")
 
                                 if (!succeeded) {
-                                    throw MigrationException("Migration could not be handled for ${dataModel.name} & ${(migrationStatus.storedDataModel.Model as? StoredRootDataModel)?.version}")
+                                    throw MigrationException("Migration could not be handled for ${dataModel.name} & ${(migrationStatus.storedDataModel.Model as? StoredRootDataModelDefinition)?.version}")
                                 }
 
                                 migrationStatus.indicesToIndex?.let {
@@ -257,7 +257,7 @@ class RocksDBDataStore(
         walkDataRecordsAndFillIndex(this, tableColumnFamilies, indicesToIndex)
     }
 
-    private fun createColumnFamilyHandles(descriptors: MutableList<ColumnFamilyDescriptor>, tableIndex: UInt, db: RootDataModel<*>) {
+    private fun createColumnFamilyHandles(descriptors: MutableList<ColumnFamilyDescriptor>, tableIndex: UInt, db: RootDataModelDefinition<*>) {
         val nameSize = tableIndex.calculateVarByteLength() + 1
 
         // Prefix set to key size for more optimal search.

@@ -2,7 +2,6 @@ package maryk.core.models.serializers
 
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.SerializationException
-import maryk.core.models.IsNamedDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsDataModelPropertyDefinitions
 import maryk.core.properties.IsMutablePropertyDefinitions
@@ -20,11 +19,11 @@ import maryk.json.JsonToken.Stopped
 import maryk.lib.exceptions.ParseException
 import maryk.yaml.IsYamlReader
 
-internal fun <DM : IsNamedDataModel<*>, P : IsDataModelPropertyDefinitions<DM, *>> readDataModelJson(
+internal fun <DM : IsDataModelPropertyDefinitions<*, *>> readDataModelJson(
     context: ContainsDefinitionsContext?,
     reader: IsJsonLikeReader,
     values: MutableValueItems,
-    properties: P,
+    properties: DM,
     propertyDefinitionsCreator: () -> IsMutablePropertyDefinitions<*>,
     processAfterPropertiesAndContinue: ((IsDefinitionWrapper<Any, Any, IsPropertyContext, *>) -> Boolean)? = null
 ) {

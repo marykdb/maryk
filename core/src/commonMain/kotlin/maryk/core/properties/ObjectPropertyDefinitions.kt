@@ -1,7 +1,7 @@
 package maryk.core.properties
 
-import maryk.core.models.IsDataModel
-import maryk.core.models.ValueDataModel
+import maryk.core.models.definitions.IsDataModelDefinition
+import maryk.core.models.definitions.ValueDataModelDefinition
 import maryk.core.models.serializers.ValueDataModelSerializer
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsCollectionDefinition
@@ -66,11 +66,11 @@ internal abstract class BaseMutableObjectPropertyDefinitions<DO: Any> : ObjectPr
 }
 
 internal class MutableValueModel<DO: ValueDataObject>: BaseMutableObjectPropertyDefinitions<DO>(), IsValueModel<DO, MutableValueModel<DO>> {
-    internal var _model: IsDataModel<*>? = null
+    internal var _model: IsDataModelDefinition<*>? = null
     override val Serializer = ValueDataModelSerializer(this)
 
     @Suppress("UNCHECKED_CAST")
-    override val Model get() = _model as? ValueDataModel<DO, MutableValueModel<DO>>
+    override val Model get() = _model as? ValueDataModelDefinition<DO, MutableValueModel<DO>>
         ?: throw Exception("No Model yet set, likely DataModel was not initialized yet")
 
     override fun invoke(values: ObjectValues<DO, MutableValueModel<DO>>): DO {

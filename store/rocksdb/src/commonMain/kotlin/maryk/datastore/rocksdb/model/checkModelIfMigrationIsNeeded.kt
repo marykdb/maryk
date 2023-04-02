@@ -1,7 +1,7 @@
 package maryk.datastore.rocksdb.model
 
 import maryk.core.exceptions.StorageException
-import maryk.core.models.RootDataModel
+import maryk.core.models.definitions.RootDataModelDefinition
 import maryk.core.models.migration.MigrationStatus
 import maryk.core.models.migration.MigrationStatus.NewModel
 import maryk.core.models.migration.MigrationStatus.UpToDate
@@ -36,7 +36,7 @@ fun <P: IsValuesPropertyDefinitions> checkModelIfMigrationIsNeeded(
 
             var readIndex = 0
             val context = DefinitionsConversionContext()
-            val storedDataModel = RootDataModel.Model.Serializer.readProtoBuf(modelBytes.size, { modelBytes[readIndex++] }, context).toDataObject()
+            val storedDataModel = RootDataModelDefinition.Model.Serializer.readProtoBuf(modelBytes.size, { modelBytes[readIndex++] }, context).toDataObject()
 
             // Check by comparing the data models for if migration is needed
             return dataModel.isMigrationNeeded(storedDataModel.properties)

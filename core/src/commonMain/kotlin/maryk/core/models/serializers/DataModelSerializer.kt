@@ -2,7 +2,6 @@ package maryk.core.models.serializers
 
 import maryk.core.inject.Inject
 import maryk.core.inject.InjectWithReference
-import maryk.core.models.values
 import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsTypedPropertyDefinitions

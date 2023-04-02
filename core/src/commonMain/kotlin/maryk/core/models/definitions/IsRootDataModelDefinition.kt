@@ -1,10 +1,10 @@
-package maryk.core.models
+package maryk.core.models.definitions
 
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.types.Version
 
-interface IsRootDataModel<P : IsValuesPropertyDefinitions> : IsValuesDataModel<P> {
+interface IsRootDataModelDefinition<DM : IsValuesPropertyDefinitions> : IsValuesDataModel<DM> {
     val keyDefinition: IsIndexable
     val indices: List<IsIndexable>?
 

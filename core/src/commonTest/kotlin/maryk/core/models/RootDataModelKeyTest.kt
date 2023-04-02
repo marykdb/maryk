@@ -4,6 +4,7 @@ import maryk.core.exceptions.InvalidDefinitionException
 import maryk.core.models.WrongProperties.boolean
 import maryk.core.models.WrongProperties.dateTime
 import maryk.core.models.WrongProperties.string
+import maryk.core.models.definitions.RootDataModelDefinition
 import maryk.core.properties.Model
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.dateTime
@@ -26,7 +27,7 @@ class RootDataModelKeyTest {
     @Test
     fun notAcceptNonRequiredDefinitions() {
         assertFailsWith<IllegalArgumentException> {
-            RootDataModel(
+            RootDataModelDefinition(
                 keyDefinition = boolean.ref(),
                 properties = WrongProperties
             )
@@ -36,7 +37,7 @@ class RootDataModelKeyTest {
     @Test
     fun notAcceptNonFinalDefinitions() {
         assertFailsWith<IllegalArgumentException> {
-            RootDataModel(
+            RootDataModelDefinition(
                 keyDefinition = Multiple(
                     dateTime.ref()
                 ),
@@ -48,7 +49,7 @@ class RootDataModelKeyTest {
     @Test
     fun notAcceptFlexByteDefinitions() {
         assertFailsWith<InvalidDefinitionException> {
-            RootDataModel(
+            RootDataModelDefinition(
                 keyDefinition = Multiple(
                     string.ref()
                 ),

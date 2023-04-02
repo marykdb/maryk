@@ -1,21 +1,21 @@
 package maryk.core.properties
 
-import maryk.core.models.IsObjectDataModel
-import maryk.core.models.ObjectDataModel
+import maryk.core.models.definitions.IsObjectDataModel
+import maryk.core.models.definitions.ObjectDataModelDefinition
 import maryk.core.models.serializers.IsObjectDataModelSerializer
 import kotlin.reflect.KClass
 
-interface IsNamedObjectModel<DO: Any, P: IsObjectPropertyDefinitions<DO>>: IsBaseModel<DO, P, IsPropertyContext, IsPropertyContext>, IsTypedObjectPropertyDefinitions<DO, P, IsPropertyContext>, IsStorableModel {
-    override val Serializer: IsObjectDataModelSerializer<DO, P, IsPropertyContext, IsPropertyContext>
-    override val Model: IsObjectDataModel<DO, P>
+interface IsNamedObjectModel<DO: Any, DM: IsObjectPropertyDefinitions<DO>>: IsBaseModel<DO, DM, IsPropertyContext, IsPropertyContext>, IsTypedObjectPropertyDefinitions<DO, DM, IsPropertyContext>, IsStorableModel {
+    override val Serializer: IsObjectDataModelSerializer<DO, DM, IsPropertyContext, IsPropertyContext>
+    override val Model: IsObjectDataModel<DO, DM>
 }
 
-abstract class NamedObjectModel<DO: Any, P: ObjectPropertyDefinitions<DO>>(
+abstract class NamedObjectModel<DO: Any, DM: ObjectPropertyDefinitions<DO>>(
     objClass: KClass<DO>,
-): ObjectModel<DO, P, IsPropertyContext, IsPropertyContext>(), IsNamedObjectModel<DO, P> {
+): ObjectModel<DO, DM, IsPropertyContext, IsPropertyContext>(), IsNamedObjectModel<DO, DM> {
     @Suppress("UNCHECKED_CAST", "LeakingThis")
-    override val Model = object: ObjectDataModel<DO, P>(
+    override val Model = object: ObjectDataModelDefinition<DO, DM>(
         objClass.simpleName!!,
-        this as P,
+        this as DM,
     ) {}
 }

@@ -3,7 +3,7 @@
 package maryk.core.query
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.IsValuesDataModel
+import maryk.core.models.definitions.IsValuesDataModel
 import maryk.core.properties.IsRootModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.QueryModel

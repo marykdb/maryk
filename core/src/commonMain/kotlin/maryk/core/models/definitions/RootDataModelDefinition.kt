@@ -1,9 +1,10 @@
-package maryk.core.models
+package maryk.core.models.definitions
 
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.definitions.PrimitiveType.RootModel
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.SerializationException
+import maryk.core.models.addProperties
 import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.models.serializers.readDataModelJson
 import maryk.core.models.serializers.writeDataModelJson
@@ -49,7 +50,7 @@ import maryk.yaml.IsYamlReader
  *
  * The dataModel can be referenced by the [name] and the properties are defined by a [properties]
  */
-class RootDataModel<DM : IsValuesPropertyDefinitions>(
+class RootDataModelDefinition<DM : IsValuesPropertyDefinitions>(
     override val keyDefinition: IsIndexable = UUIDKey,
     override val version: Version = Version(1),
     override val indices: List<IsIndexable>? = null,
@@ -57,8 +58,8 @@ class RootDataModel<DM : IsValuesPropertyDefinitions>(
     override val reservedNames: List<String>? = null,
     properties: DM,
     override val name: String = properties::class.simpleName ?: throw DefNotFoundException("Class $properties has no name")
-) : BaseDataModel<DM>(properties),
-    IsRootDataModel<DM>,
+) : BaseDataModelDefinition<DM>(properties),
+    IsRootDataModelDefinition<DM>,
     MarykPrimitive {
     override val primitiveType = RootModel
 
@@ -68,21 +69,21 @@ class RootDataModel<DM : IsValuesPropertyDefinitions>(
     override val orderedIndices: List<IsIndexable>? = indices?.sortedBy { it.referenceStorageByteArray }
 
     internal object InternalModel :
-        DefinitionModel<RootDataModel<*>>(),
-        IsDataModelPropertyDefinitions<RootDataModel<*>, PropertyDefinitionsCollectionDefinitionWrapper<RootDataModel<*>>> {
-        override val name by string(1u, RootDataModel<*>::name)
-        override val properties = addProperties(true, this as ObjectPropertyDefinitions<RootDataModel<*>>)
+        DefinitionModel<RootDataModelDefinition<*>>(),
+        IsDataModelPropertyDefinitions<RootDataModelDefinition<*>, PropertyDefinitionsCollectionDefinitionWrapper<RootDataModelDefinition<*>>> {
+        override val name by string(1u, RootDataModelDefinition<*>::name)
+        override val properties = addProperties(true, this as ObjectPropertyDefinitions<RootDataModelDefinition<*>>)
         val version by valueObject(
             index = 3u,
             dataModel = Version,
             default = Version(1),
-            getter = RootDataModel<*>::version
+            getter = RootDataModelDefinition<*>::version
         )
         val key by internalMultiType(
             index = 4u,
             typeEnum = IndexKeyPartType,
             definitionMap = mapOfIndexKeyPartDefinitions,
-            getter = RootDataModel<*>::keyDefinition,
+            getter = RootDataModelDefinition<*>::keyDefinition,
             toSerializable = { value: IsIndexable?, _: ContainsDefinitionsContext? ->
                 value?.let { TypedValue(value.indexKeyPartType, value) }
             },
@@ -90,7 +91,7 @@ class RootDataModel<DM : IsValuesPropertyDefinitions>(
         )
         val indices by list(
             index = 5u,
-            getter = RootDataModel<*>::indices,
+            getter = RootDataModelDefinition<*>::indices,
             valueDefinition = InternalMultiTypeDefinition(
                 typeEnum = IndexKeyPartType,
                 definitionMap = mapOfIndexKeyPartDefinitions
@@ -104,7 +105,7 @@ class RootDataModel<DM : IsValuesPropertyDefinitions>(
         )
         val reservedIndices by list(
             index = 6u,
-            getter = RootDataModel<*>::reservedIndices,
+            getter = RootDataModelDefinition<*>::reservedIndices,
             valueDefinition = NumberDefinition(
                 type = UInt32,
                 minValue = 1u
@@ -112,12 +113,12 @@ class RootDataModel<DM : IsValuesPropertyDefinitions>(
         )
         val reservedNames by list(
             index = 7u,
-            getter = RootDataModel<*>::reservedNames,
+            getter = RootDataModelDefinition<*>::reservedNames,
             valueDefinition = StringDefinition()
         )
 
-        override fun invoke(values: ObjectValues<RootDataModel<*>, ObjectPropertyDefinitions<RootDataModel<*>>>) =
-            RootDataModel(
+        override fun invoke(values: ObjectValues<RootDataModelDefinition<*>, ObjectPropertyDefinitions<RootDataModelDefinition<*>>>) =
+            RootDataModelDefinition(
                 name = values(1u),
                 properties = values(2u),
                 version = values(3u),
@@ -130,9 +131,9 @@ class RootDataModel<DM : IsValuesPropertyDefinitions>(
                 (properties as MutablePropertyDefinitions<*, IsRootModel>)._model = this as IsValuesDataModel<IsRootModel>
             }
 
-        override val Serializer = object: ObjectDataModelSerializer<RootDataModel<*>, ObjectPropertyDefinitions<RootDataModel<*>>, ContainsDefinitionsContext, ContainsDefinitionsContext>(this){
+        override val Serializer = object: ObjectDataModelSerializer<RootDataModelDefinition<*>, ObjectPropertyDefinitions<RootDataModelDefinition<*>>, ContainsDefinitionsContext, ContainsDefinitionsContext>(this){
             override fun writeJson(
-                values: ObjectValues<RootDataModel<*>, ObjectPropertyDefinitions<RootDataModel<*>>>,
+                values: ObjectValues<RootDataModelDefinition<*>, ObjectPropertyDefinitions<RootDataModelDefinition<*>>>,
                 writer: IsJsonLikeWriter,
                 context: ContainsDefinitionsContext?
             ) {
@@ -140,10 +141,10 @@ class RootDataModel<DM : IsValuesPropertyDefinitions>(
             }
 
             override fun writeObjectAsJson(
-                obj: RootDataModel<*>,
+                obj: RootDataModelDefinition<*>,
                 writer: IsJsonLikeWriter,
                 context: ContainsDefinitionsContext?,
-                skip: List<IsDefinitionWrapper<*, *, *, RootDataModel<*>>>?
+                skip: List<IsDefinitionWrapper<*, *, *, RootDataModelDefinition<*>>>?
             ) {
                 this.writeDataModelJson(writer, context, obj, InternalModel)
             }
@@ -217,6 +218,6 @@ class RootDataModel<DM : IsValuesPropertyDefinitions>(
     }
 
     companion object {
-        val Model: DefinitionModel<RootDataModel<*>> = InternalModel
+        val Model: DefinitionModel<RootDataModelDefinition<*>> = InternalModel
     }
 }

@@ -1,8 +1,8 @@
 package maryk.core.properties
 
 import maryk.core.extensions.bytes.initByteArray
-import maryk.core.models.IsRootDataModel
-import maryk.core.models.RootDataModel
+import maryk.core.models.definitions.IsRootDataModelDefinition
+import maryk.core.models.definitions.RootDataModelDefinition
 import maryk.core.models.migration.MigrationStatus
 import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -16,6 +16,10 @@ import maryk.core.properties.references.IsFixedBytesPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.Version
+import maryk.core.query.RequestContext
+import maryk.core.query.changes.IsChange
+import maryk.core.values.MutableValueItems
+import maryk.core.values.ValueItems
 import maryk.core.values.Values
 import maryk.lib.exceptions.ParseException
 import maryk.lib.synchronizedIteration
@@ -23,7 +27,7 @@ import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
 interface IsRootModel: IsValuesPropertyDefinitions {
-    override val Model: IsRootDataModel<out IsValuesPropertyDefinitions>
+    override val Model: IsRootDataModelDefinition<out IsValuesPropertyDefinitions>
 }
 
 open class RootModel<DM: IsValuesPropertyDefinitions>(
@@ -33,10 +37,10 @@ open class RootModel<DM: IsValuesPropertyDefinitions>(
     reservedIndices: List<UInt>? = null,
     reservedNames: List<String>? = null,
     name: String? = null,
-) : TypedValuesModel<RootDataModel<DM>, DM>(), IsRootModel {
+) : TypedValuesModel<RootDataModelDefinition<DM>, DM>(), IsRootModel {
     @Suppress("UNCHECKED_CAST")
-    override val Model: RootDataModel<DM> by lazy {
-        RootDataModel(
+    override val Model: RootDataModelDefinition<DM> by lazy {
+        RootDataModelDefinition(
             keyDefinition = keyDefinition.invoke(),
             version = version,
             indices = indices?.invoke(),
@@ -44,7 +48,7 @@ open class RootModel<DM: IsValuesPropertyDefinitions>(
             reservedNames = reservedNames,
             name = name ?: this::class.simpleName!!,
             properties = this,
-        ) as RootDataModel<DM>
+        ) as RootDataModelDefinition<DM>
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -108,6 +112,25 @@ open class RootModel<DM: IsValuesPropertyDefinitions>(
         }
     }
 }
+
+/** Create a Values object with given [changes] */
+fun <DM : IsRootModel> DM.fromChanges(
+    context: RequestContext?,
+    changes: List<IsChange>
+) = if (changes.isEmpty()) {
+    Values(this, ValueItems(), context)
+} else {
+    val valueItemsToChange = MutableValueItems(mutableListOf())
+
+    for (change in changes) {
+        change.changeValues { ref, valueChanger ->
+            valueItemsToChange.copyFromOriginalAndChange(null, ref.index, valueChanger)
+        }
+    }
+
+    Values(this, valueItemsToChange, context)
+}
+
 
 @OptIn(ExperimentalEncodingApi::class)
 fun <DM: IsRootModel> DM.key(base64: String) = key(Base64.Mime.decode(base64))

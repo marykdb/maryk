@@ -1,8 +1,8 @@
 package maryk.generator.proto3
 
 import maryk.core.exceptions.TypeException
-import maryk.core.models.IsNamedDataModel
-import maryk.core.models.IsValuesDataModel
+import maryk.core.models.definitions.IsNamedDataModelDefinition
+import maryk.core.models.definitions.IsValuesDataModel
 import maryk.core.properties.IsStorableModel
 import maryk.core.properties.IsTypedPropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
@@ -41,7 +41,7 @@ import maryk.core.properties.types.numeric.NumberType.UInt64Type
 import maryk.core.properties.types.numeric.NumberType.UInt8Type
 import maryk.generator.kotlin.GenerationContext
 
-fun <P : IsTypedPropertyDefinitions<*>> IsNamedDataModel<P>.generateProto3Schema(
+fun <DM : IsTypedPropertyDefinitions<*>> IsNamedDataModelDefinition<DM>.generateProto3Schema(
     generationContext: GenerationContext,
     writer: (String) -> Unit
 ) {

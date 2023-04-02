@@ -6,9 +6,9 @@ import maryk.core.definitions.PrimitiveType.RootModel
 import maryk.core.definitions.PrimitiveType.TypeDefinition
 import maryk.core.definitions.PrimitiveType.ValueModel
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.DataModel
-import maryk.core.models.RootDataModel
-import maryk.core.models.ValueDataModel
+import maryk.core.models.definitions.DataModelDefinition
+import maryk.core.models.definitions.RootDataModelDefinition
+import maryk.core.models.definitions.ValueDataModelDefinition
 import maryk.core.models.serializers.SingleValueDataModelSerializer
 import maryk.core.properties.SingleValueModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
@@ -52,7 +52,7 @@ data class Definitions(
                 definitionMap = mapOf(
                     PrimitiveType.Model to ContextCaptureDefinition(
                         definition = EmbeddedObjectDefinition(
-                            dataModel = { DataModel.Model }
+                            dataModel = { DataModelDefinition.Model }
                         ),
                         capturer = { context, model ->
                             context?.let {
@@ -62,7 +62,7 @@ data class Definitions(
                     ),
                     ValueModel to ContextCaptureDefinition(
                         definition = EmbeddedObjectDefinition(
-                            dataModel = { ValueDataModel.Model }
+                            dataModel = { ValueDataModelDefinition.Model }
                         ),
                         capturer = { context, model ->
                             context?.let {
@@ -72,7 +72,7 @@ data class Definitions(
                     ),
                     RootModel to ContextCaptureDefinition(
                         definition = EmbeddedObjectDefinition(
-                            dataModel = { RootDataModel.Model }
+                            dataModel = { RootDataModelDefinition.Model }
                         ),
                         capturer = { context: ContainsDefinitionsContext?, model ->
                             context?.let {

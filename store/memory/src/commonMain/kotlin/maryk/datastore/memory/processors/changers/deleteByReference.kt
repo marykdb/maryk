@@ -2,7 +2,6 @@ package maryk.datastore.memory.processors.changers
 
 import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
-import maryk.core.models.values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.wrapper.IsMapDefinitionWrapper
@@ -17,6 +16,7 @@ import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
 import maryk.core.properties.references.TypedPropertyReference
 import maryk.core.properties.references.TypedValueReference
+import maryk.core.properties.values
 import maryk.core.values.EmptyValueItems
 import maryk.datastore.memory.records.DataRecordNode
 import maryk.datastore.memory.records.DataRecordValue

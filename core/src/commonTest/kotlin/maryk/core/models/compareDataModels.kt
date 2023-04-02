@@ -1,12 +1,15 @@
 package maryk.core.models
 
+import maryk.core.models.definitions.BaseDataModelDefinition
+import maryk.core.models.definitions.IsObjectDataModel
+import maryk.core.models.definitions.IsRootDataModelDefinition
 import maryk.core.properties.definitions.wrapper.comparePropertyDefinitionWrapper
 import kotlin.test.assertEquals
 
 /**
  * Compares if two DataModels are equal
  */
-internal fun <DM : BaseDataModel<*>> compareDataModels(converted: DM, original: DM) {
+internal fun <DM : BaseDataModelDefinition<*>> compareDataModels(converted: DM, original: DM) {
     (converted.properties)
         .zip(original.properties)
         .forEach { (convertedWrapper, originalWrapper) ->
@@ -20,8 +23,8 @@ internal fun <DM : BaseDataModel<*>> compareDataModels(converted: DM, original: 
         assertEquals(original.name, converted.name)
     }
 
-    if (original is IsRootDataModel<*>) {
-        if (converted !is IsRootDataModel<*>) {
+    if (original is IsRootDataModelDefinition<*>) {
+        if (converted !is IsRootDataModelDefinition<*>) {
             throw AssertionError("Converted model should be a RootObjectDataModel")
         }
 

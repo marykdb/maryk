@@ -6,7 +6,7 @@ import maryk.core.exceptions.TypeException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.initUInt
 import maryk.core.extensions.bytes.initUIntByVarWithExtraInfo
-import maryk.core.models.IsDataModel
+import maryk.core.models.definitions.IsDataModelDefinition
 import maryk.core.processors.datastore.ChangeType.CHANGE
 import maryk.core.processors.datastore.ChangeType.OBJECT_CREATE
 import maryk.core.processors.datastore.ChangeType.OBJECT_DELETE
@@ -113,7 +113,7 @@ fun <DM : IsRootModel> DM.readStorageToChanges(
     processQualifiers(getQualifier) { qualifierReader, qualifierLength, addToCache ->
         @Suppress("UNCHECKED_CAST")
         // Otherwise, try to get a new qualifier processor from DataModel
-        (this.Model as IsDataModel<IsValuesPropertyDefinitions>).readQualifier(qualifierReader, qualifierLength, 0, select, null, changeAdder, processValue, addToCache)
+        (this.Model as IsDataModelDefinition<IsValuesPropertyDefinitions>).readQualifier(qualifierReader, qualifierLength, 0, select, null, changeAdder, processValue, addToCache)
     }
 
     // Create Values
@@ -196,7 +196,7 @@ private fun createChange(changeType: ChangeType, changePart: Any) = when (change
  * [readValueFromStorage] is used to fetch actual value from storage layer
  * [addToCache] is used to add a sub reader to cache, so it does not need to reprocess the qualifier from start
  */
-private fun <P : IsPropertyDefinitions> IsDataModel<P>.readQualifier(
+private fun <DM : IsPropertyDefinitions> IsDataModelDefinition<DM>.readQualifier(
     qualifierReader: (Int) -> Byte,
     qualifierLength: Int,
     offset: Int,
@@ -246,14 +246,14 @@ private fun <P : IsPropertyDefinitions> IsDataModel<P>.readQualifier(
 }
 
 /** Read qualifier from [qualifierReader] at [currentOffset] with [definition] into changes */
-private fun <P : IsValuesPropertyDefinitions> readQualifierOfType(
+private fun <DM : IsValuesPropertyDefinitions> readQualifierOfType(
     qualifierReader: (Int) -> Byte,
     qualifierLength: Int,
     currentOffset: Int,
     definition: IsPropertyDefinition<out Any>,
     refStoreType: ReferenceType,
     index: UInt,
-    select: IsPropRefGraph<P>?,
+    select: IsPropRefGraph<DM>?,
     reference: IsPropertyReference<*, *, *>,
     addChangeToOutput: ChangeAdder,
     readValueFromStorage: ValueWithVersionReader,
@@ -485,13 +485,13 @@ private fun <P : IsValuesPropertyDefinitions> readQualifierOfType(
     }
 }
 
-private fun <P : IsValuesPropertyDefinitions> readComplexChanges(
+private fun <DM : IsValuesPropertyDefinitions> readComplexChanges(
     qualifierReader: (Int) -> Byte,
     qualifierLength: Int,
     offset: Int,
     definition: IsSubDefinition<*, *>,
     parentReference: IsPropertyReference<*, *, *>,
-    select: IsPropRefGraph<P>?,
+    select: IsPropRefGraph<DM>?,
     addToCache: CacheProcessor,
     addChangeToOutput: ChangeAdder,
     readValueFromStorage: ValueWithVersionReader
@@ -669,13 +669,13 @@ private fun IsMultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>.readCom
     )
 }
 
-private fun <P : IsValuesPropertyDefinitions> readEmbeddedValues(
+private fun <DM : IsValuesPropertyDefinitions> readEmbeddedValues(
     qualifierReader: (Int) -> Byte,
     qualifierLength: Int,
     offset: Int,
     readValueFromStorage: ValueWithVersionReader,
     definition: IsEmbeddedDefinition<*>,
-    select: IsPropRefGraph<P>?,
+    select: IsPropRefGraph<DM>?,
     parentReference: IsPropertyReference<*, *, *>?,
     addToCache: CacheProcessor,
     addChangeToOutput: ChangeAdder

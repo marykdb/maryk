@@ -1,7 +1,7 @@
 package maryk.generator.kotlin
 
 import maryk.core.exceptions.TypeException
-import maryk.core.models.IsNamedDataModel
+import maryk.core.models.definitions.IsNamedDataModelDefinition
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
@@ -292,7 +292,7 @@ private val definitionNamesMap = mapOf(
         className = "EmbeddedValuesDefinition",
         wrapFunctionName = "embed",
         kotlinTypeName = {
-            val modelName = (it.dataModel.Model as IsNamedDataModel<*>).name
+            val modelName = (it.dataModel.Model as IsNamedDataModelDefinition<*>).name
             "Values<$modelName, $modelName.Properties>"
         },
         imports = { valuesImports },
@@ -311,7 +311,7 @@ private val definitionNamesMap = mapOf(
     PropertyDefinitionType.Value to PropertyDefinitionKotlinDescriptor(
         className = "ValueObjectDefinition",
         wrapFunctionName = "valueObject",
-        kotlinTypeName = { (it.dataModel.Model as IsNamedDataModel<*>).name },
+        kotlinTypeName = { it.dataModel.Model.name },
         definitionModel = ValueObjectDefinition.Model,
         propertyValueOverride = mapOf(
             "default" to generateKotlinValueWithDefinition,

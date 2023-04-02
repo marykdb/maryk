@@ -5,8 +5,6 @@ import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
 import maryk.core.extensions.bytes.toVarBytes
-import maryk.core.models.IsValuesDataModel
-import maryk.core.models.values
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.ListSize
 import maryk.core.processors.datastore.StorageTypeEnum.MapSize
@@ -54,6 +52,7 @@ import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
+import maryk.core.properties.values
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Check
 import maryk.core.query.changes.Delete
@@ -204,7 +203,6 @@ private suspend fun <DM : IsRootModel> applyChanges(
                         }
                     }
                     is Change -> {
-                        @Suppress("UNUSED_VARIABLE")
                         for ((reference, value) in change.referenceValuePairs) {
                             when (value) {
                                 is Map<*, *> -> {

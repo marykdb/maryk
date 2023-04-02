@@ -1,12 +1,12 @@
 package maryk.core.models.migration
 
-import maryk.core.models.IsRootDataModel
+import maryk.core.models.definitions.IsRootDataModelDefinition
 
-typealias StoredRootDataModel = IsRootDataModel<*>
-typealias NewRootDataModel = IsRootDataModel<*>
+typealias StoredRootDataModelDefinition = IsRootDataModelDefinition<*>
+typealias NewRootDataModelDefinition = IsRootDataModelDefinition<*>
 
 /**
  * Handles the migration for the to be migrated DataModels.
  * Throws MigrationException if version cannot be handled
  */
-typealias MigrationHandler<DS> = (DS, StoredRootDataModel, NewRootDataModel) -> Boolean
+typealias MigrationHandler<DS> = (DS, StoredRootDataModelDefinition, NewRootDataModelDefinition) -> Boolean

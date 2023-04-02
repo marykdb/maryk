@@ -1,8 +1,8 @@
 package maryk.datastore.rocksdb.processors
 
-import maryk.core.models.fromChanges
 import maryk.core.properties.IsRootModel
 import maryk.core.properties.definitions.index.IsIndexable
+import maryk.core.properties.fromChanges
 import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
@@ -178,10 +178,9 @@ internal fun <DM : IsRootModel> processScanUpdatesRequest(
 
         scanRequest.orderedKeys?.let { orderedKeys ->
             // Remove values which should or should not be there from passed orderedKeys
-            // This so the requester is up to date with any in between filtered values
+            // This so the requester is up-to-date with any in between filtered values
             orderedKeys.subtract(matchingKeys.toSet()).let { removedKeys ->
                 for (removedKey in removedKeys) {
-                    @Suppress("UNCHECKED_CAST")
                     val createdVersionLength = dbAccessor.get(columnFamilies.keys, dataStore.defaultReadOptions, removedKey.bytes, recyclableByteArray)
 
                     updates += RemovalUpdate(

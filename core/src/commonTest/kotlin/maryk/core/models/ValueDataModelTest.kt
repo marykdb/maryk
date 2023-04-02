@@ -4,6 +4,7 @@ import kotlinx.datetime.LocalDateTime
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
+import maryk.core.models.definitions.ValueDataModelDefinition
 import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
@@ -25,16 +26,16 @@ internal class ValueDataModelTest {
     fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(
             TestValueObject.Model,
-            ValueDataModel.Model,
+            ValueDataModelDefinition.Model,
             { DefinitionsConversionContext() },
-            { converted: ValueDataModel<*, *>, original: ValueDataModel<*, *> ->
+            { converted: ValueDataModelDefinition<*, *>, original: ValueDataModelDefinition<*, *> ->
                 compareDataModels(converted, original)
 
                 // Also test conversion with the generated ValueObject
 
                 @Suppress("UNCHECKED_CAST")
                 val convertedValueModel =
-                    converted as ValueDataModel<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>
+                    converted as ValueDataModelDefinition<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>
 
                 val value = converted.properties.values {
                     ValueItems(
@@ -66,7 +67,7 @@ internal class ValueDataModelTest {
     fun convertDefinitionToJSONAndBack() {
         checkJsonConversion(
             TestValueObject.Model,
-            ValueDataModel.Model,
+            ValueDataModelDefinition.Model,
             { DefinitionsConversionContext() },
             ::compareDataModels
         )
@@ -99,7 +100,7 @@ internal class ValueDataModelTest {
         ) {
             checkYamlConversion(
                 TestValueObject.Model,
-                ValueDataModel.Model,
+                ValueDataModelDefinition.Model,
                 { DefinitionsConversionContext() },
                 ::compareDataModels
             )

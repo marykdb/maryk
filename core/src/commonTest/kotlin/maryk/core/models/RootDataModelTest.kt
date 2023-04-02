@@ -4,6 +4,7 @@ import kotlinx.datetime.LocalTime
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
+import maryk.core.models.definitions.RootDataModelDefinition
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
@@ -90,7 +91,7 @@ internal class RootDataModelTest {
     fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(
             TestMarykModel.Model,
-            RootDataModel.Model,
+            RootDataModelDefinition.Model,
             { DefinitionsConversionContext() },
             ::compareDataModels
         )
@@ -352,7 +353,7 @@ internal class RootDataModelTest {
         ) {
             checkJsonConversion(
                 TestMarykModel.Model,
-                RootDataModel.Model,
+                RootDataModelDefinition.Model,
                 { DefinitionsConversionContext() },
                 ::compareDataModels
             )
@@ -550,7 +551,7 @@ internal class RootDataModelTest {
         ) {
             checkYamlConversion(
                 TestMarykModel.Model,
-                RootDataModel.Model,
+                RootDataModelDefinition.Model,
                 { DefinitionsConversionContext() },
                 ::compareDataModels
             )
@@ -640,7 +641,7 @@ internal class RootDataModelTest {
         newContext.dataModels["TestValueObject"] = { TestValueObject }
         newContext.dataModels["EmbeddedMarykModel"] = { EmbeddedMarykModel }
 
-        RootDataModel.Model.Serializer.readJson(reader, newContext).toDataObject().apply {
+        RootDataModelDefinition.Model.Serializer.readJson(reader, newContext).toDataObject().apply {
             assertEquals("SimpleModel", name)
 
             properties["string"]!!.let {

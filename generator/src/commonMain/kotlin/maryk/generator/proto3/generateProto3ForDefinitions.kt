@@ -2,9 +2,9 @@ package maryk.generator.proto3
 
 import maryk.core.definitions.Definitions
 import maryk.core.exceptions.TypeException
-import maryk.core.models.DataModel
-import maryk.core.models.RootDataModel
-import maryk.core.models.ValueDataModel
+import maryk.core.models.definitions.DataModelDefinition
+import maryk.core.models.definitions.RootDataModelDefinition
+import maryk.core.models.definitions.ValueDataModelDefinition
 import maryk.core.properties.enum.IsIndexedEnumDefinition
 import maryk.generator.kotlin.GenerationContext
 
@@ -20,18 +20,18 @@ fun Definitions.generateProto3(
                 obj.generateProto3Schema(writer)
                 kotlinGenerationContext.enums.add(obj)
             }
-            is ValueDataModel<*, *> -> {
+            is ValueDataModelDefinition<*, *> -> {
                 val writer = writerConstructor(obj.name)
                 obj.generateProto3Schema(
                     kotlinGenerationContext,
                     writer
                 )
             }
-            is RootDataModel<*> -> {
+            is RootDataModelDefinition<*> -> {
                 val writer = writerConstructor(obj.name)
                 obj.generateProto3Schema(kotlinGenerationContext, writer)
             }
-            is DataModel<*> -> {
+            is DataModelDefinition<*> -> {
                 val writer = writerConstructor(obj.name)
                 obj.generateProto3Schema(kotlinGenerationContext, writer)
             }

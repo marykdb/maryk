@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions.contextual
 
 import maryk.checkProtoBufConversion
-import maryk.core.models.IsValuesDataModel
+import maryk.core.models.definitions.IsValuesDataModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.TypedValuesModel
 import maryk.core.values.ValuesImpl

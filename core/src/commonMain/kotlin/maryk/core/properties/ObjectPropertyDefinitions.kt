@@ -2,7 +2,7 @@ package maryk.core.properties
 
 import maryk.core.models.IsDataModel
 import maryk.core.models.ValueDataModel
-import maryk.core.models.serializers.ObjectDataModelSerializer
+import maryk.core.models.serializers.ValueDataModelSerializer
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsContextualEncodable
@@ -67,7 +67,7 @@ internal abstract class BaseMutableObjectPropertyDefinitions<DO: Any> : ObjectPr
 
 internal class MutableValueModel<DO: ValueDataObject>: BaseMutableObjectPropertyDefinitions<DO>(), IsValueModel<DO, MutableValueModel<DO>> {
     internal var _model: IsDataModel<*>? = null
-    override val Serializer = ObjectDataModelSerializer<DO, MutableValueModel<DO>, IsPropertyContext, IsPropertyContext>(this)
+    override val Serializer = ValueDataModelSerializer(this)
 
     @Suppress("UNCHECKED_CAST")
     override val Model get() = _model as? ValueDataModel<DO, MutableValueModel<DO>>

@@ -56,13 +56,13 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueModel<DO, *>>
     override fun writeStorageBytes(value: DO, writer: (byte: Byte) -> Unit) = value._bytes.writeBytes(writer)
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) =
-        this.dataModel.Model.readFromBytes(reader)
+        this.dataModel.Serializer.readFromBytes(reader)
 
     override fun calculateTransportByteLength(value: DO) = this.dataModel.Model.byteSize
 
     override fun asString(value: DO) = value.toBase64()
 
-    override fun fromString(string: String) = this.dataModel.Model.fromBase64(string)
+    override fun fromString(string: String) = this.dataModel.Serializer.fromBase64(string)
 
     override fun getEmbeddedByName(name: String): IsDefinitionWrapper<*, *, *, *>? = dataModel[name]
 
@@ -92,7 +92,7 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueModel<DO, *>>
     override fun fromNativeType(value: Any) =
         if (value is ByteArray && value.size == this.byteSize) {
             var i = 0
-            this.dataModel.Model.readFromBytes {
+            this.dataModel.Serializer.readFromBytes {
                 value[i++]
             }
         } else {

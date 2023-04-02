@@ -1,6 +1,7 @@
 package maryk.core.properties
 
 import maryk.core.models.ValueDataModel
+import maryk.core.models.serializers.IsValueDataModelSerializer
 import maryk.core.models.serializers.ValueDataModelSerializer
 import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 import maryk.core.properties.types.ValueDataObject
@@ -8,6 +9,7 @@ import maryk.core.values.ObjectValues
 import kotlin.reflect.KClass
 
 interface IsValueModel<DO: ValueDataObject, P: IsObjectPropertyDefinitions<DO>>: IsBaseModel<DO, P, IsPropertyContext, IsPropertyContext>, IsTypedObjectPropertyDefinitions<DO, P, IsPropertyContext>, IsObjectModel<DO, P> {
+    override val Serializer: IsValueDataModelSerializer<DO, P>
     override val Model: ValueDataModel<DO, P>
 
     /** Creates bytes for given [values] */
@@ -31,16 +33,16 @@ interface IsValueModel<DO: ValueDataObject, P: IsObjectPropertyDefinitions<DO>>:
     }
 }
 
-abstract class ValueModel<DO: ValueDataObject, P: ObjectPropertyDefinitions<DO>>(
+abstract class ValueModel<DO: ValueDataObject, P: IsValueModel<DO, *>>(
     objClass: KClass<DO>,
 ): InternalModel<DO, P, IsPropertyContext, IsPropertyContext>(), IsValueModel<DO, P> {
-    @Suppress("UNCHECKED_CAST", "LeakingThis")
+    @Suppress("LeakingThis", "UNCHECKED_CAST")
     override val Serializer = object: ValueDataModelSerializer<DO, P>(this as P) {}
 
     abstract override fun invoke(values: ObjectValues<DO, P>): DO
 
     fun toBytes(vararg inputs: Any) =
-        Model.toBytes(*inputs)
+        Serializer.toBytes(*inputs)
 
     @Suppress("UNCHECKED_CAST", "LeakingThis")
     override val Model = object: ValueDataModel<DO, P>(

@@ -28,7 +28,7 @@ internal class ValueDataObjectTest {
     @Test
     fun testConvertBytes() {
         val bytes = value.toByteArray()
-        val new = TestValueObject.Model.readFromBytes(bytes.iterator()::nextByte)
+        val new = TestValueObject.Serializer.readFromBytes(bytes.iterator()::nextByte)
 
         expect(0) { new compareTo value }
     }
@@ -36,7 +36,7 @@ internal class ValueDataObjectTest {
     @Test
     fun testConvertString() {
         val string = value.toBase64()
-        val new = TestValueObject.Model.fromBase64(string)
+        val new = TestValueObject.Serializer.fromBase64(string)
 
         expect(0) { new compareTo value }
     }

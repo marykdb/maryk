@@ -2,11 +2,11 @@ package maryk.core.properties.definitions.wrapper
 
 import maryk.core.models.definitions.IsDataModelDefinition
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.graph.PropRefGraphType.PropRef
-import maryk.core.properties.invoke
+import maryk.core.models.invoke
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
@@ -23,7 +23,7 @@ import kotlin.reflect.KProperty
  * It has an input context of [CX]
  */
 data class EmbeddedValuesDefinitionWrapper<
-    DM : IsValuesPropertyDefinitions,
+    DM : IsValuesDataModel,
     CX : IsPropertyContext
 > internal constructor(
     override val index: UInt,
@@ -51,7 +51,7 @@ data class EmbeddedValuesDefinitionWrapper<
     }
 
     /** Get a top-level reference on a model with [propertyDefinitionGetter]. Used for contextual embed values property definitions. */
-    fun <T : Any, W : IsDefinitionWrapper<T, *, *, *>, DM: IsDataModelDefinition<P2>, P2: IsValuesPropertyDefinitions> refWithDM(
+    fun <T : Any, W : IsDefinitionWrapper<T, *, *, *>, DM: IsDataModelDefinition<P2>, P2: IsValuesDataModel> refWithDM(
         dataModel: DM,
         propertyDefinitionGetter: P2.() -> W
     ): (AnyOutPropertyReference?) -> IsPropertyReference<T, W, IsValues<P2>> =

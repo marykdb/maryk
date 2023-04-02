@@ -1,7 +1,7 @@
 package maryk.datastore.rocksdb.processors
 
 import maryk.core.aggregations.Aggregator
-import maryk.core.properties.IsRootModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.references.IsPropertyReference
@@ -22,10 +22,10 @@ import maryk.rocksdb.rocksDBNotFound
 import maryk.rocksdb.use
 
 internal typealias GetStoreAction<DM> = StoreAction<DM, GetRequest<DM>, ValuesResponse<DM>>
-internal typealias AnyGetStoreAction = GetStoreAction<IsRootModel>
+internal typealias AnyGetStoreAction = GetStoreAction<IsRootDataModel>
 
 /** Processes a GetRequest in a [storeAction] into a [dataStore] */
-internal fun <DM : IsRootModel> processGetRequest(
+internal fun <DM : IsRootDataModel> processGetRequest(
     storeAction: GetStoreAction<DM>,
     dataStore: RocksDBDataStore,
     cache: Cache

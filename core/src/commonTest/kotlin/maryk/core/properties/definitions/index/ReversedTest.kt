@@ -4,10 +4,10 @@ import kotlinx.datetime.LocalDateTime
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.properties.RootModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.dateTime
-import maryk.core.properties.key
+import maryk.core.models.key
 import maryk.core.query.DefinitionsConversionContext
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
@@ -15,7 +15,7 @@ import kotlin.test.Test
 import kotlin.test.expect
 
 internal class ReversedTest {
-    object MarykModel : RootModel<MarykModel>(
+    object MarykModel : RootDataModel<MarykModel>(
         keyDefinition = {
             Multiple(
                 Reversed(MarykModel.boolean.ref()),

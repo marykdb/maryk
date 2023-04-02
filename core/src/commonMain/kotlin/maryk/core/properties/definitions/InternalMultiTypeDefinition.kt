@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions
 
+import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
 import maryk.core.properties.enum.IndexedEnumDefinition
@@ -86,7 +86,7 @@ data class InternalMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsProper
     }
 }
 
-internal fun <E : TypeEnum<T>, T: Any, TO: Any, CX: IsPropertyContext, DO: Any> ObjectPropertyDefinitions<DO>.internalMultiType(
+internal fun <E : TypeEnum<T>, T: Any, TO: Any, CX: IsPropertyContext, DO: Any> IsObjectDataModel<DO>.internalMultiType(
     index: UInt,
     getter: (DO) -> TO?,
     name: String? = null,
@@ -100,7 +100,7 @@ internal fun <E : TypeEnum<T>, T: Any, TO: Any, CX: IsPropertyContext, DO: Any> 
 ): ObjectDefinitionWrapperDelegateLoader<MultiTypeDefinitionWrapper<E, T, TO, CX, DO>, DO, CX> =
     internalMultiType(index, getter, name, required, final, typeEnum, typeIsFinal, definitionMap, default, alternativeNames, toSerializable = null)
 
-internal fun <E : TypeEnum<T>, T: Any, TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.internalMultiType(
+internal fun <E : TypeEnum<T>, T: Any, TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.internalMultiType(
     index: UInt,
     getter: (DO) -> TO?,
     name: String? = null,

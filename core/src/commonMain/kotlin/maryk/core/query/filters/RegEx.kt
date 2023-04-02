@@ -1,6 +1,6 @@
 package maryk.core.query.filters
 
-import maryk.core.properties.ReferenceValuePairsModel
+import maryk.core.models.ReferenceValuePairsDataModel
 import maryk.core.query.pairs.ReferenceValueRegexPair
 import maryk.core.values.ObjectValues
 
@@ -12,7 +12,7 @@ data class RegEx internal constructor(
 
     constructor(vararg referenceValuePair: ReferenceValueRegexPair) : this(referenceValuePair.toList())
 
-    companion object : ReferenceValuePairsModel<RegEx, Companion, ReferenceValueRegexPair, String, Regex>(
+    companion object : ReferenceValuePairsDataModel<RegEx, Companion, ReferenceValueRegexPair, String, Regex>(
         pairGetter = RegEx::referenceValuePairs,
         pairModel = ReferenceValueRegexPair,
     ) {

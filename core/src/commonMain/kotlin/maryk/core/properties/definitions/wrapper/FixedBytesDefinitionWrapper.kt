@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions.wrapper
 
-import maryk.core.properties.AbstractPropertyDefinitions
+import maryk.core.models.AbstractDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 import maryk.core.properties.definitions.IsSerializableFixedBytesEncodable
@@ -37,5 +37,5 @@ data class FixedBytesDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext
     }
 
     // For delegation in definition
-    operator fun getValue(thisRef: AbstractPropertyDefinitions<DO>, property: KProperty<*>) = this
+    operator fun getValue(thisRef: AbstractDataModel<DO>, property: KProperty<*>) = this
 }

@@ -1,7 +1,7 @@
 package maryk.core.inject
 
 import maryk.core.exceptions.RequestException
-import maryk.core.properties.QueryModel
+import maryk.core.models.QueryModel
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.embedObject
 import maryk.core.properties.definitions.wrapper.contextual

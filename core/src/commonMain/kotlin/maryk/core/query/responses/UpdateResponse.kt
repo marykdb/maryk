@@ -1,8 +1,8 @@
 package maryk.core.query.responses
 
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.SimpleQueryModel
+import maryk.core.models.IsObjectDataModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.SimpleQueryModel
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
 import maryk.core.properties.types.TypedValue
@@ -17,7 +17,7 @@ import maryk.core.values.ObjectValues
  * Received an update response
  * Contains an id to listener which sent this response.
  */
-data class UpdateResponse<DM: IsRootModel>(
+data class UpdateResponse<DM: IsRootDataModel>(
     override val dataModel: DM,
     val update: IsUpdateResponse<DM>
 ): IsDataResponse<DM>, IsDataModelResponse<DM>, IsStoreRequest<DM, ProcessResponse<DM>> {
@@ -38,7 +38,7 @@ data class UpdateResponse<DM: IsRootModel>(
                 fromSerializable = { it?.value }
             ).also(::addSingle)
 
-        override fun invoke(values: ObjectValues<UpdateResponse<*>, ObjectPropertyDefinitions<UpdateResponse<*>>>) =
+        override fun invoke(values: ObjectValues<UpdateResponse<*>, IsObjectDataModel<UpdateResponse<*>>>) =
             UpdateResponse(
                 dataModel = values(1u),
                 update = values(2u)

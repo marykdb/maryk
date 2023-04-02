@@ -1,6 +1,6 @@
 package maryk.core.query.filters
 
-import maryk.core.properties.ReferenceValuePairsModel
+import maryk.core.models.ReferenceValuePairsDataModel
 import maryk.core.query.pairs.ReferenceValuePair
 import maryk.core.values.ObjectValues
 
@@ -13,7 +13,7 @@ data class LessThan internal constructor(
 
     override val filterType = FilterType.LessThan
 
-    companion object : ReferenceValuePairsModel<LessThan, Companion, ReferenceValuePair<Any>, Any, Any>(
+    companion object : ReferenceValuePairsDataModel<LessThan, Companion, ReferenceValuePair<Any>, Any, Any>(
         pairGetter = LessThan::referenceValuePairs,
         pairModel = ReferenceValuePair,
     ) {

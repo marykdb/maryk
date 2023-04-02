@@ -1,11 +1,11 @@
 package maryk.core.properties.definitions.wrapper
 
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsSimpleBaseModel
+import maryk.core.models.IsSimpleBaseObjectDataModel
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.graph.PropRefGraphType.PropRef
-import maryk.core.properties.invoke
+import maryk.core.models.invoke
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
@@ -26,7 +26,7 @@ import kotlin.reflect.KProperty
 data class EmbeddedObjectDefinitionWrapper<
     EODO : Any,
     TO : Any,
-    DM : IsSimpleBaseModel<EODO, CXI, CX>,
+    DM : IsSimpleBaseObjectDataModel<EODO, CXI, CX>,
     CXI : IsPropertyContext, CX : IsPropertyContext, in DO : Any
 > internal constructor(
     override val index: UInt,

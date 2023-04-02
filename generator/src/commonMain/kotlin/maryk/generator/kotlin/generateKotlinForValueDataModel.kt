@@ -1,8 +1,8 @@
 package maryk.generator.kotlin
 
-import maryk.core.properties.IsValueModel
+import maryk.core.models.IsValueDataModel
 
-fun IsValueModel<*, *>.generateKotlin(
+fun IsValueDataModel<*, *>.generateKotlin(
     packageName: String,
     generationContext: GenerationContext? = null,
     writer: (String) -> Unit

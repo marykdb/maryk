@@ -1,6 +1,8 @@
-package maryk.core.properties
+package maryk.core.models
 
 import maryk.core.models.serializers.IsDataModelSerializer
+import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.PropertyReferenceMarker
 import maryk.core.properties.definitions.IsEmbeddedDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
@@ -10,7 +12,7 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForValues
 
 @PropertyReferenceMarker
-interface IsPropertyDefinitions {
+interface IsDataModel {
     val Serializer : IsDataModelSerializer<*, *, *>
 
     /** Get the definition with a property [name] */
@@ -47,7 +49,7 @@ interface IsPropertyDefinitions {
     fun compatibleWithReference(propertyReference: AnyPropertyReference): Boolean {
         val unwrappedReferences = propertyReference.unwrap()
 
-        var model: IsPropertyDefinitions = this
+        var model: IsDataModel = this
 
         for (reference in unwrappedReferences) {
             if (reference is IsPropertyReferenceForValues<*, *, *, *>) {
@@ -76,7 +78,7 @@ interface IsPropertyDefinitions {
  * Optionally pass an already resolved [parent]
  * For Strongly typed reference notation
  */
-operator fun <T : Any, P: IsPropertyDefinitions, W : IsPropertyDefinition<T>, R : IsPropertyReference<T, W, *>> P.invoke(
+operator fun <T : Any, DM: IsDataModel, W : IsPropertyDefinition<T>, R : IsPropertyReference<T, W, *>> DM.invoke(
     parent: AnyOutPropertyReference? = null,
-    referenceGetter: P.() -> (AnyOutPropertyReference?) -> R
+    referenceGetter: DM.() -> (AnyOutPropertyReference?) -> R
 ) = referenceGetter(this)(parent)

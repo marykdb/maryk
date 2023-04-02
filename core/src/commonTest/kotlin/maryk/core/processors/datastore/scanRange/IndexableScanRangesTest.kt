@@ -4,7 +4,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.properties.definitions.index.Multiple
-import maryk.core.properties.key
+import maryk.core.models.key
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.filters.And
 import maryk.core.query.filters.Equals

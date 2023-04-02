@@ -1,7 +1,7 @@
 package maryk.core.query.responses
 
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.SimpleQueryModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.SimpleQueryModel
 import maryk.core.properties.definitions.list
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.types.TypedValue
@@ -12,7 +12,7 @@ import maryk.core.values.SimpleObjectValues
  * Response with [statuses] to a Change request to [dataModel]
  * It will contain an AddResponseStatus if the change contained an ObjectCreate object
  */
-data class AddOrChangeResponse<DM : IsRootModel>(
+data class AddOrChangeResponse<DM : IsRootDataModel>(
     override val dataModel: DM,
     val statuses: List<IsAddOrChangeResponseStatus<DM>>
 ) : IsDataModelResponse<DM> {
@@ -28,7 +28,7 @@ data class AddOrChangeResponse<DM : IsRootModel>(
 
         override fun invoke(values: SimpleObjectValues<AddOrChangeResponse<*>>) = AddOrChangeResponse(
             dataModel = values(1u),
-            statuses = values<List<TypedValue<TypeEnum<IsAddOrChangeResponseStatus<IsRootModel>>, IsAddOrChangeResponseStatus<IsRootModel>>>?>(2u)?.map { it.value } ?: emptyList()
+            statuses = values<List<TypedValue<TypeEnum<IsAddOrChangeResponseStatus<IsRootDataModel>>, IsAddOrChangeResponseStatus<IsRootDataModel>>>?>(2u)?.map { it.value } ?: emptyList()
         )
     }
 }

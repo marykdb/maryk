@@ -6,8 +6,8 @@ import maryk.checkYamlConversion
 import maryk.core.aggregations.Aggregations
 import maryk.core.aggregations.metric.ValueCount
 import maryk.core.extensions.toUnitLambda
-import maryk.core.properties.graph
-import maryk.core.properties.values
+import maryk.core.models.graph
+import maryk.core.models.values
 import maryk.core.query.RequestContext
 import maryk.core.query.filters.Exists
 import maryk.core.yaml.MarykYamlReader

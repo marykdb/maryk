@@ -1,11 +1,11 @@
 package maryk.core.properties.definitions
 
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.models.IsValuesDataModel
 import maryk.core.values.Values
 
 /** Interface for property definitions containing embedded Values of model [DM] and context [CX]. */
-interface IsEmbeddedValuesDefinition<DM : IsValuesPropertyDefinitions, CX : IsPropertyContext> :
+interface IsEmbeddedValuesDefinition<DM : IsValuesDataModel, CX : IsPropertyContext> :
     IsValueDefinition<Values<DM>, CX>,
     HasDefaultValueDefinition<Values<DM>>,
     IsEmbeddedDefinition<DM>,

@@ -10,10 +10,10 @@ import maryk.core.extensions.bytes.decodeZigZag
 import maryk.core.extensions.bytes.encodeZigZag
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarBytes
+import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsValuesPropertyDefinitions
-import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.SimpleObjectModel
+import maryk.core.models.IsValuesDataModel
+import maryk.core.models.SimpleObjectModel
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
@@ -85,7 +85,7 @@ data class DateDefinition(
         }
     }
 
-    object Model : SimpleObjectModel<DateDefinition, ObjectPropertyDefinitions<DateDefinition>>() {
+    object Model : SimpleObjectModel<DateDefinition, IsObjectDataModel<DateDefinition>>() {
         val required by boolean(1u, DateDefinition::required, default = true)
         val final by boolean(2u, DateDefinition::final, default = false)
         val unique by boolean(3u, DateDefinition::unique, default = false)
@@ -111,7 +111,7 @@ data class DateDefinition(
     }
 }
 
-fun IsValuesPropertyDefinitions.date(
+fun IsValuesDataModel.date(
     index: UInt,
     name: String? = null,
     required: Boolean = true,
@@ -130,7 +130,7 @@ fun IsValuesPropertyDefinitions.date(
     )
 }
 
-fun <TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.date(
+fun <TO: Any, DO: Any> IsObjectDataModel<DO>.date(
     index: UInt,
     getter: (DO) -> TO?,
     name: String? = null,
@@ -144,7 +144,7 @@ fun <TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.date(
 ): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<LocalDate, TO, IsPropertyContext, DateDefinition, DO>, DO, IsPropertyContext> =
     date(index, getter, name, required, final,  unique, minValue, maxValue, default, alternativeNames, toSerializable = null)
 
-fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.date(
+fun <TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.date(
     index: UInt,
     getter: (DO) -> TO?,
     name: String? = null,

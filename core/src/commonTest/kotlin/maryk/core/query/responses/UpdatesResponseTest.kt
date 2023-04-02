@@ -5,7 +5,7 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.models.testMarykModelObject
-import maryk.core.properties.key
+import maryk.core.models.key
 import maryk.core.query.RequestContext
 import maryk.core.query.changes.Change
 import maryk.core.query.pairs.with

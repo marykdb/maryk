@@ -2,7 +2,7 @@ package maryk.core.values
 
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
-import maryk.core.properties.graph
+import maryk.core.models.graph
 import maryk.core.properties.graph.graph
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue

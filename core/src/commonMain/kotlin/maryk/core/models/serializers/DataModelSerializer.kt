@@ -2,16 +2,16 @@ package maryk.core.models.serializers
 
 import maryk.core.inject.Inject
 import maryk.core.inject.InjectWithReference
-import maryk.core.properties.IsObjectPropertyDefinitions
+import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsTypedPropertyDefinitions
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.models.IsTypedDataModel
+import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
-import maryk.core.properties.values
+import maryk.core.models.values
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.ProtoBufKey
 import maryk.core.protobuf.WriteCacheReader
@@ -33,7 +33,7 @@ import maryk.yaml.UnknownYamlTag
 import maryk.yaml.YamlWriter
 
 /** Serializer for DataModels */
-open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedPropertyDefinitions<DO>, CX: IsPropertyContext>(
+open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO>, CX: IsPropertyContext>(
     val model: DM,
 ): IsDataModelSerializer<V, DM, CX> {
     /**
@@ -295,11 +295,11 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedPropertyDefi
     open fun createValues(context: CX?, items: IsValueItems): V {
         @Suppress("UNCHECKED_CAST")
         return when (this.model) {
-            is IsObjectPropertyDefinitions<*> ->
-                (this.model as IsObjectPropertyDefinitions<Any>).values(context as? RequestContext) {
+            is IsObjectDataModel<*> ->
+                (this.model as IsObjectDataModel<Any>).values(context as? RequestContext) {
                     items
                 } as V
-            is IsValuesPropertyDefinitions ->
+            is IsValuesDataModel ->
                 this.model.values(context as? RequestContext) {
                     items
                 } as V

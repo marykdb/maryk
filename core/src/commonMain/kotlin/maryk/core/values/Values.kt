@@ -1,19 +1,19 @@
 package maryk.core.values
 
 import maryk.core.models.definitions.IsNamedDataModelDefinition
-import maryk.core.properties.IsValuesPropertyDefinitions
-import maryk.core.properties.TypedValuesModel
+import maryk.core.models.IsValuesDataModel
+import maryk.core.models.TypedValuesDataModel
 import maryk.core.properties.graph.IsPropRefGraph
-import maryk.core.properties.validate
+import maryk.core.models.validate
 import maryk.core.query.RequestContext
 import maryk.core.query.changes.IsChange
 
-typealias ValuesImpl = Values<IsValuesPropertyDefinitions>
+typealias ValuesImpl = Values<IsValuesDataModel>
 
 /**
  * Contains a [map] with all values related to a DataObject of [dataModel]
  */
-data class Values<DM : IsValuesPropertyDefinitions> internal constructor(
+data class Values<DM : IsValuesDataModel> internal constructor(
     override val dataModel: DM,
     override val values: IsValueItems,
     override val context: RequestContext? = null
@@ -89,7 +89,7 @@ data class Values<DM : IsValuesPropertyDefinitions> internal constructor(
 }
 
 /** Output values to a json string */
-fun <V: Values<P>, P: TypedValuesModel<*, P>> V.toJson(
+fun <V: Values<DM>, DM: TypedValuesDataModel<DM>> V.toJson(
     pretty: Boolean = false
 ): String =
     this.dataModel.Serializer.writeJson(this, pretty = pretty)

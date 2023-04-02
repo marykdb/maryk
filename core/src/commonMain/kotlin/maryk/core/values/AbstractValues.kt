@@ -3,11 +3,11 @@ package maryk.core.values
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.inject.AnyInject
+import maryk.core.models.IsSimpleBaseObjectDataModel
+import maryk.core.models.IsStorableDataModel
+import maryk.core.models.IsTypedDataModel
 import maryk.core.models.serializers.IsDataModelSerializer
-import maryk.core.properties.IsStorableModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsSimpleBaseModel
-import maryk.core.properties.IsTypedPropertyDefinitions
 import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsListDefinition
@@ -30,12 +30,12 @@ import maryk.core.query.RequestContext
 import maryk.core.query.filters.IsFilter
 import maryk.lib.exceptions.ParseException
 
-typealias AnyAbstractValues = AbstractValues<Any, IsTypedPropertyDefinitions<Any>>
+typealias AnyAbstractValues = AbstractValues<Any, IsTypedDataModel<Any>>
 
 /**
  * Contains a [values] with all values related to a DataObject of [dataModel]
  */
-abstract class AbstractValues<DO : Any, DM : IsTypedPropertyDefinitions<DO>> : IsValues<DM> {
+abstract class AbstractValues<DO : Any, DM : IsTypedDataModel<DO>> : IsValues<DM> {
     abstract val dataModel: DM
     internal abstract val values: IsValueItems
     abstract val context: RequestContext?
@@ -138,7 +138,7 @@ abstract class AbstractValues<DO : Any, DM : IsTypedPropertyDefinitions<DO>> : I
     override fun original(index: UInt) = this.values[index]
 
     override fun toString(): String {
-        val name = (dataModel as? IsStorableModel)?.Model?.name ?: "ObjectValues"
+        val name = (dataModel as? IsStorableDataModel)?.Model?.name ?: "ObjectValues"
 
         return "$name $values"
     }
@@ -304,14 +304,14 @@ inline fun <reified T : Any, TO : Any> IsDefinitionWrapper<T, TO, *, *>.convertT
 
 /** Output values to a json string with possible [context] provided */
 @Suppress("UNCHECKED_CAST")
-fun <V: AbstractValues<DO, DM>, DO: Any, DM: IsSimpleBaseModel<DO, *, CX>, CX: IsPropertyContext> V.toJson(
+fun <V: AbstractValues<DO, DM>, DO: Any, DM: IsSimpleBaseObjectDataModel<DO, *, CX>, CX: IsPropertyContext> V.toJson(
     context: CX? = null,
     pretty: Boolean = false
 ): String =
     (this.dataModel.Serializer as IsDataModelSerializer<V, DM, CX>).writeJson(this, context = context, pretty = pretty)
 
 /** Get property from values with wrapper in [getProperty] and convert it to native usage */
-inline operator fun <DO : Any, DM : IsTypedPropertyDefinitions<DO>, TI : Any, reified TO : Any> AbstractValues<DO, DM>?.div(getProperty: DM.() -> IsDefinitionWrapper<TI, TO, *, DO>): TO? {
+inline operator fun <DO : Any, DM : IsTypedDataModel<DO>, TI : Any, reified TO : Any> AbstractValues<DO, DM>?.div(getProperty: DM.() -> IsDefinitionWrapper<TI, TO, *, DO>): TO? {
     if (this == null) {
         return null
     }

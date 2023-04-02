@@ -3,8 +3,8 @@
 package maryk.core.query.changes
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.QueryModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.QueryModel
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
@@ -21,7 +21,7 @@ import maryk.core.values.ObjectValues
 /**
  * Creates a DataObjectChange which contains [change] until [lastVersion] for a specific DataObject
  */
-fun <DM : IsRootModel> Key<DM>.change(
+fun <DM : IsRootDataModel> Key<DM>.change(
     vararg change: IsChange,
     lastVersion: ULong? = null
 ) = DataObjectChange(this, change.toList(), lastVersion)
@@ -29,7 +29,7 @@ fun <DM : IsRootModel> Key<DM>.change(
 /**
  * Contains [changes] until [lastVersion] for a specific DataObject by [key]
  */
-data class DataObjectChange<out DM : IsRootModel> internal constructor(
+data class DataObjectChange<out DM : IsRootDataModel> internal constructor(
     val key: Key<DM>,
     val changes: List<IsChange>,
     val lastVersion: ULong? = null
@@ -40,7 +40,7 @@ data class DataObjectChange<out DM : IsRootModel> internal constructor(
             getter = DataObjectChange<*>::key,
             definition = ContextualReferenceDefinition<RequestContext>(
                 contextualResolver = {
-                    it?.dataModel as? IsRootModel ?: throw ContextNotFoundException()
+                    it?.dataModel as? IsRootDataModel ?: throw ContextNotFoundException()
                 }
             )
         )
@@ -66,7 +66,7 @@ data class DataObjectChange<out DM : IsRootModel> internal constructor(
 
         val lastVersion by number(3u, DataObjectChange<*>::lastVersion, type = UInt64)
 
-        override fun invoke(values: ObjectValues<DataObjectChange<*>, Companion>) = DataObjectChange<IsRootModel>(
+        override fun invoke(values: ObjectValues<DataObjectChange<*>, Companion>) = DataObjectChange<IsRootDataModel>(
             key = values(1u),
             changes = values(2u),
             lastVersion = values(3u)

@@ -7,16 +7,15 @@ import maryk.core.models.addProperties
 import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.models.serializers.readDataModelJson
 import maryk.core.models.serializers.writeDataModelJson
-import maryk.core.properties.DefinitionModel
-import maryk.core.properties.IsDataModelPropertyDefinitions
-import maryk.core.properties.IsObjectPropertyDefinitions
-import maryk.core.properties.MutableValueModel
-import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.ObjectPropertyDefinitionsCollectionDefinitionWrapper
+import maryk.core.models.DefinitionModel
+import maryk.core.models.IsDataModelWithPropertyDefinitions
+import maryk.core.models.IsObjectDataModel
+import maryk.core.models.MutableValueDataModel
+import maryk.core.models.ObjectDataModelCollectionDefinitionWrapper
 import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 import maryk.core.properties.definitions.string
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
-import maryk.core.properties.invoke
+import maryk.core.models.invoke
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.MutableValueItems
@@ -30,7 +29,7 @@ typealias AnyValueDataModel = ValueDataModelDefinition<*, *>
  * ObjectDataModel of type [DO] for objects that can be encoded in fixed length width.
  * Contains [properties] definitions.
  */
-abstract class ValueDataModelDefinition<DO : ValueDataObject, DM : IsObjectPropertyDefinitions<DO>>(
+abstract class ValueDataModelDefinition<DO : ValueDataObject, DM : IsObjectDataModel<DO>>(
     name: String,
     properties: DM
 ) : ObjectDataModelDefinition<DO, DM>(name, properties), MarykPrimitive {
@@ -47,20 +46,20 @@ abstract class ValueDataModelDefinition<DO : ValueDataObject, DM : IsObjectPrope
 
     internal object Model :
         DefinitionModel<AnyValueDataModel>(),
-        IsDataModelPropertyDefinitions<AnyValueDataModel, ObjectPropertyDefinitionsCollectionDefinitionWrapper<AnyValueDataModel>> {
+        IsDataModelWithPropertyDefinitions<AnyValueDataModel, ObjectDataModelCollectionDefinitionWrapper<AnyValueDataModel>> {
         override val name by string(1u, ValueDataModelDefinition<*, *>::name)
         override val properties = addProperties(this)
 
-        override fun invoke(values: ObjectValues<ValueDataModelDefinition<*, *>, ObjectPropertyDefinitions<ValueDataModelDefinition<*, *>>>) = object : ValueDataModelDefinition<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>(
+        override fun invoke(values: ObjectValues<ValueDataModelDefinition<*, *>, IsObjectDataModel<ValueDataModelDefinition<*, *>>>) = object : ValueDataModelDefinition<ValueDataObject, IsObjectDataModel<ValueDataObject>>(
             name = values(1u),
             properties = values(2u)
         ) {}.apply {
-            (properties as MutableValueModel<ValueDataObject>)._model = this
+            (properties as MutableValueDataModel<ValueDataObject>)._model = this
         }
 
-        override val Serializer = object: ObjectDataModelSerializer<ValueDataModelDefinition<*, *>, ObjectPropertyDefinitions<ValueDataModelDefinition<*, *>>, ContainsDefinitionsContext, ContainsDefinitionsContext>(this) {
+        override val Serializer = object: ObjectDataModelSerializer<ValueDataModelDefinition<*, *>, IsObjectDataModel<ValueDataModelDefinition<*, *>>, ContainsDefinitionsContext, ContainsDefinitionsContext>(this) {
             override fun writeJson(
-                values: ObjectValues<AnyValueDataModel, ObjectPropertyDefinitions<AnyValueDataModel>>,
+                values: ObjectValues<AnyValueDataModel, IsObjectDataModel<AnyValueDataModel>>,
                 writer: IsJsonLikeWriter,
                 context: ContainsDefinitionsContext?
             ) {
@@ -85,7 +84,7 @@ abstract class ValueDataModelDefinition<DO : ValueDataObject, DM : IsObjectPrope
                     context, reader, values,
                     properties = Model,
                     propertyDefinitionsCreator = {
-                        MutableValueModel<ValueDataObject>()
+                        MutableValueDataModel<ValueDataObject>()
                     }
                 )
             }

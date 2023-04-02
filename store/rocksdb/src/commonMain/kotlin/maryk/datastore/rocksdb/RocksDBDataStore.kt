@@ -18,8 +18,8 @@ import maryk.core.models.migration.MigrationStatus.NewModel
 import maryk.core.models.migration.MigrationStatus.OnlySafeAdds
 import maryk.core.models.migration.MigrationStatus.UpToDate
 import maryk.core.models.migration.StoredRootDataModelDefinition
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.RootModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.query.requests.AddRequest
 import maryk.core.query.requests.ChangeRequest
@@ -157,7 +157,7 @@ class RocksDBDataStore(
             for ((index, dataModel) in dataModelsById) {
                 columnFamilyHandlesByDataModelIndex[index]?.let { tableColumnFamilies ->
                     tableColumnFamilies.model.let { modelColumnFamily ->
-                        when (val migrationStatus = checkModelIfMigrationIsNeeded(this.db, modelColumnFamily, dataModel.properties as RootModel<*>, this.onlyCheckModelVersion)) {
+                        when (val migrationStatus = checkModelIfMigrationIsNeeded(this.db, modelColumnFamily, dataModel.properties as RootDataModel<*>, this.onlyCheckModelVersion)) {
                             UpToDate -> Unit // Do nothing since no work is needed
                             NewModel, OnlySafeAdds -> {
                                 // Model updated so can be stored
@@ -310,7 +310,7 @@ class RocksDBDataStore(
         columnFamilyHandlesByDataModelIndex[dbIndex]
             ?: throw DefNotFoundException("DataModel definition not found for $dbIndex")
 
-    internal fun getColumnFamilies(dataModel: IsRootModel) =
+    internal fun getColumnFamilies(dataModel: IsRootDataModel) =
         columnFamilyHandlesByDataModelIndex[dataModelIdsByString[dataModel.Model.name]]
             ?: throw DefNotFoundException("DataModel definition not found for ${dataModel.Model.name}")
 

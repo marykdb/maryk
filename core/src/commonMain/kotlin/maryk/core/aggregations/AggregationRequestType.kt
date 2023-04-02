@@ -9,8 +9,8 @@ import maryk.core.aggregations.metric.Min
 import maryk.core.aggregations.metric.Stats
 import maryk.core.aggregations.metric.Sum
 import maryk.core.aggregations.metric.ValueCount
-import maryk.core.properties.IsObjectPropertyDefinitions
-import maryk.core.properties.SimpleQueryModel
+import maryk.core.models.IsObjectDataModel
+import maryk.core.models.SimpleQueryModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.enum.IndexedEnumImpl
 import maryk.core.properties.enum.IsCoreEnum
@@ -22,7 +22,7 @@ import maryk.json.MapType
 sealed class AggregationRequestType(
     index: UInt,
     override val name: String,
-    dataModel: IsObjectPropertyDefinitions<out IsAggregationRequest<*, *, *>>,
+    dataModel: IsObjectDataModel<out IsAggregationRequest<*, *, *>>,
     alternativeNames: Set<String>? = null
 ) : IndexedEnumImpl<AggregationRequestType>(index, alternativeNames),
     MapType,

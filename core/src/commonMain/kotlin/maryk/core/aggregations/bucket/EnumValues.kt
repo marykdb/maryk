@@ -3,7 +3,7 @@ package maryk.core.aggregations.bucket
 import maryk.core.aggregations.AggregationRequestType.EnumValuesType
 import maryk.core.aggregations.Aggregations
 import maryk.core.aggregations.IsAggregationRequest
-import maryk.core.properties.SimpleQueryModel
+import maryk.core.models.SimpleQueryModel
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.embedObject
 import maryk.core.properties.enum.IndexedEnumComparable

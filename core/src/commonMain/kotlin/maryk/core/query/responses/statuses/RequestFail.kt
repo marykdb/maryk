@@ -1,7 +1,7 @@
 package maryk.core.query.responses.statuses
 
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.SimpleQueryModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.SimpleQueryModel
 import maryk.core.properties.definitions.string
 import maryk.core.query.responses.statuses.StatusType.REQUEST_FAIL
 import maryk.core.values.SimpleObjectValues
@@ -9,7 +9,7 @@ import maryk.core.values.SimpleObjectValues
 /**
  * Something was wrong with [reason] with the request
  */
-data class RequestFail<DM : IsRootModel>(
+data class RequestFail<DM : IsRootDataModel>(
     val reason: String
 ) : IsChangeResponseStatus<DM> {
     override val statusType = REQUEST_FAIL
@@ -19,7 +19,7 @@ data class RequestFail<DM : IsRootModel>(
         val reason by string(1u, RequestFail<*>::reason)
 
         override fun invoke(values: SimpleObjectValues<RequestFail<*>>) =
-            RequestFail<IsRootModel>(
+            RequestFail<IsRootDataModel>(
                 values(1u)
             )
     }

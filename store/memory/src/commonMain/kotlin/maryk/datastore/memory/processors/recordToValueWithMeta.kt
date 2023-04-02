@@ -3,9 +3,9 @@ package maryk.datastore.memory.processors
 import maryk.core.clock.HLC
 import maryk.core.exceptions.TypeException
 import maryk.core.processors.datastore.readStorageToValues
-import maryk.core.properties.IsRootModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.graph.RootPropRefGraph
-import maryk.core.properties.values
+import maryk.core.models.values
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.values.EmptyValueItems
 import maryk.datastore.memory.records.DataRecord
@@ -16,7 +16,7 @@ import maryk.datastore.memory.records.DeletedValue
 /**
  * Processes [record] values to a ValuesWithMeta object
  */
-internal fun <DM : IsRootModel> DM.recordToValueWithMeta(
+internal fun <DM : IsRootDataModel> DM.recordToValueWithMeta(
     select: RootPropRefGraph<DM>?,
     toVersion: HLC?,
     record: DataRecord<DM>

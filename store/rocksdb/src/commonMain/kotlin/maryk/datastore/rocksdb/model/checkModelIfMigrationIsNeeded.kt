@@ -5,17 +5,17 @@ import maryk.core.models.definitions.RootDataModelDefinition
 import maryk.core.models.migration.MigrationStatus
 import maryk.core.models.migration.MigrationStatus.NewModel
 import maryk.core.models.migration.MigrationStatus.UpToDate
-import maryk.core.properties.IsValuesPropertyDefinitions
-import maryk.core.properties.RootModel
+import maryk.core.models.IsValuesDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.types.Version
 import maryk.core.query.DefinitionsConversionContext
 import maryk.rocksdb.ColumnFamilyHandle
 import maryk.rocksdb.RocksDB
 
-fun <P: IsValuesPropertyDefinitions> checkModelIfMigrationIsNeeded(
+fun <P: IsValuesDataModel> checkModelIfMigrationIsNeeded(
     rocksDB: RocksDB,
     modelColumnFamily: ColumnFamilyHandle,
-    dataModel: RootModel<P>,
+    dataModel: RootDataModel<P>,
     onlyCheckVersion: Boolean
 ): MigrationStatus {
     val name = rocksDB.get(modelColumnFamily, modelNameKey)?.decodeToString()

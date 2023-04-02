@@ -1,8 +1,8 @@
 package maryk.core.query.changes
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.QueryModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.QueryModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.definitions.flexBytes
@@ -16,7 +16,7 @@ import maryk.core.values.ObjectValues
 /**
  * Contains versioned [changes] for a specific DataObject by [key]
  */
-data class DataObjectVersionedChange<out DM : IsRootModel>(
+data class DataObjectVersionedChange<out DM : IsRootDataModel>(
     val key: Key<DM>,
     val sortingKey: Bytes? = null,
     val changes: List<VersionedChanges>
@@ -27,7 +27,7 @@ data class DataObjectVersionedChange<out DM : IsRootModel>(
             getter = DataObjectVersionedChange<*>::key,
             definition = ContextualReferenceDefinition<RequestContext>(
                 contextualResolver = {
-                    it?.dataModel as? IsRootModel ?: throw ContextNotFoundException()
+                    it?.dataModel as? IsRootDataModel ?: throw ContextNotFoundException()
                 }
             )
         )
@@ -48,7 +48,7 @@ data class DataObjectVersionedChange<out DM : IsRootModel>(
             )
         )
 
-        override fun invoke(values: ObjectValues<DataObjectVersionedChange<*>, Companion>) = DataObjectVersionedChange<IsRootModel>(
+        override fun invoke(values: ObjectValues<DataObjectVersionedChange<*>, Companion>) = DataObjectVersionedChange<IsRootDataModel>(
             key = values(1u),
             sortingKey = values(2u),
             changes = values(3u)

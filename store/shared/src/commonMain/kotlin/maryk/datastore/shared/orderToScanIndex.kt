@@ -2,7 +2,7 @@ package maryk.datastore.shared
 
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
-import maryk.core.properties.IsRootModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.Reversed
@@ -18,7 +18,7 @@ import maryk.datastore.shared.ScanType.IndexScan
 import maryk.datastore.shared.ScanType.TableScan
 
 /** Converts an [order] to a ScanIndexType */
-fun IsRootModel.orderToScanType(
+fun IsRootDataModel.orderToScanType(
     order: IsOrder?,
     equalPairs: List<ReferenceValuePair<*>>
 ): ScanType {
@@ -75,7 +75,7 @@ fun IsRootModel.orderToScanType(
 }
 
 /** Convert Single [order] to ScanType */
-private fun IsRootModel.singleOrderToScanType(
+private fun IsRootDataModel.singleOrderToScanType(
     order: Order
 ): ScanType {
     return if (order.propertyReference == null) {

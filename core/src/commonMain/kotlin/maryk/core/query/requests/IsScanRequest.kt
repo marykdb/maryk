@@ -2,8 +2,8 @@ package maryk.core.query.requests
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.models.IsObjectDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
@@ -29,14 +29,14 @@ import maryk.lib.exceptions.ParseException
 import maryk.yaml.IsYamlReader
 
 /** Defines a Scan from key request. */
-interface IsScanRequest<DM : IsRootModel, RP : IsResponse> : IsFetchRequest<DM, RP> {
+interface IsScanRequest<DM : IsRootDataModel, RP : IsResponse> : IsFetchRequest<DM, RP> {
     val startKey: Key<DM>?
     val order: IsOrder?
     val limit: UInt
     val includeStart: Boolean
 }
 
-internal fun <DO : IsScanRequest<*, *>, DM : IsRootModel> ObjectPropertyDefinitions<DO>.addStartKey(
+internal fun <DO : IsScanRequest<*, *>, DM : IsRootDataModel> IsObjectDataModel<DO>.addStartKey(
     getter: (DO) -> Key<DM>?
 ) =
     this.contextual(
@@ -45,12 +45,12 @@ internal fun <DO : IsScanRequest<*, *>, DM : IsRootModel> ObjectPropertyDefiniti
         definition = ContextualReferenceDefinition<RequestContext>(
             required = false,
             contextualResolver = {
-                it?.dataModel as? IsRootModel ?: throw ContextNotFoundException()
+                it?.dataModel as? IsRootDataModel ?: throw ContextNotFoundException()
             }
         )
     )
 
-internal fun <DM : IsFetchRequest<*, *>> ObjectPropertyDefinitions<DM>.addOrder(getter: (DM) -> IsOrder?) =
+internal fun <DM : IsFetchRequest<*, *>> IsObjectDataModel<DM>.addOrder(getter: (DM) -> IsOrder?) =
     ObjectDefinitionWrapperDelegateLoader(this) { propName ->
         MultiTypeDefinitionWrapper(
             8u, propName,

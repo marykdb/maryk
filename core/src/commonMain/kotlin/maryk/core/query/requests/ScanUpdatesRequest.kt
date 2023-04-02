@@ -2,8 +2,8 @@ package maryk.core.query.requests
 
 import maryk.core.aggregations.Aggregations
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.QueryModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.QueryModel
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.definitions.embedObject
@@ -26,7 +26,7 @@ import maryk.core.values.ObjectValues
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
-fun <DM : IsRootModel> DM.scanUpdates(
+fun <DM : IsRootDataModel> DM.scanUpdates(
     startKey: Key<DM>? = null,
     where: IsFilter? = null,
     order: IsOrder? = null,
@@ -60,7 +60,7 @@ fun <DM : IsRootModel> DM.scanUpdates(
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order] and only selected properties can be returned with a [select] graph
  */
-data class ScanUpdatesRequest<DM : IsRootModel> internal constructor(
+data class ScanUpdatesRequest<DM : IsRootDataModel> internal constructor(
     override val dataModel: DM,
     override val startKey: Key<DM>? = null,
     override val where: IsFilter? = null,
@@ -97,7 +97,7 @@ data class ScanUpdatesRequest<DM : IsRootModel> internal constructor(
             index = 13u, getter = ScanUpdatesRequest<*>::orderedKeys,
             valueDefinition = ContextualReferenceDefinition<RequestContext>(
                 contextualResolver = {
-                    it?.dataModel as? IsRootModel ?: throw ContextNotFoundException()
+                    it?.dataModel as? IsRootDataModel ?: throw ContextNotFoundException()
                 }
             )
         )

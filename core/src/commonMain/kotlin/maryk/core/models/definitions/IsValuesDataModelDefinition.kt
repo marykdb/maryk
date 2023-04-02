@@ -1,8 +1,8 @@
 package maryk.core.models.definitions
 
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.models.IsValuesDataModel
 
-interface IsValuesDataModel<DM : IsValuesPropertyDefinitions> : IsNamedDataModelDefinition<DM> {
+interface IsValuesDataModelDefinition<DM : IsValuesDataModel> : IsNamedDataModelDefinition<DM> {
     val reservedIndices: List<UInt>?
     val reservedNames: List<String>?
 

@@ -5,9 +5,9 @@ import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.Value
-import maryk.core.properties.AbstractPropertyDefinitions
+import maryk.core.models.AbstractDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsTypedPropertyDefinitions
+import maryk.core.models.IsTypedDataModel
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsListDefinition
@@ -49,7 +49,7 @@ internal typealias QualifierWriter = ((Byte) -> Unit) -> Unit
  * Walk Values and process storable values.
  * Pass [valueWriter] to process values
  */
-fun <DM : AbstractPropertyDefinitions<*>> AbstractValues<*, DM>.writeToStorage(
+fun <DM : AbstractDataModel<*>> AbstractValues<*, DM>.writeToStorage(
     valueWriter: ValueWriter<IsPropertyDefinition<*>>
 ) = this.writeToStorage(0, null, valueWriter)
 
@@ -58,7 +58,7 @@ fun <DM : AbstractPropertyDefinitions<*>> AbstractValues<*, DM>.writeToStorage(
  * [qualifierCount], [qualifierWriter] define the count and writer for any parent property
  * Pass [valueWriter] to process values
  */
-fun <DM : IsTypedPropertyDefinitions<*>> AbstractValues<*, DM>.writeToStorage(
+fun <DM : IsTypedDataModel<*>> AbstractValues<*, DM>.writeToStorage(
     qualifierCount: Int = 0,
     qualifierWriter: QualifierWriter? = null,
     valueWriter: ValueWriter<IsPropertyDefinition<*>>

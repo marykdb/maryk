@@ -1,11 +1,11 @@
 package maryk.datastore.rocksdb.processors
 
 import maryk.core.exceptions.StorageException
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.key
 import maryk.core.processors.datastore.scanRange.IndexableScanRanges
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.key
 import maryk.core.properties.types.Key
 import maryk.core.query.orders.Direction
 import maryk.core.query.orders.Direction.ASC
@@ -25,7 +25,7 @@ import maryk.lib.extensions.compare.matchPart
 import maryk.lib.extensions.compare.nextByteInSameLength
 import maryk.rocksdb.ReadOptions
 
-internal fun <DM : IsRootModel> scanIndex(
+internal fun <DM : IsRootDataModel> scanIndex(
     dataStore: RocksDBDataStore,
     dbAccessor: DBAccessor,
     columnFamilies: TableColumnFamilies,
@@ -192,7 +192,7 @@ fun createVersionChecker(toVersion: ULong?, iterator: DBIterator, direction: Dir
  * If it is a versioned read, skip all index records but with older versions
  * The order depends on what is defined in the [next] function
  */
-private fun <DM : IsRootModel> createGotoNext(
+private fun <DM : IsRootDataModel> createGotoNext(
     scanRequest: IsScanRequest<DM, *>,
     iterator: DBIterator,
     next: () -> Unit
@@ -212,7 +212,7 @@ private fun <DM : IsRootModel> createGotoNext(
     }
 
 /** Walk through index and processes any valid keys and versions */
-private fun <DM : IsRootModel> checkAndProcess(
+private fun <DM : IsRootDataModel> checkAndProcess(
     dbAccessor: DBAccessor,
     columnFamilies: TableColumnFamilies,
     readOptions: ReadOptions,
@@ -227,7 +227,7 @@ private fun <DM : IsRootModel> checkAndProcess(
     checkVersion: (ByteArray) -> Boolean,
     next: (ByteArray, Int, Int) -> Unit
 ) {
-    var currentSize: UInt = 0u
+    var currentSize = 0u
     while (iterator.isValid()) {
         val indexRecord = iterator.key()
         val valueSize = indexRecord.size - valueOffset - keySize - versionSize
@@ -271,7 +271,7 @@ private fun <DM : IsRootModel> checkAndProcess(
 }
 
 /** Creates a Key out of a [indexRecord] by reading from [keyOffset] */
-private fun <DM : IsRootModel> createKey(
+private fun <DM : IsRootDataModel> createKey(
     dataModel: DM,
     indexRecord: ByteArray,
     keyOffset: Int

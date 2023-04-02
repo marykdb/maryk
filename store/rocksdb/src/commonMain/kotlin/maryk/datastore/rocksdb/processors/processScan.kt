@@ -3,9 +3,9 @@ package maryk.datastore.rocksdb.processors
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsRootModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.IsComparableDefinition
-import maryk.core.properties.key
+import maryk.core.models.key
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.IsScanRequest
 import maryk.datastore.rocksdb.DBAccessor
@@ -25,7 +25,7 @@ import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.rocksDBNotFound
 
 /** Walk with [scanRequest] on [dataStore] and do [processRecord] */
-internal fun <DM : IsRootModel> processScan(
+internal fun <DM : IsRootDataModel> processScan(
     scanRequest: IsScanRequest<DM, *>,
     dataStore: RocksDBDataStore,
     dbAccessor: DBAccessor,
@@ -122,7 +122,7 @@ internal fun <DM : IsRootModel> processScan(
     }
 }
 
-internal fun <DM: IsRootModel> shouldProcessRecord(
+internal fun <DM: IsRootDataModel> shouldProcessRecord(
     dbAccessor: DBAccessor,
     columnFamilies: TableColumnFamilies,
     readOptions: ReadOptions,

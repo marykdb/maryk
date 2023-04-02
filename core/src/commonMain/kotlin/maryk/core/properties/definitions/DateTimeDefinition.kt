@@ -12,10 +12,10 @@ import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.initLongByVar
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.properties.ContextualModel
+import maryk.core.models.ContextualDataModel
+import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsValuesPropertyDefinitions
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
@@ -100,7 +100,7 @@ data class DateTimeDefinition(
 
     override fun fromNativeType(value: Any) = value as? LocalDateTime
 
-    object Model : ContextualModel<DateTimeDefinition, Model, ContainsDefinitionsContext, DateTimeDefinitionContext>(
+    object Model : ContextualDataModel<DateTimeDefinition, Model, ContainsDefinitionsContext, DateTimeDefinitionContext>(
         contextTransformer = { DateTimeDefinitionContext() },
     ) {
         val required by boolean(1u, DateTimeDefinition::required, default = true)
@@ -171,7 +171,7 @@ class DateTimeDefinitionContext : TimePrecisionContext() {
     }
 }
 
-fun IsValuesPropertyDefinitions.dateTime(
+fun IsValuesDataModel.dateTime(
     index: UInt,
     name: String? = null,
     required: Boolean = true,
@@ -191,7 +191,7 @@ fun IsValuesPropertyDefinitions.dateTime(
     )
 }
 
-fun <TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.dateTime(
+fun <TO: Any, DO: Any> IsObjectDataModel<DO>.dateTime(
     index: UInt,
     getter: (DO) -> TO?,
     name: String? = null,
@@ -206,7 +206,7 @@ fun <TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.dateTime(
 ): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<LocalDateTime, TO, IsPropertyContext, DateTimeDefinition, DO>, DO, IsPropertyContext> =
     dateTime(index, getter, name, required, final,  unique, precision, minValue, maxValue, default, alternativeNames, toSerializable = null)
 
-fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.dateTime(
+fun <TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.dateTime(
     index: UInt,
     getter: (DO) -> TO?,
     name: String? = null,

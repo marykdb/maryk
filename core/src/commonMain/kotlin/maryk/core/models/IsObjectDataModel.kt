@@ -1,6 +1,7 @@
-package maryk.core.properties
+package maryk.core.models
 
 import maryk.core.models.serializers.IsObjectDataModelSerializer
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -14,18 +15,18 @@ import maryk.core.values.IsValueItems
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
 
-interface IsTypedObjectPropertyDefinitions<DO: Any, P: IsObjectPropertyDefinitions<DO>, CX: IsPropertyContext>: IsObjectPropertyDefinitions<DO> {
-    override val Serializer : IsObjectDataModelSerializer<DO, P, *, CX>
+interface IsTypedObjectDataModel<DO: Any, DM: IsObjectDataModel<DO>, CX: IsPropertyContext>: IsObjectDataModel<DO> {
+    override val Serializer : IsObjectDataModelSerializer<DO, DM, *, CX>
 
-    operator fun invoke(values: ObjectValues<DO, P>): DO
+    operator fun invoke(values: ObjectValues<DO, DM>): DO
 }
 
 @Suppress("UNCHECKED_CAST")
-fun <DO: Any, P: IsObjectPropertyDefinitions<DO>> P.invoke(
-    values: ObjectValues<DO, P>
-) = (this as IsTypedObjectPropertyDefinitions<DO, P, *>)(values)
+fun <DO: Any, DM: IsObjectDataModel<DO>> DM.invoke(
+    values: ObjectValues<DO, DM>
+) = (this as IsTypedObjectDataModel<DO, DM, *>)(values)
 
-interface IsObjectPropertyDefinitions<DO: Any>: IsTypedPropertyDefinitions<DO> {
+interface IsObjectDataModel<DO: Any>: IsTypedDataModel<DO> {
     override val Serializer : IsObjectDataModelSerializer<DO, *, *, *>
 
     /**
@@ -52,7 +53,7 @@ interface IsObjectPropertyDefinitions<DO: Any>: IsTypedPropertyDefinitions<DO> {
 }
 
 /** Create a Values object with given [createMap] function */
-fun <DO: Any, DM : IsObjectPropertyDefinitions<DO>> DM.values(
+fun <DO: Any, DM : IsObjectDataModel<DO>> DM.values(
     context: RequestContext? = null,
     createMap: DM.() -> IsValueItems
 ) =
@@ -61,7 +62,7 @@ fun <DO: Any, DM : IsObjectPropertyDefinitions<DO>> DM.values(
 /**
  * Converts a DataObject back to ObjectValues
  */
-fun <DO : Any, DM : IsObjectPropertyDefinitions<DO>> DM.asValues(
+fun <DO : Any, DM : IsObjectDataModel<DO>> DM.asValues(
     dataObject: DO,
     context: RequestContext? = null
 ): ObjectValues<DO, DM> {
@@ -71,7 +72,7 @@ fun <DO : Any, DM : IsObjectPropertyDefinitions<DO>> DM.asValues(
     for (property in this) {
         when (property) {
             is ObjectListDefinitionWrapper<out Any, *, *, *, DO> -> {
-                val dataModel = (property.definition.valueDefinition as EmbeddedObjectDefinition<Any, IsSimpleBaseModel<Any, *, *>, *, *>).dataModel as IsObjectPropertyDefinitions<Any>
+                val dataModel = (property.definition.valueDefinition as EmbeddedObjectDefinition<Any, IsSimpleBaseObjectDataModel<Any, *, *>, *, *>).dataModel as IsObjectDataModel<Any>
                 property.getter(dataObject)?.let { list ->
                     mutableMap[property.index] = list.map {
                         dataModel.asValues(it, context)
@@ -79,7 +80,7 @@ fun <DO : Any, DM : IsObjectPropertyDefinitions<DO>> DM.asValues(
                 }
             }
             is IsEmbeddedObjectDefinition<*, *, *, *> -> {
-                val dataModel = property.dataModel as IsObjectPropertyDefinitions<Any>
+                val dataModel = property.dataModel as IsObjectDataModel<Any>
                 property.getter(dataObject)?.let {
                     mutableMap[property.index] = dataModel.asValues(it, context)
                 }

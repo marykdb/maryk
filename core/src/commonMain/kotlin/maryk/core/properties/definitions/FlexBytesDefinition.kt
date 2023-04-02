@@ -1,9 +1,9 @@
 package maryk.core.properties.definitions
 
+import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsValuesPropertyDefinitions
-import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.SimpleObjectModel
+import maryk.core.models.IsValuesDataModel
+import maryk.core.models.SimpleObjectModel
 import maryk.core.properties.definitions.PropertyDefinitionType.FlexBytes
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
@@ -76,7 +76,7 @@ data class FlexBytesDefinition(
         return compatible
     }
 
-    object Model : SimpleObjectModel<FlexBytesDefinition, ObjectPropertyDefinitions<FlexBytesDefinition>>() {
+    object Model : SimpleObjectModel<FlexBytesDefinition, IsObjectDataModel<FlexBytesDefinition>>() {
         val required by boolean(1u, FlexBytesDefinition::required, default = true)
         val final by boolean(2u, FlexBytesDefinition::final, default = false)
         val unique by boolean(3u, FlexBytesDefinition::unique, default = false)
@@ -99,7 +99,7 @@ data class FlexBytesDefinition(
     }
 }
 
-fun IsValuesPropertyDefinitions.flexBytes(
+fun IsValuesDataModel.flexBytes(
     index: UInt,
     required: Boolean = true,
     name: String? = null,
@@ -120,7 +120,7 @@ fun IsValuesPropertyDefinitions.flexBytes(
     )
 }
 
-fun <TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.flexBytes(
+fun <TO: Any, DO: Any> IsObjectDataModel<DO>.flexBytes(
     index: UInt,
     getter: (DO) -> TO?,
     name: String? = null,
@@ -136,7 +136,7 @@ fun <TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.flexBytes(
 ): ObjectDefinitionWrapperDelegateLoader<FlexBytesDefinitionWrapper<Bytes, TO, IsPropertyContext, FlexBytesDefinition, DO>, DO, IsPropertyContext> =
     flexBytes(index, getter, name, required, final,  unique, minValue, maxValue, default, minSize, maxSize, alternativeNames, toSerializable = null)
 
-fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.flexBytes(
+fun <TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.flexBytes(
     index: UInt,
     getter: (DO) -> TO?,
     name: String? = null,

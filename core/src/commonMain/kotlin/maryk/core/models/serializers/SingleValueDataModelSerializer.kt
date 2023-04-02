@@ -1,9 +1,9 @@
 package maryk.core.models.serializers
 
-import maryk.core.properties.IsObjectPropertyDefinitions
+import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
-import maryk.core.properties.values
+import maryk.core.models.values
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
@@ -11,7 +11,7 @@ import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
-open class SingleValueDataModelSerializer<T : Any, TO : Any, DO : Any, P : IsObjectPropertyDefinitions<DO>, CX : IsPropertyContext>(
+open class SingleValueDataModelSerializer<T : Any, TO : Any, DO : Any, P : IsObjectDataModel<DO>, CX : IsPropertyContext>(
     model: P,
     singlePropertyDefinitionGetter: () -> IsDefinitionWrapper<T, out TO, CX, DO>
 ) : ObjectDataModelSerializer<DO, P, CX, CX>(model) {

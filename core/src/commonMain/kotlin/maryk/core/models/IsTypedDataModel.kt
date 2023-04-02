@@ -1,12 +1,13 @@
-package maryk.core.properties
+package maryk.core.models
 
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.values.IsValueItems
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ValueItem
 
-interface IsTypedPropertyDefinitions<DO: Any> :
-    IsPropertyDefinitions,
+interface IsTypedDataModel<DO: Any> :
+    IsDataModel,
     Collection<IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>> {
 
     override operator fun get(name: String): IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>?

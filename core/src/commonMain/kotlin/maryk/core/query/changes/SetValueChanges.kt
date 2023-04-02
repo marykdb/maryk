@@ -2,7 +2,7 @@ package maryk.core.query.changes
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.QueryModel
+import maryk.core.models.QueryModel
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.set

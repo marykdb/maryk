@@ -1,7 +1,7 @@
 package maryk.core.models.serializers
 
-import maryk.core.properties.ContextualModel
-import maryk.core.properties.IsObjectPropertyDefinitions
+import maryk.core.models.ContextualDataModel
+import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.types.ValueDataObjectWithValues
@@ -11,7 +11,7 @@ import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeWriter
 
-open class ObjectDataModelSerializer<DO: Any, DM: IsObjectPropertyDefinitions<DO>, CXI:IsPropertyContext, CX: IsPropertyContext>(
+open class ObjectDataModelSerializer<DO: Any, DM: IsObjectDataModel<DO>, CXI:IsPropertyContext, CX: IsPropertyContext>(
     model: DM,
 ): DataModelSerializer<DO, ObjectValues<DO, DM>, DM, CX>(model), IsObjectDataModelSerializer<DO, DM, CXI, CX> {
     /**
@@ -81,7 +81,7 @@ open class ObjectDataModelSerializer<DO: Any, DM: IsObjectPropertyDefinitions<DO
 
     @Suppress("UNCHECKED_CAST")
     override fun transformContext(context: CXI?): CX? =
-        if (model is ContextualModel<*, *, *, *>) {
-            (model as ContextualModel<*, *, CXI, CX>).contextTransformer(Unit, context)
+        if (model is ContextualDataModel<*, *, *, *>) {
+            (model as ContextualDataModel<*, *, CXI, CX>).contextTransformer(Unit, context)
         } else context as CX?
 }

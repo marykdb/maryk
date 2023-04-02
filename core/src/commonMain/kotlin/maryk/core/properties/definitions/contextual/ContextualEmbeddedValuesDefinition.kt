@@ -1,11 +1,10 @@
 package maryk.core.properties.definitions.contextual
 
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.models.definitions.IsValuesDataModel
+import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsValuesPropertyDefinitions
-import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.TypedValuesModel
+import maryk.core.models.IsValuesDataModel
+import maryk.core.models.TypedValuesDataModel
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.wrapper.EmbeddedValuesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
@@ -21,11 +20,11 @@ import maryk.json.JsonWriter
 
 /** Definition for an embedded Values from a context resolved from [contextualResolver] */
 internal data class ContextualEmbeddedValuesDefinition<CX : IsPropertyContext>(
-    val contextualResolver: Unit.(context: CX?) -> TypedValuesModel<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>
-) : IsEmbeddedValuesDefinition<IsValuesPropertyDefinitions, CX> {
-    override val dataModel: IsValuesPropertyDefinitions
+    val contextualResolver: Unit.(context: CX?) -> TypedValuesDataModel<IsValuesDataModel>
+) : IsEmbeddedValuesDefinition<IsValuesDataModel, CX> {
+    override val dataModel: IsValuesDataModel
         get() = throw DefNotFoundException("dataModel is contextually determined")
-    override val default: Values<IsValuesPropertyDefinitions>? = null
+    override val default: Values<IsValuesDataModel>? = null
     override val required = true
     override val final = true
     override val wireType = LENGTH_DELIMITED
@@ -64,21 +63,21 @@ internal data class ContextualEmbeddedValuesDefinition<CX : IsPropertyContext>(
         length: Int,
         reader: () -> Byte,
         context: CX?,
-        earlierValue: Values<IsValuesPropertyDefinitions>?
+        earlierValue: Values<IsValuesDataModel>?
     ) =
         contextualResolver(Unit, context).Serializer.readProtoBuf(length, reader, context)
 }
 
-fun <DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.embedContextual(
+fun <DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.embedContextual(
     index: UInt,
-    getter: (DO) -> Values<out IsValuesPropertyDefinitions>? = { null },
-    contextualResolver: Unit.(context: CX?) -> TypedValuesModel<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>,
+    getter: (DO) -> Values<out IsValuesDataModel>? = { null },
+    contextualResolver: Unit.(context: CX?) -> TypedValuesDataModel<IsValuesDataModel>,
     name: String? = null,
     alternativeNames: Set<String>? = null,
-    toSerializable: (Unit.(Values<IsValuesPropertyDefinitions>?, IsPropertyContext?) -> Values<IsValuesPropertyDefinitions>?)? = null,
-    fromSerializable: (Unit.(Values<IsValuesPropertyDefinitions>?) -> Values<IsValuesPropertyDefinitions>?)? = null,
+    toSerializable: (Unit.(Values<IsValuesDataModel>?, IsPropertyContext?) -> Values<IsValuesDataModel>?)? = null,
+    fromSerializable: (Unit.(Values<IsValuesDataModel>?) -> Values<IsValuesDataModel>?)? = null,
     shouldSerialize: (Unit.(Any) -> Boolean)? = null,
-    capturer: (Unit.(IsPropertyContext, Values<IsValuesPropertyDefinitions>) -> Unit)? = null
+    capturer: (Unit.(IsPropertyContext, Values<IsValuesDataModel>) -> Unit)? = null
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     @Suppress("UNCHECKED_CAST")
     EmbeddedValuesDefinitionWrapper(
@@ -86,7 +85,7 @@ fun <DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.embedContextu
         name ?: propName,
         ContextualEmbeddedValuesDefinition(contextualResolver),
         alternativeNames,
-        getter = getter as (Any) -> Values<IsValuesPropertyDefinitions>?,
+        getter = getter as (Any) -> Values<IsValuesDataModel>?,
         capturer = capturer,
         toSerializable = toSerializable,
         fromSerializable = fromSerializable,

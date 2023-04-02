@@ -1,7 +1,7 @@
 package maryk.datastore.rocksdb.processors
 
 import maryk.core.aggregations.Aggregator
-import maryk.core.properties.IsRootModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.references.IsPropertyReference
@@ -18,10 +18,10 @@ import maryk.datastore.shared.StoreAction
 import maryk.rocksdb.use
 
 internal typealias ScanStoreAction<DM> = StoreAction<DM, ScanRequest<DM>, ValuesResponse<DM>>
-internal typealias AnyScanStoreAction = ScanStoreAction<IsRootModel>
+internal typealias AnyScanStoreAction = ScanStoreAction<IsRootDataModel>
 
 /** Processes a ScanRequest in a [storeAction] into a [dataStore] */
-internal fun <DM : IsRootModel> processScanRequest(
+internal fun <DM : IsRootDataModel> processScanRequest(
     storeAction: ScanStoreAction<DM>,
     dataStore: RocksDBDataStore,
     cache: Cache

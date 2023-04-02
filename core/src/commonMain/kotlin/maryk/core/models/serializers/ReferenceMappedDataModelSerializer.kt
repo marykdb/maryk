@@ -1,13 +1,13 @@
 package maryk.core.models.serializers
 
+import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.QueryModel
+import maryk.core.models.QueryModel
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.wrapper.ContextualDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.references.AnyPropertyReference
-import maryk.core.properties.values
+import maryk.core.models.values
 import maryk.core.query.DefinedByReference
 import maryk.core.query.RequestContext
 import maryk.core.values.MutableValueItems
@@ -19,7 +19,7 @@ import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
-open class ReferenceMappedDataModelSerializer<DO : Any, CDO : DefinedByReference<*>, DM : ObjectPropertyDefinitions<DO>, CP : ObjectPropertyDefinitions<CDO>>(
+open class ReferenceMappedDataModelSerializer<DO : Any, CDO : DefinedByReference<*>, DM : IsObjectDataModel<DO>, CP : IsObjectDataModel<CDO>>(
     model: DM,
     private val containedDataModel: QueryModel<CDO, CP>,
     private val referenceProperty: ContextualDefinitionWrapper<AnyPropertyReference, AnyPropertyReference, RequestContext, ContextualPropertyReferenceDefinition<RequestContext>, CDO>

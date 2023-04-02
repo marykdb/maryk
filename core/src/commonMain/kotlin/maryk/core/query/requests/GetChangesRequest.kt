@@ -4,8 +4,8 @@ package maryk.core.query.requests
 
 import maryk.core.aggregations.Aggregations
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.QueryModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.QueryModel
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.definitions.embedObject
@@ -26,7 +26,7 @@ import maryk.core.values.ObjectValues
  * It will only fetch the changes [fromVersion] (Inclusive) until [maxVersions] (Default=1000) is reached.
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  */
-fun <DM : IsRootModel> DM.getChanges(
+fun <DM : IsRootDataModel> DM.getChanges(
     vararg keys: Key<DM>,
     where: IsFilter? = null,
     fromVersion: ULong = 0uL,
@@ -52,7 +52,7 @@ fun <DM : IsRootModel> DM.getChanges(
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  * Only selected properties can be returned with a [select] graph
  */
-data class GetChangesRequest<DM : IsRootModel> internal constructor(
+data class GetChangesRequest<DM : IsRootDataModel> internal constructor(
     override val dataModel: DM,
     override val keys: List<Key<DM>>,
     override val where: IsFilter? = null,
@@ -75,7 +75,7 @@ data class GetChangesRequest<DM : IsRootModel> internal constructor(
             getter = GetChangesRequest<*>::keys,
             valueDefinition = ContextualReferenceDefinition<RequestContext>(
                 contextualResolver = {
-                    it?.dataModel as? IsRootModel ?: throw ContextNotFoundException()
+                    it?.dataModel as? IsRootDataModel ?: throw ContextNotFoundException()
                 }
             )
         )

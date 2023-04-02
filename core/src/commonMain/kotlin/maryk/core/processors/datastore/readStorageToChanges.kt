@@ -18,10 +18,10 @@ import maryk.core.processors.datastore.StorageTypeEnum.ObjectDelete
 import maryk.core.processors.datastore.StorageTypeEnum.SetSize
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsPropertyDefinitions
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.IsStorableModel
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.models.IsDataModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.IsStorableDataModel
+import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsEmbeddedDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
@@ -83,7 +83,7 @@ private enum class ChangeType {
  * [getQualifier] gets a qualifier until none is available and returns null
  * [processValue] processes the storage value with given type and definition
  */
-fun <DM : IsRootModel> DM.readStorageToChanges(
+fun <DM : IsRootDataModel> DM.readStorageToChanges(
     getQualifier: (((Int) -> Byte, Int) -> Unit) -> Boolean,
     select: RootPropRefGraph<DM>?,
     creationVersion: ULong?,
@@ -113,7 +113,7 @@ fun <DM : IsRootModel> DM.readStorageToChanges(
     processQualifiers(getQualifier) { qualifierReader, qualifierLength, addToCache ->
         @Suppress("UNCHECKED_CAST")
         // Otherwise, try to get a new qualifier processor from DataModel
-        (this.Model as IsDataModelDefinition<IsValuesPropertyDefinitions>).readQualifier(qualifierReader, qualifierLength, 0, select, null, changeAdder, processValue, addToCache)
+        (this.Model as IsDataModelDefinition<IsValuesDataModel>).readQualifier(qualifierReader, qualifierLength, 0, select, null, changeAdder, processValue, addToCache)
     }
 
     // Create Values
@@ -196,7 +196,7 @@ private fun createChange(changeType: ChangeType, changePart: Any) = when (change
  * [readValueFromStorage] is used to fetch actual value from storage layer
  * [addToCache] is used to add a sub reader to cache, so it does not need to reprocess the qualifier from start
  */
-private fun <DM : IsPropertyDefinitions> IsDataModelDefinition<DM>.readQualifier(
+private fun <DM : IsDataModel> IsDataModelDefinition<DM>.readQualifier(
     qualifierReader: (Int) -> Byte,
     qualifierLength: Int,
     offset: Int,
@@ -246,7 +246,7 @@ private fun <DM : IsPropertyDefinitions> IsDataModelDefinition<DM>.readQualifier
 }
 
 /** Read qualifier from [qualifierReader] at [currentOffset] with [definition] into changes */
-private fun <DM : IsValuesPropertyDefinitions> readQualifierOfType(
+private fun <DM : IsValuesDataModel> readQualifierOfType(
     qualifierReader: (Int) -> Byte,
     qualifierLength: Int,
     currentOffset: Int,
@@ -485,7 +485,7 @@ private fun <DM : IsValuesPropertyDefinitions> readQualifierOfType(
     }
 }
 
-private fun <DM : IsValuesPropertyDefinitions> readComplexChanges(
+private fun <DM : IsValuesDataModel> readComplexChanges(
     qualifierReader: (Int) -> Byte,
     qualifierLength: Int,
     offset: Int,
@@ -669,7 +669,7 @@ private fun IsMultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>.readCom
     )
 }
 
-private fun <DM : IsValuesPropertyDefinitions> readEmbeddedValues(
+private fun <DM : IsValuesDataModel> readEmbeddedValues(
     qualifierReader: (Int) -> Byte,
     qualifierLength: Int,
     offset: Int,
@@ -681,13 +681,13 @@ private fun <DM : IsValuesPropertyDefinitions> readEmbeddedValues(
     addChangeToOutput: ChangeAdder
 ) {
     val dataModel =
-        (definition.dataModel as IsStorableModel).Model
+        (definition.dataModel as IsStorableDataModel).Model
 
     // If select is Graph then resolve sub graph.
     // Otherwise, it is null or is property itself so needs to be completely selected thus set as null.
     val specificSelect = if (select is IsPropRefGraph<*>) {
         @Suppress("UNCHECKED_CAST")
-        select as IsPropRefGraph<IsValuesPropertyDefinitions>
+        select as IsPropRefGraph<IsValuesDataModel>
     } else null
 
     addToCache(offset - 1) { qr, l ->

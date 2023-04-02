@@ -1,12 +1,12 @@
 package maryk.test.models
 
-import maryk.core.properties.RootModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.string
 import maryk.test.models.Person.firstName
 import maryk.test.models.Person.surname
 
-object Person : RootModel<Person>(
+object Person : RootDataModel<Person>(
     indices = { listOf(
         Multiple(firstName.ref(), surname.ref())
     ) },

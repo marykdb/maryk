@@ -2,10 +2,10 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.RequestException
-import maryk.core.properties.ContextualModel
+import maryk.core.models.ContextualDataModel
+import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsValuesPropertyDefinitions
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.contextual.ContextualMapDefinition
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
@@ -50,7 +50,7 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
         default: Map<K, V>? = null
     ) : this(required, final, minSize, maxSize, keyDefinition, valueDefinition as IsSubDefinition<V, CX>, default)
 
-    object Model : ContextualModel<MapDefinition<*, *, *>, Model, ContainsDefinitionsContext, KeyValueDefinitionContext>(
+    object Model : ContextualDataModel<MapDefinition<*, *, *>, Model, ContainsDefinitionsContext, KeyValueDefinitionContext>(
         contextTransformer = { KeyValueDefinitionContext(it) },
     ) {
         val required by boolean(1u, MapDefinition<*, *, *>::required, default = true)
@@ -145,7 +145,7 @@ class KeyValueDefinitionContext(
     }
 }
 
-fun <K : Any, V : Any, CX : IsPropertyContext> IsValuesPropertyDefinitions.map(
+fun <K : Any, V : Any, CX : IsPropertyContext> IsValuesDataModel.map(
     index: UInt,
     name: String? = null,
     required: Boolean = true,
@@ -165,7 +165,7 @@ fun <K : Any, V : Any, CX : IsPropertyContext> IsValuesPropertyDefinitions.map(
     )
 }
 
-fun <K : Any, V : Any, TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.map(
+fun <K : Any, V : Any, TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.map(
     index: UInt,
     getter: (DO) -> TO?,
     name: String? = null,

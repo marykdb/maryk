@@ -8,13 +8,13 @@ import maryk.core.models.addProperties
 import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.models.serializers.readDataModelJson
 import maryk.core.models.serializers.writeDataModelJson
-import maryk.core.properties.DefinitionModel
-import maryk.core.properties.IsDataModelPropertyDefinitions
-import maryk.core.properties.IsValuesPropertyDefinitions
-import maryk.core.properties.MutableModel
-import maryk.core.properties.MutablePropertyDefinitions
-import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.PropertyDefinitionsCollectionDefinitionWrapper
+import maryk.core.models.DataModelCollectionDefinitionWrapper
+import maryk.core.models.DefinitionModel
+import maryk.core.models.IsDataModelWithPropertyDefinitions
+import maryk.core.models.IsObjectDataModel
+import maryk.core.models.IsValuesDataModel
+import maryk.core.models.MutableDataModel
+import maryk.core.models.MutableValuesDataModel
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.list
@@ -32,18 +32,19 @@ import maryk.json.IsJsonLikeWriter
  * properties should be validated. It models the DataObjects which can be validated. And it contains a
  * reference to the propertyDefinitions of type [DM] which can be used for the references to the properties.
  */
-open class DataModelDefinition<DM : IsValuesPropertyDefinitions>(
+open class DataModelDefinition<DM : IsValuesDataModel>(
     override val reservedIndices: List<UInt>? = null,
     override val reservedNames: List<String>? = null,
     properties: DM,
     override val name: String = properties::class.simpleName ?: throw DefNotFoundException("Class $properties has no name")
-) : BaseDataModelDefinition<DM>(properties), MarykPrimitive, IsValuesDataModel<DM> {
+) : BaseDataModelDefinition<DM>(properties), MarykPrimitive,
+    IsValuesDataModelDefinition<DM> {
     override val primitiveType = PrimitiveType.Model
 
     @Suppress("unused")
     internal object Model :
         DefinitionModel<DataModelDefinition<*>>(),
-        IsDataModelPropertyDefinitions<DataModelDefinition<*>, PropertyDefinitionsCollectionDefinitionWrapper<DataModelDefinition<*>>> {
+        IsDataModelWithPropertyDefinitions<DataModelDefinition<*>, DataModelCollectionDefinitionWrapper<DataModelDefinition<*>>> {
         override val name by string(1u, DataModelDefinition<*>::name)
         override val properties = addProperties(false, this)
         val reservedIndices by list(
@@ -60,7 +61,7 @@ open class DataModelDefinition<DM : IsValuesPropertyDefinitions>(
             valueDefinition = StringDefinition()
         )
 
-        override fun invoke(values: ObjectValues<DataModelDefinition<*>, ObjectPropertyDefinitions<DataModelDefinition<*>>>) =
+        override fun invoke(values: ObjectValues<DataModelDefinition<*>, IsObjectDataModel<DataModelDefinition<*>>>) =
             DataModelDefinition(
                 name = values(1u),
                 properties = values(2u),
@@ -68,12 +69,12 @@ open class DataModelDefinition<DM : IsValuesPropertyDefinitions>(
                 reservedNames = values(4u)
             ).apply {
                 @Suppress("UNCHECKED_CAST")
-                (properties as MutablePropertyDefinitions<*, IsValuesPropertyDefinitions>)._model = this
+                (properties as MutableValuesDataModel<IsValuesDataModel>)._model = this
             }
 
-        override val Serializer = object: ObjectDataModelSerializer<DataModelDefinition<*>, ObjectPropertyDefinitions<DataModelDefinition<*>>, ContainsDefinitionsContext, ContainsDefinitionsContext>(this) {
+        override val Serializer = object: ObjectDataModelSerializer<DataModelDefinition<*>, IsObjectDataModel<DataModelDefinition<*>>, ContainsDefinitionsContext, ContainsDefinitionsContext>(this) {
             override fun writeJson(
-                values: ObjectValues<DataModelDefinition<*>, ObjectPropertyDefinitions<DataModelDefinition<*>>>,
+                values: ObjectValues<DataModelDefinition<*>, IsObjectDataModel<DataModelDefinition<*>>>,
                 writer: IsJsonLikeWriter,
                 context: ContainsDefinitionsContext?
             ) {
@@ -94,7 +95,7 @@ open class DataModelDefinition<DM : IsValuesPropertyDefinitions>(
                 values: MutableValueItems,
                 context: ContainsDefinitionsContext?
             ) {
-                readDataModelJson(context, reader, values, Model, ::MutableModel)
+                readDataModelJson(context, reader, values, Model, ::MutableDataModel)
             }
         }
     }

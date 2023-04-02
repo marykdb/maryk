@@ -2,8 +2,8 @@ package maryk.core.query.requests
 
 import maryk.core.aggregations.Aggregations
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.QueryModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.QueryModel
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.definitions.embedObject
@@ -23,7 +23,7 @@ import maryk.core.values.ObjectValues
  * Optional: the data can be requested as it was at [toVersion]
  * If [filterSoftDeleted] (default true) is set to false it will not where away all soft deleted results.
  */
-fun <DM : IsRootModel> DM.get(
+fun <DM : IsRootDataModel> DM.get(
     vararg keys: Key<DM>,
     select: RootPropRefGraph<DM>? = null,
     where: IsFilter? = null,
@@ -38,7 +38,7 @@ fun <DM : IsRootModel> DM.get(
  * Optional: the data can be requested as it was at [toVersion]
  * If [filterSoftDeleted] (default true) is set to false it will not filter away all soft deleted results.
  */
-data class GetRequest<DM : IsRootModel> internal constructor(
+data class GetRequest<DM : IsRootDataModel> internal constructor(
     override val dataModel: DM,
     override val keys: List<Key<DM>>,
     override val select: RootPropRefGraph<DM>? = null,
@@ -57,7 +57,7 @@ data class GetRequest<DM : IsRootModel> internal constructor(
             getter = GetRequest<*>::keys,
             valueDefinition = ContextualReferenceDefinition<RequestContext>(
                 contextualResolver = {
-                    it?.dataModel as? IsRootModel ?: throw ContextNotFoundException()
+                    it?.dataModel as? IsRootDataModel ?: throw ContextNotFoundException()
                 }
             )
         )

@@ -1,7 +1,7 @@
 package maryk.datastore.test
 
 import maryk.core.exceptions.RequestException
-import maryk.core.properties.graph
+import maryk.core.models.graph
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.ObjectCreate

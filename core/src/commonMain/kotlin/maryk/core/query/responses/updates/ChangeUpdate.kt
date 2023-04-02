@@ -1,7 +1,7 @@
 package maryk.core.query.responses.updates
 
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.SimpleQueryModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.SimpleQueryModel
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.number
@@ -17,7 +17,7 @@ import maryk.core.query.responses.updates.UpdateResponseType.Change
 import maryk.core.values.SimpleObjectValues
 
 /** Update response describing a change to query results with [changes] at [key] */
-data class ChangeUpdate<DM: IsRootModel>(
+data class ChangeUpdate<DM: IsRootDataModel>(
     val key: Key<DM>,
     override val version: ULong,
     // The index within the current order
@@ -42,7 +42,7 @@ data class ChangeUpdate<DM: IsRootModel>(
             fromSerializable = { it.value }
         )
 
-        override fun invoke(values: SimpleObjectValues<ChangeUpdate<*>>) = ChangeUpdate<IsRootModel>(
+        override fun invoke(values: SimpleObjectValues<ChangeUpdate<*>>) = ChangeUpdate<IsRootDataModel>(
             key = values(1u),
             version = values(2u),
             index = values(3u),

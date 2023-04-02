@@ -2,8 +2,8 @@ package maryk.test.requests
 
 import maryk.core.aggregations.Aggregations
 import maryk.core.aggregations.metric.ValueCount
-import maryk.core.properties.graph
-import maryk.core.properties.key
+import maryk.core.models.graph
+import maryk.core.models.key
 import maryk.core.query.filters.Exists
 import maryk.core.query.orders.Orders
 import maryk.core.query.orders.ascending

@@ -1,7 +1,7 @@
 package maryk.test.requests
 
-import maryk.core.properties.graph
-import maryk.core.properties.key
+import maryk.core.models.graph
+import maryk.core.models.key
 import maryk.core.query.filters.Exists
 import maryk.core.query.orders.descending
 import maryk.core.query.requests.scanUpdates

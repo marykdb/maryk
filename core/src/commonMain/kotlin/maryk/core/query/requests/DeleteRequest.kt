@@ -1,8 +1,8 @@
 package maryk.core.query.requests
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.QueryModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.QueryModel
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.definitions.list
@@ -16,7 +16,7 @@ import maryk.core.values.ObjectValues
  * Creates a Request to delete [objectsToDelete] from [DM]. If [hardDelete] is false the data will still exist but is
  * not possible to request from server.
  */
-fun <DM : IsRootModel> DM.delete(
+fun <DM : IsRootDataModel> DM.delete(
     vararg objectsToDelete: Key<DM>,
     hardDelete: Boolean = false
 ) = DeleteRequest(this, objectsToDelete.toList(), hardDelete)
@@ -25,7 +25,7 @@ fun <DM : IsRootModel> DM.delete(
  * A Request to delete [keys] from [dataModel]. If [hardDelete] is false the data will still exist but is
  * not possible to request from server.
  */
-data class DeleteRequest<DM : IsRootModel> internal constructor(
+data class DeleteRequest<DM : IsRootDataModel> internal constructor(
     override val dataModel: DM,
     val keys: List<Key<DM>>,
     val hardDelete: Boolean
@@ -40,7 +40,7 @@ data class DeleteRequest<DM : IsRootModel> internal constructor(
             getter = DeleteRequest<*>::keys,
             valueDefinition = ContextualReferenceDefinition<RequestContext>(
                 contextualResolver = {
-                    it?.dataModel as? IsRootModel ?: throw ContextNotFoundException()
+                    it?.dataModel as? IsRootDataModel ?: throw ContextNotFoundException()
                 }
             )
         )

@@ -1,6 +1,6 @@
 package maryk.core.query.changes
 
-import maryk.core.properties.QueryModel
+import maryk.core.models.QueryModel
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.number

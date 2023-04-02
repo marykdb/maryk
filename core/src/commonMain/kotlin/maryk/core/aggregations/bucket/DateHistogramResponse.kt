@@ -2,7 +2,7 @@ package maryk.core.aggregations.bucket
 
 import maryk.core.aggregations.AggregationResponseType.DateHistogramType
 import maryk.core.aggregations.IsAggregationResponse
-import maryk.core.properties.SimpleQueryModel
+import maryk.core.models.SimpleQueryModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.list

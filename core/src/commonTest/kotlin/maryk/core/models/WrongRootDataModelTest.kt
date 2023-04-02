@@ -1,18 +1,17 @@
 package maryk.core.models
 
-import maryk.core.properties.RootModel
 import maryk.core.properties.definitions.string
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 
-object WrongModelIndex : RootModel<WrongModelIndex>(
+object WrongModelIndex : RootDataModel<WrongModelIndex>(
     reservedIndices = listOf(1u),
 ) {
     val value by string(1u)
 }
 
-object WrongModelName : RootModel<WrongModelName>(
+object WrongModelName : RootDataModel<WrongModelName>(
     reservedNames = listOf("value"),
 ) {
     val value by string (1u)

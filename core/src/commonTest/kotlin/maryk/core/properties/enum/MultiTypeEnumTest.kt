@@ -3,8 +3,8 @@ package maryk.core.properties.enum
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.properties.IsBaseModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.models.IsBaseObjectDataModel
+import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.definitions.contextual.MultiTypeDefinitionContext
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.DefinitionsContext
@@ -38,7 +38,7 @@ class MultiTypeEnumTest {
         @Suppress("UNCHECKED_CAST")
         checkProtoBufConversion(
             MarykTypeEnum,
-            MultiTypeEnumDefinition.Model as IsBaseModel<MarykTypeEnum.Companion, ObjectPropertyDefinitions<MarykTypeEnum.Companion>, ContainsDefinitionsContext, MultiTypeDefinitionContext>,
+            MultiTypeEnumDefinition.Model as IsBaseObjectDataModel<MarykTypeEnum.Companion, IsObjectDataModel<MarykTypeEnum.Companion>, ContainsDefinitionsContext, MultiTypeDefinitionContext>,
             { context },
             ::compareEnumDefinitions
         )
@@ -49,7 +49,7 @@ class MultiTypeEnumTest {
         @Suppress("UNCHECKED_CAST")
         checkJsonConversion(
             MarykTypeEnum,
-            MultiTypeEnumDefinition.Model as IsBaseModel<MarykTypeEnum.Companion, ObjectPropertyDefinitions<MarykTypeEnum.Companion>, DefinitionsContext, DefinitionsContext>,
+            MultiTypeEnumDefinition.Model as IsBaseObjectDataModel<MarykTypeEnum.Companion, IsObjectDataModel<MarykTypeEnum.Companion>, DefinitionsContext, DefinitionsContext>,
             { context },
             ::compareEnumDefinitions
         )
@@ -146,7 +146,7 @@ class MultiTypeEnumTest {
             @Suppress("UNCHECKED_CAST")
             checkYamlConversion(
                 MarykTypeEnum,
-                MultiTypeEnumDefinition.Model as IsBaseModel<MarykTypeEnum.Companion, ObjectPropertyDefinitions<MarykTypeEnum.Companion>, DefinitionsContext, DefinitionsContext>,
+                MultiTypeEnumDefinition.Model as IsBaseObjectDataModel<MarykTypeEnum.Companion, IsObjectDataModel<MarykTypeEnum.Companion>, DefinitionsContext, DefinitionsContext>,
                 { context },
                 ::compareEnumDefinitions
             )

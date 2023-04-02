@@ -1,7 +1,7 @@
 package maryk.core.query.pairs
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.properties.ReferenceValuePairModel
+import maryk.core.models.ReferenceValuePairDataModel
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.contextual.ContextualIndexedEnumDefinition
@@ -26,7 +26,7 @@ data class ReferenceTypePair<E : TypeEnum<Any>> internal constructor(
 
     override fun toString() = "$reference: $type"
 
-    companion object : ReferenceValuePairModel<ReferenceTypePair<*>, Companion, IndexedEnum, IndexedEnum, ContextualDefinitionWrapper<IndexedEnum, IndexedEnum, RequestContext, ContextualIndexedEnumDefinition<RequestContext, RequestContext, IndexedEnum, IsMultiTypeDefinition<TypeEnum<Any>, Any, RequestContext>>, ReferenceTypePair<*>>>() {
+    companion object : ReferenceValuePairDataModel<ReferenceTypePair<*>, Companion, IndexedEnum, IndexedEnum, ContextualDefinitionWrapper<IndexedEnum, IndexedEnum, RequestContext, ContextualIndexedEnumDefinition<RequestContext, RequestContext, IndexedEnum, IsMultiTypeDefinition<TypeEnum<Any>, Any, RequestContext>>, ReferenceTypePair<*>>>() {
         override val reference by addReference(
             ReferenceTypePair<*>::reference
         )

@@ -2,12 +2,11 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.models.definitions.IsValuesDataModel
-import maryk.core.properties.ContextualModel
+import maryk.core.models.ContextualDataModel
+import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsValuesPropertyDefinitions
-import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.TypedValuesModel
+import maryk.core.models.IsValuesDataModel
+import maryk.core.models.TypedValuesDataModel
 import maryk.core.properties.definitions.PropertyDefinitionType.Embed
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
@@ -21,7 +20,7 @@ import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.validate
+import maryk.core.models.validate
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
@@ -35,7 +34,7 @@ import maryk.json.JsonWriter
 import maryk.lib.safeLazy
 
 /** Definition for embedded object to [dataModel] of type [DM] */
-class EmbeddedValuesDefinition<DM : IsValuesPropertyDefinitions>(
+class EmbeddedValuesDefinition<DM : IsValuesDataModel>(
     override val required: Boolean = true,
     override val final: Boolean = false,
     dataModel: Unit.() -> DM,
@@ -50,7 +49,7 @@ class EmbeddedValuesDefinition<DM : IsValuesPropertyDefinitions>(
 
     @Suppress("UNCHECKED_CAST")
     // internal strong typed version so type system is not in a loop when creating EmbeddedValuesDefinition
-    private val typedDataModel get() = dataModel as TypedValuesModel<IsValuesDataModel<DM>, DM>
+    private val typedDataModel get() = dataModel as TypedValuesDataModel<DM>
 
     override fun asString(value: Values<DM>, context: IsPropertyContext?): String {
         var string = ""
@@ -144,12 +143,12 @@ class EmbeddedValuesDefinition<DM : IsValuesPropertyDefinitions>(
         return result
     }
 
-    object Model : ContextualModel<EmbeddedValuesDefinition<*>, Model, ContainsDefinitionsContext, ModelContext>(
+    object Model : ContextualDataModel<EmbeddedValuesDefinition<*>, Model, ContainsDefinitionsContext, ModelContext>(
         contextTransformer = { ModelContext(it) },
     ) {
         val required by boolean(1u, EmbeddedValuesDefinition<*>::required, default = true)
         val final by boolean(2u, EmbeddedValuesDefinition<*>::final, default = false)
-        val dataModel: ContextualDefinitionWrapper<IsDataModelReference<IsValuesPropertyDefinitions>, Unit.() -> IsValuesPropertyDefinitions, ModelContext, ContextualModelReferenceDefinition<IsValuesPropertyDefinitions, ModelContext, ContainsDefinitionsContext>, EmbeddedValuesDefinition<*>> by contextual(
+        val dataModel: ContextualDefinitionWrapper<IsDataModelReference<IsValuesDataModel>, Unit.() -> IsValuesDataModel, ModelContext, ContextualModelReferenceDefinition<IsValuesDataModel, ModelContext, ContainsDefinitionsContext>, EmbeddedValuesDefinition<*>> by contextual(
             index = 3u,
             definition = ContextualModelReferenceDefinition(
                 contextTransformer = { context: ModelContext? ->
@@ -158,7 +157,7 @@ class EmbeddedValuesDefinition<DM : IsValuesPropertyDefinitions>(
                 contextualResolver = { context: ContainsDefinitionsContext?, name ->
                     context?.let {
                         @Suppress("UNCHECKED_CAST")
-                        it.dataModels[name] as? Unit.() -> IsValuesPropertyDefinitions
+                        it.dataModels[name] as? Unit.() -> IsValuesDataModel
                             ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
                     } ?: throw ContextNotFoundException()
                 }
@@ -166,7 +165,7 @@ class EmbeddedValuesDefinition<DM : IsValuesPropertyDefinitions>(
             getter = {
                 { it.dataModel }
             },
-            toSerializable = { value: (Unit.() -> IsValuesPropertyDefinitions)?, _ ->
+            toSerializable = { value: (Unit.() -> IsValuesDataModel)?, _ ->
                 value?.invoke(Unit)?.let { model ->
                     DataModelReference(model.Model.name) { model }
                 }
@@ -174,7 +173,7 @@ class EmbeddedValuesDefinition<DM : IsValuesPropertyDefinitions>(
             fromSerializable = {
                 it?.get
             },
-            capturer = { context: ModelContext, dataModel: IsDataModelReference<IsValuesPropertyDefinitions> ->
+            capturer = { context: ModelContext, dataModel: IsDataModelReference<IsValuesDataModel> ->
                 context.definitionsContext?.let {
                     if (!it.dataModels.containsKey(dataModel.name)) {
                         it.dataModels[dataModel.name] = dataModel.get
@@ -190,13 +189,13 @@ class EmbeddedValuesDefinition<DM : IsValuesPropertyDefinitions>(
             index = 4u,
             getter = EmbeddedValuesDefinition<*>::default,
             contextualResolver = { context: ModelContext? ->
-                context?.model?.invoke(Unit) as? TypedValuesModel<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>
+                context?.model?.invoke(Unit) as? TypedValuesDataModel<IsValuesDataModel>
                     ?: throw ContextNotFoundException()
             }
         )
 
         override fun invoke(values: ObjectValues<EmbeddedValuesDefinition<*>, Model>) =
-            EmbeddedValuesDefinition<IsValuesPropertyDefinitions>(
+            EmbeddedValuesDefinition<IsValuesDataModel>(
                 required = values(1u),
                 final = values(2u),
                 dataModel = values(3u),
@@ -205,7 +204,7 @@ class EmbeddedValuesDefinition<DM : IsValuesPropertyDefinitions>(
     }
 }
 
-fun <DM : IsValuesPropertyDefinitions> IsValuesPropertyDefinitions.embed(
+fun <DM : IsValuesDataModel> IsValuesDataModel.embed(
     index: UInt,
     dataModel: Unit.() -> DM,
     name: String? = null,
@@ -222,7 +221,7 @@ fun <DM : IsValuesPropertyDefinitions> IsValuesPropertyDefinitions.embed(
     )
 }
 
-fun <DM : IsValuesPropertyDefinitions> ObjectPropertyDefinitions<Any>.embed(
+fun <DM : IsValuesDataModel> IsObjectDataModel<Any>.embed(
     index: UInt,
     getter: (Any) -> Values<DM>? = { null },
     dataModel: Unit.() -> DM,

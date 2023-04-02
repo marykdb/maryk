@@ -1,7 +1,8 @@
-package maryk.core.properties
+package maryk.core.models
 
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initUIntByVar
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsUsableInMultiType
@@ -13,7 +14,7 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.decodeStorageIndex
 import maryk.lib.exceptions.ParseException
 
-abstract class AbstractPropertyDefinitions<DO : Any> : IsTypedPropertyDefinitions<DO> {
+abstract class AbstractDataModel<DO : Any> : IsTypedDataModel<DO> {
     override fun iterator() = _allProperties.iterator()
 
     private val _allProperties: MutableList<IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>> =

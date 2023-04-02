@@ -3,7 +3,7 @@ package maryk.datastore.memory.processors
 import maryk.core.clock.HLC
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
-import maryk.core.properties.IsRootModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.IsScanRequest
 import maryk.datastore.memory.records.DataRecord
@@ -16,10 +16,10 @@ import maryk.datastore.shared.optimizeTableScan
 import maryk.datastore.shared.orderToScanType
 
 /** Walk with [scanRequest] on [dataStore] and do [processRecord] */
-internal fun <DM : IsRootModel> processScan(
+internal fun <DM : IsRootDataModel> processScan(
     scanRequest: IsScanRequest<DM, *>,
     dataStore: DataStore<DM>,
-    recordFetcher: (IsRootModel, Key<*>) -> DataRecord<*>?,
+    recordFetcher: (IsRootDataModel, Key<*>) -> DataRecord<*>?,
     scanSetup: ((ScanType) -> Unit)? = null,
     processRecord: (DataRecord<DM>, ByteArray?) -> Unit
 ) {
@@ -93,11 +93,11 @@ internal fun <DM : IsRootModel> processScan(
     }
 }
 
-internal fun <DM: IsRootModel> shouldProcessRecord(
+internal fun <DM: IsRootDataModel> shouldProcessRecord(
     record: DataRecord<DM>,
     scanRequest: IsScanRequest<DM, *>,
     scanRange: KeyScanRanges,
-    recordFetcher: (IsRootModel, Key<*>) -> DataRecord<*>?
+    recordFetcher: (IsRootDataModel, Key<*>) -> DataRecord<*>?
 ): Boolean {
     if (scanRange.keyBeforeStart(record.key.bytes, 0)
         || !scanRange.keyWithinRanges(record.key.bytes, 0)

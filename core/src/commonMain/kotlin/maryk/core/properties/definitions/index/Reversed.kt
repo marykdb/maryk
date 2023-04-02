@@ -4,9 +4,9 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
-import maryk.core.properties.AbstractPropertyDefinitions
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.SingleTypedValueModel
+import maryk.core.models.AbstractDataModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.SingleTypedValueDataModel
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.references.AnyPropertyReference
@@ -60,11 +60,11 @@ data class Reversed<T : Any>(
         this.reference.writeStorageBytes(writer)
     }
 
-    override fun isCompatibleWithModel(dataModel: IsRootModel): Boolean =
+    override fun isCompatibleWithModel(dataModel: IsRootDataModel): Boolean =
         reference.isCompatibleWithModel(dataModel)
 
     internal object Model :
-        SingleTypedValueModel<AnyPropertyReference, Reversed<out Any>, Model, DefinitionsConversionContext>(
+        SingleTypedValueDataModel<AnyPropertyReference, Reversed<out Any>, Model, DefinitionsConversionContext>(
             singlePropertyDefinitionGetter = { Model.reference }
         ) {
         val reference by contextual(
@@ -72,7 +72,7 @@ data class Reversed<T : Any>(
             getter = Reversed<*>::reference,
             definition = ContextualPropertyReferenceDefinition<DefinitionsConversionContext>(
                 contextualResolver = {
-                    it?.propertyDefinitions as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()
+                    it?.propertyDefinitions as? AbstractDataModel<*>? ?: throw ContextNotFoundException()
                 }
             )
         )

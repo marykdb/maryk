@@ -5,11 +5,11 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import maryk.core.exceptions.TypeException
 import maryk.core.models.definitions.IsNamedDataModelDefinition
-import maryk.core.models.definitions.IsObjectDataModel
-import maryk.core.models.definitions.IsValuesDataModel
+import maryk.core.models.definitions.IsObjectDataModelDefinition
+import maryk.core.models.definitions.IsValuesDataModelDefinition
 import maryk.core.models.definitions.ValueDataModelDefinition
-import maryk.core.properties.IsValueModel
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.models.IsValueDataModel
+import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.IsMapDefinition
@@ -167,12 +167,12 @@ internal fun generateKotlinValue(
         when (definition) {
             is ContextualModelReferenceDefinition<*, *, *> -> {
                 when (val model = (value as? Unit.() -> Any)?.invoke(Unit)) {
-                    is IsValuesPropertyDefinitions ->
+                    is IsValuesDataModel ->
                         """{ ${model.Model.name} }"""
                     is IsNamedDataModelDefinition<*> ->
                         """{ ${model.name} }"""
                     null ->
-                        if (value is IsValueModel<* , *>) {
+                        if (value is IsValueDataModel<*, *>) {
                             value.Model.name
                         } else throw TypeException("NamedDataModel $value has to be a function which returns a IsValuesPropertyDefinitions or IsNamedDataModel ")
                     else ->
@@ -189,7 +189,7 @@ internal fun generateKotlinValue(
     }
 }
 
-private fun IsObjectDataModel<*, *>.generateKotlinValue(value: Any, addImport: (String) -> Unit): String {
+private fun IsObjectDataModelDefinition<*, *>.generateKotlinValue(value: Any, addImport: (String) -> Unit): String {
     val values = mutableListOf<String>()
 
     for (property in this.properties) {
@@ -207,7 +207,7 @@ private fun IsObjectDataModel<*, *>.generateKotlinValue(value: Any, addImport: (
     }
 }
 
-private fun IsValuesDataModel<*>.generateKotlinValue(value: ValuesImpl, addImport: (String) -> Unit): String {
+private fun IsValuesDataModelDefinition<*>.generateKotlinValue(value: ValuesImpl, addImport: (String) -> Unit): String {
     val values = mutableListOf<String>()
 
     for (property in this.properties) {

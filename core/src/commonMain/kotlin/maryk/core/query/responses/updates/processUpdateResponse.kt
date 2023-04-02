@@ -1,10 +1,10 @@
 package maryk.core.query.responses.updates
 
-import maryk.core.properties.IsRootModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.changes.ObjectSoftDeleteChange
 
-fun <DM: IsRootModel> processUpdateResponse(response: IsUpdateResponse<DM>, previousResults: List<ValuesWithMetaData<DM>>) =
+fun <DM: IsRootDataModel> processUpdateResponse(response: IsUpdateResponse<DM>, previousResults: List<ValuesWithMetaData<DM>>) =
     when (response) {
         is InitialValuesUpdate<DM> -> response.values
         is InitialChangesUpdate<DM> -> throw Exception("processUpdateResponse cannot work with Change requests/responses")

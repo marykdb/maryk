@@ -1,10 +1,10 @@
 package maryk.core.models.definitions
 
 import maryk.core.exceptions.DefNotFoundException
+import maryk.core.models.IsDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsPropertyDefinitions
 
-interface IsNamedDataModelDefinition<DM : IsPropertyDefinitions> : IsDataModelDefinition<DM> {
+interface IsNamedDataModelDefinition<DM : IsDataModel> : IsDataModelDefinition<DM> {
     val name: String
 
     /** Get PropertyReference by [referenceName] */

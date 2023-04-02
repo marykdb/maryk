@@ -1,11 +1,11 @@
 package maryk.core.models.serializers
 
-import maryk.core.properties.IsObjectPropertyDefinitions
+import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.types.ValueDataObject
 import kotlin.io.encoding.ExperimentalEncodingApi
 
-interface IsValueDataModelSerializer<DO: ValueDataObject, DM: IsObjectPropertyDefinitions<DO>>:
+interface IsValueDataModelSerializer<DO: ValueDataObject, DM: IsObjectDataModel<DO>>:
     IsObjectDataModelSerializer<DO, DM, IsPropertyContext, IsPropertyContext> {
     /**
      * Read bytes from [reader] to DataObject

@@ -1,11 +1,11 @@
 package maryk.datastore.memory.records.index
 
-import maryk.core.properties.IsRootModel
+import maryk.core.models.IsRootDataModel
 
 /**
  * Contains all unique index values and has methods to add, get or remove unique value references
  */
-internal class UniqueIndexValues<DM : IsRootModel, T : Comparable<T>>(
+internal class UniqueIndexValues<DM : IsRootDataModel, T : Comparable<T>>(
     indexReference: ByteArray
 ) : AbstractIndexValues<DM, T>(
     indexReference

@@ -3,7 +3,7 @@ package maryk.core.inject
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.RequestException
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsPropertyDefinitions
+import maryk.core.models.IsDataModel
 import maryk.core.query.ContainsDataModelContext
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.ModelTypeToCollect
@@ -15,11 +15,11 @@ internal class InjectionContext(
     val requestContext: RequestContext
 ) :
     IsPropertyContext,
-    ContainsDataModelContext<IsPropertyDefinitions>,
+    ContainsDataModelContext<IsDataModel>,
     ContainsDefinitionsContext by requestContext {
     var collectionName: String? = null
 
-    override val dataModel: IsPropertyDefinitions
+    override val dataModel: IsDataModel
         get() = collectionName?.let { collectionName ->
             return when (val collectType = requestContext.getToCollectModel(collectionName)) {
                 null -> throw RequestException("Inject collection name $collectionName not found")
@@ -36,7 +36,7 @@ internal class InjectionContext(
             }
         } ?: throw ContextNotFoundException()
 
-    fun resolvePropertyReference(): IsPropertyDefinitions =
+    fun resolvePropertyReference(): IsDataModel =
         collectionName?.let { collectionName ->
             when (val collectType = requestContext.getToCollectModel(collectionName)) {
                 null -> throw RequestException("Inject collection name $collectionName not found")

@@ -8,7 +8,7 @@ import maryk.core.aggregations.metric.MaxResponse
 import maryk.core.aggregations.metric.Min
 import maryk.core.aggregations.metric.MinResponse
 import maryk.core.exceptions.RequestException
-import maryk.core.properties.graph
+import maryk.core.models.graph
 import maryk.core.properties.types.Key
 import maryk.core.query.filters.Equals
 import maryk.core.query.orders.Order.Companion.descending

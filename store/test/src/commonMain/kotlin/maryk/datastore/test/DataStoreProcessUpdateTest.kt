@@ -2,7 +2,7 @@ package maryk.datastore.test
 
 import kotlinx.datetime.LocalDateTime
 import maryk.core.exceptions.RequestException
-import maryk.core.properties.key
+import maryk.core.models.key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.changes.ObjectCreate

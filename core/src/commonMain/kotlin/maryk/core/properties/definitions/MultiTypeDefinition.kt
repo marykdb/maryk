@@ -1,9 +1,9 @@
 package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.properties.ContextualModel
-import maryk.core.properties.IsValuesPropertyDefinitions
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.models.ContextualDataModel
+import maryk.core.models.IsObjectDataModel
+import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.contextual.ContextValueTransformDefinition
 import maryk.core.properties.definitions.contextual.ContextualSubDefinition
@@ -61,7 +61,7 @@ data class MultiTypeDefinition<E : MultiTypeEnum<out T>, T: Any>(
     }
 
     @Suppress("unused")
-    object Model : ContextualModel<MultiTypeDefinition<*, *>, Model, ContainsDefinitionsContext, MultiTypeDefinitionContext>(
+    object Model : ContextualDataModel<MultiTypeDefinition<*, *>, Model, ContainsDefinitionsContext, MultiTypeDefinitionContext>(
         contextTransformer = { MultiTypeDefinitionContext(it) },
     ) {
         val required by boolean(1u, MultiTypeDefinition<*, *>::required, default = true)
@@ -123,7 +123,7 @@ data class MultiTypeDefinition<E : MultiTypeEnum<out T>, T: Any>(
     }
 }
 
-fun <E : MultiTypeEnum<out T>, T: Any> IsValuesPropertyDefinitions.multiType(
+fun <E : MultiTypeEnum<out T>, T: Any> IsValuesDataModel.multiType(
     index: UInt,
     name: String? = null,
     required: Boolean = true,
@@ -141,7 +141,7 @@ fun <E : MultiTypeEnum<out T>, T: Any> IsValuesPropertyDefinitions.multiType(
     )
 }
 
-fun <E : MultiTypeEnum<out T>, T: Any, TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.multiType(
+fun <E : MultiTypeEnum<out T>, T: Any, TO: Any, DO: Any> IsObjectDataModel<DO>.multiType(
     index: UInt,
     getter: (DO) -> TO?,
     name: String? = null,
@@ -154,7 +154,7 @@ fun <E : MultiTypeEnum<out T>, T: Any, TO: Any, DO: Any> ObjectPropertyDefinitio
 ): ObjectDefinitionWrapperDelegateLoader<MultiTypeDefinitionWrapper<E, T, TO, ContainsDefinitionsContext, DO>, DO, ContainsDefinitionsContext> =
     multiType(index, getter, name, required, final, typeEnum, typeIsFinal, default, alternativeNames, toSerializable = null)
 
-fun <E : MultiTypeEnum<out T>, T: Any, TO: Any, DO: Any, CX: ContainsDefinitionsContext> ObjectPropertyDefinitions<DO>.multiType(
+fun <E : MultiTypeEnum<out T>, T: Any, TO: Any, DO: Any, CX: ContainsDefinitionsContext> IsObjectDataModel<DO>.multiType(
     index: UInt,
     getter: (DO) -> TO?,
     name: String? = null,

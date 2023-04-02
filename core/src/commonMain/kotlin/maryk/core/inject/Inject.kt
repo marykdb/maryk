@@ -2,7 +2,7 @@ package maryk.core.inject
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.serializers.ObjectDataModelSerializer
-import maryk.core.properties.ContextualModel
+import maryk.core.models.ContextualDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
@@ -11,7 +11,7 @@ import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.exceptions.InjectException
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.values
+import maryk.core.models.values
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
@@ -41,7 +41,7 @@ data class Inject<T : Any, D : IsPropertyDefinition<T>>(
         } ?: result as T?
     }
 
-    internal companion object : ContextualModel<AnyInject, Companion, RequestContext, InjectionContext>(
+    internal companion object : ContextualDataModel<AnyInject, Companion, RequestContext, InjectionContext>(
         contextTransformer = { requestContext ->
             InjectionContext(
                 requestContext ?: throw ContextNotFoundException()

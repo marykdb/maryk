@@ -1,11 +1,10 @@
 package maryk.core.query.responses.updates
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.definitions.IsValuesDataModel
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.IsValuesPropertyDefinitions
-import maryk.core.properties.SimpleQueryModel
-import maryk.core.properties.TypedValuesModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.IsValuesDataModel
+import maryk.core.models.SimpleQueryModel
+import maryk.core.models.TypedValuesDataModel
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.contextual.embedContextual
 import maryk.core.properties.definitions.number
@@ -19,7 +18,7 @@ import maryk.core.values.SimpleObjectValues
 import maryk.core.values.Values
 
 /** Update response describing an addition to query result of [values] at [key] */
-data class AdditionUpdate<DM: IsRootModel>(
+data class AdditionUpdate<DM: IsRootDataModel>(
     val key: Key<DM>,
     override val version: ULong,
     val firstVersion: ULong,
@@ -40,12 +39,12 @@ data class AdditionUpdate<DM: IsRootModel>(
             getter = AdditionUpdate<*>::values,
             contextualResolver = { context: RequestContext? ->
                 @Suppress("UNCHECKED_CAST")
-                context?.dataModel as? TypedValuesModel<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>
+                context?.dataModel as? TypedValuesDataModel<IsValuesDataModel>
                     ?: throw ContextNotFoundException()
             }
         )
 
-        override fun invoke(values: SimpleObjectValues<AdditionUpdate<*>>) = AdditionUpdate<IsRootModel>(
+        override fun invoke(values: SimpleObjectValues<AdditionUpdate<*>>) = AdditionUpdate<IsRootDataModel>(
             key = values(1u),
             version = values(2u),
             firstVersion = values(3u),

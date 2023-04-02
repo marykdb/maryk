@@ -1,12 +1,12 @@
 package maryk.core.query.responses.statuses
 
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.SimpleQueryModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.SimpleQueryModel
 import maryk.core.query.responses.statuses.StatusType.AUTH_FAIL
 import maryk.core.values.SimpleObjectValues
 
 /** Authorization fail for this action */
-class AuthFail<DM : IsRootModel> :
+class AuthFail<DM : IsRootDataModel> :
     IsAddResponseStatus<DM>,
     IsChangeResponseStatus<DM>,
     IsDeleteResponseStatus<DM> {
@@ -18,6 +18,6 @@ class AuthFail<DM : IsRootModel> :
 
     internal companion object : SimpleQueryModel<AuthFail<*>>() {
         override fun invoke(values: SimpleObjectValues<AuthFail<*>>) =
-            AuthFail<IsRootModel>()
+            AuthFail<IsRootDataModel>()
     }
 }

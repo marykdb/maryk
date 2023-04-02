@@ -2,8 +2,8 @@ package maryk.core.properties.definitions.contextual
 
 import maryk.checkProtoBufConversion
 import maryk.core.extensions.toUnitLambda
-import maryk.core.properties.IsStorableModel
-import maryk.core.properties.IsPropertyDefinitions
+import maryk.core.models.IsStorableDataModel
+import maryk.core.models.IsDataModel
 import maryk.core.query.RequestContext
 import maryk.test.ByteCollector
 import maryk.test.models.EmbeddedMarykModel
@@ -22,8 +22,8 @@ class ContextualModelReferenceDefinitionTest {
         EmbeddedMarykModel,
     )
 
-    private val def = ContextualModelReferenceDefinition<IsPropertyDefinitions, RequestContext>(
-        contextualResolver = { context, name -> context!!.dataModels[name] as Unit.() -> IsPropertyDefinitions }
+    private val def = ContextualModelReferenceDefinition<IsDataModel, RequestContext>(
+        contextualResolver = { context, name -> context!!.dataModels[name] as Unit.() -> IsDataModel }
     )
 
     private val context = RequestContext(
@@ -41,7 +41,7 @@ class ContextualModelReferenceDefinitionTest {
         for (value in modelsToTest) {
             checkProtoBufConversion(
                 bc,
-                DataModelReference((value as IsStorableModel).Model.name) { value },
+                DataModelReference((value as IsStorableDataModel).Model.name) { value },
                 this.def,
                 this.context
             ) { converted, original ->
@@ -53,7 +53,7 @@ class ContextualModelReferenceDefinitionTest {
     @Test
     fun convertString() {
         for (namedDataModel in modelsToTest) {
-            val b = def.asString(DataModelReference((namedDataModel as IsStorableModel).Model.name) { namedDataModel }, this.context)
+            val b = def.asString(DataModelReference((namedDataModel as IsStorableDataModel).Model.name) { namedDataModel }, this.context)
             expect(namedDataModel) { def.fromString(b, this.context).get.invoke(Unit) }
         }
     }

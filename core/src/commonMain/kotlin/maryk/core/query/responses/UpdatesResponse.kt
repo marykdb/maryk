@@ -1,7 +1,7 @@
 package maryk.core.query.responses
 
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.SimpleQueryModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.SimpleQueryModel
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.types.TypedValue
@@ -11,7 +11,7 @@ import maryk.core.query.responses.updates.mapOfUpdateResponses
 import maryk.core.values.SimpleObjectValues
 
 /** Response with [updates] to [dataModel] */
-data class UpdatesResponse<DM : IsRootModel>(
+data class UpdatesResponse<DM : IsRootDataModel>(
     override val dataModel: DM,
     val updates: List<IsUpdateResponse<DM>>
 ) : IsDataResponse<DM> {

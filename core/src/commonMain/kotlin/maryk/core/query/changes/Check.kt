@@ -1,7 +1,7 @@
 package maryk.core.query.changes
 
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.ReferenceValuePairsModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.ReferenceValuePairsDataModel
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.query.pairs.ReferenceValuePair
@@ -16,7 +16,7 @@ data class Check internal constructor(
     @Suppress("UNCHECKED_CAST")
     constructor(vararg referenceValuePair: ReferenceValuePair<*>) : this(referenceValuePair.toList() as List<ReferenceValuePair<Any>>)
 
-    override fun filterWithSelect(select: RootPropRefGraph<out IsRootModel>): Check? {
+    override fun filterWithSelect(select: RootPropRefGraph<out IsRootDataModel>): Check? {
         val filtered = referenceValuePairs.filter {
             select.contains(it.reference)
         }
@@ -29,7 +29,7 @@ data class Check internal constructor(
 
     override fun toString() = "Check[${referenceValuePairs.joinToString()}]"
 
-    companion object : ReferenceValuePairsModel<Check, Companion, ReferenceValuePair<Any>, Any, Any>(
+    companion object : ReferenceValuePairsDataModel<Check, Companion, ReferenceValuePair<Any>, Any, Any>(
         pairGetter = Check::referenceValuePairs,
         pairModel = ReferenceValuePair,
     ) {

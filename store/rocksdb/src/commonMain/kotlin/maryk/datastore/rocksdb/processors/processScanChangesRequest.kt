@@ -1,6 +1,6 @@
 package maryk.datastore.rocksdb.processors
 
-import maryk.core.properties.IsRootModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.requests.ScanChangesRequest
@@ -14,10 +14,10 @@ import maryk.datastore.shared.checkMaxVersions
 import maryk.rocksdb.use
 
 internal typealias ScanChangesStoreAction<DM> = StoreAction<DM, ScanChangesRequest<DM>, ChangesResponse<DM>>
-internal typealias AnyScanChangesStoreAction = ScanChangesStoreAction<IsRootModel>
+internal typealias AnyScanChangesStoreAction = ScanChangesStoreAction<IsRootDataModel>
 
 /** Processes a ScanChangesRequest in a [storeAction] into a [dataStore] */
-internal fun <DM : IsRootModel> processScanChangesRequest(
+internal fun <DM : IsRootDataModel> processScanChangesRequest(
     storeAction: ScanChangesStoreAction<DM>,
     dataStore: RocksDBDataStore,
     cache: Cache

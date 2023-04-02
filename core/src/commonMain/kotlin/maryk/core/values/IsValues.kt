@@ -1,8 +1,8 @@
 package maryk.core.values
 
-import maryk.core.properties.IsPropertyDefinitions
+import maryk.core.models.IsDataModel
 
 /** A Values object with multiple ValueItems */
-interface IsValues<P : IsPropertyDefinitions> : Iterable<ValueItem>, IsValuesGetter {
+interface IsValues<P : IsDataModel> : Iterable<ValueItem>, IsValuesGetter {
     fun original(index: UInt): Any?
 }

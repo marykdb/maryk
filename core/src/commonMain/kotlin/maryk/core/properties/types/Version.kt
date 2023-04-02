@@ -2,7 +2,7 @@ package maryk.core.properties.types
 
 import maryk.core.models.serializers.ValueDataModelSerializer
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.ValueModel
+import maryk.core.models.ValueDataModel
 import maryk.core.properties.definitions.number
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.types.numeric.UInt16
@@ -35,7 +35,7 @@ data class Version(
         return "${major}.${minor}$patch"
     }
 
-    companion object : ValueModel<Version, Companion>(Version::class) {
+    companion object : ValueDataModel<Version, Companion>(Version::class) {
         val major by number(1u, Version::major, type = UInt16)
         val minor by number(2u, Version::minor, type = UInt16)
         val patch by number(3u, Version::patch, type = UInt16)

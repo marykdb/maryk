@@ -2,7 +2,7 @@ package maryk.datastore.memory.processors
 
 import maryk.core.aggregations.Aggregator
 import maryk.core.clock.HLC
-import maryk.core.properties.IsRootModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.ValuesWithMetaData
@@ -13,10 +13,10 @@ import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkToVersion
 
 internal typealias GetStoreAction<DM> = StoreAction<DM, GetRequest<DM>, ValuesResponse<DM>>
-internal typealias AnyGetStoreAction = GetStoreAction<IsRootModel>
+internal typealias AnyGetStoreAction = GetStoreAction<IsRootDataModel>
 
 /** Processes a GetRequest in a [storeAction] and resolve dataStore with [dataStoreFetcher] */
-internal fun <DM : IsRootModel> processGetRequest(
+internal fun <DM : IsRootDataModel> processGetRequest(
     storeAction: GetStoreAction<DM>,
     dataStoreFetcher: IsStoreFetcher<*>
 ) {

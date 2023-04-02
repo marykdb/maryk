@@ -14,7 +14,7 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
 import maryk.core.models.definitions.RootDataModelDefinition
 import maryk.core.processors.datastore.scanRange.createScanRange
-import maryk.core.properties.IsRootModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.query.requests.IsFetchRequest
 import maryk.core.query.requests.IsGetRequest
 import maryk.core.query.requests.IsScanRequest
@@ -67,7 +67,7 @@ abstract class AbstractDataStore(
         }
     }
 
-    override suspend fun <DM : IsRootModel, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
+    override suspend fun <DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
         request: RQ
     ): RP {
         waitForInit()
@@ -81,7 +81,7 @@ abstract class AbstractDataStore(
         return response.await()
     }
 
-    override suspend fun <DM : IsRootModel> processUpdate(
+    override suspend fun <DM : IsRootDataModel> processUpdate(
         updateResponse: UpdateResponse<DM>
     ): ProcessResponse<DM> {
         waitForInit()
@@ -95,7 +95,7 @@ abstract class AbstractDataStore(
         return response.await()
     }
 
-    override suspend fun <DM : IsRootModel, RQ: IsFetchRequest<DM, RP>, RP: IsDataResponse<DM>> executeFlow(
+    override suspend fun <DM : IsRootDataModel, RQ: IsFetchRequest<DM, RP>, RP: IsDataResponse<DM>> executeFlow(
         request: RQ
     ): Flow<IsUpdateResponse<DM>> {
         if (request.toVersion != null) {
@@ -118,7 +118,7 @@ abstract class AbstractDataStore(
     }
 
     /** Get [dataModel] id to identify it for storage */
-    fun getDataModelId(dataModel: IsRootModel) =
+    fun getDataModelId(dataModel: IsRootDataModel) =
         dataModelIdsByString[dataModel.Model.name] ?:
         throw DefNotFoundException("DataStore not found ${dataModel.Model.name}")
 
@@ -132,7 +132,7 @@ abstract class AbstractDataStore(
 }
 
 /** Creates update listener for request with [response] */
-private fun <DM: IsRootModel, RP: IsDataResponse<DM>> IsFetchRequest<DM, RP>.createUpdateListener(
+private fun <DM: IsRootDataModel, RP: IsDataResponse<DM>> IsFetchRequest<DM, RP>.createUpdateListener(
     response: RP
 ) =
     when (this) {

@@ -3,9 +3,9 @@ package maryk.core.properties.definitions.index
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.properties.RootModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.string
-import maryk.core.properties.key
+import maryk.core.models.key
 import maryk.lib.extensions.initByteArrayByHex
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
@@ -15,7 +15,7 @@ import kotlin.test.assertTrue
 import kotlin.test.expect
 
 internal class UUIDKeyTest {
-    object MarykModel : RootModel<MarykModel>(
+    object MarykModel : RootDataModel<MarykModel>(
         keyDefinition = { UUIDKey },
     ) {
         val value by string(1u)

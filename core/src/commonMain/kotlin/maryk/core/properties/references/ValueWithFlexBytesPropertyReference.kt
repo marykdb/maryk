@@ -1,6 +1,6 @@
 package maryk.core.properties.references
 
-import maryk.core.properties.IsRootModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.definitions.index.IndexKeyPartType
 import maryk.core.properties.definitions.index.toReferenceStorageByteArray
@@ -25,6 +25,6 @@ open class ValueWithFlexBytesPropertyReference<
     IsStorageBytesEncodable<T> by propertyDefinition {
     override val indexKeyPartType = IndexKeyPartType.Reference
     override val referenceStorageByteArray by lazy { Bytes(this.toReferenceStorageByteArray()) }
-    override fun isCompatibleWithModel(dataModel: IsRootModel) =
+    override fun isCompatibleWithModel(dataModel: IsRootDataModel) =
         dataModel.compatibleWithReference(this)
 }

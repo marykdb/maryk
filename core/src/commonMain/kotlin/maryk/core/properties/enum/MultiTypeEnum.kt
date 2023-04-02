@@ -2,9 +2,9 @@ package maryk.core.properties.enum
 
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.serializers.ObjectDataModelSerializer
+import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.SimpleObjectModel
+import maryk.core.models.SimpleObjectModel
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.IsUsableInMultiType
 import maryk.core.properties.definitions.PropertyDefinitionType
@@ -17,7 +17,7 @@ import maryk.core.properties.definitions.string
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
-import maryk.core.properties.values
+import maryk.core.models.values
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.RequestContext
 import maryk.core.values.MutableValueItems
@@ -50,7 +50,7 @@ interface MultiTypeEnum<T: Any>: TypeEnum<T> {
         } as MultiTypeEnum<Any>
     }
 
-    object Model : SimpleObjectModel<MultiTypeEnum<*>, ObjectPropertyDefinitions<MultiTypeEnum<*>>>() {
+    object Model : SimpleObjectModel<MultiTypeEnum<*>, IsObjectDataModel<MultiTypeEnum<*>>>() {
         val index by number(1u, MultiTypeEnum<*>::index, UInt32)
         val name by string(2u, MultiTypeEnum<*>::name)
         val alternativeNames by set(
@@ -68,7 +68,7 @@ interface MultiTypeEnum<T: Any>: TypeEnum<T> {
             }
         )
 
-        override fun invoke(values: ObjectValues<MultiTypeEnum<*>, ObjectPropertyDefinitions<MultiTypeEnum<*>>>): MultiTypeEnum<*>  {
+        override fun invoke(values: ObjectValues<MultiTypeEnum<*>, IsObjectDataModel<MultiTypeEnum<*>>>): MultiTypeEnum<*>  {
             val typedDefinition =
                 values<TypedValue<PropertyDefinitionType, IsTransportablePropertyDefinitionType<*>>>(
                     definition.index
@@ -82,7 +82,7 @@ interface MultiTypeEnum<T: Any>: TypeEnum<T> {
             )
         }
 
-        override val Serializer = object: ObjectDataModelSerializer<MultiTypeEnum<*>, ObjectPropertyDefinitions<MultiTypeEnum<*>>, IsPropertyContext, IsPropertyContext>(this) {
+        override val Serializer = object: ObjectDataModelSerializer<MultiTypeEnum<*>, IsObjectDataModel<MultiTypeEnum<*>>, IsPropertyContext, IsPropertyContext>(this) {
             override fun writeObjectAsJson(
                 obj: MultiTypeEnum<*>,
                 writer: IsJsonLikeWriter,

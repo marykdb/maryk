@@ -2,7 +2,7 @@
 
 package maryk.core.query.changes
 
-import maryk.core.properties.SimpleObjectModel
+import maryk.core.models.SimpleObjectModel
 import maryk.core.properties.definitions.flexBytes
 import maryk.core.properties.types.Bytes
 import maryk.core.query.changes.IndexUpdateType.Delete

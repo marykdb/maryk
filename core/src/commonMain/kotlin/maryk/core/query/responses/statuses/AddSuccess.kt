@@ -1,7 +1,7 @@
 package maryk.core.query.responses.statuses
 
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.SimpleQueryModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.SimpleQueryModel
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.number
@@ -15,7 +15,7 @@ import maryk.core.query.responses.statuses.StatusType.ADD_SUCCESS
 import maryk.core.values.SimpleObjectValues
 
 /** Successful add of given object with [key], [version] and added [changes] */
-data class AddSuccess<DM : IsRootModel>(
+data class AddSuccess<DM : IsRootDataModel>(
     val key: Key<DM>,
     val version: ULong,
     val changes: List<IsChange>
@@ -39,7 +39,7 @@ data class AddSuccess<DM : IsRootModel>(
         )
 
         override fun invoke(values: SimpleObjectValues<AddSuccess<*>>) =
-            AddSuccess<IsRootModel>(
+            AddSuccess<IsRootDataModel>(
                 key = values(1u),
                 version = values(2u),
                 changes = values(3u)

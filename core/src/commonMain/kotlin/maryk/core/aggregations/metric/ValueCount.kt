@@ -2,7 +2,7 @@ package maryk.core.aggregations.metric
 
 import maryk.core.aggregations.AggregationRequestType.ValueCountType
 import maryk.core.aggregations.IsAggregationRequest
-import maryk.core.properties.SimpleQueryModel
+import maryk.core.models.SimpleQueryModel
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.addReference

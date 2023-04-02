@@ -14,8 +14,8 @@ import maryk.core.processors.datastore.StorageTypeEnum.ObjectDelete
 import maryk.core.processors.datastore.StorageTypeEnum.SetSize
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsMapDefinition
@@ -46,7 +46,7 @@ import maryk.core.properties.references.ReferenceType.VALUE
 import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.references.referenceStorageTypeOf
 import maryk.core.properties.types.TypedValue
-import maryk.core.properties.values
+import maryk.core.models.values
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ValueItem
 import maryk.core.values.Values
@@ -61,7 +61,7 @@ private typealias AddValue = (Any) -> Unit
  * [getQualifier] gets a qualifier until none is available and returns null
  * [processValue] processes the storage value with given type and definition
  */
-fun <DM : IsRootModel> DM.readStorageToValues(
+fun <DM : IsRootDataModel> DM.readStorageToValues(
     getQualifier: (((Int) -> Byte, Int) -> Unit) -> Boolean,
     select: RootPropRefGraph<DM>?,
     processValue: ValueReader
@@ -77,7 +77,7 @@ fun <DM : IsRootModel> DM.readStorageToValues(
     processQualifiers(getQualifier) { qualifierReader, qualifierLength, addToCache ->
         // Otherwise, try to get a new qualifier processor from DataModel
         @Suppress("UNCHECKED_CAST")
-        (this.Model as IsDataModelDefinition<IsValuesPropertyDefinitions>).readQualifier(qualifierReader, qualifierLength, 0, select, null, valueAdder, processValue, addToCache)
+        (this.Model as IsDataModelDefinition<IsValuesDataModel>).readQualifier(qualifierReader, qualifierLength, 0, select, null, valueAdder, processValue, addToCache)
     }
 
     // Create Values
@@ -92,7 +92,7 @@ fun <DM : IsRootModel> DM.readStorageToValues(
  * [readValueFromStorage] is used to fetch actual value from storage layer
  * [addToCache] is used to add a sub reader to cache, so it does not need to reprocess the qualifier from start
  */
-private fun <P : IsValuesPropertyDefinitions> IsDataModelDefinition<P>.readQualifier(
+private fun <P : IsValuesDataModel> IsDataModelDefinition<P>.readQualifier(
     qualifierReader: (Int) -> Byte,
     qualifierLength: Int,
     offset: Int,
@@ -391,7 +391,7 @@ private fun readQualifierOfType(
 }
 
 /** Read embedded values into Values object */
-private fun <DM : IsRootModel> readEmbeddedValues(
+private fun <DM : IsRootDataModel> readEmbeddedValues(
     qualifierReader: (Int) -> Byte,
     qualifierLength: Int,
     offset: Int,
@@ -415,7 +415,7 @@ private fun <DM : IsRootModel> readEmbeddedValues(
     // Otherwise, it is null or is property itself so needs to be completely selected thus set as null.
     val specificSelect = if (select is IsPropRefGraph<*>) {
         @Suppress("UNCHECKED_CAST")
-        select as IsPropRefGraph<IsValuesPropertyDefinitions>
+        select as IsPropRefGraph<IsValuesDataModel>
     } else null
 
     addToCache(offset - 1) { qr, l ->

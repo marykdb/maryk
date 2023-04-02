@@ -1,6 +1,6 @@
 package maryk.core.properties.exceptions
 
-import maryk.core.properties.SimpleQueryModel
+import maryk.core.models.SimpleQueryModel
 import maryk.core.properties.exceptions.ValidationExceptionType.REQUIRED
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.values.SimpleObjectValues

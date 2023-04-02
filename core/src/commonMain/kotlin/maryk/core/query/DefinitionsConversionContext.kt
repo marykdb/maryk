@@ -1,7 +1,7 @@
 package maryk.core.query
 
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsPropertyDefinitions
+import maryk.core.models.IsDataModel
 
 /**
  * Saves the context while writing and parsing Definitions
@@ -11,5 +11,5 @@ open class DefinitionsConversionContext(
     internal val definitionsContext: DefinitionsContext = DefinitionsContext(),
 
     // Used to resolve keys in root model
-    internal var propertyDefinitions: IsPropertyDefinitions? = null
+    internal var propertyDefinitions: IsDataModel? = null
 ) : IsPropertyContext, ContainsDefinitionsContext by definitionsContext

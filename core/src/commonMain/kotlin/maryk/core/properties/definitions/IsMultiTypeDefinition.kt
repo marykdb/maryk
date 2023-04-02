@@ -20,7 +20,7 @@ import maryk.core.properties.references.ReferenceType.TYPE
 import maryk.core.properties.references.TypeReference
 import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.types.TypedValue
-import maryk.core.properties.values
+import maryk.core.models.values
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter

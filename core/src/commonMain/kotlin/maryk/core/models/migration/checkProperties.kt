@@ -1,8 +1,8 @@
 package maryk.core.models.migration
 
-import maryk.core.models.definitions.IsValuesDataModel
-import maryk.core.properties.AbstractPropertyDefinitions
-import maryk.core.properties.IsStorableModel
+import maryk.core.models.definitions.IsValuesDataModelDefinition
+import maryk.core.models.AbstractDataModel
+import maryk.core.models.IsStorableDataModel
 import maryk.lib.synchronizedIteration
 
 /**
@@ -14,16 +14,16 @@ import maryk.lib.synchronizedIteration
  * Properties only on stored data model will be checked if they are available on the reservedIndices and
  * names so they cannot be used for any future model without acknowledgement in a migration.
  */
-internal fun IsStorableModel.checkProperties(
-    storedDataModel: IsStorableModel,
+internal fun IsStorableDataModel.checkProperties(
+    storedDataModel: IsStorableDataModel,
     handleMigrationReason: (String) -> Unit
 ): Boolean {
     var hasNewProperties = false
 
     @Suppress("UNCHECKED_CAST")
     synchronizedIteration(
-        (this as AbstractPropertyDefinitions<Any>).iterator(),
-        (storedDataModel as AbstractPropertyDefinitions<Any>).iterator(),
+        (this as AbstractDataModel<Any>).iterator(),
+        (storedDataModel as AbstractDataModel<Any>).iterator(),
         { newValue, storedValue ->
             newValue.index compareTo storedValue.index
         },
@@ -38,7 +38,7 @@ internal fun IsStorableModel.checkProperties(
         },
         { storedProp ->
             val model = this.Model
-            if (model is IsValuesDataModel<*>) {
+            if (model is IsValuesDataModelDefinition<*>) {
                 if (model.reservedIndices?.contains(storedProp.index) != true) {
                     handleMigrationReason("Property with index ${storedProp.index} is not present in new model. Please add it to `reservedIndices` or add back the property to avoid this exception.")
                 }

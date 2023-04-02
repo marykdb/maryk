@@ -2,9 +2,9 @@ package maryk.core.query.changes
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.RequestException
-import maryk.core.properties.AbstractPropertyDefinitions
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.ReferencesModel
+import maryk.core.models.AbstractDataModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.ReferencesDataModel
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.graph.RootPropRefGraph
@@ -21,7 +21,7 @@ data class Delete internal constructor(
 
     constructor(vararg reference: AnyPropertyReference) : this(reference.toList())
 
-    override fun filterWithSelect(select: RootPropRefGraph<out IsRootModel>): Delete? {
+    override fun filterWithSelect(select: RootPropRefGraph<out IsRootDataModel>): Delete? {
         val filtered = references.filter {
             select.contains(it)
         }
@@ -60,7 +60,7 @@ data class Delete internal constructor(
 
     override fun toString() = "Delete[${references.joinToString()}]"
 
-    companion object : ReferencesModel<Delete, Companion>(
+    companion object : ReferencesDataModel<Delete, Companion>(
         Delete::references
     ) {
         override val references by list(
@@ -68,7 +68,7 @@ data class Delete internal constructor(
             getter = Delete::references,
             valueDefinition = ContextualPropertyReferenceDefinition<RequestContext>(
                 contextualResolver = {
-                    it?.dataModel as? AbstractPropertyDefinitions<*>?
+                    it?.dataModel as? AbstractDataModel<*>?
                         ?: throw ContextNotFoundException()
                 }
             )

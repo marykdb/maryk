@@ -1,7 +1,7 @@
 package maryk.test.models
 
 import kotlinx.datetime.LocalDateTime
-import maryk.core.properties.ValueModel
+import maryk.core.models.ValueDataModel
 import maryk.core.properties.definitions.dateTime
 import maryk.core.properties.definitions.number
 import maryk.core.properties.types.ValueDataObject
@@ -12,7 +12,7 @@ data class TestValueObject2(
     val int: Int,
     val dateTime: LocalDateTime,
 ) : ValueDataObject(toBytes(int, dateTime)) {
-    companion object : ValueModel<TestValueObject2, Companion>(TestValueObject2::class) {
+    companion object : ValueDataModel<TestValueObject2, Companion>(TestValueObject2::class) {
         val int by number(
             1u,
             TestValueObject2::int,

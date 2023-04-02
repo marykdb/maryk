@@ -4,7 +4,7 @@ import maryk.core.definitions.Operation.Request
 import maryk.core.inject.InjectWithReference
 import maryk.core.models.serializers.SingleValueDataModelSerializer
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.SingleValueModel
+import maryk.core.models.SingleValueDataModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.ListDefinition
@@ -34,7 +34,7 @@ data class Requests internal constructor(
      * From the context of JSON/YAML this object only contains a single property.
      * This is however not true for Protobuf. There this object contains a list of injectables.
      */
-    companion object : SingleValueModel<TypedValue<RequestType, Any>, TypedValue<RequestType, Any>, Requests, Companion, RequestContext>(
+    companion object : SingleValueDataModel<TypedValue<RequestType, Any>, TypedValue<RequestType, Any>, Requests, Companion, RequestContext>(
         singlePropertyDefinitionGetter = {
             @Suppress("UNCHECKED_CAST")
             Companion.requests as IsDefinitionWrapper<TypedValue<RequestType, Any>, TypedValue<RequestType, Any>, RequestContext, Requests>

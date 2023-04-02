@@ -1,7 +1,7 @@
 package maryk.datastore.test
 
 import kotlinx.datetime.LocalDateTime
-import maryk.core.properties.graph
+import maryk.core.models.graph
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change

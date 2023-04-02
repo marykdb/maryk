@@ -1,6 +1,6 @@
 package maryk.test.models
 
-import maryk.core.properties.RootModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
@@ -15,7 +15,7 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.values.Values
 
-object ComplexModel : RootModel<ComplexModel>() {
+object ComplexModel : RootDataModel<ComplexModel>() {
     val multi by multiType(
         index = 1u,
         required = false,
@@ -48,7 +48,6 @@ object ComplexModel : RootModel<ComplexModel>() {
         )
     )
 
-    @Suppress("RemoveExplicitTypeArguments")
     val mapIntMulti by map(
         index = 4u,
         required = false,

@@ -1,6 +1,6 @@
 package maryk.datastore.test
 
-import maryk.core.properties.RootModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.string
 import maryk.core.properties.exceptions.AlreadyExistsException
 import maryk.core.properties.types.Key
@@ -16,7 +16,7 @@ import maryk.datastore.shared.IsDataStore
 import kotlin.test.assertIs
 import kotlin.test.expect
 
-object UniqueModel : RootModel<UniqueModel>() {
+object UniqueModel : RootDataModel<UniqueModel>() {
     val email by string(1u, unique = true)
 }
 

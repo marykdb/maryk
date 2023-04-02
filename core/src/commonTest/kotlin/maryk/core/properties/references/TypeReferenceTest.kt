@@ -1,10 +1,10 @@
 package maryk.core.properties.references
 
-import maryk.core.properties.RootModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.multiType
 import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
-import maryk.core.properties.key
+import maryk.core.models.key
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.lib.extensions.toHex
@@ -21,7 +21,7 @@ import kotlin.test.assertTrue
 import kotlin.test.expect
 
 internal class TypeReferenceTest {
-    object MarykModel : RootModel<MarykModel>(
+    object MarykModel : RootDataModel<MarykModel>(
         keyDefinition = {
             MarykModel.multi.typeRef()
         },

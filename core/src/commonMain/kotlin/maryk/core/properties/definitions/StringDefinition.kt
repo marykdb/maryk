@@ -1,9 +1,9 @@
 package maryk.core.properties.definitions
 
+import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsValuesPropertyDefinitions
-import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.SimpleObjectModel
+import maryk.core.models.IsValuesDataModel
+import maryk.core.models.SimpleObjectModel
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
@@ -100,7 +100,7 @@ data class StringDefinition(
         return compatible
     }
 
-    object Model : SimpleObjectModel<StringDefinition, ObjectPropertyDefinitions<StringDefinition>>() {
+    object Model : SimpleObjectModel<StringDefinition, IsObjectDataModel<StringDefinition>>() {
         val required by boolean(1u, StringDefinition::required, default = true)
         val final by boolean(2u, StringDefinition::final, default = false)
         val unique by boolean(3u, StringDefinition::unique, default = false)
@@ -125,7 +125,7 @@ data class StringDefinition(
     }
 }
 
-fun IsValuesPropertyDefinitions.string(
+fun IsValuesDataModel.string(
     index: UInt,
     name: String? = null,
     required: Boolean = true,
@@ -147,7 +147,7 @@ fun IsValuesPropertyDefinitions.string(
     )
 }
 
-fun <TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.string(
+fun <TO: Any, DO: Any> IsObjectDataModel<DO>.string(
     index: UInt,
     getter: (DO) -> TO?,
     name: String? = null,
@@ -164,7 +164,7 @@ fun <TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.string(
 ): ObjectDefinitionWrapperDelegateLoader<FlexBytesDefinitionWrapper<String, TO, IsPropertyContext, StringDefinition, DO>, DO, IsPropertyContext> =
     string(index, getter, name, required, final,  unique, minValue, maxValue, default, minSize, maxSize, regEx, alternativeNames, toSerializable = null)
 
-fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.string(
+fun <TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.string(
     index: UInt,
     getter: (DO) -> TO?,
     name: String? = null,

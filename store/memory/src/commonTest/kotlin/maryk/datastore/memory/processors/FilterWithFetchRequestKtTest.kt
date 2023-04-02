@@ -5,8 +5,8 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import maryk.core.clock.HLC
 import maryk.core.processors.datastore.writeToStorage
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.key
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.key
 import maryk.core.properties.types.Key
 import maryk.core.query.filters.And
 import maryk.core.query.filters.Equals
@@ -72,7 +72,7 @@ class FilterWithFetchRequestKtTest {
         )
     )
 
-    private fun <DM : IsRootModel> DM.createDataRecord(values: Values<DM>): DataRecord<DM> {
+    private fun <DM : IsRootDataModel> DM.createDataRecord(values: Values<DM>): DataRecord<DM> {
         val recordValues = mutableListOf<DataRecordValue<*>>()
 
         values.writeToStorage { _, reference, _, value ->
@@ -87,7 +87,7 @@ class FilterWithFetchRequestKtTest {
         )
     }
 
-    private val recordFetcher = { dataModel: IsRootModel, key: Key<*> ->
+    private val recordFetcher = { dataModel: IsRootDataModel, key: Key<*> ->
         when {
             dataModel === TestMarykModel -> when (key) {
                 value1.key -> value1

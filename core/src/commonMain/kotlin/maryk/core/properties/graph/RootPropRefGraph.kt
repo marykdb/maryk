@@ -2,9 +2,9 @@ package maryk.core.properties.graph
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.serializers.ObjectDataModelSerializer
-import maryk.core.properties.ContextualModel
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.models.ContextualDataModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
@@ -16,7 +16,7 @@ import maryk.core.properties.graph.PropRefGraphType.Graph
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.properties.types.TypedValue
-import maryk.core.properties.values
+import maryk.core.models.values
 import maryk.core.query.ContainsDataModelContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
@@ -28,10 +28,10 @@ import maryk.lib.exceptions.ParseException
  * Create a Root graph with references to [properties]
  * [properties] should always be sorted by index so processing graphs is a lot easier
  */
-data class RootPropRefGraph<P : IsRootModel> internal constructor(
+data class RootPropRefGraph<P : IsRootDataModel> internal constructor(
     override val properties: List<IsPropRefGraphNode<P>>
 ) : IsPropRefGraph<P> {
-    companion object : ContextualModel<RootPropRefGraph<*>, Companion, ContainsDataModelContext<*>, GraphContext>(
+    companion object : ContextualDataModel<RootPropRefGraph<*>, Companion, ContainsDataModelContext<*>, GraphContext>(
         contextTransformer = {
             GraphContext(it?.dataModel)
         },
@@ -45,7 +45,7 @@ data class RootPropRefGraph<P : IsRootModel> internal constructor(
                     ),
                     PropRef to ContextualPropertyReferenceDefinition(
                         contextualResolver = { context: GraphContext? ->
-                            context?.dataModel as? IsValuesPropertyDefinitions? ?: throw ContextNotFoundException()
+                            context?.dataModel as? IsValuesDataModel? ?: throw ContextNotFoundException()
                         }
                     )
                 ),
@@ -70,7 +70,7 @@ data class RootPropRefGraph<P : IsRootModel> internal constructor(
         )
 
         override fun invoke(values: ObjectValues<RootPropRefGraph<*>, Companion>): RootPropRefGraph<*> =
-            RootPropRefGraph<IsRootModel>(
+            RootPropRefGraph<IsRootDataModel>(
                 properties = values(1u)
             )
 

@@ -1,8 +1,8 @@
 package maryk.core.query.responses.updates
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.SimpleQueryModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.SimpleQueryModel
 import maryk.core.properties.definitions.FlexBytesDefinition
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.definitions.list
@@ -21,7 +21,7 @@ import maryk.core.values.SimpleObjectValues
  *
  * This way the listener is always sure of the current state on which orders are changed.
  */
-data class OrderedKeysUpdate<DM: IsRootModel>(
+data class OrderedKeysUpdate<DM: IsRootDataModel>(
     val keys: List<Key<DM>>,
     override val version: ULong,
     val sortingKeys: List<Bytes>? = null
@@ -35,7 +35,7 @@ data class OrderedKeysUpdate<DM: IsRootModel>(
             getter = OrderedKeysUpdate<*>::keys,
             valueDefinition = ContextualReferenceDefinition<RequestContext>(
                 contextualResolver = {
-                    it?.dataModel as? IsRootModel ?: throw ContextNotFoundException()
+                    it?.dataModel as? IsRootDataModel ?: throw ContextNotFoundException()
                 }
             )
         )
@@ -49,7 +49,7 @@ data class OrderedKeysUpdate<DM: IsRootModel>(
             valueDefinition = FlexBytesDefinition()
         )
 
-        override fun invoke(values: SimpleObjectValues<OrderedKeysUpdate<*>>) = OrderedKeysUpdate<IsRootModel>(
+        override fun invoke(values: SimpleObjectValues<OrderedKeysUpdate<*>>) = OrderedKeysUpdate<IsRootDataModel>(
             keys = values(1u),
             version = values(2u),
             sortingKeys = values(3u)

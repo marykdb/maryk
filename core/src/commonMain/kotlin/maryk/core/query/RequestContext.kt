@@ -3,8 +3,8 @@ package maryk.core.query
 import maryk.core.exceptions.RequestException
 import maryk.core.inject.Inject
 import maryk.core.inject.InjectWithReference
-import maryk.core.properties.IsObjectPropertyDefinitions
-import maryk.core.properties.IsPropertyDefinitions
+import maryk.core.models.IsObjectDataModel
+import maryk.core.models.IsDataModel
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
@@ -13,11 +13,11 @@ import maryk.core.query.requests.IsTransportableRequest
 import maryk.core.query.responses.IsResponse
 import maryk.core.values.AbstractValues
 
-sealed class ModelTypeToCollect<DM : IsPropertyDefinitions>(val model: DM) {
+sealed class ModelTypeToCollect<DM : IsDataModel>(val model: DM) {
     class Request<RP : IsResponse>(val request: IsTransportableRequest<RP>) :
-        ModelTypeToCollect<IsObjectPropertyDefinitions<in RP>>(request.responseModel)
+        ModelTypeToCollect<IsObjectDataModel<in RP>>(request.responseModel)
 
-    class Model<DM : IsPropertyDefinitions>(value: DM) : ModelTypeToCollect<DM>(value)
+    class Model<DM : IsDataModel>(value: DM) : ModelTypeToCollect<DM>(value)
 }
 
 /**
@@ -26,13 +26,13 @@ sealed class ModelTypeToCollect<DM : IsPropertyDefinitions>(val model: DM) {
  */
 class RequestContext(
     val definitionsContext: ContainsDefinitionsContext,
-    override var dataModel: IsPropertyDefinitions? = null,
+    override var dataModel: IsDataModel? = null,
     var reference: IsPropertyReference<*, IsSerializablePropertyDefinition<*, *>, *>? = null
-) : ContainsDataModelContext<IsPropertyDefinitions>, ContainsDefinitionsContext by definitionsContext {
+) : ContainsDataModelContext<IsDataModel>, ContainsDefinitionsContext by definitionsContext {
     /** For test use */
     internal constructor(
-        dataModels: Map<String, Unit.() -> IsPropertyDefinitions>,
-        dataModel: IsPropertyDefinitions? = null,
+        dataModels: Map<String, Unit.() -> IsDataModel>,
+        dataModel: IsDataModel? = null,
         reference: IsPropertyReference<*, IsSerializablePropertyDefinition<*, *>, *>? = null
     ) : this(
         DefinitionsContext(dataModels.toMutableMap()),
@@ -51,7 +51,7 @@ class RequestContext(
     private var collectedIncMapChanges: MutableList<IncMapChange>? = null
 
     /** Add to collect values by [model] into [collectionName] */
-    fun addToCollect(collectionName: String, model: IsPropertyDefinitions) {
+    fun addToCollect(collectionName: String, model: IsDataModel) {
         if (toCollect == null) {
             toCollect = mutableMapOf()
         }

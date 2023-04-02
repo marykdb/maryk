@@ -1,7 +1,7 @@
 package maryk.core.query.changes
 
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.ReferenceValuePairsModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.ReferenceValuePairsDataModel
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.IsPropertyReferenceForValues
@@ -16,7 +16,7 @@ data class MultiTypeChange internal constructor(
 
     constructor(vararg referenceTypePair: ReferenceTypePair<*>) : this(referenceTypePair.toList())
 
-    override fun filterWithSelect(select: RootPropRefGraph<out IsRootModel>): MultiTypeChange? {
+    override fun filterWithSelect(select: RootPropRefGraph<out IsRootDataModel>): MultiTypeChange? {
         val filtered = referenceTypePairs.filter {
             select.contains(it.reference)
         }
@@ -27,7 +27,7 @@ data class MultiTypeChange internal constructor(
         // Ignore since it only describes change in type which can also be determined with actual value changes
     }
 
-    companion object : ReferenceValuePairsModel<MultiTypeChange, Companion, ReferenceTypePair<*>, IndexedEnum, IndexedEnum>(
+    companion object : ReferenceValuePairsDataModel<MultiTypeChange, Companion, ReferenceTypePair<*>, IndexedEnum, IndexedEnum>(
         pairGetter = MultiTypeChange::referenceTypePairs,
         pairModel = ReferenceTypePair,
     ) {

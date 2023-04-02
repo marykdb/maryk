@@ -1,6 +1,6 @@
 package maryk.core.models.serializers
 
-import maryk.core.properties.IsObjectPropertyDefinitions
+import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.protobuf.WriteCacheReader
@@ -8,7 +8,7 @@ import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeWriter
 
-interface IsObjectDataModelSerializer<DO: Any, DM: IsObjectPropertyDefinitions<DO>, in CXI: IsPropertyContext, CX: IsPropertyContext> :
+interface IsObjectDataModelSerializer<DO: Any, DM: IsObjectDataModel<DO>, in CXI: IsPropertyContext, CX: IsPropertyContext> :
     IsDataModelSerializer<ObjectValues<DO, DM>, DM, CX> {
     /**
      * Write an [obj] of this ObjectDataModel to JSON with [writer], skipping [skip] properties

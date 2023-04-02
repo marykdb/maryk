@@ -4,7 +4,7 @@ import maryk.core.aggregations.AggregationResponseType.AverageType
 import maryk.core.aggregations.IsAggregationResponse
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.SimpleQueryModel
+import maryk.core.models.SimpleQueryModel
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition

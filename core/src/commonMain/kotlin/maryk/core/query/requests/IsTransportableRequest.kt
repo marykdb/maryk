@@ -1,6 +1,6 @@
 package maryk.core.query.requests
 
-import maryk.core.properties.IsObjectModel
+import maryk.core.models.IsTypedObjectModel
 import maryk.core.query.RequestContext
 import maryk.core.query.responses.IsResponse
 
@@ -10,5 +10,5 @@ import maryk.core.query.responses.IsResponse
  */
 interface IsTransportableRequest<RP : IsResponse> : IsRequest<RP> {
     val requestType: RequestType
-    val responseModel: IsObjectModel<in RP, *, RequestContext, RequestContext>
+    val responseModel: IsTypedObjectModel<in RP, *, RequestContext, RequestContext>
 }

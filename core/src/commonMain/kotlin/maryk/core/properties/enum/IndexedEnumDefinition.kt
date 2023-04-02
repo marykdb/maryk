@@ -4,7 +4,7 @@ import maryk.core.definitions.PrimitiveType.EnumDefinition
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.SerializationException
 import maryk.core.models.serializers.ObjectDataModelSerializer
-import maryk.core.properties.ContextualModel
+import maryk.core.models.ContextualDataModel
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.SingleOrListDefinition
 import maryk.core.properties.definitions.StringDefinition
@@ -14,7 +14,7 @@ import maryk.core.properties.definitions.map
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.types.numeric.UInt32
-import maryk.core.properties.values
+import maryk.core.models.values
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
@@ -63,7 +63,7 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
         unknownCreator = unknownCreator
     )
 
-    internal object Model : ContextualModel<IndexedEnumDefinition<IndexedEnum>, Model, ContainsDefinitionsContext, EnumNameContext>(
+    internal object Model : ContextualDataModel<IndexedEnumDefinition<IndexedEnum>, Model, ContainsDefinitionsContext, EnumNameContext>(
         contextTransformer = { EnumNameContext(it) }
     ) {
         val name by contextual(

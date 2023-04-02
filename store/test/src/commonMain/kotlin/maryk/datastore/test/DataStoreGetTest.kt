@@ -5,7 +5,7 @@ import maryk.core.aggregations.AggregationsResponse
 import maryk.core.aggregations.metric.ValueCount
 import maryk.core.aggregations.metric.ValueCountResponse
 import maryk.core.exceptions.RequestException
-import maryk.core.properties.graph
+import maryk.core.models.graph
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.get

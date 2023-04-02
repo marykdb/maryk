@@ -2,10 +2,10 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.RequestException
-import maryk.core.properties.ContextualModel
+import maryk.core.models.ContextualDataModel
+import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsValuesPropertyDefinitions
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.contextual.ContextualCollectionDefinition
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
@@ -45,7 +45,7 @@ data class SetDefinition<T : Any, CX : IsPropertyContext> internal constructor(
         default: Set<T>? = null
     ) : this(required, final, minSize, maxSize, valueDefinition as IsValueDefinition<T, CX>, default)
 
-    object Model : ContextualModel<SetDefinition<*, *>, Model, ContainsDefinitionsContext, SetDefinitionContext>(
+    object Model : ContextualDataModel<SetDefinition<*, *>, Model, ContainsDefinitionsContext, SetDefinitionContext>(
         contextTransformer = { SetDefinitionContext(it) },
     ) {
         val required by boolean(1u, SetDefinition<*, *>::required, default = true)
@@ -112,7 +112,7 @@ class SetDefinitionContext(
     }
 }
 
-fun <T: Any, CX: IsPropertyContext> IsValuesPropertyDefinitions.set(
+fun <T: Any, CX: IsPropertyContext> IsValuesDataModel.set(
     index: UInt,
     name: String? = null,
     required: Boolean = true,
@@ -131,7 +131,7 @@ fun <T: Any, CX: IsPropertyContext> IsValuesPropertyDefinitions.set(
     )
 }
 
-fun <T: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.set(
+fun <T: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.set(
     index: UInt,
     getter: (DO) -> Set<T>?,
     name: String? = null,

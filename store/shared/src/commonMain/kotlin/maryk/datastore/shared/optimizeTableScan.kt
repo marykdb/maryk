@@ -1,7 +1,7 @@
 package maryk.datastore.shared
 
 import maryk.core.exceptions.TypeException
-import maryk.core.properties.IsRootModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.Reversed
 import maryk.core.properties.references.IsIndexablePropertyReference
@@ -13,7 +13,7 @@ import maryk.datastore.shared.ScanType.TableScan
 /**
  * Try to find index scans with the [equalPairs] for Table Scan since they can make the scan a lot shorter
  */
-fun <DM: IsRootModel> DM.optimizeTableScan(
+fun <DM: IsRootDataModel> DM.optimizeTableScan(
     tableScan: TableScan,
     equalPairs: List<ReferenceValuePair<*>>
 ): ScanType {

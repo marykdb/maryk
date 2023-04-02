@@ -1,4 +1,4 @@
-package maryk.core.properties
+package maryk.core.models
 
 import maryk.core.exceptions.SerializationException
 import maryk.core.models.serializers.ObjectDataModelSerializer
@@ -15,10 +15,10 @@ import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
 /** For data models which contains only reference pairs of type [R] */
-abstract class ReferenceValuePairsModel<DO: Any, P: ReferenceValuePairsModel<DO, P, R, T, TO>, R: DefinedByReference<*>, T : Any, TO : Any>(
+abstract class ReferenceValuePairsDataModel<DO: Any, DM: ReferenceValuePairsDataModel<DO, DM, R, T, TO>, R: DefinedByReference<*>, T : Any, TO : Any>(
     pairGetter: (DO) -> List<R>,
-    val pairModel: ReferenceValuePairModel<R, *, *, *, out IsDefinitionWrapper<T, TO, RequestContext, R>>,
-): ObjectModel<DO, P, RequestContext, RequestContext>() {
+    val pairModel: ReferenceValuePairDataModel<R, *, *, *, out IsDefinitionWrapper<T, TO, RequestContext, R>>,
+): ObjectDataModel<DO, DM, RequestContext, RequestContext>() {
     val referenceValuePairs by list(
         index = 1u,
         getter = pairGetter,
@@ -27,12 +27,12 @@ abstract class ReferenceValuePairsModel<DO: Any, P: ReferenceValuePairsModel<DO,
         )
     )
 
-    abstract override fun invoke(values: ObjectValues<DO, P>): DO
+    abstract override fun invoke(values: ObjectValues<DO, DM>): DO
 
     @Suppress("UNCHECKED_CAST", "LeakingThis")
-    override val Serializer = object: ObjectDataModelSerializer<DO, P, RequestContext, RequestContext>(this as P) {
+    override val Serializer = object: ObjectDataModelSerializer<DO, DM, RequestContext, RequestContext>(this as DM) {
         override fun writeJson(
-            values: ObjectValues<DO, P>,
+            values: ObjectValues<DO, DM>,
             writer: IsJsonLikeWriter,
             context: RequestContext?
         ) {
@@ -74,7 +74,7 @@ abstract class ReferenceValuePairsModel<DO: Any, P: ReferenceValuePairsModel<DO,
             writeEndObject()
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: RequestContext?): ObjectValues<DO, P> {
+        override fun readJson(reader: IsJsonLikeReader, context: RequestContext?): ObjectValues<DO, DM> {
             if (reader.currentToken == JsonToken.StartDocument) {
                 reader.nextToken()
             }
@@ -103,8 +103,8 @@ abstract class ReferenceValuePairsModel<DO: Any, P: ReferenceValuePairsModel<DO,
                         listOfTypePairs.add(
                             model.pairModel.values {
                                 mapNonNulls(
-                                    this@ReferenceValuePairsModel.pairModel.reference with reference,
-                                    this@ReferenceValuePairsModel.pairModel.value with value
+                                    this@ReferenceValuePairsDataModel.pairModel.reference with reference,
+                                    this@ReferenceValuePairsDataModel.pairModel.value with value
                                 )
                             }.toDataObject()
                         )

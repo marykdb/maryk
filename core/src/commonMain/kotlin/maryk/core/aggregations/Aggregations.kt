@@ -1,6 +1,6 @@
 package maryk.core.aggregations
 
-import maryk.core.properties.SingleValueModel
+import maryk.core.models.SingleValueDataModel
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.map
@@ -19,7 +19,7 @@ data class Aggregations internal constructor(
         vararg aggregationPair: Pair<String, IsAggregationRequest<*, *, *>>
     ) : this(aggregationPair.toMap())
 
-    companion object : SingleValueModel<Map<String, TypedValue<AggregationRequestType, IsAggregationRequest<*, *, *>>>, Map<String, IsAggregationRequest<*, *, *>>, Aggregations, Companion, RequestContext>(
+    companion object : SingleValueDataModel<Map<String, TypedValue<AggregationRequestType, IsAggregationRequest<*, *, *>>>, Map<String, IsAggregationRequest<*, *, *>>, Aggregations, Companion, RequestContext>(
         singlePropertyDefinitionGetter = { Companion.namedAggregations }
     ) {
         val namedAggregations by map(

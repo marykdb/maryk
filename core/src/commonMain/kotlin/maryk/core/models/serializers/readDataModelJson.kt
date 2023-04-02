@@ -2,12 +2,12 @@ package maryk.core.models.serializers
 
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.SerializationException
-import maryk.core.properties.AbstractPropertyDefinitions
-import maryk.core.properties.IsDataModelPropertyDefinitions
-import maryk.core.properties.IsMutablePropertyDefinitions
+import maryk.core.models.AbstractDataModel
+import maryk.core.models.IsDataModelWithPropertyDefinitions
+import maryk.core.models.IsMutableDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsPropertyDefinitions
-import maryk.core.properties.IsPropertyDefinitionsCollectionDefinition
+import maryk.core.models.IsDataModel
+import maryk.core.models.IsDataModelCollectionDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.DefinitionsConversionContext
@@ -19,12 +19,12 @@ import maryk.json.JsonToken.Stopped
 import maryk.lib.exceptions.ParseException
 import maryk.yaml.IsYamlReader
 
-internal fun <DM : IsDataModelPropertyDefinitions<*, *>> readDataModelJson(
+internal fun <DM : IsDataModelWithPropertyDefinitions<*, *>> readDataModelJson(
     context: ContainsDefinitionsContext?,
     reader: IsJsonLikeReader,
     values: MutableValueItems,
     properties: DM,
-    propertyDefinitionsCreator: () -> IsMutablePropertyDefinitions<*>,
+    propertyDefinitionsCreator: () -> IsMutableDataModel<*>,
     processAfterPropertiesAndContinue: ((IsDefinitionWrapper<Any, Any, IsPropertyContext, *>) -> Boolean)? = null
 ) {
     var propertiesAreProcessed = false
@@ -32,12 +32,12 @@ internal fun <DM : IsDataModelPropertyDefinitions<*, *>> readDataModelJson(
     @Suppress("UNCHECKED_CAST")
     val propertyDefinitions = lazy {
         propertyDefinitionsCreator().apply {
-            (propertiesAsWrapper.definition as IsPropertyDefinitionsCollectionDefinition<IsPropertyDefinitions>).capturer.invoke(
+            (propertiesAsWrapper.definition as IsDataModelCollectionDefinition<IsDataModel>).capturer.invoke(
                 Unit,
                 context as DefinitionsConversionContext,
                 this
             )
-        } as IsMutablePropertyDefinitions<IsDefinitionWrapper<*, *, *, *>>
+        } as IsMutableDataModel<IsDefinitionWrapper<*, *, *, *>>
     }
 
     // Inject name if it was defined as a map key in a higher level
@@ -65,7 +65,7 @@ internal fun <DM : IsDataModelPropertyDefinitions<*, *>> readDataModelJson(
                     throw ParseException("Cannot use $value definition after property definitions")
                 }
 
-                val definition = (properties as AbstractPropertyDefinitions<*>)[value]
+                val definition = (properties as AbstractDataModel<*>)[value]
                 if (definition == null) {
                     reader.skipUntilNextField()
                     continue@walker

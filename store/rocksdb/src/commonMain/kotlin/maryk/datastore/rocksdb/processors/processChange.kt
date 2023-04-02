@@ -20,8 +20,8 @@ import maryk.core.processors.datastore.writeSetToStorage
 import maryk.core.processors.datastore.writeToStorage
 import maryk.core.processors.datastore.writeTypedValueToStorage
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsListDefinition
@@ -52,7 +52,7 @@ import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
-import maryk.core.properties.values
+import maryk.core.models.values
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Check
 import maryk.core.query.changes.Delete
@@ -97,7 +97,7 @@ import maryk.datastore.shared.updates.Update
 import maryk.lib.recyclableByteArray
 import maryk.rocksdb.rocksDBNotFound
 
-internal suspend fun <DM : IsRootModel> processChange(
+internal suspend fun <DM : IsRootDataModel> processChange(
     dataStore: RocksDBDataStore,
     dataModel: DM,
     columnFamilies: TableColumnFamilies,
@@ -155,7 +155,7 @@ internal suspend fun <DM : IsRootModel> processChange(
 /**
  * Apply [changes] to a specific [transaction] and record them as [version]
  */
-private suspend fun <DM : IsRootModel> applyChanges(
+private suspend fun <DM : IsRootDataModel> applyChanges(
     dataModel: DM,
     dataStore: RocksDBDataStore,
     dbIndex: UInt,
@@ -337,9 +337,9 @@ private suspend fun <DM : IsRootModel> applyChanges(
                                     }
 
                                     @Suppress("UNCHECKED_CAST")
-                                    val valuesDefinition = reference.propertyDefinition as IsEmbeddedValuesDefinition<IsValuesPropertyDefinitions, IsPropertyContext>
+                                    val valuesDefinition = reference.propertyDefinition as IsEmbeddedValuesDefinition<IsValuesDataModel, IsPropertyContext>
                                     @Suppress("UNCHECKED_CAST")
-                                    val valuesReference = reference as IsPropertyReference<Values<IsValuesPropertyDefinitions>, IsPropertyDefinition<Values<IsValuesPropertyDefinitions>>, *>
+                                    val valuesReference = reference as IsPropertyReference<Values<IsValuesDataModel>, IsPropertyDefinition<Values<IsValuesDataModel>>, *>
 
                                     // Delete all existing values in placeholder
                                     val hadPrevValue = deleteByReference(transaction, columnFamilies, dataStore.defaultReadOptions, key, reference, reference.toStorageByteArray(), versionBytes) { _, prevValue ->
@@ -349,7 +349,7 @@ private suspend fun <DM : IsRootModel> applyChanges(
                                     @Suppress("UNCHECKED_CAST")
                                     valuesDefinition.validateWithRef(
                                         if (hadPrevValue) valuesDefinition.dataModel.values(null) { EmptyValueItems } else null,
-                                        value as Values<IsValuesPropertyDefinitions>
+                                        value as Values<IsValuesDataModel>
                                     ) { valuesReference }
 
                                     val valueWriter = createValueWriter(
@@ -743,7 +743,7 @@ private fun createValueWriter(
                 transaction.getForUpdate(dataStore.defaultReadOptions, columnFamilies.unique, uniqueReference)?.let {
                     throw UniqueException(
                         reference,
-                        Key<IsValuesPropertyDefinitions>(
+                        Key<IsValuesDataModel>(
                             // Get the key at the end of the stored unique index value
                             it.copyOfRange(fromIndex = it.size - key.size, toIndex = it.size)
                         )

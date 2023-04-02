@@ -3,12 +3,12 @@ package maryk.core.properties.definitions.wrapper
 import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.graph.PropRefGraphType.PropRef
-import maryk.core.properties.invoke
+import maryk.core.models.invoke
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
@@ -74,7 +74,7 @@ data class MultiTypeDefinitionWrapper<E : TypeEnum<T>, T: Any, TO : Any, in CX :
 
     /** Specific extension to support fetching deeper references with [type] */
     @Suppress("UNCHECKED_CAST")
-    fun <DM : IsValuesPropertyDefinitions, T : Any, R : IsPropertyReference<T, IsDefinitionWrapper<T, *, *, *>, *>> withType(
+    fun <DM : IsValuesDataModel, T : Any, R : IsPropertyReference<T, IsDefinitionWrapper<T, *, *, *>, *>> withType(
         type: TypeEnum<Values<DM>>,
         referenceGetter: DM.() ->
             (AnyOutPropertyReference?) -> R

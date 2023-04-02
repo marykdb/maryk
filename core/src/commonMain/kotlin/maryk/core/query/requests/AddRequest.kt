@@ -1,11 +1,10 @@
 package maryk.core.query.requests
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.definitions.IsValuesDataModel
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.IsValuesPropertyDefinitions
-import maryk.core.properties.QueryModel
-import maryk.core.properties.TypedValuesModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.IsValuesDataModel
+import maryk.core.models.QueryModel
+import maryk.core.models.TypedValuesDataModel
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedValuesDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.query.RequestContext
@@ -15,11 +14,11 @@ import maryk.core.values.ObjectValues
 import maryk.core.values.Values
 
 /** Creates a Request to add multiple [objectToAdd] to a store defined by given DataModel */
-fun <DM : IsRootModel> DM.add(vararg objectToAdd: Values<DM>) =
+fun <DM : IsRootDataModel> DM.add(vararg objectToAdd: Values<DM>) =
     AddRequest(this, objectToAdd.toList())
 
 /** A Request to add [objects] to [dataModel] */
-data class AddRequest<DM : IsRootModel> internal constructor(
+data class AddRequest<DM : IsRootDataModel> internal constructor(
     override val dataModel: DM,
     val objects: List<Values<DM>>
 ) : IsStoreRequest<DM, AddResponse<DM>>, IsTransportableRequest<AddResponse<DM>> {
@@ -35,7 +34,7 @@ data class AddRequest<DM : IsRootModel> internal constructor(
             valueDefinition = ContextualEmbeddedValuesDefinition<RequestContext>(
                 contextualResolver = {
                     @Suppress("UNCHECKED_CAST")
-                    it?.dataModel as? TypedValuesModel<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>
+                    it?.dataModel as? TypedValuesDataModel<IsValuesDataModel>
                         ?: throw ContextNotFoundException()
                 }
             )

@@ -3,7 +3,7 @@ package maryk.datastore.memory.processors
 import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
-import maryk.core.properties.IsRootModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.query.responses.DeleteResponse
 import maryk.core.query.responses.updates.ProcessResponse
 import maryk.core.query.responses.updates.RemovalReason.HardDelete
@@ -18,9 +18,9 @@ import maryk.datastore.shared.updates.IsUpdateAction
 /**
  * Processes the deletion of values from the data store
  */
-internal suspend fun <DM : IsRootModel> processDeleteUpdate(
+internal suspend fun <DM : IsRootDataModel> processDeleteUpdate(
     storeAction: StoreAction<DM, UpdateResponse<DM>, ProcessResponse<DM>>,
-    dataStoreFetcher: (IsRootModel) -> DataStore<*>,
+    dataStoreFetcher: (IsRootDataModel) -> DataStore<*>,
     updateSharedFlow: MutableSharedFlow<IsUpdateAction>
 ) {
     val dataModel = storeAction.request.dataModel

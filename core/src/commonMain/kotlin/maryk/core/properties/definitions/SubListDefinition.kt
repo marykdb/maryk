@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions
 
+import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.wrapper.ListDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
 
@@ -23,7 +23,7 @@ internal data class SubListDefinition<T : Any, CX : IsPropertyContext>(
     }
 }
 
-fun <T: Any, TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.subList(
+fun <T: Any, TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.subList(
     index: UInt,
     getter: (DO) -> List<TO>?,
     name: String? = null,
@@ -34,7 +34,6 @@ fun <T: Any, TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<
     shouldSerialize: (Unit.(Any) -> Boolean)? = null,
     capturer: (Unit.(CX, List<T>) -> Unit)? = null
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
-    @Suppress("UNCHECKED_CAST")
     ListDefinitionWrapper(
         index,
         name ?: propName,

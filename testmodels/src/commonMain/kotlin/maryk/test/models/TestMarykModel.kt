@@ -3,7 +3,7 @@ package maryk.test.models
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
-import maryk.core.properties.RootModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.StringDefinition
@@ -30,7 +30,7 @@ import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.values.Values
 
-object TestMarykModel : RootModel<TestMarykModel>(
+object TestMarykModel : RootDataModel<TestMarykModel>(
     keyDefinition = {
         TestMarykModel.run {
             Multiple(

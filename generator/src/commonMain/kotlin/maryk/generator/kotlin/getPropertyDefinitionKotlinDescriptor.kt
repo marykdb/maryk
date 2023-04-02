@@ -2,7 +2,7 @@ package maryk.generator.kotlin
 
 import maryk.core.exceptions.TypeException
 import maryk.core.models.definitions.IsNamedDataModelDefinition
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
@@ -37,9 +37,9 @@ import maryk.core.properties.types.numeric.NumberType.UInt8Type
 import kotlin.native.concurrent.SharedImmutable
 
 /** Get the PropertyDefinitionKotlinDescriptor of the given property */
-internal fun <T : Any, D : IsTransportablePropertyDefinitionType<in T>, P : ObjectPropertyDefinitions<D>> D.getKotlinDescriptor(): PropertyDefinitionKotlinDescriptor<T, D, P> {
+internal fun <T : Any, D : IsTransportablePropertyDefinitionType<in T>, DM : IsObjectDataModel<D>> D.getKotlinDescriptor(): PropertyDefinitionKotlinDescriptor<T, D, DM> {
     @Suppress("UNCHECKED_CAST")
-    return definitionNamesMap[this.propertyDefinitionType] as PropertyDefinitionKotlinDescriptor<T, D, P>?
+    return definitionNamesMap[this.propertyDefinitionType] as PropertyDefinitionKotlinDescriptor<T, D, DM>?
         ?: throw TypeException("Unknown propertyDefinitionType ${this.propertyDefinitionType}")
 }
 

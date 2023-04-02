@@ -2,14 +2,14 @@ package maryk.core.properties.definitions.wrapper
 
 import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
-import maryk.core.properties.IsObjectPropertyDefinitions
+import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsSimpleBaseModel
+import maryk.core.models.IsSimpleBaseObjectDataModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.graph.PropRefGraphType.PropRef
-import maryk.core.properties.invoke
+import maryk.core.models.invoke
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.AnySpecificWrappedPropertyReference
 import maryk.core.properties.references.IsPropertyReference
@@ -21,7 +21,7 @@ import maryk.core.properties.references.IsPropertyReference
  */
 data class ObjectListDefinitionWrapper<
     ODO : Any,
-    P : IsSimpleBaseModel<ODO, CX, CX>,
+    P : IsSimpleBaseObjectDataModel<ODO, CX, CX>,
     TO : Any,
     CX : IsPropertyContext,
     in DO : Any
@@ -59,7 +59,7 @@ data class ObjectListDefinitionWrapper<
             { parentRef ->
                 objectValuesDefinition.dataModel(
                     this.definition.itemRef(index, this.ref(parentRef)),
-                    referenceGetter as IsObjectPropertyDefinitions<*>.() -> (AnyOutPropertyReference?) -> IsPropertyReference<Any, IsDefinitionWrapper<Any, *, *, *>, *>
+                    referenceGetter as IsObjectDataModel<*>.() -> (AnyOutPropertyReference?) -> IsPropertyReference<Any, IsDefinitionWrapper<Any, *, *, *>, *>
                 )
             }
         }
@@ -91,7 +91,7 @@ data class ObjectListDefinitionWrapper<
 
             objectValuesDefinition.dataModel(
                 this.getItemRef(index, it),
-                referenceGetter as IsObjectPropertyDefinitions<*>.() -> (AnyOutPropertyReference?) -> R
+                referenceGetter as IsObjectDataModel<*>.() -> (AnyOutPropertyReference?) -> R
             )
         }
 
@@ -105,7 +105,7 @@ data class ObjectListDefinitionWrapper<
 
             objectValuesDefinition.dataModel(
                 this.getAnyItemRef(it),
-                referenceGetter as IsObjectPropertyDefinitions<*>.() -> (AnyOutPropertyReference?) -> R
+                referenceGetter as IsObjectDataModel<*>.() -> (AnyOutPropertyReference?) -> R
             )
         }
 }

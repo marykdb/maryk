@@ -1,9 +1,9 @@
 package maryk.core.properties.definitions
 
+import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsValuesPropertyDefinitions
-import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.SimpleObjectModel
+import maryk.core.models.IsValuesDataModel
+import maryk.core.models.SimpleObjectModel
 import maryk.core.properties.definitions.PropertyDefinitionType.FixedBytes
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
@@ -66,7 +66,7 @@ data class FixedBytesDefinition(
         return compatible
     }
 
-    object Model : SimpleObjectModel<FixedBytesDefinition, ObjectPropertyDefinitions<FixedBytesDefinition>>() {
+    object Model : SimpleObjectModel<FixedBytesDefinition, IsObjectDataModel<FixedBytesDefinition>>() {
         val required by boolean(1u, FixedBytesDefinition::required, default = true)
         val final by boolean(2u, FixedBytesDefinition::final, default = false)
         val unique by boolean(3u, FixedBytesDefinition::unique, default = false)
@@ -95,7 +95,7 @@ data class FixedBytesDefinition(
     }
 }
 
-fun IsValuesPropertyDefinitions.fixedBytes(
+fun IsValuesDataModel.fixedBytes(
     index: UInt,
     byteSize: Int,
     name: String? = null,
@@ -116,7 +116,7 @@ fun IsValuesPropertyDefinitions.fixedBytes(
 }
 
 @Suppress("unused")
-fun <TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.fixedBytes(
+fun <TO: Any, DO: Any> IsObjectDataModel<DO>.fixedBytes(
     index: UInt,
     getter: (DO) -> TO?,
     byteSize: Int,
@@ -131,7 +131,7 @@ fun <TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.fixedBytes(
 ): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<Bytes, TO, IsPropertyContext, FixedBytesDefinition, DO>, DO, IsPropertyContext> =
     fixedBytes(index, getter, byteSize, name, required, final,  unique, minValue, maxValue, default, alternativeNames, toSerializable = null)
 
-fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.fixedBytes(
+fun <TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.fixedBytes(
     index: UInt,
     getter: (DO) -> TO?,
     byteSize: Int,

@@ -3,8 +3,8 @@ package maryk.core.properties.enum
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.properties.IsBaseModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.models.IsBaseObjectDataModel
+import maryk.core.models.IsObjectDataModel
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.DefinitionsContext
 import maryk.core.yaml.MarykYamlModelReader
@@ -34,7 +34,7 @@ class IndexedEnumTest {
         @Suppress("UNCHECKED_CAST")
         checkProtoBufConversion(
             Option,
-            IndexedEnumDefinition.Model as IsBaseModel<Option.Companion, ObjectPropertyDefinitions<Option.Companion>, ContainsDefinitionsContext, EnumNameContext>,
+            IndexedEnumDefinition.Model as IsBaseObjectDataModel<Option.Companion, IsObjectDataModel<Option.Companion>, ContainsDefinitionsContext, EnumNameContext>,
             null,
             ::compareEnumDefinitions
         )
@@ -45,7 +45,7 @@ class IndexedEnumTest {
         @Suppress("UNCHECKED_CAST")
         checkJsonConversion(
             Option,
-            IndexedEnumDefinition.Model as IsBaseModel<Option.Companion, ObjectPropertyDefinitions<Option.Companion>, DefinitionsContext, DefinitionsContext>,
+            IndexedEnumDefinition.Model as IsBaseObjectDataModel<Option.Companion, IsObjectDataModel<Option.Companion>, DefinitionsContext, DefinitionsContext>,
             null,
             ::compareEnumDefinitions
         )
@@ -68,7 +68,7 @@ class IndexedEnumTest {
             @Suppress("UNCHECKED_CAST")
             checkYamlConversion(
                 Option,
-                IndexedEnumDefinition.Model as IsBaseModel<Option.Companion, ObjectPropertyDefinitions<Option.Companion>, DefinitionsContext, DefinitionsContext>,
+                IndexedEnumDefinition.Model as IsBaseObjectDataModel<Option.Companion, IsObjectDataModel<Option.Companion>, DefinitionsContext, DefinitionsContext>,
                 null,
                 ::compareEnumDefinitions
             )

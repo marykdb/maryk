@@ -1,10 +1,10 @@
 package maryk.core.properties.definitions
 
 import maryk.core.exceptions.RequestException
-import maryk.core.properties.ContextualModel
+import maryk.core.models.ContextualDataModel
+import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsValuesPropertyDefinitions
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.IncMapDefinitionWrapper
@@ -55,7 +55,7 @@ data class IncrementingMapDefinition<K : Comparable<K>, V : Any, CX : IsProperty
         valueDefinition as IsSubDefinition<V, CX>
     )
 
-    object Model : ContextualModel<IncrementingMapDefinition<*, *, *>, Model, ContainsDefinitionsContext, KeyValueDefinitionContext>(
+    object Model : ContextualDataModel<IncrementingMapDefinition<*, *, *>, Model, ContainsDefinitionsContext, KeyValueDefinitionContext>(
         contextTransformer = { KeyValueDefinitionContext(it) },
     ) {
         val required by boolean(1u, IncrementingMapDefinition<*, *, *>::required, default = true)
@@ -127,7 +127,7 @@ data class IncrementingMapDefinition<K : Comparable<K>, V : Any, CX : IsProperty
     }
 }
 
-fun <K : Comparable<K>, V : Any, CX : IsPropertyContext> IsValuesPropertyDefinitions.incrementingMap(
+fun <K : Comparable<K>, V : Any, CX : IsPropertyContext> IsValuesDataModel.incrementingMap(
     index: UInt,
     name: String? = null,
     required: Boolean = true,
@@ -147,7 +147,7 @@ fun <K : Comparable<K>, V : Any, CX : IsPropertyContext> IsValuesPropertyDefinit
 }
 
 @Suppress("unused")
-fun <K : Comparable<K>, V : Any, TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.incrementingMap(
+fun <K : Comparable<K>, V : Any, TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.incrementingMap(
     index: UInt,
     getter: (DO) -> TO?,
     name: String? = null,

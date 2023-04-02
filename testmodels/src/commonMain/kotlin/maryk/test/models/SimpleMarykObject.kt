@@ -1,6 +1,6 @@
 package maryk.test.models
 
-import maryk.core.properties.NamedObjectModel
+import maryk.core.models.NamedObjectModel
 import maryk.core.properties.definitions.string
 import maryk.core.values.ObjectValues
 

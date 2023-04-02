@@ -10,7 +10,7 @@ import maryk.core.models.definitions.DataModelDefinition
 import maryk.core.models.definitions.RootDataModelDefinition
 import maryk.core.models.definitions.ValueDataModelDefinition
 import maryk.core.models.serializers.SingleValueDataModelSerializer
-import maryk.core.properties.SingleValueModel
+import maryk.core.models.SingleValueDataModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.IsSubDefinition
@@ -41,7 +41,7 @@ data class Definitions(
 
     constructor(vararg definition: MarykPrimitive) : this(definition.toList())
 
-    internal companion object : SingleValueModel<List<TypedValue<PrimitiveType, MarykPrimitive>>, List<MarykPrimitive>, Definitions, Companion, ContainsDefinitionsContext>(
+    internal companion object : SingleValueDataModel<List<TypedValue<PrimitiveType, MarykPrimitive>>, List<MarykPrimitive>, Definitions, Companion, ContainsDefinitionsContext>(
         { Companion.definitions }
     ) {
         val definitions by list(

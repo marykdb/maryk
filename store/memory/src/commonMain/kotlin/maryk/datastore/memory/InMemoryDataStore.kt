@@ -8,7 +8,7 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
 import maryk.core.models.definitions.RootDataModelDefinition
-import maryk.core.properties.IsRootModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.query.requests.AddRequest
 import maryk.core.query.requests.ChangeRequest
 import maryk.core.query.requests.DeleteRequest
@@ -77,12 +77,12 @@ class InMemoryDataStore(
                     try {
                         clock = clock.calculateMaxTimeStamp()
 
-                        val dataStoreFetcher: (IsRootModel) -> DataStore<IsRootModel> = { model: IsRootModel ->
+                        val dataStoreFetcher: (IsRootDataModel) -> DataStore<IsRootDataModel> = { model: IsRootDataModel ->
                             val index = dataModelIdsByString[model.Model.name] ?: throw DefNotFoundException(model.Model.name)
                             @Suppress("UNCHECKED_CAST")
                             dataStores.getOrPut(index) {
-                                DataStore<IsRootModel>(keepAllVersions)
-                            } as DataStore<IsRootModel>
+                                DataStore<IsRootDataModel>(keepAllVersions)
+                            } as DataStore<IsRootDataModel>
                         }
 
                         @Suppress("UNCHECKED_CAST")

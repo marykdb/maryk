@@ -1,9 +1,9 @@
 package maryk.test.models
 
-import maryk.core.properties.Model
+import maryk.core.models.DataModel
 import maryk.core.properties.definitions.string
 
-object EmbeddedModel : Model<EmbeddedModel>() {
+object EmbeddedModel : DataModel<EmbeddedModel>() {
     val value by string(
         index = 1u,
         default = "haha",

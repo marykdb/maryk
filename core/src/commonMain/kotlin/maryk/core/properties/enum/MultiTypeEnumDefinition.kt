@@ -3,8 +3,9 @@ package maryk.core.properties.enum
 import maryk.core.definitions.PrimitiveType.TypeDefinition
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.SerializationException
+import maryk.core.models.ContextualDataModel
 import maryk.core.models.serializers.ObjectDataModelSerializer
-import maryk.core.properties.ContextualModel
+import maryk.core.models.values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsValueDefinition
@@ -17,7 +18,6 @@ import maryk.core.properties.definitions.string
 import maryk.core.properties.definitions.wrapper.ContextualDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.types.numeric.UInt32
-import maryk.core.properties.values
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
@@ -87,7 +87,7 @@ open class MultiTypeEnumDefinition<E : MultiTypeEnum<*>> internal constructor(
         unknownCreator = unknownCreator
     )
 
-    internal object Model : ContextualModel<MultiTypeEnumDefinition<MultiTypeEnum<*>>, Model, ContainsDefinitionsContext, MultiTypeDefinitionContext>(
+    internal object Model : ContextualDataModel<MultiTypeEnumDefinition<MultiTypeEnum<*>>, Model, ContainsDefinitionsContext, MultiTypeDefinitionContext>(
         contextTransformer = { MultiTypeDefinitionContext(it) },
     ) {
         val name by string(
@@ -204,7 +204,7 @@ open class MultiTypeEnumDefinition<E : MultiTypeEnum<*>> internal constructor(
                         else -> {
                             context?.definitionsContext?.currentDefinitionName = ""
                             super.readJsonToMap(reader, context).also {
-                                it[MultiTypeEnumDefinition.Model.name.index] = name
+                                it[Model.name.index] = name
                             }
                         }
                     }

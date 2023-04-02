@@ -2,11 +2,12 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.properties.DefinitionModel
+import maryk.core.models.DefinitionModel
+import maryk.core.models.IsObjectDataModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.IsValuesDataModel
+import maryk.core.models.key
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.IsValuesPropertyDefinitions
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
@@ -14,7 +15,6 @@ import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.ReferenceDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.contextual
-import maryk.core.properties.key
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
@@ -24,7 +24,7 @@ import maryk.lib.exceptions.ParseException
 import maryk.lib.safeLazy
 
 /** Definition for a reference to another DataObject*/
-class ReferenceDefinition<DM : IsRootModel>(
+class ReferenceDefinition<DM : IsRootDataModel>(
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val unique: Boolean = false,
@@ -45,7 +45,6 @@ class ReferenceDefinition<DM : IsRootModel>(
 
     override fun writeStorageBytes(value: Key<DM>, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
 
-    @Suppress("UNCHECKED_CAST")
     override fun readStorageBytes(length: Int, reader: () -> Byte) = dataModel.key(reader)
 
     override fun calculateTransportByteLength(value: Key<DM>) = this.byteSize
@@ -102,7 +101,7 @@ class ReferenceDefinition<DM : IsRootModel>(
                 contextualResolver = { context: ContainsDefinitionsContext?, name ->
                     context?.let {
                         @Suppress("UNCHECKED_CAST")
-                        it.dataModels[name] as (Unit.() -> IsRootModel)?
+                        it.dataModels[name] as (Unit.() -> IsRootDataModel)?
                             ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
                     } ?: throw ContextNotFoundException()
                 }
@@ -110,8 +109,8 @@ class ReferenceDefinition<DM : IsRootModel>(
             getter = {
                 { it.dataModel }
             },
-            toSerializable = { value: (Unit.() -> IsRootModel)?, _ ->
-                value?.invoke(Unit)?.let { model: IsRootModel ->
+            toSerializable = { value: (Unit.() -> IsRootDataModel)?, _ ->
+                value?.invoke(Unit)?.let { model: IsRootDataModel ->
                     DataModelReference(model.Model.name) { model }
                 }
             },
@@ -149,7 +148,7 @@ class ReferenceDefinition<DM : IsRootModel>(
     }
 }
 
-fun <DM: IsRootModel, TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.reference(
+fun <DM: IsRootDataModel, TO: Any, DO: Any> IsObjectDataModel<DO>.reference(
     index: UInt,
     getter: (DO) -> TO?,
     name: String? = null,
@@ -164,7 +163,7 @@ fun <DM: IsRootModel, TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.reference(
 ): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<Key<DM>, TO, IsPropertyContext, ReferenceDefinition<DM>, DO>, DO, IsPropertyContext> =
     reference(index, getter, name, required, final,  unique, minValue, maxValue, default, dataModel, alternativeNames, toSerializable = null)
 
-fun <DM: IsRootModel> IsValuesPropertyDefinitions.reference(
+fun <DM: IsRootDataModel> IsValuesDataModel.reference(
     index: UInt,
     name: String? = null,
     required: Boolean = true,
@@ -176,7 +175,6 @@ fun <DM: IsRootModel> IsValuesPropertyDefinitions.reference(
     dataModel: Unit.() -> DM,
     alternativeNames: Set<String>? = null
 ) = DefinitionWrapperDelegateLoader(this) { propName ->
-    @Suppress("UNCHECKED_CAST")
     ReferenceDefinitionWrapper<Key<DM>, DM, IsReferenceDefinition<DM, IsPropertyContext>, Any>(
         index,
         name ?: propName,
@@ -185,7 +183,7 @@ fun <DM: IsRootModel> IsValuesPropertyDefinitions.reference(
     )
 }
 
-fun <DM: IsRootModel, TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.reference(
+fun <DM: IsRootDataModel, TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.reference(
     index: UInt,
     getter: (DO) -> TO?,
     name: String? = null,

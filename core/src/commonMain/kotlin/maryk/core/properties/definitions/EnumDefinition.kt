@@ -1,10 +1,10 @@
 package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.properties.ContextualModel
+import maryk.core.models.ContextualDataModel
+import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsValuesPropertyDefinitions
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.contextual.ContextValueTransformDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
@@ -127,7 +127,7 @@ data class EnumDefinition<E : IndexedEnumComparable<E>>(
         return compatible
     }
 
-    object Model : ContextualModel<EnumDefinition<*>, Model, ContainsDefinitionsContext, EnumDefinitionContext>(
+    object Model : ContextualDataModel<EnumDefinition<*>, Model, ContainsDefinitionsContext, EnumDefinitionContext>(
         contextTransformer = { EnumDefinitionContext(it) },
     ) {
         val required by boolean(1u, EnumDefinition<*>::required, default = true)
@@ -234,7 +234,7 @@ class EnumDefinitionContext(
     var enumDefinition: EnumDefinition<IndexedEnumComparable<Any>>? = null
 }
 
-fun <E : IndexedEnumComparable<E>> IsValuesPropertyDefinitions.enum(
+fun <E : IndexedEnumComparable<E>> IsValuesDataModel.enum(
     index: UInt,
     enum: IndexedEnumDefinition<E>,
     name: String? = null,
@@ -254,7 +254,7 @@ fun <E : IndexedEnumComparable<E>> IsValuesPropertyDefinitions.enum(
     )
 }
 
-fun <E : IndexedEnumComparable<E>, TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.enum(
+fun <E : IndexedEnumComparable<E>, TO: Any, DO: Any> IsObjectDataModel<DO>.enum(
     index: UInt,
     getter: (DO) -> TO?,
     enum: IndexedEnumDefinition<E>,
@@ -269,7 +269,7 @@ fun <E : IndexedEnumComparable<E>, TO: Any, DO: Any> ObjectPropertyDefinitions<D
 ): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<E, TO, IsPropertyContext, EnumDefinition<E>, DO>, DO, IsPropertyContext> =
     enum(index, getter, enum, name, required, final,  unique, minValue, maxValue, default, alternativeNames, toSerializable = null)
 
-fun <E : IndexedEnumComparable<E>, TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.enum(
+fun <E : IndexedEnumComparable<E>, TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.enum(
     index: UInt,
     getter: (DO) -> TO?,
     enum: IndexedEnumDefinition<E>,

@@ -2,8 +2,8 @@ package maryk.core.query.pairs
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsValuesPropertyDefinitions
-import maryk.core.properties.ReferenceValuePairModel
+import maryk.core.models.IsValuesDataModel
+import maryk.core.models.ReferenceValuePairDataModel
 import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsListDefinition
@@ -32,7 +32,7 @@ data class ReferenceValuePair<T : Any> internal constructor(
 
     override fun toString() = "$reference: $value"
 
-    companion object : ReferenceValuePairModel<ReferenceValuePair<Any>, Companion, Any, Any, ContextualDefinitionWrapper<Any, Any, RequestContext, ContextualValueDefinition<RequestContext, IsPropertyContext, Any, IsValueDefinition<Any, IsPropertyContext>>, ReferenceValuePair<Any>>>() {
+    companion object : ReferenceValuePairDataModel<ReferenceValuePair<Any>, Companion, Any, Any, ContextualDefinitionWrapper<Any, Any, RequestContext, ContextualValueDefinition<RequestContext, IsPropertyContext, Any, IsValueDefinition<Any, IsPropertyContext>>, ReferenceValuePair<Any>>>() {
         override val reference by addReference(
             ReferenceValuePair<*>::reference
         )
@@ -96,7 +96,7 @@ infix fun <E : TypeEnum<T>, T: Any, D : IsMultiTypeDefinition<E, T, *>> IsProper
 
 /** Convenience infix method to create Reference [values] pairs */
 @Suppress("UNCHECKED_CAST")
-infix fun <P : IsValuesPropertyDefinitions, D : IsEmbeddedValuesDefinition<P, *>> IsPropertyReference<Values<P>, D, *>.with(
+infix fun <P : IsValuesDataModel, D : IsEmbeddedValuesDefinition<P, *>> IsPropertyReference<Values<P>, D, *>.with(
     values: Values<P>
 ): ReferenceValuePair<Values<P>> =
     ReferenceValuePair(

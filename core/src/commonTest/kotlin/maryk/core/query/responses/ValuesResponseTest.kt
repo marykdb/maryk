@@ -6,8 +6,8 @@ import maryk.checkYamlConversion
 import maryk.core.aggregations.AggregationsResponse
 import maryk.core.aggregations.metric.ValueCountResponse
 import maryk.core.extensions.toUnitLambda
-import maryk.core.properties.asValues
-import maryk.core.properties.key
+import maryk.core.models.asValues
+import maryk.core.models.key
 import maryk.core.query.RequestContext
 import maryk.core.query.ValuesWithMetaData
 import maryk.test.models.SimpleMarykModel

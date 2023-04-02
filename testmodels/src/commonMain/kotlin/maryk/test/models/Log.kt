@@ -1,7 +1,7 @@
 package maryk.test.models
 
 import kotlinx.datetime.LocalDateTime
-import maryk.core.properties.RootModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.DateTimeDefinition
 import maryk.core.properties.definitions.dateTime
 import maryk.core.properties.definitions.enum
@@ -26,7 +26,7 @@ sealed class Severity(
     )
 }
 
-object Log : RootModel<Log>(
+object Log : RootDataModel<Log>(
     keyDefinition = {
         Multiple(
             Reversed(Log.timestamp.ref()),

@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions.contextual
 
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsPropertyDefinitions
+import maryk.core.models.IsDataModel
 import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.references.AnyPropertyReference
@@ -16,7 +16,7 @@ import maryk.lib.exceptions.ParseException
 /** Definition for a reference to another property from a context resolved from [contextualResolver]  */
 data class ContextualPropertyReferenceDefinition<in CX : IsPropertyContext> internal constructor(
     override val required: Boolean = true,
-    val contextualResolver: Unit.(context: CX?) -> IsPropertyDefinitions
+    val contextualResolver: Unit.(context: CX?) -> IsDataModel
 ) : IsValueDefinition<AnyPropertyReference, CX>, IsContextualEncodable<AnyPropertyReference, CX> {
     override val final = true
     override val wireType = LENGTH_DELIMITED

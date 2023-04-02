@@ -1,13 +1,13 @@
 package maryk.core.properties.definitions
 
-import maryk.core.properties.IsObjectPropertyDefinitions
+import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsSimpleBaseModel
+import maryk.core.models.IsSimpleBaseObjectDataModel
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 
 /** Interface for property definitions containing embedded DataObjects of [DO] and context [CX]. */
-interface IsEmbeddedObjectDefinition<DO : Any, out DM : IsSimpleBaseModel<DO, CXI, CX>, in CXI : IsPropertyContext, CX : IsPropertyContext> :
+interface IsEmbeddedObjectDefinition<DO : Any, out DM : IsSimpleBaseObjectDataModel<DO, CXI, CX>, in CXI : IsPropertyContext, CX : IsPropertyContext> :
     IsValueDefinition<DO, CXI>,
     HasDefaultValueDefinition<DO>,
     IsEmbeddedDefinition<DM>,
@@ -16,7 +16,7 @@ interface IsEmbeddedObjectDefinition<DO : Any, out DM : IsSimpleBaseModel<DO, CX
     override val dataModel: DM
 
     /** Read JSON into ObjectValues */
-    fun readJsonToValues(reader: IsJsonLikeReader, context: CXI?): ObjectValues<DO, out IsObjectPropertyDefinitions<DO>> =
+    fun readJsonToValues(reader: IsJsonLikeReader, context: CXI?): ObjectValues<DO, out IsObjectDataModel<DO>> =
         this.dataModel.Serializer.readJson(reader, this.dataModel.Serializer.transformContext(context))
 
     override fun readJson(reader: IsJsonLikeReader, context: CXI?) =

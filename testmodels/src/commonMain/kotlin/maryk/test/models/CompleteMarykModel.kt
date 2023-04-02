@@ -3,7 +3,7 @@ package maryk.test.models
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
-import maryk.core.properties.RootModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.EnumDefinition
@@ -63,7 +63,7 @@ sealed class MarykEnumEmbedded(
     )
 }
 
-object CompleteMarykModel : RootModel<CompleteMarykModel>(
+object CompleteMarykModel : RootDataModel<CompleteMarykModel>(
     version = Version(2, 1),
     keyDefinition = {
         CompleteMarykModel.run {

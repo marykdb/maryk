@@ -5,10 +5,10 @@ import maryk.checkProtoBufObjectValuesConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.inject.Inject
-import maryk.core.properties.asValues
+import maryk.core.models.asValues
 import maryk.core.properties.exceptions.InjectException
-import maryk.core.properties.graph
-import maryk.core.properties.key
+import maryk.core.models.graph
+import maryk.core.models.key
 import maryk.core.query.RequestContext
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.filters.Exists

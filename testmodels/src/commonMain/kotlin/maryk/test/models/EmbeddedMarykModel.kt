@@ -1,11 +1,11 @@
 package maryk.test.models
 
-import maryk.core.properties.Model
+import maryk.core.models.DataModel
 import maryk.core.properties.definitions.embed
 import maryk.core.properties.definitions.string
 import maryk.core.values.Values
 
-object EmbeddedMarykModel : Model<EmbeddedMarykModel>(
+object EmbeddedMarykModel : DataModel<EmbeddedMarykModel>(
     reservedIndices = listOf(999u),
     reservedNames = listOf("reserved"),
 ) {

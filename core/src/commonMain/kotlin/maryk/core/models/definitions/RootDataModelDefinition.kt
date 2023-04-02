@@ -8,14 +8,15 @@ import maryk.core.models.addProperties
 import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.models.serializers.readDataModelJson
 import maryk.core.models.serializers.writeDataModelJson
-import maryk.core.properties.DefinitionModel
-import maryk.core.properties.IsDataModelPropertyDefinitions
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.IsValuesPropertyDefinitions
-import maryk.core.properties.MutablePropertyDefinitions
-import maryk.core.properties.MutableRootModel
-import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.PropertyDefinitionsCollectionDefinitionWrapper
+import maryk.core.models.AbstractDataModel
+import maryk.core.models.DataModelCollectionDefinitionWrapper
+import maryk.core.models.DefinitionModel
+import maryk.core.models.IsDataModelWithPropertyDefinitions
+import maryk.core.models.IsObjectDataModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.IsValuesDataModel
+import maryk.core.models.MutableRootDataModel
+import maryk.core.models.MutableValuesDataModel
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.StringDefinition
@@ -50,7 +51,7 @@ import maryk.yaml.IsYamlReader
  *
  * The dataModel can be referenced by the [name] and the properties are defined by a [properties]
  */
-class RootDataModelDefinition<DM : IsValuesPropertyDefinitions>(
+class RootDataModelDefinition<DM : IsValuesDataModel>(
     override val keyDefinition: IsIndexable = UUIDKey,
     override val version: Version = Version(1),
     override val indices: List<IsIndexable>? = null,
@@ -70,9 +71,9 @@ class RootDataModelDefinition<DM : IsValuesPropertyDefinitions>(
 
     internal object InternalModel :
         DefinitionModel<RootDataModelDefinition<*>>(),
-        IsDataModelPropertyDefinitions<RootDataModelDefinition<*>, PropertyDefinitionsCollectionDefinitionWrapper<RootDataModelDefinition<*>>> {
+        IsDataModelWithPropertyDefinitions<RootDataModelDefinition<*>, DataModelCollectionDefinitionWrapper<RootDataModelDefinition<*>>> {
         override val name by string(1u, RootDataModelDefinition<*>::name)
-        override val properties = addProperties(true, this as ObjectPropertyDefinitions<RootDataModelDefinition<*>>)
+        override val properties = addProperties(true, this as AbstractDataModel<RootDataModelDefinition<*>>)
         val version by valueObject(
             index = 3u,
             dataModel = Version,
@@ -117,7 +118,7 @@ class RootDataModelDefinition<DM : IsValuesPropertyDefinitions>(
             valueDefinition = StringDefinition()
         )
 
-        override fun invoke(values: ObjectValues<RootDataModelDefinition<*>, ObjectPropertyDefinitions<RootDataModelDefinition<*>>>) =
+        override fun invoke(values: ObjectValues<RootDataModelDefinition<*>, IsObjectDataModel<RootDataModelDefinition<*>>>) =
             RootDataModelDefinition(
                 name = values(1u),
                 properties = values(2u),
@@ -128,12 +129,12 @@ class RootDataModelDefinition<DM : IsValuesPropertyDefinitions>(
                 reservedNames = values(7u)
             ).apply {
                 @Suppress("UNCHECKED_CAST")
-                (properties as MutablePropertyDefinitions<*, IsRootModel>)._model = this as IsValuesDataModel<IsRootModel>
+                (properties as MutableValuesDataModel<IsRootDataModel>)._model = this as IsValuesDataModelDefinition<IsRootDataModel>
             }
 
-        override val Serializer = object: ObjectDataModelSerializer<RootDataModelDefinition<*>, ObjectPropertyDefinitions<RootDataModelDefinition<*>>, ContainsDefinitionsContext, ContainsDefinitionsContext>(this){
+        override val Serializer = object: ObjectDataModelSerializer<RootDataModelDefinition<*>, IsObjectDataModel<RootDataModelDefinition<*>>, ContainsDefinitionsContext, ContainsDefinitionsContext>(this){
             override fun writeJson(
-                values: ObjectValues<RootDataModelDefinition<*>, ObjectPropertyDefinitions<RootDataModelDefinition<*>>>,
+                values: ObjectValues<RootDataModelDefinition<*>, IsObjectDataModel<RootDataModelDefinition<*>>>,
                 writer: IsJsonLikeWriter,
                 context: ContainsDefinitionsContext?
             ) {
@@ -165,7 +166,7 @@ class RootDataModelDefinition<DM : IsValuesPropertyDefinitions>(
                     reader,
                     values,
                     InternalModel,
-                    ::MutableRootModel
+                    ::MutableRootDataModel
                 ) { definition ->
                     when (definition) {
                         key -> {

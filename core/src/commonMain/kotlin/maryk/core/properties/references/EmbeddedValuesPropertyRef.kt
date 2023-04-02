@@ -4,7 +4,7 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initUIntByVar
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedValuesDefinition
 import maryk.core.properties.definitions.wrapper.EmbeddedValuesDefinitionWrapper
 import maryk.core.properties.references.ReferenceType.EMBED
@@ -17,7 +17,7 @@ import maryk.core.values.Values
  * DataModel of type [DM] and expects context of type [CX].
  */
 class EmbeddedValuesPropertyRef<
-    DM : IsValuesPropertyDefinitions,
+    DM : IsValuesDataModel,
     CX : IsPropertyContext
 > internal constructor(
     propertyDefinition: EmbeddedValuesDefinitionWrapper<DM, CX>,

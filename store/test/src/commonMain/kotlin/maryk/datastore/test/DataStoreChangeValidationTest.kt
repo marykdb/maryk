@@ -9,7 +9,7 @@ import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.NotEnoughItemsException
 import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.core.properties.exceptions.TooManyItemsException
-import maryk.core.properties.key
+import maryk.core.models.key
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Delete

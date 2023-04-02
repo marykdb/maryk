@@ -5,7 +5,7 @@ import kotlinx.atomicfu.atomic
 import maryk.core.exceptions.StorageException
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
-import maryk.core.properties.IsRootModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.IndexChange
 import maryk.core.query.changes.IndexDelete
@@ -27,7 +27,7 @@ import maryk.datastore.shared.updates.Update.Change
 import maryk.lib.extensions.compare.compareTo
 
 /** Update listener for scans */
-class UpdateListenerForScan<DM: IsRootModel, RP: IsDataResponse<DM>>(
+class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
     request: IsScanRequest<DM, RP>,
     val scanRange: KeyScanRanges,
     response: IsDataResponse<DM>

@@ -10,12 +10,12 @@ import maryk.core.processors.datastore.matchers.IndexPartialToRegexMatch
 import maryk.core.processors.datastore.matchers.IsIndexPartialToMatch
 import maryk.core.processors.datastore.matchers.UniqueToMatch
 import maryk.core.processors.datastore.matchers.convertFilterToIndexPartsToMatch
-import maryk.core.properties.IsRootModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.query.filters.IsFilter
 import maryk.core.query.pairs.ReferenceValuePair
 
 /** Create a scan range by [filter] and [startKey] */
-fun <DM : IsRootModel> DM.createScanRange(filter: IsFilter?, startKey: ByteArray?, includeStart: Boolean = true): KeyScanRanges {
+fun <DM : IsRootDataModel> DM.createScanRange(filter: IsFilter?, startKey: ByteArray?, includeStart: Boolean = true): KeyScanRanges {
     val listOfKeyParts = mutableListOf<IsIndexPartialToMatch>()
     val listOfUniqueFilters = mutableListOf<UniqueToMatch>()
     val listOfEqualPairs = mutableListOf<ReferenceValuePair<Any>>()
@@ -38,7 +38,7 @@ fun <DM : IsRootModel> DM.createScanRange(filter: IsFilter?, startKey: ByteArray
  * Create scan range from [listOfParts] and check with [startKey]
  * It writes complete start and end keys with the partials to match
  */
-private fun <DM : IsRootModel> DM.createScanRangeFromParts(
+private fun <DM : IsRootDataModel> DM.createScanRangeFromParts(
     startKey: ByteArray?,
     includeStart: Boolean,
     listOfParts: MutableList<IsIndexPartialToMatch>,

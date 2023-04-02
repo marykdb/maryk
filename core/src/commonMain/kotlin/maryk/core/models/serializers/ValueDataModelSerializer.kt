@@ -1,13 +1,13 @@
 package maryk.core.models.serializers
 
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsValueModel
+import maryk.core.models.IsValueDataModel
 import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
-import maryk.core.properties.invoke
+import maryk.core.models.invoke
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.properties.types.ValueDataObjectWithValues
-import maryk.core.properties.values
+import maryk.core.models.values
 import maryk.core.values.MutableValueItems
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
@@ -15,7 +15,7 @@ import kotlin.io.encoding.ExperimentalEncodingApi
 /**
  * Serializer for [ValueDataObject]s
  */
-open class ValueDataModelSerializer<DO: ValueDataObject, DM: IsValueModel<DO, *>>(
+open class ValueDataModelSerializer<DO: ValueDataObject, DM: IsValueDataModel<DO, *>>(
     model: DM,
 ): ObjectDataModelSerializer<DO, DM, IsPropertyContext, IsPropertyContext>(model), IsValueDataModelSerializer<DO, DM> {
     override fun readFromBytes(reader: () -> Byte): DO {

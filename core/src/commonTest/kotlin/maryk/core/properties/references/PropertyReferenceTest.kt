@@ -6,7 +6,7 @@ import maryk.core.processors.datastore.matchers.QualifierExactMatcher
 import maryk.core.processors.datastore.matchers.QualifierFuzzyMatcher
 import maryk.core.processors.datastore.matchers.ReferencedQualifierMatcher
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.RootModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.embed
 import maryk.core.properties.definitions.string
@@ -27,7 +27,7 @@ import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import kotlin.test.expect
 
-private object Model : RootModel<Model>() {
+private object Model : RootDataModel<Model>() {
     val test by string(1u)
     val embeddedObject by embed(
         index = 2u,

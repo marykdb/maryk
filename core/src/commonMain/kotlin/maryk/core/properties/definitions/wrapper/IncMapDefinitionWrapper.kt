@@ -2,7 +2,7 @@ package maryk.core.properties.definitions.wrapper
 
 import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
-import maryk.core.properties.AbstractPropertyDefinitions
+import maryk.core.models.AbstractDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IncrementingMapDefinition
 import maryk.core.properties.definitions.IsMapDefinition
@@ -60,5 +60,5 @@ data class IncMapDefinitionWrapper<K : Comparable<K>, V : Any, TO : Any, CX : Is
         )
 
     // For delegation in definition
-    operator fun getValue(thisRef: AbstractPropertyDefinitions<DO>, property: KProperty<*>) = this
+    operator fun getValue(thisRef: AbstractDataModel<DO>, property: KProperty<*>) = this
 }

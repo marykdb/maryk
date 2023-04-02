@@ -2,10 +2,10 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.extensions.bytes.MAX_BYTE
-import maryk.core.properties.ContextualModel
+import maryk.core.models.ContextualDataModel
+import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsValuesPropertyDefinitions
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.definitions.contextual.ContextualNumberDefinition
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
@@ -119,7 +119,7 @@ data class NumberDefinition<T : Comparable<T>>(
     }
 
     @Suppress("unused")
-    object Model : ContextualModel<NumberDefinition<*>, Model, IsPropertyContext, NumericContext>(
+    object Model : ContextualDataModel<NumberDefinition<*>, Model, IsPropertyContext, NumericContext>(
         contextTransformer = { NumericContext() },
     ) {
         val required by boolean(1u, NumberDefinition<*>::required, default = true)
@@ -208,7 +208,7 @@ fun <T : Comparable<T>> fromNativeType(type: NumberDescriptor<T>, value: Any) =
         else -> null
     }
 
-fun <T : Comparable<T>> IsValuesPropertyDefinitions.number(
+fun <T : Comparable<T>> IsValuesDataModel.number(
     index: UInt,
     type: NumberDescriptor<T>,
     name: String? = null,
@@ -229,7 +229,7 @@ fun <T : Comparable<T>> IsValuesPropertyDefinitions.number(
     )
 }
 
-fun <T : Comparable<T>, TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.number(
+fun <T : Comparable<T>, TO: Any, DO: Any> IsObjectDataModel<DO>.number(
     index: UInt,
     getter: (DO) -> TO?,
     type: NumberDescriptor<T>,
@@ -245,7 +245,7 @@ fun <T : Comparable<T>, TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.number(
 ): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<T, TO, IsPropertyContext, NumberDefinition<T>, DO>, DO, IsPropertyContext> =
     number(index, getter, type, name, required, final,  unique, minValue, maxValue, default, reversedStorage, alternativeNames, toSerializable = null)
 
-fun <T : Comparable<T>, TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.number(
+fun <T : Comparable<T>, TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.number(
     index: UInt,
     getter: (DO) -> TO?,
     type: NumberDescriptor<T>,

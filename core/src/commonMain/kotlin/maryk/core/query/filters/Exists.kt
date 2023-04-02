@@ -1,8 +1,8 @@
 package maryk.core.query.filters
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.properties.AbstractPropertyDefinitions
-import maryk.core.properties.ReferencesModel
+import maryk.core.models.AbstractDataModel
+import maryk.core.models.ReferencesDataModel
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.list
@@ -36,7 +36,7 @@ data class Exists internal constructor(
         return null
     }
 
-    companion object : ReferencesModel<Exists, Companion>(
+    companion object : ReferencesDataModel<Exists, Companion>(
         Exists::references
     ) {
         override val references by list(
@@ -44,7 +44,7 @@ data class Exists internal constructor(
             getter = Exists::references,
             valueDefinition = ContextualPropertyReferenceDefinition<RequestContext>(
                 contextualResolver = {
-                    it?.dataModel as? AbstractPropertyDefinitions<*>?
+                    it?.dataModel as? AbstractDataModel<*>?
                         ?: throw ContextNotFoundException()
                 }
             )

@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions.wrapper
 
+import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyPropertyReference
@@ -37,7 +37,7 @@ data class ContextualDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext
     operator fun getValue(thisRef: Any?, property: KProperty<*>) = this
 }
 
-fun <T : Any, TO : Any, CX : IsPropertyContext, D : IsContextualEncodable<T, CX>, DO : Any> ObjectPropertyDefinitions<DO>.contextual(
+fun <T : Any, TO : Any, CX : IsPropertyContext, D : IsContextualEncodable<T, CX>, DO : Any> IsObjectDataModel<DO>.contextual(
     index: UInt,
     name: String? = null,
     definition: D,

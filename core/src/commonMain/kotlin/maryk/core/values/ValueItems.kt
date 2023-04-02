@@ -1,8 +1,8 @@
 
 package maryk.core.values
 
-import maryk.core.properties.IsPropertyDefinitions
-import maryk.core.properties.IsTypedPropertyDefinitions
+import maryk.core.models.IsDataModel
+import maryk.core.models.IsTypedDataModel
 import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.graph.IsPropRefGraph
 import maryk.core.properties.graph.PropRefGraph
@@ -23,7 +23,7 @@ interface IsValueItems : Iterable<ValueItem> {
     fun copyAdding(toAdd: Iterable<ValueItem>): IsValueItems
 
     fun copySelecting(select: IsPropRefGraph<*>): IsValueItems
-    fun toString(dataModel: IsPropertyDefinitions): String
+    fun toString(dataModel: IsDataModel): String
 }
 
 interface IsValueItemsImpl : IsValueItems {
@@ -78,7 +78,7 @@ interface IsValueItemsImpl : IsValueItems {
         }.toMutableList()
     )
 
-    override fun toString(dataModel: IsPropertyDefinitions): String =
+    override fun toString(dataModel: IsDataModel): String =
         this.list.joinToString(separator = ", ", prefix = "{", postfix = "}") { valueItem ->
             "${dataModel[valueItem.index]?.name ?: valueItem.index}=${valueItem.value}"
         }
@@ -178,7 +178,7 @@ value class MutableValueItems(
         }
     }
 
-    fun fillWithPairs(dataModel: IsTypedPropertyDefinitions<*>, pairs: Array<out ValueItem?>, setDefaults: Boolean) {
+    fun fillWithPairs(dataModel: IsTypedDataModel<*>, pairs: Array<out ValueItem?>, setDefaults: Boolean) {
         for (it in pairs) {
             if (it != null) this += it
         }

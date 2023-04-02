@@ -1,6 +1,6 @@
 package maryk.core.properties.exceptions
 
-import maryk.core.properties.SimpleQueryModel
+import maryk.core.models.SimpleQueryModel
 import maryk.core.properties.definitions.number
 import maryk.core.properties.exceptions.ValidationExceptionType.TOO_MANY_ITEMS
 import maryk.core.properties.references.AnyPropertyReference

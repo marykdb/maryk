@@ -1,6 +1,6 @@
 package maryk.core.query.responses
 
-import maryk.core.properties.SimpleQueryModel
+import maryk.core.models.SimpleQueryModel
 import maryk.core.properties.definitions.enum
 import maryk.core.properties.definitions.string
 import maryk.core.properties.enum.IndexedEnumComparable

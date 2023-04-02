@@ -4,10 +4,10 @@ import maryk.core.extensions.bytes.initInt
 import maryk.core.extensions.bytes.initLongLittleEndian
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeLittleEndianBytes
+import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsValuesPropertyDefinitions
-import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.SimpleObjectModel
+import maryk.core.models.IsValuesDataModel
+import maryk.core.models.SimpleObjectModel
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
@@ -69,7 +69,7 @@ data class GeoPointDefinition(
         else -> null
     }
 
-    object Model : SimpleObjectModel<GeoPointDefinition, ObjectPropertyDefinitions<GeoPointDefinition>>() {
+    object Model : SimpleObjectModel<GeoPointDefinition, IsObjectDataModel<GeoPointDefinition>>() {
         val required by boolean(1u, GeoPointDefinition::required, default = true)
         val final by boolean(2u, GeoPointDefinition::final, default = false)
         val default by geoPoint(3u, GeoPointDefinition::default)
@@ -82,7 +82,7 @@ data class GeoPointDefinition(
     }
 }
 
-fun IsValuesPropertyDefinitions.geoPoint(
+fun IsValuesDataModel.geoPoint(
     index: UInt,
     name: String? = null,
     required: Boolean = true,
@@ -98,7 +98,7 @@ fun IsValuesPropertyDefinitions.geoPoint(
     )
 }
 
-fun <TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.geoPoint(
+fun <TO: Any, DO: Any> IsObjectDataModel<DO>.geoPoint(
     index: UInt,
     getter: (DO) -> TO?,
     name: String? = null,
@@ -109,7 +109,7 @@ fun <TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.geoPoint(
 ): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<GeoPoint, TO, IsPropertyContext, GeoPointDefinition, DO>, DO, IsPropertyContext> =
     geoPoint(index, getter, name, required, final, default, alternativeNames, toSerializable = null)
 
-fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.geoPoint(
+fun <TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.geoPoint(
     index: UInt,
     getter: (DO) -> TO?,
     name: String? = null,

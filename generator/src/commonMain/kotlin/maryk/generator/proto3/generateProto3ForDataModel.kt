@@ -2,9 +2,9 @@ package maryk.generator.proto3
 
 import maryk.core.exceptions.TypeException
 import maryk.core.models.definitions.IsNamedDataModelDefinition
-import maryk.core.models.definitions.IsValuesDataModel
-import maryk.core.properties.IsStorableModel
-import maryk.core.properties.IsTypedPropertyDefinitions
+import maryk.core.models.definitions.IsValuesDataModelDefinition
+import maryk.core.models.IsStorableDataModel
+import maryk.core.models.IsTypedDataModel
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
@@ -41,7 +41,7 @@ import maryk.core.properties.types.numeric.NumberType.UInt64Type
 import maryk.core.properties.types.numeric.NumberType.UInt8Type
 import maryk.generator.kotlin.GenerationContext
 
-fun <DM : IsTypedPropertyDefinitions<*>> IsNamedDataModelDefinition<DM>.generateProto3Schema(
+fun <DM : IsTypedDataModel<*>> IsNamedDataModelDefinition<DM>.generateProto3Schema(
     generationContext: GenerationContext,
     writer: (String) -> Unit
 ) {
@@ -55,7 +55,7 @@ fun <DM : IsTypedPropertyDefinitions<*>> IsNamedDataModelDefinition<DM>.generate
 
     var reservations = ""
 
-    if (this is IsValuesDataModel<*>) {
+    if (this is IsValuesDataModelDefinition<*>) {
         this.reservedIndices?.let { indices ->
             reservations += "reserved ${indices.joinToString(", ")};\n      "
         }
@@ -81,7 +81,7 @@ fun <DM : IsTypedPropertyDefinitions<*>> IsNamedDataModelDefinition<DM>.generate
     writer(schema)
 }
 
-private fun IsTypedPropertyDefinitions<*>.generateSchemaForProperties(
+private fun IsTypedDataModel<*>.generateSchemaForProperties(
     generationContext: GenerationContext,
     messageAdder: (String) -> Unit
 ): String {
@@ -190,7 +190,7 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(
             "map<${this.keyDefinition.toProtoBufType(name, generationContext, messageAdder)}, ${this.valueDefinition.toProtoBufType(name, generationContext, messageAdder)}>"
         }
         is EmbeddedValuesDefinition<*> -> this.dataModel.Model.name
-        is EmbeddedObjectDefinition<*, *, *, *> -> (this.dataModel as IsStorableModel).Model.name
+        is EmbeddedObjectDefinition<*, *, *, *> -> (this.dataModel as IsStorableDataModel).Model.name
         is MultiTypeDefinition<*, *> -> {
             val multiTypeName = "${name.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }}Type"
 

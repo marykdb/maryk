@@ -2,8 +2,8 @@ package maryk.core.properties.definitions.index
 
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.SingleValueModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.SingleValueDataModel
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.references.IsIndexablePropertyReference
@@ -62,7 +62,7 @@ data class Multiple(
         }
     }
 
-    override fun isCompatibleWithModel(dataModel: IsRootModel): Boolean {
+    override fun isCompatibleWithModel(dataModel: IsRootDataModel): Boolean {
         for (reference in this.references) {
             if (!reference.isCompatibleWithModel(dataModel)) {
                 return false
@@ -93,7 +93,7 @@ data class Multiple(
     }
 
     internal object Model :
-        SingleValueModel<List<TypedValue<IndexKeyPartType<*>, IsIndexable>>, List<IsIndexablePropertyReference<*>>, Multiple, Model, DefinitionsConversionContext>(
+        SingleValueDataModel<List<TypedValue<IndexKeyPartType<*>, IsIndexable>>, List<IsIndexablePropertyReference<*>>, Multiple, Model, DefinitionsConversionContext>(
             singlePropertyDefinitionGetter = { Model.references }
         ) {
         override fun invoke(values: ObjectValues<Multiple, Model>) = Multiple(

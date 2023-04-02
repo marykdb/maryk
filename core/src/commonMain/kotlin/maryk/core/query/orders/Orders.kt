@@ -1,6 +1,6 @@
 package maryk.core.query.orders
 
-import maryk.core.properties.SingleTypedValueModel
+import maryk.core.models.SingleTypedValueDataModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.query.RequestContext
@@ -16,7 +16,7 @@ data class Orders(
 
     override val orderType = ORDERS
 
-    companion object : SingleTypedValueModel<List<Order>, Orders, Companion, RequestContext>(
+    companion object : SingleTypedValueDataModel<List<Order>, Orders, Companion, RequestContext>(
         singlePropertyDefinitionGetter = { orders }
     ) {
         val orders by list(

@@ -1,14 +1,13 @@
-package maryk.core.properties
+package maryk.core.models
 
 import maryk.core.models.definitions.IsDataModelDefinition
 import maryk.core.models.definitions.ValueDataModelDefinition
 import maryk.core.models.serializers.ValueDataModelSerializer
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsCollectionDefinition
-import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.wrapper.AnyDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.ContextualDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyPropertyReference
@@ -26,27 +25,16 @@ import maryk.yaml.IsYamlReader
 import maryk.yaml.YamlWriter
 
 /** A collection of Property Definitions which can be used to model a ObjectDataModel */
-abstract class ObjectPropertyDefinitions<DO : Any> : AbstractPropertyDefinitions<DO>(), IsObjectPropertyDefinitions<DO> {
+abstract class AbstractObjectDataModel<DO : Any> : AbstractDataModel<DO>(), IsObjectDataModel<DO> {
     /** Get a method to retrieve property from DataObject by [name] */
     fun getPropertyGetter(name: String): ((DO) -> Any?)? = nameToDefinition[name]?.run { { getPropertyAndSerialize(it, null) } }
 
     /** Get a method to retrieve property from DataObject by [index] */
     fun getPropertyGetter(index: UInt): ((DO) -> Any?)? = indexToDefinition[index]?.run { { getPropertyAndSerialize(it, null) } }
-
-    /** Add flex bytes encodable property [definition] with [name] and [index] and value [getter] */
-    fun <T : Any, CX : IsPropertyContext, D : IsContextualEncodable<T, CX>> add(
-        index: UInt,
-        name: String,
-        definition: D,
-        getter: (DO) -> T?,
-        alternativeNames: Set<String>? = null,
-        capturer: (Unit.(CX, T) -> Unit)? = null
-    ) = ContextualDefinitionWrapper(index, name, definition, alternativeNames, getter, capturer).apply {
-        addSingle(this)
-    }
 }
 
-internal abstract class BaseMutableObjectPropertyDefinitions<DO: Any> : ObjectPropertyDefinitions<DO>(), IsMutablePropertyDefinitions<IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>> {
+internal abstract class BaseMutableObjectDataModel<DO: Any> : AbstractObjectDataModel<DO>(),
+    IsMutableDataModel<IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>> {
     override fun add(element: IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>): Boolean {
         this.addSingle(propertyDefinitionWrapper = element)
         return true
@@ -65,34 +53,35 @@ internal abstract class BaseMutableObjectPropertyDefinitions<DO: Any> : ObjectPr
     override fun retainAll(elements: Collection<IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>>) = false
 }
 
-internal class MutableValueModel<DO: ValueDataObject>: BaseMutableObjectPropertyDefinitions<DO>(), IsValueModel<DO, MutableValueModel<DO>> {
+internal class MutableValueDataModel<DO: ValueDataObject>: BaseMutableObjectDataModel<DO>(),
+    IsValueDataModel<DO, MutableValueDataModel<DO>> {
     internal var _model: IsDataModelDefinition<*>? = null
     override val Serializer = ValueDataModelSerializer(this)
 
     @Suppress("UNCHECKED_CAST")
-    override val Model get() = _model as? ValueDataModelDefinition<DO, MutableValueModel<DO>>
+    override val Model get() = _model as? ValueDataModelDefinition<DO, MutableValueDataModel<DO>>
         ?: throw Exception("No Model yet set, likely DataModel was not initialized yet")
 
-    override fun invoke(values: ObjectValues<DO, MutableValueModel<DO>>): DO {
+    override fun invoke(values: ObjectValues<DO, MutableValueDataModel<DO>>): DO {
         @Suppress("UNCHECKED_CAST")
         return ValueDataObjectWithValues(this.toBytes(values), values) as DO
     }
 }
 
 /** Definition for a collection of Property Definitions for in a ObjectPropertyDefinitions */
-internal data class ObjectPropertyDefinitionsCollectionDefinition(
-    override val capturer: Unit.(DefinitionsConversionContext?, IsObjectPropertyDefinitions<Any>) -> Unit
+internal data class ObjectDataModelCollectionDefinition(
+    override val capturer: Unit.(DefinitionsConversionContext?, IsObjectDataModel<Any>) -> Unit
 ) : IsCollectionDefinition<
         AnyDefinitionWrapper,
-        ObjectPropertyDefinitions<Any>,
+        IsObjectDataModel<Any>,
         DefinitionsConversionContext,
         EmbeddedObjectDefinition<
                 AnyDefinitionWrapper,
-                IsSimpleBaseModel<AnyDefinitionWrapper, IsPropertyContext, IsPropertyContext>,
+                IsSimpleBaseObjectDataModel<AnyDefinitionWrapper, IsPropertyContext, IsPropertyContext>,
                 IsPropertyContext,
                 IsPropertyContext
         >
->, IsPropertyDefinitionsCollectionDefinition<ObjectPropertyDefinitions<Any>> {
+>, IsDataModelCollectionDefinition<IsObjectDataModel<Any>> {
     override val required = true
     override val final = true
     override val minSize: UInt? = null
@@ -101,27 +90,27 @@ internal data class ObjectPropertyDefinitionsCollectionDefinition(
     override val valueDefinition = EmbeddedObjectDefinition(
         dataModel = {
             @Suppress("UNCHECKED_CAST")
-            IsDefinitionWrapper.Model as IsSimpleBaseModel<AnyDefinitionWrapper, IsPropertyContext, IsPropertyContext>
+            IsDefinitionWrapper.Model as IsSimpleBaseObjectDataModel<AnyDefinitionWrapper, IsPropertyContext, IsPropertyContext>
         }
     )
 
     override fun validateCollectionForExceptions(
-        refGetter: () -> IsPropertyReference<ObjectPropertyDefinitions<Any>, IsPropertyDefinition<ObjectPropertyDefinitions<Any>>, *>?,
-        newValue: ObjectPropertyDefinitions<Any>,
+        refGetter: () -> IsPropertyReference<IsObjectDataModel<Any>, IsPropertyDefinition<IsObjectDataModel<Any>>, *>?,
+        newValue: IsObjectDataModel<Any>,
         validator: (item: AnyDefinitionWrapper, itemRefFactory: () -> IsPropertyReference<AnyDefinitionWrapper, IsPropertyDefinition<AnyDefinitionWrapper>, *>?) -> Any
     ) {}
 
     @Suppress("UNCHECKED_CAST")
     override fun newMutableCollection(context: DefinitionsConversionContext?) =
-        MutableValueModel<ValueDataObject>().apply {
-            capturer(Unit, context, this as IsObjectPropertyDefinitions<Any>)
-        } as BaseMutableObjectPropertyDefinitions<Any>
+        MutableValueDataModel<ValueDataObject>().apply {
+            capturer(Unit, context, this as IsObjectDataModel<Any>)
+        } as BaseMutableObjectDataModel<Any>
 
     /**
      * Overridden to render definitions list in YAML as objects
      */
     override fun writeJsonValue(
-        value: ObjectPropertyDefinitions<Any>,
+        value: IsObjectDataModel<Any>,
         writer: IsJsonLikeWriter,
         context: DefinitionsConversionContext?
     ) {
@@ -139,7 +128,7 @@ internal data class ObjectPropertyDefinitionsCollectionDefinition(
     override fun readJson(
         reader: IsJsonLikeReader,
         context: DefinitionsConversionContext?
-    ): ObjectPropertyDefinitions<Any> {
+    ): IsObjectDataModel<Any> {
         return if (reader is IsYamlReader) {
             if (reader.currentToken !is StartObject) {
                 throw ParseException("Property definitions should be an Object")
@@ -158,23 +147,23 @@ internal data class ObjectPropertyDefinitionsCollectionDefinition(
     }
 }
 
-/** Wrapper specifically to wrap a ObjectPropertyDefinitionsCollectionDefinition */
-internal data class ObjectPropertyDefinitionsCollectionDefinitionWrapper<in DO : Any>(
+/** Wrapper specifically to wrap a ObjectDataModelCollectionDefinition */
+internal data class ObjectDataModelCollectionDefinitionWrapper<in DO : Any>(
     override val index: UInt,
     override val name: String,
-    override val definition: ObjectPropertyDefinitionsCollectionDefinition,
-    override val getter: (DO) -> ObjectPropertyDefinitions<Any>?,
+    override val definition: ObjectDataModelCollectionDefinition,
+    override val getter: (DO) -> IsObjectDataModel<Any>?,
     override val alternativeNames: Set<String>? = null
 ) :
-    IsCollectionDefinition<AnyDefinitionWrapper, ObjectPropertyDefinitions<Any>, DefinitionsConversionContext, EmbeddedObjectDefinition<AnyDefinitionWrapper, IsSimpleBaseModel<AnyDefinitionWrapper, IsPropertyContext, IsPropertyContext>, IsPropertyContext, IsPropertyContext>> by definition,
-    IsDefinitionWrapper<ObjectPropertyDefinitions<Any>, ObjectPropertyDefinitions<Any>, DefinitionsConversionContext, DO>
+    IsCollectionDefinition<AnyDefinitionWrapper, IsObjectDataModel<Any>, DefinitionsConversionContext, EmbeddedObjectDefinition<AnyDefinitionWrapper, IsSimpleBaseObjectDataModel<AnyDefinitionWrapper, IsPropertyContext, IsPropertyContext>, IsPropertyContext, IsPropertyContext>> by definition,
+    IsDefinitionWrapper<IsObjectDataModel<Any>, IsObjectDataModel<Any>, DefinitionsConversionContext, DO>
 {
     override val graphType = PropRef
 
-    override val toSerializable: (Unit.(ObjectPropertyDefinitions<Any>?, DefinitionsConversionContext?) -> ObjectPropertyDefinitions<Any>?)? = null
-    override val fromSerializable: (Unit.(ObjectPropertyDefinitions<Any>?) -> ObjectPropertyDefinitions<Any>?)? = null
+    override val toSerializable: (Unit.(IsObjectDataModel<Any>?, DefinitionsConversionContext?) -> IsObjectDataModel<Any>?)? = null
+    override val fromSerializable: (Unit.(IsObjectDataModel<Any>?) -> IsObjectDataModel<Any>?)? = null
     override val shouldSerialize: (Unit.(Any) -> Boolean)? = null
-    override val capturer: (Unit.(DefinitionsConversionContext, ObjectPropertyDefinitions<Any>) -> Unit)? = null
+    override val capturer: (Unit.(DefinitionsConversionContext, IsObjectDataModel<Any>) -> Unit)? = null
 
     override fun ref(parentRef: AnyPropertyReference?) = throw NotImplementedError()
 }

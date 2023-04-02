@@ -2,8 +2,8 @@ package maryk.core.query.responses
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.models.IsObjectDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
@@ -32,27 +32,27 @@ import maryk.core.query.responses.statuses.ValidationFail
 import kotlin.native.concurrent.SharedImmutable
 
 /** A response for a data operation on a DataModel */
-interface IsDataModelResponse<out DM : IsRootModel> : IsResponse {
+interface IsDataModelResponse<out DM : IsRootDataModel> : IsResponse {
     val dataModel: DM
 }
 
-internal fun <DM : IsDataModelResponse<*>> ObjectPropertyDefinitions<DM>.addDataModel(
-    getter: (DM) -> IsRootModel?,
+internal fun <DM : IsDataModelResponse<*>> IsObjectDataModel<DM>.addDataModel(
+    getter: (DM) -> IsRootDataModel?,
     index: UInt = 1u
 ) =
     this.contextual(
         index = index,
-        definition = ContextualModelReferenceDefinition<IsRootModel, RequestContext>(
+        definition = ContextualModelReferenceDefinition<IsRootDataModel, RequestContext>(
             contextualResolver = { context, name ->
                 context?.let {
                     @Suppress("UNCHECKED_CAST")
-                    it.dataModels[name] as (Unit.() -> IsRootModel)?
+                    it.dataModels[name] as (Unit.() -> IsRootDataModel)?
                         ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
                 } ?: throw ContextNotFoundException()
             }
         ),
         getter = getter,
-        toSerializable = { value: IsRootModel?, _ ->
+        toSerializable = { value: IsRootDataModel?, _ ->
             value?.let {
                 DataModelReference(it.Model.name) { it }
             }

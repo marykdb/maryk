@@ -9,8 +9,8 @@ import maryk.core.aggregations.metric.MinResponse
 import maryk.core.aggregations.metric.StatsResponse
 import maryk.core.aggregations.metric.SumResponse
 import maryk.core.aggregations.metric.ValueCountResponse
-import maryk.core.properties.IsObjectPropertyDefinitions
-import maryk.core.properties.IsSimpleBaseModel
+import maryk.core.models.IsObjectDataModel
+import maryk.core.models.IsSimpleBaseObjectDataModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.enum.IndexedEnumImpl
 import maryk.core.properties.enum.IsCoreEnum
@@ -23,7 +23,7 @@ import maryk.json.MapType
 sealed class AggregationResponseType(
     index: UInt,
     override val name: String,
-    dataModel: IsObjectPropertyDefinitions<out IsAggregationResponse>,
+    dataModel: IsObjectDataModel<out IsAggregationResponse>,
     alternativeNames: Set<String>? = null
 ) : IndexedEnumImpl<AggregationResponseType>(index, alternativeNames),
     MapType,
@@ -32,7 +32,7 @@ sealed class AggregationResponseType(
 
     @Suppress("UNCHECKED_CAST")
     override val definition = EmbeddedObjectDefinition(
-        dataModel = { dataModel as IsSimpleBaseModel<IsAggregationResponse, *, RequestContext> }
+        dataModel = { dataModel as IsSimpleBaseObjectDataModel<IsAggregationResponse, *, RequestContext> }
     )
 
     object ValueCountType : AggregationResponseType(1u, "ValueCount", ValueCountResponse)

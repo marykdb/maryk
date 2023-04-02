@@ -2,10 +2,10 @@ package maryk.core.properties.definitions
 
 import maryk.core.extensions.bytes.initBoolean
 import maryk.core.extensions.bytes.writeBytes
+import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsValuesPropertyDefinitions
-import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.SimpleObjectModel
+import maryk.core.models.IsValuesDataModel
+import maryk.core.models.SimpleObjectModel
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
@@ -48,7 +48,7 @@ data class BooleanDefinition(
         writer.writeBoolean(value)
     }
 
-    object Model : SimpleObjectModel<BooleanDefinition, ObjectPropertyDefinitions<BooleanDefinition>>() {
+    object Model : SimpleObjectModel<BooleanDefinition, IsObjectDataModel<BooleanDefinition>>() {
         val required by boolean(1u, BooleanDefinition::required, default = true)
         val final by boolean(2u, BooleanDefinition::final, default = false)
         val default by boolean(3u, BooleanDefinition::default)
@@ -62,7 +62,7 @@ data class BooleanDefinition(
 }
 
 
-fun IsValuesPropertyDefinitions.boolean(
+fun IsValuesDataModel.boolean(
     index: UInt,
     name: String? = null,
     required: Boolean = true,
@@ -78,7 +78,7 @@ fun IsValuesPropertyDefinitions.boolean(
     )
 }
 
-fun <DO: Any> ObjectPropertyDefinitions<DO>.boolean(
+fun <DO: Any> IsObjectDataModel<DO>.boolean(
     index: UInt,
     getter: (DO) -> Boolean?,
     name: String? = null,
@@ -89,7 +89,7 @@ fun <DO: Any> ObjectPropertyDefinitions<DO>.boolean(
 ): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<Boolean, Boolean, IsPropertyContext, BooleanDefinition, DO>, DO, IsPropertyContext> =
     boolean(index, getter, name, required, final, default, alternativeNames, toSerializable = null)
 
-fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.boolean(
+fun <TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.boolean(
     index: UInt,
     getter: (DO) -> TO?,
     name: String? = null,

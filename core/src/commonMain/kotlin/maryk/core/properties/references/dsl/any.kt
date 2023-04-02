@@ -1,18 +1,18 @@
 package maryk.core.properties.references.dsl
 
-import maryk.core.properties.IsValuesPropertyDefinitions
+import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
-import maryk.core.properties.invoke
+import maryk.core.models.invoke
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.CanContainMapItemReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.values.Values
 
 /** Specific extension to support fetching deeper references on Map values by any key */
-fun <K : Any, V : Values<DM>, DM : IsValuesPropertyDefinitions, T : Any, R : IsPropertyReference<T, IsPropertyDefinition<T>, *>> IsMapDefinition<K, V, *>.any(
+fun <K : Any, V : Values<DM>, DM : IsValuesDataModel, T : Any, R : IsPropertyReference<T, IsPropertyDefinition<T>, *>> IsMapDefinition<K, V, *>.any(
     referenceGetter: DM.() -> (AnyOutPropertyReference?) -> R
 ): (AnyOutPropertyReference?) -> R =
     {

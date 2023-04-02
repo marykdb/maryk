@@ -4,7 +4,7 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
-import maryk.core.properties.graph
+import maryk.core.models.graph
 import maryk.core.query.RequestContext
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test

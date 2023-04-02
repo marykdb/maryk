@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions.contextual
 
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsPropertyDefinitions
+import maryk.core.models.IsDataModel
 import maryk.core.query.ContainsDefinitionsContext
 
 /**
@@ -9,5 +9,5 @@ import maryk.core.query.ContainsDefinitionsContext
  */
 class ModelContext(
     val definitionsContext: ContainsDefinitionsContext?,
-    var model: (Unit.() -> IsPropertyDefinitions)? = null
+    var model: (Unit.() -> IsDataModel)? = null
 ) : IsPropertyContext

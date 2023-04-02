@@ -2,8 +2,8 @@ package maryk.core.query.orders
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.serializers.ObjectDataModelSerializer
-import maryk.core.properties.AbstractPropertyDefinitions
-import maryk.core.properties.QueryModel
+import maryk.core.models.AbstractDataModel
+import maryk.core.models.QueryModel
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.enum
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
@@ -12,7 +12,7 @@ import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IsCoreEnum
 import maryk.core.properties.references.AnyPropertyReference
-import maryk.core.properties.values
+import maryk.core.models.values
 import maryk.core.query.RequestContext
 import maryk.core.query.orders.Direction.ASC
 import maryk.core.query.orders.Direction.DESC
@@ -69,7 +69,7 @@ data class Order internal constructor(
             getter = Order::propertyReference,
             definition = ContextualPropertyReferenceDefinition<RequestContext>(
                 contextualResolver = {
-                    it?.dataModel as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()
+                    it?.dataModel as? AbstractDataModel<*>? ?: throw ContextNotFoundException()
                 }
             )
         )

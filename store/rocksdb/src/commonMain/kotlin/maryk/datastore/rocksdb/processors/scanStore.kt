@@ -1,8 +1,8 @@
 package maryk.datastore.rocksdb.processors
 
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.key
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.key
 import maryk.core.properties.types.Key
 import maryk.core.query.orders.Direction
 import maryk.core.query.orders.Direction.ASC
@@ -13,7 +13,7 @@ import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
 
-internal fun <DM : IsRootModel> scanStore(
+internal fun <DM : IsRootDataModel> scanStore(
     dataStore: RocksDBDataStore,
     dbAccessor: DBAccessor,
     columnFamilies: TableColumnFamilies,
@@ -36,7 +36,7 @@ internal fun <DM : IsRootModel> scanStore(
                     iterator.next()
                 }
 
-                var currentSize: UInt = 0u
+                var currentSize = 0u
 
                 while (iterator.isValid()) {
                     val key = scanRequest.dataModel.key(iterator.key())
@@ -79,7 +79,7 @@ internal fun <DM : IsRootModel> scanStore(
                     iterator.prev()
                 }
 
-                var currentSize: UInt = 0u
+                var currentSize = 0u
 
                 while (iterator.isValid()) {
                     val key = scanRequest.dataModel.key(iterator.key())

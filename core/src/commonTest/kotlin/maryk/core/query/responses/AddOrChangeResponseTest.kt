@@ -6,7 +6,7 @@ import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
-import maryk.core.properties.key
+import maryk.core.models.key
 import maryk.core.query.RequestContext
 import maryk.core.query.changes.Change
 import maryk.core.query.pairs.with

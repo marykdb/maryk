@@ -2,7 +2,7 @@ package maryk.core.properties.references
 
 import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
-import maryk.core.properties.IsRootModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 import maryk.core.properties.definitions.index.IndexKeyPartType
 import maryk.core.properties.definitions.index.toReferenceStorageByteArray
@@ -19,7 +19,7 @@ import maryk.core.values.IsValuesGetter
  * and referred by parent PropertyReference of type [P].
  */
 open class ObjectReferencePropertyReference<
-    DM: IsRootModel,
+    DM: IsRootDataModel,
     TO : Any,
     out D : ReferenceDefinitionWrapper<TO, DM, *, *>,
     out P : AnyPropertyReference
@@ -53,7 +53,7 @@ open class ObjectReferencePropertyReference<
         this.writeStorageBytes(writer)
     }
 
-    override fun isCompatibleWithModel(dataModel: IsRootModel): Boolean =
+    override fun isCompatibleWithModel(dataModel: IsRootDataModel): Boolean =
         dataModel.compatibleWithReference(this)
 
     override fun getValue(values: IsValuesGetter) =

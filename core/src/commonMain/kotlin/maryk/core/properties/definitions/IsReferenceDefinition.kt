@@ -1,11 +1,11 @@
 package maryk.core.properties.definitions
 
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsRootModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.types.Key
 
 /** Interface for property definitions containing references to data objects of model [DM] and context [CX]. */
-interface IsReferenceDefinition<DM : IsRootModel, CX : IsPropertyContext> :
+interface IsReferenceDefinition<DM : IsRootDataModel, CX : IsPropertyContext> :
     IsComparableDefinition<Key<DM>, IsPropertyContext>,
     IsSerializableFixedBytesEncodable<Key<DM>, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<Key<DM>>,

@@ -1,6 +1,6 @@
 package maryk.datastore.memory.processors
 
-import maryk.core.properties.IsRootModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.requests.ScanChangesRequest
 import maryk.core.query.responses.ChangesResponse
@@ -9,10 +9,10 @@ import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkMaxVersions
 
 internal typealias ScanChangesStoreAction<DM> = StoreAction<DM, ScanChangesRequest<DM>, ChangesResponse<DM>>
-internal typealias AnyScanChangesStoreAction = ScanChangesStoreAction<IsRootModel>
+internal typealias AnyScanChangesStoreAction = ScanChangesStoreAction<IsRootDataModel>
 
 /** Processes a ScanChangesRequest in a [storeAction] into a dataStore from [dataStoreFetcher] */
-internal fun <DM : IsRootModel> processScanChangesRequest(
+internal fun <DM : IsRootDataModel> processScanChangesRequest(
     storeAction: ScanChangesStoreAction<DM>,
     dataStoreFetcher: IsStoreFetcher<*>
 ) {

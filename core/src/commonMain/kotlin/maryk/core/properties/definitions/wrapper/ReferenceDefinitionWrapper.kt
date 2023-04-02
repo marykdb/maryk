@@ -1,12 +1,12 @@
 package maryk.core.properties.definitions.wrapper
 
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsRootModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsReferenceDefinition
 import maryk.core.properties.graph.PropRefGraphType.PropRef
-import maryk.core.properties.invoke
+import maryk.core.models.invoke
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
@@ -19,7 +19,7 @@ import kotlin.reflect.KProperty
  * It contains an [index] and [name] to which it is referred inside DataModel, and a [getter]
  * function to retrieve value on dataObject of [DO]
  */
-data class ReferenceDefinitionWrapper<TO : Any, DM: IsRootModel, out D : IsReferenceDefinition<DM, IsPropertyContext>, in DO : Any> internal constructor(
+data class ReferenceDefinitionWrapper<TO : Any, DM: IsRootDataModel, out D : IsReferenceDefinition<DM, IsPropertyContext>, in DO : Any> internal constructor(
     override val index: UInt,
     override val name: String,
     override val definition: D,

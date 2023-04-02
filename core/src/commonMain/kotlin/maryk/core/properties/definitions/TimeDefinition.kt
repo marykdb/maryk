@@ -9,10 +9,10 @@ import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.initLongByVar
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.properties.ContextualModel
+import maryk.core.models.ContextualDataModel
+import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsValuesPropertyDefinitions
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
@@ -94,7 +94,7 @@ data class TimeDefinition(
     }
 
     @Suppress("unused")
-    object Model : ContextualModel<TimeDefinition, Model, ContainsDefinitionsContext, TimeDefinitionContext>(
+    object Model : ContextualDataModel<TimeDefinition, Model, ContainsDefinitionsContext, TimeDefinitionContext>(
         contextTransformer = { TimeDefinitionContext() },
     ) {
         val required by boolean(1u, TimeDefinition::required, default = true)
@@ -165,7 +165,7 @@ class TimeDefinitionContext : TimePrecisionContext() {
     }
 }
 
-fun IsValuesPropertyDefinitions.time(
+fun IsValuesDataModel.time(
     index: UInt,
     name: String? = null,
     required: Boolean = true,
@@ -185,7 +185,7 @@ fun IsValuesPropertyDefinitions.time(
     )
 }
 
-fun <TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.time(
+fun <TO: Any, DO: Any> IsObjectDataModel<DO>.time(
     index: UInt,
     getter: (DO) -> TO?,
     name: String? = null,
@@ -200,7 +200,7 @@ fun <TO: Any, DO: Any> ObjectPropertyDefinitions<DO>.time(
 ): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<LocalTime, TO, IsPropertyContext, TimeDefinition, DO>, DO, IsPropertyContext> =
     time(index, getter, name, required, final,  unique, minValue, maxValue, default, precision, alternativeNames, toSerializable = null)
 
-fun <TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.time(
+fun <TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.time(
     index: UInt,
     getter: (DO) -> TO?,
     name: String? = null,

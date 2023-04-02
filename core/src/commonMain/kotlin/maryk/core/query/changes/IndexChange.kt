@@ -1,7 +1,7 @@
 package maryk.core.query.changes
 
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.SingleTypedValueModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.SingleTypedValueDataModel
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
@@ -20,14 +20,14 @@ data class IndexChange(
 ): IsChange {
     override val changeType = ChangeType.IndexChange
 
-    override fun filterWithSelect(select: RootPropRefGraph<out IsRootModel>) = this
+    override fun filterWithSelect(select: RootPropRefGraph<out IsRootDataModel>) = this
 
     override fun changeValues(objectChanger: (IsPropertyReferenceForValues<*, *, *, *>, (Any?, Any?) -> Any?) -> Unit) {
         // Do nothing since it cannot operate on object itself
     }
 
     @Suppress("UNCHECKED_CAST")
-    companion object : SingleTypedValueModel<List<TypedValue<IndexUpdateType, IsIndexUpdate>>, IndexChange, Companion, ContainsDefinitionsContext>(
+    companion object : SingleTypedValueDataModel<List<TypedValue<IndexUpdateType, IsIndexUpdate>>, IndexChange, Companion, ContainsDefinitionsContext>(
         singlePropertyDefinitionGetter = { Companion.changes as IsDefinitionWrapper<List<TypedValue<IndexUpdateType, IsIndexUpdate>>, out List<TypedValue<IndexUpdateType, IsIndexUpdate>>, ContainsDefinitionsContext, IndexChange> }
     ) {
         val changes by list(

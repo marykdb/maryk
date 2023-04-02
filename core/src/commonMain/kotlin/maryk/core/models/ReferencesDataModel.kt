@@ -1,4 +1,4 @@
-package maryk.core.properties
+package maryk.core.models
 
 import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.definitions.IsValueDefinition
@@ -13,15 +13,15 @@ import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
-abstract class ReferencesModel<DO: Any, P: ReferencesModel<DO, P>>(
+abstract class ReferencesDataModel<DO: Any, DM: ReferencesDataModel<DO, DM>>(
     referencesGetter: (DO) -> List<AnyPropertyReference>,
-) : ObjectModel<DO, P, RequestContext, RequestContext>() {
+) : ObjectDataModel<DO, DM, RequestContext, RequestContext>() {
     abstract val references: ListDefinitionWrapper<AnyPropertyReference, AnyPropertyReference, RequestContext, DO>
 
-    abstract override fun invoke(values: ObjectValues<DO, P>): DO
+    abstract override fun invoke(values: ObjectValues<DO, DM>): DO
 
     @Suppress("UNCHECKED_CAST", "LeakingThis")
-    override val Serializer = object: ObjectDataModelSerializer<DO, P, RequestContext, RequestContext>(this as P) {
+    override val Serializer = object: ObjectDataModelSerializer<DO, DM, RequestContext, RequestContext>(this as DM) {
         override fun writeObjectAsJson(
             obj: DO,
             writer: IsJsonLikeWriter,
@@ -46,7 +46,7 @@ abstract class ReferencesModel<DO: Any, P: ReferencesModel<DO, P>>(
             }
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: RequestContext?): ObjectValues<DO, P> {
+        override fun readJson(reader: IsJsonLikeReader, context: RequestContext?): ObjectValues<DO, DM> {
             var currentToken = reader.currentToken
 
             if (currentToken == JsonToken.StartDocument) {
@@ -78,7 +78,7 @@ abstract class ReferencesModel<DO: Any, P: ReferencesModel<DO, P>>(
 
             return values(context) {
                 valueMap
-            } as ObjectValues<DO, P>
+            } as ObjectValues<DO, DM>
         }
     }
 }

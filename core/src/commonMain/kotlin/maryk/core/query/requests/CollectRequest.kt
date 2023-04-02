@@ -1,12 +1,12 @@
 package maryk.core.query.requests
 
 import maryk.core.models.serializers.ObjectDataModelSerializer
-import maryk.core.properties.QueryModel
+import maryk.core.models.QueryModel
 import maryk.core.properties.definitions.internalMultiType
 import maryk.core.properties.definitions.string
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.types.TypedValue
-import maryk.core.properties.values
+import maryk.core.models.values
 import maryk.core.query.RequestContext
 import maryk.core.query.requests.RequestType.Collect
 import maryk.core.query.responses.IsResponse

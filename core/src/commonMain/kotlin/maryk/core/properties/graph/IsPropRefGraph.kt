@@ -1,7 +1,7 @@
 package maryk.core.properties.graph
 
 import maryk.core.exceptions.TypeException
-import maryk.core.properties.IsPropertyDefinitions
+import maryk.core.models.IsDataModel
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.references.EmbeddedObjectPropertyRef
 import maryk.core.properties.references.EmbeddedValuesPropertyRef
@@ -9,7 +9,7 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForValues
 
 /** Defines a graph element */
-interface IsPropRefGraph<in P : IsPropertyDefinitions> {
+interface IsPropRefGraph<in P : IsDataModel> {
     val properties: List<IsPropRefGraphNode<P>>
 
     /** Select a node by [index] or return null if not exists */

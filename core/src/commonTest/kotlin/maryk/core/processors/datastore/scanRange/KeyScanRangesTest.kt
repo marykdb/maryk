@@ -2,7 +2,7 @@ package maryk.core.processors.datastore.scanRange
 
 import kotlinx.datetime.LocalDateTime
 import maryk.core.processors.datastore.matchers.IndexPartialToMatch
-import maryk.core.properties.key
+import maryk.core.models.key
 import maryk.core.query.filters.And
 import maryk.core.query.filters.Equals
 import maryk.core.query.filters.GreaterThan

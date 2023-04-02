@@ -1,8 +1,8 @@
 package maryk.datastore.memory.processors
 
 import maryk.core.clock.HLC
+import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
-import maryk.core.properties.IsRootModel
 import maryk.core.properties.types.Key
 import maryk.core.query.orders.Direction
 import maryk.core.query.orders.Direction.ASC
@@ -13,10 +13,10 @@ import maryk.datastore.memory.records.DataStore
 import maryk.lib.extensions.compare.compareTo
 import kotlin.math.min
 
-internal fun <DM : IsRootModel> scanStore(
+internal fun <DM : IsRootDataModel> scanStore(
     dataStore: DataStore<DM>,
     scanRequest: IsScanRequest<DM, *>,
-    recordFetcher: (IsRootModel, Key<*>) -> DataRecord<*>?,
+    recordFetcher: (IsRootDataModel, Key<*>) -> DataRecord<*>?,
     direction: Direction,
     scanRange: KeyScanRanges,
     processStoreValue: (DataRecord<DM>, ByteArray?) -> Unit
@@ -38,7 +38,7 @@ internal fun <DM : IsRootModel> scanStore(
                     }
                 }
 
-                var currentSize: UInt = 0u
+                var currentSize = 0u
 
                 for (index in startIndex until dataStore.records.size) {
                     val record = dataStore.records[index]
@@ -75,7 +75,7 @@ internal fun <DM : IsRootModel> scanStore(
                     }
                 } ?: dataStore.records.lastIndex
 
-                var currentSize: UInt = 0u
+                var currentSize = 0u
 
                 for (index in min(startIndex, dataStore.records.lastIndex) downTo 0) {
                     val record = dataStore.records[index]

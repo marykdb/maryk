@@ -2,7 +2,7 @@ package maryk.datastore.rocksdb.processors
 
 import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
-import maryk.core.properties.IsRootModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.query.requests.DeleteRequest
 import maryk.core.query.responses.DeleteResponse
 import maryk.core.query.responses.statuses.IsDeleteResponseStatus
@@ -13,10 +13,10 @@ import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.updates.IsUpdateAction
 
 internal typealias DeleteStoreAction<DM> = StoreAction<DM, DeleteRequest<DM>, DeleteResponse<DM>>
-internal typealias AnyDeleteStoreAction = DeleteStoreAction<IsRootModel>
+internal typealias AnyDeleteStoreAction = DeleteStoreAction<IsRootDataModel>
 
 /** Processes a DeleteRequest in a [storeAction] into a [dataStore] */
-internal suspend fun <DM : IsRootModel> processDeleteRequest(
+internal suspend fun <DM : IsRootDataModel> processDeleteRequest(
     version: HLC,
     storeAction: DeleteStoreAction<DM>,
     dataStore: RocksDBDataStore,

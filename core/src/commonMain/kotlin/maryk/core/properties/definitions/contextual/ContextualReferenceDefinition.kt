@@ -1,10 +1,10 @@
 package maryk.core.properties.definitions.contextual
 
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsRootModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsValueDefinition
-import maryk.core.properties.key
+import maryk.core.models.key
 import maryk.core.properties.types.Key
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCacheReader
@@ -17,7 +17,7 @@ import maryk.lib.exceptions.ParseException
 /** Definition for a reference to another DataObject from a context resolved from [contextualResolver] */
 class ContextualReferenceDefinition<in CX : IsPropertyContext>(
     override val required: Boolean = true,
-    val contextualResolver: Unit.(context: CX?) -> IsRootModel
+    val contextualResolver: Unit.(context: CX?) -> IsRootDataModel
 ) : IsValueDefinition<Key<*>, CX>, IsContextualEncodable<Key<*>, CX> {
     override val final = true
     override val wireType = LENGTH_DELIMITED

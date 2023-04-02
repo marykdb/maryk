@@ -1,7 +1,7 @@
 package maryk.core.query.responses.updates
 
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.SimpleQueryModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.SimpleQueryModel
 import maryk.core.properties.definitions.enum
 import maryk.core.properties.definitions.number
 import maryk.core.properties.enum.IndexedEnumComparable
@@ -23,7 +23,7 @@ enum class RemovalReason(override val index: UInt, override val alternativeNames
 }
 
 /** Update response describing a removal from query result at [key] for [reason] */
-data class RemovalUpdate<DM: IsRootModel>(
+data class RemovalUpdate<DM: IsRootDataModel>(
     val key: Key<DM>,
     override val version: ULong,
     val reason: RemovalReason
@@ -35,7 +35,7 @@ data class RemovalUpdate<DM: IsRootModel>(
         val version by number(2u, getter = RemovalUpdate<*>::version, type = UInt64)
         val reason by enum(3u, getter = RemovalUpdate<*>::reason, enum = RemovalReason)
 
-        override fun invoke(values: SimpleObjectValues<RemovalUpdate<*>>) = RemovalUpdate<IsRootModel>(
+        override fun invoke(values: SimpleObjectValues<RemovalUpdate<*>>) = RemovalUpdate<IsRootDataModel>(
             key = values(1u),
             version = values(2u),
             reason = values(3u)

@@ -2,10 +2,10 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.RequestException
-import maryk.core.properties.ContextualModel
+import maryk.core.models.ContextualDataModel
+import maryk.core.models.IsObjectDataModel
+import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsValuesPropertyDefinitions
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.contextual.ContextualCollectionDefinition
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
@@ -44,7 +44,7 @@ data class ListDefinition<T : Any, CX : IsPropertyContext> internal constructor(
         default: List<T>? = null
     ) : this(required, final, minSize, maxSize, valueDefinition as IsValueDefinition<T, CX>, default)
 
-    object Model : ContextualModel<ListDefinition<*, *>, Model, ContainsDefinitionsContext, ListDefinitionContext>(
+    object Model : ContextualDataModel<ListDefinition<*, *>, Model, ContainsDefinitionsContext, ListDefinitionContext>(
         contextTransformer = { ListDefinitionContext(it) },
     ) {
         val required by boolean(1u, ListDefinition<*, *>::required, default = true)
@@ -108,7 +108,7 @@ class ListDefinitionContext(
     }
 }
 
-fun <T: Any, CX: IsPropertyContext> IsValuesPropertyDefinitions.list(
+fun <T: Any, CX: IsPropertyContext> IsValuesDataModel.list(
     index: UInt,
     name: String? = null,
     required: Boolean = true,
@@ -127,7 +127,7 @@ fun <T: Any, CX: IsPropertyContext> IsValuesPropertyDefinitions.list(
     )
 }
 
-fun <T: Any, TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.list(
+fun <T: Any, TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.list(
     index: UInt,
     getter: (DO) -> List<TO>?,
     name: String? = null,
@@ -143,7 +143,6 @@ fun <T: Any, TO: Any, DO: Any, CX: IsPropertyContext> ObjectPropertyDefinitions<
     shouldSerialize: (Unit.(Any) -> Boolean)? = null,
     capturer: (Unit.(CX, List<T>) -> Unit)? = null
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
-    @Suppress("UNCHECKED_CAST")
     ListDefinitionWrapper(
         index,
         name ?: propName,

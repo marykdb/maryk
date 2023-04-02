@@ -3,7 +3,7 @@ package maryk.core.properties.definitions
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.properties.Model
+import maryk.core.models.DataModel
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
@@ -21,7 +21,7 @@ import kotlin.test.assertTrue
 import kotlin.test.expect
 
 internal class EmbeddedValuesDefinitionTest {
-    object MarykModel : Model<MarykModel>() {
+    object MarykModel : DataModel<MarykModel>() {
         val string by string(
             index = 1u,
             regEx = "jur",

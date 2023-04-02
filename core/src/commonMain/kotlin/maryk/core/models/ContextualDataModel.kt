@@ -1,5 +1,6 @@
-package maryk.core.properties
+package maryk.core.models
 
+import maryk.core.properties.IsPropertyContext
 import maryk.core.values.ObjectValues
 
 /**
@@ -7,8 +8,8 @@ import maryk.core.values.ObjectValues
  * Use it to create a context on starting an action which needs a context.
  * This context is cached if it is needed to read multiple times
  */
-abstract class ContextualModel<DO: Any, P: ContextualModel<DO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext>(
+abstract class ContextualDataModel<DO: Any, P: ContextualDataModel<DO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext>(
     val contextTransformer: Unit.(CXI?) -> CX?,
-) : ObjectModel<DO, P, CXI, CX>(), IsObjectPropertyDefinitions<DO>, IsObjectModel<DO, P, CXI, CX> {
+) : ObjectDataModel<DO, P, CXI, CX>(), IsObjectDataModel<DO>, IsTypedObjectModel<DO, P, CXI, CX> {
     abstract override fun invoke(values: ObjectValues<DO, P>): DO
 }

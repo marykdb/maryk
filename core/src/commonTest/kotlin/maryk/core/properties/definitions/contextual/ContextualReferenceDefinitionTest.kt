@@ -4,7 +4,7 @@ import maryk.checkProtoBufConversion
 import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.extensions.bytes.ZERO_BYTE
 import maryk.core.extensions.toUnitLambda
-import maryk.core.properties.IsRootModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.RequestContext
 import maryk.test.ByteCollector
@@ -21,7 +21,7 @@ class ContextualReferenceDefinitionTest {
     )
 
     private val def = ContextualReferenceDefinition<RequestContext>(
-        contextualResolver = { it!!.dataModel as IsRootModel }
+        contextualResolver = { it!!.dataModel as IsRootDataModel }
     )
 
     private val context = RequestContext(

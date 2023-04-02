@@ -1,8 +1,8 @@
 package maryk
 
-import maryk.core.properties.IsBaseModel
+import maryk.core.models.IsBaseObjectDataModel
+import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.values.ObjectValues
 import maryk.core.yaml.MarykYamlReader
 import maryk.json.JsonReader
@@ -10,9 +10,9 @@ import maryk.json.JsonWriter
 import maryk.yaml.YamlWriter
 import kotlin.test.assertEquals
 
-fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : IsPropertyContext> checkJsonConversion(
+fun <T : Any, P : IsObjectDataModel<T>, CXI : IsPropertyContext, CX : IsPropertyContext> checkJsonConversion(
     value: T,
-    dataModel: IsBaseModel<T, P, CXI, CX>,
+    dataModel: IsBaseObjectDataModel<T, P, CXI, CX>,
     context: (() -> CXI)? = null,
     checker: (T, T) -> Unit = { converted, original -> assertEquals(original, converted) },
     resetContextBeforeRead: Boolean = false
@@ -40,9 +40,9 @@ fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : Is
     return output
 }
 
-fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : IsPropertyContext> checkYamlConversion(
+fun <T : Any, P : IsObjectDataModel<T>, CXI : IsPropertyContext, CX : IsPropertyContext> checkYamlConversion(
     value: T,
-    dataModel: IsBaseModel<T, P, CXI, CX>,
+    dataModel: IsBaseObjectDataModel<T, P, CXI, CX>,
     context: (() -> CXI)? = null,
     checker: (T, T) -> Unit = { converted, original -> assertEquals(original, converted) },
     resetContextBeforeRead: Boolean = false
@@ -76,9 +76,9 @@ fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : Is
     return output
 }
 
-fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : IsPropertyContext> checkYamlConversion(
+fun <T : Any, P : IsObjectDataModel<T>, CXI : IsPropertyContext, CX : IsPropertyContext> checkYamlConversion(
     value: ObjectValues<T, P>,
-    dataModel: IsBaseModel<T, P, CXI, CX>,
+    dataModel: IsBaseObjectDataModel<T, P, CXI, CX>,
     context: (() -> CXI)? = null,
     checker: (ObjectValues<T, P>, ObjectValues<T, P>) -> Unit = { converted, original -> assertEquals(original, converted) },
     resetContextBeforeRead: Boolean = false
@@ -113,9 +113,9 @@ fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : Is
 }
 
 
-fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : IsPropertyContext> checkJsonConversion(
+fun <T : Any, P : IsObjectDataModel<T>, CXI : IsPropertyContext, CX : IsPropertyContext> checkJsonConversion(
     value: ObjectValues<T, P>,
-    dataModel: IsBaseModel<T, P, CXI, CX>,
+    dataModel: IsBaseObjectDataModel<T, P, CXI, CX>,
     context: (() -> CXI)? = null,
     checker: (ObjectValues<T, P>, ObjectValues<T, P>) -> Unit = { converted, original -> assertEquals(original, converted) },
     resetContextBeforeRead: Boolean = false

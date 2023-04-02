@@ -2,8 +2,8 @@ package maryk.core.query.requests
 
 import maryk.core.aggregations.Aggregations
 import maryk.core.exceptions.RequestException
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.QueryModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.QueryModel
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.embedObject
 import maryk.core.properties.definitions.number
@@ -25,7 +25,7 @@ import maryk.core.values.ObjectValues
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
-fun <DM : IsRootModel> DM.scanChanges(
+fun <DM : IsRootDataModel> DM.scanChanges(
     startKey: Key<DM>? = null,
     where: IsFilter? = null,
     order: IsOrder? = null,
@@ -57,7 +57,7 @@ fun <DM : IsRootModel> DM.scanChanges(
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order] and only selected properties can be returned with a [select] graph
  */
-data class ScanChangesRequest<DM : IsRootModel> internal constructor(
+data class ScanChangesRequest<DM : IsRootDataModel> internal constructor(
     override val dataModel: DM,
     override val startKey: Key<DM>? = null,
     override val where: IsFilter? = null,

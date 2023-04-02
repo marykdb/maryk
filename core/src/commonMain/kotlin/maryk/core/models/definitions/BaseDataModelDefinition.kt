@@ -1,11 +1,11 @@
 package maryk.core.models.definitions
 
-import maryk.core.properties.IsTypedPropertyDefinitions
+import maryk.core.models.IsTypedDataModel
 
 /**
  * A Data Model for converting and validating DataObjects. The [properties] contain all the property definitions for
  * this Model.
  */
-abstract class BaseDataModelDefinition<DM : IsTypedPropertyDefinitions<*>> internal constructor(
+abstract class BaseDataModelDefinition<DM : IsTypedDataModel<*>> internal constructor(
     final override val properties: DM
 ) : IsDataModelDefinition<DM>

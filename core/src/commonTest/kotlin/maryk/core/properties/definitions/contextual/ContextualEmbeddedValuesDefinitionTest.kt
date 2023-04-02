@@ -1,9 +1,8 @@
 package maryk.core.properties.definitions.contextual
 
 import maryk.checkProtoBufConversion
-import maryk.core.models.definitions.IsValuesDataModel
-import maryk.core.properties.IsValuesPropertyDefinitions
-import maryk.core.properties.TypedValuesModel
+import maryk.core.models.IsValuesDataModel
+import maryk.core.models.TypedValuesDataModel
 import maryk.core.values.ValuesImpl
 import maryk.test.ByteCollector
 import maryk.test.models.SimpleMarykModel
@@ -18,7 +17,7 @@ class ContextualEmbeddedValuesDefinitionTest {
 
     @Suppress("UNCHECKED_CAST")
     private val def = ContextualEmbeddedValuesDefinition<ModelContext>(
-        contextualResolver = { it!!.model!!.invoke(Unit) as TypedValuesModel<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions> }
+        contextualResolver = { it!!.model!!.invoke(Unit) as TypedValuesDataModel<IsValuesDataModel> }
     )
 
     private val context = ModelContext(

@@ -1,6 +1,6 @@
 package maryk.datastore.rocksdb.processors
 
-import maryk.core.properties.IsRootModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.query.filters.matchesFilter
 import maryk.core.query.requests.IsFetchRequest
 import maryk.datastore.rocksdb.DBAccessor
@@ -13,7 +13,7 @@ import maryk.rocksdb.ReadOptions
  * Filters on soft deleted state and given filters.
  * Return true if record should be filtered away.
  */
-internal fun <DM : IsRootModel> IsFetchRequest<DM, *>.shouldBeFiltered(
+internal fun <DM : IsRootDataModel> IsFetchRequest<DM, *>.shouldBeFiltered(
     dbAccessor: DBAccessor,
     columnFamilies: TableColumnFamilies,
     readOptions: ReadOptions,

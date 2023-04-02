@@ -1,7 +1,7 @@
 package maryk.core.query.responses.updates
 
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.SimpleQueryModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.SimpleQueryModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.number
@@ -12,7 +12,7 @@ import maryk.core.query.responses.updates.UpdateResponseType.InitialValues
 import maryk.core.values.SimpleObjectValues
 
 /** Update containing the initial values for listeners which listen to a scan. */
-data class InitialValuesUpdate<DM: IsRootModel>(
+data class InitialValuesUpdate<DM: IsRootDataModel>(
     override val version: ULong,
     val values: List<ValuesWithMetaData<DM>>
 ): IsUpdateResponse<DM> {
@@ -31,7 +31,7 @@ data class InitialValuesUpdate<DM: IsRootModel>(
             getter = InitialValuesUpdate<*>::values
         ).also(::addSingle)
 
-        override fun invoke(values: SimpleObjectValues<InitialValuesUpdate<*>>) = InitialValuesUpdate<IsRootModel>(
+        override fun invoke(values: SimpleObjectValues<InitialValuesUpdate<*>>) = InitialValuesUpdate<IsRootDataModel>(
             version = values(1u),
             values = values(2u)
         )

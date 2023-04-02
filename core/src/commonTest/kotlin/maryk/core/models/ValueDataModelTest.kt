@@ -6,11 +6,8 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.models.definitions.ValueDataModelDefinition
 import maryk.core.models.serializers.ObjectDataModelSerializer
-import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.types.ValueDataObject
-import maryk.core.properties.values
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.DefinitionsConversionContext
@@ -35,7 +32,7 @@ internal class ValueDataModelTest {
 
                 @Suppress("UNCHECKED_CAST")
                 val convertedValueModel =
-                    converted as ValueDataModelDefinition<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>
+                    converted as ValueDataModelDefinition<ValueDataObject, IsObjectDataModel<ValueDataObject>>
 
                 val value = converted.properties.values {
                     ValueItems(
@@ -51,7 +48,7 @@ internal class ValueDataModelTest {
                 val cache = WriteCache()
 
                 @Suppress("UNCHECKED_CAST")
-                val serializer = convertedValueModel.properties.Serializer as ObjectDataModelSerializer<ValueDataObject, IsObjectPropertyDefinitions<ValueDataObject>, IsPropertyContext, IsPropertyContext>
+                val serializer = convertedValueModel.properties.Serializer as ObjectDataModelSerializer<ValueDataObject, IsObjectDataModel<ValueDataObject>, IsPropertyContext, IsPropertyContext>
 
                 val byteLength = serializer.calculateObjectProtoBufLength(value, cache, context)
                 bc.reserve(byteLength)

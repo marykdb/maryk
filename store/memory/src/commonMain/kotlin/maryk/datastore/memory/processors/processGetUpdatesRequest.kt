@@ -1,8 +1,8 @@
 package maryk.datastore.memory.processors
 
 import maryk.core.clock.HLC
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.fromChanges
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.fromChanges
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.requests.GetUpdatesRequest
@@ -17,10 +17,10 @@ import maryk.datastore.shared.checkMaxVersions
 import maryk.datastore.shared.checkToVersion
 
 internal typealias GetUpdatesStoreAction<DM> = StoreAction<DM, GetUpdatesRequest<DM>, UpdatesResponse<DM>>
-internal typealias AnyGetUpdatesStoreAction = GetUpdatesStoreAction<IsRootModel>
+internal typealias AnyGetUpdatesStoreAction = GetUpdatesStoreAction<IsRootDataModel>
 
 /** Processes a GetUpdatesRequest in a [storeAction] into a dataStore from [dataStoreFetcher] */
-internal fun <DM : IsRootModel> processGetUpdatesRequest(
+internal fun <DM : IsRootDataModel> processGetUpdatesRequest(
     storeAction: GetUpdatesStoreAction<DM>,
     dataStoreFetcher: IsStoreFetcher<*>
 ) {

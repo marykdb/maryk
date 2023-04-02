@@ -1,7 +1,7 @@
 package maryk.core.models
 
 import maryk.core.models.definitions.BaseDataModelDefinition
-import maryk.core.models.definitions.IsObjectDataModel
+import maryk.core.models.definitions.IsObjectDataModelDefinition
 import maryk.core.models.definitions.IsRootDataModelDefinition
 import maryk.core.properties.definitions.wrapper.comparePropertyDefinitionWrapper
 import kotlin.test.assertEquals
@@ -16,8 +16,8 @@ internal fun <DM : BaseDataModelDefinition<*>> compareDataModels(converted: DM, 
             comparePropertyDefinitionWrapper(convertedWrapper, originalWrapper)
         }
 
-    if (original is IsObjectDataModel<*, *>) {
-        if (converted !is IsObjectDataModel<*, *>) {
+    if (original is IsObjectDataModelDefinition<*, *>) {
+        if (converted !is IsObjectDataModelDefinition<*, *>) {
             throw AssertionError("Converted model should be a ObjectDataModel")
         }
         assertEquals(original.name, converted.name)

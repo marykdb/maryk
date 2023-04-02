@@ -1,8 +1,8 @@
 package maryk.core.query.responses
 
 import maryk.core.aggregations.AggregationsResponse
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.QueryModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.QueryModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.embedObject
@@ -11,7 +11,7 @@ import maryk.core.query.ValuesWithMetaData
 import maryk.core.values.ObjectValues
 
 /** Response with [values] to an objects (Get/Scan) request to [dataModel] */
-data class ValuesResponse<DM : IsRootModel>(
+data class ValuesResponse<DM : IsRootDataModel>(
     override val dataModel: DM,
     val values: List<ValuesWithMetaData<DM>>,
     val aggregations: AggregationsResponse? = null

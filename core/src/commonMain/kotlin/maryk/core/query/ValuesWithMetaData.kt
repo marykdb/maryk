@@ -3,11 +3,10 @@
 package maryk.core.query
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.definitions.IsValuesDataModel
-import maryk.core.properties.IsRootModel
-import maryk.core.properties.IsValuesPropertyDefinitions
-import maryk.core.properties.QueryModel
-import maryk.core.properties.TypedValuesModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.IsValuesDataModel
+import maryk.core.models.QueryModel
+import maryk.core.models.TypedValuesDataModel
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.definitions.contextual.embedContextual
@@ -18,7 +17,7 @@ import maryk.core.properties.types.numeric.UInt64
 import maryk.core.values.ObjectValues
 import maryk.core.values.Values
 
-data class ValuesWithMetaData<DM : IsRootModel>(
+data class ValuesWithMetaData<DM : IsRootDataModel>(
     val key: Key<DM>,
     val values: Values<DM>,
     val firstVersion: ULong,
@@ -31,7 +30,7 @@ data class ValuesWithMetaData<DM : IsRootModel>(
             getter = ValuesWithMetaData<*>::key,
             definition = ContextualReferenceDefinition<RequestContext>(
                 contextualResolver = {
-                    it?.dataModel as? IsRootModel ?: throw ContextNotFoundException()
+                    it?.dataModel as? IsRootDataModel ?: throw ContextNotFoundException()
                 }
             )
         )
@@ -41,7 +40,7 @@ data class ValuesWithMetaData<DM : IsRootModel>(
             getter = ValuesWithMetaData<*>::values,
             contextualResolver = { context: RequestContext? ->
                 @Suppress("UNCHECKED_CAST")
-                context?.dataModel as? TypedValuesModel<IsValuesDataModel<IsValuesPropertyDefinitions>, IsValuesPropertyDefinitions>
+                context?.dataModel as? TypedValuesDataModel<IsValuesDataModel>
                     ?: throw ContextNotFoundException()
             }
         )
@@ -50,7 +49,7 @@ data class ValuesWithMetaData<DM : IsRootModel>(
         val isDeleted by boolean(5u, ValuesWithMetaData<*>::isDeleted)
 
         override fun invoke(values: ObjectValues<ValuesWithMetaData<*>, Companion>) =
-            ValuesWithMetaData<IsRootModel>(
+            ValuesWithMetaData<IsRootDataModel>(
                 key = values(1u),
                 values = values(2u),
                 firstVersion = values(3u),

@@ -1,6 +1,6 @@
 package maryk.core.query.filters
 
-import maryk.core.properties.ReferenceValuePairsModel
+import maryk.core.models.ReferenceValuePairsDataModel
 import maryk.core.query.pairs.ReferenceValueSetPair
 import maryk.core.values.ObjectValues
 
@@ -13,7 +13,7 @@ data class ValueIn internal constructor(
     @Suppress("UNCHECKED_CAST")
     constructor(vararg referenceValuePair: ReferenceValueSetPair<*>) : this(referenceValuePair.toList() as List<ReferenceValueSetPair<Any>>)
 
-    companion object : ReferenceValuePairsModel<ValueIn, Companion, ReferenceValueSetPair<*>, Set<Any>, Set<Any>>(
+    companion object : ReferenceValuePairsDataModel<ValueIn, Companion, ReferenceValueSetPair<*>, Set<Any>, Set<Any>>(
         pairGetter = ValueIn::referenceValuePairs,
         pairModel = ReferenceValueSetPair,
     ) {

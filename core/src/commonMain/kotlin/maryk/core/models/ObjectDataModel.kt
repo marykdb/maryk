@@ -1,7 +1,7 @@
-package maryk.core.properties
+package maryk.core.models
 
-import maryk.core.models.serializers.IsObjectDataModelSerializer
 import maryk.core.models.serializers.ObjectDataModelSerializer
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.IsPropertyReference
@@ -11,16 +11,13 @@ import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
 import maryk.core.values.ValueItem
 
-interface IsObjectModel<DO: Any, P: IsObjectPropertyDefinitions<DO>, in CXI : IsPropertyContext, CX : IsPropertyContext>: IsBaseModel<DO, P, CXI, CX>, IsTypedObjectPropertyDefinitions<DO, P, CX> {
-    override val Serializer: IsObjectDataModelSerializer<DO, P, CXI, CX>
-}
+typealias SimpleObjectModel<DO, DM> = ObjectDataModel<DO, DM, IsPropertyContext, IsPropertyContext>
+typealias DefinitionModel<DO> = ObjectDataModel<DO, IsObjectDataModel<DO>, ContainsDefinitionsContext, ContainsDefinitionsContext>
+internal typealias QueryModel<DO, DM> = ObjectDataModel<DO, DM, RequestContext, RequestContext>
+internal typealias SimpleQueryModel<DO> = ObjectDataModel<DO, IsObjectDataModel<DO>, RequestContext, RequestContext>
 
-typealias SimpleObjectModel<DO, P> = ObjectModel<DO, P, IsPropertyContext, IsPropertyContext>
-typealias DefinitionModel<DO> = ObjectModel<DO, ObjectPropertyDefinitions<DO>, ContainsDefinitionsContext, ContainsDefinitionsContext>
-internal typealias QueryModel<DO, P> = ObjectModel<DO, P, RequestContext, RequestContext>
-internal typealias SimpleQueryModel<DO> = ObjectModel<DO, ObjectPropertyDefinitions<DO>, RequestContext, RequestContext>
-
-abstract class ObjectModel<DO: Any, DM: IsObjectPropertyDefinitions<DO>, CXI : IsPropertyContext, CX : IsPropertyContext>: ObjectPropertyDefinitions<DO>(), IsObjectModel<DO, DM, CXI, CX> {
+abstract class ObjectDataModel<DO: Any, DM: IsObjectDataModel<DO>, CXI : IsPropertyContext, CX : IsPropertyContext>: AbstractObjectDataModel<DO>(),
+    IsTypedObjectModel<DO, DM, CXI, CX> {
     @Suppress("UNCHECKED_CAST", "LeakingThis")
     override val Serializer = ObjectDataModelSerializer<DO, DM, CXI, CX>(this as DM)
 
@@ -44,9 +41,9 @@ abstract class ObjectModel<DO: Any, DM: IsObjectPropertyDefinitions<DO>, CXI : I
         setDefaults: Boolean = true,
         context: RequestContext? = null,
     ) = ObjectValues(
-        this@ObjectModel as DM,
+        this@ObjectDataModel as DM,
         MutableValueItems().apply {
-            fillWithPairs(this@ObjectModel, pairs, setDefaults)
+            fillWithPairs(this@ObjectDataModel, pairs, setDefaults)
         },
         context,
     )

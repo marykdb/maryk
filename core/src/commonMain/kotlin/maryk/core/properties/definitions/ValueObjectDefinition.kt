@@ -3,12 +3,12 @@ package maryk.core.properties.definitions
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.writeBytes
-import maryk.core.properties.ContextualModel
+import maryk.core.models.ContextualDataModel
+import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.IsSimpleBaseModel
-import maryk.core.properties.IsValueModel
-import maryk.core.properties.IsValuesPropertyDefinitions
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.models.IsSimpleBaseObjectDataModel
+import maryk.core.models.IsValueDataModel
+import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.definitions.PropertyDefinitionType.Value
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
@@ -32,7 +32,7 @@ import maryk.json.IsJsonLikeWriter
 private typealias GenericValueModelDefinition = ValueObjectDefinition<*, *>
 
 /** Definition for value object properties containing dataObjects of [DO] defined by [dataModel] of [DM] */
-data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueModel<DO, *>>(
+data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueDataModel<DO, *>>(
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val unique: Boolean = false,
@@ -112,25 +112,25 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueModel<DO, *>>
         return compatible
     }
 
-    object Model : ContextualModel<ValueObjectDefinition<*, *>, Model, ContainsDefinitionsContext, ModelContext>(
+    object Model : ContextualDataModel<ValueObjectDefinition<*, *>, Model, ContainsDefinitionsContext, ModelContext>(
         contextTransformer = { ModelContext(it) },
     ) {
         val required by boolean(1u, ValueObjectDefinition<*, *>::required, default = true)
         val final by boolean(2u, ValueObjectDefinition<*, *>::final, default = false)
         val unique by boolean(3u, ValueObjectDefinition<*, *>::unique, default = false)
-        val dataModel: ContextualDefinitionWrapper<IsDataModelReference<IsValueModel<*, *>>, IsValueModel<*, *>, ModelContext, ContextualModelReferenceDefinition<IsValueModel<*, *>, ModelContext, ModelContext>, ValueObjectDefinition<*, *>> by contextual(
+        val dataModel: ContextualDefinitionWrapper<IsDataModelReference<IsValueDataModel<*, *>>, IsValueDataModel<*, *>, ModelContext, ContextualModelReferenceDefinition<IsValueDataModel<*, *>, ModelContext, ModelContext>, ValueObjectDefinition<*, *>> by contextual(
             index = 4u,
             getter = ValueObjectDefinition<*, *>::dataModel,
             definition = ContextualModelReferenceDefinition(
                 contextualResolver = { context, name ->
                     context?.definitionsContext?.let {
                         @Suppress("UNCHECKED_CAST")
-                        it.dataModels[name] as (Unit.() -> IsValueModel<*, *>)?
+                        it.dataModels[name] as (Unit.() -> IsValueDataModel<*, *>)?
                             ?: throw DefNotFoundException("DataModel with name $name not found on dataModels")
                     } ?: throw ContextNotFoundException()
                 }
             ),
-            toSerializable = { value: IsValueModel<*, *>?, _: ModelContext? ->
+            toSerializable = { value: IsValueDataModel<*, *>?, _: ModelContext? ->
                 value?.let {
                     DataModelReference(it.Model.name) { it }
                 }
@@ -156,7 +156,7 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueModel<DO, *>>
             definition = ContextualEmbeddedObjectDefinition(
                 contextualResolver = { context: ModelContext? ->
                     @Suppress("UNCHECKED_CAST")
-                    context?.model?.invoke(Unit) as? IsSimpleBaseModel<Any, *, ModelContext>?
+                    context?.model?.invoke(Unit) as? IsSimpleBaseObjectDataModel<Any, *, ModelContext>?
                         ?: throw ContextNotFoundException()
                 }
             )
@@ -167,7 +167,7 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueModel<DO, *>>
             definition = ContextualEmbeddedObjectDefinition(
                 contextualResolver = { context: ModelContext? ->
                     @Suppress("UNCHECKED_CAST")
-                    context?.model?.invoke(Unit) as? IsSimpleBaseModel<Any, *, ModelContext>?
+                    context?.model?.invoke(Unit) as? IsSimpleBaseObjectDataModel<Any, *, ModelContext>?
                         ?: throw ContextNotFoundException()
                 }
             )
@@ -178,7 +178,7 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueModel<DO, *>>
             definition = ContextualEmbeddedObjectDefinition(
                 contextualResolver = { context: ModelContext? ->
                     @Suppress("UNCHECKED_CAST")
-                    context?.model?.invoke(Unit) as? IsSimpleBaseModel<Any, *, ModelContext>?
+                    context?.model?.invoke(Unit) as? IsSimpleBaseObjectDataModel<Any, *, ModelContext>?
                         ?: throw ContextNotFoundException()
                 }
             )
@@ -197,7 +197,7 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueModel<DO, *>>
     }
 }
 
-fun <DO : ValueDataObject, DM : IsValueModel<DO, DM>> IsValuesPropertyDefinitions.valueObject(
+fun <DO : ValueDataObject, DM : IsValueDataModel<DO, DM>> IsValuesDataModel.valueObject(
     index: UInt,
     dataModel: DM,
     name: String? = null,
@@ -217,7 +217,7 @@ fun <DO : ValueDataObject, DM : IsValueModel<DO, DM>> IsValuesPropertyDefinition
     )
 }
 
-fun <TO: Any, DO: Any, VDO: ValueDataObject, DM : IsValueModel<VDO, DM>> ObjectPropertyDefinitions<DO>.valueObject(
+fun <TO: Any, DO: Any, VDO: ValueDataObject, DM : IsValueDataModel<VDO, DM>> IsObjectDataModel<DO>.valueObject(
     index: UInt,
     getter: (DO) -> TO?,
     dataModel: DM,
@@ -232,7 +232,7 @@ fun <TO: Any, DO: Any, VDO: ValueDataObject, DM : IsValueModel<VDO, DM>> ObjectP
 ): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<VDO, TO, IsPropertyContext, ValueObjectDefinition<VDO, DM>, DO>, DO, IsPropertyContext> =
     valueObject(index, getter, dataModel, name, required, final, unique, minValue, maxValue, default, alternativeNames, toSerializable = null)
 
-fun <TO: Any, DO: Any, VDO: ValueDataObject, DM : IsValueModel<VDO, DM>, CX: IsPropertyContext> ObjectPropertyDefinitions<DO>.valueObject(
+fun <TO: Any, DO: Any, VDO: ValueDataObject, DM : IsValueDataModel<VDO, DM>, CX: IsPropertyContext> IsObjectDataModel<DO>.valueObject(
     index: UInt,
     getter: (DO) -> TO?,
     dataModel: DM,

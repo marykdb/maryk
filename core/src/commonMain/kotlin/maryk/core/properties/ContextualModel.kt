@@ -9,6 +9,6 @@ import maryk.core.values.ObjectValues
  */
 abstract class ContextualModel<DO: Any, P: ContextualModel<DO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext>(
     val contextTransformer: Unit.(CXI?) -> CX?,
-) : InternalModel<DO, P, CXI, CX>(), IsObjectPropertyDefinitions<DO>, IsInternalModel<DO, P, CXI, CX> {
+) : ObjectModel<DO, P, CXI, CX>(), IsObjectPropertyDefinitions<DO>, IsObjectModel<DO, P, CXI, CX> {
     abstract override fun invoke(values: ObjectValues<DO, P>): DO
 }

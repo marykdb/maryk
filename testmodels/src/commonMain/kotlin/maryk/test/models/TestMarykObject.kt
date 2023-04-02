@@ -3,7 +3,7 @@ package maryk.test.models
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
-import maryk.core.properties.ObjectModel
+import maryk.core.properties.NamedObjectModel
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.StringDefinition
@@ -45,7 +45,7 @@ data class TestMarykObject(
     val listOfString: List<String>? = null
 ) {
     @Suppress("unused")
-    companion object : ObjectModel<TestMarykObject, Companion>(TestMarykObject::class) {
+    companion object : NamedObjectModel<TestMarykObject, Companion>(TestMarykObject::class) {
         val string by string(
             index = 1u,
             getter = TestMarykObject::string,

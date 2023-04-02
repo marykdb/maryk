@@ -8,7 +8,7 @@ import maryk.core.properties.types.ValueDataObject
 import maryk.core.values.ObjectValues
 import kotlin.reflect.KClass
 
-interface IsValueModel<DO: ValueDataObject, P: IsObjectPropertyDefinitions<DO>>: IsBaseModel<DO, P, IsPropertyContext, IsPropertyContext>, IsTypedObjectPropertyDefinitions<DO, P, IsPropertyContext>, IsObjectModel<DO, P> {
+interface IsValueModel<DO: ValueDataObject, P: IsObjectPropertyDefinitions<DO>>: IsBaseModel<DO, P, IsPropertyContext, IsPropertyContext>, IsTypedObjectPropertyDefinitions<DO, P, IsPropertyContext>, IsNamedObjectModel<DO, P> {
     override val Serializer: IsValueDataModelSerializer<DO, P>
     override val Model: ValueDataModel<DO, P>
 
@@ -35,7 +35,7 @@ interface IsValueModel<DO: ValueDataObject, P: IsObjectPropertyDefinitions<DO>>:
 
 abstract class ValueModel<DO: ValueDataObject, P: IsValueModel<DO, *>>(
     objClass: KClass<DO>,
-): InternalModel<DO, P, IsPropertyContext, IsPropertyContext>(), IsValueModel<DO, P> {
+): ObjectModel<DO, P, IsPropertyContext, IsPropertyContext>(), IsValueModel<DO, P> {
     @Suppress("LeakingThis", "UNCHECKED_CAST")
     override val Serializer = object: ValueDataModelSerializer<DO, P>(this as P) {}
 

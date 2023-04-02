@@ -1,13 +1,13 @@
 package maryk.test.models
 
-import maryk.core.properties.ObjectModel
+import maryk.core.properties.NamedObjectModel
 import maryk.core.properties.definitions.string
 import maryk.core.values.ObjectValues
 
 data class SimpleMarykObject(
     val value: String = "haha"
 ) {
-    companion object : ObjectModel<SimpleMarykObject, Companion>(SimpleMarykObject::class) {
+    companion object : NamedObjectModel<SimpleMarykObject, Companion>(SimpleMarykObject::class) {
         val value by string(
             index = 1u,
             getter = SimpleMarykObject::value,

@@ -3,7 +3,7 @@ package maryk.core.properties.definitions
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.properties.ObjectModel
+import maryk.core.properties.NamedObjectModel
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
@@ -26,7 +26,7 @@ internal class EmbeddedObjectDefinitionTest {
         val string: String = "jur"
     ) {
         @Suppress("unused")
-        companion object : ObjectModel<MarykObject, Companion>(MarykObject::class) {
+        companion object : NamedObjectModel<MarykObject, Companion>(MarykObject::class) {
             val string by string(
                 1u,
                 getter = MarykObject::string,

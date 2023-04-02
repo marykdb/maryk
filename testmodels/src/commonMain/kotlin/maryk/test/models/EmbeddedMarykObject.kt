@@ -1,6 +1,6 @@
 package maryk.test.models
 
-import maryk.core.properties.ObjectModel
+import maryk.core.properties.NamedObjectModel
 import maryk.core.properties.definitions.embedObject
 import maryk.core.properties.definitions.string
 import maryk.core.values.ObjectValues
@@ -11,7 +11,7 @@ data class EmbeddedMarykObject(
     val model: EmbeddedMarykObject? = null,
     val marykModel: TestMarykObject? = null
 ) {
-    companion object : ObjectModel<EmbeddedMarykObject, Companion>(EmbeddedMarykObject::class) {
+    companion object : NamedObjectModel<EmbeddedMarykObject, Companion>(EmbeddedMarykObject::class) {
         val value by string(
             index = 1u,
             getter = EmbeddedMarykObject::value
@@ -37,7 +37,7 @@ data class EmbeddedMarykObject(
             )
 
         override fun equals(other: Any?) =
-            other is ObjectModel<*, *> &&
+            other is NamedObjectModel<*, *> &&
                 this.Model.name == other.Model.name &&
                 this.size == other.size
     }

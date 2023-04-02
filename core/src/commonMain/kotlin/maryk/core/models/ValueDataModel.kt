@@ -29,10 +29,10 @@ typealias AnyValueDataModel = ValueDataModel<*, *>
  * ObjectDataModel of type [DO] for objects that can be encoded in fixed length width.
  * Contains [properties] definitions.
  */
-abstract class ValueDataModel<DO : ValueDataObject, P : IsObjectPropertyDefinitions<DO>>(
+abstract class ValueDataModel<DO : ValueDataObject, DM : IsObjectPropertyDefinitions<DO>>(
     name: String,
-    properties: P
-) : ObjectDataModel<DO, P>(name, properties), MarykPrimitive {
+    properties: DM
+) : ObjectDataModel<DO, DM>(name, properties), MarykPrimitive {
     override val primitiveType = ValueModel
 
     internal val byteSize by lazy {

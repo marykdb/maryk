@@ -5,8 +5,8 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import maryk.core.exceptions.TypeException
 import maryk.core.models.IsNamedDataModel
+import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsValuesDataModel
-import maryk.core.models.ObjectDataModel
 import maryk.core.models.ValueDataModel
 import maryk.core.properties.IsValueModel
 import maryk.core.properties.IsValuesPropertyDefinitions
@@ -189,7 +189,7 @@ internal fun generateKotlinValue(
     }
 }
 
-private fun ObjectDataModel<*, *>.generateKotlinValue(value: Any, addImport: (String) -> Unit): String {
+private fun IsObjectDataModel<*, *>.generateKotlinValue(value: Any, addImport: (String) -> Unit): String {
     val values = mutableListOf<String>()
 
     for (property in this.properties) {

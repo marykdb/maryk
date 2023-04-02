@@ -1,6 +1,5 @@
 package maryk.core.values
 
-import maryk.core.models.AbstractDataModel
 import maryk.core.models.IsNamedDataModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.TypedValuesModel
@@ -90,7 +89,7 @@ data class Values<DM : IsValuesPropertyDefinitions> internal constructor(
 }
 
 /** Output values to a json string */
-fun <V: Values<P>, DO: Any, DM: AbstractDataModel<DO, P, V, *, *>, P: TypedValuesModel<DM, P>> V.toJson(
+fun <V: Values<P>, P: TypedValuesModel<*, P>> V.toJson(
     pretty: Boolean = false
 ): String =
     this.dataModel.Serializer.writeJson(this, pretty = pretty)

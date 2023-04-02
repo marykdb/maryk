@@ -36,7 +36,7 @@ open class DataModel<DM : IsValuesPropertyDefinitions>(
     override val reservedNames: List<String>? = null,
     properties: DM,
     override val name: String = properties::class.simpleName ?: throw DefNotFoundException("Class $properties has no name")
-) : SimpleValuesDataModel<DM>(properties), MarykPrimitive, IsValuesDataModel<DM> {
+) : BaseDataModel<DM>(properties), MarykPrimitive, IsValuesDataModel<DM> {
     override val primitiveType = PrimitiveType.Model
 
     @Suppress("unused")

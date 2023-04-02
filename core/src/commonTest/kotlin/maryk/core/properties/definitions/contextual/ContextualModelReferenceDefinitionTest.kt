@@ -3,7 +3,6 @@ package maryk.core.properties.definitions.contextual
 import maryk.checkProtoBufConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.models.IsNamedDataModel
-import maryk.core.models.ObjectDataModel
 import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.query.RequestContext
 import maryk.test.ByteCollector
@@ -23,7 +22,6 @@ class ContextualModelReferenceDefinitionTest {
         EmbeddedMarykModel,
     )
 
-    @Suppress("UNCHECKED_CAST")
     private val def = ContextualModelReferenceDefinition<IsPropertyDefinitions, RequestContext>(
         contextualResolver = { context, name -> context!!.dataModels[name] as Unit.() -> IsPropertyDefinitions }
     )

@@ -6,15 +6,15 @@ import kotlin.test.assertEquals
 /**
  * Compares if two DataModels are equal
  */
-internal fun <DM : AbstractDataModel<*, *, *, *, *>> compareDataModels(converted: DM, original: DM) {
+internal fun <DM : BaseDataModel<*>> compareDataModels(converted: DM, original: DM) {
     (converted.properties)
         .zip(original.properties)
         .forEach { (convertedWrapper, originalWrapper) ->
             comparePropertyDefinitionWrapper(convertedWrapper, originalWrapper)
         }
 
-    if (original is ObjectDataModel<*, *>) {
-        if (converted !is ObjectDataModel<*, *>) {
+    if (original is IsObjectDataModel<*, *>) {
+        if (converted !is IsObjectDataModel<*, *>) {
             throw AssertionError("Converted model should be a ObjectDataModel")
         }
         assertEquals(original.name, converted.name)

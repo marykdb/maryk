@@ -57,7 +57,7 @@ class RootDataModel<DM : IsValuesPropertyDefinitions>(
     override val reservedNames: List<String>? = null,
     properties: DM,
     override val name: String = properties::class.simpleName ?: throw DefNotFoundException("Class $properties has no name")
-) : SimpleValuesDataModel<DM>(properties),
+) : BaseDataModel<DM>(properties),
     IsRootDataModel<DM>,
     MarykPrimitive {
     override val primitiveType = RootModel

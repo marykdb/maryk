@@ -31,7 +31,7 @@ internal fun <DM : IsDataModel<*>> addProperties(
     return wrapper
 }
 
-internal fun <DM : ObjectDataModel<*, *>> addProperties(definitions: AbstractPropertyDefinitions<DM>): ObjectPropertyDefinitionsCollectionDefinitionWrapper<DM> =
+internal fun <DM : IsObjectDataModel<*, *>> addProperties(definitions: AbstractPropertyDefinitions<DM>): ObjectPropertyDefinitionsCollectionDefinitionWrapper<DM> =
     ObjectPropertyDefinitionsCollectionDefinitionWrapper<DM>(
         2u,
         "properties",

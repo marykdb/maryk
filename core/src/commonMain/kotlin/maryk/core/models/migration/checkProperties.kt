@@ -2,7 +2,7 @@ package maryk.core.models.migration
 
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
-import maryk.core.properties.IsSerializableModel
+import maryk.core.properties.IsStorableModel
 import maryk.lib.synchronizedIteration
 
 /**
@@ -14,8 +14,8 @@ import maryk.lib.synchronizedIteration
  * Properties only on stored data model will be checked if they are available on the reservedIndices and
  * names so they cannot be used for any future model without acknowledgement in a migration.
  */
-internal fun IsSerializableModel.checkProperties(
-    storedDataModel: IsSerializableModel,
+internal fun IsStorableModel.checkProperties(
+    storedDataModel: IsStorableModel,
     handleMigrationReason: (String) -> Unit
 ): Boolean {
     var hasNewProperties = false

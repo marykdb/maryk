@@ -3,6 +3,7 @@ package maryk.generator.proto3
 import maryk.core.exceptions.TypeException
 import maryk.core.models.IsNamedDataModel
 import maryk.core.models.IsValuesDataModel
+import maryk.core.properties.IsStorableModel
 import maryk.core.properties.IsTypedPropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
@@ -189,7 +190,7 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(
             "map<${this.keyDefinition.toProtoBufType(name, generationContext, messageAdder)}, ${this.valueDefinition.toProtoBufType(name, generationContext, messageAdder)}>"
         }
         is EmbeddedValuesDefinition<*> -> this.dataModel.Model.name
-        is EmbeddedObjectDefinition<*, *, *, *> -> (this.dataModel.Model as IsNamedDataModel<*>).name
+        is EmbeddedObjectDefinition<*, *, *, *> -> (this.dataModel as IsStorableModel).Model.name
         is MultiTypeDefinition<*, *> -> {
             val multiTypeName = "${name.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }}Type"
 

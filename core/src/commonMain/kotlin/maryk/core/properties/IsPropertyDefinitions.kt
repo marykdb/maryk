@@ -1,6 +1,5 @@
 package maryk.core.properties
 
-import maryk.core.models.IsDataModel
 import maryk.core.models.serializers.IsDataModelSerializer
 import maryk.core.properties.definitions.IsEmbeddedDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -12,7 +11,6 @@ import maryk.core.properties.references.IsPropertyReferenceForValues
 
 @PropertyReferenceMarker
 interface IsPropertyDefinitions {
-    val Model : IsDataModel<*>
     val Serializer : IsDataModelSerializer<*, *, *>
 
     /** Get the definition with a property [name] */

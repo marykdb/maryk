@@ -54,7 +54,7 @@ open class RootModel<DM: IsValuesPropertyDefinitions>(
     ) = referenceGetter(this as DM)(parent)
 
     override fun isMigrationNeeded(
-        storedDataModel: IsSerializableModel,
+        storedDataModel: IsStorableModel,
         migrationReasons: MutableList<String>
     ): MigrationStatus {
         val indicesToIndex = mutableListOf<IsIndexable>()

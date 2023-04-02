@@ -1,6 +1,6 @@
 package maryk.core.values
 
-import maryk.core.models.IsNamedDataModel
+import maryk.core.properties.IsStorableModel
 import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsTypedObjectPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -40,7 +40,7 @@ data class ObjectValues<DO : Any, DM : IsObjectPropertyDefinitions<DO>> internal
     }
 
     override fun toString(): String {
-        val modelName = (dataModel.Model as? IsNamedDataModel<*>)?.name ?: dataModel
+        val modelName = (dataModel as? IsStorableModel)?.Model?.name ?: dataModel
         return "ObjectValues<$modelName>$values"
     }
 }

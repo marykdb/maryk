@@ -17,7 +17,6 @@ import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsRootModel
 import maryk.core.properties.IsValuesPropertyDefinitions
-import maryk.core.properties.definitions.IsEmbeddedDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsMapDefinition
@@ -243,7 +242,6 @@ private fun readQualifierOfType(
             } else {
                 @Suppress("UNCHECKED_CAST")
                 val listDefinition = definition as IsListDefinition<Any, IsPropertyContext>
-                @Suppress("UNCHECKED_CAST")
                 val listReference = reference as CanContainListItemReference<*, *, *>
 
                 val listIndex = initUInt({ qualifierReader(offset++) })
@@ -284,7 +282,6 @@ private fun readQualifierOfType(
             } else {
                 @Suppress("UNCHECKED_CAST")
                 val setDefinition = definition as IsSetDefinition<Any, IsPropertyContext>
-                @Suppress("UNCHECKED_CAST")
                 val setReference = reference as CanContainSetItemReference<*, *, *>
 
                 // Read set contents. It is always a simple value for set since it is in the qualifier.
@@ -332,7 +329,6 @@ private fun readQualifierOfType(
                 @Suppress("UNCHECKED_CAST")
                 val mapDefinition = definition as? IsMapDefinition<Any, Any, IsPropertyContext>
                     ?: throw TypeException("Definition $definition should be a MapDefinition")
-                @Suppress("UNCHECKED_CAST")
                 val mapReference = reference as CanContainMapItemReference<*, *, *>
                 val keyDefinition = mapDefinition.keyDefinition
 
@@ -400,14 +396,13 @@ private fun <DM : IsRootModel> readEmbeddedValues(
     qualifierLength: Int,
     offset: Int,
     readValueFromStorage: ValueReader,
-    definition: IsEmbeddedDefinition<*>,
+    definition: IsEmbeddedValuesDefinition<*, *>,
     parentReference: IsPropertyReference<*, *, *>,
     select: IsPropRefGraph<DM>?,
     addToCache: CacheProcessor,
     addValueToOutput: AddValue
 ) {
-    @Suppress("UNCHECKED_CAST")
-    val dataModel = definition.dataModel.Model as IsDataModel<IsValuesPropertyDefinitions>
+    val dataModel = definition.dataModel.Model
     val values = dataModel.properties.values { MutableValueItems() }
 
     addValueToOutput(values)
@@ -577,7 +572,7 @@ private fun readComplexWithSubDefinition(
             valueAdder
         )
     }
-    is IsEmbeddedDefinition<*> -> {
+    is IsEmbeddedValuesDefinition<*, *> -> {
         readEmbeddedValues(
             qualifierReader,
             qualifierLength,

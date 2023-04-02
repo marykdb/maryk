@@ -18,9 +18,10 @@ import maryk.core.processors.datastore.StorageTypeEnum.ObjectDelete
 import maryk.core.processors.datastore.StorageTypeEnum.SetSize
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.IsRootModel
+import maryk.core.properties.IsStorableModel
 import maryk.core.properties.IsValuesPropertyDefinitions
-import maryk.core.properties.definitions.IsAnyEmbeddedDefinition
 import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsEmbeddedDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
@@ -195,7 +196,7 @@ private fun createChange(changeType: ChangeType, changePart: Any) = when (change
  * [readValueFromStorage] is used to fetch actual value from storage layer
  * [addToCache] is used to add a sub reader to cache, so it does not need to reprocess the qualifier from start
  */
-private fun <P : IsValuesPropertyDefinitions> IsDataModel<P>.readQualifier(
+private fun <P : IsPropertyDefinitions> IsDataModel<P>.readQualifier(
     qualifierReader: (Int) -> Byte,
     qualifierLength: Int,
     offset: Int,
@@ -347,7 +348,6 @@ private fun <P : IsValuesPropertyDefinitions> readQualifierOfType(
             } else {
                 @Suppress("UNCHECKED_CAST")
                 val listDefinition = definition as IsListDefinition<Any, IsPropertyContext>
-                @Suppress("UNCHECKED_CAST")
                 val listReference = reference as CanContainListItemReference<*, *, *>
 
                 val listIndex = initUInt({ qualifierReader(offset++) })
@@ -381,7 +381,6 @@ private fun <P : IsValuesPropertyDefinitions> readQualifierOfType(
             } else {
                 @Suppress("UNCHECKED_CAST")
                 val setDefinition = definition as IsSetDefinition<Any, IsPropertyContext>
-                @Suppress("UNCHECKED_CAST")
                 val setReference = reference as CanContainSetItemReference<*, *, *>
 
                 // Read set contents. It is always a simple value for set since it is in the qualifier.
@@ -408,7 +407,6 @@ private fun <P : IsValuesPropertyDefinitions> readQualifierOfType(
         MAP -> {
             @Suppress("UNCHECKED_CAST")
             val mapDefinition = definition as IsMapDefinition<Any, Any, IsPropertyContext>
-            @Suppress("UNCHECKED_CAST")
             val mapReference = reference as CanContainMapItemReference<*, *, *>
 
             if (isAtEnd) {
@@ -682,9 +680,8 @@ private fun <P : IsValuesPropertyDefinitions> readEmbeddedValues(
     addToCache: CacheProcessor,
     addChangeToOutput: ChangeAdder
 ) {
-    @Suppress("UNCHECKED_CAST")
     val dataModel =
-        (definition as IsAnyEmbeddedDefinition).dataModel.Model as IsDataModel<out IsValuesPropertyDefinitions>
+        (definition.dataModel as IsStorableModel).Model
 
     // If select is Graph then resolve sub graph.
     // Otherwise, it is null or is property itself so needs to be completely selected thus set as null.

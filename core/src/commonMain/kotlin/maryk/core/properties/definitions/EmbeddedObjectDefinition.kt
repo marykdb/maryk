@@ -2,12 +2,12 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.models.IsNamedDataModel
 import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsBaseModel
 import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.IsStorableModel
 import maryk.core.properties.IsSimpleBaseModel
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -122,7 +122,7 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsSimpleBaseModel<DO, CXI, CX>, CX
 
         if (required != other.required) return false
         if (final != other.final) return false
-        if (dataModel.Model != other.dataModel.Model) return false
+        if (dataModel.Serializer != other.dataModel.Serializer) return false
 
         return true
     }
@@ -155,7 +155,7 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsSimpleBaseModel<DO, CXI, CX>, CX
             },
             toSerializable = { value: (Unit.() -> IsSimpleBaseModel<*, *, *>)?, _ ->
                 value?.invoke(Unit)?.let { model ->
-                    DataModelReference((model.Model as IsNamedDataModel<*>).name) { model }
+                    DataModelReference((model as IsStorableModel).Model.name) { model }
                 }
             },
             fromSerializable = { ref ->

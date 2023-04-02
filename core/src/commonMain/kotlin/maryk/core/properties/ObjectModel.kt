@@ -1,6 +1,5 @@
 package maryk.core.properties
 
-import maryk.core.models.BaseDataModel
 import maryk.core.models.serializers.IsObjectDataModelSerializer
 import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -51,9 +50,4 @@ abstract class ObjectModel<DO: Any, DM: IsObjectPropertyDefinitions<DO>, CXI : I
         },
         context,
     )
-
-    @Suppress("UNCHECKED_CAST", "LeakingThis")
-    override val Model = object: BaseDataModel<DM>(
-        properties = this as DM,
-    ) {}
 }

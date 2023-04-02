@@ -3,8 +3,8 @@ package maryk.core.values
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.inject.AnyInject
-import maryk.core.models.IsNamedDataModel
 import maryk.core.models.serializers.IsDataModelSerializer
+import maryk.core.properties.IsStorableModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsSimpleBaseModel
 import maryk.core.properties.IsTypedPropertyDefinitions
@@ -138,10 +138,7 @@ abstract class AbstractValues<DO : Any, DM : IsTypedPropertyDefinitions<DO>> : I
     override fun original(index: UInt) = this.values[index]
 
     override fun toString(): String {
-        val model = dataModel.Model
-        val name = if (model is IsNamedDataModel<*>) {
-            model.name
-        } else "ObjectValues"
+        val name = (dataModel as? IsStorableModel)?.Model?.name ?: "ObjectValues"
 
         return "$name $values"
     }

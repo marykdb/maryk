@@ -5,7 +5,7 @@ import maryk.core.models.ObjectDataModel
 import maryk.core.models.serializers.IsObjectDataModelSerializer
 import kotlin.reflect.KClass
 
-interface IsNamedObjectModel<DO: Any, P: IsObjectPropertyDefinitions<DO>>: IsBaseModel<DO, P, IsPropertyContext, IsPropertyContext>, IsTypedObjectPropertyDefinitions<DO, P, IsPropertyContext>, IsSerializableModel {
+interface IsNamedObjectModel<DO: Any, P: IsObjectPropertyDefinitions<DO>>: IsBaseModel<DO, P, IsPropertyContext, IsPropertyContext>, IsTypedObjectPropertyDefinitions<DO, P, IsPropertyContext>, IsStorableModel {
     override val Serializer: IsObjectDataModelSerializer<DO, P, IsPropertyContext, IsPropertyContext>
     override val Model: IsObjectDataModel<DO, P>
 }

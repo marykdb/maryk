@@ -4,8 +4,8 @@ import maryk.core.models.IsNamedDataModel
 import maryk.core.models.migration.MigrationStatus
 import maryk.core.models.migration.checkProperties
 
-interface IsSerializableModel: IsPropertyDefinitions {
-    override val Model: IsNamedDataModel<*>
+interface IsStorableModel: IsPropertyDefinitions {
+    val Model: IsNamedDataModel<out IsPropertyDefinitions>
 
     /**
      * Checks if a migration is needed between [storedDataModel] and current model and returns a status
@@ -13,7 +13,7 @@ interface IsSerializableModel: IsPropertyDefinitions {
      * Pass a [migrationReasons] if this method is overridden
      */
     fun isMigrationNeeded(
-        storedDataModel: IsSerializableModel,
+        storedDataModel: IsStorableModel,
         migrationReasons: MutableList<String> = mutableListOf()
     ): MigrationStatus {
         if (storedDataModel.Model.name != this.Model.name) {

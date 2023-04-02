@@ -83,7 +83,7 @@ class IndexedEnumTest {
             """.trimIndent()
         )
 
-        val enum = IndexedEnumDefinition.Model.Model.readJson(
+        val enum = IndexedEnumDefinition.Model.Serializer.readJson(
             reader
         ).toDataObject()
 

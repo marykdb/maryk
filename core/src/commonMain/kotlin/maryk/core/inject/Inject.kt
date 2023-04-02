@@ -1,12 +1,13 @@
 package maryk.core.inject
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.AbstractObjectDataModel
+import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.string
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.exceptions.InjectException
 import maryk.core.properties.references.IsPropertyReference
@@ -69,10 +70,13 @@ data class Inject<T : Any, D : IsPropertyDefinition<T>>(
             propertyReference = values(2u)
         )
 
-        override val Model = object : AbstractObjectDataModel<AnyInject, Companion, RequestContext, InjectionContext>(
-            properties = Companion,
-        ) {
-            override fun writeJson(obj: AnyInject, writer: IsJsonLikeWriter, context: InjectionContext?) {
+        override val Serializer = object: ObjectDataModelSerializer<AnyInject, Companion, RequestContext, InjectionContext>(this) {
+            override fun writeObjectAsJson(
+                obj: AnyInject,
+                writer: IsJsonLikeWriter,
+                context: InjectionContext?,
+                skip: List<IsDefinitionWrapper<*, *, *, AnyInject>>?
+            ) {
                 if (obj.propertyReference != null) {
                     writer.writeStartObject()
                     writer.writeFieldName(obj.collectionName)
@@ -112,7 +116,7 @@ data class Inject<T : Any, D : IsPropertyDefinition<T>>(
 
                         reader.nextToken() // read past end object
 
-                        this.properties.values(context?.requestContext) {
+                        model.values(context?.requestContext) {
                             mapNonNulls(
                                 Companion.collectionName withSerializable collectionName,
                                 Companion.propertyReference withSerializable propertyReference
@@ -127,7 +131,7 @@ data class Inject<T : Any, D : IsPropertyDefinition<T>>(
 
                         reader.nextToken()
 
-                        this.properties.values(context?.requestContext) {
+                        model.values(context?.requestContext) {
                             mapNonNulls(
                                 Companion.collectionName withSerializable collectionName
                             )

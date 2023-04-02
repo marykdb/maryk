@@ -84,14 +84,14 @@ class EmbeddedValuesDefinition<DM : IsValuesPropertyDefinitions>(
     }
 
     override fun writeJsonValue(value: Values<DM>, writer: IsJsonLikeWriter, context: IsPropertyContext?) =
-        this.typedDataModel.Model.writeJson(
+        this.typedDataModel.Serializer.writeJson(
             value,
             writer,
             context
         )
 
     override fun readJson(reader: IsJsonLikeReader, context: IsPropertyContext?) =
-        this.typedDataModel.Model.readJson(reader, context)
+        this.typedDataModel.Serializer.readJson(reader, context)
 
     override fun calculateTransportByteLength(
         value: Values<DM>,

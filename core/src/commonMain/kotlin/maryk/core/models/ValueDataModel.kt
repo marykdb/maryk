@@ -4,10 +4,12 @@ import maryk.core.definitions.MarykPrimitive
 import maryk.core.definitions.PrimitiveType.ValueModel
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.SerializationException
+import maryk.core.models.serializers.ObjectDataModelSerializer
+import maryk.core.models.serializers.readDataModelJson
+import maryk.core.models.serializers.writeDataModelJson
 import maryk.core.properties.DefinitionModel
 import maryk.core.properties.IsDataModelPropertyDefinitions
 import maryk.core.properties.IsObjectPropertyDefinitions
-import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.MutableValueModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitionsCollectionDefinitionWrapper
@@ -16,7 +18,6 @@ import maryk.core.properties.definitions.string
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.invoke
 import maryk.core.properties.types.ValueDataObject
-import maryk.core.properties.types.ValueDataObjectWithValues
 import maryk.core.properties.values
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.MutableValueItems
@@ -59,16 +60,6 @@ abstract class ValueDataModel<DO : ValueDataObject, P : IsObjectPropertyDefiniti
             values[it.index] = def.readStorageBytes(def.byteSize, reader)
         }
         return this.properties.invoke(this.properties.values { values })
-    }
-
-    override fun getValueWithDefinition(
-        definition: IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>,
-        obj: DO,
-        context: IsPropertyContext?
-    ) = if (obj is ValueDataObjectWithValues) {
-        obj.values(definition.index)
-    } else {
-        super.getValueWithDefinition(definition, obj, context)
     }
 
     /** Creates bytes for given [inputs] */
@@ -116,9 +107,7 @@ abstract class ValueDataModel<DO : ValueDataObject, P : IsObjectPropertyDefiniti
             (properties as MutableValueModel<ValueDataObject>)._model = this
         }
 
-        override val Model = object : DefinitionDataModel<AnyValueDataModel>(
-            properties = ValueDataModel.Model
-        ) {
+        override val Serializer = object: ObjectDataModelSerializer<ValueDataModel<*, *>, ObjectPropertyDefinitions<ValueDataModel<*, *>>, ContainsDefinitionsContext, ContainsDefinitionsContext>(this) {
             override fun writeJson(
                 values: ObjectValues<AnyValueDataModel, ObjectPropertyDefinitions<AnyValueDataModel>>,
                 writer: IsJsonLikeWriter,
@@ -127,10 +116,11 @@ abstract class ValueDataModel<DO : ValueDataObject, P : IsObjectPropertyDefiniti
                 throw SerializationException("Cannot write definitions from values")
             }
 
-            override fun writeJson(
-                obj: AnyValueDataModel,
+            override fun writeObjectAsJson(
+                obj: ValueDataModel<*, *>,
                 writer: IsJsonLikeWriter,
-                context: ContainsDefinitionsContext?
+                context: ContainsDefinitionsContext?,
+                skip: List<IsDefinitionWrapper<*, *, *, ValueDataModel<*, *>>>?
             ) {
                 this.writeDataModelJson(writer, context, obj, ValueDataModel.Model)
             }

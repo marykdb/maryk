@@ -3,7 +3,7 @@ package maryk.core.properties.enum
 import maryk.core.definitions.PrimitiveType.TypeDefinition
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.SerializationException
-import maryk.core.models.AbstractObjectDataModel
+import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
@@ -15,6 +15,7 @@ import maryk.core.properties.definitions.contextual.MultiTypeDefinitionContext
 import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.string
 import maryk.core.properties.definitions.wrapper.ContextualDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.values
 import maryk.core.query.ContainsDefinitionsContext
@@ -139,9 +140,7 @@ open class MultiTypeEnumDefinition<E : MultiTypeEnum<*>> internal constructor(
                 unknownCreator = { index, name -> MultiTypeEnum.invoke(index, name, null) }
             )
 
-        override val Model = object : AbstractObjectDataModel<MultiTypeEnumDefinition<MultiTypeEnum<*>>, Model, ContainsDefinitionsContext, MultiTypeDefinitionContext>(
-            properties = MultiTypeEnumDefinition.Model,
-        ) {
+        override val Serializer = object: ObjectDataModelSerializer<MultiTypeEnumDefinition<MultiTypeEnum<*>>, Model, ContainsDefinitionsContext, MultiTypeDefinitionContext>(this) {
             override fun writeJson(
                 values: ObjectValues<MultiTypeEnumDefinition<MultiTypeEnum<*>>, Model>,
                 writer: IsJsonLikeWriter,
@@ -150,10 +149,11 @@ open class MultiTypeEnumDefinition<E : MultiTypeEnum<*>> internal constructor(
                 throw SerializationException("Cannot write definitions from Values")
             }
 
-            override fun writeJson(
+            override fun writeObjectAsJson(
                 obj: MultiTypeEnumDefinition<MultiTypeEnum<*>>,
                 writer: IsJsonLikeWriter,
-                context: MultiTypeDefinitionContext?
+                context: MultiTypeDefinitionContext?,
+                skip: List<IsDefinitionWrapper<*, *, *, MultiTypeEnumDefinition<MultiTypeEnum<*>>>>?
             ) {
                 if (context?.definitionsContext?.typeEnums?.containsKey(obj.name) == true) {
                     // Write a single string name if no options was defined
@@ -165,11 +165,11 @@ open class MultiTypeEnumDefinition<E : MultiTypeEnum<*>> internal constructor(
                     // Only skip when DefinitionsContext was set
                     when {
                         context?.definitionsContext != null && context.definitionsContext.currentDefinitionName == obj.name -> {
-                            super.writeJson(obj, writer, context, skip = listOf(name))
+                            super.writeObjectAsJson(obj, writer, context, skip = listOf(name) + skip.orEmpty())
                             context.definitionsContext.currentDefinitionName = ""
                         }
                         else -> {
-                            super.writeJson(obj, writer, context)
+                            super.writeObjectAsJson(obj, writer, context, skip)
                         }
                     }
                 }

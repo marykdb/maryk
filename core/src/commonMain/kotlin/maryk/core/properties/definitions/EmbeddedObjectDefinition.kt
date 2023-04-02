@@ -76,7 +76,7 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsSimpleBaseModel<DO, CXI, CX>, CX
         }
     }
 
-    override fun writeJsonValue(value: DO, writer: IsJsonLikeWriter, context: CXI?) = this.dataModel.Model.writeJson(
+    override fun writeJsonValue(value: DO, writer: IsJsonLikeWriter, context: CXI?) = this.dataModel.Serializer.writeObjectAsJson(
         value,
         writer,
         this.dataModel.Serializer.transformContext(context)
@@ -86,18 +86,12 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsSimpleBaseModel<DO, CXI, CX>, CX
         this.dataModel.Serializer.calculateObjectProtoBufLength(
             value,
             cacher,
-            transformContext(context, cacher)
-        )
-
-    private fun transformContext(context: CXI?, cacher: WriteCacheWriter) =
-        if (dataModel is ContextualModel<*, *, *, *>) {
             dataModel.Serializer.transformContext(context)?.apply {
-                cacher.addContextToCache(this)
+                if (context !== this) {
+                    cacher.addContextToCache(this)
+                }
             }
-        } else {
-            @Suppress("UNCHECKED_CAST")
-            context as CX?
-        }
+        )
 
     override fun writeTransportBytes(
         value: DO,

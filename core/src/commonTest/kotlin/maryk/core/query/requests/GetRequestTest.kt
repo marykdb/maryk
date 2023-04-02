@@ -122,7 +122,7 @@ class GetRequestTest {
             }
         }
 
-        GetRequest.Model.readJson(reader, this.context)
+        GetRequest.Serializer.readJson(reader, this.context)
             .toDataObject()
             .apply {
                 expect(SimpleMarykModel) { dataModel }

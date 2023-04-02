@@ -1,7 +1,8 @@
-package maryk.core.models
+package maryk.core.models.serializers
 
-import maryk.core.properties.AbstractPropertyDefinitions
+import maryk.core.models.IsNamedDataModel
 import maryk.core.properties.IsDataModelPropertyDefinitions
+import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.AnyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
@@ -12,15 +13,15 @@ import maryk.yaml.YamlWriter
 internal fun <
     DM : IsNamedDataModel<*>,
     P : IsDataModelPropertyDefinitions<DM, *>,
-    P2 : AbstractPropertyDefinitions<DM>
-> AbstractDataModel<DM, P2, *, ContainsDefinitionsContext, ContainsDefinitionsContext>.writeDataModelJson(
+    P2 : IsObjectPropertyDefinitions<DM>
+> ObjectDataModelSerializer<DM, P2, ContainsDefinitionsContext, ContainsDefinitionsContext>.writeDataModelJson(
     writer: IsJsonLikeWriter,
     context: ContainsDefinitionsContext?,
     obj: DM,
     properties: P
 ) {
     writer.writeStartObject()
-    for (def in this.properties) {
+    for (def in this.model) {
         if (def == properties.properties) continue // skip properties to write last
         // Skip name if defined higher
         if (def == properties.name && context != null && context.currentDefinitionName == obj.name) {

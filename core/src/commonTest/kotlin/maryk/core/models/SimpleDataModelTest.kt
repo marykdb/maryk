@@ -40,7 +40,7 @@ internal class SimpleDataModelTest {
                 append(it)
             }
 
-            SimpleMarykModel.Model.writeJson(testValues, writer)
+            SimpleMarykModel.Serializer.writeJson(testValues, writer)
         }
 
         assertEquals("""{"value":"haas"}""".trimIndent(), output)
@@ -52,7 +52,7 @@ internal class SimpleDataModelTest {
             val writer = JsonWriter(pretty = true) {
                 append(it)
             }
-            SimpleMarykModel.Model.writeJson(testValues, writer)
+            SimpleMarykModel.Serializer.writeJson(testValues, writer)
         }
 
         assertEquals(
@@ -72,7 +72,7 @@ internal class SimpleDataModelTest {
                 append(it)
             }
 
-            SimpleMarykModel.Model.writeJson(testValues, writer)
+            SimpleMarykModel.Serializer.writeJson(testValues, writer)
         }
 
         assertEquals(
@@ -142,11 +142,11 @@ internal class SimpleDataModelTest {
             JsonWriter(writer = writer),
             JsonWriter(pretty = true, writer = writer)
         ).forEach { generator ->
-            SimpleMarykModel.Model.writeJson(testValues, generator)
+            SimpleMarykModel.Serializer.writeJson(testValues, generator)
 
             var index = 0
             val reader = { JsonReader(reader = { output[index++] }) }
-            expect(testValues) { SimpleMarykModel.Model.readJson(reader = reader()) }
+            expect(testValues) { SimpleMarykModel.Serializer.readJson(reader = reader()) }
 
             output = ""
         }

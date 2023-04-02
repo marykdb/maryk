@@ -1,7 +1,7 @@
 package maryk.core.properties.graph
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.AbstractObjectDataModel
+import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsRootModel
 import maryk.core.properties.IsValuesPropertyDefinitions
@@ -74,10 +74,13 @@ data class RootPropRefGraph<P : IsRootModel> internal constructor(
                 properties = values(1u)
             )
 
-        override val Model = object : AbstractObjectDataModel<RootPropRefGraph<*>, Companion, ContainsDataModelContext<*>, GraphContext>(
-            properties = Companion,
-        ) {
-            override fun writeJson(obj: RootPropRefGraph<*>, writer: IsJsonLikeWriter, context: GraphContext?) {
+        override val Serializer = object: ObjectDataModelSerializer<RootPropRefGraph<*>, Companion, ContainsDataModelContext<*>, GraphContext>(this) {
+            override fun writeObjectAsJson(
+                obj: RootPropRefGraph<*>,
+                writer: IsJsonLikeWriter,
+                context: GraphContext?,
+                skip: List<IsDefinitionWrapper<*, *, *, RootPropRefGraph<*>>>?
+            ) {
                 writeJsonValues(obj.properties, writer, context)
             }
 
@@ -111,7 +114,7 @@ data class RootPropRefGraph<P : IsRootModel> internal constructor(
                             propertiesList.add(
                                 TypedValue(
                                     Graph,
-                                    PropRefGraph.Model.readJson(reader, context).toDataObject()
+                                    PropRefGraph.Serializer.readJson(reader, context).toDataObject()
                                 )
                             )
                         }

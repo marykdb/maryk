@@ -1,6 +1,5 @@
 package maryk.core.properties
 
-import maryk.core.models.AbstractObjectDataModel
 import maryk.core.models.serializers.IsObjectDataModelSerializer
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
@@ -40,9 +39,8 @@ interface IsObjectPropertyDefinitions<DO: Any>: IsTypedPropertyDefinitions<DO> {
         createValidationUmbrellaException(refGetter) { addException ->
             for (it in this) {
                 try {
-                    @Suppress("UNCHECKED_CAST")
                     it.validate(
-                        newValue = (Model as AbstractObjectDataModel<DO, *, *, *>).getValueWithDefinition(it, dataObject, null),
+                        newValue = Serializer.getValueWithDefinition(it, dataObject, null),
                         parentRefFactory = refGetter
                     )
                 } catch (e: ValidationException) {

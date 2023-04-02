@@ -9,7 +9,7 @@ import maryk.core.query.responses.statuses.IsAddResponseStatus
 import maryk.core.values.SimpleObjectValues
 
 /** Response with [statuses] to an Add request to [dataModel] */
-data class AddResponse<DM : IsRootModel> constructor(
+data class AddResponse<DM : IsRootModel>(
     override val dataModel: DM,
     val statuses: List<IsAddResponseStatus<DM>>
 ) : IsDataModelResponse<DM> {

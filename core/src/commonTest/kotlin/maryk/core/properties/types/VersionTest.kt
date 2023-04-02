@@ -58,15 +58,15 @@ internal class VersionTest {
     @Test
     fun failOnInvalidJson() {
         assertFailsWith<ParseException> {
-            Version.Model.readJson(""""1.2.3.4.5"""")
+            Version.Serializer.readJson(""""1.2.3.4.5"""")
         }
 
         assertFailsWith<ParseException> {
-            Version.Model.readJson(""""Something dirty"""")
+            Version.Serializer.readJson(""""Something dirty"""")
         }
 
         assertFailsWith<InvalidJsonContent> {
-            Version.Model.readJson("1.2.3.4")
+            Version.Serializer.readJson("1.2.3.4")
         }
     }
 }

@@ -1,5 +1,6 @@
 package maryk.core.models.serializers
 
+import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
@@ -8,37 +9,35 @@ import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
-import kotlin.js.JsName
-
-interface IsObjectDataModelSerializer<DO: Any, DM: IsObjectPropertyDefinitions<DO>, in CXI:IsPropertyContext, CX: IsPropertyContext> : IsDataModelSerializer<ObjectValues<DO, DM>, DM, CX> {
-    /**
-     * Calculates the byte length for [dataObject]
-     * The [cacher] caches any values needed to write later.
-     * Optionally pass a [context] to write more complex properties which depend on other properties
-     */
-    fun calculateObjectProtoBufLength(dataObject: DO, cacher: WriteCacheWriter, context: CX? = null): Int
-
-    /**
-     * Write a ProtoBuf from a [dataObject] to [writer] and get
-     * possible cached values from [cacheGetter]
-     * Optionally pass a [context] to write more complex properties which depend on other properties
-     */
-    @JsName("writeProtoBufWithObject")
-    fun writeObjectProtoBuf(
-        dataObject: DO,
-        cacheGetter: WriteCacheReader,
-        writer: (byte: Byte) -> Unit,
-        context: CX? = null
-    )
-
-    /** Transform [context] into context specific to ObjectDataModel. Override for specific implementation */
-    @Suppress("UNCHECKED_CAST")
-    fun transformContext(context: CXI?): CX? = context as CX?
-}
+import maryk.json.IsJsonLikeWriter
 
 open class ObjectDataModelSerializer<DO: Any, DM: IsObjectPropertyDefinitions<DO>, CXI:IsPropertyContext, CX: IsPropertyContext>(
     model: DM,
 ): DataModelSerializer<DO, ObjectValues<DO, DM>, DM, CX>(model), IsObjectDataModelSerializer<DO, DM, CXI, CX> {
+    /**
+     * Write an [obj] of this ObjectDataModel to JSON with [writer]
+     * Optionally pass a [context] when needed for more complex property types
+     */
+    override fun writeObjectAsJson(
+        obj: DO,
+        writer: IsJsonLikeWriter,
+        context: CX?,
+        skip: List<IsDefinitionWrapper<*, *, *, DO>>?
+    ) {
+        writer.writeStartObject()
+        for (definition in this.model) {
+            if (skip != null && skip.contains(definition)) {
+                continue
+            }
+            val value = getValueWithDefinition(definition, obj, context) ?: continue
+
+            definition.capture(context, value)
+
+            writeJsonValue(definition, writer, value, context)
+        }
+        writer.writeEndObject()
+    }
+
     override fun calculateObjectProtoBufLength(dataObject: DO, cacher: WriteCacheWriter, context: CX?): Int {
         var totalByteLength = 0
         for (definition in this.model) {
@@ -67,7 +66,7 @@ open class ObjectDataModelSerializer<DO: Any, DM: IsObjectPropertyDefinitions<DO
         }
     }
 
-    internal open fun getValueWithDefinition(
+    override fun getValueWithDefinition(
         definition: IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>,
         obj: DO,
         context: CX?
@@ -79,4 +78,10 @@ open class ObjectDataModelSerializer<DO: Any, DM: IsObjectPropertyDefinitions<DO
         else ->
             definition.getPropertyAndSerialize(obj, context)
     }
+
+    @Suppress("UNCHECKED_CAST")
+    override fun transformContext(context: CXI?): CX? =
+        if (model is ContextualModel<*, *, *, *>) {
+            (model as ContextualModel<*, *, CXI, CX>).contextTransformer(Unit, context)
+        } else context as CX?
 }

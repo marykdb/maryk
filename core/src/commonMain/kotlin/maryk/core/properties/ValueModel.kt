@@ -1,6 +1,7 @@
 package maryk.core.properties
 
 import maryk.core.models.ValueDataModel
+import maryk.core.models.serializers.ValueDataModelSerializer
 import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.values.ObjectValues
@@ -33,6 +34,9 @@ interface IsValueModel<DO: ValueDataObject, P: IsObjectPropertyDefinitions<DO>>:
 abstract class ValueModel<DO: ValueDataObject, P: ObjectPropertyDefinitions<DO>>(
     objClass: KClass<DO>,
 ): InternalModel<DO, P, IsPropertyContext, IsPropertyContext>(), IsValueModel<DO, P> {
+    @Suppress("UNCHECKED_CAST", "LeakingThis")
+    override val Serializer = object: ValueDataModelSerializer<DO, P>(this as P) {}
+
     abstract override fun invoke(values: ObjectValues<DO, P>): DO
 
     fun toBytes(vararg inputs: Any) =

@@ -1,9 +1,10 @@
 package maryk.core.query.requests
 
-import maryk.core.models.QueryDataModel
+import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.internalMultiType
 import maryk.core.properties.definitions.string
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.values
 import maryk.core.query.RequestContext
@@ -51,10 +52,13 @@ data class CollectRequest<RQ : IsTransportableRequest<RP>, RP : IsResponse>(
                 request = values(2u)
             )
 
-        override val Model: QueryDataModel<AnyCollectRequest, Companion> = object : QueryDataModel<AnyCollectRequest, Companion>(
-            properties = this@Companion,
-        ) {
-            override fun writeJson(obj: AnyCollectRequest, writer: IsJsonLikeWriter, context: RequestContext?) {
+        override val Serializer = object: ObjectDataModelSerializer<CollectRequest<*, *>, Companion, RequestContext, RequestContext>(this) {
+            override fun writeObjectAsJson(
+                obj: CollectRequest<*, *>,
+                writer: IsJsonLikeWriter,
+                context: RequestContext?,
+                skip: List<IsDefinitionWrapper<*, *, *, CollectRequest<*, *>>>?
+            ) {
                 writer.writeStartObject()
                 writer.writeFieldName(obj.name)
                 val typedRequest = request.toSerializable?.invoke(Unit, obj.request, context)!!

@@ -3,7 +3,7 @@ package maryk.core.properties.enum
 import maryk.core.definitions.PrimitiveType.EnumDefinition
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.SerializationException
-import maryk.core.models.AbstractObjectDataModel
+import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.ContextualModel
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.SingleOrListDefinition
@@ -11,6 +11,7 @@ import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.map
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.values
@@ -156,9 +157,7 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
                 unknownCreator = { index, name -> IndexedEnumComparable(index, name) }
             )
 
-        override val Model = object : AbstractObjectDataModel<IndexedEnumDefinition<IndexedEnum>, Model, ContainsDefinitionsContext, EnumNameContext>(
-            properties = IndexedEnumDefinition.Model,
-        ) {
+        override val Serializer = object: ObjectDataModelSerializer<IndexedEnumDefinition<IndexedEnum>, Model, ContainsDefinitionsContext, EnumNameContext>(this) {
             override fun writeJson(
                 values: ObjectValues<IndexedEnumDefinition<IndexedEnum>, Model>,
                 writer: IsJsonLikeWriter,
@@ -167,10 +166,11 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
                 throw SerializationException("Cannot write definitions from Values")
             }
 
-            override fun writeJson(
+            override fun writeObjectAsJson(
                 obj: IndexedEnumDefinition<IndexedEnum>,
                 writer: IsJsonLikeWriter,
-                context: EnumNameContext?
+                context: EnumNameContext?,
+                skip: List<IsDefinitionWrapper<*, *, *, IndexedEnumDefinition<IndexedEnum>>>?
             ) {
                 if (context?.definitionsContext?.enums?.containsKey(obj.name) == true) {
                     // Write a single string name if no options was defined
@@ -182,11 +182,11 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
                     // Only skip when DefinitionsContext was set
                     when {
                         context?.definitionsContext != null && context.definitionsContext.currentDefinitionName == obj.name -> {
-                            super.writeJson(obj, writer, context, skip = listOf(name))
+                            super.writeObjectAsJson(obj, writer, context, skip = listOf(name) + skip.orEmpty())
                             context.definitionsContext.currentDefinitionName = ""
                         }
                         else -> {
-                            super.writeJson(obj, writer, context)
+                            super.writeObjectAsJson(obj, writer, context, skip)
                         }
                     }
                 }

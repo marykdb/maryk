@@ -1,7 +1,8 @@
-package maryk.core.models
+package maryk.core.models.serializers
 
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.SerializationException
+import maryk.core.models.IsNamedDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsDataModelPropertyDefinitions
 import maryk.core.properties.IsMutablePropertyDefinitions

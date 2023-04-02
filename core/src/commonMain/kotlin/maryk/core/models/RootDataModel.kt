@@ -4,6 +4,9 @@ import maryk.core.definitions.MarykPrimitive
 import maryk.core.definitions.PrimitiveType.RootModel
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.SerializationException
+import maryk.core.models.serializers.ObjectDataModelSerializer
+import maryk.core.models.serializers.readDataModelJson
+import maryk.core.models.serializers.writeDataModelJson
 import maryk.core.properties.DefinitionModel
 import maryk.core.properties.IsDataModelPropertyDefinitions
 import maryk.core.properties.IsRootModel
@@ -127,9 +130,7 @@ class RootDataModel<DM : IsValuesPropertyDefinitions>(
                 (properties as MutablePropertyDefinitions<*, IsRootModel>)._model = this as IsValuesDataModel<IsRootModel>
             }
 
-        override val Model = object : AbstractObjectDataModel<RootDataModel<*>, ObjectPropertyDefinitions<RootDataModel<*>>, ContainsDefinitionsContext, ContainsDefinitionsContext>(
-            properties = InternalModel,
-        ) {
+        override val Serializer = object: ObjectDataModelSerializer<RootDataModel<*>, ObjectPropertyDefinitions<RootDataModel<*>>, ContainsDefinitionsContext, ContainsDefinitionsContext>(this){
             override fun writeJson(
                 values: ObjectValues<RootDataModel<*>, ObjectPropertyDefinitions<RootDataModel<*>>>,
                 writer: IsJsonLikeWriter,
@@ -138,13 +139,11 @@ class RootDataModel<DM : IsValuesPropertyDefinitions>(
                 throw SerializationException("Cannot write definitions from Values")
             }
 
-            /**
-             * Overridden to handle earlier definition of keys compared to Properties
-             */
-            override fun writeJson(
+            override fun writeObjectAsJson(
                 obj: RootDataModel<*>,
                 writer: IsJsonLikeWriter,
-                context: ContainsDefinitionsContext?
+                context: ContainsDefinitionsContext?,
+                skip: List<IsDefinitionWrapper<*, *, *, RootDataModel<*>>>?
             ) {
                 this.writeDataModelJson(writer, context, obj, InternalModel)
             }

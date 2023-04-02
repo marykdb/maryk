@@ -1,11 +1,12 @@
 package maryk.core.query.changes
 
 import maryk.core.exceptions.RequestException
-import maryk.core.models.ReferenceMappedDataModel
+import maryk.core.models.serializers.ReferenceMappedDataModelSerializer
 import maryk.core.properties.IsRootModel
 import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.list
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForValues
@@ -83,12 +84,17 @@ data class SetChange internal constructor(
                 setValueChanges = values(1u)
             )
 
-        override val Model = object : ReferenceMappedDataModel<SetChange, SetValueChanges<*>, Companion, SetValueChanges.Companion>(
-            properties = Companion,
+        override val Serializer = object : ReferenceMappedDataModelSerializer<SetChange, SetValueChanges<*>, Companion, SetValueChanges.Companion>(
+            model = this,
             containedDataModel = SetValueChanges,
             referenceProperty = SetValueChanges.reference
         ) {
-            override fun writeJson(obj: SetChange, writer: IsJsonLikeWriter, context: RequestContext?) {
+            override fun writeObjectAsJson(
+                obj: SetChange,
+                writer: IsJsonLikeWriter,
+                context: RequestContext?,
+                skip: List<IsDefinitionWrapper<*, *, *, SetChange>>?
+            ) {
                 writeReferenceValueMap(writer, obj.setValueChanges, context)
             }
         }

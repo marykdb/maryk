@@ -1,6 +1,5 @@
 package maryk.core.properties.definitions
 
-import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsSimpleBaseModel
@@ -18,7 +17,7 @@ interface IsEmbeddedObjectDefinition<DO : Any, out DM : IsSimpleBaseModel<DO, CX
 
     /** Read JSON into ObjectValues */
     fun readJsonToValues(reader: IsJsonLikeReader, context: CXI?): ObjectValues<DO, out IsObjectPropertyDefinitions<DO>> =
-        this.dataModel.Model.readJson(reader, this.dataModel.Serializer.transformContext(context))
+        this.dataModel.Serializer.readJson(reader, this.dataModel.Serializer.transformContext(context))
 
     override fun readJson(reader: IsJsonLikeReader, context: CXI?) =
         this.readJsonToValues(reader, context).toDataObject()
@@ -27,9 +26,8 @@ interface IsEmbeddedObjectDefinition<DO : Any, out DM : IsSimpleBaseModel<DO, CX
         this.readTransportBytesToValues(length, reader, context).toDataObject()
 
     /** Read ProtoBuf into ObjectValues */
-    @Suppress("UNCHECKED_CAST")
     fun readTransportBytesToValues(length: Int, reader: () -> Byte, context: CXI?) =
-        (this.dataModel.Serializer as ObjectDataModelSerializer<DO, out DM, CXI, CX>).readProtoBuf(length, reader, (this.dataModel.Serializer as ObjectDataModelSerializer<DO, out DM, CXI, CX>).transformContext(context))
+        this.dataModel.Serializer.readProtoBuf(length, reader, this.dataModel.Serializer.transformContext(context))
 
     override fun compatibleWith(
         definition: IsPropertyDefinition<*>,

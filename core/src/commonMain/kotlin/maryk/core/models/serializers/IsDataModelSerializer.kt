@@ -4,8 +4,9 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.core.values.IsValues
 
-interface IsDataModelSerializer<V: Any, DM: IsPropertyDefinitions, CX: IsPropertyContext> {
+interface IsDataModelSerializer<V: IsValues<DM>, DM: IsPropertyDefinitions, CX: IsPropertyContext>: IsJsonSerializer<V, CX> {
     /**
      * Calculates the byte length for the DataObject contained in [values]
      * The [cacher] caches any values needed to write later.

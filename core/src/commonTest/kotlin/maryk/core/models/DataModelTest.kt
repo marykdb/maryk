@@ -198,7 +198,7 @@ internal class DataModelTest {
             val writer = JsonWriter {
                 append(it)
             }
-            TestMarykModel.Model.writeJson(testExtendedMarykModelObject, writer)
+            TestMarykModel.Serializer.writeJson(testExtendedMarykModelObject, writer)
         }
 
         assertEquals(JSON, output)
@@ -210,7 +210,7 @@ internal class DataModelTest {
             val writer = JsonWriter(pretty = true) {
                 append(it)
             }
-            TestMarykModel.Model.writeJson(testExtendedMarykModelObject, writer)
+            TestMarykModel.Serializer.writeJson(testExtendedMarykModelObject, writer)
         }
 
 
@@ -255,7 +255,7 @@ internal class DataModelTest {
                 append(it)
             }
 
-            TestMarykModel.Model.writeJson(testExtendedMarykModelObject, writer)
+            TestMarykModel.Serializer.writeJson(testExtendedMarykModelObject, writer)
         }
 
 
@@ -358,7 +358,7 @@ internal class DataModelTest {
         ).forEach { jsonInput ->
             input = jsonInput
             index = 0
-            expect(testExtendedMarykModelObject) { TestMarykModel.Model.readJson(reader = jsonReader()) }
+            expect(testExtendedMarykModelObject) { TestMarykModel.Serializer.readJson(reader = jsonReader()) }
         }
     }
 
@@ -371,12 +371,12 @@ internal class DataModelTest {
             JsonWriter(writer = writer),
             JsonWriter(pretty = true, writer = writer)
         ).forEach { generator ->
-            TestMarykModel.Model.writeJson(testExtendedMarykModelObject, generator)
+            TestMarykModel.Serializer.writeJson(testExtendedMarykModelObject, generator)
 
             var index = 0
             val reader = { JsonReader(reader = { output[index++] }) }
             expect(testExtendedMarykModelObject) {
-                TestMarykModel.Model.readJson(reader = reader())
+                TestMarykModel.Serializer.readJson(reader = reader())
             }
 
             output = ""

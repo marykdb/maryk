@@ -21,12 +21,190 @@ import maryk.core.query.RequestContext
 import maryk.core.values.IsValueItems
 import maryk.core.values.IsValues
 import maryk.core.values.MutableValueItems
+import maryk.json.IllegalJsonOperation
+import maryk.json.IsJsonLikeReader
+import maryk.json.IsJsonLikeWriter
+import maryk.json.JsonReader
+import maryk.json.JsonToken
+import maryk.json.JsonWriter
+import maryk.json.TokenWithType
 import maryk.lib.exceptions.ParseException
+import maryk.yaml.IsYamlReader
+import maryk.yaml.UnknownYamlTag
+import maryk.yaml.YamlWriter
 
 /** Serializer for DataModels */
 open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedPropertyDefinitions<DO>, CX: IsPropertyContext>(
     val model: DM,
 ): IsDataModelSerializer<V, DM, CX> {
+    /**
+     * Write [values] for this DataModel to JSON
+     * Optionally pass a [context] when needed for more complex property types
+     */
+    override fun writeJson(
+        values: V,
+        context: CX?,
+        pretty: Boolean
+    ) = buildString {
+        val writer = JsonWriter(pretty = pretty, ::append)
+        writeJson(values, writer, context)
+    }
+
+    /**
+     * Write [values] for this DataModel to JSON with [writer]
+     * Optionally pass a [context] when needed for more complex property types
+     */
+    override fun writeJson(
+        values: V,
+        writer: IsJsonLikeWriter,
+        context: CX?
+    ) {
+        writer.writeStartObject()
+        for ((index, value) in values) {
+            val definition = model[index] ?: continue
+
+            if (value is Inject<*, *>) {
+                if (writer is YamlWriter) {
+                    writer.writeFieldName(definition.name)
+                    writer.writeTag("!:Inject")
+                } else {
+                    writer.writeFieldName("?${definition.name}")
+                }
+
+                val injectionContext = Inject.Serializer.transformContext(context as RequestContext)
+                Inject.Serializer.writeObjectAsJson(value, writer, injectionContext)
+            } else {
+                definition.capture(context, value)
+                writeJsonValue(definition, writer, value, context)
+            }
+        }
+        writer.writeEndObject()
+    }
+
+    internal fun writeJsonValue(
+        def: IsDefinitionWrapper<in Any, in Any, IsPropertyContext, DO>,
+        writer: IsJsonLikeWriter,
+        value: Any,
+        context: CX?
+    ) {
+        writer.writeFieldName(def.name)
+        def.definition.writeJsonValue(value, writer, context)
+    }
+
+    /**
+     * Read JSON from [json] to a Map with values
+     * Optionally pass a [context] when needed to read more complex property types
+     */
+    override fun readJson(json: String, context: CX?): V {
+        var i = 0
+        val reader = JsonReader { json[i++] }
+        return this.readJson(reader, context)
+    }
+
+    /**
+     * Read JSON from [reader] to a Map with values
+     * Optionally pass a [context] when needed to read more complex property types
+     */
+    override fun readJson(reader: IsJsonLikeReader, context: CX?): V =
+        createValues(context, readJsonToMap(reader, context))
+
+    /**
+     * Read JSON from [reader] to a Map
+     * Optionally pass a [context] when needed to read more complex property types
+     */
+    open fun readJsonToMap(reader: IsJsonLikeReader, context: CX? = null): MutableValueItems {
+        if (reader.currentToken == JsonToken.StartDocument) {
+            reader.nextToken()
+        }
+
+        return if (model.isNotEmpty()) {
+            if (reader.currentToken !is JsonToken.StartObject) {
+                throw IllegalJsonOperation("Expected object at start of JSON, not ${reader.currentToken}")
+            }
+
+            val valueMap = MutableValueItems()
+            reader.nextToken()
+            walkJsonToRead(reader, valueMap, context)
+
+            valueMap
+        } else {
+            reader.nextToken()
+            MutableValueItems()
+        }
+    }
+
+    internal open fun walkJsonToRead(
+        reader: IsJsonLikeReader,
+        values: MutableValueItems,
+        context: CX?
+    ) {
+        walker@ do {
+            val token = reader.currentToken
+            when (token) {
+                is JsonToken.FieldName -> {
+                    var isInject = false
+
+                    val fieldName = token.value?.let {
+                        if (reader is JsonReader && it.startsWith("?")) {
+                            isInject = true
+                            it.substring(1)
+                        } else {
+                            it
+                        }
+                    } ?: throw ParseException("Empty field name not allowed in JSON")
+
+                    val definition = model[fieldName]
+                    if (definition == null) {
+                        reader.skipUntilNextField()
+                        continue@walker
+                    } else {
+                        reader.nextToken()
+
+                        // Skip null values
+                        val valueToken = reader.currentToken as? JsonToken.Value<*>
+                        if (valueToken != null && valueToken.value == null) {
+                            reader.nextToken()
+                            continue@walker
+                        }
+
+                        if (reader is IsYamlReader) {
+                            reader.currentToken.let { yamlToken ->
+                                if (yamlToken is TokenWithType) {
+                                    yamlToken.type.let {
+                                        if (it is UnknownYamlTag) {
+                                            isInject = it.name == ":Inject"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if (isInject) {
+                            val inject = Inject.Serializer.readJson(reader, Inject.Serializer.transformContext(context as RequestContext))
+
+                            values[definition.index] = inject
+                        } else {
+                            val readValue = if (definition is IsEmbeddedObjectDefinition<*, *, *, *>) {
+                                @Suppress("UNCHECKED_CAST")
+                                (definition as IsEmbeddedObjectDefinition<*, *, CX, *>).readJsonToValues(
+                                    reader,
+                                    context
+                                )
+                            } else {
+                                definition.readJson(reader, context)
+                            }
+
+                            values[definition.index] = readValue
+                            definition.capture(context, readValue)
+                        }
+                    }
+                }
+                else -> break@walker
+            }
+            reader.nextToken()
+        } while (token !is JsonToken.Stopped)
+    }
+
     override fun calculateProtoBufLength(values: V, cacher: WriteCacheWriter, context: CX?): Int {
         var totalByteLength = 0
         for (definition in this.model) {

@@ -89,7 +89,7 @@ internal class ObjectDataModelAsValuesTest {
             val writer = JsonWriter {
                 append(it)
             }
-            TestMarykObject.Model.writeJson(testExtendedObject, writer)
+            TestMarykObject.Serializer.writeJson(testExtendedObject, writer)
         }
 
         assertEquals(JSON, output)
@@ -101,7 +101,7 @@ internal class ObjectDataModelAsValuesTest {
             val writer = JsonWriter(pretty = true) {
                 append(it)
             }
-            TestMarykObject.Model.writeJson(testExtendedObject, writer)
+            TestMarykObject.Serializer.writeJson(testExtendedObject, writer)
         }
 
         assertEquals(
@@ -145,7 +145,7 @@ internal class ObjectDataModelAsValuesTest {
                 append(it)
             }
 
-            TestMarykObject.Model.writeJson(testExtendedObject, writer)
+            TestMarykObject.Serializer.writeJson(testExtendedObject, writer)
         }
 
         assertEquals(
@@ -208,7 +208,7 @@ internal class ObjectDataModelAsValuesTest {
         ).forEach { jsonInput ->
             input = jsonInput
             index = 0
-            expect(testExtendedObject) { TestMarykObject.Model.readJson(reader = jsonReader()) }
+            expect(testExtendedObject) { TestMarykObject.Serializer.readJson(reader = jsonReader()) }
         }
     }
 
@@ -221,11 +221,11 @@ internal class ObjectDataModelAsValuesTest {
             JsonWriter(writer = writer),
             JsonWriter(pretty = true, writer = writer)
         ).forEach { generator ->
-            TestMarykObject.Model.writeJson(testExtendedObject, generator)
+            TestMarykObject.Serializer.writeJson(testExtendedObject, generator)
 
             var index = 0
             val reader = { JsonReader(reader = { output[index++] }) }
-            expect(testExtendedObject) { TestMarykObject.Model.readJson(reader = reader()) }
+            expect(testExtendedObject) { TestMarykObject.Serializer.readJson(reader = reader()) }
 
             output = ""
         }

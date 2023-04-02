@@ -1,11 +1,12 @@
 package maryk.core.query.orders
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.QueryDataModel
+import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.enum
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.enum.IndexedEnumDefinition
@@ -86,10 +87,13 @@ data class Order internal constructor(
                 direction = values(2u)
             )
 
-        override val Model: QueryDataModel<Order, Model> = object : QueryDataModel<Order, Model>(
-            Order.Model
-        ) {
-            override fun writeJson(obj: Order, writer: IsJsonLikeWriter, context: RequestContext?) {
+        override val Serializer = object : ObjectDataModelSerializer<Order, Model, RequestContext, RequestContext>(this) {
+            override fun writeObjectAsJson(
+                obj: Order,
+                writer: IsJsonLikeWriter,
+                context: RequestContext?,
+                skip: List<IsDefinitionWrapper<*, *, *, Order>>?
+            ) {
                 if (writer is YamlWriter) {
                     writeJsonOrderValue(
                         obj.propertyReference,
@@ -98,7 +102,7 @@ data class Order internal constructor(
                         context
                     )
                 } else {
-                    super.writeJson(obj, writer, context)
+                    super.writeObjectAsJson(obj, writer, context, skip)
                 }
             }
 

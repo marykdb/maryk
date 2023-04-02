@@ -1,7 +1,7 @@
 package maryk.core.query
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.QueryDataModel
+import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.IsValueDefinition
@@ -76,10 +76,13 @@ data class ValueRange<T : Comparable<T>> internal constructor(
                 inclusiveTo = values(4u)
             )
 
-        override val Model = object : QueryDataModel<ValueRange<*>, Companion>(
-            properties = Companion
-        ) {
-            override fun writeJson(obj: ValueRange<*>, writer: IsJsonLikeWriter, context: RequestContext?) {
+        override val Serializer = object: ObjectDataModelSerializer<ValueRange<*>, Companion, RequestContext, RequestContext>(this) {
+            override fun writeObjectAsJson(
+                obj: ValueRange<*>,
+                writer: IsJsonLikeWriter,
+                context: RequestContext?,
+                skip: List<IsDefinitionWrapper<*, *, *, ValueRange<*>>>?
+            ) {
                 @Suppress("UNCHECKED_CAST")
                 if (writer is YamlWriter) {
                     writer.writeStartArray(true)

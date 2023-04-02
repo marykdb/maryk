@@ -1,11 +1,12 @@
 package maryk.core.query.changes
 
 import maryk.core.exceptions.RequestException
-import maryk.core.models.ReferenceMappedDataModel
+import maryk.core.models.serializers.ReferenceMappedDataModelSerializer
 import maryk.core.properties.IsRootModel
 import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.list
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForValues
@@ -93,12 +94,17 @@ data class IncMapChange internal constructor(
                 valueChanges = values<List<IncMapValueChanges<out Comparable<Any>, out Any>>>(1u)
             )
 
-        override val Model = object : ReferenceMappedDataModel<IncMapChange, IncMapValueChanges<out Comparable<Any>, out Any>, Companion, IncMapValueChanges.Companion>(
-            properties = Companion,
+        override val Serializer = object : ReferenceMappedDataModelSerializer<IncMapChange, IncMapValueChanges<out Comparable<Any>, out Any>, Companion, IncMapValueChanges.Companion>(
+            model = this,
             containedDataModel = IncMapValueChanges,
             referenceProperty = IncMapValueChanges.reference
         ) {
-            override fun writeJson(obj: IncMapChange, writer: IsJsonLikeWriter, context: RequestContext?) {
+            override fun writeObjectAsJson(
+                obj: IncMapChange,
+                writer: IsJsonLikeWriter,
+                context: RequestContext?,
+                skip: List<IsDefinitionWrapper<*, *, *, IncMapChange>>?
+            ) {
                 writeReferenceValueMap(writer, obj.valueChanges, context)
             }
         }

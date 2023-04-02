@@ -2,7 +2,7 @@ package maryk.core.properties.definitions.wrapper
 
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.inject.Inject
-import maryk.core.models.SimpleObjectDataModel
+import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsValuesPropertyDefinitions
 import maryk.core.properties.SimpleObjectModel
@@ -202,13 +202,12 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
             ) ?: throw DefNotFoundException("Property type $type not found")
         }
 
-        override val Model = object: SimpleObjectDataModel<AnyOutDefinitionWrapper, Model>(
-            properties = this@Model,
-        ) {
-            override fun writeJson(
-                obj: AnyOutDefinitionWrapper,
+        override val Serializer = object: ObjectDataModelSerializer<IsDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>, Model, IsPropertyContext, IsPropertyContext>(this) {
+            override fun writeObjectAsJson(
+                obj: IsDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>,
                 writer: IsJsonLikeWriter,
-                context: IsPropertyContext?
+                context: IsPropertyContext?,
+                skip: List<IsDefinitionWrapper<*, *, *, IsDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>>>?
             ) {
                 // When writing YAML, use YAML optimized format with complex field names
                 if (writer is YamlWriter) {
@@ -220,7 +219,7 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
 
                     definition.writeJsonValue(typedDefinition, writer, context)
                 } else {
-                    super.writeJson(obj, writer, context)
+                    super.writeObjectAsJson(obj, writer, context, skip)
                 }
             }
 

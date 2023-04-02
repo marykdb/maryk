@@ -2,10 +2,9 @@ package maryk.core.query.requests
 
 import maryk.core.definitions.Operation.Request
 import maryk.core.inject.InjectWithReference
-import maryk.core.models.SingleTypedValueDataModel
-import maryk.core.models.serializers.ObjectDataModelSerializer
+import maryk.core.models.serializers.SingleValueDataModelSerializer
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.QueryModel
+import maryk.core.properties.SingleValueModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.ListDefinition
@@ -35,7 +34,12 @@ data class Requests internal constructor(
      * From the context of JSON/YAML this object only contains a single property.
      * This is however not true for Protobuf. There this object contains a list of injectables.
      */
-    companion object : QueryModel<Requests, Companion>() {
+    companion object : SingleValueModel<TypedValue<RequestType, Any>, TypedValue<RequestType, Any>, Requests, Companion, RequestContext>(
+        singlePropertyDefinitionGetter = {
+            @Suppress("UNCHECKED_CAST")
+            Companion.requests as IsDefinitionWrapper<TypedValue<RequestType, Any>, TypedValue<RequestType, Any>, RequestContext, Requests>
+        }
+    ) {
         val requests by list(
             index = 1u,
             getter = Requests::requests,
@@ -75,7 +79,19 @@ data class Requests internal constructor(
             injectables = values(2u)
         )
 
-        override val Serializer = object: ObjectDataModelSerializer<Requests, Companion, RequestContext, RequestContext>(this) {
+        override val Serializer = object: SingleValueDataModelSerializer<TypedValue<RequestType, Any>, TypedValue<RequestType, Any>, Requests, Companion, RequestContext>(
+            model = this,
+            singlePropertyDefinitionGetter =  singlePropertyDefinitionGetter
+        ) {
+            /** Inject injectables if it is found on context */
+            private fun injectValues(
+                definition: IsDefinitionWrapper<Any, Any, IsPropertyContext, Requests>,
+                context: RequestContext?,
+                value: Any?
+            ) = if (definition == injectables && context != null) {
+                context.collectedInjects
+            } else value
+
             override fun protoBufLengthToAddForField(
                 value: Any?,
                 definition: IsDefinitionWrapper<Any, Any, IsPropertyContext, Requests>,
@@ -113,34 +129,5 @@ data class Requests internal constructor(
                 return map
             }
         }
-
-        @Suppress("UNCHECKED_CAST")
-        override val Model = object: SingleTypedValueDataModel<TypedValue<RequestType, Any>, Requests, Companion, RequestContext>(
-            properties = this@Companion,
-            singlePropertyDefinitionGetter = { requests as IsDefinitionWrapper<TypedValue<RequestType, Any>, TypedValue<RequestType, Any>, RequestContext, Requests> }
-        ) {
-            override fun createValues(
-                context: RequestContext?,
-                items: IsValueItems
-            ): ObjectValues<Requests, Companion> {
-                val map = super.createValues(context, items)
-
-                val injectables = map.remove(injectables.index) as? List<InjectWithReference>?
-
-                injectables?.forEach {
-                    it.injectInValues(map)
-                }
-
-                return map
-            }
-        }
-        /** Inject injectables if it is found on context */
-        private fun injectValues(
-            definition: IsDefinitionWrapper<Any, Any, IsPropertyContext, Requests>,
-            context: RequestContext?,
-            value: Any?
-        ) = if (definition == injectables && context != null) {
-            context.collectedInjects
-        } else value
     }
 }

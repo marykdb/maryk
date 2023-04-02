@@ -24,7 +24,7 @@ fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : Is
             append(it)
         }
 
-        dataModel.Model.writeJson(value, writer, newContext)
+        dataModel.Serializer.writeObjectAsJson(value, writer, newContext)
     }
 
     if (resetContextBeforeRead) {
@@ -33,7 +33,7 @@ fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : Is
 
     val chars = output.iterator()
     val reader = JsonReader { chars.nextChar() }
-    val converted = dataModel.Model.readJson(reader, newContext).toDataObject()
+    val converted = dataModel.Serializer.readJson(reader, newContext).toDataObject()
 
     checker(converted, value)
 
@@ -54,7 +54,7 @@ fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : Is
             append(it)
         }
 
-        dataModel.Model.writeJson(value, writer, newContext)
+        dataModel.Serializer.writeObjectAsJson(value, writer, newContext)
     }
 
     if (resetContextBeforeRead) {
@@ -69,7 +69,7 @@ fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : Is
             }
         }
     }
-    val converted = dataModel.Model.readJson(reader, newContext).toDataObject()
+    val converted = dataModel.Serializer.readJson(reader, newContext).toDataObject()
 
     checker(converted, value)
 
@@ -90,7 +90,7 @@ fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : Is
             append(it)
         }
 
-        dataModel.Model.writeJson(value, writer, newContext)
+        dataModel.Serializer.writeJson(value, writer, newContext)
     }
 
     if (resetContextBeforeRead) {
@@ -105,7 +105,7 @@ fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : Is
             }
         }
     }
-    val converted = dataModel.Model.readJson(reader, newContext)
+    val converted = dataModel.Serializer.readJson(reader, newContext)
 
     checker(converted, value)
 
@@ -127,7 +127,7 @@ fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : Is
             append(it)
         }
 
-        dataModel.Model.writeJson(value, writer, newContext)
+        dataModel.Serializer.writeJson(value, writer, newContext)
     }
 
     if (resetContextBeforeRead) {
@@ -136,7 +136,7 @@ fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : Is
 
     val chars = output.iterator()
     val reader = JsonReader { chars.nextChar() }
-    val converted = dataModel.Model.readJson(reader, newContext)
+    val converted = dataModel.Serializer.readJson(reader, newContext)
 
     checker(converted, value)
 

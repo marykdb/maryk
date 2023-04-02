@@ -4,6 +4,9 @@ import maryk.core.definitions.MarykPrimitive
 import maryk.core.definitions.PrimitiveType
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.SerializationException
+import maryk.core.models.serializers.ObjectDataModelSerializer
+import maryk.core.models.serializers.readDataModelJson
+import maryk.core.models.serializers.writeDataModelJson
 import maryk.core.properties.DefinitionModel
 import maryk.core.properties.IsDataModelPropertyDefinitions
 import maryk.core.properties.IsValuesPropertyDefinitions
@@ -15,6 +18,7 @@ import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.string
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.MutableValueItems
@@ -66,9 +70,7 @@ open class DataModel<DM : IsValuesPropertyDefinitions>(
                 (properties as MutablePropertyDefinitions<*, IsValuesPropertyDefinitions>)._model = this
             }
 
-        override val Model: DefinitionDataModel<DataModel<*>> = object : DefinitionDataModel<DataModel<*>>(
-            properties = DataModel.Model,
-        ) {
+        override val Serializer = object: ObjectDataModelSerializer<DataModel<*>, ObjectPropertyDefinitions<DataModel<*>>, ContainsDefinitionsContext, ContainsDefinitionsContext>(this) {
             override fun writeJson(
                 values: ObjectValues<DataModel<*>, ObjectPropertyDefinitions<DataModel<*>>>,
                 writer: IsJsonLikeWriter,
@@ -77,7 +79,12 @@ open class DataModel<DM : IsValuesPropertyDefinitions>(
                 throw SerializationException("Cannot write definitions from Values")
             }
 
-            override fun writeJson(obj: DataModel<*>, writer: IsJsonLikeWriter, context: ContainsDefinitionsContext?) {
+            override fun writeObjectAsJson(
+                obj: DataModel<*>,
+                writer: IsJsonLikeWriter,
+                context: ContainsDefinitionsContext?,
+                skip: List<IsDefinitionWrapper<*, *, *, DataModel<*>>>?
+            ) {
                 this.writeDataModelJson(writer, context, obj, DataModel.Model)
             }
 

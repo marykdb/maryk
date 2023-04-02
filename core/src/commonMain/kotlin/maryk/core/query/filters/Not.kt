@@ -1,9 +1,10 @@
 package maryk.core.query.filters
 
-import maryk.core.models.QueryDataModel
+import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.list
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.values
 import maryk.core.query.RequestContext
@@ -38,10 +39,13 @@ data class Not(
                 filters = values<List<IsFilter>>(1u)
             )
 
-        override val Model: QueryDataModel<Not, Companion> = object : QueryDataModel<Not, Companion>(
-            properties = Companion,
-        ) {
-            override fun writeJson(obj: Not, writer: IsJsonLikeWriter, context: RequestContext?) {
+        override val Serializer = object: ObjectDataModelSerializer<Not, Companion, RequestContext, RequestContext>(this) {
+            override fun writeObjectAsJson(
+                obj: Not,
+                writer: IsJsonLikeWriter,
+                context: RequestContext?,
+                skip: List<IsDefinitionWrapper<*, *, *, Not>>?
+            ) {
                 filters.writeJsonValue(
                     filters.getPropertyAndSerialize(obj, context)
                         ?: throw ParseException("Missing filters in Not filter"),

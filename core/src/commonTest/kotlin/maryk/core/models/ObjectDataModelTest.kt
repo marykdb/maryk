@@ -201,7 +201,7 @@ internal class ObjectDataModelTest {
                 append(it)
             }
 
-            TestMarykObject.Model.writeJson(testExtendedObject, writer)
+            TestMarykObject.Serializer.writeObjectAsJson(testExtendedObject, writer)
         }
 
         assertEquals(JSON, output)
@@ -213,7 +213,7 @@ internal class ObjectDataModelTest {
             val writer = JsonWriter(pretty = true) {
                 append(it)
             }
-            TestMarykObject.Model.writeJson(testExtendedObject, writer)
+            TestMarykObject.Serializer.writeObjectAsJson(testExtendedObject, writer)
         }
 
         assertEquals(
@@ -257,7 +257,7 @@ internal class ObjectDataModelTest {
                 append(it)
             }
 
-            TestMarykObject.Model.writeJson(testExtendedObject, writer)
+            TestMarykObject.Serializer.writeObjectAsJson(testExtendedObject, writer)
         }
 
         assertEquals(
@@ -333,7 +333,7 @@ internal class ObjectDataModelTest {
         ).forEach { jsonInput ->
             input = jsonInput
             index = 0
-            expect(testExtendedObject) { TestMarykObject.Model.readJson(reader = jsonReader()).toDataObject() }
+            expect(testExtendedObject) { TestMarykObject.Serializer.readJson(reader = jsonReader()).toDataObject() }
         }
     }
 
@@ -346,11 +346,11 @@ internal class ObjectDataModelTest {
             JsonWriter(writer = writer),
             JsonWriter(pretty = true, writer = writer)
         ).forEach { generator ->
-            TestMarykObject.Model.writeJson(testExtendedObject, generator)
+            TestMarykObject.Serializer.writeObjectAsJson(testExtendedObject, generator)
 
             var index = 0
             val reader = { JsonReader(reader = { output[index++] }) }
-            expect(testExtendedObject) { TestMarykObject.Model.readJson(reader = reader()).toDataObject() }
+            expect(testExtendedObject) { TestMarykObject.Serializer.readJson(reader = reader()).toDataObject() }
 
             output = ""
         }

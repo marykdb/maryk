@@ -1,9 +1,10 @@
 package maryk.core.query.filters
 
-import maryk.core.models.QueryDataModel
+import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.QueryModel
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.list
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.values
 import maryk.core.query.RequestContext
@@ -38,10 +39,13 @@ data class Or(
                 filters = values<List<IsFilter>>(1u)
             )
 
-        override val Model: QueryDataModel<Or, Companion> = object : QueryDataModel<Or, Companion>(
-            properties = Companion,
-        ) {
-            override fun writeJson(obj: Or, writer: IsJsonLikeWriter, context: RequestContext?) {
+        override val Serializer = object: ObjectDataModelSerializer<Or, Companion, RequestContext, RequestContext>(this) {
+            override fun writeObjectAsJson(
+                obj: Or,
+                writer: IsJsonLikeWriter,
+                context: RequestContext?,
+                skip: List<IsDefinitionWrapper<*, *, *, Or>>?
+            ) {
                 filters.writeJsonValue(
                     filters.getPropertyAndSerialize(obj, context)
                         ?: throw ParseException("Missing filters in Or"),

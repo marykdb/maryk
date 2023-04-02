@@ -1,9 +1,10 @@
 package maryk.core.properties.types
 
-import maryk.core.models.ValueDataModel
+import maryk.core.models.serializers.ValueDataModelSerializer
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ValueModel
 import maryk.core.properties.definitions.number
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.types.numeric.UInt16
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
@@ -45,11 +46,13 @@ data class Version(
             patch = values(3u)
         )
 
-        override val Model = object: ValueDataModel<Version, Companion>(
-            name = this::class.simpleName!!,
-            properties = this@Companion,
-        ) {
-            override fun writeJson(obj: Version, writer: IsJsonLikeWriter, context: IsPropertyContext?) {
+        override val Serializer = object: ValueDataModelSerializer<Version, Companion>(this) {
+            override fun writeObjectAsJson(
+                obj: Version,
+                writer: IsJsonLikeWriter,
+                context: IsPropertyContext?,
+                skip: List<IsDefinitionWrapper<*, *, *, Version>>?
+            ) {
                 writer.writeString(obj.toString())
             }
 

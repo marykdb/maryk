@@ -640,7 +640,7 @@ internal class RootDataModelTest {
         newContext.dataModels["TestValueObject"] = { TestValueObject }
         newContext.dataModels["EmbeddedMarykModel"] = { EmbeddedMarykModel }
 
-        RootDataModel.Model.Model.readJson(reader, newContext).toDataObject().apply {
+        RootDataModel.Model.Serializer.readJson(reader, newContext).toDataObject().apply {
             assertEquals("SimpleModel", name)
 
             properties["string"]!!.let {

@@ -8,8 +8,8 @@ import maryk.core.definitions.PrimitiveType.ValueModel
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.DataModel
 import maryk.core.models.RootDataModel
-import maryk.core.models.SingleValueDataModel
 import maryk.core.models.ValueDataModel
+import maryk.core.models.serializers.SingleValueDataModelSerializer
 import maryk.core.properties.SingleValueModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
@@ -136,8 +136,8 @@ data class Definitions(
             definitions = values(1u)
         )
 
-        override val Model = object: SingleValueDataModel<List<TypedValue<PrimitiveType, MarykPrimitive>>, List<MarykPrimitive>, Definitions, Companion, ContainsDefinitionsContext>(
-            properties = Companion,
+        override val Serializer = object: SingleValueDataModelSerializer<List<TypedValue<PrimitiveType, MarykPrimitive>>, List<MarykPrimitive>, Definitions, Companion, ContainsDefinitionsContext>(
+            model = this,
             singlePropertyDefinitionGetter = { definitions }
         ) {
             override fun writeJsonValue(

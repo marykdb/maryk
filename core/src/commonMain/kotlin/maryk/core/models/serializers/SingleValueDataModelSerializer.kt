@@ -1,4 +1,4 @@
-package maryk.core.models
+package maryk.core.models.serializers
 
 import maryk.core.properties.IsObjectPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
@@ -8,21 +8,13 @@ import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
-import maryk.json.JsonToken.StartDocument
+import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
-typealias SingleTypedValueDataModel<T, DO, P, CX> = SingleValueDataModel<T, T, DO, P, CX>
-
-/**
- * ObjectDataModel of type [DO] with [properties] definitions with a single property to contain
- * query actions so they can be validated and transported.
- *
- * In JSON/YAML this model is represented as just that property.
- */
-abstract class SingleValueDataModel<T : Any, TO : Any, DO : Any, P : IsObjectPropertyDefinitions<DO>, CX : IsPropertyContext>(
-    properties: P,
+open class SingleValueDataModelSerializer<T : Any, TO : Any, DO : Any, P : IsObjectPropertyDefinitions<DO>, CX : IsPropertyContext>(
+    model: P,
     singlePropertyDefinitionGetter: () -> IsDefinitionWrapper<T, out TO, CX, DO>
-) : AbstractObjectDataModel<DO, P, CX, CX>(properties) {
+) : ObjectDataModelSerializer<DO, P, CX, CX>(model) {
     private val singlePropertyDefinition by lazy(singlePropertyDefinitionGetter)
 
     override fun writeJson(values: ObjectValues<DO, P>, writer: IsJsonLikeWriter, context: CX?) {
@@ -31,7 +23,12 @@ abstract class SingleValueDataModel<T : Any, TO : Any, DO : Any, P : IsObjectPro
         writeJsonValue(value, writer, context)
     }
 
-    override fun writeJson(obj: DO, writer: IsJsonLikeWriter, context: CX?) {
+    override fun writeObjectAsJson(
+        obj: DO,
+        writer: IsJsonLikeWriter,
+        context: CX?,
+        skip: List<IsDefinitionWrapper<*, *, *, DO>>?
+    ) {
         val value = singlePropertyDefinition.getPropertyAndSerialize(obj, context)
             ?: throw ParseException("Missing ${singlePropertyDefinition.name} value")
         writeJsonValue(value, writer, context)
@@ -43,13 +40,13 @@ abstract class SingleValueDataModel<T : Any, TO : Any, DO : Any, P : IsObjectPro
     }
 
     override fun readJson(reader: IsJsonLikeReader, context: CX?): ObjectValues<DO, P> {
-        if (reader.currentToken == StartDocument) {
+        if (reader.currentToken == JsonToken.StartDocument) {
             reader.nextToken()
         }
 
         val value = readJsonValue(reader, context)
 
-        return this.properties.values(context as? RequestContext) {
+        return model.values(context as? RequestContext) {
             mapNonNulls(
                 singlePropertyDefinition withSerializable value
             )

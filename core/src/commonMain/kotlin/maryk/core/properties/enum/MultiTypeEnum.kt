@@ -1,7 +1,7 @@
 package maryk.core.properties.enum
 
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.models.AbstractObjectDataModel
+import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.SimpleObjectModel
@@ -14,6 +14,7 @@ import maryk.core.properties.definitions.mapOfPropertyDefEmbeddedObjectDefinitio
 import maryk.core.properties.definitions.number
 import maryk.core.properties.definitions.set
 import maryk.core.properties.definitions.string
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.values
@@ -81,13 +82,12 @@ interface MultiTypeEnum<T: Any>: TypeEnum<T> {
             )
         }
 
-        override val Model = object : AbstractObjectDataModel<MultiTypeEnum<*>, ObjectPropertyDefinitions<MultiTypeEnum<*>>, IsPropertyContext, IsPropertyContext>(
-            properties = MultiTypeEnum.Model,
-        ) {
-            override fun writeJson(
+        override val Serializer = object: ObjectDataModelSerializer<MultiTypeEnum<*>, ObjectPropertyDefinitions<MultiTypeEnum<*>>, IsPropertyContext, IsPropertyContext>(this) {
+            override fun writeObjectAsJson(
                 obj: MultiTypeEnum<*>,
                 writer: IsJsonLikeWriter,
-                context: IsPropertyContext?
+                context: IsPropertyContext?,
+                skip: List<IsDefinitionWrapper<*, *, *, MultiTypeEnum<*>>>?
             ) {
                 // When writing YAML, use YAML optimized format with complex field names
                 if (writer is YamlWriter) {
@@ -99,7 +99,7 @@ interface MultiTypeEnum<T: Any>: TypeEnum<T> {
 
                     definition.writeJsonValue(typedDefinition, writer, context)
                 } else {
-                    super.writeJson(obj, writer, context)
+                    super.writeObjectAsJson(obj, writer, context, skip)
                 }
             }
 

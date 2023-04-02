@@ -1,6 +1,5 @@
 package maryk.core.properties
 
-import maryk.core.models.QueryDataModel
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.wrapper.ContextualDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
@@ -19,9 +18,4 @@ interface IsReferenceValuePairModel<R : DefinedByReference<*>, T: Any, TO: Any, 
 abstract class ReferenceValuePairModel<R : DefinedByReference<*>, P: ReferenceValuePairModel<R, P, T, TO, W>, T: Any, TO: Any, W: IsDefinitionWrapper<T, TO, RequestContext, R>>
     : InternalModel<R, P, RequestContext, RequestContext>(), IsReferenceValuePairModel<R, T, TO, W> {
     abstract override fun invoke(values: ObjectValues<R, P>): R
-
-    @Suppress("UNCHECKED_CAST")
-    override val Model = object: QueryDataModel<R, P>(
-        this@ReferenceValuePairModel as P,
-    ) {}
 }

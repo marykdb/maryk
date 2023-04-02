@@ -34,10 +34,10 @@ data class ContextualEmbeddedObjectDefinition<CX : IsPropertyContext>(
     }
 
     override fun writeJsonValue(value: Any, writer: IsJsonLikeWriter, context: CX?) =
-        contextualResolver(Unit, context).Model.writeJson(value, writer, context)
+        contextualResolver(Unit, context).Serializer.writeObjectAsJson(value, writer, context)
 
     override fun readJson(reader: IsJsonLikeReader, context: CX?) =
-        contextualResolver(Unit, context).Model.readJson(reader, context).toDataObject()
+        contextualResolver(Unit, context).Serializer.readJson(reader, context).toDataObject()
 
     override fun calculateTransportByteLength(value: Any, cacher: WriteCacheWriter, context: CX?) =
         contextualResolver(Unit, context).Serializer.calculateObjectProtoBufLength(value, cacher, context)

@@ -44,10 +44,10 @@ internal data class ContextualEmbeddedValuesDefinition<CX : IsPropertyContext>(
     }
 
     override fun writeJsonValue(value: ValuesImpl, writer: IsJsonLikeWriter, context: CX?) =
-        contextualResolver(Unit, context).Model.writeJson(value, writer, context)
+        contextualResolver(Unit, context).Serializer.writeJson(value, writer, context)
 
     override fun readJson(reader: IsJsonLikeReader, context: CX?) =
-        contextualResolver(Unit, context).Model.readJson(reader, context)
+        contextualResolver(Unit, context).Serializer.readJson(reader, context)
 
     override fun calculateTransportByteLength(value: ValuesImpl, cacher: WriteCacheWriter, context: CX?) =
         contextualResolver(Unit, context).Serializer.calculateProtoBufLength(value, cacher, null)

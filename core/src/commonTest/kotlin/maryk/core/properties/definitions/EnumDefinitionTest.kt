@@ -183,7 +183,7 @@ internal class EnumDefinitionTest {
                 default = V2
             )
         ) {
-            EnumDefinition.Model.Model.readJson(reader, context).toDataObject()
+            EnumDefinition.Model.Serializer.readJson(reader, context).toDataObject()
         }
     }
 

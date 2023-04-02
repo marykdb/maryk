@@ -1,4 +1,4 @@
-package maryk.core.models
+package maryk.core.models.serializers
 
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -16,19 +16,14 @@ import maryk.core.values.ValueItems
 import maryk.json.IllegalJsonOperation
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
-import maryk.json.JsonToken.FieldName
-import maryk.json.JsonToken.NullValue
-import maryk.json.JsonToken.StartDocument
-import maryk.json.JsonToken.StartObject
-import maryk.json.JsonToken.Stopped
+import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
-/** For data models which contains only reference pairs */
-abstract class ReferenceMappedDataModel<DO : Any, CDO : DefinedByReference<*>, DM : ObjectPropertyDefinitions<DO>, CP : ObjectPropertyDefinitions<CDO>>(
-    properties: DM,
+open class ReferenceMappedDataModelSerializer<DO : Any, CDO : DefinedByReference<*>, DM : ObjectPropertyDefinitions<DO>, CP : ObjectPropertyDefinitions<CDO>>(
+    model: DM,
     private val containedDataModel: QueryModel<CDO, CP>,
     private val referenceProperty: ContextualDefinitionWrapper<AnyPropertyReference, AnyPropertyReference, RequestContext, ContextualPropertyReferenceDefinition<RequestContext>, CDO>
-) : QueryDataModel<DO, DM>(properties) {
+) : ObjectDataModelSerializer<DO, DM, RequestContext, RequestContext>(model) {
 
     /** Write a values to [writer] with references mapped to the internal model for [items] within [context] */
     internal fun writeReferenceValueMap(
@@ -67,11 +62,11 @@ abstract class ReferenceMappedDataModel<DO : Any, CDO : DefinedByReference<*>, D
     }
 
     override fun readJson(reader: IsJsonLikeReader, context: RequestContext?): ObjectValues<DO, DM> {
-        if (reader.currentToken == StartDocument) {
+        if (reader.currentToken == JsonToken.StartDocument) {
             reader.nextToken()
         }
 
-        if (reader.currentToken !is StartObject) {
+        if (reader.currentToken !is JsonToken.StartObject) {
             throw IllegalJsonOperation("Expected object at start of JSON")
         }
 
@@ -82,7 +77,7 @@ abstract class ReferenceMappedDataModel<DO : Any, CDO : DefinedByReference<*>, D
         walker@ do {
             val token = reader.currentToken
             when (token) {
-                is FieldName -> {
+                is JsonToken.FieldName -> {
                     val value = token.value ?: throw ParseException("Empty field name not allowed in JSON")
 
                     val valueMap = MutableValueItems()
@@ -94,13 +89,13 @@ abstract class ReferenceMappedDataModel<DO : Any, CDO : DefinedByReference<*>, D
 
                     reader.nextToken()
 
-                    if (reader.currentToken != NullValue) {
-                        if (reader.currentToken !is StartObject) {
+                    if (reader.currentToken != JsonToken.NullValue) {
+                        if (reader.currentToken !is JsonToken.StartObject) {
                             throw IllegalJsonOperation("Expected object below reference")
                         }
                         reader.nextToken()
 
-                        this.containedDataModel.Model.walkJsonToRead(reader, valueMap, context)
+                        this.containedDataModel.Serializer.walkJsonToRead(reader, valueMap, context)
                     }
 
                     val dataObjectMap = this.containedDataModel.values(context) {
@@ -113,9 +108,9 @@ abstract class ReferenceMappedDataModel<DO : Any, CDO : DefinedByReference<*>, D
                 else -> break@walker
             }
             reader.nextToken()
-        } while (token !is Stopped)
+        } while (token !is JsonToken.Stopped)
 
-        return this.properties.values(context) {
+        return model.values(context) {
             ValueItems(
                 referenceProperty withNotNull items
             )

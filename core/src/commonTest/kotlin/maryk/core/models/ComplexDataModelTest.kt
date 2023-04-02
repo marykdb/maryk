@@ -28,7 +28,7 @@ internal class ComplexDataModelMapTest {
             val writer = JsonWriter(pretty = true) {
                 append(it)
             }
-            ComplexModel.Model.writeJson(testComplexMap, writer)
+            ComplexModel.Serializer.writeJson(testComplexMap, writer)
         }
 
         assertEquals(
@@ -64,7 +64,7 @@ internal class ComplexDataModelMapTest {
 
         var index = 0
         val reader = { JsonReader(reader = { output[index++] }) }
-        expect(testComplexMap) { ComplexModel.Model.readJson(reader = reader()) }
+        expect(testComplexMap) { ComplexModel.Serializer.readJson(reader = reader()) }
     }
 
     @Test
@@ -74,7 +74,7 @@ internal class ComplexDataModelMapTest {
                 append(it)
             }
 
-            ComplexModel.Model.writeJson(testComplexMap, writer)
+            ComplexModel.Serializer.writeJson(testComplexMap, writer)
         }
 
         assertEquals(

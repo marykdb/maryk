@@ -1,7 +1,7 @@
 package maryk.core.properties
 
 import maryk.core.exceptions.SerializationException
-import maryk.core.models.QueryDataModel
+import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
@@ -30,9 +30,7 @@ abstract class ReferenceValuePairsModel<DO: Any, P: ReferenceValuePairsModel<DO,
     abstract override fun invoke(values: ObjectValues<DO, P>): DO
 
     @Suppress("UNCHECKED_CAST", "LeakingThis")
-    override val Model = object: QueryDataModel<DO, P>(
-        properties = this@ReferenceValuePairsModel as P,
-    ) {
+    override val Serializer = object: ObjectDataModelSerializer<DO, P, RequestContext, RequestContext>(this as P) {
         override fun writeJson(
             values: ObjectValues<DO, P>,
             writer: IsJsonLikeWriter,
@@ -42,9 +40,14 @@ abstract class ReferenceValuePairsModel<DO: Any, P: ReferenceValuePairsModel<DO,
             writer.writeJsonTypePairs(referenceTypePairs, context)
         }
 
-        override fun writeJson(obj: DO, writer: IsJsonLikeWriter, context: RequestContext?) {
+        override fun writeObjectAsJson(
+            obj: DO,
+            writer: IsJsonLikeWriter,
+            context: RequestContext?,
+            skip: List<IsDefinitionWrapper<*, *, *, DO>>?
+        ) {
             @Suppress("UNCHECKED_CAST")
-            val pairs = properties[1u]?.getter?.invoke(obj) as? List<R>
+            val pairs = model[1u]?.getter?.invoke(obj) as? List<R>
                 ?: throw SerializationException("No pairs defined on $obj")
 
             writer.writeJsonTypePairs(pairs, context)
@@ -98,7 +101,7 @@ abstract class ReferenceValuePairsModel<DO: Any, P: ReferenceValuePairsModel<DO,
                         val value = pairModel.value.readJson(reader, context) as TO?
 
                         listOfTypePairs.add(
-                            properties.pairModel.values {
+                            model.pairModel.values {
                                 mapNonNulls(
                                     this@ReferenceValuePairsModel.pairModel.reference with reference,
                                     this@ReferenceValuePairsModel.pairModel.value with value
@@ -111,9 +114,9 @@ abstract class ReferenceValuePairsModel<DO: Any, P: ReferenceValuePairsModel<DO,
                 reader.nextToken()
             } while (token !is JsonToken.Stopped)
 
-            return this.properties.values(context) {
+            return model.values(context) {
                 mapNonNulls(
-                    properties.referenceValuePairs withSerializable listOfTypePairs
+                    model.referenceValuePairs withSerializable listOfTypePairs
                 )
             }
         }

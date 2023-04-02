@@ -93,4 +93,4 @@ data class Values<DM : IsValuesPropertyDefinitions> internal constructor(
 fun <V: Values<P>, DO: Any, DM: AbstractDataModel<DO, P, V, *, *>, P: TypedValuesModel<DM, P>> V.toJson(
     pretty: Boolean = false
 ): String =
-    this.dataModel.Model.writeJson(this, pretty = pretty)
+    this.dataModel.Serializer.writeJson(this, pretty = pretty)

@@ -3,8 +3,8 @@ package maryk.core.values
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.inject.AnyInject
-import maryk.core.models.AbstractDataModel
 import maryk.core.models.IsNamedDataModel
+import maryk.core.models.serializers.IsDataModelSerializer
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsSimpleBaseModel
 import maryk.core.properties.IsTypedPropertyDefinitions
@@ -311,7 +311,7 @@ fun <V: AbstractValues<DO, DM>, DO: Any, DM: IsSimpleBaseModel<DO, *, CX>, CX: I
     context: CX? = null,
     pretty: Boolean = false
 ): String =
-    (this.dataModel.Model as AbstractDataModel<DO, DM, V, *, CX>).writeJson(this, context = context, pretty = pretty)
+    (this.dataModel.Serializer as IsDataModelSerializer<V, DM, CX>).writeJson(this, context = context, pretty = pretty)
 
 /** Get property from values with wrapper in [getProperty] and convert it to native usage */
 inline operator fun <DO : Any, DM : IsTypedPropertyDefinitions<DO>, TI : Any, reified TO : Any> AbstractValues<DO, DM>?.div(getProperty: DM.() -> IsDefinitionWrapper<TI, TO, *, DO>): TO? {

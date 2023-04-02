@@ -1,7 +1,8 @@
 package maryk.core.properties
 
-import maryk.core.models.QueryDataModel
+import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.definitions.IsValueDefinition
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ListDefinitionWrapper
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.query.RequestContext
@@ -19,11 +20,14 @@ abstract class ReferencesModel<DO: Any, P: ReferencesModel<DO, P>>(
 
     abstract override fun invoke(values: ObjectValues<DO, P>): DO
 
-    @Suppress("UNCHECKED_CAST")
-    override val Model = object: QueryDataModel<DO, P>(
-        this@ReferencesModel as P,
-    ) {
-        override fun writeJson(obj: DO, writer: IsJsonLikeWriter, context: RequestContext?) {
+    @Suppress("UNCHECKED_CAST", "LeakingThis")
+    override val Serializer = object: ObjectDataModelSerializer<DO, P, RequestContext, RequestContext>(this as P) {
+        override fun writeObjectAsJson(
+            obj: DO,
+            writer: IsJsonLikeWriter,
+            context: RequestContext?,
+            skip: List<IsDefinitionWrapper<*, *, *, DO>>?
+        ) {
             writer.writeJsonReferences(referencesGetter(obj), context)
         }
 
@@ -32,11 +36,11 @@ abstract class ReferencesModel<DO: Any, P: ReferencesModel<DO, P>>(
             context: RequestContext?
         ) {
             if (references.size == 1) {
-                properties.references.definition.valueDefinition.writeJsonValue(references[0], this, context)
+                model.references.definition.valueDefinition.writeJsonValue(references[0], this, context)
             } else {
                 writeStartArray()
                 for (it in references) {
-                    properties.references.definition.valueDefinition.writeJsonValue(it, this, context)
+                    model.references.definition.valueDefinition.writeJsonValue(it, this, context)
                 }
                 writeEndArray()
             }
@@ -56,8 +60,8 @@ abstract class ReferencesModel<DO: Any, P: ReferencesModel<DO, P>>(
             val valueMap = when (currentToken) {
                 is JsonToken.Value<*> -> {
                     ValueItems(
-                        properties.references withNotNull listOf(
-                            (properties.references.definition.valueDefinition as IsValueDefinition<*, RequestContext>).fromString(
+                        model.references withNotNull listOf(
+                            (model.references.definition.valueDefinition as IsValueDefinition<*, RequestContext>).fromString(
                                 currentToken.value as String,
                                 context
                             )
@@ -66,7 +70,7 @@ abstract class ReferencesModel<DO: Any, P: ReferencesModel<DO, P>>(
                 }
                 is JsonToken.StartArray -> {
                     ValueItems(
-                        properties.references withNotNull properties.references.readJson(reader, context)
+                        model.references withNotNull model.references.readJson(reader, context)
                     )
                 }
                 else -> throw ParseException("Expected a list or a single property reference in Exists filter")

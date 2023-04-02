@@ -1,7 +1,7 @@
 package maryk.core.properties.graph
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.AbstractObjectDataModel
+import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.ContextualModel
 import maryk.core.properties.IsPropertyContext
@@ -126,10 +126,13 @@ data class PropRefGraph<P : IsValuesPropertyDefinitions, PS : IsValuesPropertyDe
                 properties = values(2u)
             )
 
-        override val Model = object : AbstractObjectDataModel<PropRefGraph<*, *>, Companion, ContainsDataModelContext<*>, GraphContext>(
-            properties = Companion,
-        ) {
-            override fun writeJson(obj: PropRefGraph<*, *>, writer: IsJsonLikeWriter, context: GraphContext?) {
+        override val Serializer = object: ObjectDataModelSerializer<PropRefGraph<*, *>, Companion, ContainsDataModelContext<*>, GraphContext>(this) {
+            override fun writeObjectAsJson(
+                obj: PropRefGraph<*, *>,
+                writer: IsJsonLikeWriter,
+                context: GraphContext?,
+                skip: List<IsDefinitionWrapper<*, *, *, PropRefGraph<*, *>>>?
+            ) {
                 writeJsonValues(obj.parent.ref(), obj.properties, writer, context)
             }
 
@@ -184,7 +187,7 @@ data class PropRefGraph<P : IsValuesPropertyDefinitions, PS : IsValuesPropertyDe
                 while (currentToken != EndArray && currentToken !is Stopped) {
                     when (currentToken) {
                         is StartObject -> {
-                            val newContext = Serializer.transformContext(context)
+                            val newContext = transformContext(context)
 
                             propertiesValue.add(
                                 TypedValue(
@@ -195,7 +198,7 @@ data class PropRefGraph<P : IsValuesPropertyDefinitions, PS : IsValuesPropertyDe
                         }
                         is Value<*> -> {
                             val multiTypeDefinition =
-                                PropRefGraph.properties.valueDefinition as IsMultiTypeDefinition<PropRefGraphType, IsTransportablePropRefGraphNode, GraphContext>
+                                properties.valueDefinition as IsMultiTypeDefinition<PropRefGraphType, IsTransportablePropRefGraphNode, GraphContext>
 
                             propertiesValue.add(
                                 TypedValue(
@@ -234,7 +237,7 @@ internal fun writePropertiesToJson(
     writer.writeStartArray()
     for (graphable in transformed) {
         when (val value = graphable.value) {
-            is PropRefGraph<*, *> -> PropRefGraph.Model.writeJson(
+            is PropRefGraph<*, *> -> PropRefGraph.Serializer.writeObjectAsJson(
                 value, writer, context
             )
             is IsDefinitionWrapper<*, *, *, *> -> {

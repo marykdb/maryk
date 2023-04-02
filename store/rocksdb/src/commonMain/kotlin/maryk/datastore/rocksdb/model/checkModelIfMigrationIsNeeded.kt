@@ -1,21 +1,21 @@
 package maryk.datastore.rocksdb.model
 
 import maryk.core.exceptions.StorageException
+import maryk.core.models.IsValuesDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.models.definitions.RootDataModelDefinition
 import maryk.core.models.migration.MigrationStatus
 import maryk.core.models.migration.MigrationStatus.NewModel
 import maryk.core.models.migration.MigrationStatus.UpToDate
-import maryk.core.models.IsValuesDataModel
-import maryk.core.models.RootDataModel
 import maryk.core.properties.types.Version
 import maryk.core.query.DefinitionsConversionContext
 import maryk.rocksdb.ColumnFamilyHandle
 import maryk.rocksdb.RocksDB
 
-fun <P: IsValuesDataModel> checkModelIfMigrationIsNeeded(
+fun <DM: IsValuesDataModel> checkModelIfMigrationIsNeeded(
     rocksDB: RocksDB,
     modelColumnFamily: ColumnFamilyHandle,
-    dataModel: RootDataModel<P>,
+    dataModel: RootDataModel<DM>,
     onlyCheckVersion: Boolean
 ): MigrationStatus {
     val name = rocksDB.get(modelColumnFamily, modelNameKey)?.decodeToString()

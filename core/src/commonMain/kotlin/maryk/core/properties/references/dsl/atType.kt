@@ -2,6 +2,7 @@ package maryk.core.properties.references.dsl
 
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.IsValuesDataModel
+import maryk.core.models.invoke
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsMapDefinition
@@ -9,7 +10,6 @@ import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.enum.TypeEnum
-import maryk.core.models.invoke
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
@@ -19,9 +19,9 @@ import kotlin.jvm.JvmName
 
 /** Specific extension to support fetching deeper references on multi types by [type] */
 @JvmName("atEmbedType")
-fun <P : IsValuesDataModel, T : Any, R : IsPropertyReference<T, IsDefinitionWrapper<T, *, *, *>, *>> IsMultiTypeDefinition<*, *, *>.atType(
-    type: TypeEnum<Values<P>>,
-    referenceGetter: P.() -> (AnyOutPropertyReference?) -> R
+fun <DM : IsValuesDataModel, T : Any, R : IsPropertyReference<T, IsDefinitionWrapper<T, *, *, *>, *>> IsMultiTypeDefinition<*, *, *>.atType(
+    type: TypeEnum<Values<DM>>,
+    referenceGetter: DM.() -> (AnyOutPropertyReference?) -> R
 ): (AnyOutPropertyReference?) -> R =
     @Suppress("UNCHECKED_CAST")
     {
@@ -32,7 +32,7 @@ fun <P : IsValuesDataModel, T : Any, R : IsPropertyReference<T, IsDefinitionWrap
         } else it
 
         val typedValueRef = multiTypeDef.typedValueRef(type, parent as CanHaveComplexChildReference<*, *, *, *>)
-        (multiTypeDef.definition(type) as EmbeddedValuesDefinition<P>).dataModel(
+        (multiTypeDef.definition(type) as EmbeddedValuesDefinition<DM>).dataModel(
             typedValueRef,
             referenceGetter
         )

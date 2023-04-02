@@ -9,11 +9,11 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForValues
 
 /** Defines a graph element */
-interface IsPropRefGraph<in P : IsDataModel> {
-    val properties: List<IsPropRefGraphNode<P>>
+interface IsPropRefGraph<in DM : IsDataModel> {
+    val properties: List<IsPropRefGraphNode<DM>>
 
     /** Select a node by [index] or return null if not exists */
-    fun selectNodeOrNull(index: UInt): IsPropRefGraphNode<P>? {
+    fun selectNodeOrNull(index: UInt): IsPropRefGraphNode<DM>? {
         val propertyIndex = this.properties.binarySearch { property -> property.index compareTo index }
         if (propertyIndex < 0) {
             // Not in select so skip!

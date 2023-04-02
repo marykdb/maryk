@@ -6,7 +6,10 @@ import maryk.core.exceptions.TypeException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.initUInt
 import maryk.core.extensions.bytes.initUIntByVarWithExtraInfo
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.IsValuesDataModel
 import maryk.core.models.definitions.IsDataModelDefinition
+import maryk.core.models.values
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.ListSize
 import maryk.core.processors.datastore.StorageTypeEnum.MapSize
@@ -14,8 +17,6 @@ import maryk.core.processors.datastore.StorageTypeEnum.ObjectDelete
 import maryk.core.processors.datastore.StorageTypeEnum.SetSize
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.IsPropertyContext
-import maryk.core.models.IsRootDataModel
-import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsMapDefinition
@@ -46,7 +47,6 @@ import maryk.core.properties.references.ReferenceType.VALUE
 import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.references.referenceStorageTypeOf
 import maryk.core.properties.types.TypedValue
-import maryk.core.models.values
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ValueItem
 import maryk.core.values.Values
@@ -92,7 +92,7 @@ fun <DM : IsRootDataModel> DM.readStorageToValues(
  * [readValueFromStorage] is used to fetch actual value from storage layer
  * [addToCache] is used to add a sub reader to cache, so it does not need to reprocess the qualifier from start
  */
-private fun <P : IsValuesDataModel> IsDataModelDefinition<P>.readQualifier(
+private fun <DM : IsValuesDataModel> IsDataModelDefinition<DM>.readQualifier(
     qualifierReader: (Int) -> Byte,
     qualifierLength: Int,
     offset: Int,

@@ -1,9 +1,9 @@
 package maryk.core.query.pairs
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.properties.IsPropertyContext
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.ReferenceValuePairDataModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsListDefinition
@@ -96,10 +96,10 @@ infix fun <E : TypeEnum<T>, T: Any, D : IsMultiTypeDefinition<E, T, *>> IsProper
 
 /** Convenience infix method to create Reference [values] pairs */
 @Suppress("UNCHECKED_CAST")
-infix fun <P : IsValuesDataModel, D : IsEmbeddedValuesDefinition<P, *>> IsPropertyReference<Values<P>, D, *>.with(
-    values: Values<P>
-): ReferenceValuePair<Values<P>> =
+infix fun <DM : IsValuesDataModel, D : IsEmbeddedValuesDefinition<DM, *>> IsPropertyReference<Values<DM>, D, *>.with(
+    values: Values<DM>
+): ReferenceValuePair<Values<DM>> =
     ReferenceValuePair(
-        this as IsPropertyReference<Values<P>, IsChangeableValueDefinition<Values<P>, IsPropertyContext>, *>,
+        this as IsPropertyReference<Values<DM>, IsChangeableValueDefinition<Values<DM>, IsPropertyContext>, *>,
         values
     )

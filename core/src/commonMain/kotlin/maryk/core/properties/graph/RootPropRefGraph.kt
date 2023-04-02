@@ -1,10 +1,11 @@
 package maryk.core.properties.graph
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsValuesDataModel
+import maryk.core.models.serializers.ObjectDataModelSerializer
+import maryk.core.models.values
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
@@ -16,7 +17,6 @@ import maryk.core.properties.graph.PropRefGraphType.Graph
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.properties.types.TypedValue
-import maryk.core.models.values
 import maryk.core.query.ContainsDataModelContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
@@ -28,9 +28,9 @@ import maryk.lib.exceptions.ParseException
  * Create a Root graph with references to [properties]
  * [properties] should always be sorted by index so processing graphs is a lot easier
  */
-data class RootPropRefGraph<P : IsRootDataModel> internal constructor(
-    override val properties: List<IsPropRefGraphNode<P>>
-) : IsPropRefGraph<P> {
+data class RootPropRefGraph<DM : IsRootDataModel> internal constructor(
+    override val properties: List<IsPropRefGraphNode<DM>>
+) : IsPropRefGraph<DM> {
     companion object : ContextualDataModel<RootPropRefGraph<*>, Companion, ContainsDataModelContext<*>, GraphContext>(
         contextTransformer = {
             GraphContext(it?.dataModel)

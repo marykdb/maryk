@@ -1,19 +1,18 @@
 package maryk.datastore.shared
 
 import kotlinx.coroutines.flow.Flow
-import maryk.core.models.definitions.RootDataModelDefinition
 import maryk.core.models.IsRootDataModel
 import maryk.core.query.requests.IsFetchRequest
 import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.responses.IsDataResponse
 import maryk.core.query.responses.IsResponse
+import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.query.responses.updates.ProcessResponse
-import maryk.core.query.responses.UpdateResponse
 
 /** Processes actions on data stores. */
 interface IsDataStore {
-    val dataModelsById: Map<UInt, RootDataModelDefinition<*>>
+    val dataModelsById: Map<UInt, IsRootDataModel>
     val dataModelIdsByString: Map<String, UInt>
     val keepAllVersions: Boolean
 

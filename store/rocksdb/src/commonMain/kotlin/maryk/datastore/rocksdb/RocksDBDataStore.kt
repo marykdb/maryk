@@ -9,7 +9,7 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
 import maryk.core.extensions.bytes.calculateVarByteLength
-import maryk.core.models.definitions.RootDataModelDefinition
+import maryk.core.models.IsRootDataModel
 import maryk.core.models.migration.MigrationException
 import maryk.core.models.migration.MigrationHandler
 import maryk.core.models.migration.MigrationStatus.NeedsMigration
@@ -18,8 +18,6 @@ import maryk.core.models.migration.MigrationStatus.NewModel
 import maryk.core.models.migration.MigrationStatus.OnlySafeAdds
 import maryk.core.models.migration.MigrationStatus.UpToDate
 import maryk.core.models.migration.StoredRootDataModelDefinition
-import maryk.core.models.IsRootDataModel
-import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.query.requests.AddRequest
 import maryk.core.query.requests.ChangeRequest
@@ -90,7 +88,7 @@ import maryk.rocksdb.use
 class RocksDBDataStore(
     override val keepAllVersions: Boolean = true,
     relativePath: String,
-    dataModelsById: Map<UInt, RootDataModelDefinition<*>>,
+    dataModelsById: Map<UInt, IsRootDataModel>,
     rocksDBOptions: DBOptions? = null,
     private val onlyCheckModelVersion: Boolean = false,
     val migrationHandler: MigrationHandler<RocksDBDataStore>? = null
@@ -126,8 +124,8 @@ class RocksDBDataStore(
             var handleIndex = 1
             if (keepAllVersions) {
                 for ((index, db) in dataModelsById) {
-                    prefixSizesByColumnFamilyHandlesIndex[handles[handleIndex+2].getID()] = db.keyByteSize
-                    prefixSizesByColumnFamilyHandlesIndex[handles[handleIndex+5].getID()] = db.keyByteSize
+                    prefixSizesByColumnFamilyHandlesIndex[handles[handleIndex+2].getID()] = db.Model.keyByteSize
+                    prefixSizesByColumnFamilyHandlesIndex[handles[handleIndex+5].getID()] = db.Model.keyByteSize
                     columnFamilyHandlesByDataModelIndex[index] = HistoricTableColumnFamilies(
                         model = handles[handleIndex++],
                         keys = handles[handleIndex++],
@@ -143,7 +141,7 @@ class RocksDBDataStore(
                 }
             } else {
                 for ((index, db) in dataModelsById) {
-                    prefixSizesByColumnFamilyHandlesIndex[handles[handleIndex+2].getID()] = db.keyByteSize
+                    prefixSizesByColumnFamilyHandlesIndex[handles[handleIndex+2].getID()] = db.Model.keyByteSize
                     columnFamilyHandlesByDataModelIndex[index] = TableColumnFamilies(
                         model = handles[handleIndex++],
                         keys = handles[handleIndex++],
@@ -157,7 +155,7 @@ class RocksDBDataStore(
             for ((index, dataModel) in dataModelsById) {
                 columnFamilyHandlesByDataModelIndex[index]?.let { tableColumnFamilies ->
                     tableColumnFamilies.model.let { modelColumnFamily ->
-                        when (val migrationStatus = checkModelIfMigrationIsNeeded(this.db, modelColumnFamily, dataModel.properties as RootDataModel<*>, this.onlyCheckModelVersion)) {
+                        when (val migrationStatus = checkModelIfMigrationIsNeeded(this.db, modelColumnFamily, dataModel, this.onlyCheckModelVersion)) {
                             UpToDate -> Unit // Do nothing since no work is needed
                             NewModel, OnlySafeAdds -> {
                                 // Model updated so can be stored
@@ -168,11 +166,11 @@ class RocksDBDataStore(
                                 storeModelDefinition(this.db, modelColumnFamily, dataModel)
                             }
                             is NeedsMigration -> {
-                                val succeeded = migrationHandler?.invoke(this, migrationStatus.storedDataModel.Model as StoredRootDataModelDefinition, dataModel)
+                                val succeeded = migrationHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
                                     ?: throw MigrationException("Migration needed: No migration handler present")
 
                                 if (!succeeded) {
-                                    throw MigrationException("Migration could not be handled for ${dataModel.name} & ${(migrationStatus.storedDataModel.Model as? StoredRootDataModelDefinition)?.version}")
+                                    throw MigrationException("Migration could not be handled for ${dataModel.Model.name} & ${(migrationStatus.storedDataModel as? StoredRootDataModelDefinition)?.Model?.version}")
                                 }
 
                                 migrationStatus.indicesToIndex?.let {
@@ -257,12 +255,12 @@ class RocksDBDataStore(
         walkDataRecordsAndFillIndex(this, tableColumnFamilies, indicesToIndex)
     }
 
-    private fun createColumnFamilyHandles(descriptors: MutableList<ColumnFamilyDescriptor>, tableIndex: UInt, db: RootDataModelDefinition<*>) {
+    private fun createColumnFamilyHandles(descriptors: MutableList<ColumnFamilyDescriptor>, tableIndex: UInt, db: IsRootDataModel) {
         val nameSize = tableIndex.calculateVarByteLength() + 1
 
         // Prefix set to key size for more optimal search.
         val tableOptions = ColumnFamilyOptions().apply {
-            useFixedLengthPrefixExtractor(db.keyByteSize)
+            useFixedLengthPrefixExtractor(db.Model.keyByteSize)
         }
 
         descriptors += Model.getDescriptor(tableIndex, nameSize)
@@ -273,10 +271,10 @@ class RocksDBDataStore(
 
         if (keepAllVersions) {
             val comparatorOptions = ComparatorOptions()
-            val comparator = VersionedComparator(comparatorOptions, db.keyByteSize)
+            val comparator = VersionedComparator(comparatorOptions, db.Model.keyByteSize)
             // Prefix set to key size for more optimal search.
             val tableOptionsHistoric = ColumnFamilyOptions().apply {
-                useFixedLengthPrefixExtractor(db.keyByteSize)
+                useFixedLengthPrefixExtractor(db.Model.keyByteSize)
                 setComparator(comparator)
             }
 

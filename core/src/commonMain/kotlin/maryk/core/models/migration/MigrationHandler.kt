@@ -1,9 +1,9 @@
 package maryk.core.models.migration
 
-import maryk.core.models.definitions.IsRootDataModelDefinition
+import maryk.core.models.IsRootDataModel
 
-typealias StoredRootDataModelDefinition = IsRootDataModelDefinition<*>
-typealias NewRootDataModelDefinition = IsRootDataModelDefinition<*>
+typealias StoredRootDataModelDefinition = IsRootDataModel
+typealias NewRootDataModelDefinition = IsRootDataModel
 
 /**
  * Handles the migration for the to be migrated DataModels.

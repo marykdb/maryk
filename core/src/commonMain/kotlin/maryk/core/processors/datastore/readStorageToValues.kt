@@ -8,7 +8,6 @@ import maryk.core.extensions.bytes.initUInt
 import maryk.core.extensions.bytes.initUIntByVarWithExtraInfo
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsValuesDataModel
-import maryk.core.models.definitions.IsDataModelDefinition
 import maryk.core.models.values
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.ListSize
@@ -76,8 +75,7 @@ fun <DM : IsRootDataModel> DM.readStorageToValues(
 
     processQualifiers(getQualifier) { qualifierReader, qualifierLength, addToCache ->
         // Otherwise, try to get a new qualifier processor from DataModel
-        @Suppress("UNCHECKED_CAST")
-        (this.Model as IsDataModelDefinition<IsValuesDataModel>).readQualifier(qualifierReader, qualifierLength, 0, select, null, valueAdder, processValue, addToCache)
+        this.readQualifier(qualifierReader, qualifierLength, 0, select, null, valueAdder, processValue, addToCache)
     }
 
     // Create Values
@@ -92,7 +90,7 @@ fun <DM : IsRootDataModel> DM.readStorageToValues(
  * [readValueFromStorage] is used to fetch actual value from storage layer
  * [addToCache] is used to add a sub reader to cache, so it does not need to reprocess the qualifier from start
  */
-private fun <DM : IsValuesDataModel> IsDataModelDefinition<DM>.readQualifier(
+private fun <DM : IsValuesDataModel> DM.readQualifier(
     qualifierReader: (Int) -> Byte,
     qualifierLength: Int,
     offset: Int,
@@ -116,7 +114,7 @@ private fun <DM : IsValuesDataModel> IsDataModelDefinition<DM>.readQualifier(
                     readValueFromStorage(ObjectDelete, ObjectDeleteReference)
                 }
                 else -> {
-                    val definition = this.properties[index]
+                    val definition = this[index]
                         ?: throw DefNotFoundException("No definition for $index in $this at $index")
 
                     readQualifierOfType(
@@ -402,8 +400,8 @@ private fun <DM : IsRootDataModel> readEmbeddedValues(
     addToCache: CacheProcessor,
     addValueToOutput: AddValue
 ) {
-    val dataModel = definition.dataModel.Model
-    val values = dataModel.properties.values { MutableValueItems() }
+    val dataModel = definition.dataModel
+    val values = dataModel.values { MutableValueItems() }
 
     addValueToOutput(values)
 

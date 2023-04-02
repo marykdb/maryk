@@ -6,7 +6,9 @@ import maryk.core.exceptions.TypeException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.initUInt
 import maryk.core.extensions.bytes.initUIntByVarWithExtraInfo
-import maryk.core.models.definitions.IsDataModelDefinition
+import maryk.core.models.IsDataModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.IsValuesDataModel
 import maryk.core.processors.datastore.ChangeType.CHANGE
 import maryk.core.processors.datastore.ChangeType.OBJECT_CREATE
 import maryk.core.processors.datastore.ChangeType.OBJECT_DELETE
@@ -18,10 +20,6 @@ import maryk.core.processors.datastore.StorageTypeEnum.ObjectDelete
 import maryk.core.processors.datastore.StorageTypeEnum.SetSize
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.IsPropertyContext
-import maryk.core.models.IsDataModel
-import maryk.core.models.IsRootDataModel
-import maryk.core.models.IsStorableDataModel
-import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsEmbeddedDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
@@ -111,9 +109,8 @@ fun <DM : IsRootDataModel> DM.readStorageToChanges(
     }
 
     processQualifiers(getQualifier) { qualifierReader, qualifierLength, addToCache ->
-        @Suppress("UNCHECKED_CAST")
         // Otherwise, try to get a new qualifier processor from DataModel
-        (this.Model as IsDataModelDefinition<IsValuesDataModel>).readQualifier(qualifierReader, qualifierLength, 0, select, null, changeAdder, processValue, addToCache)
+        this.readQualifier(qualifierReader, qualifierLength, 0, select, null, changeAdder, processValue, addToCache)
     }
 
     // Create Values
@@ -196,7 +193,7 @@ private fun createChange(changeType: ChangeType, changePart: Any) = when (change
  * [readValueFromStorage] is used to fetch actual value from storage layer
  * [addToCache] is used to add a sub reader to cache, so it does not need to reprocess the qualifier from start
  */
-private fun <DM : IsDataModel> IsDataModelDefinition<DM>.readQualifier(
+private fun <DM : IsDataModel> DM.readQualifier(
     qualifierReader: (Int) -> Byte,
     qualifierLength: Int,
     offset: Int,
@@ -224,7 +221,7 @@ private fun <DM : IsDataModel> IsDataModelDefinition<DM>.readQualifier(
                     }
                 }
                 else -> {
-                    val definition = this.properties[index]
+                    val definition = this[index]
                         ?: throw DefNotFoundException("No definition for $index in $this at $index")
                     readQualifierOfType(
                         qualifierReader,
@@ -680,8 +677,7 @@ private fun <DM : IsValuesDataModel> readEmbeddedValues(
     addToCache: CacheProcessor,
     addChangeToOutput: ChangeAdder
 ) {
-    val dataModel =
-        (definition.dataModel as IsStorableDataModel).Model
+    val dataModel = definition.dataModel
 
     // If select is Graph then resolve sub graph.
     // Otherwise, it is null or is property itself so needs to be completely selected thus set as null.

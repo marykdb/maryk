@@ -12,9 +12,8 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
-import maryk.core.models.definitions.RootDataModelDefinition
-import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.models.IsRootDataModel
+import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.query.requests.IsFetchRequest
 import maryk.core.query.requests.IsGetRequest
 import maryk.core.query.requests.IsScanRequest
@@ -36,12 +35,12 @@ import maryk.datastore.shared.updates.startProcessUpdateFlow
  * Abstract DataStore implementation that takes care of the HLC clock
  */
 abstract class AbstractDataStore(
-    final override val dataModelsById: Map<UInt, RootDataModelDefinition<*>>
+    final override val dataModelsById: Map<UInt, IsRootDataModel>
 ): IsDataStore, CoroutineScope {
     override val coroutineContext = DISPATCHER + SupervisorJob()
 
     final override val dataModelIdsByString: Map<String, UInt> = dataModelsById.map { (index, dataModel) ->
-        Pair(dataModel.name, index)
+        Pair(dataModel.Model.name, index)
     }.toMap()
 
     private val initIsDone: AtomicBoolean = atomic(false)

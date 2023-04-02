@@ -35,14 +35,14 @@ private val allTestClasses = arrayOf(
 )
 
 val dataModelsForTests = mapOf(
-    1u to TestMarykModel.Model,
-    2u to SimpleMarykModel.Model,
-    3u to ComplexModel.Model,
-    4u to Log.Model,
-    5u to CompleteMarykModel.Model,
-    6u to UniqueModel.Model,
-    7u to ModelV2ExtraIndex.Model,
-    8u to Person.Model,
+    1u to TestMarykModel,
+    2u to SimpleMarykModel,
+    3u to ComplexModel,
+    4u to Log,
+    5u to CompleteMarykModel,
+    6u to UniqueModel,
+    7u to ModelV2ExtraIndex,
+    8u to Person,
 )
 
 suspend fun runDataStoreTests(dataStore: IsDataStore, runOnlyTest: String? = null) {

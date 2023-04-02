@@ -34,7 +34,7 @@ class RocksDBDataStoreMigrationTest {
             keepAllVersions = true,
             relativePath = path,
             dataModelsById = mapOf(
-                1u to ModelV1.Model
+                1u to ModelV1,
             )
         )
 
@@ -44,7 +44,7 @@ class RocksDBDataStoreMigrationTest {
             keepAllVersions = true,
             relativePath = path,
             dataModelsById = mapOf(
-                1u to ModelV1_1.Model
+                1u to ModelV1_1,
             )
         )
 
@@ -56,7 +56,7 @@ class RocksDBDataStoreMigrationTest {
                 keepAllVersions = true,
                 relativePath = path,
                 dataModelsById = mapOf(
-                    1u to ModelV2.Model
+                    1u to ModelV2,
                 ),
                 migrationHandler = null
             )
@@ -67,11 +67,11 @@ class RocksDBDataStoreMigrationTest {
                 keepAllVersions = true,
                 relativePath = path,
                 dataModelsById = mapOf(
-                    1u to ModelV2.Model
+                    1u to ModelV2,
                 ),
                 migrationHandler = { _, storedDataModel, newDataModel ->
-                    assertEquals(ModelV2.Model, newDataModel)
-                    assertEquals(ModelV1_1.Model.version, storedDataModel.version)
+                    assertEquals(ModelV2, newDataModel)
+                    assertEquals(ModelV1_1.Model.version, storedDataModel.Model.version)
                     // Should throw this exception to proof it is entering this handler
                     throw CustomException()
                 }
@@ -88,7 +88,7 @@ class RocksDBDataStoreMigrationTest {
             keepAllVersions = true,
             relativePath = path,
             dataModelsById = mapOf(
-                1u to ModelV2.Model
+                1u to ModelV2,
             )
         )
 
@@ -130,7 +130,7 @@ class RocksDBDataStoreMigrationTest {
             keepAllVersions = true,
             relativePath = path,
             dataModelsById = mapOf(
-                1u to ModelV2ExtraIndex.Model
+                1u to ModelV2ExtraIndex,
             )
         )
 

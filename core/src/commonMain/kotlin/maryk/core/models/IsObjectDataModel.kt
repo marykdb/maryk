@@ -68,10 +68,10 @@ fun <DO : Any, DM : IsObjectDataModel<DO>> DM.asValues(
 ): ObjectValues<DO, DM> {
     val mutableMap = MutableValueItems()
 
-    @Suppress("UNCHECKED_CAST")
     for (property in this) {
         when (property) {
             is ObjectListDefinitionWrapper<out Any, *, *, *, DO> -> {
+                @Suppress("UNCHECKED_CAST")
                 val dataModel = (property.definition.valueDefinition as EmbeddedObjectDefinition<Any, IsSimpleBaseObjectDataModel<Any, *, *>, *, *>).dataModel as IsObjectDataModel<Any>
                 property.getter(dataObject)?.let { list ->
                     mutableMap[property.index] = list.map {
@@ -80,7 +80,8 @@ fun <DO : Any, DM : IsObjectDataModel<DO>> DM.asValues(
                 }
             }
             is IsEmbeddedObjectDefinition<*, *, *, *> -> {
-                val dataModel = property.dataModel as IsObjectDataModel<Any>
+                @Suppress("UNCHECKED_CAST")
+                val dataModel = property.dataModel as IsObjectDataModel<in Any>
                 property.getter(dataObject)?.let {
                     mutableMap[property.index] = dataModel.asValues(it, context)
                 }

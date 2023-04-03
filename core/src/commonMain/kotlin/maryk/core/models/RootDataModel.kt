@@ -18,24 +18,25 @@ open class RootDataModel<DM: IsValuesDataModel>(
     reservedNames: List<String>? = null,
     name: String? = null,
 ) : TypedValuesDataModel<DM>(), IsRootDataModel {
-    @Suppress("UNCHECKED_CAST")
+    @Suppress("UNCHECKED_CAST", "LeakingThis")
+    private val typedThis: DM = this as DM
+
     override val Model: RootDataModelDefinition<DM> by lazy {
-        RootDataModelDefinition(
+        RootDataModelDefinition<DM>(
             keyDefinition = keyDefinition.invoke(),
             version = version,
             indices = indices?.invoke(),
             reservedIndices = reservedIndices,
             reservedNames = reservedNames,
             name = name ?: this::class.simpleName!!,
-            properties = this,
-        ) as RootDataModelDefinition<DM>
+            properties = typedThis,
+        )
     }
 
-    @Suppress("UNCHECKED_CAST")
     operator fun <T : Any, R : IsPropertyReference<T, IsPropertyDefinition<T>, *>> invoke(
         parent: AnyOutPropertyReference? = null,
         referenceGetter: DM.() -> (AnyOutPropertyReference?) -> R
-    ) = referenceGetter(this as DM)(parent)
+    ) = referenceGetter(typedThis)(parent)
 
     override fun isMigrationNeeded(
         storedDataModel: IsStorableDataModel,

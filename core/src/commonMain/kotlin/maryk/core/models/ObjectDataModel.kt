@@ -18,30 +18,29 @@ internal typealias SimpleQueryModel<DO> = ObjectDataModel<DO, IsObjectDataModel<
 
 abstract class ObjectDataModel<DO: Any, DM: IsObjectDataModel<DO>, CXI : IsPropertyContext, CX : IsPropertyContext>: AbstractObjectDataModel<DO>(),
     IsTypedObjectModel<DO, DM, CXI, CX> {
-    @Suppress("UNCHECKED_CAST", "LeakingThis")
-    override val Serializer = ObjectDataModelSerializer<DO, DM, CXI, CX>(this as DM)
+    @Suppress("UNCHECKED_CAST")
+    private val typedThis: DM = this as DM
+
+    override val Serializer = ObjectDataModelSerializer<DO, DM, CXI, CX>(typedThis)
 
     abstract override operator fun invoke(values: ObjectValues<DO, DM>): DO
 
-    @Suppress("UNCHECKED_CAST")
     operator fun <T : Any, R : IsPropertyReference<T, IsPropertyDefinition<T>, *>> invoke(
         parent: AnyOutPropertyReference? = null,
         referenceGetter: DM.() -> (AnyOutPropertyReference?) -> R
-    ) = referenceGetter(this as DM)(parent)
+    ) = referenceGetter(typedThis)(parent)
 
     operator fun <R> invoke(block: DM.() -> R): R {
-        @Suppress("UNCHECKED_CAST")
-        return block(this as DM)
+        return block(typedThis)
     }
 
     /** Create a new ObjectValues with given [pairs] */
-    @Suppress("UNCHECKED_CAST")
     fun create(
         vararg pairs: ValueItem?,
         setDefaults: Boolean = true,
         context: RequestContext? = null,
     ) = ObjectValues(
-        this@ObjectDataModel as DM,
+        typedThis,
         MutableValueItems().apply {
             fillWithPairs(this@ObjectDataModel, pairs, setDefaults)
         },

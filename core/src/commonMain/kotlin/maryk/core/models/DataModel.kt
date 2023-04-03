@@ -9,21 +9,21 @@ open class DataModel<DM: IsValuesDataModel>(
     reservedIndices: List<UInt>? = null,
     reservedNames: List<String>? = null,
 ) : TypedValuesDataModel<DM>() {
-    @Suppress("UNCHECKED_CAST")
+    @Suppress("UNCHECKED_CAST", "LeakingThis")
+    private val typedThis: DM = this as DM
+
     override val Model = DataModelDefinition(
         reservedIndices = reservedIndices,
         reservedNames = reservedNames,
-        properties = this,
-    ) as DataModelDefinition<DM>
+        properties = typedThis,
+    )
 
-    @Suppress("UNCHECKED_CAST")
     operator fun <T : Any, R : IsPropertyReference<T, IsPropertyDefinition<T>, *>> invoke(
         parent: AnyOutPropertyReference? = null,
         referenceGetter: DM.() -> (AnyOutPropertyReference?) -> R
-    ) = referenceGetter(this as DM)(parent)
+    ) = referenceGetter(typedThis)(parent)
 
     operator fun <R> invoke(block: DM.() -> R): R {
-        @Suppress("UNCHECKED_CAST")
-        return block(this as DM)
+        return block(typedThis)
     }
 }

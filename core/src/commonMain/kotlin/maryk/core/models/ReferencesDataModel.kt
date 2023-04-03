@@ -21,7 +21,9 @@ abstract class ReferencesDataModel<DO: Any, DM: ReferencesDataModel<DO, DM>>(
     abstract override fun invoke(values: ObjectValues<DO, DM>): DO
 
     @Suppress("UNCHECKED_CAST", "LeakingThis")
-    override val Serializer = object: ObjectDataModelSerializer<DO, DM, RequestContext, RequestContext>(this as DM) {
+    override val Serializer = object: ObjectDataModelSerializer<DO, DM, RequestContext, RequestContext>(
+        this as DM
+    ) {
         override fun writeObjectAsJson(
             obj: DO,
             writer: IsJsonLikeWriter,
@@ -76,6 +78,7 @@ abstract class ReferencesDataModel<DO: Any, DM: ReferencesDataModel<DO, DM>>(
                 else -> throw ParseException("Expected a list or a single property reference in Exists filter")
             }
 
+            @Suppress("UNCHECKED_CAST")
             return values(context) {
                 valueMap
             } as ObjectValues<DO, DM>

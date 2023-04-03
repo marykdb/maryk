@@ -4,10 +4,6 @@ import maryk.core.definitions.MarykPrimitive
 import maryk.core.definitions.PrimitiveType
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.SerializationException
-import maryk.core.models.addProperties
-import maryk.core.models.serializers.ObjectDataModelSerializer
-import maryk.core.models.serializers.readDataModelJson
-import maryk.core.models.serializers.writeDataModelJson
 import maryk.core.models.DataModelCollectionDefinitionWrapper
 import maryk.core.models.DefinitionModel
 import maryk.core.models.IsDataModelWithPropertyDefinitions
@@ -15,6 +11,10 @@ import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.MutableDataModel
 import maryk.core.models.MutableValuesDataModel
+import maryk.core.models.addProperties
+import maryk.core.models.serializers.ObjectDataModelSerializer
+import maryk.core.models.serializers.readDataModelJson
+import maryk.core.models.serializers.writeDataModelJson
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.list
@@ -41,7 +41,6 @@ open class DataModelDefinition<DM : IsValuesDataModel>(
     IsValuesDataModelDefinition<DM> {
     override val primitiveType = PrimitiveType.Model
 
-    @Suppress("unused")
     internal object Model :
         DefinitionModel<DataModelDefinition<*>>(),
         IsDataModelWithPropertyDefinitions<DataModelDefinition<*>, DataModelCollectionDefinitionWrapper<DataModelDefinition<*>>> {

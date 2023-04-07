@@ -7,6 +7,8 @@ import kotlin.io.encoding.ExperimentalEncodingApi
 
 interface IsValueDataModelSerializer<DO: ValueDataObject, DM: IsObjectDataModel<DO>>:
     IsObjectDataModelSerializer<DO, DM, IsPropertyContext, IsPropertyContext> {
+    val byteSize: Int
+
     /**
      * Read bytes from [reader] to DataObject
      * @throws [maryk.core.exceptions.DefNotFoundException] if definition needed for conversion is not found

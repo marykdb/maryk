@@ -1,13 +1,13 @@
 package maryk.core.models.serializers
 
-import maryk.core.properties.IsPropertyContext
 import maryk.core.models.IsValueDataModel
+import maryk.core.models.invoke
+import maryk.core.models.values
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
-import maryk.core.models.invoke
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.properties.types.ValueDataObjectWithValues
-import maryk.core.models.values
 import maryk.core.values.MutableValueItems
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
@@ -18,6 +18,15 @@ import kotlin.io.encoding.ExperimentalEncodingApi
 open class ValueDataModelSerializer<DO: ValueDataObject, DM: IsValueDataModel<DO, *>>(
     model: DM,
 ): ObjectDataModelSerializer<DO, DM, IsPropertyContext, IsPropertyContext>(model), IsValueDataModelSerializer<DO, DM> {
+    override val byteSize by lazy {
+        var size = -1
+        for (it in model) {
+            val def = it.definition as IsFixedStorageBytesEncodable<*>
+            size += def.byteSize + 1
+        }
+        size
+    }
+
     override fun readFromBytes(reader: () -> Byte): DO {
         val values = MutableValueItems()
         model.forEachIndexed { index, it ->
@@ -30,7 +39,7 @@ open class ValueDataModelSerializer<DO: ValueDataObject, DM: IsValueDataModel<DO
     }
 
     override fun toBytes(vararg inputs: Any): ByteArray {
-        val bytes = ByteArray(model.Model.byteSize)
+        val bytes = ByteArray(byteSize)
         var offset = 0
 
         model.forEachIndexed { index, it ->

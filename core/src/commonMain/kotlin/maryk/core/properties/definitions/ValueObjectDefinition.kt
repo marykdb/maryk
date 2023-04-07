@@ -5,10 +5,10 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsObjectDataModel
-import maryk.core.properties.IsPropertyContext
 import maryk.core.models.IsSimpleBaseObjectDataModel
 import maryk.core.models.IsValueDataModel
 import maryk.core.models.IsValuesDataModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.PropertyDefinitionType.Value
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
@@ -49,7 +49,7 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueDataModel<DO,
 
     override val propertyDefinitionType = Value
     override val wireType = LENGTH_DELIMITED
-    override val byteSize = dataModel.Model.byteSize
+    override val byteSize = dataModel.Serializer.byteSize
 
     override fun calculateStorageByteLength(value: DO) = this.byteSize
 
@@ -58,7 +58,7 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueDataModel<DO,
     override fun readStorageBytes(length: Int, reader: () -> Byte) =
         this.dataModel.Serializer.readFromBytes(reader)
 
-    override fun calculateTransportByteLength(value: DO) = this.dataModel.Model.byteSize
+    override fun calculateTransportByteLength(value: DO) = this.dataModel.Serializer.byteSize
 
     override fun asString(value: DO) = value.toBase64()
 

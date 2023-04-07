@@ -14,7 +14,7 @@ interface IsValueDataModel<DO: ValueDataObject, DM: IsObjectDataModel<DO>>: IsBa
 
     /** Creates bytes for given [values] */
     fun toBytes(values: ObjectValues<DO, DM>): ByteArray {
-        val bytes = ByteArray(this.Model.byteSize)
+        val bytes = ByteArray(this.Serializer.byteSize)
         var offset = 0
 
         this.forEachIndexed { index, it ->

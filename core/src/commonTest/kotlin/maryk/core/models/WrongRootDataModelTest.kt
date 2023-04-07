@@ -20,14 +20,14 @@ object WrongModelName : RootDataModel<WrongModelName>(
 internal class WrongRootDataModelTest {
     @Test
     fun checkDataModel() {
-        TestMarykModel.Model.check()
+        TestMarykModel.checkModel()
 
         assertFailsWith<IllegalArgumentException> {
-            WrongModelIndex.Model.check()
+            WrongModelIndex.checkModel()
         }
 
         assertFailsWith<IllegalArgumentException> {
-            WrongModelName.Model.check()
+            WrongModelName.checkModel()
         }
     }
 }

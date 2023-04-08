@@ -1,8 +1,8 @@
 package maryk.core.models.migration
 
-import maryk.core.models.definitions.IsValuesDataModelDefinition
 import maryk.core.models.AbstractDataModel
 import maryk.core.models.IsStorableDataModel
+import maryk.core.models.definitions.IsValuesDataModelDefinition
 import maryk.lib.synchronizedIteration
 
 /**
@@ -14,8 +14,8 @@ import maryk.lib.synchronizedIteration
  * Properties only on stored data model will be checked if they are available on the reservedIndices and
  * names so they cannot be used for any future model without acknowledgement in a migration.
  */
-internal fun IsStorableDataModel.checkProperties(
-    storedDataModel: IsStorableDataModel,
+internal fun IsStorableDataModel<*>.checkProperties(
+    storedDataModel: IsStorableDataModel<*>,
     handleMigrationReason: (String) -> Unit
 ): Boolean {
     var hasNewProperties = false

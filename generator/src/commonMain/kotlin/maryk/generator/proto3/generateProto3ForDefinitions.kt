@@ -2,9 +2,7 @@ package maryk.generator.proto3
 
 import maryk.core.definitions.Definitions
 import maryk.core.exceptions.TypeException
-import maryk.core.models.DataModel
-import maryk.core.models.RootDataModel
-import maryk.core.models.ValueDataModel
+import maryk.core.models.IsStorableDataModel
 import maryk.core.properties.enum.IsIndexedEnumDefinition
 import maryk.generator.kotlin.GenerationContext
 
@@ -20,20 +18,9 @@ fun Definitions.generateProto3(
                 obj.generateProto3Schema(writer)
                 kotlinGenerationContext.enums.add(obj)
             }
-            is ValueDataModel<*, *> -> {
+            is IsStorableDataModel<*> -> {
                 val writer = writerConstructor(obj.Meta.name)
-                obj.Meta.generateProto3Schema(
-                    kotlinGenerationContext,
-                    writer
-                )
-            }
-            is RootDataModel<*> -> {
-                val writer = writerConstructor(obj.Meta.name)
-                obj.Meta.generateProto3Schema(kotlinGenerationContext, writer)
-            }
-            is DataModel<*> -> {
-                val writer = writerConstructor(obj.Meta.name)
-                obj.Meta.generateProto3Schema(kotlinGenerationContext, writer)
+                obj.generateProto3Schema(kotlinGenerationContext, writer)
             }
             else -> throw TypeException("Unknown Maryk Primitive $obj")
         }

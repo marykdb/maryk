@@ -4,7 +4,7 @@ import maryk.core.models.definitions.IsNamedDataModelDefinition
 import maryk.core.models.migration.MigrationStatus
 import maryk.core.models.migration.checkProperties
 
-interface IsStorableDataModel: IsDataModel {
+interface IsStorableDataModel<DO: Any>: IsTypedDataModel<DO> {
     val Meta: IsNamedDataModelDefinition<out IsDataModel>
 
     /**
@@ -13,7 +13,7 @@ interface IsStorableDataModel: IsDataModel {
      * Pass a [migrationReasons] if this method is overridden
      */
     fun isMigrationNeeded(
-        storedDataModel: IsStorableDataModel,
+        storedDataModel: IsStorableDataModel<*>,
         migrationReasons: MutableList<String> = mutableListOf()
     ): MigrationStatus {
         if (storedDataModel.Meta.name != this.Meta.name) {

@@ -7,7 +7,7 @@ import maryk.core.query.RequestContext
 import maryk.core.values.IsValueItems
 import maryk.core.values.Values
 
-interface IsValuesDataModel: IsTypedDataModel<Any>, IsStorableDataModel {
+interface IsValuesDataModel: IsTypedDataModel<Any>, IsStorableDataModel<Any> {
     override val Meta : IsValuesDataModelDefinition<*>
 
     /**

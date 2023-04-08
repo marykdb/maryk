@@ -39,7 +39,7 @@ data class ObjectValues<DO : Any, DM : IsObjectDataModel<DO>> internal construct
     }
 
     override fun toString(): String {
-        val modelName = (dataModel as? IsStorableDataModel)?.Meta?.name ?: dataModel
+        val modelName = (dataModel as? IsStorableDataModel<*>)?.Meta?.name ?: dataModel
         return "ObjectValues<$modelName>$values"
     }
 }

@@ -40,7 +40,7 @@ open class RootDataModel<DM: IsValuesDataModel>(
     ) = referenceGetter(typedThis)(parent)
 
     override fun isMigrationNeeded(
-        storedDataModel: IsStorableDataModel,
+        storedDataModel: IsStorableDataModel<*>,
         migrationReasons: MutableList<String>
     ): MigrationStatus {
         val indicesToIndex = mutableListOf<IsIndexable>()

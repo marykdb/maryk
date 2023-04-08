@@ -1,10 +1,8 @@
 package maryk.generator.proto3
 
 import maryk.core.exceptions.TypeException
-import maryk.core.models.definitions.IsNamedDataModelDefinition
-import maryk.core.models.definitions.IsValuesDataModelDefinition
 import maryk.core.models.IsStorableDataModel
-import maryk.core.models.IsTypedDataModel
+import maryk.core.models.definitions.IsValuesDataModelDefinition
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
@@ -41,7 +39,7 @@ import maryk.core.properties.types.numeric.NumberType.UInt64Type
 import maryk.core.properties.types.numeric.NumberType.UInt8Type
 import maryk.generator.kotlin.GenerationContext
 
-fun <DM : IsTypedDataModel<*>> IsNamedDataModelDefinition<DM>.generateProto3Schema(
+fun <DM : IsStorableDataModel<*>> DM.generateProto3Schema(
     generationContext: GenerationContext,
     writer: (String) -> Unit
 ) {
@@ -55,17 +53,18 @@ fun <DM : IsTypedDataModel<*>> IsNamedDataModelDefinition<DM>.generateProto3Sche
 
     var reservations = ""
 
-    if (this is IsValuesDataModelDefinition<*>) {
-        this.reservedIndices?.let { indices ->
+    val meta = Meta
+    if (meta is IsValuesDataModelDefinition<*>) {
+        meta.reservedIndices?.let { indices ->
             reservations += "reserved ${indices.joinToString(", ")};\n      "
         }
-        this.reservedNames?.let { names ->
+        meta.reservedNames?.let { names ->
             reservations += "reserved ${names.joinToString{ "\"$it\"" }};\n      "
         }
         if (reservations.isNotBlank()) reservations.prependIndent().prependIndent("  ")
     }
 
-    val properties = this.properties.generateSchemaForProperties(generationContext, messageAdder)
+    val properties = this.generateSchemaForProperties(generationContext, messageAdder)
 
     val precedingMessages = if (subMessages.isNotEmpty()) {
         subMessages.joinToString("\n").plus("\n")
@@ -73,7 +72,7 @@ fun <DM : IsTypedDataModel<*>> IsNamedDataModelDefinition<DM>.generateProto3Sche
     } else ""
 
     val schema = """
-    message $name {
+    message ${Meta.name} {
       $reservations$precedingMessages${properties.prependIndent().prependIndent("  ").trimStart()}
     }
     """.trimIndent()
@@ -81,7 +80,7 @@ fun <DM : IsTypedDataModel<*>> IsNamedDataModelDefinition<DM>.generateProto3Sche
     writer(schema)
 }
 
-private fun IsTypedDataModel<*>.generateSchemaForProperties(
+private fun IsStorableDataModel<*>.generateSchemaForProperties(
     generationContext: GenerationContext,
     messageAdder: (String) -> Unit
 ): String {
@@ -190,7 +189,7 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(
             "map<${this.keyDefinition.toProtoBufType(name, generationContext, messageAdder)}, ${this.valueDefinition.toProtoBufType(name, generationContext, messageAdder)}>"
         }
         is EmbeddedValuesDefinition<*> -> this.dataModel.Meta.name
-        is EmbeddedObjectDefinition<*, *, *, *> -> (this.dataModel as IsStorableDataModel).Meta.name
+        is EmbeddedObjectDefinition<*, *, *, *> -> (this.dataModel as IsStorableDataModel<*>).Meta.name
         is MultiTypeDefinition<*, *> -> {
             val multiTypeName = "${name.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }}Type"
 

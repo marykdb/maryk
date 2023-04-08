@@ -1,8 +1,8 @@
 package maryk.generator.kotlin
 
 import maryk.core.exceptions.TypeException
-import maryk.core.models.IsStorableDataModel
 import maryk.core.models.IsRootDataModel
+import maryk.core.models.IsStorableDataModel
 import maryk.core.properties.definitions.IsEmbeddedDefinition
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.definitions.index.Multiple
@@ -137,7 +137,7 @@ private fun IsPropertyReferenceForValues<*, *, *, *>.generateRef(
         if (it is IsPropertyReferenceForValues<*, *, *, *>) {
             it.propertyDefinition.let { propDef ->
                 if (propDef is IsEmbeddedDefinition<*>) {
-                    val embedModelName = (propDef.dataModel as IsStorableDataModel).Meta.name
+                    val embedModelName = (propDef.dataModel as IsStorableDataModel<*>).Meta.name
                     addImport("$packageName.$embedModelName.Properties.${this.name}")
                 }
             }

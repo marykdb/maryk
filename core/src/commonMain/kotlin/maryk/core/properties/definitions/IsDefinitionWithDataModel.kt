@@ -1,8 +1,8 @@
 package maryk.core.properties.definitions
 
-import maryk.core.models.migration.MigrationStatus.NeedsMigration
 import maryk.core.models.IsStorableDataModel
 import maryk.core.models.IsTypedDataModel
+import maryk.core.models.migration.MigrationStatus.NeedsMigration
 
 /** Interface for property definitions defined by data model of [DM]. */
 interface IsDefinitionWithDataModel<out DM : IsTypedDataModel<*>> {
@@ -16,14 +16,14 @@ interface IsDefinitionWithDataModel<out DM : IsTypedDataModel<*>> {
         definition: IsDefinitionWithDataModel<*>,
         addIncompatibilityReason: ((String) -> Unit)?
     ): Boolean {
-        val comparisonDataModel = definition.dataModel as? IsStorableDataModel
+        val comparisonDataModel = definition.dataModel as? IsStorableDataModel<*>
 
         if (comparisonDataModel == null) {
             addIncompatibilityReason?.invoke("DataModel in definition not Serializable")
             return false
         }
 
-        return when (val migrationStatus = (this.dataModel as? IsStorableDataModel)?.isMigrationNeeded(definition.dataModel as IsStorableDataModel)) {
+        return when (val migrationStatus = (this.dataModel as? IsStorableDataModel<*>)?.isMigrationNeeded(definition.dataModel as IsStorableDataModel<*>)) {
             null -> {
                 addIncompatibilityReason?.invoke("current DataModel not Serializable")
                 false

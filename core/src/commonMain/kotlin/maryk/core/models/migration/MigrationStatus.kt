@@ -14,7 +14,7 @@ sealed class MigrationStatus {
     class NewIndicesOnExistingProperties(val indicesToIndex: List<IsIndexable>): MigrationStatus()
     /** The model is incompatible with the stored version and needs a migration */
     class NeedsMigration(
-        val storedDataModel: IsStorableDataModel,
+        val storedDataModel: IsStorableDataModel<*>,
         val migrationReasons: List<String>,
         val indicesToIndex: List<IsIndexable>?
     ): MigrationStatus() {

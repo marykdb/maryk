@@ -17,7 +17,7 @@ class GenerateProto3ForValueDataModelTest {
     @Test
     fun testDataModelConversion() {
         val output = buildString {
-            ValueMarykObject.Meta.generateProto3Schema(
+            ValueMarykObject.generateProto3Schema(
                 GenerationContext(
                     enums = mutableListOf(MarykTypeEnum)
                 )

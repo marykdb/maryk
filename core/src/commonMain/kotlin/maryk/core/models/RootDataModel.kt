@@ -1,5 +1,6 @@
 package maryk.core.models
 
+import maryk.core.definitions.MarykPrimitive
 import maryk.core.models.definitions.RootDataModelDefinition
 import maryk.core.models.migration.MigrationStatus
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -17,7 +18,7 @@ open class RootDataModel<DM: IsValuesDataModel>(
     reservedIndices: List<UInt>? = null,
     reservedNames: List<String>? = null,
     name: String? = null,
-) : TypedValuesDataModel<DM>(), IsRootDataModel {
+) : TypedValuesDataModel<DM>(), IsRootDataModel, MarykPrimitive {
     @Suppress("UNCHECKED_CAST", "LeakingThis")
     private val typedThis: DM = this as DM
 

@@ -1,6 +1,6 @@
 package maryk.core.models.definitions
 
-import maryk.core.definitions.MarykPrimitive
+import maryk.core.definitions.MarykPrimitiveDescriptor
 import maryk.core.definitions.PrimitiveType.RootModel
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.SerializationException
@@ -61,7 +61,7 @@ class RootDataModelDefinition<DM : IsValuesDataModel>(
     override val name: String = properties::class.simpleName ?: throw DefNotFoundException("Class $properties has no name")
 ) : BaseDataModelDefinition<DM>(properties),
     IsRootDataModelDefinition<DM>,
-    MarykPrimitive {
+    MarykPrimitiveDescriptor {
     override val primitiveType = RootModel
 
     override val keyByteSize = checkKeyDefinitionAndCountBytes(keyDefinition)

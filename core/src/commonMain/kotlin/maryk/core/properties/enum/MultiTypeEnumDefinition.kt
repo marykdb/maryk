@@ -1,6 +1,7 @@
 package maryk.core.properties.enum
 
-import maryk.core.definitions.PrimitiveType.TypeDefinition
+import maryk.core.definitions.MarykPrimitiveDescriptor
+import maryk.core.definitions.PrimitiveType
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.SerializationException
 import maryk.core.models.ContextualDataModel
@@ -37,7 +38,10 @@ open class MultiTypeEnumDefinition<E : MultiTypeEnum<*>> internal constructor(
 ) : AbstractIndexedEnumDefinition<E>(
     optionalCases, name, reservedIndices, reservedNames, unknownCreator
 ) {
-    override val primitiveType = TypeDefinition
+    override val Meta = object: MarykPrimitiveDescriptor {
+        override val name: String = this@MultiTypeEnumDefinition.name
+        override val primitiveType = PrimitiveType.TypeDefinition
+    }
 
     // Because of compilation issue in Native this map contains IndexedEnum<E> instead of E as value
     private val valueByString: Map<String, E> by lazy<Map<String, E>> {

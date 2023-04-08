@@ -20,6 +20,8 @@ interface IsIndexedEnumDefinition<E: IndexedEnum>:
     IsFixedStorageBytesEncodable<E>,
     IsSimpleValueDefinition<E, IsPropertyContext> {
 
+    val name: String
+
     val reservedIndices: List<UInt>?
     val reservedNames: List<String>?
 

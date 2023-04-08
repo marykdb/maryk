@@ -3,8 +3,8 @@ package maryk.core.definitions
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.models.definitions.ObjectDataModelDefinition
 import maryk.core.models.compareDataModels
+import maryk.core.models.definitions.ObjectDataModelDefinition
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.compareEnumDefinitions
 import maryk.core.query.DefinitionsConversionContext
@@ -22,12 +22,12 @@ import kotlin.test.expect
 class DefinitionsTest {
     private val definitions = Definitions(
         Option,
-        TestValueObject.Meta,
-        SimpleMarykModel.Meta,
-        EmbeddedMarykModel.Meta,
+        TestValueObject,
+        SimpleMarykModel,
+        EmbeddedMarykModel,
         SimpleMarykTypeEnum,
         MarykTypeEnum,
-        TestMarykModel.Meta
+        TestMarykModel
     )
 
     @Test

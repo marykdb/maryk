@@ -1,5 +1,6 @@
 package maryk.core.models
 
+import maryk.core.definitions.MarykPrimitive
 import maryk.core.models.definitions.ValueDataModelDefinition
 import maryk.core.models.serializers.ValueDataModelSerializer
 import maryk.core.properties.IsPropertyContext
@@ -9,7 +10,7 @@ import kotlin.reflect.KClass
 
 abstract class ValueDataModel<DO: ValueDataObject, DM: IsValueDataModel<DO, *>>(
     objClass: KClass<DO>,
-): ObjectDataModel<DO, DM, IsPropertyContext, IsPropertyContext>(), IsValueDataModel<DO, DM> {
+): ObjectDataModel<DO, DM, IsPropertyContext, IsPropertyContext>(), IsValueDataModel<DO, DM>, MarykPrimitive {
     @Suppress("UNCHECKED_CAST", "LeakingThis")
     private val typedThis: DM = this as DM
 

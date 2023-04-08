@@ -1,10 +1,12 @@
 package maryk.core.properties.enum
 
-import maryk.core.definitions.PrimitiveType.EnumDefinition
+import maryk.core.definitions.MarykPrimitiveDescriptor
+import maryk.core.definitions.PrimitiveType
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.SerializationException
-import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.models.ContextualDataModel
+import maryk.core.models.serializers.ObjectDataModelSerializer
+import maryk.core.models.values
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.SingleOrListDefinition
 import maryk.core.properties.definitions.StringDefinition
@@ -14,7 +16,6 @@ import maryk.core.properties.definitions.map
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.types.numeric.UInt32
-import maryk.core.models.values
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
@@ -33,8 +34,6 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
 ) : AbstractIndexedEnumDefinition<E>(
     optionalCases, name, reservedIndices, reservedNames, unknownCreator
 ) {
-    override val primitiveType = EnumDefinition
-
     constructor(
         enumClass: KClass<E>,
         values: () -> Array<E>,
@@ -62,6 +61,11 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
         reservedNames = reservedNames,
         unknownCreator = unknownCreator
     )
+
+    override val Meta = object: MarykPrimitiveDescriptor {
+        override val name: String = this@IndexedEnumDefinition.name
+        override val primitiveType = PrimitiveType.EnumDefinition
+    }
 
     internal object Model : ContextualDataModel<IndexedEnumDefinition<IndexedEnum>, Model, ContainsDefinitionsContext, EnumNameContext>(
         contextTransformer = { EnumNameContext(it) }

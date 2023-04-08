@@ -20,14 +20,14 @@ class RootMarykTest {
                 Operation.Define,
                 Definitions(
                     Option,
-                    SimpleMarykModel.Meta
+                    SimpleMarykModel,
                 )
             ),
             TypedValue(
                 Operation.Request,
                 Requests(
                     addRequest,
-                    getMaxRequest
+                    getMaxRequest,
                 )
             )
         )

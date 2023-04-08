@@ -1,6 +1,6 @@
 package maryk.core.models.definitions
 
-import maryk.core.definitions.MarykPrimitive
+import maryk.core.definitions.MarykPrimitiveDescriptor
 import maryk.core.definitions.PrimitiveType.ValueModel
 import maryk.core.exceptions.SerializationException
 import maryk.core.models.DefinitionModel
@@ -31,7 +31,7 @@ typealias AnyValueDataModel = ValueDataModelDefinition<*, *>
 abstract class ValueDataModelDefinition<DO : ValueDataObject, DM : IsObjectDataModel<DO>>(
     name: String,
     properties: DM
-) : ObjectDataModelDefinition<DO, DM>(name, properties), MarykPrimitive {
+) : ObjectDataModelDefinition<DO, DM>(name, properties), MarykPrimitiveDescriptor {
     override val primitiveType = ValueModel
 
     internal object Model :

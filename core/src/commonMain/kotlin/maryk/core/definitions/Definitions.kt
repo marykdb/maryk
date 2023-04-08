@@ -6,11 +6,11 @@ import maryk.core.definitions.PrimitiveType.RootModel
 import maryk.core.definitions.PrimitiveType.TypeDefinition
 import maryk.core.definitions.PrimitiveType.ValueModel
 import maryk.core.exceptions.ContextNotFoundException
+import maryk.core.models.SingleValueDataModel
 import maryk.core.models.definitions.DataModelDefinition
 import maryk.core.models.definitions.RootDataModelDefinition
 import maryk.core.models.definitions.ValueDataModelDefinition
 import maryk.core.models.serializers.SingleValueDataModelSerializer
-import maryk.core.models.SingleValueDataModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.IsSubDefinition
@@ -129,7 +129,7 @@ data class Definitions(
                 ) as Map<PrimitiveType, IsSubDefinition<out Any, ContainsDefinitionsContext>>
             ),
             fromSerializable = { it.value },
-            toSerializable = { TypedValue(it.primitiveType, it) }
+            toSerializable = { TypedValue(it.Meta.primitiveType, it) }
         )
 
         override fun invoke(values: ObjectValues<Definitions, Companion>) = Definitions(
@@ -147,8 +147,8 @@ data class Definitions(
             ) {
                 writer.writeStartObject()
                 for (item in value) {
-                    writer.writeFieldName(item.value.name)
-                    context?.currentDefinitionName = item.value.name
+                    writer.writeFieldName(item.value.Meta.name)
+                    context?.currentDefinitionName = item.value.Meta.name
                     definitions.valueDefinition.writeJsonValue(item, writer, context)
                 }
                 writer.writeEndObject()

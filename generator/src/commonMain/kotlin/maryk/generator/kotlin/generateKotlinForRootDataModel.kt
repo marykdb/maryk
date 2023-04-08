@@ -25,8 +25,8 @@ fun IsRootDataModel.generateKotlin(
     val addImport: (String) -> Unit = { importsToAdd.add(it) }
 
     // Add key definitions if they are not the default UUID key
-    val versionAsKotlin = if (Model.version != Version(1)) {
-        val (major, minor, patch) = Model.version
+    val versionAsKotlin = if (Meta.version != Version(1)) {
+        val (major, minor, patch) = Meta.version
         val patchValue = if (patch == UShort.MIN_VALUE) "" else ", $patch"
 
         addImport("maryk.core.properties.types.Version")
@@ -35,28 +35,28 @@ fun IsRootDataModel.generateKotlin(
     } else null
 
     // Add key definitions if they are not the default UUID key
-    val keyDefAsKotlin = if (Model.keyDefinition != UUIDKey) {
-        val keyDefs = Model.keyDefinition.generateKotlin(packageName, Model.name, addImport)
+    val keyDefAsKotlin = if (Meta.keyDefinition != UUIDKey) {
+        val keyDefs = Meta.keyDefinition.generateKotlin(packageName, Meta.name, addImport)
 
         "keyDefinition = ${keyDefs.prependIndent().prependIndent().trimStart()}"
     } else null
 
     // Add indices if they are not null
-    val indicesAsKotlin = Model.indices?.let { indexables ->
+    val indicesAsKotlin = Meta.indices?.let { indexables ->
         val output = mutableListOf<String>()
         for (it in indexables) {
-            output += it.generateKotlin(packageName, Model.name, addImport)
+            output += it.generateKotlin(packageName, Meta.name, addImport)
         }
         "indices = listOf(\n${output.joinToString(",\n").prependIndent().prependIndent().prependIndent()}\n        ),"
     }
 
-    val reservedIndices = Model.reservedIndices.let { indices ->
+    val reservedIndices = Meta.reservedIndices.let { indices ->
         when {
             indices.isNullOrEmpty() -> null
             else -> "reservedIndices = listOf(${indices.joinToString(", ", postfix = "u")})"
         }
     }
-    val reservedNames = Model.reservedNames.let { names ->
+    val reservedNames = Meta.reservedNames.let { names ->
         when {
             names.isNullOrEmpty() -> null
             else -> "reservedNames = listOf(${names.joinToString(", ", "\"", "\"")})"
@@ -74,7 +74,7 @@ fun IsRootDataModel.generateKotlin(
         .let { if (it.isBlank()) "" else "\n        $it\n    " }
 
     val code = """
-    object ${Model.name} : RootModel<${Model.name}>($constructorParameters) {
+    object ${Meta.name} : RootModel<${Meta.name}>($constructorParameters) {
         ${propertiesKotlin.generateDefinitionsForProperties(addImport).trimStart()}
     }
     """.trimIndent()
@@ -137,7 +137,7 @@ private fun IsPropertyReferenceForValues<*, *, *, *>.generateRef(
         if (it is IsPropertyReferenceForValues<*, *, *, *>) {
             it.propertyDefinition.let { propDef ->
                 if (propDef is IsEmbeddedDefinition<*>) {
-                    val embedModelName = (propDef.dataModel as IsStorableDataModel).Model.name
+                    val embedModelName = (propDef.dataModel as IsStorableDataModel).Meta.name
                     addImport("$packageName.$embedModelName.Properties.${this.name}")
                 }
             }

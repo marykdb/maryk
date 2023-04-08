@@ -168,7 +168,7 @@ class GenerateProto3ForDataModelTest {
     @Test
     fun testDataModelConversion() {
         val output = buildString {
-            CompleteMarykModel.Model.generateProto3Schema(
+            CompleteMarykModel.Meta.generateProto3Schema(
                 GenerationContext(
                     enums = mutableListOf(MarykTypeEnum)
                 )
@@ -183,7 +183,7 @@ class GenerateProto3ForDataModelTest {
     @Test
     fun testNumericModelConversion() {
         val output = buildString {
-            NumericMarykModel.Model.generateProto3Schema(
+            NumericMarykModel.Meta.generateProto3Schema(
                 GenerationContext()
             ) {
                 append(it)
@@ -196,7 +196,7 @@ class GenerateProto3ForDataModelTest {
     @Test
     fun testSimpleDataModelConversion() {
         val output = buildString {
-            SimpleMarykModel.Model.generateProto3Schema(
+            SimpleMarykModel.Meta.generateProto3Schema(
                 GenerationContext(
                     enums = mutableListOf(MarykTypeEnum)
                 )
@@ -211,7 +211,7 @@ class GenerateProto3ForDataModelTest {
     @Test
     fun testEmbeddedMarykModelConversion() {
         val output = buildString {
-            EmbeddedMarykModel.Model.generateProto3Schema(
+            EmbeddedMarykModel.Meta.generateProto3Schema(
                 GenerationContext(
                     enums = mutableListOf(MarykTypeEnum)
                 )
@@ -226,7 +226,7 @@ class GenerateProto3ForDataModelTest {
     @Test
     fun testTestMarykModelConversion() {
         val output = buildString {
-            TestMarykModel.Model.generateProto3Schema(
+            TestMarykModel.Meta.generateProto3Schema(
                 GenerationContext(
                     enums = mutableListOf(MarykTypeEnum)
                 )

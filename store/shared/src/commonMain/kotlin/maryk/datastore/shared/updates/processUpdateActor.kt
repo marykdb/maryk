@@ -22,7 +22,7 @@ internal suspend fun IsDataStore.startProcessUpdateFlow(updateSendChannel: Flow<
                     try {
                         @Suppress("UNCHECKED_CAST")
                         val dataModelListeners =
-                            updateListeners[dataModelIdsByString[update.dataModel.Model.name]] as? MutableList<UpdateListener<IsRootDataModel, *>>?
+                            updateListeners[dataModelIdsByString[update.dataModel.Meta.name]] as? MutableList<UpdateListener<IsRootDataModel, *>>?
 
                         if (dataModelListeners != null) {
                             for (updateListener in dataModelListeners) {

@@ -132,7 +132,7 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueDataModel<DO,
             ),
             toSerializable = { value: IsValueDataModel<*, *>?, _: ModelContext? ->
                 value?.let {
-                    DataModelReference(it.Model.name) { it }
+                    DataModelReference(it.Meta.name) { it }
                 }
             },
             fromSerializable = {

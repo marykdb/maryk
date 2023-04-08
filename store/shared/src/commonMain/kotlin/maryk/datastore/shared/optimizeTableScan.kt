@@ -17,7 +17,7 @@ fun <DM: IsRootDataModel> DM.optimizeTableScan(
     tableScan: TableScan,
     equalPairs: List<ReferenceValuePair<*>>
 ): ScanType {
-    this.Model.indices?.let { indices ->
+    this.Meta.indices?.let { indices ->
         indexWalk@ for (indexable in indices) {
             when (indexable) {
                 is Multiple -> {

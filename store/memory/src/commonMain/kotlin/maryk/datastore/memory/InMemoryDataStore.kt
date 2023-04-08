@@ -77,7 +77,7 @@ class InMemoryDataStore(
                         clock = clock.calculateMaxTimeStamp()
 
                         val dataStoreFetcher: (IsRootDataModel) -> DataStore<IsRootDataModel> = { model: IsRootDataModel ->
-                            val index = dataModelIdsByString[model.Model.name] ?: throw DefNotFoundException(model.Model.name)
+                            val index = dataModelIdsByString[model.Meta.name] ?: throw DefNotFoundException(model.Meta.name)
                             @Suppress("UNCHECKED_CAST")
                             dataStores.getOrPut(index) {
                                 DataStore<IsRootDataModel>(keepAllVersions)

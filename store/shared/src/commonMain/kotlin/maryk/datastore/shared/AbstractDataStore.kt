@@ -40,7 +40,7 @@ abstract class AbstractDataStore(
     override val coroutineContext = DISPATCHER + SupervisorJob()
 
     final override val dataModelIdsByString: Map<String, UInt> = dataModelsById.map { (index, dataModel) ->
-        Pair(dataModel.Model.name, index)
+        Pair(dataModel.Meta.name, index)
     }.toMap()
 
     private val initIsDone: AtomicBoolean = atomic(false)
@@ -118,8 +118,8 @@ abstract class AbstractDataStore(
 
     /** Get [dataModel] id to identify it for storage */
     fun getDataModelId(dataModel: IsRootDataModel) =
-        dataModelIdsByString[dataModel.Model.name] ?:
-        throw DefNotFoundException("DataStore not found ${dataModel.Model.name}")
+        dataModelIdsByString[dataModel.Meta.name] ?:
+        throw DefNotFoundException("DataStore not found ${dataModel.Meta.name}")
 
     override fun close() {
         this.cancel()

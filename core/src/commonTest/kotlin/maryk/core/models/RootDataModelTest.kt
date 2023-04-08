@@ -89,7 +89,7 @@ internal class RootDataModelTest {
     @Test
     fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(
-            TestMarykModel.Model,
+            TestMarykModel.Meta,
             RootDataModelDefinition.Model,
             { DefinitionsConversionContext() },
             ::compareDataModels
@@ -351,7 +351,7 @@ internal class RootDataModelTest {
             }""".trimIndent()
         ) {
             checkJsonConversion(
-                TestMarykModel.Model,
+                TestMarykModel.Meta,
                 RootDataModelDefinition.Model,
                 { DefinitionsConversionContext() },
                 ::compareDataModels
@@ -549,7 +549,7 @@ internal class RootDataModelTest {
             """.trimIndent()
         ) {
             checkYamlConversion(
-                TestMarykModel.Model,
+                TestMarykModel.Meta,
                 RootDataModelDefinition.Model,
                 { DefinitionsConversionContext() },
                 ::compareDataModels

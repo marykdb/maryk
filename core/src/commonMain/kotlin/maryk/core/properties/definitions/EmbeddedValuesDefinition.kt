@@ -131,7 +131,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel>(
 
         if (required != other.required) return false
         if (final != other.final) return false
-        if (dataModel.Model != other.dataModel.Model) return false
+        if (dataModel.Meta != other.dataModel.Meta) return false
 
         return true
     }
@@ -167,7 +167,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel>(
             },
             toSerializable = { value: (Unit.() -> IsValuesDataModel)?, _ ->
                 value?.invoke(Unit)?.let { model ->
-                    DataModelReference(model.Model.name) { model }
+                    DataModelReference(model.Meta.name) { model }
                 }
             },
             fromSerializable = {

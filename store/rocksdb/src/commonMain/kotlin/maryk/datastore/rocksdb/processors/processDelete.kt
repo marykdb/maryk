@@ -94,7 +94,7 @@ internal suspend fun <DM : IsRootDataModel> processDelete(
                 }
 
                 // Delete indexed values
-                dataModel.Model.indices?.let { indices ->
+                dataModel.Meta.indices?.let { indices ->
                     val valuesGetter = DBAccessorStoreValuesGetter(columnFamilies, dataStore.defaultReadOptions)
                     valuesGetter.moveToKey(key.bytes, transaction)
 

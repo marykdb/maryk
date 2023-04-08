@@ -13,7 +13,7 @@ class GenerateProto3FileHeaderTest {
             generateProto3FileHeader("maryk") {
                 append(it)
             }
-            CompleteMarykModel.Model.generateProto3Schema(
+            CompleteMarykModel.Meta.generateProto3Schema(
                 GenerationContext(
                     enums = mutableListOf(MarykTypeEnum)
                 )
@@ -43,7 +43,7 @@ class GenerateProto3FileHeaderTest {
             ) {
                 append(it)
             }
-            CompleteMarykModel.Model.generateProto3Schema(
+            CompleteMarykModel.Meta.generateProto3Schema(
                 GenerationContext(
                     enums = mutableListOf(MarykTypeEnum)
                 )

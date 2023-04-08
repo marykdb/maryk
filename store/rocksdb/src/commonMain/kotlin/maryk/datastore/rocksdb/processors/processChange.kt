@@ -672,7 +672,7 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
         var indexUpdates: MutableList<IsIndexUpdate>? = null
 
         // Process indices
-        dataModel.Model.indices?.let { indices ->
+        dataModel.Meta.indices?.let { indices ->
             if (indexUpdates == null) {
                 indexUpdates = mutableListOf()
             }

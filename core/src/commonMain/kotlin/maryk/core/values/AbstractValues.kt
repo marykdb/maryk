@@ -138,7 +138,7 @@ abstract class AbstractValues<DO : Any, DM : IsTypedDataModel<DO>> : IsValues<DM
     override fun original(index: UInt) = this.values[index]
 
     override fun toString(): String {
-        val name = (dataModel as? IsStorableDataModel)?.Model?.name ?: "ObjectValues"
+        val name = (dataModel as? IsStorableDataModel)?.Meta?.name ?: "ObjectValues"
 
         return "$name $values"
     }

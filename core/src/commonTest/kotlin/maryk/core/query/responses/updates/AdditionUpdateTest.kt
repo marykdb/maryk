@@ -28,7 +28,7 @@ internal class AdditionUpdateTest {
 
     private val context = RequestContext(
         mapOf(
-            SimpleMarykModel.Model.name toUnitLambda { SimpleMarykModel }
+            SimpleMarykModel.Meta.name toUnitLambda { SimpleMarykModel }
         ),
         dataModel = SimpleMarykModel
     )

@@ -18,7 +18,7 @@ import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
 interface IsRootDataModel: IsValuesDataModel {
-    override val Model: IsRootDataModelDefinition<out IsValuesDataModel>
+    override val Meta: IsRootDataModelDefinition<out IsValuesDataModel>
 }
 
 /** Create a Values object with given [changes] */
@@ -44,12 +44,12 @@ fun <DM : IsRootDataModel> DM.fromChanges(
 fun <DM: IsRootDataModel> DM.key(base64: String) = key(Base64.Mime.decode(base64))
 
 fun <DM: IsRootDataModel> DM.key(reader: () -> Byte) = Key<DM>(
-    initByteArray(Model.keyByteSize, reader)
+    initByteArray(Meta.keyByteSize, reader)
 )
 
 fun <DM: IsRootDataModel> DM.key(bytes: ByteArray): Key<DM> {
-    if (bytes.size != Model.keyByteSize) {
-        throw ParseException("Invalid byte length for key. Expected ${ Model.keyByteSize } instead of ${bytes.size}")
+    if (bytes.size != Meta.keyByteSize) {
+        throw ParseException("Invalid byte length for key. Expected ${ Meta.keyByteSize } instead of ${bytes.size}")
     }
     return Key(bytes)
 }
@@ -64,9 +64,9 @@ fun <DM : IsRootDataModel> DM.graph(
 
 /** Get Key based on [values] */
 fun <DM : IsRootDataModel> DM.key(values: Values<DM>): Key<DM> {
-    val bytes = ByteArray(this.Model.keyByteSize)
+    val bytes = ByteArray(this.Meta.keyByteSize)
     var index = 0
-    when (val keyDef = this.Model.keyDefinition) {
+    when (val keyDef = this.Meta.keyDefinition) {
         is Multiple -> {
             keyDef.writeStorageBytes(values) {
                 bytes[index++] = it

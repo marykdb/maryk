@@ -22,12 +22,12 @@ import kotlin.test.expect
 class DefinitionsTest {
     private val definitions = Definitions(
         Option,
-        TestValueObject.Model,
-        SimpleMarykModel.Model,
-        EmbeddedMarykModel.Model,
+        TestValueObject.Meta,
+        SimpleMarykModel.Meta,
+        EmbeddedMarykModel.Meta,
         SimpleMarykTypeEnum,
         MarykTypeEnum,
-        TestMarykModel.Model
+        TestMarykModel.Meta
     )
 
     @Test

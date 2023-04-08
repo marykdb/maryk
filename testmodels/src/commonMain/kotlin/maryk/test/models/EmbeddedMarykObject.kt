@@ -38,7 +38,7 @@ data class EmbeddedMarykObject(
 
         override fun equals(other: Any?) =
             other is NamedObjectModel<*, *> &&
-                this.Model.name == other.Model.name &&
+                this.Meta.name == other.Meta.name &&
                 this.size == other.size
     }
 }

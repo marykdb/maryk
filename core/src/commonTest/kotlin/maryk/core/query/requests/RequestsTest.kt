@@ -30,7 +30,7 @@ class RequestsTest {
     )
 
     private val context = RequestContext(mapOf(
-        SimpleMarykModel.Model.name toUnitLambda { SimpleMarykModel }
+        SimpleMarykModel.Meta.name toUnitLambda { SimpleMarykModel }
     ))
 
     private fun requestsComparison(converted: Requests, original: Requests) {

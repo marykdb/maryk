@@ -42,7 +42,7 @@ internal class ReversedTest {
         val key = MarykModel.key(obj)
 
         @Suppress("UNCHECKED_CAST")
-        with((MarykModel.Model.keyDefinition as Multiple).references[1] as Reversed<LocalDateTime>) {
+        with((MarykModel.Meta.keyDefinition as Multiple).references[1] as Reversed<LocalDateTime>) {
             val bc = ByteCollector()
             bc.reserve(7)
             this.writeStorageBytes(dt, bc::write)

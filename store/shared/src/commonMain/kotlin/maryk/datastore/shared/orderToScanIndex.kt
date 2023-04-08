@@ -46,7 +46,7 @@ fun IsRootDataModel.orderToScanType(
             }
 
             // Check if is default Table scan
-            indexableToScan(this.Model.keyDefinition, order.orders, equalPairs) { direction ->
+            indexableToScan(this.Meta.keyDefinition, order.orders, equalPairs) { direction ->
                 TableScan(
                     direction
                 )
@@ -55,7 +55,7 @@ fun IsRootDataModel.orderToScanType(
             }
 
             // Walk all indices and try to match given Orders
-            this.Model.indices?.let { indices ->
+            this.Meta.indices?.let { indices ->
                 indexLoop@ for (indexable in indices) {
                     indexableToScan(indexable, order.orders, equalPairs) { direction ->
                         IndexScan(
@@ -67,8 +67,8 @@ fun IsRootDataModel.orderToScanType(
                     }
                 }
 
-                throw RequestException("No index match found on model ${this.Model.name} for order $order")
-            } ?: throw RequestException("No indices defined on model ${this.Model.name} so order $order is not allowed")
+                throw RequestException("No index match found on model ${this.Meta.name} for order $order")
+            } ?: throw RequestException("No indices defined on model ${this.Meta.name} so order $order is not allowed")
         }
         else -> throw TypeException("Order type of $order is not supported")
     }
@@ -81,13 +81,13 @@ private fun IsRootDataModel.singleOrderToScanType(
     return if (order.propertyReference == null) {
         TableScan(order.direction)
     } else {
-        singleIndexableToScan(this.Model.keyDefinition, order) { direction ->
+        singleIndexableToScan(this.Meta.keyDefinition, order) { direction ->
             TableScan(direction)
         }?.let {
             return it
         }
 
-        this.Model.indices?.let { indices ->
+        this.Meta.indices?.let { indices ->
             for (indexable in indices) {
                 singleIndexableToScan(indexable, order) { direction ->
                     IndexScan(indexable, direction)

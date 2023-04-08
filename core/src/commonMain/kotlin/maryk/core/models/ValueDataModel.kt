@@ -20,7 +20,7 @@ abstract class ValueDataModel<DO: ValueDataObject, DM: IsValueDataModel<DO, *>>(
     fun toBytes(vararg inputs: Any) =
         Serializer.toBytes(*inputs)
 
-    override val Model = object: ValueDataModelDefinition<DO, DM>(
+    override val Meta = object: ValueDataModelDefinition<DO, DM>(
         name = objClass.simpleName!!,
         properties = typedThis,
     ) {}

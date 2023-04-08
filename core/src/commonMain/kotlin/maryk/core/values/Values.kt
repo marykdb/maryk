@@ -70,13 +70,13 @@ data class Values<DM : IsValuesDataModel> internal constructor(
 
     // ignore context
     override fun hashCode(): Int {
-        var result = dataModel.Model.hashCode()
+        var result = dataModel.Meta.hashCode()
         result = 31 * result + values.hashCode()
         return result
     }
 
     override fun toString(): String {
-        val modelName = (dataModel.Model as? IsNamedDataModelDefinition<*>)?.name ?: dataModel
+        val modelName = (dataModel.Meta as? IsNamedDataModelDefinition<*>)?.name ?: dataModel
         return "Values<$modelName>${values.toString(dataModel)}"
     }
 

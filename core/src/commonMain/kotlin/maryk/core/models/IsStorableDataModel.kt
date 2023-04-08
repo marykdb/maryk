@@ -5,7 +5,7 @@ import maryk.core.models.migration.MigrationStatus
 import maryk.core.models.migration.checkProperties
 
 interface IsStorableDataModel: IsDataModel {
-    val Model: IsNamedDataModelDefinition<out IsDataModel>
+    val Meta: IsNamedDataModelDefinition<out IsDataModel>
 
     /**
      * Checks if a migration is needed between [storedDataModel] and current model and returns a status
@@ -16,8 +16,8 @@ interface IsStorableDataModel: IsDataModel {
         storedDataModel: IsStorableDataModel,
         migrationReasons: MutableList<String> = mutableListOf()
     ): MigrationStatus {
-        if (storedDataModel.Model.name != this.Model.name) {
-            migrationReasons += "Names of models did not match: ${storedDataModel.Model.name} -> ${this.Model.name}"
+        if (storedDataModel.Meta.name != this.Meta.name) {
+            migrationReasons += "Names of models did not match: ${storedDataModel.Meta.name} -> ${this.Meta.name}"
         }
 
         val hasNewProperties = this.checkProperties(storedDataModel) {

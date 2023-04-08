@@ -51,7 +51,7 @@ internal class TypeReferenceTest {
         val key = MarykModel.key(obj)
         expect("0002") { key.bytes.toHex() }
 
-        val keyDef = MarykModel.Model.keyDefinition
+        val keyDef = MarykModel.Meta.keyDefinition
 
         val specificDef = assertIs<TypeReference<MarykTypeEnum<*>, *, *>>(keyDef)
         expect(MarykModel.multi.typeRef()) { specificDef }

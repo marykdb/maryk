@@ -16,7 +16,7 @@ class SumTest {
 
     private val context = RequestContext(
         mapOf(
-            TestMarykModel.Model.name toUnitLambda { TestMarykModel }
+            TestMarykModel.Meta.name toUnitLambda { TestMarykModel }
         ),
         dataModel = TestMarykModel
     )

@@ -36,7 +36,7 @@ class ReferenceDefinition<DM : IsRootDataModel>(
     IsReferenceDefinition<DM, IsPropertyContext> {
     override val propertyDefinitionType = PropertyDefinitionType.Reference
     override val wireType = LENGTH_DELIMITED
-    override val byteSize get() = dataModel.Model.keyByteSize
+    override val byteSize get() = dataModel.Meta.keyByteSize
 
     private val internalDataModel = safeLazy(dataModel)
     override val dataModel: DM get() = internalDataModel.value
@@ -72,7 +72,7 @@ class ReferenceDefinition<DM : IsRootDataModel>(
         if (minValue != other.minValue) return false
         if (maxValue != other.maxValue) return false
         if (default != other.default) return false
-        if (dataModel.Model.name != other.dataModel.Model.name) return false
+        if (dataModel.Meta.name != other.dataModel.Meta.name) return false
 
         return true
     }
@@ -84,7 +84,7 @@ class ReferenceDefinition<DM : IsRootDataModel>(
         result = 31 * result + (minValue?.hashCode() ?: 0)
         result = 31 * result + (maxValue?.hashCode() ?: 0)
         result = 31 * result + (default?.hashCode() ?: 0)
-        result = 31 * result + dataModel.Model.name.hashCode()
+        result = 31 * result + dataModel.Meta.name.hashCode()
         return result
     }
 
@@ -111,7 +111,7 @@ class ReferenceDefinition<DM : IsRootDataModel>(
             },
             toSerializable = { value: (Unit.() -> IsRootDataModel)?, _ ->
                 value?.invoke(Unit)?.let { model: IsRootDataModel ->
-                    DataModelReference(model.Model.name) { model }
+                    DataModelReference(model.Meta.name) { model }
                 }
             },
             fromSerializable = {

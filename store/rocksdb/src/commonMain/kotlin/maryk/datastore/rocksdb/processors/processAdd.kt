@@ -71,7 +71,7 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
             setLatestVersion(transaction, columnFamilies, key, versionBytes)
 
             // Find new index values to write
-            dataModel.Model.indices?.forEach { indexDefinition ->
+            dataModel.Meta.indices?.forEach { indexDefinition ->
                 val indexReference = indexDefinition.referenceStorageByteArray.bytes
                 val valueAndKeyBytes = indexDefinition.toStorageByteArrayForIndex(objectToAdd, key.bytes)
                     ?: return@forEach // skip if no complete values to index are found

@@ -31,10 +31,10 @@ class GenerateKotlinForDefinitionsTest {
             Option,
             SimpleMarykTypeEnum,
             MarykTypeEnum,
-            ValueMarykObject.Model,
-            EmbeddedModel.Model,
-            CompleteMarykModel.Model,
-            SimpleMarykModel.Model
+            ValueMarykObject.Meta,
+            EmbeddedModel.Meta,
+            CompleteMarykModel.Meta,
+            SimpleMarykModel.Meta
         ).generateKotlin("maryk.test.models") { name ->
             setOfNames.add(name)
             val writer = mapOfWriters[name]

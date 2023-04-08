@@ -28,10 +28,10 @@ fun checkModelIfMigrationIsNeeded(
     }
 
     return when {
-        dataModel.Model.version != version || !onlyCheckVersion -> {
+        dataModel.Meta.version != version || !onlyCheckVersion -> {
             // Read currently stored model
             val modelBytes = rocksDB.get(modelColumnFamily, modelDefinitionKey)
-                ?: throw StorageException("Model is unexpectedly missing in metadata for ${dataModel.Model.name}")
+                ?: throw StorageException("Model is unexpectedly missing in metadata for ${dataModel.Meta.name}")
 
             var readIndex = 0
             val context = DefinitionsConversionContext()

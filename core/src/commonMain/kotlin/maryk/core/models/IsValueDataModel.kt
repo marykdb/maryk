@@ -10,7 +10,7 @@ import maryk.core.values.ObjectValues
 interface IsValueDataModel<DO: ValueDataObject, DM: IsObjectDataModel<DO>>: IsBaseObjectDataModel<DO, DM, IsPropertyContext, IsPropertyContext>,
     IsTypedObjectDataModel<DO, DM, IsPropertyContext>, IsNamedObjectModel<DO, DM> {
     override val Serializer: IsValueDataModelSerializer<DO, DM>
-    override val Model: ValueDataModelDefinition<DO, DM>
+    override val Meta: ValueDataModelDefinition<DO, DM>
 
     /** Creates bytes for given [values] */
     fun toBytes(values: ObjectValues<DO, DM>): ByteArray {

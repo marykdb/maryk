@@ -28,7 +28,7 @@ internal class UUIDKeyTest {
 
         val b = initByteArrayByHex("8e6d5dc885e4b7d5f4fb932d5a0d0378")
 
-        val keyDef = MarykModel.Model.keyDefinition as UUIDKey
+        val keyDef = MarykModel.Meta.keyDefinition as UUIDKey
 
         var i = 0
         val uuid = keyDef.readStorageBytes(16) {
@@ -46,7 +46,7 @@ internal class UUIDKeyTest {
         val key = MarykModel.key(obj)
         expect(16) { key.bytes.size }
 
-        val keyDef = MarykModel.Model.keyDefinition
+        val keyDef = MarykModel.Meta.keyDefinition
 
         assertIs<UUIDKey>(keyDef).apply {
             var index = 0

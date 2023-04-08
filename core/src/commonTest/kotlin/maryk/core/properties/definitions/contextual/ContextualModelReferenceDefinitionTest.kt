@@ -28,10 +28,10 @@ class ContextualModelReferenceDefinitionTest {
 
     private val context = RequestContext(
         dataModels = mapOf(
-            TestMarykObject.Model.name toUnitLambda { TestMarykObject },
-            EmbeddedMarykObject.Model.name toUnitLambda { EmbeddedMarykObject },
-            TestMarykModel.Model.name toUnitLambda { TestMarykModel },
-            EmbeddedMarykModel.Model.name toUnitLambda { EmbeddedMarykModel }
+            TestMarykObject.Meta.name toUnitLambda { TestMarykObject },
+            EmbeddedMarykObject.Meta.name toUnitLambda { EmbeddedMarykObject },
+            TestMarykModel.Meta.name toUnitLambda { TestMarykModel },
+            EmbeddedMarykModel.Meta.name toUnitLambda { EmbeddedMarykModel }
         )
     )
 
@@ -41,7 +41,7 @@ class ContextualModelReferenceDefinitionTest {
         for (value in modelsToTest) {
             checkProtoBufConversion(
                 bc,
-                DataModelReference((value as IsStorableDataModel).Model.name) { value },
+                DataModelReference((value as IsStorableDataModel).Meta.name) { value },
                 this.def,
                 this.context
             ) { converted, original ->
@@ -53,7 +53,7 @@ class ContextualModelReferenceDefinitionTest {
     @Test
     fun convertString() {
         for (namedDataModel in modelsToTest) {
-            val b = def.asString(DataModelReference((namedDataModel as IsStorableDataModel).Model.name) { namedDataModel }, this.context)
+            val b = def.asString(DataModelReference((namedDataModel as IsStorableDataModel).Meta.name) { namedDataModel }, this.context)
             expect(namedDataModel) { def.fromString(b, this.context).get.invoke(Unit) }
         }
     }

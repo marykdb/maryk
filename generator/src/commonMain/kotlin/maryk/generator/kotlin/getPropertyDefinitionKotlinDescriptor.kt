@@ -267,7 +267,7 @@ private val definitionNamesMap = mapOf(
     PropertyDefinitionType.Reference to PropertyDefinitionKotlinDescriptor(
         className = "ReferenceDefinition",
         wrapFunctionName = "reference",
-        kotlinTypeName = { "Key<${it.dataModel.Model.name}>" },
+        kotlinTypeName = { "Key<${it.dataModel.Meta.name}>" },
         imports = { keyImports },
         definitionModel = ReferenceDefinition.Model,
     ),
@@ -292,7 +292,7 @@ private val definitionNamesMap = mapOf(
         className = "EmbeddedValuesDefinition",
         wrapFunctionName = "embed",
         kotlinTypeName = {
-            val modelName = (it.dataModel.Model as IsNamedDataModelDefinition<*>).name
+            val modelName = (it.dataModel.Meta as IsNamedDataModelDefinition<*>).name
             "Values<$modelName, $modelName.Properties>"
         },
         imports = { valuesImports },
@@ -311,7 +311,7 @@ private val definitionNamesMap = mapOf(
     PropertyDefinitionType.Value to PropertyDefinitionKotlinDescriptor(
         className = "ValueObjectDefinition",
         wrapFunctionName = "valueObject",
-        kotlinTypeName = { it.dataModel.Model.name },
+        kotlinTypeName = { it.dataModel.Meta.name },
         definitionModel = ValueObjectDefinition.Model,
         propertyValueOverride = mapOf(
             "default" to generateKotlinValueWithDefinition,

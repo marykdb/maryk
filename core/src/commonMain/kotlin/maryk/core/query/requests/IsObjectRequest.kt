@@ -32,7 +32,7 @@ internal fun <DM : IsStoreRequest<*, *>> IsObjectDataModel<DM>.addDataModel(
         getter = getter,
         toSerializable = { value, _ ->
             value?.let {
-                DataModelReference(it.Model.name) { it }
+                DataModelReference(it.Meta.name) { it }
             }
         },
         fromSerializable = { it?.get?.invoke(Unit) },

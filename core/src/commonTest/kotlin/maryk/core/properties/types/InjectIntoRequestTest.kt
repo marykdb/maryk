@@ -25,8 +25,8 @@ import kotlin.test.assertFails
 import kotlin.test.expect
 
 private val context = RequestContext(mapOf(
-    SimpleMarykModel.Model.name toUnitLambda { SimpleMarykModel },
-    ReferencesModel.Model.name toUnitLambda { ReferencesModel }
+    SimpleMarykModel.Meta.name toUnitLambda { SimpleMarykModel },
+    ReferencesModel.Meta.name toUnitLambda { ReferencesModel }
 )).apply {
     addToCollect("keysToInject", ValuesResponse)
     addToCollect("referencedKeys", ValuesResponse)
@@ -55,7 +55,7 @@ class InjectIntoRequestTest {
 
     @Test
     fun testInjectInValuesGetRequest() {
-        val requestRef = ValuesResponse { values.atAny { values.refWithDM(ReferencesModel.Model) { references } } }
+        val requestRef = ValuesResponse { values.atAny { values.refWithDM(ReferencesModel.Meta) { references } } }
 
         val getRequest = GetRequest.run {
             create(

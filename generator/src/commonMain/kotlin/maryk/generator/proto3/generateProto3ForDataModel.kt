@@ -189,8 +189,8 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(
             // Separate object
             "map<${this.keyDefinition.toProtoBufType(name, generationContext, messageAdder)}, ${this.valueDefinition.toProtoBufType(name, generationContext, messageAdder)}>"
         }
-        is EmbeddedValuesDefinition<*> -> this.dataModel.Model.name
-        is EmbeddedObjectDefinition<*, *, *, *> -> (this.dataModel as IsStorableDataModel).Model.name
+        is EmbeddedValuesDefinition<*> -> this.dataModel.Meta.name
+        is EmbeddedObjectDefinition<*, *, *, *> -> (this.dataModel as IsStorableDataModel).Meta.name
         is MultiTypeDefinition<*, *> -> {
             val multiTypeName = "${name.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }}Type"
 

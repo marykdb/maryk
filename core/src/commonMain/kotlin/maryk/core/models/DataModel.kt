@@ -12,7 +12,7 @@ open class DataModel<DM: IsValuesDataModel>(
     @Suppress("UNCHECKED_CAST", "LeakingThis")
     private val typedThis: DM = this as DM
 
-    override val Model = DataModelDefinition(
+    override val Meta = DataModelDefinition(
         reservedIndices = reservedIndices,
         reservedNames = reservedNames,
         properties = typedThis,

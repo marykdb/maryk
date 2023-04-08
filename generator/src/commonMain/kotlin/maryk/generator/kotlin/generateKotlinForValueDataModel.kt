@@ -20,13 +20,13 @@ fun IsValueDataModel<*, *>.generateKotlin(
     }
 
     val code = """
-    data class ${Model.name}(
+    data class ${Meta.name}(
         ${propertiesKotlin.generateObjectValuesForProperties().prependIndent().prependIndent().trimStart()}
     ) : ValueDataObject(toBytes(${propertiesKotlin.generatePropertyNamesForConstructor()})) {
-        companion object : ValueModel<${Model.name}, Companion>(${Model.name}::class) {
-            ${propertiesKotlin.generateDefinitionsForObjectProperties(modelName = Model.name, addImport = addImport).prependIndent().trimStart()}
+        companion object : ValueModel<${Meta.name}, Companion>(${Meta.name}::class) {
+            ${propertiesKotlin.generateDefinitionsForObjectProperties(modelName = Meta.name, addImport = addImport).prependIndent().trimStart()}
 
-            override fun invoke(values: ObjectValues<${Model.name}, Companion>) = ${Model.name}(
+            override fun invoke(values: ObjectValues<${Meta.name}, Companion>) = ${Meta.name}(
                 ${propertiesKotlin.generateInvokesForProperties().prependIndent().prependIndent().prependIndent().trimStart()}
             )
         }

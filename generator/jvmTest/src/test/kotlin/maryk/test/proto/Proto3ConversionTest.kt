@@ -33,9 +33,9 @@ class Proto3ConversionTest {
         val cache = WriteCache()
 
         bc.reserve(
-            SimpleMarykModel.Model.calculateProtoBufLength(simpleObject, cache)
+            SimpleMarykModel.Serializer.calculateProtoBufLength(simpleObject, cache)
         )
-        SimpleMarykModel.Model.writeProtoBuf(simpleObject, cache, bc::write)
+        SimpleMarykModel.Serializer.writeProtoBuf(simpleObject, cache, bc::write)
 
         val protoBufByteArray = simpleObjectProto.toByteArray()
 
@@ -69,9 +69,9 @@ class Proto3ConversionTest {
         val bc = ByteCollector()
         val cache = WriteCache()
         bc.reserve(
-            NumericMarykModel.Model.calculateProtoBufLength(numericObject, cache)
+            NumericMarykModel.Serializer.calculateProtoBufLength(numericObject, cache)
         )
-        NumericMarykModel.Model.writeProtoBuf(numericObject, cache, bc::write)
+        NumericMarykModel.Serializer.writeProtoBuf(numericObject, cache, bc::write)
 
         val protoBufByteArray = numericObjectProto.toByteArray()
 
@@ -145,9 +145,9 @@ class Proto3ConversionTest {
         val bc = ByteCollector()
         val cache = WriteCache()
         bc.reserve(
-            CompleteMarykModel.Model.calculateProtoBufLength(completeObject, cache)
+            CompleteMarykModel.Serializer.calculateProtoBufLength(completeObject, cache)
         )
-        CompleteMarykModel.Model.writeProtoBuf(completeObject, cache, bc::write)
+        CompleteMarykModel.Serializer.writeProtoBuf(completeObject, cache, bc::write)
 
         val protoBytes = completeObjectProto.toByteArray()
 

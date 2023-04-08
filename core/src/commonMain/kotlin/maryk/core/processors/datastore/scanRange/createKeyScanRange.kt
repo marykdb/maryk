@@ -20,9 +20,9 @@ fun <DM : IsRootDataModel> DM.createScanRange(filter: IsFilter?, startKey: ByteA
     val listOfUniqueFilters = mutableListOf<UniqueToMatch>()
     val listOfEqualPairs = mutableListOf<ReferenceValuePair<Any>>()
     convertFilterToIndexPartsToMatch(
-        this.Model.keyDefinition,
-        this.Model.keyByteSize,
-        { this.Model.keyIndices[it] },
+        this.Meta.keyDefinition,
+        this.Meta.keyByteSize,
+        { this.Meta.keyIndices[it] },
         filter,
         listOfKeyParts,
         listOfEqualPairs,
@@ -45,8 +45,8 @@ private fun <DM : IsRootDataModel> DM.createScanRangeFromParts(
     listOfEqualPairs: List<ReferenceValuePair<Any>>,
     listOfUniqueFilters: List<UniqueToMatch>
 ): KeyScanRanges {
-    val start: MutableList<MutableList<Byte>> = mutableListOf(ArrayList(this.Model.keyByteSize))
-    val end: MutableList<MutableList<Byte>> = mutableListOf(ArrayList(this.Model.keyByteSize))
+    val start: MutableList<MutableList<Byte>> = mutableListOf(ArrayList(this.Meta.keyByteSize))
+    val end: MutableList<MutableList<Byte>> = mutableListOf(ArrayList(this.Meta.keyByteSize))
 
     var startShouldContinue = true
     var endShouldContinue = true
@@ -133,12 +133,12 @@ private fun <DM : IsRootDataModel> DM.createScanRangeFromParts(
     }
 
     // Fill start key with MAX bytes so it properly goes to the end
-    for (it in 1..(this.Model.keyByteSize - start.first().size)) {
+    for (it in 1..(this.Meta.keyByteSize - start.first().size)) {
         addByte(start, if (startInclusive) 0 else MAX_BYTE)
     }
 
     // Fill end key with MAX bytes so it properly goes to the end
-    for (it in 1..(this.Model.keyByteSize - end.first().size)) {
+    for (it in 1..(this.Meta.keyByteSize - end.first().size)) {
         addByte(end, if (endInclusive) MAX_BYTE else 0)
     }
 
@@ -147,7 +147,7 @@ private fun <DM : IsRootDataModel> DM.createScanRangeFromParts(
         partialMatches = listOfParts,
         equalPairs = listOfEqualPairs,
         uniques = listOfUniqueFilters,
-        keySize = this.Model.keyByteSize,
+        keySize = this.Meta.keyByteSize,
         startKey = startKey,
         includeStart = includeStart
     )

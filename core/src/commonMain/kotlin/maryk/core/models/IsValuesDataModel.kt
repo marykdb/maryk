@@ -8,24 +8,24 @@ import maryk.core.values.IsValueItems
 import maryk.core.values.Values
 
 interface IsValuesDataModel: IsTypedDataModel<Any>, IsStorableDataModel {
-    override val Model : IsValuesDataModelDefinition<*>
+    override val Meta : IsValuesDataModelDefinition<*>
 
     /**
      * Checks the model if there are no conflicting values.
      * It at the moment checks the reserved indices and names of models to see if those are not used in the model.
      */
     fun checkModel() {
-        this.Model.reservedIndices?.let { reservedIndices ->
+        this.Meta.reservedIndices?.let { reservedIndices ->
             this.forEach { property ->
                 require(!reservedIndices.contains(property.index)) {
-                    "Model ${Model.name} has ${property.index} defined in option ${property.name} while it is reserved"
+                    "Model ${Meta.name} has ${property.index} defined in option ${property.name} while it is reserved"
                 }
             }
         }
-        this.Model.reservedNames?.let { reservedNames ->
+        this.Meta.reservedNames?.let { reservedNames ->
             this.forEach { case ->
                 require(!reservedNames.contains(case.name)) {
-                    "Model ${Model.name} has a reserved name defined ${case.name}"
+                    "Model ${Meta.name} has a reserved name defined ${case.name}"
                 }
             }
         }

@@ -21,7 +21,7 @@ open class RootDataModel<DM: IsValuesDataModel>(
     @Suppress("UNCHECKED_CAST", "LeakingThis")
     private val typedThis: DM = this as DM
 
-    override val Model: RootDataModelDefinition<DM> by lazy {
+    override val Meta: RootDataModelDefinition<DM> by lazy {
         RootDataModelDefinition<DM>(
             keyDefinition = keyDefinition.invoke(),
             version = version,
@@ -46,15 +46,15 @@ open class RootDataModel<DM: IsValuesDataModel>(
         if (storedDataModel is IsRootDataModel) {
             // Only process indices if they are present on new model.
             // If they are present on stored but not on new, accept it.
-            Model.orderedIndices?.let { indices ->
-                if (storedDataModel.Model.orderedIndices == null) {
+            Meta.orderedIndices?.let { indices ->
+                if (storedDataModel.Meta.orderedIndices == null) {
                     // Only index the values which have stored properties on the stored model
                     val toIndex = indices.filter { it.isCompatibleWithModel(storedDataModel) }
                     indicesToIndex.addAll(toIndex)
                 } else {
                     synchronizedIteration(
                         indices.iterator(),
-                        storedDataModel.Model.orderedIndices!!.iterator(),
+                        storedDataModel.Meta.orderedIndices!!.iterator(),
                         { newValue, storedValue ->
                             newValue.referenceStorageByteArray compareTo storedValue.referenceStorageByteArray
                         },
@@ -68,11 +68,11 @@ open class RootDataModel<DM: IsValuesDataModel>(
                 }
             }
 
-            if (storedDataModel.Model.version.major != this.Model.version.major) {
-                migrationReasons += "Major version was increased: ${storedDataModel.Model.version} -> ${this.Model.version}"
+            if (storedDataModel.Meta.version.major != this.Meta.version.major) {
+                migrationReasons += "Major version was increased: ${storedDataModel.Meta.version} -> ${this.Meta.version}"
             }
 
-            if (storedDataModel.Model.keyDefinition !== this.Model.keyDefinition) {
+            if (storedDataModel.Meta.keyDefinition !== this.Meta.keyDefinition) {
                 migrationReasons += "Key definition was not the same"
             }
         } else {

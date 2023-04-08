@@ -5,12 +5,12 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.inject.Inject
+import maryk.core.models.asValues
+import maryk.core.models.key
 import maryk.core.models.testExtendedMarykModelObject
 import maryk.core.models.testMarykModelObject
-import maryk.core.models.asValues
-import maryk.core.properties.exceptions.InjectException
-import maryk.core.models.key
 import maryk.core.models.values
+import maryk.core.properties.exceptions.InjectException
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.RequestContext
 import maryk.core.query.ValuesWithMetaData
@@ -29,7 +29,7 @@ import kotlin.test.expect
 class InjectTest {
     private val definitionsContext = DefinitionsContext(
         dataModels = mutableMapOf(
-            EmbeddedMarykModel.Model.name toUnitLambda { EmbeddedMarykModel }
+            EmbeddedMarykModel.Meta.name toUnitLambda { EmbeddedMarykModel }
         )
     )
 
@@ -82,7 +82,7 @@ class InjectTest {
         Inject("testCollection", TestMarykModel(firstResponseValueRef) { embeddedValues { value::ref } })
 
     private val injectFromAny =
-        Inject("testCollection", ValuesResponse { values.atAny { values.refWithDM(TestMarykModel.Model) { string } } })
+        Inject("testCollection", ValuesResponse { values.atAny { values.refWithDM(TestMarykModel.Meta) { string } } })
 
     @Test
     fun testGetToCollect() {

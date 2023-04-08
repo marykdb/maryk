@@ -168,20 +168,20 @@ internal fun generateKotlinValue(
             is ContextualModelReferenceDefinition<*, *, *> -> {
                 when (val model = (value as? Unit.() -> Any)?.invoke(Unit)) {
                     is IsValuesDataModel ->
-                        """{ ${model.Model.name} }"""
+                        """{ ${model.Meta.name} }"""
                     is IsNamedDataModelDefinition<*> ->
                         """{ ${model.name} }"""
                     null ->
                         if (value is IsValueDataModel<*, *>) {
-                            value.Model.name
+                            value.Meta.name
                         } else throw TypeException("NamedDataModel $value has to be a function which returns a IsValuesPropertyDefinitions or IsNamedDataModel ")
                     else ->
                         throw TypeException("NamedDataModel $value has to be a function which returns a IsValuesPropertyDefinitions or IsNamedDataModel ")
                 }
             }
             is EmbeddedValuesDefinition<*> ->
-                definition.dataModel.Model.generateKotlinValue(value as ValuesImpl, addImport)
-            is ValueObjectDefinition<*, *> -> definition.dataModel.Model.let {
+                definition.dataModel.Meta.generateKotlinValue(value as ValuesImpl, addImport)
+            is ValueObjectDefinition<*, *> -> definition.dataModel.Meta.let {
                 return it.generateKotlinValue(value, addImport)
             }
             else -> "$value"

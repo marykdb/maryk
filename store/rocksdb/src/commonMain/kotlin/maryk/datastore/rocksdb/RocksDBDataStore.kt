@@ -124,8 +124,8 @@ class RocksDBDataStore(
             var handleIndex = 1
             if (keepAllVersions) {
                 for ((index, db) in dataModelsById) {
-                    prefixSizesByColumnFamilyHandlesIndex[handles[handleIndex+2].getID()] = db.Model.keyByteSize
-                    prefixSizesByColumnFamilyHandlesIndex[handles[handleIndex+5].getID()] = db.Model.keyByteSize
+                    prefixSizesByColumnFamilyHandlesIndex[handles[handleIndex+2].getID()] = db.Meta.keyByteSize
+                    prefixSizesByColumnFamilyHandlesIndex[handles[handleIndex+5].getID()] = db.Meta.keyByteSize
                     columnFamilyHandlesByDataModelIndex[index] = HistoricTableColumnFamilies(
                         model = handles[handleIndex++],
                         keys = handles[handleIndex++],
@@ -141,7 +141,7 @@ class RocksDBDataStore(
                 }
             } else {
                 for ((index, db) in dataModelsById) {
-                    prefixSizesByColumnFamilyHandlesIndex[handles[handleIndex+2].getID()] = db.Model.keyByteSize
+                    prefixSizesByColumnFamilyHandlesIndex[handles[handleIndex+2].getID()] = db.Meta.keyByteSize
                     columnFamilyHandlesByDataModelIndex[index] = TableColumnFamilies(
                         model = handles[handleIndex++],
                         keys = handles[handleIndex++],
@@ -170,7 +170,7 @@ class RocksDBDataStore(
                                     ?: throw MigrationException("Migration needed: No migration handler present")
 
                                 if (!succeeded) {
-                                    throw MigrationException("Migration could not be handled for ${dataModel.Model.name} & ${(migrationStatus.storedDataModel as? StoredRootDataModelDefinition)?.Model?.version}")
+                                    throw MigrationException("Migration could not be handled for ${dataModel.Meta.name} & ${(migrationStatus.storedDataModel as? StoredRootDataModelDefinition)?.Meta?.version}")
                                 }
 
                                 migrationStatus.indicesToIndex?.let {
@@ -260,7 +260,7 @@ class RocksDBDataStore(
 
         // Prefix set to key size for more optimal search.
         val tableOptions = ColumnFamilyOptions().apply {
-            useFixedLengthPrefixExtractor(db.Model.keyByteSize)
+            useFixedLengthPrefixExtractor(db.Meta.keyByteSize)
         }
 
         descriptors += Model.getDescriptor(tableIndex, nameSize)
@@ -271,10 +271,10 @@ class RocksDBDataStore(
 
         if (keepAllVersions) {
             val comparatorOptions = ComparatorOptions()
-            val comparator = VersionedComparator(comparatorOptions, db.Model.keyByteSize)
+            val comparator = VersionedComparator(comparatorOptions, db.Meta.keyByteSize)
             // Prefix set to key size for more optimal search.
             val tableOptionsHistoric = ColumnFamilyOptions().apply {
-                useFixedLengthPrefixExtractor(db.Model.keyByteSize)
+                useFixedLengthPrefixExtractor(db.Meta.keyByteSize)
                 setComparator(comparator)
             }
 
@@ -309,8 +309,8 @@ class RocksDBDataStore(
             ?: throw DefNotFoundException("DataModel definition not found for $dbIndex")
 
     internal fun getColumnFamilies(dataModel: IsRootDataModel) =
-        columnFamilyHandlesByDataModelIndex[dataModelIdsByString[dataModel.Model.name]]
-            ?: throw DefNotFoundException("DataModel definition not found for ${dataModel.Model.name}")
+        columnFamilyHandlesByDataModelIndex[dataModelIdsByString[dataModel.Meta.name]]
+            ?: throw DefNotFoundException("DataModel definition not found for ${dataModel.Meta.name}")
 
     /** Get the unique indices for [dbIndex] and [uniqueHandle] */
     internal fun getUniqueIndices(dbIndex: UInt, uniqueHandle: ColumnFamilyHandle) =

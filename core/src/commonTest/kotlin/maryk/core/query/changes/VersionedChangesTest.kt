@@ -29,8 +29,8 @@ class VersionedChangesTest {
 
     private val context = RequestContext(
         dataModels = mapOf(
-            EmbeddedMarykModel.Model.name toUnitLambda { EmbeddedMarykModel },
-            TestMarykModel.Model.name toUnitLambda { TestMarykModel }
+            EmbeddedMarykModel.Meta.name toUnitLambda { EmbeddedMarykModel },
+            TestMarykModel.Meta.name toUnitLambda { TestMarykModel }
         ),
         dataModel = TestMarykModel
     )

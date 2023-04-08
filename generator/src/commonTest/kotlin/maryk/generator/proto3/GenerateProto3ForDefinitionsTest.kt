@@ -21,8 +21,8 @@ class MixedKotlinGenerationTest {
 
         Definitions(
             MarykTypeEnum,
-            ValueMarykObject.Model,
-            CompleteMarykModel.Model,
+            ValueMarykObject.Meta,
+            CompleteMarykModel.Meta,
         ).generateProto3 { name ->
             setOfNames.add(name)
             val writer = mapOfWriters[name]

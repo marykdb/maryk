@@ -59,7 +59,7 @@ internal class MutableValueDataModel<DO: ValueDataObject>: BaseMutableObjectData
     override val Serializer = ValueDataModelSerializer(this)
 
     @Suppress("UNCHECKED_CAST")
-    override val Model get() = _model as? ValueDataModelDefinition<DO, MutableValueDataModel<DO>>
+    override val Meta get() = _model as? ValueDataModelDefinition<DO, MutableValueDataModel<DO>>
         ?: throw Exception("No Model yet set, likely DataModel was not initialized yet")
 
     override fun invoke(values: ObjectValues<DO, MutableValueDataModel<DO>>): DO {

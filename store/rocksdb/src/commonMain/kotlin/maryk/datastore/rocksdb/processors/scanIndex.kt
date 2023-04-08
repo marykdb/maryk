@@ -53,7 +53,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
 
     val iterator = dbAccessor.getIterator(dataStore.defaultReadOptions, indexColumnHandle)
 
-    val keySize = scanRequest.dataModel.Model.keyByteSize
+    val keySize = scanRequest.dataModel.Meta.keyByteSize
     val valueOffset = indexReference.size
     val versionSize = if(scanRequest.toVersion != null) VERSION_BYTE_SIZE else 0
 

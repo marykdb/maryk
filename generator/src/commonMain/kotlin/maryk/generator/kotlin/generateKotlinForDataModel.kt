@@ -17,13 +17,13 @@ fun DataModel<*>.generateKotlin(
         enumKotlinDefinitions.add(it)
     }
 
-    val reservedIndices = Model.reservedIndices.let { indices ->
+    val reservedIndices = Meta.reservedIndices.let { indices ->
         when {
             indices.isNullOrEmpty() -> null
             else -> "reservedIndices = listOf(${indices.joinToString(", ", postfix = "u")}),"
         }
     }
-    val reservedNames = Model.reservedNames.let { names ->
+    val reservedNames = Meta.reservedNames.let { names ->
         when {
             names.isNullOrEmpty() -> null
             else -> "reservedNames = listOf(${names.joinToString(", ", "\"", "\"")}),"
@@ -36,7 +36,7 @@ fun DataModel<*>.generateKotlin(
         .let { if (it.isBlank()) "" else "\n        $it\n    " }
 
     val code = """
-    object ${Model.name} : Model<${Model.name}>($constructorParameters) {
+    object ${Meta.name} : Model<${Meta.name}>($constructorParameters) {
         ${propertiesKotlin.generateDefinitionsForProperties(addImport).trimStart()}
     }
     """.trimIndent()

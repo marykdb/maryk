@@ -71,7 +71,7 @@ class RocksDBDataStoreMigrationTest {
                 ),
                 migrationHandler = { _, storedDataModel, newDataModel ->
                     assertEquals(ModelV2, newDataModel)
-                    assertEquals(ModelV1_1.Model.version, storedDataModel.Model.version)
+                    assertEquals(ModelV1_1.Meta.version, storedDataModel.Meta.version)
                     // Should throw this exception to proof it is entering this handler
                     throw CustomException()
                 }

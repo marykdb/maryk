@@ -22,7 +22,7 @@ internal class ValueDataModelTest {
     @Test
     fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(
-            TestValueObject.Model,
+            TestValueObject.Meta,
             ValueDataModelDefinition.Model,
             { DefinitionsConversionContext() },
             { converted: ValueDataModelDefinition<*, *>, original: ValueDataModelDefinition<*, *> ->
@@ -63,7 +63,7 @@ internal class ValueDataModelTest {
     @Test
     fun convertDefinitionToJSONAndBack() {
         checkJsonConversion(
-            TestValueObject.Model,
+            TestValueObject.Meta,
             ValueDataModelDefinition.Model,
             { DefinitionsConversionContext() },
             ::compareDataModels
@@ -96,7 +96,7 @@ internal class ValueDataModelTest {
             """.trimIndent()
         ) {
             checkYamlConversion(
-                TestValueObject.Model,
+                TestValueObject.Meta,
                 ValueDataModelDefinition.Model,
                 { DefinitionsConversionContext() },
                 ::compareDataModels

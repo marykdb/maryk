@@ -27,12 +27,12 @@ abstract class ValuesDataModel : AbstractDataModel<Any>(), IsValuesDataModel
 
 internal class MutableRootDataModel : MutableValuesDataModel<MutableRootDataModel>(), IsRootDataModel {
     override val Serializer = DataModelSerializer<Any, Values<MutableRootDataModel>, MutableRootDataModel, IsPropertyContext>(this)
-    override val Model: IsRootDataModelDefinition<MutableRootDataModel> get() = super.Model as IsRootDataModelDefinition<MutableRootDataModel>
+    override val Meta: IsRootDataModelDefinition<MutableRootDataModel> get() = super.Meta as IsRootDataModelDefinition<MutableRootDataModel>
 }
 
 internal class MutableDataModel : MutableValuesDataModel<MutableDataModel>(), IsDataModel {
     override val Serializer = DataModelSerializer<Any, Values<MutableDataModel>, MutableDataModel, IsPropertyContext>(this)
-    override val Model: IsValuesDataModelDefinition<MutableDataModel> get() = super.Model
+    override val Meta: IsValuesDataModelDefinition<MutableDataModel> get() = super.Meta
 }
 
 /** Mutable variant of DataModel for a IsCollectionDefinition implementation */
@@ -40,7 +40,7 @@ internal abstract class MutableValuesDataModel<DM: IsValuesDataModel> : TypedVal
     IsMutableDataModel<AnyDefinitionWrapper> {
     internal var _model: IsValuesDataModelDefinition<DM>? = null
 
-    override val Model: IsValuesDataModelDefinition<DM>
+    override val Meta: IsValuesDataModelDefinition<DM>
         get() = _model ?: throw Exception("No Model yet set, likely DataModel was not initialized yet")
 
     override fun add(element: AnyDefinitionWrapper): Boolean {

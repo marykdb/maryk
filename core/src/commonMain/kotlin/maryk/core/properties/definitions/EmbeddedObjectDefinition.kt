@@ -154,7 +154,7 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsSimpleBaseObjectDataModel<DO, CX
             },
             toSerializable = { value: (Unit.() -> IsSimpleBaseObjectDataModel<*, *, *>)?, _ ->
                 value?.invoke(Unit)?.let { model ->
-                    DataModelReference((model as IsStorableDataModel).Model.name) { model }
+                    DataModelReference((model as IsStorableDataModel).Meta.name) { model }
                 }
             },
             fromSerializable = { ref ->

@@ -82,7 +82,7 @@ class InjectTest {
         Inject("testCollection", TestMarykModel(firstResponseValueRef) { embeddedValues { value::ref } })
 
     private val injectFromAny =
-        Inject("testCollection", ValuesResponse { values.atAny { values.refWithDM(TestMarykModel.Meta) { string } } })
+        Inject("testCollection", ValuesResponse { values.atAny { values.refWithDM(TestMarykModel) { string } } })
 
     @Test
     fun testGetToCollect() {

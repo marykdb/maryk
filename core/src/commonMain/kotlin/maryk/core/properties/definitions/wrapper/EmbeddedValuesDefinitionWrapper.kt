@@ -1,12 +1,11 @@
 package maryk.core.properties.definitions.wrapper
 
-import maryk.core.models.definitions.IsDataModelDefinition
-import maryk.core.properties.IsPropertyContext
 import maryk.core.models.IsValuesDataModel
+import maryk.core.models.invoke
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.graph.PropRefGraphType.PropRef
-import maryk.core.models.invoke
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
@@ -51,14 +50,14 @@ data class EmbeddedValuesDefinitionWrapper<
     }
 
     /** Get a top-level reference on a model with [propertyDefinitionGetter]. Used for contextual embed values property definitions. */
-    fun <T : Any, W : IsDefinitionWrapper<T, *, *, *>, DM: IsDataModelDefinition<P2>, P2: IsValuesDataModel> refWithDM(
+    fun <T : Any, W : IsDefinitionWrapper<T, *, *, *>, DM: IsValuesDataModel> refWithDM(
         dataModel: DM,
-        propertyDefinitionGetter: P2.() -> W
-    ): (AnyOutPropertyReference?) -> IsPropertyReference<T, W, IsValues<P2>> =
+        propertyDefinitionGetter: DM.() -> W
+    ): (AnyOutPropertyReference?) -> IsPropertyReference<T, W, IsValues<DM>> =
         {
             @Suppress("UNCHECKED_CAST")
-            propertyDefinitionGetter(dataModel.properties)
-                .ref(this.ref(it)) as IsPropertyReference<T, W, IsValues<P2>>
+            propertyDefinitionGetter(dataModel)
+                .ref(this.ref(it)) as IsPropertyReference<T, W, IsValues<DM>>
         }
 
     /** For quick notation to fetch property references with [referenceGetter] within embedded object */

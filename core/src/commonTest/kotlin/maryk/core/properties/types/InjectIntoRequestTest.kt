@@ -6,9 +6,9 @@ import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.inject.Inject
 import maryk.core.models.asValues
-import maryk.core.properties.exceptions.InjectException
 import maryk.core.models.graph
 import maryk.core.models.key
+import maryk.core.properties.exceptions.InjectException
 import maryk.core.query.RequestContext
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.filters.Exists
@@ -55,7 +55,7 @@ class InjectIntoRequestTest {
 
     @Test
     fun testInjectInValuesGetRequest() {
-        val requestRef = ValuesResponse { values.atAny { values.refWithDM(ReferencesModel.Meta) { references } } }
+        val requestRef = ValuesResponse { values.atAny { values.refWithDM(ReferencesModel) { references } } }
 
         val getRequest = GetRequest.run {
             create(

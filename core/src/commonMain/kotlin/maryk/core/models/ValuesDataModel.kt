@@ -30,7 +30,7 @@ internal class MutableRootDataModel : MutableValuesDataModel<MutableRootDataMode
     override val Meta: IsRootDataModelDefinition<MutableRootDataModel> get() = super.Meta as IsRootDataModelDefinition<MutableRootDataModel>
 }
 
-internal class MutableDataModel : MutableValuesDataModel<MutableDataModel>(), IsDataModel {
+internal class MutableDataModel : MutableValuesDataModel<MutableDataModel>(), IsValuesDataModel {
     override val Serializer = DataModelSerializer<Any, Values<MutableDataModel>, MutableDataModel, IsPropertyContext>(this)
     override val Meta: IsValuesDataModelDefinition<MutableDataModel> get() = super.Meta
 }

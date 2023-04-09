@@ -38,7 +38,7 @@ internal fun IsStorableDataModel<*>.checkProperties(
         },
         { storedProp ->
             val model = this.Meta
-            if (model is IsValuesDataModelDefinition<*>) {
+            if (model is IsValuesDataModelDefinition) {
                 if (model.reservedIndices?.contains(storedProp.index) != true) {
                     handleMigrationReason("Property with index ${storedProp.index} is not present in new model. Please add it to `reservedIndices` or add back the property to avoid this exception.")
                 }

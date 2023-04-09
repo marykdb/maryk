@@ -1,10 +1,10 @@
 package maryk.core.values
 
-import maryk.core.models.definitions.IsNamedDataModelDefinition
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.TypedValuesDataModel
-import maryk.core.properties.graph.IsPropRefGraph
+import maryk.core.models.definitions.IsNamedDataModelDefinition
 import maryk.core.models.validate
+import maryk.core.properties.graph.IsPropRefGraph
 import maryk.core.query.RequestContext
 import maryk.core.query.changes.IsChange
 
@@ -76,7 +76,7 @@ data class Values<DM : IsValuesDataModel> internal constructor(
     }
 
     override fun toString(): String {
-        val modelName = (dataModel.Meta as? IsNamedDataModelDefinition<*>)?.name ?: dataModel
+        val modelName = (dataModel.Meta as? IsNamedDataModelDefinition)?.name ?: dataModel
         return "Values<$modelName>${values.toString(dataModel)}"
     }
 

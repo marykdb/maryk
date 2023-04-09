@@ -18,7 +18,7 @@ import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
 interface IsRootDataModel: IsValuesDataModel {
-    override val Meta: IsRootDataModelDefinition<out IsValuesDataModel>
+    override val Meta: IsRootDataModelDefinition
 }
 
 /** Create a Values object with given [changes] */

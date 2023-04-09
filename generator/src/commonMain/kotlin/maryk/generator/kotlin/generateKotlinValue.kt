@@ -4,12 +4,10 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import maryk.core.exceptions.TypeException
-import maryk.core.models.definitions.IsNamedDataModelDefinition
-import maryk.core.models.definitions.IsObjectDataModelDefinition
-import maryk.core.models.definitions.IsValuesDataModelDefinition
-import maryk.core.models.definitions.ValueDataModelDefinition
 import maryk.core.models.IsValueDataModel
 import maryk.core.models.IsValuesDataModel
+import maryk.core.models.definitions.IsNamedDataModelDefinition
+import maryk.core.models.definitions.ValueDataModelDefinition
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.IsMapDefinition
@@ -80,7 +78,7 @@ internal fun generateKotlinValue(
     }
     is LocalDate -> "LocalDate(${value.year}, ${value.monthNumber}, ${value.dayOfMonth})"
     is IsIndexedEnumDefinition<*> -> value.name
-    is ValueDataModelDefinition<*, *> -> value.name
+    is ValueDataModelDefinition -> value.name
     is Key<*> -> """Key("$value")"""
     is Bytes -> {
         addImport("maryk.core.properties.types.Bytes")
@@ -169,7 +167,7 @@ internal fun generateKotlinValue(
                 when (val model = (value as? Unit.() -> Any)?.invoke(Unit)) {
                     is IsValuesDataModel ->
                         """{ ${model.Meta.name} }"""
-                    is IsNamedDataModelDefinition<*> ->
+                    is IsNamedDataModelDefinition ->
                         """{ ${model.name} }"""
                     null ->
                         if (value is IsValueDataModel<*, *>) {
@@ -180,8 +178,8 @@ internal fun generateKotlinValue(
                 }
             }
             is EmbeddedValuesDefinition<*> ->
-                definition.dataModel.Meta.generateKotlinValue(value as ValuesImpl, addImport)
-            is ValueObjectDefinition<*, *> -> definition.dataModel.Meta.let {
+                definition.dataModel.generateKotlinValue(value as ValuesImpl, addImport)
+            is ValueObjectDefinition<*, *> -> definition.dataModel.let {
                 return it.generateKotlinValue(value, addImport)
             }
             else -> "$value"
@@ -189,10 +187,10 @@ internal fun generateKotlinValue(
     }
 }
 
-private fun IsObjectDataModelDefinition<*, *>.generateKotlinValue(value: Any, addImport: (String) -> Unit): String {
+private fun IsValueDataModel<*, *>.generateKotlinValue(value: Any, addImport: (String) -> Unit): String {
     val values = mutableListOf<String>()
 
-    for (property in this.properties) {
+    for (property in this) {
         @Suppress("UNCHECKED_CAST")
         val wrapper = property as AnyDefinitionWrapper
         property.getter(value)?.let {
@@ -201,24 +199,24 @@ private fun IsObjectDataModelDefinition<*, *>.generateKotlinValue(value: Any, ad
     }
 
     return if (values.isEmpty()) {
-        "${this.name}()"
+        "${this.Meta.name}()"
     } else {
-        "${this.name}(\n${values.joinToString(",\n").prependIndent()}\n)"
+        "${this.Meta.name}(\n${values.joinToString(",\n").prependIndent()}\n)"
     }
 }
 
-private fun IsValuesDataModelDefinition<*>.generateKotlinValue(value: ValuesImpl, addImport: (String) -> Unit): String {
+private fun IsValuesDataModel.generateKotlinValue(value: ValuesImpl, addImport: (String) -> Unit): String {
     val values = mutableListOf<String>()
 
-    for (property in this.properties) {
+    for (property in this) {
         value.original(property.index)?.let {
             values.add("${property.name} = ${generateKotlinValue(property.definition, it, addImport)}")
         }
     }
 
     return if (values.isEmpty()) {
-        "${this.name}()"
+        "${this.Meta.name}()"
     } else {
-        "${this.name}(\n${values.joinToString(",\n").prependIndent()}\n)"
+        "${this.Meta.name}(\n${values.joinToString(",\n").prependIndent()}\n)"
     }
 }

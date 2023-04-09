@@ -8,7 +8,7 @@ import maryk.core.values.IsValueItems
 import maryk.core.values.Values
 
 interface IsValuesDataModel: IsTypedDataModel<Any>, IsStorableDataModel<Any> {
-    override val Meta : IsValuesDataModelDefinition<*>
+    override val Meta : IsValuesDataModelDefinition
 
     /**
      * Checks the model if there are no conflicting values.

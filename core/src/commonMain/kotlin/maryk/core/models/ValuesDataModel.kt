@@ -27,20 +27,20 @@ abstract class ValuesDataModel : AbstractDataModel<Any>(), IsValuesDataModel
 
 internal class MutableRootDataModel : MutableValuesDataModel<MutableRootDataModel>(), IsRootDataModel {
     override val Serializer = DataModelSerializer<Any, Values<MutableRootDataModel>, MutableRootDataModel, IsPropertyContext>(this)
-    override val Meta: IsRootDataModelDefinition<MutableRootDataModel> get() = super.Meta as IsRootDataModelDefinition<MutableRootDataModel>
+    override val Meta: IsRootDataModelDefinition get() = super.Meta as IsRootDataModelDefinition
 }
 
 internal class MutableDataModel : MutableValuesDataModel<MutableDataModel>(), IsValuesDataModel {
     override val Serializer = DataModelSerializer<Any, Values<MutableDataModel>, MutableDataModel, IsPropertyContext>(this)
-    override val Meta: IsValuesDataModelDefinition<MutableDataModel> get() = super.Meta
+    override val Meta: IsValuesDataModelDefinition get() = super.Meta
 }
 
 /** Mutable variant of DataModel for a IsCollectionDefinition implementation */
-internal abstract class MutableValuesDataModel<DM: IsValuesDataModel> : TypedValuesDataModel<DM>(),
+abstract class MutableValuesDataModel<DM: IsValuesDataModel> : TypedValuesDataModel<DM>(),
     IsMutableDataModel<AnyDefinitionWrapper> {
-    internal var _model: IsValuesDataModelDefinition<DM>? = null
+    internal var _model: IsValuesDataModelDefinition? = null
 
-    override val Meta: IsValuesDataModelDefinition<DM>
+    override val Meta: IsValuesDataModelDefinition
         get() = _model ?: throw Exception("No Model yet set, likely DataModel was not initialized yet")
 
     override fun add(element: AnyDefinitionWrapper): Boolean {
@@ -62,7 +62,7 @@ internal abstract class MutableValuesDataModel<DM: IsValuesDataModel> : TypedVal
 }
 
 /** Definition for a DataModel */
-internal data class DataModelCollectionDefinition(
+data class DataModelCollectionDefinition(
     val isRootModel: Boolean,
     override val capturer: Unit.(DefinitionsConversionContext?, ValuesDataModel) -> Unit
 ) : IsCollectionDefinition<
@@ -141,7 +141,7 @@ internal data class DataModelCollectionDefinition(
 }
 
 /** Wrapper specifically to wrap a DataModelCollectionDefinition */
-internal data class DataModelCollectionDefinitionWrapper<in DO : Any>(
+data class DataModelCollectionDefinitionWrapper<in DO : Any>(
     override val index: UInt,
     override val name: String,
     override val definition: DataModelCollectionDefinition,

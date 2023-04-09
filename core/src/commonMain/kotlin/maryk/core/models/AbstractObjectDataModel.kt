@@ -55,11 +55,10 @@ internal abstract class BaseMutableObjectDataModel<DO: Any> : AbstractObjectData
 
 internal class MutableValueDataModel<DO: ValueDataObject>: BaseMutableObjectDataModel<DO>(),
     IsValueDataModel<DO, MutableValueDataModel<DO>> {
-    internal var _model: IsDataModelDefinition<*>? = null
+    internal var _model: IsDataModelDefinition? = null
     override val Serializer = ValueDataModelSerializer(this)
 
-    @Suppress("UNCHECKED_CAST")
-    override val Meta get() = _model as? ValueDataModelDefinition<DO, MutableValueDataModel<DO>>
+    override val Meta get() = _model as? ValueDataModelDefinition
         ?: throw Exception("No Model yet set, likely DataModel was not initialized yet")
 
     override fun invoke(values: ObjectValues<DO, MutableValueDataModel<DO>>): DO {

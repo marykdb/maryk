@@ -54,7 +54,7 @@ fun <DM : IsStorableDataModel<*>> DM.generateProto3Schema(
     var reservations = ""
 
     val meta = Meta
-    if (meta is IsValuesDataModelDefinition<*>) {
+    if (meta is IsValuesDataModelDefinition) {
         meta.reservedIndices?.let { indices ->
             reservations += "reserved ${indices.joinToString(", ")};\n      "
         }

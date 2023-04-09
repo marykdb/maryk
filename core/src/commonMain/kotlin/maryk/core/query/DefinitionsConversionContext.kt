@@ -1,7 +1,7 @@
 package maryk.core.query
 
-import maryk.core.properties.IsPropertyContext
 import maryk.core.models.IsDataModel
+import maryk.core.properties.IsPropertyContext
 
 /**
  * Saves the context while writing and parsing Definitions

@@ -24,6 +24,13 @@ abstract class AbstractDataModel<DO : Any> : IsTypedDataModel<DO> {
     protected val nameToDefinition =
         mutableMapOf<String, IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>>()
 
+    override fun equals(other: Any?): Boolean =
+        other is AbstractDataModel<*> && nameToDefinition.keys == other.nameToDefinition.keys
+
+    override fun hashCode(): Int {
+        return nameToDefinition.keys.hashCode()
+    }
+
     override val allWithDefaults by lazy {
         _allProperties.filter {
             val def = it.definition

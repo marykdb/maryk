@@ -4,7 +4,6 @@ import kotlinx.datetime.LocalTime
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.models.definitions.RootDataModelDefinition
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
@@ -89,8 +88,8 @@ internal class RootDataModelTest {
     @Test
     fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(
-            TestMarykModel.Meta,
-            RootDataModelDefinition.Model,
+            TestMarykModel,
+            RootDataModel.Model,
             { DefinitionsConversionContext() },
             ::compareDataModels
         )
@@ -351,8 +350,8 @@ internal class RootDataModelTest {
             }""".trimIndent()
         ) {
             checkJsonConversion(
-                TestMarykModel.Meta,
-                RootDataModelDefinition.Model,
+                TestMarykModel,
+                RootDataModel.Model,
                 { DefinitionsConversionContext() },
                 ::compareDataModels
             )
@@ -549,8 +548,8 @@ internal class RootDataModelTest {
             """.trimIndent()
         ) {
             checkYamlConversion(
-                TestMarykModel.Meta,
-                RootDataModelDefinition.Model,
+                TestMarykModel,
+                RootDataModel.Model,
                 { DefinitionsConversionContext() },
                 ::compareDataModels
             )
@@ -640,99 +639,99 @@ internal class RootDataModelTest {
         newContext.dataModels["TestValueObject"] = { TestValueObject }
         newContext.dataModels["EmbeddedMarykModel"] = { EmbeddedMarykModel }
 
-        RootDataModelDefinition.Model.Serializer.readJson(reader, newContext).toDataObject().apply {
-            assertEquals("SimpleModel", name)
+        RootDataModel.Model.Serializer.readJson(reader, newContext).toDataObject().apply {
+            assertEquals("SimpleModel", this.Meta.name)
 
-            properties["string"]!!.let {
+            this["string"]!!.let {
                 expect(1u) { it.index }
                 expect(StringDefinition()) {
                     it.definition as StringDefinition
                 }
                 expect(setOf("str")) { it.alternativeNames }
             }
-            expect(properties["string"]) { properties["str"] }
+            expect(this["string"]) { this["str"] }
 
-            properties["int"]!!.let {
+            this["int"]!!.let {
                 expect(2u) { it.index }
                 expect(NumberDefinition(type = SInt32)) {
                     it.definition as NumberDefinition<*>
                 }
             }
-            properties["date"]!!.let {
+            this["date"]!!.let {
                 expect(3u) { it.index }
                 expect(DateDefinition()) { it.definition as DateDefinition }
             }
-            properties["time"]!!.let {
+            this["time"]!!.let {
                 expect(4u) { it.index }
                 expect(TimeDefinition()) { it.definition as TimeDefinition }
             }
-            properties["dateTime"]!!.let {
+            this["dateTime"]!!.let {
                 expect(5u) { it.index }
                 expect(DateTimeDefinition()) {
                     it.definition as DateTimeDefinition
                 }
             }
-            properties["options"]!!.let {
+            this["options"]!!.let {
                 expect(6u) { it.index }
                 expect(EnumDefinition(enum = Option)) {
                     it.definition as EnumDefinition<*>
                 }
             }
-            properties["fixed"]!!.let {
+            this["fixed"]!!.let {
                 expect(7u) { it.index }
                 expect(FixedBytesDefinition(byteSize = 4)) {
                     it.definition as FixedBytesDefinition
                 }
             }
-            properties["flex"]!!.let {
+            this["flex"]!!.let {
                 expect(8u) { it.index }
                 expect(FlexBytesDefinition()) {
                     it.definition as FlexBytesDefinition
                 }
             }
-            properties["list"]!!.let {
+            this["list"]!!.let {
                 expect(9u) { it.index }
                 expect(ListDefinition(valueDefinition = StringDefinition())) {
                     it.definition as ListDefinition<*, *>
                 }
             }
-            properties["set"]!!.let {
+            this["set"]!!.let {
                 expect(10u) { it.index }
                 expect(SetDefinition(valueDefinition = BooleanDefinition())) {
                     it.definition as SetDefinition<*, *>
                 }
             }
-            properties["map"]!!.let {
+            this["map"]!!.let {
                 expect(11u) { it.index }
                 expect(MapDefinition(keyDefinition = DateDefinition(), valueDefinition = StringDefinition())) {
                     it.definition as MapDefinition<*, *, *>
                 }
             }
-            properties["embedded"]!!.let {
+            this["embedded"]!!.let {
                 expect(12u) { it.index }
                 expect(EmbeddedValuesDefinition(dataModel = { TestMarykModel })) {
                     it.definition as EmbeddedValuesDefinition<*>
                 }
             }
-            properties["value"]!!.let {
+            this["value"]!!.let {
                 expect(13u) { it.index }
                 expect(ValueObjectDefinition(dataModel = TestValueObject)) {
                     it.definition as ValueObjectDefinition<*, *>
                 }
             }
-            properties["ref"]!!.let {
+            this["ref"]!!.let {
                 expect(14u) { it.index }
                 expect(ReferenceDefinition(dataModel = { TestMarykModel })) {
                     it.definition as ReferenceDefinition<*>
                 }
             }
-            properties["multi"]!!.let {
+            this["multi"]!!.let {
                 expect(15u) { it.index }
                 expect(MultiTypeDefinition(typeEnum = SimpleMarykTypeEnum)) {
                     it.definition as MultiTypeDefinition<*, *>
                 }
             }
-            properties["isTrue"]!!.let {
+            this["isTrue"]!!.let {
                 expect(16u) { it.index }
                 expect(BooleanDefinition()) {
                     it.definition as BooleanDefinition

@@ -4,9 +4,10 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsObjectDataModel
-import maryk.core.properties.IsPropertyContext
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.TypedValuesDataModel
+import maryk.core.models.validate
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.PropertyDefinitionType.Embed
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
@@ -20,7 +21,6 @@ import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.models.validate
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
@@ -131,7 +131,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel>(
 
         if (required != other.required) return false
         if (final != other.final) return false
-        if (dataModel.Meta != other.dataModel.Meta) return false
+        if (dataModel != other.dataModel) return false
 
         return true
     }

@@ -5,7 +5,7 @@ import maryk.core.models.migration.MigrationStatus
 import maryk.core.models.migration.checkProperties
 
 interface IsStorableDataModel<DO: Any>: IsTypedDataModel<DO> {
-    val Meta: IsNamedDataModelDefinition<out IsDataModel>
+    val Meta: IsNamedDataModelDefinition
 
     /**
      * Checks if a migration is needed between [storedDataModel] and current model and returns a status

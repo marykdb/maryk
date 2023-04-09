@@ -4,7 +4,6 @@ import kotlinx.datetime.LocalDateTime
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.models.definitions.ValueDataModelDefinition
 import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.types.ValueDataObject
@@ -22,23 +21,23 @@ internal class ValueDataModelTest {
     @Test
     fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(
-            TestValueObject.Meta,
-            ValueDataModelDefinition.Model,
+            TestValueObject,
+            ValueDataModel.Model,
             { DefinitionsConversionContext() },
-            { converted: ValueDataModelDefinition<*, *>, original: ValueDataModelDefinition<*, *> ->
+            { converted: IsValueDataModel<*, *>, original: IsValueDataModel<*, *> ->
                 compareDataModels(converted, original)
 
                 // Also test conversion with the generated ValueObject
 
                 @Suppress("UNCHECKED_CAST")
                 val convertedValueModel =
-                    converted as ValueDataModelDefinition<ValueDataObject, IsObjectDataModel<ValueDataObject>>
+                    converted as ValueDataModel<ValueDataObject, IsValueDataModel<ValueDataObject, *>>
 
-                val value = converted.properties.values {
+                val value = converted.values {
                     ValueItems(
-                        convertedValueModel.properties[1u]!! withNotNull 5,
-                        convertedValueModel.properties[2u]!! withNotNull LocalDateTime(2018, 7, 18, 12, 0, 0),
-                        convertedValueModel.properties[3u]!! withNotNull true
+                        convertedValueModel[1u]!! withNotNull 5,
+                        convertedValueModel[2u]!! withNotNull LocalDateTime(2018, 7, 18, 12, 0, 0),
+                        convertedValueModel[3u]!! withNotNull true
                     )
                 }.toDataObject()
 
@@ -48,7 +47,7 @@ internal class ValueDataModelTest {
                 val cache = WriteCache()
 
                 @Suppress("UNCHECKED_CAST")
-                val serializer = convertedValueModel.properties.Serializer as ObjectDataModelSerializer<ValueDataObject, IsObjectDataModel<ValueDataObject>, IsPropertyContext, IsPropertyContext>
+                val serializer = convertedValueModel.Serializer as ObjectDataModelSerializer<ValueDataObject, IsObjectDataModel<ValueDataObject>, IsPropertyContext, IsPropertyContext>
 
                 val byteLength = serializer.calculateObjectProtoBufLength(value, cache, context)
                 bc.reserve(byteLength)
@@ -63,8 +62,8 @@ internal class ValueDataModelTest {
     @Test
     fun convertDefinitionToJSONAndBack() {
         checkJsonConversion(
-            TestValueObject.Meta,
-            ValueDataModelDefinition.Model,
+            TestValueObject,
+            ValueDataModel.Model,
             { DefinitionsConversionContext() },
             ::compareDataModels
         )
@@ -96,8 +95,8 @@ internal class ValueDataModelTest {
             """.trimIndent()
         ) {
             checkYamlConversion(
-                TestValueObject.Meta,
-                ValueDataModelDefinition.Model,
+                TestValueObject,
+                ValueDataModel.Model,
                 { DefinitionsConversionContext() },
                 ::compareDataModels
             )

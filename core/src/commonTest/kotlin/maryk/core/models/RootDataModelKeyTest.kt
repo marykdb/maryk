@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package maryk.core.models
 
 import maryk.core.exceptions.InvalidDefinitionException
@@ -27,8 +29,8 @@ class RootDataModelKeyTest {
     fun notAcceptNonRequiredDefinitions() {
         assertFailsWith<IllegalArgumentException> {
             RootDataModelDefinition(
+                name = "WrongModel",
                 keyDefinition = boolean.ref(),
-                properties = WrongProperties
             )
         }
     }
@@ -37,10 +39,10 @@ class RootDataModelKeyTest {
     fun notAcceptNonFinalDefinitions() {
         assertFailsWith<IllegalArgumentException> {
             RootDataModelDefinition(
+                name = "WrongModel",
                 keyDefinition = Multiple(
                     dateTime.ref()
                 ),
-                properties = WrongProperties
             )
         }
     }
@@ -49,10 +51,10 @@ class RootDataModelKeyTest {
     fun notAcceptFlexByteDefinitions() {
         assertFailsWith<InvalidDefinitionException> {
             RootDataModelDefinition(
+                name = "WrongModel",
                 keyDefinition = Multiple(
                     string.ref()
                 ),
-                properties = WrongProperties
             )
         }
     }

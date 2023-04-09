@@ -43,7 +43,8 @@ internal val mapOfSimpleIndexKeyPartDefinitions: Map<IndexKeyPartType<IsIndexabl
         IndexKeyPartType.UUID to EmbeddedObjectDefinition(dataModel = { UUIDKey.Model }),
         IndexKeyPartType.Reference to ContextualPropertyReferenceDefinition(
             contextualResolver = {
-                it?.propertyDefinitions as? AbstractDataModel<*>? ?: throw ContextNotFoundException()
+                it?.propertyDefinitions as? AbstractDataModel<*>?
+                    ?: throw ContextNotFoundException()
             }
         ),
         IndexKeyPartType.Reversed to EmbeddedObjectDefinition(dataModel = { ReversedInstance.Model })

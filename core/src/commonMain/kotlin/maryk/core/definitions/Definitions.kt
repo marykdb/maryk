@@ -6,10 +6,10 @@ import maryk.core.definitions.PrimitiveType.RootModel
 import maryk.core.definitions.PrimitiveType.TypeDefinition
 import maryk.core.definitions.PrimitiveType.ValueModel
 import maryk.core.exceptions.ContextNotFoundException
+import maryk.core.models.DataModel
+import maryk.core.models.RootDataModel
 import maryk.core.models.SingleValueDataModel
-import maryk.core.models.definitions.DataModelDefinition
-import maryk.core.models.definitions.RootDataModelDefinition
-import maryk.core.models.definitions.ValueDataModelDefinition
+import maryk.core.models.ValueDataModel
 import maryk.core.models.serializers.SingleValueDataModelSerializer
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
@@ -52,31 +52,31 @@ data class Definitions(
                 definitionMap = mapOf(
                     PrimitiveType.Model to ContextCaptureDefinition(
                         definition = EmbeddedObjectDefinition(
-                            dataModel = { DataModelDefinition.Model }
+                            dataModel = { DataModel.Model }
                         ),
                         capturer = { context, model ->
                             context?.let {
-                                it.dataModels[model.name] = { model.properties }
+                                it.dataModels[model.Meta.name] = { model }
                             } ?: throw ContextNotFoundException()
                         }
                     ),
                     ValueModel to ContextCaptureDefinition(
                         definition = EmbeddedObjectDefinition(
-                            dataModel = { ValueDataModelDefinition.Model }
+                            dataModel = { ValueDataModel.Model }
                         ),
                         capturer = { context, model ->
                             context?.let {
-                                it.dataModels[model.name] = { model.properties }
+                                it.dataModels[model.Meta.name] = { model }
                             } ?: throw ContextNotFoundException()
                         }
                     ),
                     RootModel to ContextCaptureDefinition(
                         definition = EmbeddedObjectDefinition(
-                            dataModel = { RootDataModelDefinition.Model }
+                            dataModel = { RootDataModel.Model }
                         ),
                         capturer = { context: ContainsDefinitionsContext?, model ->
                             context?.let {
-                                it.dataModels[model.name] = { model.properties }
+                                it.dataModels[model.Meta.name] = { model }
                             } ?: throw ContextNotFoundException()
                         }
                     ),

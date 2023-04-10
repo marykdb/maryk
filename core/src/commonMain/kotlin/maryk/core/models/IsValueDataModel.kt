@@ -7,8 +7,15 @@ import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.values.ObjectValues
 
-interface IsValueDataModel<DO: ValueDataObject, DM: IsObjectDataModel<DO>>: IsBaseObjectDataModel<DO, DM, IsPropertyContext, IsPropertyContext>,
-    IsTypedObjectDataModel<DO, DM, IsPropertyContext>, IsNamedObjectModel<DO, DM> {
+/**
+ * Interface for ValueDataModels.
+ * Contains ValueDataModel specific Serializer and Meta definition.
+ * Also contains method to create bytes from passed ObjectValues based on this ValueDataModel.
+ */
+interface IsValueDataModel<DO: ValueDataObject, DM: IsObjectDataModel<DO>>:
+    IsBaseObjectDataModel<DO, DM, IsPropertyContext, IsPropertyContext>,
+    IsTypedObjectDataModel<DO, DM, IsPropertyContext>,
+    IsStorableDataModel<DO> {
     override val Serializer: IsValueDataModelSerializer<DO, DM>
     override val Meta: ValueDataModelDefinition
 

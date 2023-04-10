@@ -3,7 +3,7 @@ package maryk.test.models
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
-import maryk.core.models.NamedObjectModel
+import maryk.core.models.ObjectDataModel
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.StringDefinition
@@ -44,8 +44,7 @@ data class TestMarykObject(
     val reference: Key<TestMarykModel>? = null,
     val listOfString: List<String>? = null
 ) {
-    @Suppress("unused")
-    companion object : NamedObjectModel<TestMarykObject, Companion>(TestMarykObject::class) {
+    companion object : ObjectDataModel<TestMarykObject, Companion>(TestMarykObject::class) {
         val string by string(
             index = 1u,
             getter = TestMarykObject::string,
@@ -152,21 +151,21 @@ data class TestMarykObject(
         )
 
         override fun invoke(values: ObjectValues<TestMarykObject, Companion>) = TestMarykObject(
-            string = values(1u),
-            int = values(2u),
-            uint = values(3u),
-            double = values(4u),
-            dateTime = values(5u),
-            bool = values(6u),
-            enum = values(7u),
-            list = values(8u),
-            set = values(9u),
-            map = values(10u),
-            valueObject = values(11u),
-            embeddedObject = values(12u),
-            multi = values(13u),
-            reference = values(14u),
-            listOfString = values(15u)
+            string = values(string.index),
+            int = values(int.index),
+            uint = values(uint.index),
+            double = values(double.index),
+            dateTime = values(dateTime.index),
+            bool = values(bool.index),
+            enum = values(enum.index),
+            list = values(list.index),
+            set = values(set.index),
+            map = values(map.index),
+            valueObject = values(valueObject.index),
+            embeddedObject = values(embeddedObject.index),
+            multi = values(multi.index),
+            reference = values(reference.index),
+            listOfString = values(listOfString.index)
         )
     }
 }

@@ -29,7 +29,7 @@ import kotlin.reflect.KClass
 
 abstract class ValueDataModel<DO: ValueDataObject, DM: IsValueDataModel<DO, *>> internal constructor(
     name: String,
-): ObjectDataModel<DO, DM, IsPropertyContext, IsPropertyContext>(), IsValueDataModel<DO, DM>, MarykPrimitive {
+): InternalObjectDataModel<DO, DM, IsPropertyContext, IsPropertyContext>(), IsValueDataModel<DO, DM>, MarykPrimitive {
     constructor(
         objClass: KClass<DO>,
     ): this(

@@ -1,15 +1,14 @@
 package maryk.core.models
 
 import maryk.core.properties.IsPropertyContext
-import maryk.core.values.ObjectValues
 
 /**
- * ObjectDataModel of type [DO] which create contexts so properties know the values of other properties.
+ * DataModel containing objects of type [DO] which create contexts so properties know the values of other properties.
  * Use it to create a context on starting an action which needs a context.
  * This context is cached if it is needed to read multiple times
  */
 abstract class ContextualDataModel<DO: Any, P: ContextualDataModel<DO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext>(
     val contextTransformer: Unit.(CXI?) -> CX?,
-) : ObjectDataModel<DO, P, CXI, CX>(), IsObjectDataModel<DO>, IsTypedObjectModel<DO, P, CXI, CX> {
-    abstract override fun invoke(values: ObjectValues<DO, P>): DO
-}
+) : InternalObjectDataModel<DO, P, CXI, CX>(),
+    IsObjectDataModel<DO>,
+    IsTypedObjectModel<DO, P, CXI, CX>

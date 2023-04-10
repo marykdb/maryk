@@ -9,7 +9,7 @@ typealias SingleTypedValueDataModel<T, DO, DM, CX> = SingleValueDataModel<T, T, 
 
 abstract class SingleValueDataModel<T : Any, TO : Any, DO : Any, DM : IsObjectDataModel<DO>, CX : IsPropertyContext>(
     val singlePropertyDefinitionGetter: () -> IsDefinitionWrapper<T, out TO, CX, DO>,
-): ObjectDataModel<DO, DM, CX, CX>() {
+): InternalObjectDataModel<DO, DM, CX, CX>() {
     /** Creates a Data Object by [values] */
     abstract override fun invoke(values: ObjectValues<DO, DM>): DO
 

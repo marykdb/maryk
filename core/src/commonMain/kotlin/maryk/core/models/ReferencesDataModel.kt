@@ -13,9 +13,13 @@ import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
+/**
+ * DataModel used to objects which store a list of References.
+ * Contains Json serializers to write and read in a more user readable format.
+ */
 abstract class ReferencesDataModel<DO: Any, DM: ReferencesDataModel<DO, DM>>(
     referencesGetter: (DO) -> List<AnyPropertyReference>,
-) : ObjectDataModel<DO, DM, RequestContext, RequestContext>() {
+) : InternalObjectDataModel<DO, DM, RequestContext, RequestContext>() {
     abstract val references: ListDefinitionWrapper<AnyPropertyReference, AnyPropertyReference, RequestContext, DO>
 
     abstract override fun invoke(values: ObjectValues<DO, DM>): DO

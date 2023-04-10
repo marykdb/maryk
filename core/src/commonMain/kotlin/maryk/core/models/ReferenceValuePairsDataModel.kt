@@ -14,11 +14,14 @@ import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
-/** For data models which contains only reference pairs of type [R] */
+/**
+ * For data models which contains a list of only reference pairs of type [R]
+ * Contains specific Serializer overrides to create a nicer looking output.
+ */
 abstract class ReferenceValuePairsDataModel<DO: Any, DM: ReferenceValuePairsDataModel<DO, DM, R, T, TO>, R: DefinedByReference<*>, T : Any, TO : Any>(
     pairGetter: (DO) -> List<R>,
     val pairModel: ReferenceValuePairDataModel<R, *, *, *, out IsDefinitionWrapper<T, TO, RequestContext, R>>,
-): ObjectDataModel<DO, DM, RequestContext, RequestContext>() {
+): InternalObjectDataModel<DO, DM, RequestContext, RequestContext>() {
     val referenceValuePairs by list(
         index = 1u,
         getter = pairGetter,
@@ -26,8 +29,6 @@ abstract class ReferenceValuePairsDataModel<DO: Any, DM: ReferenceValuePairsData
             dataModel = { pairModel }
         )
     )
-
-    abstract override fun invoke(values: ObjectValues<DO, DM>): DO
 
     @Suppress("UNCHECKED_CAST", "LeakingThis")
     override val Serializer = object: ObjectDataModelSerializer<DO, DM, RequestContext, RequestContext>(this as DM) {

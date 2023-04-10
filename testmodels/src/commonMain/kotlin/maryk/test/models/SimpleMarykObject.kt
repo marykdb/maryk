@@ -1,13 +1,13 @@
 package maryk.test.models
 
-import maryk.core.models.NamedObjectModel
+import maryk.core.models.ObjectDataModel
 import maryk.core.properties.definitions.string
 import maryk.core.values.ObjectValues
 
 data class SimpleMarykObject(
     val value: String = "haha"
 ) {
-    companion object : NamedObjectModel<SimpleMarykObject, Companion>(SimpleMarykObject::class) {
+    companion object : ObjectDataModel<SimpleMarykObject, Companion>(SimpleMarykObject::class) {
         val value by string(
             index = 1u,
             getter = SimpleMarykObject::value,
@@ -16,7 +16,7 @@ data class SimpleMarykObject(
         )
 
         override fun invoke(values: ObjectValues<SimpleMarykObject, Companion>) = SimpleMarykObject(
-            value = values(1u)
+            value = values(value.index)
         )
     }
 }

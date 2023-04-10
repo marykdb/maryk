@@ -82,15 +82,19 @@ open class RootDataModel<DM: IsValuesDataModel> internal constructor(
         if (storedDataModel is IsRootDataModel) {
             // Only process indices if they are present on new model.
             // If they are present on stored but not on new, accept it.
-            Meta.orderedIndices?.let { indices ->
-                if (storedDataModel.Meta.orderedIndices == null) {
+            Meta.indices?.let { indices ->
+                val orderedIndices = indices.sortedBy { it.referenceStorageByteArray }
+
+                if (storedDataModel.Meta.indices == null) {
                     // Only index the values which have stored properties on the stored model
-                    val toIndex = indices.filter { it.isCompatibleWithModel(storedDataModel) }
+                    val toIndex = orderedIndices.filter { it.isCompatibleWithModel(storedDataModel) }
                     indicesToIndex.addAll(toIndex)
                 } else {
+                    val storedOrderedIndices = storedDataModel.Meta.indices!!.sortedBy { it.referenceStorageByteArray }
+
                     synchronizedIteration(
-                        indices.iterator(),
-                        storedDataModel.Meta.orderedIndices!!.iterator(),
+                        orderedIndices.iterator(),
+                        storedOrderedIndices.iterator(),
                         { newValue, storedValue ->
                             newValue.referenceStorageByteArray compareTo storedValue.referenceStorageByteArray
                         },

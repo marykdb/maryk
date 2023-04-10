@@ -1,6 +1,5 @@
 package maryk.core.models.definitions
 
-import maryk.core.definitions.MarykPrimitiveDescriptor
 import maryk.core.definitions.PrimitiveType
 import maryk.core.exceptions.SerializationException
 import maryk.core.models.DefinitionModel
@@ -16,14 +15,14 @@ import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeWriter
 
 /**
- * DataModel definition. Contains a [name] to identify the model.
+ * Metadata definition of a regular [maryk.core.models.DataModel]
+ * It contains a [name] and optional [reservedIndices] and [reservedNames]
  */
 data class DataModelDefinition(
     override val name: String,
     override val reservedIndices: List<UInt>? = null,
     override val reservedNames: List<String>? = null,
-) : BaseDataModelDefinition(), MarykPrimitiveDescriptor,
-    IsValuesDataModelDefinition {
+) : IsValuesDataModelDefinition {
     override val primitiveType = PrimitiveType.Model
 
     object Model : DefinitionModel<DataModelDefinition>() {

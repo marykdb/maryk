@@ -6,7 +6,6 @@ import kotlinx.datetime.LocalTime
 import maryk.core.exceptions.TypeException
 import maryk.core.models.IsValueDataModel
 import maryk.core.models.IsValuesDataModel
-import maryk.core.models.definitions.IsNamedDataModelDefinition
 import maryk.core.models.definitions.ValueDataModelDefinition
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.EnumDefinition
@@ -167,8 +166,6 @@ internal fun generateKotlinValue(
                 when (val model = (value as? Unit.() -> Any)?.invoke(Unit)) {
                     is IsValuesDataModel ->
                         """{ ${model.Meta.name} }"""
-                    is IsNamedDataModelDefinition ->
-                        """{ ${model.name} }"""
                     null ->
                         if (value is IsValueDataModel<*, *>) {
                             value.Meta.name

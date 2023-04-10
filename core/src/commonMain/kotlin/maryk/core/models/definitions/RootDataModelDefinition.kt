@@ -1,6 +1,5 @@
 package maryk.core.models.definitions
 
-import maryk.core.definitions.MarykPrimitiveDescriptor
 import maryk.core.definitions.PrimitiveType.RootModel
 import maryk.core.exceptions.SerializationException
 import maryk.core.models.DefinitionModel
@@ -27,7 +26,8 @@ import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeWriter
 
 /**
- * DataModel defining data objects which is on root level, so it can be stored and thus can have a key.
+ * DataModel definition for metadata for [maryk.core.models.DataModel],
+ * so it can be stored and thus can have a key.
  * The key is defined by passing an ordered array of key definitions.
  * If no key is defined the data model will get a UUID.
  */
@@ -37,16 +37,12 @@ data class RootDataModelDefinition(
     override val version: Version = Version(1),
     override val indices: List<IsIndexable>? = null,
     override val reservedIndices: List<UInt>? = null,
-    override val reservedNames: List<String>? = null
-) : BaseDataModelDefinition(),
-    IsRootDataModelDefinition,
-    MarykPrimitiveDescriptor {
+    override val reservedNames: List<String>? = null,
+) : IsRootDataModelDefinition {
     override val primitiveType = RootModel
 
     override val keyByteSize = checkKeyDefinitionAndCountBytes(keyDefinition)
     override val keyIndices = calculateKeyIndices(keyDefinition)
-
-    override val orderedIndices: List<IsIndexable>? = indices?.sortedBy { it.referenceStorageByteArray }
 
     object Model : DefinitionModel<RootDataModelDefinition>(){
         val name by string(1u, RootDataModelDefinition::name)

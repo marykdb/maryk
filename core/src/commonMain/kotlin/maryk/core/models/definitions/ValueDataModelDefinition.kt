@@ -1,6 +1,5 @@
 package maryk.core.models.definitions
 
-import maryk.core.definitions.MarykPrimitiveDescriptor
 import maryk.core.definitions.PrimitiveType.ValueModel
 import maryk.core.exceptions.SerializationException
 import maryk.core.models.DefinitionModel
@@ -12,11 +11,12 @@ import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeWriter
 
 /**
- * ObjectDataModel for objects that can be encoded in fixed length width.
+ * A definition of metadata for ValueDataModels.
+ * Primarily defines the [name] and [primitiveType] of the model
  */
 data class ValueDataModelDefinition(
     override val name: String,
-) : ObjectDataModelDefinition(name), MarykPrimitiveDescriptor {
+) : IsDataModelDefinition {
     override val primitiveType = ValueModel
 
     internal object Model : DefinitionModel<ValueDataModelDefinition>() {

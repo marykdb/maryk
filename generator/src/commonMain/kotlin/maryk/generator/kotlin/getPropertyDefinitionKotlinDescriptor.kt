@@ -2,7 +2,6 @@ package maryk.generator.kotlin
 
 import maryk.core.exceptions.TypeException
 import maryk.core.models.IsObjectDataModel
-import maryk.core.models.definitions.IsNamedDataModelDefinition
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
@@ -292,7 +291,7 @@ private val definitionNamesMap = mapOf(
         className = "EmbeddedValuesDefinition",
         wrapFunctionName = "embed",
         kotlinTypeName = {
-            val modelName = (it.dataModel.Meta as IsNamedDataModelDefinition).name
+            val modelName = it.dataModel.Meta.name
             "Values<$modelName, $modelName.Properties>"
         },
         imports = { valuesImports },

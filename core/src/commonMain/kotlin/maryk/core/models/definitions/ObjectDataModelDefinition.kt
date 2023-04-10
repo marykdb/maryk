@@ -1,10 +1,14 @@
 package maryk.core.models.definitions
 
-/**
- * ObjectDataModel for non-contextual models. Contains a [name] to identify the model.
- */
-interface IsObjectDataModelDefinition : IsNamedDataModelDefinition
+import maryk.core.definitions.MarykPrimitiveDescriptor
+import maryk.core.definitions.PrimitiveType
 
-abstract class ObjectDataModelDefinition(
+/**
+ * A Definition for an [maryk.core.models.ObjectDataModel].
+ * Mostly used for internal models which never need to be transported.
+ */
+data class ObjectDataModelDefinition(
     override val name: String,
-) : BaseDataModelDefinition(), IsObjectDataModelDefinition
+) : IsDataModelDefinition, MarykPrimitiveDescriptor {
+    override val primitiveType: PrimitiveType = PrimitiveType.ObjectModel
+}

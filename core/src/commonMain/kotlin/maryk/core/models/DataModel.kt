@@ -7,6 +7,8 @@ import maryk.core.exceptions.RequestException
 import maryk.core.models.definitions.DataModelDefinition
 import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.PropertiesCollectionDefinition
+import maryk.core.properties.PropertiesCollectionDefinitionWrapper
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.wrapper.AnyDefinitionWrapper
@@ -68,11 +70,10 @@ open class DataModel<DM: IsValuesDataModel>(
     }
 
     object Model: DefinitionModel<DataModel<*>>() {
-        val properties = DataModelCollectionDefinitionWrapper<Any>(
+        val properties = PropertiesCollectionDefinitionWrapper(
             1u,
             "properties",
-            DataModelPropertiesCollectionDefinition(
-                false,
+            PropertiesCollectionDefinition(
                 capturer = { context, propDefs ->
                     context?.apply {
                         this.propertyDefinitions = propDefs

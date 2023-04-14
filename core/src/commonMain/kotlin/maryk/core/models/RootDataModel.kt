@@ -6,9 +6,10 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
 import maryk.core.models.definitions.RootDataModelDefinition
 import maryk.core.models.migration.MigrationStatus
-import maryk.core.models.serializers.IsDataModelSerializer
 import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.PropertiesCollectionDefinition
+import maryk.core.properties.PropertiesCollectionDefinitionWrapper
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.index.IsIndexable
@@ -137,18 +138,20 @@ open class RootDataModel<DM: IsValuesDataModel> internal constructor(
     }
 
     object Model: DefinitionModel<RootDataModel<*>>() {
-        val properties = DataModelCollectionDefinitionWrapper<RootDataModel<*>>(
+        val properties = PropertiesCollectionDefinitionWrapper<RootDataModel<*>>(
             1u,
             "properties",
-            DataModelPropertiesCollectionDefinition(
-                false,
+            PropertiesCollectionDefinition(
                 capturer = { context, propDefs ->
                     context?.apply {
                         this.propertyDefinitions = propDefs
                     } ?: throw ContextNotFoundException()
                 }
             ),
-            getter = { it }
+            getter = {
+                @Suppress("UNCHECKED_CAST")
+                it as IsTypedDataModel<RootDataModel<*>>
+            }
         ).also(this::addSingle)
         val meta = EmbeddedObjectDefinitionWrapper(
             2u,
@@ -202,7 +205,7 @@ open class RootDataModel<DM: IsValuesDataModel> internal constructor(
                 values: MutableValueItems,
                 context: ContainsDefinitionsContext?
             ) {
-                val deserializedProperties = mutableListOf<AnyDefinitionWrapper>()
+                val deserializedProperties = properties.newMutableCollection(context as? DefinitionsConversionContext)
                 val metaValues = mutableListOf<ValueItem>()
 
                 var keyDefinitionToReadLater: List<JsonToken>? = null
@@ -290,14 +293,7 @@ open class RootDataModel<DM: IsValuesDataModel> internal constructor(
                 }
 
                 (context as? DefinitionsConversionContext)?.let {
-                    it.propertyDefinitions = object: BaseDataModel<Any>() {
-                        init {
-                            deserializedProperties.forEach(::addSingle)
-                        }
-
-                        override val Serializer: IsDataModelSerializer<*, *, *>
-                            get() = throw NotImplementedError("Only placeholder for conversion")
-                    }
+                    it.propertyDefinitions = deserializedProperties as IsDataModel?
                 }
 
                 readDelayed(keyDefinitionToReadLater, RootDataModelDefinition.Model.key)

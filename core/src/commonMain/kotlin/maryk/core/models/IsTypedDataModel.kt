@@ -1,6 +1,7 @@
 package maryk.core.models
 
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.wrapper.AnyTypedDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 
 /**
@@ -8,7 +9,7 @@ import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
  */
 interface IsTypedDataModel<DO: Any> :
     IsDataModel,
-    Collection<IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>> {
+    Collection<AnyTypedDefinitionWrapper<DO>> {
 
     override operator fun get(name: String): IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>?
     override operator fun get(index: UInt): IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>?

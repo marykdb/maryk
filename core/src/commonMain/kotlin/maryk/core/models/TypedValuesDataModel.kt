@@ -13,7 +13,7 @@ import maryk.core.values.Values
 /**
  * Class for typed DataModels which describe how to work with [Values] objects.
  */
-abstract class TypedValuesDataModel<DM: IsValuesDataModel> : ValuesDataModel(), IsTypedValuesDataModel<DM> {
+abstract class TypedValuesDataModel<DM: IsValuesDataModel> : BaseDataModel<Any>(), IsTypedValuesDataModel<DM> {
     @Suppress("UNCHECKED_CAST", "LeakingThis")
     override val Serializer = DataModelSerializer<Any, Values<DM>, DM, IsPropertyContext>(this as DM)
 

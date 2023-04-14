@@ -8,8 +8,11 @@ import maryk.core.models.definitions.ValueDataModelDefinition
 import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.models.serializers.ValueDataModelSerializer
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.PropertiesCollectionDefinition
+import maryk.core.properties.PropertiesCollectionDefinitionWrapper
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.wrapper.AnyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.AnyTypedDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.EmbeddedObjectDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.types.ValueDataObject
@@ -63,10 +66,10 @@ abstract class ValueDataModel<DO: ValueDataObject, DM: IsValueDataModel<DO, *>> 
         Serializer.toBytes(*inputs)
 
     internal object Model: DefinitionModel<ValueDataModel<*, *>>() {
-        val properties = ObjectDataModelCollectionDefinitionWrapper<ValueDataModel<*, *>>(
+        val properties = PropertiesCollectionDefinitionWrapper<ValueDataModel<*, *>>(
             1u,
             "properties",
-            ObjectDataModelPropertiesCollectionDefinition(
+            PropertiesCollectionDefinition(
                 capturer = { context, propDefs ->
                     context?.apply {
                         this.propertyDefinitions = propDefs
@@ -75,7 +78,7 @@ abstract class ValueDataModel<DO: ValueDataObject, DM: IsValueDataModel<DO, *>> 
             ),
             getter = {
                 @Suppress("UNCHECKED_CAST")
-                it as IsObjectDataModel<in Any>
+                it as IsTypedDataModel<ValueDataModel<*, *>>
             }
         ).also(this::addSingle)
         val meta = EmbeddedObjectDefinitionWrapper(
@@ -141,7 +144,7 @@ abstract class ValueDataModel<DO: ValueDataObject, DM: IsValueDataModel<DO, *>> 
                 values: MutableValueItems,
                 context: ContainsDefinitionsContext?
             ) {
-                val deserializedProperties = mutableListOf<AnyDefinitionWrapper>()
+                val deserializedProperties = mutableListOf<AnyTypedDefinitionWrapper<ValueDataModel<*, *>>>()
                 val metaValues = mutableListOf<ValueItem>()
 
                 // Inject name if it was defined as a map key in a higher level

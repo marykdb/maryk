@@ -2,10 +2,11 @@ package maryk.core.properties.definitions.wrapper
 
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.inject.Inject
-import maryk.core.models.serializers.ObjectDataModelSerializer
-import maryk.core.properties.IsPropertyContext
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.SimpleObjectModel
+import maryk.core.models.serializers.ObjectDataModelSerializer
+import maryk.core.models.values
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
@@ -23,7 +24,6 @@ import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
-import maryk.core.models.values
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.ContainsDefinitionsContext
@@ -39,6 +39,7 @@ import maryk.yaml.IsYamlReader
 import maryk.yaml.YamlWriter
 
 typealias AnyDefinitionWrapper = IsDefinitionWrapper<Any, Any, IsPropertyContext, Any>
+typealias AnyTypedDefinitionWrapper<DO> = IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>
 typealias AnyOutDefinitionWrapper = IsDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>
 
 /**

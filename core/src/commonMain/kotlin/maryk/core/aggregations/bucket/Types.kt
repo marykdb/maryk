@@ -20,7 +20,6 @@ data class Types<T: TypeEnum<*>>(
     override fun createAggregator() =
         TypesAggregator(this)
 
-    @Suppress("unused")
     companion object : SimpleQueryModel<Types<*>>() {
         val of by addReference(Types<*>::reference)
 
@@ -32,8 +31,8 @@ data class Types<T: TypeEnum<*>>(
         )
 
         override fun invoke(values: SimpleObjectValues<Types<*>>) = Types<TypeEnum<*>>(
-            reference = values(1u),
-            aggregations = values(2u)
+            reference = values(of.index),
+            aggregations = values(aggregations.index)
         )
     }
 }

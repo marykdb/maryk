@@ -1,5 +1,3 @@
-@file:Suppress("unused")
-
 package maryk.core.query
 
 import maryk.core.exceptions.ContextNotFoundException
@@ -50,11 +48,11 @@ data class ValuesWithMetaData<DM : IsRootDataModel>(
 
         override fun invoke(values: ObjectValues<ValuesWithMetaData<*>, Companion>) =
             ValuesWithMetaData<IsRootDataModel>(
-                key = values(1u),
-                values = values(2u),
-                firstVersion = values(3u),
-                lastVersion = values(4u),
-                isDeleted = values(5u)
+                key = values(key.index),
+                values = values(Companion.values.index),
+                firstVersion = values(firstVersion.index),
+                lastVersion = values(lastVersion.index),
+                isDeleted = values(isDeleted.index)
             )
     }
 }

@@ -13,7 +13,6 @@ data class ServerFail<DM : IsRootDataModel>(
 ) : IsAddResponseStatus<DM>, IsChangeResponseStatus<DM>, IsDeleteResponseStatus<DM> {
     override val statusType = SERVER_FAIL
 
-    @Suppress("unused")
     internal companion object : SimpleQueryModel<ServerFail<*>>() {
         val reason by string(
             1u, ServerFail<*>::reason
@@ -21,7 +20,7 @@ data class ServerFail<DM : IsRootDataModel>(
 
         override fun invoke(values: SimpleObjectValues<ServerFail<*>>) =
             ServerFail<IsRootDataModel>(
-                reason = values(1u)
+                reason = values(reason.index)
             )
     }
 }

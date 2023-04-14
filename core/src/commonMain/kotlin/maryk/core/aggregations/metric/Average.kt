@@ -17,11 +17,11 @@ data class Average<T: Comparable<T>>(
     override fun createAggregator() =
         AverageAggregator(this)
 
-    @Suppress("unused")
     companion object : SimpleQueryModel<Average<*>>() {
         val of by addReference(Average<*>::reference)
+
         override fun invoke(values: SimpleObjectValues<Average<*>>) = Average<Comparable<Any>>(
-            reference = values(1u)
+            reference = values(of.index)
         )
     }
 }

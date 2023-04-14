@@ -17,12 +17,11 @@ data class Sum<T: Comparable<T>>(
     override fun createAggregator() =
         SumAggregator(this)
 
-    @Suppress("unused")
     companion object : SimpleQueryModel<Sum<*>>() {
         val of by addReference(Sum<*>::reference)
 
         override fun invoke(values: SimpleObjectValues<Sum<*>>) = Sum<Comparable<Any>>(
-            reference = values(1u)
+            reference = values(of.index)
         )
     }
 }

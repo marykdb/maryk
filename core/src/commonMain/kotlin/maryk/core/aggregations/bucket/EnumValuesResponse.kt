@@ -18,7 +18,6 @@ data class EnumValuesResponse<T: IndexedEnumComparable<T>>(
 ) : IsAggregationResponse {
     override val aggregationType = EnumValuesType
 
-    @Suppress("unused")
     companion object : SimpleQueryModel<EnumValuesResponse<*>>() {
         val of by addReference(EnumValuesResponse<*>::reference)
         val buckets by list(
@@ -32,8 +31,8 @@ data class EnumValuesResponse<T: IndexedEnumComparable<T>>(
 
         override fun invoke(values: SimpleObjectValues<EnumValuesResponse<*>>) =
             EnumValuesResponse<IndexedEnumComparable<Any>>(
-                reference = values(1u),
-                buckets = values(2u)
+                reference = values(of.index),
+                buckets = values(buckets.index)
             )
     }
 }

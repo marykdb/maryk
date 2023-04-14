@@ -1,8 +1,8 @@
 package maryk.core.query.changes
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.properties.IsPropertyContext
 import maryk.core.models.QueryModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.NumberDefinition
@@ -28,7 +28,6 @@ data class ListValueChanges<T : Any> internal constructor(
     val addValuesAtIndex: Map<UInt, T>? = null,
     val addValuesToEnd: List<T>? = null
 ) : DefinedByReference<List<T>> {
-    @Suppress("unused")
     companion object : QueryModel<ListValueChanges<*>, Companion>() {
         val reference by addReference(ListValueChanges<*>::reference)
 
@@ -55,10 +54,10 @@ data class ListValueChanges<T : Any> internal constructor(
         )
 
         override fun invoke(values: ObjectValues<ListValueChanges<*>, Companion>) = ListValueChanges<Any>(
-            reference = values(1u),
-            addValuesToEnd = values(2u),
-            addValuesAtIndex = values(3u),
-            deleteValues = values(4u)
+            reference = values(reference.index),
+            addValuesToEnd = values(addValuesToEnd.index),
+            addValuesAtIndex = values(addValuesAtIndex.index),
+            deleteValues = values(deleteValues.index)
         )
     }
 }

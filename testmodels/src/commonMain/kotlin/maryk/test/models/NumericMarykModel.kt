@@ -13,7 +13,6 @@ import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.UInt64
 import maryk.core.properties.types.numeric.UInt8
 
-@Suppress("unused")
 object NumericMarykModel : RootDataModel<NumericMarykModel>() {
     val sInt8 by number(
         index = 1u,

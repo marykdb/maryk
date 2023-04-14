@@ -5,7 +5,6 @@ import maryk.lib.exceptions.ParseException
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
-@Suppress("unused")
 class Key<out P : IsValuesDataModel>(bytes: ByteArray) : Bytes(bytes) {
     @OptIn(ExperimentalEncodingApi::class)
     constructor(base64: String) : this(

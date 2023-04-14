@@ -28,7 +28,6 @@ data class OrderedKeysUpdate<DM: IsRootDataModel>(
 ) : IsUpdateResponse<DM> {
     override val type = OrderedKeys
 
-    @Suppress("unused")
     internal companion object : SimpleQueryModel<OrderedKeysUpdate<*>>() {
         val keys by list(
             index = 1u,
@@ -50,9 +49,9 @@ data class OrderedKeysUpdate<DM: IsRootDataModel>(
         )
 
         override fun invoke(values: SimpleObjectValues<OrderedKeysUpdate<*>>) = OrderedKeysUpdate<IsRootDataModel>(
-            keys = values(1u),
-            version = values(2u),
-            sortingKeys = values(3u)
+            keys = values(keys.index),
+            version = values(version.index),
+            sortingKeys = values(sortingKeys.index)
         )
     }
 }

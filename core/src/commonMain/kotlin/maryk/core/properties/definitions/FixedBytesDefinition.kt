@@ -1,9 +1,9 @@
 package maryk.core.properties.definitions
 
 import maryk.core.models.IsObjectDataModel
-import maryk.core.properties.IsPropertyContext
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.SimpleObjectModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.PropertyDefinitionType.FixedBytes
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
@@ -115,7 +115,6 @@ fun IsValuesDataModel.fixedBytes(
     )
 }
 
-@Suppress("unused")
 fun <TO: Any, DO: Any> IsObjectDataModel<DO>.fixedBytes(
     index: UInt,
     getter: (DO) -> TO?,

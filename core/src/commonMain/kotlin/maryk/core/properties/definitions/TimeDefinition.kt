@@ -11,8 +11,8 @@ import maryk.core.extensions.bytes.initLongByVar
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsObjectDataModel
-import maryk.core.properties.IsPropertyContext
 import maryk.core.models.IsValuesDataModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
@@ -93,7 +93,6 @@ data class TimeDefinition(
         else -> value as? LocalTime
     }
 
-    @Suppress("unused")
     object Model : ContextualDataModel<TimeDefinition, Model, ContainsDefinitionsContext, TimeDefinitionContext>(
         contextTransformer = { TimeDefinitionContext() },
     ) {
@@ -137,13 +136,13 @@ data class TimeDefinition(
         )
 
         override fun invoke(values: ObjectValues<TimeDefinition, Model>) = TimeDefinition(
-            required = values(1u),
-            final = values(2u),
-            unique = values(3u),
-            precision = values(4u),
-            minValue = values(5u),
-            maxValue = values(6u),
-            default = values(7u)
+            required = values(required.index),
+            final = values(final.index),
+            unique = values(unique.index),
+            precision = values(precision.index),
+            minValue = values(minValue.index),
+            maxValue = values(maxValue.index),
+            default = values(default.index)
         )
     }
 

@@ -21,7 +21,6 @@ data class NotEnoughItemsException internal constructor(
 ) {
     override val validationExceptionType = NOT_ENOUGH_ITEMS
 
-    @Suppress("unused")
     internal companion object : SimpleQueryModel<NotEnoughItemsException>() {
         val reference by addReference(NotEnoughItemsException::reference)
         // Override name since size is reserved
@@ -29,9 +28,9 @@ data class NotEnoughItemsException internal constructor(
         val minSize by number(3u, NotEnoughItemsException::minSize, UInt32)
 
         override fun invoke(values: SimpleObjectValues<NotEnoughItemsException>) = NotEnoughItemsException(
-            reference = values(1u),
-            size = values(2u),
-            minSize = values(3u)
+            reference = values(reference.index),
+            size = values(_size.index),
+            minSize = values(minSize.index)
         )
     }
 }

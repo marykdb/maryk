@@ -33,7 +33,6 @@ data class ValidationFail<DM : IsRootDataModel>(
         this.exceptions
     )
 
-    @Suppress("unused")
     internal companion object : SimpleQueryModel<ValidationFail<*>>() {
         val exceptions by list(
             index = 1u,
@@ -49,7 +48,7 @@ data class ValidationFail<DM : IsRootDataModel>(
 
         override fun invoke(values: SimpleObjectValues<ValidationFail<*>>) =
             ValidationFail<IsRootDataModel>(
-                exceptions = values(1u)
+                exceptions = values(exceptions.index)
             )
     }
 }

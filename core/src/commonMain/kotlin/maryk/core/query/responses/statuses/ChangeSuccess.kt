@@ -20,7 +20,6 @@ data class ChangeSuccess<DM : IsRootDataModel>(
 ) : IsChangeResponseStatus<DM> {
     override val statusType = CHANGE_SUCCESS
 
-    @Suppress("unused")
     internal companion object : SimpleQueryModel<ChangeSuccess<*>>() {
         val version by number(1u, ChangeSuccess<*>::version, type = UInt64)
         val changes by list(
@@ -36,8 +35,8 @@ data class ChangeSuccess<DM : IsRootDataModel>(
         )
 
         override fun invoke(values: SimpleObjectValues<ChangeSuccess<*>>) = ChangeSuccess<IsRootDataModel>(
-            version = values(1u),
-            changes = values(2u)
+            version = values(version.index),
+            changes = values(changes.index)
         )
     }
 }

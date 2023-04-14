@@ -1,12 +1,10 @@
-@file:Suppress("unused")
-
 package maryk.core.aggregations.metric
 
 import maryk.core.aggregations.AggregationResponseType.StatsType
 import maryk.core.aggregations.IsAggregationResponse
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.properties.IsPropertyContext
 import maryk.core.models.SimpleQueryModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
@@ -66,12 +64,12 @@ data class StatsResponse<T: Comparable<T>>(
 
         override fun invoke(values: SimpleObjectValues<StatsResponse<*>>) =
             StatsResponse<Comparable<Any>>(
-                reference = values(1u),
-                valueCount = values(2u),
-                average = values(3u),
-                min = values(4u),
-                max = values(5u),
-                sum = values(6u)
+                reference = values(of.index),
+                valueCount = values(valueCount.index),
+                average = values(average.index),
+                min = values(min.index),
+                max = values(max.index),
+                sum = values(sum.index)
             )
     }
 }

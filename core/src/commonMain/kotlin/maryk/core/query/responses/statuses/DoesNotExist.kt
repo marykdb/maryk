@@ -12,13 +12,12 @@ data class DoesNotExist<DM : IsRootDataModel>(
 ) : IsChangeResponseStatus<DM>, IsDeleteResponseStatus<DM> {
     override val statusType = DOES_NOT_EXIST
 
-    @Suppress("unused")
     internal companion object : SimpleQueryModel<DoesNotExist<*>>() {
         val key by addKey(DoesNotExist<*>::key)
 
         override fun invoke(values: SimpleObjectValues<DoesNotExist<*>>) =
             DoesNotExist<IsRootDataModel>(
-                key = values(1u)
+                key = values(key.index)
             )
     }
 }

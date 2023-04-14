@@ -1,5 +1,3 @@
-@file:Suppress("unused")
-
 package maryk.core.query.changes
 
 import maryk.core.models.SimpleObjectModel
@@ -41,9 +39,9 @@ data class IndexUpdate(
         )
 
         override fun invoke(values: ObjectValues<IndexUpdate, Companion>) = IndexUpdate(
-            index = values(1u),
-            indexKey = values(2u),
-            previousIndexKey = values(3u)
+            index = values(index.index),
+            indexKey = values(indexKey.index),
+            previousIndexKey = values(previousIndexKey.index)
         )
     }
 }
@@ -67,8 +65,8 @@ data class IndexDelete(
         )
 
         override fun invoke(values: ObjectValues<IndexDelete, Companion>) = IndexDelete(
-            index = values(1u),
-            indexKey = values(2u)
+            index = values(index.index),
+            indexKey = values(indexKey.index)
         )
     }
 }

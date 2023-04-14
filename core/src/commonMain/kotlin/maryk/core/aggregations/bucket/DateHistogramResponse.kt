@@ -17,7 +17,6 @@ data class DateHistogramResponse<T: Comparable<*>>(
 ) : IsAggregationResponse {
     override val aggregationType = DateHistogramType
 
-    @Suppress("unused")
     companion object : SimpleQueryModel<DateHistogramResponse<*>>() {
         val of by addReference(DateHistogramResponse<*>::reference)
         val buckets by list(
@@ -31,8 +30,8 @@ data class DateHistogramResponse<T: Comparable<*>>(
 
         override fun invoke(values: SimpleObjectValues<DateHistogramResponse<*>>) =
             DateHistogramResponse<Comparable<Any>>(
-                reference = values(1u),
-                buckets = values(2u)
+                reference = values(of.index),
+                buckets = values(buckets.index)
             )
     }
 }

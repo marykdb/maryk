@@ -14,13 +14,12 @@ data class RequestFail<DM : IsRootDataModel>(
 ) : IsChangeResponseStatus<DM> {
     override val statusType = REQUEST_FAIL
 
-    @Suppress("unused")
     internal companion object : SimpleQueryModel<RequestFail<*>>() {
         val reason by string(1u, RequestFail<*>::reason)
 
         override fun invoke(values: SimpleObjectValues<RequestFail<*>>) =
             RequestFail<IsRootDataModel>(
-                values(1u)
+                values(reason.index)
             )
     }
 }

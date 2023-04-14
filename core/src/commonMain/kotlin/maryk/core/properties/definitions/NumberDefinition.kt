@@ -4,8 +4,8 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsObjectDataModel
-import maryk.core.properties.IsPropertyContext
 import maryk.core.models.IsValuesDataModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualNumberDefinition
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
@@ -118,7 +118,6 @@ data class NumberDefinition<T : Comparable<T>>(
         return compatible
     }
 
-    @Suppress("unused")
     object Model : ContextualDataModel<NumberDefinition<*>, Model, IsPropertyContext, NumericContext>(
         contextTransformer = { NumericContext() },
     ) {
@@ -176,14 +175,14 @@ data class NumberDefinition<T : Comparable<T>>(
         val reversedStorage by boolean(8u, NumberDefinition<*>::reversedStorage, required = false)
 
         override fun invoke(values: ObjectValues<NumberDefinition<*>, Model>) = NumberDefinition<Comparable<Any>>(
-            required = values(1u),
-            final = values(2u),
-            unique = values(3u),
-            type = values(4u),
-            minValue = values(5u),
-            maxValue = values(6u),
-            default = values(7u),
-            reversedStorage = values(8u)
+            required = values(required.index),
+            final = values(final.index),
+            unique = values(unique.index),
+            type = values(type.index),
+            minValue = values(minValue.index),
+            maxValue = values(maxValue.index),
+            default = values(default.index),
+            reversedStorage = values(reversedStorage.index)
         )
     }
 }

@@ -3,8 +3,8 @@ package maryk.core.aggregations.metric
 import maryk.core.aggregations.AggregationResponseType.AverageType
 import maryk.core.aggregations.IsAggregationResponse
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.properties.IsPropertyContext
 import maryk.core.models.SimpleQueryModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
@@ -24,7 +24,6 @@ data class AverageResponse<T: Comparable<T>>(
 ) : IsAggregationResponse {
     override val aggregationType = AverageType
 
-    @Suppress("unused")
     companion object : SimpleQueryModel<AverageResponse<*>>() {
         val of by addReference(AverageResponse<*>::reference)
         val value by contextual(
@@ -44,9 +43,9 @@ data class AverageResponse<T: Comparable<T>>(
 
         override fun invoke(values: SimpleObjectValues<AverageResponse<*>>) =
             AverageResponse<Comparable<Any>>(
-                reference = values(1u),
-                value = values(2u),
-                valueCount = values(3u)
+                reference = values(of.index),
+                value = values(value.index),
+                valueCount = values(valueCount.index)
             )
     }
 }

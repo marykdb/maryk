@@ -1,5 +1,3 @@
-@file:Suppress("unused")
-
 package maryk.core.query.requests
 
 import maryk.core.aggregations.Aggregations
@@ -88,14 +86,14 @@ data class GetUpdatesRequest<DM : IsRootDataModel> internal constructor(
 
         override fun invoke(values: ObjectValues<GetUpdatesRequest<*>, Companion>) =
             GetUpdatesRequest(
-                dataModel = values(1u),
-                keys = values(2u),
-                select = values(3u),
-                where = values(4u),
-                toVersion = values(5u),
-                filterSoftDeleted = values(6u),
-                fromVersion = values(7u),
-                maxVersions = values(8u)
+                dataModel = values(from.index),
+                keys = values(keys.index),
+                select = values(select.index),
+                where = values(where.index),
+                toVersion = values(toVersion.index),
+                filterSoftDeleted = values(filterSoftDeleted.index),
+                fromVersion = values(fromVersion.index),
+                maxVersions = values(maxVersions.index)
             )
     }
 }

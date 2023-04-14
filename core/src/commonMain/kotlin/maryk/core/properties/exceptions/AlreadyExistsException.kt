@@ -24,7 +24,6 @@ data class AlreadyExistsException(
 ) {
     override val validationExceptionType = ALREADY_EXISTS
 
-    @Suppress("unused")
     internal companion object : SimpleQueryModel<AlreadyExistsException>() {
         val reference by addReference(AlreadyExistsException::reference)
         val key by contextual(
@@ -41,8 +40,8 @@ data class AlreadyExistsException(
 
         override fun invoke(values: SimpleObjectValues<AlreadyExistsException>) =
             AlreadyExistsException(
-                reference = values(1u),
-                key = values(2u)
+                reference = values(reference.index),
+                key = values(key.index)
             )
     }
 }

@@ -19,7 +19,6 @@ data class TypesResponse<T: TypeEnum<*>>(
 ) : IsAggregationResponse {
     override val aggregationType = TypesType
 
-    @Suppress("unused")
     companion object : SimpleQueryModel<TypesResponse<*>>() {
         val of by addReference(TypesResponse<*>::reference)
 
@@ -34,8 +33,8 @@ data class TypesResponse<T: TypeEnum<*>>(
 
         override fun invoke(values: SimpleObjectValues<TypesResponse<*>>) =
             TypesResponse<MultiTypeEnum<Any>>(
-                reference = values(1u),
-                buckets = values(2u)
+                reference = values(of.index),
+                buckets = values(buckets.index)
             )
     }
 }

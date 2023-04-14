@@ -3,8 +3,8 @@ package maryk.core.aggregations.metric
 import maryk.core.aggregations.AggregationResponseType.MaxType
 import maryk.core.aggregations.IsAggregationResponse
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.properties.IsPropertyContext
 import maryk.core.models.SimpleQueryModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
@@ -21,7 +21,6 @@ data class MaxResponse<T: Comparable<T>>(
 ) : IsAggregationResponse {
     override val aggregationType = MaxType
 
-    @Suppress("unused")
     companion object : SimpleQueryModel<MaxResponse<*>>() {
         val of by addReference(MaxResponse<*>::reference)
 
@@ -41,8 +40,8 @@ data class MaxResponse<T: Comparable<T>>(
 
         override fun invoke(values: SimpleObjectValues<MaxResponse<*>>) =
             MaxResponse<Comparable<Any>>(
-                reference = values(1u),
-                value = values(2u)
+                reference = values(of.index),
+                value = values(value.index)
             )
     }
 }

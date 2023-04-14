@@ -1,7 +1,6 @@
 package maryk.core.properties.enum
 
 /** Interface for Enums used in types which contain a strong type */
-@Suppress("unused")
 interface TypeEnum<out T: Any>: IndexedEnum {
     companion object {
         internal operator fun invoke(index: UInt, name: String, alternativeNames: Set<String>? = null) = object : IndexedEnumImpl<IndexedEnumComparable<Any>>(index, alternativeNames), TypeEnum<Any> {

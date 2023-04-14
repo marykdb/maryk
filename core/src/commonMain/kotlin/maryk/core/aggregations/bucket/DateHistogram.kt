@@ -24,7 +24,6 @@ data class DateHistogram<T: Comparable<*>>(
 
     override fun createAggregator() = DateHistogramAggregator(this)
 
-    @Suppress("unused")
     companion object : SimpleQueryModel<DateHistogram<*>>() {
         val of by addReference(DateHistogram<*>::reference)
         val dateUnit by enum(3u, DateHistogram<*>::dateUnit, enum = DateUnit)
@@ -36,9 +35,9 @@ data class DateHistogram<T: Comparable<*>>(
         )
 
         override fun invoke(values: SimpleObjectValues<DateHistogram<*>>) = DateHistogram<Comparable<Any>>(
-            reference = values(1u),
-            aggregations = values(2u),
-            dateUnit = values(3u)
+            reference = values(of.index),
+            aggregations = values(aggregations.index),
+            dateUnit = values(dateUnit.index)
         )
     }
 }

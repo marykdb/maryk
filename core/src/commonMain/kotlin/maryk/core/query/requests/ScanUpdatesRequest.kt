@@ -80,7 +80,6 @@ data class ScanUpdatesRequest<DM : IsRootDataModel> internal constructor(
     // Aggregations are not allowed on a scan changes request
     override val aggregations: Aggregations? = null
 
-    @Suppress("unused")
     companion object : QueryModel<ScanUpdatesRequest<*>, Companion>() {
         val from by addDataModel { it.dataModel }
         val startKey by addStartKey(ScanUpdatesRequest<*>::startKey)
@@ -104,18 +103,18 @@ data class ScanUpdatesRequest<DM : IsRootDataModel> internal constructor(
 
         override fun invoke(values: ObjectValues<ScanUpdatesRequest<*>, Companion>) =
             ScanUpdatesRequest(
-                dataModel = values(1u),
-                startKey = values(2u),
-                select = values(3u),
-                where = values(4u),
-                toVersion = values(5u),
-                filterSoftDeleted = values(6u),
-                order = values(8u),
-                limit = values(9u),
-                includeStart = values(10u),
-                fromVersion = values(11u),
-                maxVersions = values(12u),
-                orderedKeys = values(13u)
+                dataModel = values(from.index),
+                startKey = values(startKey.index),
+                select = values(select.index),
+                where = values(where.index),
+                toVersion = values(toVersion.index),
+                filterSoftDeleted = values(filterSoftDeleted.index),
+                order = values(order.index),
+                limit = values(limit.index),
+                includeStart = values(includeStart.index),
+                fromVersion = values(fromVersion.index),
+                maxVersions = values(maxVersions.index),
+                orderedKeys = values(orderedKeys.index)
             )
     }
 }

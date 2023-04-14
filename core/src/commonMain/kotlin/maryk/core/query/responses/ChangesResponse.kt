@@ -12,7 +12,6 @@ data class ChangesResponse<out DM : IsRootDataModel>(
     override val dataModel: DM,
     val changes: List<DataObjectVersionedChange<DM>>
 ) : IsDataResponse<DM> {
-    @Suppress("unused")
     companion object : SimpleQueryModel<ChangesResponse<*>>() {
         val dataModel by addDataModel({ it.dataModel })
         val changes by list(
@@ -24,8 +23,8 @@ data class ChangesResponse<out DM : IsRootDataModel>(
         )
 
         override fun invoke(values: SimpleObjectValues<ChangesResponse<*>>) = ChangesResponse(
-            dataModel = values(1u),
-            changes = values(2u)
+            dataModel = values(dataModel.index),
+            changes = values(changes.index)
         )
     }
 }

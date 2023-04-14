@@ -1,9 +1,9 @@
 package maryk.core.query.changes
 
 import maryk.core.exceptions.ContextNotFoundException
+import maryk.core.models.QueryModel
 import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.IsPropertyContext
-import maryk.core.models.QueryModel
 import maryk.core.properties.definitions.SubListDefinition
 import maryk.core.properties.definitions.contextual.ContextualSubDefinition
 import maryk.core.properties.definitions.subList
@@ -22,7 +22,6 @@ data class IncMapKeyAdditions<K : Comparable<K>, V : Any>(
     val addedKeys: List<K>? = null,
     val addedValues: List<V>? = null
 ) : DefinedByReference<Map<K, V>> {
-    @Suppress("unused")
     companion object : QueryModel<IncMapKeyAdditions<out Comparable<Any>, out Any>, Companion>() {
         val reference by addReference(IncMapKeyAdditions<*, *>::reference)
 
@@ -59,9 +58,9 @@ data class IncMapKeyAdditions<K : Comparable<K>, V : Any>(
 
         override fun invoke(values: ObjectValues<IncMapKeyAdditions<out Comparable<Any>, out Any>, Companion>): IncMapKeyAdditions<out Comparable<Any>, out Any> =
             IncMapKeyAdditions(
-                reference = values(1u),
-                addedKeys = values(2u),
-                addedValues = values(3u)
+                reference = values(reference.index),
+                addedKeys = values(addedKeys.index),
+                addedValues = values(addedValues.index)
             )
 
         override val Serializer = object: ObjectDataModelSerializer<IncMapKeyAdditions<out Comparable<Any>, out Any>, Companion, RequestContext, RequestContext>(this) {

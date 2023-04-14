@@ -21,16 +21,15 @@ data class TooManyItemsException internal constructor(
 ) {
     override val validationExceptionType = TOO_MANY_ITEMS
 
-    @Suppress("unused")
     internal companion object : SimpleQueryModel<TooManyItemsException>() {
         val reference by addReference(TooManyItemsException::reference)
         val _size by number(2u, TooManyItemsException::size, UInt32, name = "size")
         val maxSize by number(3u, TooManyItemsException::maxSize, UInt32)
 
         override fun invoke(values: SimpleObjectValues<TooManyItemsException>) = TooManyItemsException(
-            reference = values(1u),
-            size = values(2u),
-            maxSize = values(3u)
+            reference = values(reference.index),
+            size = values(_size.index),
+            maxSize = values(maxSize.index)
         )
     }
 }

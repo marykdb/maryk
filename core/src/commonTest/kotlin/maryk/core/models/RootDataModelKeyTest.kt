@@ -1,5 +1,3 @@
-@file:Suppress("unused")
-
 package maryk.core.models
 
 import maryk.core.exceptions.InvalidDefinitionException

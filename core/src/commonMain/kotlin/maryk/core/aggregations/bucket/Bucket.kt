@@ -2,8 +2,8 @@ package maryk.core.aggregations.bucket
 
 import maryk.core.aggregations.AggregationsResponse
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.properties.IsPropertyContext
 import maryk.core.models.SimpleQueryModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
@@ -20,7 +20,6 @@ data class Bucket<out T: Any>(
     val aggregations: AggregationsResponse,
     val count: ULong
 ) {
-    @Suppress("unused")
     companion object : SimpleQueryModel<Bucket<*>>() {
         val key by contextual(
             index = 1u,
@@ -45,9 +44,9 @@ data class Bucket<out T: Any>(
         val count by number(3u, Bucket<*>::count, type = UInt64)
 
         override fun invoke(values: SimpleObjectValues<Bucket<*>>) = Bucket(
-            key = values(1u),
-            aggregations = values(2u),
-            count = values(3u)
+            key = values(key.index),
+            aggregations = values(aggregations.index),
+            count = values(count.index)
         )
     }
 }

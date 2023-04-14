@@ -1,9 +1,9 @@
 package maryk.core.query.changes
 
 import maryk.core.exceptions.RequestException
-import maryk.core.models.serializers.ReferenceMappedDataModelSerializer
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.QueryModel
+import maryk.core.models.serializers.ReferenceMappedDataModelSerializer
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
@@ -79,7 +79,6 @@ data class IncMapChange internal constructor(
         }
     }
 
-    @Suppress("unused")
     companion object : QueryModel<IncMapChange, Companion>() {
         val valueChanges by list(
             index = 1u,
@@ -91,7 +90,7 @@ data class IncMapChange internal constructor(
 
         override fun invoke(values: ObjectValues<IncMapChange, Companion>): IncMapChange =
             IncMapChange(
-                valueChanges = values<List<IncMapValueChanges<out Comparable<Any>, out Any>>>(1u)
+                valueChanges = values<List<IncMapValueChanges<out Comparable<Any>, out Any>>>(valueChanges.index)
             )
 
         override val Serializer = object : ReferenceMappedDataModelSerializer<IncMapChange, IncMapValueChanges<out Comparable<Any>, out Any>, Companion, IncMapValueChanges.Companion>(

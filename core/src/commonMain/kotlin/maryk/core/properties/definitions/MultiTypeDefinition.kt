@@ -60,7 +60,6 @@ data class MultiTypeDefinition<E : MultiTypeEnum<out T>, T: Any>(
         return compatible
     }
 
-    @Suppress("unused")
     object Model : ContextualDataModel<MultiTypeDefinition<*, *>, Model, ContainsDefinitionsContext, MultiTypeDefinitionContext>(
         contextTransformer = { MultiTypeDefinitionContext(it) },
     ) {
@@ -114,11 +113,11 @@ data class MultiTypeDefinition<E : MultiTypeEnum<out T>, T: Any>(
 
         override fun invoke(values: ObjectValues<MultiTypeDefinition<*, *>, Model>): MultiTypeDefinition<*, *> =
             MultiTypeDefinition<MultiTypeEnum<Any>, Any>(
-                required = values(1u),
-                final = values(2u),
-                typeEnum = values(3u),
-                typeIsFinal = values(4u),
-                default = values(5u)
+                required = values(required.index),
+                final = values(final.index),
+                typeEnum = values(typeEnum.index),
+                typeIsFinal = values(typeIsFinal.index),
+                default = values(default.index)
             )
     }
 }

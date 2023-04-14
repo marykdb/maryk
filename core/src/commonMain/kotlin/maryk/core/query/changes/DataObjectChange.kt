@@ -1,5 +1,3 @@
-@file:Suppress("unused")
-
 package maryk.core.query.changes
 
 import maryk.core.exceptions.ContextNotFoundException
@@ -67,9 +65,9 @@ data class DataObjectChange<out DM : IsRootDataModel> internal constructor(
         val lastVersion by number(3u, DataObjectChange<*>::lastVersion, type = UInt64)
 
         override fun invoke(values: ObjectValues<DataObjectChange<*>, Companion>) = DataObjectChange<IsRootDataModel>(
-            key = values(1u),
-            changes = values(2u),
-            lastVersion = values(3u)
+            key = values(key.index),
+            changes = values(changes.index),
+            lastVersion = values(lastVersion.index)
         )
     }
 }

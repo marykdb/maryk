@@ -26,14 +26,13 @@ data class FailedActionResponse(
     val message: String,
     val failType: FailType
 ) : IsResponse {
-    @Suppress("unused")
     internal companion object : SimpleQueryModel<FailedActionResponse>() {
         val message by string(1u, FailedActionResponse::message)
         val failType by enum(2u, FailedActionResponse::failType, enum = FailType)
 
         override fun invoke(values: SimpleObjectValues<FailedActionResponse>) = FailedActionResponse(
-            message = values(1u),
-            failType = values(2u)
+            message = values(message.index),
+            failType = values(failType.index)
         )
     }
 }

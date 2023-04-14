@@ -15,13 +15,13 @@ import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
 /**
- * For data models which contains a list of only reference pairs of type [R]
+ * Class for DataModels which contains a list of only reference pairs of type [R]
  * Contains specific Serializer overrides to create a nicer looking output.
  */
 abstract class ReferenceValuePairsDataModel<DO: Any, DM: ReferenceValuePairsDataModel<DO, DM, R, T, TO>, R: DefinedByReference<*>, T : Any, TO : Any>(
     pairGetter: (DO) -> List<R>,
     val pairModel: ReferenceValuePairDataModel<R, *, *, *, out IsDefinitionWrapper<T, TO, RequestContext, R>>,
-): InternalObjectDataModel<DO, DM, RequestContext, RequestContext>() {
+): TypedObjectDataModel<DO, DM, RequestContext, RequestContext>() {
     val referenceValuePairs by list(
         index = 1u,
         getter = pairGetter,

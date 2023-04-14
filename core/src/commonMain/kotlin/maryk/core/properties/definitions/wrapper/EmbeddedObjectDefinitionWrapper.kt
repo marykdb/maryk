@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions.wrapper
 
-import maryk.core.models.IsSimpleBaseObjectDataModel
+import maryk.core.models.IsTypedObjectDataModel
 import maryk.core.models.invoke
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
@@ -26,7 +26,7 @@ import kotlin.reflect.KProperty
 data class EmbeddedObjectDefinitionWrapper<
     EODO : Any,
     TO : Any,
-    DM : IsSimpleBaseObjectDataModel<EODO, CXI, CX>,
+    DM : IsTypedObjectDataModel<EODO, *, CXI, CX>,
     CXI : IsPropertyContext, CX : IsPropertyContext, in DO : Any
 > internal constructor(
     override val index: UInt,

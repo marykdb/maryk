@@ -2,10 +2,10 @@ package maryk.core.models
 
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
-import maryk.core.values.IsValueItems
-import maryk.core.values.MutableValueItems
-import maryk.core.values.ValueItem
 
+/**
+ * Interface for DataModels which work with objects of type [DO].
+ */
 interface IsTypedDataModel<DO: Any> :
     IsDataModel,
     Collection<IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>> {
@@ -16,12 +16,4 @@ interface IsTypedDataModel<DO: Any> :
     val allWithDefaults: List<IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>>
 
     fun addSingle(propertyDefinitionWrapper: IsDefinitionWrapper<out Any, *, *, DO>)
-
-    /** Converts a list of optional [pairs] to values */
-    fun mapNonNulls(vararg pairs: ValueItem?): IsValueItems =
-        MutableValueItems().also { items ->
-            for (it in pairs) {
-                if (it != null) items += it
-            }
-        }
 }

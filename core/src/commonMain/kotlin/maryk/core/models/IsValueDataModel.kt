@@ -13,8 +13,7 @@ import maryk.core.values.ObjectValues
  * Also contains method to create bytes from passed ObjectValues based on this ValueDataModel.
  */
 interface IsValueDataModel<DO: ValueDataObject, DM: IsObjectDataModel<DO>>:
-    IsBaseObjectDataModel<DO, DM, IsPropertyContext, IsPropertyContext>,
-    IsTypedObjectDataModel<DO, DM, IsPropertyContext>,
+    IsTypedObjectDataModel<DO, DM, IsPropertyContext, IsPropertyContext>,
     IsStorableDataModel<DO> {
     override val Serializer: IsValueDataModelSerializer<DO, DM>
     override val Meta: ValueDataModelDefinition

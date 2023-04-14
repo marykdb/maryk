@@ -1,13 +1,13 @@
 package maryk.core.properties.definitions
 
 import maryk.core.models.IsObjectDataModel
+import maryk.core.models.IsTypedObjectDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.models.IsSimpleBaseObjectDataModel
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 
 /** Interface for property definitions containing embedded DataObjects of [DO] and context [CX]. */
-interface IsEmbeddedObjectDefinition<DO : Any, out DM : IsSimpleBaseObjectDataModel<DO, CXI, CX>, in CXI : IsPropertyContext, CX : IsPropertyContext> :
+interface IsEmbeddedObjectDefinition<DO : Any, out DM : IsTypedObjectDataModel<DO, *, CXI, CX>, in CXI : IsPropertyContext, CX : IsPropertyContext> :
     IsValueDefinition<DO, CXI>,
     HasDefaultValueDefinition<DO>,
     IsEmbeddedDefinition<DM>,

@@ -3,10 +3,9 @@ package maryk.core.properties.definitions
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.ContextualDataModel
-import maryk.core.models.IsBaseObjectDataModel
 import maryk.core.models.IsObjectDataModel
-import maryk.core.models.IsSimpleBaseObjectDataModel
 import maryk.core.models.IsStorableDataModel
+import maryk.core.models.IsTypedObjectDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.IsPropertyContext
@@ -32,7 +31,7 @@ import maryk.json.JsonWriter
 import maryk.lib.safeLazy
 
 /** Definition for embedded object properties to [dataModel] of type [DM] returning dataObject of [DO] */
-class EmbeddedObjectDefinition<DO : Any, DM : IsSimpleBaseObjectDataModel<DO, CXI, CX>, CXI : IsPropertyContext, CX : IsPropertyContext>(
+class EmbeddedObjectDefinition<DO : Any, DM : IsTypedObjectDataModel<DO, *, CXI, CX>, CXI : IsPropertyContext, CX : IsPropertyContext>(
     override val required: Boolean = true,
     override val final: Boolean = false,
     dataModel: Unit.() -> DM,
@@ -144,7 +143,7 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsSimpleBaseObjectDataModel<DO, CX
                 contextualResolver = { context: ModelContext?, name ->
                     context?.definitionsContext?.let {
                         @Suppress("UNCHECKED_CAST")
-                        it.dataModels[name] as? Unit.() -> IsSimpleBaseObjectDataModel<*, *, *>
+                        it.dataModels[name] as? Unit.() -> IsTypedObjectDataModel<*, *, *, *>
                             ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
                     } ?: throw ContextNotFoundException()
                 }
@@ -152,7 +151,7 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsSimpleBaseObjectDataModel<DO, CX
             getter = {
                 { it.dataModel }
             },
-            toSerializable = { value: (Unit.() -> IsSimpleBaseObjectDataModel<*, *, *>)?, _ ->
+            toSerializable = { value: (Unit.() -> IsTypedObjectDataModel<*, *, *, *>)?, _ ->
                 value?.invoke(Unit)?.let { model ->
                     DataModelReference((model as IsStorableDataModel<*>).Meta.name) { model }
                 }
@@ -160,7 +159,7 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsSimpleBaseObjectDataModel<DO, CX
             fromSerializable = { ref ->
                 ref?.get
             },
-            capturer = { context: ModelContext, dataModel: IsDataModelReference<IsSimpleBaseObjectDataModel<*, *, *>> ->
+            capturer = { context: ModelContext, dataModel: IsDataModelReference<IsTypedObjectDataModel<*, *, *, *>> ->
                 context.definitionsContext?.let {
                     if (!it.dataModels.containsKey(dataModel.name)) {
                         it.dataModels[dataModel.name] = dataModel.get
@@ -177,13 +176,13 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsSimpleBaseObjectDataModel<DO, CX
             definition = ContextualEmbeddedObjectDefinition(
                 contextualResolver = { context: ModelContext? ->
                     @Suppress("UNCHECKED_CAST")
-                    context?.model?.invoke(Unit) as? IsSimpleBaseObjectDataModel<Any, *, ModelContext>
+                    context?.model?.invoke(Unit) as? IsTypedObjectDataModel<Any, *, *, ModelContext>
                         ?: throw ContextNotFoundException()
                 }
             )
         )
 
-        override fun invoke(values: ObjectValues<EmbeddedObjectDefinition<*, *, *, *>, Model>): EmbeddedObjectDefinition<*, *, *, *> = EmbeddedObjectDefinition<Any, IsSimpleBaseObjectDataModel<Any, IsPropertyContext, IsPropertyContext>, IsPropertyContext, IsPropertyContext>(
+        override fun invoke(values: ObjectValues<EmbeddedObjectDefinition<*, *, *, *>, Model>): EmbeddedObjectDefinition<*, *, *, *> = EmbeddedObjectDefinition<Any, IsTypedObjectDataModel<Any, *, IsPropertyContext, IsPropertyContext>, IsPropertyContext, IsPropertyContext>(
             required = values(1u),
             final = values(2u),
             dataModel = values(3u),
@@ -192,7 +191,7 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsSimpleBaseObjectDataModel<DO, CX
     }
 }
 
-fun <DO : Any, P : IsBaseObjectDataModel<DO, IsObjectDataModel<DO>, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext> IsValuesDataModel.embedObject(
+fun <DO : Any, P : IsTypedObjectDataModel<DO, IsObjectDataModel<DO>, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext> IsValuesDataModel.embedObject(
     index: UInt,
     dataModel: Unit.() -> P,
     name: String? = null,
@@ -201,7 +200,7 @@ fun <DO : Any, P : IsBaseObjectDataModel<DO, IsObjectDataModel<DO>, CXI, CX>, CX
     default: DO? = null,
     alternativeNames: Set<String>? = null
 ) = DefinitionWrapperDelegateLoader(this) { propName ->
-    EmbeddedObjectDefinitionWrapper<DO, DO, IsSimpleBaseObjectDataModel<DO, CXI, CX>, CXI, CX, Any>(
+    EmbeddedObjectDefinitionWrapper<DO, DO, IsTypedObjectDataModel<DO, *, CXI, CX>, CXI, CX, Any>(
         index,
         name ?: propName,
         EmbeddedObjectDefinition(required, final, dataModel, default),
@@ -209,7 +208,7 @@ fun <DO : Any, P : IsBaseObjectDataModel<DO, IsObjectDataModel<DO>, CXI, CX>, CX
     )
 }
 
-fun <TO: Any, DO: Any, EDO : Any, DM : IsBaseObjectDataModel<EDO, DM, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext> IsObjectDataModel<DO>.embedObject(
+fun <TO: Any, DO: Any, EDO : Any, DM : IsTypedObjectDataModel<EDO, DM, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext> IsObjectDataModel<DO>.embedObject(
     index: UInt,
     getter: (DO) -> TO?,
     dataModel: Unit.() -> DM,

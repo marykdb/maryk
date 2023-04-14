@@ -17,6 +17,9 @@ import maryk.lib.exceptions.ParseException
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
+/**
+ * The root DataModel which can be stored in a DataStore.
+ */
 interface IsRootDataModel: IsValuesDataModel {
     override val Meta: IsRootDataModelDefinition
 }

@@ -20,7 +20,7 @@ data class ObjectValues<DO : Any, DM : IsObjectDataModel<DO>> internal construct
      * Will throw exception if values is missing values for a complete DataObject
      */
     @Suppress("UNCHECKED_CAST")
-    fun toDataObject() = (this.dataModel as IsTypedObjectDataModel<DO, DM, *>).invoke(this)
+    fun toDataObject() = (this.dataModel as IsTypedObjectDataModel<DO, DM, *, *>).invoke(this)
 
     // ignore context
     override fun equals(other: Any?) = when {

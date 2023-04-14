@@ -10,7 +10,14 @@ import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForValues
+import maryk.core.values.IsValueItems
+import maryk.core.values.MutableValueItems
+import maryk.core.values.ValueItem
 
+/**
+ * Interface for any DataModel.
+ * Contains methods to get its properties by name or index.
+ */
 @PropertyReferenceMarker
 interface IsDataModel {
     val Serializer : IsDataModelSerializer<*, *, *>
@@ -71,6 +78,14 @@ interface IsDataModel {
         }
         return true
     }
+
+    /** Converts a list of optional [pairs] to values */
+    fun mapNonNulls(vararg pairs: ValueItem?): IsValueItems =
+        MutableValueItems().also { items ->
+            for (it in pairs) {
+                if (it != null) items += it
+            }
+        }
 }
 
 /**

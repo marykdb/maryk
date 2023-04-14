@@ -2,7 +2,7 @@ package maryk.core.properties.definitions.contextual
 
 import maryk.checkProtoBufConversion
 import maryk.core.extensions.toUnitLambda
-import maryk.core.models.AbstractDataModel
+import maryk.core.models.BaseDataModel
 import maryk.core.query.RequestContext
 import maryk.test.ByteCollector
 import maryk.test.models.EmbeddedMarykModel
@@ -17,7 +17,7 @@ class ContextualPropertyReferenceDefinitionTest {
     )
 
     private val def = ContextualPropertyReferenceDefinition<RequestContext>(
-        contextualResolver = { it!!.dataModel as AbstractDataModel<*> }
+        contextualResolver = { it!!.dataModel as BaseDataModel<*> }
     )
 
     private val context = RequestContext(

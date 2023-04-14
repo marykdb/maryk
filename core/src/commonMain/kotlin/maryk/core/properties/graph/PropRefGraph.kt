@@ -1,7 +1,7 @@
 package maryk.core.properties.graph
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.AbstractDataModel
+import maryk.core.models.BaseDataModel
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.serializers.ObjectDataModelSerializer
@@ -70,7 +70,7 @@ data class PropRefGraph<DM : IsValuesDataModel, DMS : IsValuesDataModel> interna
             index = 1u,
             definition = ContextualPropertyReferenceDefinition(
                 contextualResolver = { context: GraphContext? ->
-                    context?.dataModel as? AbstractDataModel<*>?
+                    context?.dataModel as? BaseDataModel<*>?
                         ?: throw ContextNotFoundException()
                 }
             ),

@@ -11,16 +11,18 @@ import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
 import maryk.core.values.ValueItem
 
-typealias SimpleObjectModel<DO, DM> = InternalObjectDataModel<DO, DM, IsPropertyContext, IsPropertyContext>
-typealias DefinitionModel<DO> = InternalObjectDataModel<DO, IsObjectDataModel<DO>, ContainsDefinitionsContext, ContainsDefinitionsContext>
-internal typealias QueryModel<DO, DM> = InternalObjectDataModel<DO, DM, RequestContext, RequestContext>
-internal typealias SimpleQueryModel<DO> = InternalObjectDataModel<DO, IsObjectDataModel<DO>, RequestContext, RequestContext>
+typealias SimpleObjectModel<DO, DM> = TypedObjectDataModel<DO, DM, IsPropertyContext, IsPropertyContext>
+typealias DefinitionModel<DO> = TypedObjectDataModel<DO, IsObjectDataModel<DO>, ContainsDefinitionsContext, ContainsDefinitionsContext>
+internal typealias QueryModel<DO, DM> = TypedObjectDataModel<DO, DM, RequestContext, RequestContext>
+internal typealias SimpleQueryModel<DO> = TypedObjectDataModel<DO, IsObjectDataModel<DO>, RequestContext, RequestContext>
 
 /**
- * Internal object data model. Cannot be used within Definitions to be stores/transported.
+ * Typed ObjectDataModel.
+ * Cannot be used within Definitions to be stores/transported.
  */
-abstract class InternalObjectDataModel<DO: Any, DM: IsObjectDataModel<DO>, CXI : IsPropertyContext, CX : IsPropertyContext>: AbstractObjectDataModel<DO>(),
-    IsTypedObjectModel<DO, DM, CXI, CX> {
+abstract class TypedObjectDataModel<DO: Any, DM: IsObjectDataModel<DO>, CXI : IsPropertyContext, CX : IsPropertyContext>:
+    BaseObjectDataModel<DO>(),
+    IsTypedObjectDataModel<DO, DM, CXI, CX> {
     @Suppress("UNCHECKED_CAST")
     private val typedThis: DM = this as DM
 
@@ -45,7 +47,7 @@ abstract class InternalObjectDataModel<DO: Any, DM: IsObjectDataModel<DO>, CXI :
     ) = ObjectValues(
         typedThis,
         MutableValueItems().apply {
-            fillWithPairs(this@InternalObjectDataModel, pairs, setDefaults)
+            fillWithPairs(this@TypedObjectDataModel, pairs, setDefaults)
         },
         context,
     )

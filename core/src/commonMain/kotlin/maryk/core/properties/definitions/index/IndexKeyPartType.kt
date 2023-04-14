@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions.index
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.AbstractDataModel
+import maryk.core.models.BaseDataModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
@@ -43,7 +43,7 @@ internal val mapOfSimpleIndexKeyPartDefinitions: Map<IndexKeyPartType<IsIndexabl
         IndexKeyPartType.UUID to EmbeddedObjectDefinition(dataModel = { UUIDKey.Model }),
         IndexKeyPartType.Reference to ContextualPropertyReferenceDefinition(
             contextualResolver = {
-                it?.propertyDefinitions as? AbstractDataModel<*>?
+                it?.propertyDefinitions as? BaseDataModel<*>?
                     ?: throw ContextNotFoundException()
             }
         ),

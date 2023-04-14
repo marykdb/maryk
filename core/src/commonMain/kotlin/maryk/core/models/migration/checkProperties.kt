@@ -1,6 +1,6 @@
 package maryk.core.models.migration
 
-import maryk.core.models.AbstractDataModel
+import maryk.core.models.BaseDataModel
 import maryk.core.models.IsStorableDataModel
 import maryk.core.models.definitions.IsValuesDataModelDefinition
 import maryk.lib.synchronizedIteration
@@ -22,8 +22,8 @@ internal fun IsStorableDataModel<*>.checkProperties(
 
     @Suppress("UNCHECKED_CAST")
     synchronizedIteration(
-        (this as AbstractDataModel<Any>).iterator(),
-        (storedDataModel as AbstractDataModel<Any>).iterator(),
+        (this as BaseDataModel<Any>).iterator(),
+        (storedDataModel as BaseDataModel<Any>).iterator(),
         { newValue, storedValue ->
             newValue.index compareTo storedValue.index
         },

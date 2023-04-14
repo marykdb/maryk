@@ -3,9 +3,9 @@ package maryk.core.values
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.inject.AnyInject
-import maryk.core.models.IsSimpleBaseObjectDataModel
 import maryk.core.models.IsStorableDataModel
 import maryk.core.models.IsTypedDataModel
+import maryk.core.models.IsTypedObjectDataModel
 import maryk.core.models.serializers.IsDataModelSerializer
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.HasDefaultValueDefinition
@@ -90,6 +90,7 @@ abstract class AbstractValues<DO : Any, DM : IsTypedDataModel<DO>> : IsValues<DM
     }
 
     /** Mutate Values with [pairToAddCreator]. */
+    @Suppress("unused")
     fun mutate(pairToAddCreator: DM.() -> Array<ValueItem>) {
         val mutableValues = values as MutableValueItems
 
@@ -303,8 +304,8 @@ inline fun <reified T : Any, TO : Any> IsDefinitionWrapper<T, TO, *, *>.convertT
 }
 
 /** Output values to a json string with possible [context] provided */
-@Suppress("UNCHECKED_CAST")
-fun <V: AbstractValues<DO, DM>, DO: Any, DM: IsSimpleBaseObjectDataModel<DO, *, CX>, CX: IsPropertyContext> V.toJson(
+@Suppress("UNCHECKED_CAST", "unused")
+fun <V: AbstractValues<DO, DM>, DO: Any, DM: IsTypedObjectDataModel<DO, *, *, CX>, CX: IsPropertyContext> V.toJson(
     context: CX? = null,
     pretty: Boolean = false
 ): String =

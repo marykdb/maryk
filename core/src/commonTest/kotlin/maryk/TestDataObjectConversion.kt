@@ -1,7 +1,7 @@
 package maryk
 
-import maryk.core.models.IsBaseObjectDataModel
 import maryk.core.models.IsObjectDataModel
+import maryk.core.models.IsTypedObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.values.ObjectValues
 import maryk.core.yaml.MarykYamlReader
@@ -12,7 +12,7 @@ import kotlin.test.assertEquals
 
 fun <T : Any, P : IsObjectDataModel<T>, CXI : IsPropertyContext, CX : IsPropertyContext> checkJsonConversion(
     value: T,
-    dataModel: IsBaseObjectDataModel<T, P, CXI, CX>,
+    dataModel: IsTypedObjectDataModel<T, P, CXI, CX>,
     context: (() -> CXI)? = null,
     checker: (T, T) -> Unit = { converted, original -> assertEquals(original, converted) },
     resetContextBeforeRead: Boolean = false
@@ -42,7 +42,7 @@ fun <T : Any, P : IsObjectDataModel<T>, CXI : IsPropertyContext, CX : IsProperty
 
 fun <T : Any, P : IsObjectDataModel<T>, CXI : IsPropertyContext, CX : IsPropertyContext> checkYamlConversion(
     value: T,
-    dataModel: IsBaseObjectDataModel<T, P, CXI, CX>,
+    dataModel: IsTypedObjectDataModel<T, P, CXI, CX>,
     context: (() -> CXI)? = null,
     checker: (T, T) -> Unit = { converted, original -> assertEquals(original, converted) },
     resetContextBeforeRead: Boolean = false
@@ -78,7 +78,7 @@ fun <T : Any, P : IsObjectDataModel<T>, CXI : IsPropertyContext, CX : IsProperty
 
 fun <T : Any, P : IsObjectDataModel<T>, CXI : IsPropertyContext, CX : IsPropertyContext> checkYamlConversion(
     value: ObjectValues<T, P>,
-    dataModel: IsBaseObjectDataModel<T, P, CXI, CX>,
+    dataModel: IsTypedObjectDataModel<T, P, CXI, CX>,
     context: (() -> CXI)? = null,
     checker: (ObjectValues<T, P>, ObjectValues<T, P>) -> Unit = { converted, original -> assertEquals(original, converted) },
     resetContextBeforeRead: Boolean = false
@@ -115,7 +115,7 @@ fun <T : Any, P : IsObjectDataModel<T>, CXI : IsPropertyContext, CX : IsProperty
 
 fun <T : Any, P : IsObjectDataModel<T>, CXI : IsPropertyContext, CX : IsPropertyContext> checkJsonConversion(
     value: ObjectValues<T, P>,
-    dataModel: IsBaseObjectDataModel<T, P, CXI, CX>,
+    dataModel: IsTypedObjectDataModel<T, P, CXI, CX>,
     context: (() -> CXI)? = null,
     checker: (ObjectValues<T, P>, ObjectValues<T, P>) -> Unit = { converted, original -> assertEquals(original, converted) },
     resetContextBeforeRead: Boolean = false

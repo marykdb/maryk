@@ -5,7 +5,7 @@ import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.Value
-import maryk.core.models.AbstractDataModel
+import maryk.core.models.BaseDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.models.IsTypedDataModel
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
@@ -49,7 +49,7 @@ internal typealias QualifierWriter = ((Byte) -> Unit) -> Unit
  * Walk Values and process storable values.
  * Pass [valueWriter] to process values
  */
-fun <DM : AbstractDataModel<*>> AbstractValues<*, DM>.writeToStorage(
+fun <DM : BaseDataModel<*>> AbstractValues<*, DM>.writeToStorage(
     valueWriter: ValueWriter<IsPropertyDefinition<*>>
 ) = this.writeToStorage(0, null, valueWriter)
 

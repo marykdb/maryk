@@ -26,6 +26,10 @@ import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 import maryk.yaml.YamlWriter
 
+/**
+ * Base class for regular DataModels which work with Values objects.
+ * These DataModels can be embedded within other DataModels and RootDataModels.
+ */
 open class DataModel<DM: IsValuesDataModel>(
     meta: (String?) -> DataModelDefinition,
 ) : TypedValuesDataModel<DM>(), MarykPrimitive {
@@ -67,7 +71,7 @@ open class DataModel<DM: IsValuesDataModel>(
         val properties = DataModelCollectionDefinitionWrapper<Any>(
             1u,
             "properties",
-            DataModelCollectionDefinition(
+            DataModelPropertiesCollectionDefinition(
                 false,
                 capturer = { context, propDefs ->
                     context?.apply {

@@ -1,7 +1,7 @@
 package maryk.core.query
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.AbstractDataModel
+import maryk.core.models.BaseDataModel
 import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
@@ -24,7 +24,7 @@ internal fun <DO : Any> IsObjectDataModel<DO>.addReference(
         index = 1u,
         definition = ContextualPropertyReferenceDefinition<RequestContext>(
             contextualResolver = {
-                it?.dataModel as? AbstractDataModel<*>?
+                it?.dataModel as? BaseDataModel<*>?
                     ?: throw ContextNotFoundException()
             }
         ),

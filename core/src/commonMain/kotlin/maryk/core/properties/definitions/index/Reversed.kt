@@ -4,7 +4,7 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
-import maryk.core.models.AbstractDataModel
+import maryk.core.models.BaseDataModel
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.SingleTypedValueDataModel
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
@@ -72,7 +72,7 @@ data class Reversed<T : Any>(
             getter = Reversed<*>::reference,
             definition = ContextualPropertyReferenceDefinition<DefinitionsConversionContext>(
                 contextualResolver = {
-                    it?.propertyDefinitions as? AbstractDataModel<*>? ?: throw ContextNotFoundException()
+                    it?.propertyDefinitions as? BaseDataModel<*>? ?: throw ContextNotFoundException()
                 }
             )
         )

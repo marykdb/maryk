@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions.contextual
 
+import maryk.core.models.IsTypedObjectDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.models.IsSimpleBaseObjectDataModel
 import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
@@ -14,7 +14,7 @@ import maryk.json.JsonWriter
 
 /** Definition for an embedded DataObject from a context resolved from [contextualResolver] */
 data class ContextualEmbeddedObjectDefinition<CX : IsPropertyContext>(
-    val contextualResolver: Unit.(context: CX?) -> IsSimpleBaseObjectDataModel<Any, *, CX>
+    val contextualResolver: Unit.(context: CX?) -> IsTypedObjectDataModel<Any, *, *, CX>
 ) : IsValueDefinition<Any, CX>, IsContextualEncodable<Any, CX> {
     override val required = true
     override val final = true

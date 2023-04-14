@@ -10,7 +10,7 @@ import maryk.core.aggregations.metric.StatsResponse
 import maryk.core.aggregations.metric.SumResponse
 import maryk.core.aggregations.metric.ValueCountResponse
 import maryk.core.models.IsObjectDataModel
-import maryk.core.models.IsSimpleBaseObjectDataModel
+import maryk.core.models.IsTypedObjectDataModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.enum.IndexedEnumImpl
 import maryk.core.properties.enum.IsCoreEnum
@@ -32,7 +32,7 @@ sealed class AggregationResponseType(
 
     @Suppress("UNCHECKED_CAST")
     override val definition = EmbeddedObjectDefinition(
-        dataModel = { dataModel as IsSimpleBaseObjectDataModel<IsAggregationResponse, *, RequestContext> }
+        dataModel = { dataModel as IsTypedObjectDataModel<IsAggregationResponse, *, *, RequestContext> }
     )
 
     object ValueCountType : AggregationResponseType(1u, "ValueCount", ValueCountResponse)

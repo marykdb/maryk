@@ -34,6 +34,9 @@ import maryk.lib.synchronizedIteration
 import maryk.yaml.IsYamlReader
 import maryk.yaml.YamlWriter
 
+/**
+ * Base class for all DataModels which are at the root and can be stored into a DataStore.
+ */
 open class RootDataModel<DM: IsValuesDataModel> internal constructor(
     meta: (String?) -> RootDataModelDefinition,
 ) : TypedValuesDataModel<DM>(), IsRootDataModel, MarykPrimitive {
@@ -137,7 +140,7 @@ open class RootDataModel<DM: IsValuesDataModel> internal constructor(
         val properties = DataModelCollectionDefinitionWrapper<RootDataModel<*>>(
             1u,
             "properties",
-            DataModelCollectionDefinition(
+            DataModelPropertiesCollectionDefinition(
                 false,
                 capturer = { context, propDefs ->
                     context?.apply {
@@ -283,7 +286,7 @@ open class RootDataModel<DM: IsValuesDataModel> internal constructor(
                 }
 
                 (context as? DefinitionsConversionContext)?.let {
-                    it.propertyDefinitions = object: AbstractDataModel<Any>() {
+                    it.propertyDefinitions = object: BaseDataModel<Any>() {
                         init {
                             deserializedProperties.forEach(::addSingle)
                         }

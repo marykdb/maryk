@@ -2,7 +2,7 @@ package maryk.core.properties.definitions.wrapper
 
 import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
-import maryk.core.models.AbstractDataModel
+import maryk.core.models.BaseDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.graph.PropRefGraphType.PropRef
@@ -49,5 +49,5 @@ data class MapDefinitionWrapper<K : Any, V : Any, TO : Any, CX : IsPropertyConte
     }
 
     // For delegation in definition
-    operator fun getValue(thisRef: AbstractDataModel<DO>, property: KProperty<*>) = this
+    operator fun getValue(thisRef: BaseDataModel<DO>, property: KProperty<*>) = this
 }

@@ -4,6 +4,10 @@ import maryk.core.models.definitions.IsDataModelDefinition
 import maryk.core.models.migration.MigrationStatus
 import maryk.core.models.migration.checkProperties
 
+/**
+ * Interface for any DataModel which can be stored.
+ * Can be validated against a stored model to check if migration is needed.
+ */
 interface IsStorableDataModel<DO: Any>: IsTypedDataModel<DO> {
     val Meta: IsDataModelDefinition
 

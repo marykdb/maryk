@@ -1,7 +1,7 @@
 package maryk.core.properties.exceptions
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.AbstractDataModel
+import maryk.core.models.BaseDataModel
 import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
@@ -46,7 +46,7 @@ internal fun <DO : ValidationException> IsObjectDataModel<DO>.addReference(
         definition = ContextualPropertyReferenceDefinition<RequestContext>(
             required = false,
             contextualResolver = {
-                it?.dataModel as? AbstractDataModel<*>?
+                it?.dataModel as? BaseDataModel<*>?
                     ?: throw ContextNotFoundException()
             }
         ),

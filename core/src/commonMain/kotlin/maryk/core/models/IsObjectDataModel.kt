@@ -1,7 +1,6 @@
 package maryk.core.models
 
 import maryk.core.models.serializers.IsObjectDataModelSerializer
-import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -15,17 +14,14 @@ import maryk.core.values.IsValueItems
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
 
-interface IsTypedObjectDataModel<DO: Any, DM: IsObjectDataModel<DO>, CX: IsPropertyContext>: IsObjectDataModel<DO> {
-    override val Serializer : IsObjectDataModelSerializer<DO, DM, *, CX>
-
-    operator fun invoke(values: ObjectValues<DO, DM>): DO
-}
-
 @Suppress("UNCHECKED_CAST")
 fun <DO: Any, DM: IsObjectDataModel<DO>> DM.invoke(
     values: ObjectValues<DO, DM>
-) = (this as IsTypedObjectDataModel<DO, DM, *>)(values)
+) = (this as IsTypedObjectDataModel<DO, DM, *, *>).invoke(values)
 
+/**
+ * Interface for DataModels which work with objects of type [DO].
+ */
 interface IsObjectDataModel<DO: Any>: IsTypedDataModel<DO> {
     override val Serializer : IsObjectDataModelSerializer<DO, *, *, *>
 
@@ -72,7 +68,7 @@ fun <DO : Any, DM : IsObjectDataModel<DO>> DM.asValues(
         when (property) {
             is ObjectListDefinitionWrapper<out Any, *, *, *, DO> -> {
                 @Suppress("UNCHECKED_CAST")
-                val dataModel = (property.definition.valueDefinition as EmbeddedObjectDefinition<Any, IsSimpleBaseObjectDataModel<Any, *, *>, *, *>).dataModel as IsObjectDataModel<Any>
+                val dataModel = (property.definition.valueDefinition as EmbeddedObjectDefinition<Any, IsTypedObjectDataModel<Any, *, *, *>, *, *>).dataModel as IsObjectDataModel<Any>
                 property.getter(dataObject)?.let { list ->
                     mutableMap[property.index] = list.map {
                         dataModel.asValues(it, context)

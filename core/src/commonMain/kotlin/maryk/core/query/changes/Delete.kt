@@ -2,7 +2,7 @@ package maryk.core.query.changes
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.RequestException
-import maryk.core.models.AbstractDataModel
+import maryk.core.models.BaseDataModel
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.ReferencesDataModel
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
@@ -68,7 +68,7 @@ data class Delete internal constructor(
             getter = Delete::references,
             valueDefinition = ContextualPropertyReferenceDefinition<RequestContext>(
                 contextualResolver = {
-                    it?.dataModel as? AbstractDataModel<*>?
+                    it?.dataModel as? BaseDataModel<*>?
                         ?: throw ContextNotFoundException()
                 }
             )

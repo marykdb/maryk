@@ -24,8 +24,11 @@ import maryk.lib.exceptions.ParseException
 import maryk.yaml.IsYamlReader
 import maryk.yaml.YamlWriter
 
-/** A collection of Property Definitions which can be used to model a ObjectDataModel */
-abstract class AbstractObjectDataModel<DO : Any> : AbstractDataModel<DO>(), IsObjectDataModel<DO> {
+/**
+ * Base class for all Object based DataModels.
+ * Implements IsObjectDataModel and provides methods to get properties by name or index.
+ */
+abstract class BaseObjectDataModel<DO : Any> : BaseDataModel<DO>(), IsObjectDataModel<DO> {
     /** Get a method to retrieve property from DataObject by [name] */
     fun getPropertyGetter(name: String): ((DO) -> Any?)? = nameToDefinition[name]?.run { { getPropertyAndSerialize(it, null) } }
 
@@ -33,7 +36,7 @@ abstract class AbstractObjectDataModel<DO : Any> : AbstractDataModel<DO>(), IsOb
     fun getPropertyGetter(index: UInt): ((DO) -> Any?)? = indexToDefinition[index]?.run { { getPropertyAndSerialize(it, null) } }
 }
 
-internal abstract class BaseMutableObjectDataModel<DO: Any> : AbstractObjectDataModel<DO>(),
+internal abstract class BaseMutableObjectDataModel<DO: Any> : BaseObjectDataModel<DO>(),
     IsMutableDataModel<IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>> {
     override fun add(element: IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>): Boolean {
         this.addSingle(propertyDefinitionWrapper = element)
@@ -68,7 +71,7 @@ internal class MutableValueDataModel<DO: ValueDataObject>: BaseMutableObjectData
 }
 
 /** Definition for a collection of Property Definitions for in a ObjectPropertyDefinitions */
-internal data class ObjectDataModelCollectionDefinition(
+internal data class ObjectDataModelPropertiesCollectionDefinition(
     override val capturer: Unit.(DefinitionsConversionContext?, IsObjectDataModel<Any>) -> Unit
 ) : IsCollectionDefinition<
         AnyDefinitionWrapper,
@@ -76,11 +79,11 @@ internal data class ObjectDataModelCollectionDefinition(
         DefinitionsConversionContext,
         EmbeddedObjectDefinition<
                 AnyDefinitionWrapper,
-                IsSimpleBaseObjectDataModel<AnyDefinitionWrapper, IsPropertyContext, IsPropertyContext>,
+                IsTypedObjectDataModel<AnyDefinitionWrapper, *, IsPropertyContext, IsPropertyContext>,
                 IsPropertyContext,
                 IsPropertyContext
         >
->, IsDataModelCollectionDefinition<IsObjectDataModel<Any>> {
+>, IsDataModelPropertiesCollectionDefinition<IsObjectDataModel<Any>> {
     override val required = true
     override val final = true
     override val minSize: UInt? = null
@@ -89,7 +92,7 @@ internal data class ObjectDataModelCollectionDefinition(
     override val valueDefinition = EmbeddedObjectDefinition(
         dataModel = {
             @Suppress("UNCHECKED_CAST")
-            IsDefinitionWrapper.Model as IsSimpleBaseObjectDataModel<AnyDefinitionWrapper, IsPropertyContext, IsPropertyContext>
+            IsDefinitionWrapper.Model as IsTypedObjectDataModel<AnyDefinitionWrapper, *, IsPropertyContext, IsPropertyContext>
         }
     )
 
@@ -150,11 +153,11 @@ internal data class ObjectDataModelCollectionDefinition(
 internal data class ObjectDataModelCollectionDefinitionWrapper<in DO : Any>(
     override val index: UInt,
     override val name: String,
-    override val definition: ObjectDataModelCollectionDefinition,
+    override val definition: ObjectDataModelPropertiesCollectionDefinition,
     override val getter: (DO) -> IsObjectDataModel<Any>?,
     override val alternativeNames: Set<String>? = null
 ) :
-    IsCollectionDefinition<AnyDefinitionWrapper, IsObjectDataModel<Any>, DefinitionsConversionContext, EmbeddedObjectDefinition<AnyDefinitionWrapper, IsSimpleBaseObjectDataModel<AnyDefinitionWrapper, IsPropertyContext, IsPropertyContext>, IsPropertyContext, IsPropertyContext>> by definition,
+    IsCollectionDefinition<AnyDefinitionWrapper, IsObjectDataModel<Any>, DefinitionsConversionContext, EmbeddedObjectDefinition<AnyDefinitionWrapper, IsTypedObjectDataModel<AnyDefinitionWrapper, *, IsPropertyContext, IsPropertyContext>, IsPropertyContext, IsPropertyContext>> by definition,
     IsDefinitionWrapper<IsObjectDataModel<Any>, IsObjectDataModel<Any>, DefinitionsConversionContext, DO>
 {
     override val graphType = PropRef

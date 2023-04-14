@@ -27,9 +27,14 @@ import maryk.lib.exceptions.ParseException
 import maryk.yaml.YamlWriter
 import kotlin.reflect.KClass
 
+/**
+ * DataModel for objects which should be treated as a Value in total.
+ * They will all together be serialized as a single byte value or string and can
+ * be used as the key for a map.
+ */
 abstract class ValueDataModel<DO: ValueDataObject, DM: IsValueDataModel<DO, *>> internal constructor(
     name: String,
-): InternalObjectDataModel<DO, DM, IsPropertyContext, IsPropertyContext>(), IsValueDataModel<DO, DM>, MarykPrimitive {
+): TypedObjectDataModel<DO, DM, IsPropertyContext, IsPropertyContext>(), IsValueDataModel<DO, DM>, MarykPrimitive {
     constructor(
         objClass: KClass<DO>,
     ): this(
@@ -61,7 +66,7 @@ abstract class ValueDataModel<DO: ValueDataObject, DM: IsValueDataModel<DO, *>> 
         val properties = ObjectDataModelCollectionDefinitionWrapper<ValueDataModel<*, *>>(
             1u,
             "properties",
-            ObjectDataModelCollectionDefinition(
+            ObjectDataModelPropertiesCollectionDefinition(
                 capturer = { context, propDefs ->
                     context?.apply {
                         this.propertyDefinitions = propDefs

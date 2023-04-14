@@ -23,7 +23,7 @@ import maryk.yaml.IsYamlReader
 import maryk.yaml.YamlWriter
 
 /** A collection of Property Definitions which can be used to model a ObjectDataModel */
-abstract class ValuesDataModel : AbstractDataModel<Any>(), IsValuesDataModel
+abstract class ValuesDataModel : BaseDataModel<Any>(), IsValuesDataModel
 
 internal class MutableRootDataModel : MutableValuesDataModel<MutableRootDataModel>(), IsRootDataModel {
     override val Serializer = DataModelSerializer<Any, Values<MutableRootDataModel>, MutableRootDataModel, IsPropertyContext>(this)
@@ -62,7 +62,7 @@ abstract class MutableValuesDataModel<DM: IsValuesDataModel> : TypedValuesDataMo
 }
 
 /** Definition for a DataModel */
-data class DataModelCollectionDefinition(
+data class DataModelPropertiesCollectionDefinition(
     val isRootModel: Boolean,
     override val capturer: Unit.(DefinitionsConversionContext?, ValuesDataModel) -> Unit
 ) : IsCollectionDefinition<
@@ -71,11 +71,11 @@ data class DataModelCollectionDefinition(
     DefinitionsConversionContext,
     EmbeddedObjectDefinition<
         AnyDefinitionWrapper,
-            IsSimpleBaseObjectDataModel<AnyDefinitionWrapper, IsPropertyContext, IsPropertyContext>,
+            IsTypedObjectDataModel<AnyDefinitionWrapper, *, IsPropertyContext, IsPropertyContext>,
             IsPropertyContext,
             IsPropertyContext
     >
->, IsDataModelCollectionDefinition<ValuesDataModel> {
+>, IsDataModelPropertiesCollectionDefinition<ValuesDataModel> {
     override val required = true
     override val final = true
     override val minSize: UInt? = null
@@ -84,7 +84,7 @@ data class DataModelCollectionDefinition(
     override val valueDefinition = EmbeddedObjectDefinition(
         dataModel = {
             @Suppress("UNCHECKED_CAST")
-            IsDefinitionWrapper.Model as IsSimpleBaseObjectDataModel<AnyDefinitionWrapper, IsPropertyContext, IsPropertyContext>
+            IsDefinitionWrapper.Model as IsTypedObjectDataModel<AnyDefinitionWrapper, *, IsPropertyContext, IsPropertyContext>
         }
     )
 
@@ -144,11 +144,11 @@ data class DataModelCollectionDefinition(
 data class DataModelCollectionDefinitionWrapper<in DO : Any>(
     override val index: UInt,
     override val name: String,
-    override val definition: DataModelCollectionDefinition,
+    override val definition: DataModelPropertiesCollectionDefinition,
     override val getter: (DO) -> ValuesDataModel?,
     override val alternativeNames: Set<String>? = null
 ) :
-    IsCollectionDefinition<AnyDefinitionWrapper, ValuesDataModel, DefinitionsConversionContext, EmbeddedObjectDefinition<AnyDefinitionWrapper, IsSimpleBaseObjectDataModel<AnyDefinitionWrapper, IsPropertyContext, IsPropertyContext>, IsPropertyContext, IsPropertyContext>> by definition,
+    IsCollectionDefinition<AnyDefinitionWrapper, ValuesDataModel, DefinitionsConversionContext, EmbeddedObjectDefinition<AnyDefinitionWrapper, IsTypedObjectDataModel<AnyDefinitionWrapper, *, IsPropertyContext, IsPropertyContext>, IsPropertyContext, IsPropertyContext>> by definition,
     IsDefinitionWrapper<ValuesDataModel, ValuesDataModel, DefinitionsConversionContext, DO>
 {
     override val graphType = PropRef

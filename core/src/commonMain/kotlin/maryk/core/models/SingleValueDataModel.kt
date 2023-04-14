@@ -7,9 +7,13 @@ import maryk.core.values.ObjectValues
 
 typealias SingleTypedValueDataModel<T, DO, DM, CX> = SingleValueDataModel<T, T, DO, DM, CX>
 
+/**
+ * DataModels which only define a single value. The serializer will encode/decode this value in a
+ * more friendly way.
+ */
 abstract class SingleValueDataModel<T : Any, TO : Any, DO : Any, DM : IsObjectDataModel<DO>, CX : IsPropertyContext>(
     val singlePropertyDefinitionGetter: () -> IsDefinitionWrapper<T, out TO, CX, DO>,
-): InternalObjectDataModel<DO, DM, CX, CX>() {
+): TypedObjectDataModel<DO, DM, CX, CX>() {
     /** Creates a Data Object by [values] */
     abstract override fun invoke(values: ObjectValues<DO, DM>): DO
 

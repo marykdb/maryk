@@ -10,6 +10,9 @@ import maryk.core.values.MutableValueItems
 import maryk.core.values.ValueItem
 import maryk.core.values.Values
 
+/**
+ * Class for typed DataModels which describe how to work with [Values] objects.
+ */
 abstract class TypedValuesDataModel<DM: IsValuesDataModel> : ValuesDataModel(), IsTypedValuesDataModel<DM> {
     @Suppress("UNCHECKED_CAST", "LeakingThis")
     override val Serializer = DataModelSerializer<Any, Values<DM>, DM, IsPropertyContext>(this as DM)

@@ -14,7 +14,11 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.decodeStorageIndex
 import maryk.lib.exceptions.ParseException
 
-abstract class AbstractDataModel<DO : Any> : IsTypedDataModel<DO> {
+/**
+ * The base class for all DataModels
+ * Contains all property definitions and ways to retrieve them by plain or byte encoded name or index.
+ */
+abstract class BaseDataModel<DO : Any> : IsTypedDataModel<DO> {
     override fun iterator() = _allProperties.iterator()
 
     private val _allProperties: MutableList<IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>> =
@@ -25,7 +29,7 @@ abstract class AbstractDataModel<DO : Any> : IsTypedDataModel<DO> {
         mutableMapOf<String, IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>>()
 
     override fun equals(other: Any?): Boolean =
-        other is AbstractDataModel<*> && nameToDefinition.keys == other.nameToDefinition.keys
+        other is BaseDataModel<*> && nameToDefinition.keys == other.nameToDefinition.keys
 
     override fun hashCode(): Int {
         return nameToDefinition.keys.hashCode()

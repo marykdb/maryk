@@ -1,7 +1,7 @@
 package maryk.core.query.filters
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.AbstractDataModel
+import maryk.core.models.BaseDataModel
 import maryk.core.models.ReferencesDataModel
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
@@ -44,7 +44,7 @@ data class Exists internal constructor(
             getter = Exists::references,
             valueDefinition = ContextualPropertyReferenceDefinition<RequestContext>(
                 contextualResolver = {
-                    it?.dataModel as? AbstractDataModel<*>?
+                    it?.dataModel as? BaseDataModel<*>?
                         ?: throw ContextNotFoundException()
                 }
             )

@@ -5,7 +5,7 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsObjectDataModel
-import maryk.core.models.IsSimpleBaseObjectDataModel
+import maryk.core.models.IsTypedObjectDataModel
 import maryk.core.models.IsValueDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.IsPropertyContext
@@ -156,7 +156,7 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueDataModel<DO,
             definition = ContextualEmbeddedObjectDefinition(
                 contextualResolver = { context: ModelContext? ->
                     @Suppress("UNCHECKED_CAST")
-                    context?.model?.invoke(Unit) as? IsSimpleBaseObjectDataModel<Any, *, ModelContext>?
+                    context?.model?.invoke(Unit) as? IsTypedObjectDataModel<Any, *, *, ModelContext>?
                         ?: throw ContextNotFoundException()
                 }
             )
@@ -167,7 +167,7 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueDataModel<DO,
             definition = ContextualEmbeddedObjectDefinition(
                 contextualResolver = { context: ModelContext? ->
                     @Suppress("UNCHECKED_CAST")
-                    context?.model?.invoke(Unit) as? IsSimpleBaseObjectDataModel<Any, *, ModelContext>?
+                    context?.model?.invoke(Unit) as? IsTypedObjectDataModel<Any, *, *, ModelContext>?
                         ?: throw ContextNotFoundException()
                 }
             )
@@ -178,7 +178,7 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueDataModel<DO,
             definition = ContextualEmbeddedObjectDefinition(
                 contextualResolver = { context: ModelContext? ->
                     @Suppress("UNCHECKED_CAST")
-                    context?.model?.invoke(Unit) as? IsSimpleBaseObjectDataModel<Any, *, ModelContext>?
+                    context?.model?.invoke(Unit) as? IsTypedObjectDataModel<Any, *, *, ModelContext>?
                         ?: throw ContextNotFoundException()
                 }
             )

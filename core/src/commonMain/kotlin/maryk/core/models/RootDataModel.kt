@@ -231,8 +231,7 @@ open class RootDataModel<DM: IsValuesDataModel> internal constructor(
                         is JsonToken.FieldName -> {
                             val value = token.value ?: throw ParseException("Empty field name not allowed in JSON")
 
-                            val definition = RootDataModelDefinition.Model[value]
-                            when (definition) {
+                            when (val definition = RootDataModelDefinition.Model[value]) {
                                 null -> {
                                     if (value == properties.name) {
                                         reader.nextToken() // continue for field name

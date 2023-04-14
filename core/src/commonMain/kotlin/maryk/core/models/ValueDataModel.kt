@@ -167,8 +167,7 @@ abstract class ValueDataModel<DO: ValueDataObject, DM: IsValueDataModel<DO, *>> 
                         is JsonToken.FieldName -> {
                             val value = token.value ?: throw ParseException("Empty field name not allowed in JSON")
 
-                            val definition = ValueDataModelDefinition.Model[value]
-                            when (definition) {
+                            when (val definition = ValueDataModelDefinition.Model[value]) {
                                 null -> {
                                     if (value == properties.name) {
                                         reader.nextToken() // continue for field name

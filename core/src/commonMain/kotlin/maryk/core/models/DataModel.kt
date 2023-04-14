@@ -159,8 +159,7 @@ open class DataModel<DM: IsValuesDataModel>(
                         is JsonToken.FieldName -> {
                             val value = token.value ?: throw ParseException("Empty field name not allowed in JSON")
 
-                            val definition = DataModelDefinition.Model[value]
-                            when (definition) {
+                            when (val definition = DataModelDefinition.Model[value]) {
                                 null -> {
                                     if (value == properties.name) {
                                         reader.nextToken() // continue for field name

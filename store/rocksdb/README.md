@@ -47,7 +47,7 @@ to set less strict validation rules. However, it is not possible to change the t
 without making the old value an alternative, or add more strict validation without automatically triggering a migration.
 
 ```kotlin
-Rocks(
+RocksDBDataStore(
     // True if the data store should keep all past versions of the data
     keepAllVersions = true,
     relativePath = "path/to/folder/on/disk/for/store", 

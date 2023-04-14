@@ -21,9 +21,9 @@ for this purpose. Secondary use cases can be addressed by adding an index.
 Key structures must have fixed byte lengths. This way the location of key elements are
 predictable which are beneficial for scans over keys.
 
-Properties that can be used 
-for key elements include numbers, dates and times, fixed bytes, references, enums, booleans,
+Properties that can be used for key elements include numbers, dates and times, fixed bytes, references, enums, booleans,
 multi-type objects, and ValueDataModels containing similar values. 
+
 Properties that cannot be used in keys include strings, flexible bytes, sets, lists, maps, and 
 embedded models, as they have varying byte lengths.
 

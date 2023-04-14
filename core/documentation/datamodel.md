@@ -8,7 +8,7 @@ are used to create data objects, which can be validated or serialized.
 To ensure efficient data transport and storage, each property in a DataModel must
 have both a name and a unique integer index. The index is used to identify the property
 and must remain unchanged throughout the lifetime of the application. This index eliminates
-the need for reflection in code implementation.
+the need for reflection in code implementation which means everything can run fast.
 
 ### Example of a DataModel representing a Person in name and date of birth
 
@@ -48,7 +48,7 @@ val key = Person.key(johnSmith)
 
 ## Basic DataModels
 The basic data models form the foundation for defining data structures. DataModels consist of properties and can be
-validated. With the exception of RootDataModels, they can be nested within other DataModels to group data more 
+validated. Except RootDataModels, they can be nested within other DataModels to group data more 
 specifically. For example, address details can be stored within a Person DataModel.
 
 If you define the model using Kotlin, any DataModel should extend from the Model class.

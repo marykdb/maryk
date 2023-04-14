@@ -16,7 +16,7 @@ Checks if a value exists.
 Exists(
     propertyReference1,
     propertyReference2,
-    propertyReference3
+    propertyReference3,
 )
 ```
 
@@ -26,7 +26,7 @@ Checks if a property reference's value is equal to the given value.
 ```kotlin
 Equals(
     stringPropertyReference with "value",
-    numberPropertyReference with 5
+    numberPropertyReference with 5,
 )
 ```
 
@@ -36,7 +36,7 @@ Checks if the referenced values are greater than the given value.
 ```kotlin
 GreaterThan(
     stringPropertyReference with "value",
-    intPropertyReference with 42
+    intPropertyReference with 42,
 )
 ```
 
@@ -46,7 +46,7 @@ Checks if the referenced value is greater than or equal to the given value.
 ```kotlin
 GreaterThanEquals(
     stringPropertyReference with "value",
-    intPropertyReference with 42
+    intPropertyReference with 42,
 )
 ```
 
@@ -56,7 +56,7 @@ Checks if the referenced value is less than the given value.
 ```kotlin
 LessThan(
     stringPropertyReference with "value",
-    intPropertyReference with 42
+    intPropertyReference with 42,
 )
 ```
 
@@ -66,7 +66,7 @@ Checks if the referenced value is less than or equal to the given value.
 ```kotlin
 LessThanEquals(
     stringPropertyReference with "value",
-    intPropertyReference with 42
+    intPropertyReference with 42,
 )
 ```
 
@@ -80,7 +80,7 @@ Range(
     stringPropertyReference with ValueRange(
         from = "abba",
         to = "zeplin",
-        inclusiveTo = false
+        inclusiveTo = false,
     )
 ) 
 ```
@@ -91,7 +91,7 @@ Checks if the referenced value is prefixed by the given value.
 ```kotlin
 Prefix(
     stringPropertyReference with "val",
-    anotherStringPropertyReference with "do"
+    anotherStringPropertyReference with "do",
 )
 ```
 
@@ -101,7 +101,7 @@ Checks if the referenced value matches with the given regular expression.
 ```kotlin
 RegEx(
     stringPropertyReference with "[A-Z]+al.*",
-    anotherStringPropertyReference with "[E-Z]+al.*"
+    anotherStringPropertyReference with "[E-Z]+al.*",
 )
 ```
 
@@ -111,7 +111,7 @@ Checks if the referenced value is within the set of given values.
 ```kotlin
 ValueIn(
     stringPropertyReference with setOf("a", "b", "value"),
-    intPropertyReference with setOf(1, 3, 5)
+    intPropertyReference with setOf(1, 3, 5),
 )
 ```
 
@@ -156,6 +156,6 @@ This filter is useful if you want to exclude records that meet certain criteria.
 ```kotlin
 Not(
     Equals(stringPropertyReference equals "value"),
-    Exists(intPropertyReference)
+    Exists(intPropertyReference),
 )
 ```

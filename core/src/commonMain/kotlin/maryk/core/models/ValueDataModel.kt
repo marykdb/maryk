@@ -168,18 +168,21 @@ abstract class ValueDataModel<DO: ValueDataObject, DM: IsValueDataModel<DO, *>> 
                             val value = token.value ?: throw ParseException("Empty field name not allowed in JSON")
 
                             val definition = ValueDataModelDefinition.Model[value]
-                            if (definition == null) {
-                                if (value == properties.name) {
-                                    reader.nextToken() // continue for field name
-                                    deserializedProperties += properties.readJson(reader, context as DefinitionsConversionContext)
-                                } else {
-                                    reader.skipUntilNextField()
-                                    continue@walker
+                            when (definition) {
+                                null -> {
+                                    if (value == properties.name) {
+                                        reader.nextToken() // continue for field name
+                                        deserializedProperties += properties.readJson(reader, context as DefinitionsConversionContext)
+                                    } else {
+                                        reader.skipUntilNextField()
+                                        continue@walker
+                                    }
                                 }
-                            } else {
-                                reader.nextToken()
+                                else -> {
+                                    reader.nextToken()
 
-                                metaValues += ValueItem(definition.index, definition.definition.readJson(reader, context))
+                                    metaValues += ValueItem(definition.index, definition.definition.readJson(reader, context))
+                                }
                             }
                         }
                         else -> break@walker

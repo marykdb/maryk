@@ -232,27 +232,32 @@ open class RootDataModel<DM: IsValuesDataModel> internal constructor(
                             val value = token.value ?: throw ParseException("Empty field name not allowed in JSON")
 
                             val definition = RootDataModelDefinition.Model[value]
-                            if (definition == null) {
-                                if (value == properties.name) {
-                                    reader.nextToken() // continue for field name
-                                    deserializedProperties += properties.readJson(reader, context as DefinitionsConversionContext)
-                                } else {
-                                    reader.skipUntilNextField()
+                            when (definition) {
+                                null -> {
+                                    if (value == properties.name) {
+                                        reader.nextToken() // continue for field name
+                                        deserializedProperties += properties.readJson(reader, context as DefinitionsConversionContext)
+                                    } else {
+                                        reader.skipUntilNextField()
+                                        continue@walker
+                                    }
+                                }
+                                RootDataModelDefinition.Model.indices -> {
+                                    indicesToReadLater = mutableListOf<JsonToken>().apply {
+                                        reader.skipUntilNextField(::add)
+                                    }
                                     continue@walker
                                 }
-                            } else if (definition == RootDataModelDefinition.Model.indices) {
-                                indicesToReadLater = mutableListOf<JsonToken>().apply {
-                                    reader.skipUntilNextField(::add)
+                                RootDataModelDefinition.Model.key -> {
+                                    keyDefinitionToReadLater = mutableListOf<JsonToken>().apply {
+                                        reader.skipUntilNextField(::add)
+                                    }
+                                    continue@walker
                                 }
-                                continue@walker
-                            } else if (definition == RootDataModelDefinition.Model.key) {
-                                keyDefinitionToReadLater = mutableListOf<JsonToken>().apply {
-                                    reader.skipUntilNextField(::add)
+                                else -> {
+                                    reader.nextToken()
+                                    metaValues += ValueItem(definition.index, definition.definition.readJson(reader, context))
                                 }
-                                continue@walker
-                            } else {
-                                reader.nextToken()
-                                metaValues += ValueItem(definition.index, definition.definition.readJson(reader, context))
                             }
                         }
                         else -> break@walker

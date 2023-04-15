@@ -99,6 +99,10 @@ val user = User.readJson(reader)
   - [In-memory store](store/memory/README.md) (non-persistent, suitable for testing)
   - [RocksDB based store](store/rocksdb/README.md) (persistent, suitable for JVM/Android/iOS/Mac)
 
+## Future Roadmap
+
+- Support for proper in cloud storage by implementing a store based on the Cassandra API which is supported by many cloud store providers.
+- KTOR serialization plugin to pass data objects as values and have them serialized automatically.
 
 ## Documentation
 
@@ -122,10 +126,3 @@ All core projects are multi-platform kotlin projects, and most support JS, macOS
 ## Contributing
 
 We welcome any feature requests, issue reports, and merge requests from the community. Feel free to open issues or submit pull requests on the GitHub repository.
-
-## Future Roadmap
-
-- Support for proper in cloud storage by implementing a store based on the Cassandra API which is supported by many cloud store providers.
-- KTOR serialization plugin to pass data objects as values and have them serialized automatically.
-
-

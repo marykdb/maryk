@@ -34,7 +34,7 @@ sealed class Role(index: Int): IndexedEnumImpl<Role>(index) {
 }
 ```
 
-**Example of an Enum property definition for use within a Model its PropertyDefinitions**
+**Example of an Enum property definition for use within a Model**
 
 It refers to the earlier Kotlin enum definition
 ```kotlin

@@ -24,7 +24,7 @@ This makes them usable as map keys and list/set items.
 
 ## Examples
 
-**Example of a Value Object property definition for use within a Model its PropertyDefinitions**
+**Example of a Value Object property definition for use within a Model**
 ```kotlin
 val arrivalTime by valueObject(
     index = 1u,

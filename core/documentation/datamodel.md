@@ -77,10 +77,12 @@ Below is an example
 
 ```kotlin
 object PersonalDiaryItem : RootModel<Person>(
-    keyDefinition = Multiple(
-        user.ref(),
-        Reversed(createdAt.ref()),
-    ),
+    keyDefinition = {
+        Multiple(
+            user.ref(),
+            Reversed(dateOfPosting.ref()),
+        )
+    },
     indices = listOf(
         Multiple(
             user.ref(),
@@ -89,7 +91,7 @@ object PersonalDiaryItem : RootModel<Person>(
     ),
 ) {
     val user by reference(index = 1u, dataModel = { User })
-    val createdAt by string(index = 2u)
+    val dateOfPosting by string(index = 2u)
     val message by string(index = 3u, minSize=3, maxSize=5)
     val tags by list(index = 4u, valueDefinition=StringDefinition())
 }
@@ -165,10 +167,12 @@ allowing for quick querying based on type.
 
 ```kotlin
 object TimelineItem: RootModel<TimelineItem>(
-    keyDefinition = Multiple(
-        Reversed(Properties.dateOfPosting),
-        TypeId(Properties.item)
-    ),
+    keyDefinition = {
+        Multiple(
+            Reversed(dateOfPosting),
+            TypeId(item)
+        )
+    },
     properties = Properties
 ) {
     val dateOfPosting by dateTime(

@@ -24,7 +24,7 @@ A DateTime Property which can be used to represent the time in a date plus time.
 
 ## Examples
 
-**Example of a DateTime property definition for use within a Model its PropertyDefinitions**
+**Example of a DateTime property definition for use within a Model**
 ```kotlin
 val startDateTime by dateTime(
     index = 1u,

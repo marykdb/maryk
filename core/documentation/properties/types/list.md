@@ -24,7 +24,7 @@ Property definitions need to be required and values can thus not be null.
 
 ## Examples
 
-**Example of a List property definition for use within a Model its PropertyDefinitions**
+**Example of a List property definition for use within a Model**
 ```kotlin
 val names by list(
     index = 1u,

@@ -27,7 +27,7 @@ be null.
 
 ## Examples
 
-**Example of a Map property definition for use within a Model its PropertyDefinitions**
+**Example of a Map property definition for use within a Model**
 ```kotlin
 val mappedNames by map(
     index = 1u,

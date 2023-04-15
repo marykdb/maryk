@@ -19,7 +19,7 @@ Boolean true or false.
 
 ## Examples
 
-**Example of a Boolean property definition for use within a Model its PropertyDefinitions**
+**Example of a Boolean property definition for use within a Model**
 ```kotlin
 val isActivated by boolean(
     index = 1u,

@@ -23,7 +23,7 @@ year is unsigned so it can contain negative dates
 
 ## Examples
 
-**Example of a Date property definition for use within a Model its PropertyDefinitions**
+**Example of a Date property definition for use within a Model**
 ```kotlin
 val birthDate by date(
     index = 1u,

@@ -24,7 +24,7 @@ Property definitions need to be required and values can thus not be null.
 
 ## Examples
 
-**Example of a Set property definition for use within a Model its PropertyDefinitions**
+**Example of a Set property definition for use within a Model**
 ```kotlin
 val names by set(
     index = 1u,

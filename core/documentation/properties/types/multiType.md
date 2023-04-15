@@ -54,7 +54,7 @@ sealed class MultiType<T: Any>(
 }
 ```
 
-**Example of a multi type property definition for use within a Model its PropertyDefinitions**
+**Example of a multi type property definition for use within a Model**
 ```kotlin
 val category by multiType(
     index = 1u,

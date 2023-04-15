@@ -23,7 +23,7 @@ Defines a property of a fixed bytes length.
 
 ## Examples
 
-**Example of a Fixed Bytes property definition for use within a Model its PropertyDefinitions**
+**Example of a Fixed Bytes property definition for use within a Model**
 ```kotlin
 val value by fixedBytes(
     index = 1u,

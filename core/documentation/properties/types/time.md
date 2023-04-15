@@ -25,7 +25,7 @@ in milliseconds and nanoseconds.
 
 ## Examples
 
-**Example of a String property definition for use within a Model its PropertyDefinitions**
+**Example of a String property definition for use within a Model**
 ```kotlin
 val arrivalTime by time(
     index = 1u,

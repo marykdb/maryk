@@ -24,7 +24,7 @@ Defines a property of a flexible bytes length.
 
 ## Examples
 
-**Example of a Flex Bytes property definition for use within a Model its PropertyDefinitions**
+**Example of a Flex Bytes property definition for use within a Model**
 ```kotlin
 val value by flexBytes(
     index = 1u,

@@ -25,7 +25,7 @@ Basic String property to represent text.
 
 ## Examples
 
-**Example of a String property definition for use within a Model its PropertyDefinitions**
+**Example of a String property definition for use within a Model**
 ```kotlin
 val codeName by string(
     index = 1u,

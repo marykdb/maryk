@@ -25,7 +25,7 @@ Property definitions need to be required and values can thus not be null.
 
 ## Examples
 
-**Example of a Map property definition for use within a Model its PropertyDefinitions**
+**Example of a Map property definition for use within a Model**
 ```kotlin
 val orderNames by incrementingMap(
     index = 1u,

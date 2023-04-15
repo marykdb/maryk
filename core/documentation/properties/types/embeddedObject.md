@@ -23,7 +23,7 @@ A property which contains another DataModel as embedded object. See
 
 ## Examples
 
-**Example of an Embedded Object property definition for use within a Model its PropertyDefinitions**
+**Example of an Embedded Object property definition for use within a Model**
 ```kotlin
 val address by embedObject(
     index = 1u,

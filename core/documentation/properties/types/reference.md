@@ -23,7 +23,7 @@ Property representing a Reference to another DataObject.
 
 ## Examples
 
-**Example of a Reference property definition for use within a Model its PropertyDefinitions**
+**Example of a Reference property definition for use within a Model**
 ```kotlin
 val friend by reference(
     index = 1u,

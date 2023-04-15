@@ -20,7 +20,7 @@ to 7 digits. This represents an accuracy of up to ~11mm or ~0.43 inch.
 
 ## Examples
 
-**Example of a GeoPoint property definition for use within a Model its PropertyDefinitions**
+**Example of a GeoPoint property definition for use within a Model**
 ```kotlin
 val location by geoPoint(
     index = 1u,

@@ -20,7 +20,7 @@ A property which contains values from selected DataModel. See
 
 ## Examples
 
-**Example of an Embedded Values property definition for use within a Model its PropertyDefinitions**
+**Example of an Embedded Values property definition for use within a Model**
 ```kotlin
 val address by embed(
     index = 1u,

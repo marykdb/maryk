@@ -54,7 +54,7 @@ unsigned integers are available.
 
 ## Examples
 
-**Example of a Number property definition for use within a Model its PropertyDefinitions**
+**Example of a Number property definition for use within a Model**
 ```kotlin
 val count by number(
     index = 1u,

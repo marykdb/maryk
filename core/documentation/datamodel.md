@@ -57,9 +57,9 @@ If you define the model using Kotlin, any DataModel should extend from the Model
 
 ```kotlin
 object Address : Model<Address> {
-    val streetName = string(index = 1u)
-    val city = string(index = 2u)
-    val zipCode = string(index = 3u)
+    val streetName by string(index = 1u)
+    val city by string(index = 2u)
+    val zipCode by string(index = 3u)
 }
 ```
 
@@ -68,7 +68,32 @@ A RootDataModel is essential for the storage of all DataModel structures, as it 
 the root element. This model has additional methods for creating a unique key that is based
 on the data within the object. For more information about keys, refer to the [key page](key.md).
 
+They also provide ways to set a version to enable easy migrations and to set ordered indices for
+more efficient data retrieval.
+
 The first example above uses a RootDataModel.
+
+Below is an example
+
+```kotlin
+object PersonalDiaryItem : RootModel<Person>(
+    keyDefinition = Multiple(
+        user.ref(),
+        Reversed(createdAt.ref()),
+    ),
+    indices = listOf(
+        Multiple(
+            user.ref(),
+            tags.refToAny(),
+        ),
+    ),
+) {
+    val user by reference(index = 1u, dataModel = { User })
+    val createdAt by string(index = 2u)
+    val message by string(index = 3u, minSize=3, maxSize=5)
+    val tags by list(index = 4u, valueDefinition=StringDefinition())
+}
+```
 
 ## ValueDataModel
 ValueDataModels are designed to store objects in a more compact and efficient manner
@@ -117,10 +142,10 @@ data class PersonRoleInPeriod(
         val endDate by date(4u)
         
         override fun invoke(values: ObjectValues<TestValueObject, Companion>) = TestValueObject(
-            person = values(1u),
-            role = values(2u),
-            startDate = values(3u),
-            endDate = values(4u)
+            person = values(person.index),
+            role = values(role.index),
+            startDate = values(startDate.index),
+            endDate = values(endDate.index)
         )
     }
 }

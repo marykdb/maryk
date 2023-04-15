@@ -47,7 +47,7 @@ it an excellent choice for managing and storing data in Kotlin-based application
   between two data objects. This allows for more efficient data transportation and reduces
   bandwidth usage when synchronizing data across platforms.
 
-- **Aggregations and insights**: Aggregate your data and gain valuable insights on your
+- **Aggregations and insights**: [Aggregate your data](core/documentation/aggregations.md) and gain valuable insights on your
   stored data with built-in functionalities like count, sum, average, min/max value, and
   other statistical aggregations. Group your data based on date units like hour/week/month/year 
   or by enum value to gain a deeper understanding of your data.

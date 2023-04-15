@@ -14,4 +14,5 @@ For more information on how to use Maryk Core, check out the following resources
 - [Properties](documentation/properties/properties.md): Explore the various property types available in Maryk.
 - [Versioning](documentation/versioning.md): Discover how to store versioned data and revert to earlier versions as needed.
 - [Queries](documentation/query.md): Get a comprehensive overview of the query language and how to use it to extract meaningful data from your datasets.
+- [Aggregations](documentation/aggregations.md): Learn how to aggregate your data and gain valuable insights on your stored data.
 - [Serialization](documentation/serialization.md): Learn how to serialize and deserialize data in YAML, JSON, and ProtoBuf formats.

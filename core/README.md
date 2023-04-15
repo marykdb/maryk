@@ -15,4 +15,5 @@ For more information on how to use Maryk Core, check out the following resources
 - [Versioning](documentation/versioning.md): Discover how to store versioned data and revert to earlier versions as needed.
 - [Queries](documentation/query.md): Get a comprehensive overview of the query language and how to use it to extract meaningful data from your datasets.
 - [Aggregations](documentation/aggregations.md): Learn how to aggregate your data and gain valuable insights on your stored data.
+- [Collect & Inject Values Requests](documentation/collectAndInject.md): Learn how to use the Collect & Inject Values Requests to efficiently transport data between platforms.
 - [Serialization](documentation/serialization.md): Learn how to serialize and deserialize data in YAML, JSON, and ProtoBuf formats.

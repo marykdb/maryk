@@ -59,6 +59,7 @@ class InjectIntoRequestTest {
 
         val getRequest = GetRequest.run {
             create(
+                from with ReferencesModel,
                 keys injectWith Inject("referencedKeys", requestRef),
                 context = context,
             )

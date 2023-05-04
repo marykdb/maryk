@@ -25,12 +25,12 @@ dependencies {
     api(project(":generator"))
 
     testImplementation(project(":testmodels"))
-    testImplementation("com.google.protobuf:protobuf-kotlin:$protobufVersion")
+    testImplementation(libs.protobuf.kotlin)
 }
 
 tasks.withType(KotlinCompile) {
     kotlinOptions {
         allWarningsAsErrors = true
-        jvmTarget = "15"
+        jvmTarget = "11"
     }
 }

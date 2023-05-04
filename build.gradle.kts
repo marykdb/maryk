@@ -12,7 +12,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:_")
+        classpath(libs.kotlin.gradle.plugin)
     }
 }
 allprojects {

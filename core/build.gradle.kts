@@ -22,7 +22,7 @@ kotlin {
         commonMain {
             dependencies {
                 api(project(":yaml"))
-                api("org.jetbrains.kotlinx:atomicfu:_")
+                api(libs.atomicfu)
             }
         }
         commonTest {

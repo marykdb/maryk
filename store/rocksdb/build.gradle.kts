@@ -21,7 +21,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                api("io.maryk.rocksdb:rocksdb-multiplatform:_")
+                api(libs.rocksdb.multiplatform)
 
                 api(project(":store-shared"))
             }

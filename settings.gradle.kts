@@ -49,7 +49,8 @@ includeProjects(
     "store-test",
     "store-shared",
     "store-memory",
-    "store-rocksdb"
+    "store-rocksdb",
+    "store-cassandra",
 )
 
 rootProject.name = "maryk"

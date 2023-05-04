@@ -30,6 +30,10 @@ java-driver-core = "com.datastax.oss:java-driver-core:_"
 
 jna = "net.java.dev.jna:jna:_"
 
+cassandra-all = "org.apache.cassandra:cassandra-all:_"
+
+netty-tcnative-boringssl-static = "io.netty:netty-tcnative-boringssl-static:_"
+
 rocksdb-multiplatform = "io.maryk.rocksdb:rocksdb-multiplatform:_"
 
 org-jacoco-ant = "org.jacoco:org.jacoco.ant:_"

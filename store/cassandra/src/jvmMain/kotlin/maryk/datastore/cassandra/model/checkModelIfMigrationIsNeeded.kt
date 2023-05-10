@@ -34,12 +34,14 @@ fun checkModelIfMigrationIsNeeded(
 
             // Read dependent data models
             metaData.getByteBuffer("dependent_definition")?.let { modelBytes ->
-                Definitions.Serializer
-                    .readProtoBuf(
-                        modelBytes.remaining(),
-                        modelBytes::get,
-                        context
-                    ).toDataObject()
+                if (modelBytes.remaining() > 0) {
+                    Definitions.Serializer
+                        .readProtoBuf(
+                            modelBytes.remaining(),
+                            modelBytes::get,
+                            context
+                        ).toDataObject()
+                }
             }
 
             // Read currently stored model definition
@@ -49,7 +51,9 @@ fun checkModelIfMigrationIsNeeded(
                         modelBytes.remaining(),
                         modelBytes::get,
                         context
-                    ).toDataObject()
+                    ).toDataObject().also { dm ->
+                        context.dataModels[dataModel.Meta.name] = { dm }
+                    }
             }
 
             // Check by comparing the data models for if migration is needed

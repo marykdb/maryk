@@ -99,9 +99,10 @@ data class NumberDefinition<T : Comparable<T>>(
 
     override fun compatibleWith(
         definition: IsPropertyDefinition<*>,
+        handledPrimitiveNames: MutableSet<String>,
         addIncompatibilityReason: ((String) -> Unit)?
     ): Boolean {
-        var compatible = super<IsNumericDefinition>.compatibleWith(definition, addIncompatibilityReason)
+        var compatible = super<IsNumericDefinition>.compatibleWith(definition, handledPrimitiveNames, addIncompatibilityReason)
 
         (definition as? NumberDefinition<*>)?.let {
             if (definition.type != this.type) {

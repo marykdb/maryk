@@ -31,12 +31,13 @@ interface IsEmbeddedObjectDefinition<DO : Any, out DM : IsTypedObjectDataModel<D
 
     override fun compatibleWith(
         definition: IsPropertyDefinition<*>,
+        handledPrimitiveNames: MutableSet<String>,
         addIncompatibilityReason: ((String) -> Unit)?
     ): Boolean {
-        var compatible = super<IsValueDefinition>.compatibleWith(definition, addIncompatibilityReason)
+        var compatible = super<IsValueDefinition>.compatibleWith(definition, handledPrimitiveNames, addIncompatibilityReason)
 
         (definition as? IsEmbeddedObjectDefinition<*, *, *, *>)?.let {
-            compatible = this.compatibleWithDefinitionWithDataModel(definition, addIncompatibilityReason) && compatible
+            compatible = this.compatibleWithDefinitionWithDataModel(definition, handledPrimitiveNames, addIncompatibilityReason) && compatible
         }
 
         return compatible

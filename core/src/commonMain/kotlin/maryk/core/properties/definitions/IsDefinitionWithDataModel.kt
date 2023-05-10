@@ -14,6 +14,7 @@ interface IsDefinitionWithDataModel<out DM : IsTypedDataModel<*>> {
      */
     fun compatibleWithDefinitionWithDataModel(
         definition: IsDefinitionWithDataModel<*>,
+        handledPrimitiveNames: MutableSet<String> = mutableSetOf(),
         addIncompatibilityReason: ((String) -> Unit)?
     ): Boolean {
         val comparisonDataModel = definition.dataModel as? IsStorableDataModel<*>
@@ -23,7 +24,7 @@ interface IsDefinitionWithDataModel<out DM : IsTypedDataModel<*>> {
             return false
         }
 
-        return when (val migrationStatus = (this.dataModel as? IsStorableDataModel<*>)?.isMigrationNeeded(definition.dataModel as IsStorableDataModel<*>)) {
+        return when (val migrationStatus = (this.dataModel as? IsStorableDataModel<*>)?.isMigrationNeeded(definition.dataModel as IsStorableDataModel<*>, handledPrimitiveNames)) {
             null -> {
                 addIncompatibilityReason?.invoke("current DataModel not Serializable")
                 false

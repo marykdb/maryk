@@ -80,6 +80,7 @@ open class RootDataModel<DM: IsValuesDataModel> internal constructor(
 
     override fun isMigrationNeeded(
         storedDataModel: IsStorableDataModel<*>,
+        handledPrimitiveNames: MutableSet<String>,
         migrationReasons: MutableList<String>
     ): MigrationStatus {
         val indicesToIndex = mutableListOf<IsIndexable>()
@@ -116,14 +117,14 @@ open class RootDataModel<DM: IsValuesDataModel> internal constructor(
                 migrationReasons += "Major version was increased: ${storedDataModel.Meta.version} -> ${this.Meta.version}"
             }
 
-            if (storedDataModel.Meta.keyDefinition !== this.Meta.keyDefinition) {
+            if (storedDataModel.Meta.keyDefinition != this.Meta.keyDefinition) {
                 migrationReasons += "Key definition was not the same"
             }
         } else {
             migrationReasons += "Stored model is not a root data model"
         }
 
-        val parentResult = super<TypedValuesDataModel>.isMigrationNeeded(storedDataModel, migrationReasons)
+        val parentResult = super<TypedValuesDataModel>.isMigrationNeeded(storedDataModel, handledPrimitiveNames, migrationReasons)
 
         return if (indicesToIndex.isEmpty()) {
             parentResult

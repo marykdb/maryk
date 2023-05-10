@@ -93,14 +93,16 @@ abstract class AbstractIndexedEnumDefinition<E: IndexedEnum>(
     internal open fun enumTypeIsCompatible(
         storedEnum: E,
         newEnum: E,
+        handlePrimitiveNames: MutableSet<String>,
         addIncompatibilityReason: ((String) -> Unit)?
     ) = true
 
     final override fun compatibleWith(
         definition: IsPropertyDefinition<*>,
+        handledPrimitiveNames: MutableSet<String>,
         addIncompatibilityReason: ((String) -> Unit)?
     ): Boolean {
-        var compatible = super.compatibleWith(definition, addIncompatibilityReason)
+        var compatible = super.compatibleWith(definition, handledPrimitiveNames, addIncompatibilityReason)
 
         if (definition is AbstractIndexedEnumDefinition) {
             if (name != definition.name) {
@@ -157,7 +159,7 @@ abstract class AbstractIndexedEnumDefinition<E: IndexedEnum>(
                 }
 
                 @Suppress("UNCHECKED_CAST")
-                if (!enumTypeIsCompatible(storedEnum as E, newEnum, addIncompatibilityReason)) {
+                if (!enumTypeIsCompatible(storedEnum as E, newEnum, handledPrimitiveNames, addIncompatibilityReason)) {
                     compatible = false
                 }
 

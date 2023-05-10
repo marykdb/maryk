@@ -3,8 +3,8 @@ package maryk.core.properties.definitions
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsObjectDataModel
-import maryk.core.properties.IsPropertyContext
 import maryk.core.models.IsValuesDataModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.contextual.ContextValueTransformDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
@@ -116,12 +116,13 @@ data class EnumDefinition<E : IndexedEnumComparable<E>>(
 
     override fun compatibleWith(
         definition: IsPropertyDefinition<*>,
+        handledPrimitiveNames: MutableSet<String>,
         addIncompatibilityReason: ((String) -> Unit)?
     ): Boolean {
-        var compatible = super<IsSerializableFixedBytesEncodable>.compatibleWith(definition, addIncompatibilityReason)
+        var compatible = super<IsSerializableFixedBytesEncodable>.compatibleWith(definition, handledPrimitiveNames, addIncompatibilityReason)
 
         if (definition is EnumDefinition) {
-            compatible = enum.compatibleWith(definition.enum, addIncompatibilityReason) && compatible
+            compatible = enum.compatibleWith(definition.enum, handledPrimitiveNames, addIncompatibilityReason) && compatible
         }
 
         return compatible

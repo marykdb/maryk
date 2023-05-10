@@ -143,7 +143,11 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
      *
      * Validation rules which are less strict are accepted but more strict or incompatible rules are not.
      */
-    fun compatibleWith(wrapper: IsDefinitionWrapper<*, *, *, *>, addIncompatibilityReason: ((String) -> Unit)? = null): Boolean {
+    fun compatibleWith(
+        wrapper: IsDefinitionWrapper<*, *, *, *>,
+        handledPrimitiveNames: MutableSet<String> = mutableSetOf(),
+        addIncompatibilityReason: ((String) -> Unit)? = null
+    ): Boolean {
         var compatible = true
 
         if (index != wrapper.index) {
@@ -163,7 +167,7 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
             }
         }
 
-        if (!this.definition.compatibleWith(wrapper.definition) { addIncompatibilityReason?.invoke("$index: $it") }) {
+        if (!this.definition.compatibleWith(wrapper.definition, handledPrimitiveNames) { addIncompatibilityReason?.invoke("$index: $it") }) {
             compatible = false
         }
 

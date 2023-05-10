@@ -34,7 +34,7 @@ class CassandraDataStore(
     override val keepAllVersions: Boolean = false,
     dataModelsById: Map<UInt, IsRootDataModel>,
     private val onlyCheckModelVersion: Boolean = false,
-    val migrationHandler: MigrationHandler<CassandraDataStore>? = null
+    migrationHandler: MigrationHandler<CassandraDataStore>? = null
 ) : AbstractDataStore(dataModelsById) {
     internal val session: CqlSession
 
@@ -76,7 +76,7 @@ class CassandraDataStore(
                 }
                 is MigrationStatus.NeedsMigration -> {
                     val succeeded = migrationHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
-                        ?: throw MigrationException("Migration needed: No migration handler present")
+                        ?: throw MigrationException("Migration needed: No migration handler present. \n$migrationStatus")
 
                     if (!succeeded) {
                         throw MigrationException("Migration could not be handled for ${dataModel.Meta.name} & ${(migrationStatus.storedDataModel as? StoredRootDataModelDefinition)?.Meta?.version}")

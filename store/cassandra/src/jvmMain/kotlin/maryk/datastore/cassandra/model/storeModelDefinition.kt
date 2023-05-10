@@ -29,13 +29,23 @@ fun CassandraDataStore.storeModelDefinition(
     val modelInBytes = ByteBuffer.allocateDirect(modelByteSize)
     RootDataModel.Model.Serializer.writeObjectProtoBuf(dataModel, cache, modelInBytes::put, context)
 
-    @Suppress("UNCHECKED_CAST")
-    val dependentDefinitions = Definitions(
-        context.dataModels.values.map { it.invoke(Unit) }.filter { it !== dataModel } as List<MarykPrimitive>
-    )
-    val dependentsByteSize = Definitions.Serializer.calculateObjectProtoBufLength(dependentDefinitions, cache, context)
+    var dependentDefinitions: Definitions
+    var dependentsByteSize: Int
+    var dependentsCache: WriteCache
+    var contextDataModelsSize: Int
+    // Continue calculating size as more dependencies are discovered
+    do {
+        dependentsCache = WriteCache()
+        contextDataModelsSize = context.dataModels.size
+        @Suppress("UNCHECKED_CAST")
+        dependentDefinitions = Definitions(
+            context.dataModels.values.map { it.invoke(Unit) }.filter { it !== dataModel }.reversed() as List<MarykPrimitive>
+        )
+        dependentsByteSize = Definitions.Serializer.calculateObjectProtoBufLength(dependentDefinitions, dependentsCache, context)
+    } while (contextDataModelsSize != context.dataModels.size)
+
     val definitionInBytes = ByteBuffer.allocateDirect(dependentsByteSize)
-    Definitions.Serializer.writeObjectProtoBuf(dependentDefinitions, cache, definitionInBytes::put, context)
+    Definitions.Serializer.writeObjectProtoBuf(dependentDefinitions, dependentsCache, definitionInBytes::put, context)
 
     session.execute(
         insertStmt

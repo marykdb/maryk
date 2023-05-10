@@ -1,9 +1,9 @@
 package maryk.core.properties.definitions
 
 import maryk.core.models.IsObjectDataModel
-import maryk.core.properties.IsPropertyContext
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.SimpleObjectModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
@@ -86,9 +86,10 @@ data class StringDefinition(
 
     override fun compatibleWith(
         definition: IsPropertyDefinition<*>,
+        handledPrimitiveNames: MutableSet<String>,
         addIncompatibilityReason: ((String) -> Unit)?
     ): Boolean {
-        var compatible = super<IsComparableDefinition>.compatibleWith(definition, addIncompatibilityReason)
+        var compatible = super<IsComparableDefinition>.compatibleWith(definition, handledPrimitiveNames, addIncompatibilityReason)
         if (definition is StringDefinition) {
             if (regEx != null && regEx != definition.regEx) {
                 addIncompatibilityReason?.invoke("Regular expression ($$regEx) cannot be added or changed.")

@@ -40,9 +40,10 @@ interface IsSetDefinition<T : Any, CX : IsPropertyContext> :
 
     override fun compatibleWith(
         definition: IsPropertyDefinition<*>,
+        handledPrimitiveNames: MutableSet<String>,
         addIncompatibilityReason: ((String) -> Unit)?
     ): Boolean {
-        var compatible = super.compatibleWith(definition, addIncompatibilityReason)
+        var compatible = super.compatibleWith(definition, handledPrimitiveNames, addIncompatibilityReason)
 
         if (definition is IsSetDefinition<*, *>) {
             compatible = isCompatible(definition, addIncompatibilityReason) && compatible

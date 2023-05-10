@@ -9,7 +9,6 @@ import maryk.core.properties.references.IsPropertyReference
  * Property Definition to define comparable properties of type [T] with context [CX].
  * This is used for simple single value properties and not for lists and maps.
  */
-@Suppress("RemoveExplicitSuperQualifier")
 interface IsComparableDefinition<T : Comparable<T>, in CX : IsPropertyContext> : IsSimpleValueDefinition<T, CX> {
     val unique: Boolean
     val minValue: T?
@@ -47,9 +46,10 @@ interface IsComparableDefinition<T : Comparable<T>, in CX : IsPropertyContext> :
 
     override fun compatibleWith(
         definition: IsPropertyDefinition<*>,
+        handledPrimitiveNames: MutableSet<String>,
         addIncompatibilityReason: ((String) -> Unit)?
     ): Boolean {
-        var compatible = super.compatibleWith(definition, addIncompatibilityReason)
+        var compatible = super.compatibleWith(definition, handledPrimitiveNames, addIncompatibilityReason)
 
         (definition as? IsComparableDefinition<*, *>)?.let {
             if (definition.unique != this.unique) {

@@ -19,14 +19,14 @@ fun CassandraDataStore.storeModelDefinition(
         .value("name", bindMarker())
         .value("version", bindMarker())
         .value("definition", bindMarker())
-        .value("dependent_definitions", bindMarker())
+        .value("dependent_definition", bindMarker())
         .build()
 
     val context = DefinitionsConversionContext()
 
     val cache = WriteCache()
     val modelByteSize = RootDataModel.Model.Serializer.calculateObjectProtoBufLength(dataModel as RootDataModel<*>, cache, context)
-    val modelInBytes = ByteBuffer.allocate(modelByteSize)
+    val modelInBytes = ByteBuffer.allocateDirect(modelByteSize)
     RootDataModel.Model.Serializer.writeObjectProtoBuf(dataModel, cache, modelInBytes::put, context)
 
     @Suppress("UNCHECKED_CAST")
@@ -34,7 +34,7 @@ fun CassandraDataStore.storeModelDefinition(
         context.dataModels.values.map { it.invoke(Unit) }.filter { it !== dataModel } as List<MarykPrimitive>
     )
     val dependentsByteSize = Definitions.Serializer.calculateObjectProtoBufLength(dependentDefinitions, cache, context)
-    val definitionInBytes = ByteBuffer.allocate(dependentsByteSize)
+    val definitionInBytes = ByteBuffer.allocateDirect(dependentsByteSize)
     Definitions.Serializer.writeObjectProtoBuf(dependentDefinitions, cache, definitionInBytes::put, context)
 
     session.execute(
@@ -44,8 +44,8 @@ fun CassandraDataStore.storeModelDefinition(
                 "version" to ByteBuffer.wrap(
                     dataModel.Meta.version.toByteArray()
                 ),
-                "dependent_definitions" to definitionInBytes,
-                "definition" to modelInBytes,
+                "definition" to modelInBytes.flip(),
+                "dependent_definition" to definitionInBytes.flip(),
             ))
     )
 }

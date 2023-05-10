@@ -19,7 +19,7 @@ fun checkModelIfMigrationIsNeeded(
 ): MigrationStatus {
     val metaData = session.execute(
         selectFrom(META_Maryk_Model_Definitions)
-            .columns("name","version", "definition", "dependent_definitions")
+            .columns("name","version", "definition", "dependent_definition")
             .whereColumn("name")
             .isEqualTo(literal(dataModel.Meta.name))
             .build()
@@ -33,7 +33,7 @@ fun checkModelIfMigrationIsNeeded(
             val context = DefinitionsConversionContext()
 
             // Read dependent data models
-            metaData.getByteBuffer("dependent_definitions")?.let { modelBytes ->
+            metaData.getByteBuffer("dependent_definition")?.let { modelBytes ->
                 Definitions.Serializer
                     .readProtoBuf(
                         modelBytes.remaining(),

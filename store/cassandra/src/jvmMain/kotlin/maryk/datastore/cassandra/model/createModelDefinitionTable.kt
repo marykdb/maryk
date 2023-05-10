@@ -11,6 +11,6 @@ fun createModelDefinitionTableIfNeeded(session: CqlSession) {
         .withPartitionKey("name", DataTypes.TEXT)
         .withColumn("version", DataTypes.BLOB)
         .withColumn("definition", DataTypes.BLOB)
-        .withColumn("dependent_definitions", DataTypes.BLOB)
+        .withColumn("dependent_definition", DataTypes.BLOB)
     session.execute(metaTable.build())
 }

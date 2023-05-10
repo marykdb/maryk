@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions
 
-import maryk.core.properties.IsPropertyContext
 import maryk.core.models.IsValuesDataModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.EmbeddedValuesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
@@ -161,5 +161,6 @@ internal val mapOfPropertyDefWrappers = mapOf(
     },
     PropertyDefinitionType.String to createFlexBytesWrapper,
     PropertyDefinitionType.Time to createFixedBytesWrapper,
-    PropertyDefinitionType.Value to createFixedBytesWrapper
+    PropertyDefinitionType.Value to createFixedBytesWrapper,
+    PropertyDefinitionType.GeoPoint to createFixedBytesWrapper,
 )

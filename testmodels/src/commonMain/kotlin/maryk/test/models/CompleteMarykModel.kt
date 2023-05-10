@@ -155,7 +155,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel>(
         unique = true,
         precision = TimePrecision.MILLIS,
         minValue = LocalTime(0, 0),
-        maxValue = LocalTime(23, 59, 59, 999),
+        maxValue = LocalTime(23, 59, 59, 999_000_000),
         default = LocalTime(10, 11, 12)
     )
     val fixedBytes by fixedBytes(

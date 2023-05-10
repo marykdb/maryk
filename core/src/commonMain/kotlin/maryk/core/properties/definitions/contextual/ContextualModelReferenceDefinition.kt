@@ -1,8 +1,8 @@
 package maryk.core.properties.definitions.contextual
 
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.properties.IsPropertyContext
 import maryk.core.models.IsDataModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED

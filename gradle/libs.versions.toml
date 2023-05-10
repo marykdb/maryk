@@ -28,6 +28,8 @@ protobuf-kotlin = "com.google.protobuf:protobuf-kotlin:_"
 
 java-driver-core = "com.datastax.oss:java-driver-core:_"
 
+java-driver-query-builder = "com.datastax.oss:java-driver-query-builder:_"
+
 jna = "net.java.dev.jna:jna:_"
 
 cassandra-all = "org.apache.cassandra:cassandra-all:_"

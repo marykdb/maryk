@@ -15,6 +15,7 @@ kotlin {
             dependencies {
                 api(project(":store-shared"))
                 implementation(libs.java.driver.core)
+                implementation(libs.java.driver.query.builder)
                 implementation(libs.jna)
             }
         }

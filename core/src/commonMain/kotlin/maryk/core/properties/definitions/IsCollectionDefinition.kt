@@ -212,7 +212,7 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
 
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?, earlierValue: C?): C {
         when {
-            isPacked(length) -> {
+            isPacked() -> {
                 val collection = this.readPackedCollectionTransportBytes(
                     length,
                     reader,
@@ -239,10 +239,10 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
         }
     }
 
-    /** Packed is true when encoded with longer length than expected byte size for single */
-    private fun isPacked(length: Int) =
+    /** Packed is true when type is bit64 bit32 or var int */
+    private fun isPacked() =
         when ((this.valueDefinition as? IsValueDefinition<*, *>)?.wireType) {
-            BIT_64, BIT_32, VAR_INT -> length > (this.valueDefinition as IsFixedStorageBytesEncodable<*>).byteSize
+            BIT_64, BIT_32, VAR_INT -> true
             else -> false
         }
 

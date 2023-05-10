@@ -148,6 +148,18 @@ internal class ListDefinitionTest {
     }
 
     @Test
+    fun convertVarIntValuesToPackedTransportBytesAndBackSmall() {
+        val value = listOf(
+            1u,
+            2u,
+            3u,
+        )
+        val asHex = "1203010203"
+
+        this.testPackedTransportConversion(defVarInt, value, asHex, 2u)
+    }
+
+    @Test
     fun convert32BitValuesToPackedTransportBytesAndBack() {
         val value = floatArrayOf(
             3.566F,

@@ -64,7 +64,7 @@ internal class CompleteDataModelMapTest {
                 "date": "2010-10-10"
               },
               "list": ["ha1", "ha2", "ha3"],
-              "set": [1, 2, 3],
+              "set": [1, 2, 5],
               "map": {
                 "2010-11-12": 1,
                 "2011-12-13": 1
@@ -123,7 +123,7 @@ internal class CompleteDataModelMapTest {
               int: 10
               date: 2010-10-10
             list: [ha1, ha2, ha3]
-            set: [1, 2, 3]
+            set: [1, 2, 5]
             map:
               2010-11-12: 1
               2011-12-13: 1

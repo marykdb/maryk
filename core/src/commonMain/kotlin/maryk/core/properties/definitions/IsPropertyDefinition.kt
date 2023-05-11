@@ -48,7 +48,7 @@ interface IsPropertyDefinition<T : Any> {
         addIncompatibilityReason: ((String) -> Unit)? = null
     ): Boolean {
         var compatible = true
-        if (this::class.isInstance(definition::class)) {
+        if (this::class != definition::class && !this::class.isInstance(definition)) {
             addIncompatibilityReason?.invoke("Definitions are not of same types: ${this::class.simpleName} vs ${definition::class.simpleName}")
             compatible = false
         }

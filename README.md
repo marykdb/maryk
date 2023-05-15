@@ -58,6 +58,8 @@ To get started with Maryk, follow these steps:
 
 1. Add Maryk's core dependency to your Kotlin Multiplatform project Gradle configuration:
 
+**Note**: At this moment Maryk is not yet published to Maven Central. For now you have to publish it locally and add it to your project.
+
 ```gradle
 implementation "io.maryk:maryk-core:$version"
 ```

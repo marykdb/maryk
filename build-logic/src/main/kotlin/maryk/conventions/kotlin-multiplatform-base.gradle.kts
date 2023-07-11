@@ -1,6 +1,7 @@
 package maryk.conventions
 
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_8
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
@@ -38,6 +39,10 @@ kotlin {
 
 tasks.withType<KotlinJvmCompile>().configureEach {
     compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_1_8)
+        jvmTarget.set(JVM_1_8)
+        apiVersion.set(KOTLIN_1_8)
+        languageVersion.set(KOTLIN_1_8)
+        freeCompilerArgs.addAll("-progressive")
+        allWarningsAsErrors.set(true)
     }
 }

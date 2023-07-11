@@ -6,7 +6,7 @@ plugins {
 }
 
 kotlin {
-    jvmToolchain(17) // Android 8 requires JDK 17
+    jvmToolchain(11)
     android {
         publishAllLibraryVariants()
         publishLibraryVariantsGroupedByFlavor = true
@@ -14,6 +14,7 @@ kotlin {
 }
 
 android {
+    namespace = "io.maryk"
     @Suppress("UnstableApiUsage")
     buildToolsVersion = "32.0.0"
     compileSdk = 32

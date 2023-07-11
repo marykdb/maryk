@@ -25,7 +25,7 @@ plugins {
 
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(11)
 
     // configure all Kotlin/JVM Tests to use JUnit Jupiter
     targets.withType<KotlinJvmTarget>().configureEach {

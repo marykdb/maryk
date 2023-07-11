@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
     id("com.google.protobuf")
     id("maryk.conventions.kotlin-jvm")
@@ -24,11 +22,4 @@ dependencies {
 
     testImplementation(projects.testmodels)
     testImplementation(libs.protobuf.kotlin)
-}
-
-tasks.withType<KotlinCompile>().configureEach {
-    kotlinOptions {
-        allWarningsAsErrors = true
-        jvmTarget = "11"
-    }
 }

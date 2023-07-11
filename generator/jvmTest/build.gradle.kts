@@ -22,4 +22,5 @@ dependencies {
 
     testImplementation(projects.testmodels)
     testImplementation(libs.protobuf.kotlin)
+    testImplementation(kotlin("test"))
 }

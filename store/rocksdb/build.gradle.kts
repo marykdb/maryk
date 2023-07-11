@@ -17,6 +17,7 @@ kotlin {
         }
         commonTest {
             dependencies {
+                implementation(kotlin("test"))
                 api(projects.testmodels)
                 api(projects.store.test)
             }

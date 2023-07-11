@@ -1,8 +1,9 @@
-import org.jetbrains.kotlin.incremental.deleteDirectoryContents
+import org.gradle.kotlin.dsl.support.serviceOf
 
 plugins {
     id("maryk.conventions.kotlin-multiplatform-jvm")
     id("maryk.conventions.kotlin-multiplatform-native")
+    id("maryk.conventions.kotlin-multiplatform-android-library")
     id("maryk.conventions.publishing")
 }
 
@@ -27,12 +28,14 @@ kotlin {
 
 tasks.withType<Test>().configureEach {
     val testDatabaseDir = layout.buildDirectory.dir("test-database")
-    inputs.dir(testDatabaseDir)
 
-    doFirst {
-        testDatabaseDir.get().asFile.apply {
-            mkdirs()
-            deleteDirectoryContents()
-        }
+    val fs = serviceOf<FileSystemOperations>()
+
+    doFirst("prepare test-database dir") {
+        fs.delete { delete(testDatabaseDir) }
+        testDatabaseDir.get().asFile.mkdirs()
+    }
+    doLast("clean test-database dir") {
+        fs.delete { delete(testDatabaseDir) }
     }
 }

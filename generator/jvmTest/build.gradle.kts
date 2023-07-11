@@ -2,33 +2,31 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("com.google.protobuf")
-    id("org.jetbrains.kotlin.jvm")
-    id("idea")
+    id("maryk.conventions.kotlin-jvm")
 }
 
-ext {
-    protobufVersion = '3.21.2'
-}
+val protobufVersion = "3.21.2"
+
 
 protobuf {
     protoc {
         artifact = "com.google.protobuf:protoc:$protobufVersion"
     }
-    generatedFilesBaseDir = "$projectDir/gen"
+//    generatedFilesBaseDir = "$projectDir/gen"
 }
 
-clean {
-    delete protobuf.generatedFilesBaseDir
-}
+//tasks.clean {
+//    delete(protobuf.generatedFilesBaseDir)
+//}
 
 dependencies {
-    api(project(":generator"))
+    api(projects.generator)
 
-    testImplementation(project(":testmodels"))
+    testImplementation(projects.testmodels)
     testImplementation(libs.protobuf.kotlin)
 }
 
-tasks.withType(KotlinCompile) {
+tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions {
         allWarningsAsErrors = true
         jvmTarget = "11"

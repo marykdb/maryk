@@ -1,32 +1,19 @@
 plugins {
-    id("kotlin-multiplatform")
-}
-
-apply {
-    from("../gradle/publish.gradle")
+    id("maryk.conventions.kotlin-multiplatform-jvm")
+    id("maryk.conventions.kotlin-multiplatform-js")
+    id("maryk.conventions.kotlin-multiplatform-native")
+    id("maryk.conventions.publishing")
 }
 
 kotlin {
-
-    jvm()
-
-    js(IR) {
-        browser {}
-        nodejs {}
-    }
-
-    ios()
-    macosX64()
-    macosArm64()
-
     sourceSets {
         commonMain {
             dependencies {
-                api(project(":testlib"))
-                api(project(":core"))
-                api(project(":yaml"))
-                api(project(":json"))
-                api(project(":lib"))
+                api(projects.testlib)
+                api(projects.core)
+                api(projects.yaml)
+                api(projects.json)
+                api(projects.lib)
             }
         }
     }

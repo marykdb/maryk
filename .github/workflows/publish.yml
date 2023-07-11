@@ -1,0 +1,50 @@
+name: Publish
+on:
+  workflow_run:
+    workflows: [ Build ]
+    branches: [ master ]
+    types: [ completed ]
+  workflow_dispatch:
+
+concurrency:
+  group: "${{ github.workflow }}"
+  cancel-in-progress: false
+
+jobs:
+  maven-publish:
+    runs-on: macos-latest # macOS supports building all Kotlin targets
+    if: ${{ github.event.workflow_run.conclusion == 'success' }} # only publish if the 'Build' workflow passed
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Validate Gradle wrapper
+        uses: gradle/wrapper-validation-action@v1
+
+      - name: Cache Kotlin Konan
+        id: cache-kotlin-konan
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.konan/**/*
+          key: kotlin-konan-${{ runner.os }}
+
+      - uses: gradle/gradle-build-action@v2
+        with:
+          gradle-home-cache-cleanup: true
+          # Maven Central _really_ doesn't like parallel uploads, so disable parallelization
+          arguments: publish --no-configuration-cache --no-parallel
+        env:
+          ORG_GRADLE_PROJECT_maryk_ossrhUsername: ${{secrets.MARYK_OSSRHUSERNAME}}
+          ORG_GRADLE_PROJECT_maryk_ossrhPassword: ${{secrets.MARYK_OSSRHPASSWORD}}
+          ORG_GRADLE_PROJECT_maryk_signing_key: ${{secrets.MARYK_SIGNING_KEY}}
+          ORG_GRADLE_PROJECT_maryk_signing_password: ${{secrets.MARYK_SIGNING_PASSWORD}}

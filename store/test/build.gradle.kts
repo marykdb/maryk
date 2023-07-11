@@ -1,24 +1,15 @@
 plugins {
-    kotlin("multiplatform")
+    id("maryk.conventions.kotlin-multiplatform-jvm")
+    id("maryk.conventions.kotlin-multiplatform-js")
+    id("maryk.conventions.kotlin-multiplatform-native")
 }
 
 kotlin {
-    jvm()
-
-    js(IR) {
-        browser {}
-        nodejs {}
-    }
-
-    ios()
-    macosX64()
-    macosArm64()
-
     sourceSets {
         commonMain {
             dependencies {
-                api(project(":store-shared"))
-                api(project(":testmodels"))
+                api(projects.store.shared)
+                api(projects.testmodels)
             }
         }
     }

@@ -1,58 +1,37 @@
+import org.jetbrains.kotlin.incremental.deleteDirectoryContents
+
 plugins {
-    kotlin("multiplatform")
-}
-
-apply {
-    from("../../gradle/android.gradle")
-    from("../../gradle/publish.gradle")
-}
-
-repositories {
-    mavenCentral()
+    id("maryk.conventions.kotlin-multiplatform-jvm")
+    id("maryk.conventions.kotlin-multiplatform-native")
+    id("maryk.conventions.publishing")
 }
 
 kotlin {
-    jvm()
-
-    ios()
-    macosX64()
-    macosArm64()
-
     sourceSets {
         commonMain {
             dependencies {
                 api(libs.rocksdb.multiplatform)
 
-                api(project(":store-shared"))
+                api(projects.store.shared)
             }
         }
         commonTest {
             dependencies {
-                api(project(":testmodels"))
-                api(project(":store-test"))
+                api(projects.testmodels)
+                api(projects.store.test)
             }
         }
     }
 }
 
-// Creates the folders for the database
-val createOrEraseDBFolders = task("createOrEraseDBFolders") {
-    group = "verification"
+tasks.withType<Test>().configureEach {
+    val testDatabaseDir = layout.buildDirectory.dir("test-database")
+    inputs.dir(testDatabaseDir)
 
-    val subdir = File(project.buildDir, "test-database")
-
-    if (!subdir.exists()) {
-        subdir.deleteOnExit()
-        subdir.mkdirs()
-    } else {
-        subdir.deleteRecursively()
-        subdir.mkdirs()
-    }
-}
-
-tasks.withType<Test> {
-    this.dependsOn(createOrEraseDBFolders)
-    this.doLast {
-        File(project.buildDir, "test-database").deleteRecursively()
+    doFirst {
+        testDatabaseDir.get().asFile.apply {
+            mkdirs()
+            deleteDirectoryContents()
+        }
     }
 }

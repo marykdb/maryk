@@ -1,66 +1,24 @@
 plugins {
-    kotlin("multiplatform")
-}
-
-apply {
-    from("../../gradle/publish.gradle")
+    id("maryk.conventions.kotlin-multiplatform-jvm")
+    id("maryk.conventions.kotlin-multiplatform-js")
+    id("maryk.conventions.kotlin-multiplatform-native")
+    id("maryk.conventions.publishing")
 }
 
 kotlin {
-    jvm()
-
-    js(IR) {
-        browser {}
-        nodejs {}
-    }
-
     sourceSets {
-        val commonMain by getting {
+        commonMain {
             dependencies {
                 api(KotlinX.coroutines.core)
 
-                api(project(":core"))
+                api(projects.core)
             }
         }
-        val commonTest by getting {
+        commonTest {
             dependencies {
-                api(project(":testmodels"))
-                api(project(":store-test"))
+                api(projects.testmodels)
+                api(projects.store.test)
             }
         }
-        val nativeMain by creating {
-            dependsOn(commonMain)
-        }
-        val nativeTest by creating {
-            dependsOn(commonTest)
-        }
-    }
-
-    fun org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget.setupNativeTarget() {
-        compilations["main"].apply {
-            defaultSourceSet {
-                val nativeMain by sourceSets.getting {}
-                dependsOn(nativeMain)
-            }
-        }
-
-        compilations["test"].apply {
-            defaultSourceSet {
-                val nativeTest by sourceSets.getting {}
-                dependsOn(nativeTest)
-            }
-        }
-    }
-
-    ios {
-        setupNativeTarget()
-    }
-
-    macosX64 {
-        setupNativeTarget()
-    }
-
-    macosArm64 {
-        setupNativeTarget()
     }
 }

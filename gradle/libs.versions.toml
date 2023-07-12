@@ -6,32 +6,30 @@ gradle = { id = "gradle", version = "7.2.2" }
 
 com-google-protobuf = { id = "com.google.protobuf", version = "0.9.3" }
 
-org-jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version = "1.8.21" }
+org-jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version = "1.9.0" }
 
-org-jetbrains-kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version = "1.8.21" }
+org-jetbrains-kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version = "1.9.0" }
 
 [versions]
 
-kotlin = "1.8.21"
-##  ⬆ = "1.8.22"
-##  ⬆ = "1.9.0"
+kotlin = "1.9.0"
 
 [libraries]
 
 kotlin-gradle-plugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
 
-atomicfu = "org.jetbrains.kotlinx:atomicfu:_"
+atomicfu = "org.jetbrains.kotlinx:atomicfu:0.21.0"
 
 kotlin-scripting-compiler-embeddable = { group = "org.jetbrains.kotlin", name = "kotlin-scripting-compiler-embeddable", version.ref = "kotlin" }
 
-protoc = "com.google.protobuf:protoc:_"
+protoc = "com.google.protobuf:protoc:3.21.2"
 
-protobuf-kotlin = "com.google.protobuf:protobuf-kotlin:_"
+protobuf-kotlin = "com.google.protobuf:protobuf-kotlin:3.22.3"
 
 java-driver-core = "com.datastax.oss:java-driver-core:_"
 
 jna = "net.java.dev.jna:jna:_"
 
-rocksdb-multiplatform = "io.maryk.rocksdb:rocksdb-multiplatform:_"
+rocksdb-multiplatform = "io.maryk.rocksdb:rocksdb-multiplatform:8.0.0"
 
-org-jacoco-ant = "org.jacoco:org.jacoco.ant:_"
+org-jacoco-ant = "org.jacoco:org.jacoco.ant:0.8.7"

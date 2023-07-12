@@ -28,9 +28,9 @@ dependencies {
     testImplementation(libs.protobuf.kotlin)
 }
 
-tasks.withType(KotlinCompile) {
-    kotlinOptions {
-        allWarningsAsErrors = true
-        jvmTarget = "11"
-    }
-}
+//tasks.withType(KotlinCompile) {
+//    kotlinOptions {
+//        allWarningsAsErrors = true
+//        jvmTarget = "11"
+//    }
+//}

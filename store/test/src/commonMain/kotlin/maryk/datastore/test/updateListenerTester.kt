@@ -4,14 +4,13 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runTest
 import maryk.core.models.IsRootDataModel
 import maryk.core.query.requests.IsFetchRequest
 import maryk.core.query.responses.IsDataResponse
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.datastore.shared.IsDataStore
-import maryk.test.runSuspendingTest
 import kotlin.test.assertTrue
 
 /** Test helper for listening to update changes for [request] on [dataStore] */
@@ -20,7 +19,7 @@ fun <DM: IsRootDataModel, RP: IsDataResponse<DM>> updateListenerTester(
     request: IsFetchRequest<DM, RP>,
     responseCount: Int,
     changeBlock: suspend CoroutineScope.(Array<CompletableDeferred<IsUpdateResponse<DM>>>) -> Unit
-) = runSuspendingTest {
+) = runTest {
     val responses = Array(responseCount) {
         CompletableDeferred<IsUpdateResponse<DM>>()
     }

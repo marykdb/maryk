@@ -1,15 +1,15 @@
 package maryk.datastore.rocksdb
 
+import kotlinx.coroutines.test.runTest
 import maryk.datastore.test.dataModelsForTests
 import maryk.datastore.test.runDataStoreTests
-import maryk.test.runSuspendingTest
 import kotlin.test.Test
 
 class RocksDBDataStoreTest {
     private val basePath = "./build/test-database"
 
     @Test
-    fun testDataStore() = runSuspendingTest {
+    fun testDataStore() = runTest {
         val dataStore = RocksDBDataStore(
             relativePath = "$basePath/no-history",
             dataModelsById = dataModelsForTests,
@@ -22,7 +22,7 @@ class RocksDBDataStoreTest {
     }
 
     @Test
-    fun testDataStoreWithKeepAllVersions() = runSuspendingTest {
+    fun testDataStoreWithKeepAllVersions() = runTest {
         val dataStore = RocksDBDataStore(
             relativePath = "$basePath/history",
             keepAllVersions = true,

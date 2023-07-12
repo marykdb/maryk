@@ -21,6 +21,7 @@ kotlin {
                 api(kotlin("test-annotations-common"))
 
                 api(KotlinX.coroutines.core)
+                api(KotlinX.coroutines.test)
             }
         }
         val commonTest by getting

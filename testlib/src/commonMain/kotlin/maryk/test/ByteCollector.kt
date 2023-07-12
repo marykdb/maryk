@@ -1,6 +1,6 @@
 package maryk.test
 
-/** Collects bytes into a byteArray and enables to read them afterwards*/
+/** Collects bytes into a [ByteArray] and enables to read them afterward. */
 open class ByteCollector {
     var bytes: ByteArray? = null
     private var writeIndex = 0

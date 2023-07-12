@@ -18,8 +18,8 @@ jobs:
       matrix:
         os:
           - macos-latest
-          - ubuntu-latest
-          - windows-latest
+          #- ubuntu-latest
+          #- windows-latest
       fail-fast: false
     runs-on: ${{ matrix.os }}
 

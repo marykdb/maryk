@@ -13,6 +13,8 @@ org-jetbrains-kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform"
 [versions]
 
 kotlin = "1.8.21"
+##  ⬆ = "1.8.22"
+##  ⬆ = "1.9.0"
 
 [libraries]
 

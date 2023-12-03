@@ -4,7 +4,7 @@
 
 gradle = { id = "gradle", version = "8.5.0" }
 
-com-google-protobuf = { id = "com.google.protobuf", version = "0.9.3" }
+com-google-protobuf = { id = "com.google.protobuf", version = "0.9.4" }
 
 org-jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version = "1.9.10" }
 
@@ -12,24 +12,24 @@ org-jetbrains-kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform"
 
 [versions]
 
-kotlin = "1.9.10"
+kotlin = "1.9.21"
 
 [libraries]
 
 kotlin-gradle-plugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
 
-atomicfu = "org.jetbrains.kotlinx:atomicfu:_"
+atomicfu = "org.jetbrains.kotlinx:atomicfu:0.23.1"
 
 kotlin-scripting-compiler-embeddable = { group = "org.jetbrains.kotlin", name = "kotlin-scripting-compiler-embeddable", version.ref = "kotlin" }
 
-protoc = "com.google.protobuf:protoc:_"
+protoc = "com.google.protobuf:protoc:3.25.1"
 
-protobuf-kotlin = "com.google.protobuf:protobuf-kotlin:_"
+protobuf-kotlin = "com.google.protobuf:protobuf-kotlin:3.25.1"
 
 java-driver-core = "com.datastax.oss:java-driver-core:_"
 
 jna = "net.java.dev.jna:jna:_"
 
-rocksdb-multiplatform = "io.maryk.rocksdb:rocksdb-multiplatform:_"
+rocksdb-multiplatform = "io.maryk.rocksdb:rocksdb-multiplatform:8.0.0"
 
 org-jacoco-ant = "org.jacoco:org.jacoco.ant:_"

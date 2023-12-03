@@ -29,7 +29,6 @@ import maryk.core.query.responses.statuses.StatusType.REQUEST_FAIL
 import maryk.core.query.responses.statuses.StatusType.SERVER_FAIL
 import maryk.core.query.responses.statuses.StatusType.VALIDATION_FAIL
 import maryk.core.query.responses.statuses.ValidationFail
-import kotlin.native.concurrent.SharedImmutable
 
 /** A response for a data operation on a DataModel */
 interface IsDataModelResponse<out DM : IsRootDataModel> : IsResponse {
@@ -63,7 +62,6 @@ internal fun <DM : IsDataModelResponse<*>> IsObjectDataModel<DM>.addDataModel(
         }
     )
 
-@SharedImmutable
 internal val statusesMultiType = InternalMultiTypeDefinition(
     typeEnum = StatusType,
     definitionMap = mapOf(

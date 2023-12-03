@@ -9,7 +9,6 @@ import maryk.core.properties.graph.PropRefGraph
 import maryk.core.properties.types.MutableTypedValue
 import maryk.core.properties.types.TypedValue
 import kotlin.jvm.JvmInline
-import kotlin.native.concurrent.SharedImmutable
 
 interface IsValueItems : Iterable<ValueItem> {
     val size: Int
@@ -88,7 +87,6 @@ internal fun List<ValueItem>.searchItemByIndex(index: UInt): Int =
     // Index can never be at a higher spot in list than index itself
     binarySearch(toIndex = minOf(index.toInt(), size)) { it.index compareTo index }
 
-@SharedImmutable
 val EmptyValueItems: IsValueItems = MutableValueItems()
 @Suppress("FunctionName")
 fun ValueItems(vararg item: ValueItem): IsValueItems = MutableValueItems(*item)

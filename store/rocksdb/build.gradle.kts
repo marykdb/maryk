@@ -2,7 +2,6 @@ import org.gradle.kotlin.dsl.support.serviceOf
 
 plugins {
     id("maryk.conventions.kotlin-multiplatform-jvm")
-    id("maryk.conventions.kotlin-multiplatform-native")
     id("maryk.conventions.kotlin-multiplatform-android-library")
     id("maryk.conventions.publishing")
 }

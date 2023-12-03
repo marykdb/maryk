@@ -6,8 +6,8 @@ plugins {
 }
 
 kotlin {
-    jvmToolchain(11)
-    android {
+    jvmToolchain(17)
+    androidTarget {
         publishAllLibraryVariants()
         publishLibraryVariantsGroupedByFlavor = true
     }
@@ -24,7 +24,7 @@ android {
         testInstrumentationRunner = "android.support.test.runner.AndroidJUnitRunner"
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 }

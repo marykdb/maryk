@@ -2,7 +2,6 @@ package maryk.core.query.filters
 
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.references.IsPropertyReference
-import kotlin.native.concurrent.SharedImmutable
 
 /** Filter */
 interface IsFilter {
@@ -12,7 +11,6 @@ interface IsFilter {
     fun singleReference(predicate: (IsPropertyReference<*, *, *>) -> Boolean): IsPropertyReference<*, *, *>?
 }
 
-@SharedImmutable
 internal val mapOfFilterDefinitions = mapOf(
     FilterType.And to EmbeddedObjectDefinition(dataModel = { And }),
     FilterType.Or to EmbeddedObjectDefinition(dataModel = { Or }),

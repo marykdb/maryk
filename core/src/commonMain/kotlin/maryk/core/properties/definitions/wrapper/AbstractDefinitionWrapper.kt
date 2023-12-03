@@ -3,9 +3,7 @@ package maryk.core.properties.definitions.wrapper
 import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
 import maryk.core.properties.references.IsPropertyReference
-import kotlin.native.concurrent.SharedImmutable
 
-@SharedImmutable
 private val regEx = Regex("[a-z]+[a-zA-Z0-9]*")
 
 abstract class AbstractDefinitionWrapper(

@@ -7,7 +7,6 @@ import maryk.core.properties.enum.IsCoreEnum
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.query.orders.OrderType.ORDER
 import maryk.core.query.orders.OrderType.ORDERS
-import kotlin.native.concurrent.SharedImmutable
 
 /** Defines the type of order */
 enum class OrderType(
@@ -22,7 +21,6 @@ enum class OrderType(
     )
 }
 
-@SharedImmutable
 internal val mapOfOrderTypeToEmbeddedObject =
     mapOf(
         ORDER to EmbeddedObjectDefinition(dataModel = { Order.Model }),

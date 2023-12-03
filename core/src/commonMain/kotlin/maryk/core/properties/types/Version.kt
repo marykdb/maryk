@@ -1,8 +1,8 @@
 package maryk.core.properties.types
 
+import maryk.core.models.ValueDataModel
 import maryk.core.models.serializers.ValueDataModelSerializer
 import maryk.core.properties.IsPropertyContext
-import maryk.core.models.ValueDataModel
 import maryk.core.properties.definitions.number
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.types.numeric.UInt16
@@ -14,9 +14,7 @@ import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken.StartDocument
 import maryk.json.JsonToken.Value
 import maryk.lib.exceptions.ParseException
-import kotlin.native.concurrent.SharedImmutable
 
-@SharedImmutable
 private val versionRegEx = Regex("^([0-9]+)([.]([0-9]+))?([.]([0-9]+))?$")
 
 /**

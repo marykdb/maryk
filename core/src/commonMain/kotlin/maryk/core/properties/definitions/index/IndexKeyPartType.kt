@@ -15,7 +15,6 @@ import maryk.json.ArrayType
 import maryk.json.TokenType
 import maryk.json.ValueType
 import maryk.json.ValueType.IsNullValueType
-import kotlin.native.concurrent.SharedImmutable
 import maryk.core.properties.definitions.index.Multiple as MultipleInstance
 import maryk.core.properties.definitions.index.Reversed as ReversedInstance
 
@@ -37,7 +36,6 @@ sealed class IndexKeyPartType<out T: IsIndexable>(
     )
 }
 
-@SharedImmutable
 internal val mapOfSimpleIndexKeyPartDefinitions: Map<IndexKeyPartType<IsIndexable>, IsValueDefinition<*, DefinitionsConversionContext>> =
     mapOf(
         IndexKeyPartType.UUID to EmbeddedObjectDefinition(dataModel = { UUIDKey.Model }),
@@ -50,7 +48,6 @@ internal val mapOfSimpleIndexKeyPartDefinitions: Map<IndexKeyPartType<IsIndexabl
         IndexKeyPartType.Reversed to EmbeddedObjectDefinition(dataModel = { ReversedInstance.Model })
     )
 
-@SharedImmutable
 internal val mapOfIndexKeyPartDefinitions: Map<IndexKeyPartType<*>, IsValueDefinition<*, DefinitionsConversionContext>> =
     mapOfSimpleIndexKeyPartDefinitions.plus(
         IndexKeyPartType.Multiple to EmbeddedObjectDefinition(dataModel = { MultipleInstance.Model })

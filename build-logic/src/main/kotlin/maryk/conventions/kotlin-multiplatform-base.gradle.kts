@@ -1,7 +1,7 @@
 package maryk.conventions
 
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
-import org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_8
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
@@ -25,7 +25,7 @@ plugins {
 
 
 kotlin {
-    jvmToolchain(11)
+    jvmToolchain(17)
 
     // configure all Kotlin/JVM Tests to use JUnit Jupiter
     targets.withType<KotlinJvmTarget>().configureEach {
@@ -39,9 +39,9 @@ kotlin {
 
 tasks.withType<KotlinJvmCompile>().configureEach {
     compilerOptions {
-        jvmTarget.set(JVM_1_8)
-        apiVersion.set(KOTLIN_1_8)
-        languageVersion.set(KOTLIN_1_8)
+        jvmTarget.set(JVM_17)
+        apiVersion.set(KOTLIN_1_9)
+        languageVersion.set(KOTLIN_1_9)
         freeCompilerArgs.addAll("-progressive")
         allWarningsAsErrors.set(true)
     }

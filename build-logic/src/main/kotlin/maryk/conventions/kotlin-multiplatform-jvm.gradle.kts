@@ -12,7 +12,7 @@ kotlin {
     jvm {
         compilations.configureEach {
             compilerOptions.configure {
-                jvmTarget.set(JvmTarget.JVM_1_8)
+                jvmTarget.set(JvmTarget.JVM_17)
             }
         }
     }

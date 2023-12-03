@@ -19,7 +19,6 @@ import maryk.json.MapType
 import maryk.json.TokenType
 import maryk.json.ValueType
 import maryk.lib.extensions.isLineBreak
-import kotlin.native.concurrent.SharedImmutable
 
 /** Unknown tag name to reader, pass allowUnknownTags true in YamlReader to get them */
 class UnknownYamlTag(val name: String) : MapType, ValueType<Nothing>, ArrayType
@@ -58,7 +57,6 @@ internal interface YamlValueType<out T : Any> : ValueType<T> {
     object Yaml : YamlValueType<Nothing>
 }
 
-@SharedImmutable
 private val yamlTagMap = mapOf(
     "tag:yaml.org,2002:" to mapOf(
         "str" to ValueType.String,

@@ -22,9 +22,7 @@ import maryk.json.JsonToken.Suspended
 import maryk.json.JsonToken.Value
 import maryk.lib.extensions.HEX_CHARS
 import maryk.lib.extensions.isLineBreak
-import kotlin.native.concurrent.SharedImmutable
 
-@SharedImmutable
 private val skipArray = arrayOf(ObjectSeparator, ArraySeparator, StartDocument)
 
 /** Describes JSON complex types */

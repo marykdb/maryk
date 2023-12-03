@@ -19,7 +19,6 @@ import maryk.core.properties.exceptions.ValidationExceptionType.UMBRELLA
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.RequestContext
-import kotlin.native.concurrent.SharedImmutable
 
 /** Validation Exception with newMessage for properties */
 abstract class ValidationException internal constructor(
@@ -56,7 +55,6 @@ internal fun <DO : ValidationException> IsObjectDataModel<DO>.addReference(
         }
     )
 
-@SharedImmutable
 internal val mapOfValidationExceptionDefinitions = mapOf(
     ALREADY_EXISTS to EmbeddedObjectDefinition(dataModel = { AlreadyExistsException }),
     ALREADY_SET to EmbeddedObjectDefinition(dataModel = { AlreadySetException }),

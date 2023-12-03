@@ -6,7 +6,7 @@ plugins {
 }
 
 kotlin {
-    jvmToolchain(11)
+    jvmToolchain(17)
 }
 
 // configure all Tests to use JUnit Jupiter

@@ -1,11 +1,13 @@
 package maryk.lib.uuid
 
+import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.UByteVar
 import kotlinx.cinterop.allocArray
 import kotlinx.cinterop.get
 import kotlinx.cinterop.memScoped
 import platform.Foundation.NSUUID
 
+@OptIn(ExperimentalForeignApi::class)
 actual fun generateUUID(): Pair<Long, Long> {
     memScoped {
         val uuidBytes = allocArray<UByteVar>(16)

@@ -67,7 +67,7 @@ implementation "io.maryk:maryk-core:$version"
 2. Define your data models:
 
 ```kotlin
-object Person : RootModel<Person> { 
+object Person : RootDataModel<Person>() { 
     val firstName by string(index = 1u)
     val lastName by string(index = 2u)
     val dateOfBirth by date(index = 3u)

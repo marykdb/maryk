@@ -18,7 +18,7 @@ To create a model for a data object within Kotlin, you start with creating a kot
 `RootModel`. Within you define properties by their names, indices, types and any validations.
 
 ```kotlin
-object Person : RootModel<Person> { 
+object Person : RootDataModel<Person>() { 
     val firstName by string(index = 1u)
     val lastName by string(index = 2u)
     val dateOfBirth by date(index = 3u)
@@ -56,7 +56,7 @@ If you define the model using Kotlin, any DataModel should extend from the Model
 ** Example **
 
 ```kotlin
-object Address : Model<Address> {
+object Address : DataModel<Address> {
     val streetName by string(index = 1u)
     val city by string(index = 2u)
     val zipCode by string(index = 3u)
@@ -76,7 +76,7 @@ The first example above uses a RootDataModel.
 Below is an example
 
 ```kotlin
-object PersonalDiaryItem : RootModel<Person>(
+object PersonalDiaryItem : RootDataModel<Person>(
     keyDefinition = {
         Multiple(
             user.ref(),
@@ -166,7 +166,7 @@ allowing for quick querying based on type.
 **Example**
 
 ```kotlin
-object TimelineItem: RootModel<TimelineItem>(
+object TimelineItem: RootDataModel<TimelineItem>(
     keyDefinition = {
         Multiple(
             Reversed(dateOfPosting),

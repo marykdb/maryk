@@ -8,7 +8,7 @@ fun DataModel<*>.generateKotlin(
     writer: (String) -> Unit
 ) {
     val importsToAdd = mutableSetOf(
-        "maryk.core.properties.Model",
+        "maryk.core.properties.DataModel",
     )
     val addImport: (String) -> Unit = { importsToAdd.add(it) }
 
@@ -36,7 +36,7 @@ fun DataModel<*>.generateKotlin(
         .let { if (it.isBlank()) "" else "\n        $it\n    " }
 
     val code = """
-    object ${Meta.name} : Model<${Meta.name}>($constructorParameters) {
+    object ${Meta.name} : DataModel<${Meta.name}>($constructorParameters) {
         ${propertiesKotlin.generateDefinitionsForProperties(addImport).trimStart()}
     }
     """.trimIndent()

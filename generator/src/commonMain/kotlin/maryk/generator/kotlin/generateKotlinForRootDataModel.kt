@@ -20,7 +20,7 @@ fun IsRootDataModel.generateKotlin(
     writer: (String) -> Unit
 ) {
     val importsToAdd = mutableSetOf(
-        "maryk.core.properties.RootModel",
+        "maryk.core.properties.RootDataModel",
     )
     val addImport: (String) -> Unit = { importsToAdd.add(it) }
 
@@ -74,7 +74,7 @@ fun IsRootDataModel.generateKotlin(
         .let { if (it.isBlank()) "" else "\n        $it\n    " }
 
     val code = """
-    object ${Meta.name} : RootModel<${Meta.name}>($constructorParameters) {
+    object ${Meta.name} : RootDataModel<${Meta.name}>($constructorParameters) {
         ${propertiesKotlin.generateDefinitionsForProperties(addImport).trimStart()}
     }
     """.trimIndent()

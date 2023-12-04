@@ -10,7 +10,7 @@ These operations can be defined in Kotlin or any of the serialization formats Ma
 
 This Person model has 2 top level fields (firstName, lastName) and an Embed named Address 
 ```kotlin
-object Person : RootModel<Person> {
+object Person : RootDataModel<Person>() {
     val firstName = string(index = 1u)
     val lastName = string(index = 2u)
     val livingAddress = embed(
@@ -21,7 +21,7 @@ object Person : RootModel<Person> {
 ```
 
 ```kotlin
-object Address : Model<Address> {
+object Address : DataModel<Address>() {
   val street = string(index = 1u)
   val city = string(index = 2u)
 }

@@ -11,10 +11,10 @@ import kotlin.test.assertEquals
 val generatedKotlinForSimpleDataModel = """
 package maryk.test.models
 
-import maryk.core.properties.RootModel
+import maryk.core.properties.RootDataModel
 import maryk.core.properties.definitions.string
 
-object SimpleMarykModel : RootModel<SimpleMarykModel>() {
+object SimpleMarykModel : RootDataModel<SimpleMarykModel>() {
     val value by string(
         index = 1u,
         default = "haha",
@@ -29,7 +29,7 @@ package maryk.test.models
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
-import maryk.core.properties.RootModel
+import maryk.core.properties.RootDataModel
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.EnumDefinition
@@ -95,7 +95,7 @@ sealed class MarykEnumEmbedded(
     )
 }
 
-object CompleteMarykModel : RootModel<CompleteMarykModel>(
+object CompleteMarykModel : RootDataModel<CompleteMarykModel>(
     version = Version(2, 1)
     keyDefinition = Multiple(
         UUIDKey,

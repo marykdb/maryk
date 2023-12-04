@@ -11,7 +11,6 @@ import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.Transaction
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.updates.IsUpdateAction
-import maryk.rocksdb.use
 
 internal typealias AddStoreAction<DM> = StoreAction<DM, AddRequest<DM>, AddResponse<DM>>
 internal typealias AnyAddStoreAction = AddStoreAction<IsRootDataModel>

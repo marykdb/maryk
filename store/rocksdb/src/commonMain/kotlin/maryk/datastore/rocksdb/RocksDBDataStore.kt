@@ -1,7 +1,6 @@
 package maryk.datastore.rocksdb
 
 import kotlinx.atomicfu.atomic
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import maryk.core.clock.HLC
@@ -73,17 +72,14 @@ import maryk.datastore.rocksdb.processors.processScanRequest
 import maryk.datastore.rocksdb.processors.processScanUpdatesRequest
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.Cache
-import maryk.rocksdb.ColumnFamilyDescriptor
-import maryk.rocksdb.ColumnFamilyHandle
-import maryk.rocksdb.ColumnFamilyOptions
-import maryk.rocksdb.ComparatorOptions
-import maryk.rocksdb.DBOptions
-import maryk.rocksdb.ReadOptions
-import maryk.rocksdb.RocksDB
-import maryk.rocksdb.WriteOptions
-import maryk.rocksdb.defaultColumnFamily
-import maryk.rocksdb.openRocksDB
-import maryk.rocksdb.use
+import org.rocksdb.ColumnFamilyDescriptor
+import org.rocksdb.ColumnFamilyHandle
+import org.rocksdb.ColumnFamilyOptions
+import org.rocksdb.ComparatorOptions
+import org.rocksdb.DBOptions
+import org.rocksdb.ReadOptions
+import org.rocksdb.RocksDB
+import org.rocksdb.WriteOptions
 
 class RocksDBDataStore(
     override val keepAllVersions: Boolean = true,
@@ -112,13 +108,13 @@ class RocksDBDataStore(
 
     init {
         val descriptors: MutableList<ColumnFamilyDescriptor> = mutableListOf()
-        descriptors.add(ColumnFamilyDescriptor(defaultColumnFamily))
+        descriptors.add(ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY))
         for ((index, db) in dataModelsById) {
             createColumnFamilyHandles(descriptors, index, db)
         }
 
         val handles = mutableListOf<ColumnFamilyHandle>()
-        this.db = openRocksDB(rocksDBOptions ?: ownRocksDBOptions!!, relativePath, descriptors, handles)
+        this.db = RocksDB.open(rocksDBOptions ?: ownRocksDBOptions!!, relativePath, descriptors, handles)
 
         try {
             var handleIndex = 1

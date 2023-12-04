@@ -5,6 +5,9 @@ import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
 import maryk.core.extensions.bytes.toVarBytes
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.IsValuesDataModel
+import maryk.core.models.values
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.ListSize
 import maryk.core.processors.datastore.StorageTypeEnum.MapSize
@@ -20,8 +23,6 @@ import maryk.core.processors.datastore.writeSetToStorage
 import maryk.core.processors.datastore.writeToStorage
 import maryk.core.processors.datastore.writeTypedValueToStorage
 import maryk.core.properties.IsPropertyContext
-import maryk.core.models.IsRootDataModel
-import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsListDefinition
@@ -52,7 +53,6 @@ import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
-import maryk.core.models.values
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Check
 import maryk.core.query.changes.Delete
@@ -95,7 +95,7 @@ import maryk.datastore.shared.UniqueException
 import maryk.datastore.shared.updates.IsUpdateAction
 import maryk.datastore.shared.updates.Update
 import maryk.lib.recyclableByteArray
-import maryk.rocksdb.rocksDBNotFound
+import org.rocksdb.RocksDB
 
 internal suspend fun <DM : IsRootDataModel> processChange(
     dataStore: RocksDBDataStore,
@@ -119,7 +119,7 @@ internal suspend fun <DM : IsRootDataModel> processChange(
                 recyclableByteArray
             )
 
-        if (valueLength != rocksDBNotFound) {
+        if (valueLength != RocksDB.NOT_FOUND) {
             // Check if version is within range
             if (lastVersion != null) {
                 val lastVersionFromStore =
@@ -481,7 +481,7 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                         for (listChange in change.listValueChanges) {
                             @Suppress("UNCHECKED_CAST")
                             val originalList = getList(transaction, columnFamilies, dataStore.defaultReadOptions, key, listChange.reference as ListReference<Any, *>)
-                            val list = originalList?.toMutableList() ?: mutableListOf()
+                            val list = originalList.toMutableList()
                             val originalCount = list.size
                             listChange.deleteValues?.let {
                                 for (deleteValue in it) {

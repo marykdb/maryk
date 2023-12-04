@@ -5,8 +5,7 @@ import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.lib.extensions.compare.compareToWithOffsetLength
-import maryk.rocksdb.ReadOptions
-import maryk.rocksdb.use
+import org.rocksdb.ReadOptions
 
 /**
  * Get a value for a [reference] from [columnFamilies] with [readOptions].

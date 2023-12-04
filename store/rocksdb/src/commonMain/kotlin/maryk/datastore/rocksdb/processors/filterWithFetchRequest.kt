@@ -6,7 +6,7 @@ import maryk.core.query.requests.IsFetchRequest
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.matchQualifier
-import maryk.rocksdb.ReadOptions
+import org.rocksdb.ReadOptions
 
 /**
  * Test if record at [key] should be filtered based on given FetchRequest

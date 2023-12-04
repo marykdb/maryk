@@ -14,8 +14,7 @@ import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.rocksdb.processors.helpers.convertToValue
 import maryk.datastore.rocksdb.processors.helpers.readReversedVersionBytes
 import maryk.lib.extensions.compare.matchPart
-import maryk.rocksdb.AutoCloseable
-import maryk.rocksdb.ReadOptions
+import org.rocksdb.ReadOptions
 
 /**
  * Historical index values walker for a RocksDB store.

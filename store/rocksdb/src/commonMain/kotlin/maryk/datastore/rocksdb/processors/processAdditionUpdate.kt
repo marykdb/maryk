@@ -13,7 +13,6 @@ import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.Transaction
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.updates.IsUpdateAction
-import maryk.rocksdb.use
 
 internal typealias ProcessUpdateResponseStoreAction<DM> = StoreAction<DM, UpdateResponse<DM>, ProcessResponse<DM>>
 internal typealias AnyProcessUpdateResponseStoreAction = ProcessUpdateResponseStoreAction<IsRootDataModel>

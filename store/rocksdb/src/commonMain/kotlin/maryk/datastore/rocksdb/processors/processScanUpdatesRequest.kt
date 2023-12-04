@@ -1,8 +1,8 @@
 package maryk.datastore.rocksdb.processors
 
 import maryk.core.models.IsRootDataModel
-import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.models.fromChanges
+import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
@@ -28,8 +28,7 @@ import maryk.datastore.shared.ScanType.IndexScan
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkMaxVersions
 import maryk.lib.recyclableByteArray
-import maryk.rocksdb.rocksDBNotFound
-import maryk.rocksdb.use
+import org.rocksdb.RocksDB
 
 internal typealias ScanUpdatesStoreAction<DM> = StoreAction<DM, ScanUpdatesRequest<DM>, UpdatesResponse<DM>>
 internal typealias AnyScanUpdatesStoreAction = ScanUpdatesStoreAction<IsRootDataModel>
@@ -187,7 +186,7 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
                         key = removedKey,
                         version = lastResponseVersion,
                         reason = when {
-                            createdVersionLength == rocksDBNotFound ->
+                            createdVersionLength == RocksDB.NOT_FOUND ->
                                 HardDelete
                             isSoftDeleted(dbAccessor, columnFamilies, dataStore.defaultReadOptions, scanRequest.toVersion, removedKey.bytes) ->
                                 SoftDelete
@@ -201,7 +200,7 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
                 for (addedKey in addedKeys) {
                     val valueLength = dbAccessor.get(columnFamilies.keys, dataStore.defaultReadOptions, addedKey.bytes, recyclableByteArray)
                     // Only process it if it was created
-                    if (valueLength != rocksDBNotFound) {
+                    if (valueLength != RocksDB.NOT_FOUND) {
                         val createdVersion = recyclableByteArray.readVersionBytes()
 
                         val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->

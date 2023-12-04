@@ -4,8 +4,8 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.models.RootDataModel
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DefinitionsConversionContext
-import maryk.rocksdb.ColumnFamilyHandle
-import maryk.rocksdb.RocksDB
+import org.rocksdb.ColumnFamilyHandle
+import org.rocksdb.RocksDB
 
 fun storeModelDefinition(
     rocksDB: RocksDB,

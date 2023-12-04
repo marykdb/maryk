@@ -1,6 +1,6 @@
 package maryk.datastore.rocksdb
 
-import maryk.rocksdb.ColumnFamilyHandle
+import org.rocksdb.ColumnFamilyHandle
 
 internal open class BasicTableColumnFamilies(
     val table: ColumnFamilyHandle,

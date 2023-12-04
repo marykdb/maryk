@@ -1,8 +1,7 @@
 package maryk.datastore.rocksdb
 
-import maryk.rocksdb.AutoCloseable
-import maryk.rocksdb.ColumnFamilyHandle
-import maryk.rocksdb.ReadOptions
+import org.rocksdb.ColumnFamilyHandle
+import org.rocksdb.ReadOptions
 
 open class DBAccessor(
     internal val dataStore: RocksDBDataStore

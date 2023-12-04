@@ -8,8 +8,8 @@ import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.LAST_VERSION_INDICATOR
 import maryk.lib.recyclableByteArray
 import maryk.lib.recyclableByteArray2
-import maryk.rocksdb.ReadOptions
-import maryk.rocksdb.rocksDBNotFound
+import org.rocksdb.ReadOptions
+import org.rocksdb.RocksDB
 
 /**
  * Get last version for given key to compare with. Object should exist, or it throws an exception.
@@ -20,7 +20,7 @@ internal fun <DM: IsRootDataModel> getLastVersion(dbAccessor: DBAccessor, column
 
     val valueLength = dbAccessor.get(columnFamilies.table, readOptions, recyclableByteArray, 0, key.size + 1, recyclableByteArray2)
 
-    if (valueLength == rocksDBNotFound) {
+    if (valueLength == RocksDB.NOT_FOUND) {
         throw StorageException("Can only retrieve last versions of existing objects")
     }
 

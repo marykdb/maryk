@@ -15,7 +15,6 @@ import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.processors.helpers.getValue
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.StoreAction
-import maryk.rocksdb.use
 
 internal typealias ScanStoreAction<DM> = StoreAction<DM, ScanRequest<DM>, ValuesResponse<DM>>
 internal typealias AnyScanStoreAction = ScanStoreAction<IsRootDataModel>

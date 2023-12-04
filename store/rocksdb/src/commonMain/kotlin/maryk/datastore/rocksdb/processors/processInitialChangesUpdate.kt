@@ -15,7 +15,6 @@ import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.Transaction
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.updates.IsUpdateAction
-import maryk.rocksdb.use
 
 /** Processes a UpdateResponse with Change in a [storeAction] into a [dataStore] */
 internal suspend fun <DM : IsRootDataModel> processInitialChangesUpdate(

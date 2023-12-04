@@ -11,7 +11,6 @@ import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkMaxVersions
-import maryk.rocksdb.use
 
 internal typealias ScanChangesStoreAction<DM> = StoreAction<DM, ScanChangesRequest<DM>, ChangesResponse<DM>>
 internal typealias AnyScanChangesStoreAction = ScanChangesStoreAction<IsRootDataModel>

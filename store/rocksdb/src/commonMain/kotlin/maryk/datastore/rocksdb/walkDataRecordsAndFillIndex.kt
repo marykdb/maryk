@@ -7,7 +7,6 @@ import maryk.datastore.rocksdb.processors.FALSE_ARRAY
 import maryk.datastore.rocksdb.processors.HistoricStoreIndexValuesWalker
 import maryk.datastore.rocksdb.processors.StoreValuesGetter
 import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
-import maryk.rocksdb.use
 
 /**
  * Walks all existing data records for [columnFamilies] of model in [dataStore]

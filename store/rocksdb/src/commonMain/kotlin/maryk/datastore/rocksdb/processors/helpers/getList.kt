@@ -6,8 +6,7 @@ import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.lib.extensions.compare.matchPart
-import maryk.rocksdb.ReadOptions
-import maryk.rocksdb.use
+import org.rocksdb.ReadOptions
 
 /**
  * Get list from [dbAccessor] at [reference] by reading and collecting all values from DataRecord
@@ -18,7 +17,7 @@ internal fun <T : Any> getList(
     readOptions: ReadOptions,
     key: Key<*>,
     reference: ListReference<T, *>
-): MutableList<T>? {
+): MutableList<T> {
     val keyAndReference = reference.toStorageByteArray(key.bytes)
 
     dbAccessor.getIterator(readOptions, columnFamilies.table).use { iterator ->

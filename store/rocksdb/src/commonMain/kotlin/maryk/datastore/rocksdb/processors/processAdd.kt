@@ -3,6 +3,7 @@ package maryk.datastore.rocksdb.processors
 import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
 import maryk.core.extensions.bytes.toVarBytes
+import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.ListSize
 import maryk.core.processors.datastore.StorageTypeEnum.MapSize
@@ -11,7 +12,6 @@ import maryk.core.processors.datastore.StorageTypeEnum.SetSize
 import maryk.core.processors.datastore.StorageTypeEnum.TypeValue
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.processors.datastore.writeToStorage
-import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.exceptions.AlreadyExistsException
 import maryk.core.properties.exceptions.ValidationException
@@ -37,7 +37,7 @@ import maryk.datastore.shared.UniqueException
 import maryk.datastore.shared.updates.IsUpdateAction
 import maryk.datastore.shared.updates.Update.Addition
 import maryk.lib.recyclableByteArray
-import maryk.rocksdb.rocksDBNotFound
+import org.rocksdb.RocksDB
 
 internal suspend fun <DM : IsRootDataModel> processAdd(
     dataStore: RocksDBDataStore,
@@ -57,7 +57,7 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
 
         val exists = if (mayExist) {
             // Really check if item exists
-            dataStore.db.get(columnFamilies.table, key.bytes, recyclableByteArray) != rocksDBNotFound
+            dataStore.db.get(columnFamilies.table, key.bytes, recyclableByteArray) != RocksDB.NOT_FOUND
         } else false
 
         if (!exists) {
@@ -95,7 +95,7 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
                                 // Since it is an addition we only need to check the current uniques
                                 val uniqueCount =
                                     dataStore.db.get(columnFamilies.unique, uniqueReference, recyclableByteArray)
-                                if (uniqueCount != rocksDBNotFound) {
+                                if (uniqueCount != RocksDB.NOT_FOUND) {
                                     throw UniqueException(
                                         reference,
                                         Key<DM>(

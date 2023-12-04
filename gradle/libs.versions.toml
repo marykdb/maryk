@@ -30,6 +30,6 @@ java-driver-core = "com.datastax.oss:java-driver-core:_"
 
 jna = "net.java.dev.jna:jna:_"
 
-rocksdb-multiplatform = "io.maryk.rocksdb:rocksdb-multiplatform:8.0.0"
+rocksdbjni = "org.rocksdb:rocksdbjni:8.8.1"
 
 org-jacoco-ant = "org.jacoco:org.jacoco.ant:_"

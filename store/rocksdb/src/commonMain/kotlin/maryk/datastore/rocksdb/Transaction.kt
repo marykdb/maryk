@@ -4,10 +4,10 @@ import maryk.datastore.rocksdb.ChangeAction.Delete
 import maryk.datastore.rocksdb.ChangeAction.Put
 import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.toHex
-import maryk.rocksdb.ColumnFamilyHandle
-import maryk.rocksdb.ReadOptions
-import maryk.rocksdb.RocksDBException
-import maryk.rocksdb.rocksDBNotFound
+import org.rocksdb.ColumnFamilyHandle
+import org.rocksdb.ReadOptions
+import org.rocksdb.RocksDB
+import org.rocksdb.RocksDBException
 
 internal sealed class ChangeAction(
     val columnFamilyHandle: ColumnFamilyHandle,
@@ -66,7 +66,7 @@ class Transaction(val rocksDBDataStore: RocksDBDataStore): DBAccessor(rocksDBDat
                 change.value.copyInto(value, vOffset)
                 change.value.size
             }
-            is Delete -> rocksDBNotFound
+            is Delete -> RocksDB.NOT_FOUND
         }
     }
 

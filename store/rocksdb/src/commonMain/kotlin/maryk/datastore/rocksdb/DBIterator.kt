@@ -1,9 +1,6 @@
-@file:Suppress("UNUSED_PARAMETER")
-
 package maryk.datastore.rocksdb
 
-import maryk.rocksdb.AutoCloseable
-import maryk.rocksdb.RocksIterator
+import org.rocksdb.RocksIterator
 
 open class DBIterator(
     internal val rocksIterator: RocksIterator

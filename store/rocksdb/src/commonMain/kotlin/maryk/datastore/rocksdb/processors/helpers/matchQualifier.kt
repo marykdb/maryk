@@ -10,7 +10,7 @@ import maryk.core.processors.datastore.matchers.ReferencedQualifierMatcher
 import maryk.core.properties.references.IsPropertyReference
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.TableColumnFamilies
-import maryk.rocksdb.ReadOptions
+import org.rocksdb.ReadOptions
 
 /**
  * Match a qualifier from [reference] on transaction at [columnFamilies] and [readOptions] with [matcher] for [key].
@@ -49,7 +49,7 @@ internal fun <T : Any> DBAccessor.matchQualifier(
             key.copyInto(qualifier, 0, keyOffset, keyOffset + keyLength)
             qualifierMatcher.qualifier.copyInto(qualifier, keyLength)
 
-            return when (@Suppress("UNUSED_VARIABLE") val referencedMatcher = qualifierMatcher.referencedQualifierMatcher) {
+            return when (val referencedMatcher = qualifierMatcher.referencedQualifierMatcher) {
                 null -> {
                     val value = this.getValue(columnFamilies, readOptions, toVersion, qualifier) { valueBytes, offset, length ->
                         valueBytes.convertToValue(reference, offset, length)
@@ -71,7 +71,7 @@ internal fun <T : Any> DBAccessor.matchQualifier(
                 when (qualifierMatcher.isMatch(referenceBytes, refOffset, refLength)) {
                     NO_MATCH -> null
                     MATCH -> {
-                        val matches = when (@Suppress("UNUSED_VARIABLE") val referencedMatcher = qualifierMatcher.referencedQualifierMatcher) {
+                        val matches = when (val referencedMatcher = qualifierMatcher.referencedQualifierMatcher) {
                             null -> {
                                 val value = valueBytes.convertToValue(reference, valOffset, valLength)
                                 matcher(value)

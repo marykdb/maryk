@@ -1,6 +1,6 @@
 package maryk.datastore.rocksdb
 
-import maryk.ByteBuffer
+import java.nio.ByteBuffer
 
 private val MAX_BYTE = 0b1111_1111.toUByte()
 

@@ -7,9 +7,8 @@ import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.lib.extensions.compare.compareToWithOffsetLength
 import maryk.lib.extensions.compare.matchPart
 import maryk.lib.recyclableByteArray
-import maryk.rocksdb.ReadOptions
-import maryk.rocksdb.rocksDBNotFound
-import maryk.rocksdb.use
+import org.rocksdb.ReadOptions
+import org.rocksdb.RocksDB
 
 /**
  * Get a unique record key by value
@@ -24,7 +23,7 @@ internal fun getKeyByUniqueValue(
 ) {
     if (toVersion == null) {
         val valueLength = dbAccessor.get(columnFamilies.unique, readOptions, reference, recyclableByteArray)
-        if (valueLength != rocksDBNotFound) {
+        if (valueLength != RocksDB.NOT_FOUND) {
             val setAtVersion = recyclableByteArray.readVersionBytes()
             var readIndex = VERSION_BYTE_SIZE
             processKey({ recyclableByteArray[readIndex++] }, setAtVersion)

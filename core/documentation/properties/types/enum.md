@@ -24,11 +24,24 @@ Contains an enumeration value. The value is limited to one of the values in an e
 ## Examples
 
 **Example of an Enum definition**
+
+Kotlin enum version
 ```kotlin
-sealed class Role(index: Int): IndexedEnumImpl<Role>(index) {
-    object Admin: Role(1)
-    object Moderator: Role(2)
-    object User: Role(3)
+enum class Role(override val index: UInt, override val alternativeNames: Set<String>? = null): IndexedEnumComparable<Role> {
+    Admin(1u),
+    Moderator(2u),
+    User(3u);
+    
+    companion object: IndexedEnumDefinition<Role>(Role::class, { entries })
+}
+```
+
+Sealed class version
+```kotlin
+sealed class Role(index: UInt): IndexedEnumImpl<Role>(index) {
+    object Admin: Role(1u)
+    object Moderator: Role(2u)
+    object User: Role(3u)
     
     companion object: IndexedEnumDefinition<Role>(Role::class, { arrayOf(Admin, Moderator, User) })
 }

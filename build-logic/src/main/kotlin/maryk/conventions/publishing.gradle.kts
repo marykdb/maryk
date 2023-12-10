@@ -1,7 +1,6 @@
 package maryk.conventions
 
 import org.gradle.api.plugins.JavaBasePlugin.DOCUMENTATION_GROUP
-import org.gradle.kotlin.dsl.*
 
 /**
  * Conventions for publishing.
@@ -43,6 +42,7 @@ val sonatypeReleaseUrl = isReleaseVersion.map { isRelease ->
 publishing {
     publications.withType<MavenPublication>().configureEach {
         pom {
+            artifactId = "maryk-${artifactId}"
             name.convention("Maryk")
             description.convention("Maryk is a Kotlin Multiplatform library which helps you to store, query and send data in a structured way over multiple platforms. The data store stores any value with a version, so it is possible to request only the changed data or live listen for updates.")
             url.convention("https://github.com/marykdb/maryk")

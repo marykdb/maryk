@@ -24,6 +24,6 @@ sealed class NumberType(
 
     companion object : IndexedEnumDefinition<NumberType>(
         enumClass = NumberType::class,
-        values = { arrayOf(SInt8Type, SInt16Type, SInt32Type, SInt64Type, UInt8Type, UInt16Type, UInt32Type, UInt64Type, Float32Type, Float64Type) }
+        values = { listOf(SInt8Type, SInt16Type, SInt32Type, SInt64Type, UInt8Type, UInt16Type, UInt32Type, UInt64Type, Float32Type, Float64Type) }
     )
 }

@@ -14,6 +14,6 @@ enum class PropRefGraphType(
     Graph(2u);
 
     companion object : IndexedEnumDefinition<PropRefGraphType>(
-        "PropRefGraphType", PropRefGraphType::values
+        PropRefGraphType::class, { entries }
     )
 }

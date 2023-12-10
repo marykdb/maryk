@@ -25,7 +25,7 @@ sealed class SimpleMarykTypeEnumWithObject<T: Any>(
 
     companion object : MultiTypeEnumDefinition<SimpleMarykTypeEnumWithObject<out Any>>(
         SimpleMarykTypeEnumWithObject::class,
-        values = { arrayOf(S1, S2, S3) },
+        values = { listOf(S1, S2, S3) },
         reservedIndices = listOf(99u),
         reservedNames = listOf("O99"),
         unknownCreator = ::UnknownMarykTypeEnum

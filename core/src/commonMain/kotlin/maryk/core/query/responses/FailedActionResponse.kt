@@ -18,7 +18,7 @@ enum class FailType(
     REQUEST(3u), // Problems with the request content
     AUTH(4u); // Problems with the Authentication
 
-    companion object : IndexedEnumDefinition<FailType>("FailType", FailType::values)
+    companion object : IndexedEnumDefinition<FailType>(FailType::class, { entries })
 }
 
 /** Response with [message] and [failType] for failed actions. */

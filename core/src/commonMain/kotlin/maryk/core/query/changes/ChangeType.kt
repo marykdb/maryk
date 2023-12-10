@@ -23,6 +23,6 @@ enum class ChangeType(
     IndexChange(11u);
 
     companion object : IndexedEnumDefinition<ChangeType>(
-        ChangeType::class, ChangeType::values
+        ChangeType::class, { entries }
     )
 }

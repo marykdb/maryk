@@ -20,7 +20,7 @@ enum class UpdateResponseType(
     InitialChanges(6u);
 
     companion object : IndexedEnumDefinition<UpdateResponseType>(
-        UpdateResponseType::class, UpdateResponseType::values
+        UpdateResponseType::class, { entries }
     )
 }
 

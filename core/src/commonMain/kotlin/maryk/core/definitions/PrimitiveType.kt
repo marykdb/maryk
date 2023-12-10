@@ -12,6 +12,6 @@ enum class PrimitiveType(
     RootModel(1u), Model(2u), ValueModel(3u), EnumDefinition(4u), TypeDefinition(5u), ObjectModel(6u);
 
     companion object : IndexedEnumDefinition<PrimitiveType>(
-        "PrimitiveType", ::values
+        PrimitiveType::class, { entries }
     )
 }

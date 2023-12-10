@@ -22,7 +22,7 @@ sealed class Severity(
     class UnknownSeverity(index: UInt, override val name: String): Severity(index)
 
     companion object : IndexedEnumDefinition<Severity>(
-        Severity::class, { arrayOf(INFO, DEBUG, ERROR) }, unknownCreator = ::UnknownSeverity
+        Severity::class, { listOf(INFO, DEBUG, ERROR) }, unknownCreator = ::UnknownSeverity
     )
 }
 

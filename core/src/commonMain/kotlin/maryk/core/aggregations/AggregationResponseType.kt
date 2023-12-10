@@ -49,7 +49,7 @@ sealed class AggregationResponseType(
     companion object : MultiTypeEnumDefinition<AggregationResponseType>(
         AggregationResponseType::class,
         {
-            arrayOf(
+            listOf(
                 ValueCountType,
                 SumType,
                 AverageType,

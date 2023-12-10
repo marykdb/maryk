@@ -169,7 +169,7 @@ allowing for quick querying based on type.
 object TimelineItem: RootDataModel<TimelineItem>(
     keyDefinition = {
         Multiple(
-            Reversed(dateOfPosting),
+            Reversed(dateOfPosting.ref()),
             TypeId(item)
         )
     },

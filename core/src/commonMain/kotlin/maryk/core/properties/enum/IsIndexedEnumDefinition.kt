@@ -25,7 +25,7 @@ interface IsIndexedEnumDefinition<E: IndexedEnum>:
     val reservedIndices: List<UInt>?
     val reservedNames: List<String>?
 
-    val cases: () -> Array<E>
+    val cases: () -> List<E>
 
     override fun getEmbeddedByName(name: String): Nothing? = null
     override fun getEmbeddedByIndex(index: UInt): Nothing? = null

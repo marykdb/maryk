@@ -18,7 +18,7 @@ enum class TimePrecision(
     SECONDS(1u), MILLIS(2u), NANOS(4u);
 
     companion object : IndexedEnumDefinition<TimePrecision>(
-        "TimePrecision", TimePrecision::values
+        TimePrecision::class, { entries }
     )
 }
 

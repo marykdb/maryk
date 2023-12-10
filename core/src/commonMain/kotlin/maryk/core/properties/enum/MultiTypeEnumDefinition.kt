@@ -30,7 +30,7 @@ import kotlin.reflect.KClass
 
 /** Enum Definitions with a [name] and [cases] with types */
 open class MultiTypeEnumDefinition<E : MultiTypeEnum<*>> internal constructor(
-    optionalCases: (() -> Array<E>)?,
+    optionalCases: (() -> List<E>)?,
     name: String,
     reservedIndices: List<UInt>? = null,
     reservedNames: List<String>? = null,
@@ -65,7 +65,7 @@ open class MultiTypeEnumDefinition<E : MultiTypeEnum<*>> internal constructor(
 
     constructor(
         enumClass: KClass<E>,
-        values: () -> Array<E>,
+        values: () -> List<E>,
         reservedIndices: List<UInt>? = null,
         reservedNames: List<String>? = null,
         unknownCreator: ((UInt, String) -> E)? = null
@@ -79,7 +79,7 @@ open class MultiTypeEnumDefinition<E : MultiTypeEnum<*>> internal constructor(
 
     internal constructor(
         name: String,
-        values: () -> Array<E>,
+        values: () -> List<E>,
         reservedIndices: List<UInt>? = null,
         reservedNames: List<String>? = null,
         unknownCreator: ((UInt, String) -> E)? = null
@@ -99,7 +99,7 @@ open class MultiTypeEnumDefinition<E : MultiTypeEnum<*>> internal constructor(
             MultiTypeEnumDefinition<*>::name
         )
 
-        val cases = ContextualDefinitionWrapper<List<MultiTypeEnum<*>>, Array<MultiTypeEnum<*>>, MultiTypeDefinitionContext, ContextCollectionTransformerDefinition<MultiTypeEnum<*>, List<MultiTypeEnum<*>>, MultiTypeDefinitionContext, ContainsDefinitionsContext>, MultiTypeEnumDefinition<MultiTypeEnum<*>>>(
+        val cases = ContextualDefinitionWrapper<List<MultiTypeEnum<*>>, List<MultiTypeEnum<*>>, MultiTypeDefinitionContext, ContextCollectionTransformerDefinition<MultiTypeEnum<*>, List<MultiTypeEnum<*>>, MultiTypeDefinitionContext, ContainsDefinitionsContext>, MultiTypeEnumDefinition<MultiTypeEnum<*>>>(
             2u, "cases",
             definition = ContextCollectionTransformerDefinition(
                 definition = MultiTypeDescriptorListDefinition(),
@@ -107,12 +107,6 @@ open class MultiTypeEnumDefinition<E : MultiTypeEnum<*>> internal constructor(
                     context?.definitionsContext
                 }
             ),
-            toSerializable = { values: Array<MultiTypeEnum<*>>?, _ ->
-                values?.toList()
-            },
-            fromSerializable = { values ->
-                values?.toTypedArray()
-            },
             getter = {
                 it.cases()
             }
@@ -138,7 +132,7 @@ open class MultiTypeEnumDefinition<E : MultiTypeEnum<*>> internal constructor(
         override fun invoke(values: ObjectValues<MultiTypeEnumDefinition<MultiTypeEnum<*>>, Model>): MultiTypeEnumDefinition<MultiTypeEnum<*>> =
             MultiTypeEnumDefinition(
                 name = values(1u),
-                optionalCases = values<Array<MultiTypeEnum<*>>?>(2u)?.let { { it } },
+                optionalCases = values<List<MultiTypeEnum<*>>?>(2u)?.let { { it } },
                 reservedIndices = values(3u),
                 reservedNames = values(4u),
                 unknownCreator = { index, name -> MultiTypeEnum.invoke(index, name, null) }
@@ -222,7 +216,7 @@ open class MultiTypeEnumDefinition<E : MultiTypeEnum<*>> internal constructor(
 
         if (optionalCases != null) {
             return if (other.optionalCases != null) {
-                other.optionalCases.invoke().contentEquals(optionalCases.invoke())
+                other.optionalCases.invoke() == optionalCases.invoke()
             } else false
         }
         if (name != other.name) return false

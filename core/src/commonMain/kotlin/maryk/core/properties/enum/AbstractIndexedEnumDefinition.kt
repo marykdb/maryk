@@ -7,7 +7,7 @@ import maryk.lib.exceptions.ParseException
 import maryk.lib.safeLazy
 
 abstract class AbstractIndexedEnumDefinition<E: IndexedEnum>(
-    internal val optionalCases: (() -> Array<E>)?,
+    internal val optionalCases: (() -> List<E>)?,
     final override val name: String,
     final override val reservedIndices: List<UInt>? = null,
     final override val reservedNames: List<String>? = null,
@@ -68,7 +68,7 @@ abstract class AbstractIndexedEnumDefinition<E: IndexedEnum>(
 
         if (optionalCases != null) {
             return if (other.optionalCases != null) {
-                other.optionalCases.invoke().contentEquals(optionalCases.invoke())
+                other.optionalCases.invoke() == optionalCases.invoke()
             } else false
         }
         if (name != other.name) return false

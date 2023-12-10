@@ -48,7 +48,7 @@ sealed class AggregationRequestType(
     companion object : MultiTypeEnumDefinition<AggregationRequestType>(
         AggregationRequestType::class,
         {
-            arrayOf(
+            listOf(
                 ValueCountType,
                 SumType,
                 AverageType,

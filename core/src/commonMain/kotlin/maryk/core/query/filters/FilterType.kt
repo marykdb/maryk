@@ -25,6 +25,6 @@ enum class FilterType(
     ValueIn(13u);
 
     companion object : IndexedEnumDefinition<FilterType>(
-        "FilterType", FilterType::values
+        FilterType::class, { entries }
     )
 }

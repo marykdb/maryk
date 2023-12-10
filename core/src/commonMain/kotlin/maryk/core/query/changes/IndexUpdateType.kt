@@ -25,6 +25,5 @@ enum class IndexUpdateType(
     )
 
     override val alternativeNames: Set<String>? = null
-    companion object : MultiTypeEnumDefinition<IndexUpdateType>(
-        IndexUpdateType::class, IndexUpdateType::values)
+    companion object : MultiTypeEnumDefinition<IndexUpdateType>(IndexUpdateType::class, { entries })
 }

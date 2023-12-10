@@ -48,7 +48,7 @@ enum class DateUnit(
     Millennia(14u);
 
     companion object : IndexedEnumDefinition<DateUnit>(
-        DateUnit::class, DateUnit::values
+        DateUnit::class, { entries }
     )
 }
 

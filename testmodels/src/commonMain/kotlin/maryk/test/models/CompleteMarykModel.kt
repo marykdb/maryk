@@ -58,7 +58,7 @@ sealed class MarykEnumEmbedded(
 
     companion object : IndexedEnumDefinition<MarykEnumEmbedded>(
         MarykEnumEmbedded::class,
-        values = { arrayOf(E1, E2, E3) },
+        values = { listOf(E1, E2, E3) },
         unknownCreator = ::UnknownMarykEnumEmbedded
     )
 }

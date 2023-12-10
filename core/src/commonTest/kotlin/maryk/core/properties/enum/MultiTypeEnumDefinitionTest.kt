@@ -15,45 +15,45 @@ class MultiTypeEnumDefinitionTest {
     @Test
     fun isCompatible() {
         assertTrue {
-            MultiTypeEnumDefinition("Test", { arrayOf(T1, T2, T3) }).compatibleWith(
-                MultiTypeEnumDefinition("Test", { arrayOf(T1, T2) })
+            MultiTypeEnumDefinition("Test", { listOf(T1, T2, T3) }).compatibleWith(
+                MultiTypeEnumDefinition("Test", { listOf(T1, T2) })
             )
         }
 
         assertFalse {
-            MultiTypeEnumDefinition("WRONG", { arrayOf(T1, T2, T3) }).compatibleWith(
-                MultiTypeEnumDefinition("Test", { arrayOf(T1, T2) })
+            MultiTypeEnumDefinition("WRONG", { listOf(T1, T2, T3) }).compatibleWith(
+                MultiTypeEnumDefinition("Test", { listOf(T1, T2) })
             )
         }
 
         assertFalse {
-            MultiTypeEnumDefinition("Test", { arrayOf(ValueCountType, SumType) }).compatibleWith(
-                MultiTypeEnumDefinition("Test", { arrayOf(T1, T2) })
+            MultiTypeEnumDefinition("Test", { listOf(ValueCountType, SumType) }).compatibleWith(
+                MultiTypeEnumDefinition("Test", { listOf(T1, T2) })
             )
         }
 
         assertFalse {
-            MultiTypeEnumDefinition("Test", { arrayOf(T2) }).compatibleWith(
-                MultiTypeEnumDefinition("Test", { arrayOf(T1, T2) })
+            MultiTypeEnumDefinition("Test", { listOf(T2) }).compatibleWith(
+                MultiTypeEnumDefinition("Test", { listOf(T1, T2) })
             )
         }
 
         assertTrue {
             MultiTypeEnumDefinition(
                 name = "Test",
-                values = { arrayOf(T2) },
+                values = { listOf(T2) },
                 reservedIndices = listOf(1u),
                 reservedNames = listOf("T1", "Type1")
             ).compatibleWith(
-                MultiTypeEnumDefinition("Test", { arrayOf(T1, T2) })
+                MultiTypeEnumDefinition("Test", { listOf(T1, T2) })
             )
         }
 
         assertFalse {
-            MultiTypeEnumDefinition("Test", { arrayOf(T1, T2) }).compatibleWith(
+            MultiTypeEnumDefinition("Test", { listOf(T1, T2) }).compatibleWith(
                 MultiTypeEnumDefinition(
                     name = "Test",
-                    values = { arrayOf(T1, T2)},
+                    values = { listOf(T1, T2)},
                     reservedNames = listOf("T4"),
                     reservedIndices = listOf(4u)
                 )
@@ -72,14 +72,14 @@ class MultiTypeEnumDefinitionTest {
         val t2 = MultiTypeTestEnum(1u, StringDefinition(regEx = "[^INCOMPATIBLE]+"))
 
         assertTrue {
-            MultiTypeEnumDefinition("Test", { arrayOf(t1) }).compatibleWith(
-                MultiTypeEnumDefinition("Test", { arrayOf(t1) })
+            MultiTypeEnumDefinition("Test", { listOf(t1) }).compatibleWith(
+                MultiTypeEnumDefinition("Test", { listOf(t1) })
             )
         }
 
         assertFalse {
-            MultiTypeEnumDefinition("Test", { arrayOf(t1) }).compatibleWith(
-                MultiTypeEnumDefinition("Test", { arrayOf(t2) })
+            MultiTypeEnumDefinition("Test", { listOf(t1) }).compatibleWith(
+                MultiTypeEnumDefinition("Test", { listOf(t2) })
             )
         }
     }

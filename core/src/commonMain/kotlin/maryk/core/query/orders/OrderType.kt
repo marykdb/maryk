@@ -17,7 +17,7 @@ enum class OrderType(
     ORDERS(2u);
 
     companion object : IndexedEnumDefinition<OrderType>(
-        "OrderType", OrderType::values
+        OrderType::class, { entries }
     )
 }
 

@@ -1,9 +1,10 @@
 package maryk.core.query.orders
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.models.BaseDataModel
 import maryk.core.models.QueryModel
+import maryk.core.models.serializers.ObjectDataModelSerializer
+import maryk.core.models.values
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.enum
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
@@ -12,7 +13,6 @@ import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IsCoreEnum
 import maryk.core.properties.references.AnyPropertyReference
-import maryk.core.models.values
 import maryk.core.query.RequestContext
 import maryk.core.query.orders.Direction.ASC
 import maryk.core.query.orders.Direction.DESC
@@ -39,7 +39,7 @@ enum class Direction(
 ) : IndexedEnumComparable<Direction>, IsCoreEnum {
     ASC(1u), DESC(2u);
 
-    companion object : IndexedEnumDefinition<Direction>("Direction", ::values)
+    companion object : IndexedEnumDefinition<Direction>(Direction::class, { entries })
 }
 
 /** Descending ordering of property */

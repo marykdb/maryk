@@ -3,8 +3,8 @@ package maryk.core.properties.definitions
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsObjectDataModel
-import maryk.core.properties.IsPropertyContext
 import maryk.core.models.IsValuesDataModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.contextual.ContextValueTransformDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
@@ -206,7 +206,7 @@ data class EnumDefinition<E : IndexedEnumComparable<E>>(
     }
 }
 
-private fun areEnumsEqual(enumValues: Array<out IndexedEnum>, otherValues: Array<out IndexedEnum>) = when {
+private fun areEnumsEqual(enumValues: List<IndexedEnum>, otherValues: List<IndexedEnum>) = when {
     enumValues === otherValues -> true
     otherValues.size != enumValues.size -> false
     else -> {
@@ -220,7 +220,7 @@ private fun areEnumsEqual(enumValues: Array<out IndexedEnum>, otherValues: Array
     }
 }
 
-private fun enumsHashCode(enumValues: Array<out IndexedEnum>): Int {
+private fun enumsHashCode(enumValues: List<IndexedEnum>): Int {
     var result = 1
     for (it in enumValues) {
         result = 31 * result + it.index.hashCode()

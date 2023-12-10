@@ -276,9 +276,9 @@ internal class MultiTypeDefinitionTest {
 
     @Test
     fun isCompatible() {
-        val enum1 = MultiTypeEnumDefinition("Test", { arrayOf(T1, T2) })
-        val enum2 = MultiTypeEnumDefinition("Test", { arrayOf(T1, T2, T3) })
-        val enumWrong = MultiTypeEnumDefinition("Test", { arrayOf(T4, T5)})
+        val enum1 = MultiTypeEnumDefinition("Test", { listOf(T1, T2) })
+        val enum2 = MultiTypeEnumDefinition("Test", { listOf(T1, T2, T3) })
+        val enumWrong = MultiTypeEnumDefinition("Test", { listOf(T4, T5)})
 
         assertTrue {
             MultiTypeDefinition(typeEnum = enum2).compatibleWith(

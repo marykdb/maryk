@@ -72,7 +72,9 @@ sealed class MarykTypeEnum<T: Any>(
 
     companion object : MultiTypeEnumDefinition<MarykTypeEnum<out Any>>(
         MarykTypeEnum::class,
-        values = { arrayOf(T1, T2, T3, T4, T5, T6, T7) },
+        values = {
+            listOf(T1, T2, T3, T4, T5, T6, T7)
+        },
         reservedIndices = listOf(99u),
         reservedNames = listOf("O99"),
         unknownCreator = ::UnknownMarykTypeEnum

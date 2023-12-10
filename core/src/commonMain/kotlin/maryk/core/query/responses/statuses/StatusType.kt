@@ -21,6 +21,6 @@ enum class StatusType(
     DOES_NOT_EXIST(9u);
 
     companion object : IndexedEnumDefinition<StatusType>(
-        "StatusType", StatusType::values
+        StatusType::class, { entries }
     )
 }

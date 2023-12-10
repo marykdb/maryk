@@ -31,7 +31,7 @@ sealed class IndexKeyPartType<out T: IsIndexable>(
 
     companion object : IndexedEnumDefinition<IndexKeyPartType<*>>(
         IndexKeyPartType::class, {
-            arrayOf(UUID, Reference, Reversed, Multiple)
+            listOf(UUID, Reference, Reversed, Multiple)
         }
     )
 }

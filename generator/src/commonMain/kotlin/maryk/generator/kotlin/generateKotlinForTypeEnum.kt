@@ -43,7 +43,7 @@ fun MultiTypeEnumDefinition<*>.generateKotlinClass(addImport: (String) -> Unit):
         override val definition: IsUsableInMultiType<T, *>?,
         alternativeNames: Set<String>? = null
     ) : IndexedEnumImpl<${this.name}<Any>>(index, alternativeNames), MultiTypeEnum<T> {
-        ${@Suppress("UNCHECKED_CAST") (this.cases() as Array<MultiTypeEnum<Any>>).joinToString("") { case ->
+        ${@Suppress("UNCHECKED_CAST") (this.cases() as List<MultiTypeEnum<Any>>).joinToString("") { case ->
             val alternativeNames = case.alternativeNames?.let { altNames ->
                 ",\n    setOf(${altNames.joinToString(", ") { """"$it""""} })"
             } ?: ""
@@ -59,7 +59,7 @@ fun MultiTypeEnumDefinition<*>.generateKotlinClass(addImport: (String) -> Unit):
 
         companion object : MultiTypeEnumDefinition<${this.name}<out Any>>(
             ${this.name}::class,
-            values = { arrayOf(${this.cases().joinToString(", ") { it.name }}) },$reservedIndices$reservedNames
+            values = { listOf(${this.cases().joinToString(", ") { it.name }}) },$reservedIndices$reservedNames
             unknownCreator = ::Unknown${this.name}
         )
     }

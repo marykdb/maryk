@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions
 
-import maryk.core.properties.IsPropertyContext
 import maryk.core.models.IsValuesDataModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.EmbeddedValuesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
@@ -45,8 +45,7 @@ enum class PropertyDefinitionType(
     Time(17u),
     Value(18u);
 
-    companion object :
-        IndexedEnumDefinition<PropertyDefinitionType>("PropertyDefinitionType", PropertyDefinitionType::values)
+    companion object : IndexedEnumDefinition<PropertyDefinitionType>(PropertyDefinitionType::class, { entries })
 }
 
 internal val mapOfPropertyDefEmbeddedObjectDefinitions =

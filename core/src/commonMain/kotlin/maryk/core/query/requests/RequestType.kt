@@ -32,7 +32,7 @@ enum class RequestType(
     Collect(10u);
 
     companion object : IndexedEnumDefinition<RequestType>(
-        "RequestType", RequestType::values
+        RequestType::class, { entries }
     )
 }
 

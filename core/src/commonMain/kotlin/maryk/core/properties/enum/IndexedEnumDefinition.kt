@@ -26,7 +26,7 @@ import kotlin.reflect.KClass
 
 /** Enum Definitions with a [name] and [cases] */
 open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
-    optionalCases: (() -> Array<E>)?,
+    optionalCases: (() -> List<E>)?,
     name: String,
     reservedIndices: List<UInt>? = null,
     reservedNames: List<String>? = null,
@@ -36,7 +36,7 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
 ) {
     constructor(
         enumClass: KClass<E>,
-        values: () -> Array<E>,
+        values: () -> List<E>,
         reservedIndices: List<UInt>? = null,
         reservedNames: List<String>? = null,
         unknownCreator: ((UInt, String) -> E)? = null
@@ -50,7 +50,7 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
 
     internal constructor(
         name: String,
-        values: () -> Array<E>,
+        values: () -> List<E>,
         reservedIndices: List<UInt>? = null,
         reservedNames: List<String>? = null,
         unknownCreator: ((UInt, String) -> E)? = null
@@ -93,7 +93,7 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
             valueDefinition = SingleOrListDefinition(
                 valueDefinition = StringDefinition()
             ),
-            toSerializable = { value, context: EnumNameContext? ->
+            toSerializable = { value: (() -> List<IndexedEnum>?)?, context: EnumNameContext? ->
                 // If Enum was defined before and is thus available in context, don't include the cases again
                 val toReturnNull = context?.let { enumNameContext ->
                     if (enumNameContext.isOriginalDefinition == true) {
@@ -125,14 +125,13 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
             },
             fromSerializable = {
                 {
-                    @Suppress("UNCHECKED_CAST")
                     it?.map { (key, value) ->
                         IndexedEnumComparable(
                             key,
                             value.first(),
                             value.subList(1, value.size).toSet()
                         )
-                    }?.toTypedArray() as Array<IndexedEnum>
+                    }
                 }
             }
         )

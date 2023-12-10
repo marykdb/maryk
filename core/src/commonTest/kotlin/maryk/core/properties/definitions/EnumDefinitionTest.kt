@@ -189,9 +189,9 @@ internal class EnumDefinitionTest {
 
     @Test
     fun isCompatible() {
-        val enum1 = IndexedEnumDefinition("Test", { arrayOf(V1, V2)})
-        val enum2 = IndexedEnumDefinition("Test", { arrayOf(V1, V2, V3)})
-        val enumWrong = IndexedEnumDefinition("Test", { arrayOf(E1, E2)})
+        val enum1 = IndexedEnumDefinition("Test", { listOf(V1, V2) })
+        val enum2 = IndexedEnumDefinition("Test", { listOf(V1, V2, V3)})
+        val enumWrong = IndexedEnumDefinition("Test", { listOf(E1, E2)})
 
         assertTrue {
             EnumDefinition(enum = enum2).compatibleWith(

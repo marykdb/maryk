@@ -19,7 +19,7 @@ enum class RemovalReason(override val index: UInt, override val alternativeNames
     SoftDelete(2u),
     HardDelete(3u);
 
-    companion object : IndexedEnumDefinition<RemovalReason>(RemovalReason::class, RemovalReason::values)
+    companion object : IndexedEnumDefinition<RemovalReason>(RemovalReason::class, { entries })
 }
 
 /** Update response describing a removal from query result at [key] for [reason] */

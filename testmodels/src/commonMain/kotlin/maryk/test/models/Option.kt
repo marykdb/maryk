@@ -14,7 +14,7 @@ sealed class Option(
 
     companion object : IndexedEnumDefinition<Option>(
         enumClass = Option::class,
-        values = { arrayOf(V1, V2, V3) },
+        values = { listOf(V1, V2, V3) },
         reservedIndices = listOf(4u),
         reservedNames = listOf("V4"),
         unknownCreator = ::UnknownOption

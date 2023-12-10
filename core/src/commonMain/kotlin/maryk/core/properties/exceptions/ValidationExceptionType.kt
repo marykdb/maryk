@@ -21,6 +21,6 @@ enum class ValidationExceptionType(
     UMBRELLA(9u);
 
     companion object : IndexedEnumDefinition<ValidationExceptionType>(
-        "ValidationExceptionType", ValidationExceptionType::values
+        ValidationExceptionType::class, { entries }
     )
 }

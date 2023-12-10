@@ -163,10 +163,10 @@ class RocksDBDataStore(
                             }
                             is NeedsMigration -> {
                                 val succeeded = migrationHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
-                                    ?: throw MigrationException("Migration needed: No migration handler present")
+                                    ?: throw MigrationException("Migration needed: No migration handler present. \n$migrationStatus")
 
                                 if (!succeeded) {
-                                    throw MigrationException("Migration could not be handled for ${dataModel.Meta.name} & ${(migrationStatus.storedDataModel as? StoredRootDataModelDefinition)?.Meta?.version}")
+                                    throw MigrationException("Migration could not be handled for ${dataModel.Meta.name} & ${(migrationStatus.storedDataModel as? StoredRootDataModelDefinition)?.Meta?.version}\n$migrationStatus")
                                 }
 
                                 migrationStatus.indicesToIndex?.let {

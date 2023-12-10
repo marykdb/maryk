@@ -2,7 +2,10 @@
 
 package maryk.test.models
 
+import maryk.core.models.DataModel
 import maryk.core.models.RootDataModel
+import maryk.core.properties.definitions.embed
+import maryk.core.properties.definitions.enum
 import maryk.core.properties.definitions.number
 import maryk.core.properties.definitions.string
 import maryk.core.properties.types.Version
@@ -85,4 +88,15 @@ object ModelV2ReservedNamesAndIndices : RootDataModel<ModelV2ReservedNamesAndInd
     reservedIndices = listOf(1u),
 ) {
     val newNumber by number(index = 2u, type = SInt32, required = false)
+}
+
+object DependentModel : DataModel<DependentModel>() {
+    val value by string(index = 1u, default = "haha", regEx = "ha.*")
+}
+
+object ModelWithDependents : RootDataModel<ModelV2ReservedNamesAndIndices>(
+    version = Version(1, 0),
+) {
+    val dep by embed(index = 1u, dataModel = { DependentModel })
+    val enum by enum(index = 2u, enum = Option)
 }

@@ -16,6 +16,7 @@ import maryk.test.models.ModelV1
 import maryk.test.models.ModelV1_1
 import maryk.test.models.ModelV2
 import maryk.test.models.ModelV2ExtraIndex
+import maryk.test.models.ModelWithDependents
 import maryk.test.runSuspendingTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -79,6 +80,30 @@ class RocksDBDataStoreMigrationTest {
         }
 
         Unit
+    }
+
+    @Test
+    fun testMigrationWithDependents() = runSuspendingTest {
+        val path = "$basePath/migrationWithDeps"
+        var dataStore = RocksDBDataStore(
+            keepAllVersions = true,
+            relativePath = path,
+            dataModelsById = mapOf(
+                1u to ModelWithDependents,
+            )
+        )
+
+        dataStore.close()
+
+        dataStore = RocksDBDataStore(
+            keepAllVersions = true,
+            relativePath = path,
+            dataModelsById = mapOf(
+                1u to ModelWithDependents,
+            )
+        )
+
+        dataStore.close()
     }
 
     @Test

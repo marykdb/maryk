@@ -1,5 +1,6 @@
 package maryk.datastore.rocksdb.model
 
+import maryk.core.definitions.Definitions
 import maryk.core.exceptions.StorageException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.RootDataModel
@@ -29,12 +30,19 @@ fun checkModelIfMigrationIsNeeded(
 
     return when {
         dataModel.Meta.version != version || !onlyCheckVersion -> {
+            val context = DefinitionsConversionContext()
+
+            // Read currently stored dependent model
+            rocksDB.get(modelColumnFamily, modelDependentsDefinitionKey)?.let { dependentModelBytes ->
+                var readIndex = 0
+                Definitions.Serializer.readProtoBuf(dependentModelBytes.size, { dependentModelBytes[readIndex++] }, context).toDataObject()
+            }
+
             // Read currently stored model
             val modelBytes = rocksDB.get(modelColumnFamily, modelDefinitionKey)
                 ?: throw StorageException("Model is unexpectedly missing in metadata for ${dataModel.Meta.name}")
 
             var readIndex = 0
-            val context = DefinitionsConversionContext()
             val storedDataModel = RootDataModel.Model.Serializer.readProtoBuf(modelBytes.size, { modelBytes[readIndex++] }, context).toDataObject()
 
             // Check by comparing the data models for if migration is needed

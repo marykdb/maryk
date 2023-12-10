@@ -41,7 +41,7 @@ data class Definitions(
 
     constructor(vararg definition: MarykPrimitive) : this(definition.toList())
 
-    internal companion object : SingleValueDataModel<List<TypedValue<PrimitiveType, MarykPrimitive>>, List<MarykPrimitive>, Definitions, Companion, ContainsDefinitionsContext>(
+    companion object : SingleValueDataModel<List<TypedValue<PrimitiveType, MarykPrimitive>>, List<MarykPrimitive>, Definitions, Companion, ContainsDefinitionsContext>(
         { Companion.definitions }
     ) {
         val definitions by list(

@@ -4,6 +4,7 @@ import kotlinx.datetime.LocalTime
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
+import maryk.core.definitions.MarykPrimitive
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
@@ -738,5 +739,14 @@ internal class RootDataModelTest {
                 }
             }
         }
+    }
+
+    @Test
+    fun getAllDependencies() {
+        val list = mutableListOf<MarykPrimitive>()
+        TestMarykModel.getAllDependencies(list)
+
+        assertEquals(4, list.size)
+        assertEquals(mutableListOf(TestValueObject, EmbeddedMarykModel, TestMarykModel, SimpleMarykTypeEnum), list)
     }
 }

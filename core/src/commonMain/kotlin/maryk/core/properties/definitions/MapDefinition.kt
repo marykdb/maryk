@@ -4,8 +4,8 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.RequestException
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsObjectDataModel
-import maryk.core.properties.IsPropertyContext
 import maryk.core.models.IsValuesDataModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.contextual.ContextualMapDefinition
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader

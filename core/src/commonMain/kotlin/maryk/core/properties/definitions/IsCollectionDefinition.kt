@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions
 
+import maryk.core.definitions.MarykPrimitive
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.IsPropertyContext
@@ -266,5 +267,9 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
 
         @Suppress("UNCHECKED_CAST")
         return collection as C
+    }
+
+    override fun getAllDependencies(dependencySet: MutableList<MarykPrimitive>) {
+        valueDefinition.getAllDependencies(dependencySet)
     }
 }

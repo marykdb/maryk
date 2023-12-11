@@ -1,5 +1,6 @@
 package maryk.core.models
 
+import maryk.core.definitions.MarykPrimitive
 import maryk.core.models.serializers.IsDataModelSerializer
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyReferenceMarker
@@ -86,6 +87,9 @@ interface IsDataModel {
                 if (it != null) items += it
             }
         }
+
+    /** Collects DataModels and Enums of the current data model into a mutable list. */
+    fun getAllDependencies(dependencySet: MutableList<MarykPrimitive>)
 }
 
 /**

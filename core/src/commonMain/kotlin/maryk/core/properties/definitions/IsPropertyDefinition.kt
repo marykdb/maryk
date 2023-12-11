@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions
 
+import maryk.core.definitions.MarykPrimitive
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.exceptions.RequiredException
@@ -58,5 +59,12 @@ interface IsPropertyDefinition<T : Any> {
         }
 
         return compatible
+    }
+
+    /**
+     * Collects all dependencies for DataModel into the [dependencySet].
+     */
+    fun getAllDependencies(dependencySet: MutableList<MarykPrimitive>) {
+        // Empty implementation by default
     }
 }

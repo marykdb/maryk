@@ -2,7 +2,6 @@ package maryk.datastore.rocksdb.model
 
 import maryk.core.definitions.Definitions
 import maryk.core.definitions.MarykPrimitive
-import maryk.core.models.DataModel
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.RootDataModel
 import maryk.core.protobuf.WriteCache
@@ -21,6 +20,7 @@ fun storeModelDefinition(
     val context = DefinitionsConversionContext()
 
     val modelCache = WriteCache()
+
     val modelByteSize = RootDataModel.Model.Serializer.calculateObjectProtoBufLength(dataModel as RootDataModel<*>, modelCache, context)
 
     val bytes = ByteArray(modelByteSize)
@@ -29,20 +29,15 @@ fun storeModelDefinition(
 
     rocksDB.put(modelColumnFamily, modelDefinitionKey, bytes)
 
-    if (context.dataModels.isNotEmpty()) {
-        // Collect any sub models first.
-        val fakeCache = WriteCache()
-        context.dataModels.forEach {
-            DataModel.Model.Serializer.calculateObjectProtoBufLength(it.value(Unit) as DataModel<*>, fakeCache, context)
-        }
+    val dependencies = mutableListOf<MarykPrimitive>()
+    dataModel.getAllDependencies(dependencies)
+    // Needs to be in reverse order to do sub dependencies first and then the higher up dependencies
+    dependencies.reverse()
 
+    if (dependencies.isNotEmpty()) {
         val dependentCache = WriteCache()
 
-        val dependents = Definitions(buildList {
-            context.dataModels.values.forEach { add(it(Unit) as MarykPrimitive) }
-            context.enums.values.forEach { add(it as MarykPrimitive) }
-            context.typeEnums.values.forEach { add(it as MarykPrimitive) }
-        })
+        val dependents = Definitions(dependencies)
         val depModelByteSize = Definitions.Serializer.calculateObjectProtoBufLength(dependents, dependentCache, context)
         val dependentBytes = ByteArray(depModelByteSize)
         var depWriteIndex = 0

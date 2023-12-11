@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions
 
+import maryk.core.definitions.MarykPrimitive
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.ContextualDataModel
@@ -141,6 +142,13 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel>(
         result = 31 * result + final.hashCode()
         result = 31 * result + dataModel.hashCode()
         return result
+    }
+
+    override fun getAllDependencies(dependencySet: MutableList<MarykPrimitive>) {
+        if (!dependencySet.contains(dataModel as MarykPrimitive)) {
+            dependencySet.add(dataModel as MarykPrimitive)
+            dataModel.getAllDependencies(dependencySet)
+        }
     }
 
     object Model : ContextualDataModel<EmbeddedValuesDefinition<*>, Model, ContainsDefinitionsContext, ModelContext>(

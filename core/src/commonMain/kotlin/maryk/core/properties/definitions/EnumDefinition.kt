@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions
 
+import maryk.core.definitions.MarykPrimitive
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsObjectDataModel
@@ -125,6 +126,12 @@ data class EnumDefinition<E : IndexedEnumComparable<E>>(
         }
 
         return compatible
+    }
+
+    override fun getAllDependencies(dependencySet: MutableList<MarykPrimitive>) {
+        if (!dependencySet.contains(enum)) {
+            enum
+        }
     }
 
     object Model : ContextualDataModel<EnumDefinition<*>, Model, ContainsDefinitionsContext, EnumDefinitionContext>(

@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions
 
+import maryk.core.definitions.MarykPrimitive
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.IsPropertyContext
@@ -215,5 +216,10 @@ interface IsMapDefinition<K : Any, V : Any, CX : IsPropertyContext> :
         }
 
         return compatible
+    }
+
+    override fun getAllDependencies(dependencySet: MutableList<MarykPrimitive>) {
+        keyDefinition.getAllDependencies(dependencySet)
+        valueDefinition.getAllDependencies(dependencySet)
     }
 }

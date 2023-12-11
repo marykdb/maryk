@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions
 
+import maryk.core.definitions.MarykPrimitive
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.writeBytes
@@ -110,6 +111,13 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueDataModel<DO,
         }
 
         return compatible
+    }
+
+    override fun getAllDependencies(dependencySet: MutableList<MarykPrimitive>) {
+        if (!dependencySet.contains(dataModel as MarykPrimitive)) {
+            dataModel.getAllDependencies(dependencySet)
+            dependencySet.add(dataModel as MarykPrimitive)
+        }
     }
 
     object Model : ContextualDataModel<ValueObjectDefinition<*, *>, Model, ContainsDefinitionsContext, ModelContext>(

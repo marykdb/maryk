@@ -1,5 +1,6 @@
 package maryk.core.properties.enum
 
+import maryk.core.definitions.MarykPrimitive
 import maryk.core.definitions.MarykPrimitiveDescriptor
 import maryk.core.definitions.PrimitiveType
 import maryk.core.exceptions.DefNotFoundException
@@ -9,6 +10,7 @@ import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.models.values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
+import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.StringDefinition
@@ -90,6 +92,12 @@ open class MultiTypeEnumDefinition<E : MultiTypeEnum<*>> internal constructor(
         reservedNames = reservedNames,
         unknownCreator = unknownCreator
     )
+
+    override fun getAllDependencies(dependencySet: MutableList<MarykPrimitive>) {
+        cases().forEach { typeDef ->
+            (typeDef.definition as IsPropertyDefinition<*>).getAllDependencies(dependencySet)
+        }
+    }
 
     internal object Model : ContextualDataModel<MultiTypeEnumDefinition<MultiTypeEnum<*>>, Model, ContainsDefinitionsContext, MultiTypeDefinitionContext>(
         contextTransformer = { MultiTypeDefinitionContext(it) },

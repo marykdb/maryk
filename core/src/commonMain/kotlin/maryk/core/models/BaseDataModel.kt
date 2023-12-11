@@ -1,5 +1,6 @@
 package maryk.core.models
 
+import maryk.core.definitions.MarykPrimitive
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initUIntByVar
 import maryk.core.properties.IsPropertyContext
@@ -152,6 +153,12 @@ abstract class BaseDataModel<DO : Any> : IsTypedDataModel<DO> {
                 ) { readLength >= length }
                 else -> throw DefNotFoundException("More property references found on property that cannot have any: $propertyReference")
             }
+        }
+    }
+
+    override fun getAllDependencies(dependencySet: MutableList<MarykPrimitive>) {
+        for (property in _allProperties) {
+            property.definition.getAllDependencies(dependencySet)
         }
     }
 }

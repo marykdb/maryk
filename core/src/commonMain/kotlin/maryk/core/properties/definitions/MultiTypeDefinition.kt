@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions
 
+import maryk.core.definitions.MarykPrimitive
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsObjectDataModel
@@ -58,6 +59,14 @@ data class MultiTypeDefinition<E : MultiTypeEnum<out T>, T: Any>(
         }
 
         return compatible
+    }
+
+
+    override fun getAllDependencies(dependencySet: MutableList<MarykPrimitive>) {
+        if (!dependencySet.contains(typeEnum)) {
+            dependencySet.add(typeEnum)
+        }
+        typeEnum.getAllDependencies(dependencySet)
     }
 
     object Model : ContextualDataModel<MultiTypeDefinition<*, *>, Model, ContainsDefinitionsContext, MultiTypeDefinitionContext>(

@@ -92,6 +92,8 @@ object ModelV2ReservedNamesAndIndices : RootDataModel<ModelV2ReservedNamesAndInd
 
 object DependentModel : DataModel<DependentModel>() {
     val value by string(index = 1u, default = "haha", regEx = "ha.*")
+    val deeperEnum by enum(index = 2u, enum = Severity)
+    val embed by embed(index = 3u, dataModel = { SimpleMarykModel })
 }
 
 object ModelWithDependents : RootDataModel<ModelV2ReservedNamesAndIndices>(

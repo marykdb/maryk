@@ -37,14 +37,17 @@ RocksDBDataStore(
 
 **Note:** It is important to call `close()` at the end of the use block to release memory and clean up any processes.
 
-## Migrations
+## Migrations and Update handling
 
 The data store always checks if all passed DataModels are compatible with the stored models upon creation. 
 If they are not, it will trigger a migration. A `migrationHandler` must be defined to handle migrations.
 
+There is also a `versionUpdateHandler` which enables you to do actions after an update/migration action
+was successfully done. This way you can add intial data which depends on the updated models.
+
 **Note:** It is possible to add Models, indices, and properties without a migration. Additionally, it is possible 
 to set less strict validation rules. However, it is not possible to change the types of properties, rename values 
-without making the old value an alternative, or add more strict validation without automatically triggering a migration.
+without having the old value an alternative, or add more strict validation without automatically triggering a migration.
 
 ```kotlin
 RocksDBDataStore(
@@ -66,6 +69,13 @@ RocksDBDataStore(
                 else -> false
             }
             else -> false
+        }
+    },
+    versionUpdateHandler = { rocksDBDataStore, storedDataModel, newDataModel ->
+        // example 
+        when (storedDataModel) {
+            null -> Unit // Do something when model did not exist before
+            else -> Unit
         }
     }
 )

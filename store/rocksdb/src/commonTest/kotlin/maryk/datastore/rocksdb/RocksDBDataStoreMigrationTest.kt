@@ -25,6 +25,9 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class RocksDBDataStoreMigrationTest {
     private val basePath = "./build/test-database"
@@ -33,24 +36,42 @@ class RocksDBDataStoreMigrationTest {
 
     @Test
     fun testMigration() = runTest {
+        var didRunUpdateHandler = false
+
         val path = "$basePath/migration"
         var dataStore = RocksDBDataStore(
             keepAllVersions = true,
             relativePath = path,
             dataModelsById = mapOf(
                 1u to ModelV1,
-            )
+            ),
+            versionUpdateHandler = { _, oldModel, newModel ->
+                didRunUpdateHandler = true
+                assertNull(oldModel)
+                assertEquals(ModelV1, newModel)
+            }
         )
 
+        assertTrue { didRunUpdateHandler }
+
         dataStore.close()
+
+        didRunUpdateHandler = false
 
         dataStore = RocksDBDataStore(
             keepAllVersions = true,
             relativePath = path,
             dataModelsById = mapOf(
                 1u to ModelV1_1,
-            )
+            ),
+            versionUpdateHandler = { _, oldModel, newModel ->
+                didRunUpdateHandler = true
+                assertNotNull(oldModel)
+                assertEquals(ModelV1_1, newModel)
+            }
         )
+
+        assertTrue { didRunUpdateHandler }
 
         dataStore.close()
 

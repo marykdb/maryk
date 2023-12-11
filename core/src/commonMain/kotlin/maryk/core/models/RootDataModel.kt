@@ -133,7 +133,7 @@ open class RootDataModel<DM: IsValuesDataModel> internal constructor(
                 migrationReasons,
                 indicesToIndex
             )
-            else -> MigrationStatus.NewIndicesOnExistingProperties(indicesToIndex)
+            else -> MigrationStatus.NewIndicesOnExistingProperties(storedDataModel, indicesToIndex)
         }
     }
 

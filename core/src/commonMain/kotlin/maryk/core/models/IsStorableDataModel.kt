@@ -30,7 +30,7 @@ interface IsStorableDataModel<DO: Any>: IsTypedDataModel<DO> {
 
         return when {
             migrationReasons.isNotEmpty() -> MigrationStatus.NeedsMigration(storedDataModel, migrationReasons, null)
-            hasNewProperties -> MigrationStatus.OnlySafeAdds
+            hasNewProperties -> MigrationStatus.OnlySafeAdds(storedDataModel)
             else -> MigrationStatus.UpToDate
         }
     }

@@ -17,6 +17,7 @@ import maryk.core.models.migration.MigrationStatus.NewModel
 import maryk.core.models.migration.MigrationStatus.OnlySafeAdds
 import maryk.core.models.migration.MigrationStatus.UpToDate
 import maryk.core.models.migration.StoredRootDataModelDefinition
+import maryk.core.models.migration.VersionUpdateHandler
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.query.requests.AddRequest
 import maryk.core.query.requests.ChangeRequest
@@ -87,7 +88,8 @@ class RocksDBDataStore(
     dataModelsById: Map<UInt, IsRootDataModel>,
     rocksDBOptions: DBOptions? = null,
     private val onlyCheckModelVersion: Boolean = false,
-    val migrationHandler: MigrationHandler<RocksDBDataStore>? = null
+    val migrationHandler: MigrationHandler<RocksDBDataStore>? = null,
+    val versionUpdateHandler: VersionUpdateHandler<RocksDBDataStore>? = null,
 ) : AbstractDataStore(dataModelsById) {
     private val columnFamilyHandlesByDataModelIndex = mutableMapOf<UInt, TableColumnFamilies>()
     private val prefixSizesByColumnFamilyHandlesIndex = mutableMapOf<Int, Int>()
@@ -153,13 +155,20 @@ class RocksDBDataStore(
                     tableColumnFamilies.model.let { modelColumnFamily ->
                         when (val migrationStatus = checkModelIfMigrationIsNeeded(this.db, modelColumnFamily, dataModel, this.onlyCheckModelVersion)) {
                             UpToDate -> Unit // Do nothing since no work is needed
-                            NewModel, OnlySafeAdds -> {
+                            NewModel -> {
                                 // Model updated so can be stored
                                 storeModelDefinition(this.db, modelColumnFamily, dataModel)
+                                versionUpdateHandler?.invoke(this, null, dataModel)
+                            }
+                            is OnlySafeAdds -> {
+                                // Model updated so can be stored
+                                storeModelDefinition(this.db, modelColumnFamily, dataModel)
+                                versionUpdateHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
                             }
                             is NewIndicesOnExistingProperties -> {
                                 fillIndex(migrationStatus.indicesToIndex, tableColumnFamilies)
                                 storeModelDefinition(this.db, modelColumnFamily, dataModel)
+                                versionUpdateHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
                             }
                             is NeedsMigration -> {
                                 val succeeded = migrationHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
@@ -175,6 +184,8 @@ class RocksDBDataStore(
 
                                 // Successful so store new model definition
                                 storeModelDefinition(this.db, modelColumnFamily, dataModel)
+
+                                versionUpdateHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
                             }
                         }
                     }

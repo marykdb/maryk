@@ -7,6 +7,7 @@ sealed class Option(
     index: UInt,
     alternativeNames: Set<String>? = null
 ) : IndexedEnumImpl<Option>(index, alternativeNames) {
+    object V0: Option(0u)
     object V1: Option(1u)
     object V2: Option(2u, setOf("VERSION2"))
     object V3: Option(3u, setOf("VERSION3"))

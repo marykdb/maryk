@@ -12,7 +12,7 @@ import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.changes.change
 import maryk.core.query.pairs.with
 import maryk.lib.extensions.initByteArrayByHex
-import maryk.test.models.Option.V1
+import maryk.test.models.Option.V0
 import maryk.test.models.Option.V2
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
@@ -24,7 +24,7 @@ private val valuesAsStorablesWithVersion = arrayOf(
     "19" to arrayOf(HLC(1235uL) to 3u),
     "21" to arrayOf(HLC(1233uL) to null),
     "29" to arrayOf(HLC(1233uL) to LocalDateTime(2018, 7, 18, 0, 0), HLC(1235uL) to null),
-    "39" to arrayOf(HLC(1234uL) to V2, HLC(1235uL) to V1),
+    "39" to arrayOf(HLC(1234uL) to V2, HLC(1235uL) to V0),
     "4b" to arrayOf(HLC(1233uL) to 1, HLC(1235uL) to 2, HLC(1236uL) to 2),
     "4b0480004577" to arrayOf(HLC(1233uL) to LocalDate(2018, 9, 9)),
     "4b0480001104" to arrayOf(HLC(1235uL) to LocalDate(1981, 12, 5)),
@@ -125,7 +125,7 @@ class ReadStorageToChangesKtTest {
                             TestMarykModel { string::ref } with "hello universe",
                             TestMarykModel { int::ref } with 7,
                             TestMarykModel { uint::ref } with 3u,
-                            TestMarykModel { enum::ref } with V1
+                            TestMarykModel { enum::ref } with V0
                         ),
                         Delete(
                             TestMarykModel { dateTime::ref },

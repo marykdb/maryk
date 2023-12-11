@@ -1,7 +1,7 @@
 package maryk.core.properties.enum
 
 import maryk.test.models.MarykEnumEmbedded.E1
-import maryk.test.models.Option
+import maryk.test.models.Option.V0
 import maryk.test.models.Option.V1
 import maryk.test.models.Option.V2
 import maryk.test.models.Option.V3
@@ -20,8 +20,8 @@ class IndexedEnumDefinitionTest {
     @Test
     fun isCompatible() {
         assertTrue {
-            IndexedEnumDefinition("Test", { listOf(V1, V2, V3)}).compatibleWith(
-                IndexedEnumDefinition("Test", { listOf(V1, V2)})
+            IndexedEnumDefinition("Test", { listOf(V0, V1, V2, V3)}).compatibleWith(
+                IndexedEnumDefinition("Test", { listOf(V0, V1, V2)})
             )
         }
 

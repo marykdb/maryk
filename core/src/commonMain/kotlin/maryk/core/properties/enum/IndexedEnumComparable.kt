@@ -4,10 +4,6 @@ package maryk.core.properties.enum
 interface IndexedEnumComparable<in E> : Comparable<E>, IndexedEnum {
     companion object {
         internal operator fun invoke(index: UInt, name: String, alternativeNames: Set<String>? = null) = object : IndexedEnumImpl<IndexedEnumComparable<Any>>(index, alternativeNames) {
-            init {
-                require(index > 0u) { "Only indices of 1 and higher are allowed" }
-            }
-
             override val name = name
 
             override fun equals(other: Any?) = other is IndexedEnum && other.index == this.index

@@ -147,7 +147,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel>(
         final = true,
         unique = true,
         enum = Option,
-        minValue = Option.V1,
+        minValue = Option.V0,
         maxValue = Option.V3,
         default = Option.V1
     )

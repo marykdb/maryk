@@ -3,4 +3,4 @@ plugins {
 }
 
 group = "io.maryk"
-version = "0.3-SNAPSHOT"
+version = "0.3"

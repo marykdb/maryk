@@ -3,6 +3,7 @@ package maryk.datastore.rocksdb
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import maryk.core.clock.HLC
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
@@ -150,42 +151,44 @@ class RocksDBDataStore(
                 }
             }
 
-            for ((index, dataModel) in dataModelsById) {
-                columnFamilyHandlesByDataModelIndex[index]?.let { tableColumnFamilies ->
-                    tableColumnFamilies.model.let { modelColumnFamily ->
-                        when (val migrationStatus = checkModelIfMigrationIsNeeded(this.db, modelColumnFamily, dataModel, this.onlyCheckModelVersion)) {
-                            UpToDate -> Unit // Do nothing since no work is needed
-                            NewModel -> {
-                                // Model updated so can be stored
-                                storeModelDefinition(this.db, modelColumnFamily, dataModel)
-                                versionUpdateHandler?.invoke(this, null, dataModel)
-                            }
-                            is OnlySafeAdds -> {
-                                // Model updated so can be stored
-                                storeModelDefinition(this.db, modelColumnFamily, dataModel)
-                                versionUpdateHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
-                            }
-                            is NewIndicesOnExistingProperties -> {
-                                fillIndex(migrationStatus.indicesToIndex, tableColumnFamilies)
-                                storeModelDefinition(this.db, modelColumnFamily, dataModel)
-                                versionUpdateHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
-                            }
-                            is NeedsMigration -> {
-                                val succeeded = migrationHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
-                                    ?: throw MigrationException("Migration needed: No migration handler present. \n$migrationStatus")
-
-                                if (!succeeded) {
-                                    throw MigrationException("Migration could not be handled for ${dataModel.Meta.name} & ${(migrationStatus.storedDataModel as? StoredRootDataModelDefinition)?.Meta?.version}\n$migrationStatus")
+            runBlocking {
+                for ((index, dataModel) in dataModelsById) {
+                    columnFamilyHandlesByDataModelIndex[index]?.let { tableColumnFamilies ->
+                        tableColumnFamilies.model.let { modelColumnFamily ->
+                            when (val migrationStatus = checkModelIfMigrationIsNeeded(db, modelColumnFamily, dataModel, onlyCheckModelVersion)) {
+                                UpToDate -> Unit // Do nothing since no work is needed
+                                NewModel -> {
+                                    // Model updated so can be stored
+                                    storeModelDefinition(db, modelColumnFamily, dataModel)
+                                    versionUpdateHandler?.invoke(this@RocksDBDataStore, null, dataModel)
                                 }
-
-                                migrationStatus.indicesToIndex?.let {
-                                    fillIndex(it, tableColumnFamilies)
+                                is OnlySafeAdds -> {
+                                    // Model updated so can be stored
+                                    storeModelDefinition(db, modelColumnFamily, dataModel)
+                                    versionUpdateHandler?.invoke(this@RocksDBDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
                                 }
+                                is NewIndicesOnExistingProperties -> {
+                                    fillIndex(migrationStatus.indicesToIndex, tableColumnFamilies)
+                                    storeModelDefinition(db, modelColumnFamily, dataModel)
+                                    versionUpdateHandler?.invoke(this@RocksDBDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
+                                }
+                                is NeedsMigration -> {
+                                    val succeeded = migrationHandler?.invoke(this@RocksDBDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
+                                        ?: throw MigrationException("Migration needed: No migration handler present. \n$migrationStatus")
 
-                                // Successful so store new model definition
-                                storeModelDefinition(this.db, modelColumnFamily, dataModel)
+                                    if (!succeeded) {
+                                        throw MigrationException("Migration could not be handled for ${dataModel.Meta.name} & ${(migrationStatus.storedDataModel as? StoredRootDataModelDefinition)?.Meta?.version}\n$migrationStatus")
+                                    }
 
-                                versionUpdateHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
+                                    migrationStatus.indicesToIndex?.let {
+                                        fillIndex(it, tableColumnFamilies)
+                                    }
+
+                                    // Successful so store new model definition
+                                    storeModelDefinition(db, modelColumnFamily, dataModel)
+
+                                    versionUpdateHandler?.invoke(this@RocksDBDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
+                                }
                             }
                         }
                     }

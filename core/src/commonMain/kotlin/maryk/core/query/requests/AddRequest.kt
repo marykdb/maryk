@@ -7,6 +7,7 @@ import maryk.core.models.QueryModel
 import maryk.core.models.TypedValuesDataModel
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedValuesDefinition
 import maryk.core.properties.definitions.list
+import maryk.core.properties.types.Key
 import maryk.core.query.RequestContext
 import maryk.core.query.requests.RequestType.Add
 import maryk.core.query.responses.AddResponse
@@ -17,10 +18,15 @@ import maryk.core.values.Values
 fun <DM : IsRootDataModel> DM.add(vararg objectToAdd: Values<DM>) =
     AddRequest(this, objectToAdd.toList())
 
-/** A Request to add [objects] to [dataModel] */
+/** Use only for mock or predefined data. */
+fun <DM : IsRootDataModel> DM.add(vararg objectToAdd: Pair<Key<DM>, Values<DM>>) =
+    AddRequest(this, objectToAdd.map { it.second }, objectToAdd.map { it.first })
+
+/** A Request to add [objects] to [dataModel]. Use Keys only for predefined data */
 data class AddRequest<DM : IsRootDataModel> internal constructor(
     override val dataModel: DM,
-    val objects: List<Values<DM>>
+    val objects: List<Values<DM>>,
+    val keysForObjects: List<Key<DM>>? = null,
 ) : IsStoreRequest<DM, AddResponse<DM>>, IsTransportableRequest<AddResponse<DM>> {
     override val requestType = Add
     override val responseModel = AddResponse

@@ -28,8 +28,9 @@ internal suspend fun <DM : IsRootDataModel> processAddRequest(
     val dataStore = (dataStoreFetcher as IsStoreFetcher<DM>).invoke(addRequest.dataModel)
 
     if (addRequest.objects.isNotEmpty()) {
-        for (objectToAdd in addRequest.objects) {
-            val key = addRequest.dataModel.key(objectToAdd)
+        for ((index, objectToAdd) in addRequest.objects.withIndex()) {
+            val key = addRequest.keysForObjects?.getOrNull(index)
+                ?: addRequest.dataModel.key(objectToAdd)
 
             val status = processAdd(
                 dataStore,

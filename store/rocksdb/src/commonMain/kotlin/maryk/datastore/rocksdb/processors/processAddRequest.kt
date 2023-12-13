@@ -30,14 +30,17 @@ internal suspend fun <DM : IsRootDataModel> processAddRequest(
         val columnFamilies = dataStore.getColumnFamilies(dbIndex)
 
         Transaction(dataStore).use { transaction ->
-            for (objectToAdd in addRequest.objects) {
+            for ((index, objectToAdd) in addRequest.objects.withIndex()) {
+                val key = addRequest.keysForObjects?.getOrNull(index)
+                    ?: addRequest.dataModel.key(objectToAdd)
+
                 statuses += processAdd(
                     dataStore,
                     addRequest.dataModel,
                     transaction,
                     columnFamilies,
                     dbIndex,
-                    addRequest.dataModel.key(objectToAdd),
+                    key,
                     version,
                     objectToAdd,
                     updateSharedFlow

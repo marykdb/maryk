@@ -4,9 +4,9 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
+import maryk.core.models.key
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
-import maryk.core.models.key
 import maryk.core.query.RequestContext
 import maryk.core.query.changes.Change
 import maryk.core.query.pairs.with
@@ -20,7 +20,7 @@ import kotlin.test.Test
 import kotlin.test.expect
 
 class AddResponseTest {
-    private val key = SimpleMarykModel.key("T/sdrQBeRnYrRo1h7uhfQg")
+    private val key = SimpleMarykModel.key("T_sdrQBeRnYrRo1h7uhfQg")
 
     private val addResponse = AddResponse(
         SimpleMarykModel,
@@ -64,13 +64,13 @@ class AddResponseTest {
             dataModel: SimpleMarykModel
             statuses:
             - !ADD_SUCCESS
-              key: T/sdrQBeRnYrRo1h7uhfQg
+              key: T_sdrQBeRnYrRo1h7uhfQg
               version: 32352
               changes:
               - !Change
                 value: new
             - !ALREADY_EXISTS
-              key: T/sdrQBeRnYrRo1h7uhfQg
+              key: T_sdrQBeRnYrRo1h7uhfQg
             - !VALIDATION_FAIL
               exceptions:
               - !INVALID_VALUE

@@ -6,8 +6,8 @@ import maryk.core.query.filters.Exists
 import maryk.core.query.requests.getChanges
 import maryk.test.models.SimpleMarykModel
 
-private val key1 = SimpleMarykModel.key("WWurg6ysTsozoMei/SurOw")
-private val key2 = SimpleMarykModel.key("awfbjYrVQ+cdXblfQKV10A")
+private val key1 = SimpleMarykModel.key("WWurg6ysTsozoMei_SurOw")
+private val key2 = SimpleMarykModel.key("awfbjYrVQ-cdXblfQKV10A")
 
 val getUpdatesRequest = SimpleMarykModel.getChanges(
     key1,

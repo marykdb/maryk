@@ -13,7 +13,7 @@ import kotlin.test.assertEquals
 import kotlin.test.expect
 
 private val key1 = SimpleMarykModel.key("dR9gVdRcSPw2molM1AiOng")
-private val key2 = SimpleMarykModel.key("Vc4WgX/mQHYCSEoLtfLSUQ")
+private val key2 = SimpleMarykModel.key("Vc4WgX_mQHYCSEoLtfLSUQ")
 
 private val context = RequestContext(mapOf(
     SimpleMarykModel.Meta.name toUnitLambda { SimpleMarykModel }
@@ -39,7 +39,7 @@ class ObjectAsMapConversionTest {
         expect(
             """
             from: SimpleMarykModel
-            keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
+            keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX_mQHYCSEoLtfLSUQ]
             select:
             - value
             where: !Exists value

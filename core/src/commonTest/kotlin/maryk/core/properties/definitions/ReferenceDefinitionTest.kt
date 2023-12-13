@@ -102,7 +102,7 @@ internal class ReferenceDefinitionTest {
             final: true
             unique: true
             minValue: AAAAAAAAAA
-            maxValue: /////////w
+            maxValue: _________w
             default: AQEBAQEBAQ
             dataModel: TestMarykModel
 

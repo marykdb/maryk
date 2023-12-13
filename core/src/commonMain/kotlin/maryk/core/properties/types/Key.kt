@@ -9,7 +9,7 @@ class Key<out P : IsValuesDataModel>(bytes: ByteArray) : Bytes(bytes) {
     @OptIn(ExperimentalEncodingApi::class)
     constructor(base64: String) : this(
         try {
-            Base64.Mime.decode(base64)
+            Base64.UrlSafe.decode(base64)
         } catch (e: Throwable) {
             throw ParseException(base64)
         }

@@ -186,7 +186,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel>(
         final = true,
         unique = true,
         minValue = Bytes("AAAAAAA"),
-        maxValue = Bytes("f39/f38"),
+        maxValue = Bytes("f39_f38"),
         default = Bytes("AAECAwQ"),
         byteSize = 5
     )
@@ -196,7 +196,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel>(
         final = true,
         unique = true,
         minValue = Bytes("AA"),
-        maxValue = Bytes("f39/f39/fw"),
+        maxValue = Bytes("f39_f39_fw"),
         default = Bytes("AAECAw"),
         minSize = 1u,
         maxSize = 7u
@@ -207,7 +207,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel>(
         final = true,
         unique = true,
         minValue = Key("AA"),
-        maxValue = Key("f39/f39/fw"),
+        maxValue = Key("f39_f39_fw"),
         default = Key("AAECAQAAECAQAAECAQAAEA"),
         dataModel = { SimpleMarykModel }
     )

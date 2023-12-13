@@ -13,7 +13,7 @@ import kotlin.test.Test
 import kotlin.test.expect
 
 internal class ChangeUpdateTest {
-    private val key = SimpleMarykModel.key("0ruQCs38S2QaByYof+IJgA")
+    private val key = SimpleMarykModel.key("0ruQCs38S2QaByYof-IJgA")
 
     private val changeUpdate = ChangeUpdate(
         key = key,
@@ -45,7 +45,7 @@ internal class ChangeUpdateTest {
     fun convertToYAMLAndBack() {
         expect(
             """
-            key: 0ruQCs38S2QaByYof+IJgA
+            key: 0ruQCs38S2QaByYof-IJgA
             version: 1
             index: 5
             changes:

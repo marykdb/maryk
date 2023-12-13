@@ -69,7 +69,7 @@ class RequestsTest {
               objects:
               - key: MYc6LBYcT38nWxoE1ahNxA
                 changes: []
-              - key: lneV6ioyQL0vnbkLqwVw+A
+              - key: lneV6ioyQL0vnbkLqwVw-A
                 changes: []
             - !Delete
               from: SimpleMarykModel
@@ -77,11 +77,11 @@ class RequestsTest {
               hardDelete: true
             - !Get
               from: SimpleMarykModel
-              keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
+              keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX_mQHYCSEoLtfLSUQ]
               filterSoftDeleted: true
             - !GetChanges
               from: SimpleMarykModel
-              keys: [WWurg6ysTsozoMei/SurOw, awfbjYrVQ+cdXblfQKV10A]
+              keys: [WWurg6ysTsozoMei_SurOw, awfbjYrVQ-cdXblfQKV10A]
               filterSoftDeleted: true
               fromVersion: 0
               maxVersions: 1
@@ -100,7 +100,7 @@ class RequestsTest {
             - !Collect
               testName: !Get
                 from: SimpleMarykModel
-                keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
+                keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX_mQHYCSEoLtfLSUQ]
                 filterSoftDeleted: true
 
             """.trimIndent()

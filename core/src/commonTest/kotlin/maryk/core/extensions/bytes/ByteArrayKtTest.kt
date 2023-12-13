@@ -12,10 +12,10 @@ import kotlin.test.expect
 internal class ByteArrayKtTest {
     @OptIn(ExperimentalEncodingApi::class)
     private val bytesToTest = arrayOf(
-        Base64.Mime.decode("////////"),
-        Base64.Mime.decode("AAAAAAA"),
-        Base64.Mime.decode("iIiIiIiI"),
-        Base64.Mime.decode("iIiIiIiIAAAA//")
+        Base64.UrlSafe.decode("________"),
+        Base64.UrlSafe.decode("AAAAAAA"),
+        Base64.UrlSafe.decode("iIiIiIiI"),
+        Base64.UrlSafe.decode("iIiIiIiIAAAA__")
     )
 
     @Test

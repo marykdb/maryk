@@ -18,7 +18,7 @@ open class Bytes(val bytes: ByteArray) : Comparable<Bytes> {
     @OptIn(ExperimentalEncodingApi::class)
     constructor(base64: String) : this(
         try {
-            Base64.Mime.decode(base64)
+            Base64.UrlSafe.decode(base64)
         } catch (e: Throwable) {
             throw ParseException(base64)
         }
@@ -29,7 +29,7 @@ open class Bytes(val bytes: ByteArray) : Comparable<Bytes> {
     operator fun get(index: Int) = bytes[index]
 
     @OptIn(ExperimentalEncodingApi::class)
-    override fun toString() = Base64.Mime.encode(bytes).removeSuffix("==").removeSuffix("=")
+    override fun toString() = Base64.UrlSafe.encode(bytes).removeSuffix("==").removeSuffix("=")
 
     override infix fun compareTo(other: Bytes) = bytes compareTo other.bytes
 

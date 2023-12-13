@@ -15,7 +15,7 @@ internal class AdditionUpdateTest {
         value with "nice value"
     ) }
 
-    private val key = SimpleMarykModel.key("0ruQCs38S2QaByYof+IJgA")
+    private val key = SimpleMarykModel.key("0ruQCs38S2QaByYof-IJgA")
 
     private val additionUpdate = AdditionUpdate(
         key = key,
@@ -47,7 +47,7 @@ internal class AdditionUpdateTest {
     fun convertToYAMLAndBack() {
         expect(
             """
-            key: 0ruQCs38S2QaByYof+IJgA
+            key: 0ruQCs38S2QaByYof-IJgA
             version: 1
             firstVersion: 0
             insertionIndex: 5

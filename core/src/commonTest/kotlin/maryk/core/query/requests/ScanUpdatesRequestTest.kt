@@ -58,7 +58,7 @@ class ScanUpdatesRequestTest {
             includeStart: false
             fromVersion: 1234
             maxVersions: 10
-            orderedKeys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
+            orderedKeys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX_mQHYCSEoLtfLSUQ]
 
             """.trimIndent()
         ) {

@@ -426,7 +426,7 @@ class DataStoreScanUpdatesAndFlowTest(
                     IndexChange(listOf(
                         IndexUpdate(
                             index = Bytes("CyE"),
-                            indexKey = Bytes("wAf///////4IAAAARQAAAQ"),
+                            indexKey = Bytes("wAf_______4IAAAARQAAAQ"),
                             previousIndexKey = Bytes("wEZmZmZmZmQIAAAARQAAAQ")
                         )
                     ))
@@ -643,13 +643,13 @@ class DataStoreScanUpdatesAndFlowTest(
                     IndexChange(listOf(
                         IndexUpdate(
                             index = Bytes("BAILKQIKOQIKEQ"),
-                            indexKey = Bytes("f///sNzFfwABgAAAAAQCBwAAzGMAAAE"),
-                            previousIndexKey = Bytes("f///sNzFfwABf///+wQCBwAAzGMAAAE")
+                            indexKey = Bytes("f___sNzFfwABgAAAAAQCBwAAzGMAAAE"),
+                            previousIndexKey = Bytes("f___sNzFfwABf___-wQCBwAAzGMAAAE")
                         ),
                         IndexUpdate(
                             index = Bytes("ChE"),
                             indexKey = Bytes("gAAAAAQAAMxjAAAB"),
-                            previousIndexKey = Bytes("f///+wQAAMxjAAAB")
+                            previousIndexKey = Bytes("f___-wQAAMxjAAAB")
                         )
                     ))
                 ), changes)
@@ -816,13 +816,13 @@ class DataStoreScanUpdatesAndFlowTest(
                     IndexChange(listOf(
                         IndexUpdate(
                             index = Bytes("BAILKQIKOQIKEQ"),
-                            indexKey = Bytes("f///sNzFfwABf////QQCBwAAzGMAAAE"),
-                            previousIndexKey = Bytes("f///sNzFfwABf///+wQCBwAAzGMAAAE")
+                            indexKey = Bytes("f___sNzFfwABf____QQCBwAAzGMAAAE"),
+                            previousIndexKey = Bytes("f___sNzFfwABf___-wQCBwAAzGMAAAE")
                         ),
                         IndexUpdate(
                             index = Bytes("ChE"),
-                            indexKey = Bytes("f////QQAAMxjAAAB"),
-                            previousIndexKey = Bytes("f///+wQAAMxjAAAB")
+                            indexKey = Bytes("f____QQAAMxjAAAB"),
+                            previousIndexKey = Bytes("f___-wQAAMxjAAAB")
                         )
                     ))
                 ), changes)

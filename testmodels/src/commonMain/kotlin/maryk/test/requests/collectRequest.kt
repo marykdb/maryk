@@ -9,6 +9,6 @@ val collectRequest = CollectRequest(
     "testName",
     SimpleMarykModel.get(
         SimpleMarykModel.key("dR9gVdRcSPw2molM1AiOng"),
-        SimpleMarykModel.key("Vc4WgX/mQHYCSEoLtfLSUQ")
+        SimpleMarykModel.key("Vc4WgX_mQHYCSEoLtfLSUQ")
     )
 )

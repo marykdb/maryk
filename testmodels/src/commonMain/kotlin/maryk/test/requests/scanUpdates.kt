@@ -24,7 +24,7 @@ val scanUpdatesMaxRequest = SimpleMarykModel.run {
         select = graph { listOf(value) },
         orderedKeys = listOf(
             SimpleMarykModel.key("dR9gVdRcSPw2molM1AiOng"),
-            SimpleMarykModel.key("Vc4WgX/mQHYCSEoLtfLSUQ")
+            SimpleMarykModel.key("Vc4WgX_mQHYCSEoLtfLSUQ")
         )
     )
 }

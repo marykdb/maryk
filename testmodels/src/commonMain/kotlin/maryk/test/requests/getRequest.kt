@@ -9,7 +9,7 @@ import maryk.core.query.requests.get
 import maryk.test.models.SimpleMarykModel
 
 private val key1 = SimpleMarykModel.key("dR9gVdRcSPw2molM1AiOng")
-private val key2 = SimpleMarykModel.key("Vc4WgX/mQHYCSEoLtfLSUQ")
+private val key2 = SimpleMarykModel.key("Vc4WgX_mQHYCSEoLtfLSUQ")
 
 val getRequest = SimpleMarykModel.get(
     key1,

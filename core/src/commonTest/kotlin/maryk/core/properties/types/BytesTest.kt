@@ -8,7 +8,7 @@ import kotlin.test.expect
 
 internal class BytesTest {
     private val bytesToTest = arrayOf(
-        Bytes("////////"),
+        Bytes("________"),
         Bytes("AAAAAAA"),
         Bytes("iIiIiIiI")
     )
@@ -16,7 +16,7 @@ internal class BytesTest {
     @Test
     fun testCompare() {
         expect(0) {
-            Bytes("//") compareTo Bytes("//")
+            Bytes("__") compareTo Bytes("__")
         }
 
         expect(-4) {
@@ -26,7 +26,7 @@ internal class BytesTest {
 
     @Test
     fun hashcode() {
-        expect(30) { Bytes("//").hashCode() }
+        expect(30) { Bytes("__").hashCode() }
         expect(29791) { Bytes("AAAA").hashCode() }
     }
 

@@ -33,7 +33,7 @@ class GetChangesRequestTest {
         expect(
             """
             from: SimpleMarykModel
-            keys: [WWurg6ysTsozoMei/SurOw, awfbjYrVQ+cdXblfQKV10A]
+            keys: [WWurg6ysTsozoMei_SurOw, awfbjYrVQ-cdXblfQKV10A]
             filterSoftDeleted: true
             fromVersion: 0
             maxVersions: 1
@@ -46,7 +46,7 @@ class GetChangesRequestTest {
         expect(
             """
             from: SimpleMarykModel
-            keys: [WWurg6ysTsozoMei/SurOw, awfbjYrVQ+cdXblfQKV10A]
+            keys: [WWurg6ysTsozoMei_SurOw, awfbjYrVQ-cdXblfQKV10A]
             select:
             - value
             where: !Exists value

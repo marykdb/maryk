@@ -31,7 +31,7 @@ class CollectRequestTest {
             """
             testName: !Get
               from: SimpleMarykModel
-              keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
+              keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX_mQHYCSEoLtfLSUQ]
               filterSoftDeleted: true
 
             """.trimIndent()

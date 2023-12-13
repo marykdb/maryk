@@ -39,7 +39,7 @@ class ChangeRequestTest {
             objects:
             - key: MYc6LBYcT38nWxoE1ahNxA
               changes: []
-            - key: lneV6ioyQL0vnbkLqwVw+A
+            - key: lneV6ioyQL0vnbkLqwVw-A
               changes: []
 
             """.trimIndent()

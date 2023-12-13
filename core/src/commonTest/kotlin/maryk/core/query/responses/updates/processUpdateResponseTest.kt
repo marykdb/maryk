@@ -13,7 +13,7 @@ import kotlin.test.assertFailsWith
 
 internal class processUpdateResponseTest {
     val key1 = SimpleMarykModel.key("dR9gVdRcSPw2molM1AiOng")
-    val key2 = SimpleMarykModel.key("Vc4WgX/mQHYCSEoLtfLSUQ")
+    val key2 = SimpleMarykModel.key("Vc4WgX_mQHYCSEoLtfLSUQ")
 
     val initialItems = listOf(
         ValuesWithMetaData(
@@ -78,7 +78,7 @@ internal class processUpdateResponseTest {
     @Test
     fun testAddition() {
         val addition = AdditionUpdate(
-            key = SimpleMarykModel.key("0ruQCs38S2QaByYof+IJgA"),
+            key = SimpleMarykModel.key("0ruQCs38S2QaByYof-IJgA"),
             firstVersion = 3456uL,
             version = 4567uL,
             insertionIndex = 1,

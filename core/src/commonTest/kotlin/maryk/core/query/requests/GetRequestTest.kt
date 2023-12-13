@@ -74,7 +74,7 @@ class GetRequestTest {
         expect(
             """
             from: SimpleMarykModel
-            keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
+            keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX_mQHYCSEoLtfLSUQ]
             filterSoftDeleted: true
 
             """.trimIndent()
@@ -85,7 +85,7 @@ class GetRequestTest {
         expect(
             """
             from: SimpleMarykModel
-            keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
+            keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX_mQHYCSEoLtfLSUQ]
             select:
             - value
             where: !Exists value
@@ -105,7 +105,7 @@ class GetRequestTest {
     fun convertBasicDefinitionFromYAML() {
         val simpleYaml = """
         from: SimpleMarykModel
-        keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
+        keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX_mQHYCSEoLtfLSUQ]
         where:
         select:
         - value

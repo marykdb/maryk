@@ -59,7 +59,7 @@ open class ValueDataModelSerializer<DO: ValueDataObject, DM: IsValueDataModel<DO
 
     @OptIn(ExperimentalEncodingApi::class)
     override fun fromBase64(value: String): DO {
-        val b = Base64.Mime.decode(value)
+        val b = Base64.UrlSafe.decode(value)
         var index = 0
         return this.readFromBytes {
             b[index++]

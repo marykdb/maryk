@@ -166,11 +166,11 @@ class DataStoreScanChangesTest(
         // Mind that Log is sorted in reverse, so it goes back in time going forward
         scanResponse.changes[0].apply {
             assertEquals(keys[0], key)
-            assertEquals(Bytes("AAECf///pBP6hn/XAAE"), sortingKey)
+            assertEquals(Bytes("AAECf___pBP6hn_XAAE"), sortingKey)
         }
         scanResponse.changes[1].apply {
             assertEquals(keys[3], key)
-            assertEquals(Bytes("AAMCf///pBPjrX//AAM"), sortingKey)
+            assertEquals(Bytes("AAMCf___pBPjrX__AAM"), sortingKey)
         }
     }
 
@@ -184,11 +184,11 @@ class DataStoreScanChangesTest(
         // Mind that Log is sorted in reverse, so it goes back in time going forward
         scanResponse.changes[0].apply {
             assertEquals(keys[3], key)
-            assertEquals(Bytes("AAMCf///pBPjrX//AAM"), sortingKey)
+            assertEquals(Bytes("AAMCf___pBPjrX__AAM"), sortingKey)
         }
         scanResponse.changes[1].apply {
             assertEquals(keys[0], key)
-            assertEquals(Bytes("AAECf///pBP6hn/XAAE"), sortingKey)
+            assertEquals(Bytes("AAECf___pBP6hn_XAAE"), sortingKey)
         }
     }
 

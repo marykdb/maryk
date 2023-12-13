@@ -14,7 +14,7 @@ import kotlin.test.Test
 import kotlin.test.expect
 
 class UpdateResponseTest {
-    private val key = SimpleMarykModel.key("0ruQCs38S2QaByYof+IJgA")
+    private val key = SimpleMarykModel.key("0ruQCs38S2QaByYof-IJgA")
 
     private val updateResponse = UpdateResponse(
         dataModel = SimpleMarykModel,
@@ -44,7 +44,7 @@ class UpdateResponseTest {
             {
               "dataModel": "SimpleMarykModel",
               "update": ["Removal", {
-                "key": "0ruQCs38S2QaByYof+IJgA",
+                "key": "0ruQCs38S2QaByYof-IJgA",
                 "version": "1234",
                 "reason": "HardDelete"
               }]
@@ -61,7 +61,7 @@ class UpdateResponseTest {
             """
             dataModel: SimpleMarykModel
             update: !Removal
-              key: 0ruQCs38S2QaByYof+IJgA
+              key: 0ruQCs38S2QaByYof-IJgA
               version: 1234
               reason: HardDelete
 

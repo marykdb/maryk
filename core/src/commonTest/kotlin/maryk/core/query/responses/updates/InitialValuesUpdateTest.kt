@@ -12,7 +12,7 @@ import kotlin.test.Test
 import kotlin.test.expect
 
 internal class InitialValuesUpdateTest {
-    private val key = SimpleMarykModel.key("0ruQCs38S2QaByYof+IJgA")
+    private val key = SimpleMarykModel.key("0ruQCs38S2QaByYof-IJgA")
 
     private val initialValues = InitialValuesUpdate(
         version = 1uL,
@@ -52,7 +52,7 @@ internal class InitialValuesUpdateTest {
             """
             version: 1
             values:
-            - key: 0ruQCs38S2QaByYof+IJgA
+            - key: 0ruQCs38S2QaByYof-IJgA
               values:
                 value: test value 1
               firstVersion: 0

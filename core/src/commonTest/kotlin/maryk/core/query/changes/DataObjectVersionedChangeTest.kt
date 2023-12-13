@@ -67,7 +67,7 @@ class DataObjectVersionedChangeTest {
         expect(
             """
             key: AAACKwEAAg
-            sortingKey: BAIrAX/+
+            sortingKey: BAIrAX_-
             changes:
             - version: 219674127
               changes:

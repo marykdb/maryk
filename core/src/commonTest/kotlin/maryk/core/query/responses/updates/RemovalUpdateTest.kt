@@ -12,7 +12,7 @@ import kotlin.test.Test
 import kotlin.test.expect
 
 internal class RemovalUpdateTest {
-    private val key = SimpleMarykModel.key("0ruQCs38S2QaByYof+IJgA")
+    private val key = SimpleMarykModel.key("0ruQCs38S2QaByYof-IJgA")
 
     private val removalUpdate = RemovalUpdate(
         key = key,
@@ -41,7 +41,7 @@ internal class RemovalUpdateTest {
     fun convertToYAMLAndBack() {
         expect(
             """
-            key: 0ruQCs38S2QaByYof+IJgA
+            key: 0ruQCs38S2QaByYof-IJgA
             version: 1
             reason: NotInRange
 

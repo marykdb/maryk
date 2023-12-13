@@ -12,9 +12,9 @@ import kotlin.test.Test
 import kotlin.test.expect
 
 internal class OrderedKeysUpdateTest {
-    private val key1 = SimpleMarykModel.key("0ruQCs38S2QaByYof+IJgA")
+    private val key1 = SimpleMarykModel.key("0ruQCs38S2QaByYof-IJgA")
     private val key2 = SimpleMarykModel.key("dR9gVdRcSPw2molM1AiOng")
-    private val key3 = SimpleMarykModel.key("Vc4WgX/mQHYCSEoLtfLSUQ")
+    private val key3 = SimpleMarykModel.key("Vc4WgX_mQHYCSEoLtfLSUQ")
 
     private val orderedKeysUpdate = OrderedKeysUpdate(
         keys = listOf(key1, key2, key3),
@@ -43,7 +43,7 @@ internal class OrderedKeysUpdateTest {
     fun convertToYAMLAndBack() {
         expect(
             """
-            keys: [0ruQCs38S2QaByYof+IJgA, dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
+            keys: [0ruQCs38S2QaByYof-IJgA, dR9gVdRcSPw2molM1AiOng, Vc4WgX_mQHYCSEoLtfLSUQ]
             version: 1234
             sortingKeys: [AAE, AQI, AgME]
             

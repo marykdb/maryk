@@ -15,7 +15,7 @@ import kotlin.test.Test
 import kotlin.test.expect
 
 class DeleteResponseTest {
-    private val key = SimpleMarykModel.key("+1xO4zD4R5sIMcS9pXTZEA")
+    private val key = SimpleMarykModel.key("-1xO4zD4R5sIMcS9pXTZEA")
 
     private val deleteResponse = DeleteResponse(
         SimpleMarykModel,
@@ -50,7 +50,7 @@ class DeleteResponseTest {
             - !DELETE_SUCCESS
               version: 32352
             - !DOES_NOT_EXIST
-              key: +1xO4zD4R5sIMcS9pXTZEA
+              key: -1xO4zD4R5sIMcS9pXTZEA
             - !AUTH_FAIL
             - !SERVER_FAIL
               reason: Something went wrong

@@ -12,6 +12,7 @@ import maryk.core.values.Values
 import maryk.datastore.shared.IsDataStore
 import maryk.test.models.Log
 import maryk.test.models.Severity.ERROR
+import maryk.test.models.SimpleMarykModel
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import kotlin.test.expect
@@ -21,6 +22,7 @@ class DataStoreAddTest(
 ) : IsDataStoreTest {
     override val allTests = mapOf(
         "executeAddAndSimpleGetRequest" to ::executeAddAndSimpleGetRequest,
+        "executeAddWithKeyAndSimpleGetRequest" to ::executeAddWithKeyAndSimpleGetRequest,
         "notAddSameObjectTwice" to ::notAddSameObjectTwice
     )
 
@@ -38,6 +40,34 @@ class DataStoreAddTest(
             Log.delete(*keys.toTypedArray(), hardDelete = true)
         )
         keys.clear()
+    }
+
+    private suspend fun executeAddWithKeyAndSimpleGetRequest() {
+        val values = SimpleMarykModel.create(SimpleMarykModel.value with "haha101")
+        val key = SimpleMarykModel.key(values)
+
+        val addResponse = dataStore.execute(
+            SimpleMarykModel.add(key to values)
+        )
+
+        expect(SimpleMarykModel) { addResponse.dataModel }
+        expect(1) { addResponse.statuses.count() }
+
+        for (it in addResponse.statuses) {
+            println(it)
+            val response = assertIs<AddSuccess<Log>>(it)
+            assertRecent(response.version, 1000uL)
+            assertTrue { response.changes.isEmpty() }
+            expect(16) { assertIs<Key<SimpleMarykModel>>(response.key).size }
+        }
+
+        val getResponse = dataStore.execute(
+            SimpleMarykModel.get(key)
+        )
+
+        expect(1) { getResponse.values.size }
+
+        dataStore.execute(SimpleMarykModel.delete(key))
     }
 
     private suspend fun executeAddAndSimpleGetRequest() {

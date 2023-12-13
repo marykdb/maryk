@@ -3,9 +3,9 @@ package maryk.core.processors.datastore.scanRange
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 import maryk.core.extensions.bytes.MAX_BYTE
-import maryk.core.properties.definitions.index.Multiple
 import maryk.core.models.key
-import maryk.core.properties.types.TypedValue
+import maryk.core.properties.definitions.index.Multiple
+import maryk.core.properties.types.invoke
 import maryk.core.query.filters.And
 import maryk.core.query.filters.Equals
 import maryk.core.query.filters.GreaterThan
@@ -55,7 +55,7 @@ class IndexableScanRangesTest {
         time = LocalTime(12, 11, 10),
         booleanForKey = true,
         dateForKey = LocalDate(2019, 3, 20),
-        multiForKey = TypedValue(S1, "test"),
+        multiForKey = S1( "test"),
         enumEmbedded = E1
     )
     private val earlierKey = CompleteMarykModel.key(earlierDO)
@@ -69,7 +69,7 @@ class IndexableScanRangesTest {
         time = LocalTime(11, 10, 9),
         booleanForKey = true,
         dateForKey = LocalDate(2019, 3, 3),
-        multiForKey = TypedValue(S1, "test"),
+        multiForKey = S1( "test"),
         enumEmbedded = E1
     )
     private val matchKey = CompleteMarykModel.key(matchDO)
@@ -83,7 +83,7 @@ class IndexableScanRangesTest {
         time = LocalTime(9, 8, 7),
         booleanForKey = true,
         dateForKey = LocalDate(2019, 3, 1),
-        multiForKey = TypedValue(S1, "test"),
+        multiForKey = S1( "test"),
         enumEmbedded = E1
     )
     private val laterKey = CompleteMarykModel.key(laterDO)

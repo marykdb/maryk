@@ -1,10 +1,11 @@
 package maryk.core.properties.enum
 
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.models.IsObjectDataModel
-import maryk.core.properties.IsPropertyContext
 import maryk.core.models.SimpleObjectModel
+import maryk.core.models.serializers.ObjectDataModelSerializer
+import maryk.core.models.values
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.IsUsableInMultiType
 import maryk.core.properties.definitions.PropertyDefinitionType
@@ -17,7 +18,6 @@ import maryk.core.properties.definitions.string
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
-import maryk.core.models.values
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.RequestContext
 import maryk.core.values.MutableValueItems

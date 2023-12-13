@@ -6,9 +6,9 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import maryk.MarykTestProtos
+import maryk.core.properties.types.invoke
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
-import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.WriteCache
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
@@ -85,7 +85,7 @@ class Proto3ConversionTest {
         val completeObject = CompleteMarykModel(
             booleanForKey = true,
             dateForKey = LocalDate(2018, 7, 25),
-            multiForKey = TypedValue(S1, "string"),
+            multiForKey = S1("string"),
             enumEmbedded = E1,
             mapWithEnum = mapOf(
                 E2 to "mapped"

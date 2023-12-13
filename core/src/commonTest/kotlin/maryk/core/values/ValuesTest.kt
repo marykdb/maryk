@@ -3,9 +3,9 @@ package maryk.core.values
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import maryk.core.models.graph
+import maryk.core.properties.types.invoke
 import maryk.core.properties.graph.graph
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.types.TypedValue
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.Option.V2
 import maryk.test.models.SimpleMarykTypeEnum.S1
@@ -207,7 +207,7 @@ class ValuesTest {
                     value = "another test"
                 )
             ),
-            multi = TypedValue(S1, "s1value"),
+            multi = S1("s1value"),
             listOfString = listOf(
                 "v1", "v2", "v3"
             )

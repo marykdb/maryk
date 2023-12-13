@@ -9,11 +9,16 @@ interface TypedValue<out E : TypeEnum<T>, out T : Any> {
 }
 
 /** Constructs an immutable typed value */
-@Suppress("FunctionName")
 fun <E : TypeEnum<T>, T : Any> TypedValue(
     type: E,
     value: T
 ) = TypedValueImpl(type, value)
+
+
+/**
+ * Shortcut to create a typed value
+ */
+operator fun <T:TypeEnum<S>, S: Any> T.invoke(value: S) = TypedValue(this, value)
 
 /** An immutable typed value */
 data class TypedValueImpl<out E : TypeEnum<T>, out T : Any> internal constructor(

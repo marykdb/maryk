@@ -1,6 +1,7 @@
 package maryk.datastore.rocksdb
 
 import kotlinx.atomicfu.atomic
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -109,6 +110,8 @@ class RocksDBDataStore(
         setPrefixSameAsStart(true)
     }
 
+    private val scheduledVersionUpdateHandlers = mutableListOf<suspend () -> Unit>()
+
     init {
         val descriptors: MutableList<ColumnFamilyDescriptor> = mutableListOf()
         descriptors.add(ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY))
@@ -152,47 +155,53 @@ class RocksDBDataStore(
             }
 
             runBlocking {
-                for ((index, dataModel) in dataModelsById) {
-                    columnFamilyHandlesByDataModelIndex[index]?.let { tableColumnFamilies ->
-                        tableColumnFamilies.model.let { modelColumnFamily ->
-                            when (val migrationStatus = checkModelIfMigrationIsNeeded(db, modelColumnFamily, dataModel, onlyCheckModelVersion)) {
-                                UpToDate -> Unit // Do nothing since no work is needed
-                                NewModel -> {
-                                    // Model updated so can be stored
-                                    storeModelDefinition(db, modelColumnFamily, dataModel)
-                                    versionUpdateHandler?.invoke(this@RocksDBDataStore, null, dataModel)
-                                }
-                                is OnlySafeAdds -> {
-                                    // Model updated so can be stored
-                                    storeModelDefinition(db, modelColumnFamily, dataModel)
-                                    versionUpdateHandler?.invoke(this@RocksDBDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
-                                }
-                                is NewIndicesOnExistingProperties -> {
-                                    fillIndex(migrationStatus.indicesToIndex, tableColumnFamilies)
-                                    storeModelDefinition(db, modelColumnFamily, dataModel)
-                                    versionUpdateHandler?.invoke(this@RocksDBDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
-                                }
-                                is NeedsMigration -> {
-                                    val succeeded = migrationHandler?.invoke(this@RocksDBDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
-                                        ?: throw MigrationException("Migration needed: No migration handler present. \n$migrationStatus")
-
-                                    if (!succeeded) {
-                                        throw MigrationException("Migration could not be handled for ${dataModel.Meta.name} & ${(migrationStatus.storedDataModel as? StoredRootDataModelDefinition)?.Meta?.version}\n$migrationStatus")
+                launch(Dispatchers.IO) {
+                    for ((index, dataModel) in dataModelsById) {
+                        columnFamilyHandlesByDataModelIndex[index]?.let { tableColumnFamilies ->
+                            tableColumnFamilies.model.let { modelColumnFamily ->
+                                when (val migrationStatus = checkModelIfMigrationIsNeeded(db, modelColumnFamily, dataModel, onlyCheckModelVersion)) {
+                                    UpToDate -> Unit // Do nothing since no work is needed
+                                    NewModel -> {
+                                        // Nothing to do. Only store new model definition later
+                                        storeModelDefinition(db, modelColumnFamily, dataModel)
+                                        scheduledVersionUpdateHandlers.add {
+                                            versionUpdateHandler?.invoke(this@RocksDBDataStore, null, dataModel)
+                                        }
                                     }
-
-                                    migrationStatus.indicesToIndex?.let {
-                                        fillIndex(it, tableColumnFamilies)
+                                    is OnlySafeAdds -> {
+                                        storeModelDefinition(db, modelColumnFamily, dataModel)
+                                        scheduledVersionUpdateHandlers.add {
+                                            versionUpdateHandler?.invoke(this@RocksDBDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
+                                        }
                                     }
+                                    is NewIndicesOnExistingProperties -> {
+                                        fillIndex(migrationStatus.indicesToIndex, tableColumnFamilies)
+                                        storeModelDefinition(db, modelColumnFamily, dataModel)
+                                        scheduledVersionUpdateHandlers.add {
+                                            versionUpdateHandler?.invoke(this@RocksDBDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
+                                        }
+                                    }
+                                    is NeedsMigration -> {
+                                        val succeeded = migrationHandler?.invoke(this@RocksDBDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
+                                            ?: throw MigrationException("Migration needed: No migration handler present. \n$migrationStatus")
 
-                                    // Successful so store new model definition
-                                    storeModelDefinition(db, modelColumnFamily, dataModel)
+                                        if (!succeeded) {
+                                            throw MigrationException("Migration could not be handled for ${dataModel.Meta.name} & ${(migrationStatus.storedDataModel as? StoredRootDataModelDefinition)?.Meta?.version}\n$migrationStatus")
+                                        }
 
-                                    versionUpdateHandler?.invoke(this@RocksDBDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
+                                        migrationStatus.indicesToIndex?.let {
+                                            fillIndex(it, tableColumnFamilies)
+                                        }
+                                        storeModelDefinition(db, modelColumnFamily, dataModel)
+                                        scheduledVersionUpdateHandlers.add {
+                                            versionUpdateHandler?.invoke(this@RocksDBDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
-                }
+                }.join()
             }
         } catch (e: Throwable) {
             this.close()
@@ -202,6 +211,12 @@ class RocksDBDataStore(
 
     init {
         startFlows()
+
+        runBlocking {
+            scheduledVersionUpdateHandlers.forEach {
+                it()
+            }
+        }
     }
 
     override fun startFlows() {

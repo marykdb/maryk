@@ -3,7 +3,7 @@ package maryk.core.processors.datastore
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
-import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.invoke
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.Option.V1
 import maryk.test.models.SimpleMarykTypeEnum.S1
@@ -33,7 +33,7 @@ val testMaryk = TestMarykModel(
             value = "another test"
         )
     ),
-    multi = TypedValue(S1, "test"),
+    multi = S1("test"),
     setOfString = setOf(
         "abc", "def", "ghi"
     )
@@ -57,7 +57,7 @@ val valuesAsStorables = arrayOf(
     "6609" to "test",
     "6616" to Unit,
     "661609" to "another test",
-    "69" to TypedValue(S1, "test"),
+    "69" to S1( "test"),
     "7a" to 3,
     "7a00000000" to "v1",
     "7a00000001" to "v2",

@@ -7,6 +7,7 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.toUnitLambda
 import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
 import maryk.core.properties.enum.MultiTypeEnumDefinition
+import maryk.core.properties.types.invoke
 import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.OutOfRangeException
@@ -43,7 +44,7 @@ internal class MultiTypeDefinitionTest {
         final = true,
         required = false,
         typeEnum = MarykTypeEnum,
-        default = TypedValue(T1, "test")
+        default = T1( "test"),
     )
 
     private val defWrapper = MultiTypeDefinitionWrapper<MarykTypeEnum<out Any>, Any, Any, DefinitionsConversionContext, Any>(
@@ -51,12 +52,12 @@ internal class MultiTypeDefinitionTest {
     )
 
     private val multisToTest = arrayOf<TypedValue<MarykTypeEnum<out Any>, Any>>(
-        TypedValue(T1, "#test"),
-        TypedValue(T2, 400),
-        TypedValue(T4, listOf("#a", "#b", "#c")),
-        TypedValue(T5, setOf("#a", "#b", "#c")),
-        TypedValue(T6, mapOf(1u to "#a", 2u to "#b", 3u to "#c")),
-        TypedValue(T7, TypedValue(S1, "#test"))
+        T1( "#test"),
+        T2( 400),
+        T4(listOf("#a", "#b", "#c")),
+        T5(setOf("#a", "#b", "#c")),
+        T6(mapOf(1u to "#a", 2u to "#b", 3u to "#c")),
+        T7(S1("#test"))
     )
 
     private val context = RequestContext(
@@ -76,36 +77,36 @@ internal class MultiTypeDefinitionTest {
 
     @Test
     fun validateContent() {
-        def.validateWithRef(newValue = TypedValue(T1, "#test"))
-        def.validateWithRef(newValue = TypedValue(T2, 400))
-        def.validateWithRef(newValue = TypedValue(T4, listOf("#a", "#b", "#c")))
-        def.validateWithRef(newValue = TypedValue(T5, setOf("#a", "#b", "#c")))
-        def.validateWithRef(newValue = TypedValue(T6, mapOf(1 to "#a")))
+        def.validateWithRef(newValue = T1("#test"))
+        def.validateWithRef(newValue = T2(400))
+        def.validateWithRef(newValue = T4(listOf("#a", "#b", "#c")))
+        def.validateWithRef(newValue = T5(setOf("#a", "#b", "#c")))
+        def.validateWithRef(newValue = T6(mapOf(1 to "#a")))
 
         assertFailsWith<OutOfRangeException> {
-            def.validateWithRef(newValue = TypedValue(T2, 3000))
+            def.validateWithRef(newValue = T2(3000))
         }
         assertFailsWith<InvalidValueException> {
-            def.validateWithRef(newValue = TypedValue(T1, "&WRONG"))
+            def.validateWithRef(newValue = T1("&WRONG"))
         }
         assertFailsWith<ValidationUmbrellaException> {
-            def.validateWithRef(newValue = TypedValue(T4, listOf("&WRONG")))
+            def.validateWithRef(newValue = T4(listOf("&WRONG")))
         }
         assertFailsWith<ValidationUmbrellaException> {
-            def.validateWithRef(newValue = TypedValue(T5, setOf("&WRONG")))
+            def.validateWithRef(newValue = T5(setOf("&WRONG")))
         }
         assertFailsWith<ValidationUmbrellaException> {
-            def.validateWithRef(newValue = TypedValue(T6, mapOf(1 to "&WRONG")))
+            def.validateWithRef(newValue = T6(mapOf(1 to "&WRONG")))
         }
         assertFailsWith<InvalidValueException> {
-            def.validateWithRef(newValue = TypedValue(T7, TypedValue(S1, "&WRONG")))
+            def.validateWithRef(newValue = T7(TypedValue(S1, "&WRONG")))
         }
 
         expect("multi.*T2") {
             assertFailsWith<AlreadySetException> {
                 def.validateWithRef(
-                    previousValue = TypedValue(T1, "WRONG"),
-                    newValue = TypedValue(T2, 400),
+                    previousValue = T1("WRONG"),
+                    newValue = T2(400),
                     refGetter = { defWrapper.ref() }
                 )
             }.reference.toString()

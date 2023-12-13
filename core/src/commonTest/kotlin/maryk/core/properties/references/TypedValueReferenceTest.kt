@@ -1,7 +1,7 @@
 package maryk.core.properties.references
 
 import maryk.core.exceptions.UnexpectedValueException
-import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.invoke
 import maryk.core.protobuf.WriteCache
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
@@ -24,10 +24,7 @@ class TypedValueReferenceTest {
 
     @Test
     fun getValueFromMap() {
-        val typedValue = TypedValue(
-            T1,
-            "string"
-        )
+        val typedValue = T1("string")
 
         expect("string") { this.typedValueReference.resolveFromAny(typedValue) }
 

@@ -8,8 +8,8 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.exceptions.RequestException
 import maryk.core.extensions.toUnitLambda
+import maryk.core.properties.types.invoke
 import maryk.core.properties.references.ValueWithFlexBytesPropertyReference
-import maryk.core.properties.types.TypedValue
 import maryk.core.query.RequestContext
 import maryk.core.query.pairs.with
 import maryk.core.values.div
@@ -73,7 +73,7 @@ class ChangeTest {
             uint = 3u,
             double = 2.3,
             dateTime = LocalDateTime(2018, 7, 18, 0, 0),
-            multi = TypedValue(S1, "world"),
+            multi = S1( "world"),
             list = listOf(3, 4, 5),
             set = setOf(LocalDate(2020, 2, 20), LocalDate(2019, 12, 11)),
             map = mapOf(

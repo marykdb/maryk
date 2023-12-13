@@ -2,8 +2,9 @@ package maryk.core.processors.datastore
 
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
-import maryk.core.properties.types.TypedValue
 import maryk.core.models.values
+import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.invoke
 import maryk.core.values.EmptyValueItems
 import maryk.lib.extensions.initByteArrayByHex
 import maryk.test.models.ComplexModel
@@ -125,7 +126,7 @@ class ReadStorageToValuesKtTest {
     fun convertStorageToValuesWithWrongMultis() {
         // This is incorrect data but still the processor should skip the complex type ids
         val valuesUnset = arrayOf(
-            "69" to TypedValue(S1, "test"),
+            "69" to S1("test"),
             "691d" to Unit,
             "691d09" to "m3"
         )

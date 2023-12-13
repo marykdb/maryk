@@ -7,6 +7,7 @@ import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
+import maryk.core.properties.types.invoke
 import maryk.core.properties.types.TypedValue
 import maryk.datastore.rocksdb.processors.COMPLEX_TYPE_INDICATOR
 import maryk.datastore.rocksdb.processors.DELETED_INDICATOR
@@ -43,7 +44,7 @@ internal fun readValue(
                 val typeEnum = typeDefinition.typeEnum.resolve(type) ?:
                     throw StorageException("Unknown type $type for $typeDefinition")
                 val value = valueDefinition.readStorageBytes(valueBytesLeft(), reader)
-                TypedValue(typeEnum, value)
+                typeEnum.invoke(value)
             }
             COMPLEX_TYPE_INDICATOR -> {
                 val typeDefinition =

@@ -61,7 +61,7 @@ val category by multiType(
     required = false,
     final = true,
     typeEnum = MultiType,
-    default = TypedValue(MultiType.S1, "unknown")
+    default = MultiType.S1("unknown")
 )
 ```
 
@@ -71,7 +71,7 @@ val def = MultiTypeDefinition(
     required = false,
     final = true,
     typeEnum = MultiType,
-    default = TypedValue(MultiType.S1, "a value")
+    default = MultiType.S1("a value")
 )
 ```
 

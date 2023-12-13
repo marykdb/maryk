@@ -1,11 +1,12 @@
 package maryk.core.properties.references
 
 import maryk.core.models.RootDataModel
+import maryk.core.models.key
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.multiType
 import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
-import maryk.core.models.key
 import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.invoke
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
@@ -45,7 +46,7 @@ internal class TypeReferenceTest {
     @Test
     fun testKey() {
         val obj = MarykModel.create(
-            MarykModel.multi with TypedValue(T2, 23)
+            MarykModel.multi with T2(23)
         )
 
         val key = MarykModel.key(obj)

@@ -679,9 +679,7 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
 
         // Process indices
         dataModel.Meta.indices?.let { indices ->
-            if (indexUpdates == null) {
-                indexUpdates = mutableListOf()
-            }
+            indexUpdates = mutableListOf()
 
             val storeGetter = StoreValuesGetter(key.bytes, dataStore.db, columnFamilies, dataStore.defaultReadOptions)
             val transactionGetter = DBAccessorStoreValuesGetter(columnFamilies, dataStore.defaultReadOptions)

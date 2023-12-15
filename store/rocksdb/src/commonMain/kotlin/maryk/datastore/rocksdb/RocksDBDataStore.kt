@@ -162,23 +162,22 @@ class RocksDBDataStore(
                                 when (val migrationStatus = checkModelIfMigrationIsNeeded(db, modelColumnFamily, dataModel, onlyCheckModelVersion)) {
                                     UpToDate -> Unit // Do nothing since no work is needed
                                     NewModel -> {
-                                        // Nothing to do. Only store new model definition later
-                                        storeModelDefinition(db, modelColumnFamily, dataModel)
                                         scheduledVersionUpdateHandlers.add {
                                             versionUpdateHandler?.invoke(this@RocksDBDataStore, null, dataModel)
+                                            storeModelDefinition(db, modelColumnFamily, dataModel)
                                         }
                                     }
                                     is OnlySafeAdds -> {
-                                        storeModelDefinition(db, modelColumnFamily, dataModel)
                                         scheduledVersionUpdateHandlers.add {
                                             versionUpdateHandler?.invoke(this@RocksDBDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
+                                            storeModelDefinition(db, modelColumnFamily, dataModel)
                                         }
                                     }
                                     is NewIndicesOnExistingProperties -> {
                                         fillIndex(migrationStatus.indicesToIndex, tableColumnFamilies)
-                                        storeModelDefinition(db, modelColumnFamily, dataModel)
                                         scheduledVersionUpdateHandlers.add {
                                             versionUpdateHandler?.invoke(this@RocksDBDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
+                                            storeModelDefinition(db, modelColumnFamily, dataModel)
                                         }
                                     }
                                     is NeedsMigration -> {
@@ -192,9 +191,9 @@ class RocksDBDataStore(
                                         migrationStatus.indicesToIndex?.let {
                                             fillIndex(it, tableColumnFamilies)
                                         }
-                                        storeModelDefinition(db, modelColumnFamily, dataModel)
                                         scheduledVersionUpdateHandlers.add {
                                             versionUpdateHandler?.invoke(this@RocksDBDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
+                                            storeModelDefinition(db, modelColumnFamily, dataModel)
                                         }
                                     }
                                 }

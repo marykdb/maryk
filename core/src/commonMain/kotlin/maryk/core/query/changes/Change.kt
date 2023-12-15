@@ -16,7 +16,7 @@ data class Change internal constructor(
     override val changeType = ChangeType.Change
 
     @Suppress("UNCHECKED_CAST")
-    constructor(vararg referenceValuePair: ReferenceValuePair<*>) : this(referenceValuePair.toList() as List<ReferenceValuePair<Any>>)
+    constructor(vararg referenceValuePair: ReferenceValuePair<*>?) : this(referenceValuePair.filterNotNull() as List<ReferenceValuePair<Any>>)
 
     override fun filterWithSelect(select: RootPropRefGraph<out IsRootDataModel>): Change? {
         val filtered = referenceValuePairs.filter {

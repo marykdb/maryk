@@ -54,7 +54,6 @@ class DataStoreAddTest(
         expect(1) { addResponse.statuses.count() }
 
         for (it in addResponse.statuses) {
-            println(it)
             val response = assertIs<AddSuccess<Log>>(it)
             assertRecent(response.version, 1000uL)
             assertTrue { response.changes.isEmpty() }

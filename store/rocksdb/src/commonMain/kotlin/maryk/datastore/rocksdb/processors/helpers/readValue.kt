@@ -11,7 +11,6 @@ import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.enum.IsIndexedEnumDefinition
 import maryk.core.properties.enum.MultiTypeEnumDefinition
 import maryk.core.properties.enum.TypeEnum
-import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.invoke
 import maryk.datastore.rocksdb.processors.COMPLEX_TYPE_INDICATOR
 import maryk.datastore.rocksdb.processors.DELETED_INDICATOR
@@ -56,12 +55,11 @@ internal fun readValue(
 
                 // Change output a bit on what is expected by given definition
                 // The multi type def is useful for deletes while the enum def is used for TypeReferences and equals checks
-                val enum = when (definition) {
+                when (definition) {
                     is IsMultiTypeDefinition<*, *, *> -> resolveType(TypeValue.castDefinition(definition).typeEnum)
                     is MultiTypeEnumDefinition<*> -> resolveType(definition)
                     else -> throw StorageException("Unknown type $type for $definition")
                 }
-                TypedValue(enum, Unit)
             }
             EMBED_INDICATOR -> {
                 // Todo: skip deleted?

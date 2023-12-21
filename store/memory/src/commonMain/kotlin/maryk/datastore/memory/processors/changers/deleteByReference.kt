@@ -2,9 +2,12 @@ package maryk.datastore.memory.processors.changers
 
 import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
+import maryk.core.exceptions.StorageException
+import maryk.core.models.values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.wrapper.IsMapDefinitionWrapper
+import maryk.core.properties.enum.MultiTypeEnum
 import maryk.core.properties.references.EmbeddedValuesPropertyRef
 import maryk.core.properties.references.IsMapReference
 import maryk.core.properties.references.IsPropertyReference
@@ -12,11 +15,12 @@ import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.MapValueReference
+import maryk.core.properties.references.MultiTypePropertyReference
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
 import maryk.core.properties.references.TypedPropertyReference
 import maryk.core.properties.references.TypedValueReference
-import maryk.core.models.values
+import maryk.core.properties.types.TypedValue
 import maryk.core.values.EmptyValueItems
 import maryk.datastore.memory.records.DataRecordNode
 import maryk.datastore.memory.records.DataRecordValue
@@ -92,7 +96,7 @@ internal fun <T : Any> deleteByReference(
                         listDefinition.validateSize(newCount) { listReference }
                     }
                     referenceOfParent = listReference.toStorageByteArray()
-                    // Map values can be set to null to be deleted.
+                    // List values can be set to null to be deleted.
                     shouldHandlePrevValue = false
                     it
                 }
@@ -107,9 +111,16 @@ internal fun <T : Any> deleteByReference(
                     ) { newCount ->
                         setReference.propertyDefinition.definition.validateSize(newCount) { setReference }
                     }
-                    // Map values can be set to null to be deleted.
+                    // Set values can be set to null to be deleted.
                     shouldHandlePrevValue = false
                     it
+                }
+                is MultiTypePropertyReference<*, *, *, *, *> -> {
+                    if (it is TypedValue<*, *>) {
+                        it
+                    } else if (it is MultiTypeEnum<*>) {
+                        TypedValue(it, Unit) as T
+                    } else throw StorageException("Unknown type $it for MultiTypePropertyReference")
                 }
                 else -> it
             }

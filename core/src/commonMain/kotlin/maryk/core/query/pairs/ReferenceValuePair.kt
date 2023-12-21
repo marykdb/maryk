@@ -99,10 +99,10 @@ infix fun <E : TypeEnum<T>, T: Any, D : IsMultiTypeDefinition<E, T, *>> IsProper
 @Suppress("UNCHECKED_CAST")
 infix fun <E : TypeEnum<T>, T: Any> TypeReference<E, T, *>.with(
     typedValue: E,
-): ReferenceValuePair<TypedValue<E, T>> =
+): ReferenceValuePair<E> =
     ReferenceValuePair(
-        this as IsPropertyReference<TypedValue<E, T>, IsChangeableValueDefinition<TypedValue<E, T>, IsPropertyContext>, *>,
-        TypedValue(typedValue, Unit) as TypedValue<E, T>
+        this as IsPropertyReference<E, IsChangeableValueDefinition<E, IsPropertyContext>, *>,
+        typedValue
     )
 
 /** Convenience infix method to create TypeReference [values] pairs */

@@ -169,6 +169,17 @@ private fun readQualifierOfType(
                         addToCache(partOffset) { _, _ ->
                             // Ignore reading and return
                         }
+                    is TypeEnum<Any> -> readTypedValue(
+                        qualifierReader = qualifierReader,
+                        qualifierLength = qualifierLength,
+                        offset = offset,
+                        readValueFromStorage = readValueFromStorage,
+                        valueDefinition = definition as IsMultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>,
+                        select = select,
+                        parentReference = reference,
+                        addToCache = addToCache,
+                        addValueToOutput = valueAdder,
+                    )
                     is TypedValue<TypeEnum<Any>, Any> -> readTypedValue(
                         qualifierReader = qualifierReader,
                         qualifierLength = qualifierLength,
@@ -467,7 +478,7 @@ private fun readTypedValue(
                     parentReference = parentReference,
                     addToCache = addToCache,
                     addValueToOutput = addValueToOutput,
-                    typeToCheck = (it as TypedValue<*, *>).type
+                    typeToCheck = it as? TypeEnum<*> ?: (it as TypedValue<*, *>).type
                 )
             }
 

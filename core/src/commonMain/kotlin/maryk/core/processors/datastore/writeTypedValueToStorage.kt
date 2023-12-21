@@ -38,10 +38,7 @@ fun <T : IsPropertyDefinition<*>> writeTypedValueToStorage(
             TypeValue as StorageTypeEnum<T>,
             qualifier,
             definition,
-            TypedValue(
-                typedValue.type,
-                Unit
-            )
+            typedValue.type,
         )
 
         // write sub value(s)

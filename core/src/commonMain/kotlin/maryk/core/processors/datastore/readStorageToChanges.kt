@@ -31,6 +31,7 @@ import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.wrapper.IsValueDefinitionWrapper
+import maryk.core.properties.enum.MultiTypeEnum
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.graph.IsPropRefGraph
 import maryk.core.properties.graph.RootPropRefGraph
@@ -272,7 +273,7 @@ private fun <DM : IsValuesDataModel> readQualifierOfType(
                     if (value == null) {
                         addChangeToOutput(version, ChangeType.DELETE, ref)
                     } else {
-                        if (value !is TypedValue<*, *>) {
+                        if (value !is TypedValue<*, *> && value !is MultiTypeEnum<*>) {
                             addChangeToOutput(version, CHANGE, ReferenceValuePair(ref, value))
                         } else { // Is a TypedValue with Unit as value
                             @Suppress("UNCHECKED_CAST")
@@ -428,7 +429,7 @@ private fun <DM : IsValuesDataModel> readQualifierOfType(
                         if (value == null) {
                             addChangeToOutput(version, ChangeType.DELETE, valueReference)
                         } else {
-                            if (value !is TypedValue<*, *>) {
+                            if (value !is TypedValue<*, *> && value !is MultiTypeEnum<*>) {
                                 addChangeToOutput(version, CHANGE, valueReference with value)
                             } else {
                                 @Suppress("UNCHECKED_CAST")
@@ -585,33 +586,30 @@ private fun readTypedValue(
     var qIndex1 = offset
     if (qualifierLength <= qIndex1) {
         readValueFromStorage(Value, reference) { version, value ->
-            if (value == null) {
-                addChangeToOutput(version, ChangeType.DELETE, reference as Any)
-            } else {
-                if (value is TypedValue<TypeEnum<Any>, Any>) {
-                    if (value.value == Unit) {
-                        @Suppress("UNCHECKED_CAST")
-                        addChangeToOutput(
-                            version, TYPE,
-                            ReferenceTypePair(
-                                reference as TypedPropertyReference<TypedValue<TypeEnum<Any>, Any>>,
-                                value.type
-                            )
+            when (value) {
+                null -> addChangeToOutput(version, ChangeType.DELETE, reference as Any)
+                is MultiTypeEnum<*> -> {
+                    @Suppress("UNCHECKED_CAST")
+                    addChangeToOutput(
+                        version, TYPE,
+                        ReferenceTypePair(
+                            reference as TypedPropertyReference<TypedValue<TypeEnum<Any>, Any>>,
+                            value
                         )
-                    } else {
-                        @Suppress("UNCHECKED_CAST")
-                        addChangeToOutput(
-                            version,
-                            CHANGE,
-                            ReferenceValuePair(
-                                reference as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>,
-                                value
-                            )
-                        )
-                    }
-                } else {
-                    throw TypeException("Unexpected stored value for TypedValue.")
+                    )
                 }
+                is TypedValue<TypeEnum<Any>, Any> -> {
+                    @Suppress("UNCHECKED_CAST")
+                    addChangeToOutput(
+                        version,
+                        CHANGE,
+                        ReferenceValuePair(
+                            reference as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>,
+                            value
+                        )
+                    )
+                }
+                else -> throw TypeException("Unexpected stored value for TypedValue.")
             }
         }
     } else {

@@ -4,8 +4,8 @@ import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
-import maryk.core.properties.IsPropertyContext
 import maryk.core.models.IsRootDataModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -15,7 +15,6 @@ import maryk.core.properties.definitions.index.toReferenceStorageByteArray
 import maryk.core.properties.enum.IsIndexedEnumDefinition
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.exceptions.RequiredException
-import maryk.core.properties.references.ReferenceType.TYPE
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.ProtoBuf
@@ -27,7 +26,7 @@ import maryk.core.values.IsValuesGetter
 /** Reference to any MultiType reference */
 data class TypeReference<E : TypeEnum<T>, T: Any, in CX : IsPropertyContext> internal constructor(
     val multiTypeDefinition: IsMultiTypeDefinition<E, T, CX>,
-    override val parentReference: CanHaveComplexChildReference<TypedValue<E, T>, IsMultiTypeDefinition<E, T, *>, *, *>?
+    override val parentReference: CanHaveComplexChildReference<TypedValue<E, T>, IsMultiTypeDefinition<E, T, *>, *, *>?,
 ) : IsPropertyReferenceWithParent<E, IsIndexedEnumDefinition<E>, CanHaveComplexChildReference<TypedValue<E, T>, IsMultiTypeDefinition<E, T, *>, *, *>, TypedValue<E, T>>,
     IsFixedBytesPropertyReference<E>,
     IsFixedStorageBytesEncodable<E> by multiTypeDefinition.typeEnum,
@@ -55,7 +54,7 @@ data class TypeReference<E : TypeEnum<T>, T: Any, in CX : IsPropertyContext> int
     }
 
     override fun isForPropertyReference(propertyReference: AnyPropertyReference): Boolean {
-        return propertyReference == parentReference
+        return propertyReference == this
     }
 
     override fun calculateReferenceStorageByteLength(): Int {
@@ -86,14 +85,11 @@ data class TypeReference<E : TypeEnum<T>, T: Any, in CX : IsPropertyContext> int
         0.writeVarBytes(writer)
     }
 
-    override fun calculateSelfStorageByteLength() = 1 // For length of type bytes
+    override fun calculateSelfStorageByteLength() = 0 // For length of type bytes
 
     override fun writeSelfStorageBytes(writer: (byte: Byte) -> Unit) {
-        // Write type index bytes
-        0.writeVarIntWithExtraInfo(
-            TYPE.value,
-            writer
-        )
+        // This is used within comparisons with storage
+        // Writes nothing since the type is stored below the parent reference. So any type checks should run on the parent storage key.
     }
 
     override fun resolve(values: TypedValue<E, T>): E = values.type

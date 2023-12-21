@@ -7,7 +7,6 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.toUnitLambda
 import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
 import maryk.core.properties.enum.MultiTypeEnumDefinition
-import maryk.core.properties.types.invoke
 import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.OutOfRangeException
@@ -15,6 +14,7 @@ import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.TypeReference
 import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.invoke
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.query.RequestContext
@@ -30,6 +30,7 @@ import maryk.test.models.MarykTypeEnum.T6
 import maryk.test.models.MarykTypeEnum.T7
 import maryk.test.models.SimpleMarykTypeEnum.S1
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -124,12 +125,12 @@ internal class MultiTypeDefinitionTest {
     }
 
     @Test
-    fun resolveReferenceFromStorageByAnyTypeName() {
-        writeAndReadStorageReference(def.typedValueRef(T1, null))
-        writeAndReadStorageReference(def.typeRef(null))
+    fun resolveReferenceFromTransportByAnyTypeName() {
+        writeAndReadTransportReference(def.typedValueRef(T1, null))
+        writeAndReadTransportReference(def.typeRef(null))
     }
 
-    private fun writeAndReadTransportReference(ref: IsPropertyReference<*, *, *>) {
+    private fun writeAndReadStorageReference(ref: IsPropertyReference<*, *, *>) {
         val byteCollector = ByteCollector()
         byteCollector.reserve(ref.calculateStorageByteLength())
         ref.writeStorageBytes(byteCollector::write)
@@ -138,12 +139,18 @@ internal class MultiTypeDefinitionTest {
     }
 
     @Test
-    fun resolveReferenceFromTransportByAnyTypeName() {
-        writeAndReadTransportReference(def.typedValueRef(T1, null))
-        writeAndReadTransportReference(def.typeRef(null))
+    fun resolveReferenceFromStorageByAnyTypeName() {
+        writeAndReadStorageReference(def.typedValueRef(T1, null))
+
+        // type ref to type is always on parent ref so should write nothing
+        val ref = def.typeRef(null)
+        val byteCollector = ByteCollector()
+        byteCollector.reserve(ref.calculateStorageByteLength())
+        ref.writeStorageBytes(byteCollector::write)
+        assertEquals(0, byteCollector.size)
     }
 
-    private fun writeAndReadStorageReference(ref: IsPropertyReference<*, *, *>) {
+    private fun writeAndReadTransportReference(ref: IsPropertyReference<*, *, *>) {
         val byteCollector = ByteCollector()
         val cache = WriteCache()
         byteCollector.reserve(ref.calculateTransportByteLength(cache))

@@ -4,6 +4,7 @@ import maryk.datastore.shared.IsDataStore
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.ComplexModel
 import maryk.test.models.Log
+import maryk.test.models.Measurement
 import maryk.test.models.ModelV2ExtraIndex
 import maryk.test.models.Person
 import maryk.test.models.SimpleMarykModel
@@ -23,15 +24,16 @@ private val allTestClasses = arrayOf(
     "DataStoreGetTest" to ::DataStoreGetTest,
     "DataStoreProcessUpdateTest" to ::DataStoreProcessUpdateTest,
     "DataStoreScanChangesTest" to ::DataStoreScanChangesTest,
-    "DataStoreScanUpdatesAndFlowTest" to ::DataStoreScanUpdatesAndFlowTest,
-    "DataStoreScanUpdatesWithLogTest" to ::DataStoreScanUpdatesWithLogTest,
+    "DataStoreScanMultiTypeTest" to ::DataStoreScanMultiTypeTest,
     "DataStoreScanOnIndexTest" to ::DataStoreScanOnIndexTest,
     "DataStoreScanOnIndexWithPersonTest" to ::DataStoreScanOnIndexWithPersonTest,
     "DataStoreScanTest" to ::DataStoreScanTest,
+    "DataStoreScanUniqueTest" to ::DataStoreScanUniqueTest,
+    "DataStoreScanUpdatesAndFlowTest" to ::DataStoreScanUpdatesAndFlowTest,
+    "DataStoreScanUpdatesWithLogTest" to ::DataStoreScanUpdatesWithLogTest,
     "DataStoreScanWithFilterTest" to ::DataStoreScanWithFilterTest,
     "DataStoreScanWithMutableValueIndexTest" to ::DataStoreScanWithMutableValueIndexTest,
-    "DataStoreScanUniqueTest" to ::DataStoreScanUniqueTest,
-    "UniqueTest" to ::UniqueTest
+    "UniqueTest" to ::UniqueTest,
 )
 
 val dataModelsForTests = mapOf(
@@ -43,6 +45,7 @@ val dataModelsForTests = mapOf(
     6u to UniqueModel,
     7u to ModelV2ExtraIndex,
     8u to Person,
+    9u to Measurement,
 )
 
 suspend fun runDataStoreTests(dataStore: IsDataStore, runOnlyTest: String? = null) {

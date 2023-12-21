@@ -91,7 +91,7 @@ internal class DataObjectPropertyReferenceTest {
         expect("661e540300ae24") { TestMarykModel { embeddedValues { marykModel { map refAt LocalTime(12, 23) } } }.toStorageByteArray().toHex() }
 
         expect("690d") { TestMarykModel { multi refAtType S1 }.toStorageByteArray().toHex() }
-        expect("6905") { TestMarykModel { multi.refToType() }.toStorageByteArray().toHex() }
+        expect("69") { TestMarykModel { multi.refToType() }.toStorageByteArray().toHex() }
 
         expect("691d09") { TestMarykModel { multi.withType(S3) { value::ref } }.toStorageByteArray().toHex() }
         expect("691d1609") { TestMarykModel { multi.withType(S3) { model { value::ref } } }.toStorageByteArray().toHex() }

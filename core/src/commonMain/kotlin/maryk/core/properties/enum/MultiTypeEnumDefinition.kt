@@ -10,6 +10,7 @@ import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.models.values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
+import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.NumberDefinition
@@ -39,7 +40,7 @@ open class MultiTypeEnumDefinition<E : MultiTypeEnum<*>> internal constructor(
     unknownCreator: ((UInt, String) -> E)? = null
 ) : AbstractIndexedEnumDefinition<E>(
     optionalCases, name, reservedIndices, reservedNames, unknownCreator
-) {
+), IsChangeableValueDefinition<E, IsPropertyContext> {
     override val Meta = object: MarykPrimitiveDescriptor {
         override val name: String = this@MultiTypeEnumDefinition.name
         override val primitiveType = PrimitiveType.TypeDefinition

@@ -7,6 +7,7 @@ import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.initUIntByVar
 import maryk.core.extensions.bytes.initUIntByVarWithExtraInfo
+import maryk.core.models.values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
@@ -14,13 +15,13 @@ import maryk.core.properties.enum.IsCoreEnum
 import maryk.core.properties.enum.IsIndexedEnumDefinition
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.exceptions.AlreadySetException
+import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ReferenceType.TYPE
 import maryk.core.properties.references.TypeReference
 import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.types.TypedValue
-import maryk.core.models.values
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
@@ -65,10 +66,11 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
         TypedValueReference(type, this, parentReference)
 
     /** Creates a reference referring to any type of multi type below [parentReference] */
-    fun typeRef(parentReference: CanHaveComplexChildReference<TypedValue<E, T>, IsMultiTypeDefinition<E, T, *>, *, *>? = null) =
+    @Suppress("UNCHECKED_CAST")
+    fun typeRef(parentReference: AnyOutPropertyReference? = null) =
         TypeReference(
             this,
-            parentReference
+            parentReference as CanHaveComplexChildReference<TypedValue<E, T>, IsMultiTypeDefinition<E, T, *>, *, *>
         )
 
     /** Resolve a reference from [reader] found on a [parentReference] */

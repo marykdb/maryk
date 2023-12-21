@@ -17,6 +17,7 @@ import maryk.core.properties.definitions.wrapper.IsValueDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.TypeReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DefinedByReference
 import maryk.core.query.RequestContext
@@ -94,7 +95,17 @@ infix fun <E : TypeEnum<T>, T: Any, D : IsMultiTypeDefinition<E, T, *>> IsProper
         typedValue
     )
 
-/** Convenience infix method to create Reference [values] pairs */
+/** Convenience infix method to create Reference [typedValue] pairs */
+@Suppress("UNCHECKED_CAST")
+infix fun <E : TypeEnum<T>, T: Any> TypeReference<E, T, *>.with(
+    typedValue: E,
+): ReferenceValuePair<TypedValue<E, T>> =
+    ReferenceValuePair(
+        this as IsPropertyReference<TypedValue<E, T>, IsChangeableValueDefinition<TypedValue<E, T>, IsPropertyContext>, *>,
+        TypedValue(typedValue, Unit) as TypedValue<E, T>
+    )
+
+/** Convenience infix method to create TypeReference [values] pairs */
 @Suppress("UNCHECKED_CAST")
 infix fun <DM : IsValuesDataModel, D : IsEmbeddedValuesDefinition<DM, *>> IsPropertyReference<Values<DM>, D, *>.with(
     values: Values<DM>

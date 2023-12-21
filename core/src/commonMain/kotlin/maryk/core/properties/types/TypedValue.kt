@@ -14,7 +14,6 @@ fun <E : TypeEnum<T>, T : Any> TypedValue(
     value: T
 ) = TypedValueImpl(type, value)
 
-
 /**
  * Shortcut to create a typed value
  */
@@ -31,3 +30,6 @@ data class MutableTypedValue<out E : TypeEnum<T>, T : Any>(
     override val type: E,
     override var value: T
 ): TypedValue<E, T>
+
+@Suppress("UNCHECKED_CAST")
+fun <T : Any> TypedValue<*, *>.getValue() = this.value as T

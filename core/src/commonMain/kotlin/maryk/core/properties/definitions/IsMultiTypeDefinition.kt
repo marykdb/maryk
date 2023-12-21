@@ -70,7 +70,7 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
     fun typeRef(parentReference: AnyOutPropertyReference? = null) =
         TypeReference(
             this,
-            parentReference as CanHaveComplexChildReference<TypedValue<E, T>, IsMultiTypeDefinition<E, T, *>, *, *>
+            parentReference as CanHaveComplexChildReference<TypedValue<E, T>, IsMultiTypeDefinition<E, T, *>, *, *>?
         )
 
     /** Resolve a reference from [reader] found on a [parentReference] */

@@ -5,6 +5,7 @@ import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.processors.datastore.StorageTypeEnum.TypeValue
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
+import maryk.core.properties.enum.MultiTypeEnum
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
@@ -22,12 +23,17 @@ internal fun setTypedValue(
     reference: ByteArray,
     versionBytes: ByteArray
 ) {
-    val typedValue = value as TypedValue<TypeEnum<*>, *>
+    val properValue = if (value is MultiTypeEnum<*>) {
+        TypedValue(value, Unit)
+    } else {
+        value
+    }
+    val typedValue = properValue as TypedValue<TypeEnum<*>, *>
     val typeDefinition = TypeValue.castDefinition(definition)
 
     var index = 0
     if (typedValue.value == Unit) {
-        val valueBytes = ByteArray(value.type.index.calculateVarIntWithExtraInfoByteSize())
+        val valueBytes = ByteArray(typedValue.type.index.calculateVarIntWithExtraInfoByteSize())
         typedValue.type.index.writeVarIntWithExtraInfo(COMPLEX_TYPE_INDICATOR) { valueBytes[index++] = it }
 
         setValue(transaction, columnFamilies, key, reference, versionBytes, valueBytes)

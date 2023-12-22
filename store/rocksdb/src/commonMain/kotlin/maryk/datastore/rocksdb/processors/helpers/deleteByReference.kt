@@ -12,6 +12,7 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.definitions.wrapper.IsMapDefinitionWrapper
+import maryk.core.properties.enum.MultiTypeEnum
 import maryk.core.properties.references.EmbeddedValuesPropertyRef
 import maryk.core.properties.references.IncMapReference
 import maryk.core.properties.references.IsMapReference
@@ -26,6 +27,7 @@ import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
 import maryk.core.properties.references.TypedPropertyReference
 import maryk.core.properties.types.Key
+import maryk.core.properties.types.TypedValue
 import maryk.core.values.EmptyValueItems
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.Transaction
@@ -151,6 +153,12 @@ internal fun <T : Any> deleteByReference(
                     }
                     readValue(reference.comparablePropertyDefinition, reader) {
                         o + l - readIndex
+                    }.let {
+                        when (it) {
+                            is TypedValue<*, *> -> it
+                            is MultiTypeEnum<*> -> TypedValue(it, Unit) as T
+                            else -> throw StorageException("Unknown type for T")
+                        }
                     } as T
                 }
                 else -> (reference as IsStorageBytesEncodable<T>).fromStorageBytes(b, o, l)

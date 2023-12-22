@@ -1,5 +1,6 @@
 package maryk.core.properties.references
 
+import maryk.core.exceptions.StorageException
 import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeVarBytes
@@ -8,11 +9,11 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 import maryk.core.properties.definitions.IsMultiTypeDefinition
-import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.index.IndexKeyPartType
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.definitions.index.toReferenceStorageByteArray
 import maryk.core.properties.enum.IsIndexedEnumDefinition
+import maryk.core.properties.enum.MultiTypeEnum
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.exceptions.RequiredException
 import maryk.core.properties.types.Bytes
@@ -43,14 +44,20 @@ data class TypeReference<E : TypeEnum<T>, T: Any, in CX : IsPropertyContext> int
 
     override fun resolveFromAny(value: Any): Any {
         @Suppress("UNCHECKED_CAST")
-        return (value as? TypedValue<E, *>)?.type
+        return (value as? TypedValue<E, *>)?.type ?: (value as? E)
             ?: throw UnexpectedValueException("Expected TypedValue to get id by reference")
     }
 
     override fun getValue(values: IsValuesGetter): E {
-        val typedValue: TypedValue<E, *> = values[parentReference as IsPropertyReference<TypedValue<E, T>, IsPropertyDefinition<TypedValue<E, T>>, *>]
+        @Suppress("UNCHECKED_CAST")
+        val typedValue = values[parentReference as IsPropertyReference<Any, *, *>]
             ?: throw RequiredException(parentReference)
-        return typedValue.type
+        @Suppress("UNCHECKED_CAST")
+        return if (typedValue is MultiTypeEnum<*>) {
+            typedValue as E
+        } else if (typedValue is TypedValue<*, *>) {
+            typedValue.type as E
+        } else throw StorageException("Unknown type for $typedValue")
     }
 
     override fun isForPropertyReference(propertyReference: AnyPropertyReference): Boolean {

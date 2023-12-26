@@ -20,7 +20,6 @@ import maryk.test.models.MarykEnumEmbedded.E1
 import maryk.test.models.MarykTypeEnum.T2
 import maryk.test.models.SimpleMarykModel
 import maryk.test.models.SimpleMarykTypeEnum.S1
-import kotlin.test.assertIs
 import kotlin.test.expect
 
 class DataStoreScanWithFilterTest(
@@ -54,7 +53,7 @@ class DataStoreScanWithFilterTest(
             CompleteMarykModel.add(*objects)
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<CompleteMarykModel>>(status)
+            val response = assertStatusIs<AddSuccess<CompleteMarykModel>>(status)
             keys.add(response.key)
             if (response.version < lowestVersion) {
                 // Add lowest version for scan test
@@ -97,7 +96,7 @@ class DataStoreScanWithFilterTest(
             )
         )
 
-        assertIs<ChangeSuccess<*>>(changeResponse.statuses[0])
+        assertStatusIs<ChangeSuccess<*>>(changeResponse.statuses[0])
 
         val scanResponseForLatest = dataStore.execute(
             CompleteMarykModel.scan(

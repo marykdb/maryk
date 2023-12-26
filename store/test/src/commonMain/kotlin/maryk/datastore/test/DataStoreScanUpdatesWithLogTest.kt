@@ -49,7 +49,7 @@ class DataStoreScanUpdatesWithLogTest(
             )
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<Log>>(status)
+            val response = assertStatusIs<AddSuccess<Log>>(status)
             testKeys.add(response.key)
             if (response.version < lowestVersion) {
                 // Add lowest version for scan test

@@ -31,7 +31,6 @@ import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.datastore.shared.IsDataStore
 import maryk.test.models.TestMarykModel
 import kotlin.test.assertFalse
-import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 class DataStoreFilterTest(
@@ -105,7 +104,7 @@ class DataStoreFilterTest(
         )
 
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<TestMarykModel>>(status)
+            val response = assertStatusIs<AddSuccess<TestMarykModel>>(status)
             keys.add(response.key)
             lastVersions.add(response.version)
         }
@@ -119,7 +118,7 @@ class DataStoreFilterTest(
         )
 
         changeResponse.statuses.forEach { status ->
-            val response = assertIs<ChangeSuccess<TestMarykModel>>(status)
+            val response = assertStatusIs<ChangeSuccess<TestMarykModel>>(status)
             lastVersions.add(response.version)
         }
 

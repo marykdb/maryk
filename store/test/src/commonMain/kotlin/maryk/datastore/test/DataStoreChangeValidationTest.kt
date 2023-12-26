@@ -112,7 +112,7 @@ class DataStoreChangeValidationTest(
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val validationFail = assertIs<ValidationFail<*>>(status)
+            val validationFail = assertStatusIs<ValidationFail<*>>(status)
             validationFail.exceptions.apply {
                 expect(1) { size }
                 assertIs<InvalidValueException>(first())
@@ -139,7 +139,7 @@ class DataStoreChangeValidationTest(
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val validationFail = assertIs<ValidationFail<*>>(status)
+            val validationFail = assertStatusIs<ValidationFail<*>>(status)
             validationFail.exceptions.apply {
                 expect(1) { size }
                 assertIs<AlreadySetException>(first())
@@ -388,7 +388,7 @@ class DataStoreChangeValidationTest(
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val validationFail = assertIs<ValidationFail<*>>(status)
+            val validationFail = assertStatusIs<ValidationFail<*>>(status)
             validationFail.exceptions.apply {
                 expect(1) { size }
                 assertIs<NotEnoughItemsException>(first()).apply {

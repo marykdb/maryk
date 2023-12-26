@@ -54,7 +54,7 @@ class DataStoreAddTest(
         expect(1) { addResponse.statuses.count() }
 
         for (it in addResponse.statuses) {
-            val response = assertIs<AddSuccess<Log>>(it)
+            val response = assertStatusIs<AddSuccess<Log>>(it)
             assertRecent(response.version, 1000uL)
             assertTrue { response.changes.isEmpty() }
             expect(16) { assertIs<Key<SimpleMarykModel>>(response.key).size }
@@ -79,7 +79,7 @@ class DataStoreAddTest(
 
         val keysToOriginal = mutableMapOf<Key<*>, Values<Log>>()
         addResponse.statuses.forEachIndexed { index, it ->
-            val response = assertIs<AddSuccess<Log>>(it)
+            val response = assertStatusIs<AddSuccess<Log>>(it)
             assertRecent(response.version, 1000uL)
             assertTrue { response.changes.isEmpty() }
             expect(11) { assertIs<Key<Log>>(response.key).size }

@@ -14,7 +14,6 @@ import maryk.datastore.shared.IsDataStore
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.addRequest
 import kotlin.test.assertFailsWith
-import kotlin.test.assertIs
 import kotlin.test.expect
 
 class DataStoreGetTest(
@@ -35,7 +34,7 @@ class DataStoreGetTest(
             addRequest
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<SimpleMarykModel>>(status)
+            val response = assertStatusIs<AddSuccess<SimpleMarykModel>>(status)
             keys.add(response.key)
             if (response.version < lowestVersion) {
                 // Add lowest version for scan test

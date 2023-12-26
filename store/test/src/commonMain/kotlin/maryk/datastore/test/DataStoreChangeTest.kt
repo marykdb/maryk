@@ -122,7 +122,7 @@ class DataStoreChangeTest(
         )
 
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<TestMarykModel>>(status)
+            val response = assertStatusIs<AddSuccess<TestMarykModel>>(status)
             keys.add(response.key)
             lastVersions.add(response.version)
         }
@@ -162,7 +162,7 @@ class DataStoreChangeTest(
 
         expect(3) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = assertIs<ChangeSuccess<*>>(status)
+            val success = assertStatusIs<ChangeSuccess<*>>(status)
             assertRecent(success.version, 1000uL)
         }
 
@@ -201,7 +201,7 @@ class DataStoreChangeTest(
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = assertIs<ChangeSuccess<*>>(status)
+            val success = assertStatusIs<ChangeSuccess<*>>(status)
             assertRecent(success.version, 1000uL)
         }
 
@@ -276,7 +276,7 @@ class DataStoreChangeTest(
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = assertIs<ChangeSuccess<*>>(status)
+            val success = assertStatusIs<ChangeSuccess<*>>(status)
             assertRecent(success.version, 1000uL)
         }
 
@@ -302,7 +302,7 @@ class DataStoreChangeTest(
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = assertIs<ChangeSuccess<*>>(status)
+            val success = assertStatusIs<ChangeSuccess<*>>(status)
             assertRecent(success.version, 1000uL)
         }
 
@@ -330,7 +330,7 @@ class DataStoreChangeTest(
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = assertIs<ChangeSuccess<*>>(status)
+            val success = assertStatusIs<ChangeSuccess<*>>(status)
             assertRecent(success.version, 1000uL)
         }
 
@@ -392,7 +392,7 @@ class DataStoreChangeTest(
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = assertIs<ChangeSuccess<*>>(status)
+            val success = assertStatusIs<ChangeSuccess<*>>(status)
             assertRecent(success.version, 1000uL)
         }
 
@@ -422,7 +422,7 @@ class DataStoreChangeTest(
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = assertIs<ChangeSuccess<*>>(status)
+            val success = assertStatusIs<ChangeSuccess<*>>(status)
             assertRecent(success.version, 1000uL)
         }
 
@@ -451,7 +451,7 @@ class DataStoreChangeTest(
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            val success = assertIs<ChangeSuccess<*>>(status)
+            val success = assertStatusIs<ChangeSuccess<*>>(status)
             assertRecent(success.version, 1000uL)
         }
 
@@ -490,7 +490,7 @@ class DataStoreChangeTest(
 
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
-            assertIs<ChangeSuccess<*>>(status).apply {
+            assertStatusIs<ChangeSuccess<*>>(status).apply {
                 expect(
                     listOf(
                        IncMapAddition(

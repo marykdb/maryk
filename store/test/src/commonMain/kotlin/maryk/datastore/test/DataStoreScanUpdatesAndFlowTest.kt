@@ -105,7 +105,7 @@ class DataStoreScanUpdatesAndFlowTest(
             TestMarykModel.add(t0, t1, t2, t3, t4)
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<TestMarykModel>>(status)
+            val response = assertStatusIs<AddSuccess<TestMarykModel>>(status)
             testKeys.add(response.key)
             if (response.version < lowestVersion) {
                 // Add lowest version for scan test

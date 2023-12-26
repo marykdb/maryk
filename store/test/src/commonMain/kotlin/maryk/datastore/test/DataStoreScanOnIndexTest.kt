@@ -26,7 +26,6 @@ import maryk.test.models.Severity.ERROR
 import maryk.test.models.Severity.INFO
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import kotlin.test.assertIs
 import kotlin.test.assertSame
 import kotlin.test.expect
 
@@ -61,7 +60,7 @@ class DataStoreScanOnIndexTest(
             Log.add(*logs)
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<Log>>(status)
+            val response = assertStatusIs<AddSuccess<Log>>(status)
             keys.add(response.key)
             if (response.version > highestCreationVersion) {
                 // Add lowest version for scan test

@@ -16,7 +16,6 @@ import maryk.test.models.LengthMeasurement
 import maryk.test.models.Measurement
 import maryk.test.models.MeasurementType
 import maryk.test.models.WeightMeasurement
-import kotlin.test.assertIs
 import kotlin.test.expect
 
 class DataStoreScanMultiTypeTest(
@@ -42,19 +41,19 @@ class DataStoreScanMultiTypeTest(
         ) },
         Measurement.run { create(
             this.timestamp with LocalDateTime(2023, 11, 14, 12, 0, 0, 0),
-            this.measurement with MeasurementType.Length.invoke(LengthMeasurement.run { create(
+            this.measurement with MeasurementType.Length(LengthMeasurement.run { create(
                 lengthInCm with 181u,
             ) }),
         ) },
         Measurement.run { create(
             this.timestamp with LocalDateTime(2023, 11, 14, 12, 33, 22, 111000000),
-            this.measurement with MeasurementType.Weight.invoke(WeightMeasurement.run { create(
+            this.measurement with MeasurementType.Weight(WeightMeasurement.run { create(
                 weightInKg with 78u,
             ) }),
         ) },
         Measurement.run { create(
             this.timestamp with LocalDateTime(2023, 11, 14, 13, 0, 2, 0),
-            this.measurement with MeasurementType.Length.invoke(LengthMeasurement.run { create(
+            this.measurement with MeasurementType.Length(LengthMeasurement.run { create(
                 lengthInCm with 180u,
             ) }),
         ) },
@@ -65,7 +64,7 @@ class DataStoreScanMultiTypeTest(
             Measurement.add(*measurements)
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<Measurement>>(status)
+            val response = assertStatusIs<AddSuccess<Measurement>>(status)
             keys.add(response.key)
             if (response.version < lowestVersion) {
                 // Add lowest version for scan test

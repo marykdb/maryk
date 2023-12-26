@@ -38,7 +38,7 @@ class UniqueTest(
 
         dataStore.execute(addItems).also {
             it.statuses.forEach { status ->
-                val response = assertIs<AddSuccess<UniqueModel>>(status)
+                val response = assertStatusIs<AddSuccess<UniqueModel>>(status)
                 keys.add(response.key)
             }
         }
@@ -58,7 +58,7 @@ class UniqueTest(
     suspend fun checkUnique() {
         val addResponse = dataStore.execute(addUniqueItem)
         addResponse.statuses.forEach { status ->
-            val fail = assertIs<ValidationFail<UniqueModel>>(status)
+            val fail = assertStatusIs<ValidationFail<UniqueModel>>(status)
             val alreadyExists = assertIs<AlreadyExistsException>(fail.exceptions.first())
             expect(UniqueModel { email::ref }) { alreadyExists.reference }
             expect(keys[0]) { alreadyExists.key }
@@ -67,7 +67,7 @@ class UniqueTest(
         dataStore.execute(UniqueModel.delete(keys[0]))
 
         dataStore.execute(addUniqueItem).statuses.forEach { status ->
-            assertIs<AddSuccess<UniqueModel>>(status).also {
+            assertStatusIs<AddSuccess<UniqueModel>>(status).also {
                 keys.add(it.key)
             }
         }

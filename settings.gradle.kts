@@ -101,5 +101,6 @@ include(
     ":store:test",
     ":store:shared",
     ":store:memory",
-    ":store:rocksdb"
+    ":store:rocksdb",
+    ":store:hbase",
 )

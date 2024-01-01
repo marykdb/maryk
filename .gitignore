@@ -1,6 +1,8 @@
 generator/jvm/gen
 generator/jvmTest/gen
 
+/store/hbase/target/test-data
+
 ### Gradle ###
 .gradle
 build/
@@ -71,6 +73,5 @@ $RECYCLE.BIN/
 
 # Icon must end with two \r
 Icon
-
 
 ###########################

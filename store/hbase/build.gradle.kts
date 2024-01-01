@@ -20,12 +20,11 @@ kotlin {
         commonTest {
             dependencies {
                 implementation(kotlin("test"))
-                implementation("org.apache.logging.log4j:log4j-core:_")
-                implementation("org.apache.logging.log4j:log4j-api:_")
-                implementation("org.apache.logging.log4j:log4j-1.2-api:_")
                 api(projects.testmodels)
                 api(projects.store.test)
                 api("org.apache.hbase:hbase-shaded-testing-util:_")
+                api("org.slf4j:slf4j-simple:_")
+                api("org.slf4j:log4j-over-slf4j:_")
                 implementation(Testing.junit4)
                 implementation(Testing.mockito.core)
             }

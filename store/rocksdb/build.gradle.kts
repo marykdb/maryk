@@ -9,7 +9,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                api(libs.rocksdbjni)
+                api("org.rocksdb:rocksdbjni:_")
 
                 api(projects.store.shared)
             }

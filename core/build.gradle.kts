@@ -10,7 +10,7 @@ kotlin {
         commonMain {
             dependencies {
                 api(projects.yaml)
-                api(libs.atomicfu)
+                api("org.jetbrains.kotlinx:atomicfu:_")
             }
         }
         commonTest {

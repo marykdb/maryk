@@ -3,12 +3,9 @@ plugins {
     id("maryk.conventions.kotlin-jvm")
 }
 
-val protobufVersion = "3.21.2"
-
-
 protobuf {
     protoc {
-        artifact = "com.google.protobuf:protoc:$protobufVersion"
+        artifact = "com.google.protobuf:protoc:_"
     }
 //    generatedFilesBaseDir = "$projectDir/gen"
 }
@@ -21,6 +18,6 @@ dependencies {
     api(projects.generator)
 
     testImplementation(projects.testmodels)
-    testImplementation(libs.protobuf.kotlin)
+    testImplementation("com.google.protobuf:protobuf-kotlin:_")
     testImplementation(kotlin("test"))
 }

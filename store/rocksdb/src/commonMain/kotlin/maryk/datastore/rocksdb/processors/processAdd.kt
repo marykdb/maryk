@@ -33,6 +33,7 @@ import maryk.datastore.rocksdb.processors.helpers.setLatestVersion
 import maryk.datastore.rocksdb.processors.helpers.setTypedValue
 import maryk.datastore.rocksdb.processors.helpers.setUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setValue
+import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.UniqueException
 import maryk.datastore.shared.updates.IsUpdateAction
 import maryk.datastore.shared.updates.Update.Addition
@@ -85,7 +86,7 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
                     } // Cannot happen on new add
                     Value -> {
                         val storableDefinition = Value.castDefinition(definition)
-                        val valueBytes = storableDefinition.toStorageBytes(value, NO_TYPE_INDICATOR)
+                        val valueBytes = storableDefinition.toStorageBytes(value, TypeIndicator.NoTypeIndicator.byte)
 
                         // If a unique index, check if exists, and then write
                         if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
@@ -139,7 +140,7 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
                     Embed -> {
                         // Indicates value exists and is an embedded value object
                         // Is for the root of embed
-                        val valueBytes = byteArrayOf(EMBED_INDICATOR, TRUE)
+                        val valueBytes = byteArrayOf(TypeIndicator.EmbedIndicator.byte, TRUE)
                         setValue(transaction, columnFamilies, key, reference, versionBytes, valueBytes)
                     }
                 }

@@ -1,4 +1,4 @@
-package maryk.datastore.rocksdb.processors.helpers
+package maryk.datastore.shared
 
 import maryk.core.exceptions.StorageException
 import maryk.core.extensions.bytes.initUIntByVarWithExtraInfo
@@ -12,25 +12,20 @@ import maryk.core.properties.enum.IsIndexedEnumDefinition
 import maryk.core.properties.enum.MultiTypeEnumDefinition
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.types.invoke
-import maryk.datastore.rocksdb.processors.COMPLEX_TYPE_INDICATOR
-import maryk.datastore.rocksdb.processors.DELETED_INDICATOR
-import maryk.datastore.rocksdb.processors.EMBED_INDICATOR
-import maryk.datastore.rocksdb.processors.NO_TYPE_INDICATOR
-import maryk.datastore.rocksdb.processors.SIMPLE_TYPE_INDICATOR
 
 /**
  * Read a Value storage type property from [reader] with [definition] and get amount to read
  * from [valueBytesLeft]
  * These values have an indicator byte to signal they are a normal value/multi type or embed
  */
-internal fun readValue(
+fun readValue(
     definition: IsPropertyDefinition<out Any>?,
     reader: () -> Byte,
     valueBytesLeft: () -> Int
 ): Any? {
     return initUIntByVarWithExtraInfo(reader) { type, indicatorByte ->
         when (indicatorByte) {
-            NO_TYPE_INDICATOR -> {
+            TypeIndicator.NoTypeIndicator.byte -> {
                 val valueDefinition = if (definition is IsCollectionDefinition<*, *, *, *>) {
                     definition.valueDefinition
                 } else definition
@@ -39,7 +34,7 @@ internal fun readValue(
                     reader
                 )
             }
-            SIMPLE_TYPE_INDICATOR -> {
+            TypeIndicator.SimpleTypeIndicator.byte -> {
                 val typeDefinition =
                     TypeValue.castDefinition(definition)
                 val valueDefinition =
@@ -49,7 +44,7 @@ internal fun readValue(
                 val value = valueDefinition.readStorageBytes(valueBytesLeft(), reader)
                 typeEnum.invoke(value)
             }
-            COMPLEX_TYPE_INDICATOR -> {
+            TypeIndicator.ComplexTypeIndicator.byte -> {
                 fun resolveType(enumDef: IsIndexedEnumDefinition<*>): TypeEnum<*> =
                     enumDef.resolve(type) as? TypeEnum<*> ?: throw StorageException("Unknown type $type for $enumDef")
 
@@ -61,11 +56,11 @@ internal fun readValue(
                     else -> throw StorageException("Unknown type $type for $definition")
                 }
             }
-            EMBED_INDICATOR -> {
+            TypeIndicator.EmbedIndicator.byte -> {
                 // Todo: skip deleted?
                 Unit
             }
-            DELETED_INDICATOR -> null
+            TypeIndicator.DeletedIndicator.byte -> null
             else -> throw StorageException("Unknown Value type $indicatorByte in store")
         }
     }

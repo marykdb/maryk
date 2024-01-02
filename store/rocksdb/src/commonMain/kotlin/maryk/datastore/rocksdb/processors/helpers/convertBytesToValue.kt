@@ -1,6 +1,7 @@
 package maryk.datastore.rocksdb.processors.helpers
 
 import maryk.core.properties.references.IsPropertyReference
+import maryk.datastore.shared.readValue
 
 /** Convert a byte array from [offset] until [length] with [reference] to a value of [T] */
 internal fun <T : Any> ByteArray.convertToValue(

@@ -10,6 +10,7 @@ import org.apache.hadoop.hbase.client.ConnectionFactory
 import org.apache.hadoop.hbase.testing.TestingHBaseCluster
 import org.apache.hadoop.hbase.testing.TestingHBaseClusterOption
 import kotlin.test.Test
+import kotlin.time.Duration.Companion.seconds
 
 class HbaseDataStoreTest {
     private val cluster: TestingHBaseCluster = TestingHBaseCluster.create(
@@ -20,10 +21,10 @@ class HbaseDataStoreTest {
         cluster.start()
     }
 
-    private val connection = ConnectionFactory.createConnection(cluster.conf);
+    private val connection = ConnectionFactory.createAsyncConnection(cluster.conf).get()
 
     @Test
-    fun testDataStore() = runTest {
+    fun testDataStore() = runTest(timeout = 60.seconds) {
         val dataStore = HbaseDataStore(
             connection = connection,
             dataModelsById = dataModelsForTests,
@@ -36,7 +37,7 @@ class HbaseDataStoreTest {
     }
 
     @Test
-    fun testDataStoreWithKeepAllVersions() = runTest {
+    fun testDataStoreWithKeepAllVersions() = runTest(timeout = 60.seconds) {
         val dataStore = HbaseDataStore(
             connection = connection,
             dataModelsById = dataModelsForTests,

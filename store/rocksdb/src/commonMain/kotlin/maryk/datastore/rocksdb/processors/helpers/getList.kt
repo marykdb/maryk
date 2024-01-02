@@ -5,6 +5,7 @@ import maryk.core.properties.references.ListReference
 import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.TableColumnFamilies
+import maryk.datastore.shared.readValue
 import maryk.lib.extensions.compare.matchPart
 import org.rocksdb.ReadOptions
 

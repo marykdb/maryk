@@ -31,8 +31,9 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.values.EmptyValueItems
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.Transaction
-import maryk.datastore.rocksdb.processors.DELETED_INDICATOR
 import maryk.datastore.rocksdb.processors.DELETED_INDICATOR_ARRAY
+import maryk.datastore.shared.TypeIndicator
+import maryk.datastore.shared.readValue
 import maryk.lib.extensions.compare.matchPart
 import maryk.lib.extensions.compare.prevByteInSameLength
 import org.rocksdb.ReadOptions
@@ -56,7 +57,7 @@ internal fun <T : Any> deleteByReference(
     // Value to delete
     @Suppress("UNCHECKED_CAST")
     val prevValue: T = transaction.getValue(columnFamilies, readOptions, null, referenceToCompareTo) { b, o, l ->
-        if (l == 1 && b[o] == DELETED_INDICATOR) {
+        if (l == 1 && b[o] == TypeIndicator.DeletedIndicator.byte) {
             // does not exist so nothing to delete
             null
         } else {

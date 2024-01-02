@@ -17,6 +17,7 @@ import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
 import maryk.datastore.shared.ScanType
 import maryk.datastore.shared.ScanType.IndexScan
 import maryk.datastore.shared.ScanType.TableScan
+import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.checkToVersion
 import maryk.datastore.shared.optimizeTableScan
 import maryk.datastore.shared.orderToScanType
@@ -70,7 +71,7 @@ internal fun <DM : IsRootDataModel> processScan(
 
                     val reference = ByteArray(uniqueReference.size + 1 +valueBytes.size)
                     uniqueReference.copyInto(reference)
-                    reference[uniqueReference.size] = NO_TYPE_INDICATOR
+                    reference[uniqueReference.size] = TypeIndicator.NoTypeIndicator.byte
                     valueBytes.copyInto(reference, uniqueReference.size + 1, 0, valueBytes.size)
 
                     getKeyByUniqueValue(dbAccessor, columnFamilies, readOptions, reference, scanRequest.toVersion) { keyReader, setAtVersion ->

@@ -3,6 +3,8 @@ package maryk.datastore.rocksdb.processors
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
 import maryk.core.extensions.bytes.initIntByVar
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.values
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.ListSize
 import maryk.core.processors.datastore.StorageTypeEnum.MapSize
@@ -11,12 +13,10 @@ import maryk.core.processors.datastore.StorageTypeEnum.SetSize
 import maryk.core.processors.datastore.StorageTypeEnum.TypeValue
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.processors.datastore.readStorageToValues
-import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.properties.types.Key
-import maryk.core.models.values
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.values.EmptyValueItems
 import maryk.core.values.Values
@@ -27,8 +27,8 @@ import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.rocksdb.processors.helpers.checkExistence
 import maryk.datastore.rocksdb.processors.helpers.historicQualifierRetriever
 import maryk.datastore.rocksdb.processors.helpers.nonHistoricQualifierRetriever
-import maryk.datastore.rocksdb.processors.helpers.readValue
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
+import maryk.datastore.shared.readValue
 
 /**
  * Read values for [key] from an [iterator] to a ValuesWithMeta object.
@@ -68,10 +68,11 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                             currentVersion = maxOf(value.readVersionBytes(), maxVersion)
                             index = VERSION_BYTE_SIZE
                             isDeleted = value[index] == TRUE
+                            true
                         } else {
                             currentVersion = 0uL
+                            false
                         }
-                        null
                     }
                     Value -> {
                         val valueBytes = iterator.value()
@@ -153,8 +154,8 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                             if (iterator.key().last() == 0.toByte()) {
                                 val value = iterator.value()
                                 isDeleted = value[0] == TRUE
-                            }
-                            null
+                                isDeleted
+                            } else null
                         }
                         Value -> {
                             val valueBytes = iterator.value()

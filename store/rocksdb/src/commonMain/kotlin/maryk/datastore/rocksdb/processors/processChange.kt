@@ -84,14 +84,15 @@ import maryk.datastore.rocksdb.processors.helpers.getCurrentIncMapKey
 import maryk.datastore.rocksdb.processors.helpers.getLastVersion
 import maryk.datastore.rocksdb.processors.helpers.getList
 import maryk.datastore.rocksdb.processors.helpers.getValue
-import maryk.datastore.rocksdb.processors.helpers.readValue
 import maryk.datastore.rocksdb.processors.helpers.setIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setLatestVersion
 import maryk.datastore.rocksdb.processors.helpers.setListValue
 import maryk.datastore.rocksdb.processors.helpers.setTypedValue
 import maryk.datastore.rocksdb.processors.helpers.setUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setValue
+import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.UniqueException
+import maryk.datastore.shared.readValue
 import maryk.datastore.shared.updates.IsUpdateAction
 import maryk.datastore.shared.updates.Update
 import maryk.lib.recyclableByteArray
@@ -394,7 +395,7 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                             if (reference is IsPropertyReferenceWithParent<*, *, *, *> && reference !is ListItemReference<*, *> && reference.parentReference != null) {
                                                 transaction.getValue(columnFamilies, dataStore.defaultReadOptions, null, byteArrayOf(*key.bytes, *reference.parentReference!!.toStorageByteArray())) { b, o, _ ->
                                                     // Check if parent was deleted
-                                                    if (b[o] == DELETED_INDICATOR) null else true
+                                                    if (b[o] == TypeIndicator.DeletedIndicator.byte) null else true
                                                 } ?: throw RequestException("Property '${reference.completeName}' can only be changed if parent value exists. Set the parent value with this value.")
                                             }
 
@@ -550,11 +551,11 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                             // Check if previous value exists and raise count change if it does not
                                             transaction.getValue(columnFamilies, dataStore.defaultReadOptions, null, keyAndReference) { b, o, _ ->
                                                 // Check if parent was deleted
-                                                if (b[o] == DELETED_INDICATOR) null else true
+                                                if (b[o] == TypeIndicator.DeletedIndicator.byte) null else true
                                             } ?: countChange++ // Add 1 because does not exist
 
                                             @Suppress("UNCHECKED_CAST")
-                                            val valueBytes = (setItemRef.propertyDefinition as IsStorageBytesEncodable<Any>).toStorageBytes(value, NO_TYPE_INDICATOR)
+                                            val valueBytes = (setItemRef.propertyDefinition as IsStorageBytesEncodable<Any>).toStorageBytes(value, TypeIndicator.NoTypeIndicator.byte)
 
                                             setValue(transaction, columnFamilies, keyAndReference, versionBytes, valueBytes)
                                             setChanged(true)
@@ -737,7 +738,7 @@ private fun createValueWriter(
         ObjectDelete -> {} // Cannot happen on new add
         Value -> {
             val storableDefinition = Value.castDefinition(definition)
-            val valueBytes = storableDefinition.toStorageBytes(value, NO_TYPE_INDICATOR)
+            val valueBytes = storableDefinition.toStorageBytes(value, TypeIndicator.NoTypeIndicator.byte)
 
             // If a unique index, check if exists, and then write
             if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
@@ -774,7 +775,7 @@ private fun createValueWriter(
         Embed -> {
             // Indicates value exists and is an embed
             // Is for the root of embed
-            val valueBytes = byteArrayOf(EMBED_INDICATOR, TRUE)
+            val valueBytes = byteArrayOf(TypeIndicator.EmbedIndicator.byte, TRUE)
             setValue(transaction, columnFamilies, key, reference, versionBytes, valueBytes)
         }
     }

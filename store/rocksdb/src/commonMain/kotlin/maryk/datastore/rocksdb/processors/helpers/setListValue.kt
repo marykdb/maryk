@@ -6,13 +6,12 @@ import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.TableColumnFamilies
-import maryk.datastore.rocksdb.processors.NO_TYPE_INDICATOR
 import maryk.datastore.rocksdb.Transaction
+import maryk.datastore.shared.TypeIndicator
 
 /**
  * Set a list value in [transaction] for [reference] with a [newList] at new [version].
  * With [originalCount] it is determined if items need to be deleted.
- * Use [keepAllVersions] on true to keep old versions
  * Returns true if changed
  */
 internal fun <T : Any> setListValue(
@@ -55,7 +54,7 @@ internal fun <T : Any> setListValue(
             newRef[byteIndex++] = it
         })
 
-        setValue(transaction, columnFamilies, newRef, version, valueDefinition.toStorageBytes(item, NO_TYPE_INDICATOR))
+        setValue(transaction, columnFamilies, newRef, version, valueDefinition.toStorageBytes(item, TypeIndicator.NoTypeIndicator.byte))
         changed = true
     }
 

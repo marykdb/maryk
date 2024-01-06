@@ -20,6 +20,7 @@ suspend fun HbaseDataStore.storeModelDefinition(
     admin: AsyncAdmin,
     tableDescriptor: TableDescriptor?,
     dataModel: IsRootDataModel,
+    keepAllVersions: Boolean,
 ) {
     val newTableDescriptor = if (tableDescriptor != null) {
         TableDescriptorBuilder.newBuilder(tableDescriptor)
@@ -64,8 +65,18 @@ suspend fun HbaseDataStore.storeModelDefinition(
     } else {
         println("Creating table ${dataModel.Meta.name}")
         newTableDescriptor.setColumnFamilies(listOf(
-            ColumnFamilyDescriptorBuilder.of(metaColumnFamily),
-            ColumnFamilyDescriptorBuilder.of(dataColumnFamily),
+            ColumnFamilyDescriptorBuilder.newBuilder(metaColumnFamily).apply {
+                if (keepAllVersions) {
+                    setMaxVersions(Int.MAX_VALUE)
+                    setNewVersionBehavior(true)
+                }
+            }.build(),
+            ColumnFamilyDescriptorBuilder.newBuilder(dataColumnFamily).apply {
+                if (keepAllVersions) {
+                    setMaxVersions(Int.MAX_VALUE)
+                    setNewVersionBehavior(true)
+                }
+            }.build(),
         ))
         admin.createTable(newTableDescriptor.build()).await()
     }

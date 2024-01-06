@@ -5,7 +5,6 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.withContext
 import maryk.core.clock.HLC
-import maryk.core.extensions.bytes.toVarBytes
 import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.StorageTypeEnum
 import maryk.core.processors.datastore.writeToStorage
@@ -23,6 +22,7 @@ import maryk.core.values.Values
 import maryk.datastore.hbase.HbaseDataStore
 import maryk.datastore.hbase.MetaColumns
 import maryk.datastore.hbase.dataColumnFamily
+import maryk.datastore.hbase.helpers.countValueAsBytes
 import maryk.datastore.hbase.helpers.setTypedValue
 import maryk.datastore.hbase.metaColumnFamily
 import maryk.datastore.hbase.trueIndicator
@@ -32,7 +32,7 @@ import maryk.datastore.shared.updates.IsUpdateAction
 import maryk.datastore.shared.updates.Update
 import org.apache.hadoop.hbase.client.AdvancedScanResultConsumer
 import org.apache.hadoop.hbase.client.AsyncTable
-import org.apache.hadoop.hbase.client.Get
+import org.apache.hadoop.hbase.client.CheckAndMutate
 import org.apache.hadoop.hbase.client.Put
 
 @Suppress("UNUSED_PARAMETER")
@@ -49,21 +49,16 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
     return try {
         objectToAdd.validate()
 
-        val exists = withContext(Dispatchers.IO) {
-            table.exists(Get(key.bytes)).await()
-        }
+        val checksBeforeWrite = mutableListOf<() -> Unit>()
 
-        if (!exists) {
-            val checksBeforeWrite = mutableListOf<() -> Unit>()
+        // Create version bytes and last version ref
+        val versionBytes = HLC.toStorageBytes(version)
 
-            // Create version bytes and last version ref
-            val versionBytes = HLC.toStorageBytes(version)
+        val put = Put(key.bytes).setTimestamp(version.timestamp.toLong())
 
-            val put = Put(key.bytes)
-
-            // Store first and last version
-            put.addColumn(metaColumnFamily, MetaColumns.CreatedVersion.byteArray, version.timestamp.toLong(), versionBytes)
-            put.addColumn(metaColumnFamily, MetaColumns.LatestVersion.byteArray, version.timestamp.toLong(), versionBytes)
+        // Store first and last version
+        put.addColumn(metaColumnFamily, MetaColumns.CreatedVersion.byteArray, version.timestamp.toLong(), versionBytes)
+        put.addColumn(metaColumnFamily, MetaColumns.LatestVersion.byteArray, version.timestamp.toLong(), versionBytes)
 
 //            // Find new index values to write
 //            dataModel.Meta.indices?.forEach { indexDefinition ->
@@ -74,12 +69,12 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
 //                setIndexValue(transaction, columnFamilies, indexReference, valueAndKeyBytes, versionBytes)
 //            }
 //
-            objectToAdd.writeToStorage { type, reference, definition, value ->
-                when (type) {
-                    StorageTypeEnum.ObjectDelete -> Unit // Cannot happen on new add
-                    StorageTypeEnum.Value -> {
-                        val storableDefinition = StorageTypeEnum.Value.castDefinition(definition)
-                        val valueBytes = storableDefinition.toStorageBytes(value, TypeIndicator.NoTypeIndicator.byte)
+        objectToAdd.writeToStorage { type, reference, definition, value ->
+            when (type) {
+                StorageTypeEnum.ObjectDelete -> Unit // Cannot happen on new add
+                StorageTypeEnum.Value -> {
+                    val storableDefinition = StorageTypeEnum.Value.castDefinition(definition)
+                    val valueBytes = storableDefinition.toStorageBytes(value, TypeIndicator.NoTypeIndicator.byte)
 
 //                        // If a unique index, check if exists, and then write
 //                        if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
@@ -109,32 +104,37 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
 //                            setUniqueIndexValue(columnFamilies, transaction, uniqueReference, versionBytes, key)
 //                        }
 
-                        put.addColumn(dataColumnFamily, reference, version.timestamp.toLong(), valueBytes)
-                    }
-                    StorageTypeEnum.ListSize,
-                    StorageTypeEnum.SetSize,
-                    StorageTypeEnum.MapSize ->
-                        put.addColumn(dataColumnFamily, reference, version.timestamp.toLong(), (value as Int).toVarBytes())
-                    StorageTypeEnum.TypeValue ->
-                        setTypedValue(value, definition, put, reference, version)
-                    StorageTypeEnum.Embed -> {
-                        // Indicates value exists and is an embedded value object
-                        // Is for the root of embed
-                        val valueBytes = byteArrayOf(TypeIndicator.EmbedIndicator.byte, *trueIndicator)
-                        put.addColumn(dataColumnFamily, reference, version.timestamp.toLong(), valueBytes)
-                    }
+                    put.addColumn(dataColumnFamily, reference, version.timestamp.toLong(), valueBytes)
+                }
+                StorageTypeEnum.ListSize,
+                StorageTypeEnum.SetSize,
+                StorageTypeEnum.MapSize ->
+                    put.addColumn(dataColumnFamily, reference, version.timestamp.toLong(), countValueAsBytes(value as Int))
+                StorageTypeEnum.TypeValue ->
+                    setTypedValue(value, definition, put, reference)
+                StorageTypeEnum.Embed -> {
+                    // Indicates value exists and is an embedded value object
+                    // Is for the root of embed
+                    val valueBytes = byteArrayOf(TypeIndicator.EmbedIndicator.byte, *trueIndicator)
+                    put.addColumn(dataColumnFamily, reference, version.timestamp.toLong(), valueBytes)
                 }
             }
+        }
 
-            for (check in checksBeforeWrite) {
-                check()
-            }
+        for (check in checksBeforeWrite) {
+            check()
+        }
 
-            withContext(Dispatchers.IO) {
-                table.put(put).await()
-            }
+        val response = withContext(Dispatchers.IO) {
+            table.checkAndMutate(
+                CheckAndMutate.newBuilder(key.bytes).apply {
+                    ifNotExists(metaColumnFamily, MetaColumns.CreatedVersion.byteArray)
+                }.build(put)
+            ).await()
+        }
 
-            val changes = listOf<IsChange>()
+        if (response.isSuccess) {
+            val changes = emptyList<IsChange>()
 
             updateSharedFlow.emit(
                 Update.Addition(dataModel, key, version.timestamp, objectToAdd.change(changes))

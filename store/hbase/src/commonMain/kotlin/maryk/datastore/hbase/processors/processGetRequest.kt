@@ -71,7 +71,7 @@ internal suspend fun <DM : IsRootDataModel> processGetRequest(
             cache.readValue(dbIndex, key, reference, version, valueReader)
         }
 
-        val valuesWithMetaData = getRequest.dataModel.readTransactionIntoValuesWithMetaData(
+        val valuesWithMetaData = getRequest.dataModel.readResultIntoValuesWithMetaData(
             result,
             creationVersion,
             key,

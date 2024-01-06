@@ -9,4 +9,6 @@ enum class TypeIndicator(val byte: Byte) {
     SimpleTypeIndicator(2),
     ComplexTypeIndicator(3),
     EmbedIndicator(4);
+
+    val byteArray = byteArrayOf(byte)
 }

@@ -3,11 +3,11 @@ package maryk.core.processors.datastore
 import maryk.core.exceptions.TypeException
 import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
+import maryk.core.models.BaseDataModel
+import maryk.core.models.IsTypedDataModel
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.Value
-import maryk.core.models.BaseDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.models.IsTypedDataModel
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsListDefinition
@@ -30,13 +30,13 @@ import maryk.core.values.AbstractValues
 import maryk.core.values.AnyAbstractValues
 
 sealed class StorageTypeEnum<out T : IsPropertyDefinition<*>>(val referenceType: ReferenceType) {
-    object ObjectDelete : StorageTypeEnum<IsPropertyDefinition<Boolean>>(DELETE)
-    object Value : StorageTypeEnum<IsSimpleValueDefinition<Any, IsPropertyContext>>(VALUE)
-    object ListSize : StorageTypeEnum<IsListDefinition<Any, IsPropertyContext>>(LIST)
-    object SetSize : StorageTypeEnum<IsSetDefinition<Any, IsPropertyContext>>(SET)
-    object MapSize : StorageTypeEnum<IsMapDefinition<Any, Any, IsPropertyContext>>(MAP)
-    object TypeValue : StorageTypeEnum<IsMultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>>(TYPE)
-    object Embed : StorageTypeEnum<IsEmbeddedValuesDefinition<*, *>>(EMBED)
+    data object ObjectDelete : StorageTypeEnum<IsPropertyDefinition<Boolean>>(DELETE)
+    data object Value : StorageTypeEnum<IsSimpleValueDefinition<Any, IsPropertyContext>>(VALUE)
+    data object ListSize : StorageTypeEnum<IsListDefinition<Any, IsPropertyContext>>(LIST)
+    data object SetSize : StorageTypeEnum<IsSetDefinition<Any, IsPropertyContext>>(SET)
+    data object MapSize : StorageTypeEnum<IsMapDefinition<Any, Any, IsPropertyContext>>(MAP)
+    data object TypeValue : StorageTypeEnum<IsMultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>>(TYPE)
+    data object Embed : StorageTypeEnum<IsEmbeddedValuesDefinition<*, *>>(EMBED)
 
     @Suppress("UNCHECKED_CAST")
     fun castDefinition(definition: IsPropertyDefinition<*>?) = definition as T

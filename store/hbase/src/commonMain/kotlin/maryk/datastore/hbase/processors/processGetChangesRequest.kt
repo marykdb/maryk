@@ -63,7 +63,7 @@ internal suspend fun <DM : IsRootDataModel> processGetChangesRequest(
             cache.readValue(dbIndex, key, reference, version, valueReader)
         }
 
-        getRequest.dataModel.readTransactionIntoObjectChanges(
+        getRequest.dataModel.readResultIntoObjectChanges(
             result = result,
             creationVersion = creationVersion,
             key = key,

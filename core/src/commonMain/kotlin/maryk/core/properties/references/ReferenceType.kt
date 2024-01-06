@@ -17,6 +17,6 @@ enum class ReferenceType(val value: Byte) {
 /** Retrieve reference storage type from the [byte] */
 internal fun referenceStorageTypeOf(byte: Byte): ReferenceType {
     val byteToCompare = byte and 0b111
-    return ReferenceType.values().firstOrNull { it.value == byteToCompare }
+    return ReferenceType.entries.firstOrNull { it.value == byteToCompare }
         ?: throw ParseException("Unknown ReferenceType $byteToCompare")
 }

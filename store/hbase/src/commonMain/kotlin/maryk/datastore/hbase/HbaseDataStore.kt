@@ -15,16 +15,19 @@ import maryk.core.models.migration.StoredRootDataModelDefinition
 import maryk.core.models.migration.VersionUpdateHandler
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.query.requests.AddRequest
+import maryk.core.query.requests.ChangeRequest
 import maryk.core.query.requests.DeleteRequest
 import maryk.core.query.requests.GetChangesRequest
 import maryk.core.query.requests.GetRequest
 import maryk.datastore.hbase.model.checkModelIfMigrationIsNeeded
 import maryk.datastore.hbase.model.storeModelDefinition
 import maryk.datastore.hbase.processors.AnyAddStoreAction
+import maryk.datastore.hbase.processors.AnyChangeStoreAction
 import maryk.datastore.hbase.processors.AnyDeleteStoreAction
 import maryk.datastore.hbase.processors.AnyGetChangesStoreAction
 import maryk.datastore.hbase.processors.AnyGetStoreAction
 import maryk.datastore.hbase.processors.processAddRequest
+import maryk.datastore.hbase.processors.processChangeRequest
 import maryk.datastore.hbase.processors.processDeleteRequest
 import maryk.datastore.hbase.processors.processGetChangesRequest
 import maryk.datastore.hbase.processors.processGetRequest
@@ -62,20 +65,20 @@ class HbaseDataStore(
                             scheduledVersionUpdateHandlers.add {
                                 versionUpdateHandler?.invoke(this@HbaseDataStore, null, dataModel)
 
-                                storeModelDefinition(admin, null, dataModel)
+                                storeModelDefinition(admin, null, dataModel, keepAllVersions)
                             }
                         }
                         is MigrationStatus.OnlySafeAdds -> {
                             scheduledVersionUpdateHandlers.add {
                                 versionUpdateHandler?.invoke(this@HbaseDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
-                                storeModelDefinition(admin, tableDescriptor.await(), dataModel)
+                                storeModelDefinition(admin, tableDescriptor.await(), dataModel, keepAllVersions)
                             }
                         }
                         is MigrationStatus.NewIndicesOnExistingProperties -> {
                             fillIndex(migrationStatus.indicesToIndex)
                             scheduledVersionUpdateHandlers.add {
                                 versionUpdateHandler?.invoke(this@HbaseDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
-                                storeModelDefinition(admin, tableDescriptor.await(), dataModel)
+                                storeModelDefinition(admin, tableDescriptor.await(), dataModel, keepAllVersions)
                             }
                         }
                         is MigrationStatus.NeedsMigration -> {
@@ -91,7 +94,7 @@ class HbaseDataStore(
                             }
                             scheduledVersionUpdateHandlers.add {
                                 versionUpdateHandler?.invoke(this@HbaseDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
-                                storeModelDefinition(admin, tableDescriptor.await(), dataModel)
+                                storeModelDefinition(admin, tableDescriptor.await(), dataModel, keepAllVersions)
                             }
                         }
                     }
@@ -125,8 +128,8 @@ class HbaseDataStore(
                     when (storeAction.request) {
                         is AddRequest<*> ->
                             processAddRequest(clock, storeAction as AnyAddStoreAction, this@HbaseDataStore, updateSharedFlow)
-//                        is ChangeRequest<*> ->
-//                            processChangeRequest(clock, storeAction as AnyChangeStoreAction, this@HbaseDataStore, updateSharedFlow)
+                        is ChangeRequest<*> ->
+                            processChangeRequest(clock, storeAction as AnyChangeStoreAction, this@HbaseDataStore, updateSharedFlow)
                         is DeleteRequest<*> ->
                             processDeleteRequest(clock, storeAction as AnyDeleteStoreAction, this@HbaseDataStore, cache, updateSharedFlow)
                         is GetRequest<*> ->

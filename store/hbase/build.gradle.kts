@@ -14,7 +14,7 @@ kotlin {
         commonMain {
             dependencies {
                 api(projects.store.shared)
-                api("org.apache.hbase:hbase-shaded-client:_")
+                api("org.apache.hbase:hbase-client:_")
             }
         }
         commonTest {
@@ -22,7 +22,7 @@ kotlin {
                 implementation(kotlin("test"))
                 api(projects.testmodels)
                 api(projects.store.test)
-                api("org.apache.hbase:hbase-shaded-testing-util:_")
+                api("org.apache.hbase:hbase-testing-util:_")
                 api("org.slf4j:slf4j-simple:_")
                 api("org.slf4j:log4j-over-slf4j:_")
                 implementation(Testing.junit4)

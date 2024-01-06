@@ -1,7 +1,6 @@
 package maryk.datastore.hbase.processors
 
 import maryk.core.exceptions.StorageException
-import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.values
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
@@ -20,16 +19,17 @@ import maryk.core.query.ValuesWithMetaData
 import maryk.core.values.EmptyValueItems
 import maryk.core.values.Values
 import maryk.datastore.hbase.dataColumnFamily
+import maryk.datastore.hbase.helpers.readCountValue
+import maryk.datastore.hbase.helpers.readValue
 import maryk.datastore.hbase.trueIndicator
-import maryk.datastore.shared.readValue
 import org.apache.hadoop.hbase.Cell
 import org.apache.hadoop.hbase.client.Result
 
 /**
- * Read values for [key] from an [iterator] to a ValuesWithMeta object.
+ * Read values from result to a ValuesWithMeta object.
  * Filter results on [select]
  */
-internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
+internal fun <DM : IsRootDataModel> DM.readResultIntoValuesWithMetaData(
     result: Result,
     creationVersion: ULong,
     key: Key<DM>,
@@ -45,7 +45,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
     } else {
         var currentVersion = 0uL
 
-        val allCellIterator = result.listCells().filter {
+        val allCellIterator = result.rawCells().filter {
             it.familyArray[it.familyOffset] == dataColumnFamily.first()
         }.iterator()
 
@@ -57,35 +57,37 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
             val getQualifier: (((Int) -> Byte, Int) -> Unit) -> Boolean = { qualifierReader ->
                 allCellIterator.hasNext().also {
                     if (it) {
-                        currentCell = allCellIterator.next()
+                        val cellToRead = allCellIterator.next()
 
                         qualifierReader(
-                            { currentCell!!.qualifierArray[currentCell!!.qualifierOffset + it] },
-                            currentCell!!.qualifierLength
+                            { cellToRead.qualifierArray[cellToRead.qualifierOffset + it] },
+                            cellToRead.qualifierLength
                         )
 
-                        currentVersion = currentCell!!.timestamp.toULong()
+                        currentVersion = cellToRead.timestamp.toULong()
                         maxVersion = maxOf(currentVersion, maxVersion)
+
+                        currentCell = cellToRead
                     } else {
                         currentCell = null
                     }
                 }
             }
 
-            var index: Int
             this.readStorageToValues(
                 getQualifier = getQualifier,
                 select = select,
                 processValue = { storageType, reference ->
                     cachedRead(reference, currentVersion) {
-                        if (currentCell == null) {
+                        val cell = currentCell
+                        if (cell == null) {
                             null
                         } else {
                             when (storageType) {
                                 ObjectDelete -> {
-                                    if (currentCell!!.qualifierLength == 1 && currentCell!!.qualifierArray[currentCell!!.qualifierOffset] == 0.toByte()) {
-                                        currentVersion = maxOf(currentCell!!.timestamp.toULong(), maxVersion)
-                                        isDeleted = currentCell!!.valueArray[currentCell!!.valueOffset] == trueIndicator.first()
+                                    if (cell.qualifierLength == 1 && cell.qualifierArray[cell.qualifierOffset] == 0.toByte()) {
+                                        currentVersion = maxOf(cell.timestamp.toULong(), maxVersion)
+                                        isDeleted = cell.valueArray[cell.valueOffset] == trueIndicator.first()
                                         isDeleted
                                     } else {
                                         currentVersion = 0uL
@@ -93,32 +95,14 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                                     }
                                 }
                                 Value -> {
-                                    val valueBytes = currentCell!!.valueArray
-                                    index = 0
-                                    val reader = { valueBytes[currentCell!!.valueOffset + index++] }
-
                                     val definition =
                                         (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
                                             ?: reference.propertyDefinition
-                                    readValue(definition, reader) {
-                                        currentCell!!.valueLength - index
-                                    }
+                                    cell.readValue(definition)
                                 }
-                                ListSize -> {
-                                    val valueBytes = currentCell!!.valueArray
-                                    index = currentCell!!.valueOffset
-                                    initIntByVar { valueBytes[index++] }
-                                }
-                                SetSize -> {
-                                    val valueBytes = currentCell!!.valueArray
-                                    index = currentCell!!.valueOffset
-                                    initIntByVar { valueBytes[index++] }
-                                }
-                                MapSize -> {
-                                    val valueBytes = currentCell!!.valueArray
-                                    index = currentCell!!.valueOffset
-                                    initIntByVar { valueBytes[index++] }
-                                }
+                                ListSize -> cell.readCountValue()
+                                SetSize -> cell.readCountValue()
+                                MapSize -> cell.readCountValue()
                                 Embed -> Unit
                                 TypeValue -> throw StorageException("Not used in direct encoding")
                             }
@@ -127,7 +111,6 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                 }
             )
         }
-
     }
 
     // Return null if no values where found but values where selected

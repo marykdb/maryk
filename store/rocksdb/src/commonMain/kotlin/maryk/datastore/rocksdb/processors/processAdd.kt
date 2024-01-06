@@ -82,8 +82,7 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
 
             objectToAdd.writeToStorage { type, reference, definition, value ->
                 when (type) {
-                    ObjectDelete -> {
-                    } // Cannot happen on new add
+                    ObjectDelete -> Unit // Cannot happen on new add
                     Value -> {
                         val storableDefinition = Value.castDefinition(definition)
                         val valueBytes = storableDefinition.toStorageBytes(value, TypeIndicator.NoTypeIndicator.byte)

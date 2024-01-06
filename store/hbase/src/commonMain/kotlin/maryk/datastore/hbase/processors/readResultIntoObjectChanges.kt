@@ -1,7 +1,6 @@
 package maryk.datastore.hbase.processors
 
 import maryk.core.exceptions.StorageException
-import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.ListSize
@@ -19,13 +18,14 @@ import maryk.core.properties.types.Key
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.changes.VersionedChanges
 import maryk.datastore.hbase.dataColumnFamily
-import maryk.datastore.shared.readValue
+import maryk.datastore.hbase.helpers.readCountValue
+import maryk.datastore.hbase.helpers.readValue
 import maryk.datastore.hbase.trueIndicator
 import org.apache.hadoop.hbase.Cell
 import org.apache.hadoop.hbase.client.Result
 
-/** Process values for [key] from transaction to a DataObjectWithChanges object */
-internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
+/** Process values for [key] from result to a DataObjectWithChanges object */
+internal fun <DM : IsRootDataModel> DM.readResultIntoObjectChanges(
     result: Result,
     creationVersion: ULong,
     key: Key<DM>,
@@ -48,12 +48,13 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
     val getQualifier: (((Int) -> Byte, Int) -> Unit) -> Boolean = { qualifierReader ->
         allCellIterator.hasNext().also {
             if (it) {
-                currentCell = allCellIterator.next()
-                currentVersion = currentCell!!.timestamp.toULong()
+                val cellToRead = allCellIterator.next()
+                currentCell = cellToRead
+                currentVersion = cellToRead.timestamp.toULong()
 
                 qualifierReader(
-                    { currentCell!!.qualifierArray[currentCell!!.qualifierOffset + it] },
-                    currentCell!!.qualifierLength
+                    { cellToRead.qualifierArray[cellToRead.qualifierOffset + it] },
+                    cellToRead.qualifierLength
                 )
             } else {
                 currentCell = null
@@ -61,47 +62,34 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
         }
     }
 
-    var index: Int
     changes = this.readStorageToChanges(
         getQualifier = getQualifier,
         select = select,
         creationVersion = if (creationVersion > fromVersion) creationVersion else null,
         processValue = { storageType, reference, valueWithVersionReader ->
             val value = cachedRead(reference, currentVersion) {
-                when (storageType) {
-                    ObjectDelete -> {
-                        if (currentCell!!.qualifierLength == 1 && currentCell!!.qualifierArray[currentCell!!.qualifierOffset] == 0.toByte()) {
-                            currentCell!!.valueArray[currentCell!!.valueOffset] == trueIndicator.first()
-                        } else null
-                    }
-                    Value -> {
-                        val valueBytes = currentCell!!.valueArray
-                        index = currentCell!!.valueOffset
-                        val reader = { valueBytes[currentCell!!.valueOffset + index++] }
-
-                        val definition = (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
-                            ?: reference.propertyDefinition
-                        readValue(definition, reader) {
-                            currentCell!!.valueLength - index
+                val cell = currentCell
+                if (cell == null) {
+                    null
+                } else {
+                    when (storageType) {
+                        ObjectDelete -> {
+                            if (cell.qualifierLength == 1 && cell.qualifierArray[cell.qualifierOffset] == 0.toByte()) {
+                                cell.valueArray[cell.valueOffset] == trueIndicator.first()
+                            } else null
                         }
+                        Value -> {
+                            val definition =
+                                (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
+                                    ?: reference.propertyDefinition
+                            cell.readValue(definition)
+                        }
+                        ListSize -> cell.readCountValue()
+                        SetSize -> cell.readCountValue()
+                        MapSize -> cell.readCountValue()
+                        Embed -> Unit
+                        TypeValue -> throw StorageException("Not used in direct encoding")
                     }
-                    ListSize -> {
-                        val valueBytes = currentCell!!.valueArray
-                        index = currentCell!!.valueOffset
-                        initIntByVar { valueBytes[index++] }
-                    }
-                    SetSize -> {
-                        val valueBytes = currentCell!!.valueArray
-                        index = currentCell!!.valueOffset
-                        initIntByVar { valueBytes[index++] }
-                    }
-                    MapSize -> {
-                        val valueBytes = currentCell!!.valueArray
-                        index = currentCell!!.valueOffset
-                        initIntByVar { valueBytes[index++] }
-                    }
-                    Embed -> {}
-                    TypeValue -> throw StorageException("Not used in direct encoding")
                 }
             }
             valueWithVersionReader(currentVersion, value)

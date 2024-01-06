@@ -4,9 +4,9 @@ import maryk.core.extensions.bytes.invert
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.Transaction
-import maryk.datastore.rocksdb.processors.DELETED_INDICATOR_ARRAY
+import maryk.datastore.shared.TypeIndicator
 
-/** Delete [keyAndReference] = [value] (ByteArray) at [version] for object at [key] */
+/** Delete [keyAndReference] at [version] for object */
 internal fun deleteValue(
     transaction: Transaction,
     columnFamilies: TableColumnFamilies,
@@ -26,7 +26,7 @@ internal fun deleteValue(
         transaction.put(
             columnFamilies.historic.table,
             historicReference,
-            DELETED_INDICATOR_ARRAY
+            TypeIndicator.DeletedIndicator.byteArray,
         )
     }
 }

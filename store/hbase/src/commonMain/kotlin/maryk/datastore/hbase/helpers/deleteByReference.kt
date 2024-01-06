@@ -1,7 +1,6 @@
-package maryk.datastore.rocksdb.processors.helpers
+package maryk.datastore.hbase.helpers
 
 import maryk.core.exceptions.StorageException
-import maryk.core.extensions.bytes.initUIntByVarWithExtraInfo
 import maryk.core.models.values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
@@ -14,10 +13,8 @@ import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.definitions.wrapper.IsMapDefinitionWrapper
 import maryk.core.properties.enum.MultiTypeEnum
 import maryk.core.properties.references.EmbeddedValuesPropertyRef
-import maryk.core.properties.references.IncMapReference
 import maryk.core.properties.references.IsMapReference
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.references.IsPropertyReferenceWithParent
 import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.references.MapReference
@@ -26,37 +23,32 @@ import maryk.core.properties.references.MultiTypePropertyReference
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
 import maryk.core.properties.references.TypedPropertyReference
-import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.values.EmptyValueItems
-import maryk.datastore.rocksdb.TableColumnFamilies
-import maryk.datastore.rocksdb.Transaction
+import maryk.datastore.hbase.dataColumnFamily
 import maryk.datastore.shared.TypeIndicator
-import maryk.datastore.shared.readValue
-import maryk.lib.extensions.compare.matchPart
+import maryk.lib.extensions.compare.compareToWithOffsetLength
 import maryk.lib.extensions.compare.prevByteInSameLength
-import org.rocksdb.ReadOptions
+import org.apache.hadoop.hbase.client.Put
+import org.apache.hadoop.hbase.client.Result
 
 internal fun <T : Any> deleteByReference(
-    transaction: Transaction,
-    columnFamilies: TableColumnFamilies,
-    readOptions: ReadOptions,
-    key: Key<*>,
+    currentRowResult: Result,
+    put: Put,
     reference: TypedPropertyReference<T>,
     referenceAsBytes: ByteArray,
-    version: ByteArray,
     handlePreviousValue: ((ByteArray, T?) -> Unit)?
 ): Boolean {
-    val referenceToCompareTo = byteArrayOf(*key.bytes, *referenceAsBytes)
-    var referenceOfParent: ByteArray? = null
+    // Only set with lists where it should look at the parent
+    var referenceOfParentOfList: ByteArray? = null
     var toShiftListCount = 0u
 
     var shouldHandlePrevValue = true
 
     // Value to delete
     @Suppress("UNCHECKED_CAST")
-    val prevValue: T = transaction.getValue(columnFamilies, readOptions, null, referenceToCompareTo) { b, o, l ->
-        if (l == 1 && b[o] == TypeIndicator.DeletedIndicator.byte) {
+    val prevValue: T = currentRowResult.getColumnLatestCell(dataColumnFamily, referenceAsBytes)?.let { cell ->
+        if (cell.valueLength == 1 && cell.qualifierArray[cell.qualifierOffset] == TypeIndicator.DeletedIndicator.byte) {
             // does not exist so nothing to delete
             null
         } else {
@@ -69,36 +61,24 @@ internal fun <T : Any> deleteByReference(
                 is EmbeddedValuesPropertyRef<*, *> -> reference.propertyDefinition.definition.dataModel.values { EmptyValueItems } as T
                 is MapValueReference<*, *, *> -> {
                     val mapReference = reference.parentReference as IsMapReference<Any, Any, IsPropertyContext, IsMapDefinitionWrapper<Any, Any, Any, IsPropertyContext, *>>
-                    createCountUpdater(
-                        transaction,
-                        columnFamilies,
-                        readOptions,
-                        key,
-                        mapReference as IsPropertyReference<Map<*, *>, IsPropertyDefinition<Map<*, *>>, out Any>,
-                        version,
-                        -1
-                    ) { newCount ->
-                        mapReference.propertyDefinition.definition.validateSize(newCount) { mapReference }
+
+                    createCountUpdater(currentRowResult, mapReference, put, -1) { count ->
+                        mapReference.propertyDefinition.definition.validateSize(count) { mapReference }
                     }
+
                     // Map values can be set to null to be deleted.
                     shouldHandlePrevValue = false
 
                     when (val valueDefinition = mapReference.propertyDefinition.definition.valueDefinition) {
                         is IsStorageBytesEncodable<*> ->
-                            valueDefinition.fromStorageBytes(b, o, l) as T
+                            valueDefinition.fromStorageBytes(cell.valueArray, cell.valueOffset, cell.valueLength) as T
                         is EmbeddedValuesDefinition<*> ->
                             valueDefinition.dataModel.values { EmptyValueItems } as T
                         is IsMapDefinition<*, *, *> -> mapOf<Any, Any>() as T
                         is IsListDefinition<*, *> -> listOf<Any>() as T
                         is IsSetDefinition<*, *> -> setOf<Any>() as T
                         is IsMultiTypeDefinition<*, *, *> -> {
-                            var readIndex = o
-                            val reader = {
-                                b[readIndex++]
-                            }
-                            readValue(valueDefinition, reader) {
-                                l - readIndex
-                            } as T
+                            cell.readValue(valueDefinition) as T
                         }
                         else -> throw StorageException("Unknown map type")
                     }
@@ -107,53 +87,36 @@ internal fun <T : Any> deleteByReference(
                     val listReference = reference.parentReference as ListReference<Any, IsPropertyContext>
                     val listDefinition = listReference.propertyDefinition.definition
                     createCountUpdater(
-                        transaction,
-                        columnFamilies,
-                        readOptions,
-                        key,
+                        currentRowResult,
                         listReference as IsPropertyReference<List<*>, IsPropertyDefinition<List<*>>, out Any>,
-                        version,
-                        -1
+                        put,
+                        -1,
                     ) { newCount ->
                         toShiftListCount = newCount - reference.index
                         listDefinition.validateSize(newCount) { listReference }
                     }
-                    referenceOfParent = listReference.toStorageByteArray(key.bytes)
+                    referenceOfParentOfList = listReference.toStorageByteArray()
                     // Map values can be set to null to be deleted.
                     shouldHandlePrevValue = false
-                    (listDefinition.valueDefinition as IsStorageBytesEncodable<T>).fromStorageBytes(b, o, l)
+                    (listDefinition.valueDefinition as IsStorageBytesEncodable<T>).fromStorageBytes(cell.valueArray, cell.valueOffset, cell.valueLength)
                 }
                 is SetItemReference<*, *> -> {
                     val setReference = reference.parentReference as SetReference<Any, IsPropertyContext>
 
-                    var newO = o
-                    // Missing read by var int for size of element
-                    initUIntByVarWithExtraInfo({
-                        b[newO++]
-                    }) { _, _ -> 1 }
                     createCountUpdater(
-                        transaction,
-                        columnFamilies,
-                        readOptions,
-                        key,
+                        currentRowResult,
                         setReference as IsPropertyReference<Set<*>, IsPropertyDefinition<Set<*>>, out Any>,
-                        version,
-                        -1
+                        put,
+                        -1,
                     ) { newCount ->
                         setReference.propertyDefinition.definition.validateSize(newCount) { setReference }
                     }
                     // Map values can be set to null to be deleted.
                     shouldHandlePrevValue = false
-                    (setReference.propertyDefinition.valueDefinition as IsStorageBytesEncodable<T>).fromStorageBytes(b, newO, l)
+                    (setReference.propertyDefinition.valueDefinition as IsStorageBytesEncodable<T>).fromStorageBytes(cell.valueArray, cell.valueOffset, cell.valueLength)
                 }
                 is MultiTypePropertyReference<*, *, *, *, *> -> {
-                    var readIndex = o
-                    val reader = {
-                        b[readIndex++]
-                    }
-                    readValue(reference.comparablePropertyDefinition, reader) {
-                        o + l - readIndex
-                    }.let {
+                    cell.readValue(reference.comparablePropertyDefinition).let {
                         when (it) {
                             is TypedValue<*, *> -> it
                             is MultiTypeEnum<*> -> TypedValue(it, Unit) as T
@@ -161,51 +124,49 @@ internal fun <T : Any> deleteByReference(
                         }
                     } as T
                 }
-                else -> (reference as IsStorageBytesEncodable<T>).fromStorageBytes(b, o, l)
+                else -> (reference as IsStorageBytesEncodable<T>).fromStorageBytes(cell.valueArray, cell.valueOffset, cell.valueLength)
             }
         }
     } ?: return false
 
     if (shouldHandlePrevValue) {
         // Primarily for validations
-        handlePreviousValue?.invoke(referenceToCompareTo, prevValue)
+        handlePreviousValue?.invoke(referenceAsBytes, prevValue)
     }
 
-    // Do not delete IncMap values since they are needed for incrementing
-    // Otherwise delete in normal table
-    val shouldNotDeleteCompletely = reference is IsPropertyReferenceWithParent<*, *, *, *> && reference.parentReference is IncMapReference<*, *, *>
-
     // Delete value and complex sub parts below same reference
-    val iterator = transaction.getIterator(readOptions, columnFamilies.table)
-    iterator.seek(referenceToCompareTo)
-    val refOfParent = referenceOfParent
-    while (iterator.isValid()) {
-        val ref = iterator.key()
+    val refOfParentOfList = referenceOfParentOfList
+    var shouldLook = false
 
-        if (ref.matchPart(0, referenceToCompareTo)) {
-            // Delete if not a list or no further list items
-            if (toShiftListCount <= 0u) {
-                if (shouldNotDeleteCompletely) {
-                    setValue(transaction, columnFamilies, ref, version, TypeIndicator.DeletedIndicator.byteArray)
-                } else {
-                    deleteValue(transaction, columnFamilies, ref, version)
-                }
-            }
-        } else if (refOfParent != null && ref.matchPart(0, refOfParent)) {
-            // To handle list shifting
-            if (toShiftListCount > 0u) {
-                val value = iterator.value()
-                setValue(transaction, columnFamilies, ref.prevByteInSameLength(), version, value, VERSION_BYTE_SIZE, value.size - VERSION_BYTE_SIZE)
-                toShiftListCount--
-            }
-
-            if (toShiftListCount <= 0u) {
-                deleteValue(transaction, columnFamilies, ref, version)
-            }
-        } else {
-            break
+    for (cell in currentRowResult.rawCells()) {
+        if (!shouldLook) {
+            shouldLook = referenceAsBytes.compareToWithOffsetLength(cell.qualifierArray, cell.qualifierOffset, cell.qualifierLength) <= 0
         }
-        iterator.next()
+
+        if (shouldLook) {
+            // Exact match
+            if (referenceAsBytes.compareToWithOffsetLength(cell.qualifierArray, cell.qualifierOffset, referenceAsBytes.size) == 0) {
+                // Delete if not a list or no further list items
+                if (toShiftListCount <= 0u) {
+                    put.addColumn(dataColumnFamily, cell.qualifierArray.copyOfRange(cell.qualifierOffset, cell.qualifierOffset + cell.qualifierLength), TypeIndicator.DeletedIndicator.byteArray)
+                }
+            } else if (refOfParentOfList != null && refOfParentOfList.compareToWithOffsetLength(cell.qualifierArray, cell.qualifierOffset, refOfParentOfList.size) == 0) {
+                // To handle list shifting
+                if (toShiftListCount > 0u) {
+                    val newShiftedQualifier = cell.qualifierArray.copyOfRange(cell.qualifierOffset, cell.qualifierOffset + cell.qualifierLength).prevByteInSameLength()
+                    val newValue = cell.valueArray.copyOfRange(cell.valueOffset, cell.valueOffset + cell.valueLength)
+                    put.addColumn(dataColumnFamily, newShiftedQualifier, newValue)
+                    toShiftListCount--
+                }
+
+                if (toShiftListCount <= 0u) {
+                    put.addColumn(dataColumnFamily, cell.qualifierArray.copyOfRange(cell.qualifierOffset, cell.qualifierOffset + cell.qualifierLength), TypeIndicator.DeletedIndicator.byteArray)
+                }
+            } else {
+                // Non relevant qualifiers so break
+                break
+            }
+        }
     }
 
     return true

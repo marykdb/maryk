@@ -48,137 +48,137 @@ internal fun <DM : IsRootDataModel> IsFetchRequest<DM, *>.createFilter(): Filter
     }
 }
 
-internal fun createContentFilter(filter: IsFilter?): Filter? {
+internal fun createContentFilter(filter: IsFilter?, isNot: Boolean = false): Filter? {
     if (filter == null) {
         return null
     }
 
     return when (filter) {
-        is And -> FilterList(
-            FilterList.Operator.MUST_PASS_ALL,
-            filter.filters.map(::createContentFilter)
-        )
-        is Or -> FilterList(
-            FilterList.Operator.MUST_PASS_ONE,
-            filter.filters.map(::createContentFilter)
-        )
+        is And -> filter.filters.singleOrFilterList { createContentFilter(it, isNot) }
+        is Or -> filter.filters.singleOrFilterList(FilterList.Operator.MUST_PASS_ONE) { createContentFilter(it, isNot) }
         is Not -> SkipFilter(
-            FilterList(FilterList.Operator.MUST_PASS_ONE, filter.filters.map(::createContentFilter))
+            filter.filters.singleOrFilterList { createContentFilter(it, !isNot) }
         )
-        is Exists -> FilterList(
-            buildList {
-                filter.references.forEach {
-                    val ref = it.toStorageByteArray()
-                    add(SingleColumnValueFilter(dataColumnFamily, ref, CompareOperator.NOT_EQUAL, TypeIndicator.DeletedIndicator.byteArray).apply {
-                        filterIfMissing = true
-                    })
-                }
+        is Exists -> buildList {
+            filter.references.forEach {
+                val ref = it.toStorageByteArray()
+                val operator = if (isNot) CompareOperator.EQUAL else CompareOperator.NOT_EQUAL
+                add(SingleColumnValueFilter(dataColumnFamily, ref, operator, TypeIndicator.DeletedIndicator.byteArray).apply {
+                    filterIfMissing = true
+                })
             }
-        )
-        is Equals -> FilterList(
-            buildList {
-                filter.referenceValuePairs.forEach {
-                    add(convertToSingleColumnValueFilter(it, CompareOperator.EQUAL))
-                }
+        }.singleOrFilterList()
+        is Equals -> buildList {
+            filter.referenceValuePairs.forEach {
+                add(convertToSingleColumnValueFilter(it, if (isNot) CompareOperator.NOT_EQUAL else CompareOperator.EQUAL))
             }
-        )
-        is LessThan -> FilterList(
-            buildList {
-                filter.referenceValuePairs.forEach {
-                    add(convertToSingleColumnValueFilter(it, CompareOperator.LESS))
-                }
+        }.singleOrFilterList()
+        is LessThan -> buildList {
+            filter.referenceValuePairs.forEach {
+                add(convertToSingleColumnValueFilter(it, if (isNot) CompareOperator.GREATER_OR_EQUAL else CompareOperator.LESS))
             }
-        )
-        is LessThanEquals -> FilterList(
-            buildList {
-                filter.referenceValuePairs.forEach {
-                    add(convertToSingleColumnValueFilter(it, CompareOperator.LESS_OR_EQUAL))
-                }
+        }.singleOrFilterList()
+        is LessThanEquals -> buildList {
+            filter.referenceValuePairs.forEach {
+                add(convertToSingleColumnValueFilter(it, if (isNot) CompareOperator.GREATER else CompareOperator.LESS_OR_EQUAL))
             }
-        )
-        is GreaterThan -> FilterList(
-            buildList {
-                filter.referenceValuePairs.forEach {
-                    add(convertToSingleColumnValueFilter(it, CompareOperator.GREATER))
-                }
+        }.singleOrFilterList()
+        is GreaterThan -> buildList {
+            filter.referenceValuePairs.forEach {
+                add(convertToSingleColumnValueFilter(it, if (isNot) CompareOperator.LESS_OR_EQUAL else CompareOperator.GREATER))
             }
-        )
-        is GreaterThanEquals -> FilterList(
-            buildList {
-                filter.referenceValuePairs.forEach {
-                    add(convertToSingleColumnValueFilter(it, CompareOperator.GREATER_OR_EQUAL))
-                }
+        }.singleOrFilterList()
+        is GreaterThanEquals -> buildList {
+            filter.referenceValuePairs.forEach {
+                add(convertToSingleColumnValueFilter(it, if (isNot) CompareOperator.LESS else CompareOperator.GREATER_OR_EQUAL))
             }
-        )
-        is Prefix -> FilterList(
-            buildList {
-                filter.referenceValuePairs.forEach {
-                    val ref = it.reference.toStorageByteArray()
-                    val value = it.value
+        }.singleOrFilterList()
+        is Prefix -> buildList {
+            filter.referenceValuePairs.forEach {
+                val ref = it.reference.toStorageByteArray()
+                val value = it.value
 
-                    @Suppress("UNCHECKED_CAST")
-                    val valueBytes = (it.reference.comparablePropertyDefinition as IsStorageBytesEncodable<Any>).toStorageBytes(value, TypeIndicator.NoTypeIndicator.byte)
-                    add(SingleColumnValueFilter(dataColumnFamily, ref, CompareOperator.EQUAL, BinaryPrefixComparator(valueBytes)).apply {
-                        filterIfMissing = true
-                    })
+                @Suppress("UNCHECKED_CAST")
+                val valueBytes = (it.reference.comparablePropertyDefinition as IsStorageBytesEncodable<Any>).toStorageBytes(value, TypeIndicator.NoTypeIndicator.byte)
+                add(SingleColumnValueFilter(dataColumnFamily, ref, if (isNot) CompareOperator.NOT_EQUAL else CompareOperator.EQUAL, BinaryPrefixComparator(valueBytes)).apply {
+                    filterIfMissing = true
+                })
+            }
+        }.singleOrFilterList()
+        is Range -> buildList {
+            filter.referenceValuePairs.forEach { (reference, range) ->
+                val ref = reference.toStorageByteArray()
+
+                @Suppress("UNCHECKED_CAST")
+                val propertyDefinition = reference.comparablePropertyDefinition as IsStorageBytesEncodable<Any>
+
+                val fromBytes = propertyDefinition.toStorageBytes(range.from, TypeIndicator.NoTypeIndicator.byte)
+                val fromOperator = if (isNot) { if (range.inclusiveFrom) CompareOperator.LESS else CompareOperator.LESS_OR_EQUAL } else { if (range.inclusiveFrom) CompareOperator.GREATER_OR_EQUAL else CompareOperator.GREATER }
+                val fromFilter = SingleColumnValueFilter(dataColumnFamily, ref, fromOperator, BinaryPrefixComparator(fromBytes)).apply {
+                    filterIfMissing = true
+                }
+
+                val toOperator = if (isNot) { if (range.inclusiveFrom) CompareOperator.GREATER else CompareOperator.GREATER_OR_EQUAL } else { if (range.inclusiveFrom) CompareOperator.LESS_OR_EQUAL else CompareOperator.LESS }
+                val toBytes = propertyDefinition.toStorageBytes(range.to, TypeIndicator.NoTypeIndicator.byte)
+                val toFilter = SingleColumnValueFilter(dataColumnFamily, ref, toOperator, BinaryPrefixComparator(toBytes)).apply {
+                    filterIfMissing = true
+                }
+
+                if (isNot) {
+                    add(FilterList(FilterList.Operator.MUST_PASS_ONE, fromFilter, toFilter))
+                } else {
+                    add(fromFilter)
+                    add(toFilter)
                 }
             }
-        )
-        is Range -> FilterList(
-            buildList {
-                filter.referenceValuePairs.forEach { (reference, range) ->
-                    val ref = reference.toStorageByteArray()
+        }.singleOrFilterList()
+        is RegEx -> buildList {
+            filter.referenceValuePairs.forEach { (reference, regex) ->
+                val ref = reference.toStorageByteArray()
+                val prefixedRegex = if (regex.pattern.startsWith("^")) {
+                    regex.pattern.replace("^", "^\u0001")
+                } else "\u0001${regex.pattern}"
 
-                    @Suppress("UNCHECKED_CAST")
-                    val propertyDefinition = reference.comparablePropertyDefinition as IsStorageBytesEncodable<Any>
-
-                    val fromBytes = propertyDefinition.toStorageBytes(range.from, TypeIndicator.NoTypeIndicator.byte)
-                    add(SingleColumnValueFilter(dataColumnFamily, ref, if (range.inclusiveFrom) CompareOperator.GREATER_OR_EQUAL else CompareOperator.GREATER, BinaryPrefixComparator(fromBytes)).apply {
-                        filterIfMissing = true
-                    })
-
-                    val toBytes = propertyDefinition.toStorageBytes(range.to, TypeIndicator.NoTypeIndicator.byte)
-                    add(SingleColumnValueFilter(dataColumnFamily, ref, if (range.inclusiveTo) CompareOperator.LESS_OR_EQUAL else CompareOperator.LESS, BinaryPrefixComparator(toBytes)).apply {
-                        filterIfMissing = true
-                    })
-                }
+                add(SingleColumnValueFilter(dataColumnFamily, ref, if (isNot) CompareOperator.NOT_EQUAL else CompareOperator.EQUAL, RegexStringComparator(prefixedRegex)).apply {
+                    filterIfMissing = true
+                })
             }
-        )
-        is RegEx -> FilterList(
-            buildList {
-                filter.referenceValuePairs.forEach { (reference, regex) ->
-                    val ref = reference.toStorageByteArray()
-                    val prefixedRegex = if (regex.pattern.startsWith("^")) {
-                        regex.pattern.replace("^", "^\u0001")
-                    } else "\u0001${regex.pattern}"
-
-                    add(SingleColumnValueFilter(dataColumnFamily, ref, CompareOperator.EQUAL, RegexStringComparator(prefixedRegex)).apply {
-                        filterIfMissing = true
-                    })
-                }
-            }
-        )
-        is ValueIn -> FilterList(
-            FilterList.Operator.MUST_PASS_ALL,
-            buildList {
-                filter.referenceValuePairs.map {
-                    val refAsBytes = it.reference.toStorageByteArray()
-                    FilterList(
-                        FilterList.Operator.MUST_PASS_ONE,
-                        buildList {
-                            it.values.forEach { value ->
-                                @Suppress("UNCHECKED_CAST")
-                                val valueBytes = (it.reference.comparablePropertyDefinition as IsStorageBytesEncodable<Any>).toStorageBytes(value, TypeIndicator.NoTypeIndicator.byte)
-                                return SingleColumnValueFilter(dataColumnFamily, refAsBytes, CompareOperator.EQUAL, valueBytes).apply {
-                                    filterIfMissing = true
-                                }
-                            }
+        }.singleOrFilterList()
+        is ValueIn -> buildList<Filter> {
+            filter.referenceValuePairs.map {
+                val refAsBytes = it.reference.toStorageByteArray()
+                buildList<Filter> {
+                    it.values.forEach { value ->
+                        @Suppress("UNCHECKED_CAST")
+                        val valueBytes = (it.reference.comparablePropertyDefinition as IsStorageBytesEncodable<Any>).toStorageBytes(value, TypeIndicator.NoTypeIndicator.byte)
+                        return SingleColumnValueFilter(dataColumnFamily, refAsBytes, if (isNot) CompareOperator.NOT_EQUAL else CompareOperator.EQUAL, valueBytes).apply {
+                            filterIfMissing = true
                         }
-                    )
-                }
+                    }
+                }.singleOrFilterList(if (isNot) FilterList.Operator.MUST_PASS_ALL else FilterList.Operator.MUST_PASS_ONE)
             }
-        )
+        }.singleOrFilterList()
         else -> throw Exception("Unknown $filter")
+    }
+}
+
+private fun List<Filter>.singleOrFilterList(operator: FilterList.Operator = FilterList.Operator.MUST_PASS_ALL): Filter? {
+    return if (this.isEmpty()) {
+        return null
+    } else if (this.size == 1) {
+        this.first()
+    } else {
+        FilterList(operator, this)
+    }
+}
+
+private fun <E: IsFilter> List<E>.singleOrFilterList(operator: FilterList.Operator = FilterList.Operator.MUST_PASS_ALL, createFilter: (E?) -> Filter?): Filter? {
+    return if (this.isEmpty()) {
+        return null
+    } else if (this.size == 1) {
+        createFilter(this.first())
+    } else {
+        FilterList(operator, this.map(createFilter))
     }
 }
 

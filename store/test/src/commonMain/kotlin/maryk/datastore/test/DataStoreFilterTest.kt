@@ -53,9 +53,9 @@ class DataStoreFilterTest(
         "doRangeFilter" to ::doRangeFilter,
         "doRegExFilter" to ::doRegExFilter,
         "doValueInFilter" to ::doValueInFilter,
-//        "doNotFilter" to ::doNotFilter,
+        "doNotFilter" to ::doNotFilter,
         "doAndFilter" to ::doAndFilter,
-//        "doOrFilter" to ::doOrFilter,
+        "doOrFilter" to ::doOrFilter,
 //        "doReferencedEqualsFilter" to ::doReferencedEqualsFilter
     )
 
